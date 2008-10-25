@@ -647,7 +647,7 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 			ATOMname(t2), ATOMname(t1));			\
 		return 0;						\
 	} else if (!TYPEcomp(t1,t2)) {					\
-		GDKwarning("Interpreting %s as %s.\n",			\
+		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n",			\
 			ATOMname(t2), ATOMname(t1));			\
 	}
 #define BATcompatible(P1,P2) {						\
@@ -661,12 +661,12 @@ gdk_export int GDKsilent;	/* should GDK shut up? */
 	}								\
 	if (BAThtype(P1) != BAThtype(P2) &&                             \
 	    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {		\
-		GDKwarning("Interpreting %s as %s.\n",			\
+		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n",			\
 			ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 	}								\
 	if (BATttype(P1) != BATttype(P2) &&                             \
 	    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {		\
-		GDKwarning("Interpreting %s as %s.\n",			\
+		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n",			\
 			ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
 	}								\
 }
@@ -2505,7 +2505,7 @@ BBPcheck(REGISTER bat x, REGISTER const char *y)
 		REGISTER bat z = ABS(x);
 
 		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
-			GDKwarning("%s: range error %d\n", y, (int) x);
+			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

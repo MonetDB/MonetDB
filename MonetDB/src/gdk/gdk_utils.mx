@@ -613,6 +613,7 @@ GDKmemdump(void)
 {
 	struct Mallinfo m = MT_mallinfo();
 
+	MEMDEBUG {
 	THRprintf(GDKout, "\n#mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
 	THRprintf(GDKout, "#mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
 	THRprintf(GDKout, "#mallinfo.smblks = " SSZFMT "\n", (ssize_t) m.smblks);
@@ -622,6 +623,7 @@ GDKmemdump(void)
 	THRprintf(GDKout, "#mallinfo.fsmblks = " SSZFMT "\n", (ssize_t) m.fsmblks);
 	THRprintf(GDKout, "#mallinfo.uordblks = " SSZFMT "\n", (ssize_t) m.uordblks);
 	THRprintf(GDKout, "#mallinfo.fordblks = " SSZFMT "\n", (ssize_t) m.fordblks);
+	}
 #ifdef GDK_MEM_KEEPHISTO
 	{
 		int i;
@@ -983,7 +985,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	THRprintf(GDKout, "#%s(" SZFMT ") fail => BBPtrim(enter) usage[mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-	GDKdebug |= 4;
+/*	GDKdebug |= 4;  avoid debugging output */
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 
 	BBPtrim(memtarget, vmtarget);
@@ -1062,8 +1064,10 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		GDKmemfail("GDKmalloc", size, BBPTRIM_ALL, 0);
 		GDKmalloc_prefixsize(s, size);
 		if (s == NULL) {
-			if (emergency)
+			if (emergency){
+				GDKerror("GDKmallocmax: failed for %u bytes", size);
 				return NULL;
+			}
 			MT_alloc_print();
 			GDKfatal("GDKmallocmax: failed for %u bytes", size);
 		} else {
@@ -1655,7 +1659,7 @@ Go there and obtain the global database lock.
 	if (chdir(GDKdirStr) < 0) {
 		if (!GDKcreatedir(GDKdirStr) || chdir(GDKdirStr) < 0)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
-		GDKwarning("GDKlockHome: created directory %s\n", GDKdirStr);
+		IODEBUG THRprintf(GDKout,"#GDKlockHome: created directory %s\n", GDKdirStr);
 	}
 	if (GDKrecovery && unlink(GDKLOCK) < 0) {
 		GDKfatal("GDKlockHome: unlock DB failed\n");
@@ -1672,7 +1676,7 @@ Go there and obtain the global database lock.
 	if (p) {
 		sprintf(host, " from '%s'", buf);
 	} else {
-		GDKwarning("GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
+		IODEBUG THRprintf(GDKout,"#GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
 		host[0] = 0;
 	}
 @-
@@ -1717,7 +1721,7 @@ GDKgetHome(void)
 		MT_sleep_ms(1000);
 	}
 	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
-		GDKwarning("GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);
+		IODEBUG THRprintf(GDKout,"#GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);
 		MT_lockf(GDKLOCK, F_LOCK, 4, 1);
 	}
 	return 1;
@@ -1738,6 +1742,7 @@ which makes it hard for upper layers to detect if an error
 was produced in the process. To facilitate such testing,
 a global error count is maintained on a thread basis,
 which can be read out by the function GDKerrorCount();
+Furthermore, threads may have set their private error buffer.
 @{
 @c
 int GDKsilent = 0;
@@ -1747,9 +1752,12 @@ static int THRerrorcount[THREADDATA];
 static void
 doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const char *suffix)
 {
-	char *buf = GDKerrbuf;
+	char *buf;
 
 	THRerrorcount[THRgettid()]++;
+	buf =  THRget_errbuf(THRget(THRgettid()));
+	if (buf == 0)
+		buf = GDKerrbuf;
 	if (buf) {
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
@@ -1816,7 +1824,7 @@ GDKaddbuf(const char *message)
 
 			/* remember last ! prefix (e.g. "!ERROR: ")
 			   for any subsequent lines that start without ! */
-			message = p;
+			message = p+1;
 			/* A prefix consists of a ! immediately
 			   followed by some text, followed by a : and
 			   a space.  Anything else results in no
@@ -1828,7 +1836,7 @@ GDKaddbuf(const char *message)
 				preflen = (size_t) (p - message) + 1;
 				if (preflen > sizeof(prefix) - 1)
 					preflen = sizeof(prefix) - 1;
-				strncpy(prefix, message, preflen);
+				strncpy(prefix, message, preflen-1);
 				prefix[preflen] = 0;
 			} else {
 				/* there is a ! but no proper prefix */
@@ -2114,7 +2122,7 @@ THRnew(MT_Id pid, str name)
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == pid) {
 				gdk_unset_lock(GDKthreadLock, "THRnew");
-				GDKwarning("THRnew:duplicate " SZFMT "\n", (size_t) pid);
+				IODEBUG THRprintf(GDKout,"#THRnew:duplicate " SZFMT "\n", (size_t) pid);
 				return s;
 			}
 		}
@@ -2125,7 +2133,7 @@ THRnew(MT_Id pid, str name)
 		}
 		if (s == t) {
 			gdk_unset_lock(GDKthreadLock, "THRnew");
-			GDKwarning("THRnew: too many threads\n");
+			IODEBUG THRprintf(GDKout,"#THRnew: too many threads\n");
 			return NULL;
 		}
 		tid = s->tid;

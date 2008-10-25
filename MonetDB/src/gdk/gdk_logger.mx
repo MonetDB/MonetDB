@@ -624,7 +624,7 @@ la_bat_use(logger *lg, logaction *la)
 	BAT *b = BATdescriptor(bid);
 
 	if (!b) {
-		GDKerror("logger could not use bat (" OIDFMT ") for %s\n", bid, la->name);
+		GDKerror("logger: could not use bat (" OIDFMT ") for %s\n", bid, la->name);
 		return;
 	}
 	logger_add_bat(lg, b, la->name);
@@ -1131,11 +1131,11 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		}
 	} else if ((fp = fopen(filename, "w")) == NULL) {
 		if (!GDKcreatedir(filename)) {
-			GDKerror("logger could not create log directory %s\n", lg->dir);
+			GDKerror("logger: could not create log directory %s\n", lg->dir);
 
 			return NULL;
 		} else if ((fp = fopen(filename, "w")) == NULL) {
-			GDKerror("logger could not create file %s\n", filename);
+			GDKerror("logger: could not create file %s\n", filename);
 			return NULL;
 		}
 		fprintf(fp, "%06d\n\n", lg->version);
@@ -1239,7 +1239,7 @@ logger_exit(logger *lg)
 
 		lg->changes = 0;
 	} else {
-		GDKerror("logger could not open %s\n", filename);
+		GDKerror("logger_exit: could not open %s\n", filename);
 		return LOG_ERR;
 	}
 	return LOG_OK;

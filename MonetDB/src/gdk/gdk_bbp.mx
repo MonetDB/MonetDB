@@ -507,11 +507,11 @@ BBPinit(void)
 		GDKfilepath(buf, BAKDIR, "BBP", "bak");
 		if (stat(buf, &st) < 0) {
 			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir): create a new one */
-			GDKwarning("BBPdir: initializing BBP.\n");  /* BBPdir instead of BBPinit for backward compatibility of error messages */
+			IODEBUG THRprintf(GDKout,"#BBPdir: initializing BBP.\n");  /* BBPdir instead of BBPinit for backward compatibility of error messages */
 			if (BBPdir(0, NULL) < 0)
 				goto bailout;
 		} else if (GDKmove(BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == 0)
-			GDKwarning("BBPinit: reverting to dir saved in BBP.bak.\n");
+			IODEBUG THRprintf(GDKout,"#BBPinit: reverting to dir saved in BBP.bak.\n");
 
 		if ((fp = GDKfilelocate("BBP", "r", "dir")) == NULL)
 			goto bailout;
@@ -2263,9 +2263,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		else
 			vmtarget = 0;
 	}
-	MEMDEBUG THRprintf(GDKout, "#BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKout, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_inuse(), GDKvm_cursize());
 
-	MEMDEBUG THRprintf(GDKout, "#BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n", memtarget, vmtarget);
+	THRprintf(GDKout, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n", memtarget, vmtarget);
 	PERFDEBUG THRprintf(GDKout, "#BBPtrim(mem=%d,vm=%d)\n", memtarget > 0, vmtarget > 0);
 
 	scan = (bbptrimfirst == BBPMAXTRIM);
@@ -2303,13 +2303,13 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 			gdk_unset_lock(GDKcacheLock(i), "BBPtrim");
 
 		/* do the unload work unlocked */
-		MEMDEBUG THRprintf(GDKout, "#BBPTRIM: %s\n", (bbpunload != BBPMAXTRIM) ? " lastused   batid name" : "no more unload candidates!");
+		MEMDEBUG THRprintf(GDKout, "BBPTRIM: %s\n", (bbpunload != BBPMAXTRIM) ? " lastused   batid name" : "no more unload candidates!");
 
 		for (i = bbpunload; i != BBPMAXTRIM; i = bbptrim[i].next) {
 			BAT *b = BBP_cache(bbptrim[i].bid);
 
 			if (b == NULL || !(BBP_status(bbptrim[i].bid) & BBPUNLOADING)) {
-				GDKwarning("BBPtrim: bat(%d) gone\n", bbptrim[i].bid);
+				IODEBUG THRprintf(GDKout,"BBPtrim: bat(%d) gone\n", bbptrim[i].bid);
 				continue;
 			}
 			MEMDEBUG THRprintf(GDKout, "#BBPTRIM: %9d %7d %s\n", bbptrim[i].lastused, (int) bbptrim[i].bid, BBPname(bbptrim[i].bid));
@@ -2323,7 +2323,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 			break;
 	}
 	/* done trimming */
-	MEMDEBUG THRprintf(GDKout, "#BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_cursize(), GDKvm_cursize());
+	THRprintf(GDKout, "BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_cursize(), GDKvm_cursize());
 	PERFDEBUG THRprintf(GDKout, "#BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", did_scan, bats_unloaded, bats_written, GDKms() - msec);
 
 	BBP_notrim = 0;
@@ -3347,7 +3347,7 @@ BBPrecover_subdir(void)
 	if (ret == 0) {
 		ret = GDKremovedir(SUBDIR);
 		if (backup_dir == 2) {
-			GDKwarning("BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
+			IODEBUG THRprintf(GDKout,"BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}
@@ -3467,7 +3467,7 @@ BBPdiskscan(const char *parent)
 		}
 		if (!ok) {
 			/* found an unknown file; stop pruning in this subdir */
-			GDKwarning("BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			IODEBUG THRprintf(GDKout,"BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		if (delete) {

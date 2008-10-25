@@ -305,7 +305,7 @@ at commit-time.
 			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 		}
 	} else if (mode != STORE_MMAP) {
-		GDKerror("GDKsave failed: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
 	return err;
 }
@@ -382,7 +382,7 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 		}
 	}
 	if (ret == NULL)
-		GDKerror("GDKload failed: name=%s, ext=%s\n", nme, ext ? ext : "");
+		GDKerror("GDKload: failed name=%s, ext=%s\n", nme, ext ? ext : "");
 	return ret;
 }
 
@@ -718,21 +718,21 @@ BATdelete(BAT *b)
 	if (b->batCopiedtodisk || (b->H->heap.storage & STORE_MMAP)) {
 		if (b->htype != TYPE_void && HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
-			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
+			IODEBUG THRprintf(GDKout,"#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
 		HEAPfree(&b->H->heap);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage & STORE_MMAP)) {
 		if (b->ttype != TYPE_void && HEAPdelete(&b->T->heap, o, "tail") &&
 		    b->batCopiedtodisk)
-			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
+			IODEBUG THRprintf(GDKout,"#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap);
 	}
 	if (b->hheap) {
 		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
 			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): head heap\n", BATgetId(b));
+				IODEBUG THRprintf(GDKout,"#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->hheap);
 		}
@@ -740,7 +740,7 @@ BATdelete(BAT *b)
 	if (b->theap) {
 		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
 			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): tail heap\n", BATgetId(b));
+				IODEBUG THRprintf(GDKout,"#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->theap);
 		}

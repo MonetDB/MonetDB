@@ -373,7 +373,7 @@ BAThash(BAT *b, BUN masksize)
 			cnt = BATcapacity(b);
 
 		if (b->htype == TYPE_void) {
-			BATDEBUG GDKwarning("BAThash: creating hash-table on void column..\n");
+			ALGODEBUG THRprintf(GDKout,"#BAThash: creating hash-table on void column..\n");
 
 			tpe = TYPE_void;
 		}
