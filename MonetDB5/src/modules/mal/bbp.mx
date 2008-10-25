@@ -108,11 +108,6 @@ pattern getObjects():bat[:int,:str]
 address CMDbbpGetObjects
 	comment "View of the box content.";
 
-pattern getFiles():bat[:int,:str] 
-address CMDbbpGetFiles
-	comment "Get all file names within the BBP.";
-
-                                                                                
 @{
 @- Singleton Set management
 Singleton sets are ideally not represented by BATs, but they
@@ -229,7 +224,6 @@ bbp_export str CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpGetFiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
 bbp_export str CMDgetPageSize(lng *ret);
 bbp_export str CMDbbpNames(int *ret);
@@ -765,33 +759,6 @@ CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpGetFiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int i;
-	int *ret;
-	char buf[MAXPATHLEN];
-	char cwd[MAXPATHLEN];
-	getcwd(cwd, MAXPATHLEN);
-
-	(void) cntxt;
-	(void) mb;		/* fool compiler */
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
-	if (b == 0)
-		throw(MAL, "bbp.getFiles", "Cannot create BAT");
-	for (i=1; i<BBPsize; i++)
-	if (BBPvalid(i)) {
-		snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
-		BUNins(b, &i, buf, FALSE);
-	}
-
-	ret = (int *) getArgReference(stk, pci, 0);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,files)@
-	return MAL_SUCCEED;
-}
-
-str
 CMDbbpNames(int *ret)
 {
 	BAT *b;
@@ -898,6 +865,9 @@ CMDbbpLocation(int *ret)
 {
 	BAT *b;
 	int i;
+	char buf[MAXPATHLEN];
+	char cwd[MAXPATHLEN];
+	getcwd(cwd, MAXPATHLEN);
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
@@ -906,8 +876,9 @@ CMDbbpLocation(int *ret)
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
+			snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
-				BUNins(b, &i, BBP_physical(i), FALSE);
+				BUNins(b, &i, buf, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
