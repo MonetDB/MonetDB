@@ -389,7 +389,7 @@ char *MT_heapbase = NULL;
  * hope the VM paging algorithm behaves better than Linux which just runs off
  * the cliff and if MonetDB does not prevent RSS from being too high, enters coma.
  *
- * We will only eb able to sensibly test this on Windows64. On Windows32, mmap sizes
+ * We will only be able to sensibly test this on Windows64. On Windows32, mmap sizes
  * do not significantly exceed RAM sizes so MonetDB swapping actually will not happen
  * (of course, you've got this nasty problem of VM fragemntation and failing mmaps instead).
  *
@@ -488,6 +488,10 @@ char *MT_heapbase = NULL;
  * to the cursors (i.e. pointers to b->batBuns->free or the cursors
  * in radix-cluster), which an enhanced version of this thread might
  * take into account.
+ *
+ * [Kersten] The memory map table should be aligned to the number of
+ * mapped files. In more recent applications, such as the SkyServer
+ * this may be around 2000 BATs easily.
  */
 
 #ifdef HAVE_PTHREAD_H
@@ -519,7 +523,7 @@ static int do_not_use_posix_fadvise = 0;
 #endif
 
 #define MT_MMAP_TILE (1<<27)
-#define MT_MMAP_BUFSIZE 100
+#define MT_MMAP_BUFSIZE 4096
 MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
 int MT_mmap_cur = -1, MT_mmap_first = -1, MT_mmap_free = 0;
 
@@ -598,7 +602,7 @@ MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 		if (MT_mmap_cur == -1)
 			MT_mmap_cur = i;
 #ifdef MMAP_DEBUG
-		stream_printf(GDKerr, "MT_mmap_new: %s fd=%d\n", path, fd);
+		stream_printf(GDKerr, "#MT_mmap_new: %s fd=%d\n", path, fd);
 #endif
 		strncpy(MT_mmap_tab[i].path, path, 128);
 		MT_mmap_tab[i].base = base;
@@ -642,13 +646,13 @@ MT_mmap_del(void *base, size_t len)
 				/* tell the OS quite clearly that you want to drop this */
 				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len, POSIX_FADV_DONTNEED);
 #ifdef MMAP_DEBUG
-				stream_printf(GDKerr, "MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, (unsigned int) (MT_mmap_tab[victim].len >> 20), ret);
+				stream_printf(GDKerr, "#MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, (unsigned int) (MT_mmap_tab[victim].len >> 20), ret);
 #endif
 			}
 #endif
 			ret = close(MT_mmap_tab[victim].fd);
 #ifdef MMAP_DEBUG
-			stream_printf(GDKerr, "MT_mmap_del: close(%s fd=%d) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, ret);
+			stream_printf(GDKerr, "#MT_mmap_del: close(%s fd=%d) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, ret);
 #endif
 			MT_mmap_tab[victim].next = MT_mmap_free;
 			MT_mmap_empty(victim);
@@ -674,7 +678,7 @@ MT_fadvise(void *base, size_t len, int advice)
 			if (MT_mmap_tab[i].fd >= 0) {
 				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len, advice);
 #ifdef MMAP_DEBUG
-				stream_printf(GDKerr, "MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (len >> 20), advice, ret);
+				stream_printf(GDKerr, "#MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n", MT_mmap_tab[i].path, MT_mmap_tab[i].fd, (unsigned int) (len >> 20), advice, ret);
 #endif
 			}
 		}
@@ -697,7 +701,7 @@ MT_mmap_unload_tile(int i, size_t off, stream *err)
 	int ret = posix_madvise(MT_mmap_tab[i].base + off, MT_MMAP_TILE, POSIX_MADV_DONTNEED);
 
 	if (err) {
-		stream_printf(err, "MT_mmap_unload_tile: posix_madvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
+		stream_printf(err, "#MT_mmap_unload_tile: posix_madvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
 			      MT_mmap_tab[i].path, (unsigned int) (off >> 20),
 			      (unsigned int) (MT_MMAP_TILE >> 20), MT_mmap_tab[i].fd, ret);
 	}
@@ -706,7 +710,7 @@ MT_mmap_unload_tile(int i, size_t off, stream *err)
 		/* tell the OS quite clearly that you want to drop this */
 		ret = posix_fadvise(MT_mmap_tab[i].fd, off, MT_MMAP_TILE, POSIX_FADV_DONTNEED);
 		if (err) {
-			stream_printf(err, "MT_mmap_unload_tile: posix_fadvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
+			stream_printf(err, "#MT_mmap_unload_tile: posix_fadvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
 				      MT_mmap_tab[i].path, (unsigned int) (off >> 20),
 				      (unsigned int) (MT_MMAP_TILE >> 20), MT_mmap_tab[i].fd, ret);
 		}
@@ -721,7 +725,7 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 
 	/* save to disk an 128MB tile, and observe how long this takes */
 	if (err) {
-		stream_printf(err, "MT_mmap_save_tile: msync(%s,off=%uM,%u,SYNC)...\n",
+		stream_printf(err, "#MT_mmap_save_tile: msync(%s,off=%uM,%u,SYNC)...\n",
 			      MT_mmap_tab[i].path, (unsigned int) (tile >> 20),
 			      (unsigned int) (MT_MMAP_TILE >> 20));
 	}
@@ -729,7 +733,7 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 	ret = MT_msync(MT_mmap_tab[i].base, tile, MT_MMAP_TILE, MMAP_SYNC);
 	t = GDKms() - t;
 	if (err) {
-		stream_printf(err, "MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n",
+		stream_printf(err, "#MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n",
 			      MT_mmap_tab[i].path, (unsigned int) (tile >> 20),
 			      (unsigned int) (MT_MMAP_TILE >> 20), ret, t);
 	}
@@ -768,7 +772,7 @@ MT_mmap_trim(size_t target, void *fp)
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	if (err) {
-		stream_printf(err, "MT_mmap_trim(%u MB): rss = %u MB\n", (unsigned int) ((target) >> 20), (unsigned int) (rss >> 20));
+		stream_printf(err, "#MT_mmap_trim(%u MB): rss = %u MB\n", (unsigned int) ((target) >> 20), (unsigned int) (rss >> 20));
 	}
 	if (rss > target) {
 		/* try to selectively unload pages from the writable regions */
@@ -1085,7 +1089,7 @@ MT_munmap(void *p, size_t len)
 	int ret = munmap(p, len);
 
 #ifdef MMAP_DEBUG
-	stream_printf(GDKerr, "munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
+	stream_printf(GDKerr, "#munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
 #endif
 	MT_mmap_del(p, len);
 	return ret;
@@ -1097,7 +1101,7 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 	int ret = msync(((char*) p)+off, len, (mode & MMAP_SYNC) ? MS_SYNC : ((mode & MMAP_ASYNC) ? MS_ASYNC : MS_INVALIDATE));
 
 #ifdef MMAP_DEBUG
-	stream_printf(GDKerr, "msync(" LLFMT "," LLFMT ",%s) = %d\n", (long long) p, (long long) len, (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"), ret);
+	stream_printf(GDKerr, "#msync(" LLFMT "," LLFMT ",%s) = %d\n", (long long) p, (long long) len, (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"), ret);
 #endif
 	if (ret < 0)
 		return errno;
@@ -1110,7 +1114,7 @@ MT_madvise(void *p, size_t len, int advise)
 	int ret = posix_madvise(p, len, advise);
 
 #ifdef MMAP_DEBUG
-	stream_printf(GDKerr, "posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advise, ret);
+	stream_printf(GDKerr, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n", PTRFMTCAST p, len, advise, ret);
 #endif
 	if (MT_fadvise(p, len, advise))
 		ret = -1;
@@ -1468,7 +1472,7 @@ MT_mallinfo(void)
 	}
 	if (heapstatus == _HEAPBADPTR || heapstatus == _HEAPBADBEGIN || heapstatus == _HEAPBADNODE) {
 
-		stream_printf(GDKerr, "mallinfo(): heap is corrupt.");
+		stream_printf(GDKerr, "#mallinfo(): heap is corrupt.");
 	}
 	_heapmin();
 	return _ret;
@@ -1604,7 +1608,7 @@ rewinddir(DIR *dir)
 		return;
 
 	if (!FindClose(dir->find_file_handle))
-		stream_printf(GDKerr, "rewinddir(): FindClose() failed\n");
+		stream_printf(GDKerr, "#rewinddir(): FindClose() failed\n");
 
 	mask = malloc(strlen(dir->dir_name) + 3);
 	sprintf(mask, "%s\\*", dir->dir_name);
@@ -2116,7 +2120,7 @@ MT_vmalloc(size_t size, size_t * maxsize)
 	p = (void *) VirtualAlloc(a, size, MEM_COMMIT | mode, PAGE_READWRITE);
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (p == NULL) {
-		stream_printf(GDKerr, "VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
+		stream_printf(GDKerr, "#VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
 	}
 	return p;
 }
@@ -2126,9 +2130,9 @@ void
 MT_vmfree(void *p, size_t size)
 {
 	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-		stream_printf(GDKerr, "VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
+		stream_printf(GDKerr, "#VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
 	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-		stream_printf(GDKerr, "VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
+		stream_printf(GDKerr, "#VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
 }
 
 void *
@@ -2149,7 +2153,7 @@ MT_vmrealloc(void *v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t 
 		size_t ret = VirtualFree(p + newsize, oldsize - newsize, MEM_DECOMMIT);
 
 		if (ret == 0)
-			stream_printf(GDKerr, "VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST(p + newsize), (ssize_t) (oldsize - newsize));
+			stream_printf(GDKerr, "#VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST(p + newsize), (ssize_t) (oldsize - newsize));
 	} else if (oldsize < newsize) {
 		(void) pthread_mutex_lock(&MT_mmap_lock);
 		a = (char *) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
