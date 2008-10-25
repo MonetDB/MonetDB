@@ -548,11 +548,8 @@ void MCinitClientThread(Client c)
 	cname[11] = '\0';
 	c->mypid = MT_getpid();
 	c->mythread = t = THRnew(c->mypid,cname);
-	c->errbuf = GDKerrbuf;
-	if (c->errbuf == NULL) {
-		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
-		c->errbuf = GDKerrbuf;
-	}
+	if (c->errbuf == NULL) 
+		c->errbuf = GDKmalloc(GDKMAXERRLEN);
 	c->errbuf[0]=0;
 @-
 The GDK thread administration should be set to reflect use of
@@ -646,11 +643,13 @@ void freeClient(Client c)
 		GDKfree(c->prompt); 
 	c->prompt = NULL;
 	c->promptlength=-1;
+/*
 	if(c->errbuf){
 		GDKsetbuf(0);
 		GDKfree(c->errbuf);
 		c->errbuf=0;
 	}
+*/
 	c->father = 0;
 	c->login = c->lastcmd = 0;
 	c->delay =  0;

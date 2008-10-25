@@ -75,7 +75,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-static str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
 static void displayVolume(Client cntxt, lng vol);
 @-
@@ -158,15 +157,12 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 
 void showErrors(Client cntxt) {
 	int i;
-	if (cntxt->errbuf == '\0')
-		return;
-
 	if (*cntxt->errbuf) {
 		i = (int)strlen(cntxt->errbuf);
 		stream_printf(cntxt->fdout, "%s", cntxt->errbuf);
 		if (cntxt->errbuf[i - 1] != '\n')
 			stream_printf(cntxt->fdout, "\n");
-		*cntxt->errbuf = '\0';
+		cntxt->errbuf[0] = '\0';
 	}
 }
 @-
@@ -184,7 +180,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 	if (bid != bat_nil ){
 		BUN cnt = 0;
 		b= BATdescriptor(bid);
-		if (b == NULL) 
+		if (b == NULL)
 			return;
 		if ( b->P->sharecnt){
 			BBPunfix(b->batCacheid);
@@ -501,6 +497,7 @@ workslow:
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x') {
+				cntxt->itrace= 0;
 				stkpc = mb->stop;
 				continue;
 			}
@@ -737,6 +734,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
+	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	pci = getInstrPtr(flow->mb, stkpc);
 	if (stk->cmd) {
 		lng t=0;
@@ -745,6 +743,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		mdbStep(cntxt,mb,stk,getPC(mb,pci));
 		if (stk->cmd == 'x') {
 			/* need a way to skip */
+			cntxt->itrace= 0;
 			stkpc = mb->stop;
 			fs->pc = -1;
 			return ret;
@@ -1731,6 +1730,7 @@ reaching end of function block.
 		stk->cmd = 'n';
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x') {
+			cntxt->itrace= 0;
 			stkpc = mb->stop;
 			@2;
 		}
@@ -1802,6 +1802,21 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
+if(cntxt->errbuf && cntxt->errbuf[0] ) {
+	str z;
+	if (ret != MAL_SUCCEED){
+		z= (char*) GDKmalloc( strlen(ret)+strlen(cntxt->errbuf)+2);
+		strcpy(z,ret);
+		if (z[strlen(z)-1] != '\n') strcat(z,"\n");
+		strcat(z,cntxt->errbuf);
+		GDKfree(ret);
+		ret= z;
+	} else
+		/* trap hidden (GDK) exception */
+		ret= GDKstrdup(cntxt->errbuf);
+	exceptionVar= findVariable(mb,"GDKerror");
+	cntxt->errbuf[0] = '\0';
+}
 if( ret != MAL_SUCCEED ) {
 	str msg = 0, nxt;
 	if( stk->cmd  ) {
@@ -1809,6 +1824,7 @@ if( ret != MAL_SUCCEED ) {
 		stk->cmd= '\n';	/* in debugging go to step mode */
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
+			cntxt->itrace= 0;
 			stkpc= mb->stop;
 			@2;
 		}
@@ -1826,50 +1842,29 @@ if( ret != MAL_SUCCEED ) {
 		*msg= 0;
 		exceptionVar = findVariableLength(mb,ret,(int)(msg-ret));
 		*msg=':';
-	} else {
-		if( ret == MAL_SUCCEED && cntxt->errbuf){
-			/* trap hidden (GDK) exception */
-			msg= GDKstrdup(cntxt->errbuf);
-			exceptionVar= findVariable(mb,"GDKerror");
-		} else {
-			exceptionVar = getDestVar(pci);
-		}
-	}
+	} else
+		exceptionVar = getDestVar(pci);
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){
 		@:endProfile@
 		stkpc= mb->stop;
 		@2;
 	}
-	msg++;
 	/* assure correct variable type */
-	nxt= (str) setDynamicType(mb,getVar(mb,exceptionVar),TYPE_str,stkpc);
-	if( nxt == 0){
+	if (getVarType(mb,exceptionVar) == TYPE_str){
 		v=  &stk->stk[exceptionVar];
-		if( getVarType(mb,exceptionVar) == TYPE_any)
-			setVarType(mb, exceptionVar, TYPE_str);
 		v->vtype = TYPE_str;
 		v->val.pval= ret;
 		v->len= (int)strlen(v->val.pval);
 		ret = 0;
-	} else GDKfree(nxt);
+	} else {
+		stream_printf(cntxt->fdout,"%s",nxt);
+		GDKfree(nxt);
+	}
 	/* position yourself at the catch instruction for further decisions */
 	@:skipToCatch(exceptionVar,@2)@
 	pci= getInstrPtr(mb,stkpc);
 }
-@-
-During instruction interpretation we may have to be
-assured that the type associated with a destination variable
-is in line with the result of an operation or exceoption.
-@c
-str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc){
-	if( v->type ==tpe) return 0;
-	if( v->type == TYPE_any) return 0;
-	return createScriptException(mb, pc, TYPE, NULL,
-			"variable '%s' has already type %s (!=%s)",
-			v->name, getTypeName(v->type), getTypeName(tpe));
-}
-
 @-
 @+ Result Recycler
 An optimization scheme for query sequences is to re-use variables
