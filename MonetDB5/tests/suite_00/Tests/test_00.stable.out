@@ -5,12 +5,11 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 # 11:45:02 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34848 --set xrpc_port=46218 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_00.mal
 # 11:45:02 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# MonetDB server v5.3.0, based on kernel v1.21.0
-# Serving database 'mTests_tests_suite_00'
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2007 CWI, all rights reserved
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_tests_suite_00', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:34848/
 ## Monet Mil to Mal compiler

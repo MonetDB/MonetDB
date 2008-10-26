@@ -128,7 +128,7 @@ end main;	# 45
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 7@0,	  49	  ]
+[ 9@0,	  nil	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
