@@ -550,6 +550,7 @@ MALparser(Client c)
 
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
+	oldstate.stop= 0;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
 	if (parseMAL(c, c->curprg) || c->curprg->def->errors) {
@@ -582,7 +583,6 @@ MALparser(Client c)
 		throw(MAL, "MAL.parser", "Function signature missing");
 	}
 	pushEndInstruction(c->curprg->def);
-	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
