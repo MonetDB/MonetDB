@@ -1785,7 +1785,7 @@ win_rename(const char *old, const char *new)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDK#out, "retry rename %s %s\n", old, new);
+		IODEBUG THRprintf(GDKout, "#retry rename %s %s\n", old, new);
 		MT_sleep_ms(100); /* wait a little */
 		ret = rename(old, new);
 	}
