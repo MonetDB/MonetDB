@@ -62,6 +62,7 @@ FIXME: actually implement that
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
 #include <sys/types.h>
+#include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -363,6 +364,8 @@ forkMserver(str database, sabdb** stats, int force)
 	int pfdo[2];
 	int pfde[2];
 	dpair dp = topdp;
+	str vaultkey = NULL;
+	struct stat statbuf;
 
 	er = SABAOTHgetStatus(stats, database);
 	if (er != MAL_SUCCEED) {
@@ -463,6 +466,18 @@ forkMserver(str database, sabdb** stats, int force)
 	if ((*stats)->locked == 1 && force == 1)
 		merlog("startup of database under maintenance '%s' forced", database);
 
+	/* check if the vaultkey is there, otherwise abort early (value
+	 * lateron reused when server is started) */
+	vaultkey = alloca(sizeof(char) * 512);
+	snprintf(vaultkey, 511, "%s/.vaultkey", (*stats)->path);
+	if (stat(vaultkey, &statbuf) == -1) {
+		SABAOTHfreeStatus(stats);
+		*stats = NULL;
+		return(newErr("cannot start database '%s': no .vaultkey found "
+					"(did you create the database with `monetdb create %s`?)",
+					database, database));
+	}
+
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
@@ -482,7 +497,6 @@ forkMserver(str database, sabdb** stats, int force)
 	if (pid == 0) {
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
-		str vaultkey = alloca(sizeof(char) * 512);
 		str argv[13];	/* for the exec arguments */
 		int c = 0;
 
