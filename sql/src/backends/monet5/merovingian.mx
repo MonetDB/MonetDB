@@ -510,9 +510,6 @@ forkMserver(str database, sabdb** stats, int force)
 		dup2(pfde[1], 2);
 		close(pfde[1]);
 
-		/* we don't use stdin, neither should mserver ... */
-		close(0);
-
 		/* ok, now exec that mserver we want */
 		snprintf(conffile, 511, "--config=%s", _merovingian_conffile);
 		snprintf(dbname, 511, "--dbname=%s", database);
@@ -1811,7 +1808,11 @@ main(int argc, char *argv[])
 		case 0:
 			/* detach client from controlling tty, we only write to the
 			 * pipe to daddy */
-			close(0);
+			if (setsid() < 0)
+				fprintf(stderr, "hmmm, can't detach from controlling tty, continuing anyway\n");
+			retfd = open("/dev/null", O_RDONLY);
+			dup2(retfd, 0);
+			close(retfd);
 			close(pfd[0]); /* close unused read end */
 			retfd = pfd[1]; /* store the write end */
 		break;
@@ -1936,6 +1937,16 @@ main(int argc, char *argv[])
 	/* we need a dbfarm */
 	if (dbfarm == NULL) {
 		fprintf(stderr, "cannot find dbfarm via config file\n");
+		fflush(stderr);
+		MERO_EXIT(1);
+		return(1);
+	}
+
+	/* chdir to dbfarm so we are at least in a known to exist location */
+	if (chdir(dbfarm) < 0) {
+		fprintf(stderr, "could not move to dbfarm '%s': %s, "
+				"please create directory first\n",
+				dbfarm, strerror(errno));
 		fflush(stderr);
 		MERO_EXIT(1);
 		return(1);
