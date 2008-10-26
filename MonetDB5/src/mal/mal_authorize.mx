@@ -667,7 +667,7 @@ AUTHaddScenario(str *username, str *scenario) {
  * Removes the given scenario from the list of allowed scenarios for the
  * given user.  Note that removing the last allowed scenario results in
  * the opposite effect: it will allow any scenario to be used.
- */
+		 */
 str
 AUTHremoveScenario(str *username, str *scenario) {
 	BUN p;
@@ -693,6 +693,8 @@ AUTHremoveScenario(str *username, str *scenario) {
 
 	/* see if the scenario is valid for this user */
 	b = BATselect(BATmirror(scen), id, id);
+	if (BATcount(b) != 1)
+		throw(MAL, "removeScenario", "scenario '%s' not found for user '%s'", *scenario, *username);
 	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 0)
 		throw(MAL, "removeScenario", "scenario '%s' not found for user '%s'", *scenario, *username);
@@ -700,7 +702,8 @@ AUTHremoveScenario(str *username, str *scenario) {
 		throw(MAL, "removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* ok, remove it */
-	BATdel(scen, BATmirror(b), TRUE);
+	if (scen)
+		BATdel(scen, (b), TRUE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);

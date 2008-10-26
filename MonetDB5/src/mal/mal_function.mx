@@ -746,7 +746,7 @@ At a block exit we can finalize some variables.
 			if( depth== 0) {
 				mb->errors++;
 				GDKfree(decl);
-				GDKerror("too many unnest operations.");
+				GDKerror("setlifespan:too many unnest operations.");
 				return;
 			}
 			depth--;
@@ -755,7 +755,7 @@ At a block exit we can finalize some variables.
 			if( depth== 255) {
 				mb->errors++;
 				GDKfree(decl);
-				GDKerror("too deeply nested scope");
+				GDKerror("setlifespan:too deeply nested scope");
 				return;
 			}
 			scopes[++depth]= top;
