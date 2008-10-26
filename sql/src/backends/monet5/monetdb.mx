@@ -1078,11 +1078,12 @@ command_destroy(int argc, char *argv[])
 				printf("you are about to remove database '%s'\n", dbname);
 				printf("ALL data in this database will get lost, "
 						"are you sure? [y/N] ");
-				answ = getchar();
-				while (answ!= '\n' && getchar()!= '\n') 
-					;
-				if (answ != 'y' && answ != 'Y') {
-					printf("battle control terminated\n");
+				if (scanf("%c", &answ) >= 1 &&
+						(answ == 'y' || answ == 'Y'))
+				{
+					/* do it! */
+				} else {
+					printf("aborted\n");
 					exit(0);
 				}
 			}
