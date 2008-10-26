@@ -1163,7 +1163,6 @@ end main;                               # 11
 [ "getNames",			  "command",	  "bbp",	  "():bat[:int,:str] ",															  "CMDbbpNames;"					  ]
 [ "getTailType",		  "command",	  "bbp",	  "():bat[:int,:str] ",															  "CMDbbpTailType;"					  ]
 [ "getHeadType",		  "command",	  "bbp",	  "():bat[:int,:str] ",															  "CMDbbpHeadType;"					  ]
-[ "getFiles",			  "pattern",	  "bbp",	  "():bat[:int,:str] ",															  "CMDbbpGetFiles;"				  ]
 [ "getObjects",			  "pattern",	  "bbp",	  "():bat[:int,:str] ",															  "CMDbbpGetObjects;"					  ]
 [ "iterator",			  "pattern",	  "bbp",	  "(nme:str):lng ",															  "CMDbbpiterator;"					  ]
 [ "open",			  "command",	  "bbp",	  "():void ",																  "CMDbbpopen;"						  ]
