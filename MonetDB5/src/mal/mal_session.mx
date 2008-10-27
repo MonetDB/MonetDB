@@ -84,7 +84,6 @@ malBootstrap()
 	MCinitClientThread(c);
 	malInclude(c, bootfile, 0);
 	pushEndInstruction(c->curprg->def);
-	trimMalBlk(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
@@ -394,7 +393,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 }
 
 @-
-Determine the variable alias and used.
+Determine the variable being used and clear non-used onces.
 @c
 void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
@@ -550,7 +549,7 @@ MALparser(Client c)
 
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
-	oldstate.stop= 0;
+	oldstate.stop = 1;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
 	if (parseMAL(c, c->curprg) || c->curprg->def->errors) {
@@ -563,7 +562,6 @@ MALparser(Client c)
 		c->fdin->pos += c->yycur;
 		c->yycur = 0;
 		throw(SYNTAX, "MAL.parser", "Syntax errors detected");
-
 	}
 
 	/* now the parsing is done we should advance the stream */
@@ -608,10 +606,8 @@ MALengine(Client c)
 {
 	Symbol prg;
 	str msg = 0;
-	MalBlkRecord oldstate;
-
+	MalBlkRecord oldstate = *c->curprg->def;
 	oldstate.stop = 0;
-	oldstate.vtop = 0;
 
 	if( c->blkmode)
 		return MAL_SUCCEED;
@@ -658,7 +654,7 @@ and marking all non-temporary variables as being (potentially) used.
 		showErrors(c);
 	}
 	resetMalBlk(prg->def,1);
-	MSresetVariables(c,prg->def, c->glb, 0);
+	MSresetVariables(c,prg->def, 0, 0);
 	if( prg->def->profiler){
 		GDKfree(prg->def->profiler);
 		prg->def->profiler= NULL;
