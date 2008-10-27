@@ -48,7 +48,7 @@ command comment(val:str):xml
 address XMLcomment
 comment "Construct an comment struction ";
 
-command parse(val:str,option:str):xml
+command parse(doccont:str,val:str,option:str):xml
 address XMLparse
 comment "Parse the XML document or element string values ";
 
@@ -144,7 +144,7 @@ xml_export str XMLisdocument(bit *x, str *s);
 xml_export str XMLcomment(xml * x, str *s);
 xml_export str XMLpi(xml * x, str *target, str *s);
 xml_export str XMLroot(str *x, str *v, str *version, str *standalone);
-xml_export str XMLparse(xml * x, str *s, str *option);
+xml_export str XMLparse(xml *x, str *doccont, str *s, str *option);
 xml_export str XMLattribute(xml * ret, str *name, str *val);
 xml_export str XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val);
 xml_export str XMLelementSmall(xml * ret, str *name, xml * val);
@@ -410,11 +410,14 @@ XMLdocument(xml * x, str *val)
 	/* call the libxml2 library to perform the test */
 	doc = xmlParseMemory(*val, (int) strlen(*val));
 	if (doc) {
-		size_t len = strlen(*val) + 2;
+		int len;
+		xmlChar *buf;
 
+		xmlDocDumpMemory(doc, &buf, &len);
 		xmlFreeDoc(doc);
-		*x = GDKmalloc(len);
-		snprintf(*x, len, "D%s", *val);
+		*x = GDKmalloc(len + 2);
+		snprintf(*x, len + 2, "D%s", buf);
+		GDKfree(buf);
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "xml.document", "Document parse error");
@@ -432,6 +435,8 @@ XMLcontent(xml * x, str *val)
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	xmlParserErrors err;
+	xmlBufferPtr buf;
+	const xmlChar *s;
 	size_t len;
 
 	if (strNil(*val)) {
@@ -445,11 +450,15 @@ XMLcontent(xml * x, str *val)
 		xmlFreeDoc(doc);
 		throw(MAL, "xml.content", "Content parse error");
 	}
+	buf = xmlBufferCreate();
+	xmlNodeDump(buf, doc, elem, 0, 0);
+	s = xmlBufferContent(buf);
+	len = strlen((const char *) s) + 2;
+	*x = GDKmalloc(len);
+	snprintf(*x, len, "C%s", (const char *) s);
+	xmlBufferFree(buf);
 	xmlFreeNodeList(elem);
 	xmlFreeDoc(doc);
-	len = strlen(*val) + 2;
-	*x = GDKmalloc(len);
-	snprintf(*x, len, "C%s", *val);
 	return MAL_SUCCEED;
 #else
 	(void) x;
@@ -501,12 +510,14 @@ XMLcomment(xml * x, str *s)
 }
 
 str
-XMLparse(xml * x, str *nme, str *option)
+XMLparse(xml *x, str *doccont, str *val, str *option)
 {
-	(void) x;
 	(void) option;
-	(void) nme;
-	throw(MAL, "xml.parse", "Not yet implemented");
+	if (strcmp(*doccont, "content") == 0)
+		return XMLcontent(x, val);
+	if (strcmp(*doccont, "document") == 0)
+		return XMLdocument(x, val);
+	throw(MAL, "xml.parse", "invalid parameter");
 }
 
 str

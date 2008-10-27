@@ -52,7 +52,7 @@ command xml.comment(val:bat[:oid,:str]):bat[:oid,:xml]
 address BATXMLcomment
 comment "Create an XML comment element.";
 
-command xml.parse(val:bat[:oid,:str]):bat[:oid,:xml]
+command xml.parse(doccont:str,val:bat[:oid,:str],option:str):bat[:oid,:xml]
 address BATXMLparse
 comment "Parse the XML document or element string values.";
 
@@ -161,7 +161,7 @@ batxml_export str BATXMLisdocument(int *x, int *s);
 batxml_export str BATXMLelementSmall(int *x, str *name, int *s);
 batxml_export str BATXMLoptions(int *x, str *name, str *options, int *s);
 batxml_export str BATXMLcomment(int *x, int *s);
-batxml_export str BATXMLparse(int *x, int *s);
+batxml_export str BATXMLparse(int *x, str *doccont, int *s, str *option);
 batxml_export str BATXMLxquery(int *x, int *s, str *expr);
 batxml_export str BATXMLpi(int *x, str *tgt, int *s);
 batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
@@ -388,7 +388,8 @@ BATXMLdocument(int *ret, int *bid)
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
 		xmlDocPtr doc;
-		size_t len;
+		int len;
+		xmlChar *s;
 
 		if (strNil(t)) {
 			bunfastins(bn, h, str_nil);
@@ -402,14 +403,15 @@ BATXMLdocument(int *ret, int *bid)
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "xml.document", "document parse error");
 		}
+		xmlDocDumpMemory(doc, &s, &len);
 		xmlFreeDoc(doc);
-		if (len + 2 >= size) {
+		if ((size_t) len + 2 >= size) {
 			GDKfree(buf);
-			size = len + 128;
+			size = (size_t) len + 128;
 			buf = GDKmalloc(size);
 		}
 		buf[0] = 'D';
-		strcpy(buf + 1, t);
+		strcpy(buf + 1, (char *) s);
 		bunfastins(bn, h, buf);
 	}
 	GDKfree(buf);
@@ -438,18 +440,21 @@ BATXMLcontent(int *ret, int *bid)
 	xmlNodePtr root;
 	size_t size = BUFSIZ;
 	str buf = GDKmalloc(size);
+	xmlBufferPtr xbuf;
 
 	doc = xmlParseMemory("<doc/>", 6);
 	root = xmlDocGetRootElement(doc);
 	prepareOperand(b, bid, "content");
 	prepareResult(bn, b, TYPE_xml, "content");
 	bi = bat_iterator(b);
+	xbuf = xmlBufferCreate();
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
 		size_t len;
 		xmlNodePtr elem;
 		xmlParserErrors err;
+		const xmlChar *s;
 
 		if (strNil(t)) {
 			bunfastins(bn, h, str_nil);
@@ -459,26 +464,33 @@ BATXMLcontent(int *ret, int *bid)
 		len = strlen(t);
 		err = xmlParseInNodeContext(root, t, (int) len, 0, &elem);
 		if (err != XML_ERR_OK) {
+			xmlBufferFree(xbuf);
 			xmlFreeDoc(doc);
 			BBPreleaseref(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "xml.content", "content parse error");
 		}
-		xmlFreeNodeList(elem);
+		xmlNodeDump(xbuf, doc, elem, 0, 0);
+		s = xmlBufferContent(xbuf);
+		len = strlen((const char *) s);
 		if (len + 2 >= size) {
 			GDKfree(buf);
 			size = len + 128;
 			buf = GDKmalloc(size);
 		}
 		buf[0] = 'C';
-		strcpy(buf + 1, t);
+		strcpy(buf + 1, (const char *) s);
 		bunfastins(bn, h, buf);
+		xmlBufferEmpty(xbuf);
+		xmlFreeNodeList(elem);
 	}
+	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
+	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
 	GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
@@ -648,17 +660,14 @@ BATXMLcomment(int *ret, int *bid)
 }
 
 str
-BATXMLparse(int *ret, int *bid)
+BATXMLparse(int *ret, str *doccont, int *bid, str *option)
 {
-	BAT *b, *bn;
-	BUN p, q;
-
-	prepareOperand(b, bid, "parse");
-	prepareResult(bn, b, TYPE_xml, "parse");
-	BATloop(b, p, q) {
-	}
-	finalizeResult(ret, bn, b);
-	throw(MAL, "xml.parse", "Not yet implemented");
+	(void) option;
+	if (strcmp(*doccont, "content") == 0)
+		return BATXMLcontent(ret, bid);
+	if (strcmp(*doccont, "document") == 0)
+		return BATXMLdocument(ret, bid);
+	throw(MAL, "xml.parse", "invalid parameter");
 }
 
 str
