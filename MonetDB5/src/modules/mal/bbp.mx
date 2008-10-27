@@ -871,7 +871,9 @@ CMDbbpLocation(int *ret)
 	int i;
 	char buf[MAXPATHLEN];
 	char cwd[MAXPATHLEN];
-	(void) getcwd(cwd, MAXPATHLEN);
+
+	if (getcwd(cwd, MAXPATHLEN) == NULL)
+		throw(MAL, "catalog.bbpLocation", "cannot get current directory");
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
