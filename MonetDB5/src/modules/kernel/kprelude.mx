@@ -65,8 +65,8 @@ if( bn== NULL) {*ret= 0;
 	}
 	bn->hsorted = b->hsorted;
 	bn->tsorted = b->tsorted;
-    	bn->H->nonil = 1;
-    	bn->T->nonil = b->T->nonil;
+	bn->H->nonil = 1;
+	bn->T->nonil = b->T->nonil;
 
 @= Pseudo
 	if (BBPindex("view_@1_@2") <= 0)

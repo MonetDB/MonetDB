@@ -1820,10 +1820,8 @@ CMDposition(wrd *retval, BAT *b, ptr val)
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
 	BUN v = BUNfnd(b, p);
 
-	if (v == BUN_NONE) {
-		GDKerror("CMDposition: item not found\n");
+	if (v == BUN_NONE)
 		return GDK_FAIL;
-	}
 	*retval = (wrd) (v - BUNfirst(b));
 	return GDK_SUCCEED;
 }
@@ -1835,10 +1833,8 @@ CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 	ptr o = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) tval)->batCacheid : tval;
 	BUN v = BUNlocate(b, p, o);
 
-	if (v == BUN_NONE) {
-		GDKerror("CMDposition: item not found\n");
+	if (v == BUN_NONE)
 		return GDK_FAIL;
-	}
 	*retval = (wrd) (v - BUNfirst(b));
 	return GDK_SUCCEED;
 }
@@ -3502,7 +3498,10 @@ ALGposition(wrd *retval, int *bid, ptr val)
 		throw(MAL, "algebra.position", "Cannot access descriptor");
 	}
 	@:derefStr(b,h,val)@
-	CMDposition(retval, b, val);
+	if (CMDposition(retval, b, val) == GDK_FAIL){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.position", "Item not found");
+	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3517,7 +3516,10 @@ ALGpositionBUN(wrd *retval, int *bid, ptr val, ptr tval)
 	}
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
-	CMDpositionBUN(retval, b, val, tval);
+	if( (CMDpositionBUN(retval, b, val, tval) == GDK_FAIL) ){
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.position", "Item not found");
+	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
