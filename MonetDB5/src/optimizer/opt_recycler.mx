@@ -18,7 +18,7 @@
 @f opt_recycler
 @- The recycler
 Query optimization and processing in off-the-shelf database systems is often
-still focussed on individual queries. The queries are analysed in isolation
+still focused on individual queries. The queries are analyzed in isolation
 and ran against a kernel regardless opportunities offered by concurrent or
 previous invocations.
 
@@ -31,8 +31,8 @@ Re-use of (partial) results is used in those cases where a
 zooming-in or navigational application is at stake.
 
 The Recycler optimizer and module extends this with a middle out approach.
-They exploits the materialize-all-intermediate approach of MonetDB
-by deciding to keep a hold on them as long as deemed benificial.
+They exploit the materialize-all-intermediate approach of MonetDB
+by deciding to keep a hold on them as long as deemed beneficial.
 
 The approach taken is to mark the instructions in a MAL program
 using the recycler optimizer call, such that their result is retained
@@ -41,7 +41,7 @@ Instructions become subject to the Recycler if
 at least one of its arguments is a BAT and all others are
 either constants or variables already known in the Recycler.
 
-Upon execution, the recycler is called from the innerloop
+Upon execution, the recycler is called from the inner loop
 of the MAL interpreter to first check for
 an up-to-date result to be picked up at no cost.
 Otherwise, it evaluates the instruction and calls upon
@@ -49,9 +49,9 @@ policy functions to decide if it is worthwhile to keep.
 
 The Recycler comes with a few policy controlling operators
 to experiment with its effect in concrete settings.
-The retain policy controls when to keep results around,o
+The retain policy controls when to keep results around,
 the reuse policy looks after exact duplicate instructions
-or uses semantic knowledge on MAL instructions to detect
+or uses semantical knowledge on MAL instructions to detect
 potential reuse gain (e.g. reuse select results).
 And finally, the cache policy looks after the storage space for the 
 intermediate result pool.
@@ -76,23 +76,23 @@ The number of overloaded instructions is kept to a minimum.
 /* #define DEBUG_OPT_RECYCLER */
 @-
 The variables are all checked for being eligible as a variable
-subject to recycling control. A variable my only be assigned
+subject to recycling control. A variable may only be assigned
 a value once. The function is a sql.bind(-,-,-,0) or all arguments
 are already recycle enabled or constant.
 
-The arguments of the function can not be recycled.
-They change with each called. This does not mean
+The arguments of the function cannot be recycled.
+They change with each call. This does not mean
 that the instructions using them can not be a
 target of recycling.
 
 Just looking at a kept result target is not good enough.
 You have to sure that the arguments are also the same.
-This outrules function arguments.
+This rules out function arguments.
 
 The recycler is targeted towards a query only database.
 Any update statement invalidates the recycle cache at
 the end of the query. Moreover, it does not perform
-any cach lookup.
+any cache lookup.
 @c
 #include "mal_config.h"
 #include "opt_recycler.h"
@@ -200,7 +200,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @-
 The expected gain is largest if we can re-use selections
 on the base tables in SQL. These, however, are marked as
-uselect() calls, which only produces the oid head.
+uselect() calls, which only produce the oid head.
 For cheap types we preselect using select() and re-map uselect() back 
 over this temporary.
 For the time being for all possible selects encountered
