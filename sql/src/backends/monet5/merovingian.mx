@@ -1957,13 +1957,13 @@ main(int argc, char *argv[])
 				}
 				*p = '/';
 			}
-		}
-		if (mkdir(dbfarm, 0755)) {
-			fprintf(stderr, "unable to create directory '%s': %s\n",
-					dbfarm, strerror(errno));
-			fflush(stderr);
-			MERO_EXIT(1);
-			return(1);
+			if (mkdir(dbfarm, 0755)) {
+				fprintf(stderr, "unable to create directory '%s': %s\n",
+						dbfarm, strerror(errno));
+				fflush(stderr);
+				MERO_EXIT(1);
+				return(1);
+			}
 		}
 	}
 
