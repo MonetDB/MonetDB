@@ -17,19 +17,19 @@
 
 @f opt_dataflow
 @- The dataflow optimizer
-The MAL programs are largely logical descriptions of an execution plan.
+MAL programs are largely logical descriptions of an execution plan.
 At least as it concerns side-effect free operations.
-For these sub-plans the order of execution need not a priori fixed and
-a dataflow driven evaluation is possible. Even using multiple cores to
-work their way through the dataflow graph.
+For these sub-plans the order of execution needs not to be a priori
+fixed and a dataflow driven evaluation is possible. Even using multiple
+cores to work their way through the dataflow graph.
 
-The dataflow optimizer analysis the code and wraps all instructions
+The dataflow optimizer analyses the code and wraps all instructions
 eligible for dataflow driven execution with a guarded block.
 Ofcourse, this is only necessary if you can upfront determine there are 
 multiple threads of execution possible.
 
 Upon execution, the interpreter instantiates multiple threads based on
-an estimate of the number of processor cores available. Subsequently,
+an the number of processor cores available.  Subsequently,
 the eligible instructions are queued and consumed by the interpreter
 threads.
 
