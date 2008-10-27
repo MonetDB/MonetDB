@@ -28,10 +28,10 @@ The MAT optimizer simply expands the plan to
 deal with its components on an instruction basis.
 Only when a blocking operator is encounted, the underlying BAT is materialized.
 
-The MAT object can not be passed as an argument to any function
+The MAT object cannot be passed as an argument to any function
 without first being materialized. Simply because
 the MAT is not known by the type system and none of the lower
-level operations is aware of their existence.
+level operations are aware of its existence.
 
 In the first approach of the MAT optimizer we assume that the 
 first BAT in the MAT sequence is used as an accumulator.
@@ -39,7 +39,7 @@ Furthermore, no semantic knowledge is used to reduce the
 possible superflous (semi)joins. Instead, we limit expansion
 to a single argument. 
 This is changed at a later stage when a cost-based evaluation
-be decide differently.
+can be used to decide different.
 
 To illustrate, consider:
 @example
@@ -54,7 +54,7 @@ To illustrate, consider:
 	c0 := bat.new(:int,:int);
 	c1 := bat.new(:int,:int);
 	c := mat.new(c0,c1);
-	j := algebra.join(b,s);
+	j := algebra.join(b,c);
 	io.print(j);
 @end example
 
@@ -99,8 +99,8 @@ the properties of the MAT elements. For example, it might attempt
 to partially pack elements before proceding. This would be a runtime
 scheduling decision.
 
-Alternative, the system could use MAT iterators to avoid it.
-At the cost of more complex program analysis afterwards.
+Alternatively, the system could use MAT iterators to avoid packing
+at the cost of more complex program analysis afterwards.
 
 @example
 	ji:= bat.new(:oid,:int);
