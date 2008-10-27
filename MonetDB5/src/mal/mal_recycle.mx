@@ -433,8 +433,8 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 
 int chooseVictims(int *lvs, int ltop, lng wr)
 {
-	dbl *wcrd, maxwc, tmp;
-	int l, newtop, mpos, tmpl;
+	dbl *wcrd, maxwc, tmp, ci_crd, tot_crd;
+	int l, newtop, mpos, tmpl, ci;
 	lng w, totmem = 0, targmem, smem;
 
 #ifdef _DEBUG_CACHE_
@@ -447,7 +447,7 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 		w = recycleBlk->profiler[lvs[l]].obytes;
 /*		wcrd[l] = w? recycleCost(lvs[l])* recycleBlk->profiler[lvs[l]].counter/ w :0; */
 		wcrd[l] = w? recycleCrd(lvs[l])*100.0 / w :0;
-		totmem +=w;
+		totmem +=w; 
 	} 
 	if (totmem <= wr) /* all leaves need to be dropped */
 		return ltop;
@@ -457,11 +457,18 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 	 They are most benefitial and can be saved from dropping */ 
 
 	targmem = totmem - wr; /*sack volume */
-	smem = 0;
+	ci_crd = 0;		/* find the critical item */
+	for (l = 0; l < ltop; l++)
+		if (recycleBlk->profiler[lvs[l]].obytes <= targmem && 
+			recycleCrd(lvs[l]) > ci_crd){
+			ci = l;
+			ci_crd = recycleCrd(lvs[l]);
+	} 
+	smem = 0; tot_crd = 0;
 	for(newtop =ltop; newtop>0; newtop--){
 		maxwc = 0; mpos = newtop-1;
 		for(l = 0; l<newtop; l++){
-				if ((lng) recycleBlk->profiler[lvs[l]].obytes > targmem - smem)
+			if ((lng) recycleBlk->profiler[lvs[l]].obytes > targmem - smem)
 				wcrd[l] = -1;
 			if (maxwc <= wcrd[l]){
 				maxwc = wcrd[l];
@@ -476,11 +483,18 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 			tmp = wcrd[mpos];
 			wcrd[mpos] = wcrd[newtop-1];
 			wcrd[newtop-1] = tmp;
+			tot_crd += recycleCrd(tmpl);
 #ifdef _DEBUG_CACHE_
 		        stream_printf(cntxt->fdout,"Don't drop instruction %d, credit %f\n" , tmpl,tmp);
 #endif
 		}
 		else break;
+	}
+	if ( ci_crd > tot_crd ) { /* save the critical item instead */
+		tmpl = lvs[ci];
+		lvs[ci] = lvs[ltop-1];
+		lvs[ltop-1] = tmpl;
+		newtop = ltop-1;
 	}
 	return newtop;
 
@@ -594,9 +608,14 @@ newpass:
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
 	stream_printf(cntxt->fdout,"Target memory "LLFMT" \n", wr);
         stream_printf(cntxt->fdout,"Candidates for eviction (# LRU Crd Wgt(obytes))\n");
-        for (l = 0; l < ltop; l++)
-                stream_printf(cntxt->fdout,"%3d "LLFMT" %f " LLFMT "  \n",
-                        lvs[l],recycleBlk->profiler[lvs[l]].clk,recycleCrd(lvs[l]),recycleBlk->profiler[lvs[l]].obytes);
+        stream_printf(cntxt->fdout,"%3d "LLFMT" "LLFMT" "LLFMT" " LLFMT " %d %f %f \n",
+                lvs[l],recycleBlk->profiler[lvs[l]].clk,
+                recycleBlk->profiler[lvs[l]].ticks,
+                recycleBlk->profiler[lvs[l]].ibytes,
+                recycleBlk->profiler[lvs[l]].obytes,
+                recycleBlk->profiler[lvs[l]].counter,
+                recycleW(lvs[l]),
+                recycleCrd(lvs[l]));
 #endif
 
 	/* find entries to evict */
@@ -685,7 +704,7 @@ newpass:
 				continue with credit policy to choose the cheapest to evict */
 
 			case RCACHE_CREDIT:
-				vtop = chooseVictims(lvs, ltop, wr);
+				vtop = chooseVictims(lvs, ltop, recyclerUsedMemory + wr - memLimit);
 				for (v = 0; v < vtop; v++){
 					vm[v] = lvs[v];
 					wr -= recycleBlk->profiler[lvs[v]].obytes;
