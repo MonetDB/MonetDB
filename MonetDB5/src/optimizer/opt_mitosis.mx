@@ -23,7 +23,7 @@ benefits of parallel execution. It is the task of the mitosis
 optimizer to detect interesting cases and prepare the plan 
 where a large table is broken into identical pieces.
 
-There are two main direction to consider for mitosis.
+There are two main directions to consider for mitosis.
 The first concerns parallel execution on a single machine using all the cores
 available. The second concerns using an MPP solution, where
 part of the plan is executed at remote sites.
