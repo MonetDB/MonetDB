@@ -867,7 +867,7 @@ CMDbbpLocation(int *ret)
 	int i;
 	char buf[MAXPATHLEN];
 	char cwd[MAXPATHLEN];
-	getcwd(cwd, MAXPATHLEN);
+	(void) getcwd(cwd, MAXPATHLEN);
 
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
