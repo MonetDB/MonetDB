@@ -689,6 +689,7 @@ CALCstrConcat(str *ret, str *l, str *r)
 	str s;
 
 	s = GDKmalloc((*l?strlen(*l):0) +  (*r?strlen(*r):0) + 1);
+	*s = 0;
 	if (*l)
 		strcpy(s, *l);
 	if (*r)
