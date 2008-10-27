@@ -210,7 +210,7 @@ CLUSTER_new(bat *RB, bat *B)
 	BATiter bi,mi;
 	BUN p,q;
 	oid *mp, ocur,idx = 0;
-	int i;
+	BUN i;
 	Basket *basket;
 	(void) RB;
 
