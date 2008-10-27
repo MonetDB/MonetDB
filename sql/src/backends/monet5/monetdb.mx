@@ -599,11 +599,7 @@ command_discover(int argc, char *argv[])
 	len = snprintf(buf, sizeof(buf), "anelosimus eximius\n");
 	send(sock, buf, len, 0);
 	pos = 0;
-	len = recv(sock, buf, sizeof(buf) - 1, 0);
-	if (len <= 0) {
-		fprintf(stderr, "discover: error while reading from merovingian\n");
-		exit(2);
-	}
+	len = 0;
 	buf[len] = '\0';
 	do {
 		if ((p = strchr(buf, '\n')) == NULL) {
