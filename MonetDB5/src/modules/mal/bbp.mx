@@ -205,6 +205,10 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #define bbp_export extern
 #endif
 
+#ifdef _MSC_VER
+#define getcwd _getcwd
+#endif
+
 bbp_export str CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
