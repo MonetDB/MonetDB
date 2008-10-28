@@ -2104,7 +2104,7 @@ str not_unique(bit *ret, int* bid)
 /* later we could optimize this to start from current BUN 
    And only search the from the first if second is not found.
  */
-inline int 
+static inline int 
 HASHfndTwice(BAT *b, ptr v)
 {
 	BATiter bi = bat_iterator(b);
