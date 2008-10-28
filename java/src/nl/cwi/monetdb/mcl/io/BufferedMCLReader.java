@@ -22,10 +22,10 @@ package nl.cwi.monetdb.mcl.io;
 import java.io.*;
 
 /**
- * Read text from an character-input stream, buffering characters so as
- * to provide for efficient reading of characters, arrays and lines.
- * This class is based on the BufferedReader class, and provides extra
- * functionality useful in MCL on top of it.
+ * Read text from a character-input stream, buffering characters so as
+ * to provide a means for efficient reading of characters, arrays and
+ * lines.  This class is based on the BufferedReader class, and provides
+ * extra functionality useful for MCL.
  * <br /><br />
  * The BufferedMCLReader is typically used as layer inbetween an
  * InputStream and a specific interpreter of the data.
@@ -33,7 +33,13 @@ import java.io.*;
  *                         / Response
  * BufferedMCLReader ---o &lt;- Tuple
  *                         \ DataBlock
- * </pre> (TODO: this doesn't make sense yet)
+ * </pre>
+ * Because the BufferedMCLReader provides an efficient way to access the
+ * data from the stream in a linewise fashion, whereby each line is
+ * identified as a certain type, consumers can easily decide how to
+ * parse each retrieved line.  The line parsers from
+ * nl.cwi.monetdb.mcl.parser are well suited to work with the lines
+ * outputted by the BufferedMCLReader.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
