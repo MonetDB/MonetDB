@@ -51,14 +51,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4262E797C9B946ED9141B6C92E5FBB9E"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_3961F9FE3B964936913626305F03B533"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_50CCE1AE66AF4CF2909414830FE21BF6"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmKey" = "8:_4262E797C9B946ED9141B6C92E5FBB9E"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -814,7 +814,7 @@
         "Keywords" = "8:MonetDB XML XQuery Database"
         "ARPCOMMENTS" = "8:MonetDB XQuery Server"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl/"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_F6C39BC794AB440FB45175571C15C230"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -1374,7 +1374,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_50CCE1AE66AF4CF2909414830FE21BF6"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3961F9FE3B964936913626305F03B533"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

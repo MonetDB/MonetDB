@@ -57,12 +57,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_6D7E0B3E67B143EF9DC8FE4D803F2BEB"
-        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_8ADC98E4D05143999FFC87CAB78E68C9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -83,6 +77,12 @@
         {
         "MsmKey" = "8:_CB89303C19364CECA36BDC911637BE9C"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E05E8F4714694BD499B690114332194C"
+        "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -536,7 +536,7 @@
         "Keywords" = "8:MonetDB SQL ODBC"
         "ARPCOMMENTS" = "8:MonetDB ODBC Driver"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_14F4BC1A7F54458D91CFA4A0BD174604"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -1169,7 +1169,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_6D7E0B3E67B143EF9DC8FE4D803F2BEB"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_E05E8F4714694BD499B690114332194C"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

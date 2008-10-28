@@ -24,3 +24,8 @@ BINS = {
 	LIBS = ../driver/libMonetODBC
 }
 
+bin_odbctest = {
+	COND = NATIVE_WIN32
+	SOURCES = odbcsample1.c
+	LIBS = -lodbc32
+}
