@@ -22,16 +22,6 @@ builddir=@QMONETDB_JAVA_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-# default back-end is MonetDB4
-V=4
-for arg
-do
-    case "$arg" in
-    -4) V=4;;
-    -5) V=5;;
-    esac
-done
-
 # enhance PATH to find ${pkg}-config
 PATH="${builddir}/conf:$PATH"
 export PATH
@@ -42,4 +32,4 @@ cd "$srcdir"
 # execute the script.
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec Mapprove.py -$V --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
+exec Mapprove.py --package=${pkg} --TSTTRGBASE="${builddir}" "${@--r}"
