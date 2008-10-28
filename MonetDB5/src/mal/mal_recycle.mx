@@ -69,7 +69,7 @@ which inspects the variable table for alternative results.
 
 /*
 #define _DEBUG_RECYCLE_
-#define _DEBUG_RECYCLE_REUSE 
+#define _DEBUG_RECYCLE_REUSE
 #define _DEBUG_CACHE_
 */
 
@@ -244,8 +244,8 @@ double recycleFresh = 0.95; /* fresh instructions are protected from deletion */
 
 #define recycleCost(X) recycleAlpha * recycleBlk->profiler[X].ticks/10.0 + (1-recycleAlpha)* (recycleBlk->profiler[X].ibytes+recycleBlk->profiler[X].obytes)/1000.0
 #define recycleW(X)  ((recycleBlk->profiler[X].counter + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
-#define recycleW1(X)  ((recycleBlk->profiler[X].counter + 9) * (1 + 0.5*(sht)recycleBlk->profiler[X].trace) / 10.0)
 #define recycleCrd(X) (recycleCost(X)) * (recycleW(X))
+#define recycleCrdCPU(X) (recycleBlk->profiler[X].ticks) * (recycleW(X))
 #define getSrcMalBlk(p) recycleQPat->ptrn[(p)->recycle]->mb
 #define setIPtr(q,i,cst,c) {	VALset(&cst,TYPE_int,&i);\
 				c = defConstant(recycleBlk,TYPE_int, &cst); \
@@ -445,8 +445,7 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 	memset(wcrd,0, sizeof(dbl)*ltop);
 	for (l = 0; l < ltop; l++){
 		w = recycleBlk->profiler[lvs[l]].obytes;
-/*		wcrd[l] = w? recycleCost(lvs[l])* recycleBlk->profiler[lvs[l]].counter/ w :0; */
-		wcrd[l] = w? recycleCrd(lvs[l])*100.0 / w :0;
+		wcrd[l] = w? recycleCrdCPU(lvs[l]) / w :0;
 		totmem +=w; 
 	} 
 	if (totmem <= wr) /* all leaves need to be dropped */
@@ -457,13 +456,6 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 	 They are most benefitial and can be saved from dropping */ 
 
 	targmem = totmem - wr; /*sack volume */
-	ci_crd = 0;		/* find the critical item */
-	for (l = 0; l < ltop; l++)
-		if (recycleBlk->profiler[lvs[l]].obytes <= targmem && 
-			recycleCrd(lvs[l]) > ci_crd){
-			ci = l;
-			ci_crd = recycleCrd(lvs[l]);
-	} 
 	smem = 0; tot_crd = 0;
 	for(newtop =ltop; newtop>0; newtop--){
 		maxwc = 0; mpos = newtop-1;
@@ -483,18 +475,29 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 			tmp = wcrd[mpos];
 			wcrd[mpos] = wcrd[newtop-1];
 			wcrd[newtop-1] = tmp;
-			tot_crd += recycleCrd(tmpl);
+			tot_crd += recycleCrdCPU(tmpl);
 #ifdef _DEBUG_CACHE_
 		        stream_printf(cntxt->fdout,"Don't drop instruction %d, credit %f\n" , tmpl,tmp);
 #endif
 		}
 		else break;
 	}
+	ci_crd = 0;             /* find the critical item */
+        for (l = 0; l < ltop; l++)
+                if (recycleBlk->profiler[lvs[l]].obytes <= targmem &&
+                        recycleCrdCPU(lvs[l]) > ci_crd){
+                        ci = l;
+                        ci_crd = recycleCrdCPU(lvs[l]);
+        }
+
 	if ( ci_crd > tot_crd ) { /* save the critical item instead */
+		newtop = ltop - 1;
 		tmpl = lvs[ci];
-		lvs[ci] = lvs[ltop-1];
-		lvs[ltop-1] = tmpl;
-		newtop = ltop-1;
+		lvs[ci] = lvs[newtop];
+		lvs[newtop] = tmpl;
+#ifdef _DEBUG_CACHE_
+		stream_printf(cntxt->fdout,"Don't drop critical item : instruction %d, credit %f\n" ,tmpl,ci_crd);
+#endif
 	}
 	return newtop;
 
@@ -606,10 +609,10 @@ newpass:
 #ifdef _DEBUG_CACHE_
         stream_printf(cntxt->fdout,"RECYCLEcleanCache: policy=%d mem="LLFMT" usedmem="LLFMT"\n",
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
-	stream_printf(cntxt->fdout,"Target memory "LLFMT" \n", wr);
-        stream_printf(cntxt->fdout,"Candidates for eviction (# LRU Crd Wgt(obytes))\n");
+	stream_printf(cntxt->fdout,"Target memory "LLFMT"KB Available "LLFMT"KB\n", wr,memLimit-recyclerUsedMemory);
+        stream_printf(cntxt->fdout,"Candidates for eviction (# LRU\tTicks\tI\tO\tCnt\tWgt\tCrd)\n");
 	for (l = 0; l < ltop; l++)
-        	stream_printf(cntxt->fdout,"%3d "LLFMT" "LLFMT" "LLFMT" " LLFMT " %d %f %f \n",
+        	stream_printf(cntxt->fdout,"%3d "LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t%4.2f\t%5.3f\n",
                 	lvs[l],recycleBlk->profiler[lvs[l]].clk,
 	                recycleBlk->profiler[lvs[l]].ticks,
         	        recycleBlk->profiler[lvs[l]].ibytes,
