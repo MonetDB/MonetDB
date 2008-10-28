@@ -138,16 +138,22 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 {
 	void *dl = 0;
 	MALfcn adr;
-	int idx;
+	static int idx=0;
+	static int prev= -1;
 
 	(void) modnme;
-	if( filename)
-	for(idx =0; idx < lastfile && filesLoaded[idx].filename; idx++)
-		if( strcmp(filename, filesLoaded[idx].filename)==0) {
-			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
+	if( prev >= 0){
+			adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
+			if( adr != NULL) 
+				return adr; /* found it */
+	}
+	if( filename && prev >= 0) {
+		if( strcmp(filename, filesLoaded[prev].filename)==0) {
+			adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
 			if( adr != NULL) 
 				return adr; /* found it */
 		}
+	}
 @-
 Search for occurrence of the function in any library already loaded.
 This deals with the case that files are linked together to reduce
@@ -156,14 +162,17 @@ obtained from the source-file MAL script.
 @c
 	for(idx =0; idx < lastfile && filesLoaded[idx].handle; idx++){
 			adr = (MALfcn) dlsym(filesLoaded[idx].handle, fcnname);
-			if( adr != NULL) 
+			if( adr != NULL)  {
+				prev = idx;
 				return adr; /* found it */
+			}
 		}
 @-
 Try the program libraries at large or run through all
 loaded files and try to resolve the functionname again.
 @c
-	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+	if (dl == NULL)
+		dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 	if( dl != NULL){
 		adr = (MALfcn) dlsym(dl, fcnname);
 		if( adr != NULL) 
