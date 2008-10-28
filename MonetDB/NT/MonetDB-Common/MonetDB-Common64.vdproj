@@ -27,12 +27,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4426D0D052E94B6183A3D747F24C9CCA"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_5460D68002064BCB839AD357B5DDF75B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -46,6 +40,18 @@
         "Entry"
         {
         "MsmKey" = "8:_7A81BBE87CE141E49C746C0FC9845708"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_95AB502C09E04E9884B86C2C28CF58AD"
+        "OwnerKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -93,7 +99,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_DED2126C8427462B8140E201444D17F6"
+        "MsmKey" = "8:_DE40D199E1B2498F84A1EB70CBD21614"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -106,12 +112,6 @@
         "Entry"
         {
         "MsmKey" = "8:_F068D91803A44A1D8FD11A831791C76E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -437,7 +437,7 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DED2126C8427462B8140E201444D17F6"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DE40D199E1B2498F84A1EB70CBD21614"
             {
             "SourcePath" = "8:C:\\iconv-1.11.win64\\bin\\iconv.dll"
             "TargetName" = "8:iconv.dll"
@@ -618,9 +618,9 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB-Common64"
-        "ProductCode" = "8:{A22257B7-9D05-420B-B5EA-D4595D0B9E55}"
-        "PackageCode" = "8:{14D120E8-F379-4F74-BF45-88CA1F3AA18F}"
-        "UpgradeCode" = "8:{72E2729C-D95F-42EE-9D20-0540C64A992A}"
+        "ProductCode" = "8:{991C6A06-5658-454A-8673-1B555FE06F49}"
+        "PackageCode" = "8:{D975D1A5-A244-4099-BAE4-8F430A975715}"
+        "UpgradeCode" = "8:{8579C1FE-AA50-45D8-B312-D7C737223FF6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
@@ -668,6 +668,28 @@
                             "Transitive" = "11:FALSE"
                                 "Keys"
                                 {
+                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_D0B340E9E1F5462CB5B0DB9C0BDEACFF"
+                                    {
+                                    "Name" = "8:MonetDB"
+                                    "Condition" = "8:"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "Transitive" = "11:FALSE"
+                                        "Keys"
+                                        {
+                                        }
+                                        "Values"
+                                        {
+                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_61C9A03B8CC74C6DA491DFEE30B32337"
+                                            {
+                                            "Name" = "8:Path"
+                                            "Condition" = "8:"
+                                            "Transitive" = "11:FALSE"
+                                            "ValueTypes" = "3:2"
+                                            "Value" = "8:[TARGETDIR]"
+                                            }
+                                        }
+                                    }
                                 }
                                 "Values"
                                 {
@@ -1083,7 +1105,7 @@
                             "ContextData" = "8:1;True=1;False=0"
                             "Attributes" = "3:0"
                             "Setting" = "3:0"
-                            "Value" = "3:1"
+                            "Value" = "3:0"
                             "DefaultValue" = "3:1"
                             "UsePlugInResources" = "11:TRUE"
                             }
@@ -1254,7 +1276,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_4426D0D052E94B6183A3D747F24C9CCA"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_95AB502C09E04E9884B86C2C28CF58AD"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -1268,7 +1290,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_989E89C48F7D48F38F1878D6FD4F839F"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
