@@ -61,9 +61,9 @@ public abstract class MCLParser {
 	 * @param source the String containing the line to parse
 	 * @throws MCLParseException if source cannot be (fully) parsed by
 	 * this parser
-	 * @see next()
-	 * @see nextInt()
-	 * @see hasNext()
+	 * @see #next()
+	 * @see #nextInt()
+	 * @see #hasNext()
 	 */
 	abstract public int parse(String source) throws MCLParseException;
 
@@ -80,8 +80,8 @@ public abstract class MCLParser {
 	 *
 	 * @return true if the next call to next() or nextInt() is bound to
 	 * succeed
-	 * @see next()
-	 * @see nextInt()
+	 * @see #next()
+	 * @see #nextInt()
 	 */
 	final public boolean hasNext() {
 		return(colnr < values.length);
@@ -94,8 +94,8 @@ public abstract class MCLParser {
 	 * determine if the call to next() will succeed.
 	 *
 	 * @return the current field value
-	 * @see nextInt()
-	 * @see hasNext()
+	 * @see #nextInt()
+	 * @see #hasNext()
 	 */
 	final public String next() {
 		return(values[colnr++]);
@@ -108,7 +108,7 @@ public abstract class MCLParser {
 	 * field value as an integer.
 	 *
 	 * @return the current field value as integer
-	 * @see next()
+	 * @see #next()
 	 */
 	final public int nextInt() {
 		return(intValues[colnr++]);
