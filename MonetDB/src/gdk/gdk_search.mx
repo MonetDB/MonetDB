@@ -727,7 +727,7 @@ performance on odmg data and its high mult/div overhead.
 BUN
 SORTfndfirst_@2(BAT *b, ptr v)
 {
-	BUN end = BUNfirst(b), cur = end;
+	BUN diff, end = BUNfirst(b), cur = end;
 	size_t lo = end, hi = BUNlast(b);
 	int cmp = 1;
 	BATiter bi = bat_iterator(b);
@@ -752,11 +752,9 @@ SORTfndfirst_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur--) >= end) {
-			if (!@3_EQ(BUNt@1(bi, cur), v, @4))
-				break;
+                for(diff = cur-end; diff; diff >>= 1) {
+		    if ((cur-diff) >= end && @3_EQ(BUNt@1(bi, cur-diff), v, @4)) cur -= diff;
 		}
-		cur++;
 	}
 	return cur;
 }
@@ -764,7 +762,7 @@ SORTfndfirst_@2(BAT *b, ptr v)
 BUN
 SORTfndlast_@2(BAT *b, ptr v)
 {
-	BUN end = BUNlast(b), cur = end;
+	BUN diff, end = BUNlast(b), cur = end;
 	size_t lo = BUNfirst(b), hi = end;
 	int cmp = 1;
 	BATiter bi = bat_iterator(b);
@@ -788,13 +786,11 @@ SORTfndlast_@2(BAT *b, ptr v)
 		}
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
-		while((cur++) < end) {
-			if (!@3_EQ(BUNt@1(bi, cur), v, @4))
-				break;
+                for(diff = (end-cur)>>1; diff; diff >>= 1) {
+		    if ((cur+diff) < end && @3_EQ(BUNt@1(bi, cur+diff), v, @4)) cur += diff;
 		}
-	} else if (cmp == 0) {
-		cur++;
 	}
+	if (cmp == 0) cur++;
 	return cur;
 }
 

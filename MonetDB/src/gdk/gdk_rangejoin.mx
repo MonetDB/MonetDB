@@ -45,6 +45,12 @@ gdk_export BAT *BATbandjoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
 Join all BUNs of the BATs that have tail values: {r-mnus <= l <= r+plus}. 
 
 @h
+gdk_export BAT *BATbandmergejoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
+gdk_export BAT *BATbandmergejoin_limit(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi, size_t *limit);
+@
+Versions of bandjoin fixed on the merge implementation (possibly with a cut-off limit);
+
+@h
 #endif /* GDK_RANGEJOIN_H */
 @c
 
@@ -299,10 +305,13 @@ break;
 			ll++;
 		if (o + ll-lp > BATcapacity(bn)) {
 			BUN g = MAX(ll-lp, 1024*1024);
-
 			BATsetcount(bn, o);
+			if (limit) {
+                              *limit = o * (lc<rc)?((rp-rc)/MAX(1,rc)):((lp-lc)/MAX(1,lc));
+			      break;
+                        }                                    
 			if (BATextend(bn, BATcapacity(bn)+g) == NULL)
-				goto failed; 
+			      goto failed; 
 		}
 		bnh = (oid*)Hloc(bn, bnf);
 		bnt = (oid*)Tloc(bn, bnf);
@@ -352,13 +361,13 @@ break;
 @c
 
 static BAT *
-BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, size_t *limit) 
 {
 	BAT *bn = NULL;
 	BUN lc = BATcount(l), rc = BATcount(r);
 
 	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
-	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), MIN(lc,rc));
+	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), limit?*limit:MIN(lc,rc));
 	switch (l->ttype) {
 #ifndef NOEXPAND_CHR
 	case TYPE_chr:
@@ -407,14 +416,9 @@ failed:
 }
 
 BAT *
-BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, size_t *limit) 
 {
 	BAT *ol = l, *or = r, *bn = NULL;
-
-	if ((!BATtordered(l) && BATcount(l) < BATTINY) ||
-	    (!BAThordered(r) && BATcount(r) < BATTINY) ||
-	    ATOMtype(l->htype) != TYPE_oid || ATOMtype(r->ttype) != TYPE_oid)
-		return BATbandjoin_nl(l, r, c1, c2, li, hi);
 
 	/* large cases use a merge join like band, therefore we first sort */
 	if (!BATtordered(l))
@@ -422,12 +426,29 @@ BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	if (!BAThordered(r))
 		r = BATsort(r);
 
-	bn = BATbandjoin_mj(l, r, c1, c2, li, hi);
+	bn = BATbandjoin_mj(l, r, c1, c2, li, hi, limit);
 
 	if (l != ol)
 		BBPreclaim(l);
 	if (r != or)
 		BBPreclaim(r);
 	return bn;
+}
+
+BAT *
+BATbandmergejoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+{
+	return BATbandmergejoin_limit(l, r, c1, c2, li, hi, NULL);
+}
+
+BAT *
+BATbandjoin(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi) 
+{
+	if ((!BATtordered(l) && BATcount(l) < BATTINY) ||
+	    (!BAThordered(r) && BATcount(r) < BATTINY) ||
+	    ATOMtype(l->htype) != TYPE_oid || ATOMtype(r->ttype) != TYPE_oid)
+		return BATbandjoin_nl(l, r, c1, c2, li, hi);
+
+	return BATbandmergejoin(l, r, c1, c2, li, hi);
 }
 @}
