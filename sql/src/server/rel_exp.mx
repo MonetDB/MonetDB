@@ -445,10 +445,11 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->l) { 
+		if (e->l && !rel->name) { 
 			ne = exps_bind_column2(rel->exps, e->l, e->r);
-			/* if relation name matches expressions relation name, find column based on column name alone */
-			if (!ne && rel->name && strcmp(e->l, rel->name) == 0) 
+		/* if relation name matches expressions relation name, find column based on column name alone */
+		} else if (e->l && rel->name) { 
+			if (strcmp(e->l, rel->name) == 0) 
 				ne = exps_bind_column(rel->exps, e->r);
 		} else {
 			ne = exps_bind_column(rel->exps, e->r);

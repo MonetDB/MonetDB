@@ -423,8 +423,13 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 
 		assert(tt);
 		if (list_length(colsels) == 1) {
+			stmt *s = stmt_dup(colsels->h->data);
 			/* only one select on this column; simply keep it. */
-			list_append(newsels, stmt_dup(colsels->h->data));
+			/* we prefer range selects over simple selects */
+			if (s->type == st_uselect2 || s->type == st_select2)
+				list_prepend(newsels, s);
+			else
+				list_append(newsels, s);
 		} else if (tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->session->schema, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->session->schema, "sql_max", tt, tt, tt))) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge(newsels, colsels, (fdup) &stmt_dup);
@@ -589,7 +594,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 					assert(0);
 				}
 				if (bound[cl] && bound[cr]) {
-					list_append(newsels, stmt_uselect2(stmt_dup(col[cl]), bound[cl], bound[cr], flg));
+					list_prepend(newsels, stmt_uselect2(stmt_dup(col[cl]), bound[cl], bound[cr], flg));
 					bound[cl] = bound[cr] = NULL;
 				}
 			}
@@ -957,6 +962,7 @@ rel2bin(mvc *c, stmt *s)
 		list *ol, *l = s->op1.lval;
 
 		ol = l;
+		assert(list_length(l));
 		if (list_length(l) == 1) {
 			res = rel2bin(c, l->h->data);
 		} else {

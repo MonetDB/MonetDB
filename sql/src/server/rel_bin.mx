@@ -253,7 +253,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				as = bin_first_column(left);
 			} else {
 				/* create dummy single value in a column */
-				as = stmt_atom_int(0);
+				as = stmt_atom_wrd(0);
 				as = stmt_append(stmt_temp(tail_type(as)), as);
 			}
 		}
@@ -925,7 +925,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs )
  		sub = sql_bind_func(sql->session->schema, "sql_sub", tail_type(ls), tail_type(rs));
 		/*s = sql_binop_(sql, NULL, "sql_sub", ls, rs);*/
 		s = stmt_binop(ls, rs, sub);
-		s = stmt_select(s, stmt_atom_int(0), cmp_gt);
+		s = stmt_select(s, stmt_atom_wrd(0), cmp_gt);
 
 		/* A ids */
 		s = stmt_join(stmt_reverse(lm), s, cmp_equal);
@@ -1355,6 +1355,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs )
 	}
 	if (sub) stmt_destroy(sub);
 	if (groupby) grp_destroy(groupby);
+	stmt_set_nrcols(cursub);
 	return cursub;
 }
 

@@ -230,8 +230,12 @@ comment "if col contains exactly one value return this. Incase of more raise an 
 command not_unique( b:bat[:oid,:oid]) :bit 
 address not_unique 
 comment "check if the tail sorted bat b doesn't have unique tail values" ;
-command not_unique( b:bat[:oid,:oid]) :bit 
-address not_unique ;
+
+command not_uniques( b:bat[:oid,:oid]) :bat[:oid,:oid] 
+address not_unique_oids 
+comment "return not unique oids" ;
+command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
+address not_unique_oids ;
 
 function sql_environment():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
@@ -758,6 +762,7 @@ sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
+sql5_export str not_unique_oids(bat *ret, bat *bid);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2093,6 +2098,96 @@ str not_unique(bit *ret, int* bid)
 		throw(SQL, "not_unique", "input should be sorted");
 	}
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/* later we could optimize this to start from current BUN 
+   And only search the from the first if second is not found.
+ */
+inline int 
+HASHfndTwice(BAT *b, ptr v)
+{
+	BATiter bi = bat_iterator(b);
+	BUN i = BUN_NONE;
+	int first = 1;
+	
+	HASHloop( bi, b->H->hash, i, v) {
+		if (!first)
+			return 1;
+		first = 0;
+	}
+	return 0;
+}
+
+str 
+not_unique_oids(bat *ret, bat* bid) 
+{
+	BAT *b, *bn = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "not_uniques", "Cannot access descriptor");
+	}
+	if (b->ttype != TYPE_oid && b->ttype != TYPE_wrd) {
+		throw(SQL, "not_uniques", "Wrong types");
+	}
+
+	assert(b->htype == TYPE_oid);
+	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
+		bn = BATnew(TYPE_oid, TYPE_oid, 0);
+	} else if (b->tsorted&1) { /* ugh handle both wrd and oid types */
+		oid c = *(oid*)Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
+		oid *h = (oid*)Hloc(b,0), *vp, *ve;
+		int first = 1;
+
+		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
+		vp = (oid*)Tloc(b, BUNfirst(b));
+		ve = vp + BATcount(b);
+		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
+		rt = (oid*)Tloc(bn, BUNfirst(bn));
+		*rh++ = *h++; 
+		*rt++ = *vp; 
+		for(vp++; vp < ve; vp++, h++) {
+			oid v = *vp;
+			if (v == c) {
+				first = 0;
+				*rh++ = *h;
+				*rt++ = v;
+			} else if (!first) {
+				first = 1;
+				*rh++ = *h;
+				*rt++ = v;
+			} else {
+				*rh = *h;
+				*rt = v;
+			}
+			c = v;
+		}
+		if (first)
+			rh--;
+		BATsetcount(bn, rh - rf); 
+	} else {
+		oid *rf, *rh, *rt;
+		oid *h = (oid*)Hloc(b,0), *vp, *ve;
+		BAT *bm = BATmirror(b);
+
+		if (BATprepareHash(bm))
+			throw(SQL, "not_uniques", "hash creation failed");
+		bn = BATnew(TYPE_oid, TYPE_oid, BATcount(b));
+		vp = (oid*)Tloc(b, BUNfirst(b));
+		ve = vp + BATcount(b);
+		rf = rh = (oid*)Hloc(bn, BUNfirst(bn));
+		rt = (oid*)Tloc(bn, BUNfirst(bn));
+		for(; vp < ve; vp++, h++) {
+			/* try to find value twice */
+			if (HASHfndTwice(bm, vp)) {
+				*rh++ = *h;
+				*rt++ = *vp;
+			}
+		}
+		BATsetcount(bn, rh - rf); 
+	}
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

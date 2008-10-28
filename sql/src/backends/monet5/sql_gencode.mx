@@ -1267,7 +1267,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			backend_create_func(sql, s->op4.funcval->func); 
-			if (s->op1.stval->nrcols) {
+			if (s->op1.stval->nrcols && strcmp(fimp, "not_uniques") == 0) {
+				int rtype = s->op4.funcval->res.type->localtype;
+
+				q = newStmt(mb, mod, fimp);
+				setVarType(mb,getArg(q,0), newBatType(TYPE_oid,rtype));
+				setVarUDFtype(mb,getArg(q,0));
+				q = pushArgument(mb, q, l);
+			} else if (s->op1.stval->nrcols) {
 				int rtype = s->op4.funcval->res.type->localtype;
 
 				q = newStmt(mb, "mal","multiplex");

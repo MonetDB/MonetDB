@@ -32,12 +32,12 @@ Over..
 
 % .bbp,	.bbp # table_name
 % single_value,	L1 # name
-% char,	int # type
+% char,	wrd # type
 % 9,	3 # length
-[ "transient",	177	]
+[ "transient",	173	]
 % .bbp,	.bbp # table_name
 % single_value,	L2 # name
-% char,	int # type
+% char,	wrd # type
 % 10,	3 # length
 [ "persistent",	227	]
 

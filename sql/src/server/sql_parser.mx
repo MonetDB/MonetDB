@@ -409,6 +409,11 @@ int yydebug=1;
   	XML_validate
 	XML_namespace_declaration
 	opt_XML_namespace_declaration_and_comma
+	XML_namespace_declaration_item_list
+	XML_namespace_declaration_item
+	XML_regular_namespace_declaration_item
+	XML_default_namespace_declaration_item
+	XML_namespace_URI
 	XML_attributes
 	XML_attribute_list
 	XML_attribute
@@ -454,7 +459,6 @@ int yydebug=1;
 	XML_attribute_name
 	opt_forest_element_name
 	forest_element_name
-	XML_namespace_URI
 	XML_namespace_prefix
 	XML_PI_target
 
@@ -534,10 +538,6 @@ int yydebug=1;
 	XML_element_content_list
 	forest_element_list
 	forest_element
-	XML_namespace_declaration_item_list
-	XML_namespace_declaration_item
-	XML_regular_namespace_declaration_item
-	XML_default_namespace_declaration_item
 	XML_value_expression_list
 
 %type <i_val>
@@ -581,6 +581,9 @@ int yydebug=1;
 	opt_XML_content_option
 	XML_content_option
 	opt_XML_returning_clause
+	document_or_content
+	document_or_content_or_sequence
+	XML_whitespace_option
 
 %type <l_val>
 	opt_start
@@ -4710,11 +4713,15 @@ forest_element_name:
 XML_parse:
   XMLPARSE '(' document_or_content value_exp /* should be a string */
       XML_whitespace_option ')'
-	{ $$ = NULL; }
+	{ dlist *l = L();
+	  append_int(l, $3 );
+	  append_symbol(l, $4);
+	  append_int(l, $5);
+	  $$ = _symbol_create_list( SQL_XMLPARSE, l); }
 
 XML_whitespace_option:
-    PRESERVE WHITESPACE
-  | STRIP WHITESPACE
+    PRESERVE WHITESPACE		{ $$ = 0; }
+  | STRIP WHITESPACE		{ $$ = 1; }
   ;
 
 XML_PI:
@@ -4808,12 +4815,12 @@ XML_validate:
 
 document_or_content_or_sequence:
     document_or_content
-  | SEQUENCE
+  | SEQUENCE		{ $$ = 2; }
   ;
 
 document_or_content:
-    DOCUMENT
-  | CONTENT
+    DOCUMENT		{ $$ = 0; }
+  | CONTENT		{ $$ = 1; }
   ;
 
 opt_XML_returning_clause:
@@ -4834,39 +4841,48 @@ opt_XML_returning_clause:
 */
 
 XML_namespace_declaration:
-  XMLNAMESPACES '(' XML_namespace_declaration_item_list ')'
-	{ $$ = _symbol_create_list(SQL_XMLNAMESPACES, $3); }
+  XMLNAMESPACES '(' XML_namespace_declaration_item_list ')' 	{ $$ = $3; }
   ;
 
 XML_namespace_declaration_item_list:
- 	XML_namespace_declaration_item
-		{ $$ = append_list(L(), $1); }
+ 	XML_namespace_declaration_item 	{ $$ = $1; }
   |     XML_namespace_declaration_item_list ',' XML_namespace_declaration_item
-		{ $$ = append_list($1, $3); }
+		{ dlist *l = L();
+		  append_list(l, 
+		  	append_string(L(), sa_strdup(SA, "concat")));
+	  	  append_symbol(l, $1);
+	  	  append_symbol(l, $3);
+	  	  $$ = _symbol_create_list( SQL_BINOP, l ); }
   ;
 
 XML_namespace_declaration_item:
-    XML_regular_namespace_declaration_item
-  | XML_default_namespace_declaration_item
+    	XML_regular_namespace_declaration_item
+  | 	XML_default_namespace_declaration_item
   ;
 
 XML_namespace_prefix:
-    ident
+    	ident
   ;
 
 XML_namespace_URI:
-	STRING
+	scalar_exp
   ;
 
 XML_regular_namespace_declaration_item:
     XML_namespace_URI AS XML_namespace_prefix
-				{ $$ = append_string(L(), $1);
-				  $$ = append_string($$, $3); }
+				{ char *s = strconcat("xmlns:", $3);
+				  dlist *l = L();
+	  			  append_string(l, sa_strdup(SA, s));
+				  _DELETE(s);
+	  			  append_symbol(l, $1);
+	  			  $$ = _symbol_create_list( SQL_XMLATTRIBUTE, l ); }
   ;
 
 XML_default_namespace_declaration_item:
-    DEFAULT XML_namespace_URI	{ $$ = append_string(L(), $2); 
-				  $$ = append_string($$, NULL); }
+    DEFAULT XML_namespace_URI	{ dlist *l = L();
+	  			  append_string(l, sa_strdup(SA, "xmlns" ));
+	  			  append_symbol(l, $2);
+	  			  $$ = _symbol_create_list( SQL_XMLATTRIBUTE, l ); }
   | NO DEFAULT			{ $$ = NULL; }
   ;
 

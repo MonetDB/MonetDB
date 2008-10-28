@@ -1304,6 +1304,9 @@ sqltypeinit(void)
 	*t = NULL;
 
 	sql_create_aggr("not_unique", "sql", "not_unique", OID, BIT);
+	/* well to be precise it does reduce and map */
+	sql_create_func("not_uniques", "sql", "not_uniques", WRD, NULL, OID, SCALE_NONE);
+	sql_create_func("not_uniques", "sql", "not_uniques", OID, NULL, OID, SCALE_NONE);
 
 	/* functions needed for all types */
 	sql_create_func("hash", "calc", "hash", ANY, NULL, WRD, SCALE_FIX);

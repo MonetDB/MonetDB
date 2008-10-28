@@ -12,9 +12,9 @@ stderr of test 'select_id_not_in_another_select.SF-1737777` in directory 'src/te
 # 09:42:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32420 
 # 09:42:27 >  
 
-MAPI  = monetdb@koala:34235
-QUERY = select objID1 from "Match" where objID1 not in (select objID1 from
-ERROR = !SELECT: identifier 'objid1' unknown
+# 20:11:36 >  
+# 20:11:36 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35925  -G
+# 20:11:36 >  
 
 
 # 09:42:28 >  

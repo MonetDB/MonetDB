@@ -825,10 +825,18 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 {
 
 	char *name = qname_table(qname);
-	sql_idx *i = mvc_bind_idx(sql, ss, iname);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_idx *i = NULL;
 
-	sql_table *t = mvc_bind_table(sql, ss, name);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "CREATE INDEX: no such schema '%s'", sname);
+	if (s == NULL) 
+		s = ss;
 
+	i = mvc_bind_idx(sql, s, iname);
+	t = mvc_bind_table(sql, s, name);
 	if (i) {
 		return sql_error(sql, 02, "CREATE INDEX: name '%s' already in use", iname);
 	} else if (!t) {
@@ -861,7 +869,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 			int l;
 			node *n;
 			sql_kc *ic = NULL;
-			sql_table *t = mvc_create_cluster(sql, ss, i->base.name, 1, SQL_PERSIST, CA_COMMIT, 0); 
+			sql_table *t = mvc_create_cluster(sql, s, i->base.name, 1, SQL_PERSIST, CA_COMMIT, 0); 
 
 			if (!t) 
 				return sql_error(sql, 02, "CREATE INDEX: cannot create cluster table '%s'", iname);
@@ -900,16 +908,23 @@ drop_index(mvc *sql, dlist *qname)
 {
 	stmt *res = NULL;
 	char *iname = qname_table(qname);
-	sql_schema *ss = cur_schema(sql);
+	char *sname = qname_schema(qname);
+	sql_schema *s = NULL;
+	sql_idx *i = NULL;
 
-	sql_idx *i = mvc_bind_idx(sql, ss, iname);
-
-	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "DROP INDEX: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+ 	i = mvc_bind_idx(sql, s, iname);
 	if (!i) {
 		return sql_error(sql, 02, "DROP INDEX: no such index '%s'", iname);
+	} else if (!schema_privs(sql->role_id, s)) {
+		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
-		mvc_drop_idx(sql, ss, i);
+		mvc_drop_idx(sql, s, i);
 		res = stmt_none();
 	}
 	return res;

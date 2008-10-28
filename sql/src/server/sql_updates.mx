@@ -128,6 +128,30 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 
 		/* 2e stage: find out if inserted are unique */
 		if (idx_inserts->nrcols) {	/* insert columns not atoms */
+#if 0
+			sql_subtype *Oid = sql_bind_localtype("oid");
+			sql_subfunc *nu, *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
+			stmt *ss = NULL;
+
+			/* implementation uses group, not_uniques,
+				join, derive, not_uniques keyed check */
+			for (m = k->columns->h; m; m = m->next) {
+				sql_kc *c = m->data;
+
+				if (ss) {
+					ss = stmt_derive(ss, stmt_join(stmt_mirror(stmt_dup(ss)), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
+				} else {
+					ss = stmt_group(stmt_dup(inserts[c->c->colnr]->op2.stval));
+				}
+			}
+ 			nu = sql_bind_func_result(sql->session->schema, "not_uniques", tail_type(ss), NULL, Oid);
+			ss = stmt_unop(ss, nu);
+
+			sum = sql_bind_aggr(sql->session->schema, "not_unique", tail_type(ss));
+			ssum = stmt_aggr(ss, NULL, sum, 1);
+			/* combine results */
+			s = stmt_binop(s, ssum, or);
+#else
 			stmt *ss;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
 			/* implementation uses sort,refine, keyed check */
@@ -145,6 +169,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 			ssum = stmt_aggr(ss, NULL, sum, 1);
 			/* combine results */
 			s = stmt_binop(s, ssum, or);
+#endif
 		}
 
 		if (k->type == pkey) {

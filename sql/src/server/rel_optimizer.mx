@@ -43,7 +43,7 @@ typedef struct global_props {
 	int cnt[MAXOPS];
 } global_props;
 
-typedef sql_rel *(*rewrite_fptr)(mvc *sql, sql_rel *rel);
+typedef sql_rel *(*rewrite_fptr)(int *changes, mvc *sql, sql_rel *rel);
 typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
 
 /* The important task of the relational optimizer is to optimize the
@@ -830,8 +830,9 @@ push_up_join_exps( sql_rel *rel)
 }
 
 static sql_rel *
-rel_join_order(mvc *sql, sql_rel *rel) 
+rel_join_order(int *changes, mvc *sql, sql_rel *rel) 
 {
+	*changes = 0; 
 	if (is_join(rel->op) && rel->exps) {
 #ifdef DEBUG
 printf("BEFORE\n");
@@ -932,41 +933,57 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
  * it cleans up the projections which become useless.
  */
 sql_rel *
-rel_push_select_down(mvc *sql, sql_rel *rel) 
+rel_push_select_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = NULL;
 	sql_rel *r = NULL;
 	node *n;
 
 	(void)sql;
-	if ((is_join(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
+	/* remove empty select's */
+	if ((is_join(rel->op) || is_semi(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
 		sql_rel *l = rel->l;
 		if (l->op == op_select && !(rel_is_ref(l)) &&
 		   (!l->exps || list_length(l->exps) == 0)) {
 			rel->l = l->l;
 			l->l = NULL;
 			rel_destroy(l);
-			return rel_push_select_down(sql, rel);
+			(*changes)++;
+			return rel;
 		} 
 	}
-	if ((is_join(rel->op) || is_set(rel->op)) && rel->r) {
+	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
 		sql_rel *r = rel->r;
 		if (r->op == op_select && !(rel_is_ref(r)) &&
 	   	   (!r->exps || list_length(r->exps) == 0)) {
 			rel->r = r->l;
 			r->l = NULL;
 			rel_destroy(r);
-			return rel_push_select_down(sql, rel);
+			(*changes)++;
+			return rel;
 		}
 	} 
+	/* merge 2 selects */
+	r = rel->l;
 	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
 		rel->l = NULL;
 		rel_destroy(rel);
-		return rel_push_select_down(sql, r);
+		(*changes)++;
+		return r;
+	}
+	/* push select through semi/anti join 
+	 * select (semi(A,B)) == semi(select(A), B) */
+	if (rel->op == op_select && r && is_semi(r->op) && !(rel_is_ref(r))) {
+		rel->l = r->l;
+		r->l = rel;
+		(*changes)++;
+		return r;
 	}
 	exps = rel->exps;
-	r = rel->l;
+	/* push select through set */
+/* disabled, currently crashes on assert */
+#if 0
 	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(); 
 		for (n = exps->h; n; n = n->next) { 
@@ -1000,9 +1017,13 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 				list_append(rel->exps, exp_dup(e));
 			} 
 		}
+		/* TODO looks buggy */
 		list_destroy(exps);
-		return rel_push_select_down(sql, r);
+		(*changes)++;
+		return r;
 	}
+#endif
+	/* merge projects */
 	if (rel->op == op_project && r && r->op == op_project && !(rel_is_ref(r))) {
 		int all = 1;
 
@@ -1034,13 +1055,14 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			r->l = NULL;
 			rel_destroy(r);
 			list_destroy(exps);
-			return rel_push_select_down(sql, rel);
+			(*changes)++;
 		} else {
 			/* leave as is */
 			list_destroy(rel->exps);
 			rel->exps = exps;
 		}
 		return rel;
+	/* push select through project */
 	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(); 
@@ -1052,8 +1074,10 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
 			/* sometimes we also have functions in the expression list (TODO change them to e_cmp (predicates like (1=0))) */
 			if (e->type == e_cmp) {
 				ne = exp_push_down(sql, e, prj, prj->l);
+
 				/* can we move it down */
 				if (ne && ne != e) {
+					(*changes)++;
 					nr = prj->l;
 				} else {
 					nr = rel;
@@ -1085,12 +1109,13 @@ rel_push_select_down(mvc *sql, sql_rel *rel)
  * under the group by.
  */
 sql_rel *
-rel_push_join_down(mvc *sql, sql_rel *rel) 
+rel_push_join_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = NULL;
 	sql_rel *gb = NULL, *l = NULL;
 
 	(void)sql;
+	*changes = 0;
 	if ((is_join(rel->op) || is_semi(rel->op)) && rel->l) {
 		gb = rel->r;
 		exps = rel->exps;
@@ -1132,9 +1157,9 @@ rel_push_join_down(mvc *sql, sql_rel *rel)
 			}
 			if (is_join(rel->op)) {
 				/* push join's left side (as semijoin) down group by */
-				l = rel_copy(rel->l);
-				/* now we need to translate the names using the join
-			   	expressions */
+				//l = rel_copy(rel->l);
+				l = rel_dup(rel_dup(rel->l));
+				/* now we need to translate the names using the join expressions */
 				gb->l = rel_crossproduct(gb->l, l, op_semi);
 				l = gb->l;
 				l->exps = jes;
@@ -1264,9 +1289,10 @@ find_index(sql_rel *r, list **EXPS)
 }
 
 static sql_rel *
-rel_select_use_index(mvc *sql, sql_rel *rel) 
+rel_select_use_index(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)sql;
+	*changes = 0; 
 	if (rel->op == op_select) {
 		list *exps = NULL;
 		sql_idx *i = find_index(rel, &exps);
@@ -1329,9 +1355,10 @@ exp_merge(list *exps)
 }
 
 static sql_rel *
-rel_select_order(mvc *sql, sql_rel *rel) 
+rel_select_order(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)sql;
+	*changes = 0; 
 	if (rel->op == op_select && rel->exps && list_length(rel->exps)>1) {
 		list *exps = NULL;
 			
@@ -1345,9 +1372,43 @@ rel_select_order(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
+
+static sql_rel *
+rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
+{
+	(void)sql;
+	if (is_semi(rel->op)) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+
+		if (l->ref.refcnt == 3 && is_join(r->op) && l == r->l ) {
+			/* okay to rewrite, maybe later we should check 
+			   the semi/anti join condition (should be tid based) */
+#ifdef DEBUG
+			rel_print(sql, rel, 0);
+#endif
+			rel->r = rel_dup(r->r);
+			/* maybe rename exps ? */
+			list_destroy(rel->exps);
+			rel->exps = r->exps;
+			r->exps = NULL;
+			rel_destroy(l);
+			rel_destroy(r);
+#ifdef DEBUG
+			rel_print(sql, rel, 0);
+#endif
+			(*changes)++;
+		}
+	}
+	return rel;
+}
+
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter) 
 {
+	int changes = 0;
+
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
@@ -1376,7 +1437,10 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	}
 	if (rel_is_ref(rel))
 		return rel;
-	return rewriter(sql, rel);
+	rel = rewriter(&changes, sql, rel);
+	if (changes)
+		return rewrite(sql, rel, rewriter);
+	return rel;
 }
 
 sql_rel *
@@ -1401,10 +1465,16 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	rel_print(sql, rel, 0);
 #endif
 
+	/* TODO cleanup rel_optimzer.mx (reorder code, remove unused etc) */
+
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */
 
 	/* TODO common sub relation/expression optimizer */
+
+	/* TODO rewrite op_anti/semi (A,C=join(A,B)) [ A.tid  = C.A.tid ] */
+	if (gp.cnt[op_anti] || gp.cnt[op_semi])
+		rel = rewrite(sql, rel, &rel_rewrite_semijoin);
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 

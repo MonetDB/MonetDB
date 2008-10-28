@@ -102,8 +102,11 @@ rel_destroy_(sql_rel *rel)
 		_DELETE(rel->name);
 	if (rel->exps)
 		list_destroy(rel->exps);
-	if (is_join(rel->op) || is_select(rel->op) || 
-	    is_set(rel->op) || rel->op == op_topn) {
+	if (is_join(rel->op) || 
+	    is_semi(rel->op) || 
+	    is_select(rel->op) || 
+	    is_set(rel->op) || 
+	    rel->op == op_topn) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -367,7 +370,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 	if (settname && !tname)
 		tname = rel->name;
 
-	if (is_subquery(rel))
+	if (is_subquery(rel) && is_project(rel->op))
 		return list_create(NULL);
 
 	switch(rel->op) {
@@ -894,7 +897,9 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 			break;
 		
 		/* push down as long as the operators allow this */
-		if (!is_select(lrel->op) && lrel->op != op_join && 
+		if (!is_select(lrel->op) && 
+		    !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+		    lrel->op != op_join && 
 		    lrel->op != op_left)
 			break;
 	        /* pushing through left head of a left join is allowed */
@@ -911,7 +916,7 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 		sql_rel *n = rel_select(lrel, e);
 
 		if (p && p != lrel) {
-			assert(p->op == op_join || p->op == op_left);
+			assert(p->op == op_join || p->op == op_left || is_semi(p->op));
 			if (p->l == lrel) {
 				assert(p->l != n);
 				p->l = n;
@@ -956,7 +961,9 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 			and the relation is equal.
 		 */
 		if (lrel != rrel || 
-		   (!is_select(lrel->op) && lrel->op != op_join &&
+		   (!is_select(lrel->op) && 
+		    !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+		    lrel->op != op_join &&
 		    lrel->op != op_left))
 			break;
 	        /* pushing through left head of a left join is allowed */
@@ -1146,6 +1153,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	return NULL;
 }
 
+#if 0
 static sql_exp *
 rel_rename_column( mvc *sql, sql_rel *rel, char *cname )
 {
@@ -1162,6 +1170,25 @@ rel_rename_column( mvc *sql, sql_rel *rel, char *cname )
 	exp_setname(e, NULL, nme);
 	return exp_column(NULL, nme, exp_subtype(e), rel->card, has_nil(e));
 }
+#endif
+
+sql_exp *
+rel_find_column( mvc *sql, sql_rel *rel, char *cname )
+{
+	sql_rel *p = NULL;
+
+	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
+		return NULL;
+
+	if (is_project(rel->op) || rel->op == op_table) {
+		if (rel->exps) {
+			sql_exp *e = exps_bind_column(rel->exps, cname);
+			if (e)
+				return e;
+		}
+	}
+	return NULL;
+}
 
 sql_exp *
 rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
@@ -1171,10 +1198,12 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
 		return NULL;
 
+/* 
 	if (rel && is_subquery(rel) && p && is_join(p->op) && 
 	    rel->op == op_basetable && (p->l == rel || p->r == rel)) {
 		return rel_rename_column(sql, rel, cname);
 	}
+*/
 
 	if (is_project(rel->op) || rel->op == op_table) {
 		if (rel->exps) {
@@ -1209,7 +1238,10 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
 		if (!e)
 			e = rel_bind_column2(sql, rel->r, tname, cname);
 		return e;
-	} else if (is_set(rel->op) || is_sort(rel) || is_select(rel->op)) {
+	} else if (is_set(rel->op) || 
+		   is_sort(rel) || 
+		   is_semi(rel->op) || 
+		   is_select(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname);
 	} else if (rel->op == op_basetable && strcmp(rel->name, tname) == 0) {
@@ -2218,22 +2250,25 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 		return rel_or(sql, lr, rr, f);
 
-/*
-		char *name;
-		sql_rel *lr, *rr;
+		//char *name;
+//		sql_rel *lr, *rr;
 
+/* don't name them, else rel_bin cannot find the correct stmts 
 		rel_label(rel, ++sql->label);
 		name = rel->name;
 		stack_push_rel_view(sql, name, rel);
 		lr = stack_find_rel_view(sql, name);
 		rr = stack_find_rel_view(sql, name);
+*/
+/*
+		lr = rel_dup(rel);
+		rr = rel_dup(rel);
 		
 		lr = rel_logical_exp(sql, lr, lo, f);
 		rr = rel_logical_exp(sql, rr, ro, f);
 
 		if (!lr || !rr)
 			return NULL;
-		
 		return rel_or(sql, lr, rr, f);
 */
 	}
@@ -2296,8 +2331,15 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_rel *rl;
 
 				if (!r) {
-					r = rel_value_exp(sql, &left, sval, f, ek);
-					z = left;
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
+
+					/* TODO double dup to make sure we reference the rel */
+					/* TODO remove null checking (not needed in correlated case because of the semi/anti join) ! */
+					rel = left = rel_dup(rel_dup(left));
+					r = rel_value_exp(sql, &rel, sval, f, ek);
+					z = rel;
 					correlated = 1;
 				}
 				if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
@@ -2332,10 +2374,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			r = rel_lastexp(sql, right);
 			rel_setsubquery(right);
-			if (correlated)
-				rel = left;
-			else
-				rel = rel_crossproduct(left, right, op_join);
+			rel = rel_crossproduct(left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
 				exp_destroy(r);
@@ -2343,7 +2382,9 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(rel, e);
-			if (sc->token == SQL_NOT_IN) {
+			if (correlated) {
+				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
+			} else if (sc->token == SQL_NOT_IN) {
 				rel->op = op_left;
 				e = rel_unop_(sql, exp_dup(r), NULL, "isnull");
 				r = exp_atom_bool(1);
@@ -2359,34 +2400,47 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	{
 		symbol *lo = sc->data.sym;
 		sql_rel *r;
+		sql_exp *e = NULL;
 
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek);
-		if (!r) {
+		if (!r) { /* correlation */
+			sql_exp *le, *re;
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 
-			r = rel = rel_subquery(sql, rel, lo, ek);
-			if (!rel)
-				return NULL;
-			/* remove extra projection */
-			if (!is_join(r->op)) {
-				sql_rel *p = r;
+			/* We don't have a natural anti/semi join but versions
+			   which require (join) expression. So we should 
+			   generate row id's which we use in the anti/semi
+			   join expression.
+			 */
+			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1));
+ 			e = rel_unop_(sql, exp_dup(rel->exps->h->data), NULL, "identity");
+			rel_project_add_exp(sql, rel, e);
+			e = exp_label(e, ++sql->label);
 
-				assert(is_project(r->op));
-				rel = r = rel_dup(r->l);
-				rel_destroy(p);
-			}
-			assert(r->op == op_join);
-		} else { 	/* no correlation */
-			r = rel = rel_crossproduct(rel, r, op_join);
+			/* TODO double dup to make sure we reference the rel */
+			r = rel_subquery(sql, rel_dup(rel_dup(rel)), lo, ek);
+			if (!r) 
+				return NULL;
+
+			rel_label(r, ++sql->label);
+
+			/* lookup the identity columns and label these */
+			le = rel_bind_column(sql, rel, e->name);
+			re = rel_bind_column(sql, r, e->name);
+
+			e = exp_compare(le, re, cmp_equal);
 		}
+		r = rel = rel_crossproduct(rel, r, op_join);
 		if (sc->token == SQL_EXISTS) {
 			r->op = op_semi;
 		} else {	
 			r->op = op_anti;
 		}
+		if (e)
+			rel->exps = append(new_exp_list(), e);
 		return rel;
 	}
 	case SQL_LIKE:
@@ -3672,7 +3726,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		return rel_simple_select(sql, rel, sn->where, sn->selection);
 
 	/* if within the selection, keep the current projections */
-	if (outer && is_project(outer->op) && !is_processed(outer)) {
+	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer)) {
 		/* keep projections the hard way, ie don't rename them */
 		assert(rel->l == outer);
 
@@ -3705,7 +3759,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 		/* TODO if ek.card == card_set (IN/EXISTS etc), we could do 
 			something less expensive as group by's ! */
-		if (outer && rel->op == op_join && rel->l == outer) {
+		if (outer && rel->op == op_join && rel->l == outer && ek.card != card_set) {
 			node *n;
 			/* correlation expressions */
 			list *ce = list_select(rel->exps, rel, (fcmp) &exp_is_correlation, (fdup)&exp_dup);
@@ -3914,7 +3968,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		l = rel = rel_project(rel, pre_prj);
 		while(l && l->op != op_join) 
 			l = l->l;
-		if (l && l->op == op_join && l->l == outer)
+		if (l && l->op == op_join && l->l == outer && ek.card != card_set)
 			l->op = op_left;
 	}
 

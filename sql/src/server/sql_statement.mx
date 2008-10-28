@@ -264,6 +264,7 @@ extern stmt *stmt_reljoin(stmt *op1, list *neqjoins);
 extern stmt *stmt_diff(stmt *op1, stmt *op2);
 extern stmt *stmt_union(stmt *op1, stmt *op2);
 extern stmt *stmt_list(list *l);
+extern void stmt_set_nrcols(stmt *s);
 extern stmt *stmt_set(stmt *s1);
 extern stmt *stmt_sets(list *s1);
 extern stmt *stmt_ptable(stmt *p);
@@ -330,6 +331,9 @@ extern group *grp_semijoin(group *og, stmt *s);
 extern void grp_destroy(group *g);
 extern group *grp_dup(group *g);
 extern stmt *grp_find_groupby_col(group *g, stmt *s);
+
+extern stmt *stmt_group(stmt *s);
+extern stmt *stmt_derive(stmt *g, stmt *s);
 
 #endif /* _SQL_STATEMENT_H_ */
 
@@ -543,7 +547,7 @@ stmt_ext(stmt *grp)
 	return ns;
 }
 
-static stmt *
+stmt *
 stmt_group(stmt *s)
 {
 	stmt *ns = stmt_create(st_group);
@@ -556,7 +560,7 @@ stmt_group(stmt *s)
 	return ns;
 }
 
-static stmt *
+stmt *
 stmt_derive(stmt *s, stmt *t)
 {
 	stmt *ns = stmt_create(st_derive);
@@ -1908,16 +1912,15 @@ stmt_export(stmt *t, char *sep, char *rsep, char *ssep, char *null_string, stmt 
 	return s;
 }
 
-stmt *
-stmt_list(list *l)
+void
+stmt_set_nrcols(stmt *s)
 {
 	int nrcols = 0;
 	int key = 1;
 	node *n;
-	stmt *s = stmt_create(st_list);
+	list *l = s->op1.lval;
 
-	s->op1.lval = l;
-
+	assert(s->type == st_list);
 	for (n = l->h; n; n = n->next) {
 		stmt *f = n->data;
 
@@ -1927,6 +1930,15 @@ stmt_list(list *l)
 	}
 	s->nrcols = nrcols;
 	s->key = key;
+}
+
+stmt *
+stmt_list(list *l)
+{
+	stmt *s = stmt_create(st_list);
+
+	s->op1.lval = l;
+	stmt_set_nrcols(s);
 	return s;
 }
 
