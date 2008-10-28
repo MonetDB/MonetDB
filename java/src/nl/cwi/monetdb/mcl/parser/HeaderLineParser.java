@@ -23,7 +23,9 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * bla bla bla.
+ * The HeaderLineParser is a generic MCLParser that extracts values from
+ * a metadata header in the MCL protocol either as string or integer
+ * values.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
