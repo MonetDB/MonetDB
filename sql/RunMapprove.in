@@ -22,8 +22,8 @@ builddir=@QSQL_BUILD@
 # make sure srcdir contains absolute path name
 srcdir=`cd '@srcdir@'; pwd`
 
-# default back-end is MonetDB4
-V=4
+# default back-end is MonetDB5
+V=5
 for arg
 do
     case "$arg" in
