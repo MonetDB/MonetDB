@@ -434,7 +434,7 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 int chooseVictims(int *lvs, int ltop, lng wr)
 {
 	dbl *wcrd, maxwc, tmp, ci_crd, tot_crd;
-	int l, newtop, mpos, tmpl, ci;
+	int l, newtop, mpos, tmpl, ci = 0;
 	lng w, totmem = 0, targmem, smem;
 
 #ifdef _DEBUG_CACHE_
@@ -590,8 +590,8 @@ newpass:
 			stream_printf(cntxt->fdout,"Fresh-protected "LLFMT"\n", time0);
       			stream_printf(cntxt->fdout,"All leaves:");
 			for (l = 0; l < ltop; l++)
-                	stream_printf(cntxt->fdout,"%3d("LLFMT") \t",
-	                	lvs[l],recycleBlk->profiler[lvs[l]].clk);
+                		stream_printf(cntxt->fdout,"%3d("LLFMT") \t",
+	                		lvs[l],recycleBlk->profiler[lvs[l]].clk);
 			stream_printf(cntxt->fdout,"\n");
 #endif			
 		l = 0;
@@ -608,14 +608,15 @@ newpass:
                 rcachePolicy,recycleMemory,recyclerUsedMemory);
 	stream_printf(cntxt->fdout,"Target memory "LLFMT" \n", wr);
         stream_printf(cntxt->fdout,"Candidates for eviction (# LRU Crd Wgt(obytes))\n");
-        stream_printf(cntxt->fdout,"%3d "LLFMT" "LLFMT" "LLFMT" " LLFMT " %d %f %f \n",
-                lvs[l],recycleBlk->profiler[lvs[l]].clk,
-                recycleBlk->profiler[lvs[l]].ticks,
-                recycleBlk->profiler[lvs[l]].ibytes,
-                recycleBlk->profiler[lvs[l]].obytes,
-                recycleBlk->profiler[lvs[l]].counter,
-                recycleW(lvs[l]),
-                recycleCrd(lvs[l]));
+	for (l = 0; l < ltop; l++)
+        	stream_printf(cntxt->fdout,"%3d "LLFMT" "LLFMT" "LLFMT" " LLFMT " %d %f %f \n",
+                	lvs[l],recycleBlk->profiler[lvs[l]].clk,
+	                recycleBlk->profiler[lvs[l]].ticks,
+        	        recycleBlk->profiler[lvs[l]].ibytes,
+                	recycleBlk->profiler[lvs[l]].obytes,
+	                recycleBlk->profiler[lvs[l]].counter,
+        	        recycleW(lvs[l]),
+                	recycleCrd(lvs[l]));
 #endif
 
 	/* find entries to evict */
