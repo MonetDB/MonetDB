@@ -396,8 +396,8 @@ BATXMLdocument(int *ret, int *bid)
 			bn->T->nonil = 0;
 			continue;
 		}
-		len = strlen(t);
-		doc = xmlParseMemory(t, (int) len);
+		len = (int) strlen(t);
+		doc = xmlParseMemory(t, len);
 		if (doc == NULL) {
 			BBPreleaseref(b->batCacheid);
 			BBPunfix(bn->batCacheid);
