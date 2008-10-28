@@ -39,14 +39,26 @@ public class StartOfHeaderParser {
 	private int len;
 	private int pos;
 
-	/** Query types (copied from sql_query.mx) */
+	/* Query types (copied from sql_query.mx) */
+
+	/** A parse response (not handled) */
 	public final static int Q_PARSE    = '0';
+	/** A tabular response (typical ResultSet) */
 	public final static int Q_TABLE    = '1';
+	/** A response to an update statement, contains number of affected
+	 * rows */
 	public final static int Q_UPDATE   = '2';
+	/** A response to a schema update */
 	public final static int Q_SCHEMA   = '3';
+	/** A response to a transation statement (start, rollback, abort,
+	 * commit) */
 	public final static int Q_TRANS    = '4';
+	/** A tabular response in response to a PREPARE statement containing
+	 * information about the wildcard values that need to be supplied */
 	public final static int Q_PREPARE  = '5';
+	/** A tabular continuation response (for a ResultSet) */
 	public final static int Q_BLOCK    = '6';
+	/** An unknown and unsupported response */
 	public final static int Q_UNKNOWN  =  0 ;
 
 	public final int parse(String in) throws MCLParseException {
