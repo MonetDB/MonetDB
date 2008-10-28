@@ -416,7 +416,7 @@ XMLdocument(xml * x, str *val)
 		xmlDocDumpMemory(doc, &buf, &len);
 		xmlFreeDoc(doc);
 		*x = GDKmalloc(len + 2);
-		snprintf(*x, len + 2, "D%s", buf);
+		snprintf(*x, len + 2, "D%s", (char *) buf);
 		GDKfree(buf);
 		return MAL_SUCCEED;
 	}
