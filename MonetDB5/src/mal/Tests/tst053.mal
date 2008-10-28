@@ -1,0 +1,11 @@
+# string functions
+
+w1:= "hello";
+w2:= " world";
+s2:= w1+w2;
+io.print(s2);
+
+n:= nil:str;
+s3:= w1+n;
+io.print(s3);
+
