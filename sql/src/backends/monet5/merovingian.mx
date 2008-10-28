@@ -562,7 +562,6 @@ forkMserver(str database, sabdb** stats, int force)
 				 * it's not really a problem we exit here */
 				err e = newErr("%s", er);
 				GDKfree(er);
-				*stats = NULL;
 				return(e);
 			}
 			if ((*stats)->state == SABdbRunning &&
