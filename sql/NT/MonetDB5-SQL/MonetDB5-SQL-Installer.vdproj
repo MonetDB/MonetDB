@@ -81,6 +81,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_13440C2EDE6842BF8D9F24F554EEB87F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_13E1A54C6AC5478EBF7515DB13AB5602"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -747,12 +753,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_915DCE8458594265B5A6C588034352CA"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_91CC9D50987C4C089F77790953BC1565"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -905,6 +905,12 @@
         {
         "MsmKey" = "8:_B0E37235AD0D47B9B413FEC0E6D70CA7"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B1369EBDC1104412983FEEB7829486B7"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -1645,6 +1651,26 @@
             "TargetName" = "8:calc.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_13440C2EDE6842BF8D9F24F554EEB87F"
+            {
+            "SourcePath" = "8:C:\\libxml2-2.6.32+.win32\\bin\\libxml2.dll"
+            "TargetName" = "8:libxml2.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -6788,7 +6814,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_915DCE8458594265B5A6C588034352CA"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_B1369EBDC1104412983FEEB7829486B7"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

@@ -207,6 +207,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_355BCF62B3C24E25A61E499B6A086477"
+        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_35FDE06EB02643B385E7D40CF08B53F7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -981,6 +987,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B5DCC5B713D04F9EBAA9FC44A1DA2482"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B66321BDA396448C97DBC86EB5D35E57"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1073,12 +1085,6 @@
         {
         "MsmKey" = "8:_C4D8AF93AA1A4016B87EF11C49A8D2D8"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C6955C33E2334D3E8539D97533AED367"
-        "OwnerKey" = "8:_819BD8650A494CC68BD064E23EF621BB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -4621,6 +4627,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B5DCC5B713D04F9EBAA9FC44A1DA2482"
+            {
+            "SourcePath" = "8:C:\\libxml2-2.6.32+.win64\\bin\\libxml2.dll"
+            "TargetName" = "8:libxml2.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B66321BDA396448C97DBC86EB5D35E57"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\opt_aliases.mal"
@@ -6674,11 +6700,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_819BD8650A494CC68BD064E23EF621BB"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_355BCF62B3C24E25A61E499B6A086477"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86_x64.msm"
                 "Properties"
                 {
                 }
@@ -6688,11 +6714,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_C6955C33E2334D3E8539D97533AED367"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_819BD8650A494CC68BD064E23EF621BB"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86_x64.msm"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }
