@@ -21,20 +21,26 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_1D0E5AFDD4B14AA5B1CBFCE3A3087B35"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_1FE7B02CBBA5493DA5E90CC441A198FC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_35B43302BC264E8EB4248657234592FE"
+        "OwnerKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_AC2C6EB8513A4109846751AE33350A78"
-        "OwnerKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
+        "MsmKey" = "8:_5BE7FE00E4D843E8BC2DBCFC75D469B4"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -149,6 +155,26 @@
             "TargetName" = "8:geos_c.dll"
             "Tag" = "8:"
             "Folder" = "8:_4D9CE65EDD774551869CFD46B59B4F9E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1D0E5AFDD4B14AA5B1CBFCE3A3087B35"
+            {
+            "SourcePath" = "8:monetdb.ico"
+            "TargetName" = "8:monetdb.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -406,7 +432,7 @@
         "Keywords" = "8:MonetDB5 MonetDB SQL GIS Database"
         "ARPCOMMENTS" = "8:MonetDB5/SQL/GIS Module"
         "ARPURLINFOABOUT" = "8:http://monetdb.cwi.nl"
-        "ARPPRODUCTICON" = "8:"
+        "ARPPRODUCTICON" = "8:_1D0E5AFDD4B14AA5B1CBFCE3A3087B35"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -952,7 +978,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_AC2C6EB8513A4109846751AE33350A78"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_35B43302BC264E8EB4248657234592FE"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -970,7 +996,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86_x64.msm"
                 "Properties"
                 {
                 }
