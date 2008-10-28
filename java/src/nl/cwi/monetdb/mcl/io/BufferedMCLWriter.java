@@ -23,12 +23,20 @@ import java.io.*;
 
 /**
  * Write text to a character-output stream, buffering characters so as
- * to provide for the efficient writing of single characters, arrays,
- * and strings.
+ * to provide a means for efficient writing of single characters,
+ * arrays, and strings.
  *
  * In contrast to the BufferedWriter class, this class' newLine()
  * method always writes the newline character '\n', regardless the
- * platform's own notion of line separator.
+ * platform's own notion of line separator.  Apart from that there are
+ * no differences in the behaviour of this class, compared to its parent
+ * class, the BufferedWriter.  A small convenience is built into this
+ * class for cooperation with the BufferedMCLReader, via the
+ * registerReader() method.  It causes the reader to be reset upon each
+ * write performed though this class.  This effectuates the MCL protocol
+ * flow where a write invalidates the state of the read buffers, since
+ * each write must be answered by the server.  That also makes this
+ * class client-oriented when a reader is registered.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */

@@ -40,6 +40,8 @@ import java.io.*;
  * parse each retrieved line.  The line parsers from
  * nl.cwi.monetdb.mcl.parser are well suited to work with the lines
  * outputted by the BufferedMCLReader.
+ * This class is client-oriented, as it doesn't take into account the
+ * messages as the server receives them.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
