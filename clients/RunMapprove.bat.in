@@ -13,8 +13,6 @@ set builddir=@XCLIENTS_BUILD@
 set srcdir=@XCLIENTS_SOURCE@
 
 set PATH=%builddir%\conf;%PATH%
-set PATH=%builddir%\src\mapiclient;%PATH%
-set PATH=%builddir%\src\python;%PATH%
 
 REM execute Mapprove.py in the source directory
 pushd %srcdir%

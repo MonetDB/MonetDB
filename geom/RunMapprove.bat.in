@@ -1,28 +1,28 @@
 @echo off
 
+if not "%1"=="" goto skip
+call %0 -r
+goto end
+
+:skip
+
 setlocal
 
-set tests=%1
-if not "%tests%"=="" goto tests_set
-	rem Ask which tests to approve
-	echo Which tests do you want to approve?
-	echo   "[<dir> ]<tests> | <dirs> | -r | <Enter> for default | -? for help"
-	echo   add -f option to force approval of error messages
-	set /p tests="Mapprove> "
-:tests_set
+rem default back end is MonetDB5
+set V=5
+if "%1" == "-4" set V=4& shift
+if "%1" == "-5" set V=5& shift
 
-set prefix=@MONETDB_PREFIX@
-set builddir=@XMONETDB_BUILD@
-set srcdir=@XMONETDB_SOURCE@
+set pkg=monetdb-sql
+set builddir=@XGEOM_BUILD@
+set srcdir=@XGEOM_SOURCE@
 
-set PATH=%prefix%\src\testing;%prefix%\src\tools;%prefix%\src\mapi\clients\C;%prefix%\src\mapi\clients\python;%PATH%
-set PYTHONPATH=%prefix%\src\testing;%srcdir%\src\testing;%prefix%\src\common;%srcdir%\src\mapi\clients\python
-set PATH=%prefix%\src\common;%prefix%\src\gdk;%prefix%\src\mapi\clients\C;%prefix%\src\modules\plain\stream;%prefix%\src\monet;%PATH%
+set PATH=%builddir%\conf;%PATH%
 
 REM execute Mapprove.py in the source directory
-pushd %srcdir%\src
+pushd %srcdir%
 
-call python "%prefix%\src\testing\Mapprove.py" "--config=%prefix%\conf\MonetDB.conf" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" %tests%
+call Mapprove.py -%V% "--package=%pkg%" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal
