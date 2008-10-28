@@ -44,6 +44,8 @@ import java.io.*;
  * messages as the server receives them.
  *
  * @author Fabian Groffen <Fabian.Groffen>
+ * @see nl.cwi.monetdb.mcl.net.MapiSocket
+ * @see nl.cwi.monetdb.mcl.io.BufferedMCLWriter
  */
 public class BufferedMCLReader extends BufferedReader {
 	/** The type of the last line read */

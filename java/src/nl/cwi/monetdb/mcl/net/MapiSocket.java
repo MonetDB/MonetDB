@@ -58,9 +58,9 @@ import nl.cwi.monetdb.mcl.parser.*;
  * number of milliseconds since the UNIX epoch.  The rest of the line is
  * a String representation of the data sent or received.
  * <br /><br />
- * The general use of this Socket must be seen as a full picture only.
- * (this is not english, sorry)  It has the same ingredients as a normal
- * Socket, allowing for seamless plugging.
+ * The general use of this Socket must be seen only in the full context
+ * of a MAPI connection to a server.  It has the same ingredients as a
+ * normal Socket, allowing for seamless plugging.
  * <pre>
  *    Socket   \     /  InputStream  ----&gt; (BufferedMCL)Reader
  *              &gt; o &lt;
@@ -76,6 +76,8 @@ import nl.cwi.monetdb.mcl.parser.*;
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 4.0
+ * @see nl.cwi.monetdb.mcl.io.BufferedMCLReader
+ * @see nl.cwi.monetdb.mcl.io.BufferedMCLWriter
  */
 public final class MapiSocket {
 	/** The TCP Socket to mserver */

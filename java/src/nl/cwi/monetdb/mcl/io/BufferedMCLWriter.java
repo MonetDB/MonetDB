@@ -39,6 +39,8 @@ import java.io.*;
  * class client-oriented when a reader is registered.
  *
  * @author Fabian Groffen <Fabian.Groffen>
+ * @see nl.cwi.monetdb.mcl.net.MapiSocket
+ * @see nl.cwi.monetdb.mcl.io.BufferedMCLWriter
  */
 public class BufferedMCLWriter extends BufferedWriter {
 	private BufferedMCLReader reader;
