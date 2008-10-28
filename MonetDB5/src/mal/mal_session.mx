@@ -403,6 +403,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 
 	for (i=0; i<start; i++)
 		used[i]=1;
+	if (mb->errors==0)
 	for (i = start; i < mb->vtop; i++) {
 		if (used[i] || !isTmpVar(mb,i) ){
 			VarPtr v = getVar(mb,i);
