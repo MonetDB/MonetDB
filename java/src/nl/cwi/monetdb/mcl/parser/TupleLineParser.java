@@ -22,7 +22,9 @@ package nl.cwi.monetdb.mcl.parser;
 import java.util.*;
 
 /**
- * bla bla bla.
+ * The TupleLineParser extracts the values from a given tuple.  The
+ * number of values that are expected are known upfront to speed up
+ * allocation and validation.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
