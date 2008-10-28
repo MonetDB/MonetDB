@@ -371,7 +371,6 @@ forkMserver(str database, sabdb** stats, int force)
 	if (er != MAL_SUCCEED) {
 		err e = newErr("%s", er);
 		GDKfree(er);
-		*stats = NULL;
 		return(e);
 	}
 
@@ -413,7 +412,6 @@ forkMserver(str database, sabdb** stats, int force)
 		err e = newErr("could not retrieve uplog information: %s", er);
 		GDKfree(er);
 		SABAOTHfreeStatus(stats);
-		*stats = NULL;
 		return(e);
 	}
 
@@ -459,7 +457,6 @@ forkMserver(str database, sabdb** stats, int force)
 		break;
 		default:
 			SABAOTHfreeStatus(stats);
-			*stats = NULL;
 			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
@@ -472,7 +469,6 @@ forkMserver(str database, sabdb** stats, int force)
 	snprintf(vaultkey, 511, "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		SABAOTHfreeStatus(stats);
-		*stats = NULL;
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					"(did you create the database with `monetdb create %s`?)",
 					database, database));
@@ -482,14 +478,12 @@ forkMserver(str database, sabdb** stats, int force)
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
 		SABAOTHfreeStatus(stats);
-		*stats = NULL;
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 	if (pipe(pfde) == -1) {
 		close(pfdo[0]);
 		close(pfdo[1]);
 		SABAOTHfreeStatus(stats);
-		*stats = NULL;
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 
@@ -582,9 +576,8 @@ forkMserver(str database, sabdb** stats, int force)
 		if (i >= 20) {
 			int state = (*stats)->state;
 
-			/* starting failed, don't return the struct */
+			/* starting failed */
 			SABAOTHfreeStatus(stats);
-			*stats = NULL;
 
 			switch (state) {
 				case SABdbRunning:
@@ -960,7 +953,7 @@ handleClient(int sock)
 			if (top == NULL) {
 				stream_printf(fout, "!no such database '%s', please create it first\n", database);
 			} else {
-				stream_printf(fout, "!internal error while starting a new mserver\n");
+				stream_printf(fout, "!internal error while starting mserver, please refer to the logs\n");
 			}
 			stream_flush(fout);
 			close_stream(fout);
