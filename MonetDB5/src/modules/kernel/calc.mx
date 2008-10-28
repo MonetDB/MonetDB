@@ -688,12 +688,14 @@ CALCstrConcat(str *ret, str *l, str *r)
 {
 	str s;
 
-	s = GDKmalloc((*l?strlen(*l):0) +  (*r?strlen(*r):0) + 1);
+	if ( strNil(*l) || strNil(*r)){
+		*ret= GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	s = GDKmalloc(strlen(*l) +  strlen(*r) + 1);
 	*s = 0;
-	if (*l)
-		strcpy(s, *l);
-	if (*r)
-		strcat(s, *r);
+	strcpy(s, *l);
+	strcat(s, *r);
 	*ret = s;
 	return MAL_SUCCEED;
 }
@@ -703,8 +705,13 @@ str
 CALCstrConcatInt(str *ret, str *l, int *r)
 {
 	str s;
-	int len = (int) (*l?strlen(*l):0) + 32;
+	int len;
 
+	if (strNil(*l)|| *r == int_nil){
+		*ret= GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
+	len = (int) (*l?strlen(*l):0) + 32;
 	s = GDKmalloc(len);
 	snprintf(s, len, "%s%d", (*l?*l:""), *r);
 	*ret = s;
