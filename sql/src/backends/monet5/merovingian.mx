@@ -566,9 +566,17 @@ forkMserver(str database, sabdb** stats, int force)
 			}
 			if ((*stats)->state == SABdbRunning &&
 					(*stats)->conns != NULL &&
-					(*stats)->conns->val != NULL)
+					(*stats)->conns->val != NULL &&
+					(*stats)->scens != NULL &&
+					(*stats)->scens->val != NULL)
 			{
-				break;
+				sablist *scen = (*stats)->scens;
+				do {
+					if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
+						break;
+				} while ((scen = scen->next) != NULL);
+				if (scen != NULL)
+					break;
 			}
 		}
 		/* if we've never found a connection, try to figure out why */
@@ -591,7 +599,8 @@ forkMserver(str database, sabdb** stats, int force)
 					pdp->next = NULL;
 					return(newErr(
 								"timeout when waiting for database '%s' to "
-								"open up a communication channel", database));
+								"open up a communication channel or to "
+								"initialise the sql scenario", database));
 				case SABdbCrashed:
 					/* remove from the list again */
 					GDKfree(dp->dbname);
