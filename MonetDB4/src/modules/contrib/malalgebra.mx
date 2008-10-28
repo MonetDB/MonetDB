@@ -43,7 +43,6 @@ Too many bugs.
 @:leftjoin(fetch,\nCAUTION: positional matches are assumed not to be out-of-bounds!!)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
-
   .COMMAND leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) :
                     BAT[any::1,any::3] = CMDleftthetajoin;
   "Hook directly into the 'leftthetajoin' implementation of the join.
@@ -58,6 +57,22 @@ Too many bugs.
    Also, for each left tuple, all matching right tuples will appear in their order
    of appearrance in the right BAT. This property is handy for XQuery processing."
 
+  .COMMAND bandmergejoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner,
+                               any::2 minus, any::2 plus, bit l_in, bit h_in) :
+                                BAT[any::1,any::3] = CMDbandmergejoin;
+  "The bandjoin algorithm, but forced to use (left) mergejoin rather than nested loop"
+
+  .COMMAND bandmergejoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner,
+                               any::2 minus, any::2 plus, bit l_in, bit h_in, lng limit) :
+                                BAT[lng,BAT] = CMDbandmergejoin_limit;
+  "A bandjoin that uses the merge algorithm and limits the result size.
+   Result generation is cut off after this point and the
+   result [lng,BAT] holds [estimated_full_resultsize,limited_result]"
+
+  .COMMAND leftmergejoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, lng limit) :
+                    BAT[lng,BAT] = CMDleftmergejoin_limit;
+  "leftmergejoin, but limit the result (by cutting off result generation) 
+   return a BAT[lng,BAT] containing [full_result_estimate,limited_result]"
 
 @= select
 .COMMAND ord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : 
@@ -119,6 +134,7 @@ Too many bugs.
 #ifndef __MALALGEBRA_H__
 #define __MALALGEBRA_H__
 #include "gdk.h"
+#include "gdk_rangejoin.h"
 
 /* nothing much */
 
@@ -238,6 +254,40 @@ int
 CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 {
 	return (*result = BATnlthetajoin(l, r, *mode, (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDbandmergejoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi)
+{
+        return (*result = BATbandmergejoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* limit)
+{
+	size_t cutoff = *limit;
+        *result = BATbandmergejoin_limit(left, right, minus, plus, *li, *hi, &cutoff);
+        if (*result) {
+                bat bid = (*result)->batCacheid;
+                *result = BATnew(TYPE_lng, TYPE_bat, 1);
+                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
+                BBPunfix(bid);
+        }
+        return (*result)?GDK_SUCCEED:GDK_FAIL;
+}
+
+int
+CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* limit)
+{
+	size_t cutoff = *limit;
+        *result = BATleftmergejoin_limit(left, right, cutoff, &cutoff);
+        if (*result) {
+                bat bid = (*result)->batCacheid;
+                *result = BATnew(TYPE_lng, TYPE_bat, 1);
+                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
+                BBPunfix(bid);
+        }
+        return (*result)?GDK_SUCCEED:GDK_FAIL;
 }
 
 @= selectcmd
