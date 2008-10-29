@@ -188,7 +188,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(2,4);"); 
     ha_a := bat.insert(b,2,4);          # 26 ha_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) {G}
 #	io.print("b.insert(3,int(nil));"); 
-    ia_a := calc.int(nil:void);         # 28 ia_a:int := CALCnil2int(_37:void) 
+    ia_a := calc.int(nil);              # 28 ia_a:int := CALCnil2int(_37:void) 
     ja_a := bat.insert(b,3,ia_a);       # 29 ja_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _39:int, ia_a:int) {G}
 #	io.print("b.insert(4,16);"); 
     ka_a := bat.insert(b,4,16);         # 31 ka_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _34:int, _42:int) {G}
@@ -201,14 +201,14 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(8,64);"); 
     oa_a := bat.insert(b,8,64);         # 39 oa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _57:int, _58:int) {G}
 #	io.print("b.insert(9,int(nil));"); 
-    pa_a := calc.int(nil:void);         # 41 pa_a:int := CALCnil2int(_37:void) 
+    pa_a := calc.int(nil);              # 41 pa_a:int := CALCnil2int(_37:void) 
     qa_a := bat.insert(b,9,pa_a);       # 42 qa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _62:int, pa_a:int) {G}
 #	io.print("b.insert(int(nil),int(nil));"); 
-    ra_a := calc.int(nil:void);         # 44 ra_a:int := CALCnil2int(_37:void) 
-    sa_a := calc.int(nil:void);         # 45 sa_a:int := CALCnil2int(_37:void) 
+    ra_a := calc.int(nil);              # 44 ra_a:int := CALCnil2int(_37:void) 
+    sa_a := calc.int(nil);              # 45 sa_a:int := CALCnil2int(_37:void) 
     ta_a := bat.insert(b,ra_a,sa_a);    # 46 ta_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], ra_a:int, sa_a:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
-    ua_a := calc.int(nil:void);         # 48 ua_a:int := CALCnil2int(_37:void) 
+    ua_a := calc.int(nil);              # 48 ua_a:int := CALCnil2int(_37:void) 
     va_a := bat.insert(b,ua_a,81);      # 49 va_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], ua_a:int, _70:int) {G}
 #	io.print("b.print();"); 
     wa_a := io.print(b);                # 51 wa_a:void := IOprint_val(b:bat[:int,:int]) 
@@ -219,7 +219,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ab_a := algebra.find(b,4);          # 56 ab_a:int := ALGfind(b:bat[:int,:int], _79:int) 
     bb_a := io.print(ab_a);             # 57 bb_a:void := IOprint_val(ab_a:int) 
 #	io.print("b.find(int(nil)).print();"); 
-    cb_a := calc.int(nil:void);         # 59 cb_a:int := CALCnil2int(_83:void) 
+    cb_a := calc.int(nil);              # 59 cb_a:int := CALCnil2int(_83:void) 
     db_a := algebra.find(b,cb_a);       # 60 db_a:int := ALGfind(b:bat[:int,:int], cb_a:int) 
     eb_a := io.print(db_a);             # 61 eb_a:void := IOprint_val(db_a:int) 
 #	io.print("# This should cause an error\n"); 
@@ -230,14 +230,14 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.delete(1,15);"); 
     ib_a := bat.delete(b,1,15);         # 68 ib_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], _75:int, _94:int) {G}
 #	io.print("b.delete(int(nil),81);"); 
-    jb_a := calc.int(nil:void);         # 70 jb_a:int := CALCnil2int(_83:void) 
+    jb_a := calc.int(nil);              # 70 jb_a:int := CALCnil2int(_83:void) 
     kb_a := bat.delete(b,jb_a,81);      # 71 kb_a:bat[:int,:int] := BKCdelete_bun(b:bat[:int,:int], jb_a:int, _70:int) {G}
 #	io.print("b.print();"); 
     lb_a := io.print(b);                # 73 lb_a:void := IOprint_val(b:bat[:int,:int]) 
 #	io.print("b.insert(4,16);"); 
     mb_a := bat.insert(b,4,16);         # 75 mb_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _79:int, _91:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
-    nb_a := calc.int(nil:void);         # 77 nb_a:int := CALCnil2int(_83:void) 
+    nb_a := calc.int(nil);              # 77 nb_a:int := CALCnil2int(_83:void) 
     ob_a := bat.insert(b,nb_a,81);      # 78 ob_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], nb_a:int, _105:int) {G}
 #	io.print("b.insert(1,15);"); 
     pb_a := bat.insert(b,1,15);         # 80 pb_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _108:int, _94:int) {G}
@@ -259,30 +259,30 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ac_a := algebra.select(b,4,3);      # 96 ac_a:bat[:int,:int] := ALGselect(b:bat[:int,:int], _121:int, _128:int) {G}
     bc_a := io.print(ac_a);             # 97 bc_a:void := IOprint_val(ac_a:bat[:int,:int]) 
 #	io.print("b.select(81,int(nil)).print();"); 
-    cc_a := calc.int(nil:void);         # 99 cc_a:int := CALCnil2int(_132:void) 
+    cc_a := calc.int(nil);              # 99 cc_a:int := CALCnil2int(_132:void) 
     dc_a := algebra.select(b,81,cc_a);  #100 dc_a:bat[:int,:int] := ALGselect(b:bat[:int,:int], _105:int, cc_a:int) {G}
     ec_a := io.print(dc_a);             #101 ec_a:void := IOprint_val(dc_a:bat[:int,:int]) 
 #	io.print("b.select(int(nil),int(nil)).print();"); 
-    fc_a := calc.int(nil:void);         #103 fc_a:int := CALCnil2int(_132:void) 
-    gc_a := calc.int(nil:void);         #104 gc_a:int := CALCnil2int(_132:void) 
+    fc_a := calc.int(nil);              #103 fc_a:int := CALCnil2int(_132:void) 
+    gc_a := calc.int(nil);              #104 gc_a:int := CALCnil2int(_132:void) 
     hc_a := algebra.select(b,fc_a,gc_a);#105 hc_a:bat[:int,:int] := ALGselect(b:bat[:int,:int], fc_a:int, gc_a:int) {G}
     ic_a := io.print(hc_a);             #106 ic_a:void := IOprint_val(hc_a:bat[:int,:int]) 
 #	io.print("# A 2-dimensional cut\n"); 
     bn := algebra.fragment(b,1,5,4,15); #108 bn:bat[:int,:int] := ALGfragment(b:bat[:int,:int], _142:int, _143:int, _121:int, _144:int) {G}
     jc_a := io.print(bn);               #109 jc_a:void := IOprint_val(bn:bat[:int,:int]) 
 #	io.print("b.fragment(1,5,16,int(nil)).print();"); 
-    kc_a := calc.int(nil:void);         #111 kc_a:int := CALCnil2int(_132:void) 
+    kc_a := calc.int(nil);              #111 kc_a:int := CALCnil2int(_132:void) 
     lc_a := algebra.fragment(b,1,5,16,kc_a);#112 lc_a:bat[:int,:int] := ALGfragment(b:bat[:int,:int], _142:int, _143:int, _149:int, kc_a:int) {G}
     mc_a := io.print(lc_a);             #113 mc_a:void := IOprint_val(lc_a:bat[:int,:int]) 
 #	io.print("b.fragment(1,int(nil),16,int(nil)).print();"); 
-    nc_a := calc.int(nil:void);         #115 nc_a:int := CALCnil2int(_132:void) 
-    oc_a := calc.int(nil:void);         #116 oc_a:int := CALCnil2int(_132:void) 
+    nc_a := calc.int(nil);              #115 nc_a:int := CALCnil2int(_132:void) 
+    oc_a := calc.int(nil);              #116 oc_a:int := CALCnil2int(_132:void) 
     pc_a := algebra.fragment(b,1,nc_a,16,oc_a);#117 pc_a:bat[:int,:int] := ALGfragment(b:bat[:int,:int], _142:int, nc_a:int, _149:int, oc_a:int) {G}
     qc_a := io.print(pc_a);             #118 qc_a:void := IOprint_val(pc_a:bat[:int,:int]) 
 #	io.print("b.fragment(int(nil),int(nil),16,int(nil)).print();"); 
-    rc_a := calc.int(nil:void);         #120 rc_a:int := CALCnil2int(_132:void) 
-    sc_a := calc.int(nil:void);         #121 sc_a:int := CALCnil2int(_132:void) 
-    tc_a := calc.int(nil:void);         #122 tc_a:int := CALCnil2int(_132:void) 
+    rc_a := calc.int(nil);              #120 rc_a:int := CALCnil2int(_132:void) 
+    sc_a := calc.int(nil);              #121 sc_a:int := CALCnil2int(_132:void) 
+    tc_a := calc.int(nil);              #122 tc_a:int := CALCnil2int(_132:void) 
     uc_a := algebra.fragment(b,rc_a,sc_a,16,tc_a);#123 uc_a:bat[:int,:int] := ALGfragment(b:bat[:int,:int], rc_a:int, sc_a:int, _149:int, tc_a:int) {G}
     vc_a := io.print(uc_a);             #124 vc_a:void := IOprint_val(uc_a:bat[:int,:int]) 
 #	io.print("bn:= b.join(bn.reverse());"); 
@@ -302,7 +302,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     cd_a := io.print(bd_a);             #139 cd_a:void := IOprint_val(bd_a:bat[:int,:int]) 
 #	io.print("#and theta algebra.joins\?\n"); 
     LT := -1;                           #141 LT:int := _178:int 
-    dd_a := calc.lng(nil:void);         #142 dd_a:lng := CALCnil2lng(_180:void) 
+    dd_a := calc.lng(nil);              #142 dd_a:lng := CALCnil2lng(_180:void) 
     ed_a := algebra.thetajoin(b,c,LT,dd_a);#143 ed_a:bat[:int,:int] := ALGthetajoinEstimate(b:bat[:int,:int], c:bat[:int,:int], LT:int, dd_a:lng) {G}
     fd_a := io.print(ed_a);             #144 fd_a:void := IOprint_val(ed_a:bat[:int,:int]) 
 #	io.print("quit();"); 

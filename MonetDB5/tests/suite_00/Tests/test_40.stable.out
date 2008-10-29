@@ -111,7 +111,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(2,4);"); 
     ea_a := bat.insert(b,2,4);          # 21 ea_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _27:int, _28:int) {G}
 #	io.print("b.insert(3,int(nil));"); 
-    fa_a := calc.int(nil:void);         # 23 fa_a:int := CALCnil2int(_31:void) 
+    fa_a := calc.int(nil);              # 23 fa_a:int := CALCnil2int(_31:void) 
     ga_a := bat.insert(b,3,fa_a);       # 24 ga_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, fa_a:int) {G}
 #	io.print("b.insert(4,16);"); 
     ha_a := bat.insert(b,4,16);         # 26 ha_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _28:int, _36:int) {G}
@@ -124,14 +124,14 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(8,64);"); 
     la_a := bat.insert(b,8,64);         # 34 la_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _51:int, _52:int) {G}
 #	io.print("b.insert(9,int(nil));"); 
-    ma_a := calc.int(nil:void);         # 36 ma_a:int := CALCnil2int(_31:void) 
+    ma_a := calc.int(nil);              # 36 ma_a:int := CALCnil2int(_31:void) 
     na_a := bat.insert(b,9,ma_a);       # 37 na_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _56:int, ma_a:int) {G}
 #	io.print("b.insert(int(nil),int(nil));"); 
-    oa_a := calc.int(nil:void);         # 39 oa_a:int := CALCnil2int(_31:void) 
-    pa_a := calc.int(nil:void);         # 40 pa_a:int := CALCnil2int(_31:void) 
+    oa_a := calc.int(nil);              # 39 oa_a:int := CALCnil2int(_31:void) 
+    pa_a := calc.int(nil);              # 40 pa_a:int := CALCnil2int(_31:void) 
     qa_a := bat.insert(b,oa_a,pa_a);    # 41 qa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], oa_a:int, pa_a:int) {G}
 #	io.print("b.insert(int(nil),81);"); 
-    ra_a := calc.int(nil:void);         # 43 ra_a:int := CALCnil2int(_31:void) 
+    ra_a := calc.int(nil);              # 43 ra_a:int := CALCnil2int(_31:void) 
     sa_a := bat.insert(b,ra_a,81);      # 44 sa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], ra_a:int, _64:int) {G}
 #	io.print("#b.rename(\"b\");\n"); 
 #	io.print("b.save();"); 
@@ -177,6 +177,7 @@ end main;	# 74
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
+!MALException:algebra.position:Item not found
 
 
 

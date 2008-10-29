@@ -127,7 +127,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ea_a := aggr.sum(b);                # 22 ea_a:dbl := aggr.sum(b:bat[:int,:int]) 
     fa_a := io.print(ea_a);             # 23 fa_a:void := IOprint_val(ea_a:dbl) 
 #	io.print("b.insert(3,int(nil));"); 
-    ga_a := calc.int(nil:void);         # 25 ga_a:int := CALCnil2int(_31:void) 
+    ga_a := calc.int(nil);              # 25 ga_a:int := CALCnil2int(_31:void) 
     ha_a := bat.insert(b,3,ga_a);       # 26 ha_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, ga_a:int) {G}
 #	io.print("b.sum().print();"); 
     ia_a := aggr.sum(b);                # 28 ia_a:dbl := aggr.sum(b:bat[:int,:int]) 
@@ -143,7 +143,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(8,64);"); 
     oa_a := bat.insert(b,8,64);         # 39 oa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _54:int, _55:int) {G}
 #	io.print("b.insert(9,int(nil));"); 
-    pa_a := calc.int(nil:void);         # 41 pa_a:int := CALCnil2int(_31:void) 
+    pa_a := calc.int(nil);              # 41 pa_a:int := CALCnil2int(_31:void) 
     qa_a := bat.insert(b,9,pa_a);       # 42 qa_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _59:int, pa_a:int) {G}
 #	io.print("var t:= b.histogram();"); 
     t := aggr.histogram(b);             # 44 t:bat[:int,:int] := ALGhistogram(b:bat[:int,:int]) {G}
@@ -180,7 +180,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("c.insert(2,15);"); 
     eb_a := bat.insert(c,2,15);         # 76 eb_a:bat[:int,:int] := BKCinsert_bun(c:bat[:int,:int], _111:int, _108:int) {G}
 #	io.print("c.insert(3,int(nil));"); 
-    fb_a := calc.int(nil:void);         # 78 fb_a:int := CALCnil2int(_114:void) 
+    fb_a := calc.int(nil);              # 78 fb_a:int := CALCnil2int(_114:void) 
     gb_a := bat.insert(c,3,fb_a);       # 79 gb_a:bat[:int,:int] := BKCinsert_bun(c:bat[:int,:int], _116:int, fb_a:int) {G}
 #	io.print("c.insert(4,0);"); 
     hb_a := bat.insert(c,4,0);          # 81 hb_a:bat[:int,:int] := BKCinsert_bun(c:bat[:int,:int], _119:int, _120:int) {G}

@@ -239,16 +239,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("b.insert(\"dog\",8);"); 
     ja_a := bat.insert(b,"dog",8);      # 33 ja_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _51:str, _52:int) {G}
 #	io.print("b.insert(str(nil),9);"); 
-    ka_a := calc.str(nil:void);         # 35 ka_a:str := CALCnil2str(_55:void) {G}
+    ka_a := calc.str(nil);              # 35 ka_a:str := CALCnil2str(_55:void) {G}
     la_a := bat.insert(b,ka_a,9);       # 36 la_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], ka_a:str, _57:int) {G}
 #	io.print("b.insert(\".\",10);"); 
     ma_a := bat.insert(b,".",10);       # 38 ma_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _60:str, _61:int) {G}
 #	io.print("b.insert(\"\",int(nil));"); 
-    na_a := calc.int(nil:void);         # 40 na_a:int := CALCnil2int(_55:void) 
+    na_a := calc.int(nil);              # 40 na_a:int := CALCnil2int(_55:void) 
     oa_a := bat.insert(b,"",na_a);      # 41 oa_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _65:str, na_a:int) {G}
 #	io.print("b.insert(str(nil),int(nil));"); 
-    pa_a := calc.str(nil:void);         # 43 pa_a:str := CALCnil2str(_55:void) {G}
-    qa_a := calc.int(nil:void);         # 44 qa_a:int := CALCnil2int(_55:void) 
+    pa_a := calc.str(nil);              # 43 pa_a:str := CALCnil2str(_55:void) {G}
+    qa_a := calc.int(nil);              # 44 qa_a:int := CALCnil2int(_55:void) 
     ra_a := bat.insert(b,pa_a,qa_a);    # 45 ra_a:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], pa_a:str, qa_a:int) {G}
 #	io.print("b.print();"); 
     sa_a := io.print(b);                # 47 sa_a:void := IOprint_val(b:bat[:str,:int]) 
@@ -259,7 +259,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     va_a := algebra.find(b,"fox");      # 52 va_a:int := ALGfind(b:bat[:str,:int], _78:str) 
     wa_a := io.print(va_a);             # 53 wa_a:void := IOprint_val(va_a:int) 
 #	io.print("b.find(str(nil)).print();"); 
-    xa_a := calc.str(nil:void);         # 55 xa_a:str := CALCnil2str(_55:void) {G}
+    xa_a := calc.str(nil);              # 55 xa_a:str := CALCnil2str(_55:void) {G}
     ya_a := algebra.find(b,xa_a);       # 56 ya_a:int := ALGfind(b:bat[:str,:int], xa_a:str) 
     ab_a := io.print(ya_a);             # 57 ab_a:void := IOprint_val(ya_a:int) 
 #	io.print("# This should cause an error\n"); 
@@ -286,16 +286,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
     mb_a := algebra.select(b,2,4);      # 79 mb_a:bat[:str,:int] := ALGselect(b:bat[:str,:int], _110:int, _89:int) {G}
     nb_a := io.print(mb_a);             # 80 nb_a:void := IOprint_val(mb_a:bat[:str,:int]) 
 #	io.print("b.select(7,int(nil)).print();"); 
-    ob_a := calc.int(nil:void);         # 82 ob_a:int := CALCnil2int(_114:void) 
+    ob_a := calc.int(nil);              # 82 ob_a:int := CALCnil2int(_114:void) 
     pb_a := algebra.select(b,7,ob_a);   # 83 pb_a:bat[:str,:int] := ALGselect(b:bat[:str,:int], _116:int, ob_a:int) {G}
     qb_a := io.print(pb_a);             # 84 qb_a:void := IOprint_val(pb_a:bat[:str,:int]) 
 #	io.print("b.select(int(nil),7).print();"); 
-    rb_a := calc.int(nil:void);         # 86 rb_a:int := CALCnil2int(_114:void) 
+    rb_a := calc.int(nil);              # 86 rb_a:int := CALCnil2int(_114:void) 
     sb_a := algebra.select(b,rb_a,7);   # 87 sb_a:bat[:str,:int] := ALGselect(b:bat[:str,:int], rb_a:int, _116:int) {G}
     tb_a := io.print(sb_a);             # 88 tb_a:void := IOprint_val(sb_a:bat[:str,:int]) 
 #	io.print("b.select(int(nil),int(nil)).print();"); 
-    ub_a := calc.int(nil:void);         # 90 ub_a:int := CALCnil2int(_114:void) 
-    vb_a := calc.int(nil:void);         # 91 vb_a:int := CALCnil2int(_114:void) 
+    ub_a := calc.int(nil);              # 90 ub_a:int := CALCnil2int(_114:void) 
+    vb_a := calc.int(nil);              # 91 vb_a:int := CALCnil2int(_114:void) 
     wb_a := algebra.select(b,ub_a,vb_a);# 92 wb_a:bat[:str,:int] := ALGselect(b:bat[:str,:int], ub_a:int, vb_a:int) {G}
     xb_a := io.print(wb_a);             # 93 xb_a:void := IOprint_val(wb_a:bat[:str,:int]) 
 #	io.print("b.reverse().select(\"fox\",\"quick\").print();"); 
@@ -303,18 +303,18 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ac_a := algebra.select(yb_a,"fox","quick");# 96 ac_a:bat[:int,:str] := ALGselect(yb_a:bat[:int,:str], _130:str, _131:str) {G}
     bc_a := io.print(ac_a);             # 97 bc_a:void := IOprint_val(ac_a:bat[:int,:str]) 
 #	io.print("b.reverse().select(\"fox\",str(nil)).print();"); 
-    cc_a := calc.str(nil:void);         # 99 cc_a:str := CALCnil2str(_114:void) {G}
+    cc_a := calc.str(nil);              # 99 cc_a:str := CALCnil2str(_114:void) {G}
     dc_a := bat.reverse(b);             #100 dc_a:bat[:int,:str] := BKCreverse(b:bat[:str,:int]) {G}
     ec_a := algebra.select(dc_a,"fox",cc_a);#101 ec_a:bat[:int,:str] := ALGselect(dc_a:bat[:int,:str], _130:str, cc_a:str) {G}
     fc_a := io.print(ec_a);             #102 fc_a:void := IOprint_val(ec_a:bat[:int,:str]) 
 #	io.print("b.reverse().select(str(nil),\"quick\").print();"); 
-    gc_a := calc.str(nil:void);         #104 gc_a:str := CALCnil2str(_114:void) {G}
+    gc_a := calc.str(nil);              #104 gc_a:str := CALCnil2str(_114:void) {G}
     hc_a := bat.reverse(b);             #105 hc_a:bat[:int,:str] := BKCreverse(b:bat[:str,:int]) {G}
     ic_a := algebra.select(hc_a,gc_a,"quick");#106 ic_a:bat[:int,:str] := ALGselect(hc_a:bat[:int,:str], gc_a:str, _131:str) {G}
     jc_a := io.print(ic_a);             #107 jc_a:void := IOprint_val(ic_a:bat[:int,:str]) 
 #	io.print("b.reverse().select(str(nil),str(nil)).print();"); 
-    kc_a := calc.str(nil:void);         #109 kc_a:str := CALCnil2str(_114:void) {G}
-    lc_a := calc.str(nil:void);         #110 lc_a:str := CALCnil2str(_114:void) {G}
+    kc_a := calc.str(nil);              #109 kc_a:str := CALCnil2str(_114:void) {G}
+    lc_a := calc.str(nil);              #110 lc_a:str := CALCnil2str(_114:void) {G}
     mc_a := bat.reverse(b);             #111 mc_a:bat[:int,:str] := BKCreverse(b:bat[:str,:int]) {G}
     nc_a := algebra.select(mc_a,kc_a,lc_a);#112 nc_a:bat[:int,:str] := ALGselect(mc_a:bat[:int,:str], kc_a:str, lc_a:str) {G}
     oc_a := io.print(nc_a);             #113 oc_a:void := IOprint_val(nc_a:bat[:int,:str]) 
@@ -322,47 +322,47 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bn := algebra.fragment(b,"fox","quick",1,5);#115 bn:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _130:str, _131:str, _151:int, _152:int) {G}
     pc_a := io.print(bn);               #116 pc_a:void := IOprint_val(bn:bat[:str,:int]) 
 #	io.print("b.fragment(\"fox\",str(nil),1,5).print();"); 
-    qc_a := calc.str(nil:void);         #118 qc_a:str := CALCnil2str(_156:void) {G}
+    qc_a := calc.str(nil);              #118 qc_a:str := CALCnil2str(_156:void) {G}
     rc_a := algebra.fragment(b,"fox",qc_a,1,5);#119 rc_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _130:str, qc_a:str, _151:int, _152:int) {G}
     sc_a := io.print(rc_a);             #120 sc_a:void := IOprint_val(rc_a:bat[:str,:int]) 
 #	io.print("b.fragment(str(nil),\"quick\",1,5).print();"); 
-    tc_a := calc.str(nil:void);         #122 tc_a:str := CALCnil2str(_156:void) {G}
+    tc_a := calc.str(nil);              #122 tc_a:str := CALCnil2str(_156:void) {G}
     uc_a := algebra.fragment(b,tc_a,"quick",1,5);#123 uc_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], tc_a:str, _131:str, _151:int, _152:int) {G}
     vc_a := io.print(uc_a);             #124 vc_a:void := IOprint_val(uc_a:bat[:str,:int]) 
 #	io.print("b.fragment(str(nil),str(nil),1,5).print();"); 
-    wc_a := calc.str(nil:void);         #126 wc_a:str := CALCnil2str(_156:void) {G}
-    xc_a := calc.str(nil:void);         #127 xc_a:str := CALCnil2str(_156:void) {G}
+    wc_a := calc.str(nil);              #126 wc_a:str := CALCnil2str(_156:void) {G}
+    xc_a := calc.str(nil);              #127 xc_a:str := CALCnil2str(_156:void) {G}
     yc_a := algebra.fragment(b,wc_a,xc_a,1,5);#128 yc_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], wc_a:str, xc_a:str, _151:int, _152:int) {G}
     ad_a := io.print(yc_a);             #129 ad_a:void := IOprint_val(yc_a:bat[:str,:int]) 
 #	io.print("b.fragment(\"fox\",\"quick\",1,int(nil)).print();"); 
-    bd_a := calc.int(nil:void);         #131 bd_a:int := CALCnil2int(_156:void) 
+    bd_a := calc.int(nil);              #131 bd_a:int := CALCnil2int(_156:void) 
     cd_a := algebra.fragment(b,"fox","quick",1,bd_a);#132 cd_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _171:str, _172:str, _151:int, bd_a:int) {G}
     dd_a := io.print(cd_a);             #133 dd_a:void := IOprint_val(cd_a:bat[:str,:int]) 
 #	io.print("b.fragment(\"fox\",\"quick\",int(nil),5).print();"); 
-    ed_a := calc.int(nil:void);         #135 ed_a:int := CALCnil2int(_156:void) 
+    ed_a := calc.int(nil);              #135 ed_a:int := CALCnil2int(_156:void) 
     fd_a := algebra.fragment(b,"fox","quick",ed_a,5);#136 fd_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _171:str, _172:str, ed_a:int, _152:int) {G}
     gd_a := io.print(fd_a);             #137 gd_a:void := IOprint_val(fd_a:bat[:str,:int]) 
 #	io.print("b.fragment(\"fox\",\"quick\",int(nil),int(nil)).print();"); 
-    hd_a := calc.int(nil:void);         #139 hd_a:int := CALCnil2int(_156:void) 
-    id_a := calc.int(nil:void);         #140 id_a:int := CALCnil2int(_156:void) 
+    hd_a := calc.int(nil);              #139 hd_a:int := CALCnil2int(_156:void) 
+    id_a := calc.int(nil);              #140 id_a:int := CALCnil2int(_156:void) 
     jd_a := algebra.fragment(b,"fox","quick",hd_a,id_a);#141 jd_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _171:str, _172:str, hd_a:int, id_a:int) {G}
     kd_a := io.print(jd_a);             #142 kd_a:void := IOprint_val(jd_a:bat[:str,:int]) 
 #	io.print("b.fragment(\"fox\",str(nil),int(nil),int(nil)).print();"); 
-    ld_a := calc.str(nil:void);         #144 ld_a:str := CALCnil2str(_156:void) {G}
-    md_a := calc.int(nil:void);         #145 md_a:int := CALCnil2int(_156:void) 
-    nd_a := calc.int(nil:void);         #146 nd_a:int := CALCnil2int(_156:void) 
+    ld_a := calc.str(nil);              #144 ld_a:str := CALCnil2str(_156:void) {G}
+    md_a := calc.int(nil);              #145 md_a:int := CALCnil2int(_156:void) 
+    nd_a := calc.int(nil);              #146 nd_a:int := CALCnil2int(_156:void) 
     od_a := algebra.fragment(b,"fox",ld_a,md_a,nd_a);#147 od_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], _171:str, ld_a:str, md_a:int, nd_a:int) {G}
     pd_a := io.print(od_a);             #148 pd_a:void := IOprint_val(od_a:bat[:str,:int]) 
 #	io.print("b.fragment(str(nil),\"f\",int(nil),int(nil)).print();"); 
-    qd_a := calc.str(nil:void);         #150 qd_a:str := CALCnil2str(_191:void) {G}
-    rd_a := calc.int(nil:void);         #151 rd_a:int := CALCnil2int(_191:void) 
-    sd_a := calc.int(nil:void);         #152 sd_a:int := CALCnil2int(_191:void) 
+    qd_a := calc.str(nil);              #150 qd_a:str := CALCnil2str(_191:void) {G}
+    rd_a := calc.int(nil);              #151 rd_a:int := CALCnil2int(_191:void) 
+    sd_a := calc.int(nil);              #152 sd_a:int := CALCnil2int(_191:void) 
     td_a := algebra.fragment(b,qd_a,"f",rd_a,sd_a);#153 td_a:bat[:str,:int] := ALGfragment(b:bat[:str,:int], qd_a:str, _195:str, rd_a:int, sd_a:int) {G}
     ud_a := io.print(td_a);             #154 ud_a:void := IOprint_val(td_a:bat[:str,:int]) 
 #	io.print("b.reverse().fragment(int(nil),int(nil),str(nil),\"f\").print();"); 
-    vd_a := calc.int(nil:void);         #156 vd_a:int := CALCnil2int(_191:void) 
-    wd_a := calc.int(nil:void);         #157 wd_a:int := CALCnil2int(_191:void) 
-    xd_a := calc.str(nil:void);         #158 xd_a:str := CALCnil2str(_191:void) {G}
+    vd_a := calc.int(nil);              #156 vd_a:int := CALCnil2int(_191:void) 
+    wd_a := calc.int(nil);              #157 wd_a:int := CALCnil2int(_191:void) 
+    xd_a := calc.str(nil);              #158 xd_a:str := CALCnil2str(_191:void) {G}
     yd_a := bat.reverse(b);             #159 yd_a:bat[:int,:str] := BKCreverse(b:bat[:str,:int]) {G}
     ae_a := algebra.fragment(yd_a,vd_a,wd_a,xd_a,"f");#160 ae_a:bat[:int,:str] := ALGfragment(yd_a:bat[:int,:str], vd_a:int, wd_a:int, xd_a:str, _195:str) {G}
     be_a := io.print(ae_a);             #161 be_a:void := IOprint_val(ae_a:bat[:int,:str]) 
