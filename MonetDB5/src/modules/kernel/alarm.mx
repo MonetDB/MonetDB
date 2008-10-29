@@ -310,16 +310,29 @@ CMDctime(str *retval)
 	time_t t = time(0);
 
 #ifdef HAVE_CTIME_R3
-	char buf[26];
+	char buf[26], *base, *c;
 
-	*retval = GDKstrdup(ctime_r(&t, buf, sizeof(buf)));
+	if( (base=ctime_r(&t, buf, sizeof(buf))) ){
+		c= strchr(base,'\n');
+		if (c) *c=0;
+		*retval = GDKstrdup(base);
+	}
 #else
 #ifdef HAVE_CTIME_R
-	char buf[26];
+	char buf[26], *base, *c;
 
-	*retval = GDKstrdup(ctime_r(&t, buf));
+	if ( (base=ctime_r(&t, buf)) ){
+		c= strchr(buf,'\n');
+		if (c) *c=0;
+		*retval = GDKstrdup(base);
+	}
 #else
-	*retval = GDKstrdup(ctime(&t));
+	char *base *c;
+	if ( (base=ctime_r(&t)) ){
+		c= strchr(buf,'\n');
+		if (c) *c=0;
+		*retval = GDKstrdup(base);
+	}
 #endif
 #endif
 	return GDK_SUCCEED;
