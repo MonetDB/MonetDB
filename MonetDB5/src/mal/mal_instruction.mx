@@ -2685,7 +2685,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			}
 			strcat(t, cv);
 			advance(t,base,len);
-			if (strcmp(cv,"nil")==0  || strlen(cv)==0 || isVarUDFtype(mb, getArg(p, i)) ){
+			if (strlen(cv)==0 || isVarUDFtype(mb, getArg(p, i)) ){
 				str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 				snprintf(t,(len-(t-base)), ":%s", tpe);
 				GDKfree(tpe);
