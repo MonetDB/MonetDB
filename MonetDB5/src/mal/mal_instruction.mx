@@ -2510,7 +2510,7 @@ operatorName(int i)
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else
-	if (flg & LIST_UDF_TYPE ){
+	if (flg & LIST_MAL_UDF  && i < p->retc){
 		if ( isVarUDFtype(mb, getArg(p, i))) {
 			str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 			snprintf(t,(len-(t-base)), ":%s ", tpe);
@@ -2691,7 +2691,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				advance(t,base,len);
 			}
 			GDKfree(cv);
-			if( isaBatType(getVarType(mb,getArg(p,i)) ) ){
+			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
 					d= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
