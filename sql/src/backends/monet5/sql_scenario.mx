@@ -859,6 +859,8 @@ SQLsetTimer(Client c, int onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
+//	q = newStmt(c->curprg->def,"mdb","setThread");
+//	pushBit(c->curprg->def,q,onoff);
 //	q = newStmt(c->curprg->def,"mdb","setCount");
 //	pushBit(c->curprg->def,q,onoff);
 }
@@ -1122,7 +1124,7 @@ Inspect the variables for post code-generation actions.
 @c
 finalize:
 	if (m->emode == m_explain  && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_INSTR );
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, 0, LIST_MAL_INSTR  | LIST_MAL_UDF);
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
