@@ -37,16 +37,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
     l3 := calc.+(l,24);                 #  7 l3:int := CALCbinaryADDintint(l:int, _12:int) 
     mdb.list();                         #  8 _18:void := MDBlist() 
 end main;	# 9  
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
-    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
-    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
-    d := algebra.select(b,0,100);       #  5 d:bat[:int,:int] := ALGselect(b:bat[:int,:int], _8:int, _9:int) {G}
-    l := calc.+(24,27);                 #  6 l:int := CALCbinaryADDintint(_12:int, _14:int) 
-    l3 := calc.+(l,24);                 #  7 l3:int := CALCbinaryADDintint(l:int, _12:int) 
-    mdb.list();                         #  8 _18:void := MDBlist() 
-end main;                               #  9  
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
+    d := algebra.select(b,0,100);
+    l := calc.+(24,27);
+    l3 := calc.+(l,24);
+    mdb.list();
+end main;
 
 # 23:53:03 >  
 # 23:53:03 >  Done.

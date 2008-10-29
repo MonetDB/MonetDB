@@ -37,17 +37,17 @@ end main;	# 10
 # void	int	  # type
 #-----------------#
 [ 0@0,	  2	  ]
-function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,1@0,2);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
+function user.main():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,1@0,2);
 #many more inserts 
-    c{singleton} := algebra.select(b,0,4);#  4 c:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _9:int, _10:int) {G}
-    (_15,_16) := bat.unpack(c{singleton});#  5 (_15:oid, _16:int) := CMDbatunpack(c:bat[:oid,:int]) 
-    (_19,_20) := (0@0,_16);             #  6 (_19:oid, _20:int) := ALGmarkHead_default(_18:oid, _16:int) {G}
-    d := bat.pack(_19,_20);             #  7 d:bat[:oid,:int] := CMDbatpack(_19:oid, _20:int) {G}
-    io.print(d);                        #  8 _12:void := IOprint_val(d:bat[:oid,:int]) 
-    mdb.list();                         #  9 _14:void := MDBlist() 
-end main;                               # 10  
+    c{singleton} := algebra.select(b,0,4);
+    (_15,_16) := bat.unpack(c{singleton});
+    (_19,_20) := (0@0,_16);
+    d := bat.pack(_19,_20);
+    io.print(d);
+    mdb.list();
+end main;
 
 # 19:36:15 >  
 # 19:36:15 >  Done.

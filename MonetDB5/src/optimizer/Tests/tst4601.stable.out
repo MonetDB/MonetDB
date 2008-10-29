@@ -55,19 +55,19 @@ end main;                               # 12
 [ "Welcome" ]
 [ "Welcome" ]
 [ 2 ]
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # the first test for macro expansions and inversions 
-    io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
-    _13 := 0;                           #  3 _13:int := _14:int 
-barrier _15 := calc.<(_13,2);           #  4 _15:bit := CALCcompLTintint(_13:int, _8:int) {J8}
-    io.print("Welcome");                #  5 _16:void := IOprint_val(_17:str) 
-    _13 := calc.+(_13,1);               #  6 _13:int := CALCbinaryADDintint(_13:int, _18:int) 
-    redo _15 := calc.<(_13,2);          #  7 _15:bit := CALCcompLTintint(_13:int, _8:int) {J5}
-exit _15;                               #  8 _15:bit 
-    a := _13;                           #  9 a:int := _13:int 
-    io.print(a);                        # 10 _9:void := IOprint_val(a:int) 
-    mdb.list();                         # 11 _10:void := MDBlist() 
-end main;                               # 12  
+    io.print("test expansion");
+    _13 := 0;
+barrier _15 := calc.<(_13,2);
+    io.print("Welcome");
+    _13 := calc.+(_13,1);
+    redo _15 := calc.<(_13,2);
+exit _15;
+    a := _13;
+    io.print(a);
+    mdb.list();
+end main;
 
 # 19:36:05 >  
 # 19:36:05 >  Done.

@@ -8,4 +8,4 @@ e:= mmath.sin(d);io.print(e);
 
 optimizer.aliases();
 optimizer.evaluate();
-mdb.list();
+mdb.List();

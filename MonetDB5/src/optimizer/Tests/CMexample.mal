@@ -5,5 +5,5 @@
 	rr:= bat.reverse(r);
 	j:= algebra.join(rs,rr);
 	optimizer.costModel();
-	mdb.list();
+	mdb.List();
 

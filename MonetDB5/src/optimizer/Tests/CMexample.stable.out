@@ -29,7 +29,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     rs{rows=501:lng} := algebra.select(s{rows=1000},1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
     rr{rows=100:lng} := bat.reverse(r{rows=100});#  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
     j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
-    mdb.list();                         #  7 _14:void := MDBlist() 
+    mdb.List();                         #  7 _14:void := MDBlistDetail() 
 end main;	# 8  
 function user.main():void;              #  0 main:void := user.main() {G}
 # Cost model example 
@@ -38,7 +38,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     rs{rows=501:lng} := algebra.select(s{rows=1000},1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
     rr{rows=100:lng} := bat.reverse(r{rows=100});#  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
     j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
-    mdb.list();                         #  7 _14:void := MDBlist() 
+    mdb.List();                         #  7 _14:void := MDBlistDetail() 
 end main;                               #  8  
 
 # 08:55:26 >  
