@@ -809,7 +809,9 @@ program counter to -1, which leads to a soft abort.
 
 [UNFORTUNATELY this approach does not (yet) work
 because there seem to a possibility of a deadlock
-between incref and bbptrim]
+between incref and bbptrim. Furthermore, we have
+to be assured that the partial executed instruction
+does not lead to ref-count errors.]
 @c
 static void
 runDFLOWworker(void *t)
@@ -1471,7 +1473,7 @@ the bind(namespace, batname, mode) operation. [todo]
 		bat bid = stk->stk[getArg(pci,i)].val.bval;
 		updateBigFoot(cntxt, bid, TRUE);
 	}
-	if( needsCleanup(pci) ){ 
+	if(ret==MAL_SUCCEED && needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
