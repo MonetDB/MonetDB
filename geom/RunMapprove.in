@@ -27,7 +27,6 @@ V=5
 for arg
 do
     case "$arg" in
-    -4) V=4;;
     -5) V=5;;
     esac
 done
