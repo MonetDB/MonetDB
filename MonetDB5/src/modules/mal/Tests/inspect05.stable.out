@@ -4845,6 +4845,7 @@ end main;                               # 11
 [ "setFlow",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetFlow;"						  ]
 [ "setMemoryTrace",		  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetBigfoot;"					  ]
 [ "setTimer",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetTimer;"					  ]
+[ "setThread",				  "pattern",	  "mdb",	  "(b:bit):void ",													  "MDBsetThread;"				  ]
 [ "setCatch",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetCatch;"					  ]
 [ "setTrace",			  "pattern",	  "mdb",	  "(b:str):void ",															  "MDBsetVarTrace;"					  ]
 [ "setTrace",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetTrace;"					  ]
