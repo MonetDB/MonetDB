@@ -47,7 +47,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     date_05 := mtime.date("-768/octobe/01");#  6 date_05:date := MTIMEdate_fromstr(_11:str) 
     date_06 := mtime.date("5000\\novembe\\01");#  7 date_06:date := MTIMEdate_fromstr(_13:str) 
     date_07 := mtime.date("-1999/jun/01");#  8 date_07:date := MTIMEdate_fromstr(_15:str) 
-    date_08 := mtime.date(nil:void);    #  9 date_08:date := MTIMEnil2date(_17:void) 
+    date_08 := mtime.date(nil);         #  9 date_08:date := MTIMEnil2date(_17:void) 
     f := calc.min(date_01,date_02);     # 10 f:date := MTIMEdate_min(date_01:date, date_02:date) 
     io.print(f);                        # 11 _19:void := IOprint_val(f:date) 
     f := calc.min(date_02,date_01);     # 12 f:date := MTIMEdate_min(date_02:date, date_01:date) 
