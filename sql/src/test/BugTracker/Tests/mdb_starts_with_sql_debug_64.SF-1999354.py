@@ -41,10 +41,7 @@ def client(lang, file):
 
 
 def main():
-    if os.getenv('TST_FIVE'):
-        dbinit = "include sql;"
-    else:
-        dbinit = "module(sql_server);"
+    dbinit = "include sql;"
     srv = server_start("--set sql_debug=64",dbinit)
     client('SQL' , '%s/../../../sql/ms_functions.sql' % os.getenv('RELSRCDIR'))
     client('SQL' , '%s/mdb_starts_with_sql_debug_64.SF-1999354.sql' % os.getenv('RELSRCDIR'))

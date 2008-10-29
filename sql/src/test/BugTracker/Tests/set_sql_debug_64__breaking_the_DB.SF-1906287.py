@@ -41,10 +41,7 @@ def client(lang, file):
 
 
 def main():
-    if os.getenv('TST_FIVE'):
-        dbinit = "include sql;"
-    else:
-        dbinit = "module(sql_server);"
+    dbinit = "include sql;"
     srv = server_start("--set sql_debug=64",dbinit)
     client('SQL' , '%s/set_sql_debug_64__breaking_the_DB.SF-1906287_create.sql' % os.getenv('RELSRCDIR'))
     server_stop(srv)

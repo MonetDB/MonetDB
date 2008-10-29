@@ -23,22 +23,12 @@ builddir=@QSQL_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# M5 is default;
-@HAVE_MONETDB5_TRUE@V=5
-# commandline option overrules default  
-for arg
-do
-    case "$arg" in
-    -5) V=5;;
-    esac
-done
-
 # where compiled modules are to be found
-for d in src/backends/monet$V
+for d in src/backends/monet5
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
-MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
+MOD_PATH="${MOD_PATH}`monetdb5-config --modpath`"
 
 # make sure scripts are executable
 for x in "${builddir}/conf/${pkg}-config"
@@ -55,7 +45,7 @@ libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 PATH="${binpath}:$PATH"
 export PATH
 
-PYTHONPATH="${builddir}/src/backends/python/monet$V/.libs:${builddir}/src/backends/python/monet$V:$PYTHONPATH"
+PYTHONPATH="${builddir}/src/backends/python/monet5/.libs:${builddir}/src/backends/python/monet5:$PYTHONPATH"
 export PYTHONPATH
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
@@ -87,4 +77,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec Mtest.py --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"

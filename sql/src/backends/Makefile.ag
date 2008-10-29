@@ -15,4 +15,4 @@
 # Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = HAVE_MONETDB5?monet5 HAVE_PYTHON_SWIG?python
+SUBDIRS = monet5 HAVE_PYTHON_SWIG?python

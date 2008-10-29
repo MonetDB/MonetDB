@@ -2,5 +2,5 @@
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
 geom
-HAVE_MONETDB5?X_crash.SF-1971632
+X_crash.SF-1971632
 copy_into_crash.SF-1975402

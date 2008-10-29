@@ -6,12 +6,9 @@ set PYTHONPATH=%MONETDB_PREFIX%\%PYTHON_LIBDIR%;%PYTHONPATH%
 set PYTHONPATH=%CLIENTS_PREFIX%\%PYTHON_LIBDIR%;%CLIENTS_PREFIX%\%PYTHON_LIBDIR%\MonetDB;%PYTHONPATH%
 set PYTHONPATH=%SQL_PREFIX%\%PYTHON_LIBDIR%;%SQL_PREFIX%\%PYTHON_LIBDIR%\MonetDB;%PYTHONPATH%
 
-set v=4
-if     "%TST_FIVE%" == "Five" set v=5
-
-set PYTHONPATH=%TSTBLDBASE%\NT\src\backends\python\monet%V%;%PYTHONPATH%
+set PYTHONPATH=%TSTBLDBASE%\NT\src\backends\python\monet5;%PYTHONPATH%
 
 prompt # $t $g  
 echo on
 
-sqlsample.py "%GDK_DBFARM%" "%TSTDB%" %v%
+sqlsample.py "%GDK_DBFARM%" "%TSTDB%" 5

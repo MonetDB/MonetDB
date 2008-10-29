@@ -28,7 +28,6 @@ Source: http://downloads.sourceforge.net/monetdb/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
-%{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.25
@@ -55,7 +54,6 @@ accelerators, SQL- and XML- frontends.
 
 This package contains some common files for the %{name}-server5 packages.
 
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %package server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
@@ -78,15 +76,12 @@ accelerators, SQL- and XML- frontends.
 
 This package contains the SQL frontend for MonetDB5.
 
-%endif
 
 %package devel
 Summary: MonetDB SQL development package
 Group: Applications/Databases
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 Requires: %{name}-server5
 Requires: MonetDB5-server-devel
-%endif
 Requires: MonetDB-devel
 Requires: MonetDB-client-devel
 
@@ -114,8 +109,7 @@ rm -rf $RPM_BUILD_ROOT
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--with-monetdb=%{_prefix} \
-	--with-clients=%{_prefix} \
-	%{?_with_monetdb5} %{?_without_monetdb5}
+	--with-clients=%{_prefix}
 
 make
 
@@ -143,7 +137,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_datadir}/doc/%{name}-%{version}
 %{_datadir}/doc/%{name}-%{version}/*
 
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %files server5
 %defattr(-,root,root)
 %{_bindir}/Mbeddedsql5
@@ -156,15 +149,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb
 %{_mandir}/man1/monetdb.1.gz
 %{_mandir}/man1/merovingian.1.gz
-%endif
 
 %files devel
 %defattr(-,root,root)
 %{_libdir}/pkgconfig/MonetDB-SQL.pc
 %{_bindir}/monetdb-sql-config
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %{_libdir}/libembeddedsql5.so
-%endif
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

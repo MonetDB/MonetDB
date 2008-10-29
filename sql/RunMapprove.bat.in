@@ -8,10 +8,6 @@ goto end
 
 setlocal
 
-rem default back end is MonetDB5
-set V=5
-if "%1" == "-5" set V=5& shift
-
 set pkg=monetdb-sql
 set builddir=@XSQL_BUILD@
 set srcdir=@XSQL_SOURCE@
@@ -21,7 +17,7 @@ set PATH=%builddir%\conf;%PATH%
 REM execute Mapprove.py in the source directory
 pushd %srcdir%
 
-call Mapprove.py -%V% "--package=%pkg%" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call Mapprove.py "--package=%pkg%" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

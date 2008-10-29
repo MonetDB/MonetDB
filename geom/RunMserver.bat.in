@@ -2,25 +2,20 @@
 
 setlocal
 
-rem M5 is default;
-if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
-rem commandline option overrules default
-if "%1" == "-5" set V=5& shift
-
 set monetdb5_prefix=@XMONETDB5_PREFIX@
 set sql_prefix=@XSQL_PREFIX@
 
-if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
+call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 call "%sql_prefix%\bin\monetdb-sql-config.bat" --internal
 
 set builddir=@GEOM_BUILD@
 
 set MOD_PATH=%modpath%
-if %V% == 5 set MOD_PATH=%modpath5%;%MOD_PATH%
+set MOD_PATH=%modpath5%;%MOD_PATH%
 
 set MOD_PATH=%builddir%\src\sql;%MOD_PATH%
-set MOD_PATH=%builddir%\src\monetdb%V%;%MOD_PATH%
-set MOD_PATH=%builddir%\src\monetdb%V%\.libs;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb5;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb5\.libs;%MOD_PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\conf;%PATH%
@@ -28,8 +23,6 @@ set PATH=%builddir%\conf;%PATH%
 rem to find geos_c.dll
 set PATH=%GEOS%\bin;%PATH%
 
-if %V% == 5 set mserver=mserver5.exe
-
-%mserver% --set "monet_mod_path=%MOD_PATH%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+mserver5.exe --set "monet_mod_path=%MOD_PATH%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 endlocal

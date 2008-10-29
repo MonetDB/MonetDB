@@ -15,4 +15,4 @@
 # Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = lib HAVE_MONETDB5?monetdb5 sql
+SUBDIRS = lib monetdb5 sql

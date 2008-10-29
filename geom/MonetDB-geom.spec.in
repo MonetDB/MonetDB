@@ -27,7 +27,6 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB-geom-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-%{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.25
@@ -46,7 +45,6 @@ accelerators, SQL- and XML- frontends.
 This package contains the common parts of the GIS (Geographic
 Information System) extensions for MonetDB-SQL.
 
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %package MonetDB5
 Summary: MonetDB5 SQL GIS modules
 Group: Applications/Databases
@@ -70,15 +68,12 @@ accelerators, SQL- and XML- frontends.
 This package contains the GIS (Geographic Information System)
 extensions for MonetDB-SQL-server5.
 
-%endif
 
 %package devel
 Summary: MonetDB SQL GIS development package
 Group: Applications/Databases
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 Requires: %{name}-MonetDB5
 Requires: MonetDB5-server-devel
-%endif
 Requires: MonetDB-devel
 Requires: geos-devel
 
@@ -105,8 +100,7 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
-	--with-monetdb=%{_prefix} \
-	%{?_with_monetdb5} %{?_without_monetdb5}
+	--with-monetdb=%{_prefix}
 
 make
 
@@ -124,17 +118,13 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_datadir}/MonetDB/sql/geom.sql
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %files MonetDB5
 %{_libdir}/MonetDB5/lib/lib_geom.so.*
 %{_libdir}/MonetDB5/geom.mal
-%endif
 
 %files devel
 %{_bindir}/monetdb-geom-config
-%if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %{_libdir}/MonetDB5/lib/lib_geom.so
-%endif
 
 %changelog
 * Tue May 27 2008 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1

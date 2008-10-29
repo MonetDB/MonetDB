@@ -8,15 +8,10 @@ goto end
 
 setlocal
 
-rem M5 is default;
-if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
-rem commandline option overrules default
-if "%1" == "-5" set V=5& shift
-
 set monetdb5_prefix=@XMONETDB5_PREFIX@
 set sql_prefix=@XSQL_PREFIX@
 
-if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
+call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 call "%sql_prefix%\bin\monetdb-sql-config.bat" --internal
 
 set pkg=monetdb-geom
@@ -24,11 +19,11 @@ set builddir=@XGEOM_BUILD@
 set srcdir=@XGEOM_SOURCE@
 
 set MOD_PATH=%modpath%
-if %V% == 5 set MOD_PATH=%modpath5%;%MOD_PATH%
+set MOD_PATH=%modpath5%;%MOD_PATH%
 
 set MOD_PATH=%builddir%\src\sql;%MOD_PATH%
-set MOD_PATH=%builddir%\src\monetdb%V%;%MOD_PATH%
-set MOD_PATH=%builddir%\src\monetdb%V%\.libs;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb5;%MOD_PATH%
+set MOD_PATH=%builddir%\src\monetdb5\.libs;%MOD_PATH%
 
 set PATH=%MOD_PATH%;%PATH%
 set PATH=%builddir%\conf;%PATH%
@@ -39,7 +34,7 @@ set PATH=%GEOS%\bin;%PATH%
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
-call Mtest.py -%V% "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+call Mtest.py "--package=%pkg%" "--monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\sql_logs" "--xquery_logdir=%builddir%\xquery_logs" "--TSTTRGBASE=%builddir%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 popd
 endlocal

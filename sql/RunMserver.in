@@ -19,14 +19,7 @@
 
 builddir=@QXSQL_BUILD@
 
-mversion=4
-
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/backend/monet${mversion}/.libs:${builddir}/src/backend/monet${mversion}:`monetdb${mversion}-config --modpath`"
+MOD_PATH="${builddir}/src/backend/monet5/.libs:${builddir}/src/backend/monet5:`monetdb5-config --modpath`"
 
-case $mversion in
-4)	server=Mserver;;
-5)	server=mserver5;;
-esac
-
-exec $server --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
+exec mserver5 --set monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" ${1+"$@"}

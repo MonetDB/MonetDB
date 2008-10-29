@@ -47,10 +47,7 @@ def client(lang, file, user, passwd):
 
 
 def main():
-    if os.getenv('TST_FIVE'):
-        dbinit = "include sql;"
-    else:
-        dbinit = "module(sql_server);"
+    dbinit = "include sql;"
 
     srv = server_start(dbinit)
     client('SQL' , '%s/set_a_new_user_password.SF-1844050_create_user.sql' % os.getenv('RELSRCDIR'), "monetdb", "monetdb")

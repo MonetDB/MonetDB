@@ -9,22 +9,14 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
-!IFDEF HAVE_MONETDB5
-RUNMSERVER5 = RunMserver5.bat
-M5INSTALLER = install-m5installer
-!ELSE
-RUNMSERVER5 =
-M5INSTALLER =
-!ENDIF
-
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat $(RUNMSERVER5) RunMtest.bat RunMapprove.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMserver5.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs all $(M5INSTALLER)
+install: targetdirs all install-m5installer
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 
 !IFDEF BITS32
