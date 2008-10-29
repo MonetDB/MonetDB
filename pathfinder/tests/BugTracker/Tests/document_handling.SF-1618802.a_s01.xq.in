@@ -1,7 +1,0 @@
-let $topic_prefix := "$TSTTRGDIR/document_handling.SF-1618802/"
-let $topic_suffix := ".xml"
-
-let $topics := (0 to 99)
-for $topicnum in $topics
-	let $topic := fn:doc( fn:concat( $topic_prefix, $topicnum, $topic_suffix ))/text()
-	return $topic

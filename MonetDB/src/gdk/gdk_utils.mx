@@ -1824,7 +1824,7 @@ GDKaddbuf(const char *message)
 
 			/* remember last ! prefix (e.g. "!ERROR: ")
 			   for any subsequent lines that start without ! */
-			message = p;
+			message = p+1;
 			/* A prefix consists of a ! immediately
 			   followed by some text, followed by a : and
 			   a space.  Anything else results in no
@@ -1836,7 +1836,7 @@ GDKaddbuf(const char *message)
 				preflen = (size_t) (p - message) + 1;
 				if (preflen > sizeof(prefix) - 1)
 					preflen = sizeof(prefix) - 1;
-				strncpy(prefix, message, preflen);
+				strncpy(prefix, message, preflen-1);
 				prefix[preflen] = 0;
 			} else {
 				/* there is a ! but no proper prefix */
