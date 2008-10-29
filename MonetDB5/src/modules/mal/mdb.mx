@@ -78,6 +78,10 @@ pattern setCatch(b:bit):void
 address MDBsetCatch
 comment "Turn on/off catching exceptions";
 
+pattern setThread(b:bit):void
+address MDBsetThread
+comment "Turn on/off thread identity for debugger";
+
 pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
@@ -223,6 +227,7 @@ mdb_export str MDBsetDebug(int *ret, int *flg);
 mdb_export str MDBsetDebugStr(int *ret, str *nme);
 mdb_export str MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBsetThread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBsetBigfoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBsetFlow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBsetMemory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -437,6 +442,19 @@ MDBsetTimer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+MDBsetThread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit *flag= (bit*) getArgReference(stk,pci,1);
+
+	(void) mb;
+	if( *flag)
+		cntxt->flags |= threadFlag;
+	else
+		cntxt->flags &= ~threadFlag;
+	return MAL_SUCCEED;
+}
+
+str
 MDBsetBigfoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *flag= (bit*) getArgReference(stk,pci,1);
@@ -639,15 +657,6 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 @+ Display routines
 @c
 str
-MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) p;
-	(void) stk;
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAL_DETAIL);
-	return MAL_SUCCEED;
-}
-
-str
 MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Lifespan span= newLifespan(mb);
@@ -677,11 +686,20 @@ MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
+MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) p;
+	(void) stk;
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_EXPLAIN );
+	return MAL_SUCCEED;
+}
+
+str
 MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAPI);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_EXPLAIN | LIST_MAPI);
 	return MAL_SUCCEED;
 }
 
@@ -696,7 +714,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
-		printFunction(cntxt->fdout, s->def, 0, LIST_MAL_INSTR | LIST_MAL_PROPS | LIST_MAL_DETAIL);
+		printFunction(cntxt->fdout, s->def, 0, LIST_MAL_EXPLAIN | LIST_MAL_DETAIL);
 	(void) mb;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -706,7 +724,7 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	(void) p;
 	(void) stk;
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_INSTR | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL);
 	return MAL_SUCCEED;
 }
 
