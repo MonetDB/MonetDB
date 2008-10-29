@@ -18,12 +18,6 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-!IFDEF HAVE_MONETDB4
-M4INSTALLER = install-m4installer
-!ELSE
-M4INSTALLER =
-!ENDIF
-
 !IFDEF HAVE_MONETDB5
 RUNMSERVER5 = RunMserver5.bat
 M5INSTALLER = install-m5installer
@@ -39,7 +33,7 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs all $(M4INSTALLER) $(M5INSTALLER) $(INSTALLER_PREREQ)
+install: targetdirs all $(M5INSTALLER) $(INSTALLER_PREREQ)
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
@@ -57,20 +51,12 @@ install: targetdirs all $(M4INSTALLER) $(M5INSTALLER) $(INSTALLER_PREREQ)
 	$(INSTALL) "$(MONETDB_PREFIX)\monetdb.ico" "$(prefix)\monetdb.ico"
 
 !IFDEF BITS32
-install-m4installer:
-	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-SQL\MonetDB4-SQL-Installer.vdproj "$(prefix)"
-
 install-m5installer:
 	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
 !ENDIF
 
 !IFDEF BITS64
-install-m4installer:
-	$(INSTALL) MonetDB4-SQL64\MonetDB4-SQL-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-SQL64\MonetDB4-SQL-Installer.vdproj "$(prefix)"
-
 install-m5installer:
 	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.sln "$(prefix)"
 	$(INSTALL) MonetDB5-SQL64\MonetDB5-SQL-Installer.vdproj "$(prefix)"

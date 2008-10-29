@@ -28,7 +28,6 @@ Source: http://downloads.sourceforge.net/monetdb/MonetDB-SQL-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
-%{!?_with_monetdb4: %{!?_without_monetdb4: %define _without_monetdb4 --without-monetdb4}}
 %{!?_with_monetdb5: %{!?_without_monetdb5: %define _with_monetdb5 --with-monetdb5}}
 
 %if !%{?buildsystem}
@@ -54,33 +53,7 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
-This package contains some common files for the %{name}-server4 and
-%{name}-server5 packages.
-
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%package server4
-Summary: MonetDB4 SQL server modules
-Group: Applications/Databases
-Requires: MonetDB4-server >= 4.24
-#                            ^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-%if !%{?buildsystem}
-BuildRequires: MonetDB4-server-devel >= 4.24
-#                                       ^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-%endif
-
-%description server4
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the SQL frontend for MonetDB4.
-
-%endif
+This package contains some common files for the %{name}-server5 packages.
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %package server5
@@ -125,27 +98,6 @@ accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with %{name}.
 
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%package devel4
-Summary: MonetDB SQL development package
-Group: Applications/Databases
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-Requires: %{name}-server4
-Requires: MonetDB4-server-devel
-Requires: %{name}-devel
-%endif
-Requires: MonetDB-devel
-Requires: MonetDB-client-devel
-
-%description devel4
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to develop with %{name}.
-%endif
-
 %prep
 rm -rf $RPM_BUILD_ROOT
 
@@ -163,7 +115,6 @@ rm -rf $RPM_BUILD_ROOT
 	%{?comp_cc:CC="%{comp_cc}"} \
 	--with-monetdb=%{_prefix} \
 	--with-clients=%{_prefix} \
-	%{?_with_monetdb4} %{?_without_monetdb4} \
 	%{?_with_monetdb5} %{?_without_monetdb5}
 
 make
@@ -176,7 +127,6 @@ make install DESTDIR=$RPM_BUILD_ROOT
 # cleanup stuff we don't want to install
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
-rm -rf $RPM_BUILD_ROOT%{_libdir}/MonetDB4/Tests/*
 rm -rf $RPM_BUILD_ROOT%{_prefix}/lib*/python*/site-packages
 
 %post -p /sbin/ldconfig
@@ -192,17 +142,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/MonetDB/sql/*
 %dir %{_datadir}/doc/%{name}-%{version}
 %{_datadir}/doc/%{name}-%{version}/*
-
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%files server4
-%defattr(-,root,root)
-%{_bindir}/Mbeddedsql
-%{_libdir}/libembeddedsql.so.*
-%{_libdir}/MonetDB4/lib/lib_sql_server*
-%{_libdir}/MonetDB4/*.mil
-%dir %{_includedir}/MonetDB4/sql
-%{_includedir}/MonetDB4/sql/embeddedclient.h
-%endif
 
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %files server5
@@ -225,12 +164,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb-sql-config
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %{_libdir}/libembeddedsql5.so
-%endif
-
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%files devel4
-%defattr(-,root,root)
-%{_libdir}/libembeddedsql.so
 %endif
 
 %changelog

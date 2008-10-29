@@ -27,7 +27,7 @@ access to operations defined in the back-end, in particular for
 freeing the stack and code segment.
 
 The front-end should not rely on knowledge how the back end handles 
-the actual query processing. Using the sample back ends Monet4 and Monet5
+the actual query processing. Using the sample back end Monet5
 are used to find the common ground here. The structure currently is a
 simple functional wrapper. It assumes that a single back-end is used
 for the duration of a session.

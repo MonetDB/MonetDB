@@ -23,15 +23,12 @@ builddir=@QSQL_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
-# if both M4 & M5 are available, M5 is default;
-# otherwise, the available one is default
-@HAVE_MONETDB4_TRUE@V=4
+# M5 is default;
 @HAVE_MONETDB5_TRUE@V=5
 # commandline option overrules default  
 for arg
 do
     case "$arg" in
-    -4) V=4;;
     -5) V=5;;
     esac
 done
@@ -52,7 +49,7 @@ do
 done
 
 # enhance various paths to find our stuff
-binpath="${builddir}/conf:${builddir}/src/backends/monet4:${builddir}/src/backends/monet5"
+binpath="${builddir}/conf:${builddir}/src/backends/monet5"
 libpath="${MOD_PATH}:${builddir}/src/server/.libs"
 
 PATH="${binpath}:$PATH"

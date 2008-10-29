@@ -23,8 +23,6 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
 @HAVE_PYTHON_SWIG_FALSE@python=--without python
 @HAVE_PYTHON_SWIG_TRUE@python=--with python
-@HAVE_MONETDB4_FALSE@monetdb4=--without monetdb4
-@HAVE_MONETDB4_TRUE@monetdb4=--with monetdb4
 @HAVE_MONETDB5_FALSE@monetdb5=--without monetdb5
 @HAVE_MONETDB5_TRUE@monetdb5=--with monetdb5
 
@@ -49,14 +47,14 @@ $(rpmtopdir)/rpmmacros:
 	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
 rpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${python} ${monetdb4} ${monetdb5} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` ${python} ${monetdb5} --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 	rm -rf $(rpmtopdir)/BUILD
 
 srpm:	MonetDB-SQL.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${python} ${monetdb4} ${monetdb5} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
+	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts ${python} ${monetdb5} --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
 	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done

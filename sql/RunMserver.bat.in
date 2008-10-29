@@ -2,18 +2,13 @@
 
 setlocal
 
-rem if both M4 & M5 are available, M5 is default;
-rem otherwise, the available one is default
-if "@HAVE_MONETDB4_FALSE@" == "#" set V=4
+rem M5 is default;
 if "@HAVE_MONETDB5_FALSE@" == "#" set V=5
 rem commandline option overrules default
-if "%1" == "-4" set V=4& shift
 if "%1" == "-5" set V=5& shift
 
-set monetdb4_prefix=@XMONETDB4_PREFIX@
 set monetdb5_prefix=@XMONETDB5_PREFIX@
 
-if %V% == 4 call "%monetdb4_prefix%\bin\monetdb4-config.bat" --internal
 if %V% == 5 call "%monetdb5_prefix%\bin\monetdb5-config.bat" --internal
 
 set builddir=@XSQL_BUILD@
@@ -28,7 +23,6 @@ set PATH=%builddir%\src\common;%PATH%
 set PATH=%builddir%\src\backends\monet%V%;%PATH%
 set PATH=%builddir%\conf;%PATH%
 
-if %V% == 4 set mserver=Mserver.exe
 if %V% == 5 set mserver=mserver5.exe
 
 %mserver% --set "monet_mod_path=%MOD_PATH%" "--dbfarm=%builddir%\dbfarm" %1 %2 %3 %4 %5 %6 %7 %8 %9

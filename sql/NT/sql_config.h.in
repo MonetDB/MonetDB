@@ -21,10 +21,6 @@
 
 #include <monetdb_winconfig.h>
 
-/* ! Should be replaced by `monetdb4-config --prefix` ! */
-#define MONETDB4_PREFIX "@QXprefix@"
-/* ! Should be replaced by `monetdb4-config --sysconfdir`\MonetDB.conf ! */
-#define MONETDB4_CONFFILE "@QXsysconfdir@@QDIRSEP@MonetDB.conf"
 /* ! Should be replaced by `monetdb5-config --prefix` ! */
 #define MONETDB5_PREFIX "@QXprefix@"
 /* ! Should be replaced by `monetdb5-config --sysconfdir`\monetdb5.conf ! */

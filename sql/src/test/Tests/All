@@ -45,8 +45,6 @@ cast_str2num
 big-example
 count
 
-HAVE_MONETDB4?ID.866700
-
 decimal
 decimal2
 null

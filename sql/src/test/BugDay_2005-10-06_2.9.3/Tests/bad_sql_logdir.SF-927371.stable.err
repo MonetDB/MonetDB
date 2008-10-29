@@ -7,7 +7,7 @@ stderr of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 
 
 # 23:25:50 >  
-# 23:25:50 >  echo loaded(); quit(); | Mserver --set monet_prompt= --set sql_logdir=/xyz --dbinit=module(sql_server); loaded(); sql_server_start();
+# 23:25:50 >  echo sql.start(); clients.quit(); | mserver5 --set monet_prompt= --set sql_logdir=/xyz --dbinit=include sql;
 # 23:25:50 >  
 
 !mvc_init: unable to create system tables

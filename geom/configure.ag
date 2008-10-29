@@ -67,29 +67,17 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
-req_monetdb4_ver='4.24.0'
-#                 ^^^^^^
-# Maintained via vertoo. Please don't modify by hand!
-# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-AM_MONETDB4($req_monetdb4_ver)
 req_monetdb5_ver='5.7.0'
 #                 ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AM_MONETDB5($req_monetdb5_ver)
 
-if test "x$have_monetdb4" != xyes -a "x$have_monetdb5" != xyes; then
-	if test "x$MONETDB4_VERSION" = "x" -a "x$MONETDB5_VERSION" = "x"; then
-		AC_MSG_ERROR([Neither MonetDB4 nor MonetDB5 was not found. MonetDB/SQL requires at least version $req_monetdb4_ver of MonetDB4 or version $req_monetdb5_ver of MonetDB5.])
-	else
-		if test "x$MONETDB4_VERSION" = "x"; then
-			MONETDB4_VERSION='none'
-		fi
-		if test "x$MONETDB5_VERSION" = "x"; then
-			MONETDB5_VERSION='none'
-		fi
-		AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb4_ver of MonetDB4 (found $MONETDB4_VERSION) or version $req_monetdb5_ver of MonetDB5 (found $MONETDB5_VERSION).])
+if test "x$have_monetdb5" != xyes; then
+	if test "x$MONETDB5_VERSION" = "x"; then
+		MONETDB5_VERSION='none'
 	fi
+	AC_MSG_ERROR([MonetDB/SQL requires at least version $req_monetdb5_ver of MonetDB5 (found $MONETDB5_VERSION).])
 fi
 
 dnl geos
