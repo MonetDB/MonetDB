@@ -57,7 +57,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.printf("#~EndVariableOutput~#\n");# 12 _16:void := IOprint_str(_17:str) 
     err := bat.insert(b,1,15);          # 13 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) {G}
     err := bat.insert(b,2,4);           # 14 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) {G}
-    n0 := calc.int(nil:void);           # 15 n0:int := CALCnil2int(_24:void) 
+    n0 := calc.int(nil);                # 15 n0:int := CALCnil2int(_24:void) 
     err := bat.insert(b,3,n0);          # 16 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _25:int, n0:int) {G}
     err := bat.insert(b,4,16);          # 17 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _22:int, _26:int) {G}
     err := bat.insert(b,5,25);          # 18 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _27:int, _28:int) {G}

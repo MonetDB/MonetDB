@@ -204,16 +204,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #b.insert("lazy",7); 
     v10 := bat.insert(b,"dog",8@0);     # 28 v10:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _46:str, _47:oid) {G}
 #b.insert("dog",8); 
-    v11 := calc.str(nil:void);          # 30 v11:str := CALCnil2str(_50:void) {G}
+    v11 := calc.str(nil);               # 30 v11:str := CALCnil2str(_50:void) {G}
     v12 := bat.insert(b,v11,9@0);       # 31 v12:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], v11:str, _52:oid) {G}
 #b.insert(str(nil),9); 
     v13 := bat.insert(b,".",10@0);      # 33 v13:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _55:str, _56:oid) {G}
 #b.insert(".",10); 
-    v14 := calc.oid(nil:void);          # 35 v14:oid := CALCnil2oid(_50:void) 
+    v14 := calc.oid(nil);               # 35 v14:oid := CALCnil2oid(_50:void) 
     v15 := bat.insert(b,"",v14);        # 36 v15:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], _60:str, v14:oid) {G}
 #b.insert("",int(nil)); 
-    v16 := calc.str(nil:void);          # 38 v16:str := CALCnil2str(_50:void) {G}
-    v17 := calc.oid(nil:void);          # 39 v17:oid := CALCnil2oid(_50:void) 
+    v16 := calc.str(nil);               # 38 v16:str := CALCnil2str(_50:void) {G}
+    v17 := calc.oid(nil);               # 39 v17:oid := CALCnil2oid(_50:void) 
     v18 := bat.insert(b,v16,v17);       # 40 v18:bat[:str,:oid] := BKCinsert_bun(b:bat[:str,:oid], v16:str, v17:oid) {G}
 #b.insert(str(nil),int(nil)); 
     v19 := io.print(b);                 # 42 v19:void := IOprint_val(b:bat[:str,:oid]) 
@@ -225,7 +225,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     v22 := algebra.find(b,"fox");       # 48 v22:oid := ALGfind(b:bat[:str,:oid], _74:str) 
     v23 := io.print(v22);               # 49 v23:void := IOprint_val(v22:oid) 
 #b.find("fox").print; 
-    v24 := calc.str(nil:void);          # 51 v24:str := CALCnil2str(_50:void) {G}
+    v24 := calc.str(nil);               # 51 v24:str := CALCnil2str(_50:void) {G}
     v25 := algebra.find(b,v24);         # 52 v25:oid := ALGfind(b:bat[:str,:oid], v24:str) 
     v26 := io.print(v25);               # 53 v26:void := IOprint_val(v25:oid) 
 #b.find(str(nil)).print; 
@@ -258,12 +258,12 @@ exit MALException:str ;                 # 60 MALException:str
     v38 := algebra.select(b,2@0,4@0);   # 81 v38:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], _113:oid, _90:oid) {G}
     v39 := io.print(v38);               # 82 v39:void := IOprint_val(v38:bat[:str,:oid]) 
 #b.select(2,4).print; 
-    v40 := calc.oid(nil:void);          # 84 v40:oid := CALCnil2oid(_117:void) 
+    v40 := calc.oid(nil);               # 84 v40:oid := CALCnil2oid(_117:void) 
     v41 := algebra.select(b,7@0,v40);   # 85 v41:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], _119:oid, v40:oid) {G}
     v42 := io.print(v41);               # 86 v42:void := IOprint_val(v41:bat[:str,:oid]) 
 #b.select(7,int(nil)).print; 
-    v43 := calc.oid(nil:void);          # 88 v43:oid := CALCnil2oid(_117:void) 
-    v44 := calc.oid(nil:void);          # 89 v44:oid := CALCnil2oid(_117:void) 
+    v43 := calc.oid(nil);               # 88 v43:oid := CALCnil2oid(_117:void) 
+    v44 := calc.oid(nil);               # 89 v44:oid := CALCnil2oid(_117:void) 
     v45 := algebra.select(b,v43,v44);   # 90 v45:bat[:str,:oid] := ALGselect(b:bat[:str,:oid], v43:oid, v44:oid) {G}
     v46 := io.print(v45);               # 91 v46:void := IOprint_val(v45:bat[:str,:oid]) 
 #b.select(int(nil),int(nil)).print; 
@@ -272,26 +272,26 @@ exit MALException:str ;                 # 60 MALException:str
     bns := v47;                         # 95 bns:bat[:str,:oid] := v47:bat[:str,:oid] {G}
     v48 := io.print(bns);               # 96 v48:void := IOprint_val(bns:bat[:str,:oid]) 
 #bns:=b.fragment("fox","quick",1,5);bns.print; 
-    v49 := calc.str(nil:void);          # 98 v49:str := CALCnil2str(_117:void) {G}
+    v49 := calc.str(nil);               # 98 v49:str := CALCnil2str(_117:void) {G}
     v50 := algebra.fragment(b,"fox",v49,1@0,5@0);# 99 v50:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], _129:str, v49:str, _131:oid, _132:oid) {G}
     v51 := io.print(v50);               #100 v51:void := IOprint_val(v50:bat[:str,:oid]) 
 #b.fragment("fox",str(nil),1,5).print; 
-    v52 := calc.str(nil:void);          #102 v52:str := CALCnil2str(_117:void) {G}
-    v53 := calc.oid(nil:void);          #103 v53:oid := CALCnil2oid(_117:void) 
-    v54 := calc.oid(nil:void);          #104 v54:oid := CALCnil2oid(_117:void) 
+    v52 := calc.str(nil);               #102 v52:str := CALCnil2str(_117:void) {G}
+    v53 := calc.oid(nil);               #103 v53:oid := CALCnil2oid(_117:void) 
+    v54 := calc.oid(nil);               #104 v54:oid := CALCnil2oid(_117:void) 
     v55 := algebra.fragment(b,"fox",v52,v53,v54);#105 v55:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], _129:str, v52:str, v53:oid, v54:oid) {G}
     v56 := io.print(v55);               #106 v56:void := IOprint_val(v55:bat[:str,:oid]) 
 #b.fragment("fox",str(nil),int(nil),int(nil)).print; 
-    v57 := calc.str(nil:void);          #108 v57:str := CALCnil2str(_117:void) {G}
-    v58 := calc.oid(nil:void);          #109 v58:oid := CALCnil2oid(_117:void) 
-    v59 := calc.oid(nil:void);          #110 v59:oid := CALCnil2oid(_117:void) 
+    v57 := calc.str(nil);               #108 v57:str := CALCnil2str(_117:void) {G}
+    v58 := calc.oid(nil);               #109 v58:oid := CALCnil2oid(_117:void) 
+    v59 := calc.oid(nil);               #110 v59:oid := CALCnil2oid(_117:void) 
     v60 := algebra.fragment(b,v57,"f",v58,v59);#111 v60:bat[:str,:oid] := ALGfragment(b:bat[:str,:oid], v57:str, _150:str, v58:oid, v59:oid) {G}
     v61 := io.print(v60);               #112 v61:void := IOprint_val(v60:bat[:str,:oid]) 
 #b.fragment(str(nil),"f",int(nil),int(nil)).print; 
     v62 := bat.reverse(b);              #114 v62:bat[:oid,:str] := BKCreverse(b:bat[:str,:oid]) {G}
-    v63 := calc.oid(nil:void);          #115 v63:oid := CALCnil2oid(_155:void) 
-    v64 := calc.oid(nil:void);          #116 v64:oid := CALCnil2oid(_155:void) 
-    v65 := calc.str(nil:void);          #117 v65:str := CALCnil2str(_155:void) {G}
+    v63 := calc.oid(nil);               #115 v63:oid := CALCnil2oid(_155:void) 
+    v64 := calc.oid(nil);               #116 v64:oid := CALCnil2oid(_155:void) 
+    v65 := calc.str(nil);               #117 v65:str := CALCnil2str(_155:void) {G}
     v66 := algebra.fragment(v62,v63,v64,v65,"f");#118 v66:bat[:oid,:str] := ALGfragment(v62:bat[:oid,:str], v63:oid, v64:oid, v65:str, _150:str) {G}
     v67 := io.print(v66);               #119 v67:void := IOprint_val(v66:bat[:oid,:str]) 
 #b.reverse.fragment(int(nil),int(nil),str(nil),"f").print; 

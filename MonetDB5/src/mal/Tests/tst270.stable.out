@@ -75,7 +75,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     profiler.start();                   # 19 _30:void := CMDstartProfiler() 
     err := bat.insert(b,1,15);          # 20 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _32:int, _33:int) {G}
     err := bat.insert(b,2,4);           # 21 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _34:int, _35:int) {G}
-    n0 := calc.int(nil:void);           # 22 n0:int := CALCnil2int(_37:void) 
+    n0 := calc.int(nil);                # 22 n0:int := CALCnil2int(_37:void) 
     err := bat.insert(b,3,n0);          # 23 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _38:int, n0:int) {G}
     err := bat.insert(b,4,16);          # 24 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _35:int, _39:int) {G}
     err := bat.insert(b,5,25);          # 25 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _40:int, _41:int) {G}

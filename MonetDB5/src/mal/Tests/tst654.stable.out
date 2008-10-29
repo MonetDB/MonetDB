@@ -78,8 +78,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.append(b2,"goodbye world");     # 16 _29:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _30:str) {G}
     tablet.setProperties("name,type,dense,sorted,key,min,max");# 17 _31:int := TABsetProperties(_32:str) 
     tablet.display(b1,b2);              # 18 _33:int := TABdisplayTable(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
-    in := calc.int(nil:void);           # 19 in:int := CALCnil2int(_35:void) 
-    sn := calc.str(nil:void);           # 20 sn:str := CALCnil2str(_35:void) {G}
+    in := calc.int(nil);                # 19 in:int := CALCnil2int(_35:void) 
+    sn := calc.str(nil);                # 20 sn:str := CALCnil2str(_35:void) {G}
     bat.append(b1,in);                  # 21 _37:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], in:int) {G}
     bat.append(b2,sn);                  # 22 _38:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], sn:str) {G}
     tablet.setProperties(sn);           # 23 _39:int := TABsetProperties(sn:str) 

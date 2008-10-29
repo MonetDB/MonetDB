@@ -41,7 +41,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
     err := bat.insert(b,1,15);          #  4 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _7:int) {G}
     err := bat.insert(b,2,4);           #  5 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
-    n0 := calc.int(nil:void);           #  6 n0:int := CALCnil2int(_11:void) 
+    n0 := calc.int(nil);                #  6 n0:int := CALCnil2int(_11:void) 
     err := bat.insert(b,3,n0);          #  7 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _12:int, n0:int) {G}
     err := bat.insert(b,4,16);          #  8 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _9:int, _13:int) {G}
     err := bat.insert(b,5,25);          #  9 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _14:int, _15:int) {G}

@@ -17,7 +17,7 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 #function newsemijoin(A:bat[:int,:any_1], 
 #end newsemijoin;
 function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];#  0 newsemijoin:bat[:int,:any_1] := user.newsemijoin(A:bat[:int,:any_1], B:bat[:int,:any_2]) {UPG}
-    return newsemijoin := nil:BAT;      #  1 newsemijoin:bat[:int,:any_1] := _4:BAT {G}
+    return newsemijoin := nil;          #  1 newsemijoin:bat[:int,:any_1] := _4:BAT {G}
 end newsemijoin;	# 2  
 #z:= bat.new(:int{sorted=true},:int);
 #w:= bat.new(:int{sequence=true},:int);
