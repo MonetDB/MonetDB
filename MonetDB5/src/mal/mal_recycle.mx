@@ -504,14 +504,14 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 }
 
 
-static void RECYCLEcleanCache(lng wr){
+static void RECYCLEcleanCache(lng wr0){
 	int j,i,l,ltop,v,vtop;
 	InstrPtr p,r;
 	InstrPtr *old;
 	bit  *lmask, *dmask;
 	int k, *lvs, *vm;
 	int limit, mem, idx, pc;
-	int cont, reserve;
+	int cont, reserve, wr;
 	lng oldclk;
 	dbl mincrd, crd;
 	bte maxcat, cat, *used;
@@ -525,6 +525,7 @@ static void RECYCLEcleanCache(lng wr){
 
 newpass:
 	cont = 0;	
+	wr = wr0;
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
 
 	/* set all used variables */
