@@ -135,7 +135,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V8:bat[:oid,:oid]  := user.bind_dbat("sys","lineitem",0);#  2 V8:bat[:oid,:oid] := user.bind_dbat(_2:str, _3:str, _5:int) {G}
     V9 := bat.reverse(V8);              #  3 V9:bat[:oid,:oid] := BKCreverse(V8:bat[:oid,:oid]) {G}
     V10 := algebra.kdifference(V3,V9);  #  4 V10:bat[:oid,:date] := ALGkdiff(V3:bat[:oid,:date], V9:bat[:oid,:oid]) {G}
-    a := mtime.date(nil:void);          #  5 a:date := MTIMEnil2date(_10:void) 
+    a := mtime.date(nil);               #  5 a:date := MTIMEnil2date(_10:void) 
     V14 := algebra.uselect(V10,a,a);    #  6 V14:bat[:oid,:oid] := ALGuselect(V10:bat[:oid,:date], a:date, a:date) {G}
     V17 := algebra.markT(V14,0@0);      #  7 V17:bat[:oid,:oid] := ALGtmark(V14:bat[:oid,:oid], _13:oid) {G}
     V18 := bat.reverse(V17);            #  8 V18:bat[:oid,:oid] := BKCreverse(V17:bat[:oid,:oid]) {G}
@@ -248,7 +248,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V8:bat[:oid,:oid]  := user.bind_dbat("sys","lineitem",0);#  2 V8:bat[:oid,:oid] := user.bind_dbat(_2:str, _3:str, _5:int) {G}
     V9 := bat.reverse(V8);              #  3 V9:bat[:oid,:oid] := BKCreverse(V8:bat[:oid,:oid]) {G}
     V10 := algebra.kdifference(V3,V9);  #  4 V10:bat[:oid,:date] := ALGkdiff(V3:bat[:oid,:date], V9:bat[:oid,:oid]) {G}
-    a := mtime.date(nil:void);          #  5 a:date := MTIMEnil2date(_10:void) 
+    a := mtime.date(nil);               #  5 a:date := MTIMEnil2date(_10:void) 
     V14 := algebra.uselect(V10,a,a);    #  6 V14:bat[:oid,:oid] := ALGuselect(V10:bat[:oid,:date], a:date, a:date) {G}
     V17 := algebra.markT(V14,0@0);      #  7 V17:bat[:oid,:oid] := ALGtmark(V14:bat[:oid,:oid], _13:oid) {G}
     V18 := bat.reverse(V17);            #  8 V18:bat[:oid,:oid] := BKCreverse(V17:bat[:oid,:oid]) {G}

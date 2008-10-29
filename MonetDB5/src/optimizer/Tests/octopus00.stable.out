@@ -30,8 +30,8 @@ end main;                               #  3
 function user.q():void;                 #  0 q:void := user.q() {G}
     _27 := sabaoth.getLocalConnectionHost();#  1 _27:str := SABgetLocalConnectionHost() {G}
     _28 := sabaoth.getLocalConnectionPort();#  2 _28:int := SABgetLocalConnectionPort() 
-    remote.create("A",_27,_28,nil:str,"monetdb","monetdb");#  3 _29:void := RMTcreate(_30:str, _27:str, _28:int, _31:str, _32:str, _32:str) 
-    remote.create("B",_27,_28,nil:str,"monetdb","monetdb");#  4 _33:void := RMTcreate(_34:str, _27:str, _28:int, _31:str, _32:str, _32:str) 
+    remote.create("A",_27,_28,nil,"monetdb","monetdb");#  3 _29:void := RMTcreate(_30:str, _27:str, _28:int, _31:str, _32:str, _32:str) 
+    remote.create("B",_27,_28,nil,"monetdb","monetdb");#  4 _33:void := RMTcreate(_34:str, _27:str, _28:int, _31:str, _32:str, _32:str) 
     a:bat[:oid,:int] {rows=1000,hlb=0@0:oid,hub=1000@0:oid} := bat.new(:oid,:int);#  5 a:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
     (b:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},c:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},d:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},e:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid}) := bat.partition(a{rows=1000,hlb=0@0:oid,hub=1000@0:oid});#  6 (b:bat[:oid,:int], c:bat[:oid,:int], d:bat[:oid,:int], e:bat[:oid,:int]) := CMDbatpartition(a:bat[:oid,:int]) {G}
     _35 := remote.put("A",b{hlb=0@0:oid,hub=1000@0:oid});#  7 _35:rmtobj := RMTput(_30:str, b:bat[:oid,:int]) {G}

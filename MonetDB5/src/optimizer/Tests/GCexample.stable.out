@@ -18,13 +18,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
     t3 := array.grid(1,100,10560,0);    #  3 t3:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _11:int, _8:int) {G}
     t4 := array.grid(1,100,10560,0,8);  #  4 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
     t5 := batcalc.+(t2,t4);             #  5 t5:bat[:oid,:int] := CMDbatADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
-    t2 := nil:BAT;                      #  6 t2:bat[:oid,:int] := _18:BAT {G}
-    t4 := nil:BAT;                      #  7 t4:bat[:oid,:int] := _18:BAT {G}
+    t2 := nil;                          #  6 t2:bat[:oid,:int] := _18:BAT {G}
+    t4 := nil;                          #  7 t4:bat[:oid,:int] := _18:BAT {G}
     t6 := batcalc.oid(t5);              #  8 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
-    t5 := nil:BAT;                      #  9 t5:bat[:oid,:int] := _18:BAT {G}
+    t5 := nil;                          #  9 t5:bat[:oid,:int] := _18:BAT {G}
     t7 := algebra.join(t6,t1);          # 10 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
-    t6 := nil:BAT;                      # 11 t6:bat[:oid,:oid] := _18:BAT {G}
-    t1 := nil:BAT;                      # 12 t1:bat[:oid,:int] := _18:BAT {G}
+    t6 := nil;                          # 11 t6:bat[:oid,:oid] := _18:BAT {G}
+    t1 := nil;                          # 12 t1:bat[:oid,:int] := _18:BAT {G}
     mdb.list();                         # 13 _17:void := MDBlist() 
 end main;	# 14  
 function user.main():void;
@@ -33,13 +33,13 @@ function user.main():void;
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);
     t5 := batcalc.+(t2,t4);
-    t2 := nil:BAT;
-    t4 := nil:BAT;
+    t2 := nil;
+    t4 := nil;
     t6 := batcalc.oid(t5);
-    t5 := nil:BAT;
+    t5 := nil;
     t7 := algebra.join(t6,t1);
-    t6 := nil:BAT;
-    t1 := nil:BAT;
+    t6 := nil;
+    t1 := nil;
     mdb.list();
 end main;
 

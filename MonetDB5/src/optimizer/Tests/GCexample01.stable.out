@@ -56,18 +56,18 @@ function user.qry():void;               #  0 qry:void := user.qry() {G}
     d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
 barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J8}
-    b := nil:BAT;                       #  6 b:bat[:int,:int] := _16:BAT {G}
+    b := nil;                           #  6 b:bat[:int,:int] := _16:BAT {G}
     io.print(x);                        #  7 _10:void := IOprint_val(x:lng) 
 exit (x,y,z);                           #  8 (x:lng, y:int, z:int) 
 barrier (x,y,z) := bat.newIterator(c);  #  9 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J13}
     io.print(x);                        # 10 _11:void := IOprint_val(x:lng) 
     redo (x,y,z) := bat.hasMoreElements(c);# 11 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J10}
-    c := nil:BAT;                       # 12 c:bat[:int,:int] := _16:BAT {G}
+    c := nil;                           # 12 c:bat[:int,:int] := _16:BAT {G}
 exit (x,y,z);                           # 13 (x:lng, y:int, z:int) 
 # do not close d, it may be reused 
 barrier go := true;                     # 15 go:bit := _14:bit {J19}
     io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:int,:int]) 
-    d := nil:BAT;                       # 17 d:bat[:int,:int] := _16:BAT {G}
+    d := nil;                           # 17 d:bat[:int,:int] := _16:BAT {G}
     redo go := true;                    # 18 go:bit := _14:bit {J16}
 exit go;                                # 19 go:bit 
 end qry;                                # 20  
