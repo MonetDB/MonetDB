@@ -2510,7 +2510,7 @@ operatorName(int i)
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else
-	if (flg & LIST_UDF_TYPE || @1 ){
+	if (flg & LIST_UDF_TYPE ){
 		if ( isVarUDFtype(mb, getArg(p, i))) {
 			str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 			snprintf(t,(len-(t-base)), ":%s ", tpe);
@@ -2518,7 +2518,7 @@ operatorName(int i)
 			advance(t,base,len);
 		} 
 	}
-	if (flg & LIST_MAL_PROPS || @1){
+	if (flg & LIST_MAL_PROPS ){
 		pstring = varGetPropStr(mb, getArg(p, i));
 		if (pstring){
 			snprintf(t,(len-(t-base)),"%s", pstring);
@@ -2609,7 +2609,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		for (i = 0; i < p->retc; i++){
 			snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
 			advance(t,base,len);
-			@:showVariableProperties(1)@
+			@:showVariableProperties@
 			if (i < p->retc - 1)
 				*t++ = ',';
 		}
@@ -2707,7 +2707,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			if( ! isVarTypedef(mb,getArg(p,i)) ){
 				snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
 				advance(t,base,len);
-				@:showVariableProperties(0)@
+				@:showVariableProperties@
 			} else {
 				str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 				snprintf(t,(len-(t-base)), ":%s", tpe);
