@@ -229,7 +229,9 @@ enum modifiers {
 	DEBUGmodifier,
 	TRACEmodifier
 };
-static enum modifiers specials = NOmodifier; /* set when we see EXPLAIN,DEBUG, or TRACE (only if mode == SQL) */
+static enum modifiers specials = NOmodifier; 
+/* set when we see EXPLAIN,DEBUG, or TRACE (only if mode == SQL).
+Also retain these modes until after you have received the answer. */
 
 #define MINCOLSIZE 5
 
@@ -348,7 +350,7 @@ fetch_row(MapiHdl hdl)
 static void
 SQLsetSpecial(const char *command)
 {
-	if (mode == SQL && command) {
+	if (mode == SQL && command && specials==NOmodifier) {
 		/* catch the specials for better rendering */
 		while (*command == ' ' || *command == '\t')
 			command++;
