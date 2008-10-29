@@ -100,7 +100,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     aa_a := calc.oid(20000000);         # 38 aa_a:oid := CALCint2oid(_39:int) 
     ba_a := calc.setoid(aa_a);          # 39 ba_a:oid := CALCsetoidInc(aa_a:oid) 
 #	io.print("str(nil).print();"); 
-    ca_a := calc.str(nil:void);         # 41 ca_a:str := CALCnil2str(_43:void) {G}
+    ca_a := calc.str(nil);              # 41 ca_a:str := CALCnil2str(_43:void) {G}
     da_a := io.print(ca_a);             # 42 da_a:void := IOprint_val(ca_a:str) 
 #	io.print("quit();"); 
     ea_a := clients.quit();             # 44 ea_a:void := CLTquit() 

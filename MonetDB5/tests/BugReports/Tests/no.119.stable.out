@@ -141,27 +141,27 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ea_a := bat.insert(a,3,1);          # 48 ea_a:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _48:int, _47:int) {G}
 #	io.print("a.thetajoin(a,LT,calc.lng(nil)).print();"); 
     LT := -1;                           # 50 LT:int := _56:int 
-    fa_a := calc.lng(nil:void);         # 51 fa_a:lng := CALCnil2lng(_58:void) 
+    fa_a := calc.lng(nil);              # 51 fa_a:lng := CALCnil2lng(_58:void) 
     ga_a := algebra.thetajoin(a,a,LT,fa_a);# 52 ga_a:bat[:int,:int] := ALGthetajoinEstimate(a:bat[:int,:int], a:bat[:int,:int], LT:int, fa_a:lng) {G}
     ha_a := io.print(ga_a);             # 53 ha_a:void := IOprint_val(ga_a:bat[:int,:int]) 
 #	io.print("a.thetajoin(a,LE,calc.lng(nil)).print();"); 
     LE := -2;                           # 55 LE:int := _63:int 
-    ia_a := calc.lng(nil:void);         # 56 ia_a:lng := CALCnil2lng(_58:void) 
+    ia_a := calc.lng(nil);              # 56 ia_a:lng := CALCnil2lng(_58:void) 
     ja_a := algebra.thetajoin(a,a,LE,ia_a);# 57 ja_a:bat[:int,:int] := ALGthetajoinEstimate(a:bat[:int,:int], a:bat[:int,:int], LE:int, ia_a:lng) {G}
     ka_a := io.print(ja_a);             # 58 ka_a:void := IOprint_val(ja_a:bat[:int,:int]) 
 #	io.print("a.thetajoin(a,EQ,calc.lng(nil)).print();"); 
     EQ := 0;                            # 60 EQ:int := _69:int 
-    la_a := calc.lng(nil:void);         # 61 la_a:lng := CALCnil2lng(_58:void) 
+    la_a := calc.lng(nil);              # 61 la_a:lng := CALCnil2lng(_58:void) 
     ma_a := algebra.thetajoin(a,a,EQ,la_a);# 62 ma_a:bat[:int,:int] := ALGthetajoinEstimate(a:bat[:int,:int], a:bat[:int,:int], EQ:int, la_a:lng) {G}
     na_a := io.print(ma_a);             # 63 na_a:void := IOprint_val(ma_a:bat[:int,:int]) 
 #	io.print("a.thetajoin(a,GE,calc.lng(nil)).print();"); 
     GE := 2;                            # 65 GE:int := _51:int 
-    oa_a := calc.lng(nil:void);         # 66 oa_a:lng := CALCnil2lng(_58:void) 
+    oa_a := calc.lng(nil);              # 66 oa_a:lng := CALCnil2lng(_58:void) 
     pa_a := algebra.thetajoin(a,a,GE,oa_a);# 67 pa_a:bat[:int,:int] := ALGthetajoinEstimate(a:bat[:int,:int], a:bat[:int,:int], GE:int, oa_a:lng) {G}
     qa_a := io.print(pa_a);             # 68 qa_a:void := IOprint_val(pa_a:bat[:int,:int]) 
 #	io.print("a.thetajoin(a,GT,calc.lng(nil)).print();"); 
     GT := 1;                            # 70 GT:int := _80:int 
-    ra_a := calc.lng(nil:void);         # 71 ra_a:lng := CALCnil2lng(_58:void) 
+    ra_a := calc.lng(nil);              # 71 ra_a:lng := CALCnil2lng(_58:void) 
     sa_a := algebra.thetajoin(a,a,GT,ra_a);# 72 sa_a:bat[:int,:int] := ALGthetajoinEstimate(a:bat[:int,:int], a:bat[:int,:int], GT:int, ra_a:lng) {G}
     ta_a := io.print(sa_a);             # 73 ta_a:void := IOprint_val(sa_a:bat[:int,:int]) 
 #	io.print("quit();"); 
