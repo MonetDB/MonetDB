@@ -704,7 +704,6 @@ SQLexplainRendering(MapiHdl hdl)
 			continue;
 		if (*fields[0] == '%')
 			continue;
-		fields[0] = fields[0] + 1;	/* ignore marker */
 
 		if (ps > 0 && rows >= ps && fromConsole != NULL) {
 			SQLpagemove(len, 1, &ps, &silent);
