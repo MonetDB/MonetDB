@@ -60,8 +60,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(b0,3@0:oid,"http://www.searchengineshowdown.com/");#  8 _17:bat[:oid,:str] := BKCinsert_bun(b0:bat[:oid,:str], _18:oid, _19:str) {G}
     io.print(b0);                       #  9 _20:void := IOprint_val(b0:bat[:oid,:str]) 
     transaction.commit();               # 10 _21:bit := TRNglobal_commit() 
-    MMO_location := nil:BAT;            # 11 MMO_location:bat[:oid,:str] := _37:BAT {G}
-    b0:bat[:oid,:str]  := nil:BAT;      # 12 b0:bat[:oid,:str] := _37:BAT {G}
+    MMO_location := nil;                # 11 MMO_location:bat[:oid,:str] := _37:BAT {G}
+    b0:bat[:oid,:str]  := nil;          # 12 b0:bat[:oid,:str] := _37:BAT {G}
     b1:bat[:oid,:str]  := bbp.bind("MMO_location");# 13 b1:bat[:oid,:str] := CMDbbpbind(_5:str) {G}
     bat.delete(b1,0@0:oid);             # 14 _24:bat[:oid,:str] := BKCdelete(b1:bat[:oid,:str], _9:oid) {G}
     bat.delete(b1,2@0:oid);             # 15 _25:bat[:oid,:str] := BKCdelete(b1:bat[:oid,:str], _15:oid) {G}
