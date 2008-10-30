@@ -17,4 +17,4 @@
 
 SUBDIRS = include common storage server backends sql
 
-EXTRA_DIST_DIR = Tests test benchmarks odbc/samples/Tests jdbc/tests
+EXTRA_DIST_DIR = test benchmarks odbc/samples/Tests jdbc/tests
