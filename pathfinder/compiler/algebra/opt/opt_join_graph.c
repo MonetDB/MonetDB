@@ -168,6 +168,7 @@ opt_join_graph (PFla_op_t *p)
             }
         }   break;
 
+#if 0
         /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
            of unnecessary eqjoin and rowid operators */
@@ -248,6 +249,7 @@ opt_join_graph (PFla_op_t *p)
         case la_proxy_base:
             *p = *PFla_dummy (L(p));
             break;
+#endif
 
         default:
             break;
@@ -272,6 +274,7 @@ opt_set (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+#if 0
         /* Replace semijoin operators by normal equi-joins. (A following
            optimization phase might then try to remove the equi-joins.) */
         case la_semijoin:
@@ -318,6 +321,7 @@ opt_set (PFla_op_t *p)
                           top);
             }
             break;
+#endif
 
         /* Remove unnecessary distinct operators and narrow the schema
            of a distinct operator if some columns are not required
@@ -327,6 +331,7 @@ opt_set (PFla_op_t *p)
                 *p = *PFla_dummy (L(p));
             break;
 
+#if 0
         /* Replace all step operators by step_join operators
            to allow a following optimization phase to get rid
            of unnecessary eqjoin and rowid operators */
@@ -384,6 +389,7 @@ opt_set (PFla_op_t *p)
                 break;
             }
             break;
+#endif
 
         default:
             break;
