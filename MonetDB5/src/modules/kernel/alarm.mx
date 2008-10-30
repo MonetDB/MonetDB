@@ -308,33 +308,30 @@ int
 CMDctime(str *retval)
 {
 	time_t t = time(0);
+	char *base, *c;
 
 #ifdef HAVE_CTIME_R3
-	char buf[26], *base, *c;
+	char buf[26];
 
-	if( (base=ctime_r(&t, buf, sizeof(buf))) ){
-		c= strchr(base,'\n');
-		if (c) *c=0;
-		*retval = GDKstrdup(base);
-	}
+	base = ctime_r(&t, buf, sizeof(buf));
 #else
 #ifdef HAVE_CTIME_R
-	char buf[26], *base, *c;
+	char buf[26];
 
-	if ( (base=ctime_r(&t, buf)) ){
-		c= strchr(buf,'\n');
-		if (c) *c=0;
-		*retval = GDKstrdup(base);
-	}
+	base = ctime_r(&t, buf);
 #else
-	char *base, *c;
-	if ( (base=ctime_r(&t)) ){
-		c= strchr(buf,'\n');
-		if (c) *c=0;
-		*retval = GDKstrdup(base);
+	base = ctime(&t);
+#endif
+#endif
+	if (base == NULL) {
+		/* very unlikely to happen... */
+		GDKerror("CMDctime: failed to format time\n");
+		return GDK_FAIL;
 	}
-#endif
-#endif
+	c = strchr(base, '\n');
+	if (c)
+		*c = 0;
+	*retval = GDKstrdup(base);
 	return GDK_SUCCEED;
 }
 
