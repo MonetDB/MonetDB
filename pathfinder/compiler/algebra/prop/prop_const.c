@@ -378,7 +378,6 @@ infer_const (PFla_op_t *n)
 
         case la_semijoin:
         case la_difference:
-        case la_error:
         case la_cond_err:
             /* propagate information from the first input operator */
                 for (unsigned int j = 0;
@@ -389,6 +388,9 @@ infer_const (PFla_op_t *n)
                                 n->prop,
                                 PFprop_const_at (L(n)->prop, j),
                                 PFprop_const_val_at (L(n)->prop, j));
+            break;
+            
+        case la_error:
             break;
 
         case la_num_eq:
