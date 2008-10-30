@@ -327,7 +327,7 @@ CMDctime(str *retval)
 		*retval = GDKstrdup(base);
 	}
 #else
-	char *base *c;
+	char *base, *c;
 	if ( (base=ctime_r(&t)) ){
 		c= strchr(buf,'\n');
 		if (c) *c=0;
