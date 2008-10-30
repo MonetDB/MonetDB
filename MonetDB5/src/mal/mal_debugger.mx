@@ -829,7 +829,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		if (cntxt != mal_clients) 
 			/* help mclients with fake prompt */
 			stream_printf(out,"mdb>");
-		printTraceCall(out,mb,stk,pc,cntxt->flags);
+		printTraceCall(out,mb,stk,pc,LIST_MAL_CALL);
 	}
 	if (cntxt == mal_clients) {
 		cntxt->prompt = "mdb>";
