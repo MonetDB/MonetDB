@@ -335,7 +335,7 @@ dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
 dnl see if we actually found libxml2.
 have_libxml2="auto"
 AC_ARG_WITH(libxml2,
-    [  --with-libxml2=DIR      libxml2 library is installed in DIR],
+    AC_HELP_STRING([--with-libxml2=DIR],[libxml2 library is installed in DIR]),
     [have_libxml2="$withval"], [have_libxml2="auto"])
 have_SAX2="$have_libxml2"
 
@@ -343,15 +343,15 @@ save_CPPFLAGS="$CPPFLAGS"
 save_LDFLAGS="$LDFLAGS"
 if test "x$have_libxml2" != xno; then
 
-    XLIBS=""
     XML2_CONFIG=""
     XPATH="$PATH"
-    if test "x$have_libxml2" != xauto; then
+    case "$have_libxml2" in
+    auto|yes)
+	;;
+    *)
 	XPATH="$have_libxml2/bin"
-	if test -d "$have_libxml2/lib$bits"; then
-	    XLIBS="-L$have_libxml2/lib$bits "
-	fi
-    fi
+	;;
+    esac
 
     AC_PATH_PROG(XML2_CONFIG,xml2-config.${bits},,$XPATH)
     if test "x$XML2_CONFIG" = x; then
@@ -363,9 +363,9 @@ if test "x$have_libxml2" != xno; then
 
     if test "x$XML2_CONFIG" != x; then
         LIBXML2_CFLAGS="`$XML2_CONFIG --cflags`"
-        LIBXML2_LIBS="$XLIBS`$XML2_CONFIG --libs`"
+        LIBXML2_LIBS="`$XML2_CONFIG --libs`"
     else
-	case "x$have_libxml2" in
+	case "$have_libxml2" in
 	auto|no|yes)
 	    ;;
 	*)
@@ -437,7 +437,7 @@ dnl First allow the user to specify a location on the command line.
 dnl Further down see if we find the library and abort if not.
 have_gc="auto"
 AC_ARG_WITH(gc,
-    [  --with-gc=DIR           Boehm garbage collector library is installed in DIR],
+    AC_HELP_STRING([--with-gc=DIR],[Boehm garbage collector library is installed in DIR]),
     [have_gc="$withval"], [have_gc="auto"])
 
 if test "x$have_gc" != xauto; then
