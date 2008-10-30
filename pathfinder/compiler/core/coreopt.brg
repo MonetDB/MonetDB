@@ -316,7 +316,7 @@ LocationStep:       reject_wide (SequenceType)                  =   72(10);
 /* [/STANDOFF] */
                                                                      
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =   75(10);
-LocationSteps:      locsteps (LocationStep, CoreExpr)           =   76(10);
+LocationSteps:      locsteps (LocationStep, CoreExpr)           =  32 (10);
                                                                      
 CoreExpr:           elem (TagName, CoreExpr)                    =  30 (10);
 CoreExpr:           elem (TagName, seq (CoreExpr, CoreExpr))    =  22 (10);
@@ -1414,6 +1414,10 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
 
         /* CoreExpr:           LocationSteps */
         case 29:
+            /* This rewrite ignores side effects and throws e.g. errors away.
+               We thus disable this rewrite. */
+            break;
+            
             /* remove bogus steps starting from attribute nodes */
             assert (p->kind == c_locsteps);
             if (/* the typing infers that the result
@@ -1447,6 +1451,16 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
 
                 /* assign new node a state label */
                 PFcoreopt_label (p);
+                break;
+            }
+            break;
+
+        /* LocationSteps:      locsteps (LocationStep, CoreExpr) */
+        case 32:
+            if (PFty_subtype (TY(p), PFty_empty ()) &&
+                PFty_subtype (TY(R(p)), PFty_empty ())) {
+                *p = *R(p);
+                rewritten = true;
                 break;
             }
             break;
