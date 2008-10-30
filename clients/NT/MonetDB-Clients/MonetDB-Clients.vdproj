@@ -123,7 +123,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_9DCF359CC02C4013B6563004C2B52CF4"
+        "MsmKey" = "8:_90B54D15E2264A3CA99F56BDD6C890A5"
         "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1161,18 +1161,18 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_013535496A4340F2BFC2F062C053BBF5"
+            {
+            "Name" = "8:CommonVersion"
+            "Condition" = "8:COMMONVERSION >= \"1.24.0\""
+            "Message" = "8:A newer version of MonetDB-Common is needed."
+            "InstallUrl" = "8:http://monetdb.cwi.nl/"
+            }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_6A460DED27254F178245954E038AF566"
             {
             "Name" = "8:Installation"
             "Condition" = "8:INSTALLPATH"
             "Message" = "8:MonetDB Common needs to be installed first."
-            "InstallUrl" = "8:http://monetdb.cwi.nl/"
-            }
-            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_FDD4670083F44D7DA37795CE5B3BA96D"
-            {
-            "Name" = "8:libbat exists"
-            "Condition" = "8:LIBBATEXISTS"
-            "Message" = "8:MonetDB-Common needs to be installed first."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
         }
@@ -1186,20 +1186,13 @@
             "Value" = "8:Path"
             "Property" = "8:INSTALLPATH"
             }
-            "{39E1837C-0DB9-45A2-89C8-438377A77565}:_89476AFBA2244B7CB1CC3E9274A13836"
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_8B1CB3CDBE9F4E56B667CA51A57CD51F"
             {
-            "Name" = "8:Search for libbat"
-            "Folder" = "8:[INSTALLPATH]"
-            "Depth" = "2:2"
-            "FileName" = "8:libbat.dll"
-            "MinVesion" = "8:1.24.0.0"
-            "MaxVersion" = "8:"
-            "MinSize" = "8:"
-            "MaxSize" = "8:"
-            "MinDate" = "8:"
-            "MaxDate" = "8:"
-            "Languages" = "8:"
-            "Property" = "8:LIBBATEXISTS"
+            "Name" = "8:Search for MonetDB Common"
+            "Root" = "2:1"
+            "RegKey" = "8:Software\\[Manufacturer]\\MonetDB"
+            "Value" = "8:CommonVersion"
+            "Property" = "8:COMMONVERSION"
             }
         }
         "MsiBootstrapper"
@@ -1260,6 +1253,28 @@
                             "Transitive" = "11:FALSE"
                                 "Keys"
                                 {
+                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_B4C19D273DCD4A3CBC313A5CA08242DA"
+                                    {
+                                    "Name" = "8:MonetDB"
+                                    "Condition" = "8:"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "Transitive" = "11:FALSE"
+                                        "Keys"
+                                        {
+                                        }
+                                        "Values"
+                                        {
+                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_88C573D05B9D4AC7980691EB312039BD"
+                                            {
+                                            "Name" = "8:ClientsVersion"
+                                            "Condition" = "8:"
+                                            "Transitive" = "11:FALSE"
+                                            "ValueTypes" = "3:1"
+                                            "Value" = "8:1.25.0"
+                                            }
+                                        }
+                                    }
                                 }
                                 "Values"
                                 {
@@ -2086,7 +2101,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_9DCF359CC02C4013B6563004C2B52CF4"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_90B54D15E2264A3CA99F56BDD6C890A5"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

@@ -357,6 +357,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_52C757AFAAD04ABD9CE0031D2BF7B771"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_5364DBB6E2344D2DA0DE1C2CEFD0EA6F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -527,12 +533,6 @@
         {
         "MsmKey" = "8:_7B7FFC69BADA46E79F29CD5215B5B528"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7C0C9E0196754B0FA40C29FEB34E450F"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -4897,19 +4897,19 @@
         }
         "LaunchCondition"
         {
-            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_3BDEBA131F174543A3AA65731A49E95E"
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_22602BD9436242C48D13721036875E7A"
             {
-            "Name" = "8:libMapi exists"
-            "Condition" = "8:LIBMAPIEXISTS"
-            "Message" = "8:MonetDB Clients needs to be installed first."
+            "Name" = "8:ClientsVersion"
+            "Condition" = "8:CLIENTSVERSION >= \"1.24.0\""
+            "Message" = "8:A newer version of MonetDB-Clients is needed."
             "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
-            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_51126656D4214BA5A39FB99B90F06D71"
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_4353E710FF024423B93BC77EC4A6B488"
             {
-            "Name" = "8:libbat exists"
-            "Condition" = "8:LIBBATEXISTS"
-            "Message" = "8:MonetDB-Common needs to be installed first."
-            "InstallUrl" = "8:"
+            "Name" = "8:CommonVersion"
+            "Condition" = "8:COMMONVERSION >= \"1.25.0\""
+            "Message" = "8:A newer version of MonetDB-Common is needed."
+            "InstallUrl" = "8:http://monetdb.cwi.nl/"
             }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_AC7D06147701435B8125212AF4AF7D16"
             {
@@ -4921,35 +4921,21 @@
         }
         "Locator"
         {
-            "{39E1837C-0DB9-45A2-89C8-438377A77565}:_3CA0A6A4CF3647979994237E3E76052C"
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_9E71B9F17A654A3F97D9F51433944855"
             {
-            "Name" = "8:Search for libbat"
-            "Folder" = "8:[INSTALLPATH]"
-            "Depth" = "2:2"
-            "FileName" = "8:libbat.dll"
-            "MinVesion" = "8:1.25.0.0"
-            "MaxVersion" = "8:"
-            "MinSize" = "8:"
-            "MaxSize" = "8:"
-            "MinDate" = "8:"
-            "MaxDate" = "8:"
-            "Languages" = "8:"
-            "Property" = "8:LIBBATEXISTS"
+            "Name" = "8:Search for MonetDB Clients"
+            "Root" = "2:1"
+            "RegKey" = "8:Software\\[Manufacturer]\\MonetDB"
+            "Value" = "8:ClientsVersion"
+            "Property" = "8:CLIENTSVERSION"
             }
-            "{39E1837C-0DB9-45A2-89C8-438377A77565}:_75FEA8B4DBF04854A8C43329F0167B1D"
+            "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_A8E24A9ACA7443668DFD93410B35F620"
             {
-            "Name" = "8:Search for libMapi"
-            "Folder" = "8:[INSTALLPATH]"
-            "Depth" = "2:2"
-            "FileName" = "8:libMapi.dll"
-            "MinVesion" = "8:1.24.0.0"
-            "MaxVersion" = "8:"
-            "MinSize" = "8:"
-            "MaxSize" = "8:"
-            "MinDate" = "8:"
-            "MaxDate" = "8:"
-            "Languages" = "8:"
-            "Property" = "8:LIBMAPIEXISTS"
+            "Name" = "8:Search for MonetDB Common"
+            "Root" = "2:1"
+            "RegKey" = "8:Software\\[Manufacturer]\\MonetDB"
+            "Value" = "8:CommonVersion"
+            "Property" = "8:COMMONVERSION"
             }
             "{CF66B7F7-B7DA-4B08-A67A-233430638C9C}:_BED3D21450F1415798CB93584C9A00F6"
             {
@@ -5018,6 +5004,28 @@
                             "Transitive" = "11:FALSE"
                                 "Keys"
                                 {
+                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_0EFAD49BD74B49F38A72B05E254F4C16"
+                                    {
+                                    "Name" = "8:MonetDB"
+                                    "Condition" = "8:"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "Transitive" = "11:FALSE"
+                                        "Keys"
+                                        {
+                                        }
+                                        "Values"
+                                        {
+                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_49625FAC2A6A4FA4B465C44B6AA9D3D1"
+                                            {
+                                            "Name" = "8:MonetDB5Version"
+                                            "Condition" = "8:"
+                                            "Transitive" = "11:FALSE"
+                                            "ValueTypes" = "3:1"
+                                            "Value" = "8:5.7.0"
+                                            }
+                                        }
+                                    }
                                 }
                                 "Values"
                                 {
@@ -5545,7 +5553,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_7C0C9E0196754B0FA40C29FEB34E450F"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_52C757AFAAD04ABD9CE0031D2BF7B771"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
