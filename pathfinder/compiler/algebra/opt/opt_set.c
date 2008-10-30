@@ -66,6 +66,7 @@ opt_set (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+#if 0 /* steps not used anymore */
         case la_eqjoin:
             /* Rewrite step into duplicate generating step
                (underneath join operators). This hopefully allows
@@ -115,12 +116,14 @@ opt_set (PFla_op_t *p)
                 break;
             }
             break;
+#endif
 
         case la_distinct:
             if (PFprop_set (p->prop))
                 *p = *PFla_dummy (L(p));
             break;
 
+#if 0 /* steps not used anymore */
         case la_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icol (p->prop, p->sem.step.item) &&
@@ -141,6 +144,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item,
                           p->sem.step.item);
             break;
+#endif
 
 #if 0 /* disable step_join -> step rewrite */
         case la_step_join:
@@ -177,6 +181,7 @@ opt_set (PFla_op_t *p)
             break;
 #endif
 
+#if 0 /* steps not used anymore */
         case la_guide_step:
             if (PFprop_set (p->prop) &&
                 PFprop_icol (p->prop, p->sem.step.item) &&
@@ -199,6 +204,7 @@ opt_set (PFla_op_t *p)
                           p->sem.step.item,
                           p->sem.step.item);
             break;
+#endif
 
         default:
             break;
@@ -213,7 +219,9 @@ PFalgopt_set (PFla_op_t *root)
 {
     /* Infer set properties first */
     PFprop_infer_set (root);
+#if 0 /* steps and thus icols not used anymore */
     PFprop_infer_icol (root);
+#endif
 
     /* Optimize algebra tree */
     opt_set (root);
