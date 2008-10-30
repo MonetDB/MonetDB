@@ -1,8 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $c in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart,
-     $con in $c/Connection[./@length > avg($c/Connection/@length)]
-return 
-<CompositePart>
-{$con/@*}
-</CompositePart>

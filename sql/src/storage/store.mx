@@ -812,7 +812,7 @@ load_schema(sql_trans *tr, sqlid id, ssize_t rid)
 	if (sid < id) {
 		node *n = find_sql_schema_node(tr, NULL, sid);
 		if (n==NULL) 
-			GDKfatal("SQL schema missing or incompatible, rebuild from archive");
+			GDKfatal("SQL schema missing or incompatible, rebuilt from archive");
 		s = n->data;
 	} else {
 		s = ZNEW(sql_schema);

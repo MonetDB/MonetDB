@@ -1,8 +1,0 @@
-# this file should be ran after a M2m compile
-echo "patch test_15"
-echo "reason: mapped io() -> ioStatistics()"
-ex - test_15.mal <<!EOF
-g/io()/s//ioStatistics()/
-w test_15.mal
-q
-!EOF

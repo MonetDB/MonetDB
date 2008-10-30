@@ -1,7 +1,0 @@
-Statistics about stderr of test 'all` in directory 'tests/sigs`:
-   0 lines,  0 words,  0 chars   in lines not matching '^#`
-#  1 lines,  9 words,  96 chars   in all lines
-
-stderr of test 'all` in directory 'tests/sigs` itself:
-
-## Mtest:	Mserver -home /ufs/manegold/Monet/New/monet/IRIX646.5 -db tests_sigs -single all.milS

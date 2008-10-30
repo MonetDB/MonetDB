@@ -98,7 +98,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	}
 
 	if (!ns_st)
-		ns_st = exp_atom(atom_general(&xml_type, NULL, 0));
+		ns_st = exp_atom(atom_general(&str_type, NULL, 0));
 	if (!attr_st)
 		attr_st = exp_atom(atom_general(&xml_type, NULL, 0));
 	if (!res)
