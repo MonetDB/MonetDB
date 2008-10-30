@@ -1,1 +1,1 @@
-@call RunMserver.bat -5 %*
+@call RunMserver.bat %*
