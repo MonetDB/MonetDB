@@ -215,6 +215,8 @@ mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
 
 mal_export lng getDiskSpace(void);
+mal_export lng getDiskReads(void);
+mal_export lng getDiskWrites(void);
 #define DEBUG_MAL_PROFILER
 
 #endif
@@ -1149,6 +1151,26 @@ void initProfiler(MalBlkPtr mb){
 	mb->profiler = (ProfPtr) GDKzalloc(mb->ssize*sizeof(ProfRecord));
 }
 
+lng
+getDiskWrites()
+{
+#ifdef HAVE_SYS_RESOURCE_H
+	struct rusage infoUsage;
+	getrusage(RUSAGE_SELF, &infoUsage);
+	return infoUsage.ru_oublock;
+#endif
+	return 0;
+}
+lng
+getDiskReads()
+{
+#ifdef HAVE_SYS_RESOURCE_H
+	struct rusage infoUsage;
+	getrusage(RUSAGE_SELF, &infoUsage);
+	return infoUsage.ru_inblock;
+#endif
+	return 0;
+}
 lng
 getDiskSpace()
 {

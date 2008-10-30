@@ -511,7 +511,8 @@ static void RECYCLEcleanCache(lng wr0){
 	bit  *lmask, *dmask;
 	int k, *lvs, *vm;
 	int limit, mem, idx, pc;
-	int cont, reserve, wr;
+	int cont, reserve;
+	lng wr;
 	lng oldclk;
 	dbl mincrd, crd;
 	bte maxcat, cat, *used;
