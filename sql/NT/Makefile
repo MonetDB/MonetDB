@@ -18,7 +18,7 @@ IBITS =
 IBITS = 64
 !ENDIF
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMserver5.bat RunMtest.bat RunMapprove.bat
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat RunMtest.bat RunMapprove.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -76,9 +76,6 @@ RunMapprove.bat: "$(SRCDIR)\RunMapprove.bat.in"
 
 RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
 	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
-
-RunMserver5.bat: "$(SRCDIR)\RunMserver5.bat"
-	$(INSTALL) "$(SRCDIR)\RunMserver5.bat" .
 
 targetdirs:
 	if not exist "$(bindir)"		$(MKDIR) "$(bindir)"
