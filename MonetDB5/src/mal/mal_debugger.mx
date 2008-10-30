@@ -1317,7 +1317,7 @@ signatures satisfying the pattern.
 					for (i = 0; i < MAXSCOPE; i++) {
 						fs = fsym->subscope[i];
 						while (fs != NULL) {
-							printFunction(out, fs->def, stk, lstng);
+							printFunction(out, fs->def, 0, lstng);
 							fs = fs->peer;
 						}
 					}
@@ -1326,7 +1326,7 @@ signatures satisfying the pattern.
 				if( m) 
 					printFunction(out, m, 0, lstng);
 			} else 
-				printFunction(out, mb, stk, lstng);
+				printFunction(out, mb, 0, lstng);
 			continue;
 		}
 		case '?':
