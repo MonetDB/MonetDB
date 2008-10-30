@@ -912,7 +912,10 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 
         /* LocationSteps:      locsteps (LocationStep, CoreExpr) */
         case 41:
-            TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
+            if (PFty_disjoint (PFty_prime (TY(R(p))), PFty_node ()))
+                TY(p) = PFty_empty ();
+            else
+                TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
             break;
 
         /* CoreExpr:           apply (FunctionArgs) */
