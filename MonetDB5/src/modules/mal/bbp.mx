@@ -180,6 +180,13 @@ comment "Estimate the amount of disk space occupied by dbfarm";
 command getPageSize():lng
 address CMDgetPageSize
 comment "Obtain the memory page size";
+
+command getDiskReads():lng
+address CMDbbpDiskReads
+comment "Obtain the number of physical reads";
+command getDiskWrites():lng
+address CMDbbpDiskWrites
+comment "Obtain the number of physical reads";
 @-
 @{
 @include prelude.mx
@@ -229,6 +236,8 @@ bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 bbp_export str CMDbbpDiskSpace(lng *ret);
+bbp_export str CMDbbpDiskReads(lng *ret);
+bbp_export str CMDbbpDiskWrites(lng *ret);
 bbp_export str CMDgetPageSize(lng *ret);
 bbp_export str CMDbbpNames(int *ret);
 bbp_export str CMDbbpName(str *ret, int *bid);
@@ -793,6 +802,18 @@ str
 CMDbbpDiskSpace(lng *ret)
 {
 	*ret=  getDiskSpace();
+	return MAL_SUCCEED;
+}
+str
+CMDbbpDiskReads(lng *ret)
+{
+	*ret=  getDiskReads();
+	return MAL_SUCCEED;
+}
+str
+CMDbbpDiskWrites(lng *ret)
+{
+	*ret=  getDiskWrites();
 	return MAL_SUCCEED;
 }
 
