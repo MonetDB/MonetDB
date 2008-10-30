@@ -1,5 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item[@id="I6"]
-return
-    <Output>
-        {$a/authors/author[1]/contact_information/mailing_address}
-    </Output>

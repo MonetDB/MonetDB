@@ -1,4 +1,0 @@
-var a := nil;
-var b;
-b := "some text...";
-if(and(not(isnil(a)), a != "")) print(a);

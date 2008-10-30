@@ -1,5 +1,0 @@
-let $rscs := doc("$TSTTRGDIR/XML_attribute_generation.SF-2038906.xml")//resource
-let $rslt := for $c in $rscs//concept
-             return <concept score="{$c//score/text()}">{$c/text()}</concept>
-return count($rslt)
-
