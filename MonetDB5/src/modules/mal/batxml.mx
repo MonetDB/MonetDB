@@ -166,7 +166,7 @@ batxml_export str BATXMLxquery(int *x, int *s, str *expr);
 batxml_export str BATXMLpi(int *x, str *tgt, int *s);
 batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
 batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
-batxml_export str BATXMLelement(int *ret, str *name, str *ns, str *attr, int *bid);
+batxml_export str BATXMLelement(int *ret, str *name, xml *ns, xml *attr, int *bid);
 batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLagg(int *ret, int *bid, int *grp);
@@ -851,7 +851,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 }
 
 str
-BATXMLelement(int *ret, str *name, str *nspace, str *attr, int *bid)
+BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 {
 	BAT *b, *bn;
 	BUN p, q;
@@ -864,12 +864,17 @@ BATXMLelement(int *ret, str *name, str *nspace, str *attr, int *bid)
 		throw(MAL, "xml.element", "no element name specified");
 #ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
-		throw(MAL, "xml.attribute", "invalid element name");
+		throw(MAL, "xml.element", "invalid element name");
 #endif
 	if (nspace && !strNil(*nspace) && **nspace)
 		throw(MAL, "xml.element", "namespace support not yet implemented");
 	namelen = strlen(*name);
 	elemlen = namelen + 5;
+	if (nspace && !strNil(*nspace)) {
+		if (**nspace != 'A')
+			throw(MAL, "xml.element", "illegal namespace");
+		elemlen += strlen(*nspace);	/* " " + nspace (nspace contains initial 'A' which is replaced by space) */
+	}
 	if (attr && !strNil(*attr)) {
 		if (**attr != 'A')
 			throw(MAL, "xml.element", "illegal attribute");
@@ -905,6 +910,8 @@ BATXMLelement(int *ret, str *name, str *nspace, str *attr, int *bid)
 			bn->T->nonil = 0;
 		} else {
 			int i = snprintf(buf, size, "C<%s", *name);
+			if (nspace && !strNil(*nspace))
+				i += snprintf(buf + i, size - i, " %s", *nspace + 1);
 			if (attr && !strNil(*attr))
 				i += snprintf(buf + i, size - i, " %s", *attr + 1);
 			if (!strNil(t))

@@ -72,7 +72,7 @@ command attribute(name:str, val:str):xml
 address XMLattribute
 comment "Construct an attribute value pair";
 
-command element(name:str, ns:str, attr:xml, s:xml) :xml
+command element(name:str, ns:xml, attr:xml, s:xml) :xml
 address XMLelement
 comment "The basic building block for XML elements are namespaces, attributes and a sequence of xml elements. The name space and the attributes may be left unspecified(=nil:bat).";
 
@@ -131,24 +131,24 @@ typedef str xml;
 
 xml_export int TYPE_xml;
 
-xml_export int XMLfromString(str src, int *len, xml * x);
+xml_export int XMLfromString(str src, int *len, xml *x);
 xml_export int XMLtoString(str *s, int *len, xml src);
 
-xml_export str XMLxml2str(str *s, xml * x);
-xml_export str XMLstr2xml(xml * x, str *s);
-xml_export str XMLxmltext(str *s, xml * x);
-xml_export str XMLxml2xml(xml * x, xml * s);
-xml_export str XMLdocument(xml * x, str *s);
-xml_export str XMLcontent(xml * x, str *s);
+xml_export str XMLxml2str(str *s, xml *x);
+xml_export str XMLstr2xml(xml *x, str *s);
+xml_export str XMLxmltext(str *s, xml *x);
+xml_export str XMLxml2xml(xml *x, xml *s);
+xml_export str XMLdocument(xml *x, str *s);
+xml_export str XMLcontent(xml *x, str *s);
 xml_export str XMLisdocument(bit *x, str *s);
-xml_export str XMLcomment(xml * x, str *s);
-xml_export str XMLpi(xml * x, str *target, str *s);
+xml_export str XMLcomment(xml *x, str *s);
+xml_export str XMLpi(xml *x, str *target, str *s);
 xml_export str XMLroot(str *x, str *v, str *version, str *standalone);
 xml_export str XMLparse(xml *x, str *doccont, str *s, str *option);
-xml_export str XMLattribute(xml * ret, str *name, str *val);
-xml_export str XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val);
-xml_export str XMLelementSmall(xml * ret, str *name, xml * val);
-xml_export str XMLconcat(xml * ret, xml * left, xml * right);
+xml_export str XMLattribute(xml *ret, str *name, str *val);
+xml_export str XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val);
+xml_export str XMLelementSmall(xml *ret, str *name, xml *val);
+xml_export str XMLconcat(xml *ret, xml *left, xml *right);
 xml_export str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 xml_export size_t XMLquotestring(const char *s, char *buf, size_t len);
@@ -309,7 +309,7 @@ XMLunquotestring(char **p, char q, char *buf)
 }
 
 str
-XMLxml2str(str *s, xml * x)
+XMLxml2str(str *s, xml *x)
 {
 	if (strNil(*x)) {
 		*s = GDKstrdup(str_nil);
@@ -321,7 +321,7 @@ XMLxml2str(str *s, xml * x)
 }
 
 str
-XMLstr2xml(xml * x, str *val)
+XMLstr2xml(xml *x, str *val)
 {
 	str t = *val;
 	str buf;
@@ -340,7 +340,7 @@ XMLstr2xml(xml * x, str *val)
 }
 
 str
-XMLxmltext(str *s, xml * x)
+XMLxmltext(str *s, xml *x)
 {
 #ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
@@ -391,14 +391,14 @@ XMLxmltext(str *s, xml * x)
 }
 
 str
-XMLxml2xml(xml * s, xml * x)
+XMLxml2xml(xml *s, xml *x)
 {
 	*s = GDKstrdup(*x);
 	return MAL_SUCCEED;
 }
 
 str
-XMLdocument(xml * x, str *val)
+XMLdocument(xml *x, str *val)
 {
 #ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
@@ -429,7 +429,7 @@ XMLdocument(xml * x, str *val)
 }
 
 str
-XMLcontent(xml * x, str *val)
+XMLcontent(xml *x, str *val)
 {
 #ifdef HAVE_LIBXML2
 	xmlDocPtr doc;
@@ -491,7 +491,7 @@ XMLisdocument(bit *x, str *s)
 }
 
 str
-XMLcomment(xml * x, str *s)
+XMLcomment(xml *x, str *s)
 {
 	size_t len;
 	str buf;
@@ -596,7 +596,7 @@ XMLroot(str *ret, str *val, str *version, str *standalone)
 }
 
 str
-XMLattribute(xml * x, str *name, str *val)
+XMLattribute(xml *x, str *name, str *val)
 {
 	str t = *val;
 	str buf;
@@ -620,7 +620,7 @@ XMLattribute(xml * x, str *name, str *val)
 }
 
 str
-XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val)
+XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 {
 	size_t len, i, namelen;
 	str buf;
@@ -631,13 +631,16 @@ XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val)
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
 		throw(MAL, "xml.element", "invalid element name");
 #endif
-	if (nspace && !strNil(*nspace) && **nspace)
-		throw(MAL, "xml.element", "namespace support not yet implemented");
 	/* len is composed of several parts:
-	   "C" + "<" + name + (attr ? " " + attr : "") + (val ? ">" + val + "</" + name + ">" : "/>")
+	   "C" + "<" + name + (nspace ? " " + nspace : "") + (attr ? " " + attr : "") + (val ? ">" + val + "</" + name + ">" : "/>")
 	 */
 	namelen = strlen(*name);
 	len = namelen + 5;	/* "C", "<", "/", ">", terminating NUL */
+	if (nspace && !strNil(*nspace)) {
+		if (**nspace != 'A')
+			throw(MAL, "xml.element", "illegal namespace");
+		len += strlen(*nspace);	/* " " + nspace (nspace contains initial 'A' which is replaced by space) */
+	}
 	if (attr && !strNil(*attr)) {
 		if (**attr != 'A')
 			throw(MAL, "xml.element", "illegal attribute");
@@ -650,6 +653,8 @@ XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val)
 	}
 	buf = GDKmalloc(len);
 	i = snprintf(buf, len, "C<%s", *name);
+	if (nspace && !strNil(*nspace))
+		i += snprintf(buf + i, len - i, " %s", *nspace + 1);
 	if (attr && !strNil(*attr))
 		i += snprintf(buf + i, len - i, " %s", *attr + 1);
 	if (!strNil(*val))
@@ -661,13 +666,13 @@ XMLelement(xml * ret, str *name, str *nspace, xml * attr, xml * val)
 }
 
 str
-XMLelementSmall(xml * ret, str *name, xml * val)
+XMLelementSmall(xml *ret, str *name, xml *val)
 {
 	return XMLelement(ret, name, NULL, NULL, val);
 }
 
 str
-XMLconcat(xml * ret, xml * left, xml * right)
+XMLconcat(xml *ret, xml *left, xml *right)
 {
 	size_t len;
 	str buf;
@@ -742,7 +747,7 @@ XMLprelude(void)
 }
 
 int
-XMLfromString(str src, int *len, xml * x)
+XMLfromString(str src, int *len, xml *x)
 {
 	if (*x)
 		GDKfree(*x);
