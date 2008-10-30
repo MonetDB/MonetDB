@@ -121,7 +121,7 @@ sql_xmlelement(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int 
 	}
 
 	if (!ns_st)
-		ns_st = stmt_atom(atom_general(&str_type, NULL, 0));
+		ns_st = stmt_atom(atom_general(&xml_type, NULL, 0));
 	if (!attr_st)
 		attr_st = stmt_atom(atom_general(&xml_type, NULL, 0));
 	if (!res)

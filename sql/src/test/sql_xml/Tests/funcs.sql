@@ -7,7 +7,7 @@ CREATE FUNCTION parse (val STRING, "option" STRING) RETURNS xml external name xm
 CREATE FUNCTION pi (nme STRING, val STRING) RETURNS xml external name xml.pi;
 CREATE FUNCTION root (val STRING, version STRING, standalone STRING) RETURNS xml external name xml.root;
 CREATE FUNCTION attribute (nme STRING, val STRING) RETURNS xml external name xml.attribute;
-CREATE FUNCTION "element" (nme STRING, ns STRING, attr xml, s xml) RETURNS xml external name xml.element;
+CREATE FUNCTION "element" (nme STRING, ns xml, attr xml, s xml) RETURNS xml external name xml.element;
 CREATE FUNCTION concat (val1 xml, val2 xml) RETURNS xml external name xml.concat;
 CREATE FUNCTION forest (val1 xml, val2 xml) RETURNS xml external name xml.forest;
 CREATE FUNCTION isdocument (val STRING) RETURNS xml external name xml.isdocument;
