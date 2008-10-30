@@ -715,7 +715,7 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 	(void) stk;
 	(void) flags;
 	p= getInstrPtr(mb,pc);
-	msg = instruction2str(mb, stk, p, LIST_MAL_CALL);
+	msg = instruction2str(mb, stk, p, LIST_MAL_VALUE);
 	return msg;
 }
 

@@ -2630,6 +2630,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case FUNCTIONsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
+		if (flg & LIST_MAL_VALUE)
+			break;
 		return fcnDefinition(mb, p, s, flg, base, len);
 	case REMsymbol:
 		if(getVar(mb, getArg(p, 0))->value.val.sval) 
@@ -2668,7 +2670,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			str cv = NULL;
 
 			if (stk && flg & LIST_MAL_VALUE){
-				if (!isVarConstant(mb, getArg(p,i)))
+				if ( flg & LIST_MAL_INSTR  && !isVarConstant(mb, getArg(p,i)))
 					snprintf(t,(len-(t-base)),"%s=", getArgName(mb, p, i));
 				advance(t,base,len);
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
