@@ -753,7 +753,7 @@ SORTfndfirst_@2(BAT *b, ptr v)
 	}
 	if (cmp == 0 && b->tkey == 0) {  /* shift over multiple equals */
                 for(diff = cur-end; diff; diff >>= 1) {
-		    while ((cur-diff) >= end && @3_EQ(BUNt@1(bi, cur-diff), v, @4)) cur -= diff;
+		    while (cur >= (end+diff) && @3_EQ(BUNt@1(bi, cur-diff), v, @4)) cur -= diff;
 		}
 	}
 	return cur;
