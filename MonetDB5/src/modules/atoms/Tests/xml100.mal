@@ -11,7 +11,7 @@ cx:= xml.xml(c);
 
 xp:= xml.element("person",bx);
 io.print(xp);
-xh:= xml.element("hair",nil:str,nil:xml,cx);
+xh:= xml.element("hair",nil:xml,nil:xml,cx);
 io.print(xh);
 
 xx:= xml.forest(xp,xh);
