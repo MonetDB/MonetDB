@@ -1168,8 +1168,9 @@ getDiskReads()
 	struct rusage infoUsage;
 	getrusage(RUSAGE_SELF, &infoUsage);
 	return infoUsage.ru_inblock;
-#endif
+#else
 	return 0;
+#endif
 }
 lng
 getDiskSpace()
