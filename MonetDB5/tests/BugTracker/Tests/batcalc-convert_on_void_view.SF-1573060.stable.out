@@ -5,12 +5,11 @@ stdout of test 'batcalc-convert_on_void_view.SF-1573060` in directory 'tests/Bug
 # 14:01:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib64/MonetDB5:/ufs/mk/monet5/Linux/lib64/MonetDB5/lib:/ufs/mk/monet5/Linux/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/xquery_logs" --set mapi_port=32772 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  batcalc-convert_on_void_view.SF-1573060.mal < /dev/null
 # 14:01:54 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# MonetDB Server v4.99.19
-# Copyright (c) 1993-2006 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_tests_BugTracker
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_tests_BugTracker', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 #include microbenchmark;
 ## head: oid
