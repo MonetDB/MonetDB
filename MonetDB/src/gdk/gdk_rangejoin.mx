@@ -46,7 +46,7 @@ Join all BUNs of the BATs that have tail values: {r-mnus <= l <= r+plus}.
 
 @h
 gdk_export BAT *BATbandmergejoin(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi);
-gdk_export BAT *BATbandmergejoin_limit(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi, size_t *limit);
+gdk_export BAT *BATbandmergejoin_limit(BAT *l, BAT *r, ptr mnus, ptr plus, bit li, bit hi, BUN *limit);
 @
 Versions of bandjoin fixed on the merge implementation (possibly with a cut-off limit);
 
@@ -371,7 +371,7 @@ break;
 @c
 
 static BAT *
-BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, size_t *limit) 
+BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit) 
 {
 	BAT *bn = NULL;
 	BUN lc = BATcount(l), rc = BATcount(r);
@@ -432,7 +432,7 @@ failed:
 }
 
 BAT *
-BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, size_t *limit) 
+BATbandmergejoin_limit(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit) 
 {
 	BAT *ol = l, *or = r, *bn = NULL;
 

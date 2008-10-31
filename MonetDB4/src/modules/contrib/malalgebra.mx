@@ -265,7 +265,13 @@ CMDbandmergejoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *
 int
 CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* limit)
 {
-	size_t cutoff = *limit;
+	BUN cutoff;
+
+	if (*limit < 0 || *limit > (lng) BUN_MAX) {
+		GDKerror("CMDbandmergejoin_limit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	cutoff = (BUN) *limit;
         *result = BATbandmergejoin_limit(left, right, minus, plus, *li, *hi, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;
@@ -279,7 +285,13 @@ CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus,
 int
 CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* limit)
 {
-	size_t cutoff = *limit;
+	BUN cutoff;
+
+	if (*limit < 0 || *limit > (lng) BUN_MAX) {
+		GDKerror("CMDbandmergejoin_limit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	cutoff = (BUN) *limit;
         *result = BATleftmergejoin_limit(left, right, cutoff, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;

@@ -243,7 +243,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 static BAT *
-mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, size_t *limit)
+mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 {
 	ptr nil = ATOMnilptr(r->htype);
 	int r_scan = -1;	/* no scanning in r */
@@ -379,7 +379,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, size_t *limit)
 static BAT *batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways);
 
 static BAT*
-batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap, size_t *limit)
+batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap, BUN *limit)
 {
 	@:joincheck(BATmergejoin,l->ttype,r->htype)@
 	if (BAThdense(r) || (swap && BATtdense(l))) {
@@ -414,7 +414,7 @@ BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
 }
 
 BAT*
-BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, size_t *limit)
+BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, BUN *limit)
 {
 	return batmergejoin(l, r, estimate, FALSE, limit);
 }
