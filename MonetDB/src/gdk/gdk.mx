@@ -3240,6 +3240,7 @@ gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
+gdk_export BAT *BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, size_t *limit);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);

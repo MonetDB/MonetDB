@@ -149,6 +149,27 @@ merge between l and r, but if for a long time no matching tuples are
 found in r, it uses binary search. It also allows joining of an
 unsorted l with a sorted r; in that case it always uses binary search.
 @{
+@c
+#define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
+		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
+		 ((MAX(1,(lcur-lfirst))-1)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst)))
+
+#define bunfastins_limit(b, h, t, limit, percdone) {  		\
+                REGISTER BUN _p = BUNlast(b);                   \
+                REGISTER unsigned short _hsize = Hsize(b);	\
+                REGISTER unsigned short _tsize = Tsize(b);	\
+                if (BUNlast(b) + 1 > BATcapacity(b)) {		\
+                        if (limit) {				\
+                              *limit = b->batCount*percdone;	\
+                              goto bunins_done;			\
+			}					\
+                        if (BATextend(b, BATgrows(b)) == NULL)  \
+                                goto bunins_failed;             \
+                }                                               \
+                hfastins_nocheck(b, _p, h, _hsize);             \
+                tfastins_nocheck(b, _p, t, _tsize);             \
+                (b)->batCount++;                                \
+        }
 @= mergejoin
 	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
 	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {
@@ -208,12 +229,12 @@ unsorted l with a sorted r; in that case it always uses binary search.
 				/* generate match-product as join result */
 				for (; l_start < l_end; l_start++)
 					for (r_cur = r_start; r_cur < r_end; r_cur++)
-						bunfastins(bn, BUNhead(li, l_start), BUNtail(ri, r_cur));
+						bunfastins_limit(bn, BUNhead(li, l_start), BUNtail(ri, r_cur), limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),r_start,r_cur,r_end));
 			} else if (nil_on_miss) {
 				/* outerjoin inserts nils on a miss */
 				hasnils = 1;
 				for (; l_start < l_end; l_start++)
-					bunfastins(bn, BUNhead(li, l_start), nil_on_miss);
+					bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
 			} else {
 				l_start = l_end;	/* no match found in equi-join */
 			}
@@ -222,7 +243,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 @c
 /* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
 static BAT *
-mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate)
+mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, size_t *limit)
 {
 	ptr nil = ATOMnilptr(r->htype);
 	int r_scan = -1;	/* no scanning in r */
@@ -251,7 +272,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate)
 		return NULL;
 	}
 	if (bn == NULL) {
-		@:joinbat(JOIN_EQ,mergejoin(l,r,NULL,nil_on_miss,BUN_NONE),estimate)@
+		@:joinbat(JOIN_EQ,mergejoin(l,r,NULL,nil_on_miss,BUN_NONE,NULL),estimate)@
 	}
 
 	/* the algorithm */
@@ -322,10 +343,10 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate)
 	if (nil_on_miss && l_start < l_last) {
 		hasnils = 1;
 		for (; l_start < l_last; l_start++)
-			bunfastins(bn, BUNhead(li, l_start), nil_on_miss);
+			bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
 	}
-
 	/* propagate properties */
+      bunins_done:
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
 	if (r->hkey) {
@@ -357,28 +378,31 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate)
 
 static BAT *batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways);
 
-static BAT *
-batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap)
+static BAT*
+batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap, size_t *limit)
 {
 	@:joincheck(BATmergejoin,l->ttype,r->htype)@
 	if (BAThdense(r) || (swap && BATtdense(l))) {
 		/* batmergejoin can't handle void tail columns at all (fetchjoin is better anyway) */
-		return batfetchjoin(l, r, estimate, swap, FALSE);
+                BAT *left = limit?BATslice(l, 0, *limit):l; 
+		BAT *bn = batfetchjoin(left, r, estimate, swap, FALSE);
+                if (limit) BBPreclaim(left);
+                return bn;
 	}
 	if (swap && (((BAThordered(r) & 1) == 0) || ((BATtordered(l) & 1) && (BATcount(l) > BATcount(r))))) {
 		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
-		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate);
+		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate, limit);
 
 		return bn ? BATmirror(bn) : NULL;
 	}
-	return mergejoin(l, r, NULL, NULL, estimate);
+	return mergejoin(l, r, NULL, NULL, estimate, limit);
 }
 
 BAT *
 BATmergejoin(BAT *l, BAT *r, BUN estimate)
 {
 	/* allows swapping of left and right input for faster processing */
-	return batmergejoin(l, r, estimate, TRUE);
+	return batmergejoin(l, r, estimate, TRUE, NULL);
 }
 
 BAT *
@@ -386,7 +410,13 @@ BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
 {
 	/* do not swap left and right input,
 	   and hence maintain order of left head in result */
-	return batmergejoin(l, r, estimate, FALSE);
+	return batmergejoin(l, r, estimate, FALSE, NULL);
+}
+
+BAT*
+BATleftmergejoin_limit(BAT *l, BAT *r, BUN estimate, size_t *limit)
+{
+	return batmergejoin(l, r, estimate, FALSE, limit);
 }
 
 @- hash join
@@ -1159,7 +1189,7 @@ loop binary search (both implemented by BATmergejoin).
 	if ((BATtordered(l) & BAThordered(r) & 1) || (must_hash && (((BATtordered(l) & 1) && ((lng) lcount > logl * (lng) rcount) && swap) || ((BAThordered(r) & 1) && ((lng) rcount > logr * (lng) lcount))))) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(l,r," BUNFMT ");\n", estimate);
 
-		return batmergejoin(l, r, estimate, swap);
+		return batmergejoin(l, r, estimate, swap, NULL);
 	}
 @-
 hash join: the bread&butter join of monet
@@ -1272,7 +1302,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		/* use the merge-join; it takes care of the rest */
 		ALGODEBUG THRprintf(GDKout, "#BATouterjoin: mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);\n");
 
-		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);
+		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate, NULL);
 		ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
 		/* invest in property check, since we cannot easily derive the result properties,
