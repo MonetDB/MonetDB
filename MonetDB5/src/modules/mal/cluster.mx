@@ -241,7 +241,7 @@ The bottomline is the number of elements that fit in a single
 diskblock.
 @c
 	N= (BUN)MT_npages() /10;
-	bsize= MT_pagesize()/sizeof(lng);
+	bsize= (BUN) (MT_pagesize()/sizeof(lng));
 	if (N > (rng/ bsize))
 		N = bsize;
 	bsize= rng / N;
