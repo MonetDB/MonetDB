@@ -160,7 +160,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
                 REGISTER unsigned short _tsize = Tsize(b);	\
                 if (BUNlast(b) + 1 > BATcapacity(b)) {		\
                         if (limit) {				\
-                              *limit = b->batCount*percdone;	\
+				*limit = (BUN) (b->batCount * (percdone)); \
                               goto bunins_done;			\
 			}					\
                         if (BATextend(b, BATgrows(b)) == NULL)  \
