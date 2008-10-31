@@ -4,28 +4,18 @@ function XRPC(posturl,    /* Your XRPC server. Usually: "http://yourhost:yourpor
               moduleurl,  /* module (physical) at-hint URL. Module file must be here! */
               method,     /* method name (matches function name in module) */
               arity,      /* arity of the method */
-              updating,   /* whether the function is an updating function */
               call,       /* one or more XRPC_CALL() parameter specs (concatenated strings) */ 
-              callback,   /* callback function to call with the XML response */
-              timeout,    /* timeout value, when > 0 repeatable isolation level is presumed */
-              mode)       /* (none | repeatable) [-iterative][-trace] */
-{
-    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,updating,call,timeout,mode), callback);
-}
-     
-function XRPC_PART(geturl,    /* Your XRPC server. Usually: "http://yourhost:yourport/xrpc" */ 
               callback)   /* callback function to call with the XML response */
 {
-    clntPart.sendReceivePart(geturl, callback);
+    clnt.sendReceive(posturl, method, XRPC_REQUEST(module,moduleurl,method,arity,call), callback);
 }
 
 /**********************************************************************
           functions to construct valid XRPC soap requests
  ***********************************************************************/
 
-function XRPC_REQUEST(module, moduleurl, method, arity, updating, body, timeout, mode) 
-{
-    return '<?xml version="1.0" encoding="utf-8"?>\n' +
+function XRPC_REQUEST(module, moduleurl, method, arity, body) {
+    var r = '<?xml version="1.0" encoding="utf-8"?>\n' +
            '<env:Envelope ' +
            'xmlns:env="http://www.w3.org/2003/05/soap-envelope" ' +
            'xmlns:xrpc="http://monetdb.cwi.nl/XQuery" ' +
@@ -36,11 +26,10 @@ function XRPC_REQUEST(module, moduleurl, method, arity, updating, body, timeout,
                '<xrpc:request xrpc:module="' + module + '" ' +
                 'xrpc:location="' + moduleurl + '" ' +
                 'xrpc:method="' + method + '" ' +
-                'xrpc:mode="' + mode + '" ' +
-                'xrpc:updCall="' + (updating?"true":"false") + '" ' +
                 'xrpc:arity="' + arity + '">' + 
            body 
            + '</xrpc:request></env:Body></env:Envelope>';
+    return r;
 }
 
 /* a body consists of one or more calls */
@@ -83,25 +72,6 @@ function serializeXML(xml) {
     }
 }
 
-function string2XML(text) {
-	try //Internet Explorer
-	  {
-		  xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-		  xmlDoc.async="false";
-		  xmlDoc.loadXML(text);
-	  }
-	catch(e)
-	  {
-	  try //Firefox, Mozilla, Opera, etc.
-	    {
-		    parser=new DOMParser();
-		    xmlDoc=parser.parseFromString(text,"text/xml");
-	    }
-	  catch(e) {alert(e.message)}
-	  }
-	  return xmlDoc;
-}
-
 function getnodesXRPC(node,tagname) {
     try {
         return node.getElementsByTagNameNS("http://monetdb.cwi.nl/XQuery",tagname);
@@ -122,75 +92,21 @@ XRPCWebClient = function () {
     }
 }
 
-XRPCWebClientPart = function () {
-    if (window.XMLHttpRequest) {
-        this.xmlhttp = new XMLHttpRequest();
-    } else if (window.ActiveXObject) {
-        try {
-            this.xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
-        } catch(e) {
-            this.xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-    }
-}
-
 XRPCWebClient.prototype.sendReceive = function(posturl, method, request, callback) {
     try {
-    	this.xmlhttp.open("POST", posturl, true);
-      //alert(request);
-      if (XRPCDEBUG && method != 'getdoc') {
-        //document.getElementById("messreq").value = request; 
-        messreqChanged(string2XML(request));
-      }
-		this.xmlhttp.send(request);
-		var app = this;
-    
-    	this.xmlhttp.onreadystatechange = function() {
-            if (app.xmlhttp.readyState == 4 ) {
-                if (app.xmlhttp.status == 200 &&
-                    app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
-                    app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
-                {
-				    if (XRPCDEBUG) {
-				    	if (app.xmlhttp.responseText) {
+        this.xmlhttp.open("POST", posturl, true);
+        if (XRPCDEBUG) alert(request); 
+        this.xmlhttp.send(request);
 
-
-				    		if(method != 'getdoc') messresChanged(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
-				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
-				    	}
-				    }
-                } else {
-                    var errmsg =
-                        '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
-                        '!ERROR: HTTP/1.1 ' + app.xmlhttp.status + '\n' +
-                        '!ERROR: HTTP Response:\n\n\t' + app.xmlhttp.responseText;
-                    alert(errmsg);
-                    return null;
-                }
-            }
-        };
-    } catch (e) {
-        alert('sendRequest('+posturl,','+method+'): '+e);
-    }
-}
-
-XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
-    try {
-    	//alert("get " + geturl);
-        this.xmlhttp.open("GET", geturl, true);
-        this.xmlhttp.send("");
         var app = this;
-    
-    	this.xmlhttp.onreadystatechange = function() {
+        this.xmlhttp.onreadystatechange = function() {
             if (app.xmlhttp.readyState == 4 ) {
                 if (app.xmlhttp.status == 200 &&
                     app.xmlhttp.responseText.indexOf("!ERROR") < 0 && 
                     app.xmlhttp.responseText.indexOf("<env:Fault>") < 0) 
                 {
-				    if (XRPCDEBUG) {
-				    	if (app.xmlhttp.responseText)
-				    		callback(app.xmlhttp.responseXML? app.xmlhttp.responseXML: string2XML(app.xmlhttp.responseText));
-				    }
+                    if (XRPCDEBUG) alert(serializeXML(app.xmlhttp.responseXML)); 
+                    callback(app.xmlhttp.responseXML);
                 } else {
                     var errmsg =
                         '!ERROR: "' + method + ' execution failed at the remote side"\n\n' +
@@ -202,7 +118,7 @@ XRPCWebClientPart.prototype.sendReceivePart = function(geturl, callback) {
             }
         };
     } catch (e) {
-        alert('sendRequest('+geturl+'): '+e);
+        alert('sendRequest('+method+'): '+e);
     }
 }
 
@@ -222,15 +138,15 @@ String.prototype.xmlEscape = function(direction)
                              '\\030', '\\031', '\\032', '\\033', '\\034', '\\035', '\\036', '\\037');
 
 
-  var chars = new Array ('&','à','á','â','ã','ä','å','æ','ç','è','é',
-                         'ê','ë','ì','í','î','ï','ð','ñ','ò','ó','ô',
-                         'õ','ö','ø','ù','ú','û','ü','ý','þ','ÿ','À',
-                         'Á','Â','Ã','Ä','Å','Æ','Ç','È','É','Ê','Ë',
-                         'Ì','Í','Î','Ï','Ð','Ñ','Ò','Ó','Ô','Õ','Ö',
-                         'Ø','Ù','Ú','Û','Ü','Ý','Þ','€','\"','ß','<',
-                         '>','¢','£','¤','¥','¦','§','¨','©','ª','«',
-                         '¬','­','®','¯','°','±','²','³','´','µ','¶',
-                         '·','¸','¹','º','»','¼','½','¾');
+  var chars = new Array ('&','\340','\341','\342','\343','\344','\345','\346','\347','\350','\351',
+                         '\352','\353','\354','\355','\356','\357','\360','\361','\362','\363','\364',
+                         '\365','\366','\370','\371','\372','\373','\374','\375','\376','\377','\300',
+                         '\301','\302','\303','\304','\305','\306','\307','\310','\311','\312','\313',
+                         '\314','\315','\316','\317','\320','\321','\322','\323','\324','\325','\326',
+                         '\330','\331','\332','\333','\334','\335','\336','\200','\"','\337','<',
+                         '>','\242','\243','\244','\245','\246','\247','\250','\251','\252','\253',
+                         '\254','\255','\256','\257','\260','\261','\262','\263','\264','\265','\266',
+                         '\267','\270','\271','\272','\273','\274','\275','\276');
 
   var entities = new Array ('amp','agrave','aacute','acirc','atilde','auml','aring',
                             'aelig','ccedil','egrave','eacute','ecirc','euml','igrave',

@@ -765,7 +765,9 @@ PROC exit() : void { # redefine exit to do a checkpoint first
 
 
 # the logger background thread
+var logger_base := 0;           # this var only used by XRPC admin
 PROC pf_logmanager() : void {
+    logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
         var changes := logger_changes(pf_logger);
@@ -774,6 +776,7 @@ PROC pf_logmanager() : void {
         }
         if ((changes > 100000) and (cnt > 30)) { 
             pf_logflush(0LL);
+            logger_base := changes;
             cnt := 0;
         } 
         sleep(10);  
