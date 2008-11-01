@@ -1158,8 +1158,9 @@ getDiskWrites()
 	struct rusage infoUsage;
 	getrusage(RUSAGE_SELF, &infoUsage);
 	return infoUsage.ru_oublock;
-#endif
+#else
 	return 0;
+#endif
 }
 lng
 getDiskReads()
