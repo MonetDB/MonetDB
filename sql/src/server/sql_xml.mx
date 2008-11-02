@@ -147,7 +147,7 @@ sql_xmlforest(mvc *sql, scope *scp, symbol *sym, group *grp, stmt *subset, int f
 	if (ns) {
 		ns_st = sql_value_exp(sql, scp, ns, grp, subset, f, knd); 
 	} else {
-		ns_st = stmt_atom(atom_general(&str_type, NULL, 0));
+		ns_st = stmt_atom(atom_general(&xml_type, NULL, 0));
 	}
 	if (!ns_st)
 		return NULL;

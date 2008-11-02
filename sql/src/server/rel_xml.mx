@@ -124,7 +124,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	if (ns) {
 		ns_st = rel_value_exp(sql, rel, ns, f, knd); 
 	} else {
-		ns_st = exp_atom(atom_general(&str_type, NULL, 0));
+		ns_st = exp_atom(atom_general(&xml_type, NULL, 0));
 	}
 	if (!ns_st)
 		return NULL;
