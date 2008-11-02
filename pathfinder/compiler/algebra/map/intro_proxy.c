@@ -2907,7 +2907,7 @@ find_proxy_exit (PFla_op_t *p,
        inside the proxy). We might end up somewhere in the DAG.
        (we rely on the fact that frag_union is the first fragment
         node for each operator that consumes fragment information. */
-    else if (p->kind == la_frag_union)
+    else if (p->kind == la_frag_union || p->kind == la_empty_frag)
         return NULL;
     /* look at each node only once */
     else if (SEEN(p))
