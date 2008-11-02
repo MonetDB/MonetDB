@@ -45,20 +45,31 @@ extern stmt *logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *sub
 #include "sql_env.h"
 
 static stmt *
-rel_flat_subquery(mvc *c, symbol *sym, exp_kind ek)
+rel_scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 {
 	stmt *s = NULL;
 
-	if (mvc_debug_on(c,16384)) {
-		int status = c->session->status;
-		sql_rel *r = rel_subquery(c, NULL, sym, ek);
+	if (mvc_debug_on(sql,16384)) {
+		int status = sql->session->status;
+		sql_rel *r = rel_subquery(sql, NULL, sq, ek);
+		if (!r && scp) {
+			sql_table *t;
+
+			sql->errstr[0] = 0;
+			sql->session->status = status;
+			/* create rel from scp */
+			assert(list_length(scp->bases) == 1);
+			t = scp->bases->h->data;
+			r = rel_basetable(t, t->base.name );
+			r = rel_subquery(sql, r, sq, ek);
+		}
 		if (!r) {
-			if (!c->errstr[0]) 
-				c->session->status = status;
+			if (!sql->errstr[0]) 
+				sql->session->status = status;
 			return NULL;
 		} else {
-			r = rel_optimizer(c, r);
-			s = rel_bin(c, r);
+			r = rel_optimizer(sql, r);
+			s = rel_bin(sql, r);
 		}
 	}
 	return s;
@@ -67,9 +78,11 @@ rel_flat_subquery(mvc *c, symbol *sym, exp_kind ek)
 /* single value only */
 stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek )
 {
-	if (scp)
-		printf("scope_subquery with scope \n");
-	return sql_scope_subquery(sql, scp, sq, ek);
+	stmt *s = NULL;
+
+	if ((s = rel_scope_subquery(sql, scp, sq, ek)) == NULL)
+		return sql_scope_subquery(sql, scp, sq, ek);
+	return s;
 }
 
 stmt *flat_subquery(mvc *sql, symbol *sq)
@@ -77,7 +90,7 @@ stmt *flat_subquery(mvc *sql, symbol *sq)
 	stmt *s = NULL;
 	exp_kind ek = {type_value, card_relation, TRUE};
 
-	if ((s = rel_flat_subquery(sql, sq, ek)) == NULL)
+	if ((s = rel_scope_subquery(sql, NULL, sq, ek)) == NULL)
 		return sql_flat_subquery(sql, sq);
 	if (s && s->type == st_ordered) {
 		stmt *n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));

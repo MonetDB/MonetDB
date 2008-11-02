@@ -33,6 +33,7 @@ extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
 extern void rel_select_add_exp(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_rel *l, list *exps);
+extern sql_rel *rel_basetable(sql_table *t, char *tname);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname );
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname );
@@ -483,7 +484,7 @@ rel_copy( sql_rel *i )
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_basetable(sql_table *t, char *tname) 
 {
 	sql_rel *rel = rel_create();
@@ -1390,11 +1391,18 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
+		sql_arg *a = sql_bind_param(sql, name);
 		int var = (stack_find_var(sql, name) != NULL);
 		
 		exp = rel_bind_column(sql, rel, name);
-		if (exp && var) 
-			return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+		if (exp) {
+			if (var || a) 
+				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+		} else if (a) {
+			if (var) 
+				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+			exp = exp_param(a->name, &a->type, 0);
+		}
 		if (!exp && var)
 			return rel_var_ref(sql, name, 0);
 		if (!exp && !var)
@@ -4014,6 +4022,10 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
 	sql_rel *res = NULL;
 	SelectNode *sn = (SelectNode *) sq;
+
+	/* select ... into is currently not handled here ! */
+	if (sn->into)
+		return NULL;
 
 	if (sn->s.token != SQL_SELECT)
 		return table_ref(sql, rel, sq);
