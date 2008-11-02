@@ -1,19 +1,23 @@
 stdout of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 13:22:15 >  
-# 13:22:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=30620 --set sql_port=47090 --set xquery_port=50410 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 13:22:15 >  
+# 09:48:55 >  
+# 09:48:55 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33996 --set xrpc_port=44936 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 09:48:55 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_test_BugDay_2005-12-19_2.9.3', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33996/
+# MonetDB/SQL module v2.25.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -59,17 +63,18 @@ Over..
 [ "xrpc_open"	]
 [ "xrpc_port"	]
 [ "xquery_backend"	]
-[ "datadir"	]
+[ "mal_listing"	]
 [ "gdk_embedded"	]
-[ "xquery_output"	]
-[ "xquery_cacheMB"	]
-[ "xquery_cacherules"	]
-[ "xquery_procMB"	]
-[ "xrpc_options"	]
-[ "xrpc_admin"	]
-[ "xrpc_user"	]
-[ "xrpc_trusted"	]
-[ "monet_cwd"	]
+[ "mero_msglog"	]
+[ "mero_errlog"	]
+[ "mero_timeinterval"	]
+[ "mero_pidfile"	]
+[ "mero_exittimeout"	]
+[ "mero_doproxy"	]
+[ "mero_discoveryttl"	]
+[ "mal_init"	]
+[ "checkpoint_dir"	]
+[ "sql_init"	]
 [ "monet_version"	]
 
 # 13:22:15 >  
