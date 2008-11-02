@@ -27,6 +27,7 @@
 #include "sql_statement.h"
 
 extern stmt * rel_bin(mvc *sql, sql_rel *rel);
+extern stmt * output_rel_bin(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_BIN_H_*/
 @c
@@ -1520,6 +1521,15 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs )
 
 stmt *
 rel_bin(mvc *sql, sql_rel *rel ) 
+{
+	list *refs = create_stmt_list();
+	stmt *s = subrel_bin( sql, rel, refs);
+	list_destroy(refs);
+	return s;
+}
+
+stmt *
+output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
 	list *refs = create_stmt_list();
 	stmt *s = subrel_bin( sql, rel, refs);

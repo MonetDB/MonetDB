@@ -48,6 +48,8 @@ extern stmt *sql_delete(mvc *sql, sql_schema *schema, sql_table *t, stmt *s, int
 #include "sql_select.h"
 #include "sql_privileges.h"
 
+#include "rel_subquery.h"
+
 static  list *sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates);
 
 static stmt *
@@ -60,7 +62,7 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 	} else {
 		stmt *n = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
-		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel, ek);
+		stmt *a = value_exp(sql, scp, s, NULL, NULL, sql_sel, ek);
 
 		if (!a)
 			return(NULL);
@@ -1605,7 +1607,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 
 		if (opt_where) {
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
+			s = logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
 			if (s && s->type != st_set && s->type != st_sets) {
 				s = stmt_set(s);
 			}
@@ -1650,7 +1652,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 			a = assignment->h->next->data.sym;
 			if (a) {
 				exp_kind ek = {type_value, card_column, FALSE};
-				v = sql_value_exp(sql, scp, a, NULL, s, sql_sel, ek);
+				v = value_exp(sql, scp, a, NULL, s, sql_sel, ek);
 			} else
 				v = stmt_atom(atom_general(&c->type, NULL, 0));
 
@@ -1946,7 +1948,7 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 		if (opt_where) {
 			stmt *subset = NULL;
-			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
+			s = logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
 			if (s && s->type == st_filter) { /* filter on table ? */
 				ptable_statements(scp->ptable) = stmt_set(s);
 				s = stmt_dup(scope_first_column(scp)->s);

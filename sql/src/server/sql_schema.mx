@@ -46,6 +46,8 @@ extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, 
 #include "sql_privileges.h"
 #include "sql_psm.h"
 
+#include "rel_subquery.h"
+
 static void
 list_append_stmt(list *l, stmt *s)
 {
@@ -1221,7 +1223,7 @@ column_option(
 		{
 			char *r;
 			exp_kind ek = {type_value, card_value, FALSE};
-			stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *tmp = value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel, ek);
 
 			if (!tmp || (tmp = check_types(sql, &cs->type, tmp, type_equal)) == NULL) 
 				return SQL_ERR;
@@ -1573,7 +1575,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		if (!c) 
 			return sql_error(sql, 02, "column '%s' not found\n", cname);
- 		tmp = sql_value_exp(sql, NULL, sym, NULL, NULL, sql_sel, ek);
+ 		tmp = value_exp(sql, NULL, sym, NULL, NULL, sql_sel, ek);
 		if (!tmp || (tmp = check_types(sql, &c->type, tmp, type_equal)) == NULL) 
 			return NULL;
 		stmt_destroy(tmp);

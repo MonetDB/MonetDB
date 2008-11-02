@@ -28,6 +28,7 @@
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 extern sql_rel *rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent);
+extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
 
 extern void rel_select_add_exp(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_rel *l, sql_exp *e);
@@ -1001,7 +1002,6 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 }
 
 /* forward refs */
-static sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
 static sql_rel * rel_setquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
@@ -1887,6 +1887,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 	if (!sc)
 		return NULL;
+
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
+
 	switch (sc->token) {
 	case SQL_OR:
 	case SQL_AND:
@@ -2234,6 +2238,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 	if (!sc)
 		return NULL;
+
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
+
 	switch (sc->token) {
 	case SQL_OR:
 	{
@@ -2401,6 +2409,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = sc->data.sym;
 		sql_rel *r;
 		sql_exp *e = NULL;
+		list *exps = NULL;
 
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek);
@@ -2416,6 +2425,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			   join expression.
 			 */
 			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1));
+			exps = rel_projections(sql, rel, NULL, 1);
  			e = rel_unop_(sql, exp_dup(rel->exps->h->data), NULL, "identity");
 			rel_project_add_exp(sql, rel, e);
 			e = exp_label(e, ++sql->label);
@@ -2441,6 +2451,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 		if (e)
 			rel->exps = append(new_exp_list(), e);
+		if (exps)
+			rel = rel_project(rel, exps);
 		return rel;
 	}
 	case SQL_LIKE:
@@ -3446,6 +3458,9 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!se)
 		return NULL;
 
+ 	if (THRhighwater())
+		return sql_error(sql, 10, "SELECT: too many nested operators");
+
 	switch (se->token) {
 	case SQL_OP:
 		return rel_op(sql, se );
@@ -4334,7 +4349,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek)
 {
 	int toplevel = 0;

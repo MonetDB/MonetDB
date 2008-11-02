@@ -1,0 +1,103 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008- MonetDB B.V.
+@' All Rights Reserved.
+
+@f rel_subquery
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _REL_SUBQUERY_H_
+#define _REL_SUBQUERY_H_
+
+#include "rel_semantic.h"
+#include "sql_semantic.h"
+
+extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
+extern stmt *flat_subquery(mvc *sql, symbol *sq);
+
+extern stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
+extern stmt *logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd);
+
+#endif /*_REL_SUBQUERY_H_*/
+
+@c
+
+#include "sql_config.h"
+#include "rel_subquery.h"
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_bin.h"
+#include "sql_select.h"
+#include "sql_env.h"
+
+static stmt *
+rel_flat_subquery(mvc *c, symbol *sym, exp_kind ek)
+{
+	stmt *s = NULL;
+
+	if (mvc_debug_on(c,16384)) {
+		int status = c->session->status;
+		sql_rel *r = rel_subquery(c, NULL, sym, ek);
+		if (!r) {
+			if (!c->errstr[0]) 
+				c->session->status = status;
+			return NULL;
+		} else {
+			r = rel_optimizer(c, r);
+			s = rel_bin(c, r);
+		}
+	}
+	return s;
+}
+
+/* single value only */
+stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek )
+{
+	if (scp)
+		printf("scope_subquery with scope \n");
+	return sql_scope_subquery(sql, scp, sq, ek);
+}
+
+stmt *flat_subquery(mvc *sql, symbol *sq)
+{
+	stmt *s = NULL;
+	exp_kind ek = {type_value, card_relation, TRUE};
+
+	if ((s = rel_flat_subquery(sql, sq, ek)) == NULL)
+		return sql_flat_subquery(sql, sq);
+	if (s && s->type == st_ordered) {
+		stmt *n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));
+		stmt_destroy(s);
+		s = n;
+	}
+	return s;
+}
+
+stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd)
+{
+/*
+	if (scp)
+		printf("#value_exp with scope \n");
+*/
+	return sql_value_exp(sql, scp, se, grp, subset, f, knd);
+}
+stmt *logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd)
+{
+	if (scp)
+		printf("#logical_exp with scope \n");
+	return sql_logical_exp(sql, scp, sc, grp, subset, f, knd);
+}

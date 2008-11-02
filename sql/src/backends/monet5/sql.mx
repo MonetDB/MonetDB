@@ -984,7 +984,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 				c->emode = m_inplace;
 				rel_print(c, r, 0);
 			}
-			s = rel_bin(c, r);
+			s = output_rel_bin(c, r);
 			if (s) {
 				stmt *opt;
 
@@ -2164,7 +2164,7 @@ not_unique_oids(bat *ret, bat* bid)
 		}
 		if (first)
 			rh--;
-		BATsetcount(bn, rh - rf); 
+		BATsetcount(bn, (BUN)(rh - rf)); 
 	} else {
 		oid *rf, *rh, *rt;
 		oid *h = (oid*)Hloc(b,0), *vp, *ve;
@@ -2184,7 +2184,7 @@ not_unique_oids(bat *ret, bat* bid)
 				*rt++ = *vp;
 			}
 		}
-		BATsetcount(bn, rh - rf); 
+		BATsetcount(bn, (BUN)(rh - rf)); 
 	}
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*ret = bn->batCacheid);

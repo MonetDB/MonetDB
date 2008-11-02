@@ -33,11 +33,10 @@
 
 extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
-extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek);
-extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
-extern stmt *scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
-extern stmt *flat_subquery(mvc *sql, symbol *sq);
+extern stmt *sql_scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
+extern stmt *sql_flat_subquery(mvc *sql, symbol *sq);
 extern stmt *sql_reorder(stmt *order, stmt *s);
+extern stmt *scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
 
 extern stmt *sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
 extern stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd);
@@ -188,7 +187,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	}
 }
 
-stmt *
+static stmt *
 sql_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 {
 	SelectNode *sn = (SelectNode *) sq;
@@ -271,7 +270,7 @@ scope_subtable(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 }
 
 stmt *
-scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
+sql_scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 {
 	stmt *s;
 
@@ -281,9 +280,50 @@ scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
 	return s;
 }
 
+static stmt *
+find_order(stmt *s)
+{
+	if (s->type == st_limit) 
+		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
+	else
+		assert(s->type == st_order || s->type == st_reorder);
+		
+	while(s->type == st_reorder)
+		s = s->op1.stval;
+	return s;
+}
+
+stmt *
+sql_reorder(stmt *order, stmt *s) 
+{
+	list *l = create_stmt_list();
+	node *n;
+	/* we need to keep the order by column, to propagate the sort property*/
+	stmt *o = find_order(order);
+	stmt *x = o->op1.stval;
+
+	order = stmt_mark(stmt_reverse(order), 0);
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *sc = n->data;
+		char *cname = column_name(sc);
+		char *tname = table_name(sc);
+
+		if (sc != x)
+			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
+		else	/* first order by column */
+			sc = stmt_mark(stmt_dup(o), 0);
+		sc = stmt_alias(sc, tname, cname );
+		list_append(l, sc);
+		
+	}
+	stmt_destroy(s);
+	stmt_destroy(order);
+	return stmt_list(l);
+}
+
 /* handle limit and orderby properly ! */
 stmt *
-flat_subquery(mvc *sql, symbol *sq)
+sql_flat_subquery(mvc *sql, symbol *sq)
 {
 	scope *scp = scope_open(NULL);
 	exp_kind ek = {type_value, card_relation, TRUE};
@@ -437,7 +477,7 @@ static tvar *
 sql_subquery_optname(mvc *sql, scope *scp, symbol *query)
 {
 	SelectNode *sn = (SelectNode *) query;
-	stmt *sq = flat_subquery(sql, query);
+	stmt *sq = sql_flat_subquery(sql, query);
 	char *tname = NULL;
 
 	if (!sq)
@@ -1596,7 +1636,7 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 stmt *
 sql_table_exp(mvc *sql, scope *scp, symbol *sym ) 
 {
-	stmt *ls = flat_subquery(sql, sym);
+	stmt *ls = sql_flat_subquery(sql, sym);
 
 	(void)scp;
 	assert(scp == NULL);
@@ -1666,7 +1706,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 	case SQL_NAME:
 		return sql_var_ref(sql, se->data.sval, 1);
 	case SQL_SELECT:{
-		stmt *s = scope_subquery(sql, scp, se, ek);
+		stmt *s = sql_scope_subquery(sql, scp, se, ek);
 
 		/* make a single (column) out of a subquery,
 		   we do it here instead of all places where the
@@ -2876,7 +2916,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 	} else {
 		node *o;
 
-		rs = scope_subquery(sql, scp, ro, iek);
+		rs = sql_scope_subquery(sql, scp, ro, iek);
 
 		if (!rs) {
 			stmt_destroy(ls);
@@ -3474,7 +3514,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	case SQL_NOT_EXISTS:
 	{
 		symbol *lo = sc->data.sym;
-		stmt *ls = scope_subquery(sql, scp, lo, iek);
+		stmt *ls = sql_scope_subquery(sql, scp, lo, iek);
 
 		if (!ls)
 			return NULL;
@@ -3677,47 +3717,6 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 			cur = grp_create(s, cur, NULL);
 	}
 	return cur;
-}
-
-static stmt *
-find_order(stmt *s)
-{
-	if (s->type == st_limit) 
-		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
-	else
-		assert(s->type == st_order || s->type == st_reorder);
-		
-	while(s->type == st_reorder)
-		s = s->op1.stval;
-	return s;
-}
-
-stmt *
-sql_reorder(stmt *order, stmt *s) 
-{
-	list *l = create_stmt_list();
-	node *n;
-	/* we need to keep the order by column, to propagate the sort property*/
-	stmt *o = find_order(order);
-	stmt *x = o->op1.stval;
-
-	order = stmt_mark(stmt_reverse(order), 0);
-	for (n = s->op1.lval->h; n; n = n->next) {
-		stmt *sc = n->data;
-		char *cname = column_name(sc);
-		char *tname = table_name(sc);
-
-		if (sc != x)
-			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
-		else	/* first order by column */
-			sc = stmt_mark(stmt_dup(o), 0);
-		sc = stmt_alias(sc, tname, cname );
-		list_append(l, sc);
-		
-	}
-	stmt_destroy(s);
-	stmt_destroy(order);
-	return stmt_list(l);
 }
 
 static stmt *
@@ -4289,7 +4288,7 @@ selects(mvc *sql, scope *scp, symbol *s)
 	switch (s->token) {
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
-		ret = scope_subquery(sql, scp, s, ek);
+		ret = sql_scope_subquery(sql, scp, s, ek);
 		sql->type = Q_TABLE;
 	} 	break;
 	case SQL_JOIN:
