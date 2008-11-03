@@ -1755,9 +1755,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 	char *buf;
 
 	THRerrorcount[THRgettid()]++;
-	buf =  THRget_errbuf(THRget(THRgettid()));
-	if (buf == 0)
-		buf = GDKerrbuf;
+	buf =  GDKerrbuf;
 	if (buf) {
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
