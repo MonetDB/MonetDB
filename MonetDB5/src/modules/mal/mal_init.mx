@@ -206,6 +206,7 @@ include opt_octopus;
 include opt_partitions;
 include opt_peephole;
 include opt_qep;
+include opt_history;
 include opt_pushranges;
 include opt_reduce;
 include opt_remap;

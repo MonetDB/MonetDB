@@ -66,9 +66,9 @@ command new(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CLUSTER_new
 comment "Recluster hash key table and produce a re-allocation map";
 
-pattern map(m:bat[:oid,:oid], b:bat[:oid,:any]...):void
+pattern map(m:bat[:oid,:oid], b:bat[:oid,:int]):void
 address CLUSTER_map
-comment "Reorder tail of bat b using a cluster map";
+comment "Reorder tail of the bates referred to a cluster map";
 @{
 @h
 #ifndef _CLUSTER_H
@@ -78,7 +78,7 @@ comment "Reorder tail of bat b using a cluster map";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-/* #define _CLUSTER_DEBUG	for local debugging */
+#define _CLUSTER_DEBUG	/* for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -290,7 +290,7 @@ diskblock.
 		if (basket[bnr].limit < basket[bnr+1].base){
 #ifdef _CLUSTER_DEBUG
 			printf("case 1 mov %d %d", (int) ocur, (int) idx);
-			printf(" basket %d %d-%d %d-%d\n",bnr, 
+			printf(" basket %d %d-%d %d-%d\n",(int) bnr, 
 				(int) basket[bnr].base, (int) basket[bnr].limit, 
 				(int) basket[bnr].low, (int) basket[bnr].hgh);
 #endif
@@ -301,7 +301,7 @@ diskblock.
 		if ( bnr>0 && basket[bnr-1].limit < basket[bnr].base){
 #ifdef _CLUSTER_DEBUG
 			printf("case 2 mov %d %d", (int) ocur, (int) idx);
-			printf(" basket %d %d-%d %d-%d\n",bnr, 
+			printf(" basket %d %d-%d %d-%d\n",(int) bnr, 
 				(int) basket[bnr].base, (int) basket[bnr].limit, 
 				(int) basket[bnr].low, (int) basket[bnr].hgh);
 #endif
@@ -315,12 +315,12 @@ diskblock.
 		i= N;
 		do {
 			if (basket[bnr].limit < basket[bnr+1].base){
-	#ifdef _CLUSTER_DEBUG
+#ifdef _CLUSTER_DEBUG
 				printf("case 3 mov %d %d", (int) ocur, (int) idx);
-				printf(" basket %d %d-%d %d-%d\n",bnr, 
+				printf(" basket %d %d-%d %d-%d\n",(int) bnr, 
 					(int) basket[bnr].base, (int) basket[bnr].limit, 
 					(int) basket[bnr].low, (int) basket[bnr].hgh);
-	#endif
+#endif
 				mp[basket[bnr].limit]= idx++;
 				basket[bnr].limit++;
 				goto cont;
@@ -340,15 +340,14 @@ opportune to simply rebuild the clustered column by
 probing. 
 
 Extend this operation to accept a sequence of BATs.
-The code is not yet used.
+We change the BAT in place using a temporary copy
+to guide the move.
 @c
 void 
 CLUSTER_column(BAT *nb, BAT *cmap)
 {
 	BAT *b;
 	b= BATcopy(nb, nb->htype, nb->ttype, TRUE);
-	BATseqbase(nb, b->H->seq);
-	BATsetcount(nb, BATcount(b));
 	nb->tsorted= FALSE;
 	nb->tdense= FALSE;
 
@@ -371,47 +370,76 @@ CLUSTER_column(BAT *nb, BAT *cmap)
 str  
 CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bat *CMAP =(int *) getArgReference(stk, pci, pci->retc);
-	bat *B;
+	bat *CMAP =(int *) getArgReference(stk, pci, 1);
+	bat *B =(int *) getArgReference(stk, pci, 2);
+	BATiter bi;
+	int *p, *q;
 	BAT *nb, *cmap = NULL, *b = NULL;
-	int i;
 
 	(void) cntxt;
 	(void) mb;
+	if ( (cmap = BATdescriptor(*CMAP)) == NULL )
+		throw(MAL, "cluster.map", "Cannot access  descriptor");
+	if ( (b = BATdescriptor(*B)) == NULL ){
+		BBPunfix(*CMAP);
+		throw(MAL, "cluster.map", "Cannot access  descriptor");
+	}
 
-	for (i=pci->retc+1; i<pci->argc; i++){
-		B =(int *) getArgReference(stk, pci, i);
-		if ( (b = BATdescriptor(*B)) == NULL)
-			throw(MAL, "cluster.map", "Cannot access 1st descriptor");
+	bi= bat_iterator(b);
+	p = (int*)Tloc(b, BUNfirst(b));
+	q = p + BATcount(b);
+	for(; p<q; p++){
+#ifdef _CLUSTER_DEBUG
+		printf("recluster %d test\n", *(int*)p);
+#endif
+		if ( (nb = BATdescriptor(*(int*)p)) == NULL)
+			throw(MAL, "cluster.map", "Cannot access descriptor");
 		/* small-defense line */
-		switch(ATOMstorage(b->ttype)) {
+		switch(ATOMstorage(nb->ttype)) {
 		case TYPE_chr: case TYPE_bte: case TYPE_sht: case TYPE_oid:
 		case TYPE_wrd: case TYPE_int: case TYPE_lng: case TYPE_flt:
 		case TYPE_dbl: case TYPE_str:
 				/* doit */
 				break;
 		default:
-			BBPunfix(*B);
+			BBPunfix(nb->batCacheid);
 			throw(MAL, "cluster.map", "Cannot recluster operand");
 		}
-		BBPunfix(*B);
+		BBPunfix(nb->batCacheid);
 	}
 
-	if ( (cmap = BATdescriptor(*CMAP)) == NULL ){
-		BBPunfix(*CMAP);
-		throw(MAL, "cluster.map", "Cannot access 3rd descriptor");
-	}
-
-	for (i= pci->retc; i<pci->argc; i++){
-		/* we replace the order in the argument */
-		/* this calls for a copy to take values from */
-		/* could be improved with some pointer swissling */
-		B =(int *) getArgReference(stk, pci, i);
-		nb = BATdescriptor(*B);
+	p = (int*)Tloc(b, BUNfirst(b));
+	for(; p<q; p++){
+#ifdef _CLUSTER_DEBUG
+		printf("recluster %d\n", *(int*)p);
+#endif
+		nb = BATdescriptor(*(int*) p);
 		CLUSTER_column(nb,cmap);
 		BBPunfix(nb->batCacheid);
 	}
 	BBPunfix(*CMAP);
 	return MAL_SUCCEED;
 }
+@-
+A test skeleton for re-clustering a specific SQL table.
+
+include cluster;
+function clusterTable(nme:str);
+	t0:= alarm.time();
+	sql_catalog:bat[:int,:str] := bbp.bind("sql_catalog");
+	pat := "%_"+nme;
+	pat := pat+"_%";
+	items := pcre.like_uselect(sql_catalog,pat,"");
+	rn:= bat.reverse(items);
+	io.print(rn);
+	first:= algebra.fetch(rn,0);
+	b1:bat[:void,:any] := bbp.bind(first);
+	io.print(b1);
+	cmap:= cluster.new(first);
+	io.printf("cluster %s\n",pat);
+	cluster.map(cmap,rn);
+	t1:= alarm.time();
+	t1:= t1-t0;
+	io.printf("time %d\n",t1);
+end clusterTable;
 @}

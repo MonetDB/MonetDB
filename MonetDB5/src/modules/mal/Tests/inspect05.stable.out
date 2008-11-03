@@ -27,7 +27,9 @@ end main;                               # 11
 # h				symbol		symbol		 symbol																	 symbol							  # name
 # str				str		str		str																	str							  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "keepquery",			  "function",	  "user",	  "(qid:int,qry:str,parse:lng,optimize:lng):void;",											  "nil"							  ]
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
+[ "queryId",			  "function",	  "user",	  "(qid:int):void;",															  "nil"							  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml]):bat[:oid,:xml] ",												  "BATXMLgroup;"					  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml] ",										  "BATXMLagg;"						  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml] ",								  "BATXMLagg3;"						  ]
@@ -44,7 +46,7 @@ end main;                               # 11
 [ "element",			  "command",	  "xml",	  "(name:str,ns:xml,attr:xml,s:bat[:oid,:xml]):bat[:oid,:xml] ",									  "BATXMLelement;"					  ]
 [ "element",				  "command",	  "xml",	  "(name:str,s:bat[:oid,:xml]):bat[:oid,:xml] ",											  "BATXMLelementSmall;"					  ]
 [ "element",			  "command",	  "xml",	  "(name:str,s:xml):xml ",														  "XMLelementSmall;"					  ]
-[ "element",			  "command",	  "xml",	  "(name:str,ns:str,attr:xml,s:xml):xml ",												  "XMLelement;"						  ]
+[ "element",				  "command",	  "xml",	  "(name:str,ns:xml,attr:xml,s:xml):xml ",												  "XMLelement;"					  ]
 [ "forest",			  "pattern",	  "xml",	  "(val:bat[:oid,:xml]...):bat[:oid,:xml] ",												  "BATXMLforest;"					  ]
 [ "forest",			  "pattern",	  "xml",	  "(val:xml...):xml ",															  "XMLforest;"						  ]
 [ "#fromstr",			  "command",	  "xml",	  "():xml ",																  "XMLfromString;"					  ]
@@ -748,6 +750,8 @@ end main;                               # 11
 [ "factorize",			  "pattern",	  "optimizer",	  "():str ",																  "OPTfactorize;"					  ]
 [ "garbageCollector",		  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTgarbageCollector;"				  ]
 [ "garbageCollector",		  "pattern",	  "optimizer",	  "():str ",																  "OPTgarbageCollector;"				  ]
+[ "history",				  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPThistory;"					  ]
+[ "history",				  "pattern",	  "optimizer",	  "():str ",																  "OPThistory;"					  ]
 [ "heuristics",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTheuristics;"					  ]
 [ "heuristics",			  "pattern",	  "optimizer",	  "():str ",																  "OPTheuristics;"					  ]
 [ "inline",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTinline;"						  ]
@@ -1146,7 +1150,9 @@ end main;                               # 11
 [ "deposit",			  "pattern",	  "bbp",	  "(name:str,loc:str):bat[:any_1,:any_2] ",												  "CMDbbpbindDefinition;"				  ]
 [ "deposit",			  "pattern",	  "bbp",	  "(name:str,v:bat[:any_1,:any_2]):void ",												  "CMDbbpdeposit;"					  ]
 [ "destroy",			  "command",	  "bbp",	  "():void ",																  "CMDbbpdestroy;"					  ]
-[ "getPageSize",		  "command",	  "bbp",	  "():lng ",																  "CMDgetPageSize;"					  ]
+[ "getDiskWrites",			  "command",	  "bbp",	  "():lng ",																  "CMDbbpDiskWrites;"				  ]
+[ "getDiskReads",			  "command",	  "bbp",	  "():lng ",																  "CMDbbpDiskReads;"				  ]
+[ "getPageSize",			  "command",	  "bbp",	  "():int ",																  "CMDgetPageSize;"				  ]
 [ "getDiskSpace",		  "command",	  "bbp",	  "():lng ",																  "CMDbbpDiskSpace;"					  ]
 [ "getLRefCount",		  "command",	  "bbp",	  "(b:bat[:any_1,:any_2]):int ",													  "CMDgetBATlrefcnt;"					  ]
 [ "getRefCount",		  "command",	  "bbp",	  "(b:bat[:any_1,:any_2]):int ",													  "CMDgetBATrefcnt;"					  ]
