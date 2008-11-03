@@ -263,28 +263,50 @@ CMDbandmergejoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *
 }
 
 int
-CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* limit)
+CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* _limit)
 {
-	size_t cutoff = *limit;
+        lng limit = *_limit;
+        size_t cutoff = (size_t) limit;
+        assert(limit >= 0);
+#if SIZEOF_SIZE_T == SIZEOF_INT
+        assert(limit <= GDK_int_max);
+#endif
         *result = BATbandmergejoin_limit(left, right, minus, plus, *li, *hi, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
-                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
+                if (*result) {
+#if SIZEOF_SIZE_T == SIZEOF_LNG
+                        assert(cutoff <= (size_t) GDK_lng_max);
+#endif
+                        limit = (lng) cutoff;
+                        BUNins(*result, &limit, &bid, FALSE);
+                }
                 BBPunfix(bid);
         }
         return (*result)?GDK_SUCCEED:GDK_FAIL;
 }
 
 int
-CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* limit)
+CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* _limit)
 {
-	size_t cutoff = *limit;
+        lng limit = *_limit;
+        size_t cutoff = (size_t) limit;
+        assert(limit >= 0);
+#if SIZEOF_SIZE_T == SIZEOF_INT
+        assert(limit <= GDK_int_max);
+#endif
         *result = BATleftmergejoin_limit(left, right, cutoff, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
-                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
+                if (*result) {
+#if SIZEOF_SIZE_T == SIZEOF_LNG
+                        assert(cutoff <= (size_t) GDK_lng_max);
+#endif
+                        limit = (lng) cutoff;
+                        BUNins(*result, &limit, &bid, FALSE);
+                }
                 BBPunfix(bid);
         }
         return (*result)?GDK_SUCCEED:GDK_FAIL;
