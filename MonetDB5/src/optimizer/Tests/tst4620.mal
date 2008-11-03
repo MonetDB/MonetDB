@@ -29,4 +29,4 @@ z:= algebra.join(b,c);
 zz:= algebra.join(z,d);
 i:= aggr.count(zz);
 io.print(i);
-mdb.list();
+mdb.List();

@@ -30,4 +30,4 @@ optimizer.aliases("user","getz");
 #optimizer.deadcode("user","getz");
 #optimizer.reduce("user","getz");
 #optimizer.garbageCollector("user","getz");
-mdb.list("user","getz");
+mdb.List("user","getz");

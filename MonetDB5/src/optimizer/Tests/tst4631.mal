@@ -115,4 +115,4 @@ optimizer.setDebug();
 optimizer.aliases("user","qry1");
 optimizer.reduce("user","qry1");
 optimizer.commonTerms("user","qry1");
-mdb.list("user","qry1");
+mdb.List("user","qry1");

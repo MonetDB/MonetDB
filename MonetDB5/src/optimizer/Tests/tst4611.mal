@@ -13,4 +13,4 @@ g:= algebra.join(a,b);
 h:= algebra.join(g,c);
 
 optimizer.orcam("user","joinPath");
-mdb.list();
+mdb.List();

@@ -7,4 +7,4 @@ function test(s:str):wrd;
 	return test:=i;
 end test;
 optimizer.factorize("user","test");
-mdb.list("user","test");
+mdb.List("user","test");

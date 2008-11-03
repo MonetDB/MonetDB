@@ -7,4 +7,4 @@ bat.insert(b,6,3);
 b:= algebra.sort(b);
 #should throw out the last statement
 optimizer.deadcode();
-mdb.list();
+mdb.List();

@@ -5,4 +5,4 @@ s2:= algebra.select(s1,nil:int,75);
 io.print(s2);
 optimizer.pushranges();
 optimizer.deadcode();
-mdb.list();
+mdb.List();

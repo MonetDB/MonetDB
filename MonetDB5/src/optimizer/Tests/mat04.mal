@@ -1,5 +1,5 @@
 # select i, sum(j) from t group by i having i>4;
-mdb.list();
+mdb.List();
 #   v3:bat[:void,:int]  := sql.bind("sys","t","i",0);
     v3v0:= bat.new(:void,:int);
     bat.insert(v3v0,nil,0);

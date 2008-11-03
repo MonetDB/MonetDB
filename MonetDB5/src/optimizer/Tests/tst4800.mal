@@ -29,4 +29,4 @@ function f3():void;
 #       io.table(bat_0,bat_1,top);
 end f3;
 	optimizer.accumulators("user","f3");
-	mdb.list("user","f3");
+	mdb.List("user","f3");

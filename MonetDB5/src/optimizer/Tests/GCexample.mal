@@ -6,4 +6,4 @@
     t6 := batcalc.oid(t5);
     t7 := algebra.join(t6,t1);
 	optimizer.garbageCollector();
-	mdb.list();
+	mdb.List();

@@ -4,4 +4,4 @@ rs:= algebra.select(s,1,1);
 rr:= bat.reverse(r);
 j:= algebra.join(rs,rr);
 optimizer.costEstimation();
-mdb.list();
+mdb.List();

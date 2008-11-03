@@ -7,4 +7,4 @@ s := bat.reverse(r);
 t := bat.reverse(s);
 io.print(t);
 optimizer.peephole();
-mdb.list();
+mdb.List();

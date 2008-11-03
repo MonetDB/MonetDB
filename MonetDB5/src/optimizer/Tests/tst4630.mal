@@ -15,5 +15,5 @@ end qry;
 
 optimizer.joinPath("user","qry");
 optimizer.commonTerms("user","qry");
-mdb.list("user","qry");
+mdb.List("user","qry");
 

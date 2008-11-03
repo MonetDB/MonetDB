@@ -1,6 +1,6 @@
 #select * from t,s where t.i=s.j;
 
-mdb.list();
+mdb.List();
 #   v2:bat[:oid,:int]  := sql.bind("sys","t","i",0);
 	v2v0:= bat.new(:oid,:int);
     bat.insert(v2v0,nil,0);

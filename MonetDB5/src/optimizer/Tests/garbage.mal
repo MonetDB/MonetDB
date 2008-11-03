@@ -4,4 +4,4 @@ function tst();
   io.print(b);
 end tst;
 optimizer.garbageCollector("user","tst");
-mdb.list("user","tst");
+mdb.List("user","tst");

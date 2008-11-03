@@ -8,4 +8,4 @@
 	io.print("done");
 
 optimizer.deadcode();
-mdb.list();
+mdb.List();

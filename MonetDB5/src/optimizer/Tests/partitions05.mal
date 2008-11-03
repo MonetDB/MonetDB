@@ -34,4 +34,4 @@ function query(A0:sht):void;
     sql.exportResult(x21,"");
 end query;
 optimizer.partitions("sql","query");
-mdb.list("sql","query");
+mdb.List("sql","query");

@@ -2,4 +2,4 @@
 	bat.insert(b,1,1);
 	c:bat[:int,:int]:=mal.multiplex("calc","+",b,1);
 	optimizer.multiplex();
-	mdb.list();
+	mdb.List();

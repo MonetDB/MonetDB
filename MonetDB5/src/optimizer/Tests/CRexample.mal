@@ -6,4 +6,4 @@ s4:= algebra.select(s3,nil:int,75);
 io.print(s4);
 optimizer.pushranges();
 optimizer.deadcode();
-mdb.list();
+mdb.List();

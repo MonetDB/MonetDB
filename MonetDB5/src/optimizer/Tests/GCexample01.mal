@@ -22,4 +22,4 @@ exit go;
 end qry;
 
 optimizer.garbageCollector("user","qry");
-mdb.list("user","qry");
+mdb.List("user","qry");

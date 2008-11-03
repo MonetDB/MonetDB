@@ -86,6 +86,6 @@ end f1;
 	optimizer.accumulators("user","f1"); 
 	optimizer.garbageCollector("user","f1");
 	optimizer.factorize("user","f1");
-	mdb.list("user","f1");
+	mdb.List("user","f1");
 	##f1();
 

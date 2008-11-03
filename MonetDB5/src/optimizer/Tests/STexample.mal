@@ -5,4 +5,4 @@ c{singleton}:= algebra.select(b,0,4);
 d:= algebra.markH(c);
 io.print(d);
 optimizer.singleton();
-mdb.list();
+mdb.List();

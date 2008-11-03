@@ -40,4 +40,4 @@ exit (x35,x36,x37);
     sql.exportResult(x18,"");
 end query;
 optimizer.partitions("sql","query");
-mdb.list("sql","query");
+mdb.List("sql","query");

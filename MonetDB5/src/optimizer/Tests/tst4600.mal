@@ -12,4 +12,4 @@ optimizer.macro("user","welcome");
 
 io.print("test expansion");
 user.welcome(2);
-mdb.list();
+mdb.List();

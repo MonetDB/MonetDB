@@ -8,4 +8,4 @@ s5:= algebra.select(b,80,80,false,true);
 s6:= algebra.select(b,80,80,true,false);
 s7:= algebra.select(b,80,80,false,false);
 optimizer.pushranges();
-mdb.list();
+mdb.List();

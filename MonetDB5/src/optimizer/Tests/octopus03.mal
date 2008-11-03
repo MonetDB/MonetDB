@@ -15,4 +15,4 @@ function q();
 end q;
 
 optimizer.octopus("user","q");
-mdb.list("user","q");
+mdb.List("user","q");

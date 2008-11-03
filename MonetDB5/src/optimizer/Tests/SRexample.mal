@@ -19,4 +19,4 @@ barrier go:=true;
 exit go;
 	z:= r;
 optimizer.strengthReduction();
-mdb.list();
+mdb.List();

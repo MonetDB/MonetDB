@@ -1,5 +1,5 @@
 # the Multi Assocation Tables
-	mdb.list();
+	mdb.List();
     m0:= bat.new(:oid,:int);
     bat.insert(m0,nil:oid,0);
     m1:= bat.new(:oid,:int);

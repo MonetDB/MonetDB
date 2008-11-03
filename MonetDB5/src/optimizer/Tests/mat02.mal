@@ -1,6 +1,6 @@
 
 # select count(name) from tables
-mdb.list();
+mdb.List();
 
 # simulate the SQL behavior
     v2v0:= bat.new(:oid,:int);

@@ -85,7 +85,7 @@ end f3;
 	optimizer.commonTerms("user","f3");
 	optimizer.strengthReduction("user","f3");
 	optimizer.garbageCollector("user","f3");
-	mdb.list("user","f3");
+	mdb.List("user","f3");
 	#f3();
 
 function f4():void;

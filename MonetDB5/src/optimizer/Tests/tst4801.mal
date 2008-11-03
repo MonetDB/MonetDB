@@ -7,4 +7,4 @@ exit (go,i1);
 end f3;
 	#optimizer.accumulators("user","f3");
 	optimizer.strengthReduction("user","f3");
-	mdb.list("user","f3");
+	mdb.List("user","f3");

@@ -87,4 +87,4 @@ exit always;
 end qry1;
 
 optimizer.costModel("user","qry1");
-mdb.list("user","qry1");
+mdb.List("user","qry1");

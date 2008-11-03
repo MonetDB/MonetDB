@@ -20,4 +20,4 @@ function query();
     sql.exportResult(t14,"");
 end query;
 optimizer.partitions("sql","query");
-mdb.list("sql","query");
+mdb.List("sql","query");
