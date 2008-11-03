@@ -32,7 +32,7 @@ The keepquery is defined to trigger an expection the first
 time you use the history without initialization.
 The keepcall can be used to check for initialization of the cache.
 @mal
-module user;
+module sql;
 function keepquery{unsafe}(qid:int,qry:str,parse:lng,optimize:lng):void;
 	raise SQLexception:= "SQL history script should be run first";
 end keepquery;
@@ -43,6 +43,10 @@ end keepquery;
 
 function queryId{unsafe}(qid:int):void;
 end queryId;
+
+pattern forgetPrevious():void
+address OPTforgetPrevious
+comment "invalidate the previous instruction from future execution";
 
 pattern optimizer.history():str
 address OPThistory;
@@ -61,6 +65,7 @@ comment "Collect SQL query statistics";
 #include "mal_instruction.h"
 #include "mal_function.h"
 
+opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 /* #define _DEBUG_OPT_QUERYHISTORY_      trace its behavior */
 
 @-
@@ -79,12 +84,23 @@ based on the return variable.
 @c
 #include "opt_history.h"
 
+str 
+OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int pc;
+	(void) cntxt;
+	(void) stk;
+	pc= getPC(mb,pci);
+	assert ( pc > 0 && pc < mb->stop);
+	mb->stmt[pc-1]->token = REMsymbol;
+	return MAL_SUCCEED;
+}
+
 static int 
 OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit,slimit;
 	InstrPtr p=0, *old= mb->stmt, q,r;
-	int qid, argc, elaps, inblock, oublock, arg, ctime;
+	int qid=0, argc, elaps, inblock, oublock, arg, ctime;
 	int returnseen=0;
 
 
@@ -97,6 +113,17 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #else
 	(void) cntxt;
 #endif
+	if ( findSymbol(userRef,"keepQuery") == 0){
+		/* initialization script has not been ran */
+		return 0;
+	}
+	/* gather information  and recast the call handel*/
+	for (i = 1; i < limit; i++) {
+		p= getInstrPtr(mb,i);
+		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"queryId")==0){
+			qid= getArg(p,1);
+		}
+	}
 
 	limit= mb->stop;
 	slimit= mb->ssize;
@@ -109,6 +136,11 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for (i = 1; i < limit; i++) {
 		p= old[i];
 		
+		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"keepQuery")==0){
+			getModuleId(p) = userRef;
+			pushInstruction(mb,p);
+			q= newStmt(mb,sqlRef,"forgetPrevious");
+		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
