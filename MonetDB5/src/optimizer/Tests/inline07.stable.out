@@ -40,7 +40,7 @@ end qry;	# 4
 #
 function user.main():void;              #  0 main:void := user.main() {G}
 # remapping inline functions 
-    mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","qry");             #  2 _6:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}

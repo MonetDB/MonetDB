@@ -54,7 +54,7 @@ end f;	# 15
 #
 function user.main():void;              #  0 main:void := user.main() {G}
 #bug from Roberto to check carefull strength reduction 
-    mdb.list("user","f");               #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","f");               #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 function user.f():void;                 #  0 f:void := user.f() {G}
 # remove from disk 

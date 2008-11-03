@@ -190,7 +190,7 @@ end f1;	# 84
 #
 #
 function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.list("user","f1");              #  1 _6:void := MDBlist3(_2:str, _3:str) 
+    mdb.List("user","f1");              #  1 _6:void := MDBlist3Detail(_2:str, _3:str) 
 ##f1(); 
 end main;	# 3  
 factory user.f1(s:str):void;            #  0 f1:void := user.f1(s:str) {G}

@@ -52,7 +52,7 @@ end f;	# 15
 #mdb.list("user", "f");
 #
 function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.list("user","f");               #  1 _4:void := MDBlist3(_2:str, _3:str) 
+    mdb.List("user","f");               #  1 _4:void := MDBlist3Detail(_2:str, _3:str) 
 end main;	# 2  
 function user.f():void;                 #  0 f:void := user.f() {G}
 # remove from disk 

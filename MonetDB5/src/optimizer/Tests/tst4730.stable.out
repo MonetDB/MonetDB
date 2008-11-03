@@ -189,7 +189,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #TPCH query 1 
 # the basis for further optimizer tests 
 #don;t depend on SQL library 
-    mdb.list("user","qry1");            #  4 _7:void := MDBlist3(_5:str, _6:str) 
+    mdb.List("user","qry1");            #  4 _7:void := MDBlist3Detail(_5:str, _6:str) 
 end main;	# 5  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;#  0 qry1:bit := user.qry1(A0:sht, A1:sht, A2:sht, A3:date, A4:int) {G}
     V6:bat[:oid,:date] {rows=1000:lng} := user.bind("sys","lineitem","l_shipdate",0);#  1 V6:bat[:oid,:date] := user.bind(_8:str, _9:str, _10:str, _11:int) {G}

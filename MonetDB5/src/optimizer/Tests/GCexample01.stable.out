@@ -48,7 +48,7 @@ end qry;	# 17
 #
 function user.main():void;              #  0 main:void := user.main() {G}
 #checking proper handling of scopes for the garbage collector 
-    mdb.list("user","qry");             #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","qry");             #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}

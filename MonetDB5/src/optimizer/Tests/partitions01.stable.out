@@ -61,7 +61,7 @@ end query;	# 15
 function user.main():void;              #  0 main:void := user.main() {G}
 #testing the BAT partition manager 
 # use a fake sql library 
-    mdb.list("sql","query");            #  3 _6:void := MDBlist3(_4:str, _5:str) 
+    mdb.List("sql","query");            #  3 _6:void := MDBlist3Detail(_4:str, _5:str) 
 end main;	# 4  
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x1:bat[:oid,:int] {bid=812,rows=1,notnil=true} := sql.bind("sys","x","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}

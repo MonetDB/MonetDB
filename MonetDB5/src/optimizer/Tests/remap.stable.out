@@ -37,7 +37,7 @@ barrier (_25,_26,_27) := bat.newIterator(b);# 10 (_25:lng, _26:oid, _27:int) := 
 exit (_25,_26,_27);                     # 14 (_25:lng, _26:oid, _27:int) 
     y:bat[:int,:int]  := _22;           # 15 y:bat[:int,:int] := _22:bat[:int,:int] {G}
 # it will be ignored by the optimizer 
-    mdb.list();                         # 17 _21:void := MDBlist() 
+    mdb.List();                         # 17 _21:void := MDBlistDetail() 
 end main;                               # 18  
 
 # 22:31:17 >  

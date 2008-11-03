@@ -53,7 +53,7 @@ end qry;	# 6
 function user.main():void;              #  0 main:void := user.main() {G}
 # remapping inline functions 
 # recursive inlining 
-    mdb.list("user","qry");             #  3 _7:void := MDBlist3(_4:str, _5:str) 
+    mdb.List("user","qry");             #  3 _7:void := MDBlist3Detail(_4:str, _5:str) 
 end main;	# 4  
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}

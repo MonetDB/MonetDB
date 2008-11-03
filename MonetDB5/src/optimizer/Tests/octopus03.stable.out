@@ -26,7 +26,7 @@ function user.q():void;                 #  0 q:void := user.q() {G}
 end q;                                  # 12  
 function user.main():void;              #  0 main:void := user.main() {G}
 #simple scalar actions 
-    mdb.list("user","q");               #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","q");               #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;                               #  3  
 function user.q():void;                 #  0 q:void := user.q() {G}
     _22 := sabaoth.getLocalConnectionHost();#  1 _22:str := SABgetLocalConnectionHost() {G}

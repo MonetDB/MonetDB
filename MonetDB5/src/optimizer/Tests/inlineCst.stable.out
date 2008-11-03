@@ -44,7 +44,7 @@ end qry;	# 7
 #
 function user.main():void;              #  0 main:void := user.main() {G}
     user.qry();                         #  1 _1:void := user.qry() 
-    mdb.list("user","qry");             #  2 _6:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","qry");             #  2 _6:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 #-----------------#
 # h	t	  # name

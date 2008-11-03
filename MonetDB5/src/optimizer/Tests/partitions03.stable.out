@@ -77,7 +77,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # use a fake sql library 
 # see how you handle an aggregation 
 #select i,j from y group by i,j; 
-    mdb.list("sql","query");            #  5 _8:void := MDBlist3(_6:str, _7:str) 
+    mdb.List("sql","query");            #  5 _8:void := MDBlist3Detail(_6:str, _7:str) 
 end main;	# 6  
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x1:bat[:oid,:int] {notnil=true,rows=1,bid=1489} := sql.bind("sys","y","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _9:int) {G}

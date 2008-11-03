@@ -25,7 +25,7 @@ function user.q():void;                 #  0 q:void := user.q() {G}
 end q;                                  # 11  
 function user.main():void;              #  0 main:void := user.main() {G}
 #check the partition type resolution; 
-    mdb.list("user","q");               #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","q");               #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;                               #  3  
 function user.q():void;                 #  0 q:void := user.q() {G}
     _27 := sabaoth.getLocalConnectionHost();#  1 _27:str := SABgetLocalConnectionHost() {G}

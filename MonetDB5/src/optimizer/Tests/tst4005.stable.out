@@ -78,7 +78,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #optimizer.deadcode("user","getz"); 
 #optimizer.reduce("user","getz"); 
 #optimizer.garbageCollector("user","getz"); 
-    mdb.list("user","getz");            # 12 _15:void := MDBlist3(_7:str, _8:str) 
+    mdb.List("user","getz");            # 12 _15:void := MDBlist3Detail(_7:str, _8:str) 
 end main;	# 13  
 function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
     x := nil:int;                       #  1 x:int := _3:int 

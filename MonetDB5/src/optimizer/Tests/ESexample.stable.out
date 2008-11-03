@@ -39,7 +39,7 @@ end tst;	# 9
 #	mdb.list("user","tst");
 #
 function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.list("user","tst");             #  1 _7:void := MDBlist3(_2:str, _3:str) 
+    mdb.List("user","tst");             #  1 _7:void := MDBlist3Detail(_2:str, _3:str) 
 end main;	# 2  
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}

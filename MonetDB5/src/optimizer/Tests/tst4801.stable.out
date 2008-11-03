@@ -32,7 +32,7 @@ end f3;	# 6
 #
 function user.main():void;              #  0 main:void := user.main() {G}
 #optimizer.accumulators("user","f3"); 
-    mdb.list("user","f3");              #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","f3");              #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 function user.f3():void;                #  0 f3:void := user.f3() {G}
     t28 := array.grid(1:int,500:int,1:int,0);#  1 t28:bat[:oid,:int] := ARRAYgrid_int(_3:int, _5:int, _3:int, _6:int) {G}

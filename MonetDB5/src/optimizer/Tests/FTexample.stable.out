@@ -23,7 +23,7 @@ end test;	# 6
 #
 function user.main():void;              #  0 main:void := user.main() {G}
 #Code factorization 
-    mdb.list("user","test");            #  2 _5:void := MDBlist3(_3:str, _4:str) 
+    mdb.List("user","test");            #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
 end main;	# 3  
 factory user.test(s:str):wrd;           #  0 test:wrd := user.test(s:str) {G}
     b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
