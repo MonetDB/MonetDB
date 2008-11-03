@@ -515,10 +515,18 @@ str
 mbrFromString(mbr **w, str *src)
 {
 	int len = 0;
+	char *errbuf;
 
 	if (mbrFROMSTR(*src, &len, w))
 		return MAL_SUCCEED;
-	throw(MAL, "mbr.FromString", GDKerrbuf);
+	errbuf = GDKerrbuf;
+	if (errbuf) {
+		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
+			errbuf += 8;
+		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
+		GDKerrbuf[0] = 0;
+	}
+	throw(MAL, "mbr.FromString", "%s", errbuf ? errbuf : "cannot parse string");
 }
 
 geom_export str
@@ -653,10 +661,18 @@ str
 wkbFromString(wkb **w, str *wkt)
 {
 	int len = 0;
+	char *errbuf;
 
 	if (wkbFROMSTR(*wkt, &len, w))
 		return MAL_SUCCEED;
-	throw(MAL, "wkb.FromString", GDKerrbuf);
+	errbuf = GDKerrbuf;
+	if (errbuf) {
+		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
+			errbuf += 8;
+		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
+		GDKerrbuf[0] = 0;
+	}
+	throw(MAL, "wkb.FromString", "%s", errbuf ? errbuf : "cannot parse string");
 }
 
 geom_export str
@@ -683,6 +699,7 @@ str
 wkbFromText(wkb **w, str *wkt, int *tpe)
 {
 	int len = 0, te = *tpe;
+	char *errbuf;
 
 	*w = NULL;
 	if (wkbFROMSTR(*wkt, &len, w) && 
@@ -694,7 +711,14 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 	**w = *wkbNULL();
 	if (te != *tpe) 
 		throw(MAL, "wkb.FromText", "Geometry type '%s' not found", geom_type2str(*tpe));
-	throw(MAL, "wkb.FromText", GDKerrbuf);
+	errbuf = GDKerrbuf;
+	if (errbuf) {
+		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
+			errbuf += 8;
+		errbuf = strcpy(alloca(strlen(errbuf) + 1), errbuf);
+		GDKerrbuf[0] = 0;
+	}
+	throw(MAL, "wkb.FromText", "%s", errbuf ? errbuf : "cannot parse string");
 }
 
 geom_export BUN
