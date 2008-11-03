@@ -53,10 +53,22 @@ C	[!<>]
  */
 #define YYLMAX 100000
 
-#ifdef _MSC_VER
-/* avoid deprecation warning on Windows */
-#define isatty _isatty
+#ifdef isatty
+#undef isatty
 #endif
+#define isatty	my_isatty
+
+int
+my_isatty(int fd)
+{
+	(void) fd;
+	return 0;
+}
+
+#ifdef fileno
+#undef fileno
+#endif
+#define fileno(f)	0
 
 extern YYSTYPE yylval;
 #define YY_NEVER_INTERACTIVE	1 /* workaround to flex bug */
