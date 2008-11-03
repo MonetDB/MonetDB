@@ -26,11 +26,11 @@ REGISTER FUNCTIOn user.main
 #function user.main():int;
 #    io.print("hello world");
 #end main;
-function user.mytest():void;            #  0 main:void := user.mytest() 
+function user.mytest():void;
 #see if we can register functions 
-    language.register("user","mytest","io.print(\"hello world\");","first test");#  2 _2:void := CMDregisterFunction(_3:str, _4:str, _5:str, _6:str) 
-    mdb.list("user","mytest");          #  3 _7:void := MDBlist3(_3:str, _4:str) 
-end mytest;                             #  4  
+    language.register("user","mytest","io.print(\"hello world\");","first test");
+    mdb.list("user","mytest");
+end mytest;
 
 # 23:05:10 >  
 # 23:05:10 >  Done.

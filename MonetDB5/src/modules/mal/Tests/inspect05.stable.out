@@ -26,10 +26,8 @@ end main;                               # 11
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h				symbol		symbol		 symbol																	 symbol							  # name
 # str				str		str		str																	str							  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "keepquery",			  "function",	  "user",	  "(qid:int,qry:str,parse:lng,optimize:lng):void;",											  "nil"							  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
-[ "queryId",			  "function",	  "user",	  "(qid:int):void;",															  "nil"							  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml]):bat[:oid,:xml] ",												  "BATXMLgroup;"					  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml] ",										  "BATXMLagg;"						  ]
 [ "agg",			  "command",	  "xml",	  "(val:bat[:oid,:xml],grp:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:xml] ",								  "BATXMLagg3;"						  ]
@@ -722,6 +720,9 @@ end main;                               # 11
 [ "similarity",			  "command",	  "txtsim",	  "(string1:str,string2:str):dbl ",													  "fstrcmp0_impl;"					  ]
 [ "similarity",			  "command",	  "txtsim",	  "(string1:str,string2:str,minimum:dbl):dbl ",												  "fstrcmp_impl;"					  ]
 [ "multiplex",			  "pattern",	  "mal",	  "(a:any...):any ",															  "OPTremapMultiplex;"					  ]
+[ "forgetPrevious",			  "pattern",	  "sql",	  "():void ",																  "OPTforgetPrevious;"					  ]
+[ "keepquery",				  "function",	  "sql",	  "(qid:int,qry:str,parse:lng,optimize:lng):void;",											  "nil"							  ]
+[ "queryId",				  "function",	  "sql",	  "(qid:int):void;",															  "nil"							  ]
 [ "accessmode",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTaccessmode;"					  ]
 [ "accessmode",			  "pattern",	  "optimizer",	  "():str ",																  "OPTaccessmode;"					  ]
 [ "aliases",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTaliases;"						  ]

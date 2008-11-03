@@ -48,12 +48,12 @@ get function properties
 # str		str			  # type
 #-----------------------------------------#
 [ "user.dummy",	  "(i:int):void;"	  ]
-function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}
-    io.print(i);                        #  1 _2:void := IOprint_val(i:int) 
-    b := mdb.getDefinition();           #  2 b:bat[:void,:str] := MDBgetDefinition() {G}
-    io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:void,:str]) 
-    mdb.list();                         #  4 _5:void := MDBlist() 
-end dummy;                              #  5  
+function user.dummy(i:int):void;
+    io.print(i);
+    b := mdb.getDefinition();
+    io.print(b);
+    mdb.list();
+end dummy;
 
 # 00:03:56 >  
 # 00:03:56 >  Done.
