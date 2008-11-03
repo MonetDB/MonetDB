@@ -460,8 +460,10 @@ str defaultPlan=
 	"garbageCollector,"
 	"dataflow,"
 	//"octopus,"
+	"history,"
 	"multiplex";
 static str minimalPlan=
+	"history,"
 	"multiplex";
 	
 

@@ -57,6 +57,7 @@ extern str sql_update_var(mvc *sql, char *name);
 extern int sql_create_env(mvc *sql, sql_schema *s);
 extern int sql_create_history(mvc *sql, sql_schema *tmp);
 
+
 #endif /* _SQL_ENV_H_ */
 @c
 #include "sql_config.h"
@@ -108,6 +109,10 @@ sql_update_var(mvc *m, char *name)
 		sgn = stack_get_number(m, "cache");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->cache = (int) sgn;
+	} else if (strcmp(name, "history") == 0) {
+		sgn = stack_get_number(m, "history");
+		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+		m->history = (int) sgn;
 	}
 	return NULL;
 }
@@ -147,27 +152,4 @@ sql_create_env(mvc *m, sql_schema *s)
 	list_destroy(l);
 	return 0;
 }
-
-@-
-The 'history' table contains information on the parsing, optimization,
-and execution time. More detailed information should be obtained using
-the MonetDB kernel log, e.g. using Mknife
-@c
-
-int
-sql_create_history(mvc *m, sql_schema *s)
-{
-	sql_table *t = mvc_create_table(m, s, "history", 1, SQL_GLOBAL_TEMP, CA_PRESERVE, -1);
-
-	mvc_create_column_(m, t, "start", "timestamp", 0);
-	mvc_create_column_(m, t, "query", "varchar", 2048);
-	mvc_create_column_(m, t, "parse", "int", 32);
-	mvc_create_column_(m, t, "optimize", "int", 32);
-	mvc_create_column_(m, t, "exec", "int", 32);
-	mvc_create_column_(m, t, "total", "int", 32);
-	mvc_create_column_(m, t, "user", "varchar", 512);
-
-	return 0;
-}
-
 @}

@@ -20,17 +20,17 @@ Ready.
 
 Over..
 
-# 22:16:18 >  
-# 22:16:18 >  /usr/bin/python crash_on_concurrent_use.SF-1411926.SQL.py crash_on_concurrent_use.SF-1411926 
-# 22:16:18 >  
+# 10:07:02 >  
+# 10:07:02 >  /usr/bin/python crash_on_concurrent_use.SF-1411926.SQL.py crash_on_concurrent_use.SF-1411926 
+# 10:07:02 >  
 
-(0, [(27L,)])
-(1, [(27L,)])
-(2, [(27L,)])
-(3, [(27L,)])
-(4, [(27L,)])
+(0, [(26L,)])
+(1, [(26L,)])
+(2, [(26L,)])
+(3, [(26L,)])
+(4, [(26L,)])
 
-# 22:16:18 >  
-# 22:16:18 >  Done.
-# 22:16:18 >  
+# 10:07:02 >  
+# 10:07:02 >  Done.
+# 10:07:02 >  
 

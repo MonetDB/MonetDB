@@ -56,6 +56,7 @@ sql5_export str backend_name(cq *cq);
 #include "sql_config.h"
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
+#include "sql_scenario.h"
 #include "sql_scope.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
@@ -415,8 +416,7 @@ disconnect(MalBlkPtr mb, list *l)
 }
 
 @-
-The big code generation switch. The sections are aligned to the
-Monet version4 code generation block for ease of comparison.
+The big code generation switch. 
 @c
 #define SMALLBUFSIZ 64
 static int 
@@ -1892,11 +1892,47 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	}
 	return s->nr;
 }
+@-
+The kernel uses two calls to procedures defined in SQL.
+They have to be initialized, which is currently hacked
+by using the SQLstatment.
+@c
+static void
+initHistory(backend *be){
+	static int initdone=0;
+
+	if (initdone || be->mvc->history == 0) return;
+	if (findSymbol(userRef,"keepcall")== NULL){
+		be->mvc->history= 0;
+		showException(SQL,"sql","sql/history.sql script should be ran first.\n");
+	} else
+		initdone= 1;
+}
 
 static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
 	mvc *c = be->mvc;
 	InstrPtr q;
+	char *t;
+
+	initHistory(be);
+	if ( c->history ){
+		c->history = (int) OIDnew((oid) 1);
+        q = newStmt(mb,sqlRef,"queryId");
+        q = pushInt(mb, q, c->history);	/* query identifier */
+		
+		if (be->qry==NULL)
+			be->qry = sql_escape_str(QUERY(c->scanner) + c->scanner.as);
+		t= be->qry;
+		while( t && isspace((int) *t) ) t++;
+
+        q = newStmt(mb,sqlRef,"keepquery");
+		q= pushInt(mb,q,c->history);
+		q= pushStr(mb,q,t);
+		q= pushLng(mb,q,GDKusec() - be->mvc->Tparse);
+		q= pushLng(mb,q, GDKusec());
+		c->Tparse = 0;
+	}
 
 	(void)_dumpstmt(be, mb, s);
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
@@ -1909,6 +1945,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		getArg(q,0) = getArg(getInstrPtr(mb,0),0);
 		q->barrier = RETURNsymbol;
 	}
+	
 	pushEndInstruction(mb);
 }
 

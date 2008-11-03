@@ -25,29 +25,8 @@ Over..
 # 12:58:09 >  
 
 [ 3	]
-% . # table_name
-% single_value # name
-% tinyint # type
-% 1 # length
-[ 1	]
-% tmp.history,	. # table_name
-% query,	single_value # name
-% varchar,	varchar # type
-% 9,	7 # length
-[ "select 1;",	"monetdb"	]
-% sys.t1314649 # table_name
-% count_ # name
-% wrd # type
-% 1 # length
-[ 1	]
-% tmp.history,	. # table_name
-% query,	single_value # name
-% varchar,	varchar # type
-% 51,	7 # length
-[ "select 1;",	"monetdb"	]
-[ "select count(*) from t1314649 where \"human\" = true;",	"monetdb"	]
 
-# 12:58:09 >  
-# 12:58:09 >  Done.
-# 12:58:09 >  
+# 10:06:53 >  
+# 10:06:53 >  Done.
+# 10:06:53 >  
 

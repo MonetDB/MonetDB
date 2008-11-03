@@ -685,7 +685,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token SQL_EXPLAIN SQL_PLAN SQL_PROFILE SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token SQL_EXPLAIN SQL_PLAN SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -746,27 +746,6 @@ sqlstmt:
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->sym = $$ = $3; YYACCEPT; 
 			}
- | SQL_PROFILE 		{ mvc *m = (mvc*)parm;
-			  if (m->scanner.mode == LINE_1) {
-				yyerror("We do not support profiling SQL in interactive mode");
-				YYABORT;
-			  }
-		  	  m->emod |= mod_profile;
-			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
-#ifdef HAVE_TIMES	
-	  		  times(&m->times);
-#endif	
-			  m->Tstart = GDKusec();
-			}
-   sqlstmt		{ $$ = $3; YYACCEPT; }
- | SQL_RECORD 		{ mvc *m = (mvc*)parm;
-		  	  m->emod |= mod_record;
-			  m->scanner.as = m->scanner.yycur; 
-			  m->scanner.key = 0;
-			  m->Tparse = GDKusec();
-			}
-   sqlstmt		{ $$ = $3; YYACCEPT; }
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
 				yyerror("We only support debugging SQL in interactive mode");
@@ -4381,7 +4360,6 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
-|  SQL_PROFILE	{ $$ = sa_strdup(SA, "profile"); }
 |  SQL_RECORD	{ $$ = sa_strdup(SA, "record"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }

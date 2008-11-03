@@ -274,6 +274,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	stmt *r = NULL;
 	lng sec = 0;
 	bit T = TRUE;
+	bit F = FALSE;
 	ValRecord src;
 
  	typename = "int";
@@ -294,6 +295,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("cache", &T);
+	SQLglobal("history", &F);
 	return 0;
 }
 
@@ -852,12 +854,12 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 }
 
 void
-SQLsetTimer(Client c, int onoff)
+SQLsetTrace(Client c, int onoff)
 {
 	InstrPtr q;
 
 	c->itrace='c';
-	q = newStmt(c->curprg->def,"mdb","setTimer");
+	q = newStmt(c->curprg->def,"mdb","setTrace");
 	pushBit(c->curprg->def,q,onoff);
 //	q = newStmt(c->curprg->def,"mdb","setThread");
 //	pushBit(c->curprg->def,q,onoff);
@@ -911,6 +913,8 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
+	if (m->history)
+		be->mvc->Tparse = GDKusec();
 	m->emode = m_normal;
 	m->emod = mod_none;
 	if (be->language == 'X') {
@@ -1013,10 +1017,10 @@ produce code.
 		}
 		m->emode = m_inplace;
 	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id))) {
-		if (m->emod & mod_trace)
-			SQLsetTimer(c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
+		if (m->emod & mod_trace)
+			SQLsetTrace(c, TRUE);
 		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
 			m->emode = m_inplace;
 	} else {
@@ -1035,7 +1039,7 @@ produce code.
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
 		if (m->emod & mod_trace)
-			SQLsetTimer(c, TRUE);
+			SQLsetTrace(c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
 		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none){
@@ -1081,15 +1085,10 @@ produce code.
 @-
 In the final phase we add any debugging control
 @c
-	/* turn off debugger */
+	if (m->emod & mod_trace)
+		SQLsetTrace(c, FALSE);
 	if (m->emod & mod_debug) 
 		SQLsetDebugger(c, m, FALSE);
-	if (m->emod & mod_trace)
-		SQLsetTimer(c, FALSE);
-	if (m->emod & (mod_profile | mod_record)) {
-		be->mvc->Tparse = GDKusec() - be->mvc->Tparse;
-                be->qry = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
-	}
 	scanner_query_processed(&(m->scanner));
 
 @-
@@ -1233,27 +1232,7 @@ backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng
 	char *q = query;
 	char buf[BUFSIZ], *stmt = buf;
 
-#ifdef HAVE_TIMES	
-	if (emod & mod_profile) {
-#if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
-		int tcks_per_sec = sysconf(_SC_CLK_TCK);
-#else
-		int tcks_per_sec = CLK_TCK;
-#endif
-		struct tms t1;
-
-		times(&t1);
-		stream_printf(
-			c->scanner.ws,
-			"#times real " LLFMT ", user " LLFMT ", system " LLFMT ", %d\n",
-			total, 
-			(lng) (t1.tms_utime - be->mvc->times.tms_utime),
-			(lng) (t1.tms_stime - be->mvc->times.tms_stime),
-			tcks_per_sec);
-	}
-#endif	
-
-	if (!(emod & mod_record))
+	if (!c->history )
 		return msg;
 
 	/* ltrim query */
@@ -1285,7 +1264,6 @@ SQLengineIntern(Client c, backend *be)
 	MalStkPtr oldglb = c->glb;
 	char oldlang= be->language;
 	mvc *m = be->mvc;
-	lng T0=0;
 	InstrPtr p;
 	MalBlkPtr mb;
 
@@ -1310,8 +1288,6 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
-	if( m->emod & mod_record)
-		T0 = GDKusec();
 	if (m->emode == m_inplace) {
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
@@ -1388,14 +1364,6 @@ Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
 	c->glb = oldglb;
-	if (m->emod & (mod_profile | mod_record)) {
-		lng T1 = GDKusec();
-		lng tot = T1 - be->mvc->Tstart; 
-
-		be->mvc->Texec = T1 - T0;
-		msg = backend_record(be, be->qry, be->mvc->Tparse, be->mvc->Toptimize, be->mvc->Texec, tot);
-		be->qry = NULL;
-	}
 	return msg;
 }
 

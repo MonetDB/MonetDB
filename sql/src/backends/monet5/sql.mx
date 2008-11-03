@@ -237,6 +237,41 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
+function times(elaps:int,inblock:lng, oublock:lng):void;
+	io.printf("#times %d ms",elaps);
+	io.printf(" %d reads",inblock);
+	io.printf(" %d writes\n",oublock);
+end times;
+
+factory times();
+	elaps:= alarm.time();
+	inblocks := bbp.getDiskReads();
+	oublocks := bbp.getDiskWrites();
+barrier goon:=true;
+	u1:= alarm.time();
+	i1 := bbp.getDiskReads();
+	o1 := bbp.getDiskWrites();
+	elaps:= u1-elaps;
+	inblocks := i1-inblocks;
+	oublocks := o1-oublocks;
+	io.printf("#times %d ms",elaps);
+	io.printf(" %d reads",inblocks);
+	io.printf(" %d writes\n",oublocks);
+	elaps := u1;
+	inblocks  := i1;
+	oublocks  := o1;
+	yield times;
+	redo goon:=true;
+exit goon;
+end times;
+
+pattern argRecord():str
+address SQLargRecord
+comment "Glue together the calling sequence";
+pattern argRecord(a:any...):str
+address SQLargRecord
+comment "Glue together the calling sequence";
+
 function sql_environment():bat[:str,:bat];
 	b := bat.new(:str,:bat,2);
 	e := inspect.getEnvironment();
@@ -763,6 +798,7 @@ sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
+sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -915,6 +951,7 @@ First introduce the routines to be called by the front-end.
 #include "sql_result.h"
 #include "sql_gencode.h"
 #include <sql_storage.h>
+#include <sql_scenario.h>
 #include <store_sequence.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
@@ -3626,3 +3663,13 @@ sql_@1rank(bat *rid, bat *bid)
 @c
 @:rnk(,(void)c;nrank++,1)@
 @:rnk(dense_,nrank+=(c?1:0),2)@
+
+str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *ret;
+
+	(void) cntxt;
+	ret= (str *) getArgReference(stk,pci,0);
+	*ret = call2str(mb,stk,0,LIST_MAL_VALUE);
+	return MAL_SUCCEED;
+}
+

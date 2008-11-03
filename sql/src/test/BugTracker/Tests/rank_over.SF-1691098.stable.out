@@ -1,21 +1,23 @@
 stdout of test 'rank_over.SF-1691098` in directory 'src/test/BugTracker` itself:
 
 
-# 22:16:53 >  
-# 22:16:53 >   Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=38697 --set xrpc_port=43628 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" "--dbinit= module(sql_server);" ; echo ; echo Over..
-# 22:16:53 >  
+# 10:05:10 >  
+# 10:05:10 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34031 --set xrpc_port=43786 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 10:05:10 >  
 
-# MonetDB Server v4.23.0
-# based on GDK   v1.23.0
-# Copyright (c) 1993-2008, CWI. All rights reserved.
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-# MonetDB/SQL module v2.23.0 loaded
-
-printf("\nReady.\n");
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_test_BugTracker', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34031/
+# MonetDB/SQL module v2.25.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -53,7 +55,6 @@ Over..
 [ 24	]
 [ 25	]
 [ 26	]
-[ 27	]
 
 # 11:52:56 >  
 # 11:52:56 >  Done.
