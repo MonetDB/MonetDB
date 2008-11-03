@@ -128,6 +128,7 @@ end main;	# 14
 [ "sabaoth",	  nil	  ]
 [ "scheduler",	  nil	  ]
 [ "sema",	  nil	  ]
+[ "sql",	  nil	  ]
 [ "sqlblob",	  nil	  ]
 [ "statistics",	  nil	  ]
 [ "status",	  nil	  ]
