@@ -1,0 +1,180 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008- MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_history
+@- SQL History 
+Collection of runtime statistics on SQL queries 
+is handy for post-session analysis. To accomplish
+this, the very last step of the optimization consists
+of injection of performance gathering statements.
+This way we ensure that no code shuffling optimizer has effect.
+
+The interface is based on two MAL signatures defined in
+the SQL runtime environment. A dummy version is included
+here to ensure we can debug the code without SQL frontend.
+
+@{
+The keepquery is defined to trigger an expection the first
+time you use the history without initialization.
+The keepcall can be used to check for initialization of the cache.
+@mal
+module user;
+function keepquery{unsafe}(qid:int,qry:str,parse:lng,optimize:lng):void;
+	raise SQLexception:= "SQL history script should be run first";
+end keepquery;
+
+#function keepcall{unsafe}(qid:int, call:timestamp,arg:str,elap:lng,inblock:lng,oublock:lng):void;
+#	raise SQLexception:= "SQL history script should be run first";
+#end keepcall;
+
+function queryId{unsafe}(qid:int):void;
+end queryId;
+
+pattern optimizer.history():str
+address OPThistory;
+pattern optimizer.history(mod:str, fcn:str):str
+address OPThistory
+comment "Collect SQL query statistics";
+
+@h
+#ifndef _OPT_QUERYHISTORY_
+#define _OPT_QUERYHISTORY_
+
+#include "mal_config.h"
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "mal_interpreter.h"
+#include "mal_instruction.h"
+#include "mal_function.h"
+
+/* #define _DEBUG_OPT_QUERYHISTORY_      trace its behavior */
+
+@-
+@= initCounters
+	q = newStmt(mb,"mtime","current_timestamp");
+	ctime= getArg(q,0);
+	q = newStmt(mb,"alarm","usec");
+	elaps= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
+	q = newStmt(mb,"bbp","getDiskReads");
+	inblock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
+	q = newStmt(mb,"bbp","getDiskWrites");
+	oublock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
+@-
+A tricky piece of code. We invalidate an instruction
+based on the return variable.
+@c
+#include "opt_history.h"
+
+static int 
+OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, limit,slimit;
+	InstrPtr p=0, *old= mb->stmt, q,r;
+	int qid, argc, elaps, inblock, oublock, arg, ctime;
+	int returnseen=0;
+
+
+	(void) pci;
+	(void) stk;		/* to fool compilers */
+
+#ifdef _DEBUG_OPT_QUERYHISTORY_
+	stream_printf(cntxt->fdout,"ENTERING TRACE CODE \n");
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#else
+	(void) cntxt;
+#endif
+
+	limit= mb->stop;
+	slimit= mb->ssize;
+	newMalBlkStmt(mb, mb->ssize+20); /* a new statement stack */
+
+	pushInstruction(mb, old[0]);
+	/* collect the statistics */
+	@:initCounters@
+
+	for (i = 1; i < limit; i++) {
+		p= old[i];
+		
+		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
+			if (returnseen && p->token == ENDsymbol) {
+				pushInstruction(mb,p);
+				continue;
+			}
+			returnseen++;
+			q = newStmt(mb,"alarm","usec");
+			setVarType(mb,getArg(q,0), TYPE_lng);
+			r = newStmt(mb,"calc","-");
+			r = pushArgument(mb,r, getArg(q,0));
+			r = pushArgument(mb,r, elaps);
+			elaps= getArg(r,0);
+
+			q = newStmt(mb,"bbp","getDiskReads");
+			setVarType(mb,getArg(q,0), TYPE_lng);
+			r = newStmt(mb,"calc","-");
+			r = pushArgument(mb,r, getArg(q,0));
+			r = pushArgument(mb,r, inblock);
+			inblock= getArg(r,0);
+
+			q = newStmt(mb,"bbp","getDiskWrites");
+			setVarType(mb,getArg(q,0), TYPE_lng);
+			r = newStmt(mb,"calc","-");
+			r = pushArgument(mb,r, getArg(q,0));
+			r = pushArgument(mb,r, oublock);
+			oublock= getArg(r,0);
+
+			/* prepare the call to the history manager */
+			q = newStmt(mb,"sql","argRecord");
+			setVarType(mb,getArg(q,0), TYPE_str);
+			for ( argc=0; argc < old[0]->argc; argc++)
+				q = pushArgument(mb, q, getArg(old[0],argc));
+
+			arg= getArg(q,0);
+
+			q = newStmt(mb,"user","keepcall");
+			q = pushInt(mb, q, qid); /* query identifier */
+			q = pushArgument(mb, q, ctime); /* arguments */
+			q = pushArgument(mb, q, arg);   /* arguments */
+			q = pushArgument(mb, q, elaps); /* elaps */
+			q = pushArgument(mb, q, inblock);/* inblock */
+			q = pushArgument(mb, q, oublock);/* oublock */
+		}
+
+		pushInstruction(mb,p);
+		if (p->barrier == YIELDsymbol){
+			/* the factory yield may return */
+			@:initCounters@
+		}
+	}
+
+#ifdef _DEBUG_OPT_QUERYHISTORY_
+	stream_printf(cntxt->fdout,"LEAVING QUERYHISTORY CODE INJECTION\n");
+	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+#endif
+	for( ; i<slimit; i++)
+	if(old[i])
+		freeInstruction(old[i]);
+	GDKfree(old);
+	return 1;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(history)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(history,OPT_CHECK_ALL)@
+@}

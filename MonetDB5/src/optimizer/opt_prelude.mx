@@ -147,6 +147,7 @@ opt_export  str unionRef;
 opt_export  str unpackRef;
 opt_export  str updateRef;
 opt_export  str uselectRef;
+opt_export  str userRef;
 opt_export  str antiuselectRef;
 opt_export  str antijoinRef;
 
@@ -299,6 +300,7 @@ str unionRef;
 str unpackRef;
 str updateRef;
 str uselectRef;
+str userRef;
 str antiuselectRef;
 str antijoinRef;
 
@@ -449,6 +451,7 @@ void optimizerInit(){
 		uselectRef = putName("uselect",7);
 		antiuselectRef = putName("antiuselect",11);
 		antijoinRef = putName("antijoin",8);
+		userRef = putName("user",4);
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");
 		inlineProp = PropertyIndex("inline");
