@@ -149,7 +149,7 @@ Too many bugs.
 static BAT *
 BATmalleftjoin(BAT *l, BAT *r)
 {
-	return BATleftjoin(l, r, oid_nil);
+	return BATleftjoin(l, r, BUN_NONE);
 }
 
 static BAT *
@@ -159,9 +159,9 @@ BATmalfetchjoin(BAT *l, BAT *r)
 	int lfetch = (BATtdense(l) && ATOMstorage(r->htype) <= ATOMstorage(TYPE_oid));
 
 	if (lfetch && !(rfetch && BATcount(l) < BATcount(r))) {
-		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), oid_nil));
+		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), BUN_NONE));
 	} else if (rfetch) {
-		return BATfetchjoin(l, r, oid_nil);
+		return BATfetchjoin(l, r, BUN_NONE);
 	}
 	GDKerror("BATmalfetchjoin: Cannot perform fetchjoin: neither left tail nor right head are dense OID columns.\n");
 	return NULL;
@@ -174,7 +174,7 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 	int rfetch = (BAThdense(r) && ATOMstorage(l->ttype) <= ATOMstorage(TYPE_oid));
 
 	if (rfetch) {
-		return BATleftfetchjoin(l, r, oid_nil);
+		return BATleftfetchjoin(l, r, BUN_NONE);
 	}
 	GDKerror("BATmalleftfetchjoin: Cannot perform leftfetchjoin: right head is no dense OID column.\n");
 	return NULL;
@@ -187,16 +187,16 @@ BATmalhashjoin(BAT *l, BAT *r)
 	size_t rsize = r->H->heap.size + r->T->heap.size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 
 	if (rsize < lsize) {
-		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), oid_nil));
+		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), BUN_NONE));
 	}
-	return BAThashjoin(l, r, oid_nil);
+	return BAThashjoin(l, r, BUN_NONE);
 }
 
 /* don't reorder! */
 static BAT *
 BATmallefthashjoin(BAT *l, BAT *r)
 {
-	return BAThashjoin(l, r, oid_nil);
+	return BAThashjoin(l, r, BUN_NONE);
 }
 
 static BAT *
@@ -210,11 +210,11 @@ BATmalmergejoin(BAT *l, BAT *r)
  * Stefan: There is no reason not to perform a mergejoin on voids, is there?
  *
   if ( (l->ttype==TYPE_void) || (r->htype==TYPE_void) ) {
-    GDKerror( "BATmalmergejoin: Cannot perform mergejoin on void fields.\n" );
-    return NULL;    
+	GDKerror( "BATmalmergejoin: Cannot perform mergejoin on void fields.\n" );
+	return NULL;
   }
 */
-	return BATmergejoin(l, r, oid_nil);
+	return BATmergejoin(l, r, BUN_NONE);
 }
 
 /* don't reorder! */
@@ -225,7 +225,7 @@ BATmalleftmergejoin(BAT *l, BAT *r)
 		GDKerror("BATmalleftmergejoin: Cannot perform leftmergejoin: right head is ordered.\n");
 		return NULL;
 	}
-	return BATleftmergejoin(l, r, oid_nil);
+	return BATleftmergejoin(l, r, BUN_NONE);
 }
 
 @= joincmd
@@ -253,7 +253,7 @@ CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
 int
 CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 {
-	return (*result = BATnlthetajoin(l, r, *mode, (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -263,50 +263,40 @@ CMDbandmergejoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *
 }
 
 int
-CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* _limit)
+CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi, lng* limit)
 {
-        lng limit = *_limit;
-        size_t cutoff = (size_t) limit;
-        assert(limit >= 0);
-#if SIZEOF_SIZE_T == SIZEOF_INT
-        assert(limit <= GDK_int_max);
-#endif
+	BUN cutoff;
+
+	if (*limit < 0 || *limit > (lng) BUN_MAX) {
+		GDKerror("CMDbandmergejoin_limit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	cutoff = (BUN) *limit;
         *result = BATbandmergejoin_limit(left, right, minus, plus, *li, *hi, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
-                if (*result) {
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-                        assert(cutoff <= (size_t) GDK_lng_max);
-#endif
-                        limit = (lng) cutoff;
-                        BUNins(*result, &limit, &bid, FALSE);
-                }
+                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
                 BBPunfix(bid);
         }
         return (*result)?GDK_SUCCEED:GDK_FAIL;
 }
 
 int
-CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* _limit)
+CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* limit)
 {
-        lng limit = *_limit;
-        size_t cutoff = (size_t) limit;
-        assert(limit >= 0);
-#if SIZEOF_SIZE_T == SIZEOF_INT
-        assert(limit <= GDK_int_max);
-#endif
+	BUN cutoff;
+
+	if (*limit < 0 || *limit > (lng) BUN_MAX) {
+		GDKerror("CMDbandmergejoin_limit: parameter out of range.\n");
+		return GDK_FAIL;
+	}
+	cutoff = (BUN) *limit;
         *result = BATleftmergejoin_limit(left, right, cutoff, &cutoff);
         if (*result) {
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
-                if (*result) {
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-                        assert(cutoff <= (size_t) GDK_lng_max);
-#endif
-                        limit = (lng) cutoff;
-                        BUNins(*result, &limit, &bid, FALSE);
-                }
+                if (*result) BUNins(*result, &cutoff, &bid, FALSE);
                 BBPunfix(bid);
         }
         return (*result)?GDK_SUCCEED:GDK_FAIL;
@@ -347,6 +337,8 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 
 	bn->hsorted = b->hsorted;
 	bn->tsorted = 0;
+	bn->H->nonil = b->H->nonil;
+	bn->T->nonil = 0;
 	if (BATcount(b))
  		cur = *(oid*)BUNhead(bi,BUNfirst(b));
 	BATloop(b, p, q) {
