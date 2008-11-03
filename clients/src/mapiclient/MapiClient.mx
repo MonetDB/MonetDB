@@ -994,6 +994,12 @@ format_result(MapiHdl hdl)
 		int oldpagewidth;
 
 		oldpagewidth = pagewidth;
+		if ((reply = mapi_result_error(hdl)) != NULL) {
+			if (formatter == RAWformatter)
+				mapi_explain_result(hdl, stderr);
+			else
+				stream_printf(toConsole, "%s", reply);
+		}
 		if (mapi_get_querytype(hdl) == Q_UPDATE) {
 			if (formatter == RAWformatter)
 				stream_printf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
@@ -1015,12 +1021,6 @@ format_result(MapiHdl hdl)
 		if (specials != NOmodifier && debugMode()) {
 			SQLdebugRendering(hdl);
 			continue;
-		}
-		if ((reply = mapi_result_error(hdl)) != NULL) {
-			if (formatter == RAWformatter)
-				mapi_explain_result(hdl, stderr);
-			else
-				stream_printf(toConsole, "%s", reply);
 		}
 		if (debugMode())
 			RAWrenderer(hdl);
