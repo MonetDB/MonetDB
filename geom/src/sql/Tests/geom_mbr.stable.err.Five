@@ -7,19 +7,16 @@ stderr of test 'geom_mbr` in directory 'src/sql` itself:
 
 MAPI  = monetdb@alf:34975
 QUERY = INSERT INTO mbrs values (mbr('POINT(10)'));
-ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: ParseException: Expected number but encountered ')'
+ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
 MAPI  = monetdb@alf:34975
 QUERY = INSERT INTO mbrs values (mbr('POINT()'));
-ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected number but encountered ')'
-        !ERROR: ParseException: Expected number but encountered ')'
+ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
 MAPI  = monetdb@alf:34975
 QUERY = INSERT INTO mbrs values (mbr('POINT'));
-ERROR = !MALException:wkb.FromText:!ERROR: ParseException: Expected word but encountered end of stream
-        !ERROR: ParseException: Expected word but encountered end of stream
+ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
 MAPI  = monetdb@alf:34975
-QUERY = INSERT INTO mbrs values (mbr('');
-ERROR = !syntax error, unexpected SCOLON, expecting ')' or ',' in: "insert into mbrs values (mbr('');"
+QUERY = INSERT INTO mbrs values (mbr(''));
+ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
 
 
 # 21:15:17 >  
