@@ -253,8 +253,11 @@ dumpToStream(stream *out, str whatever) {
 	for (i = 0; i < len; i++) {
 		if (whatever[i] == '\n') {
 			whatever[i] = '\0';
-			if (i - last > 0) /* skip empty lines */
+			if (i - last > 0) { /* skip empty lines */
+				if (whatever[last] == '!') /* no need for double ! */
+					last++;
 				stream_printf(out, "!%s\n", whatever + last);
+			}
 			last = i + 1;
 		}
 	}
