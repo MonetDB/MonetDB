@@ -256,10 +256,8 @@ RECYCLEdumpWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc >1){
 		fname = * (str*) getArgReference(stk, pci,1);
 		s = open_wastream(fname);
-		if (s == NULL || stream_errnr(s)) {
-        	        GDKerror("could not open file %s.\n", fname);
-			s = cntxt->fdout;
-		}
+		if (s == NULL || stream_errnr(s))
+			throw(MAL,"recycle", "could not open file %s.\n", fname);
 	}
 	RECYCLEdump(s);
 	if( s != cntxt->fdout)
@@ -297,10 +295,8 @@ RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc >1){
 		fname = * (str*) getArgReference(stk, pci,1);
 		s = open_wastream(fname);
-		if (s == NULL || stream_errnr(s)) {
-        	        GDKerror("could not open file %s.\n", fname);
-			s = cntxt->fdout;
-		}
+		if (s == NULL || stream_errnr(s))
+			throw(MAL,"recycle", "could not open file %s.\n", fname);
 	}
 	RECYCLEdumpQPat(s);
 	if( s != cntxt->fdout)
@@ -311,7 +307,7 @@ RECYCLEdumpQPatWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @-
 Called to collect statistics at the end of each query.
 @c
-static void
+static str
 RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 {	
 	static int q=0;
@@ -324,10 +320,8 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 		s = cntxt->fdout;
 	else {
 		s = append_wastream(recycleLog);
-		if (s == NULL || stream_errnr(s)) {
-        	        GDKerror("could not open file %s.\n", recycleLog);
-			s = cntxt->fdout;
-		}
+		if (s == NULL || stream_errnr(s))
+				throw(MAL,"recycle", "could not open file %s.\n", recycleLog);
 	}
 
 	for(i=0; i< mb->stop; i++){
@@ -354,6 +348,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 	stream_printf(s, LLFMT "\t" LLFMT "\t %d\n", recyclerUsedMemory, recmem, instr);
 	if( s !=cntxt->fdout)
 		close_stream(s);
+	return MAL_SUCCEED;
 }
 
 
@@ -473,7 +468,8 @@ RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
-	if (monitorRecycler == 2 ) RECYCLErunningStat(cntxt,mb);
+	if (monitorRecycler == 2 ) 
+		return RECYCLErunningStat(cntxt,mb);
 	return MAL_SUCCEED;
 }
 @}
