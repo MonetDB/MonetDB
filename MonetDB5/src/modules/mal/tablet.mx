@@ -554,7 +554,6 @@ Access is granted to a single client thread only.
 The table structure depends on the columns to be printed,
 it will be dynamically extended to accommodate the space.
 @c
-static int tablet_debug = 0;
 static Tablet *tableReports[MAL_MAXCLIENTS];
 
 
@@ -1131,8 +1130,9 @@ copy_loadformat(Tablet *as){
 		fmt[p].nildata = GDKmalloc(fmt[p].nillen);
 		memcpy(fmt[p].nildata, ATOMnilptr(fmt[p].adt), fmt[p].nillen);
 		fmt[p].nullstr = GDKstrdup(as->format[p].nullstr);
-		if (tablet_debug)
-			stream_printf(GDKerr, "%s\n", fmt[p].name);
+#ifdef _DEBUG_TABLET_
+		stream_printf(GDKout, "#%s\n", fmt[p].name);
+#endif
 		fmt[p].batfile = NULL;
 		fmt[p].rawfile = NULL;
 		fmt[p].raw = NULL;
@@ -1175,8 +1175,9 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].nildata = GDKmalloc(fmt[p].nillen);
 		memcpy(fmt[p].nildata, ATOMnilptr(fmt[p].adt), fmt[p].nillen);
 		fmt[p].nullstr = GDKstrdup("nil");
-		if (tablet_debug)
-			stream_printf(GDKerr, "%s\n", fmt[p].name);
+#ifdef _DEBUG_TABLET_
+		stream_printf(GDKout, "#%s\n", fmt[p].name);
+#endif
 		fmt[p].batfile = NULL;
 		fmt[p].rawfile = NULL;
 		fmt[p].raw = NULL;
@@ -1555,7 +1556,7 @@ TABLET_error(stream *s)
 	if (!stream_errnr(GDKerr)) {
 		char *err = stream_error(s);
 
-		stream_printf(GDKerr, "Stream error %s\n", err);
+		stream_printf(GDKout, "#Stream error %s\n", err);
 		/* use free as stream allocates out side GDK */
 		if (err)
 			free(err);
@@ -1762,11 +1763,8 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 	BUN nr = offset + as->nr;
 	int started = !start;
 
-	if (tablet_debug)
-		stream_printf(GDKerr, "TABLETload_bulk\n");
-
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"load_bulk %d\n",start);
+	stream_printf(GDKout,"load_bulk %d\n",start);
 #endif
 	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == BUN_NONE || i < nr)) {
 		char *s, *end;
@@ -1835,8 +1833,10 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 			i += started;
 			/* ignored partial record from previous block */
 			started = 1;
-			if (tablet_debug && (i % 100000) == 0)
-				stream_printf(GDKerr, "inserted " BUNFMT "\n", i);
+#ifdef _DEBUG_TABLET_
+			if ((i % 100000) == 0)
+				stream_printf(GDKout, "#inserted " BUNFMT "\n", i);
+#endif
 			if ( i && (i % 100000) == 0)
 				sync_bats(as);
 			if (nr != BUN_NONE && i >= nr)
@@ -1844,8 +1844,8 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 		}
 	}
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"limit " SSZFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
-	stream_printf(GDKstdout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
+	stream_printf(GDKout,"#limit " SSZFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
+	stream_printf(GDKout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
 #endif
 	as->nr = i-offset;
 	sync_bats(as);
@@ -1867,14 +1867,14 @@ static void TABLETload_chunk(void *data){
 	Tablet *p = data;
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"starting loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
+	stream_printf(GDKout,"#starting loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
 #endif
 	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, (ssize_t) p->bytes);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"exit of loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
+	stream_printf(GDKout,"#exit of loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
 	{ int i;
 	for(i=0; i< (int) p->nr_attrs; i++)
-	stream_printf(GDKstdout,"field %d tuples " BUNFMT "\n",i, BATcount(p->format[i].c));
+	stream_printf(GDKout,"field %d tuples " BUNFMT "\n",i, BATcount(p->format[i].c));
 	}
 #endif
 }
@@ -1900,7 +1900,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"starting parallel file based load\n");
+	stream_printf(GDKout,"#starting parallel file based load\n");
 #endif
 
 	/* get size of file */
@@ -1935,7 +1935,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		if (partition[i]->input) {
 			int res = stream_fsetpos(partition[i]->input->s, i*piece);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"fsetpos %d " BUNFMT " %d\n",i, i*piece, res );
+	stream_printf(GDKout,"#fsetpos %d " BUNFMT " %d\n",i, i*piece, res );
 #endif
 			(void)res;
 			/* execute a thread over a range of the file */
@@ -1949,7 +1949,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 	for(i=0; i<nway; i++) 
 		MT_join_thread(partition[i]->tid);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKstdout,"all finished\n");
+	stream_printf(GDKout,"#all finished\n");
 #endif
 
 	/* check for errors */
@@ -1965,7 +1965,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 			if (partition[i]->format[0].c)
 				cnt+= BATcount(partition[i]->format[0].c);
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKstdout,"total records found " BUNFMT "\n",cnt);
+		stream_printf(GDKout,"#total records found " BUNFMT "\n",cnt);
 #endif
 
 		for( i=0; i< (int)as->nr_attrs; i++) {
@@ -2012,8 +2012,10 @@ dump_file(Tablet * as, stream *fd)
 			GDKfree(buf);
 			return -1;
 		}
-		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+#ifdef _DEBUG_TABLET_
+		if ((i % 1000000) == 0)
+			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+#endif
 	}
 	GDKfree(buf);
 	return 0;
@@ -2037,8 +2039,10 @@ output_file_default(Tablet * as, BAT *order, stream *fd)
 			return res;
 		}
 		i++;
-		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+#ifdef _DEBUG_TABLET_
+		if ((i % 1000000) == 0)
+			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+#endif
 	}
 	GDKfree(buf);
 	return res;
@@ -2056,8 +2060,10 @@ output_file_dense(Tablet * as, stream *fd)
 			GDKfree(buf);
 			return res;
 		}
-		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+#ifdef _DEBUG_TABLET_
+		if ((i % 1000000) == 0)
+			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+#endif
 	}
 	GDKfree(buf);
 	return res;
@@ -2080,8 +2086,10 @@ output_file_ordered(Tablet * as, BAT *order, stream *fd, oid base)
 			GDKfree(buf);
 			return res;
 		}
-		if (tablet_debug && (i % 1000000) == 0)
-			stream_printf(GDKerr, "dumped " BUNFMT " lines\n", i);
+#ifdef _DEBUG_TABLET_
+		if ((i % 1000000) == 0)
+			stream_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
+#endif
 	}
 	GDKfree(buf);
 	return res;
@@ -2154,7 +2162,7 @@ TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr)
 		stream *s = open_wastream(datafile);
 
 		if (s != NULL && !stream_errnr(s) && dump_file(&as, s) >= 0) {
-			stream_printf(GDKerr, "saved in %s\n", datafile);
+			stream_printf(GDKout, "#saved in %s\n", datafile);
 		}
 		if (s == NULL || stream_errnr(s)) {
 			GDKerror("could not open file %s\n", datafile);
