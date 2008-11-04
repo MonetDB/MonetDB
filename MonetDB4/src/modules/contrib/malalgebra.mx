@@ -281,10 +281,7 @@ CMDbandmergejoin_limit(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus,
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
                 if (*result) {
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-                        assert(cutoff <= (size_t) GDK_lng_max);
-#endif
-                        limit = (lng) cutoff;
+                        limit = (lng) MIN(cutoff, GDK_int_max);
                         BUNins(*result, &limit, &bid, FALSE);
                 }
                 BBPunfix(bid);
@@ -310,10 +307,7 @@ CMDleftmergejoin_limit(BAT **result, BAT *left, BAT *right, lng* _limit)
                 bat bid = (*result)->batCacheid;
                 *result = BATnew(TYPE_lng, TYPE_bat, 1);
                 if (*result) {
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-                        assert(cutoff <= (size_t) GDK_lng_max);
-#endif
-                        limit = (lng) cutoff;
+                        limit = (lng) MIN(cutoff, GDK_int_max);
                         BUNins(*result, &limit, &bid, FALSE);
                 }
                 BBPunfix(bid);
