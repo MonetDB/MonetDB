@@ -208,7 +208,7 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr p;
 	int callMALinterpreter = 1, pc, cnt = 0;
-	str msg = NULL;
+	str msg = MAL_SUCCEED;
 	int loops = 0;
 
 #ifdef DEBUG_MAL_SCHEDULER
@@ -227,11 +227,8 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 					/* all schedulers should behave like patterns */
 					/* However, we don;t have a stack now */
 					msg = (str) (*p->fcn) (mb, 0, p);
-				if (msg) {
-					GDKerror(msg);
-					showErrors(cntxt);
+				if (msg)
 					return msg;
-				}
 				pc--;	/*scheduler statement has been removed */
 			}
 		}
