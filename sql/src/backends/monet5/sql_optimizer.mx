@@ -458,7 +458,7 @@ str defaultPlan=
 	/*"recycle,"*/
 	"reduce,"
 	"garbageCollector,"
-	"dataflow,"
+	//"dataflow,"
 	//"octopus,"
 	"history,"
 	"multiplex";

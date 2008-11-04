@@ -114,7 +114,7 @@ dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 	} else if (type == TYPE_lng) {
 		@:dec_tostr(lng)@
 	} else {
-		GDKwarning("Decimal cannot be mapped to %s\n", ATOMname(type));
+		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
 	}
 	return 0;
 }
@@ -337,7 +337,7 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	(void)e;
 	(void)quote;
 	if (s == e) {
-		GDKwarning("Decimal cannot be parsed from %s\n", ATOMname(type));
+		GDKerror("Decimal cannot be parsed from %s\n", ATOMname(type));
 		return NULL;
 	} else if (type == TYPE_bte) {
 		@:dec_frstr(bte)@
@@ -348,7 +348,7 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	} else if (type == TYPE_lng) {
 		@:dec_frstr(lng)@
 	} else {
-		GDKwarning("Decimal cannot be parsed from %s\n", ATOMname(type));
+		GDKerror("Decimal cannot be parsed from %s\n", ATOMname(type));
 	}
 	return NULL;
 }
