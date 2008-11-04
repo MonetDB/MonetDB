@@ -238,7 +238,7 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 	ValRecord cst;
 
 	cst.vtype= TYPE_lng;
-	cst.val.oval= val;
+	cst.val.lval= val;
 	_t = defConstant(mb,TYPE_lng,&cst);
 	return pushArgument(mb, q, _t);
 }
