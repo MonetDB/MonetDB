@@ -1975,6 +1975,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		c->curprg = newFunction("tmp", FUNCTIONsymbol);
 
 	curPrg = c->curprg;
+	curPrg->def->keephistory= backup->def->keephistory;
 	mb = curPrg->def;
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
