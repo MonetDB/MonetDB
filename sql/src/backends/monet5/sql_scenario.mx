@@ -841,7 +841,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 }
 
 void
-SQLsetTrace(Client c, int onoff)
+SQLsetTrace(Client c, bit onoff)
 {
 	InstrPtr q;
 

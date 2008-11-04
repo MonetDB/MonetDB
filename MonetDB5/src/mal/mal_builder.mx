@@ -44,14 +44,14 @@ mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);
 mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
-mal_export InstrPtr pushChr(MalBlkPtr mb, InstrPtr q, char val);
+mal_export InstrPtr pushChr(MalBlkPtr mb, InstrPtr q, chr val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
-mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, double val);
-mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, float val);
+mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, dbl val);
+mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
-mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, int val);
+mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
@@ -193,7 +193,7 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 }
 
 InstrPtr
-pushChr(MalBlkPtr mb, InstrPtr q, char val)
+pushChr(MalBlkPtr mb, InstrPtr q, chr val)
 {
 	int _t;
 	ValRecord cst;
@@ -244,7 +244,7 @@ pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 }
 
 InstrPtr
-pushDbl(MalBlkPtr mb, InstrPtr q, double val)
+pushDbl(MalBlkPtr mb, InstrPtr q, dbl val)
 {
 	int _t;
 	ValRecord cst;
@@ -256,7 +256,7 @@ pushDbl(MalBlkPtr mb, InstrPtr q, double val)
 }
 
 InstrPtr
-pushFlt(MalBlkPtr mb, InstrPtr q, float val)
+pushFlt(MalBlkPtr mb, InstrPtr q, flt val)
 {
 	int _t;
 	ValRecord cst;
@@ -281,7 +281,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 }
 
 InstrPtr
-pushBit(MalBlkPtr mb, InstrPtr q, int val)
+pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 {
 	int _t;
 	ValRecord cst;
