@@ -281,7 +281,9 @@ newBox(str name)
 	for (i = 0; i < MAXSPACES; i++)
 		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
 			mal_unset_lock(mal_contextLock, "newBox");
-			GDKwarning("newBox:duplicate box definition\n");
+#ifdef DEBUG_MAL_BOX
+			stream_printf(GDKout,"newBox:duplicate box definition\n");
+#endif
 			return box[i];
 		}
 	for (i = 0; i < MAXSPACES; i++)
