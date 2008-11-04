@@ -2020,7 +2020,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	if (m->history) {
 		char *t = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
 		oid queryid = OIDnew(1);
-		InstrPtr q = newStmt(mb, userRef, "queryId");
+		InstrPtr q;
 
 		if (m->history == 1) {
 			sql_schema *sys = mvc_bind_schema(m, "sys");
@@ -2033,9 +2033,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			/* only needed once */
 			m->history = 2;
 		}
-		q->token = REMsymbol;
-		/* history optimizer moves these statements inplace */
-        	q = pushWrd(mb, q, queryid);	/* query identifier */
 		
 		while( t && isspace((int) *t) ) 
 			t++;
