@@ -1474,7 +1474,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		stk->cmd = 'x';	/* will force a graceful termination */
 	}
 	if( mdbSessionActive== 0) return;
-	showErrors(cntxt);
 	if (cntxt->flags & timerFlag)
 		cntxt->timer = GDKusec();
 	mdbSessionActive= 0; /* for name completion */
