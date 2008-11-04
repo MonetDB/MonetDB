@@ -47,7 +47,7 @@ mal_export InstrPtr pushBte(MalBlkPtr mb, InstrPtr q, bte val);
 mal_export InstrPtr pushChr(MalBlkPtr mb, InstrPtr q, char val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
-mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, long val);
+mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, lng val);
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, double val);
 mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, float val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
@@ -232,7 +232,7 @@ pushVoid(MalBlkPtr mb, InstrPtr q)
 }
 
 InstrPtr
-pushLng(MalBlkPtr mb, InstrPtr q, long val)
+pushLng(MalBlkPtr mb, InstrPtr q, lng val)
 {
 	int _t;
 	ValRecord cst;
