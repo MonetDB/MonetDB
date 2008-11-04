@@ -159,7 +159,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 void showErrors(Client cntxt) {
 	int i;
 	if (*cntxt->errbuf) {
-		assert(0);
 		i = (int)strlen(cntxt->errbuf);
 		stream_printf(cntxt->fdout, "%s", cntxt->errbuf);
 		if (cntxt->errbuf[i - 1] != '\n')
