@@ -78,6 +78,15 @@ opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 	inblock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
 	q = newStmt(mb,profilerRef,"getDiskWrites");
 	oublock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
+@= updateCounters
+	q = newStmt(mb,"mtime","current_timestamp");
+	getArg(q,0)= ctime;
+	q = newStmt(mb,"alarm","usec");
+	getArg(q,0)= elaps;
+	q = newStmt(mb,profilerRef,"getDiskReads");
+	getArg(q,0)= inblock;
+	q = newStmt(mb,profilerRef,"getDiskWrites");
+	getArg(q,0)= oublock;
 @-
 A tricky piece of code. We invalidate an instruction
 based on the return variable.
