@@ -626,10 +626,8 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 		char buf[BUFSIZ];
 		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
 		newComment(mb,buf);
-		if (mb->errors) {
-			showErrors(cntxt);
+		if (mb->errors) 
 			throw(MAL,"optimizer","%s failed\n",name);
-		}
 	}
 	/* code to collect all last versions to study code coverage  in SQL
 	{stream *fd;
