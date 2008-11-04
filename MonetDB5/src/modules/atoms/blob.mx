@@ -419,19 +419,19 @@ blob_fromstr(char *instr, int *l, blob **val)
 
 	s = strchr(s, '(');
 	if (s == NULL) {
-		GDKwarning("Missing ( in blob\n");
+		GDKerror("Missing ( in blob\n");
 		*val = (blob *) NULL;
 		return (0);
 	}
 	nitems = (size_t) strtoul(s + 1, &s, 10);
 	if (s == NULL) {
-		GDKwarning("Missing nitems in blob\n");
+		GDKerror("Missing nitems in blob\n");
 		*val = (blob *) NULL;
 		return (0);
 	}
 #if SIZEOF_SIZE_T > SIZEOF_INT
 	if (nitems > 0x7fffffff) {
-		GDKwarning("Blob too large\n");
+		GDKerror("Blob too large\n");
 		*val = (blob *) NULL;
 		return (0);
 	}
@@ -439,7 +439,7 @@ blob_fromstr(char *instr, int *l, blob **val)
 	nbytes = blobsize(nitems);
 	s = strchr(s, ':');
 	if (s == NULL) {
-		GDKwarning("Missing ':' in blob\n");
+		GDKerror("Missing ':' in blob\n");
 		*val = (blob *) NULL;
 		return (0);
 	}
