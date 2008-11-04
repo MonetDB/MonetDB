@@ -1418,6 +1418,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                We thus disable this rewrite. */
             break;
             
+#if 0 /* comment out code that is unreachable after / due to above "break;" */
             /* remove bogus steps starting from attribute nodes */
             assert (p->kind == c_locsteps);
             if (/* the typing infers that the result
@@ -1454,6 +1455,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                 break;
             }
             break;
+#endif
 
         /* LocationSteps:      locsteps (LocationStep, CoreExpr) */
         case 32:
