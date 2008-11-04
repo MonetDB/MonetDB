@@ -1968,6 +1968,17 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	backup = c->curprg;
 
+	if (m->history == 1) {
+		sql_schema *sys = mvc_bind_schema(m, "sys");
+		sql_subfunc *kq = sql_find_func(sys, "keepquery", 4);
+		sql_subfunc *cq = sql_find_func(sys, "keepquery", 4);
+
+		assert(kq && cq);
+		backend_create_func(be, kq->func);
+		backend_create_func(be, cq->func);
+		/* only needed once */
+		m->history = 2;
+	}
 	/* later we change this to a factory ? */
 	if (cq) 
 		c->curprg = newFunction(putName(cq->name,strlen(cq->name)), FUNCTIONsymbol);
@@ -2013,38 +2024,27 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	backend_dumpstmt(be, mb, s);
 	Toptimize = GDKusec();
 	m->Tparse = Toptimize - m->Tparse;
-	if (cq)
-		addQueryToCache(c);
-	Toptimize = GDKusec() - Toptimize;
 
 	if (m->history) {
 		char *t = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
 		oid queryid = OIDnew(1);
 		InstrPtr q;
 
-		if (m->history == 1) {
-			sql_schema *sys = mvc_bind_schema(m, "sys");
-			sql_subfunc *kq = sql_find_func(sys, "keepquery", 4);
-			sql_subfunc *cq = sql_find_func(sys, "keepquery", 4);
-
-			assert(kq && cq);
-			backend_create_func(be, kq->func);
-			backend_create_func(be, cq->func);
-			/* only needed once */
-			m->history = 2;
-		}
 		
 		while( t && isspace((int) *t) ) 
 			t++;
 
         	q = newStmt(mb, userRef, "keepquery");
 		q->token = REMsymbol;
-		q = pushInt(mb, q, queryid);
+		q = pushWrd(mb, q, queryid);
 		q = pushStr(mb, q, t);
 		q = pushLng(mb, q, m->Tparse );
 		q = pushLng(mb, q, Toptimize);
 		m->Tparse = 0;
 	}
+	if (cq)
+		addQueryToCache(c);
+	Toptimize = GDKusec() - Toptimize;
 	
 	curPrg = c->curprg;
 	if (backup) 

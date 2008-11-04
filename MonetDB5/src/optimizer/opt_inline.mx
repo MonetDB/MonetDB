@@ -69,7 +69,7 @@ They are produced by SQL compiler.
 #ifdef DEBUG_OPT_INLINE
 			stream_printf(cntxt->fdout,"check inline statement\n");
 			printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-			printInstruction(cntxt->fdout,0,q->blk,sig,LIST_MAL_ALL);
+			printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 #endif
 			if( getModuleId(q) == malRef &&
 				getFunctionId(q)== multiplexRef &&

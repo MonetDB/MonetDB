@@ -100,7 +100,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	int i, limit,slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
-	int qid = 0, argc, elaps, inblock, oublock, arg, ctime;
+	int argc, elaps, inblock, oublock, arg, ctime;
 	int returnseen = 0;
 	InstrPtr keepQuery = NULL;
 
@@ -109,7 +109,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) stk;		/* to fool compilers */
 
 #ifdef _DEBUG_OPT_QUERYHISTORY_
-	stream_printf(cntxt->fdout,"ENTERING TRACE CODE \n");
+	stream_printf(cntxt->fdout,"ENTERING HISTORY OPTIMIZER CODE \n");
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #else
 	(void) cntxt;
@@ -117,11 +117,8 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"queryId")==0)
-			qid= getArg(p,1);
-		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0){
+		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0)
 			keepQuery= p;
-		}
 	}
 	if ( keepQuery == NULL)
 		/* nothing to do */
@@ -178,7 +175,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			arg= getArg(q,0);
 
 			q = newStmt(mb,"user","keepcall");
-			q = pushInt(mb, q, qid); /* query identifier */
+			q = pushWrd(mb, q, getArg(keepQuery,1)); /* query identifier */
 			q = pushArgument(mb, q, ctime); /* arguments */
 			q = pushArgument(mb, q, arg);   /* arguments */
 			q = pushArgument(mb, q, elaps); /* elaps */
@@ -195,7 +192,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 #ifdef _DEBUG_OPT_QUERYHISTORY_
 	stream_printf(cntxt->fdout,"LEAVING QUERYHISTORY CODE INJECTION\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
 	for( ; i<slimit; i++)
 	if(old[i])

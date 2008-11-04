@@ -96,8 +96,8 @@ library logger;
 @mal
 library transaction;
 
-library mal_isolation;
-library mal_memorun;
+library mal_isolation;	# experimental code
+library mal_memorun;	# experimental code
 
 library xml;
 library batxml;
@@ -165,22 +165,16 @@ include recycle;
 include rmtobj;
 include remote;
 
-@-
-experimental
-@mal
-include mat;
-@-
-the real partition handler
-@mal
-include bpm;
+include mat; 	# experimental
+include bpm;	# experimental
 include inspect;
 include manual;
 include language;
-include constraints;
+include constraints; # experimental
 include mal_mapi;
 
 include profiler;
-include statistics;
+include statistics;	# experimental
 
 include optimizer;
 include opt_support;
