@@ -1203,23 +1203,40 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              *
              *
              * {..., $v -> q(v), ...},loop: e1 => q1,delta1
-             * loop2 = proj_iter (SEL item q1)
-             * loop3 = proj_iter (SEL res (NOT res item q1))
-             * {..., $v ->
-             *  proj_iter,pos,item (q(v)|X|(iter=iter1)(proj_iter1:iter loop2)),
-             *                      ...},loop2: e2 => (q2,delta2)
-             * {..., $v ->
-             *  proj_iter,pos,item (q(v)|X|(iter=iter1)(proj_iter1:iter loop3)),
-             *                      ...},loop3: e3 => (q3,delta3)
+             *
+             * then_map  = rowid_inner (proj_outer:iter (SEL item q1))
+             * then_loop = proj_iter:inner (then_map)
+             *
+             * { ...,
+             *   $v -> proj_iter:inner,pos,item (q(v)|X|(iter=outer)(then_map)),
+             *   ...}, then_loop: e2 => (q2,delta2)
+             *
+             * else_map  = rowid_inner (proj_outer:iter (SEL res (NOT res item q1))
+             * else_loop = proj_iter:inner (else_map)
+             *
+             * { ...,
+             *   $v -> proj_iter:inner,pos,item (q(v)|X|(iter=outer)(else_map)),
+             *   ...}, else_loop: e3 => (q3,delta3)
              * -----------------------------------------------------------------
              * {..., $v -> q(v), ...},loop,delta: if e1 then e2 else e3 =>
-             *                        (q2 U q3, delta2 U delta3)
+             *                        ((proj_iter:outer,pos,item (
+             *                              q2 |X|(iter=inner) (then_map)))
+             *                         U
+             *                         (proj_iter:outer,pos,item (
+             *                              q3 |X|(iter=inner) (else_map))),
+             *                         delta2 U delta3)
              */
             PFla_op_t *old_loop;
             PFarray_t  *old_env;
             unsigned int i;
             PFla_env_t e;
-            PFla_op_t *new_map;
+            PFla_op_t *new_map,
+                      *rowid,
+                      *var_map,
+                      *then_map,
+                      *else_map,
+                      *then_res,
+                      *else_res;
 
             /* initiate translation of e1 */
             reduce (ctx, kids[0], nts[0]);
@@ -1227,82 +1244,124 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* save old loop operator */
             old_loop = LOOP;
 
-            /* create loop2 relation */
-            LOOP = project (select_ (A(L(p)).rel, att_item),
-                            proj (att_iter, att_iter));
-
+            /* prepare the loop relation for the then-branch */
+            rowid    = rowid (select_ (A(L(p)).rel, att_item),
+                              att_inner);
+            /* create new loop operator */
+            LOOP     = project (rowid, proj (att_iter, att_inner));
+            /* create var_map relation. */
+            var_map  = project (rowid,
+                                proj (att_outer, att_iter),
+                                proj (att_inner, att_inner));
+            /* store the variable map to retrieve the old iter values */
+            then_map = var_map;
+            
             /* save old environment */
             old_env = ENV;
 
             /* update the environment for translation of e2 */
             ENV = PFarray (sizeof (PFla_env_t), 50);
 
+            /* update all variable bindings in old environment and put
+             * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
 
                 if (!e.map)
-                    new_map = project (
-                                  LOOP,
-                                  proj (att_outer, att_iter),
-                                  proj (att_inner, att_iter));
+                    new_map = project (var_map,
+                                       proj (att_outer, att_outer),
+                                       proj (att_inner, att_inner));
                 else
                     new_map = project (
                                   eqjoin (
-                                      e.map,
-                                      LOOP,
-                                      att_inner,
-                                      att_iter),
+                                      project (
+                                          e.map,
+                                          proj (att_iter, att_inner),
+                                          proj (att_outer, att_outer)),
+                                      project (
+                                          var_map,
+                                          proj (att_iter2, att_outer),
+                                          proj (att_inner, att_inner)),
+                                      att_iter,
+                                      att_iter2),
                                   proj (att_outer, att_outer),
                                   proj (att_inner, att_inner));
 
-                *((PFla_env_t *) PFarray_add (ENV))
-                    = enventry (e.var, e.rel, new_map, e.frag);
+                *((PFla_env_t *) PFarray_add (ENV)) =
+                    enventry (e.var, e.rel, new_map, e.frag);
             }
 
-            /* translate e2 */
+            /* translate e2 (then-branch) */
             reduce (ctx, kids[1], nts[1]);
 
-            /* create loop3 relation */
-            LOOP = project (select_ (not (A(L(p)).rel,
-                                         att_res,
-                                         att_item),
-                                    att_res),
-                            proj (att_iter, att_iter));
-
+            /* prepare the loop relation for the else-branch */
+            rowid    = rowid (select_ (not (A(L(p)).rel, att_res, att_item),
+                                       att_res),
+                              att_inner);
+            /* create new loop operator */
+            LOOP     = project (rowid, proj (att_iter, att_inner));
+            /* create var_map relation. */
+            var_map  = project (rowid,
+                                proj (att_outer, att_iter),
+                                proj (att_inner, att_inner));
+            /* store the variable map to retrieve the old iter values */
+            else_map = var_map;
+            
             /* update the environment for translation of e3 */
             ENV = PFarray (sizeof (PFla_env_t), 50);
 
+            /* update all variable bindings in old environment and put
+             * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
 
                 if (!e.map)
-                    new_map = project (
-                                  LOOP,
-                                  proj (att_outer, att_iter),
-                                  proj (att_inner, att_iter));
+                    new_map = project (var_map,
+                                       proj (att_outer, att_outer),
+                                       proj (att_inner, att_inner));
                 else
                     new_map = project (
                                   eqjoin (
-                                      e.map,
-                                      LOOP,
-                                      att_inner,
-                                      att_iter),
+                                      project (
+                                          e.map,
+                                          proj (att_iter, att_inner),
+                                          proj (att_outer, att_outer)),
+                                      project (
+                                          var_map,
+                                          proj (att_iter2, att_outer),
+                                          proj (att_inner, att_inner)),
+                                      att_iter,
+                                      att_iter2),
                                   proj (att_outer, att_outer),
                                   proj (att_inner, att_inner));
 
-                *((PFla_env_t *) PFarray_add (ENV))
-                    = enventry (e.var, e.rel, new_map, e.frag);
+                *((PFla_env_t *) PFarray_add (ENV)) =
+                    enventry (e.var, e.rel, new_map, e.frag);
             }
 
-            /* translate e3 */
+            /* translate e3 (else-branch) */
             reduce (ctx, kids[2], nts[2]);
 
             /* reset loop relation and environment */
             LOOP = old_loop;
             ENV = old_env;
 
+            /* merge back the old iter values */
+            then_res = project (
+                           eqjoin (A(RL(p)).rel, then_map, att_iter, att_inner),
+                           proj (att_iter, att_outer),
+                           proj (att_pos, att_pos),
+                           proj (att_item, att_item));
+
+            /* merge back the old iter values */
+            else_res = project (
+                           eqjoin (A(RR(p)).rel, else_map, att_iter, att_inner),
+                           proj (att_iter, att_outer),
+                           proj (att_pos, att_pos),
+                           proj (att_item, att_item));
+
             A(p) = (struct  PFla_pair_t) {
-                     .rel  = disjunion (A(RL(p)).rel, A(RR(p)).rel),
+                     .rel  = disjunion (then_res, else_res),
                      .frag = PFla_set_union (A(RL(p)).frag, A(RR(p)).frag) };
 
         } break;
@@ -3071,6 +3130,12 @@ locstep (core2alg_ctx_t *ctx,
          PFalg_axis_t axis, PFty_t ty,
          struct PFla_pair_t p)
 {
+    if (PFprop_type_of (p.rel, att_item) == aat_error)
+        return p;
+    else if (!(PFprop_type_of (p.rel, att_item) & aat_node))
+        PFoops (OOPS_FATAL,
+                "err:XP0019: Argument to location step must be a node sequence.");
+
     /*
      *                  env, loop: e => (q(e), delta)
      * ------------------------------------------------------------
