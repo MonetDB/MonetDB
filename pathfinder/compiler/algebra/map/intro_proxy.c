@@ -56,6 +56,7 @@
 #define pfIN(p)  ((p)->bit_in)
 #define pfOUT(p) ((p)->bit_out)
 
+#if 0
 /**
  * worker for remove_semijoin_operators() that
  * replaces semijoin operators by equi-joins and
@@ -132,6 +133,7 @@ remove_semijoin_operators (PFla_op_t *root)
     remove_semijoin_worker (root);
     PFla_dag_reset (root);
 }
+#endif
 
 /**
  *
@@ -182,6 +184,10 @@ join_resolve_conflict_worker (PFla_op_t *p,
     unsigned int i = 0, last = PFarray_last (conflict_list);
     unsigned int ori_last = last;
 
+    /* additional check to avoid an equi-join operator referencing
+       itself in the subtree of lop */
+    PFprop_infer_refctr (p);
+
     while (i < last) {
         remove = false;
         node = *(PFla_op_t **) PFarray_at (conflict_list, i);
@@ -191,7 +197,11 @@ join_resolve_conflict_worker (PFla_op_t *p,
             node->kind != la_distinct)
             return ori_last == last;
 
-        /* look into the children of the join operator */
+        /* additional check to avoid an equi-join operator referencing
+           itself in the subtree of lop */
+        if (PFprop_refctr (node) > 1)
+            return ori_last == last;
+
         if (rp == node)                  { rp_ref  = true; remove = true; }
         else if (L(rp) && L(rp) == node) { rlp_ref = true; remove = true; }
 
@@ -1338,6 +1348,7 @@ nest_proxy (PFla_op_t *root,
 
 
 
+#if 0
 /**
  *
  * Functions specific to the generation of duplicate generating
@@ -1676,6 +1687,7 @@ intro_step_join (PFla_op_t *root,
                             proj_list);
     return true;
 }
+#endif
 
 
 
@@ -3069,10 +3081,12 @@ PFintro_proxies (PFla_op_t *root)
 {
     PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *), 50);
 
+#if 0
     /* remove all semijoin operators as most of our
        proxies cannot cope with semijoins and thus
        would recognize less proxies. */
     remove_semijoin_operators (root);
+#endif
 
     /* find proxies and rewrite them in one go.
        They are based on semi-join - rowid/rownum pairs */
@@ -3099,10 +3113,13 @@ PFintro_proxies (PFla_op_t *root)
                       nest_proxy,
                       checked_nodes);
 
+    PFla_dag_reset (root);
+
     /* As we match the same nodes (equi-joins) again we need to reset
        the list of checked nodes */
     PFarray_last (checked_nodes) = 0;
 
+#if 0
     /* rewrite joins that contain only a single XPath location
        step into a new step_join operator. */
     intro_proxy_kind (root,
@@ -3115,6 +3132,7 @@ PFintro_proxies (PFla_op_t *root)
     /* As we match the same nodes (equi-joins) again we need to reset
        the list of checked nodes */
     PFarray_last (checked_nodes) = 0;
+#endif
 
     /* generate proxies consisting of equi-join - rowid/rownum pairs */
     if (!intro_proxy_kind (root,
