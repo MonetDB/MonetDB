@@ -754,7 +754,6 @@ typedef struct backend {
 	sql_idx *currIndex;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq *q;			/* pointer to the cached query */
-	str qry;
 } backend;
 
 extern backend *backend_reset(backend *b);
@@ -981,7 +980,6 @@ backend_reset(backend *b)
 	b->currKey = NULL;
 	b->currIndex = NULL;
 	b->vtop = 0;
-	b->qry = NULL;
 	b->q = NULL;
 	return b;
 }

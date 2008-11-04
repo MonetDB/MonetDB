@@ -1897,42 +1897,10 @@ The kernel uses two calls to procedures defined in SQL.
 They have to be initialized, which is currently hacked
 by using the SQLstatment.
 @c
-static void
-initHistory(backend *be){
-	static int initdone=0;
-
-	if (initdone || be->mvc->history == 0) return;
-	if (findSymbol(userRef,"keepcall")== NULL){
-		be->mvc->history= 0;
-		showException(SQL,"sql","sql/history.sql script should be ran first.\n");
-	} else
-		initdone= 1;
-}
-
 static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
 	mvc *c = be->mvc;
 	InstrPtr q;
-	char *t;
-
-	initHistory(be);
-	if ( c->history ){
-		c->history = (int) OIDnew((oid) 1);
-        q = newStmt(mb,sqlRef,"queryId");
-        q = pushInt(mb, q, c->history);	/* query identifier */
-		
-		if (be->qry==NULL)
-			be->qry = sql_escape_str(QUERY(c->scanner) + c->scanner.as);
-		t= be->qry;
-		while( t && isspace((int) *t) ) t++;
-
-        q = newStmt(mb,sqlRef,"keepquery");
-		q= pushInt(mb,q,c->history);
-		q= pushStr(mb,q,t);
-		q= pushLng(mb,q, GDKusec() - be->mvc->Tparse);
-		q= pushLng(mb,q, GDKusec());
-		c->Tparse = 0;
-	}
 
 	(void)_dumpstmt(be, mb, s);
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
@@ -1945,7 +1913,6 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		getArg(q,0) = getArg(getInstrPtr(mb,0),0);
 		q->barrier = RETURNsymbol;
 	}
-	
 	pushEndInstruction(mb);
 }
 
@@ -1991,16 +1958,13 @@ Symbol
 backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 {
 	mvc *m = be->mvc;
-	MalBlkPtr curBlk = 0;
+	MalBlkPtr mb = 0;
 	Symbol curPrg = 0, backup = NULL;
 	InstrPtr curInstr = 0;
 	int argc = 0;
 	char arg[SMALLBUFSIZ];
 	node *n;
-/*
-	InstrPtr q;
-	str msg, profile;
-*/
+	lng Toptimize = 0;
 
 	backup = c->curprg;
 
@@ -2012,46 +1976,77 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	curPrg = c->curprg;
 	curPrg->def->keephistory= backup->def->keephistory;
-	curBlk = curPrg->def;
-	curInstr = getInstrPtr(curBlk, 0);
+	mb = curPrg->def;
+	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
-	setVarType(curBlk, 0, TYPE_void);
-	setVarUDFtype(curBlk,0);
+	setVarType(mb, 0, TYPE_void);
+	setVarUDFtype(mb,0);
 	setModuleId(curInstr, putName("user",4));
 
-	if (be->mvc->argc) {
+	if (m->argc) {
 		for (argc = 0; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
 			int type = atom_type(a)->type->localtype;
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(curBlk, _strdup(arg), type);
-			curInstr = pushArgument(curBlk, curInstr, varid);
-			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk,0);
+			varid = newVariable(mb, _strdup(arg), type);
+			curInstr = pushArgument(mb, curInstr, varid);
+			setVarType(mb, varid, type);
+			setVarUDFtype(mb,0);
 		}
-	} else if (be->mvc->params) { /* needed for prepare statements */
+	} else if (m->params) { /* needed for prepare statements */
 
-		for (n = be->mvc->params->h; n; n = n->next, argc++) {
+		for (n = m->params->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
 			int type = a->type.type->localtype;
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(curBlk, _strdup(arg), type);
-			curInstr = pushArgument(curBlk, curInstr, varid);
-			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk,varid);
+			varid = newVariable(mb, _strdup(arg), type);
+			curInstr = pushArgument(mb, curInstr, varid);
+			setVarType(mb, varid, type);
+			setVarUDFtype(mb,varid);
 		}
 	}
 
-	backend_dumpstmt(be, curBlk, s);
-
-	if (cq){
-		be->mvc->Toptimize = GDKusec();
+	backend_dumpstmt(be, mb, s);
+	Toptimize = GDKusec();
+	m->Tparse = Toptimize - m->Tparse;
+	if (cq)
 		addQueryToCache(c);
-		be->mvc->Toptimize = GDKusec()- be->mvc->Toptimize;
+	Toptimize = GDKusec() - Toptimize;
+
+	if (m->history) {
+		char *t = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
+		oid queryid = OIDnew(1);
+		InstrPtr q = newStmt(mb, userRef, "queryId");
+
+		if (m->history == 1) {
+			sql_schema *sys = mvc_bind_schema(m, "sys");
+			sql_subfunc *kq = sql_find_func(sys, "keepquery", 4);
+			sql_subfunc *cq = sql_find_func(sys, "keepquery", 4);
+
+			assert(kq && cq);
+			backend_create_func(be, kq->func);
+			backend_create_func(be, cq->func);
+			/* only needed once */
+			m->history = 2;
+		}
+		q->token = REMsymbol;
+		/* history optimizer moves these statements inplace */
+        	q = pushWrd(mb, q, queryid);	/* query identifier */
+		
+		while( t && isspace((int) *t) ) 
+			t++;
+
+        	q = newStmt(mb, userRef, "keepquery");
+		q->token = REMsymbol;
+		q = pushInt(mb, q, queryid);
+		q = pushStr(mb, q, t);
+		q = pushLng(mb, q, m->Tparse );
+		q = pushLng(mb, q, Toptimize);
+		m->Tparse = 0;
 	}
 	
 	curPrg = c->curprg;

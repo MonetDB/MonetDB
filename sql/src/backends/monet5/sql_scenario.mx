@@ -38,8 +38,6 @@ sql5_export str SQLsession(str *ret);
 sql5_export str SQLsession2(str *ret);
 sql5_export str SQLprelude(void);
 sql5_export str SQLepilogue(void);
-sql5_export str SQLstartQuery(int *ret, str *qry);
-sql5_export str SQLexitQuery(int *ret, str *qry);
 
 sql5_export str SQLexit(Client c);
 sql5_export str SQLinit(Client c);
@@ -297,17 +295,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("cache", &T);
 	SQLglobal("history", &F);
 	return 0;
-}
-
-str
-SQLstartQuery(int *ret, str *qry){
-	(void) ret; (void) qry;
-	return MAL_SUCCEED;
-}
-str
-SQLexitQuery(int *ret, str *qry){
-	(void) ret; (void) qry;
-	return MAL_SUCCEED;
 }
 
 static int
@@ -844,12 +831,12 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	c->itrace='n';
 	if( onoff){
 		newStmt(c->curprg->def,"mdb","start");
-		c->debugOptimizer= TRUE;
-		c->curprg->def->keephistory= TRUE;
+		c->debugOptimizer = TRUE;
+		c->curprg->def->keephistory = TRUE;
 	} else {
 		newStmt(c->curprg->def,"mdb","stop");
-		c->debugOptimizer= FALSE;
-		c->curprg->def->keephistory= FALSE;
+		c->debugOptimizer = FALSE;
+		c->curprg->def->keephistory = FALSE;
 	}
 }
 
@@ -1218,41 +1205,6 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	if( pci->retc >= MAXARG)
 		GDKfree(argrec);
 	return ret;
-}
-
-str 
-backend_record( backend *be, char *query, lng parse, lng optimize, lng exec, lng total)
-{
-	bit fls = FALSE;
-	int ret;
-	str msg = NULL;
-	mvc *c = be->mvc;
-	char emode = c->emode;
-	char emod = c->emod;
-	char *q = query;
-	char buf[BUFSIZ], *stmt = buf;
-
-	if (!c->history )
-		return msg;
-
-	/* ltrim query */
-	while(isspace((int)(*q))) 
-		q++;
-
-	/* TODO use sql_prepare/execute */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"history\" "
-		 "VALUES(now,'%s',"LLFMT","LLFMT","LLFMT","LLFMT",USER);\n",
-		 q, parse, optimize, exec, total);
-	_DELETE(query);
-
-	c->emode = m_normal;
-	c->emode = mod_none;
-	msg = SQLstatementOut(&ret, &stmt, &fls);
-	(void)ret;
-	c->emode = emode;
-	c->emod = emod;
-	be->mvc->Tstart = be->mvc->Tparse = be->mvc->Toptimize = be->mvc->Tschedule = be->mvc->Texec = 0;
-	return msg;
 }
 
 str SQLrecompile(Client c, backend *be);
