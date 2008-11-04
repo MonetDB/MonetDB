@@ -270,10 +270,10 @@ void insertSymbol(Module scope, Symbol prg){
 	sig = getSignature(prg);
 	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
 		/* move the definition to the proper place */
+		/* default scope is the last resort */
 		c= findModule(scope,getModuleId(sig));
-		if(c == NULL){
-			GDKwarning("insertSymbol:undefined module\n");
-		} else scope = c;
+		if ( c )
+			scope = c;
 	}
 	t = getSubScope(getFunctionId(sig));
 	if( scope->subscope == NULL)
