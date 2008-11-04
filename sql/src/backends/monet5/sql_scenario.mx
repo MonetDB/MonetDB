@@ -832,9 +832,11 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	if( onoff){
 		newStmt(c->curprg->def,"mdb","start");
 		c->debugOptimizer = TRUE;
+		c->curprg->def->keephistory = TRUE;
 	} else {
 		newStmt(c->curprg->def,"mdb","stop");
 		c->debugOptimizer = FALSE;
+		c->curprg->def->keephistory = FALSE;
 	}
 }
 
@@ -846,10 +848,12 @@ SQLsetTrace(Client c, bit onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTrace");
 	pushBit(c->curprg->def,q,onoff);
-//	q = newStmt(c->curprg->def,"mdb","setThread");
-//	pushBit(c->curprg->def,q,onoff);
-//	q = newStmt(c->curprg->def,"mdb","setCount");
-//	pushBit(c->curprg->def,q,onoff);
+/*
+	q = newStmt(c->curprg->def,"mdb","setThread");
+	pushBit(c->curprg->def,q,onoff);
+	q = newStmt(c->curprg->def,"mdb","setCount");
+	pushBit(c->curprg->def,q,onoff);
+*/
 }
 
 void
