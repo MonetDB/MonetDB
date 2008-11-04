@@ -577,8 +577,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		actions= OPT@1Implementation(cntxt,mb,stk,p);
 	if( p )
 		removeInstruction(mb, p);
-    optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
-	return MAL_SUCCEED;
+    return optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 }
 @h
 @:exportOptimizer(macro)@

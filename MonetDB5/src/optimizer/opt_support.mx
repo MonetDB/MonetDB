@@ -512,7 +512,7 @@ comment "Handle simple replacements";
 #endif
 
 opt_export str MALoptimizer(Client c);
-opt_export int optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
+opt_export str optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag);
 opt_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 opt_export void showOptimizerStep(str fnme,int i, int flg);
 opt_export void showOptimizerHistory(void);
@@ -613,7 +613,7 @@ for the future using an additional flag.
 
 #define OPT_CHECK_ALL (OPT_CHECK_FLOW | OPT_CHECK_TYPES | OPT_CHECK_DECL )
 @c
-int
+str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {
 	if( actions > 0){
@@ -631,7 +631,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 		newComment(mb,buf);
 		if (mb->errors) {
 			showErrors(cntxt);
-			GDKwarning( "Optimizer %s failed\n", name);
+			throw(MAL,"optimizer","%s failed\n",name);
 		}
 	}
 	/* code to collect all last versions to study code coverage  in SQL
@@ -645,7 +645,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 	stream_close(fd);
 	}
 	*/
-	return mb->errors;
+	return MAL_SUCCEED;
 }
 @-
 Limit the loop count in the optimizer to guard against indefinite

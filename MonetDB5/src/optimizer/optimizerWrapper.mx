@@ -36,6 +36,7 @@ opt_export str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
 	str fcnnme;
+	str msg= MAL_SUCCEED;
 	Symbol s= NULL;
 	lng t,clk= GDKusec();
 	int actions = 0;
@@ -87,9 +88,9 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(cntxt->fdout,"finished @1 %d\n",actions);
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
-    optimizerCheck(cntxt, mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
+    msg= optimizerCheck(cntxt, mb, "optimizer.@1", actions, t=(GDKusec() - clk),@2);
 	QOTupdateStatistics("@1",actions,t);
 	addtoMalBlkHistory(mb,"@1");
-	return MAL_SUCCEED;
+	return msg;
 }
 @}

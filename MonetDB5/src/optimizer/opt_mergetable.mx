@@ -1616,7 +1616,7 @@ For the time being, they are no-ops.
 	(void) stk; 
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
-	optimizerCheck(cntxt,mb,"merge test",1,0,0);
+	(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
 	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 
@@ -1640,7 +1640,7 @@ fail:
 		}
 #ifdef DEBUG_OPT_MERGETABLE
 		stream_printf(GDKout,"Result of multi table optimizer FAILED\n");
-		optimizerCheck(cntxt,mb,"merge test",1,0,0);
+		(void) optimizerCheck(cntxt,mb,"merge test",1,0,0);
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	}

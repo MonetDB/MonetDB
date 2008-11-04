@@ -701,8 +701,10 @@ functions.
 				mccProject(f, mb, p, catch, &ctop);
 				continue;
 			}
-			GDKwarning("call to %s.%s can not be handled correctly\n", 
+#ifdef DEBUG_MAL_COMPILER
+			stream_printf(GDKout,"call to %s.%s can not be handled correctly\n", 
 				getModuleId(p), getFunctionId(p));
+#endif
 			errors++;
 		}
 		errors += mccInstruction(f, mb, p, i, catch, &ctop);

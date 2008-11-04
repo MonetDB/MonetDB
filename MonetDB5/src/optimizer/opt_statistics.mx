@@ -128,7 +128,9 @@ QOTupdateStatistics(str nme, int actions, lng val)
 
 	p = BUNfnd(qotStat[QOTcalls],&idx);
 	if (p == BUN_NONE) {
-		GDKwarning("#Could not access 'calls'\n");
+#ifdef _Q_STATISTICS_DEBUG
+		stream_printf(GDKout,"#Could not access 'calls'\n");
+#endif
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTcalls]);
@@ -137,7 +139,9 @@ QOTupdateStatistics(str nme, int actions, lng val)
 
 	p = BUNfnd(qotStat[QOTactions],&idx);
 	if (p == BUN_NONE){
-		GDKwarning("#Could not access 'actions'\n");
+#ifdef _Q_STATISTICS_DEBUG
+		stream_printf(GDKout,"#Could not access 'actions'\n");
+#endif
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTactions]);
@@ -146,7 +150,9 @@ QOTupdateStatistics(str nme, int actions, lng val)
 
 	p = BUNfnd(qotStat[QOTtimings],&idx);
 	if (p == BUN_NONE){
-		GDKwarning("#Could not access 'timings'\n");
+#ifdef _Q_STATISTICS_DEBUG
+		stream_printf(GDKout, "#Could not access 'timings'\n");
+#endif
 		return ;
 	}
 	bi = bat_iterator(qotStat[QOTtimings]);
