@@ -357,12 +357,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_52C757AFAAD04ABD9CE0031D2BF7B771"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_5364DBB6E2344D2DA0DE1C2CEFD0EA6F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -521,6 +515,12 @@
         {
         "MsmKey" = "8:_7706CEFBCE8A436384A3BE38A7D294BE"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_789464F0E04D49F5A6DB28C8F6150008"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -952,6 +952,12 @@
         "Entry"
         {
         "MsmKey" = "8:_E0C10DC346AB4AAEA10A2A408D3564C1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E1BA72B3FC1D4C01A0BDE10FC7806EE8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -4307,6 +4313,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E1BA72B3FC1D4C01A0BDE10FC7806EE8"
+            {
+            "SourcePath" = "8:Lib\\MonetDB5\\opt_history.mal"
+            "TargetName" = "8:opt_history.mal"
+            "Tag" = "8:"
+            "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E5123BBD2F6544F494B5259FF4473EA5"
             {
             "SourcePath" = "8:Lib\\MonetDB5\\lib_batcast.dll"
@@ -5553,7 +5579,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_52C757AFAAD04ABD9CE0031D2BF7B771"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_789464F0E04D49F5A6DB28C8F6150008"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
