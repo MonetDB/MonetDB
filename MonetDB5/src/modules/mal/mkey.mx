@@ -157,6 +157,9 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 @h
 #ifndef _MKEY_H
 #define _MKEY_H
+
+/*#define _DEBUG_MKEY_  */
+
 #include <mal.h>
 #include "mal_interpreter.h"
 #include "mal_exception.h"
@@ -365,13 +368,19 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	int mask = (1 << lbit) - 1;
 
 	if (!ALIGNsynced(bn, b) && (BATcount(b) || BATcount(bn))) {
-		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
+#ifdef _DEBUG_MKEY_
+		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
+#endif
 		return GDK_FAIL;
 	} else if (isVIEW(bn) || bn->batRestricted) {
-		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
+#ifdef _DEBUG_MKEY_
+		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
+#endif
 		return GDK_FAIL;
 	} else if (*rotate < 0 || *rotate >= (int)(sizeof(wrd)*8)) {
-		GDKerror("CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
+#ifdef _DEBUG_MKEY_
+		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
+#endif
 		return GDK_FAIL;
 	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
 		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));

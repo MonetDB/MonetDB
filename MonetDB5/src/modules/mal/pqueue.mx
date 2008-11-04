@@ -251,7 +251,7 @@ int pqueue_dequeue_@1@2(BAT *h)
   BUN num_elements;
 
   if (!(num_elements = BATcount(h))) {
-    GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
+    /* pqueue_dequeue: Cannot dequeue from empty queue */
     return GDK_FAIL;
   }
 
@@ -435,7 +435,7 @@ int pqueue_dequeue_any@1(BAT *h)
   unsigned short ts = Tsize(h);
 
   if (!(num_elements = BATcount(h))) {
-	GDKerror("pqueue_dequeue: Cannot dequeue from empty queue\n");
+	/* pqueue_dequeue: Cannot dequeue from empty queue */
 	return GDK_FAIL;
   }
 
