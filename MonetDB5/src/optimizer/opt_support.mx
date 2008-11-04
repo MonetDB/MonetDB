@@ -624,10 +624,7 @@ optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int 
 	if( cntxt->debugOptimizer){
 		/* keep the actions take as post block comments */
 		char buf[BUFSIZ];
-		InstrPtr p= getInstrPtr(mb,mb->stop-1);
 		sprintf(buf,"%-20s actions=%2d time=" LLFMT " usec",name,actions,usec);
-		if( p->token == REMsymbol)
-			removeInstruction(mb,p);
 		newComment(mb,buf);
 		if (mb->errors) {
 			showErrors(cntxt);
@@ -674,7 +671,6 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 					str place = getExceptionPlace(msg);
 					showException(getExceptionType(msg), place, getExceptionMessage(msg));
 					GDKfree(place);
-					showErrors(cntxt);
 					return msg;
 				}
 				pc= -1;
