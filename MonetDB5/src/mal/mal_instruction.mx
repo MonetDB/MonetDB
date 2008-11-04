@@ -2134,10 +2134,7 @@ clrAllTypes(MalBlkPtr mb)
 void
 setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 {
-	if (p->argv[i] >= mb->vsize) {
-		GDKwarning("setArgType:array bound error\n");
-		return;
-	}
+	assert (p->argv[i] < mb->vsize);
 	mb->var[getArg(p, i)]->type = tpe;
 }
 

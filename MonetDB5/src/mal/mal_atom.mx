@@ -132,8 +132,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 	str name= getFunctionId(pci);
 	int tpe = getTypeIndex(getModuleId(pci), (int) strlen(getModuleId(pci)), TYPE_any);
 	(void) mb; /* fool compilers */
-	if( pci->fcn == 0)
-		GDKwarning("malAtomProperty:function not bound\n");
 	if( tpe<0 || tpe>= GDKatomcnt)
 		GDKfatal("malAtomProperty:illegal type name:%s",name);
 	switch(name[0]){
