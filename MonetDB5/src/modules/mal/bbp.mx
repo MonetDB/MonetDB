@@ -181,12 +181,6 @@ command getPageSize():int
 address CMDgetPageSize
 comment "Obtain the memory page size";
 
-command getDiskReads():lng
-address CMDbbpDiskReads
-comment "Obtain the number of physical reads";
-command getDiskWrites():lng
-address CMDbbpDiskWrites
-comment "Obtain the number of physical reads";
 @-
 @{
 @include prelude.mx
@@ -804,19 +798,6 @@ CMDbbpDiskSpace(lng *ret)
 	*ret=  getDiskSpace();
 	return MAL_SUCCEED;
 }
-str
-CMDbbpDiskReads(lng *ret)
-{
-	*ret= getDiskReads();
-	return MAL_SUCCEED;
-}
-str
-CMDbbpDiskWrites(lng *ret)
-{
-	*ret= getDiskWrites();
-	return MAL_SUCCEED;
-}
-
 str
 CMDgetPageSize(int *ret)
 {

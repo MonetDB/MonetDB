@@ -157,6 +157,19 @@ command cleanup():void
 address CMDcleanup
 comment "Remove the temporary tables for profiling";
 
+command getDiskReads():lng
+address CMDgetDiskReads
+comment "Obtain the number of physical reads";
+command getDiskWrites():lng
+address CMDgetDiskWrites
+comment "Obtain the number of physical reads";
+
+command getUserTime():lng
+address CMDgetUserTime
+comment "Obtain the user timing information.";
+command getSystemTime():lng
+address CMDgetSystemTime
+comment "Obtain the user timing information.";
 @{
 @-
 @+ Implementation
@@ -458,4 +471,30 @@ CMDgetEvent( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*writes = mb->profiler[pc].obytes;
 	return MAL_SUCCEED;
 }
+str
+CMDgetDiskReads(lng *ret)
+{
+	*ret= getDiskReads();
+	return MAL_SUCCEED;
+}
+str
+CMDgetDiskWrites(lng *ret)
+{
+	*ret= getDiskWrites();
+	return MAL_SUCCEED;
+}
+str
+CMDgetUserTime(lng *ret)
+{
+	*ret= getUserTime();
+	return MAL_SUCCEED;
+}
+str
+CMDgetSystemTime(lng *ret)
+{
+	*ret= getUserTime();
+	return MAL_SUCCEED;
+}
+
+
 @}
