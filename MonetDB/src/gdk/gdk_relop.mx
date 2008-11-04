@@ -152,7 +152,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 @c
 #define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
-		 ((MAX(1,(lcur-lfirst))-1)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst)))
+		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
 #define bunfastins_limit(b, h, t, limit, percdone) {  		\
                 REGISTER BUN _p = BUNlast(b);                   \
