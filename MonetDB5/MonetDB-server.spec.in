@@ -44,16 +44,16 @@ BuildRequires: raptor-devel >= 1.4.16
 
 %define builddoc 0
 
-Requires: MonetDB-client >= 1.24
+Requires: MonetDB-client >= 1.26
 #                           ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.25
+BuildRequires: MonetDB-devel >= 1.26
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.24
+BuildRequires: MonetDB-client-devel >= 1.26
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
