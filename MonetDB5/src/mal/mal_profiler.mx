@@ -217,6 +217,8 @@ mal_export BAT *getTrace(str ev);
 mal_export lng getDiskSpace(void);
 mal_export lng getDiskReads(void);
 mal_export lng getDiskWrites(void);
+mal_export lng getUserTime(void);
+mal_export lng getSystemTime(void);
 #define DEBUG_MAL_PROFILER
 
 #endif
@@ -1162,6 +1164,7 @@ getDiskWrites()
 	return 0;
 #endif
 }
+
 lng
 getDiskReads()
 {
@@ -1173,6 +1176,31 @@ getDiskReads()
 	return 0;
 #endif
 }
+
+lng
+getUserTime()
+{
+#ifdef HAVE_TIMES
+	struct tms newTms;
+	times(&newTms);
+	return newTms.tms_utime;
+#else
+	return 0;
+#endif
+}
+lng
+getSystemTime()
+{
+#ifdef HAVE_TIMES
+	struct tms newTms;
+	times(&newTms);
+	return newTms.tms_stime;
+#else
+	return 0;
+#endif
+}
+
+
 lng
 getDiskSpace()
 {
