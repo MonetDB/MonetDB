@@ -39,13 +39,8 @@ create procedure keepQuery(
 	parse bigint,
 	optimize bigint) 
 begin
-	declare cnt int;
-	set cnt = (select count(*) from queryHistory where id = i);
-	if cnt = 0
-	then
-		insert into queryHistory
-		values(i, now(), user, query, parse, optimize);
-	end if;
+	insert into queryHistory
+	values(i, now(), user, query, parse, optimize);
 end;
 
 -- the signature is used in the kernel, don't change it
