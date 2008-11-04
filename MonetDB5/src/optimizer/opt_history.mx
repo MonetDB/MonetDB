@@ -99,9 +99,10 @@ static int
 OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit,slimit;
-	InstrPtr p=0, *old= mb->stmt, q,r;
-	int qid=0, argc, elaps, inblock, oublock, arg, ctime;
-	int returnseen=0;
+	InstrPtr p = 0, *old= mb->stmt, q,r;
+	int qid = 0, argc, elaps, inblock, oublock, arg, ctime;
+	int returnseen = 0;
+	InstrPtr keepQuery = NULL;
 
 
 	(void) pci;
@@ -116,26 +117,31 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"queryId")==0)
+		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"queryId")==0)
 			qid= getArg(p,1);
+		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0){
+			keepQuery= p;
+		}
 	}
+	if ( keepQuery == NULL)
+		/* nothing to do */
+		return 0;
 
 	limit= mb->stop;
 	slimit= mb->ssize;
 	newMalBlkStmt(mb, mb->ssize+20); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
+	/* run the keepQuery operation once only */
+	pushInstruction(mb, q = copyInstruction(keepQuery));
+	q->token = ASSIGNsymbol;
+	q = newStmt(mb,sqlRef,"forgetPrevious");
 	/* collect the statistics */
 	@:initCounters@
 
 	for (i = 1; i < limit; i++) {
 		p= old[i];
 		
-		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"keepquery")==0){
-			getModuleId(p) = userRef;
-			pushInstruction(mb,p);
-			q= newStmt(mb,sqlRef,"forgetPrevious");
-		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
