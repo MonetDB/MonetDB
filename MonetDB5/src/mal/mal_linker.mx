@@ -107,29 +107,6 @@ static FileRecord *filesLoaded;
 static int maxfiles = 0;
 static int lastfile = 0;
 
-MALfcn
-getLocalObjectFile(str filename)
-{
-	int mode = RTLD_NOW | RTLD_GLOBAL;
-	void *handle = NULL;
-	char *fullname;
-	MALfcn fcn=0;
-
-	fullname = MSP_locate_file(filename);
-	if (fullname == NULL) {
-		GDKwarning("Name not resolved %s\n",filename);
-		return 0;
-	}
-	handle = dlopen(fullname, mode);
-	if (handle){
-		fcn=(MALfcn) dlsym(handle, filename);
-		GDKfree(filename);
-		return fcn;
-	}
-	GDKwarning("could not access library %s\n", dlerror());
-	return 0;
-}
-
 @-
 Search for occurrence of the function in the library identified by the filename.
 @c
