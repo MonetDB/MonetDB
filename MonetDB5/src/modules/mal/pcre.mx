@@ -552,7 +552,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		if (flags[i] == 'e') {
 			exec_options -= PCRE_NOTEMPTY;
 /*
-			GDKwarning("exec_options %d, PCRE_NOTEMPTY %d\n",
+			stream_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
 					exec_options, PCRE_NOTEMPTY);
 */
 		} else if (flags[i] == 'i') {

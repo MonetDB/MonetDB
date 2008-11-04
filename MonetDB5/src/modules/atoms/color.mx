@@ -223,10 +223,8 @@ color_fromstr(char *colorStr, int *len, color **c)
 			int b = CLRhextoint(p[8], p[9]);
 
 			**c = (color) (r << 16 | g << 8 | b);
-		} else {
-			GDKwarning("Invalid color string representation '%s'\n", p);
+		} else
 			**c = chr_nil;
-		}
 	}
 
 #ifdef DEBUG_COLOR
