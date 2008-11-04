@@ -1929,8 +1929,8 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
         q = newStmt(mb,sqlRef,"keepquery");
 		q= pushInt(mb,q,c->history);
 		q= pushStr(mb,q,t);
-		q= pushLng(mb,q, (long) (GDKusec() - be->mvc->Tparse) );
-		q= pushLng(mb,q, (long) GDKusec());
+		q= pushLng(mb,q, GDKusec() - be->mvc->Tparse);
+		q= pushLng(mb,q, GDKusec());
 		c->Tparse = 0;
 	}
 
