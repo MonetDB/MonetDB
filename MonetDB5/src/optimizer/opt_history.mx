@@ -113,7 +113,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #else
 	(void) cntxt;
 #endif
-	if ( findSymbol(userRef,"keepQuery") == 0){
+	if ( findSymbol(userRef,"keepquery") == 0){
 		/* initialization script has not been ran */
 		return 0;
 	}
@@ -171,7 +171,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			/* prepare the call to the history manager */
 			q = newStmt(mb,"sql","argRecord");
 			setVarType(mb,getArg(q,0), TYPE_str);
-			for ( argc=0; argc < old[0]->argc; argc++)
+			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
 
 			arg= getArg(q,0);
