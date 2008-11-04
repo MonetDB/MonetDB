@@ -372,7 +372,6 @@ CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *CMAP =(int *) getArgReference(stk, pci, 1);
 	bat *B =(int *) getArgReference(stk, pci, 2);
-	BATiter bi;
 	int *p, *q;
 	BAT *nb, *cmap = NULL, *b = NULL;
 
@@ -385,7 +384,6 @@ CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "cluster.map", "Cannot access  descriptor");
 	}
 
-	bi= bat_iterator(b);
 	p = (int*)Tloc(b, BUNfirst(b));
 	q = p + BATcount(b);
 	for(; p<q; p++){
