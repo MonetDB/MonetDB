@@ -74,9 +74,9 @@ opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 	ctime= getArg(q,0);
 	q = newStmt(mb,"alarm","usec");
 	elaps= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
-	q = newStmt(mb,"bbp","getDiskReads");
+	q = newStmt(mb,profilerRef,"getDiskReads");
 	inblock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
-	q = newStmt(mb,"bbp","getDiskWrites");
+	q = newStmt(mb,profilerRef,"getDiskWrites");
 	oublock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
 @-
 A tricky piece of code. We invalidate an instruction
@@ -113,16 +113,11 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 #else
 	(void) cntxt;
 #endif
-	if ( findSymbol(userRef,"keepquery") == 0){
-		/* initialization script has not been ran */
-		return 0;
-	}
-	/* gather information  and recast the call handel*/
+	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
-		p= getInstrPtr(mb,i);
-		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"queryId")==0){
+		p = getInstrPtr(mb,i);
+		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"queryId")==0)
 			qid= getArg(p,1);
-		}
 	}
 
 	limit= mb->stop;
@@ -136,7 +131,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for (i = 1; i < limit; i++) {
 		p= old[i];
 		
-		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"keepQuery")==0){
+		if ( getModuleId(p)== sqlRef && idcmp(getFunctionId(p),"keepquery")==0){
 			getModuleId(p) = userRef;
 			pushInstruction(mb,p);
 			q= newStmt(mb,sqlRef,"forgetPrevious");
@@ -154,14 +149,14 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			r = pushArgument(mb,r, elaps);
 			elaps= getArg(r,0);
 
-			q = newStmt(mb,"bbp","getDiskReads");
+			q = newStmt(mb,profilerRef,"getDiskReads");
 			setVarType(mb,getArg(q,0), TYPE_lng);
 			r = newStmt(mb,"calc","-");
 			r = pushArgument(mb,r, getArg(q,0));
 			r = pushArgument(mb,r, inblock);
 			inblock= getArg(r,0);
 
-			q = newStmt(mb,"bbp","getDiskWrites");
+			q = newStmt(mb,profilerRef,"getDiskWrites");
 			setVarType(mb,getArg(q,0), TYPE_lng);
 			r = newStmt(mb,"calc","-");
 			r = pushArgument(mb,r, getArg(q,0));
