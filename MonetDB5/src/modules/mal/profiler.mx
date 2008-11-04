@@ -227,6 +227,10 @@ profiler_export str CMDcloseProfilerStream(int *res);
 profiler_export str CMDcleanup(int *ret);
 profiler_export str CMDgetEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDclearEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDgetDiskReads(lng *ret);
+profiler_export str CMDgetDiskWrites(lng *ret);
+profiler_export str CMDgetUserTime(lng *ret);
+profiler_export str CMDgetSystemTime(lng *ret);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
