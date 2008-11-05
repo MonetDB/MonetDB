@@ -150,9 +150,17 @@ found in r, it uses binary search. It also allows joining of an
 unsorted l with a sorted r; in that case it always uses binary search.
 @{
 @c
-#define BATPERC(lfirst,lcur,lend,rfirst,rcur,rend)\
-		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
-		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
+static dbl BATPERC(BUN lfirst, BUN lcur, BUN lend, BUN rfirst, BUN rcur, BUN rend) {
+        BUN done = lcur-lfirst;
+	dbl lpercdone = (((dbl) done)/((dbl) (lend-lfirst)));
+        if (done < 10 && lcur < lend) {
+	    dbl rpercdone = (((dbl) rcur-rfirst)/((dbl) (rend-rfirst)));
+            if (done) lpercdone *= done;
+            lpercdone += rpercdone;
+            if (done) lpercdone /= done;
+        }
+	return MAX(0.0001,lpercdone);
+}
 
 #define bunfastins_limit(b, h, t, limit, percdone) {  		\
                 REGISTER BUN _p = BUNlast(b);                   \
@@ -160,8 +168,8 @@ unsorted l with a sorted r; in that case it always uses binary search.
                 REGISTER size_t _tsize = Tsize(b);              \
                 if (BUNlast(b) + 1 > BATcapacity(b)) {		\
                         if (limit) {				\
-				*limit = (size_t) (b->batCount*(percdone)); \
-                              goto bunins_done;			\
+				*limit = (size_t) (b->batCount/(percdone)); \
+                              goto bunins_limit;			\
 			}					\
                         if (BATextend(b, BATgrows(b)) == NULL)  \
                                 goto bunins_failed;             \
@@ -346,7 +354,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate, size_t *lim
 			bunfastins_limit(bn, BUNhead(li, l_start), nil_on_miss, limit, BATPERC(BUNfirst(l),l_start,BUNlast(l),0,1,1));
 	}
 	/* propagate properties */
-      bunins_done:
+	if (limit) *limit = BATcount(bn);
+      bunins_limit:
 	bn->hsorted = BAThordered(l);
 	bn->tsorted = FALSE;
 	if (r->hkey) {
