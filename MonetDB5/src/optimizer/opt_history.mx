@@ -126,8 +126,11 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0)
+		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0){
 			keepQuery= p;
+			getVarConstant(mb,getArg(p,4)).val.lval = 
+				GDKusec()-getVarConstant(mb,getArg(p,4)).val.lval ;
+		}
 	}
 	if ( keepQuery == NULL)
 		/* nothing to do */
