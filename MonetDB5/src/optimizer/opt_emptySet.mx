@@ -102,7 +102,6 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_emptySet.h"
 #include "opt_aliases.h"
 #include "opt_deadcode.h"
-#include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 
 #define propagate(X) {p->token= ASSIGNsymbol; setVarUsed(mb,getArg(p,1)); \
