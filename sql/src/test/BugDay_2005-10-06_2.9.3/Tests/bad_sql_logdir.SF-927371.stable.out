@@ -16,10 +16,10 @@ stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://127.0.0.1:35894/
-# MonetDB/SQL module v2.25.0 loaded
-!ERROR: logger: could not create log directory /xyz/demo/sql/
+# Listening for connection requests on mapi:monetdb://127.0.0.1:38808/
+# MonetDB/SQL module v2.26.0 loaded
 !SQLException:SQLinit:Catalogue initialization failed
+!ERROR: logger: could not create log directory /xyz/demo/sql/
 #function user.main():void;
 #    sql.start();
 #    clients.quit();
