@@ -1,0 +1,97 @@
+stdout of test 'cluster00` in directory 'src/modules/mal` itself:
+
+
+# 14:20:04 >  
+# 14:20:04 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39938 --set xrpc_port=49692 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  cluster00.mal
+# 14:20:04 >  
+
+# MonetDB server v5.7.0, based on kernel v1.25.0
+# Serving database 'mTests_src_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38516/
+function user.main():void;              #  0 main:void := user.main() {G}
+#test clustering a small table 
+    mmath.srand(0:int);                 #  2 _2:void := MATHsrandint(_3:int) 
+    b := bat.new(:oid,:int);            #  3 b:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
+    c := bat.new(:oid,:int);            #  4 c:bat[:oid,:int] := CMDBATnew(_5:oid, _8:int) {G}
+barrier (v,i) := language.newRange(0:int);#  5 (v:bit, i:int) := RNGnewRange_int(_3:int) {J11}
+    j := mmath.rand();                  #  6 j:int := MATHrandint() 
+    bat.append(b,j);                    #  7 _12:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], j:int) {G}
+    j := mmath.rand();                  #  8 j:int := MATHrandint() 
+    bat.append(c,j);                    #  9 _13:bat[:int,:any] := BKCappend_val_wrap(c:bat[:oid,:int], j:int) {G}
+    redo (v,i) := language.nextElement(1:int,10:int);# 10 (v:bit, i:int) := RNGnextElement_int(_14:int, _15:int) {J6}
+exit (v,i);                             # 11 (v:bit, i:int) 
+#bat.append(b,b); 
+    io.print(b,c);                      # 13 _17:void := IOtable(b:bat[:oid,:int], c:bat[:oid,:int]) 
+    keys := cluster.key(b);             # 14 keys:bat[:oid,:oid] := CLUSTER_key(b:bat[:oid,:int]) {G}
+    io.print(keys);                     # 15 _19:void := IOprint_val(keys:bat[:oid,:oid]) 
+    map := cluster.new(keys);           # 16 map:bat[:oid,:oid] := CLUSTER_new(keys:bat[:oid,:oid]) {G}
+    io.print(map);                      # 17 _21:void := IOprint_val(map:bat[:oid,:oid]) 
+    b1 := algebra.join(map,b);          # 18 b1:bat[:oid,:int] := ALGjoin(map:bat[:oid,:oid], b:bat[:oid,:int]) {G}
+    c1 := algebra.join(map,c);          # 19 c1:bat[:oid,:int] := ALGjoin(map:bat[:oid,:oid], c:bat[:oid,:int]) {G}
+    io.print(b1,c1);                    # 20 _24:void := IOtable(b1:bat[:oid,:int], c1:bat[:oid,:int]) 
+end main;                               # 21  
+#-----------------------------------------#
+# h	t		t		  # name
+# void	int		int		  # type
+#-----------------------------------------#
+[ 0@0,	  1804289383,	  846930886	  ]
+[ 1@0,	  1681692777,	  1714636915	  ]
+[ 2@0,	  1957747793,	  424238335	  ]
+[ 3@0,	  719885386,	  1649760492	  ]
+[ 4@0,	  596516649,	  1189641421	  ]
+[ 5@0,	  1025202362,	  1350490027	  ]
+[ 6@0,	  783368690,	  1102520059	  ]
+[ 7@0,	  2044897763,	  1967513926	  ]
+[ 8@0,	  1365180540,	  1540383426	  ]
+[ 9@0,	  304089172,	  1303455736	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  235@0	  ]
+[ 1@0,	  924@0	  ]
+[ 2@0,	  970@0	  ]
+[ 3@0,	  881@0	  ]
+[ 4@0,	  635@0	  ]
+[ 5@0,	  825@0	  ]
+[ 6@0,	  910@0	  ]
+[ 7@0,	  106@0	  ]
+[ 8@0,	  526@0	  ]
+[ 9@0,	  469@0	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 4@0,	  4@0	  ]
+[ 5@0,	  5@0	  ]
+[ 6@0,	  6@0	  ]
+[ 7@0,	  7@0	  ]
+[ 8@0,	  8@0	  ]
+[ 9@0,	  9@0	  ]
+#-----------------------------------------#
+# h	t		t		  # name
+# void	int		int		  # type
+#-----------------------------------------#
+[ 0@0,	  1804289383,	  846930886	  ]
+[ 1@0,	  1681692777,	  1714636915	  ]
+[ 2@0,	  1957747793,	  424238335	  ]
+[ 3@0,	  719885386,	  1649760492	  ]
+[ 4@0,	  596516649,	  1189641421	  ]
+[ 5@0,	  1025202362,	  1350490027	  ]
+[ 6@0,	  783368690,	  1102520059	  ]
+[ 7@0,	  2044897763,	  1967513926	  ]
+[ 8@0,	  1365180540,	  1540383426	  ]
+[ 9@0,	  304089172,	  1303455736	  ]
+
+# 14:20:04 >  
+# 14:20:04 >  Done.
+# 14:20:04 >  
+
