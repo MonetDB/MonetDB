@@ -372,7 +372,7 @@ dec_container (void)
     type_co new_co;
     new_co.kind = DEC;
     new_co.table = "dec_values";
-    new_co.mil_type = "dbl";
+    new_co.mil_type = "dec";
     new_co.mil_cast = "DEC";
     new_co.name = "decimal";
 
@@ -3273,8 +3273,11 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
         "  if (_k.exist(BOOL)) {\n"
         "    _val.insert(kind.ord_uselect(BOOL).mirror().leftfetchjoin(item).[bit]().[%s]());\n"
         "  }\n"
-        "  if (_k.exist(DEC) or _k.exist(DBL)) {\n"
-        "    _val.insert(kind.ord_uselect(DEC,DBL).mirror().leftfetchjoin(item).leftfetchjoin(dbl_values).[%s]());\n"
+        "  if (_k.exist(DBL)) {\n"
+        "    _val.insert(kind.ord_uselect(DBL).mirror().leftfetchjoin(item).leftfetchjoin(dbl_values).[%s]());\n"
+        "  }\n"
+        "  if (_k.exist(DEC)) {\n"
+        "    _val.insert(kind.ord_uselect(DEC).mirror().leftfetchjoin(item).leftfetchjoin(dec_values).[%s]());\n"
         "  }\n"
         "  if (_k.exist(STR) or _k.exist(U_A)) {\n"
         "    _val.insert(kind.ord_uselect(STR,U_A).mirror().leftfetchjoin(item).leftfetchjoin(str_values).%s);\n"
@@ -3282,7 +3285,7 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
         "  _val := _val.tmark(0@0).project(%s_nil).access(BAT_WRITE).replace(_val).access(BAT_READ);\n"
         "} else {\n"
         "  # at run-time, it turns out to be homogeneous\n"
-        "  kind := reverse(_k).fetch(0);\n", tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, str_cast, tpe.mil_type);
+        "  kind := reverse(_k).fetch(0);\n", tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, tpe.mil_type, str_cast, tpe.mil_type);
 
     if (rcode != NORMAL || strcmp(tpe.mil_type,"bit"))
         milprintf(f,
@@ -3297,10 +3300,17 @@ evaluateCastAny(opt_t *f, int rc, int rcode, type_co tpe, char* str_cast)
         "  }\n", tpe.mil_type);
 
     if (rcode != NORMAL || strcmp(tpe.mil_type,"dbl"))
-        milprintf(f,
-        "  if ((kind = DEC) or (kind = DBL)) {\n"
+        milprintf(f, 
+        "  if (kind = DBL) {\n"
         "    _val := item.leftfetchjoin(dbl_values).[%s]();\n"
         "  }\n", tpe.mil_type);
+
+    if (rcode != NORMAL || strcmp(tpe.mil_type,"dec"))
+        milprintf(f, 
+	"  if (kind = DEC) {\n"
+	"    _val := item.leftfetchjoin(dec_values).[%s]();\n"
+	"  }\n", tpe.mil_type);
+
 
     if (rcode != NORMAL || strcmp(tpe.mil_type,"str"))
         milprintf(f,
@@ -3387,7 +3397,7 @@ static void
 translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
 {
     if (TY_EQ (input_type, PFty_xs_integer ()))
-        evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dbl]()");
+        evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dec]()");
     else if (TY_EQ (input_type, PFty_xs_decimal ()))
     {
         if (rcode != NORMAL && rc == NORMAL)
@@ -3403,14 +3413,14 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         }
     }
     else if (TY_EQ (input_type, PFty_xs_double ()))
-        evaluateCast (f, rcode, rc, dbl_container(), dec_container(), "[dbl]()");
+        evaluateCast (f, rcode, rc, dbl_container(), dec_container(), "[dec]()");
     else if (TY_EQ (input_type, PFty_xs_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
-        evaluateCast (f, rcode, rc, str_container(), dec_container(), "[dbl]()");
+        evaluateCast (f, rcode, rc, str_container(), dec_container(), "[dec]()");
     else if (TY_EQ (input_type, PFty_xs_boolean ()))
-        evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
-    else /* handles the choice type */
-        evaluateCastAny(f, rc, rcode, dec_container(), "[dbl]()");
+        evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dec]()");
+    else /* handles the choice type */ 
+        evaluateCastAny(f, rc, rcode, dec_container(), "[dec]()");  
 }
 
 /**
@@ -3781,7 +3791,7 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     {
         rcode = (code)?DEC:NORMAL;
         evaluateOp (f, rcode, rc1, rc2, counter, operator,
-                    dec_container(), (div)?"dbl(0)":NULL);
+                    dec_container(), (div)?"dec(0)":NULL);
     }
     else if (TY_EQ(expected, PFty_opt(PFty_xs_integer())))
     {
@@ -3799,7 +3809,7 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     {
         rcode = (code)?DEC:NORMAL;
         evaluateOpOpt (f, rcode, rc1, rc2, counter, operator,
-                       dec_container(), "DEC", (div)?"dbl(0)":NULL);
+                       dec_container(), "DEC", (div)?"dec(0)":NULL);
     }
     else
     {
@@ -6563,6 +6573,21 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  time_shred := time_shred + usec() - t;\n"
                 "} # end of translate fn:doc (string?) as document?\n", (rc)?item_ext:val_join(STR));
         return NORMAL;
+    } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"doc-available")))
+    {
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        item_ext = kind_str(rc);
+
+        /* expects strings otherwise something stupid happens */
+        milprintf(f,
+                "{ # translate fn:doc (string?) as boolean\n"
+                "  var t := usec();\n"
+                "  item  := [oid](ws_docavailable(ws, item%s.materialize(ipik)));\n"
+                "  kind  := BOOL;\n"
+                "  ipik  := item;\n"
+                "  time_shred := time_shred + usec() - t;\n"
+                "} # end of translate fn:doc-available (string?) as boolean\n", (rc)?item_ext:val_join(STR));
+        return NORMAL;
     } else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"collection")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -6642,22 +6667,27 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "iter := iter.materialize(ipik);\n"
                      "item := item.materialize(ipik);\n"
                      "kind := kind.materialize(ipik);\n");
+        saveResult_ (f, ++counter, NORMAL);
+
+        /* 'interpret-as-numeric' boolean */
+        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        saveResult_ (f, ++counter, NORMAL);
 
         /* VALUES to look for */
-        saveResult_ (f, ++counter, NORMAL);
-        rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
         milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         milprintf(f,
                 "{ # translate pf:text($ctx as node()*, $hash as string) as element()*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, \"*\", \"*\", \"*\", \"*\", false);\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, \"*\", \"*\", \"*\", \"*\", false, item%03u);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
                 "  kind := set_kind(get_container(id_pre.hmark(0@0).leftfetchjoin(kind%03u)),ELEM);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
-                "} # end of translate pf:text () as element()*\n", counter, counter, counter, counter, counter);
+                "} # end of translate pf:text () as element()*\n", counter-1, counter-1, counter-1, counter, counter-1, counter-1);
 
+        deleteResult_ (f, counter, NORMAL);
         deleteResult_ (f, counter, NORMAL);
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"attribute")) == 0)
@@ -6688,26 +6718,52 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "item_str_ := item%s.fetch(0)%s;\n", (rc == NORMAL)?"":"_str_", (rc == NORMAL)?val_join(STR):"");
         saveResult_ (f, ++counter, STR);
 
-        /* VALUES to look for */
+        /* 'interpret-as-numeric' boolean */
         rc = translate2MIL (f, VALUES, cur_level, counter, RRL(RRR(args)));
+        saveResult_ (f, ++counter, NORMAL);
+
+        /* VALUES to look for */
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(RRR(RRR(args))));
         milprintf(f, "item_str_ := item%s.materialize(ipik);\n",  (rc == NORMAL)?val_join(STR):"_str_");
 
         milprintf(f,
                 "{ # translate pf:attribute($ctx as node()*, $elt_ns as xs:string, $elt_loc as xs:string, $attr_ns as xs:string, $attr_loc as xs:string, $hash as xs:double) as element()*\n"
-                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, item_str_%03u, item_str_%03u, item_str_%03u, item_str_%03u, true);\n"
+                "  var id_pre := vx_lookup(ws, iter%03u, item%03u, kind%03u, item_str_, item_str_%03u, item_str_%03u, item_str_%03u, item_str_%03u, true, item%03u);\n"
                 "  iter := id_pre.hmark(0@0).leftfetchjoin(iter%03u);\n"
                 "  kind := set_kind(get_container(id_pre.hmark(0@0).leftfetchjoin(kind%03u)),ELEM);\n"
                 "  item := id_pre.tmark(0@0);\n"
                 "  ipik := item;\n"
                 "  pos  := tmark_grp_unique(iter,ipik);\n"
                 "} # end of translate pf:attribute () as element()*\n",
-                   counter-4, counter-4, counter-4, counter-3, counter-2, counter-1, counter, counter-4, counter-4);
+                   counter-5, counter-5, counter-5, counter-4, counter-3, counter-2, counter-1, counter, counter-5, counter-5);
 
+        deleteResult_ (f, counter--, NORMAL);
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter--, STR);
         deleteResult_ (f, counter, NORMAL);
+        return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"idxfail")) == 0) 
+    {
+        milprintf(f,
+                "{ # translate pf:idxfail () as node()\n"
+                "  item := 1@0;\n"
+                "  kind := set_kind(WS,ELEM);\n"
+                "  iter := mirror(loop%03u);\n"
+                "  pos := 1;\n"
+                "  ipik := item;\n"
+                "} # end of translate pf:idxfail () as node()\n", cur_level);
+        return NORMAL;
+    } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"idxfailed")) == 0) 
+    {
+        milprintf(f,
+                "{ # translate pf:idxfailed(node()) as boolean\n"
+                "  item := [oid]([=](item,1@0));\n"
+                "  kind := BOOL;\n"
+                "  pos := 1;\n"
+                "  ipik := item;\n"
+                "} # end of translate pf:idxfailed(node()) as boolean\n", cur_level);
         return NORMAL;
     } else if (PFqname_eq(fnQname,PFqname (PFns_lib,"supernode")) == 0)
     {
@@ -6796,11 +6852,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate fn:put (node, string) as stmt\n"
                 "  fn_put(ws, item_str_.materialize(ipik), item%03u.materialize(ipik%03u), kind%03u.materialize(ipik%03u), int_values, dbl_values, dec_values, str_values);\n"
                 "  item := bat(void,oid).seqbase(0@0);\n"
-                "  kind := bat(void,int).seqbase(0@0);\n"
-                "  iter := 1@0;\n"
+                "  kind := item;\n"
+                "  iter := mirror(loop%03u);\n"
                 "  pos := 1;\n"
                 "  ipik := item;\n"
-                "} # end of translate fn:put (node, string) as stmt\n", counter, counter, counter, counter);
+                "} # end of translate fn:put (node, string) as stmt\n", counter, counter, counter, counter, cur_level);
         deleteResult_ (f, counter, NORMAL);
         return NORMAL;
     }
@@ -7371,10 +7427,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 cur_level,
                 cur_level);
 
-        /* nil as NaN value doesn't work out, because nil disappears in joins */
+        /* substitute nil by nan */
         milprintf(f,
-                "if (cast_val.texist(dbl_nil))\n"
-                "{    ERROR (\"We do not support the value NaN.\"); }\n");
+                "cast_val.access(BAT_WRITE).inplace([isnil](cast_val).ord_uselect(true).project(dbl(127,255,255,255,255,255,255,255))).access(BAT_READ);\n");
 
         if (!code)
             addValues (f, dbl_container(), "cast_val", "item");
@@ -8322,7 +8377,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    item := item.tmark(0@0);\n"
                 "    kind := kind.tmark(0@0);\n"
                 ,opt_counter,opt_counter, opt_counter,opt_counter,opt_counter);
-            milprintf(f, "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n");
+            milprintf(f, "    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,dec_values,str_values);\n");
         } else {
                 milprintf(f, "    var optbat := new(str,str);\n");
         }
@@ -8847,26 +8902,26 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_lit_dec:
             if (code == VALUES)
             {
-                char* b = (char*) &c->sem.dec;
+                char buf[20];
+                snprintf(buf, 20, PF_DEC_FMT(c->sem.dec));
                 rc = DEC;
                 milprintf(f,
                         "iter := loop%03u.tmark(0@0);\n"
                         "ipik := iter;\n"
                         "pos := 1@0;\n"
-                        "item%s := dbl(%d,%d,%d,%d,%d,%d,%d,%d);\n"
+                        "item%s := dec(\"%s\");\n"
                         "kind := DEC;\n",
-                        cur_level, kind_str(rc), b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
+                        cur_level, kind_str(rc), buf);
             }
             else
             {
-                char* b = (char*) &c->sem.dec;
+                char buf[20];
+                snprintf(buf, 20, PF_DEC_FMT(c->sem.dec));
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dec_values.append(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n"
-                        "var itemID := dec_values.reverse().find(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n",
-                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7],
-                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
+                        "dec_values.append(dec(\"%s\"));\n"
+                        "var itemID := dec_values.reverse().find(dec(\"%s\"));\n", buf, buf);
                 /* translateConst needs a bound variable itemID */
                 translateConst(f, cur_level, "DEC");
                 milprintf(f,
@@ -8892,9 +8947,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dec_values.append(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n"
-                        "var itemID := dec_values.reverse().find(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n",
-                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7],
+                        "dbl_values.append(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n"
+                        "var itemID := dbl_values.reverse().find(dbl(%d,%d,%d,%d,%d,%d,%d,%d));\n", 
+                            b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7], 
                             b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
                 /* translateConst needs a bound variable itemID */
                 translateConst(f, cur_level, "DBL");
@@ -11474,7 +11529,7 @@ const char* PFinitMIL(void) {
         "# value containers for literal values\n"
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
         "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
-        "var dec_values := dbl_values;\n"
+        "var dec_values := bat(dec,void).key(true).reverse().seqbase(0@0);\n"
         "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append(\"\");\n"
         "\n"
         "var fun_vid000 := bat(void,oid);\n"
@@ -11615,7 +11670,7 @@ const char* PFstartMIL(int statement_type) {
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
            "  # 'none' could theoretically occur in genType as root tagname ('xml-root-none'), so check for 'xml'\n"\
            "  if ((genType.search(\"none\") < 0) or (genType.search(\"xml\") >= 0))\n"\
-           "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"\
+           "   print_result(genType,moduleNS,method,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,dec_values,str_values);\n"\
            PF_STOPMIL_END("Print ")
 #define PF_STOPMIL_UPDATE PF_STOPMIL_START\
            "  play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n" PF_STOPMIL_END("Update")

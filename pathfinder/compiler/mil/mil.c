@@ -257,6 +257,39 @@ PFmil_lit_dbl (double d)
 }
 
 /**
+ * Create a MIL tree node representing a literal double.
+ * (The result will be a MIL leaf node, with kind #m_lit_dbl and
+ * semantic value @a d.)
+ *
+ * @param d The double value to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_dbl_ (int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7)
+{
+    PFmil_t *ret = leaf (m_lit_dbl);
+    char* b = (char*) &ret->sem.d;
+    b[0] = d0; b[1] = d1; b[2] = d2; b[3] = d3; 
+    b[4] = d4; b[5] = d5; b[6] = d6; b[7] = d7; 
+    return ret;
+}
+
+
+/**
+ * Create a MIL tree node representing a literal double.
+ * (The result will be a MIL leaf node, with kind #m_lit_dbl and
+ * semantic value @a l -- it is represented a a long long inT.)
+ *
+ * @param d The double value to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_dec (long long int l)
+{
+    PFmil_t *ret = leaf (m_lit_dec);
+    ret->sem.l = l;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a literal boolean.
  * (The result will be a MIL leaf node, with kind #m_lit_bit and
  * semantic value @a b.)

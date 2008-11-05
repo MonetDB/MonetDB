@@ -284,6 +284,7 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
  { PRE_SIZE,     "_rid_level",        TYPE_void, TYPE_chr,  1.0, 0}, 
  { PRE_SIZE,     "_rid_prop",         TYPE_void, TYPE_oid,  1.0, 0}, 
  { PRE_SIZE,     "_rid_kind",         TYPE_void, TYPE_chr,  1.0, 0}, 
+ { PRE_SIZE,     "_rid_pnid",         TYPE_void, TYPE_oid,  1.0, 0}, 
  { PRE_SIZE,     "_rid_nid",          TYPE_void, TYPE_void, 1.0, 0}, 
  { NID_RID,      "_nid_rid",          TYPE_void, TYPE_void, 1.0, 0}, 
  { FRAG_ROOT,    "_frag_root",        TYPE_oid,  TYPE_oid,  0.0, 0}, 
@@ -514,6 +515,7 @@ emit_tuple(shredCtxStruct* shredCtx,
            int level, 
            oid prop, 
            chr kind, 
+           oid pnid, 
            oid nid)
 {
     if (size >= GDK_int_max) {
@@ -553,6 +555,7 @@ emit_tuple(shredCtxStruct* shredCtx,
               shredBAT_extend(&shredCtx->dstBAT[PRE_LEVEL], newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_PROP],  newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_KIND],  newsize) &&
+              shredBAT_extend(&shredCtx->dstBAT[PRE_PNID],  newsize) &&
               (shredCtx->updatable == 0 || shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize)));
         MT_sema_up(shredCtx->extend_sema, "shredder_extend"); 
         if (err) return GDK_FAIL;
@@ -574,6 +577,7 @@ emit_tuple(shredCtxStruct* shredCtx,
     shredCtx->dstBAT[PRE_LEVEL].cast.chrCAST[pre] = (chr) level;
     shredCtx->dstBAT[PRE_PROP].cast.oidCAST[pre] = prop;
     shredCtx->dstBAT[PRE_KIND].cast.chrCAST[pre] = kind;
+    shredCtx->dstBAT[PRE_PNID].cast.oidCAST[pre] = pnid;
     return GDK_SUCCEED;
 }
 
@@ -590,7 +594,7 @@ createHole(shredCtxStruct *shredCtx)
 #ifdef DEBUG
        stream_printf(GDKout, "SHRHOLE: FILL HOLE[%d, rest=%d]\n", shredCtx->nnode_pre, cnt);
 #endif
-       if (!emit_tuple(shredCtx, shredCtx->nnode_pre, sizefill, chr_nil, oid_nil, chr_nil, oid_nil))
+       if (!emit_tuple(shredCtx, shredCtx->nnode_pre, sizefill, chr_nil, oid_nil, chr_nil, oid_nil, oid_nil))
            return GDK_FAIL;
        shredCtx->nnode_pre++;
     }
@@ -618,11 +622,12 @@ emit_node(shredCtxStruct *shredCtx,
           node_t *node)
 {
     int nodeSize = shredCtx->nnode_pre-node->pre-1;
+    oid pnid = shredCtx->lifo?shredCtx->sp?TOP(shredCtx).pre:0:oid_nil;
     if (nodeSize > GDK_int_max) {
             GDKerror("emitNode: size(%d) >= GDK_int_max(%d)\n", nodeSize, GDK_int_max);
             return GDK_FAIL;
     }
-    return emit_tuple(shredCtx, node->pre, nodeSize, node->level, node->prop, node->kind, node->nid);
+    return emit_tuple(shredCtx, node->pre, nodeSize, node->level, node->prop, node->kind, pnid, node->nid);
 }
 
 /**
@@ -986,6 +991,10 @@ shred_start_element(void *xmlCtx,
         const xmlChar *a_val = atts[i+3];
         const xmlChar *a_end = atts[i+4];
 
+        /* libxml2 apparently does not provide default namespaces for attributes, recover them from the element */
+        if (a_pfx == NULL && e_pfx == NULL && e_uri) 
+            a_uri = e_uri; 
+
 #ifdef DEBUG
         stream_printf(GDKout, "  attr(");
         if (a_uri) stream_printf(GDKout, "uri=%s, ", a_uri);
@@ -994,10 +1003,6 @@ shred_start_element(void *xmlCtx,
         stream_printf(GDKout, ", val=\"%s\"", a_val);
         stream_printf(GDKout, ")\n");
 #endif
-        if (!a_pfx && a_uri) { 
-          a_uri = NULL; /* attribute without prefix cannot have a namespace */
-        }
-
         int attrType;
         char* idref_suffix = NULL;
         if ((attrType = attrDB_check(&shredCtx->idrefAttrDB,(char*)e_loc,(char*)a_tag))) {
@@ -1842,6 +1847,7 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
             shredCtx->dstBAT[PRE_LEVEL].cast.chrCAST[newsize] = chr_nil;
             shredCtx->dstBAT[PRE_PROP].cast.oidCAST[newsize] = oid_nil;
             shredCtx->dstBAT[PRE_KIND].cast.chrCAST[newsize] = chr_nil;
+            shredCtx->dstBAT[PRE_PNID].cast.oidCAST[newsize] = oid_nil;
             shredCtx->dstBAT[PRE_NID].cast.oidCAST[newsize] = oid_nil;
             newsize++;
             delsize++; /* it is negated by |(1<<31), so -- becomes ++ */

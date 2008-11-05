@@ -94,6 +94,7 @@ static char *ID[] = {
       [sql_intersect]         = "INTERSECT ALL",
       [sql_lit_int]           = "lit_int",
       [sql_lit_lng]           = "lit_lng",
+      [sql_lit_dbl]           = "lit_dbl",
       [sql_lit_dec]           = "lit_dec",
       [sql_lit_str]           = "lit_str",
       [sql_lit_null]          = "lit_null",
@@ -346,8 +347,12 @@ print_literal (PFsql_t * n)
             PFprettyprintf ("'%s'", n->sem.atom.val.s);
             break;
 
+        case sql_lit_dbl:
+            PFprettyprintf ("%5g", n->sem.atom.val.d);
+            break;
+
         case sql_lit_dec:
-            PFprettyprintf ("%g", n->sem.atom.val.dec);
+            PFprettyprintf (PF_DEC_FMT(n->sem.atom.val.dec));
             break;
 
         default:
@@ -679,6 +684,7 @@ print_statement (PFsql_t *n)
             break;
 
         case sql_lit_int:
+        case sql_lit_dbl:
         case sql_lit_dec:
         case sql_lit_str:
             print_literal (n);

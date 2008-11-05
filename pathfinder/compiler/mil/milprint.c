@@ -1145,6 +1145,7 @@ print_expression (PFmil_t * n)
         case m_lit_str:
         case m_lit_oid:
         case m_lit_dbl:
+        case m_lit_dec:
         case m_lit_bit:
         case m_nil:
             print_literal (n);
@@ -1298,6 +1299,8 @@ print_variable (PFmil_t * n)
 static void
 print_literal (PFmil_t * n)
 {
+    char buf[20], *b = (char*) &n->sem.d;
+
     switch (n->kind) {
 
         /* literal : IntegerLiteral */
@@ -1323,7 +1326,13 @@ print_literal (PFmil_t * n)
 
         /* literal : DblLiteral */
         case m_lit_dbl:
-            milprintf ("dbl(%gLL)", n->sem.d);
+            milprintf ("dbl(%d,%d,%d,%d,%d,%d,%d,%d)", b[0],b[1],b[2],b[3],b[4],b[5],b[6],b[7]);
+            break;
+
+        /* literal : DecLiteral */
+        case m_lit_dec:
+            snprintf(buf, 20, PF_DEC_FMT(n->sem.l));
+            milprintf ("dec(\"%s\")", buf);
             break;
 
         /* literal : BitLiteral */
@@ -1356,6 +1365,7 @@ print_type (PFmil_t *n)
         , [mty_str]   = "str"
         , [mty_lng]   = "lng"
         , [mty_dbl]   = "dbl"
+        , [mty_dec]   = "dec"
         , [mty_bit]   = "bit"
         , [mty_chr]   = "chr"
         , [mty_bat]   = "bat"

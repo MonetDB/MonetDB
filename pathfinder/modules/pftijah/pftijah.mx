@@ -1130,7 +1130,7 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
 	bat($t).mmap(1);
 	collBat.find("submitBats").append($t);
     }
-    collBat.find("_size").access(BAT_APPEND).mmap(1);
+    collBat.find("_size").access(BAT_APPEND).mmap(1); # HERE
     collBat.find("_tid").access(BAT_APPEND).mmap(1);
     collBat.find("_pfpre").access(BAT_APPEND).mmap(1);
     var fpfx := str(collBat.find("_fragments").count());
@@ -3121,8 +3121,8 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 	var pre_size := bat("tj_" + ftiName + "_size" + str(frag_offset));
         var tids := pre_tid.slice(lng(offset) - lng(pre_tid.seqbase()), lng(pre_tid.count() - 1));
 	var sizes := pre_size.slice(lng(offset) - lng(pre_size.seqbase()), lng(pre_size.count() - 1));
-	tids.access(BAT_WRITE);
-	sizes.access(BAT_WRITE);
+	tids.access(BAT_APPEND);
+	sizes.access(BAT_APPEND);
 	frag_offset :+= 1;
 	while (frag_offset <= frag_last)
 	{

@@ -377,6 +377,7 @@ static PFsql_t *max_pre_frag;
 /* check if sql_statement is a literal */
 #define IS_LITERAL(s) (s->kind == sql_lit_int \
                      || s->kind == sql_lit_lng \
+                     || s->kind == sql_lit_dbl \
                      || s->kind == sql_lit_dec \
                      || s->kind == sql_lit_str)
 
@@ -424,7 +425,7 @@ literal (PFalg_atom_t atom)
         case aat_int:       return lit_int (atom.val.int_);
         case aat_str:       return lit_str (atom.val.str);
         case aat_bln:       return lit_int (atom.val.bln?1:0);
-        case aat_dbl:       return lit_dec (atom.val.dbl);
+        case aat_dbl:       return lit_dbl (atom.val.dbl);
         case aat_dec:       return lit_dec (atom.val.dec_);
         case aat_qname_loc: return lit_str (PFqname_loc (atom.val.int_));
         case aat_qname_uri: return lit_str (PFqname_uri (atom.val.int_));

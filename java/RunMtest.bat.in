@@ -1,0 +1,25 @@
+@echo off
+
+if not "%1"=="" goto skip
+call %0 -rq
+goto end
+
+:skip
+
+setlocal
+
+set pkg=monetdb-java
+set builddir=@XMONETDB_JAVA_BUILD@
+set srcdir=@XMONETDB_JAVA_SOURCE@
+
+set PATH=%builddir%\conf;%PATH%
+
+REM execute Mtest.py in the source directory
+pushd %srcdir%
+
+call Mtest.py --package=%pkg% "--TSTTRGBASE=%builddir%" %*
+
+popd
+endlocal
+
+:end

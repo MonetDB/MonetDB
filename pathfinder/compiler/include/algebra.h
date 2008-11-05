@@ -148,7 +148,7 @@ union PFalg_atom_val_t {
     nat           nat_;    /**< value for natural number atoms (#aat_nat) */
     long long int int_;    /**< value for integer atoms (#aat_int) */
     char         *str;     /**< value for string and untyped atoms (#aat_str) */
-    double        dec_;     /**< value for decimal atoms (#aat_dec) */
+    long long int dec_;    /**< value for decimal atoms (#aat_dec) */
     double        dbl;     /**< value for double atoms (#aat_dbl) */
     bool          bln;     /**< value for boolean atoms (#aat_bln) */
     PFqname_t     qname;
@@ -414,8 +414,7 @@ PFalg_atom_t PFalg_lit_int (long long int value);
 PFalg_atom_t PFalg_lit_str (char *value);
 
 /** construct literal float (atom) */
-/* FIXME: Wouter: should be double? */
-PFalg_atom_t PFalg_lit_dec (float value);
+PFalg_atom_t PFalg_lit_dec (long long int);
 
 /** construct literal double (atom) */
 PFalg_atom_t PFalg_lit_dbl (double value);

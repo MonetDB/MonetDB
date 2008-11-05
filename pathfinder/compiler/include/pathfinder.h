@@ -65,6 +65,12 @@ void *alloca(size_t);
 #define false   (char)0
 #endif
 
+#include <fmt.h>
+
+/* decimals have digits 12d.%06d (implementable as a 64bits long long int) */
+#define PF_DEC_PRECISION 1000000LL
+#define PF_DEC_FMT(x)    LLFMT ".%06d", ((x)/PF_DEC_PRECISION), (int) ( (((x) < 0)?-(x):(x))%PF_DEC_PRECISION)
+
 /** fatalities now lead to a longjump instead of exit() */
 extern jmp_buf PFexitPoint;       
 

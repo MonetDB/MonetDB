@@ -56,7 +56,7 @@ the "AmbientDB" project.
         BAT[void, int] fun_kind,
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values,
-        BAT[void, dbl] dec_values,
+        BAT[void, lng] dec_values,
         BAT[void, str] str_values) : BAT[str, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
@@ -80,7 +80,7 @@ PROC rpc_client(
         BAT[void, int] fun_kind,
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values,
-        BAT[void, dbl] dec_values,
+        BAT[void, lng] dec_values,
         BAT[void, str] str_values) : oid {
 
     var rpcres := http_post(options, dst, moduleNS, location, method,
@@ -113,6 +113,7 @@ PROC get_rpc_res (
         BAT[void, bat] ws, 
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values, 
+        BAT[void, lng] dec_values, 
         BAT[void, str] str_values) : BAT[void, bat]
 {
     var res_iter := bat(void,oid).seqbase(0@0);
@@ -251,10 +252,10 @@ PROC get_rpc_res (
                         res_item.append(int_values.reverse().find(i));
                         res_kind.append(INT);
                     } else if(subtpe = "decimal") {
-                        var d := dbl(val);
-                        dbl_values.append(d);
+                        var d := dec(val);
+                        dec_values.append(d);
                         res_iter.append(oid(itercnt));
-                        res_item.append(dbl_values.reverse().find(d));
+                        res_item.append(dec_values.reverse().find(d));
                         res_kind.append(DEC);
                     } else if(or( (subtpe = "float"), (subtpe = "double") )) {
                         var d := dbl(val);
@@ -422,7 +423,7 @@ PROC doLoopLiftedRPC(
     # the original iteration number
     var proc_res := [get_rpc_res](rpc_results.tmark(0@0),
             rpc_results.hmark(0@0), const ws, const int_values,
-            const dbl_values, const str_values);
+            const dbl_values, const dec_values, const str_values);
 
     res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
     res_item := proc_res.[fetch](1);
@@ -1142,7 +1143,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                 "</xrpc:atomic-value>");
                         break;
                     case DEC:
-                        value2buf(b, fun_item, a, TYPE_dbl, dbl_values,
+                        value2buf(b, fun_item, a, TYPE_dec, dec_values,
                                 "<xrpc:atomic-value xsi:type=\"xs:decimal\">",
                                 "</xrpc:atomic-value>");
                         break;
@@ -1247,7 +1248,7 @@ CMDhttp_post(BAT **res, str options, str dst, str rpc_module,
                                 "xml-noheader-noroot", NULL, NULL, NULL, NULL,
                                 ws, 1,
                                 node_item, node_item, node_item, node_kind,
-                                int_values, dbl_values, str_values);
+                                int_values, dbl_values, dec_values, str_values);
 
                         if(BBPreclaim(node_item) == -1){
                             GDKerror("CMDhttp_post: failed to destroy "

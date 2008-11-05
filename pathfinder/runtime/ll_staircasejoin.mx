@@ -76,19 +76,22 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @:ll_proto(descendant)@
 @:ll_head(descendant,FALSE)@
     self = FALSE;
-    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    if (res_size == 0)
+        res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* DESCENDANT-OR-SELF STEP */
 @:ll_head(descendant_or_self,FALSE)@
     self = TRUE;
-    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    if (res_size == 0)
+        res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(descendant, (size[pre] & (1<<31)))@
 
 /* CHILD STEP */
 @:ll_proto(child)@
 @:ll_head(child,TRUE)@
-    res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
+    if (res_size == 0)
+        res_size = BATcount(iter_bat);	/* FIXME: estimate size! */
 @:ll_main(child, FALSE)@
 
 /* Templates / Wrappers */
@@ -96,13 +99,13 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @= ll_proto
 static int
 ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int *size,
-	oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test);
+	oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test, size_t cutoff, size_t *estimate);
 @
 @= ll_head
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size, BAT *cand_bat,
 	 bit *_one_iter, bit *_one_ctx,
-	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order, chr *_kind_test)
+	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order, chr *_kind_test, int *_cutoff)
 {
     /* --------------------------- declarations ---------------------------- */
 
@@ -112,13 +115,16 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
     oid min_iter = *_min_iter;
     oid max_iter = *_max_iter;
     bit no_iter_order = *_no_iter_order;
+    size_t cutoff = ((*_cutoff < 0) ? 0 : (size_t)*_cutoff);
     bit self = FALSE;
     bit child_step = @2;
     chr *kind = NULL, kind_test = *_kind_test;
     BAT *res = NULL;
-    BAT *del = NULL;
-    size_t res_size = 0;
+    BAT *del1 = NULL, *del2 = NULL;
+    size_t res_size = cutoff;
     int *size;
+    size_t estimate = 0;
+    int _estimate = 0;
 
     /* --------------------------- checks ---------------------------------- */
 
@@ -195,12 +201,22 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         @:ll_return(GDK_FAIL)@
     } else if (cand_bat->ttype == TYPE_void) {
         /* rare case: an oid candidate-list that is void-dense.  materialize it */ 
-        del = BATnew(TYPE_void, TYPE_oid, BATcount(cand_bat));
-        if (del == NULL || (cand_bat->tseqbase != oid_nil && BATins(del, cand_bat, FALSE) == NULL)) 
+        del1 = BATnew(TYPE_void, TYPE_oid, BATcount(cand_bat));
+        if (del1 == NULL || (cand_bat->tseqbase != oid_nil && BATins(del1, cand_bat, FALSE) == NULL)) 
             @:ll_return(GDK_FAIL)@
-        cand_bat = del;
+        cand_bat = del1;
+    }
+
+    if (ctx_bat->ttype == TYPE_void) {
+        /* rare case: an oid context-list that is void-dense.  materialize it */ 
+        del2 = BATnew(TYPE_void, TYPE_oid, BATcount(ctx_bat));
+        if (del2 == NULL || (ctx_bat->tseqbase != oid_nil && BATins(del2, ctx_bat, FALSE) == NULL)) 
+            @:ll_return(GDK_FAIL)@
+        ctx_bat = del2;
     }
     size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+
+    *result = NULL;
 
     /* --------------------------- empty result ---------------------------- */
 
@@ -216,7 +232,10 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         res->tdense = TRUE;
         BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
         BATset(res, TRUE);
-        *result = res;
+        _estimate = 0;
+        *result = BATnew(TYPE_int, TYPE_bat, 1);
+       bunfastins (*result, (void*) &_estimate, (void*) &res->batCacheid);
+       BBPunfix(res->batCacheid);
         @:ll_return(GDK_SUCCEED)@
     }
 @
@@ -236,22 +255,36 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         oid lst_ctx = 0;
         oid *sdst = 0, *hdst = 0, *tdst = 0;
         size_t max_size = 0;
+        size_t free, decr;
+            
+        if (cutoff > 0) {
+            free = cutoff;
+            decr = 1; 
+        } else {
+            free = 1;
+            decr = 0; 
+        }
 
         assert((size[fst_ctx] & (1<<31)) == 0);
-        max_size = res_size = (size_t)(size[fst_ctx] + (int)self);
-        if ( cand_bat ) {
-            if ( BATcount(cand_bat) < res_size ) {
-                res_size = BATcount(cand_bat);
+        max_size = (size_t)(size[fst_ctx] + (int)self);
+        if (cutoff == 0) {
+            res_size = max_size;
+            if ( cand_bat ) {
+                if ( BATcount(cand_bat) < res_size ) {
+                    res_size = BATcount(cand_bat);
+                }
             }
+            res_size *= BATcount(iter_bat);
+        } else {
+            res_size = cutoff;
         }
-        res_size *= BATcount(iter_bat);
         res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
             GDKerror("%s: could not allocate a result BAT[oid,void] of size " SZFMT ".\n", name, res_size);
             @:ll_return(GDK_FAIL)@
         }
-        res_size /= BATcount(iter_bat);
+        /* res_size /= BATcount(iter_bat); */
         fst_ctx = fst_ctx + (oid)(1 - (int)self);
         lst_ctx = fst_ctx + (oid)max_size;
         sdst = hdst = (oid*)Hloc(res, BUNlast(res));
@@ -264,9 +297,10 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
             if ( one_iter ) {
                 oid iter = *(oid*)BUNtail(iter_bati, BUNfirst(iter_bat));
 
-                for (cand = fst_cand ; cand < lst_cand && *cand < lst_ctx; cand++) {
+                for (cand = fst_cand ; cand < lst_cand && *cand < lst_ctx && free > 0; cand++) {
                     *hdst++ = iter;
                     *tdst++ = *cand;
+                    free -= decr;
                 }
             } else 
             {   /* multiple iters */
@@ -274,12 +308,16 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
                 BUN fst_iter = BUNfirst(iter_bat);
                 BUN lst_iter = BUNlast(iter_bat);
                     
-                for (cand = fst_cand ; cand < lst_cand && *cand < lst_ctx; cand++) {
-                    for (iter = fst_iter ; iter < lst_iter; iter++) {
+                for (cand = fst_cand ; cand < lst_cand && *cand < lst_ctx && free > 0; cand++) {
+                    for (iter = fst_iter ; iter < lst_iter && free > 0; iter++) {
                         *hdst++ = *(oid*)BUNtail(iter_bati,iter);
                         *tdst++ = *cand;
+                        free -= decr;
                     }
                 }
+            }
+            if (free == 0) {
+                estimate = (size_t)(((dbl)(lst_cand - fst_cand) / (dbl)(cand - fst_cand)) * (dbl)cutoff);
             }
         } else 
         {   /* !cands */ 
@@ -288,10 +326,11 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
             if ( one_iter ) {
                 oid iter = *(oid*)BUNtail(iter_bati, BUNfirst(iter_bat));
 
-                for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                for (pre = fst_ctx ; pre < lst_ctx && free > 0 ; pre++ ) {
                     if ((kind && kind[pre] != kind_test) || @2) continue; 
                     *hdst++ = iter;
                     *tdst++ = pre;
+                    free -= decr;
                 }
             } else 
             {   /* multiple iters */
@@ -299,13 +338,17 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
                 BUN fst_iter = BUNfirst(iter_bat);
                 BUN lst_iter = BUNlast(iter_bat);
                 
-                for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                for (pre = fst_ctx ; pre < lst_ctx && free > 0 ; pre++ ) {
                     if ((kind && kind[pre] != kind_test) || @2) continue; 
-                    for (iter = fst_iter ; iter < lst_iter; iter ++) {
+                    for (iter = fst_iter ; iter < lst_iter && free > 0; iter ++) {
                         *hdst++ = *(oid*)BUNtail(iter_bati,iter);
                         *tdst++ = pre;
+                        free -= decr;
                     }
                 }
+            }
+            if (free == 0) {
+                estimate = (size_t)(((dbl)(lst_ctx - fst_ctx) / (dbl)(pre - fst_ctx)) * (dbl)cutoff);
             }
         }
         BATsetcount(res, hdst-sdst);
@@ -323,7 +366,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
         }
 
         if (ll_@1(&res, iter_bat, ctx_bat, end_ctx, cand_bat, size, 
-                  min_iter, max_iter, no_iter_order, self, kind, kind_test) == GDK_FAIL )
+                  min_iter, max_iter, no_iter_order, self, kind, kind_test, cutoff, &estimate) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -359,14 +402,29 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *pre_size,
     BATkey(BATmirror(res),(res->tdense||one_iter)); /* might be TRUE in some more cases... */
     BATset(res, TRUE);
 }
-    *result = res;
+    if (estimate == 0)
+        estimate = BATcount(res);
+    if (estimate < (size_t) GDK_int_max)
+        _estimate = (int) estimate;
+    else
+        _estimate = GDK_int_max;
+    *result = BATnew(TYPE_int, TYPE_bat, 1);
+    bunfastins (*result, (void*) &_estimate, (void*) &res->batCacheid);
+    BBPunfix(res->batCacheid);
 
     @:ll_return(GDK_SUCCEED)@
+
+bunins_failed:
+    if (*result)
+        BBP_unfix_reclaim(*result);
+    *result = NULL;
+    @:ll_return(GDK_FAIL)@
 }
 @
 
 @= ll_return
-{   if (del) BBPreclaim(del);
+{   if (del1) BBPreclaim(del1);
+    if (del2) BBPreclaim(del2);
     if (res && (@1 == GDK_FAIL))
         BBP_unfix_reclaim(res);
     return @1; }
@@ -416,18 +474,29 @@ struct stack_item_C {
 
 static int
 ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int* size,
-             oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test)
+             oid min_iter, oid max_iter, bit no_iter_order, bit self, chr *kind, chr kind_test, size_t cutoff, size_t* estimate)
 {
-    BATiter ctx_bati = bat_iterator(ctx_bat), end_ctxi = bat_iterator(end_ctx);
+    BATiter end_ctxi = bat_iterator(end_ctx);
     BATiter iter_bati = bat_iterator(iter_bat);
     BAT *res = *result;
     si_C *stack = 0;
     int stack_top = 0;
-    oid pre = 0, ctx = 0, cur_ctx = 0;
+    oid pre = 0, ctx = 0, cur_ctx = 0, cand = 0;
     size_t cur_idx = 0, iter_idx = 0;
-    BUN ctx_bun = 0, ctx_last = 0;
+    oid *ctx_fst = (oid*)Tloc(ctx_bat,BUNfirst(ctx_bat));
+    oid *ctx_cur = ctx_fst;
+    oid *ctx_lst = (oid*)Tloc(ctx_bat,BUNlast(ctx_bat));
     oid *cand_cur = (oid*)(cand_bat?Tloc(cand_bat,BUNfirst(cand_bat)):NULL);
     oid *cand_lst = (oid*)(cand_bat?Tloc(cand_bat,BUNlast(cand_bat)-1):NULL);
+    size_t free, decr;
+        
+    if (cutoff > 0) {
+        free = cutoff;
+        decr = 1; 
+    } else {
+        free = 1;
+        decr = 0; 
+    }
 
     /* not used, here; keep compilers happy */
     (void)min_iter;
@@ -446,12 +515,9 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
     iter_idx = BUNfirst(iter_bat);
     assert(!end_ctx || iter_idx == BUNfirst(end_ctx));
 
-    ctx_bun = BUNfirst(ctx_bat);
-    ctx_last = BUNlast(ctx_bat);
-
 @= getnextctx
     iter_idx++;
-    ctx_bun++;
+    ctx_cur++;
 @
 @= pushctx
     si_C new_stack_item;
@@ -480,12 +546,46 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
        starting from the ctx (on the top of the stack) until
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
-    while (ctx_bun < ctx_last && cand_cur <= cand_lst) {
-        ctx = *(oid*)BUNtail(ctx_bati,ctx_bun);
+    while (ctx_cur < ctx_lst && cand_cur <= cand_lst && free > 0) {
+        ctx = *ctx_cur;
+        cand = cand_cur ? *cand_cur : oid_nil;
+
+        /* if the stack is empty,
+           we can ignore/skip "obviously" non-matching ctx- & cand-nodes
+           by advancing the both cursors in a merge-like fashion ... */
+        if (cand_bat && !stack_top && (cand < ctx || ctx + size[ctx] < cand)) {
+            while (ctx_cur < ctx_lst && cand_cur <= cand_lst && (*cand_cur < *ctx_cur || *ctx_cur + size[*ctx_cur] < *cand_cur)) {
+                ctx = *ctx_cur;
+                cand = *cand_cur;
+                if (cand < ctx) {
+                    /* poor man's binary search / exploiting forward scan */
+                    while (cand_cur+1048576 <= cand_lst && *(cand_cur+1048576) < ctx)
+                        cand_cur += 1048576; /* this avoids mmapped I/O */
+                    while (cand_cur+32768 <= cand_lst && *(cand_cur+32768) < ctx)
+                        cand_cur += 32768;
+                    while (cand_cur+1024 <= cand_lst && *(cand_cur+1024) < ctx)
+                        cand_cur += 1024;
+                    while (cand_cur+32 <= cand_lst && *(cand_cur+32) < ctx)
+                        cand_cur += 32;
+                    while (cand_cur <= cand_lst && *cand_cur < ctx)
+                        cand_cur ++;
+                } else /* ctx + size[ctx] < cand */ {
+                    while (ctx_cur < ctx_lst && *ctx_cur + size[*ctx_cur] < cand) {
+                        @:getnextctx@
+                    }
+                }
+            }
+        }
+        /* ... otherwise, we can at least ignore ctx nodes that end before next cand */
+        else if (cand_bat && ctx + size[ctx] < cand) {
+            while (ctx_cur < ctx_lst && *ctx_cur + size[*ctx_cur] < cand) {
+                @:getnextctx@
+            }
+        }
         /* if the stack is empty the next ctx node
            has to be pushed on the stack 
            and the next ctx node is called*/
-        if (!stack_top) {
+        else if (!stack_top) {
             @:pushctx@
             @:getnextctx@
         }
@@ -517,7 +617,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
     /* need to process the ctx nodes, which are still on the stack 
        - only need to evaluate the inner loop and pop, because 
          there are no more new ctx nodes */
-    while (stack_top) {
+    while (stack_top && free > 0) {
         @:inner_loop_child(stack[stack_top-1].eocs,@1,@2)@
         @:popctx@
     }
@@ -534,7 +634,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
 
             for (; pre <= @1 && pre < *fst_pre; pre += (size[pre]&GDK_int_max) + 1) { 
             }
-            for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1)
+            for (; free > 0  && pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1)
               if ((size[pre] & (1<<31)) == 0) {
 
                 /* poor man's binary search / exploiting forward scan */
@@ -558,13 +658,13 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
         for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
         }
     } else if (kind) {
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+        for (; pre <= @1 && free > 0; pre += (size[pre]&GDK_int_max) + 1) {
             if ((size[pre] & (1<<31)) == 0 && kind[pre] == kind_test) {
                 @:inner_loop_child_body(@2,@3)@
             }
         }
     } else {
-        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+        for (; pre <= @1 && free > 0; pre += (size[pre]&GDK_int_max) + 1) {
             if ((size[pre] & (1<<31)) == 0) {
                 @:inner_loop_child_body(@2,@3)@
             }
@@ -589,12 +689,14 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
                 *hdst++ = next_iter;
                 *tdst++ = pre;
                 prev_iter = next_iter;
+                free -= decr;
             }
 @
 @= no_duplicates_body
             oid next_iter = *(oid*)BUNtail(iter_bati,cur_idx);
             *hdst++ = next_iter;
             *tdst++ = pre;
+            free -= decr;
 @
 @= inner_loop_child_body
         @1
@@ -610,7 +712,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
         tdst = (oid*)Tloc(res, BUNlast(res));
         if (end_ctx) {
             for (cur_idx = stack[stack_top-1].first;
-                 cur_idx <= stack[stack_top-1].last;
+                 cur_idx <= stack[stack_top-1].last && free > 0;
                  cur_idx++) {
                 if (pre < *(oid*)BUNtail(end_ctxi,cur_idx)) {
                     @2
@@ -618,7 +720,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
             }
         } else {
             for (cur_idx = stack[stack_top-1].first;
-                 cur_idx <= stack[stack_top-1].last;
+                 cur_idx <= stack[stack_top-1].last && free > 0;
                  cur_idx++) {
                 @2
             }
@@ -628,6 +730,9 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_ba
 @c
 
     GDKfree(stack);
+    if (free == 0) {
+        *estimate = (size_t)(((dbl)(ctx_lst - ctx_fst) / (dbl)(ctx_cur - ctx_fst)) * (dbl)cutoff);
+    }
     *result = res;    
     return GDK_SUCCEED;
 bunins_failed:
@@ -655,7 +760,7 @@ struct stack_item_D {
 
 static int
 ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *cand_bat, int* size,
-                oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test)
+                oid min_iter, oid max_iter, bit no_iter_order, bit self, chr* kind, chr kind_test, size_t cutoff, size_t *estimate)
 {
     BATiter ctx_bati = bat_iterator(ctx_bat), iter_bati = bat_iterator(iter_bat);
     BAT *res = *result;
@@ -672,6 +777,15 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
     int OST_bits  = OST_bytes * 8;
     int OST_mask  = OST_bits - 1;
     int OST_shift = 0;
+    size_t free, decr;
+        
+    if (cutoff > 0) {
+        free = cutoff;
+        decr = 1; 
+    } else {
+        free = 1;
+        decr = 0; 
+    }
 
     /* not used, here; keep compilers happy */
     (void)end_ctx;
@@ -765,14 +879,14 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
        starting from the ctx (on the top of the stack) until
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
-    while (ctx_bun < ctx_last && cnd <= lst_cnd) {
+    while (ctx_bun < ctx_last && cnd <= lst_cnd && free > 0) {
         oid cur_ctx = ctx;
         /* scan over all iters for the current ctx node;
            only a new (non-active) iters have to be added
            to the list of active iters */
         pre = ctx;
         @:skip_cands_before_pre@
-        while (ctx_bun < ctx_last) {
+        while (ctx_bun < ctx_last && free > 0) {
             ctx = *(oid*)BUNtail(ctx_bati,ctx_bun);
             iter_idx = *(oid*)BUNtail(iter_bati,iter_bun) - min_iter;
             if (ctx != cur_ctx)
@@ -787,6 +901,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
                     if (pre == cnd && ((kind == NULL) || (kind[pre] == kind_test))) {
                         oid iter = min_iter + iter_idx;
                         bunfastins(res, &iter, &pre);
+                       free -= decr;
                     }
                 }
             }
@@ -795,7 +910,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
         }
         @:sort_iters_on_stack@
         pre++;
-        if (ctx_bun < ctx_last) {
+        if (ctx_bun < ctx_last && free > 0) {
             if (ctx <= stack[stack_top-1].eocs) {
                 /* find all results between the current ctx node
                    and the next (descendant) ctx node */
@@ -804,10 +919,10 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
             } else {
                 /* successively finish all active scopes
                    that do not contain the next ctx node */
-                while (stack_top && stack[stack_top-1].eocs <= ctx) {
+                while (stack_top && stack[stack_top-1].eocs <= ctx && free > 0) {
                     @:finish_scope_descendant@
                 }
-                if (ctx <= stack[stack_top-1].eocs) {
+                if (ctx <= stack[stack_top-1].eocs && free > 0) {
                     @:inner_loop_descendant(ctx)@
                 }
             }
@@ -816,7 +931,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
     /* need to process the ctx nodes, which are still on the stack 
        - only need to evaluate the inner loop and pop, because 
          there are no more new ctx nodes */
-    while (stack_top) {
+    while (stack_top && free > 0) {
         @:finish_scope_descendant@
     }
 
@@ -825,7 +940,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
     /* find all results in the current scope */
     @:inner_loop_descendant(eocs)@
     /* back to enclosing scope: remove all iters that are done */
-    while (stack_top && stack[stack_top-1].eocs <= eocs) {
+    while (stack_top && stack[stack_top-1].eocs <= eocs && free > 0) {
         stack_top--;
         onstack_clr(stack[stack_top].iter_idx);
     }
@@ -855,18 +970,20 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
             oid *fst_pre = cnd_ptr;
             oid *lst_pre = (oid*)Tloc(cand_bat, BUNlast(cand_bat));
                             
-            for (cur_pre = fst_pre ; cur_pre < lst_pre && *cur_pre <= lst_ctx; cur_pre++) {
+            for (cur_pre = fst_pre ; cur_pre < lst_pre && *cur_pre <= lst_ctx && free > 0; cur_pre++) {
                 for (j = 0 ; j < stack_top ; j++ ) {
                     *hdst++ = iters_on_stack[j];
                     *tdst++ = *cur_pre;
+                    free -= decr;
                 }
             }
         } else {
-            for ( ; pre <= @1 ; pre++ ) {
+            for ( ; pre <= @1 && free > 0 ; pre++ ) {
                 if ((kind && kind[pre] != kind_test) || (size[pre] & (1<<31))) continue; 
-                for (j = 0 ; j < stack_top ; j++ ) {
+                for (j = 0 ; j < stack_top && free > 0 ; j++ ) {
                     *hdst++ = iters_on_stack[j];
                     *tdst++ = pre;
+                    free -= decr;
                 }
             }
         }
@@ -879,14 +996,20 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *end_ctx, BAT *ca
 @c
 
     GDKfree(stack);
-    for ( i=0; i<num_iters; i++ ) {
-        if (onstack_get(i)) {
-            GDKwarning("ll_descendant: iter %d still on stack !??\n", i + min_iter);
+    if (free > 0) {
+        for ( i=0; i<num_iters; i++ ) {
+            if (onstack_get(i)) {
+                GDKwarning("ll_descendant: iter %d still on stack !??\n", i + min_iter);
+            }
         }
     }
     GDKfree(onstack);
     GDKfree(iters_on_stack);
     
+    if (free == 0) {
+        BUN ctx_fst = BUNfirst(ctx_bat);
+        *estimate = (size_t)(((dbl)(ctx_last - ctx_fst) / (dbl)(ctx_bun - ctx_fst)) * (dbl)cutoff);
+    }
     *result = res;    
     return GDK_SUCCEED;
 bunins_failed:

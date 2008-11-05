@@ -171,7 +171,7 @@ typedef enum PFctype_t PFctype_t;
 /** Semantic node content of core tree node */
 union PFcsem_t {
     long long int  num;        /**< integer value */
-    double         dec;        /**< decimal value */
+    long long int  dec;        /**< decimal value */
     double         dbl;        /**< double value */
     bool           tru;        /**< truth value (boolean) */
     char          *str;        /**< string value */
@@ -243,7 +243,7 @@ PFvar_t *PFcore_new_var (char *);
 PFcnode_t *PFcore_var (PFvar_t *);
 
 PFcnode_t *PFcore_num (long long int);
-PFcnode_t *PFcore_dec (double);
+PFcnode_t *PFcore_dec (long long int);
 PFcnode_t *PFcore_dbl (double);
 PFcnode_t *PFcore_str (char *);
 

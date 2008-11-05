@@ -231,7 +231,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_dec:
-            PFarray_printf (s, "%g", a.val.dec_);
+            PFarray_printf (s, PF_DEC_FMT(a.val.dec_));
             break;
 
         case aat_dbl:
@@ -274,12 +274,13 @@ xml_literal (PFalg_atom_t a)
            s, "<value type=\"%s\">%s</value>",
            PFalg_simple_type_str (a.type),
            PFesc_string (a.val.str));
-    else if (a.type == aat_dec)
+    else if (a.type == aat_dec) {
+        char buf[32];
+        snprintf(buf, 32, PF_DEC_FMT(a.val.dec_));
         PFarray_printf (
-           s, "<value type=\"%s\">%g</value>",
-           PFalg_simple_type_str (a.type),
-           a.val.dec_);
-    else if (a.type == aat_dbl)
+           s, "<value type=\"%s\">%s</value>",
+           PFalg_simple_type_str (a.type), buf);
+    } else if (a.type == aat_dbl)
         PFarray_printf (
            s, "<value type=\"%s\">%g</value>",
            PFalg_simple_type_str (a.type),

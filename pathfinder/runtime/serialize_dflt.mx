@@ -568,6 +568,25 @@ dflt_seqEmitDbl (XqueryCtx* ctx, dbl dv)
 }
 
 /**
+ * Emit a Double element of an XQUERY/Pathfinder result sequence
+ */
+static bool
+dflt_seqEmitDec (XqueryCtx* ctx, lng lv)
+{
+    char buf[20], *s;
+    
+    /* print decimal, and cut off trailing 0-s */
+    snprintf(buf, 20, DEC_FMT(lv));
+    for(s=buf; *s; s++);
+    while(s > buf && s[-1] == '0') s--; 
+    if (s[-1] == '.') s++;
+    *s = 0;
+    stream_write (ctx->out, buf, s-buf, 1);
+
+    return SUCCESS;
+}
+
+/**
  * Emit a String element of an XQUERY/Pathfinder result sequence
  */
 static bool
@@ -1118,6 +1137,7 @@ struct serializeFunStruct dmSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     esc_seqEmitStr,
     dflt_seqEmitAttribute,
     dflt_seqEmitTextnode,
@@ -1154,6 +1174,7 @@ struct serializeFunStruct mapi_dmSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     esc_seqEmitStr,
     dflt_seqEmitAttribute,
     dflt_seqEmitTextnode,
@@ -1190,6 +1211,7 @@ struct serializeFunStruct textSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     text_seqEmitStr,
     text_seqEmitAttribute,
     text_seqEmitStr,
@@ -1226,6 +1248,7 @@ struct serializeFunStruct mapi_textSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     text_seqEmitStr,
     text_seqEmitAttribute,
     text_seqEmitStr,
@@ -1262,6 +1285,7 @@ struct serializeFunStruct xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1298,6 +1322,7 @@ struct serializeFunStruct mapi_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1334,6 +1359,7 @@ struct serializeFunStruct typed_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1370,6 +1396,7 @@ struct serializeFunStruct mapi_typed_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_seqEmitStr,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1406,6 +1433,7 @@ struct serializeFunStruct xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_handle_characters,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1442,6 +1470,7 @@ struct serializeFunStruct mapi_xrpc_xmlSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     dflt_handle_characters,
     dflt_handle_attribute,
     dflt_handle_characters,
@@ -1478,6 +1507,7 @@ struct serializeFunStruct seqSerializeFun = {
     dflt_seqEmitBool,
     dflt_seqEmitInt,
     dflt_seqEmitDbl,
+    dflt_seqEmitDec,
     esc_seqEmitStr,
     dflt_seqEmitAttribute,
     seq_seqEmitTextnode,

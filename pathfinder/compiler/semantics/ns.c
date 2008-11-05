@@ -274,7 +274,7 @@ user_ns_add (PFloc_t loc, PFns_t ns)
  *   in-scope environment (will be replaced on success)
  * @return indicates if lookup has been successful
  */
-static char *
+char *
 ns_lookup (const char *prefix)
 {
     assert (prefix);

@@ -148,6 +148,7 @@ enum PFsql_kind_t {
 
     , sql_lit_int           /* literal integer */
     , sql_lit_lng           /* literal 64 bit integer */
+    , sql_lit_dbl           /* literal double */
     , sql_lit_dec           /* literal decimal */
     , sql_lit_str           /* literal string */
     , sql_lit_null          /* NULL value */
@@ -276,7 +277,8 @@ union PFsql_sem_t {
             long long int l;     /**< Long integer value. */
             char *s;             /**< String value. */
             bool b;              /**< Boolean value. */
-            double dec;          /**< Decimal value. */
+            double d;            /**< Double value. */
+            long long int dec;   /**< Decimal value. */
         } val;
     } atom;
     
@@ -656,11 +658,17 @@ PFsql_t * PFsql_lit_lng (long long int l);
  */
 PFsql_t * PFsql_lit_str (const char *s);
 /**
+ * Create a SQL tree node representing a literal double value.
+ *
+ * @param d The double value to represent in SQL.
+ */
+PFsql_t * PFsql_lit_dbl (double d);
+/**
  * Create a SQL tree node representing a literal decimal value.
  *
  * @param dec The decimal value to represent in SQL.
  */
-PFsql_t * PFsql_lit_dec (float dec);
+PFsql_t * PFsql_lit_dec (long long int dec);
 /**
  * Create a SQL tree node representing a NULL.
  */

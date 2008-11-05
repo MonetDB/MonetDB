@@ -30,25 +30,28 @@
  *
  * For both (1) and (2), I then generate:
  *
- * let $var1 := EXPR0, (: our context nodes *)
+ * let (: get context nodes - discarding non-nodes :)
+ *     $var1 := for $var2 in EXPR0
+ *              return if ($var2 instance of node())
+ *                     then $var2 else (),
+ *     $var3 := EXPR1,
  *
- *     (: atomize lookup values first - doing this in MonetDB would be a pain :)
- *     $var2 := for $var3 in EXPR1
- *              return if ($var3 instance of node()) 
- *                     then data($var3) else $var3,
- *
- *     (: use pf:text/pf:attribute index-lookup builtins to get candidates    :)
- *     $var4 := for $var5 in $var2
- *              (: viz pf:attribute($var1, "el_ns","el_loc","at_ns","at_loc", :)
- *              return pf:text($var1, string($var5)) 
- *
+ *     (: use pf:text/pf:attribute index-lookup builtins to get candidates :)
+ *     $var4 := for $var5 in EXPR1 
+ *              return if (or($var5 instance of xs:boolean), 
+ *                            $var5 instance of xs:double)), 
+ *                     then pf:idxfail() else
+ *               (: resp.   pf:attribute($var1, "el_ns","el_loc","at_ns","at_loc", :) 
+ *                          pf:text($var1, 
+ *                                  or($var5 instance of xs:integer,
+ *                                     $var5 instance of xs:decimal), string(data($var2)))
  * return
  *     (: if we have candidates, use them, otherwise use the original plan :)
- *     if (some $var6 in $var3 satisfies $var6 instance of document-node())
+ *     if (some $var6 in $var4 satisfies pf:idxfailed($var6))
  *     then
  *          (: original plan :)
  *          for $x in EXPR0/PATH1
- *          where PATH2/text() = $var2 (: re-use atomization effort :)
+ *          where PRED($x) = $var3
  *          [ order by EXPR3($x) ]
  *          return EXPR2($x)
  *     else
@@ -56,7 +59,7 @@
  *          for $x in ($var4/UP/PATH2_REV)
  *                    [some $var7 in pf:supernode(./PATH1_REV),
  *                          $var8 in $var1 satisfies $var7 is $var8]
- *          where $x/child::b/text() = $var2
+ *          where PRED($x) = $var3
  *          [ order by EXPR3($x) ]
  *          return EXPR2($x)
  *
@@ -67,18 +70,14 @@
  * - REV_PATH1 and REV_PATH2 are the reverse paths (inverse steps in reverse 
  *   order) of PATH1 resp. PATH2.
  * - EXPR0 and EXPR2($x),.. can be any XQuery expression
- * - in the final return pattern we use PRED($x)=$var2 instead of PRED($x)=EXPR1
- *   such that even if at runtime the index is not used, we did not waste effort 
- *   on atomizing node values in EXPR1 twice ($var2 contains atomized values).
  * - UP = . for attribute tests. For PRED($x)/text() = EXPR1 tests, 
  *   UP = parent::nsloc, to go from text nodes to element nodes. Finally, 
  *   UP = ancestor::nsloc, for PRED(x) = EXPR1 tests (ie on fn:data).
- *   Last match is tricky: the first non-space text node will produce
- *   the match.
  *
- * The run-time decision whether to use the index or not is encoded in the $var6
- * test for document nodes!! When the index should not be used, the pf:text() 
- * or pf:attribute() return a single result: a document node (1@0).
+ * The run-time decision whether to use the index or not is encoded with a special
+ * node!! When the index should not be used, the pf:text() or pf:attribute() return 
+ * a single result: a document node (1@0). It is detected by pf:idxfailed() and can
+ * be generated with pf:idxfail()
  * Note that the access path selection is done *per iteration*!!
  *
  * Note I repeat the EXPR0 in the original plan, so potentially it is executed
@@ -100,9 +99,9 @@
  *
  * let $var1 := doc("foo"),
  *     $var2 := "1",
- *     $var4 := pf:attribute($var1, "*", "b", "*", "id", $var2),
+ *     $var4 := pf:attribute($var1, "", "b", "", "id", true(), $var2),
  * return
- *     if (some $var6 in $var4 satisfies $var6 instance of document-node())
+ *     if (some $var6 in $var4 satisfies pf:idxfailed($var6))
  *     then (: original plan :)
  *          doc("foo")/descendant::a[./child::b/@id = $var2]/ret
  *     else (: index plan :)
@@ -118,10 +117,13 @@
  *
  * I use the following pathfinder-specific builtin extensions that support 
  * equi-value index-based lookup:
+ * - pf:idxfail() as node()
+ * - pf:idxfailed($ctx as node()) as xs:boolean
  * - pf:supernode($ctx as node()*) as node()*
- * - pf:attribute($frag as node()*, $ns as xs:string, $loc as xs:string, 
- *                $val as xs:string) as node()*
- * - pf:text($frag as node()*, $val as xs:string) as node()*
+ * - pf:attribute($frag as node()*, $eltns as xs:string, $eltloc as xs:string, 
+ *                                  $attns as xs:string, $attloc as xs:string,
+ *                                  $numeric as xs:boolean, $val as xs:string) as node()*
+ * - pf:text($frag as node()*, $numeric as xs:boolean, $val as xs:string) as node()*
  *
  * For each document node in $ctx, pf:supernode() adds its collection-supernode 
  * to the result. Collection supernodes are returned by pf:collection(), and 
@@ -173,35 +175,6 @@
  * stems from an outer for-loop. That is, if the equality predicate is (part of) 
  * a join condition. So, I only detect such joins if the equi-test text/attribute 
  * access starts in the inner join expression.
- *
- *
- * Future Work:
- * ------------
- *
- * As the index maps (hashes) values on doubles, we can also use it to handle 
- * range queries on numeric values. The fact that at this point in the pathfinder
- * compiler we do not have type info could be mitigated by a run-time hack: 
- * e.g. we could let the index give up at runtime on range-patterns if EXPR1
- * is not fully numeric.
- *
- * This approach could handle the patterns:
- * - PRED($x) comp EXPR1, comp in union(lcomp,gcomp), lcomp={<,<=}, gcomp={>,>=}
- * - (PRED($x) gcomp EXPR1) and (PRED($x) lcomp EXPR2)
- * - (PRED1($x) gcomp EXPR1) and (PRED1($x) lcomp EXPR2) or
- *   (PRED2($x) gcomp EXPR1) and (PRED2($x) lcomp EXPR2)
- *
- * The latter two patterns test point-intersect-region, and region-overlaps.
- * Such support for region tests is arguably more powerful than the standoff
- * work by Wouter Alink. It will also make MonetDB the champion of the so-
- * called "Guido" query set, whose scalability heavily hinges on band-joins.
- *
- * The (adapted) pf:text/pf:attribute for this would need a band-join to handle 
- * this and it would then make sense to switch to pre-sorted doubles with a 
- * delta table for updates, instead of a hash-table. 
- *
- * A small extension to the value=>double mapping (hashing?) would also permit
- * to index date/time values in such a way that range queries can be supported.
- *
  *
  * Copyright Notice:
  * -----------------
@@ -260,28 +233,34 @@
 #define instof(a,b)       p_wire2(p_instof, p->loc, a, b)  
 #define ord_ret(a,b)      p_wire2(p_ord_ret, p->loc, a, b)  
 #define pred(a,b)         p_wire2(p_pred, p->loc, a, b)  
+#define or(a,b)           p_wire2(p_or, p->loc, a, b)  
 #define is(a,b)           p_wire2(p_is, p->loc, a, b)  
 #define eq(a,b)           p_wire2(p_eq, p->loc, a, b)  
 #define some(a,b)         p_wire2(p_some, p->loc, a, b)  
+#define cast(a,b)         p_wire2(p_cast, p->loc, a, b)  
+#define emptyseq()        p_leaf(p_empty_seq, p->loc)
 
 /* these cannot be handled with a macro */
 #define apply(x,y,a)      apply_(p->loc, x, y, a)
 #define node_ty(x,y)      node_ty_(p->loc, x, y) 
+#define atom_ty(x,y)      atom_ty_(p->loc, x, y) 
 #define var(x)            var_(p->loc, x) 
 #define lit_str(x)        lit_str_(p->loc, x?x:"") 
 #define step(a,b)         step_(p->loc, a, b) 
 #define seq_ty(a)         seq_ty_(p->loc, a) 
+
+extern char * ns_lookup (const char *prefix);
 
 static PFpnode_t* 
 var_(PFloc_t loc, int varnum) 
 { 
     PFpnode_t *r = p_leaf(p_varref, loc);  
     if (r) {
-        r->sem.qname_raw.prefix = "#pf";
-        r->sem.qname_raw.loc = (char*) PFmalloc(8);
-        if (r->sem.qname_raw.loc) {
-            snprintf(r->sem.qname_raw.loc, 8, "heur%03d", varnum);
-            r->sem.qname_raw.loc[7] = 0;
+        char *varnme = (char*) PFmalloc(8);
+        if (varnme) {
+            snprintf(varnme, 8, "heur%03d", varnum);
+            varnme[7] = 0;
+            r->sem.qname = PFqname((PFns_t) { .prefix = "#pf", .uri = ns_lookup ("#pf") }, varnme);
         }
     }
     return r; 
@@ -292,6 +271,16 @@ node_ty_(PFloc_t loc, PFpkind_t kind, PFpnode_t *n)
 { 
     PFpnode_t *r = p_wire1(p_node_ty, loc, n);
     if (r) r->sem.kind = kind; 
+    return r; 
+}
+
+static PFpnode_t* 
+atom_ty_(PFloc_t loc, char *prefix, char *tpe) 
+{ 
+    PFpnode_t *r = p_wire1(p_atom_ty, loc, p_leaf(p_nil, loc));
+    if (r) {
+        r->sem.qname = PFqname((PFns_t) { .prefix = prefix, .uri = ns_lookup (prefix) }, tpe);
+    }
     return r; 
 }
 
@@ -316,8 +305,7 @@ apply_(PFloc_t loc, char *ns, char* fcn, PFpnode_t *a)
 { 
     PFpnode_t *r = p_wire1(p_fun_ref, loc, a);
     if (r) {
-        r->sem.qname_raw.prefix = ns;
-        r->sem.qname_raw.loc = fcn;
+        r->sem.qname = PFqname((PFns_t) { .prefix = ns, .uri = ns_lookup(ns) }, fcn);
     }
     return r;
 }
@@ -329,29 +317,25 @@ seq_ty_(PFloc_t loc, PFpnode_t *a) {
     return r; 
 }
 
-#define cpy(cur)            cpy_subst(cur,NULL,NULL,NULL)
-#define subst(cur,src,dst)  cpy_subst(cur,src,dst,NULL)
-#define dot2var(cur,dst)    cpy_subst(cur,NULL,dst,NULL)
+#define cpy(cur)            cpy_subst(cur,NULL,NULL)
+#define subst(cur,src,dst)  cpy_subst(cur,src,dst)
+#define dot2var(cur,dst)    cpy_subst(cur,NULL,dst)
 
 /* copy a abssyn tree, performing (possibly) some substitutions 
  */
-static PFpnode_t *cpy_subst(PFpnode_t*, PFpnode_t *, PFpnode_t *, int*);
+static PFpnode_t *cpy_subst(PFpnode_t*, PFpnode_t *, PFpnode_t *);
 static PFpnode_t *
-cpy_subst(PFpnode_t* cur, PFpnode_t* src, PFpnode_t* dst, int *haspath)
+cpy_subst(PFpnode_t* cur, PFpnode_t* src, PFpnode_t* dst)
 {
-    int haspath1 = 0, haspath2 = 0, subst_dots = (dst && src == NULL); 
+    int subst_dots = (dst && src == NULL); 
     PFpnode_t *n = (PFpnode_t*) PFmalloc(sizeof(PFpnode_t));
 
     if (cur == src) return dst; /* perform simple substitution */
     if (n) {
         *n = *cur;
-        if (L(n)) L(n) = cpy_subst(L(n), src, dst, &haspath1);
+        if (L(n)) L(n) = cpy_subst(L(n), src, dst);
         if (subst_dots && cur->kind == p_pred) dst = NULL;
-        if (R(n)) R(n) = cpy_subst(R(n), src, dst, &haspath2);
-    }
-    if (haspath) { /* post traversal check whether we have seen a locpath */
-        *haspath = haspath1 || haspath2 || (cur->kind == p_locpath);
-        if (*haspath) subst_dots = 0;
+        if (R(n)) R(n) = cpy_subst(R(n), src, dst);
     }
     /* special case: dot substitution */
     return (subst_dots && cur->kind == p_dot)?cpy(dst):n;
@@ -389,7 +373,7 @@ check_predicate(PFpnode_t *r, PFpnode_t **req_name)
             if (!tst) {
                 if (L(r)->sem.axis == p_attribute) {
                     tst = TST_ATTR; /* 'PATH/@attr = VAL' pattern */
-                /* } else { commented out because wrong..
+                /* } else { re-enable when computing/maintaining string-value index on elts is working
                     tst = TST_DATA;  'PATH = VAL' pattern, ie fn:data(PATH) */
                 }
             }
@@ -440,7 +424,7 @@ skip(PFpnode_t *p, int skippred) {
 }
 
 static PFpnode_t *
-revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
+revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds, int* sum)
 {
     PFpaxis_t axis = p_self;
     PFpnode_t *r = ctx;
@@ -457,7 +441,7 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
             p = skip_over_emptyseq(L(p)); 
             continue;
         }
-        if (p->kind != p_locpath || L(p)->kind != p_step) break;
+        if (p->kind != p_locpath || (L(p)->kind != p_step && L(p)->kind != p_pred)) break;
 
         rev_axis_t a = rev_axis[L(p)->sem.kind];
         if (a.id == p_attribute) return NULL;
@@ -467,8 +451,8 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
         int delta = a.benefit;
         if (LL(p)->kind == p_node_ty && LL(L(p)) &&
             LL(L(p))->kind == p_req_ty && LL(LL(p)) &&
-            LL(LL(p))->kind == p_req_name && LL(LL(p))->sem.qname_raw.loc && 
-            LL(LL(p))->sem.qname_raw.loc[0]) 
+            LL(LL(p))->kind == p_req_name && PFqname_loc(LL(LL(p))->sem.qname) && 
+            PFqname_loc(LL(LL(p))->sem.qname)[0]) 
         {
            delta /= 2; /* specific path is cheaper than a wildcard path */
         }
@@ -486,6 +470,7 @@ revert_locpath(PFpnode_t **root, PFpnode_t* ctx, int gen_preds)
         axis = a.id;
     }
     if (benefit < 0) return NULL;
+    *sum += benefit;
 
     /* finish the reverse path, return the path context expression in 'root' */
     *root = p;
@@ -502,7 +487,7 @@ var_independent(PFpnode_t *p, PFpnode_t *ignore, PFpnode_t *binds)
         PFpnode_t* b;
         for(b = binds; b->kind == p_binds; b = R(b)) {
             PFpnode_t *v = (L(b)->kind == p_let)?LL(L(b)):LL(LL(b));
-            if (!PFqname_raw_eq(p->sem.qname_raw, v->sem.qname_raw)) return 0;
+            if (!PFqname_eq(p->sem.qname, v->sem.qname)) return 0;
         }
     }
     if (L(p) && !var_independent(L(p), ignore, binds)) return 0;
@@ -519,7 +504,7 @@ var_findbind(PFpnode_t *v, PFpnode_t *EXPR2) {
             LL(v) && LL(v)->kind == p_vars && 
             LL(L(v)) && LL(L(v))->kind == p_var_type && 
             LL(LL(v)) && LL(LL(v))->kind == p_varref &&
-            !PFqname_raw_eq(LL(LL(v))->sem.qname_raw, EXPR2->sem.qname_raw)) return v;
+            !PFqname_eq(LL(LL(v))->sem.qname, EXPR2->sem.qname)) return v;
         v = R(v);
     }
     return NULL; 
@@ -530,7 +515,7 @@ var_findbind(PFpnode_t *v, PFpnode_t *EXPR2) {
 static int
 try_rewrite(PFpnode_t **stack, int depth, int curvar)
 {
-    PFpnode_t *p = stack[depth];
+    PFpnode_t *h, *p = stack[depth];
 
     /* my rewrite introduces 9 temporary variables */
     PFpnode_t *VAR1 = var(curvar+1);
@@ -573,13 +558,14 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
     /* declare the protagonist expressions in our patterns */
     PFpnode_t *BINDS = nil;
     PFpnode_t *VBIND = NULL;
-    PFpnode_t *COND  = subst(stack[depth], R(p), cpy(VAR2));
+    PFpnode_t *COND  = subst(stack[depth], R(p), cpy(VAR3)); 
     PFpnode_t *EXPR0 = NULL; 
     PFpnode_t *EXPR1 = R(p);
     PFpnode_t *EXPR2 = (tst == TST_DATA)?L(p):LR(p); 
     PFpnode_t *EXPR3 = nil; 
     PFpnode_t *PATH1_REV = NULL;
-    PFpnode_t *PATH2_REV = revert_locpath(&EXPR2, UP, 0);
+    int total_benefit = 0;
+    PFpnode_t *PATH2_REV = revert_locpath(&EXPR2, UP, 0, &total_benefit);
     if (PATH2_REV == NULL) return 0;
 
     if (stack[depth-1]->kind == p_exprseq && /* matches pattern (1) */
@@ -605,14 +591,16 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
         }
     }
     if (EXPR0) { /* we have a pattern hit! */
+        h = skip_to_locpath((LR(p)->kind == p_dot)?EXPR0:LR(p));
         EXPR0 = skip_over_emptyseq(EXPR0);
-        PATH1_REV = revert_locpath(&EXPR0, dot, 1); 
+        PATH1_REV = revert_locpath(&EXPR0, dot, 1, &total_benefit); 
+        if (total_benefit < 6) PATH1_REV = NULL;
     }
+    
     if (PATH1_REV) {
         /* get the parameters for the pf:text/pf:attribute call */
         PFpnode_t *arg = args(VAR1, nil);
-        PFpnode_t *h = skip_to_locpath((LR(p)->kind == p_dot)?EXPR0:LR(p));
-        char *prefix = "*", *loc = "*";
+        char *uri = "*", *loc = "*";
         
         if (h->kind == p_locpath && 
             L(h) && L(h)->kind == p_step &&
@@ -621,15 +609,15 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
             LL(LL(h)) && LL(LL(h))->kind == p_req_name)
         {
             /* get the element type just before the text/attribute step */
-            loc = LL(LL(h))->sem.qname_raw.loc;
-            prefix = LL(LL(h))->sem.qname_raw.prefix;
+            loc = PFqname_loc(LL(LL(h))->sem.qname);
+            uri = PFqname_uri(LL(LL(h))->sem.qname);
         }
         if (tst == TST_ATTR) {  
             /* pf:attribute() has additional parameters wrt pf:text() */
-            arg = args(lit_str(req_name->sem.qname_raw.loc), 
-                       args(lit_str(req_name->sem.qname_raw.prefix), 
+            arg = args(lit_str(PFqname_loc(req_name->sem.qname)), 
+                       args(lit_str(PFqname_uri(req_name->sem.qname)), 
                             args(lit_str(loc), 
-                                 args(lit_str(prefix), arg))));
+                                 args(lit_str(uri), arg))));
         }
  
         /* create the bindings of our new enclosing flwr block */
@@ -638,22 +626,30 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
 
         *h = /* overwrite $x, thus replace it and further binds by our new vars */
         *binds(
-           let(var_type(cpy(VAR1)),EXPR0),
+           let(var_type(cpy(VAR1)),
+               flwr(binds(bind(vars(cpy(VAR2)),EXPR0), nil),
+               where(nil, ord_ret(nil, /* below convoluted test for node() as alg does not provide instof(node) */
+                     if_then(or(or(or(or(or(instof(cpy(VAR2), seq_ty(atom_ty("xs","integer"))),
+                                            instof(cpy(VAR2), seq_ty(atom_ty("xs","decimal")))),
+                                            instof(cpy(VAR2), seq_ty(atom_ty("xs","double")))),
+                                            instof(cpy(VAR2), seq_ty(atom_ty("xs","string")))),
+                                            instof(cpy(VAR2), seq_ty(atom_ty("xs","boolean")))),
+                                            instof(cpy(VAR2), seq_ty(atom_ty("xdt","untypedAtomic")))),
+                     then_else(emptyseq(), cpy(VAR2))))))),
           binds(
-           let(var_type(cpy(VAR2)),
-               flwr(binds(bind(vars(cpy(VAR3)),EXPR1), nil),
-               where(nil, ord_ret(nil,
-                     if_then(instof(cpy(VAR3), seq_ty(node_ty(p_kind_node, nil))),
-                     then_else(apply("fn", "data", args(cpy(VAR3), nil)),
-                               cpy(VAR3))))))),
+           let(var_type(cpy(VAR3)), EXPR1),
           binds(
            let(var_type(cpy(VAR4)),
-               flwr(binds(bind(vars(cpy(VAR5)), cpy(VAR2)), nil),
+               flwr(binds(bind(vars(cpy(VAR5)), cpy(EXPR1)), nil),
                where(nil, ord_ret(nil,
-                     apply("pf",(tst == TST_ATTR)?"attribute":"text", 
-                           args(apply("fn", "string", args(cpy(VAR5), nil)),
-                                arg)))))), nil)));
-
+                     if_then(or(instof(cpy(VAR5), seq_ty(atom_ty("xs","boolean"))),
+                                instof(cpy(VAR5), seq_ty(atom_ty("xs","double")))),
+                     then_else(apply("pf","idxfail", nil),
+                               apply("pf",(tst == TST_ATTR)?"attribute":"text", 
+                                     args(apply("fn", "string", args(apply("fn", "data", args(cpy(VAR3), nil)), nil)), 
+                                          args(or(instof(cpy(VAR5), seq_ty(atom_ty("xs","decimal"))), 
+                                                  instof(cpy(VAR5), seq_ty(atom_ty("xs","integer")))),
+                                               arg))))))))),nil)));
 
         /* pattern(2): put in VBIND any remaining variable bindings after $x */
         if (VBIND) { 
@@ -662,16 +658,16 @@ try_rewrite(PFpnode_t **stack, int depth, int curvar)
             VBIND = cpy(R(VBIND));
         }
 
-        /* creatively edited 'pf -Pas10' of target pattern */
+        /* creatively edited 'pf -Pas12' of target pattern */
         *stack[depth-2] =
         *flwr(BINDS,
          where(nil, 
          ord_ret(nil,
               if_then(some(binds(bind(vars(cpy(VAR6)), cpy(VAR4)), nil),
-                      instof(cpy(VAR6), seq_ty(node_ty(p_kind_doc, nil)))),
+                      apply("pf","idxfailed", args(cpy(VAR6), nil))),
               then_else(
                   /* original plan */
-                  subst(stack[depth-2], R(p), cpy(VAR2)),
+                  subst(stack[depth-2], R(p), cpy(VAR3)), 
                   /* index plan */
                   flwr(binds(bind(vars(cpy(VAR9)),
                              pred(PATH2_REV,

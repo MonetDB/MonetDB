@@ -262,7 +262,7 @@ typedef union PFpsem_t PFpsem_t;
 
 union PFpsem_t {
     long long int    num;        /**< integer value */
-    double           dec;        /**< decimal value */
+    long long int    dec;        /**< decimal value */
     double           dbl;        /**< double value */
     bool             tru;        /**< truth value (boolean) */
     char            *str;        /**< string value */

@@ -490,6 +490,8 @@ impl_types (PFalg_simple_type_t ty)
             return mty_str;
 
         case aat_dec:
+            return mty_dec;
+
         case aat_dbl:
             return mty_dbl;
 
@@ -786,7 +788,7 @@ literal_ (PFalg_atom_t atom, PFalg_simple_type_t type)
         case aat_int:  return lit_lng (atom.val.int_);
         case aat_uA:
         case aat_str:  return lit_str (atom.val.str);
-        case aat_dec:  return lit_dbl (atom.val.dec_);
+        case aat_dec:  return lit_dec (atom.val.dec_);
         case aat_dbl:  return lit_dbl (atom.val.dbl);
         case aat_bln:  return lit_bit (atom.val.bln);
         case aat_qname_id:
@@ -2981,7 +2983,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 intVAL = new_var (1);
                 dblVAL = new_var (1);
-                decVAL = dblVAL;
+                decVAL = new_var (1); 
                 strVAL = new_var (1);
                 item   = new_var (1);
                 kind   = new_var (1);
@@ -2999,14 +3001,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    key (new (type (mty_dbl), type (mty_void)),
                                         true)),
                                lit_oid (0))),
-                    /*
                     assgn (var (decVAL->name),
                            seqbase (
                                reverse (
-                                   key (new (type (mty_dbl), type (mty_void)),
+                                   key (new (type (mty_dec), type (mty_void)),
                                     true)),
                                lit_oid (0))),
-                    */
                     assgn (var (strVAL->name),
                            seqbase (
                                reverse (
@@ -3319,9 +3319,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                              select2 (VAR (L(p)->env,
                                                            pa_item,
                                                            aat_dec),
-                                                      cast (type (mty_dbl),
+                                                      cast (type (mty_dec),
                                                             nil ()),
-                                                      cast (type (mty_dbl),
+                                                      cast (type (mty_dec),
                                                             nil ()))
                                              )))));
                     if (ty == aat_dec) {
@@ -3348,9 +3348,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 project (select2 (VAR (L(p)->env,
                                                        pa_item,
                                                        aat_dec),
-                                                  cast (type (mty_dbl),
+                                                  cast (type (mty_dec),
                                                         nil ()),
-                                                  cast (type (mty_dbl),
+                                                  cast (type (mty_dec),
                                                         nil ())),
                                          var (PF_MIL_VAR_DEC)))
                         );
@@ -3421,6 +3421,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 unpin (intVAL, 1);
                 unpin (dblVAL, 1);
+                unpin (decVAL, 1);
                 unpin (strVAL, 1);
                 unpin (item, 1);
                 unpin (kind, 1);
@@ -3535,7 +3536,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                              lit_oid (0))),
                 assgn (
                     var (decVAL->name),
-                    seqbase (new (type (mty_void), type (mty_dbl)),
+                    seqbase (new (type (mty_void), type (mty_dec)),
                              lit_oid (0))),
                 assgn (
                     var (strVAL->name),
@@ -4625,7 +4626,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* because functions are only allowed for dbl
                        we need to cast before and afterwards:
                        res := `input'.[dbl]().[`op']().[`res_type'](); */
-                    if (impl_types (res_type) == mty_dbl)
+                    if (op == PFmil_mabs || impl_types (res_type) != mty_int)
                         execute (
                             assgn (var (res->name),
                                    op (VAR (L(p)->env, att, res_type))));
@@ -5091,17 +5092,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                                     casted,
                                                     var (res->name))));
                         }
-
-                    if (p->sem.fun_1to1.kind == alg_fun_fn_number)
-                        /* As we do not support the value NaN we need to generate
-                           an error for all tuples that cannot be casted (instead
-                           of generating NaN). */
-                        execute (
-                            if_ (exist (reverse (var (res->name)),
-                                        cast (implty (res_type), nil ())),
-                                 error (
-                                     lit_str ("We do not support the value NaN.")),
-                                 nop ()));
+                    /* substitute nil by nan */
+                    execute (assgn (var (res->name),
+                                    mifthenelse (misnil (var (res->name)),
+                                                 lit_dbl_ (127,255,255,255,255,255,255,255),
+                                                 var (res->name))));
                 }   break; /* fold) */
                 case alg_fun_fn_qname: /* fold( */
                 {

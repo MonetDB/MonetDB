@@ -1191,6 +1191,7 @@ struct serializeFunStruct pftijahSerializeFun = {
     null_seqEmitBool,
     null_seqEmitInt,
     null_seqEmitDbl,
+    null_seqEmitDec,
     null_seqEmitStr,
     null_handle_attribute,
     null_handle_characters,

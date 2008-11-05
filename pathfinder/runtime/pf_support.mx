@@ -36,6 +36,52 @@ implementation on top of MonetDB within the "Pathfinder" project.
 .USE monettime;
 .USE streams;
 
+@- decimal
+For XQuery we now implement decimal as a lng, with fixed %d12.%6d decimal point 
+@m
+.ATOM dec = lng;
+        .FROMSTR = dec_fromstr;
+        .TOSTR = dec_tostr;
+.END;
+
+.OPERATOR  (dec) "+"  (dec) : dec = dec_add; "addition"
+.OPERATOR  (dec) "-"  (dec) : dec = dec_sub; "substraction"
+.OPERATOR1 (dec) "*"  (dec) : dec = dec_mult; "multiplication"
+.OPERATOR1 (dec) "/"  (dec) : dec = dec_div; "division"
+.COMMAND log(dec) : dec = dec_log; "The log(x) function returns the natural logarithm of x."
+.COMMAND pow(dec,dec) : dec = dec_pow; "The pow(x,y) function returns the value of x raised to the power of y."
+.COMMAND sqrt(dec) : dec = dec_sqrt; "The sqrt(x) function returns the non-negative square root of x."
+.COMMAND ceil(dec) : dec = dec_ceil; "The ceil(x) function rounds x upwards to the nearest integer."
+.COMMAND floor(dec) : dec = dec_floor; "The floor(x) function rounds x downwards to the nearest integer."
+.COMMAND round(dec) : dec = dec_round; "The round(n) returns n rounded from .5 upwards, below downwards."
+.COMMAND bit(dec) : bit = dec_to_bit; "cast decimal to boolean"
+.COMMAND lng(dec) : lng = dec_to_lng; "cast decimal to long integer"
+.COMMAND dbl(dec) : dbl = dec_to_dbl; "cast decimal to decimal"
+.COMMAND str(dec) : str = dec_to_str; "cast decimal to string"
+.COMMAND dec(bit) : dec = dec_from_bit; "cast decimal from boolean"
+.COMMAND dec(lng) : dec = dec_from_lng; "cast decimal from long integer"
+.COMMAND dec(dbl) : dec = dec_from_dbl; "cast decimal from decimal"
+.COMMAND dec(str) : dec = dec_from_str; "cast decimal from string"
+
+.COMMAND dec_as_lng(BAT[any::1,dec]) : BAT[any::1,lng] = BATdec_as_lng; "treat a dec column bitwise as a lng"
+.COMMAND lng_as_dec(BAT[any::1,lng]) : BAT[any::1,dec] = BATlng_as_dec; "treat a lng column bitwise as a dec"
+
+@-
+quite a few primitives re-use routines from arith.mx and bat_arith.mx as-is
+@m
+.OPERATOR0 (dec) "<"  (dec) : bit = lng_comp_LT; "left smaller than right?"
+.OPERATOR0 (dec) "<=" (dec) : bit = lng_comp_LE; "left smaller or equal than right?"
+.OPERATOR0 (dec) ">"  (dec) : bit = lng_comp_GT; "left greater than right?"
+.OPERATOR0 (dec) ">=" (dec) : bit = lng_comp_GE; "left greater or equal than right?"
+.OPERATOR0 (dec) "="  (dec) : bit = lng_comp_EQ; "left equal to right?"
+.OPERATOR0 (dec) "!=" (dec) : bit = lng_comp_NEQ; "left not equal to right?"
+.COMMAND isnil(dec) : bit = lng_isnil; "return true iff the parameter is NIL"
+.COMMAND max(dec,dec) : dec = lng_binary_MAX; "maximum of two values"
+.COMMAND min(dec,dec) : dec = lng_binary_MIN; "minimum of two values"
+.COMMAND abs(dec) : dec = lng_unary_ABS; "absolute value" 
+.OPERATOR "-"(dec) : dec = lng_unary_NEG; "negated value" 
+.COMMAND sign(dec) : dec = lng_unary_SIGN; "Returns +1, 0, -1 based on the sign of the given expression" 
+
 @- XML shredder (shredder.mx)
 @m
 .COMMAND shred_url(BAT[str,bat], str url, lng percentage, lock l, bit verbose) : void = CMDshred_url;
@@ -64,21 +110,21 @@ percentage - a number [0,100] indicating the amount of free space to reserve for
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
                       BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, 
-                      BAT[oid,str] str_values) :
+                      BAT[oid,dec] dec_values, BAT[oid,str] str_values) :
                             void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
 .COMMAND print_result(str mode, BAT[void,bat] ws,
                       BAT[void,oid] item, BAT[void,int] kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
-                      BAT[void,dbl] dec_values, BAT[void,str] str_values) :
+                      BAT[void,dec] dec_values, BAT[void,str] str_values) :
                             void = xquery_print_result_main;
  "C interface to Workset result print routine"
 
 .COMMAND print_result(str file, str mode, BAT[void,bat] ws,
                       oid item, int kind,
                       BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
-                      BAT[void,dbl] dec_values, BAT[void,str] str_values) :
+                      BAT[void,dec] dec_values, BAT[void,str] str_values) :
                             void = xquery_print_result_file;
  "C interface to Workset result print routine, but print to a file"
 
@@ -237,8 +283,21 @@ if all are ok."
 
 @- Value Hashing
 @m
-.COMMAND xquery_hash(str) : int = CMDxquery_hash; ""
-.COMMAND [xquery_hash](BAT[void,str]) : BAT[void,int] = CMDxquery_hash_bat; ""
+.COMMAND xquery_hash(str) : lng = CMD_XQH_H; "hash a string value"
+.COMMAND [xquery_hash](BAT[void,str]) : BAT[void,lng] = CMD_XQH_H_bat; "hash a string value"
+.COMMAND xquery_hash_num(str) : lng = CMD_XQH_H_NUM; "hash a string value of a numeric"
+.COMMAND [xquery_hash_num](BAT[void,str]) : BAT[void,lng] = CMD_XQH_H_NUM_bat; "hash a string value of a numeric"
+
+.COMMAND xquery_rehash(lng,lng) : lng = CMD_XQH_C; "compute the hash of 2 concatenated strings from their hashes"
+.COMMAND [xquery_rehash](BAT[void,lng], BAT[void,lng]) : BAT[void,lng] = CMD_XQH_C_bat; "compute the hash of 2 concatenated strings from their hashes"
+
+.COMMAND xquery_hash2str(lng) : str = CMD_XQH_STR; "debug routine that prints the components of an xquery hash value"
+
+.COMMAND xquery_hash_xor(lng,lng,int) : lng = CMD_XQH_XOR_lng; "shift the second argument by the third, and xor it with the first"
+.COMMAND xquery_hash_xor(lng,oid,int) : lng = CMD_XQH_XOR_oid; "shift the second argument by the third, and xor it with the first"
+.COMMAND "[:xquery_hash_xor=]"(BAT[void,lng], BAT[void,lng], int) : BAT[void,lng] = CMD_XQH_XOR_lng_bat; "shift the second argument by the third, and xor it with the first"
+.COMMAND "[:xquery_hash_xor=]"(BAT[void,lng], BAT[void,oid], int) : BAT[void,lng] = CMD_XQH_XOR_oid_bat; "shift the second argument by the third, and xor it with the first"
+
 
 @- Constant Columns
 
@@ -322,6 +381,37 @@ DESCRIPTION:
 returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for each group."
 @
 @m
+@:ws_step_down(descendant)@
+@:ws_step_down(descendant_or_self)@
+@:ws_step_down(child)@
+
+@= ws_step_down
+.COMMAND ws_@1(BAT[oid,oid] l_prune,
+                   BAT[oid,oid] l_pre,
+                   BAT[oid,int] pre_size,
+                   BAT[oid,oid] r_pre,
+                   bit one_iter, bit one_ctx,
+                   oid min_iter, oid max_iter,
+                   bit no_iter_order,
+                   int cutoff): BAT[int,BAT] = PFws_@1;
+"PARAMETERS:
+BAT[void,oid] l_prune (grouping relation; sorted on tail within each ctx group)
+BAT[void,oid] l_pre (context set; sorted on tail)
+BAT[void,int] pre_size (from the working set)
+BAT[void,oid] r_pre (sorted list of result candidate OIDs in the tail)
+bit           one_iter (only one iter?)
+bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
+oid           min_iter,max_iter (smallest and largest iter id)
+bit           no_iter_order (descendant & descendant_or_self, only: 
+               result will be ordered on item, but not sub-ordered on iter)
+int           cutoff (result size limit; int(nil) or <=0  =>  no limit)
+DESCRIPTION:
+returns an [int,BAT]-BAT with a single BUN;
+head: estimated result size, in case result was cut off; actual result size, otherwise;
+tail: [oid,oid]-BAT with all pairs of positions/IDs ([l_pre.head, r_pre.head]) such that
+      (l_pre.tail STEP r_pre.tail) holds and {[l_prune.tail, r_pre.tail]} is distinct."
+@
+@m
 @:ll_cmd(descendant)@
 @:ll_cmd(descendant_or_self)@
 @:ll_cmd(child)@
@@ -334,7 +424,8 @@ returns all nodes on the @1-sibling axis of the ctx-nodes duplicate free for eac
                    BAT[void,any] cands,
                    bit one_iter, bit one_ctx,
                    oid min_iter, oid max_iter,
-                   bit no_iter_order, chr kind_test): BAT[oid,oid] = PFll_@1;
+                   bit no_iter_order, chr kind_test,
+                   int cutoff): BAT[int,BAT] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
@@ -347,8 +438,11 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
 oid           min_iter,max_iter (smallest and largest iter id)
 bit           no_iter_order (descendant & descendant_or_self, only: 
                result will be ordered on item, but not sub-ordered on iter)
+int           cutoff (result size limit; int(nil) or <=0  =>  no limit)
 DESCRIPTION:
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
+returns an [int,BAT]-BAT with a single BUN;
+head: estimated result size, in case result was cut off; actual result size, otherwise;
+tail: [oid,oid]-BAT with all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
 @
 @m
 @:ll_upwards(parent,parent)@
@@ -366,6 +460,7 @@ BAT[void,int] pre_size (from the working set)
 BAT[void,int] pre_level (from the working set)
 DESCRIPTION:
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group."
+
 
 @- string primitives
 @m
@@ -437,7 +532,7 @@ const empty_kind_bat := bat(void,int,0).seqbase(0@0).rename("empty_kind_bat").ac
 const EMPTY_STRING := 0@0;
 const OID_PAGE_BITS := isnil(lng(1LL << 32).oid()).ifthenelse(10,9);
 const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).rename("empty_dbl__bat").access(BAT_READ);
-const empty_dec__bat := empty_dbl__bat;
+const empty_dec__bat := bat(void,dec,0).seqbase(0@0).rename("empty_dec__bat").access(BAT_READ);
 const empty_str__bat := bat(void,str,0).seqbase(0@0).rename("empty_str__bat").access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).rename("empty_int__bat").access(BAT_READ);
 const bool_not := bat(void,oid,2).append(1@0).append(0@0).rename("bool_not").seqbase(0@0).access(BAT_READ);
@@ -449,12 +544,96 @@ const chr_nil       := chr(nil);
 const int_nil       := int(nil);
 const lng_nil       := lng(nil);
 const dbl_nil       := dbl(nil);
+const dec_nil       := dec(nil);
 const oid_nil       := oid(nil);
 const str_nil       := str(nil);
 const stream_nil    := Stream(nil);
 const lock_nil      := lock(nil);
 const sema_nil      := sema(nil);
 const timestamp_nil := timestamp(nil);
+
+const DEC_LNGMIN    := -1000000000000000000LL;
+const DEC_LNGMAX    := 1000000000000000000LL;
+
+# define these for mental sanity
+PROC dec(int v) : dec { return dec(lng(v)); } 
+PROC dec(wrd v) : dec { return dec(lng(v)); } 
+PROC dec(bte v) : dec { return dec(lng(v)); } 
+PROC dec(chr v) : dec { return dec(lng(v)); } 
+PROC dec(flt v) : dec { return dec(dbl(v)); } 
+
+# interpret dec as lng, but assure all values are in range
+PROC lng_as_dec_chk(BAT[any::1,lng] b) : BAT[any::1,dec]
+{
+  return reverse(b.hmark(0@0)).leftfetchjoin(lng_as_dec_chk(b.tmark(0@0)));
+}
+PROC lng_as_dec_chk(BAT[void,lng] b) : BAT[void,dec]
+{ 
+  var lo := b.ord_uselect(lng_nil,DEC_LNGMIN).project(lng_nil);
+  var hi := b.ord_uselect(DEC_LNGMAX,lng_nil).project(lng_nil);
+  if ((count(lo) = 0) and (count(hi) = 0)) return lng_as_dec(b);
+  return lng_as_dec(b.access(BAT_WRITE).inplace(lo).inplace(hi).access(BAT_READ)); 
+}
+
+# use dec_as_lng()/lng_as_dec() to rely on efficient lng bulk primitives from aggrX3 and bat_arith
+PROC {sum}(BAT[any::1,dec] b) : BAT[any::1,dec] { 
+  return lng_as_dec_chk({sum}(dec_as_lng(b))); 
+}
+
+PROC {avg}(BAT[any::1,dec] b) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b))); 
+}
+
+PROC {min}(BAT[any::1,dec] b) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b))); 
+}
+
+PROC {max}(BAT[any::1,dec] b) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b))); 
+}
+PROC {sum}(BAT[any::1,dec] b, BAT[any::1,any] e) : BAT[any::1,dec] { 
+  return lng_as_dec_chk({sum}(dec_as_lng(b),e)); 
+}
+
+PROC {avg}(BAT[any::1,dec] b, BAT[any::1,any] e) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b),e)); 
+}
+
+PROC {min}(BAT[any::1,dec] b, BAT[any::1,any] e) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b),e)); 
+}
+
+PROC {max}(BAT[any::1,dec] b, BAT[any::1,any] e) : BAT[any::1,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b),e)); 
+}
+
+PROC {sum}(BAT[oid,dec] b, BAT[oid,oid] g, BAT[oid,any] e ) : BAT[oid,dec] { 
+  return lng_as_dec_chk({sum}(dec_as_lng(b),g,e)); 
+}
+
+PROC {avg}(BAT[oid,dec] b, BAT[oid,oid] g, BAT[oid,any] e ) : BAT[oid,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b),g,e)); 
+}
+
+PROC {min}(BAT[oid,dec] b, BAT[oid,oid] g, BAT[oid,any] e ) : BAT[oid,dec] { 
+  return lng_as_dec_chk({sum}(dec_as_lng(b),g,e)); 
+}
+
+PROC {max}(BAT[oid,dec] b, BAT[oid,oid] g, BAT[oid,any] e ) : BAT[oid,dec] { 
+  return lng_as_dec({sum}(dec_as_lng(b),g,e)); 
+}
+
+PROC [-](BAT[oid,dec] l) : BAT[oid,dec] { 
+  return lng_as_dec_chk([-](dec_as_lng(l))); 
+}
+
+PROC [-](BAT[oid,dec] l, BAT[oid,dec] r) : BAT[oid,dec] { 
+  return lng_as_dec_chk([-](dec_as_lng(l),dec_as_lng(r))); 
+}
+
+PROC [+](BAT[oid,dec] l, BAT[oid,dec] r) : BAT[oid,dec] { 
+  return lng_as_dec_chk([+](dec_as_lng(l),dec_as_lng(r))); 
+}
 
 PROC log2(any i) : int { return int(log(dbl(i))/M_LN2) + 1; }
 
@@ -695,7 +874,7 @@ PROC get_attr_own(BAT[oid,bat] ws, BAT[oid,oid] nids, any cont) : BAT[oid,oid]
 
 PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
             BAT[void,lng] int_values, BAT[void,dbl] dbl_values,
-            BAT[void,dbl] dec_values, BAT[void,str] str_values) : void
+            BAT[void,dec] dec_values, BAT[void,str] str_values) : void
 {
     var protocol := [search](uri, "://");
     var sel := protocol.uselect(0,int_nil).hmark(0@0).leftfetchjoin(uri);
@@ -1005,7 +1184,7 @@ PROC trace_items (BAT[void,any] ws,
                                                     .set_kind(kind),
                                       new (void,lng).seqbase(0@0),
                                       new (void,dbl).seqbase(0@0),
-                                      new (void,dbl).seqbase(0@0),
+                                      new (void,dec).seqbase(0@0),
                                       new (void,str).seqbase(0@0));
                     } else {
                         # attribute nodes
@@ -1535,10 +1714,10 @@ PROC combine_node_info (any frag1, bat[void,oid] pre1, any attr1,
                     res.chk_order();
                 }
 @= wrap
-PROC ll_@1(BAT[oid,oid] iter, BAT[oid,oid] ctx, BAT[oid,int] pre_size, BAT[void,any] cands, bit one_iter, bit one_ctx, oid min_iter, oid max_iter, bit no_iter_order, chr kind_test) : BAT[oid,oid]
+PROC ll_@1(BAT[oid,oid] iter, BAT[oid,oid] ctx, BAT[oid,int] pre_size, BAT[void,any] cands, bit one_iter, bit one_ctx, oid min_iter, oid max_iter, bit no_iter_order, chr kind_test, int cutoff) : BAT[oid,oid]
 {
         var end_ctx := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
-	return ll_@1(iter, ctx, end_ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test);
+	return ll_@1(iter, ctx, end_ctx, pre_size, cands, one_iter, one_ctx, min_iter, max_iter, no_iter_order, kind_test, cutoff);
 }
 ADDHELP("ll_@1", "manegold", "Aug 2007",
 "PARAMETERS:\n\
@@ -1551,8 +1730,11 @@ bit           one_ctx  (only one ctx node, i.e., the same for all iters?)\n\
 oid           min_iter,max_iter (smallest and largest iter id)\n\
 bit           no_iter_order (descendant & descendant_or_self, only: \n\
                result will be ordered on item, but not sub-ordered on iter)\n\
+int           cutoff (result size limit; int(nil) or <=0  =>  no limit)\n\
 DESCRIPTION:\n\
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
+returns an [int,BAT]-BAT with a single BUN;\n\
+head: estimated result size, in case result was cut off; actual result size, otherwise;\n\
+tail: [oid,oid]-BAT with all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
 "pf_support");
 
 PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,any] cands, chr kind_test) : BAT[void,bat]
@@ -1644,7 +1826,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, BAT[oid,oid] end_ctx, oid cont, B
 	# the actual location step
 	if ( isnil(result) ) {
 		var res := ll_@1 (iter, item, end_ctx, pre_size, cands, one_iter, one_item, 
-		                   min_iter, max_iter, (and(order,2) = 0), kind_test);
+		                   min_iter, max_iter, (and(order,2) = 0), kind_test, int(nil)).fetch(0);
                                
                 @:resolve_unique_iters()@
 
@@ -5737,6 +5919,218 @@ PROC fix_consecutive_texts(bat[void, bat] ws, bat[oid,oid] contnid) : void
 #include <plain/algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
 
+/* simple implementation of 18-digit decimals as 64-bits integers. 12 digits before, and 6 after the comma (fixed) 
+ *
+ * the restriction to 18 digits the point means we do not use all 64 bits, therefore overflow checking in 
+ * multiplication is easy as (hi_int(D)+1)^2 still fits
+ *
+ * DEC type & defines have been moved to pathfinder.ms
+ */
+@= atomalloc
+    if (*dst == NULL || *len < @1) {
+        if (*dst) GDKfree(*dst);
+        *dst = (@2) GDKmalloc(@1); 
+        if (*dst == NULL) return 0;
+        *len = @1;
+    }
+@c
+#include <arith.h>
+
+lng p10[12] = 
+{10LL,100LL,1000LL,10000LL,100000LL,1000000LL,10000000LL,100000000LL,1000000000LL,10000000000LL,100000000000LL,1000000000000LL};
+int dec_fromstr(str src, int *len, dec **dst) {
+    lng tmp1 = lng_nil, tmp2 = 0, *p1 = &tmp1, *p2 = &tmp2;
+    int l, k;
+    @:atomalloc((int) sizeof(lng),dec*)@
+    l = lngFromStr(src, len, &p1);
+    if (tmp1 <= -DEC_SIGNIF || tmp1 >= DEC_SIGNIF) {
+        **(lng**)dst = lng_nil; /* out of range */
+	return l;
+    }
+    if (src[l] == '.' && src[l+1] >= '0' && src[l+1] <= '9') {
+        l += (k = lngFromStr(src+l+1, len, &p2));
+        if (tmp2 == lng_nil) {
+            **(lng**)dst = lng_nil; /* illegal */
+	    return l;
+        }
+        if (k > 6)      tmp2 /= p10[k-7];
+        else if (k < 6) tmp2 *= p10[5-k];
+    }
+    **(lng**)dst = (tmp1 * DEC_PRECISION) + tmp2;
+    return l;
+}
+
+int dec_tostr(str *dst, int *len, dec *src) {
+    char *p, *s;
+    @:atomalloc(20,str);
+
+    /* print it */
+    if (*(lng*)src <= DEC_MIN || *(lng*)src >= DEC_MAX) {
+        assert(*(lng*)src == lng_nil);
+        (*dst)[0] = 'n'; (*dst)[1] = 'i'; (*dst)[2] = 'l'; (*dst)[3] = 0;
+    } else {
+        (void) snprintf(*dst, 20, DEC_FMT(*src));
+    }
+
+    /* cut off superfluous trailing zeros */
+    for(p = s = *dst; *p; p++);
+    while(p > s && p[-1] == '0') p--;
+    if (p[-1] == '.') p++;
+    *p = 0;
+    return p - s; /* length */
+}
+
+int dec_add(dec *res, dec *l, dec *r)  {
+    lng ll = *(lng*) l, rl = *(lng*) r, v = ll + rl;
+    *res = (ll == lng_nil || rl == lng_nil || v <= DEC_MIN || v >= DEC_MAX)? lng_nil : v; 
+    return GDK_SUCCEED;
+}
+
+int dec_sub(dec *res, dec *l, dec *r)  {
+    lng ll = *(lng*) l, rl = *(lng*) r, v = ll - rl;
+    *res = (ll == lng_nil || rl == lng_nil || v <= DEC_MIN || v >= DEC_MAX)? lng_nil : v; 
+    return GDK_SUCCEED;
+}
+
+int dec_mult(dec *res, dec *l, dec *r)  {
+    lng ll = *(lng*) l, rl = *(lng*) r, chk = (ll / DEC_SIGNIF)  * (rl / DEC_SIGNIF);
+    lng v = (chk <= (-DEC_SIGNIF) || chk >= DEC_SIGNIF) ? lng_nil: /* filters out overflow */
+	        (ll * (rl / DEC_PRECISION)) + ((ll * (rl % DEC_PRECISION)) / DEC_PRECISION);
+    *res = (ll == lng_nil || rl == lng_nil || v <= DEC_MIN || v >= DEC_MAX)? lng_nil : v; 
+    return GDK_SUCCEED;
+}
+
+int dec_div(dec *res, dec *l, dec *r)  {
+    lng ll = *(lng*) l, rl = *(lng*) r;
+    if (ll == lng_nil || rl == lng_nil || rl == 0) {
+        *(lng*) res = lng_nil;
+    } else {
+        lng tmp1 = ll / rl;
+        lng tmp2 = tmp1 * DEC_PRECISION;
+        if ((rl / DEC_PRECISION) == 0LL) { /* check range overflow iff abs(rl) < 0 */
+            if (tmp2 <= DEC_MIN || tmp2 >= DEC_MAX) {
+		tmp2 = lng_nil; /* detect close corner cases that dbl check misses */
+            } else {
+                dbl ld = DEC2DBL(ll), rd = DEC2DBL(rl), dd = ld / rd; 
+                if (dd <= DEC_DBLMIN || dd >= DEC_DBLMAX) {
+                    tmp2 = lng_nil; /* range check modulo dbl precision errors */
+                }
+            }
+        } else {
+            /* divide left remainder by high right number */
+            tmp2 += ((ll - tmp1 * rl) * DEC_PRECISION) / rl;
+        }
+        *(lng*) res = tmp2;
+    }
+    return GDK_SUCCEED;
+}
+
+int dec_floor(dec *res, dec *val)  {
+    lng v = *(lng*) val;
+    *(lng*) res = (v == lng_nil) ? lng_nil : (v / DEC_PRECISION) * DEC_PRECISION;
+    return GDK_SUCCEED;
+}
+
+int dec_ceil(dec *res, dec *val)  {
+    lng v = *(lng*) val, l = (v % DEC_PRECISION);
+    lng r = ((v / DEC_PRECISION) + (l != 0)) * DEC_PRECISION;
+    *(lng*) res = (v == lng_nil || r >= DEC_MAX) ? lng_nil : r;
+    return GDK_SUCCEED;
+}
+
+int dec_round(dec *res, dec *val)  {
+    lng v = *(lng*) val, l = (v % DEC_PRECISION), a = (l < 0) ? -l : l;
+    lng r = ((v / DEC_PRECISION) + (a >= (DEC_PRECISION/2))) * DEC_PRECISION;
+    *(lng*) res = (v == lng_nil || r >= DEC_MAX) ? lng_nil : r;
+    return GDK_SUCCEED;
+}
+
+int dec_log(dec *res, dec *val)  {
+    lng vl = *(lng*) val;
+    dbl vd = DEC2DBL(vl);
+    dbl dd = log(vd);
+    *(lng*) res = (vl == lng_nil) ? lng_nil : DBL2DEC(dd);
+    return GDK_SUCCEED;
+}
+
+int dec_pow(dec *res, dec *l, dec *r)  {
+    lng ll = *(lng*) l, rl = *(lng*) r;
+    dbl ld = DEC2DBL(ll), rd = DEC2DBL(rl);
+    dbl dd = pow(ld,rd);
+    *(lng*) res = (ll == lng_nil || rl == lng_nil) ? lng_nil: DBL2DEC(dd);
+    return GDK_SUCCEED;
+}
+
+int dec_sqrt(dec *res, dec *val)  {
+    lng vl = *(lng*) val;
+    dbl vd = DEC2DBL(vl);
+    dbl dd = sqrt(vd);
+    *(lng*) res = (vl == lng_nil) ? lng_nil: DBL2DEC(dd);
+    return GDK_SUCCEED;
+}
+
+int dec_to_bit(bit* res, dec *val) {
+    *(bit*) res = (*(lng*)val == lng_nil) ? bit_nil : (*(lng*) val != 0);
+    return GDK_SUCCEED;
+}
+
+int dec_from_bit(dec* res, bit *val) {
+    *(lng*) res = (*val == bit_nil) ? lng_nil : (*val)?DEC_PRECISION:0LL;
+    return GDK_SUCCEED;
+}
+
+int dec_to_lng(lng* res, dec *val) {
+    *(lng*) res = (*(lng*) val) / DEC_PRECISION;
+    return GDK_SUCCEED;
+}
+
+int dec_from_lng(dec* res, lng *val) {
+    lng v = *val;
+    *(lng*) res = (v <= -DEC_SIGNIF || v >= DEC_SIGNIF) ? lng_nil : v*DEC_PRECISION;
+    return GDK_SUCCEED;
+}
+
+int dec_to_dbl(dbl* res, dec *val) {
+    *(dbl*) res = DEC2DBL(*(lng*) val);
+    return GDK_SUCCEED;
+}
+
+int dec_from_dbl(dec* res, dbl *val) {
+    *(dec*) res = DBL2DEC(*val);
+    return GDK_SUCCEED;
+}
+
+int dec_to_str(str* res, dec *val) {
+    int len = 80;
+    *res = (str) GDKmalloc(len);
+    if (*res == NULL) return GDK_FAIL;
+    (void) dec_tostr(res, &len, val);
+    return GDK_SUCCEED;
+}
+
+int dec_from_str(dec* res, str val) {
+    int len = (int) sizeof(lng);
+    (void) dec_fromstr(val, &len, &res);
+    return GDK_SUCCEED;
+}
+
+int BATdec_as_lng(BAT **res, BAT *b) {
+    BAT *bn = *res = BATcopy(b, b->htype, b->ttype, FALSE);
+    if (bn == NULL) return GDK_FAIL;
+    bn->ttype = TYPE_lng;
+    bn->batDirtydesc = 1;
+    return GDK_SUCCEED;
+}
+
+int BATlng_as_dec(BAT **res, BAT *b) {
+    BAT *bn = *res = BATcopy(b, b->htype, b->ttype, FALSE);
+    if (bn == NULL) return GDK_FAIL;
+    bn->ttype = TYPE_dec;
+    bn->batDirtydesc = 1;
+    return GDK_SUCCEED;
+}
+
+
 @c
 /* delete a file from the local tmp/ directory in the dbfarm; protect against abuse */
 int CMDcleantmpdir(lng *lim) {
@@ -5762,96 +6156,293 @@ int CMDcleantmpdir(lng *lim) {
 }
 
 @- hash fuctions
-
-For general comparisons, we need to ensure that all strings hashing
-on a valid boolean hash on the same double value. The same for all
-numeric values. For strings, we also base the hash only on the
-first keyword (ie exccluding spaces). This allows us to also support
-selections on the fn:data value of nodes. As fn:data() value of a node
-is the concatenation of all descendant text values with a space in 
-between, we will hit (among others) on the first non-space-only text node.
-
-examples:
-
-XQUERY_HASH(" true")           = 1.0
-XQUERY_HASH(" FALSE")          = 0.0 
-XQUERY_HASH(" true love")      = 1.0
-XQUERY_HASH(" false feelings") = 0.0
-XQUERY_HASH("  4.21e10 ")      = 42.0
-XQUERY_HASH("42")              = 42.0
-XQUERY_HASH(" foo bar ")       = XQUERY_HASH("foo")
 @c
-#define XQUERY_STRHASH(_key,_hash) {\
-     int _i;\
-     for (_i = _hash = 0; _key[_i] && _key[_i] != ' '; _i++) {\
-         _hash += _key[_i];\
-         _hash += (_hash << 10);\
-         _hash ^= (_hash >> 6);\
-     }\
-     _hash += (_hash << 3);\
-     _hash ^= (_hash >> 11);\
-     _hash += (_hash << 15);\
- }
-#define XQUERY_HASH(_dst,_val) {                     \
-    char *_s = _val;                                 \
-    int _len = 0, _dummy = sizeof(dbl);              \
-    dbl _tmp = 0.0, *_ref = &_tmp;                   \
-    while(*_s && (isspace(*_s))) _s++;               \
-    if (((_s[0] == 't') | (_s[0] == 'T')) &&         \
-        ((_s[1] == 'r') | (_s[1] == 'R')) &&         \
-        ((_s[2] == 'u') | (_s[2] == 'U')) &&         \
-        ((_s[3] == 'e') | (_s[3] == 'E')) &&         \
-        ((_s[4] ==  0 ) | isspace(_s[4])))           \
-    {                                                \
-       _tmp = 1.0; _len = 1;                         \
-    } else if (((_s[0] == 'f') | (_s[0] == 'F')) &&  \
-               ((_s[1] == 'a') | (_s[1] == 'A')) &&  \
-               ((_s[2] == 'l') | (_s[2] == 'L')) &&  \
-               ((_s[3] == 's') | (_s[3] == 'S')) &&  \
-               ((_s[4] == 'e') | (_s[4] == 'E')) &&  \
-               ((_s[5] ==  0 ) | isspace(_s[5])))    \
-    {                                                \
-       _tmp = 0.0; _len = 1;                         \
-    } else if (isdigit(_s[0]) | (_s[0] == '.') |     \
-               (_s[0] == '+') | (_s[0] == '-'))      \
-    {                                                \
-       _len = dblFromStr(_val, &_dummy, &_ref);      \
-    }                                                \
-    if (_len == 0) {                                 \
-       hash_t _hsh;                                  \
-       XQUERY_STRHASH(_val, _hsh);                   \
-       _tmp = (dbl) _hsh;                            \
-    }                                                \
-{   /* required by gcc 4.3.0 (at least on Gentoo 1.12.11.1) to avoid        */ \
-    /* "dereferencing type-punned pointer will break strict-aliasing rules" */ \
-    int *_tmp_int = (int*) (void*) &_tmp;               \
-    *_dst = ((_tmp_int[0] ^ _tmp_int[1]) & 0x7fffffff); \
-}}
+/* a string hash function H(str)->h that respects XQuery numeric casts and 
+ * a combination function C(h,h)->h that is associative and respects string concatenation. 
+ *
+ * By Peter Boncz, CWI 2008.
+ *
+ * special requirements:
+ *
+ * - there is a numeric cast function N() on the result domain of H() whose
+ *   results respects XQuery casting of strings and doubles (and decimals/integers).
+ *   i.e.:
+ *   N(H(' 42 foo')) = N(H(' 42')) = N(H(' 4.2E1')) = N(H('.00000042E8'))
+ *
+ *  The basic idea is to combine a numeric-specific hash in the highest 28 bits with
+ *  non-numeric info in lower hash bits. Those 28 numeric bits are only based on the 
+ *  exponent of the double, and disregards zeros. Thus, in the above example it 
+ *  is only based on "42".  
+ *
+ *  So, N(x) = x & MASK, MASK = 0x111 .... 1110000 .... 000
+ *                                 \_________/\__________/
+ *                                  28 bits     36 bits
+ *
+ *  the high-bit masking is order-respecting, which means that on a sorted list of H(s) values
+ *  (i.e. an index), we can use clustered range selection: LO(H(s)) <= H(idx) <= HI(H(s)) 
+ *  to get all nodes whose string values potentially cast to some decimal represented by s.
+ *
+ *  The HI(h) function yields         0xHH .... HHH11111111111111
+ *  The LO(h) function even starts at 0xHH .....HHH001000 ... 000
+ *                                      \_________/^^^\_________/
+ *                                        28 bits  OFF  33 bits          
+ *  i.e. LO(h) starts with OFF=001, because OFF=000 is reserved for strings that do not cast 
+ *       to any numeric. This avoids hash collisions of non-numerical strings on numericals.
+ *
+ *  normal equi-selection on string value maps to a full comparison H(idx) == H(s)
+ *
+ * - the combination function C() has associativity on all string decompositions, i.e.:
+ *   H('abc') = C(H('ab'),H('c')) 
+ *            = C(H('a'),H('bc')) 
+ *            = C(H('a'),C(H('b'),H('c')))
+ *            = C(C(H('a'),H('b')),H('c'))
+ *
+ *   The associativity is crucial for compositional computation of the hash of the
+ *   string values of element nodes, by combining all hash values of child nodes.
+ *   Not only does this reduce index computation time (and resources needed -- no
+ *   full string concatenation for the root node), it also helps maintenance of 
+ *   the index under updates (only children on the ancestor nodes of affected locations
+ *   need to be touched to recompute the hash values of all ancestors).
+ *
+ *   The hash function concatenates 7-bits bit patterns for each character by each 
+ *   time shifting it 4 bits further and XOR-ing. When the 28-bits limit is reached, 
+ *   it shifts round again. To combine hash values with such cyclic XOR, we need to 
+ *   keep track of where we are. This is done using OFF offset numbers that point to
+ *   to one of the 7 possible 4-bits aligned positions in the 28-bit hash string. 
+ *
+ * The format of the H(s) numbers is as follows:
+ * 64-bits     = D1..28-OFFd-C1..28-OFFc-EBIT-SBIT
+ * where Dx..x = 28-bits, iterative shiftright4bit/XOR on leading/consecutive non-zero digits
+ *       OFFd  = 3bit 1 + (length-of-D-sequence % 7) "offset into D" (000 means: no number)
+ *       Cx..x = 28-bits, iterative shiftright4bit/XOR on all non-whitespace bytes
+ *       OFFc  = 3bit 1 + (length-of-C-sequence % 7) "offset into C" (000 means: no identifier) 
+ *       EBIT  = 1bit "identifier ends here"
+ *       SBIT  = 1bit "string starts with whitespace"
+ *
+ * The OFFd and OFFc need 3 bits because with 4-bits shifts there are 7 possible offsets
+ * for the XOR in the 28-bits C/Dx..x patterns. The 8-th value (000) is used for special
+ * purposes.
+ *
+ * This special 000 value of OFFd also implies that long_nil (1000...0000) cannot occur,
+ * since a "no number" hash value starts with 28 zeros. In all other cases OFFc is not 000.
+ * The assured absence of nil is handy, because MonetDB joins and select omit matches on
+ * nil and we want to use these operations on hash values.
+ *
+ * The hash value h(v) can be XORed in the highest 28 bits with other characteristics, 
+ * such as qnames. However, to guard against generating a NIL (only possible with 
+ * non-numbers, when OFFc=000 and the highest 28 bits also 0, initially), the highest bit 
+ * should never be xored (thus potentially set). This leaves 27 bits for XOR-ing.
+ *
+ * The special 000 value of OFFc means that we have seen only whitespace so far (no 
+ * identifier). Its presence is tested by the XQH_NIL macro.
+ *
+ * Of course, hash collisions (false positives) are always possible.
+ * In fact, this hash function may not be very robust. But it is better than nothing.
+ * Runtime q-opt can protect against disasters (only use if idx works)
+ *
+ * INF, -INF, NaN all hash on a non-number: 31 highest bits 0
+ */ 
+#define XQH_LNG(v)     ((lng) v)
+#define XQH_AND(v,m)   ((v) & XQH_LNG(m))
+#define XQH_BIT(v,s)   (XQH_AND(v, 1 << (s)) >> (s))
+#define XQH_NIL(v,s)   (!XQH_AND((v) >> (s), 7))
+#define XQH_OFF(v,s)   ((XQH_NIL(v,s) - 1) & (XQH_AND((v) >> ((s)-2), 28) - 4))
+#define XQH_TST(v)     ((v) - XQH_LNG(1))
+#define XQH_MSK28(s)   (((XQH_LNG(1) << 28) - 1) << (s))
+#define XQH_MOD7(v)    ((v) - ((((v) > 7) << 3) - ((v) > 7)))
+#define XQH_PLUS(l,r,s)(XQH_LNG(XQH_OFF(l,s) + XQH_OFF(r,s)))
+#define XQH_ADD(l,r,s) ((XQH_MOD7(XQH_PLUS(l,r,s)>>2)+(XQH_PLUS(l,r,s) != 0)) << (s))
 
-int CMDxquery_hash(int *dst, char* val) {
-    XQUERY_HASH(dst, val);
-    return GDK_SUCCEED;
-}
-int CMDxquery_hash_bat(BAT **res, BAT* b) {
-    size_t cnt = BATcount(b);
-    BAT *bn = *res = BATnew(TYPE_void, TYPE_int, cnt);
-    int *dst = (int*) Tloc(bn, BUNfirst(bn));
-    BUN p, q;
-    BATiter bi;
+#define XQH_C(l,r)     ((((l) ^ (((XQH_AND(r >> ( 0+XQH_OFF(r,33)), XQH_MSK28(36)) |           \
+                                   XQH_AND(r << (28-XQH_OFF(r,33)), XQH_MSK28(36)))            \
+                                          & XQH_TST(XQH_BIT(l,1)|(XQH_BIT(r,0)&~XQH_NIL(l,2))))\
+                                 | (XQH_AND(r >> ( 0+XQH_OFF(r,2)), XQH_MSK28(5)) |            \
+                                    XQH_AND(r << (28-XQH_OFF(r,2)), XQH_MSK28(5)))))           \
+                                & (XQH_MSK28(36) | XQH_MSK28(5) | 3))                          \
+                       | XQH_ADD(l,r,33) | XQH_ADD(l,r,2)                                      \
+                       | XQH_AND(r,2|XQH_NIL(l,2)) | (XQH_AND(r,1&~XQH_NIL(l,2)) << 1))
 
-    if (bn == NULL) return GDK_FAIL;
-    bi = bat_iterator(b);
-    BATloop(b,p,q) {
-        str val = (str) BUNtvar(bi,p);
-        XQUERY_HASH(dst, val);
-        dst++;
+#define XQH_H_NUM(v)   (XQH_AND(XQH_H(v), XQH_MSK28(36)) | (XQH_LNG(1) << 33))
+#define XQH_SPACE(c)   (((c) == ' ') | ((c) == '\t') | ((c)  == '\n') | ((c) == 'e') | ((c) == 'E'))
+
+
+INLINE lng XQH_H(str v) {
+    lng val, digithash = 0, fullhash = 0;
+    int m, k = 0, l = 0;
+    str s, c;
+
+    /* skip leading spaces, yes 'e'/'E' is space also */
+    for(s=v;  XQH_SPACE(*s); s++);
+    val = (s > v); /* S-bit "starts with space" */ 
+
+    /* get identifier usable to construct a double value from (D array) */
+    for(m=57, c=s; *c; c++) {
+       if ((*c >= '1') & (*c <= '9')) {
+          lng v = XQH_LNG(*c & 127);
+          digithash ^= (v << m);
+          if (m < 36) digithash ^= (v << (m+28));
+          if ((m -= 4) < 33) m = 57;
+          l++;
+       } else if ((*c != '-') & (*c != '+') & (*c != '0') & (*c != '.')) {
+          val |= 2; break; /* E-bit "ends here" */ 
+       } 
     }
-    ALIGNsetH(bn, b);
-    BATsetcount(bn, cnt);
-    bn->tsorted = 0;
+    val |= digithash & XQH_MSK28(36);
+    if (l) val |= XQH_LNG(1 + (l % 7)) << 33; /* OFFd */
+
+    /* just hash all characters in the string (C array) */
+    for(m=27, c=s; *c; c++) {
+       if (!XQH_SPACE(*c)) {
+          lng v = XQH_LNG(*c & 127);
+          fullhash ^= (v << m) | (v << (m+28));
+          if ((m -= 4) < 2) m = 27;
+          k++;
+       }
+    }
+    val |= fullhash & XQH_MSK28(5);
+    if (k) val |= (1 + (k % 7)) << 2; /* OFFc */
+    return val;
+}
+
+@= hash
+int CMD_XQH_H@1(lng *res, str v) {
+    *res = XQH_H@1(v);
     return GDK_SUCCEED;
 }
 
+int CMD_XQH_H@1_bat(BAT **res, BAT* b) {
+    size_t i = 0, cnt = BATcount(b);
+    BAT *bn = *res = BATnew(TYPE_void, TYPE_lng, cnt);
+    char *base = (char*) b->T->vheap->base;
+    if (bn) {
+        var_t *src = (var_t*) Tloc(b, BUNfirst(b));
+        lng *dst = (lng*) Tloc(bn, BUNfirst(bn));
+        for(i=0; i<cnt; i++) 
+            dst[i] =  XQH_H@1(base + src[i]);
+
+        ALIGNsetH(bn, b);
+        BATsetcount(bn, cnt);
+        bn->tsorted = 0;
+        return GDK_SUCCEED;
+    }
+    return GDK_FAIL;
+}
+@c
+@:hash()@
+@:hash(_NUM)@
+
+int CMD_XQH_C(lng *res, lng* l, lng* r) {
+    *res = XQH_C(*l, *r);
+    return GDK_SUCCEED;
+}
+
+int CMD_XQH_C_bat(BAT **res, BAT* l, BAT *r) {
+    if (ALIGNsynced(l, r)) {
+        size_t i = 0, cnt = BATcount(l);
+        BAT *bn = *res = BATnew(TYPE_void, TYPE_lng, cnt);
+        lng *lval = (lng*) Tloc(bn, BUNfirst(l));
+        lng *rval = (lng*) Tloc(bn, BUNfirst(r));
+        lng *dst = (lng*) Tloc(bn, BUNfirst(bn));
+        if (bn == NULL) return GDK_FAIL;
+
+        for(i=0; i<cnt; i++) 
+            dst[i] = XQH_C(lval[i], rval[i]);
+
+        ALIGNsetH(bn, l);
+        BATsetcount(bn, cnt);
+        bn->tsorted = 0;
+        return GDK_SUCCEED;
+    }
+    GDKerror("xquery_rehash: (%s,%s): not synced on head.\n", BATgetId(l), BATgetId(r));
+    return GDK_FAIL;
+}
+
+int CMD_XQH_STR(str *res, lng* val) {
+    char *p = *res = (char*) GDKmalloc(128); 
+    lng v = *val;
+    int i;
+    if (p == NULL) return GDK_FAIL;
+
+    /* print 28 D-number bit-by-bit */    
+    for(i=63; i >= 36; i--)
+        *p++ = '1' - !(v & (XQH_LNG(1) << i));
+    *p++ = '-'; 
+
+    /* print NaN or D=X */
+    if (XQH_NIL(v,33)) {
+       *p++ = 'N'; *p++ = 'a'; *p++ = 'N';
+    } else {
+       *p++ = 'C'; *p++ = '='; *p++ = '0' + (XQH_OFF(v,33) >> 2);
+    }
+    *p++ = '-'; 
+
+    /* print 28 C-number bit-by-bit */    
+    for(i=32; i >= 5; i--)
+        *p++ = '1' - !(v & (XQH_LNG(1) << i));
+    *p++ = '-'; 
+
+    /* print NIL or C=X */
+    if (XQH_NIL(v,2)) {
+       *p++ = 'N'; *p++ = 'I'; *p++ = 'L';
+    } else {
+       *p++ = 'D'; *p++ = '='; *p++ = '0' + (XQH_OFF(v,2) >> 2);
+    }
+    *p++ = '-';
+
+    /* print ENDS or CONT */
+    if (XQH_AND(v,2)) {
+       *p++ = 'E'; *p++ = 'N'; *p++ = 'D'; *p++ = 'S';
+    } else {
+       *p++ = 'C'; *p++ = 'O'; *p++ = 'N'; *p++ = 'T';
+    } 
+    *p++ = '-';
+
+    /* print optionally STARTSPACE */
+    if (XQH_AND(v,1)) {
+       *p++ = 'S'; *p++ = 'T'; *p++ = 'A'; *p++ = 'R'; *p++ = 'T'; 
+       *p++ = 'S'; *p++ = 'P'; *p++ = 'A'; *p++ = 'C'; *p++ = 'E'; 
+    }
+    *p = 0;
+    return GDK_SUCCEED;
+}
+
+void XQH_DEBUG(lng val) {
+    str s;
+    CMD_XQH_STR(&s, &val);
+    printf("%s\n",s);
+    GDKfree(s);
+}
+
+@= xor
+int CMD_XQH_XOR_@1(lng *res, lng* l, @1* r, int *s) {
+    *res = *l ^ XQH_AND(XQH_LNG(*r) << *s, ~(XQH_LNG(1)<<63));
+    return GDK_SUCCEED;
+}
+
+int CMD_XQH_XOR_@1_bat(BAT **res, BAT *l, BAT *r, int *s) {
+    if (!ALIGNsynced(l, r)) {
+        GDKerror("xquery_hash_xor: (%s,%s): not synced on head.\n", BATgetId(l), BATgetId(r));
+    } else if (isVIEW(l) || l->batRestricted) {
+        GDKerror("xquery_hash_xor: (%s,%s): left operand not writable.\n", BATgetId(l), BATgetId(r));
+    } else {
+        size_t i = 0, cnt = BATcount(l);
+        int shift = *s;
+        lng *lval = (lng*) Tloc(l, BUNfirst(l));
+        @1 *rval = (@1*) Tloc(r, BUNfirst(r));
+        BBPfix(l->batCacheid);
+        *res = l;
+
+        for(i=0; i<cnt; i++) 
+            lval[i] ^= XQH_AND(XQH_LNG(rval[i]) << shift, ~(XQH_LNG(1)<<63));
+
+        l->tsorted = 0;
+        return GDK_SUCCEED;
+    }
+    return GDK_FAIL;
+}
+@c
+@:xor(lng)@
+@:xor(oid)@
 
 @- constant handling
 @c
@@ -8389,6 +8980,7 @@ xquery_print_result_loop (
     BAT* kind,
     BAT* intVAL,
     BAT* dblVAL,
+    BAT* decVAL,
     BAT* strVAL)
 {
     size_t niters = BATcount (loop);
@@ -8406,6 +8998,7 @@ xquery_print_result_loop (
                kind, /* kind relation */
                intVAL,
                dblVAL,
+               decVAL,
                strVAL);
 }
 
@@ -8436,6 +9029,7 @@ xquery_print_result_main (
                kind, /* kind relation */
                intVAL,
                dblVAL,
+               decVAL,
                strVAL);
 }
 
@@ -8490,6 +9084,7 @@ xquery_print_result_file (
                              k, /* kind relation */
                              intVAL,
                              dblVAL,
+                             decVAL,
                              strVAL);
                          stream_destroy(s);
                     }

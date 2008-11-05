@@ -293,7 +293,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node, bool qnames_resolved)
                 L2 (p_id[n->kind], s, n->loc);
                 break;
             case p_lit_dec:
-                snprintf (s, sizeof (s), "%.5g", n->sem.dec);
+                snprintf (s, sizeof (s), PF_DEC_FMT(n->sem.dec));
                 s[sizeof(s) - 1] = 0;
                 L2 (p_id[n->kind], s, n->loc);
                 break;
@@ -447,7 +447,7 @@ abssyn_pretty (PFpnode_t *n, bool qnames_resolved)
                 PFprettyprintf (LLFMT, n->sem.num);
                 break;
             case p_lit_dec:
-                PFprettyprintf ("%.5g", n->sem.dec);
+                PFprettyprintf (PF_DEC_FMT(n->sem.dec));
                 break;
             case p_lit_dbl:
                 PFprettyprintf ("%.5g", n->sem.dbl);

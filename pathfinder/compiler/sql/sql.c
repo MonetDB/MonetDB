@@ -636,12 +636,25 @@ PFsql_lit_str (const char *s)
 }
 
 /**
+ * Create a SQL tree node representing a literal double value.
+ *
+ * @param d The double value to represent in SQL.
+ */
+PFsql_t *
+PFsql_lit_dbl (double d)
+{
+    PFsql_t *ret = leaf (sql_lit_dbl);
+    ret->sem.atom.val.d = d;
+    return ret;
+}
+
+/**
  * Create a SQL tree node representing a literal decimal value.
  *
  * @param dec The decimal value to represent in SQL.
  */
 PFsql_t *
-PFsql_lit_dec (float dec)
+PFsql_lit_dec (long long int dec)
 {
     PFsql_t *ret = leaf (sql_lit_dec);
     ret->sem.atom.val.dec = dec;
@@ -1227,6 +1240,7 @@ PFsql_op_duplicate (PFsql_t *expr)
         case sql_lit_int:
         case sql_lit_lng:
         case sql_lit_dec:
+        case sql_lit_dbl:
         case sql_lit_str:
         {
             PFsql_t *ret = leaf (expr->kind);

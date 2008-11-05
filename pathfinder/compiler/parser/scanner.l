@@ -668,7 +668,11 @@ _                                {S}
                                      gotoState (OPERATOR);
                                      pf_yield (IntegerLiteral);
                                    }
-{DecimalLiteral}                   { pflval.dec = atof (yytext);
+{DecimalLiteral}                   { char* p = yytext; while(*p != '.') p++; p++;
+                                     int mult = PF_DEC_PRECISION;  
+                                     pflval.dec = atoi (yytext) * PF_DEC_PRECISION;
+                                     while((mult/=10) > 1 && *p >= '0' && *p <= '9') 
+                                        pflval.dec += mult * (*p++ - '0');
                                      gotoState (OPERATOR);
                                      pf_yield (DecimalLiteral);
                                    }

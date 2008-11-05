@@ -146,7 +146,7 @@ literal (PFalg_atom_t a)
             break;
 
         case aat_dec:
-            PFarray_printf (s, "%g", a.val.dec_);
+            PFarray_printf (s, PF_DEC_FMT(a.val.dec_));
             break;
 
         case aat_dbl:

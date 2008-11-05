@@ -137,6 +137,7 @@ enum PFmil_kind_t {
     , m_lit_oid      /**< literal oid */
     , m_lit_str      /**< literal string */
     , m_lit_dbl      /**< literal double */
+    , m_lit_dec      /**< literal decimal */
     , m_lit_bit      /**< literal boolean */
 
     , m_nil          /**< MonetDB's special value `nil' */
@@ -400,9 +401,10 @@ enum PFmil_type_t {
     , mty_str   = 4
     , mty_lng   = 5
     , mty_dbl   = 6
-    , mty_bit   = 7
-    , mty_chr   = 8
-    , mty_bat   = 9
+    , mty_dec   = 7
+    , mty_bit   = 8
+    , mty_chr   = 9
+    , mty_bat   = 10
 };
 typedef enum PFmil_type_t PFmil_type_t;
 
@@ -473,6 +475,10 @@ PFmil_t * PFmil_lit_oid (oid o);
 
 /** a literal dbl */
 PFmil_t * PFmil_lit_dbl (double d);
+PFmil_t * PFmil_lit_dbl_ (int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7);
+
+/** a literal dec */
+PFmil_t * PFmil_lit_dec (long long int l);
 
 /** a literal bit */
 PFmil_t * PFmil_lit_bit (bool b);
