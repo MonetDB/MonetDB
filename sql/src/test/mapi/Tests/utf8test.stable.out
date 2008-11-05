@@ -67,11 +67,7 @@ Over..
 | value without special characters |
 | funny characters: Ã Ã¡Ã¢Ã£Ã¤Ã¥         |
 +----------------------------------+
-
-# 10:28:27 >  
-# 10:28:27 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=31669  -fraw -Eiso-8859-1 -s 'select * from utf8test'
-# 10:28:27 >  
-
+2 tuples
 % sys.utf8test # table_name
 % s # name
 % varchar # type
@@ -89,6 +85,7 @@ Over..
 | value without special characters |
 | funny characters: àáâãäå         |
 +----------------------------------+
+2 tuples
 
 # 10:26:28 >  
 # 10:26:28 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32641  -s 'drop table utf8test'

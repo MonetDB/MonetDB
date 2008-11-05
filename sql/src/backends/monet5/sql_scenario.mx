@@ -263,6 +263,9 @@ SQLexit(Client c)
 	stmt_destroy(r);			   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
+#define NR_GLOBAL_VARS 8
+/* NR_GLOBAL_VAR should match exactly the number of variables created
+   in global_variables */
 /* initialize the global variable, ie make mvc point to these */
 static int
 global_variables(mvc *sql, char *user, char *schema)
@@ -383,7 +386,7 @@ SQLinitClient(Client c)
 	} else {
 		m = c->state[MAL_SCENARIO_OPTIMIZE];
 		be = c->state[MAL_SCENARIO_PARSER];
-		mvc_reset(m, c->fdin, c->fdout, SQLdebug, 7);
+		mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS);
 		backend_reset(be);
 	}
 	/* pass through credentials of the user if not console */

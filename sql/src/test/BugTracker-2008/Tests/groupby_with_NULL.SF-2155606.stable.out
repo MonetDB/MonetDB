@@ -28,7 +28,7 @@ Over..
 [ 1	]
 % sys.testola,	.,	sys.testola # table_name
 % color,	single_value,	sum_count # name
-% varchar,	char,	bigint # type
+% varchar,	char,	wrd # type
 % 4,	0,	2 # length
 [ "blue",	NULL,	12	]
 [ "red",	NULL,	2	]

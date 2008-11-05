@@ -27,6 +27,32 @@ The interface is based on two MAL signatures defined in
 the SQL runtime environment. A dummy version is included
 here to ensure we can debug the code without SQL frontend.
 
+
+create table queryHistory(
+    id wrd primary key,
+    defined timestamp,  -- when entered into the cache
+    ipnumber string,    -- origin of the request
+    name string,        -- database user name
+    query string,
+    parse bigint,       -- time in usec
+    optimize bigint     -- time in usec
+);
+
+create table History(
+	id wrd references queryHistory(id), -- references query plan
+    called timestamp,   -- time the first statement was executed
+    arguments string,
+    xtime bigint,       -- time from the first statement until result export
+    rtime bigint,       -- time to ship the result to the client
+    cores int,          -- max number of parallel threads used
+    load int,           -- percentage of CPU used by cores
+    foot bigint,        -- footprint for all bats in the plan
+    xsize bigint,       -- storage size of intermediates created
+    rsize bigint,       -- storage size of the result set
+    tuples bigint,      -- number of tuples in the result set
+    inblock bigint,     -- number of physical blocks read
+    oublock bigint,     -- number of physical blocks written
+)
 @{
 The keepquery is defined to trigger an expection the first
 time you use the history without initialization.
@@ -67,26 +93,34 @@ comment "Collect SQL query statistics";
 
 opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 /* #define _DEBUG_OPT_QUERYHISTORY_      trace its behavior */
-
 @-
+Prepare the call to the history manager.
+@= arguments
+	q = newStmt(mb,"sql","argRecord");
+	setVarType(mb,getArg(q,0), TYPE_str);
+	for ( argc=1; argc < old[0]->argc; argc++)
+		q = pushArgument(mb, q, getArg(old[0],argc));
+	arg= getArg(q,0);
+@-
+@= initCounter
+	q = newStmt(mb,"@2","@3");
+	@1= getArg(q,0);
+@= zeroCounter
+	q = newAssignment(mb);
+	q = push@2(mb,q,0);
+	@1= getArg(q,0);
 @= initCounters
-	q = newStmt(mb,"mtime","current_timestamp");
-	ctime= getArg(q,0);
-	q = newStmt(mb,"alarm","usec");
-	elaps= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
-	q = newStmt(mb,profilerRef,"getDiskReads");
-	inblock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
-	q = newStmt(mb,profilerRef,"getDiskWrites");
-	oublock= getArg(q,0)= newTmpVariable(mb, TYPE_lng);
-@= updateCounters
-	q = newStmt(mb,"mtime","current_timestamp");
-	getArg(q,0)= ctime;
-	q = newStmt(mb,"alarm","usec");
-	getArg(q,0)= elaps;
-	q = newStmt(mb,profilerRef,"getDiskReads");
-	getArg(q,0)= inblock;
-	q = newStmt(mb,profilerRef,"getDiskWrites");
-	getArg(q,0)= oublock;
+	@:initCounter(ctime, mtime, current_timestamp)@
+	@:arguments@
+	@:zeroCounter(cores,Int)@
+	@:zeroCounter(load,Int)@
+	@:zeroCounter(foot,Lng)@
+	@:zeroCounter(xsize,Lng)@
+	@:zeroCounter(rsize,Lng)@
+	@:zeroCounter(tuples,Lng)@
+	@:initCounter(inblock, profiler, getDiskReads)@
+	@:initCounter(oublock, profiler, getDiskWrites)@
+	@:initCounter(xtime, alarm, usec)@
 @-
 A tricky piece of code. We invalidate an instruction
 based on the return variable.
@@ -109,8 +143,9 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 {
 	int i, limit,slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
-	int argc, elaps, inblock, oublock, arg, ctime;
-	int returnseen = 0;
+	int argc, inblock, oublock, arg, ctime;
+	int xtime, rtime, cores, load, foot, xsize, rsize, tuples;
+	int returnseen = 0, answerseen = 0;
 	InstrPtr keepQuery = NULL;
 
 
@@ -126,8 +161,11 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb,i);
-		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0)
+		if ( getModuleId(p)== userRef && idcmp(getFunctionId(p),"keepquery")==0){
 			keepQuery= p;
+			getVarConstant(mb,getArg(p,4)).val.lval = 
+				GDKusec()-getVarConstant(mb,getArg(p,4)).val.lval ;
+		}
 	}
 	if ( keepQuery == NULL)
 		/* nothing to do */
@@ -135,59 +173,59 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	limit= mb->stop;
 	slimit= mb->ssize;
-	newMalBlkStmt(mb, mb->ssize+20); /* a new statement stack */
+	newMalBlkStmt(mb, 2 * mb->ssize); /* a new statement stack */
 
 	pushInstruction(mb, old[0]);
 	/* run the keepQuery operation once only */
 	pushInstruction(mb, q = copyInstruction(keepQuery));
 	q->token = ASSIGNsymbol;
 	q = newStmt(mb,sqlRef,"forgetPrevious");
+
 	/* collect the statistics */
 	@:initCounters@
 
 	for (i = 1; i < limit; i++) {
 		p= old[i];
 		
+		if ( getModuleId(p)==sqlRef && answerseen == 0 &&
+			idcmp(getFunctionId(p),"exportValue")==0){
+			answerseen++;
+			@:update(xtime,alarm,usec)@
+			@:initCounter(rtime, alarm, usec)@
+		}	
+		if ( getModuleId(p)==sqlRef && answerseen ){
+			/* sum the result size */
+			@:update(rsize,bbp,getBatSize)@
+		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
 				continue;
 			}
 			returnseen++;
-			q = newStmt(mb,"alarm","usec");
-			setVarType(mb,getArg(q,0), TYPE_lng);
+@-
+@= update
+			q = newStmt(mb,"@2","@3");
 			r = newStmt(mb,"calc","-");
 			r = pushArgument(mb,r, getArg(q,0));
-			r = pushArgument(mb,r, elaps);
-			elaps= getArg(r,0);
-
-			q = newStmt(mb,profilerRef,"getDiskReads");
-			setVarType(mb,getArg(q,0), TYPE_lng);
-			r = newStmt(mb,"calc","-");
-			r = pushArgument(mb,r, getArg(q,0));
-			r = pushArgument(mb,r, inblock);
-			inblock= getArg(r,0);
-
-			q = newStmt(mb,profilerRef,"getDiskWrites");
-			setVarType(mb,getArg(q,0), TYPE_lng);
-			r = newStmt(mb,"calc","-");
-			r = pushArgument(mb,r, getArg(q,0));
-			r = pushArgument(mb,r, oublock);
-			oublock= getArg(r,0);
-
-			/* prepare the call to the history manager */
-			q = newStmt(mb,"sql","argRecord");
-			setVarType(mb,getArg(q,0), TYPE_str);
-			for ( argc=1; argc < old[0]->argc; argc++)
-				q = pushArgument(mb, q, getArg(old[0],argc));
-
-			arg= getArg(q,0);
+			r = pushArgument(mb,r, @1);
+			@1= getArg(r,0);
+@c
+			@:update(rtime,alarm,usec)@
+			@:update(oublock,profiler,getDiskWrites)@
+			@:update(inblock,profiler,getDiskReads)@
 
 			q = newStmt(mb,"user","keepcall");
 			q = pushArgument(mb, q, getArg(keepQuery,1)); /* query identifier */
 			q = pushArgument(mb, q, ctime); /* arguments */
 			q = pushArgument(mb, q, arg);   /* arguments */
-			q = pushArgument(mb, q, elaps); /* elaps */
+			q = pushArgument(mb, q, xtime); 
+			q = pushArgument(mb, q, rtime); 
+			q = pushArgument(mb, q, load); 
+			q = pushArgument(mb, q, foot); 
+			q = pushArgument(mb, q, xsize); 
+			q = pushArgument(mb, q, rsize); 
+			q = pushArgument(mb, q, tuples); 
 			q = pushArgument(mb, q, inblock);/* inblock */
 			q = pushArgument(mb, q, oublock);/* oublock */
 		}
@@ -195,7 +233,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		pushInstruction(mb,p);
 		if (p->barrier == YIELDsymbol){
 			/* the factory yield may return */
-			@:updateCounters@
+			@:initCounters@
 		}
 	}
 

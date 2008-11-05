@@ -78,7 +78,7 @@ comment "Reorder tail of the bates referred to a cluster map";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-#define _CLUSTER_DEBUG	/* for local debugging */
+/* #define _CLUSTER_DEBUG	for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
