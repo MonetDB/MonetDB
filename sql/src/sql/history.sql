@@ -23,9 +23,15 @@ create table callHistory(
 	id wrd references queryHistory(id),
 	called timestamp,
 	arguments string,
-	elapsed bigint,
+	elapsed bigint,		-- total time from sending the query and get the complete results back
+	exectime bigint,	-- execution time from the start until results export
+	restime  bigint,	-- execution time until from the start until the query plan's end
 	inblock bigint,
-	oublock bigint
+	oublock bigint,
+	numthreads int,		-- number of threads used
+	rscload int,		-- resources load
+	tmpfootprint bigint, 	-- footprint for tmp bats of the plan
+	glbfootprnnt bigint 	-- footprint for bats in the plan
 );
 
 create view queryLog as
@@ -49,11 +55,17 @@ create procedure keepCall(
 	called timestamp,
 	arguments string,
 	elapsed bigint,
+	exectime bigint,
+	restime bigint,
 	inblock bigint,
-	oublock bigint) 
+	oublock bigint,
+	numthreads int,
+	rscload int,
+	tmpfootprint bigint,
+	glbfootprint bigint)
 begin
 	insert into callHistory
-	values(id, called, arguments, elapsed, inblock, oublock);
+	values(id, called, arguments, elapsed, exectime, restime, inblock, oublock, numthreads, rscload, tmpfootprint, glbfootprint);
 end;
 
 set history=true;
