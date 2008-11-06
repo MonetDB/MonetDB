@@ -114,7 +114,7 @@ sql_update_var(mvc *m, char *name)
 		sgn = stack_get_number(m, "history");
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		if (!sql_find_func(sys, "keepquery", 4) ||
-		    !sql_find_func(sys, "keepcall", 12))
+		    !sql_find_func(sys, "keepcall", 13))
 			return sql_message( "Cannot activate history because the keepQuery and keepCall procedures are not available\n" ); 
 		m->history = (int) (sgn)?1:0;
 	}
