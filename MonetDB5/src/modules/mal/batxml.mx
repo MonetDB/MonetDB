@@ -237,6 +237,7 @@ BATXMLxml2str(int *ret, int *bid)
 str
 BATXMLxmltext(int *ret, int *bid)
 {
+#ifdef HAVE_LIBXML2
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -314,6 +315,11 @@ BATXMLxmltext(int *ret, int *bid)
 	if (content != NULL)
 		GDKfree(content);
 	throw(MAL, "xml.text", "bunins failed");
+#else
+	(void) ret;
+	(void) bid;
+	throw(MAL, "xml.text", "not available as required version of libxml2 was not found by configure.\n");
+#endif
 }
 
 @-

@@ -97,30 +97,28 @@ opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 Prepare the call to the history manager.
 @= arguments
 	q = newStmt(mb,"sql","argRecord");
-	setVarType(mb,getArg(q,0), TYPE_str);
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
-	arg= getArg(q,0);
+	arg= getArg(q,0)= newVariable(mb,"args",TYPE_str);
 @-
 @= initCounter
 	q = newStmt(mb,"@2","@3");
-	@1= getArg(q,0);
+	@1= getArg(q,0)= newVariable(mb,"@1",TYPE_@4);
 @= zeroCounter
 	q = newAssignment(mb);
 	q = push@2(mb,q,0);
-	@1= getArg(q,0);
+	@1= getArg(q,0)= newVariable(mb,"@1",TYPE_@3);
 @= initCounters
-	@:initCounter(ctime, mtime, current_timestamp)@
+	@:initCounter(ctime,mtime,current_timestamp,any)@
 	@:arguments@
-	@:zeroCounter(cores,Int)@
-	@:zeroCounter(load,Int)@
-	@:zeroCounter(foot,Lng)@
-	@:zeroCounter(xsize,Lng)@
-	@:zeroCounter(rsize,Lng)@
-	@:zeroCounter(tuples,Lng)@
-	@:initCounter(inblock, profiler, getDiskReads)@
-	@:initCounter(oublock, profiler, getDiskWrites)@
-	@:initCounter(xtime, alarm, usec)@
+	@:zeroCounter(cores,Int,int)@
+	@:zeroCounter(load,Int,int)@
+	@:zeroCounter(foot,Lng,lng)@
+	@:zeroCounter(xsize,Lng,lng)@
+	@:zeroCounter(rsize,Lng,lng)@
+	@:initCounter(inblock,profiler,getDiskReads,lng)@
+	@:initCounter(oublock,profiler,getDiskWrites,lng)@
+	@:initCounter(xtime,alarm,usec,lng)@
 @-
 A tricky piece of code. We invalidate an instruction
 based on the return variable.
@@ -144,7 +142,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, limit,slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, inblock, oublock, arg, ctime;
-	int xtime, rtime, cores, load, foot, xsize, rsize, tuples;
+	int xtime, rtime = 0, cores, load, foot, xsize, rsize, tuples = 0;
 	int returnseen = 0, answerseen = 0;
 	InstrPtr keepQuery = NULL;
 
@@ -188,15 +186,31 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		p= old[i];
 		
 		if ( getModuleId(p)==sqlRef && answerseen == 0 &&
-			idcmp(getFunctionId(p),"exportValue")==0){
+			idcmp(getFunctionId(p),"exportValue")==0  ){
 			answerseen++;
 			@:update(xtime,alarm,usec)@
-			@:initCounter(rtime, alarm, usec)@
+			@:zeroCounter(tuples,Lng,lng)@
+			q->argc--;
+			pushLng(mb,q,1);
+			@:initCounter(rtime,alarm,usec,lng)@
 		}	
-		if ( getModuleId(p)==sqlRef && answerseen ){
+		if ( getModuleId(p)==sqlRef && 
+			 idcmp(getFunctionId(p),"rsColumn")==0 ){
+			int tup ;
+			if (answerseen == 0){
+				answerseen++;
+				@:update(xtime,alarm,usec)@
+				@:initCounter(tup,aggr,count,wrd)@
+				q= pushArgument(mb,q, getArg(p,7));
+				tup= getArg(q,0);
+				@:initCounter(tuples,calc,lng,lng)@
+				pushArgument(mb,q,tup);
+				@:initCounter(rtime,alarm,usec,lng)@
+			}
 			/* sum the result size */
-			@:update(rsize,bbp,getBatSize)@
-		}
+			@:update(rsize,bat,getSize)@
+			q=pushArgument(mb,q,getArg(p,7));
+		}	
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
@@ -209,7 +223,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			r = newStmt(mb,"calc","-");
 			r = pushArgument(mb,r, getArg(q,0));
 			r = pushArgument(mb,r, @1);
-			@1= getArg(r,0);
+			getArg(r,0)=@1;
 @c
 			@:update(rtime,alarm,usec)@
 			@:update(oublock,profiler,getDiskWrites)@
@@ -221,6 +235,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			q = pushArgument(mb, q, arg);   /* arguments */
 			q = pushArgument(mb, q, xtime); 
 			q = pushArgument(mb, q, rtime); 
+			q = pushArgument(mb, q, cores); 
 			q = pushArgument(mb, q, load); 
 			q = pushArgument(mb, q, foot); 
 			q = pushArgument(mb, q, xsize); 

@@ -42,6 +42,7 @@ A dummy module is needed to load properly.
 #include <sql.h>
 #include <sql_atom.h>
 #include <sql_statement.h>
+#include <sql_env.h>
 #include <sql_mvc.h>
 #include <mal_function.h>
 
@@ -1970,8 +1971,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 
 	if (m->history == 1) {
 		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_subfunc *kq = sql_find_func(sys, "keepquery", 4);
-		sql_subfunc *cq = sql_find_func(sys, "keepcall", 12);
+		sql_subfunc *kq = sql_find_func(sys, "keepquery", NR_KEEPQUERY_ARGS);
+		sql_subfunc *cq = sql_find_func(sys, "keepcall", NR_KEEPCALL_ARGS);
 
 		assert(kq && cq);
 		backend_create_func(be, kq->func);
