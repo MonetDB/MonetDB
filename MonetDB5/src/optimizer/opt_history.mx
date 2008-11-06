@@ -142,7 +142,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, limit,slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, inblock, oublock, arg, ctime;
-	int xtime, rtime = 0, cores, load, foot, xsize, rsize, tuples;
+	int xtime, rtime = 0, cores, load, foot, xsize, rsize, tuples = 0;
 	int returnseen = 0, answerseen = 0;
 	InstrPtr keepQuery = NULL;
 
