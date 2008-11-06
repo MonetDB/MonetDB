@@ -40,7 +40,7 @@ create table queryHistory(
 -- The footprint depicts the amount of memory used to keep all
 -- relevant intermediates and persistent bats in memory .
 -- The xsize parameter is indicative for the amount of intermediate
--- results produced. And rsize the non-rendered data to be shipped.
+-- results produced. 
 -- All timing in usec
 create table callHistory(
 	id wrd references queryHistory(id), -- references query plan
@@ -48,12 +48,9 @@ create table callHistory(
 	arguments string,
 	xtime bigint,		-- time from the first statement until result export
 	rtime bigint,		-- time to ship the result to the client
-	cores int,			-- max number of parallel threads used
-	load int,			-- percentage of CPU used by cores
 	foot bigint, 		-- footprint for all bats in the plan
 	xsize bigint,		-- storage size of intermediates created
-	rsize bigint,		-- storage size of the result set
-	tuples bigint,		-- number of tuples in the result set
+	tuples wrd,			-- number of tuples in the result set
 	inblock bigint,		-- number of physical blocks read
 	oublock bigint		-- number of physical blocks written
 );
@@ -75,24 +72,21 @@ end;
 
 -- the signature is used in the kernel, don't change it
 create procedure keepCall(
-	id wrd, -- references query plan
+	id wrd, 			-- references query plan
 	ctime timestamp,	-- time the first statement was executed
 	arguments string,
 	xtime bigint,		-- time from the first statement until result export
 	rtime bigint,		-- time to ship the result to the client
-	cores int,			-- max number of parallel threads used
-	load int,			-- percentage of CPU used by cores
 	foot bigint, 		-- footprint for all bats in the plan
 	xsize bigint,		-- storage size of intermediates created
-	rsize bigint,		-- storage size of the result set
-	tuples bigint,		-- number of tuples in the result set
+	tuples wrd,			-- number of tuples in the result set
 	inblock bigint,		-- number of physical blocks read
 	oublock bigint		-- number of physical blocks written
 )
 begin
 	insert into callHistory
-	values( id, ctime, arguments, xtime, rtime, cores,
-		load, foot, xsize, rsize, tuples, inblock, oublock );
+	values( id, ctime, arguments, xtime, rtime, 
+		foot, xsize, tuples, inblock, oublock );
 end;
 
 set history=true;
