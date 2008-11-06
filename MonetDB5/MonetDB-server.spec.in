@@ -31,6 +31,7 @@ Requires(pre): shadow-utils
 BuildRequires: python
 BuildRequires: pcre-devel
 BuildRequires: raptor-devel >= 1.4.16
+BuildRequires: libxml2-devel
 
 # when we want MonetDB to run as system daemon, we need this
 # also see the scriptlets below
@@ -65,6 +66,7 @@ Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: MonetDB-devel
 Requires: MonetDB-client-devel
+Requires: libxml2-devel
 
 %description
 MonetDB is a database management system that is developed from a
