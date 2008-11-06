@@ -374,9 +374,9 @@ typedef struct shredCtxStruct {
     /* the database containing the ID|IDREF|IDREFS attributes */
     idrefAttrDBStr idrefAttrDB;        
 
-    char*    base_dir;		 /* base location of the shredded doc. Used to
-    				  * locate relative external subsets */
-    int	     started;		 /* empty xml doc detector */
+    char*    base_dir;           /* base location of the shredded doc. Used to
+                                  * locate relative external subsets */
+    int      started;            /* empty xml doc detector */
     int      err;                /* error during shred */
     void*    xmlCtx;             /* SAX2 context pointer */
 
@@ -669,7 +669,7 @@ handle_xml_chars(shredCtxStruct *shredCtx)
         if (!emit_string(shredCtx, shredCtx->content_buf))
             return GDK_FAIL;
         if (shredCtx->serFun) {
-                shredCtx->serFun->handle_characters(shredCtx->serCtx,(str)shredCtx->content_buf);
+            shredCtx->serFun->handle_characters(shredCtx->serCtx,(str)shredCtx->content_buf);
         }
     }
     shredCtx->content = 0;
@@ -751,17 +751,17 @@ handle_externalSubset(shredCtxStruct *shredCtx,
             }
         } else if (p->type == XML_ENTITY_DECL) {
             xmlEntityPtr ep =(xmlEntityPtr)p;
-	    if ( ! xmlAddDtdEntity(
-	    	ctx->myDoc,
-		ep->name,
-		ep->type,
-		ep->ExternalID,
-		ep->SystemID,
-		ep->content)
-	       ) {
-	            GDKerror("fail to install ENTITY(\"%s\")\n",ep->name);
-	    }
-	}
+            if ( ! xmlAddDtdEntity(
+                    ctx->myDoc,
+                    ep->name,
+                    ep->type,
+                    ep->ExternalID,
+                    ep->SystemID,
+                    ep->content)
+               ) {
+                GDKerror("fail to install ENTITY(\"%s\")\n",ep->name);
+            }
+        }
         p = p->next;
     }
     return GDK_SUCCEED;
@@ -824,10 +824,10 @@ shred_end_document(void *xmlCtx)
 
     if ( !shredCtx->started ) {
         /* due to an libxml2 feature this function may be called when the
-	 * document is empty and has not even been started. Bail out here
-	 * a.s.a.p
-	 */
-	 return;
+         * document is empty and has not even been started. Bail out here
+         * a.s.a.p
+         */
+         return;
     }
     /* pop document node and enter into pre|size|level|prop|kind relation */
     if (!emit_node(shredCtx, &POP(shredCtx))) {
@@ -847,85 +847,85 @@ shred_end_document(void *xmlCtx)
 static xmlChar *
 charEntToUtf8(const xmlChar *a_val, const xmlChar *a_end)
 {
-	/* UTF-8 encoding is smaller than character entity encoding, so this is enough memory */
-	xmlChar *newval = malloc(a_end - a_val + 1);
-	int i = 0;
-	int val;
+    /* UTF-8 encoding is smaller than character entity encoding, so this is enough memory */
+    xmlChar *newval = malloc(a_end - a_val + 1);
+    int i = 0;
+    int val;
 
-	while (a_val < a_end) {
-		if (a_val[0] == '&' && a_val[1] == '#') {
-			const xmlChar *p = a_val;
-			a_val += 2;
-			val = 0;
-			if (*a_val == 'x') {
-				a_val++;
-				while (a_val < a_end && *a_val != ';') {
-					if ('0' <= *a_val && *a_val <= '9')
-						val = (val << 4) | (*a_val - '0');
-					else if ('a' <= *a_val && *a_val <= 'f')
-						val = (val << 4) | (*a_val - 'a' + 10);
-					else if ('A' <= *a_val && *a_val <= 'F')
-						val = (val << 4) | (*a_val - 'A' + 10);
-					else {
-						/* incorrect charref encoding, copy literally */
-						a_val = p;
-						goto fail;
-					}
-					a_val++;
-				}
-			} else {
-				while (a_val < a_end && *a_val != ';') {
-					if ('0' <= *a_val && *a_val <= '9')
-						val = (val * 10) + (*a_val - '0');
-					else {
-						/* incorrect charref encoding, copy literally */
-						a_val = p;
-						goto fail;
-					}
-					a_val++;
-				}
-			}
-			if (a_val >= a_end || *a_val != ';') {
-				/* incorrect charref encoding, copy literally */
-				a_val = p;
-				goto fail;
-			}
-			if (val < 0x80)
-				newval[i++] = val;
-			else if (val < 0x800) {
-				newval[i++] = 0xC0 | ((val >> 6) & 0x1F);
-				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
-			} else if (val < 0x10000) {
-				newval[i++] = 0xE0 | ((val >> 12) & 0x0F);
-				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
-				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
-			} else if (val < 0x200000) {
-				newval[i++] = 0xF0 | ((val >> 18) & 0x07);
-				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
-				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
-				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
-			} else if (val < 0x4000000) {
-				newval[i++] = 0xF8 | ((val >> 24) & 0x03);
-				newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
-				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
-				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
-				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
-			} else {
-				newval[i++] = 0xF8 | ((val >> 30) & 0x01);
-				newval[i++] = 0xF8 | ((val >> 24) & 0x3F);
-				newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
-				newval[i++] = 0x80 | ((val >> 12) & 0x3F);
-				newval[i++] = 0x80 | ((val >> 6) & 0x3F);
-				newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
-			}
-		} else {
-		  fail:
-			newval[i++] = *a_val;
-		}
-		a_val++;
-	}
-	newval[i] = 0;
-	return newval;
+    while (a_val < a_end) {
+        if (a_val[0] == '&' && a_val[1] == '#') {
+            const xmlChar *p = a_val;
+            a_val += 2;
+            val = 0;
+            if (*a_val == 'x') {
+                a_val++;
+                while (a_val < a_end && *a_val != ';') {
+                    if ('0' <= *a_val && *a_val <= '9')
+                        val = (val << 4) | (*a_val - '0');
+                    else if ('a' <= *a_val && *a_val <= 'f')
+                        val = (val << 4) | (*a_val - 'a' + 10);
+                    else if ('A' <= *a_val && *a_val <= 'F')
+                        val = (val << 4) | (*a_val - 'A' + 10);
+                    else {
+                        /* incorrect charref encoding, copy literally */
+                        a_val = p;
+                        goto fail;
+                    }
+                    a_val++;
+                }
+            } else {
+                while (a_val < a_end && *a_val != ';') {
+                    if ('0' <= *a_val && *a_val <= '9')
+                        val = (val * 10) + (*a_val - '0');
+                    else {
+                        /* incorrect charref encoding, copy literally */
+                        a_val = p;
+                        goto fail;
+                    }
+                    a_val++;
+                }
+            }
+            if (a_val >= a_end || *a_val != ';') {
+                /* incorrect charref encoding, copy literally */
+                a_val = p;
+                goto fail;
+            }
+            if (val < 0x80)
+                newval[i++] = val;
+            else if (val < 0x800) {
+                newval[i++] = 0xC0 | ((val >> 6) & 0x1F);
+                newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+            } else if (val < 0x10000) {
+                newval[i++] = 0xE0 | ((val >> 12) & 0x0F);
+                newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+                newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+            } else if (val < 0x200000) {
+                newval[i++] = 0xF0 | ((val >> 18) & 0x07);
+                newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+                newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+                newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+            } else if (val < 0x4000000) {
+                newval[i++] = 0xF8 | ((val >> 24) & 0x03);
+                newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
+                newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+                newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+                newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+            } else {
+                newval[i++] = 0xF8 | ((val >> 30) & 0x01);
+                newval[i++] = 0xF8 | ((val >> 24) & 0x3F);
+                newval[i++] = 0xF0 | ((val >> 18) * 0x3F);
+                newval[i++] = 0x80 | ((val >> 12) & 0x3F);
+                newval[i++] = 0x80 | ((val >> 6) & 0x3F);
+                newval[i++] = 0x80 | ((val & 0x3F) & 0x3F);
+            }
+        } else {
+          fail:
+            newval[i++] = *a_val;
+        }
+        a_val++;
+    }
+    newval[i] = 0;
+    return newval;
 }
 
 /**
@@ -1016,10 +1016,10 @@ shred_start_element(void *xmlCtx,
             idref_suffix = (attrType == XML_ATTRIBUTE_ID)?"id":"idref";
         }
 
-	xmlChar *newval = charEntToUtf8(a_val, a_end);
+        xmlChar *newval = charEntToUtf8(a_val, a_end);
         val_id = shredBAT_append_str(shredCtx, PROP_VAL,(char*)newval);
-	free(newval);
-	newval = 0;
+        free(newval);
+        newval = 0;
         qn_id  = handle_pfx_uri_loc(shredCtx, (char*) a_pfx, (char*) a_uri, (char*) a_tag, idref_suffix);
         oid ownerPre = node.nid;
 
@@ -1320,34 +1320,34 @@ shred_external_subset(void *xmlCtx,
     if (ExternalID || SystemID) { /* ignore dummy calls */
         xmlDtdPtr dtd;
 
-	const xmlChar *abs_SystemID;
+        const xmlChar *abs_SystemID;
 
-	char locbuff[FILENAME_MAX+1];
+        char locbuff[FILENAME_MAX+1];
 
-	if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !((*SystemID=='/') || (*SystemID=='\\'))) {
-	   /* is is a relative name which should be prefixed with the
-	    * base location of the shredded xml document.
-	    */
-	    /* base_dir */
-	    snprintf(locbuff, sizeof(locbuff), "%s%s", shredCtx->base_dir, (char *) SystemID);
-	    abs_SystemID = (const xmlChar *)&locbuff[0];
-	} else
-	    abs_SystemID = SystemID;
+        if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !((*SystemID=='/') || (*SystemID=='\\'))) {
+           /* is is a relative name which should be prefixed with the
+            * base location of the shredded xml document.
+            */
+            /* base_dir */
+            snprintf(locbuff, sizeof(locbuff), "%s%s", shredCtx->base_dir, (char *) SystemID);
+            abs_SystemID = (const xmlChar *)&locbuff[0];
+        } else
+            abs_SystemID = SystemID;
         if ((dtd=xmlParseDTD(ExternalID, abs_SystemID))) {
-    	    if ( !ctx->myDoc ) {
-	        /* Mysteriously no myDoc is created by libxml2. For internal
-		 * subsets this is done automatically. For external subsets
-		 * it has to be done by hand. The parsed dtd is the external
-		 * subset for this doc
-		 */
-    	        ctx->myDoc = xmlNewDoc(ctx->version);
+                if ( !ctx->myDoc ) {
+                /* Mysteriously no myDoc is created by libxml2. For internal
+                 * subsets this is done automatically. For external subsets
+                 * it has to be done by hand. The parsed dtd is the external
+                 * subset for this doc
+                 */
+                    ctx->myDoc = xmlNewDoc(ctx->version);
             }
-	    if ( !ctx->myDoc->extSubset ) {
-		ctx->myDoc->extSubset = dtd;
-	    } else {
+            if ( !ctx->myDoc->extSubset ) {
+                ctx->myDoc->extSubset = dtd;
+            } else {
                 stream_printf(GDKout, "!WARNING: double external subset(\"%s\") may cause problems.\n", SystemID);
                 xmlFreeDtd(dtd);
-	    }
+            }
             if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
             // xmlFreeDtd(dtd); should be done by freeer of myDoc 
@@ -1362,29 +1362,29 @@ shred_external_subset(void *xmlCtx,
 static xmlEntityPtr
 shred_getEntity(void *xmlCtx, const xmlChar *name)
 {
-	/* the shredder is now able to handle ENTITY's from the internal
-	 * subset. I do not really understand yet why this had to be done
-	 * here and why it was not handled automagically
-	 * The functions used are defined in $LIBXML2INCLUDES/entities.h
-	 */
+        /* the shredder is now able to handle ENTITY's from the internal
+         * subset. I do not really understand yet why this had to be done
+         * here and why it was not handled automagically
+         * The functions used are defined in $LIBXML2INCLUDES/entities.h
+         */
 #if 0
-	stream_printf(GDKerr,"shred_getEntity(ctx,\"%s\") CALLED\n",name);
+        stream_printf(GDKerr,"shred_getEntity(ctx,\"%s\") CALLED\n",name);
 #endif
-	xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
-	/* lookup the entity in the document entity hash table */
-	/* maybe we should use xmlGetDtdEntity in case of failure */
-	xmlEntityPtr res = xmlGetDocEntity(ctx->myDoc,name);
+        xmlParserCtxtPtr ctx = ((shredCtxStruct*) xmlCtx)->xmlCtx;
+        /* lookup the entity in the document entity hash table */
+        /* maybe we should use xmlGetDtdEntity in case of failure */
+        xmlEntityPtr res = xmlGetDocEntity(ctx->myDoc,name);
 #if 0
-	if ( res ) {
-	    stream_printf(GDKout,"#!found ENTITY \"%s\"\n",name);
-	} else {
-	    stream_printf(GDKout,"#!cannot find ENTITY \"%s\"\n",name);
-	}
+        if ( res ) {
+            stream_printf(GDKout,"#!found ENTITY \"%s\"\n",name);
+        } else {
+            stream_printf(GDKout,"#!cannot find ENTITY \"%s\"\n",name);
+        }
 #endif
-	/* QUESTION: xmlGetDtdEntity() and xmlGetParameterEntity() were also
-	 * possible, whats the diff between the doc/dtd versions, they both
-	 * seem to work. */
-	return res;
+        /* QUESTION: xmlGetDtdEntity() and xmlGetParameterEntity() were also
+         * possible, whats the diff between the doc/dtd versions, they both
+         * seem to work. */
+        return res;
 }
 
 /* ====================================================================
@@ -1483,13 +1483,13 @@ shredder_parse(shredCtxStruct *shredCtx,
         * XML_PARSE_NOCDATA   = merge CDATA as text nodes 
         * XML_PARSE_NOXINCNODE= do not generate XINCLUDE START/END nodes 
         */
-	/*
-	 * TODO: how to prevent expansion of entities?
-	 */
+        /*
+         * TODO: how to prevent expansion of entities?
+         */
         xmlCtx = xmlCreateURLParserCtxt(location,
-			XML_PARSE_DTDLOAD|
-			XML_PARSE_XINCLUDE|
-			XML_PARSE_NOXINCNODE);
+                        XML_PARSE_DTDLOAD|
+                        XML_PARSE_XINCLUDE|
+                        XML_PARSE_NOXINCNODE);
     } 
     if (!xmlCtx) {
         GDKerror("shredder_parse: libxml2 could not initialize a parser.\n");
@@ -1904,19 +1904,19 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
          * whether it might still hold...)
          */
         if (shredCtx->dstBAT[PRE_SIZE].bat->tkey == TRUE) {
-        	shredCtx->dstBAT[PRE_SIZE].bat->tsorted = 0;
-        	shredCtx->dstBAT[PRE_SIZE].bat->tdense = 0;
-        	shredCtx->dstBAT[PRE_SIZE].bat->T->nonil = 0;
-        	BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
+            shredCtx->dstBAT[PRE_SIZE].bat->tsorted = 0;
+            shredCtx->dstBAT[PRE_SIZE].bat->tdense = 0;
+            shredCtx->dstBAT[PRE_SIZE].bat->T->nonil = 0;
+            BATkey(BATmirror(shredCtx->dstBAT[PRE_SIZE].bat), FALSE);
         }
         if (shredCtx->dstBAT[PRE_KIND].bat->tkey == TRUE) {
-        	shredCtx->dstBAT[PRE_KIND].bat->tsorted = 0;
-        	shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
-        	shredCtx->dstBAT[PRE_KIND].bat->T->nonil = 0;
-        	BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
+            shredCtx->dstBAT[PRE_KIND].bat->tsorted = 0;
+            shredCtx->dstBAT[PRE_KIND].bat->tdense = 0;
+            shredCtx->dstBAT[PRE_KIND].bat->T->nonil = 0;
+            BATkey(BATmirror(shredCtx->dstBAT[PRE_KIND].bat), FALSE);
         }
         if (shredCtx->dstBAT[ATTR_PROP].bat->tkey == TRUE) {
-        	BATkey(BATmirror(shredCtx->dstBAT[ATTR_PROP].bat), FALSE);
+            BATkey(BATmirror(shredCtx->dstBAT[ATTR_PROP].bat), FALSE);
         }
     }
     assert((shredCtx->updatable && shredCtx->nnode_nid <= newsize) || (!shredCtx->updatable && shredCtx->nnode_nid == newsize));
@@ -1961,7 +1961,7 @@ baseLOCATION(char* location) {
     char *p = &lc[strlen(lc)-1];
 
     while ( (p > lc) && (*p != '/') && (*p != '\\') && (*p != ':') )
-    	--p;
+        --p;
     *++p = '\0';
     return lc;
 }
@@ -2021,10 +2021,10 @@ shred(BAT *docBAT,
     shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock, verbose);
     if (shredCtx) {
         if ( location )
-	    /* determine base prefix to look for external subsets */
-	    shredCtx->base_dir = baseLOCATION(location);
-	else
-	    shredCtx->base_dir = NULL;
+            /* determine base prefix to look for external subsets */
+            shredCtx->base_dir = baseLOCATION(location);
+        else
+            shredCtx->base_dir = NULL;
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
             if (verbose && res && !s && !buffer) {
@@ -2037,7 +2037,7 @@ shred(BAT *docBAT,
                 if (PRINT_STAT) shredder_stats(shredCtx);
             }
           }
-	  if ( shredCtx->base_dir ) GDKfree(shredCtx->base_dir);
+          if ( shredCtx->base_dir ) GDKfree(shredCtx->base_dir);
           shredder_free(shredCtx, res?1:-shredCtx->updatable);
     }
     if (coll_lock) {
