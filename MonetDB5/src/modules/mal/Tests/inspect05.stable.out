@@ -834,6 +834,7 @@ end main;                               # 11
 [ "dumpTrace",			  "command",	  "profiler",	  "():void ",																  "CMDdumpTrace;"					  ]
 [ "deactivate",			  "command",	  "profiler",	  "(name:str):void ",															  "CMDdeactivateProfiler;"				  ]
 [ "getMemory",				  "pattern",	  "profiler",	  "():lng ",																  "CMDgetMemory;"				  ]
+[ "getFootprint",			  "pattern",	  "profiler",	  "():lng ",																  "CMDgetFootprint;"				  ]
 [ "getSystemTime",		  "command",	  "profiler",	  "():lng ",																  "CMDgetSystemTime;"				  ]
 [ "getUserTime",		  "command",	  "profiler",	  "():lng ",																  "CMDgetUserTime;"				  ]
 [ "getDiskWrites",		  "command",	  "profiler",	  "():lng ",																  "CMDgetDiskWrites;"				  ]
