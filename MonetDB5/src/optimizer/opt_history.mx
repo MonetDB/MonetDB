@@ -44,11 +44,8 @@ create table History(
     arguments string,
     xtime bigint,       -- time from the first statement until result export
     rtime bigint,       -- time to ship the result to the client
-    cores int,          -- max number of parallel threads used
-    load int,           -- percentage of CPU used by cores
     foot bigint,        -- footprint for all bats in the plan
     xsize bigint,       -- storage size of intermediates created
-    rsize bigint,       -- storage size of the result set
     tuples bigint,      -- number of tuples in the result set
     inblock bigint,     -- number of physical blocks read
     oublock bigint,     -- number of physical blocks written
@@ -111,11 +108,10 @@ Prepare the call to the history manager.
 @= initCounters
 	@:initCounter(ctime,mtime,current_timestamp,any)@
 	@:arguments@
-	@:zeroCounter(cores,Int,int)@
-	@:zeroCounter(load,Int,int)@
-	@:zeroCounter(foot,Lng,lng)@
-	@:zeroCounter(xsize,Lng,lng)@
-	@:zeroCounter(rsize,Lng,lng)@
+	@:zeroCounter(memory,Lng,lng)@
+	@:zeroCounter(tuples,Wrd,wrd)@
+	q->argc--;
+	pushWrd(mb,q,1);
 	@:initCounter(inblock,profiler,getDiskReads,lng)@
 	@:initCounter(oublock,profiler,getDiskWrites,lng)@
 	@:initCounter(xtime,alarm,usec,lng)@
@@ -142,8 +138,8 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, limit,slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, inblock, oublock, arg, ctime;
-	int xtime, rtime = 0, cores, load, foot, xsize, rsize, tuples = 0;
-	int returnseen = 0, answerseen = 0;
+	int xtime=0, rtime = 0, foot=0, memory, tuples=0;
+	int returnseen = 0;
 	InstrPtr keepQuery = NULL;
 
 
@@ -185,32 +181,20 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	for (i = 1; i < limit; i++) {
 		p= old[i];
 		
-		if ( getModuleId(p)==sqlRef && answerseen == 0 &&
-			idcmp(getFunctionId(p),"exportValue")==0  ){
-			answerseen++;
-			@:update(xtime,alarm,usec)@
-			@:zeroCounter(tuples,Lng,lng)@
-			q->argc--;
-			pushLng(mb,q,1);
-			@:initCounter(rtime,alarm,usec,lng)@
-		}	
 		if ( getModuleId(p)==sqlRef && 
-			 idcmp(getFunctionId(p),"rsColumn")==0 ){
-			int tup ;
-			if (answerseen == 0){
-				answerseen++;
-				@:update(xtime,alarm,usec)@
-				@:initCounter(tup,aggr,count,wrd)@
-				q= pushArgument(mb,q, getArg(p,7));
-				tup= getArg(q,0);
-				@:initCounter(tuples,calc,lng,lng)@
-				pushArgument(mb,q,tup);
-				@:initCounter(rtime,alarm,usec,lng)@
-			}
-			/* sum the result size */
-			@:update(rsize,bat,getSize)@
-			q=pushArgument(mb,q,getArg(p,7));
+			(idcmp(getFunctionId(p),"exportValue")==0 ||
+			 idcmp(getFunctionId(p),"exportResult")==0  ) ){
+			@:update(xtime,alarm,usec,-)@
+			@:initCounter(rtime,alarm,usec,lng)@
+			pushInstruction(mb,p);
+			@:update(rtime,alarm,usec,-)@
+			continue;
 		}	
+		if (getModuleId(p)==sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
+			printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+			@:initCounter(tuples,aggr,count,wrd)@
+			q= pushArgument(mb,q, getArg(p,3));
+		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
@@ -220,14 +204,15 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @-
 @= update
 			q = newStmt(mb,"@2","@3");
-			r = newStmt(mb,"calc","-");
+			r = newStmt(mb,"calc","@4");
 			r = pushArgument(mb,r, getArg(q,0));
 			r = pushArgument(mb,r, @1);
 			getArg(r,0)=@1;
 @c
-			@:update(rtime,alarm,usec)@
-			@:update(oublock,profiler,getDiskWrites)@
-			@:update(inblock,profiler,getDiskReads)@
+			@:initCounter(foot,profiler,getFootprint,lng)@
+			@:initCounter(memory,profiler,getMemory,lng)@
+			@:update(oublock,profiler,getDiskWrites,-)@
+			@:update(inblock,profiler,getDiskReads,-)@
 
 			q = newStmt(mb,"user","keepcall");
 			q = pushArgument(mb, q, getArg(keepQuery,1)); /* query identifier */
@@ -235,14 +220,13 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			q = pushArgument(mb, q, arg);   /* arguments */
 			q = pushArgument(mb, q, xtime); 
 			q = pushArgument(mb, q, rtime); 
-			q = pushArgument(mb, q, cores); 
-			q = pushArgument(mb, q, load); 
 			q = pushArgument(mb, q, foot); 
-			q = pushArgument(mb, q, xsize); 
-			q = pushArgument(mb, q, rsize); 
+			q = pushArgument(mb, q, memory); 
 			q = pushArgument(mb, q, tuples); 
 			q = pushArgument(mb, q, inblock);/* inblock */
 			q = pushArgument(mb, q, oublock);/* oublock */
+			pushInstruction(mb,p);
+			continue;
 		}
 
 		pushInstruction(mb,p);

@@ -250,8 +250,8 @@ command isSortedReverse(b:bat[:any_1,:any_2]) :bit
 address BKCisSortedReverse
 comment "Returns whether a BAT is ordered on head or not.";
 
-command getSpaceReserved(b:bat[:any_1,:any_2]) :lng 
-address BKCgetSpaceReserved
+command getStorageSize(b:bat[:any_1,:any_2]) :lng 
+address BKCgetStorageSize
 comment "Determine the total space (in bytes) reserved for a BAT.";
 
 command getSpaceUsed(b:bat[:any_1,:any_2]) :lng 
@@ -634,9 +634,9 @@ bat5_export str BKCinfo(int *retval, int *bid);
 bat5_export str BKCbatsize(lng *tot, int *bid);
 bat5_export str BKCbatvmsize(lng *tot, int *bid);
 bat5_export str BKCbatdisksize(lng *tot, int *bid);
-bat5_export str BKCgetSpaceReserved(lng *tot, int *bid);
+bat5_export str BKCgetStorageSize(lng *tot, int *bid);
 bat5_export str BKCgetSpaceUsed(lng *tot, int *bid);
-bat5_export str BKCgetSpaceReserved_str(lng *tot, str batname);
+bat5_export str BKCgetStorageSize_str(lng *tot, str batname);
 bat5_export str BKCisSynced(bit *ret, int *bid1, int *bid2);
 bat5_export str BKCsetColumn(int *r, int *bid, str *tname);
 bat5_export str BKCsetColumns(int *r, int *bid, str *hname, str *tname);
@@ -1494,11 +1494,11 @@ CMDbatvmsize(lng *tot, BAT *b)
 }
 
 static int
-CMDbatsize(lng *tot, BAT *b)
+CMDbatsize(lng *tot, BAT *b, int force)
 {
 	size_t size = 0;
 
-	if (!isVIEW(b)) {
+	if ( force || !isVIEW(b)) {
 		BUN cnt = BATcapacity(b);
 
 		size += b->H->heap.size;
@@ -1517,7 +1517,7 @@ CMDbatsize(lng *tot, BAT *b)
 }
 
 int
-CMDbatsize_str(lng *tot, str batname)
+CMDbatsize_str(lng *tot, str batname, int force)
 {
 	bat bid = BBPindex(batname);
 	BAT *b = bid ? (BAT *) BBPgetdesc(bid) : NULL;
@@ -1526,7 +1526,7 @@ CMDbatsize_str(lng *tot, str batname)
 		GDKerror("CMDbatsize_str: %s no such bat.\n", batname);
 		return GDK_FAIL;
 	}
-	return CMDbatsize(tot, b);
+	return CMDbatsize(tot, b, force);
 }
 
 @+ Synced BATs
@@ -3341,19 +3341,19 @@ BKCbatsize(lng *tot, int *bid){
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
 	}
-	CMDbatsize(tot,b);
+	CMDbatsize(tot,b, FALSE);
 	BBPreleaseref(*bid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCgetSpaceReserved(lng *tot, int *bid)
+BKCgetStorageSize(lng *tot, int *bid)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getSpaceReserved", "Cannot access descriptor");
-	CMDbatsize(tot,b);
+		throw(MAL, "bat.getStorageSize", "Cannot access descriptor");
+	CMDbatsize(tot,b,TRUE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -3387,13 +3387,13 @@ BKCgetSpaceUsed(lng *tot, int *bid)
 }
 
 str
-BKCgetSpaceReserved_str(lng *tot, str batname)
+BKCgetStorageSize_str(lng *tot, str batname)
 {
 	int bid = BBPindex(batname);
 
 	if (bid == 0) 
-		throw(MAL, "bat.getSpaceReserved", "no such bat.\n");
-	return BKCgetSpaceReserved(tot, &bid);
+		throw(MAL, "bat.getStorageSize", "no such bat.\n");
+	return BKCgetStorageSize(tot, &bid);
 }
 
 @+ Synced BATs

@@ -170,6 +170,13 @@ comment "Obtain the user timing information.";
 command getSystemTime():lng
 address CMDgetSystemTime
 comment "Obtain the user timing information.";
+
+pattern getFootprint():lng
+address CMDgetFootprint
+comment "Get the memory footprint and reset it";
+pattern getMemory():lng
+address CMDgetMemory
+comment "Get the amount of memory claimed and reset it";
 @{
 @-
 @+ Implementation
@@ -231,6 +238,8 @@ profiler_export str CMDgetDiskReads(lng *ret);
 profiler_export str CMDgetDiskWrites(lng *ret);
 profiler_export str CMDgetUserTime(lng *ret);
 profiler_export str CMDgetSystemTime(lng *ret);
+profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
@@ -500,5 +509,23 @@ CMDgetSystemTime(lng *ret)
 	return MAL_SUCCEED;
 }
 
+str
+CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	lng *l= getArgReference(stk,pci,0);
 
+	(void) mb;
+	*l = cntxt->bigfoot;
+	cntxt->bigfoot= 0;
+	cntxt->vmfoot= 0;
+	return MAL_SUCCEED;
+}
+str
+CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	lng *l= getArgReference(stk,pci,0);
+
+	(void) mb;
+	*l = cntxt->memory;
+	cntxt->memory= 0;
+	return MAL_SUCCEED;
+}
 @}
