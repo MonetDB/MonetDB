@@ -37,11 +37,14 @@ create table queryHistory(
 -- This can be done manually on the SQL console, or be integrated
 -- in the keepQuery and keepCall upon need.
 -- The parameters are geared at understanding the resource claims
--- The footprint depicts the amount of memory used to keep all
--- relevant intermediates and persistent bats in memory .
--- The xsize parameter is indicative for the amount of intermediate
--- results produced. 
--- All timing in usec
+-- The 'foot'-print depicts the maximum amount of memory used to keep all
+-- relevant intermediates and persistent bats in memory at any time
+-- during query execution.
+-- The 'memory' parameter is total amount of BAT storage claimed during
+-- query execution.
+-- The 'inblock' and 'oublock' indicate the physical IOs during.
+-- All timing in usec and all storage in bytes.
+
 create table callHistory(
 	id wrd references queryHistory(id), -- references query plan
 	ctime timestamp,	-- time the first statement was executed
@@ -49,7 +52,7 @@ create table callHistory(
 	xtime bigint,		-- time from the first statement until result export
 	rtime bigint,		-- time to ship the result to the client
 	foot bigint, 		-- footprint for all bats in the plan
-	xsize bigint,		-- storage size of intermediates created
+	memory bigint,		-- storage size of intermediates created
 	tuples wrd,			-- number of tuples in the result set
 	inblock bigint,		-- number of physical blocks read
 	oublock bigint		-- number of physical blocks written
@@ -78,7 +81,7 @@ create procedure keepCall(
 	xtime bigint,		-- time from the first statement until result export
 	rtime bigint,		-- time to ship the result to the client
 	foot bigint, 		-- footprint for all bats in the plan
-	xsize bigint,		-- storage size of intermediates created
+	memory bigint,		-- storage size of intermediates created
 	tuples wrd,			-- number of tuples in the result set
 	inblock bigint,		-- number of physical blocks read
 	oublock bigint		-- number of physical blocks written
@@ -86,7 +89,7 @@ create procedure keepCall(
 begin
 	insert into callHistory
 	values( id, ctime, arguments, xtime, rtime, 
-		foot, xsize, tuples, inblock, oublock );
+		foot, memory, tuples, inblock, oublock );
 end;
 
 set history=true;
