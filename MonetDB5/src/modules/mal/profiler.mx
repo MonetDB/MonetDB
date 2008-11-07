@@ -171,9 +171,12 @@ command getSystemTime():lng
 address CMDgetSystemTime
 comment "Obtain the user timing information.";
 
+pattern getFootprint():lng
+address CMDgetFootprint
+comment "Get the memory footprint and reset it";
 pattern getMemory():lng
 address CMDgetMemory
-comment "Get the memory footprint and reset it";
+comment "Get the amount of memory claimed and reset it";
 @{
 @-
 @+ Implementation
@@ -505,13 +508,22 @@ CMDgetSystemTime(lng *ret)
 }
 
 str
-CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	lng *l= getArgReference(stk,pci,0);
 
 	(void) mb;
 	*l = cntxt->bigfoot;
 	cntxt->bigfoot= 0;
 	cntxt->vmfoot= 0;
+	return MAL_SUCCEED;
+}
+str
+CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	lng *l= getArgReference(stk,pci,0);
+
+	(void) mb;
+	*l = cntxt->memory;
+	cntxt->memory= 0;
 	return MAL_SUCCEED;
 }
 @}
