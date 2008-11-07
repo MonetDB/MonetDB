@@ -357,8 +357,10 @@ parse_request(stream *out,
               bit isAdmin)
 {
     char err[4098];
+    XRPCreq_t *req;
 
-    XRPCreq_t *req = xrpc_parse_message(err, 4098, shredBAT, NULL);
+    err[0] = 0;
+    req = xrpc_parse_message(err, 4098, shredBAT, NULL);
     if(!req) {
         if(strcmp(err, OUT_OF_MEM) == 0)
             send_err(out, ERR500, "env:Receiver", err);

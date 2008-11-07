@@ -168,6 +168,7 @@ void showErrors(Client cntxt) {
 }
 @-
 The bigfoot memory tracker keeps track on the space occupancy of BATs. 
+The property 'memory' illustrates the total amount of memory claimed.
 It ignores for the time being the heaps for the variable sized atoms.
 Moreover, it is not thread safe and it can not correctly handle
 aliases embedded in MAL assignments.
@@ -177,21 +178,23 @@ static INLINE void
 updateBigFoot(Client cntxt, int bid, int add)
 {
 	BAT *b;
+	lng memory;
 
 	if (bid != bat_nil ){
 		BUN cnt = 0;
 		b= BATdescriptor(bid);
 		if (b == NULL)
 			return;
-		if ( b->P->sharecnt){
+		if ( isVIEW(b) ){
 			BBPunfix(b->batCacheid);
 			return;
 		}
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
 		if (add) {
-			cntxt->vmfoot += VIEWhparent(b)?0:headsize(b,cnt);
-			cntxt->vmfoot += VIEWtparent(b)?0:tailsize(b,cnt);
+			memory = headsize(b,cnt) + tailsize(b,cnt);
+			cntxt->vmfoot += memory;
+			cntxt->memory += memory;
 		} else {
 			cntxt->vmfoot -= VIEWhparent(b)?0:headsize(b,cnt);
 			cntxt->vmfoot -= VIEWtparent(b)?0:tailsize(b,cnt);
