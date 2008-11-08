@@ -52,7 +52,7 @@ comment "Create an iterator with fixed granule size.
 
 command bat.hasMoreElements(b:bat[:any_1,:any_2], size:lng)
 	(:lng, :bat[:any_1,:any_2])
-address CHPhasMoreChunks
+address CHPhasMoreElements
 comment "Produce the next chunk for processing.";
 
 pattern bat.newIterator(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
@@ -105,7 +105,7 @@ comment "return the BUN tail value using the cursor.";
 #endif
 
 chopper_export str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule);
-chopper_export str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule);
+chopper_export str CHPhasMoreElements(lng *res, int *vid, int *bid, lng *granule);
 chopper_export str CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 chopper_export str CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 chopper_export str CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -144,12 +144,12 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 }
 
 @-
-The hasMoreElements version advances the chunk reader,
+The hasMoreElements version advances the reader,
 which also means that the view descriptor is already available.
 The granule size may differ in each call.
 @c
 str
-CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
+CHPhasMoreElements(lng *res, int *vid, int *bid, lng *granule)
 {
 	BAT *b, *view;
 	BUN i;

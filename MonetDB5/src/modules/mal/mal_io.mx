@@ -200,7 +200,7 @@ io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, Ins
 @:PrintFormatted(dbl)@
 @:PrintFormatted(str)@
 io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
-io_export str IOexport(int *ret, int *bid, str *fnme);
+io_export str IOexport(bit *ret, int *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
 io_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -585,7 +585,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	if (snprintf(buf, MAXFORMAT, *fmt,*val) < 0){
 		throw(MAL, "io.print", "Format error, %s expected and < 64K", @2);
 	} else
-		stream_printf(fd,*fmt,*val);
+		stream_printf(fd,*fmt, (@1)*val);
 	return MAL_SUCCEED;
 }
 @c
@@ -722,7 +722,7 @@ IOdatafile(str *ret, str *fnme){
 }
 
 str
-IOexport(int *ret, int *bid, str *fnme)
+IOexport(bit *ret, int *bid, str *fnme)
 {
 	BAT *b;
 	stream *s = open_wastream(*fnme);
