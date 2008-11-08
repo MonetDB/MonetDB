@@ -3986,16 +3986,12 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mid = hdl->mid;
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
-	/* remember the query just for the error messages */
-	if (hdl->query == NULL) {
-		size_t sz = size;
-
-		if (sz > 512)
-			sz = 512;
-		hdl->query = malloc(sz + 1);
-		strncpy(hdl->query, query, sz);
-		hdl->query[sz] = 0;
-	}
+	/* remember the last query just for the error messages */
+	if (hdl->query)
+			free(hdl->query);
+	hdl->query = malloc(size + 1);
+	strncpy(hdl->query, query, size);
+	hdl->query[size] = 0;
 
 	if (mid->trace == MAPI_TRACE) {
 		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
