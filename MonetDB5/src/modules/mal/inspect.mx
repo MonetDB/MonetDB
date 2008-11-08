@@ -761,10 +761,10 @@ INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret;
+	bit *ret;
 	(void) stk;
 	(void) cntxt;
-	ret = (int *) getArgReference(stk, pci, 0);
+	ret = (bit *) getArgReference(stk, pci, 0);
 	*ret = getArgType(mb,pci,1)== getArgType(mb,pci,2);
 	return MAL_SUCCEED;
 }
