@@ -38,7 +38,7 @@ function user.choptest(b:bat[:oid,:lng],size:lng,base:lng):void;#  0 choptest:vo
     t0 := alarm.usec();                 #  1 t0:lng := ALARMusec() 
 barrier (chk,c) := bat.newIterator(b,size);#  2 (chk:lng, c:bat[:oid,:lng]) := CHPnewChunkIterator(b:bat[:oid,:lng], size:lng) {GJ5}
     t := algebra.select(c,256000:lng,266000:lng);#  3 t:bat[:oid,:lng] := ALGselect(c:bat[:oid,:lng], _8:lng, _9:lng) {G}
-    redo (chk,c) := bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreChunks(b:bat[:oid,:lng], size:lng) {GJ3}
+    redo (chk,c) := bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreElements(b:bat[:oid,:lng], size:lng) {GJ3}
 exit (chk,c);                           #  5 (chk:lng, c:bat[:oid,:lng]) 
     t1 := alarm.usec();                 #  6 t1:lng := ALARMusec() 
     d0 := calc.-(t1,t0);                #  7 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 

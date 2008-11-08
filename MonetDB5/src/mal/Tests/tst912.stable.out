@@ -30,7 +30,7 @@ factory user.getChunk(b:bat[:oid,:lng],size:lng) (bb:bit,c:bat[:oid,:lng]);#  0 
     (chk,c) := bat.newIterator(b,size); #  1 (chk:lng, c:bat[:oid,:lng]) := CHPnewChunkIterator(b:bat[:oid,:lng], size:lng) {G}
 barrier allways := calc.>=(chk,0);      #  2 allways:bit := CALCcompGElngint(chk:lng, _7:int) {J6}
     yield (bb,c) := (true,c);           #  3 (bb:bit, c:bat[:oid,:lng]) := _8:bit, c:bat[:oid,:lng] {G}
-    (chk,c) := bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreChunks(b:bat[:oid,:lng], size:lng) {G}
+    (chk,c) := bat.hasMoreElements(b,size);#  4 (chk:lng, c:bat[:oid,:lng]) := CHPhasMoreElements(b:bat[:oid,:lng], size:lng) {G}
     redo allways := calc.>=(chk,0);     #  5 allways:bit := CALCcompGElngint(chk:lng, _7:int) {J3}
 exit allways;                           #  6 allways:bit 
     io.print("#factory done\n");        #  7 _9:void := IOprint_val(_10:str) 
