@@ -529,9 +529,11 @@ String nil testing is slightly different.
 static str
 IOprint_formatted_nil(stream *fd, str format)
 {
-	str c,f;
+	str c,s,f;
+	str new= (str) alloca(strlen(format)+1);
 
-	for (c = format; *c; c++) {
+	strcpy(new,format);
+	for (c = new; *c; c++) {
 		if (*c == '\\') {
 			c++;
 			@:escaped@
@@ -549,16 +551,17 @@ IOprint_formatted_nil(stream *fd, str format)
 		f=c+1;
 		if (*f== '+' || *f== '-') f++;
 		while (isdigit((int) *f) ) f++;
+		s= f;
 		if (*f =='.' ) f++;
 		while (isdigit((int) *f) ) f++;
-		if (*f =='l' ) f++;
+		while (*f =='l' ) f++;
 		if (*f =='d' || *f == 'f' || *f =='s' || *f == 'c'){
-			char old= *f;
-			*f='s';
+			*s++='s';
+			while (*++f ) *s++ = *f;
+			*s = 0;
 			stream_printf(fd,c,"nil");
-			*f=old;
 			break;
-		} else throw(MAL, "io.print", "Format limitation expected");
+		} else throw(MAL, "io.print", "Format limitation");
 	}
 	return MAL_SUCCEED;
 }
