@@ -578,12 +578,12 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 	if( format== NULL || format== str_nil) 
 		throw(MAL, "io.print", "Format missing");
 	if( formatMarker(format,@2)!=1) 
-		throw(MAL, "io.print", "Format error");
+		throw(MAL, "io.print", "Format error, expected %%%s\n",@2);
 
 	if( *val == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt);
 	if (snprintf(buf, MAXFORMAT, *fmt,*val) < 0){
-		throw(MAL, "io.print", "Format error, %s expected and < 64K", @2);
+		throw(MAL, "io.print", "Format error, %%%s expected and < 64K", @2);
 	} else
 		stream_printf(fd,*fmt, (@1)*val);
 	return MAL_SUCCEED;
@@ -593,7 +593,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 @:printFormatted(sht,"%d")@
 @:printFormatted(int,"%d")@
 @:printFormatted(wrd,"%d")@
-@:printFormatted(lng,LLFMT)@	/* ignore format */
+@:printFormatted(lng,LLFMT)@	
 @:printFormatted(flt,"%f")@
 @:printFormatted(dbl,"%f")@
 
