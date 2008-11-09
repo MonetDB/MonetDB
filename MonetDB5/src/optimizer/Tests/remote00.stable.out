@@ -36,10 +36,6 @@ stdout of test 'remote00` in directory 'src/optimizer` itself:
 # int	int	  # type
 #-----------------#
 [ 2,	  7	  ]
-[ "end of server 1" ]
-#function user.main():void;
-#    clients.quit();
-#end main;
 
 # 16:36:12 >  
 # 16:36:12 >  Done.

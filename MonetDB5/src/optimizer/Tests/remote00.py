@@ -6,7 +6,7 @@ class Popen:
         self.stdin,self.stdout = os.popen2(cmd);
 
 def server_start(x,dbname,mapi_port):
-    srvcmd = 'valgrind %s --debug=10 --dbname "%s"' % (re.sub('mapi_port=[^ ]* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
+    srvcmd = '%s --debug=10 --dbname "%s"' % (re.sub('mapi_port=[^ ]* ','mapi_port=%d ' % mapi_port,os.getenv('MSERVER')),dbname)
     return Popen(srvcmd);
 
 def server_stop(srv):
@@ -45,7 +45,7 @@ def main():
 
     srv1.stdin.write("clients.quit();\n");
     srv1.stdin.flush()
-    srv2.stdin.write("alarm.sleep(3);  io.print(\"end of server 1\"); clients.quit();\n");
+    srv2.stdin.write("clients.quit();\n");
     srv2.stdin.flush()
 
     server_stop(srv1);
