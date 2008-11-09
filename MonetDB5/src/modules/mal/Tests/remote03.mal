@@ -18,10 +18,14 @@ exit MALException;
 
 # now do it with a function that returns something (a BAT in this case)
 b:rmtobj := remote.exec("test", "inspect", "getAtomNames");
+catch MALException:str;
+	io.print("Received second error from the remote site");
+	io.printf(MALException);
+exit MALException;
 c:bat[:int,:str] := remote.get("test", b);
 io.print(c);
 catch MALException:str;
-	io.print("Received second error from the remote site");
+	io.print("Received third error from the remote site");
 	io.printf(MALException);
 exit MALException;
 
@@ -30,7 +34,7 @@ a:rmtobj := remote.exec("test", "io", "print", b);
 d:void := remote.get("test", a);
 io.print(d);
 catch MALException:str;
-	io.print("Received third error from the remote site");
+	io.print("Received fourth error from the remote site");
 	io.printf(MALException);
 exit MALException;
 
