@@ -1612,8 +1612,10 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
-		if (glb)
+		if (glb){
 			glb->stk[cnt]= glb->stk[i];
+			VALempty(&glb->stk[i]);
+		}
 		
 		cnt++;
 	}
@@ -1768,6 +1770,7 @@ convertConstant(malType type, ValPtr vr)
 		  if( vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0){
 			vr->vtype = type;
 			vr->val.sval = GDKstrdup(str_nil);
+			vr->len = (int) strlen(vr->val.sval);
 			return 0;
 		  }
 		  if( vr->vtype == TYPE_chr){

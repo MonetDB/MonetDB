@@ -220,8 +220,11 @@ sequence of factory calls.
 				rhs = &getVarConstant(mb,i);
 				*lhs = *rhs;
 			}
-		} else
+		} else{
 			lhs->vtype = getVarGDKType(mb,i);
+			lhs->val.pval = 0;
+			lhs->len = 0;
+		}
 	}
 @c
 
@@ -332,7 +335,11 @@ use. The stack value is cleared to avoid misinterpretation of left-over
 information. Since a stack frame may contain values of a previous call,
 we should first remove garbage. 
 @c
-	@:initStack((env && mbcaller)?pci->argc:1)@
+	if (env && env->stkbot) {
+		@:initStack(env->stkbot)@
+	} else {
+		@:initStack((env && mbcaller)?pci->argc:1)@
+	}
 
 	if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
 	ret = runMALsequence(cntxt, mb, startpc,  0, stk, env, pcicaller);
