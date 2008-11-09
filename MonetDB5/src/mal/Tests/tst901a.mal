@@ -16,5 +16,5 @@ d1:= t1-t0;
 d2:= t3-t2;
 xc:= aggr.count(b);
 io.printf("#count %d\n",xc);
-io.printf("#make %d \n",d1);
-io.printf("#multiplex %d\n",d2);
+io.printf("#make %lld \n",d1);
+io.printf("#multiplex %lld\n",d2);

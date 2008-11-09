@@ -15,4 +15,4 @@ e:= calc.str(nil);
 io.printf("formatted str %+4s\n",e);
 
 l:= calc.lng(nil);	
-io.printf("formatted lng %5d\n",l);
+io.printf("formatted lng %lld\n",l);

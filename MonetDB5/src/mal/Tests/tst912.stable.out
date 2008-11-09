@@ -68,7 +68,7 @@ exit (tst,c);                           #  5 (tst:bit, c:bat[:oid,:lng])
     if := calc.flt(i);                  #  9 if:flt := CALClng2flt(i:lng) 
     df := calc.flt(d0);                 # 10 df:flt := CALClng2flt(d0:lng) 
     f := calc./(df,if);                 # 11 f:flt := CALCbinarycheckDIVfltflt(df:flt, if:flt) 
-    io.printf("#chopped at %d",size);   # 12 _17:void := IOprint_formatted_lng(_18:str, size:lng) 
+    io.printf("#chopped at %lld",size); # 12 _17:void := IOprint_formatted_lng(_18:str, size:lng) 
     io.printf(" at %f usec\n",f);       # 13 _19:void := IOprint_formatted_flt(_20:str, f:flt) 
 end choptest;	# 14  
 #
@@ -114,7 +114,7 @@ barrier doit := true;                   # 11 doit:bit := _17:bit {J13}
 exit doit;                              # 13 doit:bit 
     t1 := alarm.usec();                 # 14 t1:lng := ALARMusec() 
     base := calc.-(t1,t0);              # 15 base:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select direct %d usec\n",base);# 16 _23:void := IOprint_formatted_lng(_24:str, base:lng) 
+    io.printf("#select direct %lld usec\n",base);# 16 _23:void := IOprint_formatted_lng(_24:str, base:lng) 
     user.choptest(b,100000:lng,base);   # 17 _25:void := user.choptest(b:bat[:oid,:lng], _26:lng, base:lng) 
     user.choptest(b,10000:lng,base);    # 18 _27:void := user.choptest(b:bat[:oid,:lng], _28:lng, base:lng) 
     user.choptest(b,1000:lng,base);     # 19 _29:void := user.choptest(b:bat[:oid,:lng], _30:lng, base:lng) 
