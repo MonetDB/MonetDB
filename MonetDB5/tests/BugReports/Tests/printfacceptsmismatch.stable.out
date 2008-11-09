@@ -20,6 +20,7 @@ function user.main():void;              #  0 main:void := user.main()
     io.printf("%d\n",l);                #  6 _8:void := IOprint_formatted_lng(_9:str, l:lng) 
     io.printf("%d\n",f);                #  7 _10:void := IOprint_formatted_flt(_9:str, f:flt) 
 end main;                               #  8  
+!MALException:io.print:Format error, expected %lld
 
 
 
