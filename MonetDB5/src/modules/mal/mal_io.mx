@@ -593,7 +593,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 @:printFormatted(sht,"%d")@
 @:printFormatted(int,"%d")@
 @:printFormatted(wrd,"%d")@
-@:printFormatted(lng,"")@	/* ignore format */
+@:printFormatted(lng,LLFMT)@	/* ignore format */
 @:printFormatted(flt,"%f")@
 @:printFormatted(dbl,"%f")@
 
