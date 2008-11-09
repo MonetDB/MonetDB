@@ -17,9 +17,10 @@ function user.main():void;              #  0 main:void := user.main()
 # SF bug #2051290 
     l := 12:lng;                        #  4 l:lng := _5:lng 
     f := 5:flt;                         #  5 f:flt := _7:flt 
-    io.printf("%D\n",l);                #  6 _8:void := IOprint_formatted_lng(_9:str, l:lng) 
-    io.printf("%d\n",f);                #  7 _10:void := IOprint_formatted_flt(_11:str, f:flt) 
+    io.printf("%d\n",l);                #  6 _8:void := IOprint_formatted_lng(_9:str, l:lng) 
+    io.printf("%d\n",f);                #  7 _10:void := IOprint_formatted_flt(_9:str, f:flt) 
 end main;                               #  8  
+
 
 
 

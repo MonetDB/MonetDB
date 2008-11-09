@@ -5,5 +5,5 @@
 l := 12:lng;
 f := 5:flt;
 
-io.printf("%D\n", l);
+io.printf("%d\n", l);
 io.printf("%d\n", f);
