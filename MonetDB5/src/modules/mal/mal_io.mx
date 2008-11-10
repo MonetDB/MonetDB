@@ -490,7 +490,11 @@ formatMarker(str format,str m)
 
 	while ((t = strchr(t, '%')) != NULL) {
 		t++;
-		while ( t && !isalpha((int) *t) ) t++;
+		while ( *t && !isalpha((int) *t) ) t++;
+#ifdef WIN32
+		if (t && *t=='I') t++;
+		while ( *t && !digit((int) *t) ) t++;
+#endif
 		/* gcc 4.0.0 on MacOS X 10.4 (Darwin 8.11.0) *
 		 * does not like "strlen(m+1)" in case m=="" */
 		if (*m && strncmp(t, m+1, strlen(m) - 1) )
@@ -622,12 +626,12 @@ IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format,"%s") != 1)
-		throw(MAL, "io.print", "Format error");
+		throw(MAL, "io.print", "Format error, %%s expected");
 
 	if (strNil(*val))
 		return IOprint_formatted_nil(fd, *(str *) fmt);
 	if (snprintf(buf, MAXFORMAT, format,*val) < 0){
-		throw(MAL, "io.print", "Format error, %s expected");
+		throw(MAL, "io.print", "Format error, %%s expected");
 	} else
 		stream_printf(fd,format,*val);
 	return MAL_SUCCEED;
@@ -650,7 +654,7 @@ IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format,"%d") != 1)
-		throw(MAL, "io.print", "Format error");
+		throw(MAL, "io.print", "Format error %%d expected");
 
 	if (*s == oid_nil)
 		msg = GDKstrdup("nil");
@@ -683,7 +687,7 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (format == NULL)
 		throw(MAL, "io.print", "Format missing");
 	if (formatMarker(format,"%s") != 1)
-		throw(MAL, "io.print", "Format error");
+		throw(MAL, "io.print", "Format error, %%s expected");
 
 	if (*s == bit_nil)
 		return IOprint_formatted_nil(fd, *(str *) fmt);
@@ -692,7 +696,7 @@ IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		msg = "false";
 	if (snprintf(buf, MAXFORMAT, format,msg) < 0){
-		throw(MAL, "io.print", "Format error, %s expected");
+		throw(MAL, "io.print", "Format error, %%s expected");
 	} else
 		stream_printf(fd,format,msg);
 	if (*ret == EOF)
