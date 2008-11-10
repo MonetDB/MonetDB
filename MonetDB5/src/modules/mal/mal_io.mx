@@ -554,6 +554,10 @@ IOprint_formatted_nil(stream *fd, str format)
 		s= f;
 		if (*f =='.' ) f++;
 		while (isdigit((int) *f) ) f++;
+#ifdef WIN32
+		if ( *f =='I') f++;
+		while (isdigit((int) *f) ) f++;
+#endif
 		while (*f =='l' ) f++;
 		if (*f =='d' || *f == 'f' || *f =='s' || *f == 'c'){
 			*s++='s';
@@ -598,11 +602,7 @@ str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci
 @:printFormatted(wrd,"%d")@
 @:printFormatted(flt,"%f")@
 @:printFormatted(dbl,"%f")@
-#ifdef WIN32
-@:printFormatted(lng,"%I64d")@	
-#else
 @:printFormatted(lng,LLFMT)@	
-#endif
 
 
 str
