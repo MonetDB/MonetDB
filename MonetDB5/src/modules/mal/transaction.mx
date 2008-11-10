@@ -28,13 +28,13 @@ Note, however, the SQL front-end obeys transaction semantics.
 @mal
 module transaction;
 
-command sync() :bit
+command sync():bit
 address TRNglobal_sync
 comment "Save all persistent BATs";
-command commit() :bit
+command commit():bit
 address TRNglobal_commit
 comment "Global commit on all BATs";
-command abort() :bit
+command abort():bit
 address TRNglobal_abort
 comment "Global abort on all BATs";
 command subcommit(b:bat[:any_1,:str]):bit
@@ -80,14 +80,14 @@ comment	"List deletions since last commit.";
 #define transaction_export extern
 #endif
 
-transaction_export str TRNglobal_sync(int *ret);
-transaction_export str TRNglobal_abort(int *ret);
-transaction_export str TRNglobal_commit(int *ret);
-transaction_export str TRNsub_commit(int *ret, int *bid);
+transaction_export str TRNglobal_sync(bit *ret);
+transaction_export str TRNglobal_abort(bit *ret);
+transaction_export str TRNglobal_commit(bit *ret);
+transaction_export str TRNsub_commit(bit *ret, int *bid);
 transaction_export str TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 transaction_export str TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-transaction_export str TRNsubcommit(int *ret, int *bid);
+transaction_export str TRNsubcommit(bit *ret, int *bid);
 transaction_export str TRNtrans_prev(int *ret, int *bid);
 transaction_export str TRNtrans_alpha(int *ret, int *bid);
 transaction_export str TRNtrans_delta(int *ret, int *bid);
@@ -99,27 +99,27 @@ The remainder contains the Monet 5 wrapper code to make this all work
 @c
 #include "mal_exception.h"
 str
-TRNglobal_sync(int *ret)
+TRNglobal_sync(bit *ret)
 {
 	*ret = BBPsync(BBPsize,NULL)?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 
 str
-TRNglobal_abort(int *ret)
+TRNglobal_abort(bit *ret)
 {
 	*ret = TMabort()?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 
 str
-TRNglobal_commit(int *ret)
+TRNglobal_commit(bit *ret)
 {
 	*ret = TMcommit()?FALSE:TRUE;
 	return MAL_SUCCEED;
 }
 str
-TRNsubcommit(int *ret, int *bid)
+TRNsubcommit(bit *ret, int *bid)
 {
 	BAT *b;
 	b= BATdescriptor(*bid);

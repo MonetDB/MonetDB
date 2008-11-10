@@ -4667,7 +4667,7 @@ end main;                               # 11
 [ "hasMoreElements",		  "pattern",	  "bat",	  "(b:bat[:any_1,:BAT]) (_2:lng,h:any_1,t:any_2) ",											  "CHPbunHasMoreElements;"				  ]
 [ "hasMoreElements",		  "pattern",	  "bat",	  "(b:bat[:oid,:any_2]) (_2:lng,h:oid,t:any_2) ",											  "CHPbunHasMoreElements;"				  ]
 [ "hasMoreElements",		  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2]) (_2:lng,h:any_1,t:any_2) ",											  "CHPbunHasMoreElements;"				  ]
-[ "hasMoreElements",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2],size:lng) (_3:lng,_4:bat[:any_1,:any_2]) ",									  "CHPhasMoreChunks;"					  ]
+[ "hasMoreElements",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],size:lng) (_3:lng,_4:bat[:any_1,:any_2]) ",										  "CHPhasMoreElements;"				  ]
 [ "hasReadMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKChasReadMode;"					  ]
 [ "hasWriteMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKChasWriteMode;"					  ]
 [ "hasAppendMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKChasAppendMode;"					  ]
