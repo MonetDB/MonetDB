@@ -2235,7 +2235,7 @@ extern int monet_exec(str);
 void
 BBPtrim(size_t memtarget, size_t vmtarget)
 {
-	int i, limit, scan, did_scan = FALSE;
+	int i, limit, scan, did_scan = FALSE, done= BBP_THREADMASK;
 	int msec = 0, bats_written = 0, bats_unloaded = 0;	/* performance info */
 	MT_Id t = BBP_getpid();
 
@@ -2274,6 +2274,8 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 	limit = bbpscanstart;
 
 	while (memtarget > 0 || vmtarget > 0) {
+		if( done-- <0)
+			break;
 		/* acquire the BBP locks */
 		for (i = 0; i <= BBP_THREADMASK; i++)
 			gdk_set_lock(GDKcacheLock(i), "BBPtrim");
