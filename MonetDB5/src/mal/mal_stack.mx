@@ -69,6 +69,7 @@ ensure we are still within safe bounds.
 typedef struct MALSTK {
 	int stksize;
 	int stktop;
+	int stkbot;			/* the first variable to be initialized */
 	lng stkdepth;		/* to protect against overflow */
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
@@ -199,6 +200,7 @@ clearStack(MalStkPtr s)
 	for (v = s->stk; i >= 0; i--, v++)
 		if (ATOMextern(v->vtype) && v->val.pval)
 			GDKfree(v->val.pval);
+	s->stkbot = 0;
 }
 
 @}

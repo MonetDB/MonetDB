@@ -51,7 +51,7 @@ function user.tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];#  0 tst:b
     io.printf("count %d\n",lim);        #  4 _8:void := IOprint_formatted_wrd(_9:str, lim:wrd) 
     l := calc.lng(lim);                 #  5 l:lng := CALCwrd2lng(lim:wrd) 
 barrier (mloop,m) := language.newRange(0:lng);#  6 (mloop:bit, m:lng) := RNGnewRange_lng(_13:lng) {J17}
-    io.printf("loopindex %d\n",m);      #  7 _14:void := IOprint_formatted_lng(_15:str, m:lng) 
+    io.printf("loopindex %lld\n",m);    #  7 _14:void := IOprint_formatted_lng(_15:str, m:lng) 
     B2 := algebra.fetch(A2,m);          #  8 B2:int := ALGfetch(A2:bat[:oid,:int], m:lng) 
     io.printf("B2 value %d\n",B2);      #  9 _17:void := IOprint_formatted_int(_18:str, B2:int) 
     B3 := algebra.fetch(A3,m);          # 10 B3:int := ALGfetch(A3:bat[:oid,:int], m:lng) 

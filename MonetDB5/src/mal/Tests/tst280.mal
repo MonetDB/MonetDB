@@ -10,7 +10,7 @@ function tst(A2:bat[:oid,:int],A3:bat[:oid,:int]):bat[:oid,:int];
 	io.printf("count %d\n",lim);
 	l:= calc.lng(lim);
 barrier (mloop,m):=language.newRange(0:lng);
-	io.printf("loopindex %d\n",m);
+	io.printf("loopindex %lld\n",m);
         B2 := algebra.fetch(A2,m);       
 	io.printf("B2 value %d\n",B2);
         B3 := algebra.fetch(A3,m);       

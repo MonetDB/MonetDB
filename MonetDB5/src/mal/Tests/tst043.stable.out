@@ -24,12 +24,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     e := calc.str(nil);                 # 10 e:str := CALCnil2str(_3:void) {G}
     io.printf("formatted str %+4s\n",e);# 11 _16:void := IOprint_formatted_str(_17:str, e:str) 
     l := calc.lng(nil);                 # 12 l:lng := CALCnil2lng(_3:void) 
-    io.printf("formatted lng %5d\n",l); # 13 _19:void := IOprint_formatted_lng(_20:str, l:lng) 
+    io.printf("formatted lng %lld\n",l);# 13 _19:void := IOprint_formatted_lng(_20:str, l:lng) 
 end main;                               # 14  
 formatted int nil
 formatted bit nil
 formatted chr nil
-formatted flt  ni
+formatted flt nil
 formatted str  nil
 formatted lng   nil
 

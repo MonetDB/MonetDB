@@ -656,6 +656,10 @@ and marking all non-temporary variables as being (potentially) used.
 	}
 	resetMalBlk(prg->def,1);
 	MSresetVariables(c,prg->def, 0, 0);
+	if (c->glb){
+		/* for global stacks avoid reinitialization from this point */
+		c->glb->stkbot = prg->def->vtop;
+	}
 	if( prg->def->profiler){
 		GDKfree(prg->def->profiler);
 		prg->def->profiler= NULL;

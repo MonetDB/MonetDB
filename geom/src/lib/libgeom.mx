@@ -144,7 +144,7 @@ void
 libgeom_init(void) 
 {
 	str tmp;
-	initGEOS((GEOSMessageHandler)GDKwarning, (GEOSMessageHandler)GDKerror);
+	initGEOS((GEOSMessageHandler)GDKerror, (GEOSMessageHandler)GDKerror);
 	tmp = GDKgetenv("monet_welcome");
 	if (tmp != NULL && strcmp(tmp, "yes") == 0)
 		printf("# MonetDB/GIS module v" VERSION " loaded\n");

@@ -386,9 +386,25 @@ Let's call it as a synchronous action, without concern on parallelism.
 	}
 	if (mb->errors)
 		throw(MAL, "factory.call", "Factory contains errors");
-	if (firstcall )
+	if (firstcall ){
+		/* initialize the stack */
+		for(i= psig->argc; i< mb->vtop; i++) {
+			lhs = &pl->stk->stk[i];
+			if( isVarConstant(mb,i) > 0 ){
+				assert(!isVarCleanup(mb,i));
+				if( !isVarDisabled(mb,i)){
+					rhs = &getVarConstant(mb,i);
+					*lhs = *rhs;
+				}
+				} else{
+					lhs->vtype = getVarGDKType(mb,i);
+					lhs->val.pval = 0;
+					lhs->len = 0;
+				}
+		}
+		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
-	else {
+	 } else {
 		if( cmd && cntxt->timer == 0)
 			mdbStep(cntxt,mb,pl->stk,pl->pc);
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);

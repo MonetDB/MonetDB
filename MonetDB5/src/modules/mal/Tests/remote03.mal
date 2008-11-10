@@ -12,18 +12,35 @@ remote.create("test", h, p, nil:str, "monetdb", "monetdb");
 # taken as function
 f:rmtobj := remote.exec("test", "io.print", "bla");
 catch MALException:str;
+	io.print("Received an error from the remote site");
 	io.printf(MALException);
 exit MALException;
 
 # now do it with a function that returns something (a BAT in this case)
 b:rmtobj := remote.exec("test", "inspect", "getAtomNames");
+catch MALException:str;
+	io.print("Received second error from the remote site");
+	io.printf(MALException);
+exit MALException;
 c:bat[:int,:str] := remote.get("test", b);
 io.print(c);
+catch MALException:str;
+	io.print("Received third error from the remote site");
+	io.printf(MALException);
+exit MALException;
 
 # io.print only outputs things, but returns nothing
 a:rmtobj := remote.exec("test", "io", "print", b);
+catch MALException:str;
+	io.print("Received fourth error from the remote site");
+	io.printf(MALException);
+exit MALException;
 d:void := remote.get("test", a);
 io.print(d);
+catch MALException:str;
+	io.print("Received fifth error from the remote site");
+	io.printf(MALException);
+exit MALException;
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
