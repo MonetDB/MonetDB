@@ -2275,6 +2275,8 @@ THRprintf(stream *s, const char *format, ...)
 	gdk_set_lock(MT_system_lock, "THRprintf");
 	if (*format != '!') {
 		c = '#';
+		if (*format == '#')
+			format++;
 	} else {
 		c = '!';
 		format++;
