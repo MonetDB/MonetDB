@@ -123,8 +123,10 @@ stream_export void stream_destroy(stream *s);
 stream_export char *stream_error(stream *s);
 stream_export int stream_flush(stream *s);
 stream_export int stream_fsync(stream *s);
-stream_export int stream_fgetpos(stream *s, size_t *p);
-stream_export int stream_fsetpos(stream *s, size_t p);
+#ifdef SIZEOF_LNG
+stream_export int stream_fgetpos(stream *s, lng *p);
+stream_export int stream_fsetpos(stream *s, lng p);
+#endif
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export void stream_clearerr(stream *s);
@@ -350,8 +352,8 @@ struct stream {
 	void (*destroy) (stream *s);
 	int (*flush) (stream *s);
 	int (*fsync) (stream *s);
-	int (*fgetpos) (stream *s, size_t *p);
-	int (*fsetpos) (stream *s, size_t p);
+	int (*fgetpos) (stream *s, lng *p);
+	int (*fsetpos) (stream *s, lng p);
 };
 
 #if !HAVE_DECL_STRDUP
@@ -546,7 +548,7 @@ stream_fsync(stream *s)
 }
 
 int
-stream_fgetpos(stream *s, size_t *p)
+stream_fgetpos(stream *s, lng *p)
 {
 #ifdef STREAM_DEBUG
 	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
@@ -560,7 +562,7 @@ stream_fgetpos(stream *s, size_t *p)
 }
 
 int
-stream_fsetpos(stream *s, size_t p)
+stream_fsetpos(stream *s, lng p)
 {
 #ifdef STREAM_DEBUG
 	printf("fsetpos %s\n", s->name ? s->name : "<unnamed>");
@@ -811,16 +813,24 @@ file_fsync(stream *s)
 }
 
 static int
-file_fgetpos(stream *s, size_t *p)
+file_fgetpos(stream *s, lng *p)
 {
 	FILE *fp = (FILE*)s->stream_data.p;
 
-	*p = ftell(fp);
+#if defined(NATIVE_WIN32) && _MSC_VER >= 1400 /* Visual Studio 2005 */
+	*p = (lng) _ftelli64(fp); /* returns __int64 */
+#else
+#ifdef HAVE_FTELLO
+	*p = (lng) ftello(fp);	/* returns off_t */
+#else
+	*p = (lng) ftell(fp);	/* returns long */
+#endif
+#endif
 	return 0;
 }
 
 static int
-file_fsetpos(stream *s, size_t p)
+file_fsetpos(stream *s, lng p)
 {
 	int res = 0;
 	FILE *fp = (FILE*)s->stream_data.p;
@@ -828,7 +838,11 @@ file_fsetpos(stream *s, size_t p)
 #if defined(NATIVE_WIN32) && _MSC_VER >= 1400 /* Visual Studio 2005 */
 	res = _fseeki64(fp, (__int64) p, SEEK_SET);
 #else
+#ifdef HAVE_FSEEKO
+	res = fseeko(fp, (off_t) p, SEEK_SET);
+#else
 	res = fseek(fp, (long) p, SEEK_SET);
+#endif
 #endif
 	return res;
 }

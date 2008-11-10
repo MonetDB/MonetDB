@@ -106,7 +106,7 @@ typedef struct logger {
 	char *dir;
 	precommit_fptr phandler;
 	stream *log;
-	size_t end;		/* end of pre-allocated blocks for faster f(data)sync */
+	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
 	BAT *catalog;		/* int, str */
 	BAT *seqs;		/* int, lng */
@@ -1554,11 +1554,11 @@ static char zeros[DBLKSZ] = { 0 };
 static void
 pre_allocate(logger *lg)
 {
-	size_t p;
+	lng p;
 
 	stream_fgetpos(lg->log, &p);
 	if (p + DBLKSZ > lg->end) {
-		size_t s = p;
+		lng s = p;
 
 		if (p > lg->end) {
 			lg->end = p & ~DBLKMASK;
@@ -1567,7 +1567,7 @@ pre_allocate(logger *lg)
 		}
 		if (p < lg->end) {
 			p = (lg->end - p);
-			stream_write(lg->log, zeros, p, 1);
+			stream_write(lg->log, zeros, (size_t) p, 1);
 			lg->end += p;
 			p = 0;
 		}

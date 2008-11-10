@@ -1236,6 +1236,7 @@ AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
+AC_CHECK_FUNCS([ftello fseeko])
 
 dnl AC_PROG_CC_STDC()
 if test -f "$srcdir"/vertoo.data; then
