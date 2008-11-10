@@ -136,8 +136,14 @@
 /* Define to 1 if you have the `fpclassify' function. */
 /* #undef HAVE_FPCLASSIFY */
 
+/* Define to 1 if you have the `fseeko' function. */
+/* #undef HAVE_FSEEKO */
+
 /* Define to 1 if you have the `fstat' function. */
 #define HAVE_FSTAT 1
+
+/* Define to 1 if you have the `ftello' function. */
+/* #undef HAVE_FTELLO */
 
 /* Define to 1 if you have the `fsync' function. */
 /* #undef HAVE_FSYNC */

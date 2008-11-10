@@ -455,7 +455,7 @@ typedef struct Table_t {
 	unsigned int rowwidth;	/* sum of columns used for mallocs */
 	bstream *input;		/* where to get the data from */
 	stream *output;		/* where to leave immediate output */
-	size_t bytes;		/* required bytes to load (round up to end of record) */
+	lng bytes;		/* required bytes to load (round up to end of record) */
 	MT_Id tid;		/* Thread id for parallel loads only */
 	int partid;		/* partition number */
 	Column columns[1];	/* at least one column, enlarged upon need */
@@ -1753,7 +1753,7 @@ The rawmode() indicator acts as the internal switch.
 @c
 
 static BUN
-TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int start, ssize_t limit)
+TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int start, lng limit)
 {
 	int res = 0, done = 0;
 	BUN i = 0;
@@ -1788,7 +1788,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 			char *e = strstr(s, sep);
 
 			if (e) {
-				limit -= (ssize_t) (e - s) + seplen;
+				limit -= (lng) (e - s) + seplen;
 				*e = '\0';
 				if (started && i>=offset && insert_line(as, s, NULL, col1,col2) < 0) {
 					s = e + seplen;
@@ -1844,7 +1844,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 		}
 	}
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#limit " SSZFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
+	stream_printf(GDKout,"#limit " LLFMT ", nr " BUNFMT " res %d offset " BUNFMT "\n",limit,i-offset,res,offset);
 	stream_printf(GDKout,"stream eof %d len " SZFMT " pos " SZFMT "\n", b->eof, b->len, b->pos);
 #endif
 	as->nr = i-offset;
@@ -1867,11 +1867,11 @@ static void TABLETload_chunk(void *data){
 	Tablet *p = data;
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#starting loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
+	stream_printf(GDKout,"#starting loader child (bytes) " LLFMT " %d\n", p->bytes, p->tid);
 #endif
-	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, (ssize_t) p->bytes);
+	TABLETload_bulk(p, p->input, p->output, 0, p->nr_attrs, p->partid, p->bytes);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#exit of loader child (bytes) " SZFMT " %d\n", p->bytes, p->tid);
+	stream_printf(GDKout,"#exit of loader child (bytes) " LLFMT " %d\n", p->bytes, p->tid);
 	{ int i;
 	for(i=0; i< (int) p->nr_attrs; i++)
 	stream_printf(GDKout,"field %d tuples " BUNFMT "\n",i, BATcount(p->format[i].c));
@@ -1885,19 +1885,19 @@ BUN
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
 	char *error = NULL;
-	BUN piece, cnt=0, size;
+	BUN cnt=0;
+	lng piece,size;
 	int i,j;
 	FILE *f;
 	Tablet **partition = NULL;
 
 	if (!nway) /* based on max parallel threads to consider */
 		nway = GDKnr_threads;
-	partition = (Tablet**)alloca(sizeof(Tablet*)*nway);	
 
 	/* Detect the block streams over files */
 	if (as->offset || (as->nr != BUN_NONE && as->nr < 10000) || 
 	    (f = getFile(b->s)) == NULL)
-		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
+		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, LLONG_MAX);
 
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"#starting parallel file based load\n");
@@ -1905,13 +1905,23 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 
 	/* get size of file */
 	fseek(f,0L,SEEK_END);
-	size = ftell(f);
+#if defined(NATIVE_WIN32) && _MSC_VER >= 1400 /* Visual Studio 2005 */
+	size = (lng) _ftelli64(f); /* returns __int64 */
+#else
+#ifdef HAVE_FTELLO
+	size = (lng) ftello(f);	/* returns off_t */
+#else
+	size = (lng) ftell(f);	/* returns long */
+#endif
+#endif
 	/* determine block size */
 	piece = (size+nway-1)/nway;
-	if (size < 100000){ /* to small use non threaded version */
+	if (size < 100000 || nway == 1){ /* too small use non threaded version */
 		fseek(f,0L,SEEK_SET);
-		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, INT_MAX);
+		return TABLETload_bulk(as, b, out, 0, as->nr_attrs, 0, LLONG_MAX);
 	}
+
+	partition = (Tablet**)alloca(sizeof(Tablet*)*nway);	
 
 	/* prepare the tablet descriptors */
 	for( i=0; i<nway; i++) {
@@ -1935,7 +1945,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 		if (partition[i]->input) {
 			int res = stream_fsetpos(partition[i]->input->s, i*piece);
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"#fsetpos %d " BUNFMT " %d\n",i, i*piece, res );
+			stream_printf(GDKout,"#fsetpos %d " LLFMT " %d\n",i, i*piece, res );
 #endif
 			(void)res;
 			/* execute a thread over a range of the file */

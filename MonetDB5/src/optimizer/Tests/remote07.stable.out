@@ -55,7 +55,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     low := calc.+(5,1);                 # 15 low:int := CALCbinaryADDintint(_28:int, _29:int) 
     mapi.put(mid,"low",low);            # 16 _30:void := SERVERput(mid:int, _31:str, low:int) 
     i:lng  := mapi.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");# 17 i:lng := SERVERmapi_rpc_single_row(mid:int, _33:str) 
-    io.printf(" count %d\n",i);         # 18 _34:void := IOprint_formatted_lng(_35:str, i:lng) 
+    io.printf(" count %lld\n",i);       # 18 _34:void := IOprint_formatted_lng(_35:str, i:lng) 
     d:bat[:int,:int]  := mapi.rpc(mid,"io.print(i);");# 19 d:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _37:str) {G}
     io.print(d);                        # 20 _38:void := IOprint_val(d:bat[:int,:int]) 
     mapi.disconnect(mid);               # 21 _39:void := SERVERdisconnect(mid:int) 

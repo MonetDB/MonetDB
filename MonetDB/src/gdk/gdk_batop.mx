@@ -1935,7 +1935,7 @@ BAThashsplit(BAT *b, BUN n, int unary)
 	/* assert(n <= 0x40000000); */
 	BATcheck(b, "BAThashsplit");
 	if (n > BATcount(b)) {
-		PROPDEBUG THRprintf(GDKout,"#BAThashsplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").", n, BATcount(b));
+		PROPDEBUG THRprintf(GDKout,"#BAThashsplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").\n", n, BATcount(b));
 		n = BATcount(b);
 	}
 	if (n < 1) {
@@ -2004,7 +2004,7 @@ BATrangesplit(BAT *b, BUN n, int unary)
 
 	BATcheck(b, "BATrangesplit");
 	if (n > BATcount(b)) {
-		PROPDEBUG THRprintf(GDKout,"#BATrangesplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").", n, BATcount(b));
+		PROPDEBUG THRprintf(GDKout,"#BATrangesplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").\n", n, BATcount(b));
 		n = BATcount(b);
 	}
 	if (n < 1) {

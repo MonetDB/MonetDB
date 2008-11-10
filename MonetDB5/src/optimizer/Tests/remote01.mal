@@ -30,7 +30,7 @@ mapi.put(mid,"low",low);
 mapi.rpc(mid,"e:=algebra.select(d,low,7);");
 mapi.rpc(mid,"i:=aggr.count(d);");
 i:lng:= mapi.rpc(mid,"io.print(i);");
-io.printf(" count %d\n",i);
+io.printf(" count %lld\n",i);
 d:bat[:int,:int]:= mapi.rpc(mid,"io.print(d);");
 io.print(d);
 mapi.disconnect(mid);
