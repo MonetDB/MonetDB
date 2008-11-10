@@ -31,10 +31,14 @@ exit MALException;
 
 # io.print only outputs things, but returns nothing
 a:rmtobj := remote.exec("test", "io", "print", b);
+catch MALException:str;
+	io.print("Received fourth error from the remote site");
+	io.printf(MALException);
+exit MALException;
 d:void := remote.get("test", a);
 io.print(d);
 catch MALException:str;
-	io.print("Received fourth error from the remote site");
+	io.print("Received fifth error from the remote site");
 	io.printf(MALException);
 exit MALException;
 

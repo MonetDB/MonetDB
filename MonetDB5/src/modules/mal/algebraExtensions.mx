@@ -58,13 +58,13 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #endif
 
 ae_export str ALGprojectCst(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-ae_export str ALGprojectCstBody(int *result, int *bid, ptr *p, int tt);
+ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
 @c
 #include "algebraExtensions.h"
 str
-ALGprojectCstBody(int *result, int *bid, ptr *p, int tt){
+ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
