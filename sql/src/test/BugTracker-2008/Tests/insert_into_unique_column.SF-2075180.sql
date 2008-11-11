@@ -6,5 +6,7 @@ PNUM INT UNIQUE);
 INSERT INTO FEAT16 VALUES (3, NULL);
 INSERT INTO FEAT16 VALUES (4, NULL);
 
+select * from feat16;
+
 drop table FEAT16;
 
