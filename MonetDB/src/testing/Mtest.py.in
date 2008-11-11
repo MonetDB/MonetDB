@@ -2720,6 +2720,16 @@ if SYST == "Linux":
     if not LINUX_DIST:
         LINUX_DIST = SYST+':'+re.compile('^([0-9\.]*)([^0-9\.].*)$').match(RELEASE).group(1)
     DIST,VERSION = LINUX_DIST.split(':', 1)
+elif SYST == "SunOS":
+    if os.path.isfile('/etc/release'):
+        l = open('/etc/release').readline()
+        p = l.strip(' \n').split(" ")
+        ARCH = p[len(p) - 1]
+        REL = p[len(p) - 2]
+        DATE = p[len(p) - 3]
+        NAME = ''.join(p[:len(p) - 3])
+        DIST = NAME
+        VERSION = REL + "/" + ARCH
 else:
     DIST = SYST
     VERSION = RELEASE
