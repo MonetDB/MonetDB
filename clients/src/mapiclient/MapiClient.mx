@@ -543,18 +543,6 @@ XMLrenderer(MapiHdl hdl)
 }
 
 static void
-RAWrenderer(MapiHdl hdl)
-{
-	char *line;
-
-	while ((line = fetch_line(hdl)) != 0) {
-		if (*line == '=')
-			line++;
-		stream_printf(toConsole, "%s\n", line);
-	}
-}
-
-static void
 CSVrenderer(MapiHdl hdl)
 {
 	int fields;
@@ -632,6 +620,20 @@ SQLqueryEcho(MapiHdl hdl)
 		}
 	}
 }
+
+static void
+RAWrenderer(MapiHdl hdl)
+{
+	char *line;
+
+	SQLqueryEcho(hdl);
+	while ((line = fetch_line(hdl)) != 0) {
+		if (*line == '=')
+			line++;
+		stream_printf(toConsole, "%s\n", line);
+	}
+}
+
 static void
 SQLheader(MapiHdl hdl, int *len, int fields)
 {
