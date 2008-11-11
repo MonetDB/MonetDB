@@ -614,11 +614,10 @@ SQLqueryEcho(MapiHdl hdl)
 		qry = mapi_get_query(hdl);
 		if (qry) {
 			if (!interactive_stdin) {
-				char *p;
-				while ((p = strchr(qry, '\n')) != NULL) {
+				char *p = qry;
+				while ((p = strchr(p, '\n')) != NULL) {
 					*p++ = '\0';
-					stream_printf(toConsole, "#%s\n", qry);
-					qry = p;
+					stream_printf(toConsole, "#%s\n", p);
 				}
 			} else {
 				stream_printf(toConsole, "%s", qry);
