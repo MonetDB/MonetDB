@@ -159,6 +159,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_4D4F0B4C055446B0AB86ADF4DF4F5719"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_4E983DE832D14C35A86E9D442B594559"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -599,12 +605,6 @@
         {
         "MsmKey" = "8:_F6C39BC794AB440FB45175571C15C230"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F6C91C5AE1CA435D8FFC6CA793AAFD01"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -2833,7 +2833,7 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4-Server"
-        "ProductCode" = "8:{BD465E6B-E457-40DD-9C32-D0424E1D91AD}"
+        "ProductCode" = "8:{EBA247ED-C9BB-43CE-85C6-B559A900EF15}"
         "PackageCode" = "8:{1DC7BB6D-D70C-4AD9-BC2A-47323A99FC4D}"
         "UpgradeCode" = "8:{FBA5D08C-F929-4705-8FA0-14E6AA7B5374}"
         "RestartWWWService" = "11:FALSE"
@@ -3432,11 +3432,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_4D4F0B4C055446B0AB86ADF4DF4F5719"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "IsDependency" = "11:TRUE"
+            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -3446,11 +3446,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F6C91C5AE1CA435D8FFC6CA793AAFD01"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_F68A02B385C64980A45DD72D196AC354"
             {
             "UseDynamicProperties" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
                 "Properties"
                 {
                 }
