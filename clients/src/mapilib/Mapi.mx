@@ -4971,7 +4971,11 @@ char *
 mapi_get_query(MapiHdl hdl)
 {
 	mapi_hdl_check0(hdl, "mapi_get_query");
-	return strdup(hdl->query);
+	if (hdl->query != NULL) {
+		return strdup(hdl->query);
+	} else {
+		return(NULL);
+	}
 }
 
 
