@@ -493,10 +493,8 @@ formatMarker(str format,str m)
 		while ( *t && !isalpha((int) *t) ) t++;
 #ifdef WIN32
 		if (t && *t=='I') t++;
-		while ( *t && !digit((int) *t) ) t++;
+		while ( *t && isdigit((int) *t) ) t++;
 #endif
-		/* gcc 4.0.0 on MacOS X 10.4 (Darwin 8.11.0) *
-		 * does not like "strlen(m+1)" in case m=="" */
 		if (*m && strncmp(t, m+1, strlen(m) - 1) )
 			i++; /* indicate error */
 		i++;
