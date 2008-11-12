@@ -1362,7 +1362,7 @@ overload (PFqname_t qn, PFcnode_t *args)
     PFcnode_t *arg;
     PFfun_t *fn;
     unsigned int i, a;
-    bool ari_match, zoo_match, arg_match = 0;
+    bool ari_match, zoo_match, arg_match;
 
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
@@ -1377,6 +1377,7 @@ overload (PFqname_t qn, PFcnode_t *args)
          * expected formal parameter types?
          */
         if (fn->sig_count == 1) {
+            arg_match = true;
             ari_match = true;
             a         = 0;
             while (a < fn->arity) {
