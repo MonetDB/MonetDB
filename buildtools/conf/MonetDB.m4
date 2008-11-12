@@ -536,16 +536,6 @@ case "$host_os" in
 	LINUX_DIST="`echo "$LINUX_DIST" | sed 's|:||'`"
 	AC_MSG_RESULT($LINUX_DIST)
 	;;
-    solaris*)
-	AC_MSG_CHECKING(which Solaris distribution we're using) 
-	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & MonetDB/src/testing/Mtest.py.in !
-	if test -s /etc/release ; then
-		SOL_VER="`head -n1 /etc/release | sed -e 's/^ \+//'`"
-		AC_MSG_RESULT($SOL_VER)
-	else
-		AC_MSG_RESULT([no idea (/etc/release not found)])
-	fi
-	;;
 esac
 AC_SUBST(LINUX_DIST)
 ]) dnl AM_MONETDB_LINUX_DIST
