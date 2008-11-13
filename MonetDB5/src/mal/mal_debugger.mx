@@ -84,7 +84,7 @@ mdb>help
 	List <obj>       -- list with type information
 	span             -- list the life span of variables
 	var  <obj>       -- print symbol table for module
-	optimizer <obj>  -- display program after optimizer step
+	optimizer <obj>  -- display optimizer steps
 	print <var>      -- display value of a variable
 	print <var> <cnt>[<first>] -- display BAT chunk
 	info <var>       -- display bat variable properties
@@ -1819,8 +1819,9 @@ mdbHelp(stream *f)
 	stream_printf(f, "quit             -- turn off debugging\n");
 	stream_printf(f, "list <obj>       -- list current program block\n");
 	stream_printf(f, "List <obj>       -- list with type information\n");
+	stream_printf(f, "list [<step>]    -- list program block after optimizer step\n");
 	stream_printf(f, "var  <obj>       -- print symbol table for module\n");
-	stream_printf(f, "optimizer <obj>  -- display program after optimizer step\n");
+	stream_printf(f, "optimizer <obj>  -- display optimizer steps\n");
 	stream_printf(f, "print <var>      -- display value of a variable\n");
 	stream_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
 	stream_printf(f, "info <var>       -- display bat variable properties\n");
