@@ -625,7 +625,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
                            UNAME(p, p->sem.doc_tbl.res),
-                           UNAME(p, p->sem.doc_tbl.att));
+                           UNAME(p, p->sem.doc_tbl.att),
+                           p->sem.doc_tbl.kind);
             break;
 
         case la_doc_access:

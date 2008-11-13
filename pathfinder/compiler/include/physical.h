@@ -326,7 +326,7 @@ union PFpa_op_sem_t {
                                        cond_error: name of the bool column */
         char *          str;      /**< error message (only used by cond_err) */
     } err;
-    
+
     /* semantic content for debug relation map operator */
     struct {
         PFalg_att_t      inner;    /**< name of the inner column */
@@ -351,6 +351,13 @@ union PFpa_op_sem_t {
                                        iter column of the result
                                        (used for optimizations) */
     } fun_call;
+
+    /* semantic content for physical operator fn:doc nad pf:collection */
+    struct {
+        PFalg_att_t          att;  /**< argument attribute */
+        PFalg_att_t          res;  /**< attribute to hold the result */
+        PFalg_doc_tbl_kind_t kind; /**< kind of originator function */
+    } doc_tbl;
 
     /* semantic content for physical operator of function fn:id/idref */
     struct {
@@ -397,7 +404,7 @@ struct PFpa_op_t {
     unsigned           bit_dag:1;  /**< enables DAG traversal */
     unsigned           bit_in:1;   /**< indicates that node is part
                                         of a recursion body */
-    
+
     struct PFpa_op_t  *child[PFPA_OP_MAXCHILD];
     unsigned int       refctr;
     int                node_id;    /**< specifies the id of this operator
@@ -677,7 +684,8 @@ PFpa_op_t *PFpa_llscjoin (const PFpa_op_t *ctx,
  */
 PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
                           PFalg_att_t res,
-                          PFalg_att_t att);
+                          PFalg_att_t att,
+                          PFalg_doc_tbl_kind_t kind);
 
 /**
  * Access to the string content of loaded documents

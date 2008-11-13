@@ -310,7 +310,6 @@ enum PFalg_fun_call_t {
     , alg_fun_call_pf_documents_str_unsafe /**< pf:documents_str_unsafe    */
     , alg_fun_call_pf_collections          /**< pf:collections             */
     , alg_fun_call_pf_collections_unsafe   /**< pf:collections_unsafe      */
-    , alg_fun_call_pf_collection           /**< pf:collection */
     , alg_fun_call_xrpc                    /**< XRPC function call         */
     , alg_fun_call_xrpc_helpers            /**< func call for XRPC helpers */
     , alg_fun_call_tijah                   /**< Tijah function call        */
@@ -371,6 +370,14 @@ enum PFalg_fun_t {
     , alg_fun_upd_replace_node    /**< upd:replaceNode */
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
+
+
+/** doc table operator kinds */
+enum PFalg_doc_tbl_kind_t {
+      alg_dt_doc   = 1
+    , alg_dt_col   = 2
+};
+typedef enum PFalg_doc_tbl_kind_t PFalg_doc_tbl_kind_t;
 
 /* ............. document fields specification .............. */
 

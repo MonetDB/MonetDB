@@ -704,7 +704,6 @@ infer_const (PFla_op_t *n)
                  n->sem.fun_call.kind == alg_fun_call_pf_documents_str_unsafe ||
                  n->sem.fun_call.kind == alg_fun_call_pf_collections ||
                  n->sem.fun_call.kind == alg_fun_call_pf_collections_unsafe ||
-                 n->sem.fun_call.kind == alg_fun_call_pf_collection ||
                  n->sem.fun_call.kind == alg_fun_call_xrpc ||
                  n->sem.fun_call.kind == alg_fun_call_xrpc_helpers ||
                  n->sem.fun_call.kind == alg_fun_call_tijah) &&

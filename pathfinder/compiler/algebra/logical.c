@@ -3027,7 +3027,8 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t *
-PFla_doc_tbl (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
+PFla_doc_tbl (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att,
+              PFalg_doc_tbl_kind_t kind)
 {
     unsigned int i;
     PFla_op_t   *ret;
@@ -3035,8 +3036,9 @@ PFla_doc_tbl (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att)
     ret = la_op_wire1 (la_doc_tbl, n);
 
     /* store columns to work on in semantical field */
-    ret->sem.doc_tbl.res = res;
-    ret->sem.doc_tbl.att = att;
+    ret->sem.doc_tbl.res  = res;
+    ret->sem.doc_tbl.att  = att;
+    ret->sem.doc_tbl.kind = kind;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;
@@ -4434,7 +4436,8 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_doc_tbl:
             return PFla_doc_tbl (left,
                                  n->sem.doc_tbl.res,
-                                 n->sem.doc_tbl.att);
+                                 n->sem.doc_tbl.att,
+                                 n->sem.doc_tbl.kind);
 
         case la_doc_access:
             return PFla_doc_access (left, right,
