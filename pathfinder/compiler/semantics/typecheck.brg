@@ -1362,7 +1362,7 @@ overload (PFqname_t qn, PFcnode_t *args)
     PFcnode_t *arg;
     PFfun_t *fn;
     unsigned int i, a;
-    bool match, zoo_match, arg_match;
+    bool ari_match, zoo_match, arg_match;
 
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
@@ -1377,22 +1377,20 @@ overload (PFqname_t qn, PFcnode_t *args)
          * expected formal parameter types?
          */
         if (fn->sig_count == 1) {
-            match     = true;
-            zoo_match = true;
+            arg_match = true;
+            ari_match = true;
             a         = 0;
             while (a < fn->arity) {
                 /* test if function has at least the same
                    number of arguments as the tested function */
                 if (arg->kind == c_nil)
                 {
-                    match = false;
+                    ari_match = false;
                     break;
                 }
 
                 arg_match = PFty_promotable (arg->child[0]->type,
                                              (fn->sigs[0].par_ty)[a]);
-                
-                match = match && arg_match;
                 
                 /* apply function zero-or-one on the type of the argument */
                 zoo_ty = *PFty_simplify (
@@ -1407,7 +1405,7 @@ overload (PFqname_t qn, PFcnode_t *args)
                 /* if neither the original type
                    nor the zero-or-one type match
                    we give up */
-                if (!match && !zoo_match)
+                if (!arg_match && !zoo_match)
                     break;
 
                 /* if the original type does not match
@@ -1457,7 +1455,7 @@ overload (PFqname_t qn, PFcnode_t *args)
 
             /* yes, return this function (its the most specific match) */
             /* and it has the same number of arguments */
-            if (match && arg->kind == c_nil)
+            if (ari_match && arg_match && arg->kind == c_nil)
                 return fn;
         }
         else

@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_598044FF2CD04BB5954E0D92BC8EE8D0"
+        "OwnerKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_61B2E04FDCD84F34A63853B93B1DCD7B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -41,12 +47,6 @@
         {
         "MsmKey" = "8:_7A81BBE87CE141E49C746C0FC9845708"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_95AB502C09E04E9884B86C2C28CF58AD"
-        "OwnerKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -618,7 +618,7 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB-Common64"
-        "ProductCode" = "8:{991C6A06-5658-454A-8673-1B555FE06F49}"
+        "ProductCode" = "8:{A273E3DE-269F-4246-A714-FEB875C1BAC3}"
         "PackageCode" = "8:{D975D1A5-A244-4099-BAE4-8F430A975715}"
         "UpgradeCode" = "8:{8579C1FE-AA50-45D8-B312-D7C737223FF6}"
         "RestartWWWService" = "11:FALSE"
@@ -1284,7 +1284,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_95AB502C09E04E9884B86C2C28CF58AD"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_598044FF2CD04BB5954E0D92BC8EE8D0"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
