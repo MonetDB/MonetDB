@@ -1,7 +1,7 @@
 #check the storage size
 function tst():void;
 	z:= inspect.getSize();
-	io.printf("#size %lld\n",z);
+	io.printf("#size %d\n",z);
 end tst;
 
 user.tst();
@@ -9,12 +9,12 @@ user.tst();
 f:= inspect.getSize("algebra");
 fs:lng:= aggr.sum(f);
 fs2:= fs/2;
-io.printf("#algebra size %lld\n",fs2);
+io.printf("#algebra size %d\n",fs2);
 
 z:= inspect.getSize("inspect");
 zs:lng:= aggr.sum(z);
 zs2:= zs/2;
-io.printf("#inspect size %lld\n",zs2);
+io.printf("#inspect size %d\n",zs2);
 
 l:= inspect.getSize();
-io.printf("#size %lld\n",l);
+io.printf("#size %d\n",l);

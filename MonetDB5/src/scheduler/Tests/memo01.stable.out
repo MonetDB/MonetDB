@@ -102,7 +102,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     T1cost := calc.+(Acost,Bcost);      # 19 T1cost:wrd := CALCbinaryADDwrdwrd(Acost:wrd, Bcost:wrd) 
     T2cost := calc.+(Bcost,Ccost);      # 20 T2cost:wrd := CALCbinaryADDwrdwrd(Bcost:wrd, Ccost:wrd) 
     T3cost := calc.+(Ccost,Dcost);      # 21 T3cost:wrd := CALCbinaryADDwrdwrd(Ccost:wrd, Dcost:wrd) 
-    io.printf("choicepoint 1\n");       # 22 _26:void := IOprint_str(_27:str) 
+    io.printf("choicepoint 1\n");       # 22 _26:void := IOprintf(_27:str) 
     scheduler.choice();                 # 23 _28:void := RUNchoice() 
     T1 := algebra.join(A,B);            # 24 T1:bat[:int,:int] := ALGjoin(A:bat[:int,:int], B:bat[:int,:int]) {G}
     T1cost := aggr.count(T1);           # 25 T1cost:wrd := ALGcount_bat(T1:bat[:int,:int]) 
@@ -110,7 +110,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     T2cost := aggr.count(T2);           # 27 T2cost:wrd := ALGcount_bat(T2:bat[:int,:int]) 
     T3 := algebra.join(C,D);            # 28 T3:bat[:int,:int] := ALGjoin(C:bat[:int,:int], D:bat[:int,:int]) {G}
     T3cost := aggr.count(T3);           # 29 T3cost:wrd := ALGcount_bat(T3:bat[:int,:int]) 
-    io.printf("choicepoint 2\n");       # 30 _32:void := IOprint_str(_33:str) 
+    io.printf("choicepoint 2\n");       # 30 _32:void := IOprintf(_33:str) 
     scheduler.choice(T1cost,T1,T2cost,T2,T3cost,T3);# 31 _34:void := RUNchoice(T1cost:wrd, T1:bat[:int,:int], T2cost:wrd, T2:bat[:int,:int], T3cost:wrd, T3:bat[:int,:int]) 
     T4cost := calc.+(T1cost,Ccost);     # 32 T4cost:wrd := CALCbinaryADDwrdwrd(T1cost:wrd, Ccost:wrd) 
     T5cost := calc.+(Acost,T2cost);     # 33 T5cost:wrd := CALCbinaryADDwrdwrd(Acost:wrd, T2cost:wrd) 
@@ -127,7 +127,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     T7cost := aggr.count(T7);           # 44 T7cost:wrd := ALGcount_bat(T7:bat[:int,:int]) 
     T8 := algebra.join(C,D);            # 45 T8:bat[:int,:int] := ALGjoin(C:bat[:int,:int], D:bat[:int,:int]) {G}
     T8cost := aggr.count(T8);           # 46 T8cost:wrd := ALGcount_bat(T8:bat[:int,:int]) 
-    io.printf("choicepoint 3\n");       # 47 _45:void := IOprint_str(_46:str) 
+    io.printf("choicepoint 3\n");       # 47 _45:void := IOprintf(_46:str) 
     scheduler.choice(T4cost,T4,T5cost,T5,T6cost,T6,T7cost,T7,T8cost,T8);# 48 _47:void := RUNchoice(T4cost:wrd, T4:bat[:int,:int], T5cost:wrd, T5:bat[:int,:int], T6cost:wrd, T6:bat[:int,:int], T7cost:wrd, T7:bat[:int,:int], T8cost:wrd, T8:bat[:int,:int]) 
     T9cost := calc.+(T2cost,Dcost);     # 49 T9cost:wrd := CALCbinaryADDwrdwrd(T2cost:wrd, Dcost:wrd) 
     T10cost := calc.+(T5cost,Dcost);    # 50 T10cost:wrd := CALCbinaryADDwrdwrd(T5cost:wrd, Dcost:wrd) 
@@ -139,7 +139,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     T11 := algebra.join(A,T6);          # 56 T11:bat[:int,:int] := ALGjoin(A:bat[:int,:int], T6:bat[:int,:int]) {G}
     T12 := algebra.join(A,T7);          # 57 T12:bat[:int,:int] := ALGjoin(A:bat[:int,:int], T7:bat[:int,:int]) {G}
     T13 := algebra.join(T1,T8);         # 58 T13:bat[:int,:int] := ALGjoin(T1:bat[:int,:int], T8:bat[:int,:int]) {G}
-    io.printf("choicepoint 4\n");       # 59 _58:void := IOprint_str(_59:str) 
+    io.printf("choicepoint 4\n");       # 59 _58:void := IOprintf(_59:str) 
     scheduler.choice(T9cost,T9,T10cost,T10,T11cost,T11,T12cost,T12,T13cost,T13);# 60 _60:void := RUNchoice(T9cost:wrd, T9:bat[:int,:int], T10cost:wrd, T10:bat[:int,:int], T11cost:wrd, T11:bat[:int,:int], T12cost:wrd, T12:bat[:int,:int], T13cost:wrd, T13:bat[:int,:int]) 
     answer := scheduler.pick(T9,T10,T11,T12,T13);# 61 answer:bat[:int,:int] := RUNpickResult(T9:bat[:int,:int], T10:bat[:int,:int], T11:bat[:int,:int], T12:bat[:int,:int], T13:bat[:int,:int]) {G}
     io.print(answer);                   # 62 _62:void := IOprint_val(answer:bat[:int,:int]) 

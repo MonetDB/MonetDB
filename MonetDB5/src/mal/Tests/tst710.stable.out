@@ -25,7 +25,7 @@ function user.main():void;              #  0 main:void := user.main()
     i := 1;                             #  2 i:int := _3:int 
     io.print(i);                        #  3 _4:void := IOprint_val(i:int) 
 catch GDKerror:str ;                    #  4 GDKerror:str {J6}
-    io.printf("GDKerror, do something\n");#  5 _6:void := IOprint_str(_7:str) 
+    io.printf("GDKerror, do something\n");#  5 _6:void := IOprintf(_7:str) 
 exit GDKerror:str ;                     #  6 GDKerror:str 
 end main;	# 7  
 [ 1 ]

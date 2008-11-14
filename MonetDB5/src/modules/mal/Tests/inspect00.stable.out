@@ -28,7 +28,7 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 #end tst;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     i := mdb.getStackDepth();           #  1 i:int := MDBStkDepth() 
-    io.printf("stack depth %d\n",i);    #  2 _2:void := IOprint_formatted_int(_3:str, i:int) 
+    io.printf("stack depth %d\n",i);    #  2 _2:void := IOprintf(_3:str, i:int) 
     t := mdb.getStackTrace();           #  3 t:bat[:void,:str] := MDBStkTrace() {G}
     io.print(t);                        #  4 _5:void := IOprint_val(t:bat[:void,:str]) 
     b0 := mdb.getStackFrame(0);         #  5 b0:bat[:str,:str] := MDBgetStackFrameN(_7:int) {G}

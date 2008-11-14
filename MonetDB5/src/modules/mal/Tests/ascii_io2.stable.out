@@ -67,7 +67,7 @@ barrier correct := calc.!=(targetdir,"");# 15 correct:bit := CALCcompNEQstrstr(t
     targetdir := calc.+(targetdir,"/"); # 16 targetdir:str := CALCstrConcat(targetdir:str, _24:str) {G}
 exit correct;                           # 17 correct:bit 
     datafile := calc.+(targetdir,"ascii_io2.load");# 18 datafile:str := CALCstrConcat(targetdir:str, _26:str) {G}
-    io.printf("#source:%s\n",datafile); # 19 _27:void := IOprint_formatted_str(_28:str, datafile:str) 
+    io.printf("#source:%s\n",datafile); # 19 _27:void := IOprintf(_28:str, datafile:str) 
     idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);# 20 idxbat:bat[:str,:BAT] := CMDtablet_load(namebat:bat[:oid,:str], sepbat:bat[:oid,:str], typebat:bat[:oid,:str], datafile:str, len:int) {G}
 #io.print(idxbat); 
     i1 := algebra.fetch(idxbat,0);      # 22 i1:BAT := ALGfetchint(idxbat:bat[:str,:BAT], _32:int) {G}

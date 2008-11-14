@@ -18,9 +18,9 @@ stdout of test 'tst840` in directory 'src/mal` itself:
 function user.main():void;              #  0 main:void := user.main() {G}
 # raw IO may screw up the front-end 
     s := " \nline1\n\nline2\n";         #  2 s:str := _3:str {G}
-    io.printf("----\n");                #  3 _4:void := IOprint_str(_5:str) 
-    io.printf("%s",s);                  #  4 _6:void := IOprint_formatted_str(_7:str, s:str) 
-    io.printf("----\n");                #  5 _8:void := IOprint_str(_5:str) 
+    io.printf("----\n");                #  3 _4:void := IOprintf(_5:str) 
+    io.printf("%s",s);                  #  4 _6:void := IOprintf(_7:str, s:str) 
+    io.printf("----\n");                #  5 _8:void := IOprintf(_5:str) 
 end main;	# 6  
 ----
  

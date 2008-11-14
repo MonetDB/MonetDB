@@ -48,9 +48,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     io.print(c);                        # 11 _16:void := IOprint_val(c:bat[:int,:str]) 
 #setPersistent(c); 
     io.print(c);                        # 13 _18:void := IOprint_val(c:bat[:int,:str]) 
-    io.printf("caught anything?\n");   # 14 _19:void := IOprint_str(_20:str) 
+    io.printf("caught anything?\n");    # 14 _19:void := IOprintf(_20:str) 
 catch GDKerror:str ;                    # 15 GDKerror:str {J17}
-    io.printf("Catched the renaming exception\n");# 16 _22:void := IOprint_str(_23:str) 
+    io.printf("Catched the renaming exception\n");# 16 _22:void := IOprintf(_23:str) 
 exit GDKerror:str ;                     # 17 GDKerror:str 
 #get rid of it again 
 #destroy(b); 

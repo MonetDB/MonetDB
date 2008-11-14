@@ -78,7 +78,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     mapi.rpc(mid,"e:=algebra.select(d,low,7);");# 26 _44:void := SERVERquery(mid:int, _45:str) 
     mapi.rpc(mid,"i:=aggr.count(d);");  # 27 _46:void := SERVERquery(mid:int, _47:str) 
     i:lng  := mapi.rpc(mid,"io.print(i);");# 28 i:lng := SERVERmapi_rpc_single_row(mid:int, _49:str) 
-    io.printf(" count %lld\n",i);       # 29 _50:void := IOprint_formatted_lng(_51:str, i:lng) 
+    io.printf(" count %d\n",i);         # 29 _50:void := IOprintf(_51:str, i:lng) 
     d:bat[:int,:int]  := mapi.rpc(mid,"io.print(d);");# 30 d:bat[:int,:int] := SERVERmapi_rpc_bat(mid:int, _53:str) {G}
     io.print(d);                        # 31 _54:void := IOprint_val(d:bat[:int,:int]) 
     mapi.disconnect(mid);               # 32 _55:void := SERVERdisconnect(mid:int) 

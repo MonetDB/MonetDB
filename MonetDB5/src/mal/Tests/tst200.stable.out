@@ -51,10 +51,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #focussed on integers 
 #it includes bat.insertions,deletions,selections, and joins. 
     b := bat.new(:int,:int);            #  8 b:bat[:int,:int] := CMDBATnew(_10:int, _11:int) {G}
-    io.printf("#~BeginVariableOutput~#\n");#  9 _12:void := IOprint_str(_13:str) 
+    io.printf("#~BeginVariableOutput~#\n");#  9 _12:void := IOprintf(_13:str) 
 #binfo:= info(b); 
 #err:= print(binfo);  
-    io.printf("#~EndVariableOutput~#\n");# 12 _16:void := IOprint_str(_17:str) 
+    io.printf("#~EndVariableOutput~#\n");# 12 _16:void := IOprintf(_17:str) 
     err := bat.insert(b,1,15);          # 13 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _19:int, _20:int) {G}
     err := bat.insert(b,2,4);           # 14 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) {G}
     n0 := calc.int(nil);                # 15 n0:int := CALCnil2int(_24:void) 

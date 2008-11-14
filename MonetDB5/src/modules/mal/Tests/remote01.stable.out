@@ -62,12 +62,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # retrieve a value (that for sure won't exist) 
     x:void  := remote.get("test",b1:rmtobj);#  9 x:void := RMTget(_8:str, _13:rmtobj) 
 catch MALException:str ;                # 10 MALException:str {J12}
-    io.printf("!%s\n",MALException);    # 11 _15:void := IOprint_formatted_str(_16:str, MALException:str) 
+    io.printf("!%s\n",MALException);    # 11 _15:void := IOprintf(_16:str, MALException:str) 
 exit MALException:str ;                 # 12 MALException:str 
 # should raise an exception (the arguments don't matter here) 
     remote.create("test","localhost",50000,nil:str,"test","test");# 14 _18:void := RMTcreate(_8:str, _19:str, _20:int, _9:str, _8:str, _8:str) 
 catch MALException:str ;                # 15 MALException:str {J17}
-    io.printf("!%s\n",MALException);    # 16 _21:void := IOprint_formatted_str(_16:str, MALException:str) 
+    io.printf("!%s\n",MALException);    # 16 _21:void := IOprintf(_16:str, MALException:str) 
 exit MALException:str ;                 # 17 MALException:str 
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
@@ -75,7 +75,7 @@ exit MALException:str ;                 # 17 MALException:str
 # this should fail now 
     remote.destroy("test");             # 22 _26:void := RMTdestroy(_8:str) 
 catch MALException:str ;                # 23 MALException:str {J25}
-    io.printf("!%s\n",MALException);    # 24 _27:void := IOprint_formatted_str(_16:str, MALException:str) 
+    io.printf("!%s\n",MALException);    # 24 _27:void := IOprintf(_16:str, MALException:str) 
 exit MALException:str ;                 # 25 MALException:str 
 end main;                               # 26  
 !MALException:remote.get:'b1' may not be used before being initialized

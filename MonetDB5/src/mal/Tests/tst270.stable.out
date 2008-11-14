@@ -68,10 +68,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
     b := bat.new(:int,:int);            # 14 b:bat[:int,:int] := CMDBATnew(_22:int, _23:int) {G}
-    io.printf("#~BeginVariableOutput~#\n");# 15 _24:void := IOprint_str(_25:str) 
+    io.printf("#~BeginVariableOutput~#\n");# 15 _24:void := IOprintf(_25:str) 
     binfo := bat.info(b);               # 16 binfo:bat[:str,:str] := BKCinfo(b:bat[:int,:int]) {G}
     io.print(binfo);                    # 17 _27:void := IOprint_val(binfo:bat[:str,:str]) 
-    io.printf("#~EndVariableOutput~#\n");# 18 _28:void := IOprint_str(_29:str) 
+    io.printf("#~EndVariableOutput~#\n");# 18 _28:void := IOprintf(_29:str) 
     profiler.start();                   # 19 _30:void := CMDstartProfiler() 
     err := bat.insert(b,1,15);          # 20 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _32:int, _33:int) {G}
     err := bat.insert(b,2,4);           # 21 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _34:int, _35:int) {G}

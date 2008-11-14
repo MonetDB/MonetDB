@@ -81,10 +81,10 @@ exit (mloop,h,t);                       # 25 (mloop:lng, h:oid, t:lng)
     d2 := calc.-(t3,t2);                # 30 d2:lng := CALCbinarySUBlnglng(t3:lng, t2:lng) 
     d3 := calc.-(t4,t3);                # 31 d3:lng := CALCbinarySUBlnglng(t4:lng, t3:lng) 
     cnt := aggr.count(d);               # 32 cnt:wrd := ALGcount_bat(d:bat[:oid,:lng]) 
-    io.printf("#cnt %d ",cnt);          # 33 _35:void := IOprint_formatted_wrd(_36:str, cnt:wrd) 
-    io.printf("#make %d ",d1);          # 34 _37:void := IOprint_formatted_lng(_38:str, d1:lng) 
-    io.printf("#multiplex %d\n",d2);    # 35 _39:void := IOprint_formatted_lng(_40:str, d2:lng) 
-    io.printf("#compiled multiplex %d\n",d3);# 36 _41:void := IOprint_formatted_lng(_42:str, d3:lng) 
+    io.printf("#cnt %d ",cnt);          # 33 _35:void := IOprintf(_36:str, cnt:wrd) 
+    io.printf("#make %d ",d1);          # 34 _37:void := IOprintf(_38:str, d1:lng) 
+    io.printf("#multiplex %d\n",d2);    # 35 _39:void := IOprintf(_40:str, d2:lng) 
+    io.printf("#compiled multiplex %d\n",d3);# 36 _41:void := IOprintf(_42:str, d3:lng) 
 #profiler.stop(); 
 end main;	# 38  
 #cnt 1000000 #make 782279 #multiplex 1936981

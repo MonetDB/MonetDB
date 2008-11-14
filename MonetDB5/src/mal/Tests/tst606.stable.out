@@ -45,7 +45,7 @@ end main;	# 7
 #	return w;
 #end take;
 function constants.take(v:str):any_1;   #  0 take:any_1 := constants.take(v:str) {UPG}
-    io.printf("looking for %s\n",v);    #  1 _2:void := IOprint_formatted_str(_3:str, v:str) 
+    io.printf("looking for %s\n",v);    #  1 _2:void := IOprintf(_3:str, v:str) 
     w := constants.take(v);             #  2 w:any := constants.take(v:str) 
     return take := w;                   #  3 take:any_1 := w:any 
 end take;	# 4  
