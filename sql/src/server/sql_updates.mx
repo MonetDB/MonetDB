@@ -107,6 +107,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 		stmt *s = inserts[0]->op2.stval;
 		sql_subaggr *sum;
 		stmt *ssum = NULL;
+		stmt *col = NULL;
 
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
@@ -114,22 +115,34 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 			stmt_relselect_fill(s, stmt_uselect(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts), cmp_equal));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+				col = stmt_bat(c->c, stmt_dup(ts), RDONLY);
+				if ((k->type == ukey) && stmt_has_null(stmt_dup(col))) {
+					sql_subtype *t = tail_type(col);
+					stmt *n = stmt_atom(atom_general(t, NULL, 0));
+					col = stmt_select2(col, n, stmt_dup(n), 0);
+				}
 
-				stmt_relselect_fill(s, stmt_uselect( stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
+				stmt_relselect_fill(s, stmt_uselect( col, stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 			}
 		} else {
 			s = stmt_releqjoin_init();
 			stmt_releqjoin_fill(s, stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+				col = stmt_bat(c->c, stmt_dup(ts), RDONLY);
+				if ((k->type == ukey) && stmt_has_null(stmt_dup(col))) {
+					sql_subtype *t = tail_type(col);
+					stmt *n = stmt_atom(atom_general(t, NULL, 0));
+					col = stmt_select2(col, n, stmt_dup(n), 0);
+				}
 
-				stmt_releqjoin_fill(s, stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval));
+				stmt_releqjoin_fill(s, col, stmt_dup(inserts[c->c->colnr]->op2.stval));
 			}
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
 
 		/* 2e stage: find out if inserted are unique */
-		if (idx_inserts->nrcols) {	/* insert columns not atoms */
+		if (!alter && idx_inserts->nrcols) {	/* insert columns not atoms */
 #if 0
 			sql_subtype *Oid = sql_bind_localtype("oid");
 			sql_subfunc *nu, *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
@@ -184,8 +197,13 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 		sql_kc *c = k->columns->h->data;
 		stmt *s, *h = inserts[c->c->colnr]->op2.stval;
 
+		s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
+		if ((k->type == ukey) && stmt_has_null(stmt_dup(s))) {
+			sql_subtype *t = tail_type(h);
+			stmt *n = stmt_atom(atom_general(t, NULL, 0));
+			s = stmt_select2(s, n, stmt_dup(n), 0);
+		}
 		if (!alter) {
-			s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
 			if (h->nrcols) {
 				s = stmt_join(s, stmt_reverse(stmt_dup(h)), cmp_equal);
 				/* s should be empty */
@@ -202,7 +220,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts, int a
 		}
 
 		/* 2e stage: find out if inserts are unique */
-		if (h->nrcols) {	/* insert multiple atoms */
+		if (h->nrcols && (k->type == pkey || !alter) ) {	/* insert multiple atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
