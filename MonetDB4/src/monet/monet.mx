@@ -806,6 +806,8 @@ monet_sprintf(str *res, str format, va_list ap)
 					lval = (lng) *(sht *) p;
 				} else if (type == TYPE_int) {
 					lval = (lng) *(int *) p;
+				} else if (type == TYPE_wrd) {
+					lval = (lng) *(wrd *) p;
 				} else if (type == TYPE_flt) {
 					lval = (lng) *(flt *) p;
 				} else if (type == TYPE_dbl) {
