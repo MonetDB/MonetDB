@@ -476,9 +476,8 @@ PFll_following(BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *doc_pre, BAT *pre
     /* -------------------- set result properties ---------------------- */
 {
     bit trivial  = (BATcount(res) < 2);
-    oid fst_item = *(oid*)Tloc(res, BUNfirst(res));
-    oid lst_item = *(oid*)Tloc(res, BUNlast(res) - 1);
-    bit one_item = (fst_item == lst_item);
+    /* actually zero_or_one_item... */
+    bit one_item = trivial || (*(oid*)Tloc(res, BUNfirst(res)) == *(oid*)Tloc(res, BUNlast(res) - 1));
     bit one_iter = (num_iter == 1);
 
     res->batDirty = TRUE;
