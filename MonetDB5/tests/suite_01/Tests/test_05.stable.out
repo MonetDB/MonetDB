@@ -67,13 +67,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("s.print();"); 
     qa_a := io.print(s);                # 53 qa_a:void := IOprint_val(s:bat[:int,:str]) 
 #	io.print("# Monet printf should behave as in C\n"); 
-    ra_a := io.printf("got single quote ' .\n");# 55 ra_a:void := IOprint_str(_73:str) 
+    ra_a := io.printf("got single quote ' .\n");# 55 ra_a:void := IOprintf(_73:str) 
 #	io.print("# remove superfluous escapes\n"); 
-    sa_a := io.printf("got single quote ' without escape\n");# 57 sa_a:void := IOprint_str(_76:str) 
+    sa_a := io.printf("got single quote ' without escape\n");# 57 sa_a:void := IOprintf(_76:str) 
 #	io.print("printf(\"got tab \t and newline \n .\n\");"); 
-    ta_a := io.printf("got tab \t and newline \n .\n");# 59 ta_a:void := IOprint_str(_79:str) 
+    ta_a := io.printf("got tab \t and newline \n .\n");# 59 ta_a:void := IOprintf(_79:str) 
 #	io.print("printf(\"problem signalled before \\\"\n\");"); 
-    ua_a := io.printf("problem signalled before \\\"\n");# 61 ua_a:void := IOprint_str(_82:str) 
+    ua_a := io.printf("problem signalled before \\\"\n");# 61 ua_a:void := IOprintf(_82:str) 
 #	io.print("quit();"); 
     va_a := clients.quit();             # 63 va_a:void := CLTquit() 
 end main;	# 64  

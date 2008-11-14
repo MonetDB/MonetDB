@@ -50,10 +50,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 catch MALException:str ;                #  6 MALException:str {J8}
     zs := nil:str;                      #  7 zs:str := _11:str {G}
 exit MALException:str ;                 #  8 MALException:str 
-    io.printf("oid(0) -> %s\n",zs);     #  9 _12:void := IOprint_formatted_str(_13:str, zs:str) 
+    io.printf("oid(0) -> %s\n",zs);     #  9 _12:void := IOprintf(_13:str, zs:str) 
     z := algebra.find(b,nil:oid);       # 10 z:str := ALGfind(b:bat[:oid,:str], _14:oid) {G}
     zs := str.str(z);                   # 11 zs:str := STRtostr(z:str) {G}
-    io.printf("oid(nil) -> %s\n",zs);   # 12 _15:void := IOprint_formatted_str(_16:str, zs:str) 
+    io.printf("oid(nil) -> %s\n",zs);   # 12 _15:void := IOprintf(_16:str, zs:str) 
     bat.append(b,"zero");               # 13 _17:bat[:str,:any] := BKCappend_val_wrap(b:bat[:oid,:str], _5:str) {G}
     io.print(b);                        # 14 _18:void := IOprint_val(b:bat[:oid,:str]) 
     z := algebra.find(b,0@0:oid);       # 15 z:str := ALGfind(b:bat[:oid,:str], _8:oid) {G}
@@ -61,13 +61,13 @@ exit MALException:str ;                 #  8 MALException:str
 catch MALException:str ;                # 17 MALException:str {J19}
     zs := nil:str;                      # 18 zs:str := _11:str {G}
 exit MALException:str ;                 # 19 MALException:str 
-    io.printf("oid(0) -> %s\n",zs);     # 20 _19:void := IOprint_formatted_str(_13:str, zs:str) 
+    io.printf("oid(0) -> %s\n",zs);     # 20 _19:void := IOprintf(_13:str, zs:str) 
     z := algebra.find(b,nil:oid);       # 21 z:str := ALGfind(b:bat[:oid,:str], _14:oid) {G}
     zs := str.str(z);                   # 22 zs:str := STRtostr(z:str) {G}
 catch MALException:str ;                # 23 MALException:str {J25}
     zs := nil:str;                      # 24 zs:str := _11:str {G}
 exit MALException:str ;                 # 25 MALException:str 
-    io.printf("oid(nil) -> %s\n",zs);   # 26 _20:void := IOprint_formatted_str(_16:str, zs:str) 
+    io.printf("oid(nil) -> %s\n",zs);   # 26 _20:void := IOprintf(_16:str, zs:str) 
 end main;	# 27  
 #-----------------#
 # h	t	  # name

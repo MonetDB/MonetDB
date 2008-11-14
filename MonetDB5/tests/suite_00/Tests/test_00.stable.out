@@ -179,10 +179,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("var b:= new(int,int);"); 
     b := bat.new(nil:int,nil:int);      # 17 b:bat[:int,:int] := CMDBATnew(_19:int, _19:int) {G}
 #	io.print("#b.roles(\"head\",\"tail\"); roles was removed from the kernel ops\n"); 
-    ca_a := io.printf("#~BeginVariableOutput~#\n");# 19 ca_a:void := IOprint_str(_22:str) 
+    ca_a := io.printf("#~BeginVariableOutput~#\n");# 19 ca_a:void := IOprintf(_22:str) 
     da_a := bat.info(b);                # 20 da_a:bat[:str,:str] := BKCinfo(b:bat[:int,:int]) {G}
     ea_a := io.print(da_a);             # 21 ea_a:void := IOprint_val(da_a:bat[:str,:str]) 
-    fa_a := io.printf("#~EndVariableOutput~#\n");# 22 fa_a:void := IOprint_str(_26:str) 
+    fa_a := io.printf("#~EndVariableOutput~#\n");# 22 fa_a:void := IOprintf(_26:str) 
 #	io.print("b.insert(1,15);"); 
     ga_a := bat.insert(b,1,15);         # 24 ga_a:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) {G}
 #	io.print("b.insert(2,4);"); 

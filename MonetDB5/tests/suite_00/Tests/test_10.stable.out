@@ -101,12 +101,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ha_a := bat.insert(s,4,2);          # 23 ha_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _24:int, _25:int) {G}
     ia_a := bat.insert(s,4,3);          # 24 ia_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _24:int, _22:int) {G}
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\");"); 
-    ja_a := io.printf("#~BeginVariableOutput~#\n");# 26 ja_a:void := IOprint_str(_34:str) 
+    ja_a := io.printf("#~BeginVariableOutput~#\n");# 26 ja_a:void := IOprintf(_34:str) 
 #	io.print("sort(s).print();"); 
     ka_a := algebra.sort(s);            # 28 ka_a:bat[:int,:int] := ALGhsort(s:bat[:int,:int]) {G}
     la_a := io.print(ka_a);             # 29 la_a:void := IOprint_val(ka_a:bat[:int,:int]) 
 #	io.print("printf(\"#~EndVariableOutput~#\\n\");"); 
-    ma_a := io.printf("#~EndVariableOutput~#\n");# 31 ma_a:void := IOprint_str(_40:str) 
+    ma_a := io.printf("#~EndVariableOutput~#\n");# 31 ma_a:void := IOprintf(_40:str) 
 #	io.print("sortHT(s).print();"); 
     na_a := algebra.sortHT(s);          # 33 na_a:bat[:int,:int] := ALGhtsort(s:bat[:int,:int]) {G}
     oa_a := io.print(na_a);             # 34 oa_a:void := IOprint_val(na_a:bat[:int,:int]) 
@@ -125,12 +125,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ua_a := bat.insert(s,4,2);          # 47 ua_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _24:int, _25:int) {G}
     va_a := bat.insert(s,1,1);          # 48 va_a:bat[:int,:int] := BKCinsert_bun(s:bat[:int,:int], _27:int, _27:int) {G}
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\");"); 
-    wa_a := io.printf("#~BeginVariableOutput~#\n");# 50 wa_a:void := IOprint_str(_34:str) 
+    wa_a := io.printf("#~BeginVariableOutput~#\n");# 50 wa_a:void := IOprintf(_34:str) 
 #	io.print("sort(s).print();"); 
     xa_a := algebra.sort(s);            # 52 xa_a:bat[:int,:int] := ALGhsort(s:bat[:int,:int]) {G}
     ya_a := io.print(xa_a);             # 53 ya_a:void := IOprint_val(xa_a:bat[:int,:int]) 
 #	io.print("printf(\"#~EndVariableOutput~#\\n\");"); 
-    ab_a := io.printf("#~EndVariableOutput~#\n");# 55 ab_a:void := IOprint_str(_40:str) 
+    ab_a := io.printf("#~EndVariableOutput~#\n");# 55 ab_a:void := IOprintf(_40:str) 
 #	io.print("sortHT(s).print();"); 
     bb_a := algebra.sortHT(s);          # 57 bb_a:bat[:int,:int] := ALGhtsort(s:bat[:int,:int]) {G}
     cb_a := io.print(bb_a);             # 58 cb_a:void := IOprint_val(bb_a:bat[:int,:int]) 

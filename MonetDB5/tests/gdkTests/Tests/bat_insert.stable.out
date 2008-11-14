@@ -33,7 +33,7 @@ function user.check_cap(b:bat[:any_1,:any_2]):void;#  0 check_cap:void := user.c
     overflow := calc.+(inserted,deleted);#  6 overflow:lng := CALCbinaryADDwrdlng(inserted:wrd, deleted:lng) 
     overflow := calc.-(overflow,cap);   #  7 overflow:lng := CALCbinarySUBlnglng(overflow:lng, cap:lng) 
 barrier errors := calc.>(overflow,0:lng);#  8 errors:bit := CALCcompGTlnglng(overflow:lng, _9:lng) {J10}
-    io.printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);#  9 _10:void := IOprint_formatted_lng(_11:str, overflow:lng) 
+    io.printf("!ERROR: wrote %d BUNs beyond capacity\n",overflow);#  9 _10:void := IOprintf(_11:str, overflow:lng) 
 exit errors;                            # 10 errors:bit 
 end check_cap;	# 11  
 #
