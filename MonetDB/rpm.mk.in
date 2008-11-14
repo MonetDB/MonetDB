@@ -19,7 +19,9 @@
 
 # make rules to generate MonetDB RPMs (works on RedHat Linux, only)
 
-rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
+rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpmbuild
+
+rpmmacros = `rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(rpmtopdir)/rpmmacros
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
@@ -31,7 +33,7 @@ $(rpmtopdir)/rpmmacros:
 	mkdir -p $(rpmtopdir)/BUILD
 	mkdir -p $(rpmtopdir)/INSTALL
 
-	echo "macrofiles: /usr/lib/rpm/macros:/usr/lib/rpm/%{_target}/macros:/usr/lib/rpm/redhat/macros:/etc/rpm/macros.specspo:/etc/rpm/macros.prelink:/etc/rpm/macros.solve:/etc/rpm/macros.up2date:/etc/rpm/macros:/etc/rpm/%{_target}/macros:$(rpmtopdir)/rpmmacros" > $(rpmtopdir)/rpmrc
+	echo "macrofiles: $(rpmmacros)" > $(rpmtopdir)/rpmrc
 
 	echo "%_tmppath          /tmp"                >  $(rpmtopdir)/rpmmacros
 	echo "%_topdir           $(rpmtopdir)"        >> $(rpmtopdir)/rpmmacros
@@ -39,18 +41,19 @@ $(rpmtopdir)/rpmmacros:
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
 	echo "%dist              _@LINUX_DIST@"       >> $(rpmtopdir)/rpmmacros
+	echo "%packager MonetDB Database System <monet@cwi.nl>" >> $(rpmtopdir)/rpmmacros
 	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
 rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
-	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+	$(RPMBUILD) --macros "$(rpmmacros)" --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
+	for i in $(rpmtopdir)/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 	rm -rf $(rpmtopdir)/BUILD
 
 srpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
-	$(RPMBUILD) --rcfile $(rpmtopdir)/rpmrc -ts --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
-	for i in rpm/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
+	$(RPMBUILD) --macros "$(rpmmacros)" --rcfile $(rpmtopdir)/rpmrc -ts --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
+	for i in $(rpmtopdir)/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 

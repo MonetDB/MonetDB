@@ -110,6 +110,8 @@ key_destroy(sql_key *k)
 	}
 	list_destroy(k->columns);
 	base_destroy(&k->base);
+	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
+		k->t->pkey = NULL;
 	_DELETE(k);
 }
 

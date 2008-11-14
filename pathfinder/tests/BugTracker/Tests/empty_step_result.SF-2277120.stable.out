@@ -1,0 +1,49 @@
+stdout of test 'empty_step_result.SF-2277120` in directory 'tests/BugTracker` itself:
+
+
+# 14:53:23 >  
+# 14:53:23 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39629 --set xrpc_port=43527 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 14:53:23 >  
+
+# MonetDB Server v4.26.0
+# based on GDK   v1.26.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.9.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.26.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:43527/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:53:23 >  
+# 14:53:23 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39629 empty_step_result.SF-2277120.xq
+# 14:53:23 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 14:53:24 >  
+# 14:53:24 >  Done.
+# 14:53:24 >  
+

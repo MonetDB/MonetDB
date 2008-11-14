@@ -1444,6 +1444,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
 			dnode *nms = s->data.lval->h;
 			sql_key *k;
+			list *l = create_stmt_list();
 
 			if (kt == pkey && t->pkey) 
 				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
@@ -1458,11 +1459,22 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 				if (!c) {
 					return sql_error(sql, 02, "no such column '%s' for table '%s'\n", nm, t->base.name);
 				}
+				else if (alter && (kt == pkey)) {
+					char *msg;
+					sql_subaggr *cnt = sql_bind_aggr(sql->session->schema, "count", NULL);
+					stmt *bt = stmt_basetable(c->t, c->t->base.name);
+					stmt *cs = stmt_bat(c, bt, RDONLY);
+					stmt *s = stmt_atom(atom_general(&c->type, NULL, 0));
+
+					s = stmt_uselect(cs, s, cmp_equal);
+					s = stmt_aggr(s, NULL, sql_dup_aggr(cnt), 1);
+					msg = sql_message("CONSTRAINT PRIMARY KEY: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+
+					list_append(l,stmt_exception(s, msg, 02));
+				} 
 				(void) mvc_create_kc(sql, k, c);
 			}
 			if (alter) {
-				list *l = create_stmt_list();
-
 				res = sql_insert_add_idx(sql, t, k->idx, l);
 			} else {
 				res = stmt_none();
