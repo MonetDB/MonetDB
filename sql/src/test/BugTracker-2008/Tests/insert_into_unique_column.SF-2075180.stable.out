@@ -45,8 +45,52 @@ Over..
 [ NULL	]
 [ NULL	]
 [ 2	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.feat16,	sys.feat16 # table_name
+% age,	pnum # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ 2,	NULL	]
+[ 2,	NULL	]
+[ NULL,	2	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.feat16,	sys.feat16 # table_name
+% age,	pnum # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ 2,	NULL	]
+[ 2,	NULL	]
+[ NULL,	2	]
+[ NULL,	2	]
+[ 2,	2	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.t2 # table_name
+% id # name
+% int # type
+% 1 # length
 
-# 00:04:26 >  
-# 00:04:26 >  Done.
-# 00:04:26 >  
+# 16:20:08 >  
+# 16:20:08 >  Done.
+# 16:20:08 >  
 
