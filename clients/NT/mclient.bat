@@ -10,3 +10,5 @@
 
 @rem start the real client
 @"%MONETDB%\bin\mclient.exe" %*
+
+@if ERRORLEVEL 1 pause
