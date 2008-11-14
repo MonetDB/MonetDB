@@ -54,4 +54,6 @@ move "%ALLUSERSPROFILE%\Application Data\MonetDB5" "%MONETDBDIR%"
 rem start the real server
 "%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %SQLLOGDIR% %*
 
+if ERRORLEVEL 1 pause
+
 endlocal
