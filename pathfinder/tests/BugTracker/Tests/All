@@ -170,6 +170,8 @@ XML_attribute_generation.SF-2038906
 empty_file.SF-2017862
 empty_step_result.SF-2277120
 string_substring.SF-2153484
+intersect_duplicates.SF-2142522
+multi_merged_union.SF-2276427
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
