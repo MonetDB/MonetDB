@@ -8274,7 +8274,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 /* add the node references into list of twig constructors
                    (size = 0, kind = REFERENCE, prop = p_prop, cont = p_cont):
                    v := new(void, bat).seqbase(0@0);
-                   v.append(p_iter);
+                   v.append(p_iter.chk_order());
                    v.append(p_iter.project(%twig_state->pre%));
                    v.append(p_iter.project(0));
                    v.append(p_iter.project(%twig_state->level%));
@@ -8294,7 +8294,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                     lit_oid (0))),
                     /* iter */
                     bappend (var (v->name),
-                             var (p_iter->name)),
+                             chk_order (var (p_iter->name))),
                     /* pre */
                     bappend (var (v->name),
                              project (
