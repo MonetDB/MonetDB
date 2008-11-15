@@ -27,6 +27,7 @@
                  | 'var' Variable                           <m_declare>
                  | 'ERROR (' expression ')'                 <m_error>
                  | 'print (' args ')'                       <m_print>
+                 | 'printf (' args ')'                      <m_printf>
                  | 'col_name (' expr ',' expr ')'           <m_col_name>
                  | 'destroy_ws (' expression ')'            <m_destroy_ws>
 
@@ -580,6 +581,13 @@ print_statement (PFmil_t * n)
         /* statement: 'print (' expression ')' */
         case m_print:
             milprintf ("print (");
+            print_args (n->child[0]);
+            milprintf (")");
+            break;
+
+        /* statement: 'printf (' expression ')' */
+        case m_printf:
+            milprintf ("printf (");
             print_args (n->child[0]);
             milprintf (")");
             break;

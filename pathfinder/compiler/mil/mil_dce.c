@@ -442,6 +442,7 @@ mil_dce_worker (PFmil_t *root, PFbitset_t *used_vars, PFbitset_t *dirty_vars,
         case m_destroy_ws:
         case m_error:
         case m_print:
+        case m_printf:
         case m_break:
         case m_use:
         case m_update_tape:

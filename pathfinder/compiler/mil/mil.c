@@ -1730,6 +1730,12 @@ PFmil_print (const PFmil_t *args)
 }
 
 PFmil_t *
+PFmil_printf (const PFmil_t *args)
+{
+    return wire1 (m_printf, args);
+}
+
+PFmil_t *
 PFmil_col_name (const PFmil_t *bat, const PFmil_t *name)
 {
     return wire2 (m_col_name, bat, name);
