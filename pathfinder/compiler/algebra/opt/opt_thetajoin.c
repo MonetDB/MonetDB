@@ -994,6 +994,12 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             break;
 
         case la_pos_select:
+            /* the following rewrite is incorrect as the thetajoin arguments
+               filter out some rows from the cross product -- Not every
+               iteration has the same number of rows anymore and thus row-
+               numbering inside the pos_select needs to take the result
+               of the thetajoin into account. */
+#if 0
             /* An expression that does not contain any sorting column
                required by the positional select operator, but contains
                the partitioning attribute is independent of the positional
@@ -1065,6 +1071,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                     break;
                 }
             }
+#endif
             break;
 
         case la_disjunion:
