@@ -833,19 +833,19 @@ do_opt_mvd (PFla_op_t *p, bool modified)
         break;
 
     case la_num_eq:
-        modified = modify_binary_op (p, PFla_eq);
+        modified = modify_binary_op (p, PFla_eq) || modified;
         break;
     case la_num_gt:
-        modified = modify_binary_op (p, PFla_gt);
+        modified = modify_binary_op (p, PFla_gt) || modified;
         break;
     case la_bool_and:
-        modified = modify_binary_op (p, PFla_and);
+        modified = modify_binary_op (p, PFla_and) || modified;
         break;
     case la_bool_or:
-        modified = modify_binary_op (p, PFla_or);
+        modified = modify_binary_op (p, PFla_or) || modified;
         break;
     case la_bool_not:
-        modified = modify_unary_op (p, PFla_not);
+        modified = modify_unary_op (p, PFla_not) || modified;
         break;
 
     case la_to:
@@ -875,16 +875,16 @@ do_opt_mvd (PFla_op_t *p, bool modified)
         break;
 
     case la_avg:
-        modified = modify_aggr (p, la_avg);
+        modified = modify_aggr (p, la_avg) || modified;
         break;
     case la_max:
-        modified = modify_aggr (p, la_max);
+        modified = modify_aggr (p, la_max) || modified;
         break;
     case la_min:
-        modified = modify_aggr (p, la_min);
+        modified = modify_aggr (p, la_min) || modified;
         break;
     case la_sum:
-        modified = modify_aggr (p, la_sum);
+        modified = modify_aggr (p, la_sum) || modified;
         break;
     case la_count:
         /* An expression that contains the partitioning attribute is
