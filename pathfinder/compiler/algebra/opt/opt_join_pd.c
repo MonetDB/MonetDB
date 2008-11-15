@@ -109,7 +109,6 @@ map_proj_name (PFla_op_t *p, bool leftside, PFalg_att_t att)
         if (proj_at (proj, i).old == att)
             return proj_at (proj, i).new;
    
-    assert (0);
     PFoops (OOPS_FATAL,
             "Could not find column name in projection list.");
 
@@ -743,6 +742,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 break;
 
             case la_disjunion:
+            /* disable the following rewrite as it leads to a plan                                                 
+               explosion for more complex queries (see bug #1991738) */                                            
+                break;
+#if 0   
             {
                 /* In situations where we apply actions on the
                    empty sequence and append the generated rows with a union
@@ -807,6 +810,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 join_pushdown_worker (L(p), clean_up_list);
                 join_pushdown_worker (R(p), clean_up_list);
             } break;
+#endif
 
             case la_fun_1to1:
                 if (!is_join_att (p, lp->sem.fun_1to1.res)) {
