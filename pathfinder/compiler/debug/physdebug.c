@@ -56,14 +56,14 @@ static char *a_id[]  = {
       /* note: dot does not like the sequence "×\nfoo", so we put spaces
        * around the cross symbol.
        */
-    , [pa_cross]           = " × "              /* \"#00FFFF\" */
+    , [pa_cross]           = "CROSS"            /* \"#00FFFF\" */
     , [pa_leftjoin]        = "LEFTJOIN"         /* \"#00FF00\" */
     , [pa_eqjoin]          = "EQJOIN"           /* \"#00FF00\" */
     , [pa_semijoin]        = "SEMIJOIN"         /* \"#00FF00\" */
     , [pa_thetajoin]       = "thetajoin"
     , [pa_unq2_thetajoin]  = "unique_thetajoin"
     , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
-    , [pa_project]         = "¶ "
+    , [pa_project]         = "PROJECT"
     , [pa_select]          = "SEL"
     , [pa_val_select]      = "VAL SEL"
     , [pa_append_union]    = "APPEND_UNION"
