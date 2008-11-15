@@ -424,7 +424,7 @@ find_goal (PFla_op_t *n, PFla_op_t *goal)
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        found_goal = find_goal (n->child[i], goal) | found_goal;
+        found_goal = find_goal (n->child[i], goal) || found_goal;
 
     return found_goal;
 }
