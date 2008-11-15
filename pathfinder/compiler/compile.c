@@ -718,24 +718,13 @@ AFTER_CORE2ALG:
     /* make runtime timing available */
     if (status->timing) {
         mroot = PFmil_seq (mroot,
-                           PFmil_print (
-                               PFmil_lit_str (
-                                   "Document loading time (in msec)")),
-                           PFmil_print (
-                               PFmil_var (
-                                   PF_MIL_VAR_TIME_LOAD)),
-                           PFmil_print (
-                               PFmil_lit_str (
-                                   "Query time (in msec)")),
-                           PFmil_print (
-                               PFmil_var (
-                                   PF_MIL_VAR_TIME_QUERY)),
-                           PFmil_print (
-                               PFmil_lit_str (
-                                   "Serialization time (in msec)")),
-                           PFmil_print (
-                               PFmil_var (
-                                   PF_MIL_VAR_TIME_PRINT)));
+                           PFmil_printf (
+                               PFmil_arg (PFmil_lit_str ("\nShred  % 10.3f msec"
+                                                         "\nQuery  % 10.3f msec"
+                                                         "\nPrint  % 10.3f msec\n"),
+                               PFmil_arg (PFmil_var (PF_MIL_VAR_TIME_LOAD),
+                               PFmil_arg (PFmil_var (PF_MIL_VAR_TIME_QUERY),
+                                          PFmil_var (PF_MIL_VAR_TIME_PRINT))))));
     }
 
     if (status->dead_code_el) {
@@ -986,8 +975,32 @@ PFcompile_MonetDB (char *xquery, char* url,
         paroot = PFplan (laroot);
         /* generate internal MIL representation */
         mroot = PFmilgen (paroot, genType);
+
+        if (!strncmp ("timing", genType, 6))
+            /* make sure the timing variables are retained */
+            mroot = PFmil_seq (mroot,
+                               PFmil_use (PFmil_var (PF_MIL_VAR_TIME_LOAD)),
+                               PFmil_use (PFmil_var (PF_MIL_VAR_TIME_QUERY)),
+                               PFmil_use (PFmil_var (PF_MIL_VAR_TIME_PRINT)));
+
         /* some dead-code elimination */
         mroot = PFmil_dce (mroot);
+
+        if (!strncmp ("timing", genType, 6))
+            /* add timing information */
+            mroot = PFmil_seq (mroot,
+                               PFmil_printf (
+                                   PFmil_arg (PFmil_lit_str ("\nTrans  % 10.3f msec"
+                                                             "\nShred  % 10.3f msec"
+                                                             "\nQuery  % 10.3f msec"
+                                                             "\nPrint  % 10.3f msec\n"),
+                                   PFmil_arg (PFmil_div (PFmil_cast (PFmil_type (mty_dbl),
+                                                                     PFmil_lit_dbl (PFtimer_stop (timing))),
+                                                         PFmil_lit_dbl(1000.0)),
+                                   PFmil_arg (PFmil_var (PF_MIL_VAR_TIME_LOAD),
+                                   PFmil_arg (PFmil_var (PF_MIL_VAR_TIME_QUERY),
+                                              PFmil_var (PF_MIL_VAR_TIME_PRINT)))))));
+
         /* and serialize our internal representation into actual MIL code */
         serialized_mil_code = PFmil_serialize (mroot);
 
