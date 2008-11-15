@@ -1,0 +1,9 @@
+fn:string(<a><b/></a>/*)
+
+<>
+
+let $doc := <a><b>bla</b></a> return fn:substring($doc/*, 1,1)
+
+<>
+
+let $doc := <a><b>bla</b></a> return fn:substring($doc/*, 1)
