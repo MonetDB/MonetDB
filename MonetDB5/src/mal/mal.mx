@@ -296,7 +296,9 @@ mal_export int moreClients(int reruns);
 #define LIST_MAL_EXPLAIN  (LIST_MAL_INSTR | LIST_MAL_UDF | LIST_MAL_PROPS)
 #define LIST_MAL_ALL   (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_UDF | LIST_MAL_PROPS | LIST_MAL_DETAIL )
 
+#ifndef WORDS_BIGENDIAN
 #define STRUCT_ALIGNED
+#endif
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -344,9 +346,6 @@ void tstAligned(void)
 #ifdef STRUCT_ALIGNED
 	if(allAligned<0)
 	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
-#else
-	if(allAligned==0)
-	    GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
 int mal_init(){
