@@ -1612,7 +1612,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
-		if (glb){
+		if (glb && i != cnt){
 			glb->stk[cnt]= glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}
