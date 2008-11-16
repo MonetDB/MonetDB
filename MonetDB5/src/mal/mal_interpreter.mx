@@ -335,10 +335,12 @@ use. The stack value is cleared to avoid misinterpretation of left-over
 information. Since a stack frame may contain values of a previous call,
 we should first remove garbage. 
 @c
-	if (env && env->stkbot) {
+	if (env && mbcaller) {
+		@:initStack(pci->argc)@
+	} else if ( env && env->stkbot) {
 		@:initStack(env->stkbot)@
 	} else {
-		@:initStack((env && mbcaller)?pci->argc:1)@
+		@:initStack(mbcaller? pci->argc:1)@
 	}
 
 	if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
