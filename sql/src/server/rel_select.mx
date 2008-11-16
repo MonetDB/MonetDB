@@ -29,6 +29,10 @@
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 extern sql_rel *rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
+extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
+extern sql_rel * rel_project(sql_rel *l, list *e);
+extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
+extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
 
 extern void rel_select_add_exp(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select(sql_rel *l, sql_exp *e);
@@ -195,11 +199,11 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(old, NULL, nme);
-		return exp_column(tname, nme, exp_subtype(old), orel->card, has_nil(old));
+		return exp_column(tname, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
 	} else if (cname && !old->name) {
 		exp_setname(old, tname, cname);
 	}
-	return exp_column(tname, cname, exp_subtype(old), orel->card, has_nil(old));
+	return exp_column(tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
 }
 
 static sql_exp *
@@ -212,11 +216,11 @@ basetable_bind_column( sql_rel *rel, char *cname )
 	if (rel->exps) /* list of aliases */
 		e = exps_bind_column(rel->exps, cname);
 	if (e) 
-		return exp_column(NULL, cname, exp_subtype(e), rel->card, has_nil(e));
+		return exp_column(NULL, cname, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
 		if (strcmp(c->base.name, cname) == 0)
-			return exp_column(rel->name, cname, &c->type, CARD_MULTI, c->null );
+			return exp_column(rel->name, cname, &c->type, CARD_MULTI, c->null, 0);
 	}
 	return NULL;
 }
@@ -364,8 +368,8 @@ rel_bind_path(sql_rel *rel, sql_exp *e )
 }
 
 
-static list *
-rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
+list *
+rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 {
 	list *rexps, *exps ;
 
@@ -380,8 +384,8 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_projections(sql, rel->l, tname, settname );
-		rexps = rel_projections(sql, rel->r, tname, settname );
+		exps = rel_projections(sql, rel->l, tname, settname, intern );
+		rexps = rel_projections(sql, rel->r, tname, settname, intern );
 		exps = list_merge( exps, rexps, (fdup)&exp_dup);
 		list_destroy(rexps);
 		return exps;
@@ -394,7 +398,8 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 			exps = new_exp_list();
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
+				if (intern || !is_intern(e)) 
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
 			}
 			return exps;
 		}
@@ -402,7 +407,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 	case op_union:
 	case op_except:
 	case op_inter:
-		exps = rel_projections(sql, rel->l, tname, settname );
+		exps = rel_projections(sql, rel->l, tname, settname, intern );
 		if (exps) {
 			node *en;
 			for (en = exps->h; en; en = en->next) {
@@ -416,7 +421,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 
 	case op_select:
 	case op_topn:
-		return rel_projections(sql, rel->l, tname, settname );
+		return rel_projections(sql, rel->l, tname, settname, intern );
 	case op_basetable: 
 	{
 		node *cn;
@@ -427,13 +432,15 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname )
 			node *en;
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				append(exps, exp_column(NULL, e->name, exp_subtype(e), rel->card, has_nil(e)));
+				append(exps, exp_column(NULL, e->name, exp_subtype(e), rel->card, has_nil(e), is_intern(e)));
 			}
 		} else {
 			for (cn = t->columns.set->h; cn; cn = cn->next) {
 				sql_column *c = cn->data;
-				append(exps, exp_column(tname, c->base.name, &c->type, CARD_MULTI, c->null));
+				append(exps, exp_column(tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 			}
+			if (intern) 
+				append(exps, exp_column(tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 		}
 		return exps;
 	} 
@@ -564,7 +571,7 @@ rel_join_add_exps( sql_rel *rel, list *exps)
 		rel_join_add_exp(rel, n->data);
 }
 
-static sql_rel *
+sql_rel *
 rel_project(sql_rel *l, list *e)
 {
 	sql_rel *rel = rel_create();
@@ -673,10 +680,10 @@ static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 	if (!tname && e->type == e_column)
 		tname = e->l;
-	return exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m));
+	return exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
 }
 
-static void 
+void 
 rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
@@ -712,7 +719,7 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 					 rel, rel->exps->t->data, 1); 
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
-	return exp_column(rel->name, e->name, exp_subtype(e), e->card, has_nil(e));
+	return exp_column(rel->name, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 }
 
 void
@@ -787,7 +794,7 @@ rel_project2groupby(mvc *sql, sql_rel **g)
 				}
 			}
 		}
-		return rel_project(r, rel_projections(sql, r, NULL, 1));
+		return rel_project(r, rel_projections(sql, r, NULL, 1, 1));
 	}
 	return NULL;
 }
@@ -830,7 +837,7 @@ rel_orderby(mvc *sql, sql_rel *l, list *orderbyexps )
 		rel->l = l;
 		rel->r = orderbyexps;
 		rel->op = op_project;	
-		rel->exps = rel_projections(sql, rel, NULL, 1);
+		rel->exps = rel_projections(sql, rel, NULL, 1, 0);
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
 		return rel;
@@ -1154,25 +1161,6 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	return NULL;
 }
 
-#if 0
-static sql_exp *
-rel_rename_column( mvc *sql, sql_rel *rel, char *cname )
-{
-	sql_exp *e = NULL;
-	char name[16], *nme;
-	nme = number2name(name, 16, ++sql->label);
-
-	assert(rel->op == op_basetable);
-	/* ambiguous names need fixing */
-	e = basetable_bind_column(rel, cname); 
-	if (!rel->exps)
-		rel->exps = new_exp_list();
-	append(rel->exps, e);
-	exp_setname(e, NULL, nme);
-	return exp_column(NULL, nme, exp_subtype(e), rel->card, has_nil(e));
-}
-#endif
-
 sql_exp *
 rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 {
@@ -1252,7 +1240,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, cname) == 0)
-				return exp_column(rel->name, cname, &c->type, CARD_MULTI, c->null);
+				return exp_column(rel->name, cname, &c->type, CARD_MULTI, c->null, 0);
 		}
 	}
 	return NULL;
@@ -1285,7 +1273,7 @@ rel_table_func_named(mvc *sql, sql_rel *rel, symbol *query)
 	exps = new_exp_list();
 	for (m = st->comp_type->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
-		append(exps, exp_column(NULL, c->base.name, &c->type, CARD_MULTI, c->null));
+		append(exps, exp_column(NULL, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
 	return rel_table_func(tname, e, exps);
 }
@@ -1324,7 +1312,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
 		if (temp_table && !t) {
-			list *exps = rel_projections(sql, temp_table, NULL, 0);
+			list *exps = rel_projections(sql, temp_table, NULL, 0, 1);
 
 			temp_table = rel_project(temp_table, exps);
 			rel_setname(temp_table, tname);
@@ -1394,7 +1382,8 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		sql_arg *a = sql_bind_param(sql, name);
 		int var = (stack_find_var(sql, name) != NULL);
 		
-		exp = rel_bind_column(sql, rel, name);
+		if (rel)
+			exp = rel_bind_column(sql, rel, name);
 		if (exp) {
 			if (var || a) 
 				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
@@ -1412,8 +1401,9 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
 
-		exp = rel_bind_column2(sql, rel, tname, cname);
-		if (!exp) {
+		if (rel)
+			exp = rel_bind_column2(sql, rel, tname, cname);
+		if (!exp && rel) {
 			sql_rel *p, *r = rel_bind_table(&p, rel, tname);
 
 			(void)p;
@@ -1879,14 +1869,12 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	sql_rel *rel;
 
 	(void)f;
-	l = rel_project(l, rel_projections(sql, l, NULL, 1));
-	r = rel_project(r, rel_projections(sql, r, NULL, 1));
+	l = rel_project(l, rel_projections(sql, l, NULL, 1, 1));
+	r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
 	rel = rel_setop(l, r, op_union);
-	rel->exps = rel_projections(sql, rel, NULL, 1);
+	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	return rel;
 }
-
-static sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
 
 static sql_exp *
 rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
@@ -2055,7 +2043,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				}
 				if (right) {
 					rl = rel_setop(right, rl, op_union);
-					rl->exps = rel_projections(sql, rl, NULL, 0);
+					rl->exps = rel_projections(sql, rl, NULL, 0, 1);
+					set_processed(rl);
 				}
 				right = rl;
 			}
@@ -2239,7 +2228,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 }
 
-static sql_rel *
+sql_rel *
 rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 {
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -2315,10 +2304,21 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		dlist *dl = sc->data.lval;
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
-		sql_exp *l = rel_value_exp(sql, &rel, lo, f, ek), *e;
-		sql_rel *left = rel, *right = NULL;
+		sql_rel *left = NULL, *right = NULL, *outer = rel;
+		sql_exp *l = rel_value_exp(sql, &left, lo, f, ek), *e;
 		int correlated = 0;
+		int l_is_value = 1;
 
+		if (!l) {
+		 	l_is_value = 0;
+			/* reset error */
+			left = rel;
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+			l = rel_value_exp(sql, &left, lo, f, ek);
+		} else if (!left) {
+ 			left = rel_project_exp(exp_label(l, ++sql->label));
+		}
 		if (!l)
 			return NULL;
 
@@ -2373,7 +2373,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				}
 				if (right) {
 					rl = rel_setop(right, rl, op_union);
-					rl->exps = rel_projections(sql, rl, NULL, 0);
+					rl->exps = rel_projections(sql, rl, NULL, 0, 1);
+					set_processed(rl);
 				}
 				right = rl;
 			}
@@ -2398,7 +2399,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			}
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(rel, e);
-			if (correlated) {
+			if (correlated || l_is_value) {
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
 			} else if (sc->token == SQL_NOT_IN) {
 				rel->op = op_left;
@@ -2407,6 +2408,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = exp_compare( e, r, cmp_equal);
 				rel = rel_select(rel, e);
 			}
+			if (l_is_value) 
+				rel = rel_crossproduct(outer, rel, op_join);
 			return rel;
 		}
 		return right;
@@ -2421,7 +2424,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek);
-		if (!r) { /* correlation */
+		if (!r && rel) { /* correlation */
 			sql_exp *le, *re;
 			/* reset error */
 			sql->session->status = 0;
@@ -2432,8 +2435,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			   generate row id's which we use in the anti/semi
 			   join expression.
 			 */
-			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1));
-			exps = rel_projections(sql, rel, NULL, 1);
+			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 1));
+			exps = rel_projections(sql, rel, NULL, 1, 1);
  			e = rel_unop_(sql, exp_dup(rel->exps->h->data), NULL, "identity");
 			rel_project_add_exp(sql, rel, e);
 			e = exp_label(e, ++sql->label);
@@ -2451,6 +2454,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			e = exp_compare(le, re, cmp_equal);
 		}
+		if (!r || !rel) 
+			return NULL;
 		r = rel = rel_crossproduct(rel, r, op_join);
 		if (sc->token == SQL_EXISTS) {
 			r->op = op_semi;
@@ -3504,10 +3509,13 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			}
 			if (*rel) {
 				/* current projection list */
-				list *pre_proj = rel_projections(sql, *rel, NULL, 1);
-				sql_rel *p = rel_dup((*rel)->l);
+				list *pre_proj = rel_projections(sql, *rel, NULL, 1, 1);
+				sql_rel *p = *rel;
 
-				rel_destroy(*rel);
+				if (is_project((*rel)->op)) {
+					p =rel_dup((*rel)->l);
+					rel_destroy(*rel);
+				}
 				*rel = rel_crossproduct(p, r, op_join);
 				*rel = rel_project(*rel, pre_proj);
 				return rel_lastexp(sql, r);
@@ -3597,7 +3605,7 @@ rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 
 		(void)p;
 		if (r) 
-			return rel_projections(sql, r, tname, 1 );
+			return rel_projections(sql, r, tname, 1, 0);
 		return sql_error(sql, 02, 
 			"Column expression Table '%s' unknown", tname);
 	}
@@ -3664,8 +3672,8 @@ static sql_rel *
 join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 {
 	int found = 0;
-	list *exps = rel_projections(sql, t1, NULL, 1);
-	list *r_exps = rel_projections(sql, t2, NULL, 1);
+	list *exps = rel_projections(sql, t1, NULL, 1, 0);
+	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list();
 	node *n;
 
@@ -3735,6 +3743,23 @@ check_correlation_exps( list *exps )
 	return 0;
 }
 
+static int 
+exp_is_not_intern(sql_exp *e)
+{
+	return is_intern(e)?-1:0;
+}
+
+static void
+rel_remove_internal_exp(sql_rel *rel)
+{
+	if (rel->exps) {
+		list *n_exps = list_select(rel->exps, rel, (fcmp)&exp_is_not_intern, (fdup)exp_dup);
+
+		list_destroy(rel->exps);
+		rel->exps = n_exps;
+	}
+}
+
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind ek)
 {
@@ -3770,7 +3795,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_group_by(sql, rel, sn->groupby,sn->selection);
+			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection);
 
 			if (!gbe) 
 				return NULL;
@@ -3794,9 +3819,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					/* group by on identity */
 					sql_exp *e;
 
-					outer_gbexps = rel_projections(sql, outer, NULL, 1);
+					outer_gbexps = rel_projections(sql, outer, NULL, 1, 1);
 					if (!is_project(outer->op)) 
-						rel->l = outer = rel_project(outer, rel_projections(sql, outer, NULL, 1));
+						rel->l = outer = rel_project(outer, rel_projections(sql, outer, NULL, 1, 1));
  					e = rel_unop_(sql, exp_dup(outer->exps->h->data), NULL, "identity");
 					rel_project_add_exp(sql, outer, e);
 					set_processed(outer);
@@ -3831,7 +3856,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	
 					assert(e->type == e_cmp);
 					assert(re->type == e_column);
-					re = exp_column(inner->name, re->r, exp_subtype(re), inner->card, has_nil(re));
+					re = exp_column(inner->name, re->r, exp_subtype(re), inner->card, has_nil(re), is_intern(re));
 					e = exp_compare( exp_dup(e->l), re, e->flag);
 					append(jexps, e);
 				}
@@ -3868,7 +3893,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			if (outer) /* for non decorrelated or card_set sub
 				      queries we project all of the outer */
 				rel = rel_project(rel, 
-					rel_projections(sql, outer, NULL, 1));
+					rel_projections(sql, outer, NULL, 1, 1));
 			else
 				rel = rel_project(rel, new_exp_list());
 		}
@@ -3943,7 +3968,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		}
 
 		if (!outer && !is_project(rel->op)) {
-			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1));
+			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 0));
+		} else if (!outer && is_project(rel->op)) {
+			rel_remove_internal_exp(rel);
 		} else {
 			/* 
 			 * subquery can only return one column
@@ -3960,10 +3987,14 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (outer && jexps) {
 		rel = rel_crossproduct(outer, rel, op_join);
 		rel_join_add_exps(rel, jexps );
-		if (pre_prj) {
-			list *exps = rel_projections(sql, outer, NULL, 1);
-			sql_exp *e = rel_lastexp(sql, rel->r);
 
+		/* We need to project all of the (old) outer 
+			(ie its current projected and any other column) */
+		if (pre_prj) {
+			sql_exp *e = rel_lastexp(sql, rel->r);
+			list *exps = list_dup(pre_prj, (fdup)&exp_dup);
+
+			exps = list_merge(exps, rel_projections(sql, outer, NULL, 1, 1), (fdup)&exp_dup);
 			rel = rel_project(rel, exps);
 			rel_project_add_exp(sql, rel, e);
 			set_processed(rel);
@@ -4054,14 +4085,14 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			else 
 				res = fnd;
 		}
-		if (rel /*&& !toplevel */) {
-			rel_setsubquery(res);
-			res = rel_crossproduct(rel, res, op_join);
-		}
 		if (!fnd) {
 			if (res)
 				rel_destroy(res);
 			return NULL;
+		}
+		if (rel /*&& !toplevel */) {
+			rel_setsubquery(res);
+			res = rel_crossproduct(rel, res, op_join);
 		}
 
 	} else if (toplevel) {	/* only on top level query */
@@ -4081,8 +4112,8 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		node *n, *m;
 		int changes = 0;
 
-		list *ls = rel_projections(sql, l, NULL, 1);
-		list *rs = rel_projections(sql, r, NULL, 1);
+		list *ls = rel_projections(sql, l, NULL, 1, 1);
+		list *rs = rel_projections(sql, r, NULL, 1, 1);
 		list *nls = new_exp_list();
 		list *nrs = new_exp_list();
 
@@ -4113,7 +4144,9 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		}
 	}
 	rel = rel_setop(l, r, (operator_type)op);
-	rel->exps = rel_projections(sql, rel, NULL, 0);
+	/* TODO introduce a rel_labeled_projections, ie which
+	   simple takes all expressions and uniquely names them */
+	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
 	set_processed(rel);
 	return rel;
 }
@@ -4234,7 +4267,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				return NULL;
 			}
 		}
-		exps = rel_projections(sql, t1, NULL, 1);
+		exps = rel_projections(sql, t1, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
 			char *nm = exp_name(m->data);
 			int fnd = 0;
@@ -4249,7 +4282,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				append(outexps, exp_dup(m->data));
 		}
 		list_destroy(exps);
-		exps = rel_projections(sql, t2, NULL, 1);
+		exps = rel_projections(sql, t2, NULL, 1, 1);
 		for (m = exps->h; m; m = m->next) {
 			char *nm = exp_name(m->data);
 			int fnd = 0;
@@ -4328,7 +4361,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	if (!lv || !rv)
 		return NULL;
 
- 	lexps = rel_projections(sql, lv, NULL, 1);
+ 	lexps = rel_projections(sql, lv, NULL, 1, 1);
 	/* find the matching columns (all should match?)
 	 * union these 
 	 * if !all do a distinct operation at the end 
@@ -4355,7 +4388,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	lv = rel_project(lv, lexps);
 	rv = rel_project(rv, rexps);
 	rel = rel_setop(lv, rv, op_union);
-	rel->exps = rel_projections(sql, rel, NULL, 0);
+	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
 	if (!all)
 		rel = rel_distinct(rel);
 	return rel;
@@ -4411,7 +4444,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
 
-		sql_exp *n = exp_column(e->rname, e->name, exp_subtype(e), sq->card, has_nil(e));
+		sql_exp *n = exp_column(e->rname, e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 		exp_setname(n, NULL, cname);
 		list_append(l, n);
 	}

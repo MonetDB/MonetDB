@@ -326,9 +326,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			if (!l) {
 				swapped = 1;
 				l = bin_find_column(right, el->l, i->base.name);
-				r = bin_find_column(left, er->l, "%OID%");
+				r = bin_find_column(left, er->l, "%TID%");
 			} else {
-				r = bin_find_column(right, er->l, "%OID%");
+				r = bin_find_column(right, er->l, "%TID%");
 			}
 			/* small performance improvement, ie use idx directly */
 			if (l->type == st_alias && 
@@ -438,7 +438,7 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 }
 
 static stmt *
-rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	stmt *ts, *sub = NULL;
@@ -455,18 +455,18 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs )
 		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
 		list_append(l, sc);
 	}
+	/* %TID% column */
+	if (t->columns.set->h) { 
+		sql_column *c = t->columns.set->h->data;
+		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
+		char *rnme = (rel->name)?rel->name:t->base.name;
+
+		rnme = (rnme)?_strdup(rnme):NULL;
+		sc = stmt_mirror(sc);
+		sc = stmt_alias(sc, rnme, _strdup("%TID%"));
+		list_append(l, sc);
+	}
 	if (t->idxs.set) {
-		/* oid column */
-		if (t->columns.set->h) { 
-			sql_column *c = t->columns.set->h->data;
-			stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
-			char *rnme = (rel->name)?rel->name:t->base.name;
-	
-			rnme = (rnme)?_strdup(rnme):NULL;
-			sc = stmt_mirror(sc);
-			sc = stmt_alias(sc, rnme, _strdup("%OID%"));
-			list_append(l, sc);
-		}
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
 			stmt *sc = stmt_idxbat(i, RDONLY);
@@ -501,7 +501,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_table( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	stmt *sub = NULL;
@@ -557,7 +557,7 @@ not_equi_join(stmt *j)
 }
 
 static stmt *
-rel2bin_join( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *en, *n;
@@ -688,7 +688,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *en, *n;
@@ -808,7 +808,7 @@ rel2bin_distinct(stmt *s)
 }
 
 static stmt *
-rel2bin_union( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *n, *m;
@@ -851,13 +851,37 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs )
 	stmt_destroy(left);
 	stmt_destroy(right);
 	sub = stmt_list(l);
+
+	/* TODO put in sep function !!!, and add to all is_project(op) */
+	/* union can be a projection too */
+	if (rel->exps) {
+		node *en;
+		list *l = create_stmt_list();
+
+		for( en = rel->exps->h; en; en = en->next ) {
+			sql_exp *exp = en->data;
+			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				cond_stmt_destroy(sub);
+				list_destroy(l);
+				return NULL;
+			}
+			s = stmt_rename(rel, exp, s);
+			list_append(l, s);
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(l);
+	}
+
 	if (need_distinct(rel)) 
 		sub = rel2bin_distinct(sub);
 	return sub;
 }
 
 static stmt *
-rel2bin_except( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *stmts; 
 	node *n, *m;
@@ -975,7 +999,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_inter( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *stmts; 
 	node *n, *m;
@@ -1080,7 +1104,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_project( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *en;
@@ -1189,7 +1213,7 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 
 
 static stmt *
-rel2bin_select( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *en, *n;
@@ -1296,7 +1320,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l, *aggrs;
 	node *n, *en;
@@ -1361,7 +1385,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs )
 }
 
 static stmt *
-rel2bin_topn( mvc *sql, sql_rel *rel, list *refs )
+rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl;
 	int l = -1, o = 0;
@@ -1462,7 +1486,7 @@ refs_find_rel(list *refs, sql_rel *rel)
 }
 
 static stmt *
-subrel_bin(mvc *sql, sql_rel *rel, list *refs ) 
+subrel_bin(mvc *sql, sql_rel *rel, list *refs) 
 {
 	stmt *s = NULL;
 
@@ -1520,7 +1544,7 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs )
 }
 
 stmt *
-rel_bin(mvc *sql, sql_rel *rel ) 
+rel_bin(mvc *sql, sql_rel *rel) 
 {
 	list *refs = create_stmt_list();
 	stmt *s = subrel_bin( sql, rel, refs);

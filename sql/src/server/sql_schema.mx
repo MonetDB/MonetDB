@@ -880,7 +880,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				mvc_create_column(sql, t, ic->c->base.name, &ic->c->type);
 			}
 			/* oid to link back to the original table */
-			mvc_create_column(sql, t, "OID", sql_bind_localtype("oid"));
+			mvc_create_column(sql, t, "NID", sql_bind_localtype("oid"));
 
 			/* Add triggers for, insert, update and delete on the				   original table */
 			l = snprintf(buf, BUFSIZ, "create trigger ins_%s before insert on %s referencing old as tab new as ins for each row insert into %s values(", t->base.name, i->t->base.name, t->base.name);
@@ -895,10 +895,10 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				ic = n->data;
 				l += snprintf(buf+l, BUFSIZ-l, "set %s = upd.%s%c, ", ic->c->base.name, ic->c->base.name, (n->next)?',':' ');
 			}
-			l += snprintf(buf+l, BUFSIZ-l, "where upd.OID = %s.OID;", t->base.name);
+			l += snprintf(buf+l, BUFSIZ-l, "where upd.NID = %s.NID;", t->base.name);
 
 			l += snprintf(buf+l, BUFSIZ-l, "create trigger del_%s before delete on %s referencing old as del for each row delete from %s ", t->base.name, i->t->base.name, t->base.name);
-			l += snprintf(buf+l, BUFSIZ-l, "where del.OID = %s.OID;", t->base.name);
+			l += snprintf(buf+l, BUFSIZ-l, "where del.NID = %s.NID;", t->base.name);
 			return stmt_sql(_strdup(buf));
 		}
 		return stmt_none();

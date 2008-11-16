@@ -405,7 +405,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 
 		if (!(cs = scope_bind(scp, tname, cname))) {
 			tvar *tv = scope_bind_table(scp, tname);
-			if (tv && strcmp(cname, "OID") == 0) {
+			if (tv && strcmp(cname, "NID") == 0) {
 				cvar *cv = tv->columns->h->data;
 				cs = stmt_mirror(stmt_dup(cv->s));
 			} else {

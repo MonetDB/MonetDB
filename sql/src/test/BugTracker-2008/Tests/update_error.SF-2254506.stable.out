@@ -41,7 +41,7 @@ Over..
 % 1,	3 # length
 [ 1,	100	]
 [ 2,	200	]
-[ 3	]
+[ 2	]
 % sys.table1,	sys.table1 # table_name
 % col1,	col2 # name
 % int,	int # type

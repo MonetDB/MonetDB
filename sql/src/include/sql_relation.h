@@ -64,6 +64,7 @@ typedef struct expression {
 #define ASCENDING	16
 #define ANTISEL	32
 #define HAS_NO_NIL	64
+#define EXP_INTERN	128
  
 #define MAXOPS 16
 
@@ -139,6 +140,12 @@ typedef enum operator_type {
 	((e->flag&EXP_DISTINCT))
 #define set_distinct(e) \
 	e->flag |= EXP_DISTINCT
+
+/* used for expressions and relations */
+#define is_intern(e) \
+	((e->flag&EXP_INTERN))
+#define set_intern(e) \
+	e->flag |= EXP_INTERN
 
 #define is_processed(rel) \
 	(rel->processed)

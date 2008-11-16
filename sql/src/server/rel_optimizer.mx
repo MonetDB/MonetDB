@@ -353,6 +353,22 @@ find_rel(list *rels, sql_exp *e)
 	return NULL;
 }
 
+static sql_rel *
+find_one_rel(list *rels, sql_exp *e)
+{
+	node *n;
+	sql_rel *fnd = NULL;
+
+	for(n = rels->h; n; n = n->next) {
+		if (rel_has_exp(n->data, e) == 0) {
+			if (fnd)
+				return NULL;
+			fnd = n->data;
+		}
+	}
+	return fnd;
+}
+
 static int
 joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 {
@@ -596,17 +612,25 @@ order_joins(list *rels, list *exps)
 	list *sdje, *n_rels = list_create(NULL);
 	int fnd = 0;
 
+	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(rels, exps);
 
+	/* open problem, some expressions use more then 2 relations */
+	/* For example a.x = b.y * c.z; */
 	if (sdje->h) {
 		/* get the first expression */
 		cje = sdje->h->data;
-		list_remove_data(sdje, cje);
-		list_remove_data(exps, cje);
 
 		/* find the involved relations */
-		l = find_rel(rels, cje->l);
-		r = find_rel(rels, cje->r);
+
+		/* TODO all current code assumes expressions only touch 2 (atmost) 2 base tables, but complex expressions my touch multiple base tables */
+		l = find_one_rel(rels, cje->l);
+		r = find_one_rel(rels, cje->r);
+
+		if (l && r) {
+			list_remove_data(sdje, cje);
+			list_remove_data(exps, cje);
+		}
 	}
 	if (l && r) {
 		list_remove_data(rels, l);
@@ -784,10 +808,16 @@ reorder_join(mvc *sql, sql_rel *rel)
 	rel->exps = NULL; /* should be all crosstables by now */
  	rels = list_create(NULL);
 	if (is_outerjoin(rel->op)) {
+		int cnt = 0;
 		/* try to use an join index also for outer joins */
 		list_append(rels, rel->l);
 		list_append(rels, rel->r);
+		cnt = list_length(exps);
 		rel->exps = find_fk(rels, exps);
+		if (list_length(rel->exps) != cnt) {
+			list_destroy(rel->exps);
+			rel->exps = list_dup(exps, (fdup)&exp_dup);
+		}
 	} else { 
  		get_relations(rel, rels);
 #ifdef DEBUG

@@ -33,6 +33,7 @@
 extern stmt *updates(mvc *sql, scope *scp, symbol *sym);
 
 extern void cleanup_stmts(stmt **stmts, int cnt);
+extern stmt ** table_update_array(sql_table *t, int *Len);
 extern stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output);
 extern stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
 extern stmt *sql_delete(mvc *sql, sql_schema *schema, sql_table *t, stmt *s, int output, int all);
@@ -513,7 +514,7 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 }
 
 
-static stmt ** 
+stmt ** 
 table_update_array(sql_table *t, int *Len)
 {
 	stmt **updates;
@@ -1596,7 +1597,6 @@ static stmt *
 sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where)
 {
 	stmt *temp_table = NULL;
-	stmt *s = NULL;
 	sql_table *t = mvc_bind_table(sql, schema, tname);
 
 	if (!t && !schema) {
@@ -1611,114 +1611,28 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
 	} else {
-		int len = 0, i = 0;
 		tvar *tv = NULL;
-		dnode *n;
+		stmt *s = NULL, **updates, *rows_affected = NULL;
 		list *l;
-		stmt **updates, *rows_affected;
-		exp_kind ek = {type_value, card_column, TRUE};
 
 		scp = scope_open(scp);
 		if (temp_table) 
 			tv = scope_add_temp_table(scp, t, temp_table, t->base.name); 
 		else
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
-
-		if (opt_where) {
-			s = logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
-			if (s && s->type != st_set && s->type != st_sets) {
-				s = stmt_set(s);
-			}
-			if (s) {
-				/* check if the table is used in the query */
-				stmt *tmp = complex_find_subset(s, tv->s);
-
-				if (!tmp) { /* not used do a select all */
-					cvar *cv = tv->columns->h->data;
-
-					tmp = stmt_dup(cv->s);
-					s = sql_and(sql, scp, s, tmp, sql_where);
-				}
-
-				s = stmt2pivot(scp, s);
-			} else {
-				scope_close(scp);
-				return NULL;
-			}
-		} else {	/* update all */
-			cvar *c = tv->columns->h->data;
-
-			s = stmt2pivot(scp, stmt_dup(c->s));
-		}
-		l = create_stmt_list();
-
-		updates = table_update_array(t, &len);
-
-		for (n = assignmentlist->h, i = 0; n; n = n->next, i++) {
-			symbol *a = NULL;
-			stmt *v = NULL;
-			dlist *assignment = n->data.sym->data.lval;
-			char *cname = assignment->h->data.sval;
-			sql_column *c = mvc_bind_column(sql, t, cname);
-
-			if (!c) {
-				stmt_destroy(s);
-				list_destroy(l);
-				cleanup_stmts(updates, len);
-				return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", tname, assignment->h->data.sval);
-			}
-			a = assignment->h->next->data.sym;
-			if (a) {
-				exp_kind ek = {type_value, card_column, FALSE};
-				v = value_exp(sql, scp, a, NULL, s, sql_sel, ek);
-			} else
-				v = stmt_atom(atom_general(&c->type, NULL, 0));
-
-			if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
-				stmt_destroy(s);
-				list_destroy(l);
-				cleanup_stmts(updates, len);
-				return NULL;
-			}
-
-			if (v->nrcols <= 0) {
-				v = stmt_const(stmt_reverse(s ? first_subset(s) : stmt_bat(c, stmt_dup(tv->s), RDONLY)), v);
-			} else {
-				if (v->type == st_list && list_length(v->op1.lval) == 2) { /* sub query with outer refs */
-					node *o = v->op1.lval->h;
-					stmt *oref = stmt_dup(o->next->data);
-					stmt *sqa = stmt_dup(o->data);
-					stmt *cmp, *h;
-
-					cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
-					/* need to fix the cmp head */
-					h = stmt_dup(cmp->h->t);
-					stmt_destroy(cmp->h);
-					cmp->h = h;
-					stmt_destroy(v);
-					v = cmp;
-				}
-				/* s is a table result ie new oid, original oid 
-				 * v is a result based on subset s, new oid, val
-				 * So a join is needed to get original oid, val
-				 */
-				v = stmt_join(stmt_reverse(first_subset(s)), v, cmp_equal);
-			}
-			updates[c->colnr] = stmt_update_col(c, v);
-		}
-		rows_affected = stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1));
-		stmt_destroy(s);
-
-		l = sql_update(sql, schema, t, updates);
-		list_append(l, rows_affected);
-		s = stmt_list(l);
+		updates = update_exp(sql, scp, opt_where, assignmentlist, t, tv, &rows_affected);
+		if (updates) {
+			l = sql_update(sql, schema, t, updates);
+			list_append(l, rows_affected);
+			s = stmt_list(l);
 		
-		if (sql->cascade_action) {
-			list_destroy(sql->cascade_action);
-			sql->cascade_action = NULL;
+			if (sql->cascade_action) {
+				list_destroy(sql->cascade_action);
+				sql->cascade_action = NULL;
+			}
+			cleanup_stmts(updates, list_length(t->columns.set));
 		}
 		scp = scope_close(scp);
-		cleanup_stmts(updates, len);
 		return s;
 	}
 }
@@ -1957,7 +1871,6 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;
-		exp_kind ek = {type_value, card_column, TRUE};
 
 		scp = scope_open(scp);
 		if (temp_table) 
@@ -1965,33 +1878,13 @@ delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 		else
 			tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 		if (opt_where) {
-			stmt *subset = NULL;
-			s = logical_exp(sql, scp, opt_where, NULL, NULL, sql_where, ek);
-			if (s && s->type == st_filter) { /* filter on table ? */
-				ptable_statements(scp->ptable) = stmt_set(s);
-				s = stmt_dup(scope_first_column(scp)->s);
-			}
-			if (s && s->type != st_set && s->type != st_sets) {
-				s = stmt_set(s);
-			}
-			if (s) {
-				/* check if the table is used in the query */
-				stmt *tmp = complex_find_subset(s, tv->s);
-
-				if (!tmp) { /* not used do a select all */
-					cvar *cv = tv->columns->h->data;
-
-					tmp = stmt_dup(cv->s);
-					s = sql_and(sql, scp, s, tmp, sql_where);
-				}
-
-				subset = stmt2pivot(scp,s);
-			} else {
+			stmt *subset = update_logical_exp(sql, scp, opt_where, tv, t);
+	
+			if (!subset) {
 				scope_close(scp);
 				return NULL;
 			}
 			s = sql_delete(sql, schema, t, subset, 1, 0);
-			stmt_destroy(subset);
 		} else {	/* delete all */
 			s = sql_delete(sql, schema, t, NULL, 1, 1);
 		}

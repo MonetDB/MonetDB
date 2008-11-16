@@ -23,9 +23,11 @@
 #ifndef _REL_EXP_H_
 #define _REL_EXP_H_
 
+/*
 typedef struct pair {
 	void *l, *r;
 } pair;
+*/
 
 #define new_exp_list() list_create((fdestroy)&exp_destroy)
 
@@ -59,7 +61,7 @@ extern sql_exp * exp_atom_str(str s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(str s);
 extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
 extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
-extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils);
+extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
 extern void exp_setname( sql_exp *e, char *rname, char *name );
 
 extern void exp_swap( sql_exp *e );
@@ -299,7 +301,7 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
-exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils) 
+exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(e_column);
 
@@ -311,6 +313,8 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils)
 	e->f = t;
 	if (!has_nils)
 		set_has_no_nil(e);
+	if (intern)
+		set_intern(e);
 	return e;
 }
 
@@ -460,8 +464,13 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	case e_aggr:
 	case e_func: {
 		list *l = e->l;
-		if (l->h)
-			return rel_find_exp(rel, l->h->data);
+		node *n = l->h;
+
+		while (ne == NULL && n != NULL) {
+			ne = rel_find_exp(rel, n->data);
+			n = n->next;
+		}
+		return ne;
 	}
 	case e_cmp:	
 		return NULL;
@@ -519,7 +528,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 				node *n;
 				for (n = t->columns.set->h; n; n = n->next) {
 					sql_column *c = n->data;
-					if (strcmp(c->base.name, e->r) == 0) {
+					if (e->r && strcmp(c->base.name, e->r) == 0) {
 						ne = e;
 						break;
 					}
