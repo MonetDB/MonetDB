@@ -116,6 +116,8 @@ of remote objects and returns the handle to its result";
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
 
+/* #define _DEBUG_REMOTE_	  trace the interaction */
+
 #ifdef WIN32
 #ifndef LIBREMOTE
 #define remote_export extern __declspec(dllimport)
@@ -171,8 +173,6 @@ RMTfindconn(connection *ret, str conn) {
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
-
-	/* walk through the list */
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
@@ -272,7 +272,7 @@ remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, ident, tmp;
 	connection c;
-	char qbuf[512];
+	char qbuf[BUFSIZ+1];
 	MapiHdl mhdl;
 	int rtype;
 	ValPtr v;
@@ -305,8 +305,11 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str val, var;
 		BAT *b;
 
-		snprintf(qbuf, 511, "user.remote_internal_servegetbat(\"%s\", %s);",
+		snprintf(qbuf, BUFSIZ, "user.remote_internal_servegetbat(\"%s\", %s);",
 				getTypeName(rtype), ident);
+#ifdef _DEBUG_REMOTE
+		stream_printf(ctxt->fdout,"#remote.get:%s\n",qbuf);
+#endif
 		rethrow("remote.get", tmp,
 				RMTquery(&mhdl, "remote.get", c->mconn, qbuf));
 		mapi_fetch_row(mhdl); /* should succeed */
@@ -368,7 +371,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		str val;
 		int len = 0;
 
-		snprintf(qbuf, 511, "user.remote_internal_serveget(\"%s\", %s);",
+		snprintf(qbuf, BUFSIZ, "user.remote_internal_serveget(\"%s\", %s);",
 				getTypeName(rtype), ident);
 		rethrow("remote.get", tmp,
 				RMTquery(&mhdl, "remote.get", c->mconn, qbuf));
@@ -384,9 +387,9 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				if (ATOMextern(rtype) == 0)
 					GDKfree(p);
 			} else {
-				char tval[512];
-				snprintf(tval, 511, "%s", val);
-				tval[511] = '\0';
+				char tval[BUFSIZ+1];
+				snprintf(tval, BUFSIZ, "%s", val);
+				tval[BUFSIZ] = '\0';
 				mapi_close_handle(mhdl);
 				throw(MAL, "remote.get", "unable to parse value '%s'", tval);
 			}
@@ -443,7 +446,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char head[10], tail[10];
-		char qbuf[512]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ+1]; /* FIXME: this should be dynamic */
 		int bid;
 		BAT *b;
 		BUN p, q;
@@ -468,9 +471,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if ((b = BATdescriptor(bid)) == NULL)
 			throw(MAL, "remote.put", "cannot access BAT descriptor");
 
-		qbuf[511] = '\0';
-		snprintf(qbuf, 511, "%s := bat.new(:%s, :%s, " BUNFMT ");",
+		qbuf[BUFSIZ] = '\0';
+		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
 				ident, head, tail, BATcount(b));
+#ifdef _DEBUG_REMOTE
+		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
+#endif
 
 		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
 		mapi_close_handle(mhdl);
@@ -480,8 +486,11 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BATloop(b, p, q) {
 			ATOMformat(getHeadType(type), BUNhead(bi, p), &headv);
 			ATOMformat(getTailType(type), BUNtail(bi, p), &tailv);
-			snprintf(qbuf, 511, "bat.insert(%s, %s:%s, %s:%s);",
+			snprintf(qbuf, BUFSIZ, "bat.insert(%s, %s:%s, %s:%s);",
 					ident, headv, head, tailv, tail);
+#ifdef _DEBUG_REMOTE
+		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
+#endif
 			rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
 			/* we leak headv and tailv here if an exception is thrown */
 			mapi_close_handle(mhdl);
@@ -491,15 +500,18 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BBPunfix(b->batCacheid);
 	} else {
 		str val = NULL;
-		char qbuf[512]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ+1]; /* FIXME: this should be dynamic */
 		if (ATOMvarsized(type)) {
 			ATOMformat(type, *(str *)value, &val);
 		} else {
 			ATOMformat(type, value, &val);
 		}
-		snprintf(qbuf, 511, "%s := %s:%s;\n", ident, val, ATOMname(type));
-		qbuf[511] = '\0';
+		snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, ATOMname(type));
+		qbuf[BUFSIZ] = '\0';
 		GDKfree(val);
+#ifdef _DEBUG_REMOTE
+		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
+#endif
 		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
 		mapi_close_handle(mhdl);
 	}
@@ -527,7 +539,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, tmp;
 	int i, len;
 	connection c;
-	char qbuf[512];	/* FIXME: make this dynamic */
+	char qbuf[BUFSIZ+1];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
 
 	(void)cntxt;
@@ -555,7 +567,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* build the function invocation string in qbuf */
 	len = 0;
-	len += snprintf(&qbuf[len], 511 - len, "%s := %s.%s(", ident, mod, func);
+	len += snprintf(&qbuf[len], BUFSIZ - len, "%s := %s.%s(", ident, mod, func);
 
 	/* handle the arguments to the function */
 	assert(pci->argc >= 3); /* ret, conn, func, ... */
@@ -566,13 +578,16 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* all arguments are of type rmtobj, at least we blindly trust
 		 * the parser that it makes sure, we can cast to a string
 		 * pointer as long as rmtobj is nothing more than that */
-		len += snprintf(&qbuf[len], 511 - len, "%s%s",
+		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
 				(i > 4 ? ", " : ""),
 				*((str *)getArgReference(stk, pci, i)));
 	}
 
 	/* finish end execute the invocation string */
-	len += snprintf(&qbuf[len], 511 - len, ");");
+	len += snprintf(&qbuf[len], BUFSIZ - len, ");");
+#ifdef _DEBUG_REMOTE
+		stream_printf(ctxt->fdout,"#remote.exec:%s\n",qbuf);
+#endif
 	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
@@ -683,6 +698,9 @@ str RMTcreate(
 				conn, mapi_error_str(c->mconn));
 	/* TODO: throw away connection? */
 
+#ifdef _DEBUG_REMOTE_
+	mapi_trace(c->mconn,TRUE);
+#endif
 	/* initialise remote helper function */
 	rethrow("remote.create", tmp,
 			RMTquery(&mhdl, "remote.create", c->mconn, serveget));
