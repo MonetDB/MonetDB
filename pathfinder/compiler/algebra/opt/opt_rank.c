@@ -1507,7 +1507,7 @@ opt_rank (PFla_op_t *p)
                 is_rr (LL(p)) &&
                 p->sem.doc_tbl.att != LL(p)->sem.rank_opt.res) {
                 resolve_name_conflict (LL(p), p->sem.doc_tbl.res);
-                
+
                 PFalg_att_t res    = LL(p)->sem.rank_opt.res;
                 PFarray_t  *sortby = LL(p)->sem.rank_opt.sortby;
 
@@ -1515,7 +1515,8 @@ opt_rank (PFla_op_t *p)
                    both roots and frag operators */
                 *(L(p)) = *(doc_tbl (L(LL(p)),
                                      L(p)->sem.doc_tbl.res,
-                                     L(p)->sem.doc_tbl.att));
+                                     L(p)->sem.doc_tbl.att,
+                                     L(p)->sem.doc_tbl.kind));
                 /* push roots + doc_tbl through the rank */
                 *p = *(rank_opt (roots (L(p)), res, sortby));
                 modified = true;

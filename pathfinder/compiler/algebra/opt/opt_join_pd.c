@@ -1085,7 +1085,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                        tuple in the left relation and thus the result of the
                        roots operator stays stable. */
                     break;
-                
+
                 if (L(lp)->kind == la_doc_tbl &&
                     !is_join_att (p, L(lp)->sem.doc_tbl.res)) {
                     /* create projection list */
@@ -1102,7 +1102,8 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
 
                     *L(lp) = *doc_tbl (eqjoin_opt (LL(lp), rp, lproj, rproj),
                                        map_col (L(lp)->sem.doc_tbl.res),
-                                       map_col (L(lp)->sem.doc_tbl.att));
+                                       map_col (L(lp)->sem.doc_tbl.att),
+                                       L(lp)->sem.doc_tbl.kind);
                     *p = *roots (L(lp));
 
                     /* the schema of the new roots operator has to

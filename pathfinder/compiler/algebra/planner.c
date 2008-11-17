@@ -1948,7 +1948,8 @@ plan_doc_tbl (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
                   doc_tbl (*(plan_t **) PFarray_at (L(n)->plans, i),
-                           n->sem.doc_tbl.res, n->sem.doc_tbl.att));
+                           n->sem.doc_tbl.res, n->sem.doc_tbl.att,
+                           n->sem.doc_tbl.kind));
 
     return ret;
 }

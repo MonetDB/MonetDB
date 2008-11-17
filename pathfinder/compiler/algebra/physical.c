@@ -2592,7 +2592,8 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
  * function.
  */
 PFpa_op_t *
-PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att,
+              PFalg_doc_tbl_kind_t kind)
 {
     unsigned int i;
     PFpa_op_t   *ret;
@@ -2600,8 +2601,9 @@ PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
     ret = wire1 (pa_doc_tbl, n);
 
     /* store columns to work on in semantical field */
-    ret->sem.unary.res = res;
-    ret->sem.unary.att = att;
+    ret->sem.doc_tbl.res  = res;
+    ret->sem.doc_tbl.att  = att;
+    ret->sem.doc_tbl.kind = kind;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;

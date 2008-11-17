@@ -1125,8 +1125,10 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_doc_tbl:
-            if (ACTATT (L(a), a->sem.doc_tbl.att) ==
-                ACTATT (L(b), b->sem.doc_tbl.att))
+            if ((ACTATT (L(a), a->sem.doc_tbl.att) ==
+                 ACTATT (L(b), b->sem.doc_tbl.att)) &&
+                (a->sem.doc_tbl.kind ==
+                 b->sem.doc_tbl.kind))
                 return true;
 
             return false;
@@ -1863,7 +1865,8 @@ new_operator (PFla_op_t *n)
             return PFla_doc_tbl (CSE(L(n)),
                                  create_unq_name (CSE(L(n))->schema,
                                                   n->sem.doc_tbl.res),
-                                 ACTATT (L(n), n->sem.doc_tbl.att));
+                                 ACTATT (L(n), n->sem.doc_tbl.att),
+                                 n->sem.doc_tbl.kind);
 
         case la_doc_access:
             return PFla_doc_access (CSE(L(n)), CSE(R(n)),

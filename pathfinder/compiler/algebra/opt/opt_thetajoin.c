@@ -1844,7 +1844,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                            both roots and frag operators */
                         *(L(p)) = *(doc_tbl (L(LL(p)),
                                              L(p)->sem.doc_tbl.res,
-                                             L(p)->sem.doc_tbl.att));
+                                             L(p)->sem.doc_tbl.att,
+                                             L(p)->sem.doc_tbl.kind));
                         /* push roots + doc_tbl through the thetajoin */
                         *p = *(thetajoin_opt (roots (L(p)), other_side, pred));
                     }
@@ -1856,7 +1857,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                            both roots and frag operators */
                         *(L(p)) = *(doc_tbl (R(LL(p)),
                                              L(p)->sem.doc_tbl.res,
-                                             L(p)->sem.doc_tbl.att));
+                                             L(p)->sem.doc_tbl.att,
+                                             L(p)->sem.doc_tbl.kind));
                         /* push roots + doc_tbl through the thetajoin */
                         *p = *(thetajoin_opt (other_side, roots (L(p)), pred));
                     }

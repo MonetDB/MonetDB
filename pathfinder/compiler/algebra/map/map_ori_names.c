@@ -682,7 +682,8 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_doc_tbl:
             res = doc_tbl (SEC_PROJ(LEFT, p, p->sem.doc_tbl.res),
                            ONAME(p, p->sem.doc_tbl.res),
-                           ONAME(p, p->sem.doc_tbl.att));
+                           ONAME(p, p->sem.doc_tbl.att),
+                           p->sem.doc_tbl.kind);
             break;
 
         case la_doc_access:

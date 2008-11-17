@@ -3994,7 +3994,7 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item);
+    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_doc);
 
     return (struct PFla_pair_t) {
         .rel  = project (roots (doc),
@@ -4034,6 +4034,48 @@ PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
                    proj (att_pos, att_pos),
                    proj (att_item, att_res)),
         .frag = PFla_empty_set () };
+}
+
+/*
+ *  function fn:collection (string) as node*
+ */
+struct PFla_pair_t
+PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
+                     struct PFla_pair_t *args)
+{
+    (void) ordering; (void) loop;
+
+    /* collection root nodes */
+    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_col);
+
+    struct PFla_pair_t p = {
+        .rel  = project (roots (doc),
+                         proj (att_iter, att_iter),
+                         proj (att_pos, att_pos),
+                         proj (att_item, att_res)),
+        .frag = PFla_set (fragment (doc)) };
+
+    /* child step */
+    struct PFalg_step_spec_t spec = {
+        .axis = alg_chld,
+        .kind = node_kind_node,
+        .qname = PFqname (PFns_wild, NULL) };
+
+    PFla_op_t *step = PFla_project (
+                          PFla_step_join_simple (
+                              PFla_set_to_la (p.frag),
+                              project (p.rel,
+                                       proj (att_iter, att_iter),
+                                       proj (att_item, att_item)),
+                              spec,
+                              att_item,
+                              att_item1),
+                          PFalg_proj (att_iter, att_iter),
+                          PFalg_proj (att_item, att_item1));
+
+    return (struct  PFla_pair_t) {
+                   .rel = rank (step, att_pos, sortby (att_item)),
+                   .frag = p.frag };
 }
 
 /* --------------------- */
@@ -4892,24 +4934,16 @@ struct PFla_pair_t
 PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
                      struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) loop; (void) ordering;
+
+    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_col);
 
     return (struct PFla_pair_t) {
-
-        .rel = rank (fun_call (loop,
-                               fun_param (args[0].rel,
-                                          nil(),
-                                          ipi_schema(aat_str)),
-                               ii_schema(aat_pnode),
-                               alg_fun_call_pf_collection,
-                               PFqname (PFns_wild, NULL),
-                               NULL,
-                               att_iter,
-                               alg_occ_unknown),
-                     att_pos,
-                     sortby (att_item)),
-
-        .frag = PFla_empty_set () };
+        .rel  = project (roots (doc),
+                         proj (att_iter, att_iter),
+                         proj (att_pos, att_pos),
+                         proj (att_item, att_res)),
+        .frag = PFla_set (fragment (doc)) };
 }
 
 /**

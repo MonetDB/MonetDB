@@ -106,7 +106,7 @@
 /** StaircaseJoin */
 #define llscjoin(a,b,c,d,e,f) PFpa_llscjoin ((a), (b), (c), (d), (e), (f))
 
-#define doc_tbl(a,b,c)       PFpa_doc_tbl ((a), (b), (c))
+#define doc_tbl(a,b,c,d)       PFpa_doc_tbl ((a), (b), (c), (d))
 #define doc_access(a,b,c,d)  PFpa_doc_access ((a), (b), (c), (d))
 
 /* twig root operator */

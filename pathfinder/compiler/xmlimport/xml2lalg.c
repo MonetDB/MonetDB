@@ -1587,6 +1587,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
+               <kind name="FUNCTION"/>
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" new="false"/>
                <column name="COLNAME" function="iter"/>
@@ -1597,10 +1598,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_doc_tbl
              (
              CHILDNODE(0),
+             PFLA_FUNTY("/content/kind/@name"),
              PFLA_ATT("/content/column[@new='true']/@name"),
              PFLA_ATT("/content/column[@new='false']/@name")
              );
-        }  
+        }
         break;
 
 /******************************************************************************/

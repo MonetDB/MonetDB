@@ -372,10 +372,11 @@ union PFla_op_sem_t {
         PFalg_att_t     item_doc; /**< column to store the fragment info */
     } doc_join;
 
-    /* store the column names necessary for document lookup */
+    /* store the column names necessary for document or collection lookup */
     struct {
-        PFalg_att_t     res;      /**< column to store the document nodes */
-        PFalg_att_t     att;      /**< column that contains the references */
+        PFalg_att_t           res;/**< column to store the doc/col nodes */
+        PFalg_att_t           att;/**< column that contains the references */
+        PFalg_doc_tbl_kind_t kind;/**< kind of the operator */
     } doc_tbl;
 
     /* store the column names necessary for document access */
@@ -987,8 +988,8 @@ PFla_op_t * PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
  * Access to (persistently stored) XML documents, the fn:doc()
  * function.  Returns a (frag, result) pair.
  */
-PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel,
-                          PFalg_att_t res, PFalg_att_t att);
+PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel, PFalg_att_t res,
+                          PFalg_att_t att, PFalg_doc_tbl_kind_t kind);
 
 /** Constructor for string access of loaded documents */
 PFla_op_t * PFla_doc_access (const PFla_op_t *doc,

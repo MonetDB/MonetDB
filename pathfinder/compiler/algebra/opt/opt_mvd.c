@@ -1439,7 +1439,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                        both roots and frag operators */
                     *(L(p)) = *(doc_tbl (L(LL(p)),
                                          L(p)->sem.doc_tbl.res,
-                                         L(p)->sem.doc_tbl.att));
+                                         L(p)->sem.doc_tbl.att,
+                                         L(p)->sem.doc_tbl.kind));
                     /* push roots + doc_tbl through the cross product */
                     *p = *(cross_can (other_side, roots (L(p))));
                 }
@@ -1449,7 +1450,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                        both roots and frag operators */
                     *(L(p)) = *(doc_tbl (R(LL(p)),
                                          L(p)->sem.doc_tbl.res,
-                                         L(p)->sem.doc_tbl.att));
+                                         L(p)->sem.doc_tbl.att,
+                                         L(p)->sem.doc_tbl.kind));
                     /* push roots + doc_tbl through the cross product */
                     *p = *(cross_can (other_side, roots (L(p))));
                 }
@@ -1466,7 +1468,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                          attlist (L(p)->sem.doc_tbl.att),
                                          tuple (LL(p)->sem.attach.value)),
                                      L(p)->sem.doc_tbl.res,
-                                     L(p)->sem.doc_tbl.att));
+                                     L(p)->sem.doc_tbl.att,
+                                     L(p)->sem.doc_tbl.kind));
 
                 /* push roots + doc_tbl through the cross product */
                 *p = *(cross_can (input, roots (L(p))));
