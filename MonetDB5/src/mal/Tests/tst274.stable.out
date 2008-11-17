@@ -66,7 +66,7 @@ exit (go,i);                            # 10 (go:bit, i:lng)
     profiler.activate("disk");          # 14 _22:void := CMDactivateProfiler(_23:str) 
     profiler.setAll();                  # 15 _24:void := CMDsetAllProfiler() 
     profiler.start();                   # 16 _25:void := CMDstartProfiler() 
-    io.printf("#monitor \n");           # 17 _26:void := IOprint_str(_27:str) 
+    io.printf("#monitor \n");           # 17 _26:void := IOprintf(_27:str) 
     mx := aggr.max(b);                  # 18 mx:lng := ALGmax_lng(b:bat[:oid,:lng]) 
     mx := calc.+(mx,1);                 # 19 mx:lng := CALCbinaryADDlngint(mx:lng, _29:int) 
 #enforce an empty set later on 

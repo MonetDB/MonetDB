@@ -242,6 +242,7 @@ opt_join_graph (PFla_op_t *p)
                 break;
             }
             break;
+#endif
 
         /* throw away proxy nodes and thus avoid calling option '-o {'
            which would remove all step_joins as well. */
@@ -249,7 +250,6 @@ opt_join_graph (PFla_op_t *p)
         case la_proxy_base:
             *p = *PFla_dummy (L(p));
             break;
-#endif
 
         default:
             break;

@@ -136,13 +136,9 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_eqjoin:
         case la_thetajoin:
         case la_disjunion:
+        case la_intersect:
             l_set = n->prop->set;
             r_set = n->prop->set;
-            break;
-
-        case la_intersect:
-            l_set = true;
-            r_set = true;
             break;
 
         case la_semijoin:

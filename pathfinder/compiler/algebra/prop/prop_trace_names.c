@@ -118,9 +118,6 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
     switch (n->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
-        case la_lit_tbl:
-        case la_empty_tbl:
-        case la_ref_tbl:
         case la_select:
         case la_pos_select:
         case la_distinct:
@@ -135,6 +132,21 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_dummy:
             break;
 
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_ref_tbl:
+            /* All name tracing columns that reach base operators
+               are bound to be problematic for the goal operator.
+               They are either introduced inside the proxy or
+               conflict with a goal input column. So we let the
+               goal operator know about the generated columns. */
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
+                add_name_pair (goal->prop->name_pairs,
+                               ORI_AT(np_list, i),
+                               att_NULL);
+            }
+            break;
+
         case la_attach:
             diff_np (np_list, n->sem.attach.res);
             break;
@@ -147,16 +159,24 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                n->prop->l_name_pairs = PFarray (sizeof (name_pair_t), 10);
 
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
-                /* Adjust all current column names for the columns
-                   in the projection list and prune the out of scope
-                   names. */
-                for (j = 0; j < n->sem.proj.count; j++)
-                    if (n->sem.proj.items[j].new == CUR_AT(np_list, i)) {
-                        add_name_pair (n->prop->l_name_pairs,
-                                       ORI_AT(np_list, i),
-                                       n->sem.proj.items[j].old);
-                        break;
-                    }
+                /* ensure that we don't forget anything about modified columns */
+                if (CUR_AT(np_list, i) == att_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+                else {
+                    /* Adjust all current column names for the columns
+                       in the projection list and prune the out of scope
+                       names. */
+                    for (j = 0; j < n->sem.proj.count; j++)
+                        if (n->sem.proj.items[j].new == CUR_AT(np_list, i)) {
+                            add_name_pair (n->prop->l_name_pairs,
+                                           ORI_AT(np_list, i),
+                                           n->sem.proj.items[j].old);
+                            break;
+                        }
+                }
             }
             map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
         }   return;
@@ -173,13 +193,22 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* split up the name mappings */
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
-                for (j = 0; j < L(n)->schema.count; j++)
-                    if (L(n)->schema.items[j].name == CUR_AT(np_list, i)) {
-                        add_name_pair (n->prop->l_name_pairs,
-                                       ORI_AT(np_list, i),
-                                       CUR_AT(np_list, i));
-                        break;
-                    }
+                /* ensure that we don't forget anything about
+                   modified columns (thus add them into both branches) */
+                if (CUR_AT(np_list, i) == att_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+                else {
+                    for (j = 0; j < L(n)->schema.count; j++)
+                        if (L(n)->schema.items[j].name == CUR_AT(np_list, i)) {
+                            add_name_pair (n->prop->l_name_pairs,
+                                           ORI_AT(np_list, i),
+                                           CUR_AT(np_list, i));
+                            break;
+                        }
+                }
             }
             map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
@@ -196,13 +225,23 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             }
             else
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
-                    for (j = 0; j < R(n)->schema.count; j++)
-                        if (R(n)->schema.items[j].name == CUR_AT(np_list, i)) {
-                            add_name_pair (n->prop->l_name_pairs,
-                                           ORI_AT(np_list, i),
-                                           CUR_AT(np_list, i));
-                            break;
-                        }
+                    /* ensure that we don't forget anything about
+                       modified columns (thus add them into both branches) */
+                    if (CUR_AT(np_list, i) == att_NULL) {
+                        add_name_pair (n->prop->l_name_pairs,
+                                       ORI_AT(np_list, i),
+                                       CUR_AT(np_list, i));
+                    }
+                    else {
+                        for (j = 0; j < R(n)->schema.count; j++)
+                            if (R(n)->schema.items[j].name == CUR_AT(np_list,
+                                                                     i)) {
+                                add_name_pair (n->prop->l_name_pairs,
+                                               ORI_AT(np_list, i),
+                                               CUR_AT(np_list, i));
+                                break;
+                            }
+                    }
                 }
             map_names (R(n), goal, n->prop->l_name_pairs, att_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
@@ -424,7 +463,7 @@ find_goal (PFla_op_t *n, PFla_op_t *goal)
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        found_goal = find_goal (n->child[i], goal) | found_goal;
+        found_goal = find_goal (n->child[i], goal) || found_goal;
 
     return found_goal;
 }
