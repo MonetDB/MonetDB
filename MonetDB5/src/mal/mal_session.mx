@@ -421,6 +421,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			glb->stk[i].vtype = TYPE_int;
 			glb->stk[i].len = 0;
 			glb->stk[i].val.pval = 0;
+			/* drop the variable */
+			clearVariable(mb,i);
 		}
 	}
 	trimMalVariables_(mb,used,glb);
@@ -606,7 +608,7 @@ str
 MALengine(Client c)
 {
 	Symbol prg;
-	str msg = 0;
+	str msg = MAL_SUCCEED;
 	MalBlkRecord oldstate = *c->curprg->def;
 	oldstate.stop = 0;
 
@@ -644,8 +646,6 @@ and marking all non-temporary variables as being (potentially) used.
 	}
 	if (prg->def->errors == 0)
 		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
-	else
-		msg = MAL_SUCCEED;
 	if (msg) {
 		str place = getExceptionPlace(msg);
 		showException(getExceptionType(msg), place, getExceptionMessage(msg));

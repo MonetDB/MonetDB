@@ -2172,6 +2172,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	    b->htype == TYPE_void && 
 	    g->htype == TYPE_void && 
 	    g->ttype == TYPE_void &&
+	    BATcount(b) == BATcount(e) &&
 	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		wrd one = 1;
