@@ -25,3 +25,4 @@ invalid_qualified_column_name.SF-2183288
 update_error.SF-2254506
 too_may_nested_operators.SF-2102167
 aborting_process.SF-2130710
+server_aborts_on_nested_query_without_from_in_subquery.SF-2183292
