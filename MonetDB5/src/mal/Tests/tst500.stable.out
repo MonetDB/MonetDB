@@ -26,9 +26,9 @@ stdout of test 'tst500` in directory 'src/mal` itself:
 #	return r;
 #end simple;
 function user.simple(i:int,lim:int,s:str):flt;#  0 simple:flt := user.simple(i:int, lim:int, s:str) {G}
-    io.printf("i=%d ",i);               #  1 _4:void := IOprint_formatted_int(_5:str, i:int) 
-    io.printf("lim=%d ",lim);           #  2 _6:void := IOprint_formatted_int(_7:str, lim:int) 
-    io.printf("str=%s\n",s);            #  3 _8:void := IOprint_formatted_str(_9:str, s:str) 
+    io.printf("i=%d ",i);               #  1 _4:void := IOprintf(_5:str, i:int) 
+    io.printf("lim=%d ",lim);           #  2 _6:void := IOprintf(_7:str, lim:int) 
+    io.printf("str=%s\n",s);            #  3 _8:void := IOprintf(_9:str, s:str) 
     i := calc.+(i,1);                   #  4 i:int := CALCbinaryADDintint(i:int, _10:int) 
 barrier v := calc.<(i,lim);             #  5 v:bit := CALCcompLTintint(i:int, lim:int) {J7}
     z := user.simple(i,lim,s);          #  6 z:flt := user.simple(i:int, lim:int, s:str) 

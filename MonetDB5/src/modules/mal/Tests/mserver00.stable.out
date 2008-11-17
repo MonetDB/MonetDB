@@ -111,16 +111,16 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # testing t:=1+3; 
     mapi.query(mid,"t:= 1+3; io.print(t,\"hello\");");# 19 _23:int := SERVERquery(mid:int, _24:str) 
     i := mapi.get_row_count(mid);       # 20 i:int := SERVERget_row_count(mid:int) 
-    io.printf("rowcount %d\n",i);       # 21 _26:void := IOprint_formatted_int(_27:str, i:int) 
+    io.printf("rowcount %d\n",i);       # 21 _26:void := IOprintf(_27:str, i:int) 
     mapi.fetch_row(mid);                # 22 _28:int := SERVERfetch_row(mid:int) 
     i := mapi.get_field_count(mid);     # 23 i:int := SERVERget_field_count(mid:int) 
-    io.printf("fieldcount %d\n",i);     # 24 _29:void := IOprint_formatted_int(_30:str, i:int) 
+    io.printf("fieldcount %d\n",i);     # 24 _29:void := IOprintf(_30:str, i:int) 
     i := mapi.fetch_field(mid,0);       # 25 i:int := SERVERfetch_field_int(mid:int, _31:int) 
-    io.printf("field 0 %d\n",i);        # 26 _32:void := IOprint_formatted_int(_33:str, i:int) 
+    io.printf("field 0 %d\n",i);        # 26 _32:void := IOprintf(_33:str, i:int) 
     s:str  := mapi.fetch_field(mid,1);  # 27 s:str := SERVERfetch_field_str(mid:int, _35:int) {G}
-    io.printf("field 1 %s\n",s);        # 28 _36:void := IOprint_formatted_str(_37:str, s:str) 
+    io.printf("field 1 %s\n",s);        # 28 _36:void := IOprintf(_37:str, s:str) 
     mapi.query(mid,"r:= bat.new(:oid,:int);");# 29 _38:int := SERVERquery(mid:int, _39:str) 
-    io.printf("shipped first query\n"); # 30 _40:void := IOprint_str(_41:str) 
+    io.printf("shipped first query\n"); # 30 _40:void := IOprintf(_41:str) 
     mapi.query(mid,"bat.insert(r, 1@0,311);");# 31 _42:int := SERVERquery(mid:int, _43:str) 
     mapi.query(mid,"bat.insert(r,2@0,433);");# 32 _44:int := SERVERquery(mid:int, _45:str) 
     b:bat[:oid,:int]  := mapi.rpc(mid,"io.print(r);");# 33 b:bat[:oid,:int] := SERVERmapi_rpc_bat(mid:int, _47:str) {G}
@@ -153,7 +153,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 # c:= mapi.rpc(remotedb,algebra,join,a,b) 
 # the remainder should be tested  
 catch MapiException:str ;               # 62 MapiException:str {J64}
-    io.printf("foutje:%s\n",MapiException);# 63 _79:void := IOprint_formatted_str(_80:str, MapiException:str) 
+    io.printf("foutje:%s\n",MapiException);# 63 _79:void := IOprintf(_80:str, MapiException:str) 
 exit MapiException:str ;                # 64 MapiException:str 
     mapi.disconnect(mid);               # 65 _81:void := SERVERdisconnect(mid:int) 
 end main;	# 66  

@@ -154,7 +154,7 @@ barrier correct := calc.!=(targetdir,"");#  5 correct:bit := CALCcompNEQstrstr(t
     targetdir := calc.+(targetdir,"/"); #  6 targetdir:str := CALCstrConcat(targetdir:str, _6:str) {G}
 exit correct;                           #  7 correct:bit 
     datafile := calc.+(targetdir,"rdf.testdata.ttl");#  8 datafile:str := CALCstrConcat(targetdir:str, _8:str) {G}
-    io.printf("#source:%s\n",datafile); #  9 _9:void := IOprint_formatted_str(_10:str, datafile:str) 
+    io.printf("#source:%s\n",datafile); #  9 _9:void := IOprintf(_10:str, datafile:str) 
     rdf.importGraph(datafile,"turtle","db","g",1024:lng);# 10 _11:void := RDFimportGraph(datafile:str, _12:str, _13:str, _14:str, _15:lng) 
     xsdtypes:bat[:oid,:str]  := bbp.bind("RDFtype2xsd");# 11 xsdtypes:bat[:oid,:str] := CMDbbpbind(_17:str) {G}
     io.print("Datatypes");              # 12 _18:void := IOprint_val(_19:str) 

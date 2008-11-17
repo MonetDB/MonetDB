@@ -25,22 +25,22 @@ stdout of test 'tst2570` in directory 'src/mal` itself:
 #exit go;
 #end step1;
 factory user.step1():int;               #  0 step1:int := user.step1() 
-    io.printf("start step 1\n");        #  1 _1:void := IOprint_str(_2:str) 
+    io.printf("start step 1\n");        #  1 _1:void := IOprintf(_2:str) 
     cnt := 0;                           #  2 cnt:int := _4:int 
 barrier go := true;                     #  3 go:bit := _6:bit {J8}
     cnt := calc.+(cnt,1);               #  4 cnt:int := CALCbinaryADDintint(cnt:int, _7:int) 
-    io.printf("step1 %d\n",cnt);        #  5 _8:void := IOprint_formatted_int(_9:str, cnt:int) 
+    io.printf("step1 %d\n",cnt);        #  5 _8:void := IOprintf(_9:str, cnt:int) 
     yield step1 := cnt;                 #  6 step1:int := cnt:int 
     redo go := true;                    #  7 go:bit := _6:bit {J4}
 exit go;                                #  8 go:bit 
     return step1 := 0;                  #  9 step1:int := _4:int 
 end step1;                              # 10  
 factory user.step2():int;               #  0 step2:int := user.step2() 
-    io.printf("start step 2\n");        #  1 _1:void := IOprint_str(_2:str) 
+    io.printf("start step 2\n");        #  1 _1:void := IOprintf(_2:str) 
     cnt := 0;                           #  2 cnt:int := _4:int 
 barrier go := true;                     #  3 go:bit := _6:bit {J8}
     cnt := calc.+(cnt,1);               #  4 cnt:int := CALCbinaryADDintint(cnt:int, _7:int) 
-    io.printf("step2 %d\n",cnt);        #  5 _8:void := IOprint_formatted_int(_9:str, cnt:int) 
+    io.printf("step2 %d\n",cnt);        #  5 _8:void := IOprintf(_9:str, cnt:int) 
     yield step2 := cnt;                 #  6 step2:int := cnt:int 
     redo go := true;                    #  7 go:bit := _6:bit {J4}
 exit go;                                #  8 go:bit 

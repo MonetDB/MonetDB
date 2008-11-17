@@ -37,7 +37,7 @@ function user.main():void;              #  0 main:void := user.main()
     io.print("should not come here");   #  4 _4:void := IOprint_val(_5:str) 
 #exception block; 
 catch MALException:str ;                #  6 MALException:str {J8}
-    io.printf("caught IllegalAccess\n");#  7 _8:void := IOprint_str(_9:str) 
+    io.printf("caught IllegalAccess\n");#  7 _8:void := IOprintf(_9:str) 
 exit MALException:str ;                 #  8 MALException:str 
     io.print("done");                   #  9 _10:void := IOprint_val(_11:str) 
 end main;	# 10  

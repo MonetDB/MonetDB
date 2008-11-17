@@ -20,7 +20,7 @@ end dummy;	# 5
 function user.main():void;              #  0 main:void := user.main() {G}
 #self inspection of the code base 
     user.dummy(1);                      #  2 _2:void := user.dummy(_3:int) 
-    io.printf("get function properties\n");#  3 _4:void := IOprint_str(_5:str) 
+    io.printf("get function properties\n");#  3 _4:void := IOprintf(_5:str) 
     l := inspect.getSignature("user","dummy");#  4 l:bat[:str,:str] := INSPECTgetSignature(_7:str, _8:str) {G}
     io.print(l);                        #  5 _9:void := IOprint_val(l:bat[:str,:str]) 
     mdb.list("user","dummy");           #  6 _10:void := MDBlist3(_7:str, _8:str) 

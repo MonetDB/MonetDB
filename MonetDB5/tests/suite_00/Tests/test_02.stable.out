@@ -111,10 +111,10 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("insert(s,\"hello\",8);"); 
     la_a := bat.insert(s,"hello",8);    # 33 la_a:bat[:str,:int] := BKCinsert_bun(s:bat[:str,:int], _20:str, _51:int) {G}
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");"); 
-    ma_a := io.printf("#~BeginVariableOutput~#\n");# 35 ma_a:void := IOprint_str(_54:str) 
+    ma_a := io.printf("#~BeginVariableOutput~#\n");# 35 ma_a:void := IOprintf(_54:str) 
     na_a := bat.info(s);                # 36 na_a:bat[:str,:str] := BKCinfo(s:bat[:str,:int]) {G}
     oa_a := io.print(na_a);             # 37 oa_a:void := IOprint_val(na_a:bat[:str,:str]) 
-    pa_a := io.printf("#~EndVariableOutput~#\n");# 38 pa_a:void := IOprint_str(_58:str) 
+    pa_a := io.printf("#~EndVariableOutput~#\n");# 38 pa_a:void := IOprintf(_58:str) 
 #	io.print("print(find(s,\"cello\"));"); 
     qa_a := algebra.find(s,"cello");    # 40 qa_a:int := ALGfind(s:bat[:str,:int], _31:str) 
     ra_a := io.print(qa_a);             # 41 ra_a:void := IOprint_val(qa_a:int) 

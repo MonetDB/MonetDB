@@ -361,12 +361,12 @@ function user.main():void;              #  0 main:void := user.main() {G}
     ib_a := algebra.select(hb_a,5);     #125 ib_a:bat[:int,:int] := ALGselect1(hb_a:bat[:int,:int], _109:int) {G}
     jb_a := io.print(ib_a);             #126 jb_a:void := IOprint_val(ib_a:bat[:int,:int]) 
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\");"); 
-    kb_a := io.printf("#~BeginVariableOutput~#\n");#128 kb_a:void := IOprint_str(_139:str) 
+    kb_a := io.printf("#~BeginVariableOutput~#\n");#128 kb_a:void := IOprintf(_139:str) 
 #	io.print("s.sort().print();"); 
     lb_a := algebra.sort(s);            #130 lb_a:bat[:int,:int] := ALGhsort(s:bat[:int,:int]) {G}
     mb_a := io.print(lb_a);             #131 mb_a:void := IOprint_val(lb_a:bat[:int,:int]) 
 #	io.print("printf(\"#~EndVariableOutput~#\\n\");"); 
-    nb_a := io.printf("#~EndVariableOutput~#\n");#133 nb_a:void := IOprint_str(_145:str) 
+    nb_a := io.printf("#~EndVariableOutput~#\n");#133 nb_a:void := IOprintf(_145:str) 
 #	io.print("s.sortHT().print();"); 
     ob_a := algebra.sortHT(s);          #135 ob_a:bat[:int,:int] := ALGhtsort(s:bat[:int,:int]) {G}
     pb_a := io.print(ob_a);             #136 pb_a:void := IOprint_val(ob_a:bat[:int,:int]) 
@@ -414,13 +414,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
     uc_a := algebra.select(tc_a,5);     #178 uc_a:bat[:int,:int] := ALGselect1(tc_a:bat[:int,:int], _166:int) {G}
     vc_a := io.print(uc_a);             #179 vc_a:void := IOprint_val(uc_a:bat[:int,:int]) 
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\");"); 
-    wc_a := io.printf("#~BeginVariableOutput~#\n");#181 wc_a:void := IOprint_str(_199:str) 
+    wc_a := io.printf("#~BeginVariableOutput~#\n");#181 wc_a:void := IOprintf(_199:str) 
 #	io.print("s.reverse().sort().print();"); 
     xc_a := bat.reverse(s);             #183 xc_a:bat[:int,:int] := BKCreverse(s:bat[:int,:int]) {G}
     yc_a := algebra.sort(xc_a);         #184 yc_a:bat[:int,:int] := ALGhsort(xc_a:bat[:int,:int]) {G}
     ad_a := io.print(yc_a);             #185 ad_a:void := IOprint_val(yc_a:bat[:int,:int]) 
 #	io.print("printf(\"#~EndVariableOutput~#\\n\");"); 
-    bd_a := io.printf("#~EndVariableOutput~#\n");#187 bd_a:void := IOprint_str(_206:str) 
+    bd_a := io.printf("#~EndVariableOutput~#\n");#187 bd_a:void := IOprintf(_206:str) 
 #	io.print("s.reverse().sortHT().print();"); 
     cd_a := bat.reverse(s);             #189 cd_a:bat[:int,:int] := BKCreverse(s:bat[:int,:int]) {G}
     dd_a := algebra.sortHT(cd_a);       #190 dd_a:bat[:int,:int] := ALGhtsort(cd_a:bat[:int,:int]) {G}

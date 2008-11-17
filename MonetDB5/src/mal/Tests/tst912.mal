@@ -24,7 +24,7 @@ function choptest(b:bat[:oid,:lng], size:lng, base:lng);
     if:= calc.flt(i);
     df:= calc.flt(d0);
     f:= df/if;
-    io.printf("#chopped at %lld",size);
+    io.printf("#chopped at %d",size);
     io.printf(" at %f usec\n",f);
 end choptest;
 
@@ -41,7 +41,7 @@ barrier doit:= true;
 exit doit;
 t1:= alarm.usec();
 base:= t1-t0;
-io.printf("#select direct %lld usec\n",base);
+io.printf("#select direct %d usec\n",base);
 
 user.choptest(b,100000:lng,base);
 user.choptest(b,10000:lng,base);

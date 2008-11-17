@@ -1,0 +1,40 @@
+stdout of test 'printf` in directory 'src/modules/mal` itself:
+
+
+# 00:29:00 >  
+# 00:29:00 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35839 --set xrpc_port=47139 --set monet_prompt= --trace  --dbname=mTests_src_modules_mal  printf.mal
+# 00:29:00 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35839/
+function user.main():void;              #  0 main:void := user.main() 
+#some tests for the printf support 
+    i := 1;                             #  2 i:int := _3:int 
+    in := nil:int;                      #  3 in:int := _5:int 
+    io.printf("int %d %d\n",i,in);      #  4 _6:void := IOprintf(_7:str, i:int, in:int) 
+    io.printf("int %d %d %d %d\n",i,in,i,in);#  5 _8:void := IOprintf(_9:str, i:int, in:int, i:int, in:int) 
+    f := 3.1400001;                     #  6 f:flt := _11:flt 
+    if := nil:flt;                      #  7 if:flt := _13:flt 
+    io.printf("float mix %f %d\n",f,if);#  8 _14:void := IOprintf(_15:str, f:flt, if:flt) 
+    l := 1:lng;                         #  9 l:lng := _17:lng 
+    il := nil:lng;                      # 10 il:lng := _19:lng 
+    io.printf("long mix %d %d\n",l,il); # 11 _20:void := IOprintf(_21:str, l:lng, il:lng) 
+    b := true;                          # 12 b:bit := _23:bit 
+    ib := nil:bit;                      # 13 ib:bit := _25:bit 
+    io.printf("bit mix %d %d\n",b,ib);  # 14 _26:void := IOprintf(_27:str, b:bit, ib:bit) 
+end main;                               # 15  
+int 1 nil
+int 1 nil 1 nil
+float mix 3.140000 nil
+long mix 1 nil
+bit mix 1 nil
+
+# 00:29:00 >  
+# 00:29:00 >  Done.
+# 00:29:00 >  
+

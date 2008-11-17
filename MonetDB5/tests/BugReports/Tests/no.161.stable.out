@@ -77,7 +77,7 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 function user.test_inner(in:str):void;  #  0 test_inner:void := user.test_inner(in:str) {G}
 #	io.print("   printf(\"test_inner.in: %s\\n\",str(in));"); 
     ca_a := calc.str(in);               #  2 ca_a:str := CALCstr2str(in:str) {G}
-    da_a := io.printf("test_inner.in: %s\n",ca_a);#  3 da_a:void := IOprint_formatted_str(_5:str, ca_a:str) 
+    da_a := io.printf("test_inner.in: %s\n",ca_a);#  3 da_a:void := IOprintf(_5:str, ca_a:str) 
 end test_inner;	# 4  
 ##	mil.line("PROC test_outer(any in) : void {");
 #function test_outer(in:any_1):void;
@@ -90,7 +90,7 @@ end test_inner;	# 4
 function user.test_outer(in:any_1):void;#  0 test_outer:void := user.test_outer(in:any_1) {P}
 #	io.print("   printf(\"test_outer.in: %s\\n\",str(in));"); 
     ea_a := calc.str(in);               #  2 ea_a:any := calc.str(in:any_1) 
-    fa_a := io.printf("test_outer.in: %s\n",ea_a);#  3 fa_a:void := IOprint_formatted_str(_5:str, ea_a:any) 
+    fa_a := io.printf("test_outer.in: %s\n",ea_a);#  3 fa_a:void := IOprintf(_5:str, ea_a:any) 
 #	io.print("   test_inner(in);"); 
     ga_a := user.test_inner(in);        #  5 ga_a:any := user.test_inner(in:any_1) 
 end test_outer;	# 6  

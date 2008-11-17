@@ -29,7 +29,7 @@ function user.tst(i:int,s:str):bit;     #  0 tst:bit := user.tst(i:int, s:str) {
     io.print(j);                        #  2 _5:void := IOprint_val(j:int) 
 # ignore comments 
     format := "hello %s\n";             #  4 format:str := _8:str {G}
-    io.printf(format,s);                #  5 _9:void := IOprint_formatted_str(format:str, s:str) 
+    io.printf(format,s);                #  5 _9:void := IOprintf(format:str, s:str) 
     return tst := true;                 #  6 tst:bit := _10:bit 
 end tst;	# 7  
 ## there should be only one definition

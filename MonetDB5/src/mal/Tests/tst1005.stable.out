@@ -57,7 +57,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bbp.open();                         # 12 _17:void := CMDbbpopen() 
     v := bbp.take("myfirstbat");        # 13 v:bat[:any,:any] := CMDbbptake(_12:str) {G}
 catch MALException:str ;                # 14 MALException:str {J16}
-    io.printf("%s\n",MALException);     # 15 _20:void := IOprint_formatted_str(_21:str, MALException:str) 
+    io.printf("%s\n",MALException);     # 15 _20:void := IOprintf(_21:str, MALException:str) 
 exit MALException:str ;                 # 16 MALException:str 
     io.print("v");                      # 17 _22:void := IOprint_val(_23:str) 
     io.print(v);                        # 18 _24:void := IOprint_val(v:bat[:any,:any]) 

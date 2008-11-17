@@ -90,32 +90,20 @@ comment "Print a MAL value tuple .";
 pattern prompt(val:any_1):void 
 address IOprompt_val
 comment "Print a MAL value without brackets.";
-pattern printft(val:any_1):void 
-address IOprint_ft
+
+pattern printf(fmt:str,val:any...):void 
+address IOprintf
+comment "Select default format ";
+pattern printf(fmt:str):void 
+address IOprintf
 comment "Select default format ";
 
-pattern printf(format:str,val:bit):void
-address IOprint_formatted_bit;
-pattern printf(format:str,val:chr):void
-address IOprint_formatted_chr;
-pattern printf(format:str,val:sht):void
-address IOprint_formatted_sht;
-pattern printf(format:str,val:int):void
-address IOprint_formatted_int;
-pattern printf(format:str,val:wrd):void
-address IOprint_formatted_wrd;
-pattern printf(format:str,val:oid):void
-address IOprint_oid;
-pattern printf(format:str,val:lng):void
-address IOprint_formatted_lng;
-pattern printf(format:str,val:flt):void
-address IOprint_formatted_flt;
-pattern printf(format:str,val:dbl):void
-address IOprint_formatted_dbl;
-pattern printf(format:str,val:str):void
-address IOprint_formatted_str;
-pattern printf(val:str):void
-address IOprint_str;
+pattern printf(filep:streams,fmt:str,val:any...):void 
+address IOprintfStream
+comment "Select default format ";
+pattern printf(filep:streams,fmt:str):void 
+address IOprintfStream
+comment "Select default format ";
 
 command data(fname:str):str
 address IOdatafile
@@ -177,7 +165,8 @@ str hd, str tl, int nobat);
 io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 io_export str IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 io_export str IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_ft(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+io_export str IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 int i, int order, int printhead, int printorder);
 io_export str IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -186,20 +175,6 @@ io_export str IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@= PrintFormatted
-io_export str IOprint_formatted_@1(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
-@h
-@:PrintFormatted(bit)@
-@:PrintFormatted(chr)@
-@:PrintFormatted(sht)@
-@:PrintFormatted(int)@
-@:PrintFormatted(wrd)@
-@:PrintFormatted(lng)@
-@:PrintFormatted(flt)@
-@:PrintFormatted(dbl)@
-@:PrintFormatted(str)@
-io_export str IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr st, InstrPtr pci);
 io_export str IOexport(bit *ret, int *bid, str *fnme);
 io_export str IOdatafile(str *ret, str *fnme);
 io_export str IOimport(int *ret, int *bid, str *fnme);
@@ -342,21 +317,321 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return IOprintBoth(cntxt, mb, stk, pci, 1, 0, 0, 1);
 }
 
-str
-IOprint_ft(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tpe = getArgType(mb, pci, 1);
-	ptr val = (ptr) getArgReference(stk, pci, 1);
+@-
+The @%IOprintf_@() gets a format str, and a sequence of (ptr,int) parameters
+containing values and their type numbers. The @%printf@() proved to be a
+great risk; people formatting badly their "%s" format strings were crashing
+the kernel. This function will prevent you from doing so.
 
-	if (val == NULL) {
-		ATOMprint(TYPE_str, "nil", cntxt->fdout);
+New implementation that repeatedly invokes sprintf => hacking the va_alist
+for using vfsprintf proved to be too compiler-dependent (OLD approach).
+
+@= writemem
+	if (dst+@1 > buf+size) {
+		ptrdiff_t offset = dst - buf;
+		do {
+			size *= 2;
+		} while (dst+@1 > buf+size);
+		buf = GDKrealloc(buf, size);
+		dst = buf + offset;
+	}
+@= sprintf
+	if (width > adds) {
+		adds = width+10;
+		add = (str) alloca((int)adds);
+	}
+#ifndef HAVE_SNPRINTF
+	sprintf(add, meta, @1);
+#else
+	n = snprintf( add, adds, meta, @1 );
+	while (n < 0 || (size_t) n >= adds) {
+		if (n >= 0)	/* glibc 2.1 */
+			adds = n+1; /* precisely what is needed */
+		else		/* glibc 2.0 */
+			adds *= 2; /* twice the old size */
+		add = (str) alloca ((int)adds);
+		n = snprintf( add, adds, meta, @1 );
+	}
+#endif /* HAVE_SNPRINTF */
+@c
+static char toofew_error[80] = "at least %d parameters expected.\n";
+static char format_error[80] = "error in format before param %d.\n";
+static char type_error[80] = "illegal type in param %d.\n";
+
+#define return_error(x)\
+	GDKfree(buf); throw(MAL,"io.printf",x,argc);
+
+static char niltext[4] = "nil";
+
+static str
+IOprintf_(str *res, str format, ...)
+{
+	va_list ap;
+#ifdef HAVE_SNPRINTF
+	int n;
+#endif /* HAVE_SNPRINTF */
+
+	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
+	size_t adds = 100, width = 0;
+	char addbuf[100], *add = addbuf, *dst, *buf, *cur, *paramseen = NULL;
+	char *p;
+
+	if (format == NULL) {
+		throw(MAL,"io.printf", "NULL pointer passed as format.\n");
+	} else if (strchr(format, '%') == NULL) {
+		*res = GDKstrdup(format);
 		return MAL_SUCCEED;
 	}
-	if (tpe == TYPE_str)
-		ATOMprint(TYPE_str, *(str *) val, cntxt->fdout);
-	else
-		ATOMprint(tpe, val, cntxt->fdout);
+	va_start(ap,format);
+	buf = dst = (str) GDKmalloc(size = 80);
+	*res = NULL;
+
+	for (cur = format; *cur; cur++) {
+		if (paramseen) {
+			char meta[100];
+			ptrdiff_t extra = 0;
+			ptrdiff_t len;
+
+			if (GDKisdigit(*cur)) {
+				if (dotseen) {
+					prec = 10 * prec + (*cur - '0');
+				} else {
+					width = 10 * width + (*cur - '0');
+				}
+				continue;
+			} else if (dotseen == 0 && *cur == '.') {
+				dotseen = 1;
+				continue;
+			} else if (cur == paramseen + 1 && (*cur == '+' || *cur == '-' || *cur == ' ')) {
+				continue;
+			} else if (*cur == 'l') {
+				cur++;
+				if (*cur == 'l') {
+					cur++;
+					/* start of ll */
+					extra = (cur - paramseen) - 2;
+				}
+			}
+			if ((p = va_arg(ap, char *)) == NULL) {
+				return_error(toofew_error);
+			}
+			type = ATOMstorage(va_arg(ap, int));
+
+			len = 1 + (cur - paramseen);
+			memcpy(meta, paramseen, len);
+			meta[len] = 0;
+			if (ATOMcmp(type, ATOMnilptr(type), p) == 0) {
+				/* value is nil; attempt to print formatted 'nil'
+				   without generating %ls etc. */
+				char *csrc, *ctrg = meta;
+
+				for (csrc = paramseen; csrc < cur; csrc++) {
+					if (*csrc == '.')
+						break;
+					if (GDKisdigit(*csrc) || *csrc == '-')
+						*(++ctrg) = *csrc;
+				}
+				*(++ctrg) = 's';
+				*(++ctrg) = 0;
+				@:sprintf(niltext)@
+			} else if (strchr("cdiouxX", *cur) && !extra) {
+				int ival;
+
+				if (dotseen) {
+					return_error(format_error);
+				} else if (type == TYPE_chr) {
+					ival = (int) *(chr *) p;
+				} else if (type == TYPE_bte) {
+					ival = (int) *(bte *) p;
+				} else if (type == TYPE_sht) {
+					ival = (int) *(sht *) p;
+				} else if (type == TYPE_flt) {
+					ival = (int) *(flt *) p;
+				} else if (type == TYPE_wrd) {
+					goto largetypes;
+				} else if (type == TYPE_lng) {
+					goto largetypes;
+				} else if (type == TYPE_int) {
+					ival = *(int *) p;
+				} else {
+					return_error(type_error);
+				}
+				@:sprintf(ival)@
+			} else if (strchr("diouxX", *cur)) {
+#ifdef NATIVE_WIN32
+				ptrdiff_t i;
+#endif
+				lng lval;
+
+				if (dotseen) {
+					return_error(format_error);
+				}
+			largetypes:
+				if (type == TYPE_chr) {
+					lval = (lng) *(chr *) p;
+				} else if (type == TYPE_bte) {
+					lval = (lng) *(bte *) p;
+				} else if (type == TYPE_sht) {
+					lval = (lng) *(sht *) p;
+				} else if (type == TYPE_int) {
+					lval = (lng) *(int *) p;
+				} else if (type == TYPE_wrd) {
+					lval = (lng) *(wrd *) p;
+				} else if (type == TYPE_flt) {
+					lval = (lng) *(flt *) p;
+				} else if (type == TYPE_dbl) {
+					lval = (lng) *(dbl *) p;
+				} else if (type == TYPE_lng) {
+					lval = *(lng *) p;
+				} else {
+					return_error(type_error);
+				}
+#ifdef NATIVE_WIN32
+				for (i = len; i >= (extra + 2); i--) {
+					meta[i + 1] = meta[i];
+				}
+				meta[extra] = 'I';
+				meta[extra + 1] = '6';
+				meta[extra + 2] = '4';
+#endif
+				@:sprintf(lval)@
+			} else if (strchr("feEgG", *cur)) {
+				dbl dval;
+
+				if (type == TYPE_flt) {
+					dval = (dbl) *(flt *) p;
+				} else if (type == TYPE_dbl) {
+					dval = *(dbl *) p;
+				} else {
+					return_error(type_error);
+				}
+				width += (1 + prec);
+#ifndef HAVE_SNPRINTF
+				/* Brute force; this size always fits a double */
+				width += 300;
+#endif /* HAVE_SNPRINTF */
+				@:sprintf(dval)@
+			} else if (*cur == 's') {
+				int length;
+
+				if (extra) {
+					return_error(format_error);
+				} else if (type != TYPE_str) {
+					return_error(type_error);
+				}
+				length = strLen(p);
+				width++;
+				prec++;	/* account for '\0' */
+				if (dotseen && prec < length)
+					length = prec;
+				if ((size_t) length > width)
+					width = (size_t) length;
+				@:sprintf(p)@
+			} else {
+				return_error(format_error);
+			}
+			width = strlen(add);
+			@:writemem(width)@
+			memcpy(dst, add, width);
+			dst += width;
+			paramseen = NULL;
+			argc++;
+		} else if (!escaped) {
+			if (*cur == '\\' || (*cur == '%' && cur[1] == '%')) {
+				escaped = 1;
+			} else if (*cur == '%') {
+				paramseen = cur;
+				dotseen = prec = 0;
+				width = 0;
+			} else {
+				@:writemem(1)@
+				*dst++ = *cur;
+			}
+		} else {
+			escaped = 0;
+			@:writemem(1)@
+			*dst++ = *cur;
+		}
+	}
+
+/*
+	if ( va_arg(ap, char *) != NULL){
+		GDKfree(buf); 
+		throw(MAL,"io.printf", "params %d and beyond ignored %s.\n",argc);
+	}
+*/
+	va_end(ap);
+
+	@:writemem(1)@
+	*dst = 0;
+	*res = buf;
 	return MAL_SUCCEED;
+}
+
+#define G(X) ,getArgValue(stk,pci,X), getArgType(mb,pci,X)
+str
+IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *fmt = (str*) getArgReference(stk,pci,1);
+	str fmt2;
+	str msg= MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+	switch( pci->argc){
+	case 2: msg= IOprintf_(&fmt2,*fmt );
+			break;
+	case 3: msg= IOprintf_(&fmt2,*fmt G(2));
+		break;
+	case 4: msg= IOprintf_(&fmt2,*fmt G(2) G(3));
+		break;
+	case 5: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4));
+		break;
+	case 6: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5));
+		break;
+	case 7: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6));
+		break;
+	case 8: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7));
+		break;
+	case 9: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8));
+		break;
+	case 10: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8) G(9));
+	}
+	if (msg== MAL_SUCCEED)
+		stream_printf(cntxt->fdout,"%s",fmt2);
+	return msg;
+}
+str
+IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *fmt = (str*) getArgReference(stk,pci,2);
+	str fmt2;
+	stream *f= (stream*) getArgValue(stk,pci,1);
+	str msg= MAL_SUCCEED;
+
+	(void) cntxt;
+	(void) mb;
+	switch( pci->argc){
+	case 3: msg= IOprintf_(&fmt2,*fmt);
+		break;
+	case 4: msg= IOprintf_(&fmt2,*fmt G(3));
+		break;
+	case 5: msg= IOprintf_(&fmt2,*fmt G(3) G(4));
+		break;
+	case 6: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5));
+		break;
+	case 7: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6));
+		break;
+	case 8: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7));
+		break;
+	case 9: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8));
+		break;
+	case 10: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9));
+		break;
+	case 11: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9) G(10));
+	}
+	if (msg== MAL_SUCCEED)
+		stream_printf(f,"%s",fmt2);
+	return msg;
 }
 
 @-
@@ -442,267 +717,6 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
-@- Formatter print
-The format string is scrutinized using VALsprintf in the GDK library
-to avoid that passing a wrong argument (e.g. NULL pointer) kills the server.
-The generic printf function is rather expensive. Ideally it should be
-replaced by a squeezer into a type-specific function calls.
-@-
-Formatted print statements are to be broken down into its constituents.
-This avoids repeated type checking in most cases.
-
-@= escaped
-	switch(*c){
-	case 'n': stream_printf(fd,"\n");break;
-	case 't': stream_printf(fd,"\t");break;
-	case 'r': stream_printf(fd,"\r");break;
-	case '\\': stream_printf(fd,"\\");break;
-	default : stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
-	}
-@c
-str
-IOprint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fd = cntxt->fdout;
-	str *s= (str*) getArgReference(stk,pci,1);
-	str c;
-	(void) mb;
-
-	if (strNil(*s))
-		stream_printf(fd, "nil");
-	else {
-		for (c = *s; *c; c++) {
-			if (*c == '\\') {
-				c++;
-				@:escaped@
-			} else
-				stream_printf(fd, "%c", *c);
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-int
-formatMarker(str format,str m)
-{
-	int i = 0;
-	str t = format;
-
-	while ((t = strchr(t, '%')) != NULL) {
-		t++;
-		while ( *t && !isalpha((int) *t) ) t++;
-#ifdef WIN32
-		if (t && *t=='I') t++;
-		while ( *t && isdigit((int) *t) ) t++;
-#endif
-		if (*m && strncmp(t, m+1, strlen(m) - 1) )
-			i++; /* indicate error */
-		i++;
-	}
-	return i;
-}
-
-@-
-Printing format values is limited to a single element each.
-This to simplify error handling
-@= formatConversion
-	for(c= format;*c; c++){
-		if( *c=='\\'){
-			c++;
-			@:escaped@
-			continue;
-		} 
-		if( *c!= '%'){
-			stream_printf(fd,"%c",*c);
-			continue;
-		}
-		if(*(c+1)=='%'){ 
-			stream_printf(fd,"%c",*c);
-			c++; continue;
-		}
-		if (strncmp(@2,c,strlen(@2)))
-			throw(MAL, "io.print", "Format limitation," @2" expected");
-		stream_printf(fd,@2,@1);
-		c+= strlen(@2)-1;
-	}
-@-
-String nil testing is slightly different.
-@c
-static str
-IOprint_formatted_nil(stream *fd, str format)
-{
-	str c,s,f;
-	str new= (str) alloca(strlen(format)+1);
-
-	strcpy(new,format);
-	for (c = new; *c; c++) {
-		if (*c == '\\') {
-			c++;
-			@:escaped@
-			continue;
-		} 
-		if (*c != '%') {
-			stream_printf(fd, "%c", *c);
-			continue;
-		}
-		if (*(c + 1) == '%') {
-			stream_printf(fd, "%c", *c);
-			c++;
-			continue;
-		}
-		f=c+1;
-		if (*f== '+' || *f== '-') f++;
-		while (isdigit((int) *f) ) f++;
-		s= f;
-		if (*f =='.' ) f++;
-		while (isdigit((int) *f) ) f++;
-#ifdef WIN32
-		if ( *f =='I') f++;
-		while (isdigit((int) *f) ) f++;
-#endif
-		while (*f =='l' ) f++;
-		if (*f =='d' || *f == 'f' || *f =='s' || *f == 'c'){
-			*s++='s';
-			while (*++f ) *s++ = *f;
-			*s = 0;
-			stream_printf(fd,c,"nil");
-			break;
-		} else throw(MAL, "io.print", "Format limitation");
-	}
-	return MAL_SUCCEED;
-}
-@= printFormatted
-str IOprint_formatted_@1(Client cntxt, MalBlkPtr mv, MalStkPtr stk, InstrPtr pci)
-{
-	str *fmt = (str *) getArgReference(stk,pci,1);
-	@1 *val = (@1 *) getArgReference(stk,pci,2);
-	stream *fd = cntxt->fdout;
-	char *format;
-	char buf[MAXFORMAT];
-
-	(void) cntxt;
-	(void) mv;
-	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL || format== str_nil) 
-		throw(MAL, "io.print", "Format missing");
-	if( formatMarker(format,@2)!=1) 
-		throw(MAL, "io.print", "Format error, expected %%%s\n",@2);
-
-	if( *val == @1_nil) 
-		return IOprint_formatted_nil(fd,* (str*) fmt);
-	if (snprintf(buf, MAXFORMAT, *fmt,*val) < 0){
-		throw(MAL, "io.print", "Format error, %%%s expected and < 64K", @2);
-	} else
-		stream_printf(fd,*fmt, (@1)*val);
-	return MAL_SUCCEED;
-}
-@c
-@:printFormatted(chr,"%c")@
-@:printFormatted(sht,"%d")@
-@:printFormatted(int,"%d")@
-@:printFormatted(wrd,"%d")@
-@:printFormatted(flt,"%f")@
-@:printFormatted(dbl,"%f")@
-@:printFormatted(lng,LLFMT)@	
-
-
-str
-IOprint_formatted_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fd = cntxt->fdout;
-	ptr fmt = (ptr) getArgReference(stk,pci,1);
-	str *val = (str *) getArgReference(stk,pci,2);
-	char *format;
-	char buf[MAXFORMAT];
-	
-	(void) cntxt;
-	(void) mb;
-
-	/* TODO: check format properly !!! including sizes */
-	format = *(str *) fmt;
-	if (format == NULL)
-		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format,"%s") != 1)
-		throw(MAL, "io.print", "Format error, %%s expected");
-
-	if (strNil(*val))
-		return IOprint_formatted_nil(fd, *(str *) fmt);
-	if (snprintf(buf, MAXFORMAT, format,*val) < 0){
-		throw(MAL, "io.print", "Format error, %%s expected");
-	} else
-		stream_printf(fd,format,*val);
-	return MAL_SUCCEED;
-}
-
-str
-IOprint_oid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	stream *fd = cntxt->fdout;
-	int *ret= (int*) getArgReference(stk,pci,0);
-	ptr fmt = (ptr) getArgReference(stk,pci,1);
-	oid *s = (oid*) getArgReference(stk,pci,2);
-	char *format;
-	str msg, c;
-	int len = 50;
-
-	(void) mb;
-	format = *(str *) fmt;
-
-	if (format == NULL)
-		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format,"%d") != 1)
-		throw(MAL, "io.print", "Format error %%d expected");
-
-	if (*s == oid_nil)
-		msg = GDKstrdup("nil");
-	else {
-		msg = (str) GDKmalloc(len);
-		OIDtoStr(&msg, &len, s);
-	}
-	@:formatConversion(msg,"%s")@
-	GDKfree(msg);
-	if (*ret == EOF)
-		throw(MAL, "io.print", "End-of-file encountered");
-	return MAL_SUCCEED;
-}
-
-str
-IOprint_formatted_bit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret= (ptr) getArgReference(stk,pci,0);
-	ptr fmt= (ptr) getArgReference(stk,pci,1);
-	bit *s= (bit*) getArgReference(stk,pci,2);
-	stream *fd = cntxt->fdout;
-	char *format;
-	str msg;
-	char buf[MAXFORMAT];
-
-	(void) cntxt;
-	(void) mb;
-	/* TODO: check format properly !!! including sizes */
-	format = *(str *) fmt;
-	if (format == NULL)
-		throw(MAL, "io.print", "Format missing");
-	if (formatMarker(format,"%s") != 1)
-		throw(MAL, "io.print", "Format error, %%s expected");
-
-	if (*s == bit_nil)
-		return IOprint_formatted_nil(fd, *(str *) fmt);
-	if (*s)
-		msg = "true";
-	else
-		msg = "false";
-	if (snprintf(buf, MAXFORMAT, format,msg) < 0){
-		throw(MAL, "io.print", "Format error, %%s expected");
-	} else
-		stream_printf(fd,format,msg);
-	if (*ret == EOF)
-		throw(MAL, "io.print", "End-of-file encountered");
-	return MAL_SUCCEED;
-}
-
-@-
 @+ Bulk export/loading
 To simplify conversion between versions and to interface with other
 applications, we use a simple import/export operation.

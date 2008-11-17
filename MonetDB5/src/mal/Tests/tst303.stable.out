@@ -27,7 +27,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     raise IllegalAccess := "an exception";#  2 IllegalAccess:str := _3:str {G}
     io.print("should not come here\n"); #  3 _4:void := IOprint_val(_5:str) 
 catch IllegalAccess;                    #  4 IllegalAccess:str {J8}
-    io.printf("caught %s\n",IllegalAccess);#  5 _6:void := IOprint_formatted_str(_7:str, IllegalAccess:str) 
+    io.printf("caught %s\n",IllegalAccess);#  5 _6:void := IOprintf(_7:str, IllegalAccess:str) 
     raise IllegalAccess := "a second exception raised";#  6 IllegalAccess:str := _8:str {G}
     io.print("should not come here either\n");#  7 _9:void := IOprint_val(_10:str) 
 exit IllegalAccess;                     #  8 IllegalAccess:str 

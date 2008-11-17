@@ -1,0 +1,19 @@
+#some tests for the printf support
+
+i:=1;
+in:= nil:int;
+
+io.printf("int %d %d\n",i,in);
+io.printf("int %d %d %d %d\n",i,in,i,in);
+
+f:= 3.14;
+if:= nil:flt;
+io.printf("float mix %f %d\n",f,if);
+
+l:=1:lng;
+il:= nil:lng;
+io.printf("long mix %d %d\n",l,il);
+
+b:= true;
+ib:= nil:bit;
+io.printf("bit mix %d %d\n",b,ib);

@@ -33,11 +33,13 @@ ascii_io2
 #bpm11
 #bpm12
 
+remoteInit
 remote01
 remote02
 remote03
 remote04
 
+printf
 #some mapi related tests
 #mapi01 this one generates different output always
 mapi02
