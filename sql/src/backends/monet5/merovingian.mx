@@ -1319,6 +1319,7 @@ controlRunner(void *d)
 								q, getErrMsg(e));
 						send(msgsock, buf2, len, 0);
 						freeErr(e);
+						stats = NULL;
 					} else {
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send(msgsock, buf2, len, 0);
@@ -2159,6 +2160,7 @@ main(int argc, char *argv[])
 			if (e != NO_ERR) {
 				fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
 				freeErr(e);
+				stats = NULL;
 			}
 			if (stats != NULL)
 				SABAOTHfreeStatus(&stats);
