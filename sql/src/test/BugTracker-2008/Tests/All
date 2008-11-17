@@ -24,3 +24,4 @@ groupby_with_NULL.SF-2155606
 invalid_qualified_column_name.SF-2183288
 update_error.SF-2254506
 too_may_nested_operators.SF-2102167
+aborting_process.SF-2130710
