@@ -25,6 +25,8 @@
 
 EXTRA_DIST = title.html.in
 
+EXTRA_DIST_DIR = Tests
+
 headers_html = {
 	HEADERS = bmp gif html js png xq
 	DIR = datadir/MonetDB/xrpc/admin
@@ -44,4 +46,12 @@ headers_html = {
 		title.html \
 		tum-logo.gif \
 		xrpcwebclient.js
+}
+
+headers_xml = {
+	HEADERS = xml
+	DIR = datadir/MonetDB/xrpc/admin
+	SOURCES = \
+		xmark1.xml \
+		xmark2.xml
 }

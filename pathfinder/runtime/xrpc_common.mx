@@ -111,7 +111,7 @@
 #define XRPC_WSAT_RES SOAP_ENVELOPE\
     "<env:Header>\n"\
       XRPC_WS_QID \
-    " <xrpc:partipant>%s,%s:%s:%s,"LLFMT",%d</xrpc:participant>\n"\
+    " <xrpc:participant>%s,%s:%s:%s,"LLFMT",%d</xrpc:participant>\n"\
     "</env:Header>\n"\
     "<env:Body><wsat:%s/></env:Body>\n"\
     "</env:Envelope>"
@@ -570,16 +570,16 @@ xrpc_parse_message(
     /* i: index in xrpc:call; j: index of xrpc:sequence per xrpc:call */
     next_call_node_pre = call_node_pre;
     for(i = 0; 
-            next_call_node_pre > 0 && next_call_node_pre < nnodes; 
-                call_node_pre = next_call_node_pre, i++) 
+            next_call_node_pre > 0 && next_call_node_pre < nnodes && i < iterc; 
+                call_node_pre = next_call_node_pre) 
     {
         /* end of current call node */
         next_call_node_pre = call_node_pre + pre_sizeT[call_node_pre] + 1;
 
         for(seq_node_pre = skip_text_nodes(pre_kindT, call_node_pre + 1, next_call_node_pre), 
             next_seq_node_pre = seq_node_pre, j = 0;
-                next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre;
-                    seq_node_pre = next_seq_node_pre, j++) 
+                next_seq_node_pre > 0 && next_seq_node_pre < next_call_node_pre && j < argc;
+                    seq_node_pre = next_seq_node_pre) 
         {
             /* end of current sequence node */
             next_seq_node_pre = seq_node_pre + pre_sizeT[seq_node_pre] + 1;
@@ -623,15 +623,15 @@ xrpc_parse_message(
                         ao_ptr++;
                     }
                     if(tpe < 0){
-                        snprintf(err, errlen, "XRPC request: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                " does not have an \""XSI_NS":type\"", i, j, k);
+                        snprintf(err, errlen, "XRPC %s: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
+                                " does not have an \""XSI_NS":type\"", msg+strlen(XRPC_NS)+1, i, j, k);
                         goto cleanup;
                     }
                     req->argtpe[req->nr_args] = tpe;
                     val_node_pre = tpe_node_pre + 1;
                     if(pre_sizeT[tpe_node_pre] != 1 || pre_kindT[val_node_pre] != TEXT) {
-                        snprintf(err, errlen, "XRPC message: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
-                                "is expected to have a simple value", i, j, k);
+                        snprintf(err, errlen, "XRPC %s: iter["LLFMT"]/param["LLFMT"]/value["LLFMT"]"
+                                "is expected to have a simple value", msg+strlen(XRPC_NS)+1, i, j, k);
                         goto cleanup;
                     }
                     req->argval[req->nr_args] = text_base + prop_textT[pre_propT[val_node_pre]];
@@ -640,10 +640,10 @@ xrpc_parse_message(
                     if (attr_ownT[ao_ptr] == tpe_node_pre) {
                         val_node_pre = ao_ptr;
                     } else {
-                        snprintf(err, errlen, "XRPC request: "
+                        snprintf(err, errlen, "XRPC %s: "
                                 "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
                                 "of type "XRPC_NS":attribute is expected to have a single attribute",
-                                i, j, k);
+                                msg+strlen(XRPC_NS)+1, i, j, k);
                         goto cleanup;
                     }
                     req->hasNodeParam = TRUE;
@@ -662,10 +662,10 @@ xrpc_parse_message(
                         pre_kindT[val_node_pre] = 4;
                         pre_propT[val_node_pre] = oid_nil;
                     } else if (req->argtpe[req->nr_args] < 0) {
-                        snprintf(err, errlen, "XRPC request: "
+                        snprintf(err, errlen, "XRPC %s: "
                                 "iter["LLFMT"]/param["LLFMT"]/value["LLFMT"] "
                                 "contains unsupported type: %s\n",
-                                i, j, k, pul);
+                                msg+strlen(XRPC_NS)+1, i, j, k, pul);
                         goto cleanup;
                     } else {
                         val_node_pre = tpe_node_pre + 1;
@@ -696,8 +696,13 @@ xrpc_parse_message(
                 next_tpe_node_pre = skip_text_nodes(pre_kindT, next_tpe_node_pre, next_seq_node_pre);
             } /* end loop 'xrpc:<type>' */
             next_seq_node_pre = skip_text_nodes(pre_kindT, next_seq_node_pre, next_call_node_pre);
+            /* if this is a response messsage, we increase it itercnt (its argc
+             * is always 1, i.e. j=0), otherwise, we increase its argc (i.e. j++) */
+            if(participants) i++; else j++;
         } /* end loop 'xrpc:sequence' */
         next_call_node_pre = skip_text_nodes(pre_kindT, next_call_node_pre, nnodes);
+        /* if this is a request message, we increase its itercnt here */
+        if(!participants) i++;
     } /* end loop 'xrpc:call' */
     frag_root = BATsetaccess(frag_root, BAT_READ);
     res = req; req = NULL;

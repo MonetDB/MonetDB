@@ -1587,6 +1587,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
         {
             /*
             <content>
+               <kind name="FUNCTION"/>
                <column name="COLNAME" new="true"/>
                <column name="COLNAME" new="false"/>
                <column name="COLNAME" function="iter"/>
@@ -1594,21 +1595,13 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             </content>
             */
 
-            /* FIXME: the signature of PFla_doc_tbl has changed
-             * with a fourth argument: a flag to signify if the
-             * originator function wass fn:doc or pf:collection.
-             */
-            /*
             newAlgNode = PFla_doc_tbl
              (
              CHILDNODE(0),
+             PFLA_FUNTY("/content/kind/@name"),
              PFLA_ATT("/content/column[@new='true']/@name"),
              PFLA_ATT("/content/column[@new='false']/@name")
              );
-             */
-            PFoops (OOPS_FATAL,
-                    "Import of la_doc_tbl operator "
-                    "is not implemented yet");
         }
         break;
 
