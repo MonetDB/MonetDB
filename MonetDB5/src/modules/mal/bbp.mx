@@ -100,7 +100,7 @@ pattern bind(head:str,tail:str):bat[:any_1,:any_2]
 address CMDbbpbind2
 comment "Locate the BAT using the head and tail names in the BAT buffer pool");
 
-pattern bind(idx:BAT):bat[:any_1,:any_2] 
+pattern bind(idx:int):bat[:any_1,:any_2] 
 address CMDbbpbindindex
 comment "Locate the BAT using its BBP index in the BAT buffer pool";
 
@@ -884,9 +884,10 @@ CMDbbpLocation(int *ret)
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
-			snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
-			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
+				snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
 				BUNins(b, &i, buf, FALSE);
+			}
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
