@@ -5091,7 +5091,7 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* override some query-specific MIL runtime variables from here */
-    if(ctx->mode & XQ_MILPRINT_SUMMER) {
+    if(ctx->mode & XQ_XRPC) {
         @:setvar(xrpc_module,module)@
         @:setvar(xrpc_method,method)@
         @:setvar(xrpc_mode,mode)@
@@ -5572,7 +5572,7 @@ xquery_client_reset(xquery_client *ctx, char *err)
     BATclear(ctx->str_values);
     BUNappend(ctx->str_values, "", FALSE);
 
-    if(ctx->mode & XQ_MILPRINT_SUMMER) {
+    if(ctx->mode & XQ_XRPC) {
         *ctx->xrpc_shredBAT = int_nil; 
         (*ctx->xrpc_qid)[0] = 0;
         (*ctx->xrpc_caller)[0] = 0;
@@ -6374,7 +6374,7 @@ xquery_method(mapi_client *mc,
     char *err, *ns = "fn";
     stream *s = NULL;
 
-    ctx->mode = XQ_XRPC;
+    ctx->mode |= XQ_XRPC;
     ctx->errbuf = GDKerrbuf;
     if(shredBAT)
         *ctx->xrpc_shredBAT = BBPcacheid(shredBAT);
