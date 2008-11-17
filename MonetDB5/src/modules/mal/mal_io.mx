@@ -486,6 +486,14 @@ IOprintf_(str *res, str format, ...)
 				} else {
 					return_error(type_error);
 				}
+				if (!extra) {
+					meta[len + 2] = meta[len];
+					meta[len + 1] = meta[len - 1];
+					meta[len] = 'l';
+					meta[len - 1] = 'l';
+					len += 2;
+					extra = len - 3;
+				}
 #ifdef NATIVE_WIN32
 				for (i = len; i >= (extra + 2); i--) {
 					meta[i + 1] = meta[i];
