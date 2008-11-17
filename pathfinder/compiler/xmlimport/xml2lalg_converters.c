@@ -317,7 +317,7 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
 //     {
 //         return la_doc_index_join;
 //     }
-    else if (strcmp(s, "fn:doc") == 0)
+    else if (strcmp(s, "document table access") == 0)
     {
         return la_doc_tbl;
     }
@@ -1133,9 +1133,27 @@ PFxml2la_conv_2PFLA_docType(char* s)
 
 }
 
+/******************************************************************************/
+/******************************************************************************/
+
+PFalg_doc_tbl_kind_t 
+PFxml2la_conv_2PFLA_doctblType(char* s) 
+{
+    if (strcmp(s, "fn:doc") == 0)
+    {
+        return alg_dt_doc;
+    }
+    else if (strcmp(s, "fn:collection") == 0)
+    {
+        return alg_dt_col;
+    }
+    else
+    {
+        PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+        /* pacify picky compilers */
+        return alg_dt_doc;
 
 
+    }
 
-
-
-
+}

@@ -235,6 +235,15 @@
                         PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
+ * Macro return-type:  PFalg_doc_tbl_kind_t 
+ * XPath return-type:  attribute(){1}
+ */
+#define PFLA_DOCTBLTY(xpath) \
+                PFxml2la_conv_2PFLA_doctblType( \
+                    PFxml2la_xpath_getAttributeValueFromAttributeNode( \
+                        PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
+
+/**              
  * Macro return-type:  PFord_ordering_t 
  * XPath return-type:  element()+
  */
@@ -1598,9 +1607,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_doc_tbl
              (
              CHILDNODE(0),
-             PFLA_FUNTY("/content/kind/@name"),
              PFLA_ATT("/content/column[@new='true']/@name"),
-             PFLA_ATT("/content/column[@new='false']/@name")
+             PFLA_ATT("/content/column[@new='false']/@name"),
+             PFLA_DOCTBLTY("/content/kind/@name")
              );
         }
         break;

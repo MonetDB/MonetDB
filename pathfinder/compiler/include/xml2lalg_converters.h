@@ -84,5 +84,8 @@ PFxml2la_conv_2PFLA_nodekind(char* s);
 PFalg_doc_t 
 PFxml2la_conv_2PFLA_docType(char* s);
 
+PFalg_doc_tbl_kind_t
+PFxml2la_conv_2PFLA_doctblType(char* s);
+
 #endif
 

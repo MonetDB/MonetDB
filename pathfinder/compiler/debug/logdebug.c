@@ -173,7 +173,7 @@ static char *xml_id[]  = {
     , [la_guide_step]       = "XPath step (with guide information)"
     , [la_guide_step_join]  = "path step join (with guide information)"
     , [la_doc_index_join]   = "document index join"
-    , [la_doc_tbl]          = "fn:doc"
+    , [la_doc_tbl]          = "document table access"
     , [la_doc_access]       = "#pf:string-value"
     , [la_twig]             = "twig_construction"
     , [la_fcns]             = "constructor_sequence_(fcns)"
@@ -853,11 +853,18 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         }   break;
 
         case la_doc_tbl:
+        {
+            char *name = NULL;
+
+            switch (n->sem.doc_tbl.kind) {
+                case alg_dt_doc: name = "fn:doc";        break;
+                case alg_dt_col: name = "fn:collection"; break;
+            }
             PFarray_printf (dot, "%s (%s:<%s>)",
-                            a_id[n->kind],
+                            name,
                             PFatt_str (n->sem.doc_tbl.res),
                             PFatt_str (n->sem.doc_tbl.att));
-            break;
+        }   break;
 
         case la_doc_access:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
@@ -2053,14 +2060,25 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
         }   break;
 
         case la_doc_tbl:
+        {
+
+            char *name = NULL;
+
+            switch (n->sem.doc_tbl.kind) {
+                case alg_dt_doc:    name = "fn:doc";        break;
+                case alg_dt_col:    name = "fn:collection"; break;
+            }
+
             PFarray_printf (xml,
                             "    <content>\n"
+                            "      <kind name=\"%s\"/>\n"
                             "      <column name=\"%s\" new=\"true\"/>\n"
                             "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
+                            name,
                             PFatt_str (n->sem.doc_tbl.res),
                             PFatt_str (n->sem.doc_tbl.att));
-            break;
+        }   break;
 
         case la_doc_access:
             PFarray_printf (xml,
