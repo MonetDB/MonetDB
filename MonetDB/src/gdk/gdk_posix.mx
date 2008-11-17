@@ -1126,7 +1126,7 @@ MT_mallinfo(void)
 {
 	struct Mallinfo _ret;
 
-#ifdef HAVE_USEFUL_MALLINFO
+#if defined(HAVE_USEFUL_MALLINFO) && 0
 	struct mallinfo m;
 
 	m = mallinfo();
