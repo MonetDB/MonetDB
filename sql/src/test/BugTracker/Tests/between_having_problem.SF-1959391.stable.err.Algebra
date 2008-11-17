@@ -12,9 +12,9 @@ stderr of test 'between_having_problem.SF-1959391` in directory 'src/test/BugTra
 # 21:05:31 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36007  -G
 # 21:05:31 >  
 
-MAPI  = monetdb@alf:36007
+MAPI  = monetdb@alf:33345
 QUERY = select id from t31959391 where (id between 0 and 62) having (id = id+.1 or id = id
-ERROR = !SELECT: cannot use non GROUP BY column '(null)' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 
 # 21:05:31 >  
 # 21:05:31 >  Done.
