@@ -70,14 +70,60 @@ exit correct;                           # 17 correct:bit
     io.printf("#source:%s\n",datafile); # 19 _27:void := IOprintf(_28:str, datafile:str) 
     idxbat := tablet.load(namebat,sepbat,typebat,datafile,len);# 20 idxbat:bat[:str,:BAT] := CMDtablet_load(namebat:bat[:oid,:str], sepbat:bat[:oid,:str], typebat:bat[:oid,:str], datafile:str, len:int) {G}
 #io.print(idxbat); 
-    i1 := algebra.fetch(idxbat,0);      # 22 i1:BAT := ALGfetchint(idxbat:bat[:str,:BAT], _32:int) {G}
-    b1:bat[:oid,:str]  := bbp.bind(i1); # 23 b1:bat[:oid,:str] := CMDbbpbindindex(i1:BAT) {G}
-#io.print(b1); 
-    i2 := algebra.fetch(idxbat,1);      # 25 i2:BAT := ALGfetchint(idxbat:bat[:str,:BAT], _36:int) {G}
-    b2:bat[:oid,:str]  := bbp.bind(i2); # 26 b2:bat[:oid,:str] := CMDbbpbindindex(i2:BAT) {G}
-#io.print(b2); 
+    b1:bat[:oid,:str]  := algebra.fetch(idxbat,0);# 22 b1:bat[:oid,:str] := ALGfetchint(idxbat:bat[:str,:BAT], _32:int) {G}
+#b1:bat[:oid,:str] := bbp.bind(i1); 
+    io.print(b1);                       # 24 _34:void := IOprint_val(b1:bat[:oid,:str]) 
+    b2:bat[:oid,:str]  := algebra.fetch(idxbat,1);# 25 b2:bat[:oid,:str] := ALGfetchint(idxbat:bat[:str,:BAT], _36:int) {G}
+#b2:bat[:oid,:str] := bbp.bind(i2); 
+    io.print(b2);                       # 27 _38:void := IOprint_val(b2:bat[:oid,:str]) 
 end main;	# 28  
-#source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/ascii_io2.load
+#source:/net/alf.ins.cwi.nl/export/scratch0/niels/rc/Linux-x86_64/mTests/src/modules/mal/ascii_io2.load
+#-----------------------------------------#
+# h	t				  # name
+# void	str				  # type
+#-----------------------------------------#
+[ 0@0,	  "IA073-000474-B024-230"	  ]
+[ 1@0,	  "                     "	  ]
+[ 2@0,	  "IA073-000474-B024-231"	  ]
+[ 3@0,	  ""				  ]
+[ 4@0,	  "IA073-000474-B024-232"	  ]
+[ 5@0,	  "  "				  ]
+[ 6@0,	  "IA073-000474-B024-233"	  ]
+[ 7@0,	  ""				  ]
+[ 8@0,	  "IA073-000474-B024-234"	  ]
+[ 9@0,	  " "				  ]
+[ 10@0,	  "IA073-000474-B024-235"	  ]
+[ 11@0,	  ""				  ]
+[ 12@0,	  "IA073-000474-B024-236"	  ]
+[ 13@0,	  ""				  ]
+[ 14@0,	  "IA073-000474-B024-237"	  ]
+[ 15@0,	  ""				  ]
+[ 16@0,	  "IA073-000474-B024-238"	  ]
+[ 17@0,	  ""				  ]
+[ 18@0,	  "IA073-000474-B024-239"	  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "0-request"	  ]
+[ 1@0,	  "         "	  ]
+[ 2@0,	  "1-from"	  ]
+[ 3@0,	  ""		  ]
+[ 4@0,	  "2-library"	  ]
+[ 5@0,	  "  "		  ]
+[ 6@0,	  "3-subject"	  ]
+[ 7@0,	  ""		  ]
+[ 8@0,	  "4-listing"	  ]
+[ 9@0,	  " "		  ]
+[ 10@0,	  "5-up"	  ]
+[ 11@0,	  ""		  ]
+[ 12@0,	  "6-to"	  ]
+[ 13@0,	  ""		  ]
+[ 14@0,	  "7-index"	  ]
+[ 15@0,	  ""		  ]
+[ 16@0,	  "8-up"	  ]
+[ 17@0,	  ""		  ]
+[ 18@0,	  "9-to"	  ]
 
 # 21:10:47 >  
 # 21:10:47 >  Done.
