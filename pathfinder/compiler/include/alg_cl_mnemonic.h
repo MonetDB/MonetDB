@@ -33,6 +33,7 @@
 #define cl(s)       PFalg_collist((s))
 /** abbreviation for column list accessors */
 #define clat(cl,i)  PFalg_collist_at((cl),(i))
+#define cltop(cl)   PFalg_collist_top((cl))
 #define cladd(cl)   PFalg_collist_add((cl))
 #define clsize(cl)  PFalg_collist_size((cl))
 

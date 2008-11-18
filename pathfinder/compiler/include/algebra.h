@@ -229,6 +229,7 @@ typedef unsigned int PFalg_col_t;
 #define PFalg_collist_copy(cl)     PFarray_copy ((cl))
 /** Positional access to a column list */
 #define PFalg_collist_at(cl,i)     *(PFalg_col_t *) PFarray_at ((cl), (i))
+#define PFalg_collist_top(cl)      *(PFalg_col_t *) PFarray_top ((cl))
 /** Append to a column list */
 #define PFalg_collist_add(cl)      *(PFalg_col_t *) PFarray_add ((cl))
 /** Size of a column list */

@@ -54,12 +54,12 @@
  * Test if @a col is in the list of icol columns in array @a icols
  */
 static bool
-icol_worker (PFarray_t *icols, PFalg_col_t col)
+icol_worker (PFalg_collist_t *icols, PFalg_col_t col)
 {
     if (!icols) return false;
 
-    for (unsigned int i = 0; i < PFarray_last (icols); i++)
-        if (col == *(PFalg_col_t *) PFarray_at (icols, i))
+    for (unsigned int i = 0; i < clsize (icols); i++)
+        if (col == clat (icols, i))
             return true;
 
     return false;
@@ -94,25 +94,16 @@ PFprop_icol_right (const PFprop_t *prop, PFalg_col_t col)
     return icol_worker (prop->r_icols, col);
 }
 
-/**
- * worker for PFprop_icols_count and PFprop_icols_to_collist
- */
-static unsigned int
-icols_count (const PFprop_t *prop)
-{
-    if (!prop->icols)
-        return 0;
-    else
-        return PFarray_last (prop->icols);
-}
-
 /*
  * count number of icols columns
  */
 unsigned int
 PFprop_icols_count (const PFprop_t *prop)
 {
-    return icols_count (prop);
+    if (!prop->icols)
+        return 0;
+    else
+        return clsize (prop->icols);
 }
 
 /**
@@ -121,17 +112,10 @@ PFprop_icols_count (const PFprop_t *prop)
 PFalg_collist_t *
 PFprop_icols_to_collist (const PFprop_t *prop)
 {
-    PFalg_collist_t *new_list;
-
-    new_list = PFalg_collist (icols_count (prop));
-
     if (!prop->icols)
-        return new_list;
-
-    for (unsigned int i = 0; i < PFarray_last (prop->icols); i++)
-        cladd (new_list) = *(PFalg_col_t *) PFarray_at (prop->icols, i);
-
-    return new_list;
+        return PFalg_collist (0);
+    else
+        return PFalg_collist_copy (prop->icols);
 }
 
 /**
@@ -139,17 +123,16 @@ PFprop_icols_to_collist (const PFprop_t *prop)
  * @a schema_ocols
  */
 static void
-intersect_ocol (PFarray_t *icols, PFla_op_t *n)
+intersect_ocol (PFalg_collist_t *icols, PFla_op_t *n)
 {
     unsigned int i = 0;
     assert (icols);
-    while (i < PFarray_last (icols)) {
-        if (PFprop_ocol (n, *(PFalg_col_t *) PFarray_at (icols, i)))
+    while (i < clsize (icols)) {
+        if (PFprop_ocol (n, clat (icols, i)))
             i++;
         else { /* no match -- remove the column */
-            *(PFalg_col_t *) PFarray_at (icols, i)
-                = *(PFalg_col_t *) PFarray_top (icols);
-            PFarray_last (icols)--;
+            clat (icols, i) = cltop (icols);
+            clsize (icols)--;
         }
     }
 }
@@ -158,12 +141,12 @@ intersect_ocol (PFarray_t *icols, PFla_op_t *n)
  * Returns union of two icols lists
  */
 static void
-union_ (PFarray_t *a, PFalg_col_t b)
+union_ (PFalg_collist_t *a, PFalg_col_t b)
 {
     assert (a);
 
     if (!icol_worker (a, b))
-        *(PFalg_col_t *) PFarray_add (a) = b;
+        cladd (a) = b;
 }
 
 /**
@@ -171,17 +154,17 @@ union_ (PFarray_t *a, PFalg_col_t b)
  * of the icol list @a b that are not in @a a/
  */
 static void
-union_list (PFarray_t *a, PFarray_t *b)
+union_list (PFalg_collist_t *a, PFalg_collist_t *b)
 {
     PFalg_col_t cur;
 
     assert (a);
     if (!b) return;
 
-    for (unsigned int i = 0; i < PFarray_last (b); i++) {
-        cur = *(PFalg_col_t *) PFarray_at (b, i);
+    for (unsigned int i = 0; i < clsize (b); i++) {
+        cur = clat (b, i);
         if (!icol_worker (a, cur))
-            *(PFalg_col_t *) PFarray_add (a) = cur;
+            cladd (a) = cur;
     }
 }
 
@@ -189,16 +172,15 @@ union_list (PFarray_t *a, PFarray_t *b)
  * Returns difference of two icols lists
  */
 static void
-diff (PFarray_t *a, PFalg_col_t b)
+diff (PFalg_collist_t *a, PFalg_col_t b)
 {
     unsigned int i = 0;
-    while (i < PFarray_last (a)) {
-        if (*(PFalg_col_t *) PFarray_at (a, i) != b)
+    while (i < clsize (a)) {
+        if (clat (a, i) != b)
             i++;
         else { /* b found -- remove the column */
-            *(PFalg_col_t *) PFarray_at (a, i)
-                = *(PFalg_col_t *) PFarray_top (a);
-            PFarray_last (a)--;
+            clat (a, i) = cltop (a);
+            clsize (a)--;
             return;
         }
     }
@@ -208,7 +190,7 @@ diff (PFarray_t *a, PFalg_col_t b)
  * Check if a column @a b appears in list @a a.
  */
 static bool
-in (PFarray_t *a, PFalg_col_t b)
+in (PFalg_collist_t *a, PFalg_col_t b)
 {
     return (icol_worker (a, b));
 }
@@ -217,21 +199,20 @@ in (PFarray_t *a, PFalg_col_t b)
  * Check if a list @a a is empty.
  */
 static bool
-empty (PFarray_t *a)
+empty (PFalg_collist_t *a)
 {
-    return PFarray_last (a) == 0;
+    return clsize (a) == 0;
 }
 
 static void
-copy (PFarray_t *base, PFarray_t *content)
+copy (PFalg_collist_t *base, PFalg_collist_t *content)
 {
-    for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(PFalg_col_t *) PFarray_add (base) =
-            *(PFalg_col_t *) PFarray_at (content, i);
+    for (unsigned int i = 0; i < clsize (content); i++)
+        cladd (base) = clat (content, i);
 }
 
 /* forward declaration */
-static void prop_infer_icols (PFla_op_t *, PFarray_t *);
+static void prop_infer_icols (PFla_op_t *, PFalg_collist_t *);
 
 /**
  * Alternative traversal of the icols that is started
@@ -271,7 +252,7 @@ static bool first_twig_child;
  * (uses edge counter stored in EDGE(n) from the first run)
  */
 static void
-prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
+prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
 {
     /* for element construction we need a special translation
        and therefore skip the default inference of the children */
@@ -908,22 +889,22 @@ prop_infer (PFla_op_t *n)
        (reuse already existing lists if already available
         as this increases the performance of the compiler a lot) */
     if (n->prop->icols)
-        PFarray_last (n->prop->icols) = 0;
+        clsize (n->prop->icols) = 0;
     else
-        n->prop->icols = PFarray (sizeof (PFalg_col_t), 10);
+        n->prop->icols = PFalg_collist (10);
 
     if (L(n)) {
         if (n->prop->l_icols)
-            PFarray_last (n->prop->l_icols) = 0;
+            clsize (n->prop->l_icols) = 0;
         else
-            n->prop->l_icols = PFarray (sizeof (PFalg_col_t), 10);
+            n->prop->l_icols = PFalg_collist (10);
     }
 
     if (R(n)) {
         if (n->prop->r_icols)
-            PFarray_last (n->prop->r_icols) = 0;
+            clsize (n->prop->r_icols) = 0;
         else
-            n->prop->r_icols = PFarray (sizeof (PFalg_col_t), 10);
+            n->prop->r_icols = PFalg_collist (10);
     }
 }
 
@@ -934,16 +915,16 @@ prop_infer (PFla_op_t *n)
 void
 PFprop_infer_icol_specific (PFla_op_t *root, PFalg_col_t icols)
 {
-    PFarray_t   *icol_list;
-    PFalg_col_t  mod_icols = icols;
-    unsigned int count     = 0,
-                 bit_shift = 1;;
+    PFalg_collist_t *icol_list;
+    PFalg_col_t      mod_icols = icols;
+    unsigned int     count     = 0,
+                     bit_shift = 1;;
 
     while (mod_icols) {
         count += mod_icols & 1;
         mod_icols >>= 1;
     }
-    icol_list = PFarray (sizeof (PFalg_col_t), count);
+    icol_list = PFalg_collist (count);
 
     mod_icols = icols;
     /* unfold icols into a list of columns */

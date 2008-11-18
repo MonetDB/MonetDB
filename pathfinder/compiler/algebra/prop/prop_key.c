@@ -50,12 +50,12 @@
  * Test if @a col is in the list of key columns in array @a keys
  */
 static bool
-key_worker (PFarray_t *keys, PFalg_col_t col)
+key_worker (PFalg_collist_t *keys, PFalg_col_t col)
 {
     if (!keys) return false;
 
-    for (unsigned int i = 0; i < PFarray_last (keys); i++)
-        if (col == *(PFalg_col_t *) PFarray_at (keys, i))
+    for (unsigned int i = 0; i < clsize (keys); i++)
+        if (col == clat (keys, i))
             return true;
 
     return false;
@@ -90,25 +90,16 @@ PFprop_key_right (const PFprop_t *prop, PFalg_col_t col)
     return key_worker (prop->r_keys, col);
 }
 
-/**
- * worker for PFprop_keys_count and PFprop_keys_to_collist
- */
-static unsigned int
-keys_count (const PFprop_t *prop)
-{
-    if (!prop->keys)
-        return 0;
-    else
-        return PFarray_last (prop->keys);
-}
-
 /*
  * count number of key columns
  */
 unsigned int
 PFprop_keys_count (const PFprop_t *prop)
 {
-    return keys_count (prop);
+    if (!prop->keys)
+        return 0;
+    else
+        return clsize (prop->keys);
 }
 
 /**
@@ -117,17 +108,10 @@ PFprop_keys_count (const PFprop_t *prop)
 PFalg_collist_t *
 PFprop_keys_to_collist (const PFprop_t *prop)
 {
-    PFalg_collist_t *new_list;
-
-    new_list = PFalg_collist (keys_count (prop));
-
     if (!prop->keys)
-        return new_list;
-
-    for (unsigned int i = 0; i < PFarray_last (prop->keys); i++)
-        cladd (new_list) = *(PFalg_col_t *) PFarray_at (prop->keys, i);
-
-    return new_list;
+        return PFalg_collist (0);
+    else
+        return PFalg_collist_copy (prop->keys);
 }
 
 /**
@@ -135,12 +119,12 @@ PFprop_keys_to_collist (const PFprop_t *prop)
  * if @a b is not in the list.
  */
 static void
-union_ (PFarray_t *a, PFalg_col_t b)
+union_ (PFalg_collist_t *a, PFalg_col_t b)
 {
     assert (a);
 
     if (!key_worker (a, b))
-        *(PFalg_col_t *) PFarray_add (a) = b;
+        cladd (a) = b;
 }
 
 /**
@@ -148,25 +132,24 @@ union_ (PFarray_t *a, PFalg_col_t b)
  * of the key list @a b that are not in @a a/
  */
 static void
-union_list (PFarray_t *a, PFarray_t *b)
+union_list (PFalg_collist_t *a, PFalg_collist_t *b)
 {
     PFalg_col_t cur;
 
     assert (a && b);
 
-    for (unsigned int i = 0; i < PFarray_last (b); i++) {
-        cur = *(PFalg_col_t *) PFarray_at (b, i);
+    for (unsigned int i = 0; i < clsize (b); i++) {
+        cur = clat (b, i);
         if (!key_worker (a, cur))
-            *(PFalg_col_t *) PFarray_add (a) = cur;
+            cladd (a) = cur;
     }
 }
 
 static void
-copy (PFarray_t *base, PFarray_t *content)
+copy (PFalg_collist_t *base, PFalg_collist_t *content)
 {
-    for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(PFalg_col_t *) PFarray_add (base) =
-            *(PFalg_col_t *) PFarray_at (content, i);
+    for (unsigned int i = 0; i < clsize (content); i++)
+        cladd (base) = clat (content, i);
 }
 
 /**
@@ -279,10 +262,9 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 }
             break;
 
-
         case la_ref_tbl:
             /* Make sure we don't process a component key here. */
-            if(PFarray_last (n->sem.ref_tbl.keys) == 1)
+            if (PFarray_last (n->sem.ref_tbl.keys) == 1)
             {
                 int keyPos =  *(int*) PFarray_at (n->sem.ref_tbl.keys, 0);
 
@@ -291,13 +273,9 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
                 PFalg_col_t key = schemaItem.name;
 
-                *(PFalg_col_t *) PFarray_add (n->prop->keys) = key;
-
+                cladd (n->prop->keys) = key;
             }
-
-
             break;
-
 
         case la_disjunion:
             /*
@@ -311,11 +289,9 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             if (L(n)->prop->domains && R(n)->prop->domains
                 && n->prop->disjdoms) {
 
-                for (unsigned int i = 0;
-                        i < PFarray_last (L(n)->prop->keys); i++) {
+                for (unsigned int i = 0; i < clsize (L(n)->prop->keys); i++) {
 
-                    PFalg_col_t key_col
-                        = *(PFalg_col_t *) PFarray_at (L(n)->prop->keys, i);
+                    PFalg_col_t key_col = clat (L(n)->prop->keys, i);
 
                     if (key_worker (R(n)->prop->keys, key_col)
                         && PFprop_disjdom (n->prop,
@@ -797,22 +773,22 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
        (reuse already existing lists if already available
         as this increases the performance of the compiler a lot) */
     if (n->prop->keys)
-        PFarray_last (n->prop->keys) = 0;
+        clsize (n->prop->keys) = 0;
     else
-        n->prop->keys = PFarray (sizeof (PFalg_col_t), 10);
+        n->prop->keys = PFalg_collist (10);
 
     if (L(n)) {
         if (n->prop->l_keys)
-            PFarray_last (n->prop->l_keys) = 0;
+            clsize (n->prop->l_keys) = 0;
         else
-            n->prop->l_keys = PFarray (sizeof (PFalg_col_t), 10);
+            n->prop->l_keys = PFalg_collist (10);
     }
 
     if (R(n)) {
         if (n->prop->r_keys)
-            PFarray_last (n->prop->r_keys) = 0;
+            clsize (n->prop->r_keys) = 0;
         else
-            n->prop->r_keys = PFarray (sizeof (PFalg_col_t), 10);
+            n->prop->r_keys = PFalg_collist (10);
     }
 
     /* infer information on key columns */
