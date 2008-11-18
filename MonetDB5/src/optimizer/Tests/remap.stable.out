@@ -20,25 +20,44 @@ stdout of test 'remap` in directory 'src/optimizer` itself:
 #	mdb.list();
 #
 !TypeException:user.main[12]:'bat.insert' undefined in: _30:any := bat.insert(_22:bat[:int,:int], _26:oid, _29:int)
-function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+function user.main():void;
+    b := bat.new(:oid,:int);
 # a correct call 
-    z:bat[:oid,:int]  := batcalc.+(b,1);#  3 z:bat[:oid,:int] := CMDbatADDcst_int_int_int(b:bat[:oid,:int], _8:int) {G}
-    f:bat[:oid,:bit]  := batcalc.<(b,3);#  4 f:bat[:oid,:bit] := CMD_LT_int_cst(b:bat[:oid,:int], _11:int) {G}
-    f:bat[:oid,:bit]  := batcalc.>(b,3);#  5 f:bat[:oid,:bit] := CMD_GT_int_cst(b:bat[:oid,:int], _11:int) {G}
-    d := bat.new(:oid,:str);            #  6 d:bat[:oid,:str] := CMDBATnew(_2:oid, _13:str) {G}
-    a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDunaryISNIL(d:bat[:oid,:str]) {G}
+    z := batcalc.+(b,1);
+    f := batcalc.<(b,3);
+    f := batcalc.>(b,3);
+    d := bat.new(:oid,:str);
+    a := batcalc.isnil(d);
 # demonstrate an error 
-    _22 := bat.new(nil:int,nil:int);    #  9 _22:bat[:int,:int] := CMDBATnew(_23:int, _23:int) {G}
-barrier (_25,_26,_27) := bat.newIterator(b);# 10 (_25:lng, _26:oid, _27:int) := CHPbunIterator(b:bat[:oid,:int]) {J14}
-    _29 := calc.+(_27,1);               # 11 _29:int := CALCbinaryADDintint(_27:int, _8:int) 
-    bat.insert(_22,_26,_29);            # 12 _30:any := bat.insert(_22:bat[:int,:int], _26:oid, _29:int) {U}
-    redo (_25,_26,_27) := bat.hasMoreElements(b);# 13 (_25:lng, _26:oid, _27:int) := CHPbunHasMoreElements(b:bat[:oid,:int]) {J11}
-exit (_25,_26,_27);                     # 14 (_25:lng, _26:oid, _27:int) 
-    y:bat[:int,:int]  := _22;           # 15 y:bat[:int,:int] := _22:bat[:int,:int] {G}
+    _22 := bat.new(nil:int,nil:int);
+barrier (_25,_26,_27) := bat.newIterator(b);
+    _29 := calc.+(_27,1);
+    bat.insert(_22,_26,_29);
+    redo (_25,_26,_27) := bat.hasMoreElements(b);
+exit (_25,_26,_27);
+    y := _22;
 # it will be ignored by the optimizer 
-    mdb.List();                         # 17 _21:void := MDBlistDetail() 
-end main;                               # 18  
+    mdb.List();
+end main;
+function user.main():void;
+    b := bat.new(:oid,:int);
+# a correct call 
+    z := batcalc.+(b,1);
+    f := batcalc.<(b,3);
+    f := batcalc.>(b,3);
+    d := bat.new(:oid,:str);
+    a := batcalc.isnil(d);
+# demonstrate an error 
+    _22 := bat.new(nil:int,nil:int);
+barrier (_25,_26,_27) := bat.newIterator(b);
+    _29 := calc.+(_27,1);
+    bat.insert(_22,_26,_29);
+    redo (_25,_26,_27) := bat.hasMoreElements(b);
+exit (_25,_26,_27);
+    y := _22;
+# it will be ignored by the optimizer 
+    mdb.List();
+end main;
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

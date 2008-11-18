@@ -10,46 +10,29 @@ stdout of test 'GCexample01` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-#function qry();
-#b:= bat.new(:int,:int);
-#c:= bat.new(:int,:int);
-#bat.insert(b,1,1);
-#
-#barrier (x,y,z):= bat.newIterator(b);
-#	io.print(x);
-#exit (x,y,z);
-#
-#barrier (x,y,z):= bat.newIterator(c);
-#	io.print(x);
-#	redo (x,y,z):= bat.hasMoreElements(c);
-#exit (x,y,z);
-#end qry;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    d := bat.new(:int,:int);            #  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
-barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {J7}
-    io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
-exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 
-barrier (x,y,z) := bat.newIterator(c);  #  8 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {J11}
-    io.print(x);                        #  9 _11:void := IOprint_val(x:lng) 
-    redo (x,y,z) := bat.hasMoreElements(c);# 10 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {J9}
-exit (x,y,z);                           # 11 (x:lng, y:int, z:int) 
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.qry():void;
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
+    d := bat.new(:int,:int);
+    bat.insert(b,1,1);
+barrier (x,y,z) := bat.newIterator(b);
+    io.print(x);
+exit (x,y,z);
+barrier (x,y,z) := bat.newIterator(c);
+    io.print(x);
+    redo (x,y,z) := bat.hasMoreElements(c);
+exit (x,y,z);
 # do not close d, it may be reused 
-barrier go := true;                     # 13 go:bit := _14:bit {J16}
-    io.print(d);                        # 14 _15:void := IOprint_val(d:bat[:int,:int]) 
-    redo go := true;                    # 15 go:bit := _14:bit {J14}
-exit go;                                # 16 go:bit 
-end qry;	# 17  
-#
-#optimizer.garbageCollector("user","qry");
-#mdb.list("user","qry");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+barrier go := true;
+    io.print(d);
+    redo go := true;
+exit go;
+end qry;
+function user.main():void;
 #checking proper handling of scopes for the garbage collector 
-    mdb.List("user","qry");             #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
-end main;	# 3  
+    mdb.List("user","qry");
+end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c := bat.new(:int,:int);            #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}

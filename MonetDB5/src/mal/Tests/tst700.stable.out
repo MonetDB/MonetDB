@@ -31,26 +31,26 @@ stdout of test 'tst700` in directory 'src/mal` itself:
 #	printf("%6.2f\n",pi);
 #	printf("single line %s \n","hello");
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # A few system calls 
-    io.print('c');                      #  2 _2:void := IOprint_val(_3:chr) 
-    io.print("hello world");            #  3 _4:void := IOprint_val(_5:str) 
-    io.print(0);                        #  4 _6:void := IOprint_val(_7:int) 
-    io.print(1:lng);                    #  5 _8:void := IOprint_val(_9:lng) 
-    io.print('c');                      #  6 _10:void := IOprint_val(_3:chr) 
-    io.print(true);                     #  7 _11:void := IOprint_val(_12:bit) 
-    pi := 3.14700007;                   #  8 pi:flt := _14:flt 
-    x := 1;                             #  9 x:int := _16:int 
-    io.print(x);                        # 10 _17:void := IOprint_val(x:int) 
-    io.print(pi);                       # 11 _18:void := IOprint_val(pi:flt) 
-    io.printf("hello\n");               # 12 _19:void := IOprintf(_20:str) 
-    io.printf("%5d\n",0);               # 13 _21:void := IOprintf(_22:str, _7:int) 
-    io.printf("%5d\n",1:lng);           # 14 _23:void := IOprintf(_22:str, _9:lng) 
-    io.printf("%c\n",'c');              # 15 _24:void := IOprintf(_25:str, _3:chr) 
-    io.printf("%-8d\n",true);           # 16 _26:void := IOprintf(_27:str, _12:bit) 
-    io.printf("%6.2f\n",pi);            # 17 _28:void := IOprintf(_29:str, pi:flt) 
-    io.printf("single line %s \n","hello");# 18 _30:void := IOprintf(_31:str, _32:str) 
-end main;	# 19  
+    io.print('c');
+    io.print("hello world");
+    io.print(0);
+    io.print(1:lng);
+    io.print('c');
+    io.print(true);
+    pi := 3.14700007;
+    x := 1;
+    io.print(x);
+    io.print(pi);
+    io.printf("hello\n");
+    io.printf("%5d\n",0);
+    io.printf("%5d\n",1:lng);
+    io.printf("%c\n",'c');
+    io.printf("%-8d\n",true);
+    io.printf("%6.2f\n",pi);
+    io.printf("single line %s \n","hello");
+end main;
 [ 'c' ]
 [ "hello world" ]
 [ 0 ]

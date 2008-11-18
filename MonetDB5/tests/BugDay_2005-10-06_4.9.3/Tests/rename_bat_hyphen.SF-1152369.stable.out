@@ -5,22 +5,23 @@ stdout of test 'rename_bat_hyphen.SF-1152369` in directory 'tests/BugDay_2005-10
 # 18:43:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=35404 --set sql_port=42535 --set xquery_port=56092 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-10-06_4.9.3  < rename_bat_hyphen.milS
 # 18:43:39 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-#a:= bat.new(:int,:int);
-#bat.setName(a,"x-");
-#io.print(a);
-#
-##bat("x-").print();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.setName(a,"x_");                #  2 _3:void := BKCsetName(a:bat[:int,:int], _4:str) 
-    io.print(a);                        #  3 _5:void := IOprint_val(a:bat[:int,:int]) 
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_tests_BugDay_2005-10-06_4.9.3', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
+    a := bat.new(:int,:int);
+    bat.setName(a,"x_");
+    io.print(a);
 #bat("x-").print(); 
-end main;	# 5  
+end main;
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
 
 
 

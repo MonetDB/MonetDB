@@ -22,16 +22,16 @@ stdout of test 'tst240` in directory 'src/mal` itself:
 #io.print(g);
 #io.print(h);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # testing pack/unpack of bats 
-    i := 1;                             #  2 i:int := _3:int 
-    j := 2;                             #  3 j:int := _5:int 
-    b := bat.pack(i,j);                 #  4 b:bat[:int,:int] := CMDbatpack(i:int, j:int) {G}
-    io.print(b);                        #  5 _7:void := IOprint_val(b:bat[:int,:int]) 
-    (g,h) := bat.unpack(b);             #  6 (g:int, h:int) := CMDbatunpack(b:bat[:int,:int]) 
-    io.print(g);                        #  7 _10:void := IOprint_val(g:int) 
-    io.print(h);                        #  8 _11:void := IOprint_val(h:int) 
-end main;	# 9  
+    i := 1;
+    j := 2;
+    b := bat.pack(i,j);
+    io.print(b);
+    (g,h) := bat.unpack(b);
+    io.print(g);
+    io.print(h);
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

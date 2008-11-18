@@ -34,22 +34,22 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 !TypeException:user.main[11]:'bat.new' undefined in: y:bat[:str,:int] := bat.new(_11:int, _11:int)
 
 !TypeException:user.main[12]:type mismatch flt := str
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Variables names may be tagged with a type upfront. 
 # They may be initialized with a lexical constant using 
 # either their stored type syntax or with a string literal 
-    s:str  := "hello";                  #  4 s:str := _5:str {G}
-    i:sht  := 1:sht;                    #  5 i:sht := _7:sht 
-    b:bit  := true;                     #  6 b:bit := _9:bit 
-    z:bat[:int,:int]  := bat.new(:int,:int);#  7 z:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
+    s := "hello";
+    i := 1:sht;
+    b := true;
+    z := bat.new(:int,:int);
 # type resolver should complain on the rest 
-    j:sht  := 1:lng;                    #  9 j:sht := _14:lng {U}
-    k:lng  := 1:sht;                    # 10 k:lng := _7:sht {U}
-    y:bat[:str,:int]  := bat.new(:int,:int);# 11 y:bat[:str,:int] := bat.new(_11:int, _11:int) {U}
-    f:flt  := "wrong";                  # 12 f:flt := _18:str {U}
-end main;	# 13  
+    j := 1:lng;
+    k := 1:sht;
+    y := bat.new(:int,:int);
+    f := "wrong";
+end main;
 
-# 07:58:46 >  
-# 07:58:46 >  Done.
-# 07:58:46 >  
+# 19:43:03 >  
+# 19:43:03 >  Done.
+# 19:43:03 >  
 

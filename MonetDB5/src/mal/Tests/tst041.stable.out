@@ -62,80 +62,80 @@ stdout of test 'tst041` in directory 'src/mal` itself:
 #B:= nil:bte;
 #io.print(B);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # this sequence tests nil type management  
-    b := nil;                           #  2 b:void := _3:void {G}
-    io.print(b);                        #  3 _4:void := IOprint_val(b:void) 
-    a := 23;                            #  4 a:int := _6:int 
-    io.print(a);                        #  5 _7:void := IOprint_val(a:int) 
-    a := calc.int(nil);                 #  6 a:int := CALCnil2int(_3:void) 
-    io.print(a);                        #  7 _8:void := IOprint_val(a:int) 
-    a := calc.int(nil:int);             #  8 a:int := CALCint2int(_9:int) 
-    io.print(a);                        #  9 _10:void := IOprint_val(a:int) 
-    a := calc.int(13);                  # 10 a:int := CALCint2int(_11:int) 
-    io.print(a);                        # 11 _12:void := IOprint_val(a:int) 
-    a := calc.int("23");                # 12 a:int := CALCstr2int(_13:str) 
-    io.print(a);                        # 13 _14:void := IOprint_val(a:int) 
-    a := calc.int(43:flt);              # 14 a:int := CALCflt2int(_15:flt) 
-    io.print(a);                        # 15 _16:void := IOprint_val(a:int) 
-    a := calc.int(63:dbl);              # 16 a:int := CALCdbl2int(_17:dbl) 
-    io.print(a);                        # 17 _18:void := IOprint_val(a:int) 
-    a := nil:int;                       # 18 a:int := _9:int 
-    io.print(a);                        # 19 _19:void := IOprint_val(a:int) 
-    c := true;                          # 20 c:bit := _21:bit 
-    io.print(c);                        # 21 _22:void := IOprint_val(c:bit) 
-    c := calc.bit(nil);                 # 22 c:bit := CALCnil2bit(_3:void) 
-    io.print(c);                        # 23 _23:void := IOprint_val(c:bit) 
-    c := calc.bit(nil:bit);             # 24 c:bit := CALCbit2bit(_24:bit) 
-    io.print(c);                        # 25 _25:void := IOprint_val(c:bit) 
-    c := calc.bit(false);               # 26 c:bit := CALCbit2bit(_26:bit) 
-    io.print(c);                        # 27 _27:void := IOprint_val(c:bit) 
-    c := calc.bit(1);                   # 28 c:bit := CALCint2bit(_28:int) 
-    io.print(c);                        # 29 _29:void := IOprint_val(c:bit) 
-    c := calc.bit("true");              # 30 c:bit := CALCstr2bit(_30:str) 
-    io.print(c);                        # 31 _31:void := IOprint_val(c:bit) 
-    c := calc.bit(1:flt);               # 32 c:bit := CALCflt2bit(_32:flt) 
-    io.print(c);                        # 33 _33:void := IOprint_val(c:bit) 
-    c := calc.bit(0:dbl);               # 34 c:bit := CALCdbl2bit(_34:dbl) 
-    io.print(c);                        # 35 _35:void := IOprint_val(c:bit) 
-    c := nil:bit;                       # 36 c:bit := _24:bit 
-    io.print(c);                        # 37 _36:void := IOprint_val(c:bit) 
-    d := 3.1400001:flt;                 # 38 d:flt := _38:flt 
-    io.print(d);                        # 39 _39:void := IOprint_val(d:flt) 
-    d := calc.flt(nil);                 # 40 d:flt := CALCnil2flt(_40:void) 
-    io.print(d);                        # 41 _41:void := IOprint_val(d:flt) 
-    d := calc.flt(nil:flt);             # 42 d:flt := CALCflt2flt(_42:flt) 
-    io.print(c);                        # 43 _43:void := IOprint_val(c:bit) 
-    d := calc.flt(5);                   # 44 d:flt := CALCint2flt(_44:int) 
-    io.print(d);                        # 45 _45:void := IOprint_val(d:flt) 
-    d := calc.flt("7.14");              # 46 d:flt := CALCstr2flt(_46:str) 
-    io.print(d);                        # 47 _47:void := IOprint_val(d:flt) 
-    d := nil:flt;                       # 48 d:flt := _42:flt 
-    io.print(d);                        # 49 _48:void := IOprint_val(d:flt) 
-    e := "hello";                       # 50 e:str := _50:str {G}
-    io.print(e);                        # 51 _51:void := IOprint_val(e:str) 
-    e := calc.str(nil);                 # 52 e:str := CALCnil2str(_40:void) {G}
-    io.print(e);                        # 53 _52:void := IOprint_val(e:str) 
-    e := calc.str("nil");               # 54 e:str := CALCstr2str(_53:str) {G}
-    io.print(e);                        # 55 _54:void := IOprint_val(e:str) 
-    e := nil:str;                       # 56 e:str := _55:str {G}
-    io.print(e);                        # 57 _56:void := IOprint_val(e:str) 
-    io.print(nil:str);                  # 58 _57:void := IOprint_val(_55:str) 
-    f := 'Z';                           # 59 f:chr := _59:chr 
-    io.print(f);                        # 60 _60:void := IOprint_val(f:chr) 
-    f := calc.chr(nil);                 # 61 f:chr := CALCnil2chr(_40:void) 
-    io.print(f);                        # 62 _61:void := IOprint_val(f:chr) 
-    f := calc.chr("X");                 # 63 f:chr := CALCstr2chr(_62:str) 
-    io.print(f);                        # 64 _63:void := IOprint_val(f:chr) 
-    o := nil:blob;                      # 65 o:blob := _65:blob 
-    io.print(o);                        # 66 _66:void := IOprint_val(o:blob) 
-    o := calc.blob(nil:blob);           # 67 o:blob := BLOBblob_blob(_67:blob) 
-    io.print(o);                        # 68 _68:void := IOprint_val(o:blob) 
-    w := nil:wrd;                       # 69 w:wrd := _70:wrd 
-    io.print(w);                        # 70 _71:void := IOprint_val(w:wrd) 
-    B := nil:bte;                       # 71 B:bte := _73:bte 
-    io.print(B);                        # 72 _74:void := IOprint_val(B:bte) 
-end main;	# 73  
+    b := nil;
+    io.print(b);
+    a := 23;
+    io.print(a);
+    a := calc.int(nil);
+    io.print(a);
+    a := calc.int(nil:int);
+    io.print(a);
+    a := calc.int(13);
+    io.print(a);
+    a := calc.int("23");
+    io.print(a);
+    a := calc.int(43:flt);
+    io.print(a);
+    a := calc.int(63:dbl);
+    io.print(a);
+    a := nil:int;
+    io.print(a);
+    c := true;
+    io.print(c);
+    c := calc.bit(nil);
+    io.print(c);
+    c := calc.bit(nil:bit);
+    io.print(c);
+    c := calc.bit(false);
+    io.print(c);
+    c := calc.bit(1);
+    io.print(c);
+    c := calc.bit("true");
+    io.print(c);
+    c := calc.bit(1:flt);
+    io.print(c);
+    c := calc.bit(0:dbl);
+    io.print(c);
+    c := nil:bit;
+    io.print(c);
+    d := 3.1400001:flt;
+    io.print(d);
+    d := calc.flt(nil);
+    io.print(d);
+    d := calc.flt(nil:flt);
+    io.print(c);
+    d := calc.flt(5);
+    io.print(d);
+    d := calc.flt("7.14");
+    io.print(d);
+    d := nil:flt;
+    io.print(d);
+    e := "hello";
+    io.print(e);
+    e := calc.str(nil);
+    io.print(e);
+    e := calc.str("nil");
+    io.print(e);
+    e := nil:str;
+    io.print(e);
+    io.print(nil:str);
+    f := 'Z';
+    io.print(f);
+    f := calc.chr(nil);
+    io.print(f);
+    f := calc.chr("X");
+    io.print(f);
+    o := nil:blob;
+    io.print(o);
+    o := calc.blob(nil:blob);
+    io.print(o);
+    w := nil:wrd;
+    io.print(w);
+    B := nil:bte;
+    io.print(B);
+end main;
 [ nil ]
 [ 23 ]
 [ nil ]

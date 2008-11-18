@@ -17,10 +17,10 @@ stdout of test 'tst620` in directory 'src/mal` itself:
 #	z:= inspect.getSize();
 #	io.printf("#size %d\n",z);
 #end tst;
-function user.tst():void;               #  0 tst:void := user.tst() 
-    z := inspect.getSize();             #  1 z:lng := INSPECTgetSize() 
-    io.printf("#size %d\n",z);          #  2 _2:void := IOprintf(_3:str, z:lng) 
-end tst;	# 3  
+function user.tst():void;
+    z := inspect.getSize();
+    io.printf("#size %d\n",z);
+end tst;
 #
 #user.tst();
 #
@@ -37,24 +37,24 @@ end tst;	# 3
 #l:= inspect.getSize();
 #io.printf("#size %d\n",l);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #check the storage size 
-    user.tst();                         #  2 _2:void := user.tst() 
-    f := inspect.getSize("algebra");    #  3 f:bat[:str,:lng] := INSPECTgetModuleSize(_4:str) {G}
-    fs:lng  := aggr.sum(f);             #  4 fs:lng := aggr.sum(f:bat[:str,:lng]) 
-    fs2 := calc./(fs,2);                #  5 fs2:lng := CALCbinarycheckDIVlngint(fs:lng, _7:int) 
-    io.printf("#algebra size %d\n",fs2);#  6 _8:void := IOprintf(_9:str, fs2:lng) 
-    z := inspect.getSize("inspect");    #  7 z:bat[:str,:lng] := INSPECTgetModuleSize(_11:str) {G}
-    zs:lng  := aggr.sum(z);             #  8 zs:lng := aggr.sum(z:bat[:str,:lng]) 
-    zs2 := calc./(zs,2);                #  9 zs2:lng := CALCbinarycheckDIVlngint(zs:lng, _7:int) 
-    io.printf("#inspect size %d\n",zs2);# 10 _14:void := IOprintf(_15:str, zs2:lng) 
-    l := inspect.getSize();             # 11 l:lng := INSPECTgetSize() 
-    io.printf("#size %d\n",l);          # 12 _17:void := IOprintf(_18:str, l:lng) 
-end main;	# 13  
-#size 580
-#algebra size 30304
-#inspect size 3288
-#size 2500
+    user.tst();
+    f := inspect.getSize("algebra");
+    fs := aggr.sum(f);
+    fs2 := calc./(fs,2);
+    io.printf("#algebra size %d\n",fs2);
+    z := inspect.getSize("inspect");
+    zs := aggr.sum(z);
+    zs2 := calc./(zs,2);
+    io.printf("#inspect size %d\n",zs2);
+    l := inspect.getSize();
+    io.printf("#size %d\n",l);
+end main;
+#size 516
+#algebra size 29908
+#inspect size 4564
+#size 2124
 
 # 21:04:56 >  
 # 21:04:56 >  Done.

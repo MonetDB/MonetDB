@@ -12,96 +12,20 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
 # Visit http://monetdb.cwi.nl/ for further information
-## Monet Mil to Mal compiler
-##include mil;
-## Copyright (c) 2001-2004, CWI. All rights reserved.
-#
-##Predefined code segment
-##The compiler can not guarantee an accurate compilation,
-##because MIL unlike MAL is a dynamically typed language.
-##A few guidelines to maximize usefullness.
-##- make the type of variables explicit, in particular 'nil'
-##- upon advice of M2m to remap identifiers, change it in your program directly
-##use the "mil_schema" for additional support routines
-##	mil.line("# >Number:         161\n");
-##	mil.line("# >Category:       Mserver\n");
-##	mil.line("# >Synopsis:       tostr problem when str module is loaded\n");
-##	mil.line("# >Confidential:   no\n");
-##	mil.line("# >Severity:       critical\n");
-##	mil.line("# >Priority:       high\n");
-##	mil.line("# >Responsible:    boncz (Peter Boncz)\n");
-##	mil.line("# >State:          open\n");
-##	mil.line("# >Class:          sw-bug\n");
-##	mil.line("# >Submitter-Id:   unknown\n");
-##	mil.line("# >Arrival-Date:   Wed Jul 15 15:24:01 1998\n");
-##	mil.line("# >Originator:     windhouw@cwi.nl\n");
-##	mil.line("# >Organization:\n");
-##	mil.line("# CWI\n");
-##	mil.line("# >Release:        980101\n");
-##	mil.line("# >Environment:\n");
-##	mil.line("# \n");
-##	mil.line("# >Description:\n");
-##	mil.line("# In the following script the string becomes different\n");
-##	mil.line("# in the inner procedure (when the str module is loaded):\n");
-##	mil.line("# \n");
-##	mil.line("# Script\n");
-##	mil.line("# 8<-----\n");
-##	mil.line("# PROC test_inner(any in) : void {\n");
-##	mil.line("#    printf(\"test_inner.in: %s\\n\",str(in));\n");
-##	mil.line("# }\n");
-##	mil.line("#  \n");
-##	mil.line("# PROC test_outer(any in) : void {\n");
-##	mil.line("#    printf(\"test_outer.in: %s\\n\",str(in));\n");
-##	mil.line("#    test_inner(in);\n");
-##	mil.line("# }\n");
-##	mil.line("# 8<-----\n");
-##	mil.line("# Output\n");
-##	mil.line("# 8<-----\n");
-##	mil.line("# >test_outer(\"chr\");\n");
-##	mil.line("# test_outer.in: chr\n");
-##	mil.line("# test_inner.in: chr\n");
-##	mil.line("# >module(str);\n");
-##	mil.line("# >test_outer(\"chr\");\n");
-##	mil.line("# test_outer.in: chr\n");
-##	mil.line("# test_inner.in: test_inner.in: %s\n");
-##	mil.line("# 8<----\n");
-##	mil.line("setoid(oid(20000000));");
-#	aa_a := calc.oid(20000000);
-#	ba_a := calc.setoid(aa_a);
-##	mil.line("PROC test_inner(any in) : void {");
-#function test_inner(in:str):void;
-##	mil.line("   printf(\"test_inner.in: %s\\n\",str(in));");
-#	ca_a := calc.str(in);
-#	da_a := io.printf("test_inner.in: %s\n",ca_a);
-#end test_inner;
-function user.test_inner(in:str):void;  #  0 test_inner:void := user.test_inner(in:str) {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.test_inner(in:str):void;
 #	io.print("   printf(\"test_inner.in: %s\\n\",str(in));"); 
-    ca_a := calc.str(in);               #  2 ca_a:str := CALCstr2str(in:str) {G}
-    da_a := io.printf("test_inner.in: %s\n",ca_a);#  3 da_a:void := IOprintf(_5:str, ca_a:str) 
-end test_inner;	# 4  
-##	mil.line("PROC test_outer(any in) : void {");
-#function test_outer(in:any_1):void;
-##	mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");
-#	ea_a := calc.str(in);
-#	fa_a := io.printf("test_outer.in: %s\n",ea_a);
-##	mil.line("   test_inner(in);");
-#	ga_a := user.test_inner(in);
-#end test_outer;
-function user.test_outer(in:any_1):void;#  0 test_outer:void := user.test_outer(in:any_1) {P}
+    ca_a := calc.str(in);
+    da_a := io.printf("test_inner.in: %s\n",ca_a);
+end test_inner;
+function user.test_outer(in:any_1):void;
 #	io.print("   printf(\"test_outer.in: %s\\n\",str(in));"); 
-    ea_a := calc.str(in);               #  2 ea_a:any := calc.str(in:any_1) 
-    fa_a := io.printf("test_outer.in: %s\n",ea_a);#  3 fa_a:void := IOprintf(_5:str, ea_a:any) 
+    ea_a := calc.str(in);
+    fa_a := io.printf("test_outer.in: %s\n",ea_a);
 #	io.print("   test_inner(in);"); 
-    ga_a := user.test_inner(in);        #  5 ga_a:any := user.test_inner(in:any_1) 
-end test_outer;	# 6  
-##	mil.line("test_outer(\"chr\");");
-#	ha_a := user.test_outer("chr");
-##	mil.line("test_outer(\"chr\");");
-#	ia_a := user.test_outer("chr");
-##	mil.line("quit();");
-#	ja_a := clients.quit();
-#
-function user.main():void;              #  0 main:void := user.main() 
+    ga_a := user.test_inner(in);
+end test_outer;
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -154,17 +78,17 @@ function user.main():void;              #  0 main:void := user.main()
 #	io.print("# test_inner.in: test_inner.in: %s\n"); 
 #	io.print("# 8<----\n"); 
 #	io.print("setoid(oid(20000000));"); 
-    aa_a := calc.oid(20000000);         # 53 aa_a:oid := CALCint2oid(_54:int) 
-    ba_a := calc.setoid(aa_a);          # 54 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+    aa_a := calc.oid(20000000);
+    ba_a := calc.setoid(aa_a);
 #	io.print("PROC test_inner(any in) : void {"); 
 #	io.print("PROC test_outer(any in) : void {"); 
 #	io.print("test_outer(\"chr\");"); 
-    ha_a := user.test_outer("chr");     # 58 ha_a:void := user.test_outer(_60:str) 
+    ha_a := user.test_outer("chr");
 #	io.print("test_outer(\"chr\");"); 
-    ia_a := user.test_outer("chr");     # 60 ia_a:void := user.test_outer(_60:str) 
+    ia_a := user.test_outer("chr");
 #	io.print("quit();"); 
-    ja_a := clients.quit();             # 62 ja_a:void := CLTquit() 
-end main;	# 63  
+    ja_a := clients.quit();
+end main;
 test_outer.in: chr
 test_inner.in: chr
 test_outer.in: chr

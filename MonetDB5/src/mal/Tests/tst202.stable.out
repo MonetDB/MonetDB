@@ -34,28 +34,28 @@ stdout of test 'tst202` in directory 'src/mal` itself:
 #	#destroy(b);
 #	#destroy(c);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # GDK layer should produce exceptions rather then direct warnings 
 # or ignoring. 
 # a typical case is to try to rename an existing (persistent) bat 
-    b:bat[:int,:int]  := bat.new(:int,:int);#  4 b:bat[:int,:int] := CMDBATnew(_5:int, _5:int) {G}
-    bat.setName(b,"mybat");             #  5 _6:void := BKCsetName(b:bat[:int,:int], _7:str) 
+    b := bat.new(:int,:int);
+    bat.setName(b,"mybat");
 #setPersistent(b); 
-    bat.setColumn(b,"first","second");  #  7 _9:void := BKCsetColumns(b:bat[:int,:int], _10:str, _11:str) 
-    io.print(b);                        #  8 _12:void := IOprint_val(b:bat[:int,:int]) 
-    c := bat.new(:int,:str);            #  9 c:bat[:int,:str] := CMDBATnew(_5:int, _14:str) {G}
-    bat.setName(c,"mybat");             # 10 _15:void := BKCsetName(c:bat[:int,:str], _7:str) 
-    io.print(c);                        # 11 _16:void := IOprint_val(c:bat[:int,:str]) 
+    bat.setColumn(b,"first","second");
+    io.print(b);
+    c := bat.new(:int,:str);
+    bat.setName(c,"mybat");
+    io.print(c);
 #setPersistent(c); 
-    io.print(c);                        # 13 _18:void := IOprint_val(c:bat[:int,:str]) 
-    io.printf("caught anything?\n");    # 14 _19:void := IOprintf(_20:str) 
-catch GDKerror:str ;                    # 15 GDKerror:str {J17}
-    io.printf("Catched the renaming exception\n");# 16 _22:void := IOprintf(_23:str) 
-exit GDKerror:str ;                     # 17 GDKerror:str 
+    io.print(c);
+    io.printf("caught anything?\n");
+catch GDKerror;
+    io.printf("Catched the renaming exception\n");
+exit GDKerror;
 #get rid of it again 
 #destroy(b); 
 #destroy(c); 
-end main;	# 21  
+end main;
 #-----------------#
 # first	second	  # name
 # int	int	  # type

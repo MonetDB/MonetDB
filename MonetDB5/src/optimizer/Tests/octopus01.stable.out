@@ -10,19 +10,19 @@ stdout of test 'octopus01` in directory 'src/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39418/
-function user.q():void;                 #  0 q:void := user.q() {G}
-    a:bat[:oid,:int] {rows=1000,hlb=0@0:oid,hub=1000@0:oid} := bat.new(:oid,:int);#  1 a:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
-    b:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid} := bat.partition(a{rows=1000,hlb=0@0:oid,hub=1000@0:oid});#  2 b:bat[:oid,:int] := CMDbatpartition(a:bat[:oid,:int]) {G}
-    b1 := algebra.select(b{hlb=0@0:oid,hub=1000@0:oid},0,10);#  3 b1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _9:int, _10:int) {G}
-    c1 := algebra.select(b{hlb=0@0:oid,hub=1000@0:oid},11,20);#  4 c1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _12:int, _13:int) {G}
-    u := algebra.kunion(b1,c1);         #  5 u:bat[:oid,:int] := ALGkunion(b1:bat[:oid,:int], c1:bat[:oid,:int]) {G}
-    io.print(u);                        #  6 _15:void := IOprint_val(u:bat[:oid,:int]) 
-end q;                                  #  7  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.q():void;
+    a := bat.new(:oid,:int);
+    b := bat.partition(a);
+    b1 := algebra.select(b,0,10);
+    c1 := algebra.select(b,11,20);
+    u := algebra.kunion(b1,c1);
+    io.print(u);
+end q;
+function user.main():void;
 #octopus should not sent the same object twice. 
-    mdb.List("user","q");               #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
-end main;                               #  3  
+    mdb.List("user","q");
+end main;
 function user.q():void;                 #  0 q:void := user.q() {G}
     _16 := sabaoth.getLocalConnectionHost();#  1 _16:str := SABgetLocalConnectionHost() {G}
     _17 := sabaoth.getLocalConnectionPort();#  2 _17:int := SABgetLocalConnectionPort() 

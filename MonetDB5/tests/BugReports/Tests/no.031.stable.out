@@ -12,60 +12,8 @@ stdout of test 'no.031` in directory 'tests/BugReports` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
 # Visit http://monetdb.cwi.nl/ for further information
-## Monet Mil to Mal compiler
-##include mil;
-## Copyright (c) 2001-2004, CWI. All rights reserved.
-#
-##Predefined code segment
-##The compiler can not guarantee an accurate compilation,
-##because MIL unlike MAL is a dynamically typed language.
-##A few guidelines to maximize usefullness.
-##- make the type of variables explicit, in particular 'nil'
-##- upon advice of M2m to remap identifiers, change it in your program directly
-##use the "mil_schema" for additional support routines
-##	mil.line("# >Number:         31\n");
-##	mil.line("# >Category:       Mserver\n");
-##	mil.line("# >Synopsis:       Import does not work.\n");
-##	mil.line("# >Confidential:   no\n");
-##	mil.line("# >Severity:       serious\n");
-##	mil.line("# >Priority:       medium\n");
-##	mil.line("# >Responsible:    quak\n");
-##	mil.line("# >State:          closed\n");
-##	mil.line("# >Class:          sw-bug\n");
-##	mil.line("# >Submitter-Id:   unknown\n");
-##	mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997\n");
-##	mil.line("# >Originator:     quak\n");
-##	mil.line("# >Organization:\n");
-##	mil.line("# >Release:        970101\n");
-##	mil.line("# >Environment:\n");
-##	mil.line("# ALL\n");
-##	mil.line("# >Description:\n");
-##	mil.line("# The following script, which creates a bat exports\n");
-##	mil.line("# it and then tries to import it again fails:\n");
-##	mil.line("# \n");
-##	mil.line("# > a := bat.new(int,int);\n");
-##	mil.line("# > a.insert(1,1);\n");
-##	mil.line("# > a.export(\"/home/quak/tmp/testt\");\n");
-##	mil.line("# > b := bat.new(int,int);\n");
-##	mil.line("# > b.import(\"/home/quak/tmp/testt\");\n");
-##	mil.line("var a := bat.new(int,int);");
-#	a := bat.new(nil:int,nil:int);
-##	mil.line("a.insert(1,1);");
-#	aa_a := bat.insert(a,1,1);
-##	mil.line("a.print();");
-#	ba_a := io.print(a);
-##	mil.line("a.export(\"testt\");");
-#	ca_a := io.export(a,"testt");
-##	mil.line("var b := bat.new(int,int);");
-#	b := bat.new(nil:int,nil:int);
-##	mil.line("b.import(\"testt\");");
-#	da_a := io.import(b,"testt");
-##	mil.line("b.print();");
-#	ea_a := io.print(b);
-##	mil.line("quit();");
-#	fa_a := clients.quit();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -101,22 +49,22 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("# > b := bat.new(int,int);\n"); 
 #	io.print("# > b.import(\"/home/quak/tmp/testt\");\n"); 
 #	io.print("var a := bat.new(int,int);"); 
-    a := bat.new(nil:int,nil:int);      # 36 a:bat[:int,:int] := CMDBATnew(_37:int, _37:int) {G}
+    a := bat.new(nil:int,nil:int);
 #	io.print("a.insert(1,1);"); 
-    aa_a := bat.insert(a,1,1);          # 38 aa_a:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _40:int, _40:int) {G}
+    aa_a := bat.insert(a,1,1);
 #	io.print("a.print();"); 
-    ba_a := io.print(a);                # 40 ba_a:void := IOprint_val(a:bat[:int,:int]) 
+    ba_a := io.print(a);
 #	io.print("a.export(\"testt\");"); 
-    ca_a := io.export(a,"testt");       # 42 ca_a:bit := IOexport(a:bat[:int,:int], _45:str) 
+    ca_a := io.export(a,"testt");
 #	io.print("var b := bat.new(int,int);"); 
-    b := bat.new(nil:int,nil:int);      # 44 b:bat[:int,:int] := CMDBATnew(_37:int, _37:int) {G}
+    b := bat.new(nil:int,nil:int);
 #	io.print("b.import(\"testt\");"); 
-    da_a := io.import(b,"testt");       # 46 da_a:bat[:int,:int] := IOimport(b:bat[:int,:int], _45:str) {G}
+    da_a := io.import(b,"testt");
 #	io.print("b.print();"); 
-    ea_a := io.print(b);                # 48 ea_a:void := IOprint_val(b:bat[:int,:int]) 
+    ea_a := io.print(b);
 #	io.print("quit();"); 
-    fa_a := clients.quit();             # 50 fa_a:void := CLTquit() 
-end main;	# 51  
+    fa_a := clients.quit();
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

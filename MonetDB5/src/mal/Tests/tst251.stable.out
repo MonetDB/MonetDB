@@ -31,26 +31,26 @@ stdout of test 'tst251` in directory 'src/mal` itself:
 #	redo (v,h,ts):= hasMoreElements(c);
 #exit v;
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # The series tst2?? is a patched version of suite_00 
 # The first and foremost BAT operations 
 # String iterator stuff 
-    c := bat.new(:int,:str);            #  4 c:bat[:int,:str] := CMDBATnew(_5:int, _6:str) {G}
-    bat.insert(c,1,"hello");            #  5 _7:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _8:int, _9:str) {G}
-    bat.insert(c,2,"brave");            #  6 _10:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _11:int, _12:str) {G}
-    bat.insert(c,3,"world");            #  7 _13:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _14:int, _15:str) {G}
-    bat.insert(c,4,"");                 #  8 _16:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _17:int, _18:str) {G}
-    x := calc.str(nil);                 #  9 x:str := CALCnil2str(_20:void) {G}
-    bat.insert(c,5,x);                  # 10 _21:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _22:int, x:str) {G}
-    bat.insert(c,6,"!");                # 11 _23:bat[:int,:str] := BKCinsert_bun(c:bat[:int,:str], _24:int, _25:str) {G}
-    io.print(c);                        # 12 _26:void := IOprint_val(c:bat[:int,:str]) 
-barrier (v,h,ts) := bat.newIterator(c); # 13 (v:lng, h:int, ts:str) := CHPbunIterator(c:bat[:int,:str]) {GJ18}
-    io.print(v);                        # 14 _30:void := IOprint_val(v:lng) 
-    io.printf("[%d,",h);                # 15 _31:void := IOprintf(_32:str, h:int) 
-    io.printf("%s]\n",ts);              # 16 _33:void := IOprintf(_34:str, ts:str) 
-    redo (v,h,ts) := bat.hasMoreElements(c);# 17 (v:lng, h:int, ts:str) := CHPbunHasMoreElements(c:bat[:int,:str]) {GJ14}
-exit v;                                 # 18 v:lng 
-end main;	# 19  
+    c := bat.new(:int,:str);
+    bat.insert(c,1,"hello");
+    bat.insert(c,2,"brave");
+    bat.insert(c,3,"world");
+    bat.insert(c,4,"");
+    x := calc.str(nil);
+    bat.insert(c,5,x);
+    bat.insert(c,6,"!");
+    io.print(c);
+barrier (v,h,ts) := bat.newIterator(c);
+    io.print(v);
+    io.printf("[%d,",h);
+    io.printf("%s]\n",ts);
+    redo (v,h,ts) := bat.hasMoreElements(c);
+exit v;
+end main;
 #-------------------------#
 # h	tmp_4		  # name
 # int	str		  # type

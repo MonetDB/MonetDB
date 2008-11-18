@@ -13,15 +13,20 @@ stdout of test 'tst161` in directory 'src/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32526/
 !SyntaxException:convertConstant:pointer conversion error
 !SyntaxException:defConstant:constant coercion error from int to mytype
-function mytype.l():mytype;             #  0 l:mytype := mytype.l() 
-    return l := 0:mytype;               #  1 l:mytype := _1:mytype 
-end l;	# 2  
+#end l;
+function mytype.l():mytype;
+    return l := 0:mytype;
+end l;
+#
+#z:= mytype.l();
+#io.print(z);
+#
 !TypeException:user.main[2]:'mytype.l' undefined in: z:mytype := mytype.l()
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # testing definition of new atom type based on ptr 
-    z := mytype.l();                    #  2 z:mytype := mytype.l() {U}
-    io.print(z);                        #  3 _3:void := IOprint_val(z:mytype) 
-end main;	# 4  
+    z := mytype.l();
+    io.print(z);
+end main;
 
 # 19:09:44 >  
 # 19:09:44 >  Done.

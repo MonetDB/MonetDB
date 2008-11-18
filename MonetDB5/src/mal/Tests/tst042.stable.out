@@ -36,33 +36,33 @@ stdout of test 'tst042` in directory 'src/mal` itself:
 #v:= getTypeName(bbt); printf("bat %s\n",v);
 #
 #
-function user.main():void;              #  0 main:void := user.main() {G}
-    s := "hello";                       #  1 s:str := _2:str {G}
-    i := 1;                             #  2 i:int := _4:int 
-    f := 3.1400001;                     #  3 f:flt := _6:flt 
-    c := 'a';                           #  4 c:chr := _8:chr 
-    b := true;                          #  5 b:bit := _10:bit 
-    w := 1:wrd;                         #  6 w:wrd := _12:wrd 
-    B := 2:bte;                         #  7 B:bte := _14:bte 
-    bb := bat.new(:oid,:str);           #  8 bb:bat[:oid,:str] := CMDBATnew(_16:oid, _17:str) {G}
-    st := inspect.getType(s);           #  9 st:str := INSPECTtypeName(s:str) {G}
-    io.printf("%s\n",st);               # 10 _19:void := IOprintf(_20:str, st:str) 
-    it := inspect.getType(i);           # 11 it:str := INSPECTtypeName(i:int) {G}
-    io.printf("%s\n",it);               # 12 _22:void := IOprintf(_20:str, it:str) 
-    ft := inspect.getType(f);           # 13 ft:str := INSPECTtypeName(f:flt) {G}
-    io.printf("%s\n",ft);               # 14 _24:void := IOprintf(_20:str, ft:str) 
-    ct := inspect.getType(c);           # 15 ct:str := INSPECTtypeName(c:chr) {G}
-    io.printf("%s\n",ct);               # 16 _26:void := IOprintf(_20:str, ct:str) 
-    bt := inspect.getType(b);           # 17 bt:str := INSPECTtypeName(b:bit) {G}
-    io.printf("%s\n",bt);               # 18 _28:void := IOprintf(_20:str, bt:str) 
-    wt := inspect.getType(w);           # 19 wt:str := INSPECTtypeName(w:wrd) {G}
-    io.printf("%s\n",wt);               # 20 _30:void := IOprintf(_20:str, wt:str) 
-    Bt := inspect.getType(B);           # 21 Bt:str := INSPECTtypeName(B:bte) {G}
-    io.printf("%s\n",Bt);               # 22 _32:void := IOprintf(_20:str, Bt:str) 
-    (ht,tt) := inspect.getType(bb);     # 23 (ht:str, tt:str) := INSPECTtypeName(bb:bat[:oid,:str]) {G}
-    io.printf("bat  head %s\n",ht);     # 24 _35:void := IOprintf(_36:str, ht:str) 
-    io.printf("bat  head %s\n",tt);     # 25 _37:void := IOprintf(_36:str, tt:str) 
-end main;	# 26  
+function user.main():void;
+    s := "hello";
+    i := 1;
+    f := 3.1400001;
+    c := 'a';
+    b := true;
+    w := 1:wrd;
+    B := 2:bte;
+    bb := bat.new(:oid,:str);
+    st := inspect.getType(s);
+    io.printf("%s\n",st);
+    it := inspect.getType(i);
+    io.printf("%s\n",it);
+    ft := inspect.getType(f);
+    io.printf("%s\n",ft);
+    ct := inspect.getType(c);
+    io.printf("%s\n",ct);
+    bt := inspect.getType(b);
+    io.printf("%s\n",bt);
+    wt := inspect.getType(w);
+    io.printf("%s\n",wt);
+    Bt := inspect.getType(B);
+    io.printf("%s\n",Bt);
+    (ht,tt) := inspect.getType(bb);
+    io.printf("bat  head %s\n",ht);
+    io.printf("bat  head %s\n",tt);
+end main;
 str
 int
 flt

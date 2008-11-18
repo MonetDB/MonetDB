@@ -10,46 +10,25 @@ stdout of test 'inlineIfthen` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:36453/
-#function user.foo{inline}(b:int):int;
-#   foo:= 0;
-#barrier go:= b<10;
-#   foo:= 1;
-#exit go;
-#   return foo;
-#end foo;
-function user.foo{inline}(b:int):int;   #  0 foo:int := user.foo(b:int) 
-    foo{inline} := 0;                   #  1 foo:int := _2:int 
-barrier go := calc.<(b,10);             #  2 go:bit := CALCcompLTintint(b:int, _4:int) {J4}
-    foo{inline} := 1;                   #  3 foo:int := _5:int 
-exit go;                                #  4 go:bit 
-    return foo{inline} := foo{inline};  #  5 foo:int := foo:int 
-end foo;	# 6  
-#
-#function qry();
-#	b:= bat.new(:oid,:int);
-#	bat.append(b,1);
-#	bat.append(b,10);
-#	bat.append(b,20);
-#	r:bat[:oid,:int]:= mal.multiplex("user","foo",b);
-#	io.print(r);
-#end qry;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.append(b,1);                    #  2 _4:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}
-    bat.append(b,10);                   #  3 _6:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
-    bat.append(b,20);                   #  4 _8:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _9:int) {G}
-    r:bat[:oid,:int]  := mal.multiplex("user","foo",b);#  5 r:bat[:oid,:int] := OPTremapMultiplex(_11:str, _12:str, b:bat[:oid,:int]) {G}
-    io.print(r);                        #  6 _13:void := IOprint_val(r:bat[:oid,:int]) 
-end qry;	# 7  
-#
-#optimizer.inline("user","qry");
-#optimizer.remap("user","qry");
-#mdb.list("user","qry");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.List("user","qry");             #  1 _5:void := MDBlist3Detail(_2:str, _3:str) 
-end main;	# 2  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.foo{inline}(b:int):int;
+    foo := 0;
+barrier go := calc.<(b,10);
+    foo := 1;
+exit go;
+    return foo := foo;
+end foo;
+function user.qry():void;
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
+    bat.append(b,10);
+    bat.append(b,20);
+    r := mal.multiplex("user","foo",b);
+    io.print(r);
+end qry;
+function user.main():void;
+    mdb.List("user","qry");
+end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.append(b,1);                    #  2 _4:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _5:int) {G}

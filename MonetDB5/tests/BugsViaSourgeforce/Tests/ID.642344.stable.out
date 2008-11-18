@@ -43,7 +43,7 @@ stdout of test 'ID.642344` in directory 'tests/BugsViaSourgeforce` itself:
 #	ba_a := io.print(aa_a);
 #
 !TypeException:user.main[26]:'user.varval' undefined in: aa_a:any := user.varval(_28:str)
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -67,11 +67,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("# The \"varval\"-function apparently contains a bug\n"); 
 #	io.print("# regarding reference counting. See example below:\n"); 
 #	io.print(""); 
-    bar := bat.new(nil:int,nil:int);    # 24 bar:bat[:int,:int] := CMDBATnew(_25:int, _25:int) {G}
+    bar := bat.new(nil:int,nil:int);
 #	io.print("var bar:=new(int,int);"); 
-    aa_a := user.varval("bar");         # 26 aa_a:any := user.varval(_28:str) {U}
-    ba_a := io.print(aa_a);             # 27 ba_a:void := IOprint_val(aa_a:any) 
-end main;	# 28  
+    aa_a := user.varval("bar");
+    ba_a := io.print(aa_a);
+end main;
 
 # 07:27:17 >  
 # 07:27:17 >  Done.

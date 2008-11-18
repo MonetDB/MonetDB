@@ -620,6 +620,8 @@ MALengine(Client c)
 
 	if (prg->def->errors > 0) {
 		showErrors(c);
+		if (c->listing )
+			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		@:restoreState@
 		throw(MAL, "MAL.engine", "Program contains errors");
 	}
@@ -632,9 +634,9 @@ MALengine(Client c)
 		c->glb->blk = prg->def;
 		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
-
-	if (c->listing)
+	if (c->listing > 1 )
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
+
 @-
 In interactive mode we should avoid early garbage collection of values.
 This can be controlled by the clean up control at the instruction level

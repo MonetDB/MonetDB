@@ -26,14 +26,14 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 
 !SyntaxException:parseError:     ^operator expected
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # the multiplex code blocks. Testing syntax errors 
-    b := bat.new(:lng,:lng);            #  2 b:any := bat.new(_3:lng, _3:lng) {U}
-    x := multiplex.+(b,b);              #  3 x:any := multiplex.+(b:any, b:any) {U}
-    d;                                  #  4 d:any {U}
+    b := bat.new(:lng,:lng);
+    x := multiplex.+(b,b);
+    d;
 # parser bug 
-    a := b;                             #  6 a:any := b:any {U}
-end main;                               #  7  {U}
+    a := b;
+end main;
 
 # 12:41:59 >  
 # 12:41:59 >  Done.

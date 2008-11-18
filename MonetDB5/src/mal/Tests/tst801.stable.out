@@ -27,23 +27,23 @@ stdout of test 'tst801` in directory 'src/mal` itself:
 #x := algebra.find(b, 4);
 #io.print(x);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #testing simple stuff around type BAT 
-    y := bat.new(:int,:int);            #  2 y:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(y,0,0);                  #  3 _4:bat[:int,:int] := BKCinsert_bun(y:bat[:int,:int], _5:int, _5:int) {G}
-    z := bat.new(:int,:int);            #  4 z:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(z,1,1);                  #  5 _7:bat[:int,:int] := BKCinsert_bun(z:bat[:int,:int], _8:int, _8:int) {G}
-    b := bat.new(:int,:BAT);            #  6 b:bat[:int,:BAT] := CMDBATnew(_3:int, _10:BAT) {G}
-    bat.insert(b,0,y);                  #  7 _11:bat[:int,:BAT] := BKCinsert_bun(b:bat[:int,:BAT], _5:int, y:bat[:int,:int]) {G}
-    bat.insert(b,1,z);                  #  8 _12:bat[:int,:BAT] := BKCinsert_bun(b:bat[:int,:BAT], _8:int, z:bat[:int,:int]) {G}
-    io.print(z);                        #  9 _13:void := IOprint_val(z:bat[:int,:int]) 
-    x := algebra.find(b,0);             # 10 x:BAT := ALGfind(b:bat[:int,:BAT], _5:int) {G}
+    y := bat.new(:int,:int);
+    bat.insert(y,0,0);
+    z := bat.new(:int,:int);
+    bat.insert(z,1,1);
+    b := bat.new(:int,:BAT);
+    bat.insert(b,0,y);
+    bat.insert(b,1,z);
+    io.print(z);
+    x := algebra.find(b,0);
 #io.print(x); 
-    x := algebra.find(b,1);             # 12 x:BAT := ALGfind(b:bat[:int,:BAT], _8:int) {G}
+    x := algebra.find(b,1);
 #io.print(x); 
-    x := algebra.find(b,4);             # 14 x:BAT := ALGfind(b:bat[:int,:BAT], _17:int) {G}
-    io.print(x);                        # 15 _18:void := IOprint_val(x:BAT) 
-end main;                               # 16  
+    x := algebra.find(b,4);
+    io.print(x);
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

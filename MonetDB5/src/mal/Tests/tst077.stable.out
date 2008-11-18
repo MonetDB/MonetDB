@@ -18,10 +18,10 @@ stdout of test 'tst077` in directory 'src/mal` itself:
 #        return (a,x);
 #
 #end swap;
-function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);#  0 (a:str, b:bat[:any_1,:int]) := user.swap(x:bat[:any_1,:int], y:bat[:int,:int]) {PG}
-    a := "done";                        #  1 a:str := _5:str {G}
-    return (a,b) := (a,x);              #  2 (a:str, b:bat[:any_1,:int]) := a:str, x:bat[:any_1,:int] {G}
-end swap;	# 3  
+function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);
+    a := "done";
+    return (a,b) := (a,x);
+end swap;
 #
 #X:= new(:int,:int);
 #insert(X,1,1);
@@ -32,16 +32,16 @@ end swap;	# 3
 #print(y);
 #
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # parsing operations with multi-assignments 
-    X := bat.new(:int,:int);            #  2 X:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(X,1,1);                  #  3 _4:bat[:int,:int] := BKCinsert_bun(X:bat[:int,:int], _5:int, _5:int) {G}
-    Y := bat.new(:int,:int);            #  4 Y:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(Y,2,2);                  #  5 _7:bat[:int,:int] := BKCinsert_bun(Y:bat[:int,:int], _8:int, _8:int) {G}
-    (x,y) := user.swap(X,Y);            #  6 (x:str, y:bat[:int,:int]) := user.swap(X:bat[:int,:int], Y:bat[:int,:int]) {G}
-    io.print(x);                        #  7 _11:void := IOprint_val(x:str) 
-    io.print(y);                        #  8 _12:void := IOprint_val(y:bat[:int,:int]) 
-end main;	# 9  
+    X := bat.new(:int,:int);
+    bat.insert(X,1,1);
+    Y := bat.new(:int,:int);
+    bat.insert(Y,2,2);
+    (x,y) := user.swap(X,Y);
+    io.print(x);
+    io.print(y);
+end main;
 [ "done" ]
 #-----------------#
 # h	t	  # name

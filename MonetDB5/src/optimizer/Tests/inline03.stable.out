@@ -10,43 +10,24 @@ stdout of test 'inline03` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:34223/
-## remapping inline functions
-## the crucial part is to recognize valid inlines
-#function foo{inline}(a:int,b:int):int;
-#	base:=1;
-#	c:= a+b;
-#	c:= c *base;
-#	return c;
-#end foo;
-function user.foo{inline}(a:int,b:int):int;#  0 foo:int := user.foo(a:int, b:int) 
-    base := 1;                          #  1 base:int := _4:int 
-    c := calc.+(a,b);                   #  2 c:int := CALCbinaryADDintint(a:int, b:int) 
-    c := calc.*(c,base);                #  3 c:int := CALCbinaryMULintint(c:int, base:int) 
-    return foo{inline} := c;            #  4 foo:int := c:int 
-end foo;	# 5  
-#
-#function qry();
-#	b:= bat.new(:oid,:int);
-#	bat.insert(b,0@0,1);
-#	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,b);
-#	z:bat[:oid,:int]:= mal.multiplex("user","foo",b,2);
-#end qry;
-function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);#  3 z:bat[:oid,:int] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);#  4 z:bat[:oid,:int] := OPTremapMultiplex(_8:str, _9:str, b:bat[:oid,:int], _10:int) {G}
-end qry;	# 5  
-#	optimizer.inline("user","qry");
-#	optimizer.remap("user","qry");
-#	mdb.list("user","qry");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.foo{inline}(a:int,b:int):int;
+    base := 1;
+    c := calc.+(a,b);
+    c := calc.*(c,base);
+    return foo := c;
+end foo;
+function user.qry():void;
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,1);
+    z := mal.multiplex("user","foo",b,b);
+    z := mal.multiplex("user","foo",b,2);
+end qry;
+function user.main():void;
 # remapping inline functions 
 # the crucial part is to recognize valid inlines 
-    mdb.List("user","qry");             #  3 _7:void := MDBlist3Detail(_4:str, _5:str) 
-end main;	# 4  
+    mdb.List("user","qry");
+end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     bat.insert(b,0@0,1);                #  2 _4:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _5:oid, _6:int) {G}

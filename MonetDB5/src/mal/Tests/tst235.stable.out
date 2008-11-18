@@ -21,13 +21,13 @@ stdout of test 'tst235` in directory 'src/mal` itself:
 #	dn:= bbp.getNames();
 #	io.print(dn,d,dl);
 #end dir;
-function user.dir():void;               #  0 dir:void := user.dir() {G}
-    d := bbp.getRefCount();             #  1 d:bat[:int,:int] := CMDbbpRefCount() {G}
-    dl := bbp.getLRefCount();           #  2 dl:bat[:int,:int] := CMDbbpLRefCount() {G}
-    dn := bbp.getNames();               #  3 dn:bat[:int,:str] := CMDbbpNames() {G}
-    ds := algebra.sort(dn);             #  4 ds:bat[:int,:str] := ALGhsort(dn:bat[:int,:str]) {G}
-    io.table(ds,d,dl);                  #  5 _5:void := IOttable(ds:bat[:int,:str], d:bat[:int,:int], dl:bat[:int,:int]) 
-end dir;	# 6  
+function user.dir():void;
+    d := bbp.getRefCount();
+    dl := bbp.getLRefCount();
+    dn := bbp.getNames();
+    ds := algebra.sort(dn);
+    io.table(ds,d,dl);
+end dir;
 #
 #function createBAT(name:str):bat;
 #    res:= bat.new(:int,:int);
@@ -37,30 +37,30 @@ end dir;	# 6
 #	dir();
 #    return i;
 #end createBAT;
-function user.createBAT(name:str):BAT;  #  0 createBAT:BAT := user.createBAT(name:str) {G}
-    res := bat.new(:int,:int);          #  1 res:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.setName(res,name);              #  2 _4:void := BKCsetName(res:bat[:int,:int], name:str) 
-    i := calc.getBATidentifier(res);    #  3 i:BAT := CALCbat2batid(res:bat[:int,:int]) {G}
-    j := i;                             #  4 j:BAT := i:BAT {G}
+function user.createBAT(name:str):BAT;
+    res := bat.new(:int,:int);
+    bat.setName(res,name);
+    i := calc.getBATidentifier(res);
+    j := i;
 # now res should have 3 lrefs 
-    z := bbp.getLRefCount(res);         #  6 z:int := CMDgetBATlrefcnt(res:bat[:int,:int]) 
-    io.print(z);                        #  7 _9:void := IOprint_val(z:int) 
-    return createBAT := i;              #  8 createBAT:BAT := i:BAT {G}
-end createBAT;	# 9  
+    z := bbp.getLRefCount(res);
+    io.print(z);
+    return createBAT := i;
+end createBAT;
 #
 #dir();
 #d:= user.createBAT("one");
 #io.print(d); # bat d should have 1 lref
 #dir();
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # BAT references are seens as BAT's and should be subject to the 
 # same reference scheme. 
-    d := user.createBAT("one");         #  3 d:BAT := user.createBAT(_4:str) {G}
-    i := bbp.getLRefCount(d);           #  4 i:int := CMDgetBATlrefcnt(d:BAT) 
-    io.print(i);                        #  5 _6:void := IOprint_val(i:int) 
+    d := user.createBAT("one");
+    i := bbp.getLRefCount(d);
+    io.print(i);
 # bat d should have 1 lref 
-end main;	# 7  
+end main;
 [ 3 ]
 [ 1 ]
 

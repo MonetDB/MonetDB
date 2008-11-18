@@ -48,43 +48,44 @@ stdout of test 'tst272` in directory 'src/mal` itself:
 #print(s);
 #print(t,s);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #Same as tst270, but includes testing of the profiler trace 
-    profiler.activate("ticks");         #  2 _2:void := CMDactivateProfiler(_3:str) 
+    profiler.activate("ticks");
 #profiler.activate("pc"); 
-    profiler.activate("statement");     #  4 _5:void := CMDactivateProfiler(_6:str) 
-    profiler.setFilter("*","insert");   #  5 _7:void := CMDsetFilterProfiler(_8:str, _9:str) 
-    o := calc.oid(20000000);            #  6 o:oid := CALCint2oid(_11:int) 
-    calc.setoid(o);                     #  7 _12:oid := CALCsetoidInc(o:oid) 
-    b := bat.new(:int,:int);            #  8 b:bat[:int,:int] := CMDBATnew(_14:int, _15:int) {G}
+    profiler.activate("statement");
+    profiler.setFilter("*","insert");
+    o := calc.oid(20000000);
+    calc.setoid(o);
+    b := bat.new(:int,:int);
 #test basic functionality of the BAT library. 
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
-    profiler.start();                   # 12 _19:void := CMDstartProfiler() 
-    err := bat.insert(b,1,15);          # 13 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _21:int, _22:int) {G}
-    err := bat.insert(b,2,4);           # 14 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _23:int, _24:int) {G}
-    n0 := calc.int(nil);                # 15 n0:int := CALCnil2int(_26:void) 
-    err := bat.insert(b,3,n0);          # 16 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _27:int, n0:int) {G}
-    err := bat.insert(b,4,16);          # 17 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _24:int, _28:int) {G}
-    err := bat.insert(b,5,25);          # 18 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, _30:int) {G}
-    err := bat.insert(b,6,36);          # 19 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _31:int, _32:int) {G}
-    err := bat.insert(b,7,49);          # 20 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _33:int, _34:int) {G}
-    err := bat.insert(b,8,64);          # 21 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _35:int, _36:int) {G}
-    err := bat.insert(b,9,n0);          # 22 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _37:int, n0:int) {G}
-    err := bat.insert(b,n0,n0);         # 23 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, n0:int) {G}
-    err := bat.insert(b,n0,81);         # 24 err:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n0:int, _38:int) {G}
-    io.print(b);                        # 25 _39:void := IOprint_val(b:bat[:int,:int]) 
-    io.print(b,b,b);                    # 26 _40:void := IOtable(b:bat[:int,:int], b:bat[:int,:int], b:bat[:int,:int]) 
-    profiler.stop();                    # 27 _41:void := CMDstopProfiler() 
-    io.printf("#~BeginVariableOutput~#\n");# 28 _42:void := IOprintf(_43:str) 
-    t := profiler.getTrace("ticks");    # 29 t:bat[:int,:any] := CMDgetTrace(_45:str) {G}
+    profiler.start();
+    err := bat.insert(b,1,15);
+    err := bat.insert(b,2,4);
+    n0 := calc.int(nil);
+    err := bat.insert(b,3,n0);
+    err := bat.insert(b,4,16);
+    err := bat.insert(b,5,25);
+    err := bat.insert(b,6,36);
+    err := bat.insert(b,7,49);
+    err := bat.insert(b,8,64);
+    err := bat.insert(b,9,n0);
+    err := bat.insert(b,n0,n0);
+    err := bat.insert(b,n0,81);
+    io.print(b);
+    io.print(b,b,b);
+    profiler.stop();
+    io.printf("#~BeginVariableOutput~#\n");
+    t := profiler.getTrace("ticks");
 #io.print(t); 
-    s := profiler.getTrace("statement");# 31 s:bat[:int,:any] := CMDgetTrace(_48:str) {G}
+    s := profiler.getTrace("statement");
 #io.print(s); 
 #io.print(t,s); 
-    io.printf("#~EndVariableOutput~#\n");# 34 _51:void := IOprintf(_52:str) 
-    profiler.cleanup();                 # 35 _53:void := CMDcleanup() 
-end main;	# 36  
+    io.printf("#~EndVariableOutput~#\n");
+    profiler.cleanup();
+end main;
+# Start performance profiling
 #-----------------#
 # h	tmp_13	  # name
 # int	int	  # type

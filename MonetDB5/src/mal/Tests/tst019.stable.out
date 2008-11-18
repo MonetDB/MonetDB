@@ -18,12 +18,12 @@ stdout of test 'tst019` in directory 'src/mal` itself:
 #    return w;   # should produce a type error
 #end welcome;
 !TypeException:user.welcome[3]:type mismatch void := str
-function user.welcome(lim:int):void;    #  0 welcome:void := user.welcome(lim:int) {G}
-    i := 2;                             #  1 i:int := _3:int 
-    w := "hello";                       #  2 w:str := _5:str {G}
-    return welcome := w;                #  3 welcome:void := w:str {U}
+function user.welcome(lim:int):void;
+    i := 2;
+    w := "hello";
+    return welcome := w;
 # should produce a type error 
-end welcome;	# 5  
+end welcome;
 #
 #function welcome0(lim:int):str;
 #    i:= 2;
@@ -32,63 +32,63 @@ end welcome;	# 5
 #   # should produce a type error
 #end welcome0;
 !SyntaxException:user.welcome0[3]:invalid return target!
-function user.welcome0(lim:int):str;    #  0 welcome0:str := user.welcome0(lim:int) {G}
-    i := 2;                             #  1 i:int := _3:int 
-    w := "hello";                       #  2 w:str := _5:str {G}
-    return (welcome0,lim) := (w,i);     #  3 (welcome0:str, lim:int) := w:str, i:int {G}
+function user.welcome0(lim:int):str;
+    i := 2;
+    w := "hello";
+    return (welcome0,lim) := (w,i);
 # should produce a type error 
-end welcome0;	# 5  
+end welcome0;
 #
 #function welcome1(lim:int):str;
 #    i:= 2;
 #    return w:="hello"; 
 #end welcome1;
-function user.welcome1(lim:int):str;    #  0 welcome1:str := user.welcome1(lim:int) {G}
-    i := 2;                             #  1 i:int := _3:int 
-    return w := "hello";                #  2 w:str := _5:str {G}
-end welcome1;	# 3  
+function user.welcome1(lim:int):str;
+    i := 2;
+    return w := "hello";
+end welcome1;
 #
 #function welcome2(lim:int):str;
 #    i:= 2;
 #    w:="hello"; 
 #    return w;
 #end welcome2;
-function user.welcome2(lim:int):str;    #  0 welcome2:str := user.welcome2(lim:int) {G}
-    i := 2;                             #  1 i:int := _3:int 
-    w := "hello";                       #  2 w:str := _5:str {G}
-    return welcome2 := w;               #  3 welcome2:str := w:str {G}
-end welcome2;	# 4  
+function user.welcome2(lim:int):str;
+    i := 2;
+    w := "hello";
+    return welcome2 := w;
+end welcome2;
 #
 #function welcome3(lim:int)(w:str,i:int);
 #    i:= 2;
 #    return w:="hello"; #illegal return statement
 #end welcome3;
 !SyntaxException:user.welcome3[2]:invalid return target!
-function user.welcome3(lim:int) (w:str,i:int);#  0 (w:str, i:int) := user.welcome3(lim:int) {G}
-    i := 2;                             #  1 i:int := _4:int 
-    return w := "hello";                #  2 w:str := _5:str {G}
+function user.welcome3(lim:int) (w:str,i:int);
+    i := 2;
+    return w := "hello";
 #illegal return statement 
-end welcome3;	# 4  
+end welcome3;
 #
 #function welcome4(lim:int)(w:str,i:int);
 #    i:= 2;
 #    return (w,i):="hello"; #illegal return statement
 #end welcome4;
 !TypeException:user.welcome4[2]:Multiple assignment mismatch
-function user.welcome4(lim:int) (w:str,i:int);#  0 (w:str, i:int) := user.welcome4(lim:int) {G}
-    i := 2;                             #  1 i:int := _4:int 
-    return (w,i) := "hello";            #  2 (w:str, i:int) := _5:str {UG}
+function user.welcome4(lim:int) (w:str,i:int);
+    i := 2;
+    return (w,i) := "hello";
 #illegal return statement 
-end welcome4;	# 4  
+end welcome4;
 #
 #function welcome5(lim:int)(:str,:int);
 #    i:= 2;
 #    return (w,i):=("hello",2); 
 #end welcome5;
-function user.welcome5(lim:int) (_2:str,_3:int);#  0 (_2:str, _3:int) := user.welcome5(lim:int) {G}
-    i := 2;                             #  1 i:int := _5:int 
-    return (w,i) := ("hello",2);        #  2 (w:str, i:int) := _7:str, _5:int {G}
-end welcome5;	# 3  
+function user.welcome5(lim:int) (_2:str,_3:int);
+    i := 2;
+    return (w,i) := ("hello",2);
+end welcome5;
 #
 #y:= user.welcome1(1);
 #io.print(y);
@@ -98,13 +98,13 @@ end welcome5;	# 3
 #(x,y):= user.welcome2(1);
 #
 !TypeException:user.main[5]:'user.welcome2' undefined in: (x:any, y:str) := user.welcome2(_2:int)
-function user.main():void;              #  0 main:void := user.main() {G}
-    y := user.welcome1(1);              #  1 y:str := user.welcome1(_2:int) {G}
-    io.print(y);                        #  2 _3:void := IOprint_val(y:str) 
-    y := user.welcome2(1);              #  3 y:str := user.welcome2(_2:int) {G}
-    io.print(y);                        #  4 _4:void := IOprint_val(y:str) 
-    (x,y) := user.welcome2(1);          #  5 (x:any, y:str) := user.welcome2(_2:int) {U}
-end main;	# 6  
+function user.main():void;
+    y := user.welcome1(1);
+    io.print(y);
+    y := user.welcome2(1);
+    io.print(y);
+    (x,y) := user.welcome2(1);
+end main;
 
 # 07:58:38 >  
 # 07:58:38 >  Done.

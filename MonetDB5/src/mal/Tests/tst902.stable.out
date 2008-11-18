@@ -35,27 +35,27 @@ stdout of test 'tst902` in directory 'src/mal` itself:
 #exit w;
 #print(d);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # what is the overhead of MAL in multiplex situations 
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
-    b := bat.new(:lng,:lng);            #  3 b:bat[:lng,:lng] := CMDBATnew(_4:lng, _4:lng) {G}
-barrier (k,v) := language.newRange(0:lng);#  4 (k:bit, v:lng) := RNGnewRange_lng(_7:lng) {J7}
-    bat.insert(b,v,v);                  #  5 _8:bat[:lng,:lng] := BKCinsert_bun(b:bat[:lng,:lng], v:lng, v:lng) {G}
-    redo (k,v) := language.nextElement(1:lng,10:lng);#  6 (k:bit, v:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J5}
-exit (k,v);                             #  7 (k:bit, v:lng) 
-    c := algebra.copy(b);               #  8 c:bat[:lng,:lng] := ALGcopy(b:bat[:lng,:lng]) {G}
-    d := bat.new(:lng,:lng);            #  9 d:bat[:lng,:lng] := CMDBATnew(_4:lng, _4:lng) {G}
-barrier (w,h,t) := bat.newIterator(b);  # 10 (w:lng, h:lng, t:lng) := CHPbunIterator(b:bat[:lng,:lng]) {J18}
-    B1 := algebra.find(b,h);            # 11 B1:lng := ALGfind(b:bat[:lng,:lng], h:lng) 
-    B2 := algebra.find(c,h);            # 12 B2:lng := ALGfind(c:bat[:lng,:lng], h:lng) 
-    t := calc.+(B1,B2);                 # 13 t:lng := CALCbinaryADDlnglng(B1:lng, B2:lng) 
-    bat.insert(d,h,t);                  # 14 _18:bat[:lng,:lng] := BKCinsert_bun(d:bat[:lng,:lng], h:lng, t:lng) {G}
-    redo (w,h,t) := bat.hasMoreElements(b);# 15 (w:lng, h:lng, t:lng) := CHPbunHasMoreElements(b:bat[:lng,:lng]) {J11}
-catch GDKerror:str ;                    # 16 GDKerror:str {J17}
-exit GDKerror:str ;                     # 17 GDKerror:str 
-exit w;                                 # 18 w:lng 
-    io.print(d);                        # 19 _20:void := IOprint_val(d:bat[:lng,:lng]) 
-end main;	# 20  
+    b := bat.new(:lng,:lng);
+barrier (k,v) := language.newRange(0:lng);
+    bat.insert(b,v,v);
+    redo (k,v) := language.nextElement(1:lng,10:lng);
+exit (k,v);
+    c := algebra.copy(b);
+    d := bat.new(:lng,:lng);
+barrier (w,h,t) := bat.newIterator(b);
+    B1 := algebra.find(b,h);
+    B2 := algebra.find(c,h);
+    t := calc.+(B1,B2);
+    bat.insert(d,h,t);
+    redo (w,h,t) := bat.hasMoreElements(b);
+catch GDKerror;
+exit GDKerror;
+exit w;
+    io.print(d);
+end main;
 #-----------------#
 # h	tmp_6	  # name
 # lng	lng	  # type

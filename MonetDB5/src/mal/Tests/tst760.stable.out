@@ -18,10 +18,10 @@ stdout of test 'tst760` in directory 'src/mal` itself:
 #	k:= 1+c;
 #	print(k);
 #end test;
-function user.test(b:bat[:any,:any_2],c:any_2):void;#  0 test:void := user.test(b:bat[:any,:any_2], c:any_2) {PG}
-    k := calc.+(1,c);                   #  1 k:any := calc.+(_4:int, c:any_2) 
-    io.print(k);                        #  2 _5:void := IOprint_val(k:any) 
-end test;	# 3  
+function user.test(b:bat[:any,:any_2],c:any_2):void;
+    k := calc.+(1,c);
+    io.print(k);
+end test;
 #
 #c:=new(:int,:str);
 #test(c,"hello");
@@ -31,12 +31,12 @@ end test;	# 3
 !MALException:user.test[0]:Error in cloned function
 
 !TypeException:user.main[4]:'user.test' undefined in: _6:void := user.test(c:bat[:int,:str], _7:str)
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Polymorphic function tests 
 # Catching a dynamic error 
-    c := bat.new(:int,:str);            #  3 c:bat[:int,:str] := CMDBATnew(_4:int, _5:str) {G}
-    user.test(c,"hello");               #  4 _6:void := user.test(c:bat[:int,:str], _7:str) {U}
-end main;	# 5  
+    c := bat.new(:int,:str);
+    user.test(c,"hello");
+end main;
 
 # 08:01:30 >  
 # 08:01:30 >  Done.

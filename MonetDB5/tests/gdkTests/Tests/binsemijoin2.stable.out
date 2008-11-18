@@ -12,67 +12,35 @@ stdout of test 'binsemijoin2` in directory 'tests/gdkTests` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_gdkTests
 # Visit http://monetdb.cwi.nl/ for further information
-## Test provided as bug-report by 
-## Maurice van Keulen <keulen@fmi.uni-konstanz.de>
-## Torsten Grust <grust@fmi.uni-konstanz.de>
-#
-#left:=bat.new(:void,:oid);
-#bat.setSequenceBase(left,0@0);
-#right:=bat.new(:oid,:void);
-#
-#i:=0;
-#barrier go:= i<12;
-#	o:= calc.oid(i);
-#	bat.append(left,o);
-#	i:= i+1;
-#	redo go:= i<12;
-#exit go;
-#i:=0;
-#barrier go:= i<12;
-#	j:= i*2;
-#	oj:= calc.oid(j);
-#	bat.insert(right,oj,nil);
-#	i:= i+1;
-#	redo go:= i<12;
-#exit go;
-#
-#io.print(left);
-#io.print(right);
-#
-#bat.order(right);
-#io.print(right);
-#
-#z:= algebra.semijoin(left,right);
-#io.print(z);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # Test provided as bug-report by  
 # Maurice van Keulen <keulen@fmi.uni-konstanz.de> 
 # Torsten Grust <grust@fmi.uni-konstanz.de> 
-    left := bat.new(:oid,:oid);         #  4 left:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
-    right := bat.new(:oid,:oid);        #  5 right:bat[:oid,:oid] := CMDBATnew(_5:oid, _5:oid) {G}
-    i := 0;                             #  6 i:int := _8:int 
-barrier go := calc.<(i,12);             #  7 go:bit := CALCcompLTintint(i:int, _10:int) {J12}
-    o := calc.oid(i);                   #  8 o:oid := CALCint2oid(i:int) 
-    bat.append(left,o);                 #  9 _12:bat[:oid,:any] := BKCappend_val_wrap(left:bat[:oid,:oid], o:oid) {G}
-    i := calc.+(i,1);                   # 10 i:int := CALCbinaryADDintint(i:int, _13:int) 
-    redo go := calc.<(i,12);            # 11 go:bit := CALCcompLTintint(i:int, _10:int) {J8}
-exit go;                                # 12 go:bit 
-    i := 0;                             # 13 i:int := _8:int 
-barrier go := calc.<(i,200);            # 14 go:bit := CALCcompLTintint(i:int, _14:int) {J20}
-    j := calc.*(i,2);                   # 15 j:int := CALCbinaryMULintint(i:int, _16:int) 
-    oj := calc.oid(j);                  # 16 oj:oid := CALCint2oid(j:int) 
-    bat.insert(right,oj,nil:oid);       # 17 _18:bat[:oid,:oid] := BKCinsert_bun(right:bat[:oid,:oid], oj:oid, _19:oid) {G}
-    i := calc.+(i,1);                   # 18 i:int := CALCbinaryADDintint(i:int, _13:int) 
-    redo go := calc.<(i,200);           # 19 go:bit := CALCcompLTintint(i:int, _14:int) {J15}
-exit go;                                # 20 go:bit 
-    io.print(left);                     # 21 _20:void := IOprint_val(left:bat[:oid,:oid]) 
-    io.print(right);                    # 22 _21:void := IOprint_val(right:bat[:oid,:oid]) 
-    bat.order(right);                   # 23 _22:bat[:oid,:oid] := BKCorder(right:bat[:oid,:oid]) {G}
-    io.print(right);                    # 24 _23:void := IOprint_val(right:bat[:oid,:oid]) 
-    z := algebra.semijoin(left,right);  # 25 z:bat[:oid,:oid] := ALGsemijoin(left:bat[:oid,:oid], right:bat[:oid,:oid]) {G}
-    io.print(z);                        # 26 _25:void := IOprint_val(z:bat[:oid,:oid]) 
-end main;	# 27  
+    left := bat.new(:oid,:oid);
+    right := bat.new(:oid,:oid);
+    i := 0;
+barrier go := calc.<(i,12);
+    o := calc.oid(i);
+    bat.append(left,o);
+    i := calc.+(i,1);
+    redo go := calc.<(i,12);
+exit go;
+    i := 0;
+barrier go := calc.<(i,200);
+    j := calc.*(i,2);
+    oj := calc.oid(j);
+    bat.insert(right,oj,nil:oid);
+    i := calc.+(i,1);
+    redo go := calc.<(i,200);
+exit go;
+    io.print(left);
+    io.print(right);
+    bat.order(right);
+    io.print(right);
+    z := algebra.semijoin(left,right);
+    io.print(z);
+end main;
 #-----------------#
 # h	t	  # name
 # void	oid	  # type

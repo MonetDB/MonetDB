@@ -22,25 +22,25 @@ stdout of test 'tst020` in directory 'src/mal` itself:
 #	redo l;
 #exit	l;
 #end pl;
-function user.pl(i:str):void;           #  0 pl:void := user.pl(i:str) {G}
-    L := "something";                   #  1 L:str := _3:str {G}
-    r := 0;                             #  2 r:int := _5:int 
-barrier l := calc.==(r,0);              #  3 l:bit := CALCcompEQintint(r:int, _5:int) {J8}
-    y := r;                             #  4 y:int := r:int 
-    r := calc.+(r,1);                   #  5 r:int := CALCbinaryADDintint(r:int, _8:int) 
-    leave l;                            #  6 l:bit {J8}
-    redo l;                             #  7 l:bit {J4}
-exit l;                                 #  8 l:bit 
-end pl;	# 9  
+function user.pl(i:str):void;
+    L := "something";
+    r := 0;
+barrier l := calc.==(r,0);
+    y := r;
+    r := calc.+(r,1);
+    leave l;
+    redo l;
+exit l;
+end pl;
 #a:= "hello";
 #z:= pl(a);
 #print("done");
 #
-function user.main():void;              #  0 main:void := user.main() {G}
-    a := "hello";                       #  1 a:str := _2:str {G}
-    z := user.pl(a);                    #  2 z:void := user.pl(a:str) 
-    io.print("done");                   #  3 _4:void := IOprint_val(_5:str) 
-end main;	# 4  
+function user.main():void;
+    a := "hello";
+    z := user.pl(a);
+    io.print("done");
+end main;
 [ "done" ]
 
 # 07:58:39 >  

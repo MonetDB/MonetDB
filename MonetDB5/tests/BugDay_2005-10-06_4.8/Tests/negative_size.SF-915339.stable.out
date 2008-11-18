@@ -11,11 +11,11 @@ stdout of test 'negative_size.SF-915339` in directory 'tests/BugDay_2005-10-06_4
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31637/
-function user.main():void;              #  0 main:void := user.main() {G}
-    c := bat.new(:int,:int,-5000);      #  1 c:bat[:int,:int] := CMDBATnewint(_2:int, _2:int, _3:int) {G}
-    io.print(c);                        #  2 _4:void := IOprint_val(c:bat[:int,:int]) 
-end main;	# 3  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
+    c := bat.new(:int,:int,-5000);
+    io.print(c);
+end main;
 !MALException:bbp.new:requested BAT size must not be negative
 
 

@@ -12,61 +12,28 @@ stdout of test 'tst4005` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-## bug discovered in SQL, alias removal does not handle arguments properly
-#function getz(p:int):int;
-#    x := nil:int;
-#    V4 := p;
-#    V6 := calc.sht(10);
-#    V9 := calc.int(V6);
-#    V11 := calc.>(V4,V9);
-#barrier V12 := V11;
-#    V13 := p;
-#    V15 := calc.int(2);
-#    V22 := calc.*(V13,V15);
-#    V24 := calc.int(V22);
-#    x := V24;
-#exit V12;
-#barrier V27 := calc.not(V11);
-#    V28 := p;
-#    x := V28;
-#exit V27;
-#    V30 := x;
-#    return V31 := V30;
-#end getz;
-function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
-    x := nil:int;                       #  1 x:int := _3:int 
-    V4 := p;                            #  2 V4:int := p:int 
-    V6 := calc.sht(10);                 #  3 V6:sht := CALCint2sht(_6:int) 
-    V9 := calc.int(V6);                 #  4 V9:int := CALCsht2int(V6:sht) 
-    V11 := calc.>(V4,V9);               #  5 V11:bit := CALCcompGTintint(V4:int, V9:int) 
-barrier V12 := V11;                     #  6 V12:bit := V11:bit {J12}
-    V13 := p;                           #  7 V13:int := p:int 
-    V15 := calc.int(2);                 #  8 V15:int := CALCint2int(_12:int) 
-    V22 := calc.*(V13,V15);             #  9 V22:int := CALCbinaryMULintint(V13:int, V15:int) 
-    V24 := calc.int(V22);               # 10 V24:int := CALCint2int(V22:int) 
-    x := V24;                           # 11 x:int := V24:int 
-exit V12;                               # 12 V12:bit 
-barrier V27 := calc.not(V11);           # 13 V27:bit := CALCunarybitNOT(V11:bit) {J16}
-    V28 := p;                           # 14 V28:int := p:int 
-    x := V28;                           # 15 x:int := V28:int 
-exit V27;                               # 16 V27:bit 
-    V30 := x;                           # 17 V30:int := x:int 
-    return V31 := V30;                  # 18 V31:int := V30:int 
-end getz;	# 19  
-##optimizer.costModel("user","getz");
-##optimizer.coercions("user","getz");
-##optimizer.emptySet("user","getz");
-##optimizer.modes("user","getz");
-#optimizer.aliases("user","getz");
-##optimizer.commonTerms("user","getz");
-##optimizer.accumulators("user","getz");
-##optimizer.joinPath("user","getz");
-##optimizer.deadcode("user","getz");
-##optimizer.reduce("user","getz");
-##optimizer.garbageCollector("user","getz");
-#mdb.list("user","getz");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.getz(p:int):int;
+    x := nil:int;
+    V4 := p;
+    V6 := calc.sht(10);
+    V9 := calc.int(V6);
+    V11 := calc.>(V4,V9);
+barrier V12 := V11;
+    V13 := p;
+    V15 := calc.int(2);
+    V22 := calc.*(V13,V15);
+    V24 := calc.int(V22);
+    x := V24;
+exit V12;
+barrier V27 := calc.not(V11);
+    V28 := p;
+    x := V28;
+exit V27;
+    V30 := x;
+    return V31 := V30;
+end getz;
+function user.main():void;
 # bug discovered in SQL, alias removal does not handle arguments properly 
 #optimizer.costModel("user","getz"); 
 #optimizer.coercions("user","getz"); 
@@ -78,8 +45,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #optimizer.deadcode("user","getz"); 
 #optimizer.reduce("user","getz"); 
 #optimizer.garbageCollector("user","getz"); 
-    mdb.List("user","getz");            # 12 _15:void := MDBlist3Detail(_7:str, _8:str) 
-end main;	# 13  
+    mdb.List("user","getz");
+end main;
 function user.getz(p:int):int;          #  0 getz:int := user.getz(p:int) 
     x := nil:int;                       #  1 x:int := _3:int 
     V6 := calc.sht(10);                 #  2 V6:sht := CALCint2sht(_6:int) 

@@ -5,238 +5,125 @@ stdout of test 'tst4700` in directory 'src/optimizer` itself:
 # 23:52:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4700.mal </dev/null
 # 23:52:59 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information.
-## The first MAL compiler test
-## the result is retained in MCCtst903.c
-## which can be compiled and linked with the system.
-#
-#
-#function tst903();
-#    t0:= alarm.usec();
-#    b:= bbp.new(:void,:lng);
-#    barrier (go,i):= mal.newRange(0:lng);
-#        k:= mmath.rand();
-#        l:= calc.lng(k);
-#        bat.insert(b,nil,l);
-#        redo (go,i):= mal.nextElement(1:lng,1000000:lng);
-#    exit (go,i);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#loop %d",d0);
-#    #setReadMode(b);
-#    mx:= aggr.max(b); 
-#    #io.printf("max %d",mx);
-#    mi:= aggr.min(b); 
-#    #io.printf(" min %d\n",mi);
-#    t0:= alarm.usec();
-#    c:= algebra.copy(b);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#copy %d",d0);
-#    cnt:= aggr.count(c);
-#    io.printf("#count %d\n",cnt);
-#    t0:= alarm.usec();
-#    z:= algebra.select(b,25:lng,25:lng);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select none %d",d0);
-#    cnt:= aggr.count(z);
-#    io.printf(" count %d\n",cnt);
-#    t0:= alarm.usec();
-#    z2:= algebra.select(b,mi,mx);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select all %d",d0);
-#    cnt:= aggr.count(z2);
-#    io.printf(" count %d\n",cnt);
-#    rng:= mx-mi;
-#    r2:= rng/20;
-#    r3:= mi+r2;
-#    t0:= alarm.usec();
-#    z3:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.05 %d",d0);
-#    cnt:= aggr.count(z3);
-#    io.printf(" count %d\n",cnt);
-#    r2:= rng/10;
-#    r3:= mi+r2;
-#    t0:= alarm.usec();
-#    z4:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.1 %d",d0);
-#    cnt:= aggr.count(z4);
-#    io.printf(" count %d\n",cnt);
-#    r2:= rng/5;
-#    r3:= mi+r2;
-#    t0:= alarm.usec();
-#    z5:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.2 %d",d0);
-#    cnt:= aggr.count(z5);
-#    io.printf(" count %d\n",cnt);
-#    r3:= r3+r2;
-#    t0:= alarm.usec();
-#    z6:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.4 %d",d0);
-#    cnt:= aggr.count(z6);
-#    io.printf(" count %d\n",cnt);
-#    r3:= r3+r2;
-#    t0:= alarm.usec();
-#    z7:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.6 %d",d0);
-#    cnt:= aggr.count(z7);
-#    io.printf(" count %d\n",cnt);
-#    r3:= r3+r2;
-#    t0:= alarm.usec();
-#    z8:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 0.8 %d",d0);
-#    cnt:= aggr.count(z8);
-#    io.printf(" count %d\n",cnt);
-#    r3:= r3+r2;
-#    t0:= alarm.usec();
-#    z9:= algebra.select(b,mi,r3);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#select 1.0 %d",d0);
-#    cnt:= aggr.count(z9);
-#    io.printf(" count %d\n",cnt);
-#    t0:= alarm.usec();
-#    sr:= bat.reverse(b);
-#    s:= algebra.sort(sr);
-#    t1:= alarm.usec();
-#    d0:= t1-t0;
-#    io.printf("#tail sort %d",d0);
-#end tst903;
-function user.tst903():void;            #  0 tst903:void := user.tst903() {G}
-    t0 := alarm.usec();                 #  1 t0:lng := ALARMusec() 
-    b := bat.new(:oid,:lng);            #  2 b:bat[:oid,:lng] := CMDBATnew(_3:oid, _4:lng) {G}
-barrier (go,i) := language.newRange(0:lng);#  3 (go:bit, i:lng) := RNGnewRange_lng(_7:lng) {J8}
-    k := mmath.rand();                  #  4 k:int := MATHrandint() 
-    l := calc.lng(k);                   #  5 l:lng := CALCint2lng(k:int) 
-    bat.insert(b,nil:oid,l);            #  6 _10:bat[:oid,:lng] := BKCinsert_bun(b:bat[:oid,:lng], _11:oid, l:lng) {G}
-    redo (go,i) := language.nextElement(1:lng,1000000:lng);#  7 (go:bit, i:lng) := RNGnextElement_lng(_12:lng, _13:lng) {J4}
-exit (go,i);                            #  8 (go:bit, i:lng) 
-    t1 := alarm.usec();                 #  9 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 10 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#loop %d",d0);           # 11 _16:void := IOprintf(_17:str, d0:lng) 
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.tst903():void;
+    t0 := alarm.usec();
+    b := bat.new(:oid,:lng);
+barrier (go,i) := language.newRange(0:lng);
+    k := mmath.rand();
+    l := calc.lng(k);
+    bat.insert(b,nil:oid,l);
+    redo (go,i) := language.nextElement(1:lng,1000000:lng);
+exit (go,i);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#loop %d",d0);
 #setReadMode(b); 
-    mx := aggr.max(b);                  # 13 mx:lng := ALGmax_lng(b:bat[:oid,:lng]) 
+    mx := aggr.max(b);
 #io.printf("max %d",mx); 
-    mi := aggr.min(b);                  # 15 mi:lng := ALGmin_lng(b:bat[:oid,:lng]) 
+    mi := aggr.min(b);
 #io.printf(" min %d\n",mi); 
-    t0 := alarm.usec();                 # 17 t0:lng := ALARMusec() 
-    c := algebra.copy(b);               # 18 c:bat[:oid,:lng] := ALGcopy(b:bat[:oid,:lng]) {G}
-    t1 := alarm.usec();                 # 19 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 20 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#copy %d",d0);           # 21 _24:void := IOprintf(_25:str, d0:lng) 
-    cnt := aggr.count(c);               # 22 cnt:wrd := ALGcount_bat(c:bat[:oid,:lng]) 
-    io.printf("#count %d\n",cnt);       # 23 _27:void := IOprintf(_28:str, cnt:wrd) 
-    t0 := alarm.usec();                 # 24 t0:lng := ALARMusec() 
-    z := algebra.select(b,25:lng,25:lng);# 25 z:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], _30:lng, _30:lng) {G}
-    t1 := alarm.usec();                 # 26 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 27 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select none %d",d0);    # 28 _31:void := IOprintf(_32:str, d0:lng) 
-    cnt := aggr.count(z);               # 29 cnt:wrd := ALGcount_bat(z:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 30 _33:void := IOprintf(_34:str, cnt:wrd) 
-    t0 := alarm.usec();                 # 31 t0:lng := ALARMusec() 
-    z2 := algebra.select(b,mi,mx);      # 32 z2:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, mx:lng) {G}
-    t1 := alarm.usec();                 # 33 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 34 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select all %d",d0);     # 35 _36:void := IOprintf(_37:str, d0:lng) 
-    cnt := aggr.count(z2);              # 36 cnt:wrd := ALGcount_bat(z2:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 37 _38:void := IOprintf(_34:str, cnt:wrd) 
-    rng := calc.-(mx,mi);               # 38 rng:lng := CALCbinarySUBlnglng(mx:lng, mi:lng) 
-    r2 := calc./(rng,20);               # 39 r2:lng := CALCbinarycheckDIVlngint(rng:lng, _41:int) 
-    r3 := calc.+(mi,r2);                # 40 r3:lng := CALCbinaryADDlnglng(mi:lng, r2:lng) 
-    t0 := alarm.usec();                 # 41 t0:lng := ALARMusec() 
-    z3 := algebra.select(b,mi,r3);      # 42 z3:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 43 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 44 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.05 %d",d0);    # 45 _44:void := IOprintf(_45:str, d0:lng) 
-    cnt := aggr.count(z3);              # 46 cnt:wrd := ALGcount_bat(z3:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 47 _46:void := IOprintf(_34:str, cnt:wrd) 
-    r2 := calc./(rng,10);               # 48 r2:lng := CALCbinarycheckDIVlngint(rng:lng, _47:int) 
-    r3 := calc.+(mi,r2);                # 49 r3:lng := CALCbinaryADDlnglng(mi:lng, r2:lng) 
-    t0 := alarm.usec();                 # 50 t0:lng := ALARMusec() 
-    z4 := algebra.select(b,mi,r3);      # 51 z4:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 52 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 53 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.1 %d",d0);     # 54 _49:void := IOprintf(_50:str, d0:lng) 
-    cnt := aggr.count(z4);              # 55 cnt:wrd := ALGcount_bat(z4:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 56 _51:void := IOprintf(_34:str, cnt:wrd) 
-    r2 := calc./(rng,5);                # 57 r2:lng := CALCbinarycheckDIVlngint(rng:lng, _52:int) 
-    r3 := calc.+(mi,r2);                # 58 r3:lng := CALCbinaryADDlnglng(mi:lng, r2:lng) 
-    t0 := alarm.usec();                 # 59 t0:lng := ALARMusec() 
-    z5 := algebra.select(b,mi,r3);      # 60 z5:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 61 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 62 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.2 %d",d0);     # 63 _54:void := IOprintf(_55:str, d0:lng) 
-    cnt := aggr.count(z5);              # 64 cnt:wrd := ALGcount_bat(z5:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 65 _56:void := IOprintf(_34:str, cnt:wrd) 
-    r3 := calc.+(r3,r2);                # 66 r3:lng := CALCbinaryADDlnglng(r3:lng, r2:lng) 
-    t0 := alarm.usec();                 # 67 t0:lng := ALARMusec() 
-    z6 := algebra.select(b,mi,r3);      # 68 z6:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 69 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 70 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.4 %d",d0);     # 71 _58:void := IOprintf(_59:str, d0:lng) 
-    cnt := aggr.count(z6);              # 72 cnt:wrd := ALGcount_bat(z6:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 73 _60:void := IOprintf(_34:str, cnt:wrd) 
-    r3 := calc.+(r3,r2);                # 74 r3:lng := CALCbinaryADDlnglng(r3:lng, r2:lng) 
-    t0 := alarm.usec();                 # 75 t0:lng := ALARMusec() 
-    z7 := algebra.select(b,mi,r3);      # 76 z7:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 77 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 78 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.6 %d",d0);     # 79 _62:void := IOprintf(_63:str, d0:lng) 
-    cnt := aggr.count(z7);              # 80 cnt:wrd := ALGcount_bat(z7:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 81 _64:void := IOprintf(_34:str, cnt:wrd) 
-    r3 := calc.+(r3,r2);                # 82 r3:lng := CALCbinaryADDlnglng(r3:lng, r2:lng) 
-    t0 := alarm.usec();                 # 83 t0:lng := ALARMusec() 
-    z8 := algebra.select(b,mi,r3);      # 84 z8:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 85 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 86 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 0.8 %d",d0);     # 87 _66:void := IOprintf(_67:str, d0:lng) 
-    cnt := aggr.count(z8);              # 88 cnt:wrd := ALGcount_bat(z8:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 89 _68:void := IOprintf(_69:str, cnt:wrd) 
-    r3 := calc.+(r3,r2);                # 90 r3:lng := CALCbinaryADDlnglng(r3:lng, r2:lng) 
-    t0 := alarm.usec();                 # 91 t0:lng := ALARMusec() 
-    z9 := algebra.select(b,mi,r3);      # 92 z9:bat[:oid,:lng] := ALGselect(b:bat[:oid,:lng], mi:lng, r3:lng) {G}
-    t1 := alarm.usec();                 # 93 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                # 94 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#select 1.0 %d",d0);     # 95 _71:void := IOprintf(_72:str, d0:lng) 
-    cnt := aggr.count(z9);              # 96 cnt:wrd := ALGcount_bat(z9:bat[:oid,:lng]) 
-    io.printf(" count %d\n",cnt);       # 97 _73:void := IOprintf(_69:str, cnt:wrd) 
-    t0 := alarm.usec();                 # 98 t0:lng := ALARMusec() 
-    sr := bat.reverse(b);               # 99 sr:bat[:lng,:oid] := BKCreverse(b:bat[:oid,:lng]) {G}
-    s := algebra.sort(sr);              #100 s:bat[:lng,:oid] := ALGhsort(sr:bat[:lng,:oid]) {G}
-    t1 := alarm.usec();                 #101 t1:lng := ALARMusec() 
-    d0 := calc.-(t1,t0);                #102 d0:lng := CALCbinarySUBlnglng(t1:lng, t0:lng) 
-    io.printf("#tail sort %d",d0);      #103 _76:void := IOprintf(_77:str, d0:lng) 
-end tst903;                             #104  
-#
-#Mcc.compile("user","tst903");
-#
+    t0 := alarm.usec();
+    c := algebra.copy(b);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#copy %d",d0);
+    cnt := aggr.count(c);
+    io.printf("#count %d\n",cnt);
+    t0 := alarm.usec();
+    z := algebra.select(b,25:lng,25:lng);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select none %d",d0);
+    cnt := aggr.count(z);
+    io.printf(" count %d\n",cnt);
+    t0 := alarm.usec();
+    z2 := algebra.select(b,mi,mx);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select all %d",d0);
+    cnt := aggr.count(z2);
+    io.printf(" count %d\n",cnt);
+    rng := calc.-(mx,mi);
+    r2 := calc./(rng,20);
+    r3 := calc.+(mi,r2);
+    t0 := alarm.usec();
+    z3 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.05 %d",d0);
+    cnt := aggr.count(z3);
+    io.printf(" count %d\n",cnt);
+    r2 := calc./(rng,10);
+    r3 := calc.+(mi,r2);
+    t0 := alarm.usec();
+    z4 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.1 %d",d0);
+    cnt := aggr.count(z4);
+    io.printf(" count %d\n",cnt);
+    r2 := calc./(rng,5);
+    r3 := calc.+(mi,r2);
+    t0 := alarm.usec();
+    z5 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.2 %d",d0);
+    cnt := aggr.count(z5);
+    io.printf(" count %d\n",cnt);
+    r3 := calc.+(r3,r2);
+    t0 := alarm.usec();
+    z6 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.4 %d",d0);
+    cnt := aggr.count(z6);
+    io.printf(" count %d\n",cnt);
+    r3 := calc.+(r3,r2);
+    t0 := alarm.usec();
+    z7 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.6 %d",d0);
+    cnt := aggr.count(z7);
+    io.printf(" count %d\n",cnt);
+    r3 := calc.+(r3,r2);
+    t0 := alarm.usec();
+    z8 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 0.8 %d",d0);
+    cnt := aggr.count(z8);
+    io.printf(" count %d\n",cnt);
+    r3 := calc.+(r3,r2);
+    t0 := alarm.usec();
+    z9 := algebra.select(b,mi,r3);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#select 1.0 %d",d0);
+    cnt := aggr.count(z9);
+    io.printf(" count %d\n",cnt);
+    t0 := alarm.usec();
+    sr := bat.reverse(b);
+    s := algebra.sort(sr);
+    t1 := alarm.usec();
+    d0 := calc.-(t1,t0);
+    io.printf("#tail sort %d",d0);
+end tst903;
 !TypeException:user.main[4]:'Mcc.compile' undefined in: _4:any := Mcc.compile(_5:str, _6:str)
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # The first MAL compiler test 
 # the result is retained in MCCtst903.c 
 # which can be compiled and linked with the system. 
-    Mcc.compile("user","tst903");       #  4 _4:any := Mcc.compile(_5:str, _6:str) {U}
-end main;	# 5  
+    Mcc.compile("user","tst903");
+end main;
 
 # 23:52:59 >  
 # 23:52:59 >  Done.

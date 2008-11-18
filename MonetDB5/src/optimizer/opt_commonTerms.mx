@@ -30,7 +30,7 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_COMMONTERMS      show partial result */
+/* #define DEBUG_OPT_COMMONTERMS       show partial result */
 
 @c
 #include "mal_config.h"
@@ -113,6 +113,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	for(i=0; i<mb->vtop; i++) 
 		alias[i]=i;
 
+#ifdef DEBUG_OPT_COMMONTERMS
+	stream_printf(cntxt->fdout,"START COMMONTERMS\n");
+#endif
 	setLifespan(mb,span);
 	old = mb->stmt;
 	limit = mb->stop;
@@ -184,10 +187,10 @@ multiple occurrences of the same constant in the symbol table.
 #ifdef DEBUG_OPT_COMMONTERMS
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-				printf("%d, %d  %d %d ", i, j, 
+				stream_printf(cntxt->fdout,"%d, %d  %d %d ", i, j, 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q));
-				printf(" :%d %d %d %d %d\n", 
+				stream_printf(cntxt->fdout," :%d %d %d %d %d\n", 
 					!hasCommonResults(p, q), 
 					!hasSideEffects(p, TRUE),
 					!hasSideEffects(q, TRUE),

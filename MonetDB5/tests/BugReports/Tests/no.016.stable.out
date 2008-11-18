@@ -11,46 +11,8 @@ stdout of test 'no.016` in directory 'tests/BugReports` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-## Monet Mil to Mal compiler
-##include mil;
-## Copyright (c) 2001-2004, CWI. All rights reserved.
-#
-##Predefined code segment
-##The compiler can not guarantee an accurate compilation,
-##because MIL unlike MAL is a dynamically typed language.
-##A few guidelines to maximize usefullness.
-##- make the type of variables explicit, in particular 'nil'
-##- upon advice of M2m to remap identifiers, change it in your program directly
-##use the "mil_schema" for additional support routines
-##	mil.line("# >Number:         16\n");
-##	mil.line("# >Category:       MIL\n");
-##	mil.line("# >Synopsis:       MIL: sample, does not handle empty BAT\n");
-##	mil.line("# >Confidential:   no\n");
-##	mil.line("# >Severity:       serious\n");
-##	mil.line("# >Priority:       medium\n");
-##	mil.line("# >Responsible:    boncz\n");
-##	mil.line("# >State:          closed\n");
-##	mil.line("# >Class:          sw-bug\n");
-##	mil.line("# >Submitter-Id:   unknown\n");
-##	mil.line("# >Arrival-Date:   Wed Jul 16 15:00:00 1997\n");
-##	mil.line("# >Originator:     jonas\n");
-##	mil.line("# >Organization:\n");
-##	mil.line("# >Release:        970101\n");
-##	mil.line("# >Environment:\n");
-##	mil.line("# general/IRIX monet3.0.6\n");
-##	mil.line("# >Description:\n");
-##	mil.line("# >a := bat.new(int, int);\n");
-##	mil.line("# >a.sample(1).print;\n");
-##	mil.line("# !FATAL GDKmalloc called with size 0\n");
-##	mil.line("var a := bat.new(int, int);");
-#	a := bat.new(nil:int,nil:int);
-##	mil.line("a.sample(1).print();");
-#	aa_a := algebra.sample(a,1);
-#	ba_a := io.print(aa_a);
-##	mil.line("quit();");
-#	ca_a := clients.quit();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -81,13 +43,13 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("# >a.sample(1).print;\n"); 
 #	io.print("# !FATAL GDKmalloc called with size 0\n"); 
 #	io.print("var a := bat.new(int, int);"); 
-    a := bat.new(nil:oid,nil:int);      # 31 a:bat[:oid,:int] := CMDBATnew(_32:oid, _33:int) {G}
+    a := bat.new(nil:oid,nil:int);
 #	io.print("a.sample(1).print();"); 
-    aa_a := algebra.sample(a,1);        # 33 aa_a:bat[:oid,:int] := ALGsample(a:bat[:oid,:int], _36:int) {G}
-    ba_a := io.print(aa_a);             # 34 ba_a:void := IOprint_val(aa_a:bat[:oid,:int]) 
+    aa_a := algebra.sample(a,1);
+    ba_a := io.print(aa_a);
 #	io.print("quit();"); 
-    ca_a := clients.quit();             # 36 ca_a:void := CLTquit() 
-end main;	# 37  
+    ca_a := clients.quit();
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

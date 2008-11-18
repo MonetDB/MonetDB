@@ -24,18 +24,18 @@ stdout of test 'tst060` in directory 'src/mal` itself:
 #exit 	b1;
 #	print(s1);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # garbage collection strins 
-    s0 := "hello";                      #  2 s0:str := _3:str {G}
-    s0 := "world";                      #  3 s0:str := _4:str {G}
-    b1 := calc.==(s0,"world");          #  4 b1:bit := CALCcompEQstrstr(s0:str, _4:str) 
-    s1 := s0;                           #  5 s1:str := s0:str {G}
-barrier b1;                             #  6 b1:bit {J9}
-    s2 := s1;                           #  7 s2:str := s1:str {G}
-    s1 := "bye";                        #  8 s1:str := _8:str {G}
-exit b1;                                #  9 b1:bit 
-    io.print(s1);                       # 10 _9:void := IOprint_val(s1:str) 
-end main;	# 11  
+    s0 := "hello";
+    s0 := "world";
+    b1 := calc.==(s0,"world");
+    s1 := s0;
+barrier b1;
+    s2 := s1;
+    s1 := "bye";
+exit b1;
+    io.print(s1);
+end main;
 [ "bye" ]
 
 # 07:58:48 >  

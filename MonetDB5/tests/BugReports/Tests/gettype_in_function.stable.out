@@ -14,55 +14,55 @@ stdout of test 'gettype_in_function` in directory 'tests/BugReports` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:39150/
-function user.typetest(o:any):void;     #  0 typetest:void := user.typetest(o:any) {PG}
-    t := inspect.getType(o);            #  1 t:str := INSPECTtypeName(o:any) {G}
-    io.print(t);                        #  2 _3:void := IOprint_val(t:str) 
-end typetest;                           #  3  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.typetest(o:any):void;
+    t := inspect.getType(o);
+    io.print(t);
+end typetest;
+function user.main():void;
 # observed 13-08-2008: inspect.getType works fine local, but not in a 
 # function on an argument with type :any 
 # SF bug #2051258 
-    p := "string";                      #  4 p:str := _5:str {G}
-    t := inspect.getType(p);            #  5 t:str := INSPECTtypeName(p:str) {G}
+    p := "string";
+    t := inspect.getType(p);
 # here it is still a "str" 
-    io.print(t);                        #  7 _8:void := IOprint_val(t:str) 
+    io.print(t);
 # but now it is a "any", should be "str" 
-    user.typetest(p);                   #  9 _10:void := user.typetest(p:str) 
+    user.typetest(p);
 # more fun with a BAT 
-    b := bat.new(:str,:int);            # 11 b:bat[:str,:int] := CMDBATnew(_13:str, _14:int) {G}
-    t := inspect.getType(b);            # 12 t:str := INSPECTtypeName(b:bat[:str,:int]) {G}
+    b := bat.new(:str,:int);
+    t := inspect.getType(b);
 # here it is what we expect 
-    io.print(t);                        # 14 _16:void := IOprint_val(t:str) 
+    io.print(t);
 # now it is "any" even though the above problem was fixed 
-    user.typetest(b);                   # 16 _18:void := user.typetest(b:bat[:str,:int]) 
+    user.typetest(b);
 # even cooler, now suddenly a string is "any" too 
-    user.typetest(p);                   # 18 _20:void := user.typetest(p:str) 
+    user.typetest(p);
 # extended 
-    i := 1:int;                         # 20 i:int := _23:int 
-    d := bat.new(:str,:flt);            # 21 d:bat[:str,:flt] := CMDBATnew(_25:str, _26:flt) {G}
-    tii := inspect.getTypeIndex(i);     # 22 tii:int := INSPECTtypeIndex(i:int) 
-    io.print(tii);                      # 23 _28:void := IOprint_val(tii:int) 
-    tni := inspect.getTypeName(tii);    # 24 tni:str := INSPECTtypename(tii:int) {G}
-    io.print(tni);                      # 25 _30:void := IOprint_val(tni:str) 
-    tib := inspect.getTypeIndex(d);     # 26 tib:int := INSPECTtypeIndex(d:bat[:str,:flt]) 
-    io.print(tib);                      # 27 _32:void := IOprint_val(tib:int) 
-    (ht,tt) := inspect.getTypeIndex(d); # 28 (ht:int, tt:int) := INSPECTtypeIndex(d:bat[:str,:flt]) 
-    io.print(ht,tt);                    # 29 _35:void := IOprint_val(ht:int, tt:int) 
-    tnb := inspect.getTypeName(tib);    # 30 tnb:str := INSPECTtypename(tib:int) {G}
-    io.print(tnb);                      # 31 _37:void := IOprint_val(tnb:str) 
-    rev := bat.reverse(d);              # 32 rev:bat[:flt,:str] := BKCreverse(d:bat[:str,:flt]) {G}
-    rid := inspect.getTypeIndex(rev);   # 33 rid:int := INSPECTtypeIndex(rev:bat[:flt,:str]) 
-    tns := inspect.getTypeName(rid);    # 34 tns:str := INSPECTtypename(rid:int) {G}
-    io.print(tns);                      # 35 _41:void := IOprint_val(tns:str) 
+    i := 1:int;
+    d := bat.new(:str,:flt);
+    tii := inspect.getTypeIndex(i);
+    io.print(tii);
+    tni := inspect.getTypeName(tii);
+    io.print(tni);
+    tib := inspect.getTypeIndex(d);
+    io.print(tib);
+    (ht,tt) := inspect.getTypeIndex(d);
+    io.print(ht,tt);
+    tnb := inspect.getTypeName(tib);
+    io.print(tnb);
+    rev := bat.reverse(d);
+    rid := inspect.getTypeIndex(rev);
+    tns := inspect.getTypeName(rid);
+    io.print(tns);
 #type tests 
-    z1 := inspect.equalType(i,:int);    # 37 z1:bit := INSPECTequalType(i:int, _14:int) 
-    io.print(z1);                       # 38 _44:void := IOprint_val(z1:bit) 
-    z1 := inspect.equalType(d,:bat[:str,:flt]);# 39 z1:bit := INSPECTequalType(d:bat[:str,:flt], _45:bat[:str,:flt]) 
-    io.print(z1);                       # 40 _46:void := IOprint_val(z1:bit) 
-    z1 := inspect.equalType(d,:int);    # 41 z1:bit := INSPECTequalType(d:bat[:str,:flt], _14:int) 
-    io.print(z1);                       # 42 _47:void := IOprint_val(z1:bit) 
-end main;                               # 43  
+    z1 := inspect.equalType(i,:int);
+    io.print(z1);
+    z1 := inspect.equalType(d,:bat[:str,:flt]);
+    io.print(z1);
+    z1 := inspect.equalType(d,:int);
+    io.print(z1);
+end main;
 [ "str" ]
 [ "str" ]
 [ "bat[:str,:int]" ]

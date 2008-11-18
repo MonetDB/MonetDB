@@ -26,19 +26,19 @@ stdout of test 'tst025` in directory 'src/mal` itself:
 #io.print(b);
 #
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Wrong behavior of self-deletion, it works on M4 
-    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(b,5140046,1804289383);   #  3 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
-    bat.insert(b,5442033,846930886);    #  4 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
-    bat.insert(b,5645862,1681692777);   #  5 _10:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) {G}
-    io.print(b);                        #  6 _13:void := IOprint_val(b:bat[:int,:int]) 
+    b := bat.new(:int,:int);
+    bat.insert(b,5140046,1804289383);
+    bat.insert(b,5442033,846930886);
+    bat.insert(b,5645862,1681692777);
+    io.print(b);
 # it left one behind 
-    bat.delete(b,b);                    #  8 _15:bat[:int,:int] := BKCdelete_bat_bun(b:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(b);                        #  9 _16:void := IOprint_val(b:bat[:int,:int]) 
-    bat.delete(b,b);                    # 10 _17:bat[:int,:int] := BKCdelete_bat_bun(b:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(b);                        # 11 _18:void := IOprint_val(b:bat[:int,:int]) 
-end main;	# 12  
+    bat.delete(b,b);
+    io.print(b);
+    bat.delete(b,b);
+    io.print(b);
+end main;
 #---------------------------------#
 # h		t		  # name
 # int		int		  # type

@@ -22,12 +22,12 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 #	reduce:= multiplex.tactics("/",b,div);
 #	print(reduce);
 #end perftst;
-function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;#  0 perftst:void := user.perftst(b:bat[:any_1,:any_2], div:any_2) {PG}
-    io.print("perftst");                #  1 _3:void := IOprint_val(_4:str) 
-    io.print(div);                      #  2 _5:void := IOprint_val(div:any_2) 
-    reduce := batcalc./(b,div);         #  3 reduce:any := batcalc./(b:bat[:any_1,:any_2], div:any_2) 
-    io.print(reduce);                   #  4 _7:void := IOprint_val(reduce:any) 
-end perftst;	# 5  
+function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;
+    io.print("perftst");
+    io.print(div);
+    reduce := batcalc./(b,div);
+    io.print(reduce);
+end perftst;
 #
 #
 #b:= new(:lng,:lng);
@@ -36,15 +36,15 @@ end perftst;	# 5
 #        redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # the multiplex code blocks. 
-    b := bat.new(:oid,:lng);            #  2 b:bat[:oid,:lng] := CMDBATnew(_3:oid, _4:lng) {G}
-barrier (v,i) := language.newRange(0:lng);#  3 (v:bit, i:lng) := RNGnewRange_lng(_7:lng) {J6}
-    bat.append(b,i);                    #  4 _8:bat[:lng,:any] := BKCappend_val_wrap(b:bat[:oid,:lng], i:lng) {G}
-    redo (v,i) := language.nextElement(1:lng,10:lng);#  5 (v:bit, i:lng) := RNGnextElement_lng(_9:lng, _10:lng) {J4}
-exit (v,i);                             #  6 (v:bit, i:lng) 
-    user.perftst(b,1:lng);              #  7 _11:void := user.perftst(b:bat[:oid,:lng], _9:lng) 
-end main;	# 8  
+    b := bat.new(:oid,:lng);
+barrier (v,i) := language.newRange(0:lng);
+    bat.append(b,i);
+    redo (v,i) := language.nextElement(1:lng,10:lng);
+exit (v,i);
+    user.perftst(b,1:lng);
+end main;
 [ "perftst" ]
 [ 1 ]
 #-----------------#

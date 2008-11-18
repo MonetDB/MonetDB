@@ -15,12 +15,12 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 #raise	IllegalAccess := 1234;
 #	print("should not come here\n");
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 #propagate INT exception 
 # (you should be able to pass it upwards though) 
-    raise PermissionDeniedException := 1234;#  3 PermissionDeniedException:int := _4:int 
-    io.print("should not come here\n"); #  4 _5:void := IOprint_val(_6:str) 
-end main;	# 5  
+    raise PermissionDeniedException := 1234;
+    io.print("should not come here\n");
+end main;
 !MALException:user.main[3]:Exception raised
 !PermissionDeniedException:user.main[5]:Exception not caught
 

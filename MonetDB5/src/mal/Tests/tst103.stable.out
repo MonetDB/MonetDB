@@ -17,22 +17,22 @@ stdout of test 'tst103` in directory 'src/mal` itself:
 #function f(a:any$1, b:any$2):bat[:any$2,:any$1] ;
 #	return f:=bbp.new(:any$2,:any$1); 
 #end f;
-function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];#  0 f:bat[:any_2,:any_1] := user.f(a:any_1, b:any_2) {UPG}
-    return f := bat.new(:any_2,:any_1); #  1 f:bat[:any_2,:any_1] := CMDBATnew(_3:any_2, _4:any_1) {PG}
-end f;	# 2  
+function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];
+    return f := bat.new(:any_2,:any_1);
+end f;
 #
 #a:= f(1,"hello");
 #b:= f(1,"world");
 #c:= f(1.0, -3);
 #d:= f(true,false);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # check propagation of type variables over bats 
-    a := user.f(1,"hello");             #  2 a:bat[:str,:int] := user.f(_3:int, _4:str) {G}
-    b := user.f(1,"world");             #  3 b:bat[:str,:int] := user.f(_3:int, _6:str) {G}
-    c := user.f(1,-3);                  #  4 c:bat[:int,:flt] := user.f(_8:flt, _9:int) {G}
-    d := user.f(true,false);            #  5 d:bat[:bit,:bit] := user.f(_11:bit, _12:bit) {G}
-end main;	# 6  
+    a := user.f(1,"hello");
+    b := user.f(1,"world");
+    c := user.f(1,-3);
+    d := user.f(true,false);
+end main;
 
 # 07:58:55 >  
 # 07:58:55 >  Done.

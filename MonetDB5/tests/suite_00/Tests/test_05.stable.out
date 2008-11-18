@@ -5,152 +5,14 @@ stdout of test 'test_05` in directory 'tests/suite_00` itself:
 # 00:12:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_05.mal </dev/null
 # 00:12:27 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl/ for further information.
-## Monet Mil to Mal compiler
-#include mil;
-## Copyright (c) 2001-2004, CWI. All rights reserved.
-#
-##Predefined code segment
-##The compiler can not guarantee an accurate compilation,
-##because MIL unlike MAL is a dynamically typed language.
-##A few guidelines to maximize usefullness.
-##- make the type of variables explicit, in particular 'nil'
-##- upon advice of M2m to remap identifiers, change it in your program directly
-##use the "mil_schema" for additional support routines
-#	mil.line("setoid(oid(20000000));");
-#	aa_a := calc.oid(20000000);
-#	ba_a := calc.setoid(aa_a);
-#	mil.line("#test basic functionality of the BAT library.\n");
-#	mil.line("#focussed on float\n");
-#	mil.line("#it includes bat.insertions,deletions,selections, and joins.\n");
-#	mil.line("print(3.147);");
-#	ca_a := io.print(3.147);
-#	mil.line("var b:= bbp.new(flt,flt);");
-#	b := bbp.new(nil:flt,nil:flt);
-#	mil.line("b.insert(1.2, 15.6);");
-#	da_a := bat.insert(b,1.2,15.6);
-#	mil.line("b.insert(2.3, 4.5);");
-#	ea_a := bat.insert(b,2.3,4.5);
-#	mil.line("b.insert(3.0, calc.flt(nil));");
-#	fa_a := calc.flt(nil);
-#	ga_a := bat.insert(b,3.0,fa_a);
-#	mil.line("b.insert(4.5, 16.7);");
-#	ha_a := bat.insert(b,4.5,16.7);
-#	mil.line("b.insert(5.6, 25.6);");
-#	ia_a := bat.insert(b,5.6,25.6);
-#	mil.line("b.insert(6.6, 36.7);");
-#	ja_a := bat.insert(b,6.6,36.7);
-#	mil.line("b.insert(7.8, 49.0);");
-#	ka_a := bat.insert(b,7.8,49.0);
-#	mil.line("b.insert(8.9, 64.5);");
-#	la_a := bat.insert(b,8.9,64.5);
-#	mil.line("b.insert(9.0, calc.flt(nil));");
-#	ma_a := calc.flt(nil);
-#	na_a := bat.insert(b,9.0,ma_a);
-#	mil.line("b.insert(flt(nil),flt(nil));");
-#	oa_a := calc.flt(nil);
-#	pa_a := calc.flt(nil);
-#	qa_a := bat.insert(b,oa_a,pa_a);
-#	mil.line("b.insert(flt(nil),81.2);");
-#	ra_a := calc.flt(nil);
-#	sa_a := bat.insert(b,ra_a,81.2);
-#	mil.line("b.print();");
-#	ta_a := io.print(b);
-#	mil.line("# Testing simple retrievals\n");
-#	ua_a := algebra.find(b,1.2);
-#	va_a := io.print(ua_a);
-#	mil.line("b.find(4.5).print();");
-#	wa_a := algebra.find(b,4.5);
-#	xa_a := io.print(wa_a);
-#	mil.line("b.find(flt(nil)).print();");
-#	ya_a := calc.flt(nil);
-#	ab_a := algebra.find(b,ya_a);
-#	bb_a := io.print(ab_a);
-#	mil.line("# This should cause an error\n");
-##ignore	cb_a := algebra.find(b,10.1);
-##ignore	db_a := io.print(cb_a);
-#	mil.line("# Can we delete them and re-insert them later on\n");
-#	eb_a := bat.delete(b,4.5,16.7);
-#	mil.line("b.delete(1.2, 15.6);");
-#	fb_a := bat.delete(b,1.2,15.6);
-#	mil.line("b.delete(flt(nil),81.2);");
-#	gb_a := calc.flt(nil);
-#	hb_a := bat.delete(b,gb_a,81.2);
-#	mil.line("b.print();");
-#	ib_a := io.print(b);
-#	mil.line("b.insert(4.5, 16.7);");
-#	jb_a := bat.insert(b,4.5,16.7);
-#	mil.line("b.insert(1.2, 15.6);");
-#	kb_a := bat.insert(b,1.2,15.6);
-#	mil.line("b.insert(flt(nil),81.2);");
-#	lb_a := calc.flt(nil);
-#	mb_a := bat.insert(b,lb_a,81.2);
-#	mil.line("b.count().print();");
-#	nb_a := aggr.count(b);
-#	ob_a := io.print(nb_a);
-#	mil.line("# Lets cut out a few sections\n");
-#	pb_a := algebra.select(b,25.6,64.5);
-#	qb_a := io.print(pb_a);
-#	mil.line("b.select(4.5,15.6).print();");
-#	rb_a := algebra.select(b,4.5,15.6);
-#	sb_a := io.print(rb_a);
-#	mil.line("b.select(4.5,4.5).print();");
-#	tb_a := algebra.select(b,4.5,4.5);
-#	ub_a := io.print(tb_a);
-#	mil.line("# This should cause an error\n");
-#	vb_a := algebra.select(b,4.5,3.4);
-#	wb_a := io.print(vb_a);
-#	mil.line("b.select(81.2,flt(nil)).print();");
-#	xb_a := calc.flt(nil);
-#	yb_a := algebra.select(b,81.2,xb_a);
-#	ac_a := io.print(yb_a);
-#	mil.line("b.select(flt(nil),flt(nil)).print();");
-#	bc_a := calc.flt(nil);
-#	cc_a := calc.flt(nil);
-#	dc_a := algebra.select(b,bc_a,cc_a);
-#	ec_a := io.print(dc_a);
-#	mil.line("# A 2-dimensional cut\n");
-#	bn := algebra.fragment(b,1.2,5.6,4.5,15.6);
-#	fc_a := io.print(bn);
-#	mil.line("b.fragment(1.2,5.6,16.2,flt(nil)).print();");
-#	gc_a := calc.flt(nil);
-#	hc_a := algebra.fragment(b,1.2,5.6,16.2,gc_a);
-#	ic_a := io.print(hc_a);
-#	mil.line("b.fragment(1.2,flt(nil),16.2,flt(nil)).print();");
-#	jc_a := calc.flt(nil);
-#	kc_a := calc.flt(nil);
-#	lc_a := algebra.fragment(b,1.2,jc_a,16.2,kc_a);
-#	mc_a := io.print(lc_a);
-#	mil.line("b.fragment(flt(nil),flt(nil),16.2,flt(nil)).print();");
-#	nc_a := calc.flt(nil);
-#	oc_a := calc.flt(nil);
-#	pc_a := calc.flt(nil);
-#	qc_a := algebra.fragment(b,nc_a,oc_a,16.2,pc_a);
-#	rc_a := io.print(qc_a);
-#	mil.line("var b1:= b.join(bn.reverse());");
-#	sc_a := bat.reverse(bn);
-#	b1 := algebra.join(b,sc_a);
-#	mil.line("b1.print();");
-#	tc_a := io.print(b1);
-#	mil.line("var b2:= b.semijoin(b1);");
-#	b2 := algebra.semijoin(b,b1);
-#	mil.line("b2.print();");
-#	uc_a := io.print(b2);
-#	mil.line("# band join experiment\n");
-#	c := algebra.copy(b);
-#	mil.line("bandjoin(b,c,4.5,4.5).print();");
-#	vc_a := algebra.bandjoin(b,c,4.5,4.5);
-#	wc_a := io.print(vc_a);
-#	mil.line("quit();");
-#	xc_a := clients.quit();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_tests_suite_00', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -161,132 +23,132 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #- upon advice of M2m to remap identifiers, change it in your program directly 
 #use the "mil_schema" for additional support routines 
 #	io.print("setoid(oid(20000000));"); 
-    aa_a := calc.oid(20000000);         # 11 aa_a:oid := CALCint2oid(_12:int) 
-    ba_a := calc.setoid(aa_a);          # 12 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+    aa_a := calc.oid(20000000);
+    ba_a := calc.setoid(aa_a);
 #	io.print("#test basic functionality of the BAT library.\n"); 
 #	io.print("#focussed on float\n"); 
 #	io.print("#it includes bat.insertions,deletions,selections, and joins.\n"); 
 #	io.print("print(3.147);"); 
-    ca_a := io.print(3.14700007);       # 17 ca_a:void := IOprint_val(_19:flt) 
+    ca_a := io.print(3.14700007);
 #	io.print("var b:= bat.new(flt,flt);"); 
-    b := bat.new(nil:flt,nil:flt);      # 19 b:bat[:flt,:flt] := CMDBATnew(_22:flt, _22:flt) {G}
+    b := bat.new(nil:flt,nil:flt);
 #	io.print("b.insert(1.2, 15.6);"); 
-    da_a := bat.insert(b,1.20000005,15.6000004);# 21 da_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _25:flt, _26:flt) {G}
+    da_a := bat.insert(b,1.20000005,15.6000004);
 #	io.print("b.insert(2.3, 4.5);"); 
-    ea_a := bat.insert(b,2.29999995,4.5);# 23 ea_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _29:flt, _30:flt) {G}
+    ea_a := bat.insert(b,2.29999995,4.5);
 #	io.print("b.insert(3.0, calc.flt(nil));"); 
-    fa_a := calc.flt(nil);              # 25 fa_a:flt := CALCnil2flt(_33:void) 
-    ga_a := bat.insert(b,3,fa_a);       # 26 ga_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _35:flt, fa_a:flt) {G}
+    fa_a := calc.flt(nil);
+    ga_a := bat.insert(b,3,fa_a);
 #	io.print("b.insert(4.5, 16.7);"); 
-    ha_a := bat.insert(b,4.5,16.7000008);# 28 ha_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _30:flt, _38:flt) {G}
+    ha_a := bat.insert(b,4.5,16.7000008);
 #	io.print("b.insert(5.6, 25.6);"); 
-    ia_a := bat.insert(b,5.5999999,25.6000004);# 30 ia_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _41:flt, _42:flt) {G}
+    ia_a := bat.insert(b,5.5999999,25.6000004);
 #	io.print("b.insert(6.6, 36.7);"); 
-    ja_a := bat.insert(b,6.5999999,36.7000008);# 32 ja_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _45:flt, _46:flt) {G}
+    ja_a := bat.insert(b,6.5999999,36.7000008);
 #	io.print("b.insert(7.8, 49.0);"); 
-    ka_a := bat.insert(b,7.80000019,49);# 34 ka_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _49:flt, _50:flt) {G}
+    ka_a := bat.insert(b,7.80000019,49);
 #	io.print("b.insert(8.9, 64.5);"); 
-    la_a := bat.insert(b,8.89999962,64.5);# 36 la_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _53:flt, _54:flt) {G}
+    la_a := bat.insert(b,8.89999962,64.5);
 #	io.print("b.insert(9.0, calc.flt(nil));"); 
-    ma_a := calc.flt(nil);              # 38 ma_a:flt := CALCnil2flt(_33:void) 
-    na_a := bat.insert(b,9,ma_a);       # 39 na_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _58:flt, ma_a:flt) {G}
+    ma_a := calc.flt(nil);
+    na_a := bat.insert(b,9,ma_a);
 #	io.print("b.insert(flt(nil),flt(nil));"); 
-    oa_a := calc.flt(nil);              # 41 oa_a:flt := CALCnil2flt(_33:void) 
-    pa_a := calc.flt(nil);              # 42 pa_a:flt := CALCnil2flt(_33:void) 
-    qa_a := bat.insert(b,oa_a,pa_a);    # 43 qa_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], oa_a:flt, pa_a:flt) {G}
+    oa_a := calc.flt(nil);
+    pa_a := calc.flt(nil);
+    qa_a := bat.insert(b,oa_a,pa_a);
 #	io.print("b.insert(flt(nil),81.2);"); 
-    ra_a := calc.flt(nil);              # 45 ra_a:flt := CALCnil2flt(_33:void) 
-    sa_a := bat.insert(b,ra_a,81.1999969);# 46 sa_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], ra_a:flt, _66:flt) {G}
+    ra_a := calc.flt(nil);
+    sa_a := bat.insert(b,ra_a,81.1999969);
 #	io.print("b.print();"); 
-    ta_a := io.print(b);                # 48 ta_a:void := IOprint_val(b:bat[:flt,:flt]) 
+    ta_a := io.print(b);
 #	io.print("# Testing simple retrievals\n"); 
-    ua_a := algebra.find(b,1.20000005); # 50 ua_a:flt := ALGfind(b:bat[:flt,:flt], _71:flt) 
-    va_a := io.print(ua_a);             # 51 va_a:void := IOprint_val(ua_a:flt) 
+    ua_a := algebra.find(b,1.20000005);
+    va_a := io.print(ua_a);
 #	io.print("b.find(4.5).print();"); 
-    wa_a := algebra.find(b,4.5);        # 53 wa_a:flt := ALGfind(b:bat[:flt,:flt], _75:flt) 
-    xa_a := io.print(wa_a);             # 54 xa_a:void := IOprint_val(wa_a:flt) 
+    wa_a := algebra.find(b,4.5);
+    xa_a := io.print(wa_a);
 #	io.print("b.find(flt(nil)).print();"); 
-    ya_a := calc.flt(nil);              # 56 ya_a:flt := CALCnil2flt(_79:void) 
-    ab_a := algebra.find(b,ya_a);       # 57 ab_a:flt := ALGfind(b:bat[:flt,:flt], ya_a:flt) 
-    bb_a := io.print(ab_a);             # 58 bb_a:void := IOprint_val(ab_a:flt) 
+    ya_a := calc.flt(nil);
+    ab_a := algebra.find(b,ya_a);
+    bb_a := io.print(ab_a);
 #	io.print("# This should cause an error\n"); 
 #ignore	cb_a := algebra.find(b,10.1); 
 #ignore	db_a := io.print(cb_a); 
 #	io.print("# Can we delete them and re-insert them later on\n"); 
-    eb_a := bat.delete(b,4.5,16.7000008);# 63 eb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], _75:flt, _87:flt) {G}
+    eb_a := bat.delete(b,4.5,16.7000008);
 #	io.print("b.delete(1.2, 15.6);"); 
-    fb_a := bat.delete(b,1.20000005,15.6000004);# 65 fb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], _71:flt, _90:flt) {G}
+    fb_a := bat.delete(b,1.20000005,15.6000004);
 #	io.print("b.delete(flt(nil),81.2);"); 
-    gb_a := calc.flt(nil);              # 67 gb_a:flt := CALCnil2flt(_79:void) 
-    hb_a := bat.delete(b,gb_a,81.1999969);# 68 hb_a:bat[:flt,:flt] := BKCdelete_bun(b:bat[:flt,:flt], gb_a:flt, _66:flt) {G}
+    gb_a := calc.flt(nil);
+    hb_a := bat.delete(b,gb_a,81.1999969);
 #	io.print("b.print();"); 
-    ib_a := io.print(b);                # 70 ib_a:void := IOprint_val(b:bat[:flt,:flt]) 
+    ib_a := io.print(b);
 #	io.print("b.insert(4.5, 16.7);"); 
-    jb_a := bat.insert(b,4.5,16.7000008);# 72 jb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _75:flt, _87:flt) {G}
+    jb_a := bat.insert(b,4.5,16.7000008);
 #	io.print("b.insert(1.2, 15.6);"); 
-    kb_a := bat.insert(b,1.20000005,15.6000004);# 74 kb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], _71:flt, _90:flt) {G}
+    kb_a := bat.insert(b,1.20000005,15.6000004);
 #	io.print("b.insert(flt(nil),81.2);"); 
-    lb_a := calc.flt(nil);              # 76 lb_a:flt := CALCnil2flt(_79:void) 
-    mb_a := bat.insert(b,lb_a,81.1999969);# 77 mb_a:bat[:flt,:flt] := BKCinsert_bun(b:bat[:flt,:flt], lb_a:flt, _103:flt) {G}
+    lb_a := calc.flt(nil);
+    mb_a := bat.insert(b,lb_a,81.1999969);
 #	io.print("b.count().print();"); 
-    nb_a := aggr.count(b);              # 79 nb_a:wrd := ALGcount_bat(b:bat[:flt,:flt]) 
-    ob_a := io.print(nb_a);             # 80 ob_a:void := IOprint_val(nb_a:wrd) 
+    nb_a := aggr.count(b);
+    ob_a := io.print(nb_a);
 #	io.print("# Lets cut out a few sections\n"); 
-    pb_a := algebra.select(b,25.6000004,64.5);# 82 pb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _109:flt, _110:flt) {G}
-    qb_a := io.print(pb_a);             # 83 qb_a:void := IOprint_val(pb_a:bat[:flt,:flt]) 
+    pb_a := algebra.select(b,25.6000004,64.5);
+    qb_a := io.print(pb_a);
 #	io.print("b.select(4.5,15.6).print();"); 
-    rb_a := algebra.select(b,4.5,15.6000004);# 85 rb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _114:flt, _90:flt) {G}
-    sb_a := io.print(rb_a);             # 86 sb_a:void := IOprint_val(rb_a:bat[:flt,:flt]) 
+    rb_a := algebra.select(b,4.5,15.6000004);
+    sb_a := io.print(rb_a);
 #	io.print("b.select(4.5,4.5).print();"); 
-    tb_a := algebra.select(b,4.5,4.5);  # 88 tb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _114:flt, _114:flt) {G}
-    ub_a := io.print(tb_a);             # 89 ub_a:void := IOprint_val(tb_a:bat[:flt,:flt]) 
+    tb_a := algebra.select(b,4.5,4.5);
+    ub_a := io.print(tb_a);
 #	io.print("# This should cause an error\n"); 
-    vb_a := algebra.select(b,4.5,3.4000001);# 91 vb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _114:flt, _121:flt) {G}
-    wb_a := io.print(vb_a);             # 92 wb_a:void := IOprint_val(vb_a:bat[:flt,:flt]) 
+    vb_a := algebra.select(b,4.5,3.4000001);
+    wb_a := io.print(vb_a);
 #	io.print("b.select(81.2,flt(nil)).print();"); 
-    xb_a := calc.flt(nil);              # 94 xb_a:flt := CALCnil2flt(_125:void) 
-    yb_a := algebra.select(b,81.1999969,xb_a);# 95 yb_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], _103:flt, xb_a:flt) {G}
-    ac_a := io.print(yb_a);             # 96 ac_a:void := IOprint_val(yb_a:bat[:flt,:flt]) 
+    xb_a := calc.flt(nil);
+    yb_a := algebra.select(b,81.1999969,xb_a);
+    ac_a := io.print(yb_a);
 #	io.print("b.select(flt(nil),flt(nil)).print();"); 
-    bc_a := calc.flt(nil);              # 98 bc_a:flt := CALCnil2flt(_125:void) 
-    cc_a := calc.flt(nil);              # 99 cc_a:flt := CALCnil2flt(_125:void) 
-    dc_a := algebra.select(b,bc_a,cc_a);#100 dc_a:bat[:flt,:flt] := ALGselect(b:bat[:flt,:flt], bc_a:flt, cc_a:flt) {G}
-    ec_a := io.print(dc_a);             #101 ec_a:void := IOprint_val(dc_a:bat[:flt,:flt]) 
+    bc_a := calc.flt(nil);
+    cc_a := calc.flt(nil);
+    dc_a := algebra.select(b,bc_a,cc_a);
+    ec_a := io.print(dc_a);
 #	io.print("# A 2-dimensional cut\n"); 
-    bn := algebra.fragment(b,1.20000005,5.5999999,4.5,15.6000004);#103 bn:bat[:flt,:flt] := ALGfragment(b:bat[:flt,:flt], _135:flt, _136:flt, _114:flt, _137:flt) {G}
-    fc_a := io.print(bn);               #104 fc_a:void := IOprint_val(bn:bat[:flt,:flt]) 
+    bn := algebra.fragment(b,1.20000005,5.5999999,4.5,15.6000004);
+    fc_a := io.print(bn);
 #	io.print("b.fragment(1.2,5.6,16.2,flt(nil)).print();"); 
-    gc_a := calc.flt(nil);              #106 gc_a:flt := CALCnil2flt(_125:void) 
-    hc_a := algebra.fragment(b,1.20000005,5.5999999,16.2000008,gc_a);#107 hc_a:bat[:flt,:flt] := ALGfragment(b:bat[:flt,:flt], _135:flt, _136:flt, _142:flt, gc_a:flt) {G}
-    ic_a := io.print(hc_a);             #108 ic_a:void := IOprint_val(hc_a:bat[:flt,:flt]) 
+    gc_a := calc.flt(nil);
+    hc_a := algebra.fragment(b,1.20000005,5.5999999,16.2000008,gc_a);
+    ic_a := io.print(hc_a);
 #	io.print("b.fragment(1.2,flt(nil),16.2,flt(nil)).print();"); 
-    jc_a := calc.flt(nil);              #110 jc_a:flt := CALCnil2flt(_125:void) 
-    kc_a := calc.flt(nil);              #111 kc_a:flt := CALCnil2flt(_125:void) 
-    lc_a := algebra.fragment(b,1.20000005,jc_a,16.2000008,kc_a);#112 lc_a:bat[:flt,:flt] := ALGfragment(b:bat[:flt,:flt], _135:flt, jc_a:flt, _142:flt, kc_a:flt) {G}
-    mc_a := io.print(lc_a);             #113 mc_a:void := IOprint_val(lc_a:bat[:flt,:flt]) 
+    jc_a := calc.flt(nil);
+    kc_a := calc.flt(nil);
+    lc_a := algebra.fragment(b,1.20000005,jc_a,16.2000008,kc_a);
+    mc_a := io.print(lc_a);
 #	io.print("b.fragment(flt(nil),flt(nil),16.2,flt(nil)).print();"); 
-    nc_a := calc.flt(nil);              #115 nc_a:flt := CALCnil2flt(_125:void) 
-    oc_a := calc.flt(nil);              #116 oc_a:flt := CALCnil2flt(_125:void) 
-    pc_a := calc.flt(nil);              #117 pc_a:flt := CALCnil2flt(_125:void) 
-    qc_a := algebra.fragment(b,nc_a,oc_a,16.2000008,pc_a);#118 qc_a:bat[:flt,:flt] := ALGfragment(b:bat[:flt,:flt], nc_a:flt, oc_a:flt, _142:flt, pc_a:flt) {G}
-    rc_a := io.print(qc_a);             #119 rc_a:void := IOprint_val(qc_a:bat[:flt,:flt]) 
+    nc_a := calc.flt(nil);
+    oc_a := calc.flt(nil);
+    pc_a := calc.flt(nil);
+    qc_a := algebra.fragment(b,nc_a,oc_a,16.2000008,pc_a);
+    rc_a := io.print(qc_a);
 #	io.print("var b1:= b.join(bn.reverse());"); 
-    sc_a := bat.reverse(bn);            #121 sc_a:bat[:flt,:flt] := BKCreverse(bn:bat[:flt,:flt]) {G}
-    b1 := algebra.join(b,sc_a);         #122 b1:bat[:flt,:flt] := ALGjoin(b:bat[:flt,:flt], sc_a:bat[:flt,:flt]) {G}
+    sc_a := bat.reverse(bn);
+    b1 := algebra.join(b,sc_a);
 #	io.print("b1.print();"); 
-    tc_a := io.print(b1);               #124 tc_a:void := IOprint_val(b1:bat[:flt,:flt]) 
+    tc_a := io.print(b1);
 #	io.print("var b2:= b.semijoin(b1);"); 
-    b2 := algebra.semijoin(b,b1);       #126 b2:bat[:flt,:flt] := ALGsemijoin(b:bat[:flt,:flt], b1:bat[:flt,:flt]) {G}
+    b2 := algebra.semijoin(b,b1);
 #	io.print("b2.print();"); 
-    uc_a := io.print(b2);               #128 uc_a:void := IOprint_val(b2:bat[:flt,:flt]) 
+    uc_a := io.print(b2);
 #	io.print("# band join experiment\n"); 
-    c := algebra.copy(b);               #130 c:bat[:flt,:flt] := ALGcopy(b:bat[:flt,:flt]) {G}
+    c := algebra.copy(b);
 #	io.print("bandjoin(b,c,4.5,4.5).print();"); 
-    vc_a := algebra.bandjoin(b,c,4.5,4.5);#132 vc_a:bat[:flt,:flt] := ALGbandjoin_default(b:bat[:flt,:flt], c:bat[:flt,:flt], _168:flt, _168:flt) {G}
-    wc_a := io.print(vc_a);             #133 wc_a:void := IOprint_val(vc_a:bat[:flt,:flt]) 
+    vc_a := algebra.bandjoin(b,c,4.5,4.5);
+    wc_a := io.print(vc_a);
 #	io.print("quit();"); 
-    xc_a := clients.quit();             #135 xc_a:void := CLTquit() 
-end main;                               #136  
+    xc_a := clients.quit();
+end main;
 [ 3.14700007 ]
 #var b:= bbp.new(flt,flt);
 #b.insert(1.2, 15.6);

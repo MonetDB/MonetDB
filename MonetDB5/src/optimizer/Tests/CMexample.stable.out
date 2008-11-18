@@ -12,25 +12,16 @@ stdout of test 'CMexample` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-## Cost model example
-#	r{rows=100} := bat.new(:void,:int);
-#	s{rows=1000}:= bat.new(:void,:int);
-#	rs:= algebra.select(s,1,1);
-#	rr:= bat.reverse(r);
-#	j:= algebra.join(rs,rr);
-#	optimizer.costModel();
-#	mdb.list();
-#
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.main():void;
 # Cost model example 
-    r{rows=100} := bat.new(:oid,:int);  #  2 r:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
-    s{rows=1000} := bat.new(:oid,:int); #  3 s:bat[:oid,:int] := CMDBATnew(_4:oid, _8:int) {G}
-    rs{rows=501:lng} := algebra.select(s{rows=1000},1,1);#  4 rs:bat[:oid,:int] := ALGselect(s:bat[:oid,:int], _10:int, _10:int) {G}
-    rr{rows=100:lng} := bat.reverse(r{rows=100});#  5 rr:bat[:int,:oid] := BKCreverse(r:bat[:oid,:int]) {G}
-    j{rows=100:lng} := algebra.join(rs{rows=501:lng},rr{rows=100:lng});#  6 j:bat[:oid,:oid] := ALGjoin(rs:bat[:oid,:int], rr:bat[:int,:oid]) {G}
-    mdb.List();                         #  7 _14:void := MDBlistDetail() 
-end main;	# 8  
+    r := bat.new(:oid,:int);
+    s := bat.new(:oid,:int);
+    rs := algebra.select(s,1,1);
+    rr := bat.reverse(r);
+    j := algebra.join(rs,rr);
+    mdb.List();
+end main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # Cost model example 
     r{rows=100} := bat.new(:oid,:int);  #  2 r:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}

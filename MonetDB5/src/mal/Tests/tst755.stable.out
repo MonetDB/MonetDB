@@ -19,10 +19,10 @@ stdout of test 'tst755` in directory 'src/mal` itself:
 #	k:= 1+"wrong";
 #	io.print(k);
 #end test;
-function user.test(b:bat[:any_1,:any_2],c:any_2):void;#  0 test:void := user.test(b:bat[:any_1,:any_2], c:any_2) {PG}
-    k := calc.+(1,"wrong");             #  1 k:any := calc.+(_4:int, _5:str) 
-    io.print(k);                        #  2 _6:void := IOprint_val(k:any) 
-end test;	# 3  
+function user.test(b:bat[:any_1,:any_2],c:any_2):void;
+    k := calc.+(1,"wrong");
+    io.print(k);
+end test;
 #
 #c:= bat.new(:int,:str);
 #user.test(c,"hello");
@@ -30,13 +30,13 @@ end test;	# 3
 !TypeException:user.test[1]:'calc.+' undefined in: k:any := calc.+(_4:int, _5:str)
 !MALException:user.test[0]:Error in cloned function
 !TypeException:user.main[5]:'user.test' undefined in: _7:void := user.test(c:bat[:int,:str], _8:str)
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Polymorphic function tests 
 # Catching a pervasive error a.s.a.p. 
 # The function may not be cloned and a secondary error is generated 
-    c := bat.new(:int,:str);            #  4 c:bat[:int,:str] := CMDBATnew(_5:int, _6:str) {G}
-    user.test(c,"hello");               #  5 _7:void := user.test(c:bat[:int,:str], _8:str) {U}
-end main;	# 6  
+    c := bat.new(:int,:str);
+    user.test(c,"hello");
+end main;
 
 # 23:38:00 >  
 # 23:38:00 >  Done.

@@ -10,54 +10,30 @@ stdout of test 'partitions02` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-##testing the BAT partition manager
-## use a fake sql library
-## see how you handle an aggregation
-#module sql;
-#pattern bind(s:str,t:str,i:str,flag:int):bat[:oid,:int]
-pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MDBdummy;#  0 bind:bat[:oid,:int] := sql.bind(s:str, t:str, i:str, flag:int) {G}
-#pattern rsColumn(b:any...):void
-pattern sql.rsColumn(b:any...):void address MDBdummy;#  0 rsColumn:void := sql.rsColumn(b:any) {P}
-#pattern resultSet(b:any...):void
-pattern sql.resultSet(b:any...):void address MDBdummy;#  0 resultSet:void := sql.resultSet(b:any) {P}
-#pattern exportResult(b:any...):void
-pattern sql.exportResult(b:any...):void address MDBdummy;#  0 exportResult:void := sql.exportResult(b:any) {P}
-#pattern exportValue(b:any...):void
-pattern sql.exportValue(b:any...):void address MDBdummy;#  0 exportValue:void := sql.exportValue(b:any) {P}
-#
-##select count(*) from x
-#function query(A0:sht):void;
-#    x1:bat[:oid,:int]{notnil=true,rows=0,bid=765}  := sql.bind("sys","x","i",0);
-#    x6:bat[:oid,:int]{notnil=true,rows=0,bid=769}  := sql.bind("sys","x","i",1);
-#    constraints.emptySet(x6);
-#    x8:bat[:oid,:int]{notnil=true,rows=0,bid=771}  := sql.bind("sys","x","i",2);
-#    constraints.emptySet(x8);
-#    x11{rows=0} := algebra.markT(x1,0@0);
-#    x12{rows=0} := bat.reverse(x11);
-#    x13{rows=1} := aggr.count(x12);
-#    sql.exportValue(1,"sys.","countx","int",32,0,6,x13,"");
-#end query;
-function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
-    x1:bat[:oid,:int] {notnil=true,rows=0,bid=765} := sql.bind("sys","x","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
-    x6:bat[:oid,:int] {notnil=true,rows=0,bid=769} := sql.bind("sys","x","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _11:int) {G}
-    constraints.emptySet(x6{notnil=true,rows=0,bid=769});#  3 _12:void := CemptySet(x6:bat[:oid,:int]) 
-    x8:bat[:oid,:int] {notnil=true,rows=0,bid=771} := sql.bind("sys","x","i",2);#  4 x8:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _15:int) {G}
-    constraints.emptySet(x8{notnil=true,rows=0,bid=771});#  5 _16:void := CemptySet(x8:bat[:oid,:int]) 
-    x11{rows=0} := algebra.markT(x1{notnil=true,rows=0,bid=765},0@0);#  6 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _18:oid) {G}
-    x12{rows=0} := bat.reverse(x11{rows=0});#  7 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
-    x13{rows=1} := aggr.count(x12{rows=0});#  8 x13:wrd := ALGcount_bat(x12:bat[:oid,:oid]) 
-    sql.exportValue(1,"sys.","countx","int",32,0,6,x13{rows=1},"");#  9 _21:void := MDBdummy(_11:int, _22:str, _23:str, _24:str, _25:int, _4:int, _26:int, x13:wrd, _27:str) 
-end query;	# 10  
-#optimizer.partitions("sql","query");
-#mdb.list("sql","query");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+pattern sql.bind(s:str,t:str,i:str,flag:int):bat[:oid,:int] address MDBdummy;
+pattern sql.rsColumn(b:any...):void address MDBdummy;
+pattern sql.resultSet(b:any...):void address MDBdummy;
+pattern sql.exportResult(b:any...):void address MDBdummy;
+pattern sql.exportValue(b:any...):void address MDBdummy;
+function sql.query(A0:sht):void;
+    x1 := sql.bind("sys","x","i",0);
+    x6 := sql.bind("sys","x","i",1);
+    constraints.emptySet(x6);
+    x8 := sql.bind("sys","x","i",2);
+    constraints.emptySet(x8);
+    x11 := algebra.markT(x1,0@0);
+    x12 := bat.reverse(x11);
+    x13 := aggr.count(x12);
+    sql.exportValue(1,"sys.","countx","int",32,0,6,x13,"");
+end query;
+function user.main():void;
 #testing the BAT partition manager 
 # use a fake sql library 
 # see how you handle an aggregation 
 #select count(*) from x 
-    mdb.List("sql","query");            #  5 _8:void := MDBlist3Detail(_6:str, _7:str) 
-end main;	# 6  
+    mdb.List("sql","query");
+end main;
 function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x1:bat[:oid,:int] {notnil=true,rows=0,bid=765} := sql.bind("sys","x","i",0);#  1 x1:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _4:int) {G}
     x6:bat[:oid,:int] {notnil=true,rows=0,bid=769} := sql.bind("sys","x","i",1);#  2 x6:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _8:str, _11:int) {G}

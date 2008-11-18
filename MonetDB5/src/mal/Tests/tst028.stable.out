@@ -13,22 +13,22 @@ stdout of test 'tst028` in directory 'src/mal` itself:
 #function f(a:bat[:int,:any]):void;
 #	io.print(a);
 #end f;
-function user.f(a:bat[:int,:any]):void; #  0 f:void := user.f(a:bat[:int,:any]) {G}
-    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:int,:any]) 
-end f;	# 2  
+function user.f(a:bat[:int,:any]):void;
+    io.print(a);
+end f;
 #function h(a:bat[:any,:int]):void;
 #	io.print(a);
 #end h;
-function user.h(a:bat[:any,:int]):void; #  0 h:void := user.h(a:bat[:any,:int]) {G}
-    io.print(a);                        #  1 _2:void := IOprint_val(a:bat[:any,:int]) 
-end h;	# 2  
+function user.h(a:bat[:any,:int]):void;
+    io.print(a);
+end h;
 ##function g(b:bat[:int,:any]):void;
 #	#f(b);
 ##end g;
 #function g(b:any):void;
 #end g;
-function user.g(b:any):void;            #  0 g:void := user.g(b:any) {P}
-end g;	# 1  
+function user.g(b:any):void;
+end g;
 #
 #z:= bat.new(:int,:str);
 #f(z);
@@ -36,16 +36,16 @@ end g;	# 1
 #zrev:= bat.reverse(z);
 #h(zrev);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #function g(b:bat[:int,:any]):void; 
 #f(b); 
 #end g; 
-    z := bat.new(:int,:str);            #  4 z:bat[:int,:str] := CMDBATnew(_5:int, _6:str) {G}
-    user.f(z);                          #  5 _7:void := user.f(z:bat[:int,:str]) 
-    user.g(z);                          #  6 _8:void := user.g(z:bat[:int,:str]) 
-    zrev := bat.reverse(z);             #  7 zrev:bat[:str,:int] := BKCreverse(z:bat[:int,:str]) {G}
-    user.h(zrev);                       #  8 _10:void := user.h(zrev:bat[:str,:int]) 
-end main;	# 9  
+    z := bat.new(:int,:str);
+    user.f(z);
+    user.g(z);
+    zrev := bat.reverse(z);
+    user.h(zrev);
+end main;
 #-----------------#
 # h	t	  # name
 # int	str	  # type

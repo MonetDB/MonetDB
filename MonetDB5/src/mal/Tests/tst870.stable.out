@@ -33,28 +33,28 @@ stdout of test 'tst870` in directory 'src/mal` itself:
 #h:= group.max(b);
 #io.print(h);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #testing the multiplex operations on simple groups 
-    b := bat.new(:oid,:oid);            #  2 b:bat[:oid,:oid] := CMDBATnew(_3:oid, _3:oid) {G}
-    bat.insert(b,0@0,0@0);              #  3 _4:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _5:oid, _5:oid) {G}
-    bat.insert(b,1@0,1@0);              #  4 _6:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _7:oid) {G}
-    bat.insert(b,1@0,2@0);              #  5 _8:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _9:oid) {G}
-    bat.insert(b,1@0,3@0);              #  6 _10:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _7:oid, _11:oid) {G}
-    bat.insert(b,2@0,2@0);              #  7 _12:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _9:oid) {G}
-    bat.insert(b,2@0,0@0);              #  8 _13:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _5:oid) {G}
-    bat.insert(b,2@0,3@0);              #  9 _14:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _9:oid, _11:oid) {G}
-    bat.insert(b,3@0,nil:oid);          # 10 _15:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _16:oid) {G}
-    bat.insert(b,3@0,1@0);              # 11 _17:bat[:oid,:oid] := BKCinsert_bun(b:bat[:oid,:oid], _11:oid, _7:oid) {G}
-    io.print(b);                        # 12 _18:void := IOprint_val(b:bat[:oid,:oid]) 
-    ma_a := io.printf("#~BeginVariableOutput~#\n");# 13 ma_a:void := IOprintf(_20:str) 
-    na_a := bat.info(b);                # 14 na_a:bat[:str,:str] := BKCinfo(b:bat[:oid,:oid]) {G}
-    oa_a := io.print(na_a);             # 15 oa_a:void := IOprint_val(na_a:bat[:str,:str]) 
-    pa_a := io.printf("#~EndVariableOutput~#\n");# 16 pa_a:void := IOprintf(_24:str) 
-    g := group.min(b);                  # 17 g:bat[:oid,:oid] := GRPmin_oid_oid(b:bat[:oid,:oid]) {G}
-    io.print(g);                        # 18 _26:void := IOprint_val(g:bat[:oid,:oid]) 
-    h := group.max(b);                  # 19 h:bat[:oid,:oid] := GRPmax_oid_oid(b:bat[:oid,:oid]) {G}
-    io.print(h);                        # 20 _28:void := IOprint_val(h:bat[:oid,:oid]) 
-end main;	# 21  
+    b := bat.new(:oid,:oid);
+    bat.insert(b,0@0,0@0);
+    bat.insert(b,1@0,1@0);
+    bat.insert(b,1@0,2@0);
+    bat.insert(b,1@0,3@0);
+    bat.insert(b,2@0,2@0);
+    bat.insert(b,2@0,0@0);
+    bat.insert(b,2@0,3@0);
+    bat.insert(b,3@0,nil:oid);
+    bat.insert(b,3@0,1@0);
+    io.print(b);
+    ma_a := io.printf("#~BeginVariableOutput~#\n");
+    na_a := bat.info(b);
+    oa_a := io.print(na_a);
+    pa_a := io.printf("#~EndVariableOutput~#\n");
+    g := group.min(b);
+    io.print(g);
+    h := group.max(b);
+    io.print(h);
+end main;
 #-----------------#
 # h	t	  # name
 # oid	oid	  # type

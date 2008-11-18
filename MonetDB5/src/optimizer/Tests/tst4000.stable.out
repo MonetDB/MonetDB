@@ -11,20 +11,22 @@ stdout of test 'tst4000` in directory 'src/optimizer` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34820/
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.main():void;
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
-    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
-    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_7:int, _7:int) {G}
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
 # identical until insert takes place 
-    d := algebra.select(b,0,100);       #  6 d:bat[:int,:int] := ALGselect(b:bat[:int,:int], _11:int, _12:int) {G}
+    d := algebra.select(b,0,100);
 # mapped onto one instruction 
-    l := calc.+(24,27);                 #  8 l:int := CALCbinaryADDintint(_16:int, _18:int) 
+    l := calc.+(24,27);
 # mapped to l 
-    l3 := calc.+(l,24);                 # 10 l3:int := CALCbinaryADDintint(l:int, _16:int) 
+    l3 := calc.+(l,24);
 # replace the alias 
-end main;	# 12  
+end main;
+#optimizer.commonTerms actions= 2 time=13 usec 
+#optimizer.aliases    actions= 0 time=3 usec 
 
 # 23:52:51 >  
 # 23:52:51 >  Done.

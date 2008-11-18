@@ -97,7 +97,7 @@ request and each time we encounter EOL.
 
 void echoInput(Client cntxt)
 {
-	if (cntxt->listing & LIST_INPUT) { 
+	if (cntxt->listing == 1) { 
 		char *c = CURRENT(cntxt); 
 		stream_printf(cntxt->fdout,"#");
 		while (*c && !NL(*c)) {
@@ -1293,7 +1293,7 @@ This scheme is intended for just-in-time compilation.
 	}
 	@:helpInfo(curBlk->help)@
 	showErrors(cntxt);
-	if(curBlk && cntxt->listing) 
+	if(curBlk && cntxt->listing > 1) 
 		printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
 	return curBlk;
 }
@@ -1372,7 +1372,7 @@ int parseEnd(Client cntxt)
 		}
 		showit= TRUE;
 		skipToEnd(cntxt);
-		if(showit && cntxt->listing) 
+		if(showit && cntxt->listing > 1) 
 			printFunction(cntxt->fdout, curBlk, 0, cntxt->listing);
 		showErrors(cntxt);
 		return 1;

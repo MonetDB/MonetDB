@@ -21,21 +21,21 @@ stdout of test 'tst300` in directory 'src/mal` itself:
 #	printf("caught exception\n");
 #exit	myNewException;
 #end tst;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    raise myNewException:str  := "new exception";#  1 myNewException:str := _2:str {G}
-    io.printf("should not come here\n");#  2 _3:void := IOprintf(_4:str) 
+function user.tst():void;
+    raise myNewException := "new exception";
+    io.printf("should not come here\n");
 #exception block; 
-catch myNewException:str ;              #  4 myNewException:str {J6}
-    io.printf("caught exception\n");    #  5 _6:void := IOprintf(_7:str) 
-exit myNewException:str ;               #  6 myNewException:str 
-end tst;	# 7  
+catch myNewException;
+    io.printf("caught exception\n");
+exit myNewException;
+end tst;
 #
 #tst();
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # Exception identifiers can be introduced at any place 
-    user.tst();                         #  2 _2:void := user.tst() 
-end main;	# 3  
+    user.tst();
+end main;
 caught exception
 
 # 08:01:13 >  

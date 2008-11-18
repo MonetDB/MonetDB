@@ -10,24 +10,24 @@ stdout of test 'octopus03` in directory 'src/optimizer` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33178/
-function user.q():void;                 #  0 q:void := user.q() {G}
-    a:bat[:oid,:int] {rows=1000,hlb=0@0:oid,hub=1000@0:oid} := bat.new(:oid,:int);#  1 a:bat[:oid,:int] := CMDBATnew(_5:oid, _6:int) {G}
-    (b:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},c:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},d:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid},e:bat[:oid,:int] {hlb=0@0:oid,hub=1000@0:oid}) := bat.partition(a{rows=1000,hlb=0@0:oid,hub=1000@0:oid});#  2 (b:bat[:oid,:int], c:bat[:oid,:int], d:bat[:oid,:int], e:bat[:oid,:int]) := CMDbatpartition(a:bat[:oid,:int]) {G}
-    aa := 1;                            #  3 aa:int := _12:int 
-    bc := aggr.count(b{hlb=0@0:oid,hub=1000@0:oid});#  4 bc:wrd := ALGcount_bat(b:bat[:oid,:int]) 
-    dc := aggr.count(c{hlb=0@0:oid,hub=1000@0:oid});#  5 dc:wrd := ALGcount_bat(c:bat[:oid,:int]) 
-    ca := 3;                            #  6 ca:int := _16:int 
-    ea := calc.+(aa,bc);                #  7 ea:wrd := CALCbinaryADDintwrd(aa:int, bc:wrd) 
-    fa := calc.+(ca,dc);                #  8 fa:wrd := CALCbinaryADDintwrd(ca:int, dc:wrd) 
-    ha := ea;                           #  9 ha:wrd := ea:wrd 
-    ga := calc.+(fa,ha);                # 10 ga:wrd := CALCbinaryADDwrdwrd(fa:wrd, ha:wrd) 
-    io.print(ga);                       # 11 _21:void := IOprint_val(ga:wrd) 
-end q;                                  # 12  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.q():void;
+    a := bat.new(:oid,:int);
+    (b,c,d,e) := bat.partition(a);
+    aa := 1;
+    bc := aggr.count(b);
+    dc := aggr.count(c);
+    ca := 3;
+    ea := calc.+(aa,bc);
+    fa := calc.+(ca,dc);
+    ha := ea;
+    ga := calc.+(fa,ha);
+    io.print(ga);
+end q;
+function user.main():void;
 #simple scalar actions 
-    mdb.List("user","q");               #  2 _5:void := MDBlist3Detail(_3:str, _4:str) 
-end main;                               #  3  
+    mdb.List("user","q");
+end main;
 function user.q():void;                 #  0 q:void := user.q() {G}
     _22 := sabaoth.getLocalConnectionHost();#  1 _22:str := SABgetLocalConnectionHost() {G}
     _23 := sabaoth.getLocalConnectionPort();#  2 _23:int := SABgetLocalConnectionPort() 

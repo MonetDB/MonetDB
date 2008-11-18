@@ -10,45 +10,88 @@ stdout of test 'recycle10` in directory 'src/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://modi.ins.cwi.nl:31275/
-function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];#  0 bind:bat[:oid,:int] := user.bind(s:str, t:str, c:str, i:int) {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
-    bat.insert(b,0@0,0);                #  2 _8:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _9:oid, _10:int) {G}
-    bat.insert(b,1@0,1);                #  3 _11:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _12:oid, _13:int) {G}
-    bat.insert(b,2@0,2);                #  4 _14:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _15:oid, _16:int) {G}
-    bat.insert(b,3@0,3);                #  5 _17:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _18:oid, _19:int) {G}
-    bat.insert(b,4@0,4);                #  6 _20:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _21:oid, _22:int) {G}
-    bat.insert(b,5@0,5);                #  7 _23:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _24:oid, _25:int) {G}
-    bat.insert(b,6@0,6);                #  8 _26:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _27:oid, _28:int) {G}
-    bat.insert(b,7@0,7);                #  9 _29:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _30:oid, _31:int) {G}
-    bat.insert(b,8@0,8);                # 10 _32:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _33:oid, _34:int) {G}
-    bat.insert(b,9@0,9);                # 11 _35:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _36:oid, _37:int) {G}
-    bat.insert(b,10@0,10);              # 12 _38:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _39:oid, _40:int) {G}
-    bat.insert(b,11@0,11);              # 13 _41:bat[:oid,:int] := BKCinsert_bun(b:bat[:oid,:int], _42:oid, _43:int) {G}
-    return bind := b;                   # 14 bind:bat[:oid,:int] := b:bat[:oid,:int] {G}
-end bind;                               # 15  
-function user.qry(low:int,hgh:int):void;#  0 qry:void := user.qry(low:int, hgh:int) {G}
-    b := user.bind("schema","table","column",0);#  1 b:bat[:oid,:int] := user.bind(_4:str, _5:str, _6:str, _7:int) {G}
-    s1 := algebra.select(b,low,hgh);    #  2 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, hgh:int) {G}
-    v := calc.+(low,hgh);               #  3 v:int := CALCbinaryADDintint(low:int, hgh:int) 
-    v1 := calc./(v,2);                  #  4 v1:int := CALCbinarycheckDIVintint(v:int, _11:int) 
-    v2 := calc.int(v1);                 #  5 v2:int := CALCint2int(v1:int) 
-    s2 := algebra.select(b,v2);         #  6 s2:bat[:oid,:int] := ALGselect1(b:bat[:oid,:int], v2:int) {G}
-    s3 := algebra.select(b,low,v2);     #  7 s3:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, v2:int) {G}
-    s4 := algebra.select(b,low,hgh,false,true);#  8 s4:bat[:oid,:int] := ALGselectInclusive(b:bat[:oid,:int], low:int, hgh:int, _16:bit, _17:bit) {G}
-    io.print(s1);                       #  9 _18:void := IOprint_val(s1:bat[:oid,:int]) 
-    io.print(s2);                       # 10 _19:void := IOprint_val(s2:bat[:oid,:int]) 
-    io.print(s3);                       # 11 _20:void := IOprint_val(s3:bat[:oid,:int]) 
-    io.print(s4);                       # 12 _21:void := IOprint_val(s4:bat[:oid,:int]) 
-end qry;                                # 13  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
+##test the basics of the recycler
+## testing reuse-cover with different selection instructions
+#
+#function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+#	b:= bat.new(:oid,:int);
+#	bat.insert(b,0@0,0);
+#	bat.insert(b,1@0,1);
+#	bat.insert(b,2@0,2);
+#	bat.insert(b,3@0,3);
+#	bat.insert(b,4@0,4);
+#	bat.insert(b,5@0,5);
+#	bat.insert(b,6@0,6);
+#	bat.insert(b,7@0,7);
+#	bat.insert(b,8@0,8);
+#	bat.insert(b,9@0,9);
+#	bat.insert(b,10@0,10);
+#	bat.insert(b,11@0,11);
+#	return bind:=b;
+#end bind;
+function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
+    b := bat.new(:oid,:int);
+    bat.insert(b,0@0,0);
+    bat.insert(b,1@0,1);
+    bat.insert(b,2@0,2);
+    bat.insert(b,3@0,3);
+    bat.insert(b,4@0,4);
+    bat.insert(b,5@0,5);
+    bat.insert(b,6@0,6);
+    bat.insert(b,7@0,7);
+    bat.insert(b,8@0,8);
+    bat.insert(b,9@0,9);
+    bat.insert(b,10@0,10);
+    bat.insert(b,11@0,11);
+    return bind := b;
+end bind;
+#
+#function qry(low:int, hgh:int);
+#    b:= user.bind("schema","table","column",0);
+#    s1:= algebra.select(b,low,hgh);
+#    v:= low + hgh;
+#    v1:= v/2;
+#    v2:= calc.int(v1);
+#    s2:= algebra.select(b,v2);
+#    s3:= algebra.select(b,low,v2);
+#    s4:= algebra.select(b,low,hgh,false,true);
+#    io.print(s1);
+#    io.print(s2);
+#    io.print(s3);
+#    io.print(s4);
+#end qry;
+function user.qry(low:int,hgh:int):void;
+    b := user.bind("schema","table","column",0);
+    s1 := algebra.select(b,low,hgh);
+    v := calc.+(low,hgh);
+    v1 := calc./(v,2);
+    v2 := calc.int(v1);
+    s2 := algebra.select(b,v2);
+    s3 := algebra.select(b,low,v2);
+    s4 := algebra.select(b,low,hgh,false,true);
+    io.print(s1);
+    io.print(s2);
+    io.print(s3);
+    io.print(s4);
+end qry;
+#
+#recycle.setRetainPolicy(1);
+#recycle.setReusePolicy(1);
+#optimizer.recycle("user","qry");
+#
+#qry(2,8);
+#
+#recycle.dump();
+#
+function user.main():void;
 #test the basics of the recycler 
 # testing reuse-cover with different selection instructions 
-    recycle.setRetainPolicy(1);         #  3 _3:void := RECYCLEsetRetain(_4:int) 
-    recycle.setReusePolicy(1);          #  4 _5:void := RECYCLEsetReuse(_4:int) 
-    user.qry(2,8);                      #  5 _9:void := user.qry(_10:int, _11:int) 
-    recycle.dump();                     #  6 _12:void := RECYCLEdumpWrap() 
-end main;                               #  7  
+    recycle.setRetainPolicy(1);
+    recycle.setReusePolicy(1);
+    user.qry(2,8);
+    recycle.dump();
+end main;
 #-----------------#
 # h	t	  # name
 # void	int	  # type

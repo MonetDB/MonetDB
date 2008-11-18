@@ -28,21 +28,21 @@ stdout of test 'tst267` in directory 'src/mal` itself:
 #g:= array.*(a,b);
 #print(g);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Grouped sums 
-    a := bat.new(:oid,:int);            #  2 a:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    b := bat.new(:oid,:int);            #  3 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    bat.append(a,1);                    #  4 _6:bat[:int,:any] := BKCappend_val_wrap(a:bat[:oid,:int], _7:int) {G}
-    bat.append(a,2);                    #  5 _8:bat[:int,:any] := BKCappend_val_wrap(a:bat[:oid,:int], _9:int) {G}
-    bat.append(b,5);                    #  6 _10:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _11:int) {G}
-    bat.append(b,6);                    #  7 _12:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _13:int) {G}
-    bat.append(b,7);                    #  8 _14:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _15:int) {G}
-    bat.append(b,8);                    #  9 _16:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], _17:int) {G}
-    io.print(a);                        # 10 _18:void := IOprint_val(a:bat[:oid,:int]) 
-    io.print(b);                        # 11 _19:void := IOprint_val(b:bat[:oid,:int]) 
-    g := array.product(a,b);            # 12 g:bat[:int,:int] := ARRAYproduct(a:bat[:oid,:int], b:bat[:oid,:int]) {G}
-    io.print(g);                        # 13 _21:void := IOprint_val(g:bat[:int,:int]) 
-end main;	# 14  
+    a := bat.new(:oid,:int);
+    b := bat.new(:oid,:int);
+    bat.append(a,1);
+    bat.append(a,2);
+    bat.append(b,5);
+    bat.append(b,6);
+    bat.append(b,7);
+    bat.append(b,8);
+    io.print(a);
+    io.print(b);
+    g := array.product(a,b);
+    io.print(g);
+end main;
 #-----------------#
 # h	tmp_13	  # name
 # void	int	  # type

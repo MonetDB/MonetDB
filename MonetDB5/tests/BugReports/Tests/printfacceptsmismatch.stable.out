@@ -10,16 +10,16 @@ stdout of test 'printfacceptsmismatch` in directory 'tests/BugReports` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36797/
-function user.main():void;              #  0 main:void := user.main() 
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # observed 13-08-2008: printf accepts a long for an int formatter, 
 # whereas it should complain (additionally the error could be clearer) 
 # SF bug #2051290 
-    l := 12:lng;                        #  4 l:lng := _5:lng 
-    f := 5:flt;                         #  5 f:flt := _7:flt 
-    io.printf("%d\n",l);                #  6 _8:void := IOprintf(_9:str, l:lng) 
-    io.printf("%d\n",f);                #  7 _10:void := IOprintf(_9:str, f:flt) 
-end main;                               #  8  
+    l := 12:lng;
+    f := 5:flt;
+    io.printf("%d\n",l);
+    io.printf("%d\n",f);
+end main;
 12
 5
 

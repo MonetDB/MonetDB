@@ -12,79 +12,42 @@ stdout of test 'intersect_diff_nil` in directory 'tests/gdkTests` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_gdkTests
 # Visit http://monetdb.cwi.nl/ for further information
-#a:=bat.new(:int,:int);
-#b:=bat.new(:int,:int);
-#n:=nil:int;
-#bat.insert(a, 1, 1);
-#bat.insert(a, n, 2);
-#bat.insert(a, 3, 3);
-#bat.insert(a, n, n);
-#bat.insert(a, 5, 5);
-#bat.insert(a, 6, n);
-#bat.insert(a, 7, 7);
-#bat.insert(b,-1,-1);
-#bat.insert(b, n, 2);
-#bat.insert(b,-3,-3);
-#bat.insert(b, n, n);
-#bat.insert(b,-5,-5);
-#bat.insert(b, 6, n);
-#bat.insert(b,-7,-7);
-#
-#ka:= algebra.kintersect(a,b);
-#io.print(ka);
-#ka:= algebra.kintersect(b,a);
-#io.print(ka);
-#
-#ka:= algebra.sintersect(a,b);
-#io.print(ka);
-#ka:= algebra.sintersect(b,a);
-#io.print(ka);
-#
-#ka:= algebra.kdifference(a,b);
-#io.print(ka);
-#ka:= algebra.kdifference(b,a);
-#io.print(ka);
-#
-#ka:= algebra.sdifference(a,b);
-#io.print(ka);
-#ka:= algebra.sdifference(b,a);
-#io.print(ka);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    a := bat.new(:int,:int);            #  1 a:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    b := bat.new(:int,:int);            #  2 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    n := nil:int;                       #  3 n:int := _5:int 
-    bat.insert(a,1,1);                  #  4 _6:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _7:int, _7:int) {G}
-    bat.insert(a,n,2);                  #  5 _8:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], n:int, _9:int) {G}
-    bat.insert(a,3,3);                  #  6 _10:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _11:int, _11:int) {G}
-    bat.insert(a,n,n);                  #  7 _12:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], n:int, n:int) {G}
-    bat.insert(a,5,5);                  #  8 _13:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _14:int, _14:int) {G}
-    bat.insert(a,6,n);                  #  9 _15:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _16:int, n:int) {G}
-    bat.insert(a,7,7);                  # 10 _17:bat[:int,:int] := BKCinsert_bun(a:bat[:int,:int], _18:int, _18:int) {G}
-    bat.insert(b,-1,-1);                # 11 _19:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _20:int, _20:int) {G}
-    bat.insert(b,n,2);                  # 12 _21:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n:int, _9:int) {G}
-    bat.insert(b,-3,-3);                # 13 _22:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _23:int, _23:int) {G}
-    bat.insert(b,n,n);                  # 14 _24:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], n:int, n:int) {G}
-    bat.insert(b,-5,-5);                # 15 _25:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _26:int, _26:int) {G}
-    bat.insert(b,6,n);                  # 16 _27:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _16:int, n:int) {G}
-    bat.insert(b,-7,-7);                # 17 _28:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _29:int, _29:int) {G}
-    ka := algebra.kintersect(a,b);      # 18 ka:bat[:int,:int] := ALGsemijoin(a:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(ka);                       # 19 _31:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.kintersect(b,a);      # 20 ka:bat[:int,:int] := ALGsemijoin(b:bat[:int,:int], a:bat[:int,:int]) {G}
-    io.print(ka);                       # 21 _32:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.sintersect(a,b);      # 22 ka:bat[:int,:int] := ALGsintersect(a:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(ka);                       # 23 _33:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.sintersect(b,a);      # 24 ka:bat[:int,:int] := ALGsintersect(b:bat[:int,:int], a:bat[:int,:int]) {G}
-    io.print(ka);                       # 25 _34:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.kdifference(a,b);     # 26 ka:bat[:int,:int] := ALGkdiff(a:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(ka);                       # 27 _35:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.kdifference(b,a);     # 28 ka:bat[:int,:int] := ALGkdiff(b:bat[:int,:int], a:bat[:int,:int]) {G}
-    io.print(ka);                       # 29 _36:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.sdifference(a,b);     # 30 ka:bat[:int,:int] := ALGsdiff(a:bat[:int,:int], b:bat[:int,:int]) {G}
-    io.print(ka);                       # 31 _37:void := IOprint_val(ka:bat[:int,:int]) 
-    ka := algebra.sdifference(b,a);     # 32 ka:bat[:int,:int] := ALGsdiff(b:bat[:int,:int], a:bat[:int,:int]) {G}
-    io.print(ka);                       # 33 _38:void := IOprint_val(ka:bat[:int,:int]) 
-end main;	# 34  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
+    a := bat.new(:int,:int);
+    b := bat.new(:int,:int);
+    n := nil:int;
+    bat.insert(a,1,1);
+    bat.insert(a,n,2);
+    bat.insert(a,3,3);
+    bat.insert(a,n,n);
+    bat.insert(a,5,5);
+    bat.insert(a,6,n);
+    bat.insert(a,7,7);
+    bat.insert(b,-1,-1);
+    bat.insert(b,n,2);
+    bat.insert(b,-3,-3);
+    bat.insert(b,n,n);
+    bat.insert(b,-5,-5);
+    bat.insert(b,6,n);
+    bat.insert(b,-7,-7);
+    ka := algebra.kintersect(a,b);
+    io.print(ka);
+    ka := algebra.kintersect(b,a);
+    io.print(ka);
+    ka := algebra.sintersect(a,b);
+    io.print(ka);
+    ka := algebra.sintersect(b,a);
+    io.print(ka);
+    ka := algebra.kdifference(a,b);
+    io.print(ka);
+    ka := algebra.kdifference(b,a);
+    io.print(ka);
+    ka := algebra.sdifference(a,b);
+    io.print(ka);
+    ka := algebra.sdifference(b,a);
+    io.print(ka);
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

@@ -10,24 +10,40 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33085/
-factory user.tryme():bit;               #  0 tryme:bit := user.tryme() {G}
-    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    bat.setWriteMode(b);                #  2 _4:bat[:oid,:int] := BKCsetWriteMode(b:bat[:oid,:int]) {G}
-barrier always := true;                 #  3 always:bit := _6:bit {J6}
-    yield tryme := always;              #  4 tryme:bit := always:bit 
-    redo always;                        #  5 always:bit {J4}
-exit always;                            #  6 always:bit 
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
+## A exception in a factory should terminate it 
+#
+#factory tryme():bit;
+#	b:= bat.new(:oid,:int);
+#    bat.setWriteMode(b);
+#barrier always:= true;
+#    yield always;
+#    redo always;
+#exit always;
+##catch MALException:str;
+#    #print("exception");
+##exit MALException;
+#	return tryme:= false;
+#end tryme;
+factory user.tryme():bit;
+    b := bat.new(:oid,:int);
+    bat.setWriteMode(b);
+barrier always := true;
+    yield tryme := always;
+    redo always;
+exit always;
 #catch MALException:str; 
 #print("exception"); 
 #exit MALException; 
-    return tryme := false;              # 10 tryme:bit := _10:bit 
-end tryme;                              # 11  
-function user.main():void;              #  0 main:void := user.main() 
+    return tryme := false;
+end tryme;
+#user.tryme();    # shouldn;t hang when you forget the exception
+#
+function user.main():void;
 # A exception in a factory should terminate it  
-    user.tryme();                       #  2 _2:bit := user.tryme() 
+    user.tryme();
 # shouldn;t hang when you forget the exception 
-end main;	# 4  
+end main;
 
 # 08:58:58 >  
 # 08:58:58 >  Done.

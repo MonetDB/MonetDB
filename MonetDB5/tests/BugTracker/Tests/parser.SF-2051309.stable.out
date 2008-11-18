@@ -15,14 +15,14 @@ stdout of test 'parser.SF-2051309` in directory 'tests/BugTracker` itself:
 !SyntaxException:convertConstant:integer parse error
 !TypeException:user.main[3]:'calc.:' undefined in: l:any := calc.:(s:str, lng:any)
 !TypeException:user.main[3]:'lng' may not be used before being initialized
-function user.main():void;              #  0 main:void := user.main() {G}
-    s := "89437487923647823647862387462378468723634":str;#  1 s:str := _2:str {G}
-    io.print(s);                        #  2 _3:void := IOprint_val(s:str) 
-    l := calc.:(s,lng);                 #  3 l:any := calc.:(s:str, lng:any) {U}
-    io.print(l);                        #  4 _6:void := IOprint_val(l:any) 
-    e := nil:lng;                       #  5 e:lng := _8:lng 
-    io.print(e);                        #  6 _9:void := IOprint_val(e:lng) 
-end main;                               #  7  
+function user.main():void;
+    s := "89437487923647823647862387462378468723634":str;
+    io.print(s);
+    l := calc.:(s,lng);
+    io.print(l);
+    e := nil:lng;
+    io.print(e);
+end main;
 
 # 00:05:16 >  
 # 00:05:16 >  Done.

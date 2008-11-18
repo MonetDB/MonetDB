@@ -13,17 +13,23 @@ stdout of test 'tst162` in directory 'src/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32526/
 !SyntaxException:convertConstant:pointer conversion error
 !SyntaxException:defConstant:constant coercion error from int to strtype
-function strtype.l():strtype;           #  0 l:strtype := strtype.l() 
-    l := 1:strtype;                     #  1 l:strtype := _1:strtype 
-    return l := nil:strtype;            #  2 l:strtype := _2:strtype 
-end l;                                  #  3  
+#    return l:= nil:strtype;
+#end l;
+function strtype.l():strtype;
+    l := 1:strtype;
+    return l := nil:strtype;
+end l;
+#
+#z:= strtype.l();
+#io.print(z);
+#
 !TypeException:user.main[3]:'strtype.l' undefined in: z:strtype := strtype.l()
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # testing definition of new atom type based on ptr 
 # this definition caused an error 
-    z := strtype.l();                   #  3 z:strtype := strtype.l() {U}
-    io.print(z);                        #  4 _4:void := IOprint_val(z:strtype) 
-end main;	# 5  
+    z := strtype.l();
+    io.print(z);
+end main;
 
 # 19:09:44 >  
 # 19:09:44 >  Done.

@@ -16,17 +16,17 @@ stdout of test 'lngssaretruncated` in directory 'tests/BugReports` itself:
 !SyntaxException:convertConstant:integer parse error
 !TypeException:user.main[6]:'calc.:' undefined in: l:any := calc.:(s:str, lng:any)
 !TypeException:user.main[6]:'lng' may not be used before being initialized
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # observed 14-08-2008: the parser already truncates e in the parsed 
 # program, additionally, l is not a lng, but a string. 
 # SF bug #2051309 
-    s := "89437487923647823647862387462378468723634":str;#  4 s:str := _5:str {G}
-    io.print(s);                        #  5 _6:void := IOprint_val(s:str) 
-    l := calc.:(s,lng);                 #  6 l:any := calc.:(s:str, lng:any) {U}
-    io.print(l);                        #  7 _9:void := IOprint_val(l:any) 
-    e := nil:lng;                       #  8 e:lng := _11:lng 
-    io.print(e);                        #  9 _12:void := IOprint_val(e:lng) 
-end main;                               # 10  
+    s := "89437487923647823647862387462378468723634":str;
+    io.print(s);
+    l := calc.:(s,lng);
+    io.print(l);
+    e := nil:lng;
+    io.print(e);
+end main;
 
 # 13:47:18 >  
 # 13:47:18 >  Done.

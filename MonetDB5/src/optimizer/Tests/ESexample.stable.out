@@ -5,42 +5,26 @@ stdout of test 'ESexample` in directory 'src/optimizer` itself:
 # 22:08:09 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39624 --set sql_port=43520 --set xquery_port=59650 --set monet_prompt= --trace --dbname=mTests_src_optimizer  ESexample.mal < /dev/null
 # 22:08:09 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_optimizer
-# Visit http://monetdb.cwi.nl/ for further information.
-#function test():void;
-#	V1 := bat.new(:void,:oid);
-#	V7 := bat.new(:void,:oid);
-#	V10{empty} := bat.new(:int,:void);
-#	V11 := bat.reverse(V10);    
-#	V12 := algebra.kdifference(V7,V11);       
-#	V16 := algebra.markH(V12);  
-#	V17 := algebra.join(V16,V7);        
-#	bat.append(V1,V17); 
-#end tst;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    V10{rows=0} := bat.new(:int,:oid);  #  3 V10:bat[:int,:oid] := CMDBATnew(_3:int, _2:oid) {G}
-    V11 := bat.reverse(V10{rows=0});    #  4 V11:bat[:oid,:int] := BKCreverse(V10:bat[:int,:oid]) {G}
-    V12 := algebra.kdifference(V7,V11); #  5 V12:bat[:oid,:int] := ALGkdiff(V7:bat[:oid,:int], V11:bat[:oid,:int]) {G}
-    V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
-    V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
-    bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
-end tst;	# 9  
-#    optimizer.costModel("user","tst");
-#    optimizer.emptySet("user","tst");
-#    optimizer.aliases("user","tst");
-#    optimizer.deadcode("user","tst");
-#	mdb.list("user","tst");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.List("user","tst");             #  1 _7:void := MDBlist3Detail(_2:str, _3:str) 
-end main;	# 2  
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.tst():void;
+    V1 := bat.new(:oid,:int);
+    V7 := bat.new(:oid,:int);
+    V10 := bat.new(:int,:oid);
+    V11 := bat.reverse(V10);
+    V12 := algebra.kdifference(V7,V11);
+    V16 := algebra.markT(V12);
+    V17 := algebra.join(V16,V7);
+    bat.append(V1,V17);
+end tst;
+function user.main():void;
+    mdb.List("user","tst");
+end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
     V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}

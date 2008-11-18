@@ -22,16 +22,16 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #o:= oid(z1);
 #print(o);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # testing void to oid coercion 
-    z1 := bat.new(:oid,:int);           #  2 z1:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    bat.append(z1,0);                   #  3 _5:bat[:int,:any] := BKCappend_val_wrap(z1:bat[:oid,:int], _6:int) {G}
-    bat.append(z1,1);                   #  4 _7:bat[:int,:any] := BKCappend_val_wrap(z1:bat[:oid,:int], _8:int) {G}
-    bat.append(z1,2);                   #  5 _9:bat[:int,:any] := BKCappend_val_wrap(z1:bat[:oid,:int], _10:int) {G}
-    io.print(z1);                       #  6 _11:void := IOprint_val(z1:bat[:oid,:int]) 
-    o := batcalc.oid(z1);               #  7 o:bat[:oid,:oid] := CMDconvert_int_oid(z1:bat[:oid,:int]) {G}
-    io.print(o);                        #  8 _13:void := IOprint_val(o:bat[:oid,:oid]) 
-end main;	# 9  
+    z1 := bat.new(:oid,:int);
+    bat.append(z1,0);
+    bat.append(z1,1);
+    bat.append(z1,2);
+    io.print(z1);
+    o := batcalc.oid(z1);
+    io.print(o);
+end main;
 #-----------------#
 # h	tmp_4	  # name
 # void	int	  # type

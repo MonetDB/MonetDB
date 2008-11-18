@@ -59,38 +59,38 @@ stdout of test 'tst654` in directory 'src/mal` itself:
 ##someone(1,2);
 ##b:= new(void,int);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # An extensive test for the new tablet layout 
-    tablet.display(2,"strong");         #  2 _2:int := TABdisplayRow(_3:int, _4:str) 
-    tablet.display(2,"strong",true);    #  3 _5:int := TABdisplayRow(_3:int, _4:str, _6:bit) 
-    first := 1;                         #  4 first:int := _8:int 
-    last := 2;                          #  5 last:int := _3:int 
-    tablet.display(first,last);         #  6 _10:int := TABdisplayRow(first:int, last:int) 
-    tablet.setFormat(first,last);       #  7 _11:void := TABsetFormat(first:int, last:int) 
-    tablet.setProperties("name,type");  #  8 _12:int := TABsetProperties(_13:str) 
-    tablet.setName(0,"Eerste");         #  9 _14:void := TABsetColumnName(_15:int, _16:str) 
+    tablet.display(2,"strong");
+    tablet.display(2,"strong",true);
+    first := 1;
+    last := 2;
+    tablet.display(first,last);
+    tablet.setFormat(first,last);
+    tablet.setProperties("name,type");
+    tablet.setName(0,"Eerste");
 #tablet.setRowBracket("|","|"); 
-    b1 := bat.new(:oid,:int);           # 11 b1:bat[:oid,:int] := CMDBATnew(_19:oid, _20:int) {G}
-    bat.append(b1,42);                  # 12 _21:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _22:int) {G}
-    bat.append(b1,49);                  # 13 _23:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _24:int) {G}
-    b2 := bat.new(:oid,:str);           # 14 b2:bat[:oid,:str] := CMDBATnew(_19:oid, _26:str) {G}
-    bat.append(b2,"hello world");       # 15 _27:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _28:str) {G}
-    bat.append(b2,"goodbye world");     # 16 _29:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _30:str) {G}
-    tablet.setProperties("name,type,dense,sorted,key,min,max");# 17 _31:int := TABsetProperties(_32:str) 
-    tablet.display(b1,b2);              # 18 _33:int := TABdisplayTable(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
-    in := calc.int(nil);                # 19 in:int := CALCnil2int(_35:void) 
-    sn := calc.str(nil);                # 20 sn:str := CALCnil2str(_35:void) {G}
-    bat.append(b1,in);                  # 21 _37:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], in:int) {G}
-    bat.append(b2,sn);                  # 22 _38:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], sn:str) {G}
-    tablet.setProperties(sn);           # 23 _39:int := TABsetProperties(sn:str) 
-    tablet.setDecimal(0,3,1);           # 24 _40:void := TABsetColumnDecimal(_15:int, _41:int, _42:int) 
-    tablet.setNull(1,"unknown");        # 25 _43:void := TABsetColumnNull(_42:int, _44:str) 
-    tablet.display(b1,b2);              # 26 _45:int := TABdisplayTable(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
-    tablet.setTableBracket("<rowset>","</rowset>");# 27 _46:void := TABsetTableBracket(_47:str, _48:str) 
-    tablet.setRowBracket("<row>","</row>");# 28 _49:void := TABsetRowBracket(_50:str, _51:str) 
-    tablet.setBracket(0,"<age>","</age>");# 29 _52:void := TABsetColumnBracket(_53:int, _54:str, _55:str) 
-    tablet.setBracket(1,"<title>","</title>");# 30 _56:void := TABsetColumnBracket(_42:int, _57:str, _58:str) 
-    tablet.page(b1,b2);                 # 31 _59:int := TABpage(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
+    b1 := bat.new(:oid,:int);
+    bat.append(b1,42);
+    bat.append(b1,49);
+    b2 := bat.new(:oid,:str);
+    bat.append(b2,"hello world");
+    bat.append(b2,"goodbye world");
+    tablet.setProperties("name,type,dense,sorted,key,min,max");
+    tablet.display(b1,b2);
+    in := calc.int(nil);
+    sn := calc.str(nil);
+    bat.append(b1,in);
+    bat.append(b2,sn);
+    tablet.setProperties(sn);
+    tablet.setDecimal(0,3,1);
+    tablet.setNull(1,"unknown");
+    tablet.display(b1,b2);
+    tablet.setTableBracket("<rowset>","</rowset>");
+    tablet.setRowBracket("<row>","</row>");
+    tablet.setBracket(0,"<age>","</age>");
+    tablet.setBracket(1,"<title>","</title>");
+    tablet.page(b1,b2);
 #leftover typeing 
 #function someone(i:any...); 
 #print("good"); 
@@ -99,7 +99,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #someone(2,"strong",true); 
 #someone(1,2); 
 #b:= new(void,int); 
-end main;	# 40  
+end main;
 #-----------------------#
 # _4,	_5		# name
 #-----------------------#

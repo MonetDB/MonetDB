@@ -11,10 +11,12 @@ stdout of test 'tst000` in directory 'src/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37878/
-function user.main():void;              #  0 main:void := user.main() 
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
+##empty test file, used to check startup problems
+#
+function user.main():void;
 #empty test file, used to check startup problems 
-end main;	# 2  
+end main;
 
 # 10:56:51 >  
 # 10:56:51 >  Done.

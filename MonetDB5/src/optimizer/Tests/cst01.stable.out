@@ -10,22 +10,12 @@ stdout of test 'cst01` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-## test constant expressions
-#    X2 := calc.dbl(1);
-#    X14 := calc.dbl(180);
-#    X15 := calc.*(X2,X14);
-#    X16 := mmath.pi();
-#    X17 := calc./(X15,X16);
-#	io.print(X17);
-#
-#optimizer.evaluate();
-#mdb.list();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.main():void;
 # test constant expressions 
-    io.print(57.295779513082323);       #  2 _9:void := IOprint_val(X17:dbl) 
-    mdb.List();                         #  3 _11:void := MDBlistDetail() 
-end main;	# 4  
+    io.print(57.295779513082323);
+    mdb.List();
+end main;
 [ 57.295779513082323 ]
 function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions 

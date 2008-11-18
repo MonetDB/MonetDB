@@ -19,13 +19,13 @@ stdout of test 'tst1604` in directory 'src/mal` itself:
 #u:= new(:int,:str);
 #print(t,u);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # handling of correct header printing 
-    t := bat.new(:int,:str);            #  2 t:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
-    bat.setColumn(t,"first");           #  3 _5:void := BKCsetColumn(t:bat[:int,:str], _6:str) 
-    u := bat.new(:int,:str);            #  4 u:bat[:int,:str] := CMDBATnew(_3:int, _8:str) {G}
-    io.print(t,u);                      #  5 _9:void := IOtable(t:bat[:int,:str], u:bat[:int,:str]) 
-end main;	# 6  
+    t := bat.new(:int,:str);
+    bat.setColumn(t,"first");
+    u := bat.new(:int,:str);
+    io.print(t,u);
+end main;
 #-------------------------#
 # h	first	tmp_5	  # name
 # int	str	str	  # type

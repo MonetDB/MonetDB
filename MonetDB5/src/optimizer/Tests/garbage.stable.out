@@ -10,23 +10,15 @@ stdout of test 'garbage` in directory 'src/optimizer` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:38798/
-#function tst();
-#  b:= bat.new(:int,:int);
-#  c{keep}:= bat.new(:int,:int);
-#  io.print(b);
-#end tst;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    c{keep} := bat.new(:int,:int);      #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:int,:int]) 
-end tst;	# 4  
-#optimizer.garbageCollector("user","tst");
-#mdb.list("user","tst");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    mdb.List("user","tst");             #  1 _4:void := MDBlist3Detail(_2:str, _3:str) 
-end main;	# 2  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.tst():void;
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
+    io.print(b);
+end tst;
+function user.main():void;
+    mdb.List("user","tst");
+end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
     c{keep} := bat.new(:int,:int);      #  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}

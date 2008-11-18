@@ -17,10 +17,10 @@ stdout of test 'tst400e` in directory 'src/mal` itself:
 #	z:= z+1:lng;
 #	return z;
 #end simple;
-function user.simple(z:lng):lng;        #  0 simple:lng := user.simple(z:lng) 
-    z := calc.+(z,1:lng);               #  1 z:lng := CALCbinaryADDlnglng(z:lng, _2:lng) 
-    return simple := z;                 #  2 simple:lng := z:lng 
-end simple;	# 3  
+function user.simple(z:lng):lng;
+    z := calc.+(z,1:lng);
+    return simple := z;
+end simple;
 #
 #	k:= 0:lng;
 #barrier	v:= k<1000000:lng;
@@ -29,16 +29,16 @@ end simple;	# 3
 #exit	v;
 #io.print(k);
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # simple test of a function call  
 # performance evaluation, how expensive are 100k calls? 
-    k := 0:lng;                         #  3 k:lng := _4:lng 
-barrier v := calc.<(k,1000000:lng);     #  4 v:bit := CALCcompLTlnglng(k:lng, _6:lng) {J7}
-    k := user.simple(k);                #  5 k:lng := user.simple(k:lng) 
-    redo v := calc.<(k,1000000:lng);    #  6 v:bit := CALCcompLTlnglng(k:lng, _6:lng) {J5}
-exit v;                                 #  7 v:bit 
-    io.print(k);                        #  8 _7:void := IOprint_val(k:lng) 
-end main;	# 9  
+    k := 0:lng;
+barrier v := calc.<(k,1000000:lng);
+    k := user.simple(k);
+    redo v := calc.<(k,1000000:lng);
+exit v;
+    io.print(k);
+end main;
 [ 1000000 ]
 
 # 07:48:33 >  

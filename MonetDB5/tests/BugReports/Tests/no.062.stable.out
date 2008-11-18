@@ -12,88 +12,8 @@ stdout of test 'no.062` in directory 'tests/BugReports` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
 # Visit http://monetdb.cwi.nl/ for further information
-## Monet Mil to Mal compiler
-##include mil;
-## Copyright (c) 2001-2004, CWI. All rights reserved.
-#
-##Predefined code segment
-##The compiler can not guarantee an accurate compilation,
-##because MIL unlike MAL is a dynamically typed language.
-##A few guidelines to maximize usefullness.
-##- make the type of variables explicit, in particular 'nil'
-##- upon advice of M2m to remap identifiers, change it in your program directly
-##use the "mil_schema" for additional support routines
-##	mil.line("# >Number:         62\n");
-##	mil.line("# >Category:       MIL\n");
-##	mil.line("# >Synopsis:       Handling of nested arithmetic expressions is inconsistent\n");
-##	mil.line("# >Confidential:   no\n");
-##	mil.line("# >Severity:       critical\n");
-##	mil.line("# >Priority:       high\n");
-##	mil.line("# >Responsible:    mk\n");
-##	mil.line("# >State:          feedback\n");
-##	mil.line("# >Class:          sw-bug\n");
-##	mil.line("# >Submitter-Id:   unknown\n");
-##	mil.line("# >Arrival-Date:   Fri Oct 24 14:09:23 1997\n");
-##	mil.line("# >Originator:     mk\n");
-##	mil.line("# >Organization:\n");
-##	mil.line("# >Release:        971007\n");
-##	mil.line("# >Environment:\n");
-##	mil.line("# \n");
-##	mil.line("# >Description:\n");
-##	mil.line("# Handlin>t:= bat.new(int,int);\n");
-##	mil.line("# >t.insert(0,0);\n");
-##	mil.line("# >t.insert(1+1,0);\n");
-##	mil.line("# >t.insert(-1,-0);\n");
-##	mil.line("# >print(t);\n");
-##	mil.line("# #-----------------#\n");
-##	mil.line("# # int   | tmp_32  #\n");
-##	mil.line("# #-----------------#\n");
-##	mil.line("# [ 0,      0       ]\n");
-##	mil.line("# [ 2,      0       ]\n");
-##	mil.line("# [ -1,     0       ]\n");
-##	mil.line("# ># alles zover is goed\n");
-##	mil.line("# >t.insert(-1+1,0);\n");
-##	mil.line("# >t.insert(-1 - 1,0);\n");
-##	mil.line("# !ERROR: in syntax at \"t.insert(-1 - 1,0);\"\n");
-##	mil.line("# !                                      ^\n");
-##	mil.line("# >t.insert(-1 -1, 0);\n");
-##	mil.line("# !ERROR: in syntax at \"t.insert(-1 -1, 0);\"\n");
-##	mil.line("# !                                        ^\n");
-##	mil.line("# >#not what is expected from nested expression\n");
-##	mil.line("# >t.print;\n");
-##	mil.line("# #-----------------#\n");
-##	mil.line("# # int   | tmp_32  #\n");
-##	mil.line("# #-----------------#\n");
-##	mil.line("# [ 0,      0       ]\n");
-##	mil.line("# [ 2,      0       ]\n");
-##	mil.line("# [ -1,     0       ]\n");
-##	mil.line("# [ 0,      0       ]\n");
-##	mil.line("# >t.insert(0-1+ -1, 0);\n");
-##	mil.line("# !ERROR: in syntax at \"t.insert(0-1+ -1, 0);\"\n");
-##	mil.line("# \n");
-##	mil.line("# This is not what a user would expect\n");
-##	mil.line("setoid(oid(20000000));");
-#	aa_a := calc.oid(20000000);
-#	ba_a := calc.setoid(aa_a);
-##	mil.line("var t:= bat.new(int,int);");
-#	t := bat.new(nil:int,nil:int);
-##	mil.line("t.insert(0,0);");
-#	ca_a := bat.insert(t,0,0);
-##	mil.line("t.insert(1+1,0);");
-#	da_a := calc.+(1,1);
-#	ea_a := bat.insert(t,da_a,0);
-##	mil.line("t.insert(-1,-0);");
-#	fa_a := bat.insert(t,-1,-0);
-##	mil.line("t.insert(0,0);");
-#	ga_a := bat.insert(t,0,0);
-##	mil.line("t.insert(-1+1,0);");
-#	ha_a := calc.+(-1,1);
-#	ia_a := bat.insert(t,ha_a,0);
-##	mil.line("print(t);");
-#	ja_a := io.print(t);
-##	mil.line("# alles zover is goed\n");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+function user.main():void;
 # Monet Mil to Mal compiler 
 # Copyright (c) 2001-2004, CWI. All rights reserved. 
 #Predefined code segment 
@@ -153,26 +73,26 @@ function user.main():void;              #  0 main:void := user.main() {G}
 #	io.print("# \n"); 
 #	io.print("# This is not what a user would expect\n"); 
 #	io.print("setoid(oid(20000000));"); 
-    aa_a := calc.oid(20000000);         # 60 aa_a:oid := CALCint2oid(_61:int) 
-    ba_a := calc.setoid(aa_a);          # 61 ba_a:oid := CALCsetoidInc(aa_a:oid) 
+    aa_a := calc.oid(20000000);
+    ba_a := calc.setoid(aa_a);
 #	io.print("var t:= bat.new(int,int);"); 
-    t := bat.new(nil:int,nil:int);      # 63 t:bat[:int,:int] := CMDBATnew(_65:int, _65:int) {G}
+    t := bat.new(nil:int,nil:int);
 #	io.print("t.insert(0,0);"); 
-    ca_a := bat.insert(t,0,0);          # 65 ca_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) {G}
+    ca_a := bat.insert(t,0,0);
 #	io.print("t.insert(1+1,0);"); 
-    da_a := calc.+(1,1);                # 67 da_a:int := CALCbinaryADDintint(_71:int, _71:int) 
-    ea_a := bat.insert(t,da_a,0);       # 68 ea_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], da_a:int, _68:int) {G}
+    da_a := calc.+(1,1);
+    ea_a := bat.insert(t,da_a,0);
 #	io.print("t.insert(-1,-0);"); 
-    fa_a := bat.insert(t,-1,0);         # 70 fa_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _75:int, _68:int) {G}
+    fa_a := bat.insert(t,-1,0);
 #	io.print("t.insert(0,0);"); 
-    ga_a := bat.insert(t,0,0);          # 72 ga_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], _68:int, _68:int) {G}
+    ga_a := bat.insert(t,0,0);
 #	io.print("t.insert(-1+1,0);"); 
-    ha_a := calc.+(-1,1);               # 74 ha_a:int := CALCbinaryADDintint(_75:int, _71:int) 
-    ia_a := bat.insert(t,ha_a,0);       # 75 ia_a:bat[:int,:int] := BKCinsert_bun(t:bat[:int,:int], ha_a:int, _68:int) {G}
+    ha_a := calc.+(-1,1);
+    ia_a := bat.insert(t,ha_a,0);
 #	io.print("print(t);"); 
-    ja_a := io.print(t);                # 77 ja_a:void := IOprint_val(t:bat[:int,:int]) 
+    ja_a := io.print(t);
 #	io.print("# alles zover is goed\n"); 
-end main;	# 79  
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

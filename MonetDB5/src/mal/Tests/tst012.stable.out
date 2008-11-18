@@ -29,23 +29,23 @@ stdout of test 'tst012` in directory 'src/mal` itself:
 #exit	j;
 #	print("second loop done");
 #
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # simple loop with controlled redo 
-    i := 0;                             #  2 i:int := _3:int 
-barrier j := calc.<(i,3);               #  3 j:bit := CALCcompLTintint(i:int, _5:int) {J7}
-    io.print(i);                        #  4 _6:void := IOprint_val(i:int) 
-    i := calc.+(i,1);                   #  5 i:int := CALCbinaryADDintint(i:int, _7:int) 
-    redo j := calc.<(i,3);              #  6 j:bit := CALCcompLTintint(i:int, _5:int) {J4}
-exit j;                                 #  7 j:bit 
-    io.print("first loop done");        #  8 _8:void := IOprint_val(_9:str) 
-    i := 0;                             #  9 i:int := _3:int 
-barrier j := calc.<(i,3);               # 10 j:bit := CALCcompLTintint(i:int, _5:int) {J14}
-    io.print(i);                        # 11 _10:void := IOprint_val(i:int) 
-    i := calc.+(i,1);                   # 12 i:int := CALCbinaryADDintint(i:int, _7:int) 
-    redo j := calc.<(i,3);              # 13 j:bit := CALCcompLTintint(i:int, _5:int) {J11}
-exit j;                                 # 14 j:bit 
-    io.print("second loop done");       # 15 _11:void := IOprint_val(_12:str) 
-end main;	# 16  
+    i := 0;
+barrier j := calc.<(i,3);
+    io.print(i);
+    i := calc.+(i,1);
+    redo j := calc.<(i,3);
+exit j;
+    io.print("first loop done");
+    i := 0;
+barrier j := calc.<(i,3);
+    io.print(i);
+    i := calc.+(i,1);
+    redo j := calc.<(i,3);
+exit j;
+    io.print("second loop done");
+end main;
 [ 0 ]
 [ 1 ]
 [ 2 ]

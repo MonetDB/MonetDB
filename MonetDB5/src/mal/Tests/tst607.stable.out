@@ -27,22 +27,22 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 #io.print("attempt twice to release");
 #const.release("roomnumber"); # failure? done twice or implicit take?
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # using spaces 
-    u:str  := const.take("user");       #  2 u:str := CSTtake(_3:str) {G}
-    io.printf("#User bound to %s\n",u); #  3 _4:void := IOprintf(_5:str, u:str) 
-    roomnumber := 321;                  #  4 roomnumber:int := _7:int 
-    const.deposit("roomnumber",roomnumber);#  5 _8:void := CSTdeposit(_9:str, roomnumber:int) 
-    v:int  := const.take("roomnumber"); #  6 v:int := CSTtake(_9:str) 
-    io.print(v);                        #  7 _11:void := IOprint_val(v:int) 
-    v:int  := 123;                      #  8 v:int := _12:int 
-    v:int  := calc.+(v,1);              #  9 v:int := CALCbinaryADDintint(v:int, _13:int) 
-    const.release("roomnumber");        # 10 _14:void := CSTrelease(_9:str) 
-    io.print("attempt twice to release");# 11 _15:void := IOprint_val(_16:str) 
-    const.release("roomnumber");        # 12 _17:void := CSTrelease(_9:str) 
+    u := const.take("user");
+    io.printf("#User bound to %s\n",u);
+    roomnumber := 321;
+    const.deposit("roomnumber",roomnumber);
+    v := const.take("roomnumber");
+    io.print(v);
+    v := 123;
+    v := calc.+(v,1);
+    const.release("roomnumber");
+    io.print("attempt twice to release");
+    const.release("roomnumber");
 # failure? done twice or implicit take? 
-end main;	# 14  
-#User bound to mk
+end main;
+#User bound to 0
 [ 321 ]
 [ "attempt twice to release" ]
 

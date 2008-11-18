@@ -11,17 +11,29 @@ stdout of test 'tst053` in directory 'src/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33912/
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33756/
+## string functions
+#
+#w1:= "hello";
+#w2:= " world";
+#s2:= w1+w2;
+#io.print(s2);
+#
+#n:= nil:str;
+#s3:= w1+n;
+#io.print(s3);
+#
+#
+function user.main():void;
 # string functions 
-    w1 := "hello";                      #  2 w1:str := _3:str {G}
-    w2 := " world";                     #  3 w2:str := _5:str {G}
-    s2 := calc.+(w1,w2);                #  4 s2:str := CALCstrConcat(w1:str, w2:str) {G}
-    io.print(s2);                       #  5 _7:void := IOprint_val(s2:str) 
-    n := nil:str;                       #  6 n:str := _9:str {G}
-    s3 := calc.+(w1,n);                 #  7 s3:str := CALCstrConcat(w1:str, n:str) {G}
-    io.print(s3);                       #  8 _11:void := IOprint_val(s3:str) 
-end main;                               #  9  
+    w1 := "hello";
+    w2 := " world";
+    s2 := calc.+(w1,w2);
+    io.print(s2);
+    n := nil:str;
+    s3 := calc.+(w1,n);
+    io.print(s3);
+end main;
 [ "hello world" ]
 [ nil ]
 

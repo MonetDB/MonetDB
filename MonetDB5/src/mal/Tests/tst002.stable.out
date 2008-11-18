@@ -15,15 +15,20 @@ stdout of test 'tst002` in directory 'src/mal` itself:
 !SyntaxException:parseError:^<identifier> expected
 !SyntaxException:parseError:	false:= 24;
 !SyntaxException:parseError:^<identifier> expected
-function user.main():void;              #  0 main:void := user.main() 
+#barrier barrier:= true;
+#	b:= true;
+#	b:= false;
+#exit barrier;
+#
+function user.main():void;
 # reserved names may not be used as target variables 
-    ;                                   #  2 _2:any {U}
-    ;                                   #  3 _3:any {U}
-barrier barrier := true;                #  4 barrier:any := _5:bit {U}
-    b := true;                          #  5 b:any := _5:bit {U}
-    b := false;                         #  6 b:any := _7:bit {U}
-exit barrier;                           #  7 barrier:any {U}
-end main;                               #  8  {U}
+    ;
+    ;
+barrier barrier := true;
+    b := true;
+    b := false;
+exit barrier;
+end main;
 
 # 07:58:32 >  
 # 07:58:32 >  Done.

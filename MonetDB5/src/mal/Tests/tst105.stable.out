@@ -18,7 +18,7 @@ stdout of test 'tst105` in directory 'src/mal` itself:
 #module bat2;
 #command new(h:any_1,t:any_2) :bat[:any_1, :any_2] 
 !MALException:MAL.getAddress:address of 'bat2.GDKbatnew' not found
-command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;#  0 new:bat[:any_1,:any_2] := bat2.new(h:any_1, t:any_2) {UP}
+command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;
 #
 #a:= bat2.new(:str,:int);
 #b:= bat2.new(:str,:int);
@@ -27,13 +27,13 @@ command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;#  0 new:
 !TypeException:user.main[3]:'bat2.new' undefined in: a:bat[:str,:int] := bat2.new(_4:str, _5:int)
 
 !TypeException:user.main[4]:'bat2.new' undefined in: b:bat[:str,:int] := bat2.new(_7:str, _5:int)
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # check propagation of type variables over bats 
 # can be checked after bat module has been added 
-    a := bat2.new(:str,:int);           #  3 a:bat[:str,:int] := bat2.new(_4:str, _5:int) {UG}
-    b := bat2.new(:str,:int);           #  4 b:bat[:str,:int] := bat2.new(_7:str, _5:int) {UG}
-    c := bat.new(:str,:int);            #  5 c:bat[:str,:int] := CMDBATnew(_9:str, _5:int) {G}
-end main;	# 6  
+    a := bat2.new(:str,:int);
+    b := bat2.new(:str,:int);
+    c := bat.new(:str,:int);
+end main;
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

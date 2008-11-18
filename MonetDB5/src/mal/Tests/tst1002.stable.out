@@ -25,17 +25,17 @@ stdout of test 'tst1002` in directory 'src/mal` itself:
 #	print(MALException);
 #exit MALException;
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # the first of a series of BBP test cases 
 # the temporary bat produced in tst1000 should not exist anymore 
-    bbp.open();                         #  3 _3:void := CMDbbpopen() 
-    c := bbp.take("myfirstbat");        #  4 c:bat[:any,:any] := CMDbbptake(_5:str) {G}
-    io.print(c);                        #  5 _6:void := IOprint_val(c:bat[:any,:any]) 
-    bbp.close();                        #  6 _7:void := CMDbbpclose() 
-catch MALException:str ;                #  7 MALException:str {J9}
-    io.printf("%s\n",MALException);     #  8 _9:void := IOprintf(_10:str, MALException:str) 
-exit MALException:str ;                 #  9 MALException:str 
-end main;	# 10  
+    bbp.open();
+    c := bbp.take("myfirstbat");
+    io.print(c);
+    bbp.close();
+catch MALException;
+    io.printf("%s\n",MALException);
+exit MALException;
+end main;
 MALException:bbp.take:failed to take object from box
 
 # 07:58:52 >  

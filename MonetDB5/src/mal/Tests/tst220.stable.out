@@ -23,23 +23,23 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #
 #	return bb;
 #end steal; 
-function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];#  0 steal:bat[:any_1,:any_2] := user.steal(bb:bat[:any_1,:any_2]) {UPG}
-    i := bbp.getLRefCount(bb);          #  1 i:int := CMDgetBATlrefcnt(bb:bat[:any_1,:any_2]) 
-    io.printf("enter function refcount =%d[2,3]\n",i);#  2 _3:void := IOprintf(_4:str, i:int) 
-    loc := bb;                          #  3 loc:bat[:any_1,:any_2] := bb:bat[:any_1,:any_2] {G}
-    i := bbp.getLRefCount(bb);          #  4 i:int := CMDgetBATlrefcnt(bb:bat[:any_1,:any_2]) 
-    io.printf("local in function refcount =%d[3,4]\n",i);#  5 _6:void := IOprintf(_7:str, i:int) 
-    return steal := bb;                 #  6 steal:bat[:any_1,:any_2] := bb:bat[:any_1,:any_2] {G}
-end steal;	# 7  
+function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];
+    i := bbp.getLRefCount(bb);
+    io.printf("enter function refcount =%d[2,3]\n",i);
+    loc := bb;
+    i := bbp.getLRefCount(bb);
+    io.printf("local in function refcount =%d[3,4]\n",i);
+    return steal := bb;
+end steal;
 #
 #function createone():bat[:int,:str];
 #	b:= bbp.new(:int,:str);
 #	return b;
 #end createone;
-function user.createone():bat[:int,:str];#  0 createone:bat[:int,:str] := user.createone() {G}
-    b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_2:int, _3:str) {G}
-    return createone := b;              #  2 createone:bat[:int,:str] := b:bat[:int,:str] {G}
-end createone;	# 3  
+function user.createone():bat[:int,:str];
+    b := bat.new(:int,:str);
+    return createone := b;
+end createone;
 #
 #	b:= bbp.new(:int,:str);
 #	i:= bbp.getLRefCount(b);
@@ -78,49 +78,49 @@ end createone;	# 3
 #	i:= getLRefCount(b);
 #	printf("after 5rd assignment refcount =%d[1]\n",i);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # a test checking BAT reference counting under various situations 
-    b := bat.new(:int,:str);            #  2 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
-    i := bbp.getLRefCount(b);           #  3 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("refcount =%d[1]\n",i);   #  4 _6:void := IOprintf(_7:str, i:int) 
-    bat.insert(b,1,"bat B");            #  5 _8:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _9:int, _10:str) {G}
-    io.print(b);                        #  6 _11:void := IOprint_val(b:bat[:int,:str]) 
-    i := bbp.getLRefCount(b);           #  7 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("refcount =%d[1]\n",i);   #  8 _12:void := IOprintf(_7:str, i:int) 
+    b := bat.new(:int,:str);
+    i := bbp.getLRefCount(b);
+    io.printf("refcount =%d[1]\n",i);
+    bat.insert(b,1,"bat B");
+    io.print(b);
+    i := bbp.getLRefCount(b);
+    io.printf("refcount =%d[1]\n",i);
 #handle an alias, which isn;t used! 
-    b2 := b;                            # 10 b2:bat[:int,:str] := b:bat[:int,:str] {G}
-    i := bbp.getLRefCount(b);           # 11 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("after assignment refcount =%d[2]\n",i);# 12 _15:void := IOprintf(_16:str, i:int) 
+    b2 := b;
+    i := bbp.getLRefCount(b);
+    io.printf("after assignment refcount =%d[2]\n",i);
 #re-use a bat variable 
-    b3 := b;                            # 14 b3:bat[:int,:str] := b:bat[:int,:str] {G}
-    cnt := aggr.count(b3);              # 15 cnt:wrd := ALGcount_bat(b3:bat[:int,:str]) 
+    b3 := b;
+    cnt := aggr.count(b3);
 # forced use 
-    i := bbp.getLRefCount(b);           # 17 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("after 2nd assignment refcount =%d[3]\n",i);# 18 _21:void := IOprintf(_22:str, i:int) 
+    i := bbp.getLRefCount(b);
+    io.printf("after 2nd assignment refcount =%d[3]\n",i);
 #re-use a bat variable 
-    b3 := user.createone();             # 20 b3:bat[:int,:str] := user.createone() {G}
-    i := bbp.getLRefCount(b);           # 21 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("after 3rd assignment refcount =%d[2]\n",i);# 22 _24:void := IOprintf(_25:str, i:int) 
-    i := bbp.getLRefCount(b3);          # 23 i:int := CMDgetBATlrefcnt(b3:bat[:int,:str]) 
-    io.printf("assignment refcount =%d[1]\n",i);# 24 _26:void := IOprintf(_27:str, i:int) 
+    b3 := user.createone();
+    i := bbp.getLRefCount(b);
+    io.printf("after 3rd assignment refcount =%d[2]\n",i);
+    i := bbp.getLRefCount(b3);
+    io.printf("assignment refcount =%d[1]\n",i);
 #re-use a bat variable 
-    b4 := algebra.select(b,"bat C","bat C");# 26 b4:bat[:int,:str] := ALGselect(b:bat[:int,:str], _30:str, _30:str) {G}
-    io.print(b4);                       # 27 _31:void := IOprint_val(b4:bat[:int,:str]) 
-    i := bbp.getLRefCount(b);           # 28 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("after 4rd assignment refcount =%d[2]\n",i);# 29 _32:void := IOprintf(_33:str, i:int) 
+    b4 := algebra.select(b,"bat C","bat C");
+    io.print(b4);
+    i := bbp.getLRefCount(b);
+    io.printf("after 4rd assignment refcount =%d[2]\n",i);
 # remove by assignment 
-    b2 := b3;                           # 31 b2:bat[:int,:str] := b3:bat[:int,:str] {G}
-    i := bbp.getLRefCount(b);           # 32 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("after 5rd assignment refcount =%d[1]\n",i);# 33 _35:void := IOprintf(_36:str, i:int) 
-    io.printf("call function\n");       # 34 _37:void := IOprintf(_38:str) 
-    d := user.steal(b);                 # 35 d:bat[:int,:str] := user.steal(b:bat[:int,:str]) {G}
-    i := bbp.getLRefCount(b);           # 36 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("return from function refcount =%d[2]\n",i);# 37 _40:void := IOprintf(_41:str, i:int) 
-    io.printf("check self replacement, overrule refcount!\n");# 38 _42:void := IOprintf(_43:str) 
-    b := user.steal(b);                 # 39 b:bat[:int,:str] := user.steal(b:bat[:int,:str]) {G}
-    i := bbp.getLRefCount(b);           # 40 i:int := CMDgetBATlrefcnt(b:bat[:int,:str]) 
-    io.printf("return from function refcount =%d[2]\n",i);# 41 _44:void := IOprintf(_41:str, i:int) 
-end main;	# 42  
+    b2 := b3;
+    i := bbp.getLRefCount(b);
+    io.printf("after 5rd assignment refcount =%d[1]\n",i);
+    io.printf("call function\n");
+    d := user.steal(b);
+    i := bbp.getLRefCount(b);
+    io.printf("return from function refcount =%d[2]\n",i);
+    io.printf("check self replacement, overrule refcount!\n");
+    b := user.steal(b);
+    i := bbp.getLRefCount(b);
+    io.printf("return from function refcount =%d[2]\n",i);
+end main;
 refcount =1[1]
 #-------------------------#
 # h	t		  # name

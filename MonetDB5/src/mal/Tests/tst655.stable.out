@@ -27,19 +27,19 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.setProperties("name,type,dense,sorted,key,min,max");
 #tablet.display(b1,b2);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # An extensive test for the new tablet layout 
 #sent the output of a table to a file 
-    b1 := bat.new(:oid,:int);           #  3 b1:bat[:oid,:int] := CMDBATnew(_4:oid, _5:int) {G}
-    bat.append(b1,42);                  #  4 _6:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _7:int) {G}
-    bat.append(b1,49);                  #  5 _8:bat[:int,:any] := BKCappend_val_wrap(b1:bat[:oid,:int], _9:int) {G}
-    b2 := bat.new(:oid,:str);           #  6 b2:bat[:oid,:str] := CMDBATnew(_4:oid, _11:str) {G}
-    bat.append(b2,"hello world");       #  7 _12:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _13:str) {G}
-    bat.append(b2,"goodbye world");     #  8 _14:bat[:str,:any] := BKCappend_val_wrap(b2:bat[:oid,:str], _15:str) {G}
-    tablet.setFormat(b1,b2);            #  9 _16:void := TABsetFormat(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
-    tablet.setProperties("name,type,dense,sorted,key,min,max");# 10 _17:int := TABsetProperties(_18:str) 
-    tablet.display(b1,b2);              # 11 _19:int := TABdisplayTable(b1:bat[:oid,:int], b2:bat[:oid,:str]) 
-end main;	# 12  
+    b1 := bat.new(:oid,:int);
+    bat.append(b1,42);
+    bat.append(b1,49);
+    b2 := bat.new(:oid,:str);
+    bat.append(b2,"hello world");
+    bat.append(b2,"goodbye world");
+    tablet.setFormat(b1,b2);
+    tablet.setProperties("name,type,dense,sorted,key,min,max");
+    tablet.display(b1,b2);
+end main;
 #---------------------------------------#
 # tmp_4,	tmp_5			# name
 # int,		str			# type

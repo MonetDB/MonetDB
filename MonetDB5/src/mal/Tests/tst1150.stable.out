@@ -29,23 +29,23 @@ stdout of test 'tst1150` in directory 'src/mal` itself:
 #	i := stream.readInt(fp);
 #	print(i);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # simple stream test 
-    fp := streams.openWrite("tst1150garbage");#  2 fp:streams := stream_open_wastreamwrap(_3:str) 
-    streams.writeStr(fp,"Dit is een test\n");#  3 _4:void := stream_write_stringwrap(fp:streams, _5:str) 
-    streams.flush(fp);                  #  4 _6:void := stream_flush_streamwrap(fp:streams) 
-    streams.close(fp);                  #  5 _7:void := stream_close_streamwrap(fp:streams) 
-    fp := streams.openRead("tst1150garbage");#  6 fp:streams := stream_open_rastreamwrap(_3:str) 
-    s := streams.readStr(fp);           #  7 s:str := stream_read_stringwrap(fp:streams) {G}
-    io.print(s);                        #  8 _9:void := IOprint_val(s:str) 
-    streams.close(fp);                  #  9 _10:void := stream_close_streamwrap(fp:streams) 
-    fp := streams.openWrite("tst1150garbage");# 10 fp:streams := stream_open_wastreamwrap(_3:str) 
-    streams.writeInt(fp,1234);          # 11 _11:void := stream_writeIntwrap(fp:streams, _12:int) 
-    streams.close(fp);                  # 12 _13:void := stream_close_streamwrap(fp:streams) 
-    fp := streams.openRead("tst1150garbage");# 13 fp:streams := stream_open_rastreamwrap(_3:str) 
-    i := streams.readInt(fp);           # 14 i:int := stream_readIntwrap(fp:streams) 
-    io.print(i);                        # 15 _15:void := IOprint_val(i:int) 
-end main;	# 16  
+    fp := streams.openWrite("tst1150garbage");
+    streams.writeStr(fp,"Dit is een test\n");
+    streams.flush(fp);
+    streams.close(fp);
+    fp := streams.openRead("tst1150garbage");
+    s := streams.readStr(fp);
+    io.print(s);
+    streams.close(fp);
+    fp := streams.openWrite("tst1150garbage");
+    streams.writeInt(fp,1234);
+    streams.close(fp);
+    fp := streams.openRead("tst1150garbage");
+    i := streams.readInt(fp);
+    io.print(i);
+end main;
 [ "Dit is een test\n" ]
 [ 1234 ]
 

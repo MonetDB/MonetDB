@@ -25,24 +25,24 @@ stdout of test 'tst035` in directory 'src/mal` itself:
 #b:=b;
 #i:= getLRefCount(b); print(i);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 #The MAL interpreter should initiate garbage collection correctly 
 # early version was too early 
-    z := "hello world";                 #  3 z:str := _4:str {G}
-    io.print(z);                        #  4 _5:void := IOprint_val(z:str) 
-    z := z;                             #  5 z:str := z:str {G}
-    io.print(z);                        #  6 _6:void := IOprint_val(z:str) 
-    io.print("done");                   #  7 _7:void := IOprint_val(_8:str) 
-    b := bat.new(:int,:int);            #  8 b:bat[:int,:int] := CMDBATnew(_10:int, _10:int) {G}
-    i := bbp.getLRefCount(b);           #  9 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
-    io.print(i);                        # 10 _12:void := IOprint_val(i:int) 
-    b := b;                             # 11 b:bat[:int,:int] := b:bat[:int,:int] {G}
-    i := bbp.getLRefCount(b);           # 12 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
-    io.print(i);                        # 13 _13:void := IOprint_val(i:int) 
-    b := b;                             # 14 b:bat[:int,:int] := b:bat[:int,:int] {G}
-    i := bbp.getLRefCount(b);           # 15 i:int := CMDgetBATlrefcnt(b:bat[:int,:int]) 
-    io.print(i);                        # 16 _14:void := IOprint_val(i:int) 
-end main;	# 17  
+    z := "hello world";
+    io.print(z);
+    z := z;
+    io.print(z);
+    io.print("done");
+    b := bat.new(:int,:int);
+    i := bbp.getLRefCount(b);
+    io.print(i);
+    b := b;
+    i := bbp.getLRefCount(b);
+    io.print(i);
+    b := b;
+    i := bbp.getLRefCount(b);
+    io.print(i);
+end main;
 [ "hello world" ]
 [ "hello world" ]
 [ "done" ]

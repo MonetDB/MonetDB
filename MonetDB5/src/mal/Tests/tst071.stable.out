@@ -18,11 +18,11 @@ stdout of test 'tst071` in directory 'src/mal` itself:
 #	return(a,b);
 #
 #end swap;
-function user.swap(x:int,y:int) (a:int,b:int);#  0 (a:int, b:int) := user.swap(x:int, y:int) 
-    a := y;                             #  1 a:int := y:int 
-    b := x;                             #  2 b:int := x:int 
-    return (a,b) := (a,b);              #  3 (a:int, b:int) := a:int, b:int 
-end swap;	# 4  
+function user.swap(x:int,y:int) (a:int,b:int);
+    a := y;
+    b := x;
+    return (a,b) := (a,b);
+end swap;
 #
 #(x,y):= swap(1,2);
 #print(x);
@@ -31,14 +31,14 @@ end swap;	# 4
 #print(a);
 #
 !TypeException:user.main[5]:'user.swap' undefined in: a:any := user.swap(_9:int, _10:int)
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 # parsing operations with multi-assignments 
-    (x,y) := user.swap(1,2);            #  2 (x:int, y:int) := user.swap(_4:int, _5:int) 
-    io.print(x);                        #  3 _6:void := IOprint_val(x:int) 
-    io.print(y);                        #  4 _7:void := IOprint_val(y:int) 
-    a := user.swap(3,4);                #  5 a:any := user.swap(_9:int, _10:int) {U}
-    io.print(a);                        #  6 _11:void := IOprint_val(a:any) 
-end main;	# 7  
+    (x,y) := user.swap(1,2);
+    io.print(x);
+    io.print(y);
+    a := user.swap(3,4);
+    io.print(a);
+end main;
 
 # 07:58:49 >  
 # 07:58:49 >  Done.

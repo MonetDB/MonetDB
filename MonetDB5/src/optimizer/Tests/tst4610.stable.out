@@ -12,38 +12,20 @@ stdout of test 'tst4610` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-## the first test for macro expansions and inversions
-#
-#function joinPath( a:bat[:any_1,:any_2],
-#    z:= algebra.join(a,b);
-#    zz:= algebra.join(z,c);
-#    return zz;
-#end joinPath;
-function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];#  0 joinPath:bat[:any_1,:any_4] := user.joinPath(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3,:any_4]) {UPG}
-    z := algebra.join(a,b);             #  1 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
-    zz := algebra.join(z,c);            #  2 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
-    return joinPath := zz;              #  3 joinPath:bat[:any_1,:any_4] := zz:bat[:any,:any] {G}
-end joinPath;	# 4  
-#
-#optimizer.macroContraction("user","joinPath");
-#
-#a:= bat.new(:int,:int);
-#b:= bat.new(:int,:int);
-#c:= bat.new(:int,:int);
-#g:= algebra.join(a,b);
-#h:= algebra.join(g,c);
-#
-#r:= algebra.joinPath(a,b,c);
-#mdb.list();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
+    z := algebra.join(a,b);
+    zz := algebra.join(z,c);
+    return joinPath := zz;
+end joinPath;
+function user.main():void;
 # the first test for macro expansions and inversions 
-    a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
-    r := algebra.joinPath(a,b,c);       #  6 r:bat[:any,:any] := ALGjoinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {G}
-    mdb.List();                         #  7 _12:void := MDBlistDetail() 
+    a := bat.new(:int,:int);
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
+    h := user.joinPath(a,b,c);
+    r := algebra.joinPath(a,b,c);
+    mdb.List();
 function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
     a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}

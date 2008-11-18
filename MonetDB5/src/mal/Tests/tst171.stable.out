@@ -48,40 +48,40 @@ stdout of test 'tst171` in directory 'src/mal` itself:
 #    x:= calc.isnotnil(g);
 #    print(x);
 #
-function user.main():void;              #  0 main:void := user.main() {G}
+function user.main():void;
 # Testing for nil values. 
-    tv := true;                         #  2 tv:bit := _3:bit 
-    io.print(tv);                       #  3 _4:void := IOprint_val(tv:bit) 
-    fv := false;                        #  4 fv:bit := _6:bit 
-    io.print(fv);                       #  5 _7:void := IOprint_val(fv:bit) 
-    io.print("strings");                #  6 _8:void := IOprint_val(_9:str) 
-    z := calc.str("nil");               #  7 z:str := CALCstr2str(_11:str) {G}
-    x := calc.isnil(z);                 #  8 x:bit := CALCisnil_str(z:str) 
-    io.print(x);                        #  9 _13:void := IOprint_val(x:bit) 
-    y := calc.isnil("something");       # 10 y:bit := CALCisnil_str(_15:str) 
-    io.print(y);                        # 11 _16:void := IOprint_val(y:bit) 
-    a := calc.str(nil);                 # 12 a:str := CALCnil2str(_18:void) {G}
-    x := calc.isnil(a);                 # 13 x:bit := CALCisnil_str(a:str) 
-    io.print(x);                        # 14 _19:void := IOprint_val(x:bit) 
-    io.print("integers");               # 15 _20:void := IOprint_val(_21:str) 
-    i := calc.int("nil");               # 16 i:int := CALCstr2int(_11:str) 
-    x := calc.isnil(i);                 # 17 x:bit := CALCisnil_int(i:int) 
-    io.print(x);                        # 18 _23:void := IOprint_val(x:bit) 
-    y := calc.isnil(0);                 # 19 y:bit := CALCisnil_int(_24:int) 
-    io.print(y);                        # 20 _25:void := IOprint_val(y:bit) 
-    io.print("floats");                 # 21 _26:void := IOprint_val(_27:str) 
-    f := calc.flt(nil);                 # 22 f:flt := CALCnil2flt(_18:void) 
-    x := calc.isnil(f);                 # 23 x:bit := CALCisnil_flt(f:flt) 
-    io.print(x);                        # 24 _29:void := IOprint_val(x:bit) 
-    x := calc.isnil(3.1400001);         # 25 x:bit := CALCisnil_flt(_30:flt) 
-    io.print(x);                        # 26 _31:void := IOprint_val(x:bit) 
-    io.print("nil");                    # 27 _32:void := IOprint_val(_11:str) 
-    g := nil;                           # 28 g:void := _18:void {G}
-    x := calc.isnil(g);                 # 29 x:bit := CALCisnil_void(g:void) 
-    io.print(x);                        # 30 _34:void := IOprint_val(x:bit) 
-    x := calc.isnotnil(g);              # 31 x:bit := CALCisnotnil_void(g:void) 
-    io.print(x);                        # 32 _35:void := IOprint_val(x:bit) 
-end main;	# 33  
+    tv := true;
+    io.print(tv);
+    fv := false;
+    io.print(fv);
+    io.print("strings");
+    z := calc.str("nil");
+    x := calc.isnil(z);
+    io.print(x);
+    y := calc.isnil("something");
+    io.print(y);
+    a := calc.str(nil);
+    x := calc.isnil(a);
+    io.print(x);
+    io.print("integers");
+    i := calc.int("nil");
+    x := calc.isnil(i);
+    io.print(x);
+    y := calc.isnil(0);
+    io.print(y);
+    io.print("floats");
+    f := calc.flt(nil);
+    x := calc.isnil(f);
+    io.print(x);
+    x := calc.isnil(3.1400001);
+    io.print(x);
+    io.print("nil");
+    g := nil;
+    x := calc.isnil(g);
+    io.print(x);
+    x := calc.isnotnil(g);
+    io.print(x);
+end main;
 [ true ]
 [ false ]
 [ "strings" ]

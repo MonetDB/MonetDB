@@ -47,47 +47,56 @@ stdout of test 'tst2560` in directory 'src/mal` itself:
 #	redo always;
 #exit always;
 #end view1;
-factory user.view1(l:int,h:int):bat[:oid,:str];#  0 view1:bat[:oid,:str] := user.view1(l:int, h:int) {G}
-    a:bat[:oid,:int]  := bbp.bind("emp","age");#  1 a:bat[:oid,:int] := CMDbbpbind2(_4:str, _5:str) {G}
-    b:bat[:oid,:str]  := bbp.bind("emp","name");#  2 b:bat[:oid,:str] := CMDbbpbind2(_4:str, _7:str) {G}
-barrier always := true;                 #  3 always:bit := _9:bit {J17}
-    lOld := l;                          #  4 lOld:int := l:int 
-    hOld := h;                          #  5 hOld:int := h:int 
-    io.print("recalc");                 #  6 _12:void := IOprint_val(_13:str) 
-    c := algebra.select(a,l,h);         #  7 c:bat[:oid,:int] := ALGselect(a:bat[:oid,:int], l:int, h:int) {G}
-    d := algebra.semijoin(b,c);         #  8 d:bat[:oid,:str] := ALGsemijoin(b:bat[:oid,:str], c:bat[:oid,:int]) {G}
-barrier available := true;              #  9 available:bit := _9:bit {J15}
-    yield view1 := d;                   # 10 view1:bat[:oid,:str] := d:bat[:oid,:str] {G}
-    leave available := calc.!=(lOld,l); # 11 available:bit := CALCcompNEQintint(lOld:int, l:int) {J15}
-    leave available := calc.!=(hOld,h); # 12 available:bit := CALCcompNEQintint(hOld:int, h:int) {J15}
-    io.print("reuse");                  # 13 _17:void := IOprint_val(_18:str) 
-    redo available := true;             # 14 available:bit := _9:bit {J10}
-exit available;                         # 15 available:bit 
-    redo always;                        # 16 always:bit {J4}
-exit always;                            # 17 always:bit 
-    return view1 := nil:bat[:oid,:str]; # 18 view1:bat[:oid,:str] := _19:bat[:oid,:str] {G}
-end view1;                              # 19  
-function user.main():void;              #  0 main:void := user.main() {G}
+factory user.view1(l:int,h:int):bat[:oid,:str];
+    a := bbp.bind("emp","age");
+    b := bbp.bind("emp","name");
+barrier always := true;
+    lOld := l;
+    hOld := h;
+    io.print("recalc");
+    c := algebra.select(a,l,h);
+    d := algebra.semijoin(b,c);
+barrier available := true;
+    yield view1 := d;
+    leave available := calc.!=(lOld,l);
+    leave available := calc.!=(hOld,h);
+    io.print("reuse");
+    redo available := true;
+exit available;
+    redo always;
+exit always;
+    return view1 := nil:bat[:oid,:str];
+end view1;
+#
+#e:= user.view1(0,2);
+#io.print(e);
+#e:= user.view1(0,2);
+#io.print(e);
+#e:= user.view1(0,4);
+#io.print(e);
+#
+#
+function user.main():void;
 #materialized views example 
-    r := bat.new(:oid,:int);            #  2 r:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    bat.setRole(r,"emp","age");         #  3 _5:void := BKCsetRole(r:bat[:oid,:int], _6:str, _7:str) 
-    bat.append(r,1);                    #  4 _8:bat[:int,:any] := BKCappend_val_wrap(r:bat[:oid,:int], _9:int) {G}
-    bat.append(r,2);                    #  5 _10:bat[:int,:any] := BKCappend_val_wrap(r:bat[:oid,:int], _11:int) {G}
-    bat.append(r,3);                    #  6 _12:bat[:int,:any] := BKCappend_val_wrap(r:bat[:oid,:int], _13:int) {G}
-    io.print(r);                        #  7 _14:void := IOprint_val(r:bat[:oid,:int]) 
-    s := bat.new(:oid,:str);            #  8 s:bat[:oid,:str] := CMDBATnew(_3:oid, _16:str) {G}
-    bat.setRole(s,"emp","name");        #  9 _17:void := BKCsetRole(s:bat[:oid,:str], _6:str, _18:str) 
-    bat.append(s,"A");                  # 10 _19:bat[:str,:any] := BKCappend_val_wrap(s:bat[:oid,:str], _20:str) {G}
-    bat.append(s,"B");                  # 11 _21:bat[:str,:any] := BKCappend_val_wrap(s:bat[:oid,:str], _22:str) {G}
-    bat.append(s,"C");                  # 12 _23:bat[:str,:any] := BKCappend_val_wrap(s:bat[:oid,:str], _24:str) {G}
-    io.print(s);                        # 13 _25:void := IOprint_val(s:bat[:oid,:str]) 
-    e := user.view1(0,2);               # 14 e:bat[:oid,:str] := user.view1(_27:int, _11:int) {G}
-    io.print(e);                        # 15 _28:void := IOprint_val(e:bat[:oid,:str]) 
-    e := user.view1(0,2);               # 16 e:bat[:oid,:str] := user.view1(_27:int, _11:int) {G}
-    io.print(e);                        # 17 _29:void := IOprint_val(e:bat[:oid,:str]) 
-    e := user.view1(0,4);               # 18 e:bat[:oid,:str] := user.view1(_27:int, _30:int) {G}
-    io.print(e);                        # 19 _31:void := IOprint_val(e:bat[:oid,:str]) 
-end main;	# 20  
+    r := bat.new(:oid,:int);
+    bat.setRole(r,"emp","age");
+    bat.append(r,1);
+    bat.append(r,2);
+    bat.append(r,3);
+    io.print(r);
+    s := bat.new(:oid,:str);
+    bat.setRole(s,"emp","name");
+    bat.append(s,"A");
+    bat.append(s,"B");
+    bat.append(s,"C");
+    io.print(s);
+    e := user.view1(0,2);
+    io.print(e);
+    e := user.view1(0,2);
+    io.print(e);
+    e := user.view1(0,4);
+    io.print(e);
+end main;
 #-----------------#
 # emp	age	  # name
 # void	int	  # type

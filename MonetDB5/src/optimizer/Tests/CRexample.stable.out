@@ -12,22 +12,13 @@ stdout of test 'CRexample` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-#b := bat.new(:void,:int);
-#s1:= algebra.select(b,1,80);
-#s2:= algebra.select(s1,5,95);
-#s3:= algebra.select(s2,50,nil:int);
-#s4:= algebra.select(s3,nil:int,75);
-#io.print(s4);
-#optimizer.cascade();
-#optimizer.deadCodeRemoval();
-#mdb.list();
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:void,:int);           #  1 b:bat[:void,:int] := CMDBATnew(_2:void, _3:int) {G}
-    s4 := algebra.select(b,50,75);      #  2 s4:bat[:void,:int] := ALGselect(b:bat[:void,:int], _11:int, _14:int) {G}
-    io.print(s4);                       #  3 _15:void := IOprint_val(s4:bat[:void,:int]) 
-    mdb.List();                         #  4 _18:void := MDBlistDetail() 
-end main;	# 5  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+function user.main():void;
+    b := bat.new(:void,:int);
+    s4 := algebra.select(b,50,75);
+    io.print(s4);
+    mdb.List();
+end main;
 #-----------------#
 # h	t	  # name
 # void	int	  # type
