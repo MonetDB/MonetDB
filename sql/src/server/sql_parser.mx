@@ -4164,7 +4164,7 @@ data_type:
  |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
 			{ 
-			  lng d = $3;
+			  int d = $3;
 			  if (d > 18) {
 				char *msg = sql_message("decimal of %d digits are not supported", d);
 				yyerror(msg);
