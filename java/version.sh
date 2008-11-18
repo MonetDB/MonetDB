@@ -111,11 +111,13 @@ sed \
 file="configure.ag"
 sed \
 	-e "s|^\(\[MonetDB Java\], \)\[${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}\]|\1\[${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}\]|" \
+	-e "s|\[20[0-9][0-9][01][0-9][0-3][0-9]\]|[$(date +%Y%m%d)]|" \
 	${file} | ${diff} ${file} - | ${patch}
 
 file="NT/rules.msc"
 sed \
 	-e "s|^\(VERSION=\)${ESC_MAJOR}\.${ESC_MINOR}.${ESC_SUFFIX//[^0-9]/}|\1${NEW_MAJOR}.${NEW_MINOR}.${NEW_SUFFIX//[^0-9]/}|" \
+	-e "s|VERSION=20[0-9][0-9][01][0-9][0-3][0-9]|VERSION=$(date +%Y%m%d)|" \
 	${file} | ${diff} ${file} - | ${patch}
 
 for file in \
