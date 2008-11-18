@@ -71,6 +71,9 @@
 #include "logical.h"
 #include "logical_mnemonic.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 
 #include "xml2lalg_xpath_utils.h"
 #include "xml2lalg_converters.h"
@@ -2424,18 +2427,15 @@ getPFLA_AttributeList(
     xmlNodePtr nodePtr, 
     const char* xpathExpression)
 {
-
-
     /* fetch all attribute columns from xml */
     xmlXPathObjectPtr atts_xml =  XPATH(xpathExpression);
 
     /* how many attributes do we have? */
     int attsCount = PFxml2la_xpath_getNodeCount(atts_xml);;
 
-
+    PFalg_collist_t *collist = PFalg_collist (attsCount);
 
     /* (1) fetch the attributes from xml */
-    PFalg_col_t* atts = PFmalloc (attsCount * sizeof (PFalg_col_t));
     for (int i = 0; i < attsCount; i++)
     {
         /*
@@ -2443,19 +2443,15 @@ getPFLA_AttributeList(
          transfer it to the corresponding PF-Type, and
          store it in the attribute list
         */
-        atts[i] = ctx->convert2PFLA_attributeName(
+        cladd (collist) = ctx->convert2PFLA_attributeName(
             PFxml2la_xpath_getAttributeValueFromElementNode(
                 PFxml2la_xpath_getNthNode(atts_xml, i), "name"));
     }             
-
-    /* (2) construct the attribute list  */
-    PFalg_collist_t *collist = PFalg_collist_(attsCount, atts);
 
     if(atts_xml)
         xmlXPathFreeObject(atts_xml);
 
     return collist;
-
 }
 
 

@@ -1267,7 +1267,7 @@ column_eq (unsigned int col1, unsigned int col2,
  */
 static PFalg_col_t
 littbl_column (PFalg_col_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
-               PFarray_t *seen)
+               PFalg_collist_t *seen)
 {
     assert (littbl1->kind == la_lit_tbl);
     assert (littbl2->kind == la_lit_tbl);
@@ -1297,9 +1297,8 @@ littbl_column (PFalg_col_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
         if (column_eq (column, i, littbl1, littbl2)) {
             /* loop over the protocolled columns to check if
              * if we want to use a column twice */
-            for (unsigned int j = 0; j < PFarray_last (seen); j++)
-                if (littbl2->schema.items[i].name ==
-                    *((PFalg_col_t *)PFarray_at (seen, j)))
+            for (unsigned int j = 0; j < clsize (seen); j++)
+                if (littbl2->schema.items[i].name == clat (seen, j))
                     match = true;
             if (match) continue;
 
@@ -2172,16 +2171,15 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
              * we have to protocol the columns
              * we have just seen, to avoid a column to be
              * used twice */
-            PFarray_t *seen = PFarray (sizeof(PFalg_col_t), DEF_WIDTH);
+            PFalg_collist_t *seen = PFalg_collist(DEF_WIDTH);
             for (unsigned int i = 0; i < ori->schema.count; i++) {
                 PFalg_col_t col = littbl_column (ori->schema.items[i].name,
                                                  ori, cse, seen);
 
-                *((PFalg_col_t *) PFarray_add (seen)) = col;
+                cladd (seen) = col;
 
                 INACTCOL (actmap,
-                          actcol (col,
-                                  ori->schema.items[i].name));
+                          actcol (col, ori->schema.items[i].name));
             }
         }   break;
 

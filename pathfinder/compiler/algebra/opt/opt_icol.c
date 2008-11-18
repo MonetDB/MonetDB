@@ -93,7 +93,7 @@ opt_icol (PFla_op_t *p)
                at least one column remains. */
             if (count && count < p->schema.count) {
                 /* create new list of columns */
-                PFalg_col_t   *cols = PFmalloc (count * sizeof (PFalg_col_t));
+                PFalg_collist_t *collist = PFalg_collist (count);
 
                 /* create list of tuples each containing a list of atoms */
                 PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
@@ -106,7 +106,7 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (PFprop_icol (p->prop, p->schema.items[i].name)) {
                         /* retain matching values in literal table */
-                        cols[count] = p->schema.items[i].name;
+                        cladd (collist) = p->schema.items[i].name;
                         for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++)
                             tuples[j].atoms[count] =
                                     p->sem.lit_tbl.tuples[j].atoms[i];
@@ -116,15 +116,13 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++)
                     tuples[i].count = count;
 
-                *p = *PFla_lit_tbl_ (PFalg_collist_ (count, cols),
-                                     p->sem.lit_tbl.count,
-                                     tuples);
+                *p = *PFla_lit_tbl_ (collist, p->sem.lit_tbl.count, tuples);
                 SEEN(p) = true;
             } else if (!count && p->schema.count > 1) {
                 /* prune everything except one column */
 
                 /* create new list of columns */
-                PFalg_col_t   *cols = PFmalloc (1 * sizeof (PFalg_col_t));
+                PFalg_collist_t *collist = PFalg_collist (1);
 
                 /* create list of tuples each containing a list of atoms */
                 PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
@@ -134,14 +132,13 @@ opt_icol (PFla_op_t *p)
                                                 sizeof (*(tuples[i].atoms)));
 
                 /* retain matching values in literal table */
-                cols[0] = p->schema.items[0].name;
+                cladd (collist) = p->schema.items[0].name;
                 for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++) {
                     tuples[j].atoms[0] = PFalg_lit_nat (42);
                     tuples[j].count = 1;
                 }
 
-                *p = *PFla_lit_tbl_ (PFalg_collist_ (1, cols),
-                                     p->sem.lit_tbl.count, tuples);
+                *p = *PFla_lit_tbl_ (collist, p->sem.lit_tbl.count, tuples);
                 SEEN(p) = true;
             }
         } break;

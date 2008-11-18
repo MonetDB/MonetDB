@@ -43,6 +43,9 @@
 #include "oops.h"         /* PFoops() */
 #include "mem.h"          /* PFmalloc() */
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -443,13 +446,13 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    attach (lit_tbl) */
         case 6:
         {
-            unsigned int   i, j,
-                           acount = p->schema.count,
-                           tcount = L(p)->sem.lit_tbl.count;
-            PFalg_col_t   *cols   = PFmalloc (acount * sizeof (PFalg_col_t));
-            PFalg_tuple_t *tuples = PFmalloc (tcount * sizeof (PFalg_tuple_t));
-            PFalg_tuple_t  tuple;
-            PFalg_atom_t   value  = p->sem.attach.value;
+            unsigned int     i, j,
+                             acount  = p->schema.count,
+                             tcount  = L(p)->sem.lit_tbl.count;
+            PFalg_collist_t *collist = PFalg_collist (acount);
+            PFalg_tuple_t   *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t));
+            PFalg_tuple_t    tuple;
+            PFalg_atom_t     value   = p->sem.attach.value;
 
             /* copy the tuples and attach the value
                of the new column to every tuple */
@@ -463,10 +466,10 @@ reduce (PFla_op_t *p, int goalnt)
             }
             /* copy the aligned column names */
             for (j = 0; j < acount - 1; j++)
-                cols[j] = L(p)->schema.items[j].name;
-            cols[j] = p->sem.attach.res;
+                cladd (collist) = L(p)->schema.items[j].name;
+            cladd (collist) = p->sem.attach.res;
 
-            *p = *PFla_lit_tbl_ (PFalg_collist_ (acount, cols), tcount, tuples);
+            *p = *PFla_lit_tbl_ (collist, tcount, tuples);
             SEEN(p) = false;
             label (p);
         }   break;
@@ -632,12 +635,12 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    project (lit_tbl) */
         case 19:
         {
-            unsigned int   i, j, index,
-                           acount  = p->schema.count,
-                           tcount  = L(p)->sem.lit_tbl.count;
-            PFalg_col_t   *cols    = PFmalloc (acount * sizeof (PFalg_col_t));
-            PFalg_tuple_t *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
-                          *ltuples = L(p)->sem.lit_tbl.tuples;
+            unsigned int     i, j, index,
+                             acount  = p->schema.count,
+                             tcount  = L(p)->sem.lit_tbl.count;
+            PFalg_collist_t *collist = PFalg_collist (acount);
+            PFalg_tuple_t   *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
+                            *ltuples = L(p)->sem.lit_tbl.tuples;
 
             /* allocate memory for the tuples */
             for (j = 0; j < tcount; j++) {
@@ -648,7 +651,7 @@ reduce (PFla_op_t *p, int goalnt)
             /* iterate over all columns */
             for (i = 0; i < acount; i++) {
                 /* copy the column names */
-                cols[i] = p->sem.proj.items[i].new;
+                cladd (collist) = p->sem.proj.items[i].new;
 
                 /* find the corresponding column index in the table */
                 for (j = 0; j < L(p)->schema.count; j++)
@@ -662,7 +665,7 @@ reduce (PFla_op_t *p, int goalnt)
                     tuples[j].atoms[i] = ltuples[j].atoms[index];
             }
 
-            *p = *PFla_lit_tbl_ (PFalg_collist_ (acount, cols), tcount, tuples);
+            *p = *PFla_lit_tbl_ (collist, tcount, tuples);
             SEEN(p) = false;
             label (p);
         }   break;
@@ -835,15 +838,15 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    disjunion (lit_tbl, lit_tbl) */
         case 25:
         {
-            unsigned int   i, j, index,
-                           acount  = p->schema.count,
-                           lcount  = L(p)->sem.lit_tbl.count,
-                           rcount  = R(p)->sem.lit_tbl.count,
-                           tcount  = lcount + rcount;
-            PFalg_col_t   *cols    = PFmalloc (acount * sizeof (PFalg_col_t));
-            PFalg_tuple_t *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
-                          *ltuples = L(p)->sem.lit_tbl.tuples,
-                          *rtuples = R(p)->sem.lit_tbl.tuples;
+            unsigned int     i, j, index,
+                             acount  = p->schema.count,
+                             lcount  = L(p)->sem.lit_tbl.count,
+                             rcount  = R(p)->sem.lit_tbl.count,
+                             tcount  = lcount + rcount;
+            PFalg_collist_t *collist = PFalg_collist (acount);
+            PFalg_tuple_t   *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t)),
+                            *ltuples = L(p)->sem.lit_tbl.tuples,
+                            *rtuples = R(p)->sem.lit_tbl.tuples;
 
             /* allocate memory for the tuples */
             for (j = 0; j < tcount; j++) {
@@ -854,11 +857,11 @@ reduce (PFla_op_t *p, int goalnt)
             /* iterate over all columns */
             for (i = 0; i < acount; i++) {
                 /* copy the column names */
-                cols[i] = p->schema.items[i].name;
+                cladd (collist) = p->schema.items[i].name;
 
                 /* find the corresponding column index in the left table */
                 for (j = 0; j < acount; j++)
-                    if (cols[i] == L(p)->schema.items[j].name)
+                    if (clat (collist, i) == L(p)->schema.items[j].name)
                         break;
                 assert (j < acount);
                 index = j;
@@ -869,7 +872,7 @@ reduce (PFla_op_t *p, int goalnt)
 
                 /* find the corresponding column index in the right table */
                 for (j = 0; j < acount; j++)
-                    if (cols[i] == R(p)->schema.items[j].name)
+                    if (clat (collist, i) == R(p)->schema.items[j].name)
                         break;
                 assert (j < acount);
                 index = j;
@@ -879,7 +882,7 @@ reduce (PFla_op_t *p, int goalnt)
                     tuples[j+lcount].atoms[i] = rtuples[j].atoms[index];
             }
 
-            *p = *PFla_lit_tbl_ (PFalg_collist_ (acount, cols), tcount, tuples);
+            *p = *PFla_lit_tbl_ (collist, tcount, tuples);
             SEEN(p) = false;
             label (p);
         }   break;

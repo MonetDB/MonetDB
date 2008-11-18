@@ -2314,12 +2314,11 @@ collect_mappings_worker (PFalg_col_t res,
             req_col_names[i].old = col_NULL;
 
     /* Remove result column */
-    for (i = 0; i < PFarray_last (new_col_names); i++) {
-        col = *(PFalg_col_t *) PFarray_at (new_col_names, i);
+    for (i = 0; i < clsize (new_col_names); i++) {
+        col = clat (new_col_names, i);
         if (col == res) {
-            *(PFalg_col_t *) PFarray_at (new_col_names, i)
-                = *(PFalg_col_t *) PFarray_top (new_col_names);
-            PFarray_del (new_col_names);
+            clat (new_col_names, i) = cltop (new_col_names);
+            clsize (new_col_names) -= 1;
             i--;
         }
     }
@@ -2327,15 +2326,15 @@ collect_mappings_worker (PFalg_col_t res,
     /* Add columns in refs if they are not already an available column. */
     for (i = 0; i < clsize (refs); i++) {
         col_present = false;
-        for (j = 0; j < PFarray_last (new_col_names); j++) {
-            col = *(PFalg_col_t *) PFarray_at (new_col_names, j);
+        for (j = 0; j < clsize (new_col_names); j++) {
+            col = clat (new_col_names, j);
             if (col == clat (refs, i)) {
                 col_present = true;
                 break;
             }
         }
         if (!col_present)
-            *(PFalg_col_t *) PFarray_add (new_col_names) = clat (refs, i);
+            cladd (new_col_names) = clat (refs, i);
     }
 }
 
@@ -2374,12 +2373,11 @@ collect_mappings (PFla_op_t *p,
                             break;
                         }
                 }
-                for (i = 0; i < PFarray_last (new_col_names); i++) {
-                    col = *(PFalg_col_t *) PFarray_at (new_col_names, i);
+                for (i = 0; i < clsize (new_col_names); i++) {
+                    col = clat (new_col_names, i);
                     for (j = 0; j < p->sem.proj.count; j++)
                         if (col == p->sem.proj.items[j].new) {
-                            *(PFalg_col_t *) PFarray_at (new_col_names, i) =
-                                p->sem.proj.items[j].old;
+                            clat (new_col_names, i) = p->sem.proj.items[j].old;
                             break;
                         }
                 }
@@ -2657,10 +2655,10 @@ unnest_proxy (PFla_op_t *root,
        the key values for the connecting join. */
     for (i = 0; i < req_count; i++) {
         cur_col = req_col_names[i].old;
-        for (j = 0; j < PFarray_last (new_col_names); j++)
-            if (cur_col == *(PFalg_col_t *) PFarray_at (new_col_names, j))
+        for (j = 0; j < clsize (new_col_names); j++)
+            if (cur_col == clat (new_col_names, j))
                 break;
-        if (j == PFarray_last (new_col_names)) {
+        if (j == clsize (new_col_names)) {
             map_col_new = req_col_names[i].new;
             map_col_old = req_col_names[i].old;
             break;

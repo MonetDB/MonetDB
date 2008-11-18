@@ -596,18 +596,16 @@ opt_const (PFla_op_t *p, bool no_attach)
                 /* as all columns are constant, the distinct operator
                    can be replaced by lit_tbl of the current schema
                    whose single row contains the constant values */
-                PFalg_col_t *cols = PFmalloc (p->schema.count *
-                                              sizeof (PFalg_col_t));
+                PFalg_collist_t *collist = PFalg_collist (p->schema.count);
                 PFalg_atom_t *atoms = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_atom_t));
 
                 for (i = 0; i < p->schema.count; i++) {
-                    cols[i] = p->schema.items[i].name;
+                    cladd (collist) = p->schema.items[i].name;
                     atoms[i] = PFprop_const_val (p->prop,
                                                  p->schema.items[i].name);
                 }
-                *p = *PFla_lit_tbl (PFalg_collist_ (i, cols),
-                                    PFalg_tuple_ (i, atoms));
+                *p = *PFla_lit_tbl (collist, PFalg_tuple_ (i, atoms));
 
                 SEEN(p) = true;
 #endif
