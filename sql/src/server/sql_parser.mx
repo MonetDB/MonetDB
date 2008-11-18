@@ -4166,7 +4166,7 @@ data_type:
 			{ 
 			  lng d = $3;
 			  if (d > 18) {
-				char *msg = sql_message("decimal of " LLFMT " digits are not supported", d);
+				char *msg = sql_message("decimal of %d digits are not supported", d);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
@@ -4177,14 +4177,14 @@ data_type:
 			}
  |  sqlDECIMAL '(' nonzero ',' posint ')'
 			{ 
-			  lng d = $3;
-			  lng s = $5;
+			  int d = $3;
+			  int s = $5;
 			  if (s >= d || s + d > 18) {
 				char *msg = NULL;
 				if (s >= d)
-					msg = sql_message("scale (" LLFMT ") should be less than precision (" LLFMT ")", s, d);
+					msg = sql_message("scale (%d) should be less than precision (%d)", s, d);
 				else
-					msg = sql_message("decimal(" LLFMT ","LLFMT") isn't supported because P="LLFMT" + S="LLFMT" > 18", d, s, d, s);
+					msg = sql_message("decimal(%d,%d) isn't supported because P=%d + S=%d > 18", d, s, d, s);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
@@ -4210,7 +4210,7 @@ data_type:
 			}
  |  sqlFLOAT '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
+				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4241,7 +4241,7 @@ data_type:
 			{ sql_find_subtype(&$$, $1, $3, 0); }
  | type_alias '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
+				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);
