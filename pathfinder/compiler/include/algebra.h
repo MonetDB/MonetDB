@@ -467,16 +467,6 @@ PFalg_tuple_t PFalg_tuple_ (unsigned int count, PFalg_atom_t *atoms);
  */
 PFalg_collist_t * PFalg_collist_ (unsigned int count, PFalg_col_t *cols);
 
-
-/* Returns the original schema without the columns given in the list */
-#define PFalg_schema_diff(schema, ...) \
-    PFalg_schema_diff_ (schema, \
-            (sizeof ((PFalg_col_t[]) { __VA_ARGS__ })   \
-                       / sizeof (PFalg_col_t)), \
-            (PFalg_col_t[]) {__VA_ARGS__})
-PFalg_schema_t PFalg_schema_diff_(PFalg_schema_t schema,
-                        unsigned int count, PFalg_col_t *cols);
-
 /** 
  * Constructor for an empty schema with iter|pos|item and item of type item_t
  */

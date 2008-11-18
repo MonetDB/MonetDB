@@ -602,65 +602,6 @@ PFalg_collist_ (unsigned int count, PFalg_col_t *cols)
 }
 
 /**
- * Count the items in the schema different to collist.
- */
-static unsigned int
-schema_diff_count (PFalg_schema_t schema, unsigned int count,
-                PFalg_col_t *collist)
-{
-    unsigned int c = 0;
-    bool match = false;
-
-    for (unsigned int i = 0; i < schema.count; i++) {
-        for (unsigned int j = 0; j < count; j++) {
-            if (schema.items[i].name == collist[j])
-                match = true;
-        }
-
-        if (!match) c++;
-        match = false;
-    }
-
-    return c;
-}
-
-/**
- * Return the schema without the columns given
- * in the @a collist argument.
- */
-PFalg_schema_t
-PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
-                PFalg_col_t *collist)
-{
-    unsigned int retc = 0;
-    bool match = false;
-    unsigned int c = schema_diff_count (schema, count, collist);
-
-    PFalg_schema_t ret =
-        (PFalg_schema_t)
-        {
-            .count = c,
-            .items = (PFalg_schm_item_t *) PFmalloc (
-                c * sizeof (PFalg_schm_item_t))
-        };
-
-
-    for (unsigned int i = 0; i < schema.count; i++) {
-        for (unsigned int j = 0; j < count; j++) {
-            if (schema.items[i].name == collist[j]) {
-                match = true;
-                break;
-            }
-        }
-
-        if (!match) ret.items[retc++] = schema.items[i];
-        match = false;
-    }
-
-    return ret;
-}
-
-/**
  * Return a schema of iter|pos|item where item type is item_t
  */
 PFalg_schema_t
