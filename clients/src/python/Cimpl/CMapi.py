@@ -398,6 +398,12 @@ class MapiQuery:
         if ret == MapiLib.MTIMEOUT:
             raise IOError(self.__mid.error_str())
 
+    def last_id(self):
+        ret = MapiLib.mapi_get_last_id(self.__hdl)
+        if self.__mid.error():
+            raise IOError(self.__mid.error_str())
+        return ret
+
     def fetch_row(self):
         ret = MapiLib.mapi_fetch_row(self.__hdl)
         if self.__mid.error():

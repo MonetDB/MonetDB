@@ -141,11 +141,10 @@ class BaseCursor:
 
     # _query = __do_query
 
-
     def insert_id(self):
-        """Return the last inserted ID on an AUTO_INCREMENT columns.
-        DEPRECATED: use lastrowid attribute"""
-        self.errorhandler(self, NotSupportedError, "Monet does not support AUTO_INCREMENT columns")
+        if not self._result:
+            self.errorhandler(self, NotSupportedError, "missing result handle")
+        return self._result.last_id()
 
     def _fetch_row(self, size=1):
         if not self._result:
