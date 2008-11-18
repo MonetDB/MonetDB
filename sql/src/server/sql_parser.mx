@@ -1270,7 +1270,7 @@ opt_restart:
  *   * else the value
  */
 opt_increment:
-	/* empty */				{ $$ = -1; }
+	/* empty */		{ $$ = -1; }
   |	INCREMENT BY nonzero	{ $$ = $3; }
   ;
 
@@ -1295,7 +1295,7 @@ opt_min:
  *   * else the MAXVALUE value
  */
 opt_max:
-	/* empty */				{ $$ = -1; }
+	/* empty */			{ $$ = -1; }
   |	MAXVALUE nonzero		{ $$ = $2; }
   |	NOMAXVALUE				{ $$ =  0; }
   ;
@@ -1307,7 +1307,7 @@ opt_max:
  *   * else the value
  */
 opt_cache:
-	/* empty */				{ $$ = -1; }
+	/* empty */			{ $$ = -1; }
   |	CACHE nonzero			{ $$ = $2; }
   ;
 
@@ -4163,29 +4163,34 @@ data_type:
 
  |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
-			{ if ($3 > 18) {
-				char *msg = sql_message("decimal of " LLFMT " digits are not supported", $3);
+			{ 
+			  int d = $3;
+			  if (d > 18) {
+				char *msg = sql_message("decimal of %d digits are not supported", d);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
 			  } else {
-			        sql_find_subtype(&$$, "decimal", $3, 0); 
+			        sql_find_subtype(&$$, "decimal", d, 0); 
 			  }
 			}
  |  sqlDECIMAL '(' nonzero ',' posint ')'
-			{ if ($5 >= $3 || $5 + $3 > 18) {
+			{ 
+			  int d = $3;
+			  int s = $5;
+			  if (s >= d || s + d > 18) {
 				char *msg = NULL;
-				if ($5 >= $3)
-					msg = sql_message("scale (" LLFMT ") should be less than precision (" LLFMT ")", $5, $3);
+				if (s >= d)
+					msg = sql_message("scale (%d) should be less than precision (%d)", s, d);
 				else
-					msg = sql_message("decimal(" LLFMT ","LLFMT") isn't supported because P="LLFMT" + S="LLFMT" > 18", $3, $5, $3, $5);
+					msg = sql_message("decimal(%d,%d) isn't supported because P=%d + S=%d > 18", d, s, d, s);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
 			  } else {
-				sql_find_subtype(&$$, "decimal", $3, $5);
+				sql_find_subtype(&$$, "decimal", d, s);
 			  }
 			}
  |  sqlFLOAT		{ sql_find_subtype(&$$, "double", 0, 0); }
@@ -4205,7 +4210,7 @@ data_type:
 			}
  |  sqlFLOAT '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
+				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4236,7 +4241,7 @@ data_type:
 			{ sql_find_subtype(&$$, $1, $3, 0); }
  | type_alias '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(" LLFMT ") should be less than number of digits(" LLFMT ")", $5, $3);
+				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);

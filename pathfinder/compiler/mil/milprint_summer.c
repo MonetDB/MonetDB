@@ -11580,9 +11580,13 @@ const char* PFstartMIL(int statement_type) {
         "    play_update_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
         "  }\n"\
         "  if (xrpc_coord) xrpc_commit(xrpc_qid, xrpc_mode, xrpc_timeout, time_start, ws.find(XRPC_PARTICIPANTS)); \n"\
-        "  if (xrpc_method != \"\") \n"\
+        "  if (xrpc_method != \"\") { \n"\
+        "    var saved_seqbase := ws.seqbase(); \n"\
+        "    if(isnil(ws.seqbase())) ws.seqbase(0@0); \n"\
         "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
-        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_hostport,dirty,xrpc_seqnr,xrpc_timeout,time_start);\n"
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_hostport,dirty,xrpc_seqnr,xrpc_timeout,time_start);\n" \
+        "    ws.seqbase(saved_seqbase); \n"\
+        "  }\n"
 #define PF_STOPMIL_DOCMGT_BODY\
         "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\

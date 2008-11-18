@@ -1,0 +1,136 @@
+stdout of test 'db_env` in directory 'runtime/xrpc/admin` itself:
+
+
+# 12:02:34 >  
+# 12:02:34 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32688 --set xrpc_port=47901 --set monet_prompt= --trace  "--dbname=mTests_runtime_xrpc_admin" "--dbinit= module(pathfinder);" db_env.prologue ; echo ; echo Over..
+# 12:02:34 >  
+
+
+
+# MonetDB Server v4.24.0
+# based on GDK   v1.24.1
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.1 loaded (default back-end is 'milprint_summer')
+# XRPC administrative console at http://127.0.0.1:47901/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 12:02:34 >  
+# 12:02:34 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=32688 db_env.xq
+# 12:02:34 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+  <bun head="config">
+#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf
+  </bun>
+  <bun head="datadir">
+#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/share
+  </bun>
+  <bun head="gdk_alloc_map">
+#    no
+  </bun>
+  <bun head="gdk_arch">
+#    64bitx86_64-unknown-linux-gnu
+  </bun>
+  <bun head="gdk_dbfarm">
+#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm
+  </bun>
+  <bun head="gdk_dbname">
+#    mTests_runtime_xrpc_admin
+  </bun>
+  <bun head="gdk_mem_bigsize">
+#    262144
+  </bun>
+  <bun head="gdk_mem_maxsize">
+#    6786091110
+  </bun>
+  <bun head="gdk_mem_pagebits">
+#    14
+  </bun>
+  <bun head="gdk_version">
+#    1.24.0
+  </bun>
+  <bun head="gdk_vmtrim">
+#    yes
+  </bun>
+  <bun head="host">
+#    localhost
+  </bun>
+  <bun head="mapi_clients">
+#    2
+  </bun>
+  <bun head="mapi_open">
+#    true
+  </bun>
+  <bun head="mapi_port">
+#    32688
+  </bun>
+  <bun head="monet_admin">
+#    adm
+  </bun>
+  <bun head="monet_cwd">
+#    /ufs/zhang/homepage/ROOT/mTests/runtime/xrpc/admin
+  </bun>
+  <bun head="monet_version">
+#    4.24.0
+  </bun>
+  <bun head="standoff_end">
+#    end
+  </bun>
+  <bun head="standoff_ns">
+#    
+  </bun>
+  <bun head="standoff_start">
+#    start
+  </bun>
+  <bun head="xquery_backend">
+#    milprint_summer
+  </bun>
+  <bun head="xquery_cacheMB">
+#    100
+  </bun>
+  <bun head="xquery_cacherules">
+#    
+  </bun>
+  <bun head="xquery_logdir">
+#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs
+  </bun>
+  <bun head="xquery_output">
+#    dm
+  </bun>
+  <bun head="xquery_procMB">
+#    128
+  </bun>
+  <bun head="xrpc_admin">
+#    127.0.0.1;http://127.0.0.1;localhost;http://localhost
+  </bun>
+  <bun head="xrpc_open">
+#    true
+  </bun>
+  <bun head="xrpc_options">
+#    
+  </bun>
+  <bun head="xrpc_port">
+#    47901
+  </bun>
+  <bun head="xrpc_trusted">
+#    http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/net/jarl/export/scratch0/zhang/monet-install/stable/debug/share/MonetDB/xrpc/export
+  </bun>
+    <bun head="xrpc_user">
+#    http://127.0.0.1;127.0.0.1;http://localhost;localhost
+  </bun>
+</XQueryResult>
+
+# 12:02:35 >  
+# 12:02:35 >  Done.
+# 12:02:35 >  
+

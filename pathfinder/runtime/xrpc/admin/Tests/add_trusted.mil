@@ -1,0 +1,14 @@
+module("pathfinder");
+module("unix");
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+var TSTTRGDIR := getenv("TSTTRGDIR");
+var HOST := getenv("HOST");
+var XRPCPORT := getenv("XRPCPORT");
+
+add_xrpc_trusted(TSTSRCDIR);
+add_xrpc_trusted(TSTTRGDIR);
+add_xrpc_trusted("http://"+HOST+":"+XRPCPORT);
+
+commit();
+

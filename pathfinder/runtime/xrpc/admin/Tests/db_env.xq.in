@@ -1,0 +1,18 @@
+(:
+  Test the following admin functions:
+  - adm:db-env()
+  Filter out uninteresting differences in the results
+:)
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+for $env in execute at {"$HOST:$XRPCPORT"} {adm:db-env()}
+return
+   (text { "&#10;  " },
+    element bun {
+        $env/@head,
+        text { "&#10;#    " },
+        string($env/@tail),
+        text { "&#10;  " }
+    }),
+text { "&#10;" }
+

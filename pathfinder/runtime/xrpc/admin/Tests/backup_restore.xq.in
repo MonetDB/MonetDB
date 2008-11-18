@@ -1,0 +1,69 @@
+(:
+  1. show current documents in DB
+  2. backup current DB
+  3. delete all documents in DB
+  4. restore backup
+
+  Test the following admin functions:
+  - adm:add-doc()
+  - adm:documents()
+  - adm:backup()
+  - adm:backup-col()
+  - adm:del-col()
+  - adm:del-doc()
+  - adm:restore()
+  - adm:restore-col()
+:)
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+(execute at {"$HOST:$XRPCPORT"}
+            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
+                         "xmark1.xml", "xmark", 10)},
+ execute at {"$HOST:$XRPCPORT"}
+            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
+                         "xmark2.xml", "xmark", 10)}
+)
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+<db-before-backup>{
+   let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()}
+   return
+       for $d in $docs
+       return element document {
+               attribute updatable {$d/@updatable},
+               attribute collection {$d/@collection},
+               $d/text() }
+}</db-before-backup>
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+execute at {"$HOST:$XRPCPORT"} {adm:backup("test")}
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+<db-after-del>{
+    execute at {"$HOST:$XRPCPORT"} {adm:collections()}
+}</db-after-del>
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+execute at {"$HOST:$XRPCPORT"} {adm:restore("test", 0)}
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+<db-after-restore>{
+   let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()}
+   return
+       for $d in $docs
+       return element document {
+               attribute updatable {$d/@updatable},
+               attribute collection {$d/@collection},
+               attribute uri {$d/@uri},
+               $d/text() }
+}</db-after-restore>
+

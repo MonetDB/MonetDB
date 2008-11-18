@@ -1749,10 +1749,18 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		set_anti(e);
 
 	/* atom or row => select */
-	if (ls->card > rel->card)
-		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
-	if (rs->card > rel->card) 
-		return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
+	if (ls->card > rel->card) {
+		if (ls->name) 
+			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ls->name);
+		else
+			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+	}
+	if (rs->card > rel->card) {
+		if (rs->name)
+			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", rs->name);
+		else
+			return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+	}
 	if (rs->card <= CARD_ATOM && is_atom(rs)) {
 		if (ls->card == rs->card)  /* bin compare op */
 			return rel_select(rel, e);

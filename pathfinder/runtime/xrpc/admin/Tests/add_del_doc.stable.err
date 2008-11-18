@@ -1,0 +1,17 @@
+stderr of test 'add_del_doc` in directory 'runtime/xrpc/admin` itself:
+
+
+# 16:44:49 >  
+# 16:44:49 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36099 --set xrpc_port=49971 --set monet_prompt= --trace  "--dbname=mTests_runtime_xrpc_admin" "--dbinit= module(pathfinder);" add_del_doc.prologue ; echo ; echo Over..
+# 16:44:49 >  
+
+
+# 16:44:49 >  
+# 16:44:49 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=36099 add_del_doc.xq
+# 16:44:49 >  
+
+
+# 16:44:50 >  
+# 16:44:50 >  Done.
+# 16:44:50 >  
+
