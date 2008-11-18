@@ -103,6 +103,9 @@ comment "Locate the BAT using the head and tail names in the BAT buffer pool");
 pattern bind(idx:int):bat[:any_1,:any_2] 
 address CMDbbpbindindex
 comment "Locate the BAT using its BBP index in the BAT buffer pool";
+pattern bind(idx:bat):bat[:any_1,:any_2] 
+address CMDbbpbindindex
+comment "Locate the BAT using its identifier in the BAT buffer pool";
 
 pattern getObjects():bat[:int,:str] 
 address CMDbbpGetObjects
