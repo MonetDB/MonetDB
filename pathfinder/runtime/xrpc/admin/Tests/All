@@ -1,0 +1,4 @@
+add_del_doc
+backup_restore
+db_stats
+db_env

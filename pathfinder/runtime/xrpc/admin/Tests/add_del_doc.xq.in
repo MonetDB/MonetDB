@@ -1,0 +1,76 @@
+(:
+  1. add two xmark documents and show the results;
+  2. delete the two added documents and show the results.
+
+  Test the following admin functions:
+  - adm:collections()
+  - adm:documents()
+  - adm:documents($collections)
+  - adm:add-doc()
+  - adm:del-col()
+  - adm:del-doc()
+:)
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+(execute at {"$HOST:$XRPCPORT"}
+            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
+                         "xmark1.xml", "xmark", 10)},
+ execute at {"$HOST:$XRPCPORT"}
+            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
+                         "xmark2.xml", "xmark", 10)}
+)
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+(<collections-after-add>{
+    execute at {"$HOST:$XRPCPORT"} {adm:collections()}
+ }</collections-after-add>,
+ <documents-after-add>{
+    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()}
+    return
+        for $d in $docs
+        return element document {
+                attribute updatable {$d/@updatable},
+                attribute collection {$d/@collection},
+                $d/text() }
+ }</documents-after-add>,
+ <documents-of-collection-after-add>{
+    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents("xmark")}
+    return
+        for $d in $docs
+        return element document {
+                attribute updatable {$d/@updatable},
+                attribute collection {$d/@collection},
+                $d/text() }
+ }</documents-of-collection-after-add>
+)
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+(<collections-after-del>{
+    execute at {"$HOST:$XRPCPORT"} {adm:collections()}
+ }</collections-after-del>,
+ <documents-after-del>{
+    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()}
+    return
+        for $d in $docs
+        return element document {
+                attribute updatable {$d/@updatable},
+                attribute collection {$d/@collection},
+                $d/text() }
+ }</documents-after-del>,
+ <documents-of-collection-after-del>{
+    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents("xmark")}
+    return
+        for $d in $docs
+        return element document {
+                attribute updatable {$d/@updatable},
+                attribute collection {$d/@collection},
+                $d/text() }
+ }</documents-of-collection-after-del>
+)
+
