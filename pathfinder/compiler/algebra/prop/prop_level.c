@@ -44,13 +44,13 @@
 #define UNKNOWN_LEVEL -1
 
 static int
-level_lookup (PFarray_t *level_mapping, PFalg_att_t attr)
+level_lookup (PFarray_t *level_mapping, PFalg_col_t col)
 {
     if (!level_mapping)
         return UNKNOWN_LEVEL;
 
     for (unsigned int i = 0; i < PFarray_last (level_mapping); i++)
-        if (attr == ((level_t *) PFarray_at (level_mapping, i))->attr)
+        if (col == ((level_t *) PFarray_at (level_mapping, i))->col)
             return ((level_t *) PFarray_at (level_mapping, i))->level;
 
     return UNKNOWN_LEVEL;
@@ -60,32 +60,32 @@ level_lookup (PFarray_t *level_mapping, PFalg_att_t attr)
  * Return level stored in property container @a prop.
  */
 int
-PFprop_level (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_level (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
-    return level_lookup (prop->level_mapping, attr);
+    return level_lookup (prop->level_mapping, col);
 }
 
 /**
- * Return the level of nodes stored in column @a attr
+ * Return the level of nodes stored in column @a col
  * in the left level mapping filed of property container @a prop.
  */
 int
-PFprop_level_left (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_level_left (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
-    return level_lookup (prop->l_level_mapping, attr);
+    return level_lookup (prop->l_level_mapping, col);
 }
 
 /**
- * Return the level of nodes stored in column @a attr
+ * Return the level of nodes stored in column @a col
  * in the right level mapping filed of property container @a prop.
  */
 int
-PFprop_level_right (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_level_right (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
-    return level_lookup (prop->r_level_mapping, attr);
+    return level_lookup (prop->r_level_mapping, col);
 }
 
 static void
@@ -114,7 +114,7 @@ copy_level_info (PFla_op_t *n, PFla_op_t *child)
 }
 
 static void
-mark_level (PFprop_t *prop, PFalg_att_t attr, int level)
+mark_level (PFprop_t *prop, PFalg_col_t col, int level)
 {
     assert (prop);
 
@@ -122,7 +122,7 @@ mark_level (PFprop_t *prop, PFalg_att_t attr, int level)
         prop->level_mapping = PFarray (sizeof (level_t), 5);
 
     *(level_t *) PFarray_add (prop->level_mapping)
-        = (level_t) { .attr = attr, .level = level };
+        = (level_t) { .col = col, .level = level };
 }
 
 /**
@@ -240,14 +240,14 @@ infer_level (PFla_op_t *n)
                 for (unsigned int j = 0; j < R(n)->schema.count; j++)
                     if (L(n)->schema.items[i].name ==
                         R(n)->schema.items[j].name) {
-                        PFalg_att_t att = L(n)->schema.items[i].name;
+                        PFalg_col_t col = L(n)->schema.items[i].name;
                         int l_level, r_level;
 
-                        l_level = PFprop_level (L(n)->prop, att);
-                        r_level = PFprop_level (R(n)->prop, att);
+                        l_level = PFprop_level (L(n)->prop, col);
+                        r_level = PFprop_level (R(n)->prop, col);
 
                         if (l_level >= 0 && l_level == r_level)
-                            mark_level (n->prop, att, l_level);
+                            mark_level (n->prop, col, l_level);
                         break;
                     }
             break;
@@ -260,7 +260,7 @@ infer_level (PFla_op_t *n)
             if (n->sem.step.level >= 0)
                 mark_level (n->prop, n->sem.step.item_res, n->sem.step.level);
             else {
-                PFalg_att_t item_res = n->sem.step.item_res;
+                PFalg_col_t item_res = n->sem.step.item_res;
                 int level = PFprop_level (R(n)->prop, n->sem.step.item);
                 if (level >= 0)
                     switch (n->sem.step.spec.axis) {

@@ -113,6 +113,9 @@
 /* We will need a notion of ``ordering''. */
 #include "ordering.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -180,18 +183,18 @@ add_plans (PFplanlist_t *list, PFplanlist_t *plans)
 }
 
 /**
- * Helper function: Determine type of attribute @a att in schema
+ * Helper function: Determine type of column @a col in schema
  * @a schema. Used by plan_disjunion() and plan_thetajoin().
  */
 static PFalg_simple_type_t
-type_of (PFalg_schema_t schema, PFalg_att_t att)
+type_of (PFalg_schema_t schema, PFalg_col_t col)
 {
     for (unsigned int i = 0; i < schema.count; i++)
-        if (schema.items[i].name == att)
+        if (schema.items[i].name == col)
             return schema.items[i].type;
 
-    PFoops (OOPS_FATAL, "unable to find attribute %s in schema",
-            PFatt_str (att));
+    PFoops (OOPS_FATAL, "unable to find column %s in schema",
+            PFcol_str (col));
 
     return 0;  /* pacify compilers */
 }
@@ -246,21 +249,17 @@ plan_serialize (const PFla_op_t *n)
 static PFplanlist_t *
 plan_lit_tbl (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret  = new_planlist ();
-    plan_t        *plan = NULL;
+    PFplanlist_t    *ret     = new_planlist ();
+    plan_t          *plan    = NULL;
+    PFalg_collist_t *collist = PFalg_collist (n->schema.count);
 
-    PFalg_attlist_t attlist;
-
-    attlist.count = n->schema.count;
-    attlist.atts  = PFmalloc (attlist.count * sizeof (*attlist.atts));
-
-    for (unsigned int i = 0; i < attlist.count; i++)
-        attlist.atts[i] = n->schema.items[i].name;
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        cladd (collist) = n->schema.items[i].name;
 
     /*
      * There is exactly this one plan.
      */
-    plan = lit_tbl (attlist, n->sem.lit_tbl.count, n->sem.lit_tbl.tuples);
+    plan = lit_tbl (collist, n->sem.lit_tbl.count, n->sem.lit_tbl.tuples);
 
     /* Add this plan to the return set of plans. */
     add_plan (ret, plan);
@@ -384,21 +383,21 @@ plan_cross (const PFla_op_t *n)
  */
 static void
 join_worker (PFplanlist_t *ret,
-             PFalg_att_t att1, PFalg_att_t att2,
+             PFalg_col_t col1, PFalg_col_t col2,
              const plan_t *a, const plan_t *b)
 {
     /*
      * try ``standard'' EqJoin, which does not give us any
      * ordering guarantees.
      */
-    add_plan (ret, eqjoin (att1, att2, a, b));
+    add_plan (ret, eqjoin (col1, col2, a, b));
 
     /*
      * LeftJoin may be more expensive, but gives us some ordering
      * guarantees.
      */
-    add_plan (ret, leftjoin (att2, att1, b, a));
-    add_plan (ret, leftjoin (att1, att2, a, b));
+    add_plan (ret, leftjoin (col2, col1, b, a));
+    add_plan (ret, leftjoin (col1, col2, a, b));
 }
 
 /**
@@ -416,7 +415,7 @@ plan_eqjoin (const PFla_op_t *n)
     /* combine each plan in R with each plan in S */
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
-            join_worker (ret, n->sem.eqjoin.att1, n->sem.eqjoin.att2,
+            join_worker (ret, n->sem.eqjoin.col1, n->sem.eqjoin.col2,
                               *(plan_t **) PFarray_at (L(n)->plans, r),
                               *(plan_t **) PFarray_at (R(n)->plans, s));
         }
@@ -428,11 +427,11 @@ plan_eqjoin (const PFla_op_t *n)
 
         /* create the above projection list */
         for (unsigned int i = 0; i < n->schema.count; i++) {
-            PFalg_att_t cur = n->schema.items[i].name;
-            if (cur != n->sem.eqjoin.att1)
+            PFalg_col_t cur = n->schema.items[i].name;
+            if (cur != n->sem.eqjoin.col1)
                 proj[i] = PFalg_proj (cur, cur);
             else
-                proj[i] = PFalg_proj (cur, n->sem.eqjoin.att2);
+                proj[i] = PFalg_proj (cur, n->sem.eqjoin.col2);
         }
         
         for (unsigned int l = 0; l < PFarray_last (R(n)->plans); l++)
@@ -440,8 +439,8 @@ plan_eqjoin (const PFla_op_t *n)
                 add_plan (ret,
                           project (
                               semijoin (
-                                  n->sem.eqjoin.att2,
-                                  n->sem.eqjoin.att1,
+                                  n->sem.eqjoin.col2,
+                                  n->sem.eqjoin.col1,
                                   *(plan_t **) PFarray_at (R(n)->plans, l),
                                   *(plan_t **) PFarray_at (LL(n)->plans, r)),
                               n->schema.count, proj));
@@ -454,19 +453,19 @@ plan_eqjoin (const PFla_op_t *n)
 
         /* create the above projection list */
         for (unsigned int i = 0; i < n->schema.count; i++) {
-            PFalg_att_t cur = n->schema.items[i].name;
-            if (cur != n->sem.eqjoin.att2)
+            PFalg_col_t cur = n->schema.items[i].name;
+            if (cur != n->sem.eqjoin.col2)
                 proj[i] = PFalg_proj (cur, cur);
             else
-                proj[i] = PFalg_proj (cur, n->sem.eqjoin.att1);
+                proj[i] = PFalg_proj (cur, n->sem.eqjoin.col1);
         }
         
         for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
             for (unsigned int r = 0; r < PFarray_last (RL(n)->plans); r++)
                 add_plan (ret,
                           project (
-                              semijoin (n->sem.eqjoin.att1,
-                                  n->sem.eqjoin.att2,
+                              semijoin (n->sem.eqjoin.col1,
+                                  n->sem.eqjoin.col2,
                                   *(plan_t **) PFarray_at (L(n)->plans, l),
                                   *(plan_t **) PFarray_at (RL(n)->plans, r)),
                               n->schema.count, proj));
@@ -491,8 +490,8 @@ plan_semijoin (const PFla_op_t *n)
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
             add_plan (ret,
-                      semijoin (n->sem.eqjoin.att1,
-                                n->sem.eqjoin.att2,
+                      semijoin (n->sem.eqjoin.col1,
+                                n->sem.eqjoin.col2,
                                 *(plan_t **) PFarray_at (L(n)->plans, r),
                                 *(plan_t **) PFarray_at (R(n)->plans, s)));
         }
@@ -640,7 +639,7 @@ plan_unique_thetajoin (const PFla_op_t *n)
     PFplanlist_t *ret     = new_planlist (),
                  *lsorted = new_planlist (),
                  *rsorted = new_planlist ();
-    PFalg_att_t   ldist, rdist;
+    PFalg_col_t   ldist, rdist;
 
     PFalg_simple_type_t cur_type;
 
@@ -742,7 +741,7 @@ plan_unique_thetajoin (const PFla_op_t *n)
  * There's just one physical operator for `project' that we
  * call from here.  The resulting plans will contain all
  * those orderings of @a n (or prefixes thereof), for which
- * we still have all attributes left in the projection result.
+ * we still have all columns left in the projection result.
  */
 static PFplanlist_t *
 plan_project (const PFla_op_t *n)
@@ -781,33 +780,33 @@ plan_select (const PFla_op_t *n)
     for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
         add_plan (ret,
                   select_ (*(plan_t **) PFarray_at (L(n)->plans, r),
-                           n->sem.select.att));
+                           n->sem.select.col));
 
     if (op->kind == la_project &&
         L(op)->kind == la_num_eq &&
         LL(op)->kind == la_attach &&
-        (L(op)->sem.binary.att1 == LL(op)->sem.attach.res ||
-         L(op)->sem.binary.att2 == LL(op)->sem.attach.res)) {
-        PFalg_att_t res  = LL(op)->sem.attach.res,
-                    att1 = L(op)->sem.binary.att1,
-                    att2 = L(op)->sem.binary.att2,
-                    sel_att = n->sem.select.att;
+        (L(op)->sem.binary.col1 == LL(op)->sem.attach.res ||
+         L(op)->sem.binary.col2 == LL(op)->sem.attach.res)) {
+        PFalg_col_t res  = LL(op)->sem.attach.res,
+                    col1 = L(op)->sem.binary.col1,
+                    col2 = L(op)->sem.binary.col2,
+                    sel_col = n->sem.select.col;
         bool val_ref = false;
 
-        /* normalize such that the atom is stored in att2 */
-        if (res == att1) {
-            att1 = att2;
-            att2 = res;
+        /* normalize such that the atom is stored in col2 */
+        if (res == col1) {
+            col1 = col2;
+            col2 = res;
         }
 
         for (unsigned int i = 0; i < op->sem.proj.count; i++)
-            if (sel_att == op->sem.proj.items[i].new)
-                sel_att = op->sem.proj.items[i].old;
-            else if (op->sem.proj.items[i].old == att2)
+            if (sel_col == op->sem.proj.items[i].new)
+                sel_col = op->sem.proj.items[i].old;
+            else if (op->sem.proj.items[i].old == col2)
                 val_ref = true;
 
         /* no match -- bail out */
-        if (sel_att != L(op)->sem.binary.res ||
+        if (sel_col != L(op)->sem.binary.res ||
             val_ref ||
             LL(op)->sem.attach.value.type == aat_qname)
             return ret;
@@ -818,7 +817,7 @@ plan_select (const PFla_op_t *n)
                           attach (
                               val_select (
                                   *(plan_t **) PFarray_at (L(LL(op))->plans, r),
-                                  att1,
+                                  col1,
                                   LL(op)->sem.attach.value),
                               L(op)->sem.binary.res,
                               PFalg_lit_bln (true)),
@@ -839,7 +838,7 @@ plan_select (const PFla_op_t *n)
 static PFplanlist_t *
 plan_pos_select (const PFla_op_t *n)
 {
-    PFalg_att_t      att,
+    PFalg_col_t      col,
                      used_cols     = 0,
                      num,
                      cast;
@@ -861,7 +860,7 @@ plan_pos_select (const PFla_op_t *n)
     ord_desc    = PFordering ();
     ord_wo_part = PFordering ();
 
-    /* the partitioning attribute must be the primary ordering */
+    /* the partitioning column must be the primary ordering */
     if (n->sem.pos_sel.part) {
         ord_asc  = PFord_refine (ord_asc, n->sem.pos_sel.part, DIR_ASC);
         ord_desc = PFord_refine (ord_desc, n->sem.pos_sel.part, DIR_DESC);
@@ -869,17 +868,17 @@ plan_pos_select (const PFla_op_t *n)
 
     switch_order = n->sem.pos_sel.pos < 0;
 
-    /* then we refine by all the attributes in the sortby parameter */
+    /* then we refine by all the columns in the sortby parameter */
     for (unsigned int i = 0;
          i < PFord_count (n->sem.pos_sel.sortby);
          i++) {
-        att = PFord_order_col_at (n->sem.pos_sel.sortby, i);
+        col = PFord_order_col_at (n->sem.pos_sel.sortby, i);
         dir = PFord_order_dir_at (n->sem.pos_sel.sortby, i);
         dir = switch_order ? !dir : dir;
 
-        ord_asc     = PFord_refine (ord_asc, att, dir);
-        ord_desc    = PFord_refine (ord_desc, att, dir);
-        ord_wo_part = PFord_refine (ord_wo_part, att, dir);
+        ord_asc     = PFord_refine (ord_asc, col, dir);
+        ord_desc    = PFord_refine (ord_desc, col, dir);
+        ord_wo_part = PFord_refine (ord_wo_part, col, dir);
     }
 
     /* ensure correct input ordering for positional predicate */
@@ -898,12 +897,12 @@ plan_pos_select (const PFla_op_t *n)
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
 
-    /* get ourselves a new attribute name */
+    /* get ourselves a new column name */
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    num  = new_name (att_pos, used_cols);
-    cast = new_name (att_pos, (used_cols|num));
+    num  = new_name (col_pos, used_cols);
+    cast = new_name (col_pos, (used_cols|num));
 
     for (unsigned int i = 0; i < count; i++)
         proj[i] = PFalg_proj (n->schema.items[i].name,
@@ -939,7 +938,7 @@ plan_pos_select (const PFla_op_t *n)
  * Available implementations are MergeUnion and AppendUnion.
  * MergeUnion is order-aware.  It expects both input relations
  * to be in some given ordering, and will propagate that ordering
- * to its output.  For two equal values in the ordering attribute,
+ * to its output.  For two equal values in the ordering column,
  * MergeUnion will pick tuples from the left relation first, then
  * from the right relation.
  *
@@ -982,19 +981,19 @@ plan_disjunion (const PFla_op_t *n)
             for (i = 0; i < PFord_set_count (R->orderings); i++) {
                 PFord_ordering_t ri  = PFord_set_at (R->orderings, i);
                 /* get the order prefix */
-                PFalg_att_t      att = PFord_order_col_at (ri, 0);
+                PFalg_col_t      col = PFord_order_col_at (ri, 0);
                 for (j = 0; j < PFord_set_count (S->orderings); j++) {
                     PFord_ordering_t sj = PFord_set_at (S->orderings, j);
                     
                     if (/* look for matching prefixes */
-                        PFord_order_col_at (sj, 0) == att &&
+                        PFord_order_col_at (sj, 0) == col &&
                         /* make sure that merged_union is only called for
                            ascending orders */
                         PFord_order_dir_at (ri, 0) == DIR_ASC &&
                         PFord_order_dir_at (sj, 0) == DIR_ASC) {
 
-                        PFalg_simple_type_t tyR = type_of (R->schema, att);
-                        PFalg_simple_type_t tyS = type_of (S->schema, att);
+                        PFalg_simple_type_t tyR = type_of (R->schema, col);
+                        PFalg_simple_type_t tyS = type_of (S->schema, col);
 
                         if (tyR == tyS &&
                             (tyR == aat_nat ||
@@ -1003,7 +1002,7 @@ plan_disjunion (const PFla_op_t *n)
                              tyR == aat_dec ||
                              tyR == aat_dbl ||
                              tyR == aat_uA))
-                            PFord_set_add (prefixes, sortby (att));
+                            PFord_set_add (prefixes, sortby (col));
                         
                         break;
                     }
@@ -1172,8 +1171,8 @@ plan_binop (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
 
-    static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_att_t,
-                                const PFalg_att_t, const PFalg_att_t)
+    static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_col_t,
+                                const PFalg_col_t, const PFalg_col_t)
         = {
               [la_num_eq]       = PFpa_eq
             , [la_num_gt]       = PFpa_gt
@@ -1188,8 +1187,8 @@ plan_binop (const PFla_op_t *n)
                 op[n->kind] (
                     *(plan_t **) PFarray_at (L(n)->plans, i),
                     n->sem.binary.res,
-                    n->sem.binary.att1,
-                    n->sem.binary.att2));
+                    n->sem.binary.col1,
+                    n->sem.binary.col2));
 
     return ret;
 }
@@ -1209,7 +1208,7 @@ plan_unary (const PFla_op_t *n)
                 add_plan (ret,
                           bool_not (
                             *(plan_t **) PFarray_at (L(n)->plans, i),
-                            n->sem.unary.res, n->sem.unary.att));
+                            n->sem.unary.res, n->sem.unary.col));
                 break;
 
             default:
@@ -1236,8 +1235,8 @@ plan_to (const PFla_op_t *n)
         add_plan (ret,
                   to (*(plan_t **) PFarray_at (L(n)->plans, i),
                       n->sem.binary.res,
-                      n->sem.binary.att1,
-                      n->sem.binary.att2));
+                      n->sem.binary.col1,
+                      n->sem.binary.col2));
 
     return ret;
 }
@@ -1262,7 +1261,7 @@ plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
         add_plan (ret,
                   aggr (kind,
                         *(plan_t **) PFarray_at (L(n)->plans, i),
-                        n->sem.aggr.res, n->sem.aggr.att, n->sem.aggr.part));
+                        n->sem.aggr.res, n->sem.aggr.col, n->sem.aggr.part));
 
     return ret;
 }
@@ -1378,13 +1377,13 @@ plan_rownum (const PFla_op_t *n)
     ord_desc    = PFordering ();
     ord_wo_part = PFordering ();
 
-    /* the partitioning attribute must be the primary ordering */
+    /* the partitioning column must be the primary ordering */
     if (n->sem.sort.part) {
         ord_asc  = PFord_refine (ord_asc, n->sem.sort.part, DIR_ASC);
         ord_desc = PFord_refine (ord_desc, n->sem.sort.part, DIR_DESC);
     }
 
-    /* then we refine by all the attributes in the sortby parameter */
+    /* then we refine by all the columns in the sortby parameter */
     for (unsigned int i = 0;
          i < PFord_count (n->sem.sort.sortby);
          i++) {
@@ -1489,7 +1488,7 @@ plan_type (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
                   type (*(plan_t **) PFarray_at (L(n)->plans, i),
-                        n->sem.type.att, n->sem.type.ty, n->sem.type.res));
+                        n->sem.type.col, n->sem.type.ty, n->sem.type.res));
 
     return ret;
 }
@@ -1507,7 +1506,7 @@ plan_type_assert (const PFla_op_t *n)
         add_plan (ret,
                   type_assert (
                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.type.att, n->sem.type.ty));
+                      n->sem.type.col, n->sem.type.ty));
 
     return ret;
 }
@@ -1532,7 +1531,7 @@ plan_cast (const PFla_op_t *n)
         add_plan (ret,
                   cast (*(plan_t **) PFarray_at (L(n)->plans, r),
                         n->sem.type.res,
-                        n->sem.type.att,
+                        n->sem.type.col,
                         n->sem.type.ty));
 
     return ret;
@@ -1624,11 +1623,11 @@ plan_step_join (const PFla_op_t *n)
     assert (n); assert (n->kind == la_step_join);
     assert (R(n)); assert (R(n)->plans);
 
-    PFalg_att_t   item_res  = n->sem.step.item_res,
+    PFalg_col_t   item_res  = n->sem.step.item_res,
                   item      = n->sem.step.item,
                   iter,
                   iter2;
-    PFalg_att_t   used_cols = 0;
+    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -1642,13 +1641,13 @@ plan_step_join (const PFla_op_t *n)
         proj[i] = PFalg_proj (n->schema.items[i].name,
                               n->schema.items[i].name);
 
-    /* get ourselves two new attribute name
+    /* get ourselves two new column name
        (for creating keys using mark and joining back) */
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    iter  = new_name (att_iter, used_cols);
-    iter2 = new_name (att_iter, (used_cols|iter));
+    iter  = new_name (col_iter, used_cols);
+    iter2 = new_name (col_iter, (used_cols|iter));
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -1692,7 +1691,7 @@ plan_step_join (const PFla_op_t *n)
 static PFplanlist_t *
 plan_step_join_to_step (const PFla_op_t *n)
 {
-    PFalg_att_t   item_out  = n->sem.proj.items[0].new,
+    PFalg_col_t   item_out  = n->sem.proj.items[0].new,
                   item_res  = n->sem.proj.items[0].old,
                   item,
                   iter,
@@ -1717,7 +1716,7 @@ plan_step_join_to_step (const PFla_op_t *n)
     /* find a free iter value */
     item      = L(n)->sem.step.item;
     used_cols = item_res | item;
-    iter      = new_name (att_iter, used_cols);
+    iter      = new_name (col_iter, used_cols);
     
     proj_out[0].new = item_out;
     proj_out[0].old = item;
@@ -1761,7 +1760,7 @@ plan_step_join_to_step (const PFla_op_t *n)
 static PFplanlist_t *
 plan_step_join_to_step_check (const PFla_op_t *n)
 {
-    PFalg_att_t   iter_out  = n->sem.proj.items[0].new,
+    PFalg_col_t   iter_out  = n->sem.proj.items[0].new,
                   iter      = n->sem.proj.items[0].old,
                   item;
     PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
@@ -1844,7 +1843,7 @@ plan_step_join_to_step_check (const PFla_op_t *n)
 static PFplanlist_t *
 plan_step_join_to_llstep (const PFla_op_t *n)
 {
-    PFalg_att_t   item_out,
+    PFalg_col_t   item_out,
                   item_res,
                   item,
                   iter_out,
@@ -1948,7 +1947,7 @@ plan_doc_tbl (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
                   doc_tbl (*(plan_t **) PFarray_at (L(n)->plans, i),
-                           n->sem.doc_tbl.res, n->sem.doc_tbl.att,
+                           n->sem.doc_tbl.res, n->sem.doc_tbl.col,
                            n->sem.doc_tbl.kind));
 
     return ret;
@@ -1973,7 +1972,7 @@ plan_doc_access (const PFla_op_t *n)
                   doc_access (
                       *(plan_t **) PFarray_at (R(n)->plans, i),
                       n->sem.doc_access.res,
-                      n->sem.doc_access.att,
+                      n->sem.doc_access.col,
                       n->sem.doc_access.doc_col));
 
     return ret;
@@ -1991,8 +1990,8 @@ plan_twig (const PFla_op_t *n)
 {
     PFplanlist_t  *ret           = new_planlist ();
     plan_t        *cheapest_plan = NULL;
-    PFalg_att_t    iter          = n->sem.iter_item.iter;
-    PFalg_att_t    item          = n->sem.iter_item.item;
+    PFalg_col_t    iter          = n->sem.iter_item.iter;
+    PFalg_col_t    item          = n->sem.iter_item.item;
 
     /* find the cheapest plan */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
@@ -2033,7 +2032,7 @@ plan_docnode (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.docnode.iter;
+    PFalg_col_t    iter       = n->sem.docnode.iter;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2061,8 +2060,8 @@ plan_element (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.iter_item.iter;
-    PFalg_att_t    item       = n->sem.iter_item.item;
+    PFalg_col_t    iter       = n->sem.iter_item.iter;
+    PFalg_col_t    item       = n->sem.iter_item.item;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2090,7 +2089,7 @@ plan_attribute (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.iter_item1_item2.iter;
+    PFalg_col_t    iter       = n->sem.iter_item1_item2.iter;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2118,7 +2117,7 @@ plan_textnode (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.iter_item.iter;
+    PFalg_col_t    iter       = n->sem.iter_item.iter;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2145,7 +2144,7 @@ plan_comment (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.iter_item.iter;
+    PFalg_col_t    iter       = n->sem.iter_item.iter;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2172,7 +2171,7 @@ plan_processi (const PFla_op_t *n)
 {
     PFplanlist_t  *ret        = new_planlist ();
     PFplanlist_t  *ordered_in = new_planlist ();
-    PFalg_att_t    iter       = n->sem.iter_item1_item2.iter;
+    PFalg_col_t    iter       = n->sem.iter_item1_item2.iter;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (ordered_in,
@@ -2200,7 +2199,7 @@ plan_content (const PFla_op_t *n)
 {
     PFplanlist_t *ret        = new_planlist (),
                  *ordered_in = new_planlist ();
-    PFalg_att_t   iter       = n->sem.iter_pos_item.iter,
+    PFalg_col_t   iter       = n->sem.iter_pos_item.iter,
                   pos        = n->sem.iter_pos_item.pos,
                   item       = n->sem.iter_pos_item.item;
 
@@ -2240,7 +2239,7 @@ plan_merge_texts (const PFla_op_t *n)
     PFplanlist_t *ret      = new_planlist ();
     PFplanlist_t *sorted   = new_planlist ();
     plan_t       *cheapest_sorted    = NULL;
-    PFalg_att_t   iter     = n->sem.merge_adjacent.iter_in,
+    PFalg_col_t   iter     = n->sem.merge_adjacent.iter_in,
                   pos      = n->sem.merge_adjacent.pos_in,
                   item     = n->sem.merge_adjacent.item_in,
                   iter_res = n->sem.merge_adjacent.iter_res,
@@ -2288,8 +2287,8 @@ plan_error (const PFla_op_t *n)
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret, error(*(plan_t **) PFarray_at (L(n)->plans, i),
-                             n->sem.err.att,
-                             type_of (n->schema, n->sem.err.att)));
+                             n->sem.err.col,
+                             type_of (n->schema, n->sem.err.col)));
 
     return ret;
 }
@@ -2309,7 +2308,7 @@ plan_cond_err (const PFla_op_t *n)
                   cond_err (
                       *(plan_t **) PFarray_at (L(n)->plans, i),
                       *(plan_t **) PFarray_at (R(n)->plans, j),
-                      n->sem.err.att, n->sem.err.str));
+                      n->sem.err.col, n->sem.err.str));
 
     return ret;
 }
@@ -2322,8 +2321,8 @@ plan_trace (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
     PFplanlist_t *sorted_n1 = new_planlist ();
-    PFalg_att_t   iter = n->sem.iter_pos_item.iter;
-    PFalg_att_t   pos  = n->sem.iter_pos_item.pos;
+    PFalg_col_t   iter = n->sem.iter_pos_item.iter;
+    PFalg_col_t   pos  = n->sem.iter_pos_item.pos;
 
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plans (sorted_n1,
@@ -2486,7 +2485,7 @@ plan_string_join (const PFla_op_t *n)
     PFplanlist_t *ret       = new_planlist ();
     PFplanlist_t *sorted_n1 = new_planlist ();
     PFplanlist_t *sorted_n2 = new_planlist ();
-    PFalg_att_t   iter      = n->sem.string_join.iter,
+    PFalg_col_t   iter      = n->sem.string_join.iter,
                   pos       = n->sem.string_join.pos,
                   item      = n->sem.string_join.item,
                   iter_res  = n->sem.string_join.iter_res,
@@ -2668,12 +2667,12 @@ plan_id_join (PFla_op_t *n)
             n->sem.doc_join.kind == la_dj_idref);
     assert (R(n)); assert (R(n)->plans);
 
-    PFalg_att_t   item_res  = n->sem.doc_join.item_res,
+    PFalg_col_t   item_res  = n->sem.doc_join.item_res,
                   item      = n->sem.doc_join.item,
                   item_doc  = n->sem.doc_join.item_doc,
                   iter,
                   iter2;
-    PFalg_att_t   used_cols = 0;
+    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count + 1,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -2689,13 +2688,13 @@ plan_id_join (PFla_op_t *n)
     /* add the result column */
     proj[n->schema.count] = PFalg_proj (item_res, item_res);
 
-    /* get ourselves two new attribute name
+    /* get ourselves two new column name
        (for creating keys using mark and joining back) */
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    iter  = new_name (att_iter, used_cols);
-    iter2 = new_name (att_iter, (used_cols|iter));
+    iter  = new_name (col_iter, used_cols);
+    iter2 = new_name (col_iter, (used_cols|iter));
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -2740,12 +2739,12 @@ plan_vx_join (PFla_op_t *n)
             n->sem.doc_join.kind == la_dj_attr);
     assert (R(n)); assert (R(n)->plans);
 
-    PFalg_att_t   item_res  = n->sem.doc_join.item_res,
+    PFalg_col_t   item_res  = n->sem.doc_join.item_res,
                   item      = n->sem.doc_join.item,
                   item_doc  = n->sem.doc_join.item_doc,
                   iter,
                   iter2;
-    PFalg_att_t   used_cols = 0;
+    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count + 1,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -2761,13 +2760,13 @@ plan_vx_join (PFla_op_t *n)
     /* add the result column */
     proj[n->schema.count] = PFalg_proj (item_res, item_res);
 
-    /* get ourselves two new attribute name
+    /* get ourselves two new column name
        (for creating keys using mark and joining back) */
     for (unsigned int i = 0; i < n->schema.count; i++)
         used_cols |= n->schema.items[i].name;
 
-    iter  = new_name (att_iter, used_cols);
-    iter2 = new_name (att_iter, (used_cols|iter));
+    iter  = new_name (col_iter, used_cols);
+    iter2 = new_name (col_iter, (used_cols|iter));
 
 
     /* create the inner projection list */
@@ -3524,17 +3523,17 @@ plan_subexpression (PFla_op_t *n)
             plan_t *p = (*(plan_t **) PFarray_at (plans, 0));
             unsigned int plan_count = PFarray_last (plans);
             unsigned int i, j, plan;
-            PFalg_att_t att;
+            PFalg_col_t col;
 
             for (i = 0; i < p->schema.count; i++) {
-                att = p->schema.items[i].name;
+                col = p->schema.items[i].name;
                 /* check for an iter-like column (to avoid generating
                    a large amount of plans) */
                 if ((unq_column_names &&
-                     PFalg_ori_name (att, ~att_NULL) == att_iter) ||
+                     PFalg_ori_name (col, ~col_NULL) == col_iter) ||
                     (!unq_column_names &&
                      PFalg_unq_fixed_name (p->schema.items[i].name, 1) ==
-                     PFalg_unq_fixed_name (att_iter, 1)))
+                     PFalg_unq_fixed_name (col_iter, 1)))
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
             }
 

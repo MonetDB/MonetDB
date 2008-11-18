@@ -95,12 +95,12 @@ opt_reqvals (PFla_op_t *p)
        column has a constant value that differs its required value,
        by an empty table. */
     for (unsigned int i = 0; i < p->schema.count; i++) {
-        PFalg_att_t cur_att = p->schema.items[i].name;
+        PFalg_col_t cur_col = p->schema.items[i].name;
 
-        if (PFprop_req_bool_val (p->prop, cur_att) &&
-            PFprop_const (p->prop, cur_att) &&
-            (PFprop_const_val (p->prop, cur_att)).val.bln !=
-             PFprop_req_bool_val_val (p->prop, cur_att)) {
+        if (PFprop_req_bool_val (p->prop, cur_col) &&
+            PFprop_const (p->prop, cur_col) &&
+            (PFprop_const_val (p->prop, cur_col)).val.bln !=
+             PFprop_req_bool_val_val (p->prop, cur_col)) {
             /* create an empty table instead */
             *p = *PFla_empty_tbl_ (p->schema);
             return;
@@ -150,7 +150,7 @@ PFla_op_t *
 PFalgopt_reqval (PFla_op_t *root)
 {
     /* Split up plans where two select operators (then + else setting)
-       reference the same call to fn:boolean (@att:false U @att:true) */
+       reference the same call to fn:boolean (@col:false U @col:true) */
     PFla_map_fun (root, map_fun);
 
     /* Infer reqval properties first */

@@ -184,35 +184,35 @@ check_op (PFla_op_t *n, bool op_used)
             POS  (n) = POS  (L(n)) | POS  (R(n));
 
             /* get the iter column through the map relations */
-            if (n->sem.eqjoin.att1 & ITER(L(n)) &&
-                n->sem.eqjoin.att2 == att_outer &&
+            if (n->sem.eqjoin.col1 & ITER(L(n)) &&
+                n->sem.eqjoin.col2 == col_outer &&
                 /* as consistency check make sure the map
                    relation has the schema inner|outer */
                 R(n)->schema.count == 2 &&
-                (R(n)->schema.items[0].name == att_inner ||
-                 R(n)->schema.items[0].name == att_outer) &&
-                (R(n)->schema.items[1].name == att_inner ||
-                 R(n)->schema.items[1].name == att_outer))
-                ITER(n) = ITER(n) | att_inner;
-            else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
-                n->sem.eqjoin.att1 == att_outer &&
+                (R(n)->schema.items[0].name == col_inner ||
+                 R(n)->schema.items[0].name == col_outer) &&
+                (R(n)->schema.items[1].name == col_inner ||
+                 R(n)->schema.items[1].name == col_outer))
+                ITER(n) = ITER(n) | col_inner;
+            else if (n->sem.eqjoin.col2 & ITER(R(n)) &&
+                n->sem.eqjoin.col1 == col_outer &&
                 /* as consistency check make sure the map
                    relation has the schema inner|outer */
                 L(n)->schema.count == 2 &&
-                (L(n)->schema.items[0].name == att_inner ||
-                 L(n)->schema.items[0].name == att_outer) &&
-                (L(n)->schema.items[1].name == att_inner ||
-                 L(n)->schema.items[1].name == att_outer))
-                ITER(n) = ITER(n) | att_inner;
+                (L(n)->schema.items[0].name == col_inner ||
+                 L(n)->schema.items[0].name == col_outer) &&
+                (L(n)->schema.items[1].name == col_inner ||
+                 L(n)->schema.items[1].name == col_outer))
+                ITER(n) = ITER(n) | col_inner;
             /* get the iter column through the map relations */
-            else if (n->sem.eqjoin.att1 & ITER(L(n)) &&
-                n->sem.eqjoin.att2 == att_inner &&
-                PFprop_ocol (R(n), att_outer))
-                ITER(n) = ITER(n) | att_outer;
-            else if (n->sem.eqjoin.att2 & ITER(R(n)) &&
-                n->sem.eqjoin.att1 == att_inner &&
-                PFprop_ocol (L(n), att_outer))
-                ITER(n) = ITER(n) | att_outer;
+            else if (n->sem.eqjoin.col1 & ITER(L(n)) &&
+                n->sem.eqjoin.col2 == col_inner &&
+                PFprop_ocol (R(n), col_outer))
+                ITER(n) = ITER(n) | col_outer;
+            else if (n->sem.eqjoin.col2 & ITER(R(n)) &&
+                n->sem.eqjoin.col1 == col_inner &&
+                PFprop_ocol (L(n), col_outer))
+                ITER(n) = ITER(n) | col_outer;
             break;
 
         case la_project:
@@ -254,7 +254,7 @@ check_op (PFla_op_t *n, bool op_used)
 
         case la_cast:
             /* check for a reference to pos */
-            if (POS(L(n)) & n->sem.type.att)
+            if (POS(L(n)) & n->sem.type.col)
                 return true;
 
             ITER (n) = ITER (L(n));
@@ -301,7 +301,7 @@ check_op (PFla_op_t *n, bool op_used)
         /* we have to assume that we see a nested recursion */
         case la_rec_fix:
             if (ITER(L(n)))
-                ITER(n) = att_iter;
+                ITER(n) = col_iter;
             break;
 
         case la_rec_param:
@@ -317,7 +317,7 @@ check_op (PFla_op_t *n, bool op_used)
         case la_rec_base:
             /* loop relation */
             if (n->schema.count == 1) {
-                if (n->schema.items[0].name == att_iter)
+                if (n->schema.items[0].name == col_iter)
                     IN(n) = true;
             }
             /* recursion variable */
@@ -327,17 +327,17 @@ check_op (PFla_op_t *n, bool op_used)
                 bool item = false;
 
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    if (n->schema.items[i].name == att_iter)
+                    if (n->schema.items[i].name == col_iter)
                         iter = true;
-                    else if (n->schema.items[i].name == att_pos)
+                    else if (n->schema.items[i].name == col_pos)
                         pos = true;
-                    else if (n->schema.items[i].name == att_item)
+                    else if (n->schema.items[i].name == col_item)
                         item = true;
                 }
 
                 if (iter && pos && item) {
-                    ITER(n) = att_iter;
-                    POS(n) = att_pos;
+                    ITER(n) = col_iter;
+                    POS(n) = col_pos;
                     IN(n) = true;
                 }
             }
@@ -413,8 +413,8 @@ prop_check (PFla_op_t *n, bool op_used)
     n->bit_dag = true;
 
     /* reset ITER and POS information */
-    ITER (n) = att_NULL;
-    POS  (n) = att_NULL;
+    ITER (n) = col_NULL;
+    POS  (n) = col_NULL;
     IN   (n) = false;
 
     return check_op (n, op_used);

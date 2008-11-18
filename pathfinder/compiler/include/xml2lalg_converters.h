@@ -54,9 +54,9 @@
 PFla_op_kind_t 
 PFxml2la_conv_2PFLA_OpKind(const char* s);
 
-PFalg_att_t 
+PFalg_col_t 
 PFxml2la_conv_2PFLA_attributeName(const char* s);
-PFalg_att_t 
+PFalg_col_t 
 PFxml2la_conv_2PFLA_attributeName_unq(const char* s);
 
 PFalg_simple_type_t 

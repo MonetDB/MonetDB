@@ -40,6 +40,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -48,51 +51,51 @@
 
 /**
  * worker for PFprop_icol;
- * Test if @a attr is in the list of icol columns in array @a icols
+ * Test if @a col is in the list of icol columns in array @a icols
  */
 static bool
-icol_worker (PFarray_t *icols, PFalg_att_t attr)
+icol_worker (PFarray_t *icols, PFalg_col_t col)
 {
     if (!icols) return false;
 
     for (unsigned int i = 0; i < PFarray_last (icols); i++)
-        if (attr == *(PFalg_att_t *) PFarray_at (icols, i))
+        if (col == *(PFalg_col_t *) PFarray_at (icols, i))
             return true;
 
     return false;
 }
 
 /**
- * Test if @a attr is in the list of icol columns in container @a prop
+ * Test if @a col is in the list of icol columns in container @a prop
  */
 bool
-PFprop_icol (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_icol (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->icols, attr);
+    return icol_worker (prop->icols, col);
 }
 
 /**
- * Test if @a attr is in the list of icol columns of the left child
+ * Test if @a col is in the list of icol columns of the left child
  * (information is stored in property container @a prop)
  */
 bool
-PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_icol_left (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->l_icols, attr);
+    return icol_worker (prop->l_icols, col);
 }
 
 /**
- * Test if @a attr is in the list of icol columns of the right child
+ * Test if @a col is in the list of icol columns of the right child
  * (information is stored in property container @a prop)
  */
 bool
-PFprop_icol_right (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_icol_right (const PFprop_t *prop, PFalg_col_t col)
 {
-    return icol_worker (prop->r_icols, attr);
+    return icol_worker (prop->r_icols, col);
 }
 
 /**
- * worker for PFprop_icols_count and PFprop_icols_to_attlist
+ * worker for PFprop_icols_count and PFprop_icols_to_collist
  */
 static unsigned int
 icols_count (const PFprop_t *prop)
@@ -104,7 +107,7 @@ icols_count (const PFprop_t *prop)
 }
 
 /*
- * count number of icols attributes
+ * count number of icols columns
  */
 unsigned int
 PFprop_icols_count (const PFprop_t *prop)
@@ -113,21 +116,20 @@ PFprop_icols_count (const PFprop_t *prop)
 }
 
 /**
- * Return icols attributes in an attlist.
+ * Return icols columns in an collist.
  */
-PFalg_attlist_t
-PFprop_icols_to_attlist (const PFprop_t *prop)
+PFalg_collist_t *
+PFprop_icols_to_collist (const PFprop_t *prop)
 {
-    PFalg_attlist_t new_list;
+    PFalg_collist_t *new_list;
 
-    new_list.count = icols_count (prop);
-    new_list.atts = PFmalloc (new_list.count * sizeof (*(new_list.atts)));
+    new_list = PFalg_collist (icols_count (prop));
 
     if (!prop->icols)
         return new_list;
 
     for (unsigned int i = 0; i < PFarray_last (prop->icols); i++)
-        new_list.atts[i] = *(PFalg_att_t *) PFarray_at (prop->icols, i);
+        cladd (new_list) = *(PFalg_col_t *) PFarray_at (prop->icols, i);
 
     return new_list;
 }
@@ -142,11 +144,11 @@ intersect_ocol (PFarray_t *icols, PFla_op_t *n)
     unsigned int i = 0;
     assert (icols);
     while (i < PFarray_last (icols)) {
-        if (PFprop_ocol (n, *(PFalg_att_t *) PFarray_at (icols, i)))
+        if (PFprop_ocol (n, *(PFalg_col_t *) PFarray_at (icols, i)))
             i++;
         else { /* no match -- remove the column */
-            *(PFalg_att_t *) PFarray_at (icols, i)
-                = *(PFalg_att_t *) PFarray_top (icols);
+            *(PFalg_col_t *) PFarray_at (icols, i)
+                = *(PFalg_col_t *) PFarray_top (icols);
             PFarray_last (icols)--;
         }
     }
@@ -156,12 +158,12 @@ intersect_ocol (PFarray_t *icols, PFla_op_t *n)
  * Returns union of two icols lists
  */
 static void
-union_ (PFarray_t *a, PFalg_att_t b)
+union_ (PFarray_t *a, PFalg_col_t b)
 {
     assert (a);
 
     if (!icol_worker (a, b))
-        *(PFalg_att_t *) PFarray_add (a) = b;
+        *(PFalg_col_t *) PFarray_add (a) = b;
 }
 
 /**
@@ -171,15 +173,15 @@ union_ (PFarray_t *a, PFalg_att_t b)
 static void
 union_list (PFarray_t *a, PFarray_t *b)
 {
-    PFalg_att_t cur;
+    PFalg_col_t cur;
 
     assert (a);
     if (!b) return;
 
     for (unsigned int i = 0; i < PFarray_last (b); i++) {
-        cur = *(PFalg_att_t *) PFarray_at (b, i);
+        cur = *(PFalg_col_t *) PFarray_at (b, i);
         if (!icol_worker (a, cur))
-            *(PFalg_att_t *) PFarray_add (a) = cur;
+            *(PFalg_col_t *) PFarray_add (a) = cur;
     }
 }
 
@@ -187,15 +189,15 @@ union_list (PFarray_t *a, PFarray_t *b)
  * Returns difference of two icols lists
  */
 static void
-diff (PFarray_t *a, PFalg_att_t b)
+diff (PFarray_t *a, PFalg_col_t b)
 {
     unsigned int i = 0;
     while (i < PFarray_last (a)) {
-        if (*(PFalg_att_t *) PFarray_at (a, i) != b)
+        if (*(PFalg_col_t *) PFarray_at (a, i) != b)
             i++;
         else { /* b found -- remove the column */
-            *(PFalg_att_t *) PFarray_at (a, i)
-                = *(PFalg_att_t *) PFarray_top (a);
+            *(PFalg_col_t *) PFarray_at (a, i)
+                = *(PFalg_col_t *) PFarray_top (a);
             PFarray_last (a)--;
             return;
         }
@@ -206,7 +208,7 @@ diff (PFarray_t *a, PFalg_att_t b)
  * Check if a column @a b appears in list @a a.
  */
 static bool
-in (PFarray_t *a, PFalg_att_t b)
+in (PFarray_t *a, PFalg_col_t b)
 {
     return (icol_worker (a, b));
 }
@@ -224,8 +226,8 @@ static void
 copy (PFarray_t *base, PFarray_t *content)
 {
     for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(PFalg_att_t *) PFarray_add (base) =
-            *(PFalg_att_t *) PFarray_at (content, i);
+        *(PFalg_col_t *) PFarray_add (base) =
+            *(PFalg_col_t *) PFarray_at (content, i);
 }
 
 /* forward declaration */
@@ -301,8 +303,8 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
         case la_serialize_rel:
             union_ (n->prop->l_icols, n->sem.ser_rel.iter);
             union_ (n->prop->l_icols, n->sem.ser_rel.pos);
-            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
-                union_ (n->prop->l_icols, n->sem.ser_rel.items.atts[i]);
+            for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
+                union_ (n->prop->l_icols, clat (n->sem.ser_rel.items, i));
             break;
 
         case la_lit_tbl:
@@ -324,15 +326,15 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
             copy (n->prop->l_icols, n->prop->icols);
             copy (n->prop->r_icols, n->prop->icols);
             /* add both join columns to the inferred icols */
-            union_ (n->prop->l_icols, n->sem.eqjoin.att1);
-            union_ (n->prop->r_icols, n->sem.eqjoin.att2);
+            union_ (n->prop->l_icols, n->sem.eqjoin.col1);
+            union_ (n->prop->r_icols, n->sem.eqjoin.col2);
             break;
 
         case la_semijoin:
             copy (n->prop->l_icols, n->prop->icols);
             /* add both join columns to the inferred icols */
-            union_ (n->prop->l_icols, n->sem.eqjoin.att1);
-            union_ (n->prop->r_icols, n->sem.eqjoin.att2);
+            union_ (n->prop->l_icols, n->sem.eqjoin.col1);
+            union_ (n->prop->r_icols, n->sem.eqjoin.col2);
             break;
 
         case la_thetajoin:
@@ -356,7 +358,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
         case la_select:
             copy (n->prop->l_icols, n->prop->icols);
             /* add selected column to the inferred icols */
-            union_ (n->prop->l_icols, n->sem.select.att);
+            union_ (n->prop->l_icols, n->sem.select.col);
             break;
 
         case la_pos_select:
@@ -369,7 +371,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                         PFord_order_col_at (n->sem.pos_sel.sortby, i));
 
             /* only infer part if available */
-            if (n->sem.pos_sel.part != att_NULL)
+            if (n->sem.pos_sel.part != col_NULL)
                 union_ (n->prop->l_icols, n->sem.pos_sel.part);
             break;
 
@@ -421,8 +423,8 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.fun_1to1.res);
-            for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                union_ (n->prop->l_icols, n->sem.fun_1to1.refs.atts[i]);
+            for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
+                union_ (n->prop->l_icols, clat (n->sem.fun_1to1.refs, i));
             break;
 
         case la_num_eq:
@@ -437,8 +439,8 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.binary.res);
-            union_ (n->prop->l_icols, n->sem.binary.att1);
-            union_ (n->prop->l_icols, n->sem.binary.att2);
+            union_ (n->prop->l_icols, n->sem.binary.col1);
+            union_ (n->prop->l_icols, n->sem.binary.col2);
             break;
 
         case la_bool_not:
@@ -449,7 +451,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.unary.res);
-            union_ (n->prop->l_icols, n->sem.unary.att);
+            union_ (n->prop->l_icols, n->sem.unary.col);
             break;
 
         case la_avg:
@@ -465,9 +467,9 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.aggr.res);
-            union_ (n->prop->l_icols, n->sem.aggr.att);
+            union_ (n->prop->l_icols, n->sem.aggr.col);
             /* only infer part if available */
-            if (n->sem.aggr.part != att_NULL)
+            if (n->sem.aggr.part != col_NULL)
                 union_ (n->prop->l_icols, n->sem.aggr.part);
             break;
 
@@ -480,7 +482,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
 
             diff (n->prop->l_icols, n->sem.aggr.res);
             /* only infer part if available */
-            if (n->sem.aggr.part != att_NULL)
+            if (n->sem.aggr.part != col_NULL)
                 union_ (n->prop->l_icols, n->sem.aggr.part);
             break;
 
@@ -500,7 +502,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                         PFord_order_col_at (n->sem.sort.sortby, i));
 
             /* only infer part if available */
-            if (n->sem.sort.part != att_NULL)
+            if (n->sem.sort.part != col_NULL)
                 union_ (n->prop->l_icols, n->sem.sort.part);
             break;
 
@@ -518,11 +520,11 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.type.res);
-            union_ (n->prop->l_icols, n->sem.type.att);
+            union_ (n->prop->l_icols, n->sem.type.col);
             break;
 
         case la_type_assert:
-            /* if n->sem.type.att is not present this operator
+            /* if n->sem.type.col is not present this operator
                has to be pruned -- therefore we do not care about
                inferrring this column in icols. */
             copy (n->prop->l_icols, n->prop->icols);
@@ -560,7 +562,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->l_icols, n->sem.doc_tbl.res);
-            union_ (n->prop->l_icols, n->sem.doc_tbl.att);
+            union_ (n->prop->l_icols, n->sem.doc_tbl.col);
             break;
 
         case la_doc_access:
@@ -571,7 +573,7 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
                 break;
 
             diff (n->prop->r_icols, n->sem.doc_access.res);
-            union_ (n->prop->r_icols, n->sem.doc_access.att);
+            union_ (n->prop->r_icols, n->sem.doc_access.col);
             break;
 
         case la_twig:
@@ -733,15 +735,15 @@ prop_infer_icols (PFla_op_t *n, PFarray_t *icols)
 
         case la_error:
             copy (n->prop->l_icols, n->prop->icols);
-            union_ (n->prop->l_icols, n->sem.err.att);
+            union_ (n->prop->l_icols, n->sem.err.col);
             break;
 
         case la_cond_err:
             /* infer incoming icols for input relation */
             copy (n->prop->l_icols, n->prop->icols);
-            /* infer attribute that triggers error generation
+            /* infer column that triggers error generation
                for error checking relation  */
-            union_ (n->prop->r_icols, n->sem.err.att);
+            union_ (n->prop->r_icols, n->sem.err.col);
             break;
 
         case la_nil:
@@ -908,20 +910,20 @@ prop_infer (PFla_op_t *n)
     if (n->prop->icols)
         PFarray_last (n->prop->icols) = 0;
     else
-        n->prop->icols = PFarray (sizeof (PFalg_att_t), 10);
+        n->prop->icols = PFarray (sizeof (PFalg_col_t), 10);
 
     if (L(n)) {
         if (n->prop->l_icols)
             PFarray_last (n->prop->l_icols) = 0;
         else
-            n->prop->l_icols = PFarray (sizeof (PFalg_att_t), 10);
+            n->prop->l_icols = PFarray (sizeof (PFalg_col_t), 10);
     }
 
     if (R(n)) {
         if (n->prop->r_icols)
             PFarray_last (n->prop->r_icols) = 0;
         else
-            n->prop->r_icols = PFarray (sizeof (PFalg_att_t), 10);
+            n->prop->r_icols = PFarray (sizeof (PFalg_col_t), 10);
     }
 }
 
@@ -930,10 +932,10 @@ prop_infer (PFla_op_t *n)
  * with the icols collected in @a icols.
  */
 void
-PFprop_infer_icol_specific (PFla_op_t *root, PFalg_att_t icols)
+PFprop_infer_icol_specific (PFla_op_t *root, PFalg_col_t icols)
 {
     PFarray_t   *icol_list;
-    PFalg_att_t  mod_icols = icols;
+    PFalg_col_t  mod_icols = icols;
     unsigned int count     = 0,
                  bit_shift = 1;;
 
@@ -941,10 +943,10 @@ PFprop_infer_icol_specific (PFla_op_t *root, PFalg_att_t icols)
         count += mod_icols & 1;
         mod_icols >>= 1;
     }
-    icol_list = PFarray (sizeof (PFalg_att_t), count);
+    icol_list = PFarray (sizeof (PFalg_col_t), count);
 
     mod_icols = icols;
-    /* unfold icols into a list of attributes */
+    /* unfold icols into a list of columns */
     while (mod_icols) {
         union_ (icol_list, icols & bit_shift);
         bit_shift <<= 1;

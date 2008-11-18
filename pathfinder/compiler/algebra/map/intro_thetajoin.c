@@ -59,6 +59,9 @@
 #include "oops.h"
 #include "alg_dag.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -72,12 +75,12 @@
  * Returns the intersection of an column list @a cols and a schema
  * @a schema_ocols
  */
-static PFalg_att_t
-intersect_ocol (PFalg_att_t cols, PFalg_schema_t schema_ocols)
+static PFalg_col_t
+intersect_ocol (PFalg_col_t cols, PFalg_schema_t schema_ocols)
 {
-    PFalg_att_t ocols = 0;
+    PFalg_col_t ocols = 0;
 
-    /* intersect attributes */
+    /* intersect columns */
     for (unsigned int j = 0; j < schema_ocols.count; j++)
         ocols |= schema_ocols.items[j].name;
 
@@ -87,8 +90,8 @@ intersect_ocol (PFalg_att_t cols, PFalg_schema_t schema_ocols)
 /**
  * Returns union of two column lists
  */
-static PFalg_att_t
-union_ (PFalg_att_t a, PFalg_att_t b)
+static PFalg_col_t
+union_ (PFalg_col_t a, PFalg_col_t b)
 {
     return a | b;
 }
@@ -96,8 +99,8 @@ union_ (PFalg_att_t a, PFalg_att_t b)
 /**
  * Returns the difference of two column lists
  */
-static PFalg_att_t
-diff (PFalg_att_t a, PFalg_att_t b)
+static PFalg_col_t
+diff (PFalg_col_t a, PFalg_col_t b)
 {
     return a & (~b);
 }
@@ -122,9 +125,9 @@ diff (PFalg_att_t a, PFalg_att_t b)
 static bool
 find_join_worker (PFla_op_t *n,
                   PFla_op_t **join,
-                  PFalg_att_t bool_cols,
-                  PFalg_att_t left_cols,
-                  PFalg_att_t right_cols)
+                  PFalg_col_t bool_cols,
+                  PFalg_col_t left_cols,
+                  PFalg_col_t right_cols)
 {
     assert (n);
 
@@ -200,7 +203,7 @@ find_join_worker (PFla_op_t *n,
 
         case la_project:
         {
-            PFalg_att_t bool_cols  = 0,
+            PFalg_col_t bool_cols  = 0,
                         left_cols  = 0,
                         right_cols = 0;
 
@@ -225,16 +228,16 @@ find_join_worker (PFla_op_t *n,
 
             if (LEFT_COLS(n) & n->sem.fun_1to1.res) {
                 LEFT_COLS(n) = diff (LEFT_COLS(n), n->sem.fun_1to1.res);
-                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
+                for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
                     LEFT_COLS(n) = union_ (LEFT_COLS(n),
-                                           n->sem.fun_1to1.refs.atts[i]);
+                                           clat (n->sem.fun_1to1.refs, i));
             }
 
             if (RIGHT_COLS(n) & n->sem.fun_1to1.res) {
                 RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.fun_1to1.res);
-                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
+                for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
                     RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
-                                            n->sem.fun_1to1.refs.atts[i]);
+                                            clat (n->sem.fun_1to1.refs, i));
             }
             break;
 
@@ -242,40 +245,40 @@ find_join_worker (PFla_op_t *n,
         case la_num_gt:
             if (BOOL_COLS(n) & n->sem.binary.res) {
                 BOOL_COLS(n)  = diff   (BOOL_COLS(n),  n->sem.binary.res);
-                LEFT_COLS(n)  = union_ (LEFT_COLS(n),  n->sem.binary.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
+                LEFT_COLS(n)  = union_ (LEFT_COLS(n),  n->sem.binary.col1);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col2);
             }
 
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att2);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col1);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col2);
             }
 
             if (RIGHT_COLS(n) & n->sem.binary.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.binary.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col1);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col2);
             }
             break;
 
         case la_bool_and:
             if (BOOL_COLS(n) & n->sem.binary.res) {
                 BOOL_COLS(n) = diff   (BOOL_COLS(n), n->sem.binary.res);
-                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.att1);
-                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.att2);
+                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.col1);
+                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.binary.col2);
             }
 
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att2);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col1);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col2);
             }
 
             if (RIGHT_COLS(n) & n->sem.binary.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.binary.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col1);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col2);
             }
             break;
 
@@ -284,31 +287,31 @@ find_join_worker (PFla_op_t *n,
 
             if (LEFT_COLS(n) & n->sem.binary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.binary.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att1);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.att2);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col1);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.binary.col2);
             }
 
             if (RIGHT_COLS(n) & n->sem.binary.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.binary.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att1);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.att2);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col1);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.binary.col2);
             }
             break;
 
         case la_bool_not:
             if (BOOL_COLS(n) & n->sem.unary.res) {
                 BOOL_COLS(n) = diff   (BOOL_COLS(n), n->sem.unary.res);
-                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.unary.att);
+                BOOL_COLS(n) = union_ (BOOL_COLS(n), n->sem.unary.col);
             }
 
             if (LEFT_COLS(n) & n->sem.unary.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.unary.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.unary.att);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.unary.col);
             }
 
             if (RIGHT_COLS(n) & n->sem.unary.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.unary.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.unary.att);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.unary.col);
             }
             break;
 
@@ -330,9 +333,9 @@ find_join_worker (PFla_op_t *n,
             BOOL_COLS(n)  = diff (BOOL_COLS(n),  n->sem.aggr.res);
 
             if (LEFT_COLS(n) & n->sem.aggr.res)
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.aggr.att);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.aggr.col);
             if (RIGHT_COLS(n) & n->sem.aggr.res)
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.aggr.att);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.aggr.col);
             LEFT_COLS(n)  = diff (LEFT_COLS(n),  n->sem.aggr.res);
             RIGHT_COLS(n) = diff (RIGHT_COLS(n), n->sem.aggr.res);
 
@@ -357,7 +360,7 @@ find_join_worker (PFla_op_t *n,
                                                n->sem.sort.sortby, i));
 
                 /* only infer part if available */
-                if (n->sem.sort.part != att_NULL)
+                if (n->sem.sort.part != col_NULL)
                     LEFT_COLS(n) = union_ (LEFT_COLS(n),
                                            n->sem.sort.part);
             }
@@ -373,7 +376,7 @@ find_join_worker (PFla_op_t *n,
                                                 n->sem.sort.sortby, i));
 
                 /* only infer part if available */
-                if (n->sem.sort.part != att_NULL)
+                if (n->sem.sort.part != col_NULL)
                     RIGHT_COLS(n) = union_ (RIGHT_COLS(n),
                                             n->sem.sort.part);
             }
@@ -390,12 +393,12 @@ find_join_worker (PFla_op_t *n,
 
             if (LEFT_COLS(n) & n->sem.type.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.type.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.type.att);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.type.col);
             }
 
             if (RIGHT_COLS(n) & n->sem.type.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.type.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.type.att);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.type.col);
             }
             break;
 
@@ -434,22 +437,22 @@ find_join_worker (PFla_op_t *n,
         case la_doc_tbl:
             if (LEFT_COLS(n) & n->sem.doc_tbl.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_tbl.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.att);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_tbl.col);
             }
             if (RIGHT_COLS(n) & n->sem.doc_tbl.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_tbl.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.att);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_tbl.col);
             }
             break;
 
         case la_doc_access:
             if (LEFT_COLS(n) & n->sem.doc_access.res) {
                 LEFT_COLS(n) = diff   (LEFT_COLS(n), n->sem.doc_access.res);
-                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_access.att);
+                LEFT_COLS(n) = union_ (LEFT_COLS(n), n->sem.doc_access.col);
             }
             if (RIGHT_COLS(n) & n->sem.doc_access.res) {
                 RIGHT_COLS(n) = diff   (RIGHT_COLS(n), n->sem.doc_access.res);
-                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_access.att);
+                RIGHT_COLS(n) = union_ (RIGHT_COLS(n), n->sem.doc_access.col);
             }
             break;
 
@@ -464,15 +467,15 @@ find_join_worker (PFla_op_t *n,
         case la_content:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a constructor */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_merge_adjacent:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through an element constructor */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_roots:
@@ -485,15 +488,15 @@ find_join_worker (PFla_op_t *n,
             /* for the fragment information we do not need to introduce
                column names as the thetajoin can never be moved along
                its edges. */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_error:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through an error */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_cond_err:
@@ -531,8 +534,8 @@ find_join_worker (PFla_op_t *n,
         case la_rec_fix:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a recursion operator */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_rec_param:
@@ -545,8 +548,8 @@ find_join_worker (PFla_op_t *n,
         case la_fun_frag_param:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a function application */
-            LEFT_COLS(n)  = att_NULL;
-            RIGHT_COLS(n) = att_NULL;
+            LEFT_COLS(n)  = col_NULL;
+            RIGHT_COLS(n) = col_NULL;
             break;
 
         case la_proxy:
@@ -633,7 +636,7 @@ find_join (PFla_op_t *select)
 
     if (find_join_worker (L(select),
                           &join,
-                          select->sem.select.att,
+                          select->sem.select.col,
                           0,
                           0) &&
         join &&
@@ -654,8 +657,8 @@ transform_join (PFla_op_t *join)
     assert (join && join->kind == la_eqjoin);
 
     pred[0] = PFalg_sel (alg_comp_eq,
-                         join->sem.eqjoin.att1,
-                         join->sem.eqjoin.att2);
+                         join->sem.eqjoin.col1,
+                         join->sem.eqjoin.col2);
 
     *join = *PFla_thetajoin (L(join), R(join), 1, pred);
 }

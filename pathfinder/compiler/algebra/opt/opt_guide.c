@@ -56,7 +56,7 @@ static void
 merge_guide_steps (PFla_op_t *n)
 {
     PFla_op_t *step1, *step2, *proj = NULL;
-    PFalg_att_t item;
+    PFalg_col_t item;
     PFalg_axis_t new_axis;
 
     assert(n);
@@ -239,7 +239,7 @@ opt_guide(PFla_op_t *n)
             unsigned int i,
                          count = 0; /* # of guide nodes */
             PFguide_tree_t** guides = NULL; /* array of guide nodes */
-            PFalg_att_t column = n->sem.step.item_res;
+            PFalg_col_t column = n->sem.step.item_res;
             int origin;
 
             /* look if operator has guide nodes */

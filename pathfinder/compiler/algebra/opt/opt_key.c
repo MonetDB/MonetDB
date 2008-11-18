@@ -86,7 +86,7 @@ opt_key (PFla_op_t *p)
                 *p = *PFla_project (
                           L(p),
                           PFalg_proj (p->sem.aggr.res,
-                                      p->sem.aggr.att),
+                                      p->sem.aggr.col),
                           PFalg_proj (p->sem.aggr.part,
                                       p->sem.aggr.part));
                 SEEN(p) = true;

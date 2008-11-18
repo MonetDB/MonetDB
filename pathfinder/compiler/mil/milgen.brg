@@ -99,6 +99,9 @@
 /* abbreviate MIL constructor calls */
 #include "mil_mnemonic.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -522,11 +525,11 @@ impl_types (PFalg_simple_type_t ty)
  * @brief Environment entry.
  *
  * In each physical algebra tree node, we keep an environment
- * that maps an attribute/type combination to the #mvar_t struct
+ * that maps a column/type combination to the #mvar_t struct
  * that holds the corresponding MIL variable.
  */
 struct env_t {
-    PFalg_att_t          att;
+    PFalg_col_t          col;
     PFalg_simple_type_t  ty;
     mvar_t              *mvar;
 };
@@ -537,9 +540,9 @@ typedef struct env_t env_t;
  * @brief Create a new (empty) environment for #env_t entries.
  *
  * With each node in the physical algebra DAG, we keep such an
- * environment that maps an attribute/type combination onto the
+ * environment that maps a column/type combination onto the
  * #mvar_t item that implements it. (Think of this as the mapping
- * from attribute/type to the BAT that represents that combination.
+ * from column/type to the BAT that represents that combination.
  */
 static PFarray_t *
 new_env (void)
@@ -549,14 +552,14 @@ new_env (void)
 
 /** @brief Add an item to environment for #env_t entries. */
 static void
-env_add_ (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
+env_add_ (PFarray_t *env, PFalg_col_t col, PFalg_simple_type_t ty, mvar_t *v)
 {
     *(env_t *) PFarray_add (env)
-        = (env_t) { .att = att, .ty = ty, .mvar = v };
+        = (env_t) { .col = col, .ty = ty, .mvar = v };
 #ifndef NDEBUG
     execute ( comment ("    %s: %s(%s)",
                        PFmil_var_str (v->name),
-                       PFatt_str (att),
+                       PFcol_str (col),
                        PFalg_simple_type_str (ty)));
 #endif
 }
@@ -588,13 +591,13 @@ env_at (const PFarray_t *env, unsigned int i)
  * @a env (in specific cases, this is not an error).
  */
 static mvar_t *
-env_mvar_unsafe (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
+env_mvar_unsafe (const PFarray_t *env, PFalg_col_t col, PFalg_simple_type_t ty)
 {
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
 
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        if (entry.att == att && entry.ty == ty)
+        if (entry.col == col && entry.ty == ty)
             return entry.mvar;
     }
     return NULL;
@@ -602,39 +605,39 @@ env_mvar_unsafe (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 
 /**
  * @brief Look up an entry in the environment @a env, given a combination
- *        of attribute (@a att) and type (@a ty) as the search key.
+ *        of column (@a col) and type (@a ty) as the search key.
  */
 static mvar_t *
 #ifndef NDEBUG
 #define env_mvar(e,a,t) (env_mvar_ ((e), (a), (t), __func__, __LINE__))
-env_mvar_ (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty,
+env_mvar_ (const PFarray_t *env, PFalg_col_t col, PFalg_simple_type_t ty,
            const char *func, const int line)
 #else
-env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
+env_mvar (const PFarray_t *env, PFalg_col_t col, PFalg_simple_type_t ty)
 #endif
 {
-    mvar_t *mvar = env_mvar_unsafe (env, att, ty);
+    mvar_t *mvar = env_mvar_unsafe (env, col, ty);
 
     if (mvar)
         return mvar;
 
 #ifndef NDEBUG
     fprintf (stderr,
-             "looking for att: %s, ty: 0x%X in function %s (line %i)\n",
-             PFatt_str (att), ty, func, line);
+             "looking for col: %s, ty: 0x%X in function %s (line %i)\n",
+             PFcol_str (col), ty, func, line);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        fprintf (stderr, "  att: %s, type: 0x%X, mvar->name: %s\n",
-                 PFatt_str (entry.att), entry.ty,
+        fprintf (stderr, "  col: %s, type: 0x%X, mvar->name: %s\n",
+                 PFcol_str (entry.col), entry.ty,
                  PFmil_var_str (entry.mvar->name));
     }
 #endif
 
     PFoops (OOPS_FATAL,
-            "attribute '%s' with type '0x%X' not found in environment",
-            PFatt_str (att), ty);
+            "column '%s' with type '0x%X' not found in environment",
+            PFcol_str (col), ty);
     /* we don't ever get here */
     return NULL;
 }
@@ -663,7 +666,7 @@ env_copy (PFpa_op_t *p, PFarray_t *in_env)
     /* copy all the existing variables */
     for (unsigned int i = 0; i < env_count (in_env); i++) {
         env_t entry = env_at (in_env, i);
-        env_add (p->env, entry.att, entry.ty, entry.mvar);
+        env_add (p->env, entry.col, entry.ty, entry.mvar);
         pin (entry.mvar, p->refctr);
     }
 }
@@ -694,7 +697,7 @@ env_map (PFpa_op_t *p, PFarray_t *in_env, mvar_t *v)
                                   lit_oid (0)))));
 
         env_add (p->env,
-                 env_at (in_env, i).att,
+                 env_at (in_env, i).col,
                  env_at (in_env, i).ty,
                  tmp);
     }
@@ -762,14 +765,14 @@ static void reduce (PFpa_op_t * p, int goalnt);
 /***********************************/
 /* fold( reduce() helper functions */
 /***********************************/
-/** @brief Lookup the type of the @a att column in the schema of node @a n. */
+/** @brief Lookup the type of the @a col column in the schema of node @a n. */
 static PFalg_simple_type_t
-type_of (const PFpa_op_t *n, PFalg_att_t att)
+type_of (const PFpa_op_t *n, PFalg_col_t col)
 { /* fold( */
     assert (n);
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (n->schema.items[i].name == att)
+        if (n->schema.items[i].name == col)
             return n->schema.items[i].type;
 
     PFoops (OOPS_FATAL,
@@ -828,8 +831,8 @@ intersect (PFpa_op_t *p,
            mvar_t *res)
 { /* fold( */
     PFarray_t          *helper_vars = PFarray (sizeof (mvar_t *), 10);
-    PFalg_att_t         latt,
-                        ratt;
+    PFalg_col_t         lcol,
+                        rcol;
     PFalg_simple_type_t lty  = 0,
                         rty  = 0;
     PFmil_t            *args = NULL;
@@ -840,15 +843,15 @@ intersect (PFpa_op_t *p,
 
     /* collect all arguments/columns for the intersection ... */
     for (unsigned int i = 0; i < left.count; i++) { /* fold( */
-        latt = left.items[i].name;
-        ratt = right.items[i].name;
+        lcol = left.items[i].name;
+        rcol = right.items[i].name;
         lty  = left.items[i].type;
         rty  = right.items[i].type;
 
         /* cope with simple types */
         if (type_bit_check (lty) && lty == rty) {
-            l = env_mvar (L(p)->env, latt, lty);
-            r = env_mvar (R(p)->env, ratt, rty);
+            l = env_mvar (L(p)->env, lcol, lty);
+            r = env_mvar (R(p)->env, rcol, rty);
         }
         /* cope with nodes */
         else if (!(~aat_node & lty) && !(~aat_node & rty)) {
@@ -865,13 +868,13 @@ intersect (PFpa_op_t *p,
             }
             /* cope with normal nodes only */
             else if (lty == aat_pnode && rty == aat_pnode) {
-                l = env_mvar (L(p)->env, latt, aat_pre);
-                r = env_mvar (R(p)->env, ratt, aat_pre);
+                l = env_mvar (L(p)->env, lcol, aat_pre);
+                r = env_mvar (R(p)->env, rcol, aat_pre);
             }
             /* cope with attribute nodes only */
             else if (lty == aat_anode && rty == aat_anode) {
-                l = env_mvar (L(p)->env, latt, aat_attr);
-                r = env_mvar (R(p)->env, ratt, aat_attr);
+                l = env_mvar (L(p)->env, lcol, aat_attr);
+                r = env_mvar (R(p)->env, rcol, aat_attr);
             }
             /* cope with a mix of all possible nodes */
             else if (lty == aat_node && rty == aat_node) {
@@ -890,8 +893,8 @@ intersect (PFpa_op_t *p,
                    and attr id by one and replace nil by 0. This
                    way attributes only match attributes and
                    other nodes only match non-attribute nodes. */
-                l = env_mvar (L(p)->env, latt, aat_pre);
-                r = env_mvar (R(p)->env, ratt, aat_pre);
+                l = env_mvar (L(p)->env, lcol, aat_pre);
+                r = env_mvar (R(p)->env, rcol, aat_pre);
 
                 execute (
                     assgn (var (lpre->name),
@@ -918,8 +921,8 @@ intersect (PFpa_op_t *p,
                     args = arg (args, arg (var (lpre->name),
                                            var (rpre->name)));
 
-                l = env_mvar (L(p)->env, latt, aat_attr);
-                r = env_mvar (R(p)->env, ratt, aat_attr);
+                l = env_mvar (L(p)->env, lcol, aat_attr);
+                r = env_mvar (R(p)->env, rcol, aat_attr);
 
                 execute (
                     assgn (var (lattr->name),
@@ -942,8 +945,8 @@ intersect (PFpa_op_t *p,
                 /* add the attr column */
                 args = arg (args, arg (var (lattr->name), var (rattr->name)));
 
-                l = env_mvar (L(p)->env, latt, aat_frag);
-                r = env_mvar (R(p)->env, ratt, aat_frag);
+                l = env_mvar (L(p)->env, lcol, aat_frag);
+                r = env_mvar (R(p)->env, rcol, aat_frag);
 
                 args = arg (args, arg (var (l->name), var (r->name)));
 
@@ -962,8 +965,8 @@ intersect (PFpa_op_t *p,
             else
                 args = arg (args, arg (var (l->name),
                                        var (r->name)));
-            l = env_mvar (L(p)->env, latt, aat_frag);
-            r = env_mvar (R(p)->env, ratt, aat_frag);
+            l = env_mvar (L(p)->env, lcol, aat_frag);
+            r = env_mvar (R(p)->env, rcol, aat_frag);
         }
         /* cope with QNames */
         else if (aat_qname == lty && aat_qname == rty) {
@@ -975,12 +978,12 @@ intersect (PFpa_op_t *p,
 
             execute (
                 assgn (var (luri_loc->name),
-                       mposjoin (VAR (L(p)->env, latt, aat_qname_id),
-                                 VAR (L(p)->env, latt, aat_qname_cont),
+                       mposjoin (VAR (L(p)->env, lcol, aat_qname_id),
+                                 VAR (L(p)->env, lcol, aat_qname_cont),
                                  var (PF_MIL_VAR_QN_URI_LOC))),
                 assgn (var (ruri_loc->name),
-                       mposjoin (VAR (R(p)->env, ratt, aat_qname_id),
-                                 VAR (R(p)->env, ratt, aat_qname_cont),
+                       mposjoin (VAR (R(p)->env, rcol, aat_qname_id),
+                                 VAR (R(p)->env, rcol, aat_qname_cont),
                                  var (PF_MIL_VAR_QN_URI_LOC))));
 
             if (!args)
@@ -1018,8 +1021,8 @@ intersect (PFpa_op_t *p,
  *
  * @param l the left input relation
  * @param r the right input relation
- * @param latt the comparison column of the left input
- * @param ratt the comparison column of the right input
+ * @param lcol the comparison column of the left input
+ * @param rcol the comparison column of the right input
  * @param[out] lres the MIL variable which the result
  *                  of the preparation for the left input
  *                  is assigned to
@@ -1029,30 +1032,30 @@ intersect (PFpa_op_t *p,
  */
 static void
 prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
-              PFalg_att_t latt, PFalg_att_t ratt,
+              PFalg_col_t lcol, PFalg_col_t rcol,
               mvar_t *lres, mvar_t *rres)
 { /* fold( */
-    PFalg_simple_type_t lty = type_of (l, latt),
-                        rty = type_of (r, ratt);
+    PFalg_simple_type_t lty = type_of (l, lcol),
+                        rty = type_of (r, rcol);
 
     /* cope with simple types */
     if (type_bit_check (lty) && lty == rty) {
         execute (
             assgn (var (lres->name),
-                   VAR (l->env, latt, lty)),
+                   VAR (l->env, lcol, lty)),
             assgn (var (rres->name),
-                   VAR (r->env, ratt, rty)));
+                   VAR (r->env, rcol, rty)));
     }
     /* cope with nodes */
     else if (!(~aat_node & lty) && !(~aat_node & rty)) {
         mvar_t *tmp_res = new_var (1),
-               *lf      = env_mvar (l->env, latt, aat_frag),
-               *rf      = env_mvar (r->env, ratt, aat_frag);
+               *lf      = env_mvar (l->env, lcol, aat_frag),
+               *rf      = env_mvar (r->env, rcol, aat_frag);
 
         /* cope with normal nodes only */
         if (lty == aat_pnode && rty == aat_pnode) {
-            mvar_t *lp = env_mvar (l->env, latt, aat_pre);
-            mvar_t *rp = env_mvar (r->env, ratt, aat_pre);
+            mvar_t *lp = env_mvar (l->env, lcol, aat_pre);
+            mvar_t *rp = env_mvar (r->env, rcol, aat_pre);
             execute (assgn (var (tmp_res->name),
                             zip_nodes (
                                 var (lf->name),
@@ -1064,8 +1067,8 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
         }
         /* cope with attribute nodes only */
         else if (lty == aat_anode && rty == aat_anode) {
-            mvar_t *la = env_mvar (l->env, latt, aat_attr);
-            mvar_t *ra = env_mvar (r->env, ratt, aat_attr);
+            mvar_t *la = env_mvar (l->env, lcol, aat_attr);
+            mvar_t *ra = env_mvar (r->env, rcol, aat_attr);
             execute (assgn (var (tmp_res->name),
                             zip_nodes (
                                 var (lf->name),
@@ -1091,7 +1094,7 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
 
             if (lty & aat_pre)
                 execute (
-                    assgn (var (lp->name), VAR (l->env, latt, aat_pre)),
+                    assgn (var (lp->name), VAR (l->env, lcol, aat_pre)),
                     assgn (var (lp->name),
                            mifthenelse (
                                misnil (var (lp->name)),
@@ -1107,7 +1110,7 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
 
             if (rty & aat_pre)
                 execute (
-                    assgn (var (rp->name), VAR (r->env, ratt, aat_pre)),
+                    assgn (var (rp->name), VAR (r->env, rcol, aat_pre)),
                     assgn (var (rp->name),
                            mifthenelse (
                                misnil (var (rp->name)),
@@ -1123,7 +1126,7 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
 
             if (lty & aat_attr)
                 execute (
-                    assgn (var (la->name), VAR (l->env, latt, aat_attr)),
+                    assgn (var (la->name), VAR (l->env, lcol, aat_attr)),
                     assgn (var (la->name),
                            mifthenelse (
                                misnil (var (la->name)),
@@ -1139,7 +1142,7 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
 
             if (rty & aat_attr)
                 execute (
-                    assgn (var (ra->name), VAR (r->env, ratt, aat_attr)),
+                    assgn (var (ra->name), VAR (r->env, rcol, aat_attr)),
                     assgn (var (ra->name),
                            mifthenelse (
                                misnil (var (ra->name)),
@@ -1183,12 +1186,12 @@ prepare_comp (PFpa_op_t *l, PFpa_op_t *r,
     else if (aat_qname == lty && aat_qname == rty) {
         execute (
             assgn (var (lres->name),
-                   mposjoin (VAR (l->env, latt, aat_qname_id),
-                             VAR (l->env, latt, aat_qname_cont),
+                   mposjoin (VAR (l->env, lcol, aat_qname_id),
+                             VAR (l->env, lcol, aat_qname_cont),
                              var (PF_MIL_VAR_QN_URI_LOC))),
             assgn (var (rres->name),
-                   mposjoin (VAR (r->env, ratt, aat_qname_id),
-                             VAR (r->env, ratt, aat_qname_cont),
+                   mposjoin (VAR (r->env, rcol, aat_qname_id),
+                             VAR (r->env, rcol, aat_qname_cont),
                              var (PF_MIL_VAR_QN_URI_LOC))));
     }
     else
@@ -1213,22 +1216,22 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
      * Derive a single BAT from the multi-column grouping
      * (using functions from the xtables module).
      */
-    PFalg_att_t att;
+    PFalg_col_t col;
     bool        dir,
                 initialized = false;
 
     for (unsigned int i = 0; i < PFord_count (ord); i++) {
-        att = PFord_order_col_at (ord, i);
+        col = PFord_order_col_at (ord, i);
         dir = PFord_order_dir_at (ord, i);
 
         /* special case QNames -- here we need to look up the
            values */
-        if (type_of (p, att) & aat_qname) {
+        if (type_of (p, col) & aat_qname) {
             mvar_t *qn = new_var (1);
             execute (
                 assgn (var (qn->name),
-                       mposjoin (VAR (p->env, att, aat_qname_id),
-                                 VAR (p->env, att, aat_qname_cont),
+                       mposjoin (VAR (p->env, col, aat_qname_id),
+                                 VAR (p->env, col, aat_qname_cont),
                                  var (PF_MIL_VAR_QN_URI_LOC))));
             if (!initialized) {
                 execute (
@@ -1247,7 +1250,7 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
         else
             /* cope with all non-QName types */
             for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                if (t & TYPE_MASK(type_of (p, att)) &&
+                if (t & TYPE_MASK(type_of (p, col)) &&
                     !(t & aat_qname)) {
                     if (!initialized) {
                         execute (
@@ -1255,7 +1258,7 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
                                    reverse (
                                        sort (
                                            reverse (
-                                               VAR (p->env, att, t)),
+                                               VAR (p->env, col, t)),
                                            dir))));
                         initialized = true;
                     }
@@ -1263,7 +1266,7 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
                         execute (
                             assgn (var (res->name),
                                    ctrefine (var (res->name),
-                                             VAR (p->env, att, t),
+                                             VAR (p->env, col, t),
                                              dir)));
                 }
     }
@@ -1271,19 +1274,19 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
 
 /**
  * @brief Generate MIL code that extracts the QName references
- *        from a node column @a att in a given operator @a p.
+ *        from a node column @a col in a given operator @a p.
  *
  * @param p the operator whose column values are used
- * @param att the column that holds the node references
+ * @param col the column that holds the node references
  * @param[out] id the MIL variable the references to the QName
  *                entries are assigned to
  * @param[out] cont the MIL variable the containers to the respective
  *                  QName references are assigned to
  */
 static void
-fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
+fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont)
 { /* fold( */
-    PFalg_simple_type_t ty = type_of (p, att);
+    PFalg_simple_type_t ty = type_of (p, col);
 
     if (ty == aat_pnode) {
         /* find all element nodes and extract their QName references */
@@ -1291,8 +1294,8 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
                 *elem      = new_var (1),
                 *elem_cont = new_var (1),
                 *map       = new_var (1);
-        PFmil_t *pre       = VAR (p->env, att, aat_pre),
-                *pre_cont  = VAR (p->env, att, aat_frag);
+        PFmil_t *pre       = VAR (p->env, col, aat_pre),
+                *pre_cont  = VAR (p->env, col, aat_frag);
 
         execute (
             assgn (var (kind->name),
@@ -1331,8 +1334,8 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
     }
     else if (ty == aat_anode) {
         /* extract all QName references from the attributes */
-        PFmil_t *attr      = VAR (p->env, att, aat_attr),
-                *attr_cont = VAR (p->env, att, aat_frag);
+        PFmil_t *attr      = VAR (p->env, col, aat_attr),
+                *attr_cont = VAR (p->env, col, aat_frag);
 
         execute (
             assgn (var (id->name),
@@ -1362,10 +1365,10 @@ fn_node_name (PFpa_op_t *p, PFalg_att_t att, mvar_t *id, mvar_t *cont)
                 *acont     = new_var (1),
                 *res       = new_var (1),
 
-                *attr_col  = env_mvar (p->env, att, aat_attr);
-        PFmil_t *pre       = VAR (p->env, att, aat_pre),
-                *pre_cont  = VAR (p->env, att, aat_frag),
-                *attr      = VAR (p->env, att, aat_attr);
+                *attr_col  = env_mvar (p->env, col, aat_attr);
+        PFmil_t *pre       = VAR (p->env, col, aat_pre),
+                *pre_cont  = VAR (p->env, col, aat_frag),
+                *attr      = VAR (p->env, col, aat_attr);
 
         execute (
             /* get all attributes */
@@ -1630,16 +1633,16 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
                PFmil_t * (*gop) (const PFmil_t *),
                PFpa_op_t *p)
 { /* fold( */
-     PFalg_att_t         part    = p->sem.aggr.part,
-                         att     = p->sem.aggr.att,
+     PFalg_col_t         part    = p->sem.aggr.part,
+                         col     = p->sem.aggr.col,
                          res     = p->sem.aggr.res;
      PFalg_simple_type_t part_ty,
-                         att_ty  = type_of (L(p), att),
+                         col_ty  = type_of (L(p), col),
                          res_ty  = type_of (p, res);
 
-     assert (att_ty == res_ty);
+     assert (col_ty == res_ty);
 
-     if (part != att_NULL) {
+     if (part != col_NULL) {
          mvar_t *v    = new_var (1);
          mvar_t *res_var  = new_var (p->refctr);
          mvar_t *part_var = new_var (p->refctr);
@@ -1648,10 +1651,10 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
 
          execute (
               /* v :=
-                 {gop}(att.reverse().join(part).reverse()) */
+                 {gop}(col.reverse().join(part).reverse()) */
               assgn (var (v->name),
                      gop (reverse (
-                              join (reverse (VAR (L(p)->env, att, att_ty)),
+                              join (reverse (VAR (L(p)->env, col, col_ty)),
                                     VAR (L(p)->env, part, part_ty))))),
               /* res := v.reverse ().mark (0@0).reverse (); */
               assgn (var (res_var->name),
@@ -1669,7 +1672,7 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
           mvar_t *v = new_var (p->refctr);
           execute (
                assgn (var (v->name),
-                      op (VAR (L(p)->env, att, att_ty))),
+                      op (VAR (L(p)->env, col, col_ty))),
                assgn (var (v->name),
                       append (
                            seqbase (
@@ -1708,8 +1711,8 @@ llscj (const PFpa_op_t *p)
             *ret_frag = new_var (p->refctr), /* the `frag' result variable */
             *ret_pre  = new_var (p->refctr); /* the `pre' result variable */
 
-    PFalg_att_t pa_iter = p->sem.scjoin.iter;
-    PFalg_att_t pa_item = p->sem.scjoin.item;
+    PFalg_col_t pa_iter = p->sem.scjoin.iter;
+    PFalg_col_t pa_item = p->sem.scjoin.item;
 
     PFalg_simple_type_t iter_ty     = type_of (L(p), pa_iter),
                         item_ty     = type_of (L(p), pa_item),
@@ -1885,7 +1888,7 @@ pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
 		);
 	    }
 	    PFalg_simple_type_t postype = aat_nat;
-	    if ( p->schema.items[1].name != att_pos ) {
+	    if ( p->schema.items[1].name != col_pos ) {
 	        /* INCOMPLETE. Temporary fix for Hennings document startnodes
 		 * problem.
 		 * When startnodes are delivered in document order like in
@@ -1919,10 +1922,10 @@ pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
 
 static void
 pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
-		     PFalg_att_t a_iter,
-		     PFalg_att_t a_item, PFalg_simple_type_t t_item,
-		     PFalg_att_t a_frag,
-		     PFalg_att_t a_pos
+		     PFalg_col_t a_iter,
+		     PFalg_col_t a_item, PFalg_simple_type_t t_item,
+		     PFalg_col_t a_frag,
+		     PFalg_col_t a_pos
 		    )
 {
 	mvar_t *v_iter  = new_var (dest->refctr);
@@ -2113,7 +2116,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
                 /* add the variable to the current environment
                    (and thus also to the base environment) */
                 env_add (p->env,
-                         env_at (LL(p)->env, i).att,
+                         env_at (LL(p)->env, i).col,
                          env_at (LL(p)->env, i).ty,
                          tmp);
 
@@ -2195,7 +2198,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     /* switch off debugging information as it triggers errors in MonetDB...
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
-                           lit_str (PFatt_str (env_at (p->env, i).att))));
+                           lit_str (PFatt_str (env_at (p->env, i).col))));
     */
 #endif
 
@@ -2270,7 +2273,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
 
                 /* find the corresponding variable in res for
                    the variable in p */
-                mvar_t *tmp = env_mvar (LR(p)->env, entry.att, entry.ty);
+                mvar_t *tmp = env_mvar (LR(p)->env, entry.col, entry.ty);
 
                 execute (
                     assgn (var (entry.mvar->name),
@@ -2305,7 +2308,7 @@ reduce2 (PFpa_op_t * p, int goalnt)
     /* switch off debugging information as it triggers errors in MonetDB...
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
-                           lit_str (PFatt_str (env_at (p->env, i).att))));
+                           lit_str (PFcol_str (env_at (p->env, i).col))));
     */
 #endif
 
@@ -2397,7 +2400,7 @@ reduce3 (PFpa_op_t * p, int goalnt)
     /* switch off debugging information as it triggers errors in MonetDB...
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
-                           lit_str (PFatt_str (env_at (p->env, i).att))));
+                           lit_str (PFcol_str (env_at (p->env, i).col))));
     */
 #endif
 
@@ -2508,7 +2511,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFalg_simple_type_t ty;
             PFmil_create_ws_t create;
             mvar_t *err, *time, *try = NULL;
-            PFalg_att_t pa_item = p->sem.serialize.item;
+            PFalg_col_t pa_item = p->sem.serialize.item;
             PFmil_t *oldmilprog, *bodymilprog;
 
             /* save the current mil program */
@@ -3655,8 +3658,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             if (p->sem.attach.value.type == aat_qname) {
                 mvar_t *id   = new_var (p->refctr);
                 mvar_t *cont = new_var (p->refctr);
-                env_add (p->env, p->sem.attach.attname, aat_qname_id, id);
-                env_add (p->env, p->sem.attach.attname, aat_qname_cont, cont);
+                env_add (p->env, p->sem.attach.col, aat_qname_id, id);
+                env_add (p->env, p->sem.attach.col, aat_qname_cont, cont);
 
                 execute (
                     assgn (var (id->name),
@@ -3671,7 +3674,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             else {
                 /* now create the new column */
                 v = new_var (p->refctr);
-                env_add (p->env, p->sem.attach.attname,
+                env_add (p->env, p->sem.attach.col,
                          p->sem.attach.value.type, v);
 
                 execute (
@@ -3734,8 +3737,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              * implementations). By using leftjoin(), however, we
              * can guarantee the result to be correctly ordered.
              */
-            PFalg_simple_type_t lty = type_of (L(p), p->sem.eqjoin.att1);
-            PFalg_simple_type_t rty = type_of (R(p), p->sem.eqjoin.att2);
+            PFalg_simple_type_t lty = type_of (L(p), p->sem.eqjoin.col1);
+            PFalg_simple_type_t rty = type_of (R(p), p->sem.eqjoin.col2);
             mvar_t *l  = NULL;
             mvar_t *r  = NULL;
             mvar_t *v1 = new_var (1);
@@ -3747,8 +3750,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 if (lty != rty)
                     PFoops (OOPS_FATAL, "incompatible types in Join");
 
-                l = env_mvar (L(p)->env, p->sem.eqjoin.att1, lty);
-                r = env_mvar (R(p)->env, p->sem.eqjoin.att2, rty);
+                l = env_mvar (L(p)->env, p->sem.eqjoin.col1, lty);
+                r = env_mvar (R(p)->env, p->sem.eqjoin.col2, rty);
             }
             else {
                 /* If this case is ever triggered this means we have
@@ -3796,8 +3799,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 17: /* fold( */
         {
             bool                initialized = false;
-            PFalg_att_t         latt,
-                                ratt;
+            PFalg_col_t         lcol,
+                                rcol;
             PFalg_simple_type_t lty  = 0,
                                 rty  = 0;
             PFmil_t            *(*op) (const PFmil_t *, const PFmil_t *);
@@ -3821,17 +3824,17 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 if (p->sem.thetajoin.pred[i].comp == alg_comp_eq) { /* fold( */
                     initialized = true;
 
-                    latt = p->sem.thetajoin.pred[i].left;
-                    ratt = p->sem.thetajoin.pred[i].right;
-                    lty  = type_of (L(p), latt);
-                    rty  = type_of (R(p), ratt);
+                    lcol = p->sem.thetajoin.pred[i].left;
+                    rcol = p->sem.thetajoin.pred[i].right;
+                    lty  = type_of (L(p), lcol);
+                    rty  = type_of (R(p), rcol);
 
                     left.items[left.count++] =
                         (struct PFalg_schm_item_t)
-                            { .name = latt, .type = lty };
+                            { .name = lcol, .type = lty };
                     right.items[right.count++] =
                         (struct PFalg_schm_item_t)
-                            { .name = ratt, .type = rty };
+                            { .name = rcol, .type = rty };
 
                 } /* fold) */
 
@@ -3949,7 +3952,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      unq1_thetajoin (Rel, Rel) */
         case 19: /* fold( */
         {
-            PFalg_att_t latt, ratt, ldist_att, rdist_att;
+            PFalg_col_t lcol, rcol, ldist_col, rdist_col;
             PFalg_simple_type_t lty, rty, ldist_ty, rdist_ty;
             PFmil_t *comp;
             mvar_t *l     = NULL,
@@ -3961,24 +3964,24 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             v = new_var (1);
 
-            latt      = p->sem.unq_thetajoin.left;
-            ratt      = p->sem.unq_thetajoin.right;
-            ldist_att = p->sem.unq_thetajoin.ldist;
-            rdist_att = p->sem.unq_thetajoin.rdist;
+            lcol      = p->sem.unq_thetajoin.left;
+            rcol      = p->sem.unq_thetajoin.right;
+            ldist_col = p->sem.unq_thetajoin.ldist;
+            rdist_col = p->sem.unq_thetajoin.rdist;
 
-            lty      = type_of (L(p), latt);
-            rty      = type_of (R(p), ratt);
-            ldist_ty = type_of (L(p), ldist_att);
-            rdist_ty = type_of (R(p), rdist_att);
+            lty      = type_of (L(p), lcol);
+            rty      = type_of (R(p), rcol);
+            ldist_ty = type_of (L(p), ldist_col);
+            rdist_ty = type_of (R(p), rdist_col);
 
             if (type_bit_check (lty) && type_bit_check (ldist_ty)) {
                 if (lty != rty || ldist_ty != rdist_ty)
                     PFoops (OOPS_FATAL, "incompatible types in Theta-Join");
 
-                l     = env_mvar (L(p)->env, latt, lty);
-                r     = env_mvar (R(p)->env, ratt, rty);
-                ldist = env_mvar (L(p)->env, ldist_att, ldist_ty);
-                rdist = env_mvar (R(p)->env, rdist_att, rdist_ty);
+                l     = env_mvar (L(p)->env, lcol, lty);
+                r     = env_mvar (R(p)->env, rcol, rty);
+                ldist = env_mvar (L(p)->env, ldist_col, ldist_ty);
+                rdist = env_mvar (R(p)->env, rdist_col, rdist_ty);
             }
             else {
                 /* If this case is ever triggered this means we have
@@ -4022,8 +4025,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                           lit_oid (0)))));
 
                 /* add the two result columns to the environment */
-                env_add (p->env, ldist_att, ldist_ty, v1);
-                env_add (p->env, rdist_att, rdist_ty, v2);
+                env_add (p->env, ldist_col, ldist_ty, v1);
+                env_add (p->env, rdist_col, rdist_ty, v2);
             }
             else if (p->kind == pa_unq1_thetajoin) {
                 v1 = new_var (p->refctr);
@@ -4043,7 +4046,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            reverse( mark (var (v->name), lit_oid (0)))));
 
                 /* add the result column to the environment */
-                env_add (p->env, ldist_att, ldist_ty, v1);
+                env_add (p->env, ldist_col, ldist_ty, v1);
             }
             else
                 PFoops (OOPS_FATAL,
@@ -4085,7 +4088,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     var (v->name),
                     reverse (
                         mark (
-                            select_(VAR (L(p)->env, p->sem.select.att,aat_bln),
+                            select_(VAR (L(p)->env, p->sem.select.col,aat_bln),
                                     lit_bit (true)),
                             lit_oid (0)))));
 
@@ -4101,7 +4104,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         {
             v = new_var (1);
 
-            assert (type_of (p, p->sem.attach.attname) ==
+            assert (type_of (p, p->sem.attach.col) ==
                     p->sem.attach.value.type);
 
             if (!type_bit_check (p->sem.attach.value.type))
@@ -4122,8 +4125,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     reverse (
                         mark (
                             uselect (VAR (L(p)->env,
-                                          p->sem.attach.attname,
-                                          type_of (p, p->sem.attach.attname)),
+                                          p->sem.attach.col,
+                                          type_of (p, p->sem.attach.col)),
                                      literal (p->sem.attach.value)),
                             lit_oid (0)))));
 
@@ -4137,12 +4140,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      append_union (Rel, Rel) */
         case 23: /* fold( */
         {
-            PFalg_att_t         att;
+            PFalg_col_t         col;
             PFalg_simple_type_t lty, rty;
             for (unsigned int i = 0; i < p->schema.count; i++) {
-                att = p->schema.items[i].name;
-                lty = type_of (L(p), att);
-                rty = type_of (R(p), att);
+                col = p->schema.items[i].name;
+                lty = type_of (L(p), col);
+                rty = type_of (R(p), col);
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & TYPE_MASK(p->schema.items[i].type)) {
 
@@ -4158,7 +4161,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 assgn (
                                     var (v->name),
                                     access (
-                                        copy (VAR (L(p)->env, att, t)),
+                                        copy (VAR (L(p)->env, col, t)),
                                         BAT_APPEND)));
                         else
                             /* v := <some BAT of L>.project(nil); */
@@ -4180,7 +4183,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 access (
                                     bappend (
                                         var (v->name),
-                                        VAR (R(p)->env, att, t)),
+                                        VAR (R(p)->env, col, t)),
                                     BAT_READ));
                         else
                             /* v.append(<some BAT of L>.project(nil)); */
@@ -4193,7 +4196,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                             cast (implty (t), nil ()))),
                                     BAT_READ));
 
-                        env_add (p->env, att, t, v);
+                        env_add (p->env, col, t, v);
                     }
             }
         }   break; /* fold) */
@@ -4201,7 +4204,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      merge_union (Rel, Rel) */
         case 25: /* fold( */
         {
-            PFalg_att_t         grp_att;
+            PFalg_col_t         grp_col;
             PFalg_simple_type_t grp_ty;
             PFmil_t            *args;
             v = new_var (1);
@@ -4213,22 +4216,22 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         "is not implemented (got %s)",
                         PFord_str (p->sem.merge_union.ord));
 
-            grp_att = PFord_order_col_at (p->sem.merge_union.ord, 0);
-            grp_ty  = type_of (p, grp_att);
+            grp_col = PFord_order_col_at (p->sem.merge_union.ord, 0);
+            grp_ty  = type_of (p, grp_col);
 
             if (!type_bit_check (grp_ty) ||
-                type_of (L(p), grp_att) != grp_ty ||
-                type_of (R(p), grp_att) != grp_ty)
+                type_of (L(p), grp_col) != grp_ty ||
+                type_of (R(p), grp_col) != grp_ty)
                 PFoops (OOPS_FATAL,
                         "cannot handle polymorphic grouping columns "
                         " in the merge-union translation for MIL");
 
-            /* first two arguments of merged_union() are the grouping atts */
-            args = arg (assert_order (VAR (L(p)->env, grp_att, grp_ty)),
-                        assert_order (VAR (R(p)->env, grp_att, grp_ty)));
+            /* first two arguments of merged_union() are the grouping cols */
+            args = arg (assert_order (VAR (L(p)->env, grp_col, grp_ty)),
+                        assert_order (VAR (R(p)->env, grp_col, grp_ty)));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->schema.items[i].name != grp_att)
+                if (p->schema.items[i].name != grp_col)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & TYPE_MASK(p->schema.items[i].type))
                             for (unsigned short j = 0; j <= 1; j++) {
@@ -4263,9 +4266,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* now extract all the result BATs */
             for (unsigned int i = 0; i < p->schema.count; i++) {
-                /* The grouping attribute is to be found
+                /* The grouping column is to be found
                    as the first result BAT. */
-                if (p->schema.items[i].name == grp_att) {
+                if (p->schema.items[i].name == grp_col) {
                     mvar_t *w = new_var (p->refctr);
                     env_add (p->env, p->schema.items[i].name, grp_ty, w);
                     execute (assgn (var (w->name),
@@ -4291,7 +4294,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      intersect (Rel, Rel) */
         case 26: /* fold( */
         {
-            PFalg_att_t         att;
+            PFalg_col_t         col;
             PFalg_simple_type_t lty,
                                 rty;
             PFalg_schema_t      left,
@@ -4307,13 +4310,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* collect the aligned list of columns (in preparation for
                the intersect worker) */
             for (unsigned int i = 0; i < p->schema.count; i++) {
-                    att = p->schema.items[i].name;
-                    lty = type_of (L(p), att);
-                    rty = type_of (R(p), att);
+                    col = p->schema.items[i].name;
+                    lty = type_of (L(p), col);
+                    rty = type_of (R(p), col);
                     left.items[left.count++] =
-                        (struct PFalg_schm_item_t) { .name = att, .type = lty };
+                        (struct PFalg_schm_item_t) { .name = col, .type = lty };
                     right.items[right.count++] =
-                        (struct PFalg_schm_item_t) { .name = att, .type = rty };
+                        (struct PFalg_schm_item_t) { .name = col, .type = rty };
             }
 
             /* apply the intersection */
@@ -4353,7 +4356,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    lit_oid (0)))));
 
                 env_add (p->env,
-                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).col,
                          env_at (L(p)->env, 0).ty,
                          res);
             }
@@ -4361,7 +4364,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 /* First apply the intersection like the intersect operator
                    and then build the difference of the left side and the
                    result of the intersection. */
-                PFalg_att_t         att;
+                PFalg_col_t         col;
                 PFalg_simple_type_t lty,
                                     rty;
                 PFalg_schema_t      left,
@@ -4379,15 +4382,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 /* collect the aligned list of columns (in preparation for
                    the intersect worker) */
                 for (unsigned int i = 0; i < p->schema.count; i++) {
-                        att = p->schema.items[i].name;
-                        lty = type_of (L(p), att);
-                        rty = type_of (R(p), att);
+                        col = p->schema.items[i].name;
+                        lty = type_of (L(p), col);
+                        rty = type_of (R(p), col);
                         left.items[left.count++] =
                             (struct PFalg_schm_item_t)
-                                { .name = att, .type = lty };
+                                { .name = col, .type = lty };
                         right.items[right.count++] =
                             (struct PFalg_schm_item_t)
-                                { .name = att, .type = rty };
+                                { .name = col, .type = rty };
                 }
 
                 /* apply the intersection */
@@ -4451,12 +4454,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 -- assert_order however only copes with ascending order */
             if (PFord_count (ord) &&
                 PFord_order_dir_at (ord, 0) == DIR_ASC) {
-                PFalg_att_t att = PFord_order_col_at (ord, 0);
-                PFalg_simple_type_t ty = type_of (rel, att);
+                PFalg_col_t col = PFord_order_col_at (ord, 0);
+                PFalg_simple_type_t ty = type_of (rel, col);
                 if (type_bit_check(ty))
                     execute (
-                        assgn (VAR(p->env, att, ty),
-                               assert_order (VAR(p->env, att, ty))));
+                        assgn (VAR(p->env, col, ty),
+                               assert_order (VAR(p->env, col, ty))));
             }
 
             /* release our temporary variable */
@@ -4489,12 +4492,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     -- assert_order however only copes with ascending order */
                 if (PFord_count (ord) &&
                     PFord_order_dir_at (ord, 0) == DIR_ASC) {
-                    PFalg_att_t att = PFord_order_col_at (ord, 0);
-                    PFalg_simple_type_t ty = type_of (L(p), att);
+                    PFalg_col_t col = PFord_order_col_at (ord, 0);
+                    PFalg_simple_type_t ty = type_of (L(p), col);
                     if (type_bit_check(ty))
                         execute (
-                            assgn (VAR(p->env, att, ty),
-                                   assert_order (VAR(p->env, att, ty))));
+                            assgn (VAR(p->env, col, ty),
+                                   assert_order (VAR(p->env, col, ty))));
                 }
 
                 /* release our temporary variable */
@@ -4525,9 +4528,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                    stay unchanged. */
                 for (j = 0; j < PFord_count (p->sem.sortby.existing); j++)
                     if (PFord_order_col_at (p->sem.sortby.existing, j) ==
-                        env_at (L(p)->env, i).att) {
+                        env_at (L(p)->env, i).col) {
                         env_t entry = env_at (L(p)->env, i);
-                        env_add (p->env, entry.att, entry.ty, entry.mvar);
+                        env_add (p->env, entry.col, entry.ty, entry.mvar);
                         pin (entry.mvar, p->refctr);
                         break;
                     }
@@ -4549,7 +4552,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                               lit_oid (0)))));
 
                     env_add (p->env,
-                             env_at (L(p)->env, i).att,
+                             env_at (L(p)->env, i).col,
                              env_at (L(p)->env, i).ty,
                              tmp);
                 }
@@ -4578,13 +4581,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_concat: /* fold( */
                 {
                     PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    res_type = type_of (L(p), att1);
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    res_type = type_of (L(p), col1);
 
-                    assert (res_type == type_of (L(p), att2));
+                    assert (res_type == type_of (L(p), col2));
                     assert (res_type == aat_int || res_type == aat_dec ||
                             res_type == aat_dbl || res_type == aat_str);
 
@@ -4607,8 +4610,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* do the arithmetics */
                     execute (
                         assgn (var (res->name),
-                               op (VAR (L(p)->env, att1, res_type),
-                                   VAR (L(p)->env, att2, res_type))));
+                               op (VAR (L(p)->env, col1, res_type),
+                                   VAR (L(p)->env, col2, res_type))));
                 }   break; /* fold) */
                 case alg_fun_fn_abs:
                 case alg_fun_fn_ceiling:
@@ -4616,10 +4619,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_round: /* fold( */
                 {
                     PFmil_t * (*op) (const PFmil_t *) = NULL;
-                    PFalg_att_t att;
+                    PFalg_col_t col;
 
-                    att = p->sem.fun_1to1.refs.atts[0];
-                    res_type = type_of (L(p), att);
+                    col = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = type_of (L(p), col);
 
                     assert (res_type == aat_int ||
                             res_type == aat_dec ||
@@ -4644,81 +4647,81 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     if (impl_types (res_type) == mty_dbl)
                         execute (
                             assgn (var (res->name),
-                                   op (VAR (L(p)->env, att, res_type))));
+                                   op (VAR (L(p)->env, col, res_type))));
                     else
                         execute (
                             assgn (var (res->name),
                                    mcast (implty (res_type),
                                           op (mcast (type (mty_dbl),
                                                      VAR (L(p)->env,
-                                                          att,
+                                                          col,
                                                           res_type))))));
                 }   break; /* fold) */
                 case alg_fun_fn_substring: /* fold( */
                 {
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
                     res_type = aat_str;
 
                     execute (
                         assgn (var (res->name),
                                mstring (
-                                   VAR (L(p)->env, att1, aat_str),
+                                   VAR (L(p)->env, col1, aat_str),
                                    mmax( msub( mcast (type (mty_int),
                                                       mround_up( VAR (L(p)->env,
-                                                                 att2,
+                                                                 col2,
                                                                  aat_dbl))),
                                               lit_int(1)),
                                          lit_int(0)))));
                 }   break; /* fold) */
                 case alg_fun_fn_substring_dbl: /* fold( */
                 {
-                    PFalg_att_t att1, att2, att3;
+                    PFalg_col_t col1, col2, col3;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    col3 = clat (p->sem.fun_1to1.refs, 2);
                     res_type = aat_str;
 
                     execute (
                         assgn (var (res->name),
                                mstring2 (
-                                   VAR (L(p)->env, att1, aat_str),
+                                   VAR (L(p)->env, col1, aat_str),
                                    mmax( msub( mcast (type (mty_int),
                                                       mround_up( VAR (L(p)->env,
-                                                                 att2,
+                                                                 col2,
                                                                  aat_dbl))),
                                               lit_int(1)),
                                          lit_int(0)),
                                    mcast (type (mty_int),
                                           mround_up( VAR (L(p)->env,
-                                                     att3,
+                                                     col3,
                                                      aat_dbl))))));
                 }   break; /* fold) */
 
                 case alg_fun_fn_string_length: /* fold( */
                 {
-                    PFalg_att_t att;
+                    PFalg_col_t col;
 
-                    att = p->sem.fun_1to1.refs.atts[0];
+                    col = clat (p->sem.fun_1to1.refs, 0);
                     res_type = aat_int;
 
                     execute (
                         assgn (var (res->name),
                                mcast (implty (res_type),
                                       mlength (
-                                          VAR (L(p)->env, att, aat_str)))));
+                                          VAR (L(p)->env, col, aat_str)))));
                 }   break; /* fold) */
                 case alg_fun_fn_normalize_space:
                 case alg_fun_fn_upper_case:
                 case alg_fun_fn_lower_case: /* fold( */
                 {
                     PFmil_t * (*op) (const PFmil_t *) = NULL;
-                    PFalg_att_t att;
+                    PFalg_col_t col;
 
-                    att = p->sem.fun_1to1.refs.atts[0];
+                    col = clat (p->sem.fun_1to1.refs, 0);
                     res_type = aat_str;
 
                     switch (p->sem.fun_1to1.kind) {
@@ -4733,31 +4736,31 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     execute (
                         assgn (var (res->name),
-                               op (VAR (L(p)->env, att, aat_str))));
+                               op (VAR (L(p)->env, col, aat_str))));
 
                 }   break; /* fold) */
                 case alg_fun_fn_translate: /* fold( */
                 {
-                    PFalg_att_t att1, att2, att3;
+                    PFalg_col_t col1, col2, col3;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    col3 = clat (p->sem.fun_1to1.refs, 2);
                     res_type = aat_str;
 
                     execute (
                         assgn (var (res->name),
                                mtranslate (
-                                   VAR (L(p)->env, att1, aat_str),
-                                   VAR (L(p)->env, att2, aat_str),
-                                   VAR (L(p)->env, att3, aat_str))));
+                                   VAR (L(p)->env, col1, aat_str),
+                                   VAR (L(p)->env, col2, aat_str),
+                                   VAR (L(p)->env, col3, aat_str))));
                 }   break; /* fold) */
                 case alg_fun_fn_contains: /* fold( */
                 {
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
                     res_type = aat_bln;
 
                     /* do the containment checks:
@@ -4765,8 +4768,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (res->name),
                                mnot (meq (msearch (
-                                              VAR (L(p)->env, att1, aat_str),
-                                              VAR (L(p)->env, att2, aat_str)),
+                                              VAR (L(p)->env, col1, aat_str),
+                                              VAR (L(p)->env, col2, aat_str)),
                                           lit_int (-1)))));
                 }   break; /* fold) */
                 case alg_fun_fn_starts_with:
@@ -4774,10 +4777,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_matches: /* fold( */
                 {
                     PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
                     res_type = aat_bln;
 
                     switch (p->sem.fun_1to1.kind) {
@@ -4792,62 +4795,62 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     execute (
                         assgn (var (res->name),
-                               op (VAR (L(p)->env, att1, aat_str),
-                                   VAR (L(p)->env, att2, aat_str))));
+                               op (VAR (L(p)->env, col1, aat_str),
+                                   VAR (L(p)->env, col2, aat_str))));
                 }   break; /* fold) */
                 case alg_fun_fn_substring_before: /* fold( */
                 {
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
                     res_type = aat_str;
 
                     execute (
                         assgn (var (res->name),
-                               mstring2 (VAR (L(p)->env, att1, aat_str),
+                               mstring2 (VAR (L(p)->env, col1, aat_str),
                                          lit_int (0),
                                          msearch (
-                                             VAR (L(p)->env, att1, aat_str),
-                                             VAR (L(p)->env, att2, aat_str)))));
+                                             VAR (L(p)->env, col1, aat_str),
+                                             VAR (L(p)->env, col2, aat_str)))));
 
                 }   break; /* fold) */
                 case alg_fun_fn_substring_after: /* fold( */
                 {
-                    PFalg_att_t att1, att2;
+                    PFalg_col_t col1, col2;
                     mvar_t     *search_res;
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
                     res_type = aat_str;
                     search_res = new_var(1);
 
                     execute (
                         assgn (var (search_res->name),
-                               msearch (VAR (L(p)->env, att1, aat_str),
-                                        VAR (L(p)->env, att2, aat_str))),
+                               msearch (VAR (L(p)->env, col1, aat_str),
+                                        VAR (L(p)->env, col2, aat_str))),
                         assgn (var (res->name),
                                mifthenelse (meq (var (search_res->name),
                                                  lit_int(-1)),
                                             lit_str(""),
                                             mstring (
-                                                VAR (L(p)->env, att1, aat_str),
+                                                VAR (L(p)->env, col1, aat_str),
                                                 madd (var (search_res->name),
                                                       mlength (VAR (L(p)->env,
-                                                                   att2,
+                                                                   col2,
                                                                    aat_str))
                                                       )))));
                     unpin(search_res, 1);
                 }   break; /* fold) */
                 case alg_fun_fn_matches_flag: /* fold( */
                 {
-                    PFalg_att_t att1, att2, att3;
+                    PFalg_col_t col1, col2, col3;
                     mvar_t *chk = new_var(1),
                            *err = new_var(1);
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    col3 = clat (p->sem.fun_1to1.refs, 2);
                     res_type = aat_bln;
 
                     /* check flags for validity */
@@ -4856,7 +4859,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 seq ( assgn (var (chk->name),
                                              mpcre_match (
                                                  VAR (L(p)->env,
-                                                      att3,
+                                                      col3,
                                                       aat_str),
                                                  lit_str("[^imsx]"))))),
                         if_ (not (isnil (var (err->name))),
@@ -4874,9 +4877,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (res->name),
                                mpcre_match_flag (
-                                   VAR (L(p)->env, att1, aat_str),
-                                   VAR (L(p)->env, att2, aat_str),
-                                   VAR (L(p)->env, att3, aat_str))));
+                                   VAR (L(p)->env, col1, aat_str),
+                                   VAR (L(p)->env, col2, aat_str),
+                                   VAR (L(p)->env, col3, aat_str))));
 
                     unpin (chk, 1);
                     unpin (err, 1);
@@ -4884,13 +4887,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_replace: /* fold( */
                 case alg_fun_fn_replace_flag:
                 {
-                    PFalg_att_t  att1, att2, att3;
+                    PFalg_col_t  col1, col2, col3;
                     PFmil_t     *flags = NULL;
                     mvar_t      *chk   = new_var (1);
 
-                    att1 = p->sem.fun_1to1.refs.atts[0];
-                    att2 = p->sem.fun_1to1.refs.atts[1];
-                    att3 = p->sem.fun_1to1.refs.atts[2];
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    col3 = clat (p->sem.fun_1to1.refs, 2);
                     res_type = aat_str;
 
                     switch (p->sem.fun_1to1.kind) {
@@ -4899,7 +4902,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             break;
                         case alg_fun_fn_replace_flag:
                             flags = VAR (L(p)->env,
-                                         p->sem.fun_1to1.refs.atts[3],
+                                         clat (p->sem.fun_1to1.refs, 3),
                                          aat_str);
                             break;
                         default:
@@ -4910,7 +4913,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                      * string contains variables */
                     execute (
                         assgn (var (chk->name),
-                               mpcre_match (VAR (L(p)->env, att3, aat_str),
+                               mpcre_match (VAR (L(p)->env, col3, aat_str),
                                             lit_str("[$][0-9]"))),
                         if_ (texist (var (chk->name), lit_bit(true)),
                              error (lit_str ("Variables in replacements are "
@@ -4922,14 +4925,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (res->name),
                                mpcre_replace (
-                                   VAR (L(p)->env, att1, aat_str),
-                                   VAR (L(p)->env, att2, aat_str),
-                                   VAR (L(p)->env, att3, aat_str),
+                                   VAR (L(p)->env, col1, aat_str),
+                                   VAR (L(p)->env, col2, aat_str),
+                                   VAR (L(p)->env, col3, aat_str),
                                    flags)));
                 }   break; /* fold) */
                 case alg_fun_fn_name: /* fold( */
                 {
-                    PFalg_att_t att         = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t col         = clat (p->sem.fun_1to1.refs, 0);
                     mvar_t     *id          = new_var (1),
                                *cont        = new_var (1),
                                *empty_str   = new_var (1),
@@ -4941,7 +4944,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                *false_oid   = new_var (1);
 
                     /* look up the correct QName references */
-                    fn_node_name (L(p), att, id, cont);
+                    fn_node_name (L(p), col, id, cont);
 
                     /* get all prefixes */
                     execute (
@@ -5018,7 +5021,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_local_name:
                 case alg_fun_fn_namespace_uri: /* fold( */
                 {
-                    PFalg_att_t   att         = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t   col         = clat (p->sem.fun_1to1.refs, 0);
                     mvar_t       *id          = new_var (1),
                                  *cont        = new_var (1),
                                  *name        = new_var (1),
@@ -5036,7 +5039,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     }
 
                     /* look up the correct QName references */
-                    fn_node_name (L(p), att, id, cont);
+                    fn_node_name (L(p), col, id, cont);
 
                     /* get all prefixes */
                     execute (
@@ -5073,8 +5076,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_number:
                 case alg_fun_fn_number_lax: /* fold( */
                 {
-                    PFalg_att_t         att   = p->sem.fun_1to1.refs.atts[0];
-                    PFalg_simple_type_t ty    = type_of (L(p), att);
+                    PFalg_col_t         col   = clat (p->sem.fun_1to1.refs, 0);
+                    PFalg_simple_type_t ty    = type_of (L(p), col);
                     bool                first = true;
 
                     res_type = aat_dbl;
@@ -5089,12 +5092,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             PFmil_t *casted = NULL;
 
                             if (t == res_type)
-                                casted = VAR (L(p)->env, att, t);
+                                casted = VAR (L(p)->env, col, t);
                             else
                                 casted
                                     = mcast (
                                         implty (res_type),
-                                        VAR (L(p)->env, att, t));
+                                        VAR (L(p)->env, col, t));
 
                             if (first) {
                                 execute (assgn (var (res->name), casted));
@@ -5121,8 +5124,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 }   break; /* fold) */
                 case alg_fun_fn_qname: /* fold( */
                 {
-                    PFalg_att_t uri     = p->sem.fun_1to1.refs.atts[0],
-                                pfx_loc = p->sem.fun_1to1.refs.atts[1];
+                    PFalg_col_t uri     = clat (p->sem.fun_1to1.refs, 0),
+                                pfx_loc = clat (p->sem.fun_1to1.refs, 1);
                     mvar_t     *cont    = new_var (p->refctr),
                                *offset  = new_var (1),
                                *prefix  = new_var (1),
@@ -5202,16 +5205,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 }   break; /* fold) */
                 case alg_fun_fn_doc_available: /* fold( */
                 {
-                    PFalg_att_t att;
+                    PFalg_col_t col;
 
-                    att = p->sem.fun_1to1.refs.atts[0];
+                    col = clat (p->sem.fun_1to1.refs, 0);
                     res_type = aat_bln;
 
                     execute (
                         assgn (var (res->name),
                                ws_docavailable ( var (PF_MIL_VAR_WS),
                                                  VAR (L(p)->env,
-                                                      att,
+                                                      col,
                                                       aat_str))));
 
                 } break; /* fold) */
@@ -5219,7 +5222,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 {
                     res_type = aat_frag;
                     res = env_mvar (L(p)->env,
-                                    p->sem.fun_1to1.refs.atts[0],
+                                    clat (p->sem.fun_1to1.refs, 0),
                                     aat_frag);
                 }   break; /* fold) */
                 case alg_fun_pf_supernode: /* fold( */
@@ -5228,15 +5231,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     break; /* fold) */
                 case alg_fun_pf_add_doc_str: /* fold( */
                 {
-                    PFalg_att_t filepath   = p->sem.fun_1to1.refs.atts[0],
-                                docname    = p->sem.fun_1to1.refs.atts[1],
-                                collection = p->sem.fun_1to1.refs.atts[2];
+                    PFalg_col_t filepath   = clat (p->sem.fun_1to1.refs, 0),
+                                docname    = clat (p->sem.fun_1to1.refs, 1),
+                                collection = clat (p->sem.fun_1to1.refs, 2);
 
                     assert (env_count (L(p)->env));
 
                     /* relink all filepath strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == filepath) {
+                        if (env_at (L(p)->env, i).col == filepath) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5246,7 +5249,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all document name strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == docname) {
+                        if (env_at (L(p)->env, i).col == docname) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5256,7 +5259,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all colection name strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == collection) {
+                        if (env_at (L(p)->env, i).col == collection) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5274,16 +5277,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 }   break; /* fold) */
                 case alg_fun_pf_add_doc_str_int: /* fold( */
                 {
-                    PFalg_att_t filepath   = p->sem.fun_1to1.refs.atts[0],
-                                docname    = p->sem.fun_1to1.refs.atts[1],
-                                collection = p->sem.fun_1to1.refs.atts[2],
-                                percentage = p->sem.fun_1to1.refs.atts[3];
+                    PFalg_col_t filepath   = clat (p->sem.fun_1to1.refs, 0),
+                                docname    = clat (p->sem.fun_1to1.refs, 1),
+                                collection = clat (p->sem.fun_1to1.refs, 2),
+                                percentage = clat (p->sem.fun_1to1.refs, 3);
 
                     assert (env_count (L(p)->env));
 
                     /* relink all filepath strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == filepath) {
+                        if (env_at (L(p)->env, i).col == filepath) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5293,7 +5296,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all document name strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == docname) {
+                        if (env_at (L(p)->env, i).col == docname) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5303,7 +5306,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all colection name strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == collection) {
+                        if (env_at (L(p)->env, i).col == collection) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5320,13 +5323,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 }   break; /* fold) */
                 case alg_fun_pf_del_doc: /* fold( */
                 {
-                    PFalg_att_t docname   = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t docname   = clat (p->sem.fun_1to1.refs, 0);
 
                     assert (env_count (L(p)->env));
 
                     /* relink all document name strings to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == docname) {
+                        if (env_at (L(p)->env, i).col == docname) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5345,7 +5348,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 case alg_fun_pf_nid: /* fold( */
                 {
-                    PFalg_att_t element   = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t element   = clat (p->sem.fun_1to1.refs, 0);
                     PFmil_t *pre       = VAR (p->env, element, aat_pre),
                             *pre_cont  = VAR (p->env, element, aat_frag);
 
@@ -5369,7 +5372,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
  
                 case alg_fun_pf_docname: /* fold( */
                 {
-                    PFalg_att_t element   = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t element   = clat (p->sem.fun_1to1.refs, 0);
                     PFmil_t *pre          = VAR (p->env, element, aat_pre),
                             *pre_cont     = VAR (p->env, element, aat_frag);
 
@@ -5389,14 +5392,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 case alg_fun_upd_delete: /* fold( */
                 {
-                    PFalg_att_t tgt = p->sem.fun_1to1.refs.atts[0];
+                    PFalg_col_t tgt = clat (p->sem.fun_1to1.refs, 0);
                     mvar_t *loop = NULL;
 
                     assert (env_count (L(p)->env));
 
                     /* relink all target nodes to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == tgt) {
+                        if (env_at (L(p)->env, i).col == tgt) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5424,8 +5427,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_upd_replace_element:
                 case alg_fun_upd_replace_node: /* fold( */
                 {
-                    PFalg_att_t tgt     = p->sem.fun_1to1.refs.atts[0],
-                                changes = p->sem.fun_1to1.refs.atts[1];
+                    PFalg_col_t tgt     = clat (p->sem.fun_1to1.refs, 0),
+                                changes = clat (p->sem.fun_1to1.refs, 1);
                     mvar_t *loop = NULL;
                     
                     int update_str;
@@ -5434,7 +5437,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all target nodes to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == tgt) {
+                        if (env_at (L(p)->env, i).col == tgt) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5445,7 +5448,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     /* relink all changes to the result BATs */
                     for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                        if (env_at (L(p)->env, i).att == changes) {
+                        if (env_at (L(p)->env, i).col == changes) {
                             pin (env_at (L(p)->env, i).mvar, p->refctr);
                             env_add (p->env,
                                      p->sem.fun_1to1.res,
@@ -5521,7 +5524,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* transform (possibly) multiple input columns
                into two single BATs (stored in l and r) */
             prepare_comp (
-                L(p), L(p), p->sem.binary.att1, p->sem.binary.att2, l, r);
+                L(p), L(p), p->sem.binary.col1, p->sem.binary.col2, l, r);
 
             /* do the comparison */
             execute (
@@ -5539,7 +5542,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         {
             mvar_t *res = new_var (p->refctr);
 
-            assert (aat_bln == type_of (L(p), p->sem.unary.att));
+            assert (aat_bln == type_of (L(p), p->sem.unary.col));
 
             /* copy the complete environment of the argument */
             env_copy (p, L(p)->env);
@@ -5547,7 +5550,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* do the comparison */
             execute (
                 assgn (var (res->name),
-                       mnot (VAR (L(p)->env, p->sem.unary.att, aat_bln))));
+                       mnot (VAR (L(p)->env, p->sem.unary.col, aat_bln))));
 
             /* and put the result into p's environment */
             env_add (p->env, p->sem.unary.res, aat_bln, res);
@@ -5561,8 +5564,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
             mvar_t *res = new_var (p->refctr);
 
-            assert (aat_bln == type_of (L(p), p->sem.binary.att1));
-            assert (aat_bln == type_of (L(p), p->sem.binary.att2));
+            assert (aat_bln == type_of (L(p), p->sem.binary.col1));
+            assert (aat_bln == type_of (L(p), p->sem.binary.col2));
 
             /* choose the correct operator */
             if (p->kind == pa_bool_and)     op = PFmil_mand;
@@ -5576,8 +5579,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* do the comparison */
             execute (
                 assgn (var (res->name),
-                       op (VAR (L(p)->env, p->sem.binary.att1, aat_bln),
-                           VAR (L(p)->env, p->sem.binary.att2, aat_bln))));
+                       op (VAR (L(p)->env, p->sem.binary.col1, aat_bln),
+                           VAR (L(p)->env, p->sem.binary.col2, aat_bln))));
 
             /* and put the result into p's environment */
             env_add (p->env, p->sem.binary.res, aat_bln, res);
@@ -5603,14 +5606,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     mmax (lit_lng (0),
                           madd (lit_lng (1),
                                 msub (VAR (L(p)->env,
-                                           p->sem.binary.att2,
+                                           p->sem.binary.col2,
                                            aat_int),
                                       VAR (L(p)->env,
-                                           p->sem.binary.att1,
+                                           p->sem.binary.col1,
                                            aat_int))))),
                 assgn (
                     var (v->name),
-                    enumerate (VAR (L(p)->env, p->sem.binary.att1, aat_int),
+                    enumerate (VAR (L(p)->env, p->sem.binary.col1, aat_int),
                                var (v->name))),
                 assgn (
                     var (res->name),
@@ -5671,7 +5674,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
         /* Rel:      count (Rel) */
         case 66: /* fold( */
-            if (p->sem.count.part != att_NULL) {
+            if (p->sem.count.part != col_NULL) {
                 mvar_t *res            = new_var (p->refctr);
                 mvar_t *part           = new_var (p->refctr);
                 PFalg_simple_type_t ty = type_of (L(p), p->sem.count.part);
@@ -5764,7 +5767,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 execute (
                     assgn (var (res->name),
                            mark (VAR (L(p)->env,
-                                      env_at (L(p)->env, 0).att,
+                                      env_at (L(p)->env, 0).col,
                                       aat_pre),
                                  lit_oid (1))));
             else
@@ -5831,12 +5834,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 -- assert_order however only copes with ascending order */
             if (PFord_count (ord) &&
                 PFord_order_dir_at (ord, 0) == DIR_ASC) {
-                PFalg_att_t att = PFord_order_col_at (ord, 0);
-                PFalg_simple_type_t ty = type_of (rel, att);
+                PFalg_col_t col = PFord_order_col_at (ord, 0);
+                PFalg_simple_type_t ty = type_of (rel, col);
                 if (type_bit_check (ty))
                     execute (
-                        assgn (VAR(p->env, att, ty),
-                               assert_order (VAR(p->env, att, ty))));
+                        assgn (VAR(p->env, col, ty),
+                               assert_order (VAR(p->env, col, ty))));
             }
 
             /* release our temporary variable */
@@ -5876,8 +5879,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 76: /* fold( */
         {
             mvar_t             *res      = new_var (p->refctr);
-            PFalg_att_t         att      = p->sem.type.att;
-            PFalg_simple_type_t input_ty = type_of (L(p), att),
+            PFalg_col_t         col      = p->sem.type.col;
+            PFalg_simple_type_t input_ty = type_of (L(p), col),
                                 req_ty   = p->sem.type.ty;
             PFmil_t            *type     = NULL;
 
@@ -5893,23 +5896,23 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 type = project (ANY_VAR (L(p)->env), lit_bit (false));
             else if (req_ty == aat_node)
                 /* both pre values and attributes are available and allowed */
-                type = mnot (misnil (VAR (L(p)->env, att, aat_frag)));
+                type = mnot (misnil (VAR (L(p)->env, col, aat_frag)));
             else if (req_ty == aat_pnode && input_ty & aat_attr)
                 /* attr values are available and not allowed */
-                type = mand (mnot (misnil (VAR (L(p)->env, att, aat_frag))),
-                             misnil (VAR (L(p)->env, att, aat_attr)));
+                type = mand (mnot (misnil (VAR (L(p)->env, col, aat_frag))),
+                             misnil (VAR (L(p)->env, col, aat_attr)));
             else if (req_ty == aat_pnode)
                 /* pre values are available and allowed */
-               type = mnot (misnil (VAR (L(p)->env, att, aat_pre)));
+               type = mnot (misnil (VAR (L(p)->env, col, aat_pre)));
             else if (req_ty == aat_anode)
                 /* attributes are available and allowed */
-                type = mnot (misnil (VAR (L(p)->env, att, aat_attr)));
+                type = mnot (misnil (VAR (L(p)->env, col, aat_attr)));
             else if (req_ty == aat_qname)
                 /* attributes are available and allowed */
-                type = mnot (misnil (VAR (L(p)->env, att, aat_qname_id)));
+                type = mnot (misnil (VAR (L(p)->env, col, aat_qname_id)));
             else
                 /* we have one simple type */
-                type = mnot (misnil (VAR (L(p)->env, att, req_ty)));
+                type = mnot (misnil (VAR (L(p)->env, col, req_ty)));
 
             execute (assgn (var (res->name), type));
         }   break; /* fold) */
@@ -5923,8 +5926,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      cast (Rel) */
         case 78: /* fold( */
         {
-            PFalg_att_t         att      = p->sem.cast.att;
-            PFalg_simple_type_t input_ty = type_of (L(p), att),
+            PFalg_col_t         col      = p->sem.cast.col;
+            PFalg_simple_type_t input_ty = type_of (L(p), col),
                                 req_ty   = p->sem.cast.ty;
 
             /* copy the complete environment of the argument */
@@ -5939,14 +5942,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 if (input_ty == aat_qname) {
                     env_add (p->env, p->sem.cast.res, aat_qname_id,
-                             env_mvar (L(p)->env, att, aat_qname_id));
+                             env_mvar (L(p)->env, col, aat_qname_id));
                     env_add (p->env, p->sem.cast.res, aat_qname_cont,
-                             env_mvar (L(p)->env, att, aat_qname_cont));
+                             env_mvar (L(p)->env, col, aat_qname_cont));
                 }
                 else if (input_ty == aat_str || input_ty == aat_uA) {
                     mvar_t *res_id   = new_var (p->refctr),
                            *res_cont = new_var (p->refctr),
-                           *in       = env_mvar (L(p)->env, att, input_ty);
+                           *in       = env_mvar (L(p)->env, col, input_ty);
 
                     transform_QName (in, res_id);
                     execute (
@@ -5966,9 +5969,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     if (input_ty & aat_qname)
                         execute (
                             assgn (var (res_id->name),
-                                   VAR (L(p)->env, att, aat_qname_id)),
+                                   VAR (L(p)->env, col, aat_qname_id)),
                             assgn (var (res_cont->name),
-                                   VAR (L(p)->env, att, aat_qname_cont)));
+                                   VAR (L(p)->env, col, aat_qname_cont)));
                     else
                         execute (
                             assgn (var (res_id->name),
@@ -5982,7 +5985,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         if (input_ty & ty[i]) {
                             mvar_t *str_id   = new_var (1),
                                    *str_cont = new_var (1),
-                                   *in       = env_mvar (L(p)->env, att, ty[i]);
+                                   *in       = env_mvar (L(p)->env, col, ty[i]);
 
                             transform_QName (in, str_id);
                             execute (
@@ -6027,8 +6030,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                *true_oid    = new_var (1),
                                *false_oid   = new_var (1);
 
-                        id   = env_mvar (L(p)->env, att, aat_qname_id);
-                        cont = env_mvar (L(p)->env, att, aat_qname_cont);
+                        id   = env_mvar (L(p)->env, col, aat_qname_id);
+                        cont = env_mvar (L(p)->env, col, aat_qname_cont);
 
                         execute (
                             assgn (var (prefix->name),
@@ -6091,7 +6094,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         PFmil_t *casted = NULL;
 
                         if (t == p->sem.cast.ty)
-                            casted = VAR (L(p)->env, p->sem.cast.att, t);
+                            casted = VAR (L(p)->env, p->sem.cast.col, t);
                         else if ((t == aat_str || t == aat_uA) &&
                                  req_ty == aat_bln) {
                             /* The cast from string or untypedAtomic
@@ -6104,25 +6107,25 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             /* collect all strings that map to 'true' */
                             execute (assgn (var (true_values->name),
                                             meq (VAR (L(p)->env,
-                                                      p->sem.cast.att,
+                                                      p->sem.cast.col,
                                                       t),
                                                  lit_str("true"))),
                                      assgn (var (true_values->name),
                                             mor (var (true_values->name),
                                                  meq (VAR (L(p)->env,
-                                                           p->sem.cast.att,
+                                                           p->sem.cast.col,
                                                            t),
                                                       lit_str("1")))),
                             /* collect all strings that map to 'false' */
                                      assgn (var (false_values->name),
                                             meq (VAR (L(p)->env,
-                                                      p->sem.cast.att,
+                                                      p->sem.cast.col,
                                                       t),
                                                  lit_str("false"))),
                                      assgn (var (false_values->name),
                                             mor (var (false_values->name),
                                                  meq (VAR (L(p)->env,
-                                                           p->sem.cast.att,
+                                                           p->sem.cast.col,
                                                            t),
                                                       lit_str("0")))),
                             /* generate an error message for all other
@@ -6160,7 +6163,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             casted
                                 = mcast (
                                     implty (p->sem.cast.ty),
-                                    VAR (L(p)->env, p->sem.cast.att, t));
+                                    VAR (L(p)->env, p->sem.cast.col, t));
 
                         if (parts)
                             execute (assgn (var (res->name),
@@ -6188,15 +6191,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      seqty1 (Rel) */
         case 79: /* fold( */
         {
-             PFalg_att_t         part    = p->sem.aggr.part,
-                                 att     = p->sem.aggr.att,
+             PFalg_col_t         part    = p->sem.aggr.part,
+                                 col     = p->sem.aggr.col,
                                  res     = p->sem.aggr.res;
              PFalg_simple_type_t part_ty;
 
-             assert (type_of (L(p), att) == aat_bln &&
+             assert (type_of (L(p), col) == aat_bln &&
                      type_of (p, res) == aat_bln);
 
-             if (part != att_NULL) {
+             if (part != col_NULL) {
                  mvar_t *res_var  = new_var (p->refctr);
                  mvar_t *part_var = new_var (p->refctr);
 
@@ -6206,10 +6209,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                  execute (
                       /* v :=
-                         (att.reverse().join(part).reverse()) */
+                         (col.reverse().join(part).reverse()) */
                       assgn (var (v->name),
                              reverse (
-                                 join (reverse (VAR (L(p)->env, att, aat_bln)),
+                                 join (reverse (VAR (L(p)->env, col, aat_bln)),
                                        VAR (L(p)->env, part, part_ty)))),
                       /* v := [and]([=](1,{sum}(v)),[=](1,{count}(v))); */
                       assgn (var (v->name),
@@ -6233,7 +6236,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              else {
                   v = new_var (p->refctr);
                   execute (
-                      assgn (var (v->name), VAR (L(p)->env, att, aat_bln)),
+                      assgn (var (v->name), VAR (L(p)->env, col, aat_bln)),
                       assgn (var (v->name),
                              PFmil_and (
                                  eq (lit_int (1),
@@ -6253,15 +6256,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      all (Rel) */
         case 80: /* fold( */
         {
-             PFalg_att_t         part    = p->sem.aggr.part,
-                                 att     = p->sem.aggr.att,
+             PFalg_col_t         part    = p->sem.aggr.part,
+                                 col     = p->sem.aggr.col,
                                  res     = p->sem.aggr.res;
              PFalg_simple_type_t part_ty;
 
-             assert (type_of (L(p), att) == aat_bln &&
+             assert (type_of (L(p), col) == aat_bln &&
                      type_of (p, res) == aat_bln);
 
-             if (part != att_NULL) {
+             if (part != col_NULL) {
                  mvar_t *res_var  = new_var (p->refctr);
                  mvar_t *part_var = new_var (p->refctr);
 
@@ -6271,10 +6274,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                  execute (
                       /* v :=
-                         (att.reverse().join(part).reverse()) */
+                         (col.reverse().join(part).reverse()) */
                       assgn (var (v->name),
                              reverse (
-                                 join (reverse (VAR (L(p)->env, att, aat_bln)),
+                                 join (reverse (VAR (L(p)->env, col, aat_bln)),
                                        VAR (L(p)->env, part, part_ty)))),
                       /* v := [=]({sum}(v),{count}(v)); */
                       assgn (var (v->name),
@@ -6297,7 +6300,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              else {
                   v = new_var (p->refctr);
                   execute (
-                      assgn (var (v->name), VAR (L(p)->env, att, aat_bln)),
+                      assgn (var (v->name), VAR (L(p)->env, col, aat_bln)),
                       assgn (var (v->name),
                              eq (PFmil_sum (mcast (type (mty_int),
                                                    var (v->name))),
@@ -6345,7 +6348,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     assgn (var (v->name),
                            doc_tbl (var (PF_MIL_VAR_WS),
                                     VAR (L(p)->env,
-                                         p->sem.doc_tbl.att,
+                                         p->sem.doc_tbl.col,
                                          aat_str))),
                     assgn (var (pre->name),
                            fetch (var (v->name),
@@ -6362,7 +6365,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     assgn (var (v->name),
                            ws_collection_root (var (PF_MIL_VAR_WS),
                                                VAR (L(p)->env,
-                                                    p->sem.doc_tbl.att,
+                                                    p->sem.doc_tbl.col,
                                                     aat_str))),
                     assgn (var (pre->name),
                            tmark (var(v->name),
@@ -6388,15 +6391,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      doc_access (Rel) */
         case 101: /* fold( */
         {
-            PFalg_att_t         att = p->sem.doc_access.att;
+            PFalg_col_t         col = p->sem.doc_access.col;
 #ifndef NDEBUG
             /* only used in assertions */
-            PFalg_simple_type_t ty  = type_of (L(p), p->sem.doc_access.att);
+            PFalg_simple_type_t ty  = type_of (L(p), p->sem.doc_access.col);
 #endif
             mvar_t             *str = new_var (p->refctr);
 
-            PFmil_t *frag = VAR (L(p)->env, att, aat_frag),
-                    *pre  = VAR (L(p)->env, att, aat_pre),
+            PFmil_t *frag = VAR (L(p)->env, col, aat_frag),
+                    *pre  = VAR (L(p)->env, col, aat_pre),
                     *attr,
                     *prop = mposjoin (
                                 pre, frag, fetch (var (PF_MIL_VAR_WS),
@@ -6414,7 +6417,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             switch (p->sem.doc_access.doc_col) {
                 case (doc_atext):
                     assert (ty == aat_anode);
-                    attr = VAR (L(p)->env, att, aat_attr);
+                    attr = VAR (L(p)->env, col, aat_attr);
 
                     execute (
                         assgn (var (str->name),
@@ -6875,7 +6878,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                        { ERROR ("..."); } else {} */
                     if_ (not (eq (count (var (sorting->name)),
                               count (tunique (var (sorting->name))))),
-                         error (lit_str ("err:XQDY0025: attribute names are not"
+                         error (lit_str ("err:XQDY0025: element names are not"
                                          " unique in constructed element.")),
                          nop ()));
                 unpin (sorting, 1);
@@ -7048,24 +7051,24 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             assert (type_of (LL(p), L(p)->sem.iter_item1_item2.item2)
                     == aat_str);
         {
-            PFalg_att_t iter_att  = L(p)->sem.iter_item1_item2.iter,
-                        qn_att    = L(p)->sem.iter_item1_item2.item1,
-                        val_att   = L(p)->sem.iter_item1_item2.item2;
+            PFalg_col_t iter_col  = L(p)->sem.iter_item1_item2.iter,
+                        qn_col    = L(p)->sem.iter_item1_item2.item1,
+                        val_col   = L(p)->sem.iter_item1_item2.item2;
             mvar_t     *seqb      = new_var (1),
                        *qn_id     = new_var (1),
                        *root_pre  = new_var (p->refctr),
                        *root_attr = new_var (p->refctr),
                        *root_frag = new_var (p->refctr),
-                       *iter      = env_mvar (LL(p)->env, iter_att, aat_nat);
+                       *iter      = env_mvar (LL(p)->env, iter_col, aat_nat);
             /* Lookup the input value column ... */
-            PFmil_t    *val       = VAR (LL(p)->env, val_att, aat_str);
+            PFmil_t    *val       = VAR (LL(p)->env, val_col, aat_str);
 
             /* and the QName columns. (Furthermore ensure that the QNames
                are stored in the WS container and copy them if they reside
                in a different container.) */
             copy_QName (
-                env_mvar (LL(p)->env, qn_att, aat_qname_id),
-                env_mvar (LL(p)->env, qn_att, aat_qname_cont),
+                env_mvar (LL(p)->env, qn_col, aat_qname_id),
+                env_mvar (LL(p)->env, qn_col, aat_qname_cont),
                 qn_id);
 
             execute (
@@ -7300,7 +7303,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            madd (var (l->name), var (r->name))));
 
                 env_add (p->env,
-                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).col,
                          env_at (L(p)->env, 0).ty,
                          v);
 
@@ -7308,7 +7311,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 assert (env_count (L(p)->env) == 1);
                 env_add (p->env,
-                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).col,
                          env_at (L(p)->env, 0).ty,
                          env_at (L(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7317,7 +7320,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 assert (env_count (R(p)->env) == 1);
                 env_add (p->env,
-                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).col,
                          env_at (R(p)->env, 0).ty,
                          env_at (R(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7332,7 +7335,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             if (env_count (L(p)->env)) {
                 assert (env_count (L(p)->env) == 1);
                 env_add (p->env,
-                         env_at (L(p)->env, 0).att,
+                         env_at (L(p)->env, 0).col,
                          env_at (L(p)->env, 0).ty,
                          env_at (L(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7445,7 +7448,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  lit_int (twig_state->size))));
 
                 env_add (p->env,
-                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).col,
                          env_at (R(p)->env, 0).ty,
                          env_at (R(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7460,7 +7463,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            var (content_size->name)));
 
                 env_add (p->env,
-                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).col,
                          env_at (R(p)->env, 0).ty,
                          env_at (R(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7637,7 +7640,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  lit_int (twig_state->size))));
 
                 env_add (p->env,
-                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).col,
                          env_at (R(p)->env, 0).ty,
                          env_at (R(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7652,7 +7655,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            var (content_size->name)));
 
                 env_add (p->env,
-                         env_at (R(p)->env, 0).att,
+                         env_at (R(p)->env, 0).col,
                          env_at (R(p)->env, 0).ty,
                          env_at (R(p)->env, 0).mvar);
                 pin (env_at (p->env, 0).mvar, 1);
@@ -7713,7 +7716,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFmil_t    *iter   = VAR (L(p)->env,
                                       p->sem.iter_item1_item2.iter,
                                       aat_nat);
-            PFalg_att_t qn_att = p->sem.iter_item1_item2.item1;
+            PFalg_col_t qn_col = p->sem.iter_item1_item2.item1;
             PFmil_t    *val    = VAR (L(p)->env,
                                       p->sem.iter_item1_item2.item2,
                                       aat_str);
@@ -7723,8 +7726,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /* Ensure that the QNames are stored in the WS container
                and copy them if they reside in a different container. */
             copy_QName (
-                env_mvar (L(p)->env, qn_att, aat_qname_id),
-                env_mvar (L(p)->env, qn_att, aat_qname_cont),
+                env_mvar (L(p)->env, qn_col, aat_qname_id),
+                env_mvar (L(p)->env, qn_col, aat_qname_cont),
                 qn_id);
 
             execute (
@@ -7826,7 +7829,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 unpin (bool_list, 1);
                 
                 /* add the correct sizes to the variable environment */
-                env_add (p->env, att_NULL, aat_int, size);
+                env_add (p->env, col_NULL, aat_int, size);
             }
             
             execute (
@@ -8293,7 +8296,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 var (gsize->name))));
                     unpin (sizes, 1);
                     /* add the grouped sizes to the variable environment */
-                    env_add (p->env, att_NULL, aat_int, gsize);
+                    env_add (p->env, col_NULL, aat_int, gsize);
                 }
             }
             else if (treat_pre && p->kind == pa_slim_content) {
@@ -8389,7 +8392,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 var (gsize->name))));
 
                     /* add the grouped sizes to the variable environment */
-                    env_add (p->env, att_NULL, aat_int, gsize);
+                    env_add (p->env, col_NULL, aat_int, gsize);
                 }
             }
 
@@ -8407,7 +8410,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      merge_adjacent (Rel) */
         case 117: /* fold( */
         {
-            PFalg_att_t         iter_att   = p->sem.iter_pos_item.iter,
+            PFalg_col_t         iter_att   = p->sem.iter_pos_item.iter,
                                 pos_att    = p->sem.iter_pos_item.pos,
                                 item_att   = p->sem.iter_pos_item.item;
             PFalg_simple_type_t item_ty    = type_of (L(p), item_att);
@@ -8610,18 +8613,18 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      error (Rel) */
         case 129: /* fold( */
             execute (
-                if_ (eq (count (VAR (L(p)->env, p->sem.err.att, aat_str)),
+                if_ (eq (count (VAR (L(p)->env, p->sem.err.col, aat_str)),
                          lit_int (0)),
                      nop(),
-                     error (fetch (VAR (L(p)->env, p->sem.err.att, aat_str),
+                     error (fetch (VAR (L(p)->env, p->sem.err.col, aat_str),
                                    lit_int (0)))));
 
-            /* copy all the attributes */
+            /* copy all the columns */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 /* make sure that the implicit type change
                    is correctly implemented */
-                if (env_at (L(p)->env, i).att == p->sem.err.att) {
-                    PFalg_simple_type_t ty = type_of (p, p->sem.err.att);
+                if (env_at (L(p)->env, i).col == p->sem.err.col) {
+                    PFalg_simple_type_t ty = type_of (p, p->sem.err.col);
                     assert (env_at (L(p)->env, i).ty == aat_str);
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -8634,13 +8637,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                        seqbase (new (type (mty_void),
                                                      implty (t)),
                                                 lit_oid (0))));
-                            env_add (p->env, p->sem.err.att, t, v);
+                            env_add (p->env, p->sem.err.col, t, v);
                         }
                 }
                 else {
                     pin (env_at (L(p)->env, i).mvar, p->refctr);
                     env_add (p->env,
-                             env_at (L(p)->env, i).att,
+                             env_at (L(p)->env, i).col,
                              env_at (L(p)->env, i).ty,
                              env_at (L(p)->env, i).mvar);
                 }
@@ -8650,7 +8653,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      cond_err (Rel, Rel) */
         case 130: /* fold( */
             execute (
-                if_ (exist (reverse (VAR (R(p)->env, p->sem.err.att, aat_bln)),
+                if_ (exist (reverse (VAR (R(p)->env, p->sem.err.col, aat_bln)),
                             lit_bit (false)),
                      error (lit_str (p->sem.err.str)),
                      nop ()));
@@ -8674,23 +8677,23 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             PFmil_t *iter = NULL,
                     *item = NULL;
 
-            /* copy all the attributes */
+            /* copy all the columns */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
                 env_add (p->env,
-                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).col,
                          env_at (L(p)->env, i).ty,
                          env_at (L(p)->env, i).mvar);
 
                 /* as a side effect fill in the trace information */
-                if (env_at (L(p)->env, i).att == p->sem.ii.iter) {
+                if (env_at (L(p)->env, i).col == p->sem.ii.iter) {
                     /* fill in the iter information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITER),
                                 lit_oid (trace_id),
                                 var (env_at (L(p)->env, i).mvar->name)));
                 }
-                else if (env_at (L(p)->env, i).att == p->sem.ii.item) {
+                else if (env_at (L(p)->env, i).col == p->sem.ii.item) {
                     /* fill in the item information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITEM),
@@ -8737,14 +8740,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             p->sem.trace_map.trace_id = trace_id;
 
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                if (env_at (L(p)->env, i).att == p->sem.trace_map.outer) {
+                if (env_at (L(p)->env, i).col == p->sem.trace_map.outer) {
                     /* fill in the iter information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_OUTER),
                                 lit_oid (trace_id),
                                 var (env_at (L(p)->env, i).mvar->name)));
                 }
-                else if (env_at (L(p)->env, i).att == p->sem.trace_map.inner) {
+                else if (env_at (L(p)->env, i).col == p->sem.trace_map.inner) {
                     /* fill in the item information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_INNER),
@@ -8828,13 +8831,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unpin (new_count, 1);
             unpin (old_count, 1);
 
-            /* copy all the result attributes */
+            /* copy all the result columns */
             for (unsigned int i = 0; i < env_count (res_env); i++) {
                 pin (env_at (res_env, i).mvar,
                      p->refctr);
 
                 env_add (p->env,
-                         env_at (res_env, i).att,
+                         env_at (res_env, i).col,
                          env_at (res_env, i).ty,
                          env_at (res_env, i).mvar);
             }
@@ -8910,7 +8913,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             /*                                 */
             /***********************************/
 
-            /* PFalg_att_t funcall_loop = p->sem.fun_call.iter; */
+            /* PFalg_col_t funcall_loop = p->sem.fun_call.iter; */
 
             switch (p->sem.fun_call.kind) { /* fold( */
                 
@@ -8923,8 +8926,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     mvar_t *res_item = new_var (p->refctr);
                     mvar_t *res_iter = new_var (p->refctr);
                     mvar_t *res_frag = new_var (p->refctr);
-	            PFalg_att_t iter = p->schema.items[0].name;
-	            PFalg_att_t item = p->schema.items[1].name;
+	            PFalg_col_t iter = p->schema.items[0].name;
+	            PFalg_col_t item = p->schema.items[1].name;
                     mvar_t *loop = env_mvar (L(p)->env,
                                              p->sem.fun_call.iter,
                                              aat_nat);
@@ -8970,8 +8973,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     mvar_t *res_item = new_var (p->refctr);
                     mvar_t *res_iter = new_var (p->refctr);
                     mvar_t *res_frag = new_var (p->refctr);
-	            PFalg_att_t iter = p->schema.items[0].name;
-	            PFalg_att_t item = p->schema.items[1].name;
+	            PFalg_col_t iter = p->schema.items[0].name;
+	            PFalg_col_t item = p->schema.items[1].name;
                     mvar_t *loop = env_mvar (L(p)->env,
                                              p->sem.fun_call.iter,
                                              aat_nat);
@@ -9023,8 +9026,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     mvar_t *res_item = new_var (p->refctr);
                     mvar_t *res_iter = new_var (p->refctr);
                     mvar_t *res_frag = new_var (p->refctr);
-                    PFalg_att_t iter = p->schema.items[0].name;
-                    PFalg_att_t item = p->schema.items[1].name;
+	            PFalg_col_t iter = p->schema.items[0].name;
+	            PFalg_col_t item = p->schema.items[1].name;
                     mvar_t *loop = env_mvar (L(p)->env,
                                              p->sem.fun_call.iter,
                                              aat_nat);
@@ -9079,7 +9082,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* release all pins */
                     unpin (v, 2);
 
-                    /* fill the environment for all attributes and columns */
+                    /* fill the environment for all columns */
                     for (unsigned int i = 0; i < p->schema.count; i++) {
                         for (PFalg_simple_type_t t = 1; t; t <<= 1)
                             if (t & TYPE_MASK(p->schema.items[i].type)) {
@@ -9105,9 +9108,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 #ifdef HAVE_PFTIJAH
 	    const char* fcname = PFqname_loc(p->sem.fun_call.qname);
 
-	    PFalg_att_t fc_iter_a = p->schema.items[0].name; /* fixed */
-	    PFalg_att_t fc_pos_a  = p->schema.items[1].name; /* fixed */
-	    PFalg_att_t fc_item_a = p->schema.items[2].name; /* fixed */
+	    PFalg_col_t fc_iter_a = p->schema.items[0].name; /* fixed */
+	    PFalg_col_t fc_pos_a  = p->schema.items[1].name; /* fixed */
+	    PFalg_col_t fc_item_a = p->schema.items[2].name; /* fixed */
 
 
 	    if ( PFT_FUN(fcname) ) {
@@ -9327,7 +9330,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
 		    /* copy the pos bat */
 	    	    PFalg_simple_type_t postype = aat_nat;
-	    	    if ( op1->schema.items[1].name != att_pos ) {
+	    	    if ( op1->schema.items[1].name != col_pos ) {
 	               /* INCOMPLETE. Temporary fix for Hennings document startnodes
 		 	* problem.
 		 	* When startnodes are delivered in document order like in
@@ -9567,7 +9570,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
     /* switch off debugging information as it triggers errors in MonetDB...
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
-                           lit_str (PFatt_str (env_at (p->env, i).att))));
+                           lit_str (PFcol_str (env_at (p->env, i).col))));
     */
 #endif
 

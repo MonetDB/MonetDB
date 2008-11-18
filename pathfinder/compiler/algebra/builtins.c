@@ -56,10 +56,10 @@
 static PFla_op_t *
 adjust_positions (const PFla_op_t *n)
 {
-    return project (rownum (n, att_pos1, sortby (att_pos), att_iter),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos1),
-                    proj (att_item, att_item));
+    return project (rownum (n, col_pos1, sortby (col_pos), col_iter),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos1),
+                    proj (col_item, col_item));
 }
 
 /* ----------------------------------------- */
@@ -77,13 +77,13 @@ sel_type (const PFla_op_t *n, PFalg_simple_type_t ty)
                type_assert_pos (
                     select_ (
                            type (n,
-                                 att_res,
-                                 att_item, ty),
-                           att_res),
-                    att_item, ty),
-               proj (att_iter, att_iter),
-               proj (att_pos, att_pos),
-               proj (att_item, att_item));
+                                 col_res,
+                                 col_item, ty),
+                           col_res),
+                    col_item, ty),
+               proj (col_iter, col_iter),
+               proj (col_pos, col_pos),
+               proj (col_item, col_item));
 }
 
 /**
@@ -109,7 +109,7 @@ typeswitch (PFla_op_t *n,
     bool found = false;
 
     for (unsigned int i = 0; i < n->schema.count; i++) {
-        if (n->schema.items[i].name == att_item) {
+        if (n->schema.items[i].name == col_item) {
             found = true;
             item_types = n->schema.items[i].type;
             break;
@@ -117,8 +117,8 @@ typeswitch (PFla_op_t *n,
     }
     if (!found)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in typeswitch not found",
-                PFatt_str (att_item));
+                "column `%s' referenced in typeswitch not found",
+                PFcol_str (col_item));
 
     /* Iterate over the list of types and fire the callback function
        on the tuples that match that type (selection is done with
@@ -261,27 +261,27 @@ typeswitch2 (PFla_op_t *n1,
  */
 static PFla_op_t *
 bin_op (PFalg_simple_type_t t,
-        PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
-                          PFalg_att_t, PFalg_att_t),
+        PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
+                          PFalg_col_t, PFalg_col_t),
         const PFla_op_t *n1,
         const PFla_op_t *n2)
 {
     return project (OP (eqjoin (
                             project (cast (n1,
-                                           att_cast, att_item, t),
-                                     proj (att_iter, att_iter),
-                                     proj (att_pos, att_pos),
-                                     proj (att_item, att_cast)),
+                                           col_cast, col_item, t),
+                                     proj (col_iter, col_iter),
+                                     proj (col_pos, col_pos),
+                                     proj (col_item, col_cast)),
                             project (cast (n2,
-                                           att_cast, att_item, t),
-                                     proj (att_iter1, att_iter),
-                                     proj (att_item1, att_cast)),
-                            att_iter,
-                            att_iter1),
-                        att_res, att_item, att_item1),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_res));
+                                           col_cast, col_item, t),
+                                     proj (col_iter1, col_iter),
+                                     proj (col_item1, col_cast)),
+                            col_iter,
+                            col_iter1),
+                        col_res, col_item, col_item1),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos),
+                    proj (col_item, col_res));
 }
 
 /* ---------------------------------------------- */
@@ -318,24 +318,24 @@ bin_op (PFalg_simple_type_t t,
 static struct PFla_pair_t
 un_op (PFalg_simple_type_t t,
        PFla_op_t *(*OP) (const PFla_op_t *,
-                         PFalg_att_t,
-                         PFalg_att_t),
+                         PFalg_col_t,
+                         PFalg_col_t),
        struct PFla_pair_t arg)
 {
     return (struct PFla_pair_t) {
         .rel = project (OP (project (
                                 cast (arg.rel,
-                                      att_cast,
-                                      att_item,
+                                      col_cast,
+                                      col_item,
                                       t),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_cast)),
-                            att_res,
-                            att_item),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                                proj (col_iter, col_iter),
+                                proj (col_pos, col_pos),
+                                proj (col_item, col_cast)),
+                            col_res,
+                            col_item),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -364,10 +364,10 @@ fn_bui_node_name (struct PFla_pair_t
                             doc_access (
                                 PFla_set_to_la (args[0].frag),
                                 nodes (loop, ordering, args).rel,
-                                att_res, att_item, doc_qname),
-                            proj (att_iter, att_iter),
-                            proj (att_pos, att_pos),
-                            proj (att_item, att_res));
+                                col_res, col_item, doc_qname),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos),
+                            proj (col_item, col_res));
 
     return (struct PFla_pair_t) {
                     .rel = qnames,
@@ -413,11 +413,11 @@ fn_bui_node_name_attr_filter (const PFla_op_t* loop,
                     PFla_step_simple (
                         PFla_set_to_la (args[0].frag),
                         project (args[0].rel,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_item)),
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_item)),
                         self_attr_spec,
-                        att_iter, att_item, att_item),
-                    att_pos, lit_int(1));
+                        col_iter, col_item, col_item),
+                    col_pos, lit_int(1));
 
     return (struct PFla_pair_t) {
                     .rel = attributes,
@@ -445,11 +445,11 @@ fn_bui_node_name_element_filter (const PFla_op_t* loop,
                     PFla_step_simple (
                         PFla_set_to_la (args[0].frag),
                         project (args[0].rel,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_item)),
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_item)),
                         self_elem_spec,
-                        att_iter, att_item, att_item),
-                        att_pos, lit_int(1));
+                        col_iter, col_item, col_item),
+                        col_pos, lit_int(1));
                                 
     return (struct PFla_pair_t) {
                     .rel = elements,
@@ -528,12 +528,12 @@ fn_string (struct PFla_pair_t (*data)
                                      loop,
                                      ordering,
                                      args).rel,
-                                 att_cast,
-                                 att_item,
+                                 col_cast,
+                                 col_item,
                                  aat_str),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_cast));
+                             proj (col_iter, col_iter),
+                             proj (col_pos, col_pos),
+                             proj (col_item, col_cast));
 
     /* add the empty strings for the missing iterations */
     PFla_op_t *res = disjunion (
@@ -544,9 +544,9 @@ fn_string (struct PFla_pair_t (*data)
                                      loop,
                                      project (
                                          strings,
-                                         proj (att_iter, att_iter))),
-                                 att_pos, lit_nat (1)),
-                             att_item, lit_str ("")));
+                                         proj (col_iter, col_iter))),
+                                 col_pos, lit_nat (1)),
+                             col_item, lit_str ("")));
 
     return (struct PFla_pair_t) { .rel  = res, .frag = PFla_empty_set () };
 }
@@ -649,59 +649,59 @@ fn_data (struct PFla_pair_t (*str_val)
     /*
      * carry out specific type test on type
      */
-    PFla_op_t *type = type (args[0].rel, att_res, att_item, node_type);
+    PFla_op_t *type = type (args[0].rel, col_res, col_item, node_type);
 
     /* select those rows that have type "node" */
     PFla_op_t *nodes = project (
                                 type_assert_pos (
-                                                 select_ (type, att_res),
-                                                 att_item, node_type),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_item));
+                                                 select_ (type, col_res),
+                                                 col_item, node_type),
+                                proj (col_iter, col_iter),
+                                proj (col_pos, col_pos),
+                                proj (col_item, col_item));
 
     /* select the remaining rows */
     PFla_op_t *atomics = project (type_assert_neg (select_ (not (type,
-                                                                 att_res1,
-                                                                 att_res),
-                                                            att_res1),
-                                                   att_item, node_type),
-                                  proj (att_iter, att_iter),
-                                  proj (att_pos, att_pos),
-                                  proj (att_item, att_item));
+                                                                 col_res1,
+                                                                 col_res),
+                                                            col_res1),
+                                                   col_item, node_type),
+                                  proj (col_iter, col_iter),
+                                  proj (col_pos, col_pos),
+                                  proj (col_item, col_item));
 
     /* renumber */
-    PFla_op_t *q = rowid (nodes, att_inner);
+    PFla_op_t *q = rowid (nodes, col_inner);
 
     PFla_op_t *map = project (q,
-                              proj (att_outer, att_iter),
-                              proj (att_inner, att_inner),
-                              proj (att_pos1, att_pos));
+                              proj (col_outer, col_iter),
+                              proj (col_inner, col_inner),
+                              proj (col_pos1, col_pos));
 
     struct  PFla_pair_t str_args = {
         .rel = attach (
                        project (
                                 q,
-                                proj (att_iter, att_inner),
-                                proj (att_item, att_item)),
-                       att_pos, lit_nat(1)),
+                                proj (col_iter, col_inner),
+                                proj (col_item, col_item)),
+                       col_pos, lit_nat(1)),
         .frag = args[0].frag };
 
     PFla_op_t *res = project(
                          eqjoin(
-                             cast(str_val (project (q, proj (att_iter,
-                                                             att_inner)),
+                             cast(str_val (project (q, proj (col_iter,
+                                                             col_inner)),
                                            ordering,
                                            &str_args).rel,
-                                  att_cast,
-                                  att_item,
+                                  col_cast,
+                                  col_item,
                                   aat_uA),
                              map,
-                             att_iter,
-                             att_inner),
-                         proj(att_iter, att_outer),
-                         proj(att_pos, att_pos1),
-                         proj(att_item, att_cast));
+                             col_iter,
+                             col_inner),
+                         proj(col_iter, col_outer),
+                         proj(col_pos, col_pos1),
+                         proj(col_item, col_cast));
 
     return (struct  PFla_pair_t) {
         .rel  = disjunion (atomics, res),
@@ -802,10 +802,10 @@ PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = error (
                     attach (
-                        attach (loop, att_pos, lit_nat (1)),
-                        att_item,
+                        attach (loop, col_pos, lit_nat (1)),
+                        col_item,
                         lit_str ("http://www.w3.org/2005/xqt-errors#FOER0000")),
-                    att_item),
+                    col_item),
         .frag = PFla_empty_set ()};
 }
 
@@ -818,7 +818,7 @@ PFbui_fn_error (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
     (void) loop; (void) ordering;
 
     return (struct PFla_pair_t) {
-        .rel  = error (args[0].rel, att_item),
+        .rel  = error (args[0].rel, col_item),
         .frag = PFla_empty_set ()};
 }
 
@@ -844,21 +844,21 @@ PFbui_fn_error_str (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[0].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                            alg_fun_fn_concat,
-                           att_res,
-                           attlist(att_item, att_item1)),
-                       proj (att_iter, att_iter),
-                       proj (att_pos, att_pos),
-                       proj (att_item, att_res)),
-                   att_item),
+                           col_res,
+                           collist(col_item, col_item1)),
+                       proj (col_iter, col_iter),
+                       proj (col_pos, col_pos),
+                       proj (col_item, col_res)),
+                   col_item),
         .frag = PFla_empty_set ()};
 }
 
@@ -895,9 +895,9 @@ bin_arith_callback (PFla_op_t *n1,
 
     return bin_op (t,
                    (PFla_op_t *(*) (const PFla_op_t *,
-                                    PFalg_att_t,
-                                    PFalg_att_t,
-                                    PFalg_att_t)) params,
+                                    PFalg_col_t,
+                                    PFalg_col_t,
+                                    PFalg_col_t)) params,
                    n1,
                    n2);
 }
@@ -910,8 +910,8 @@ bin_arith_callback (PFla_op_t *n1,
  */
 static struct PFla_pair_t
 bin_arith (struct PFla_pair_t *args,
-           PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
-                             PFalg_att_t, PFalg_att_t),
+           PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
+                             PFalg_col_t, PFalg_col_t),
            const PFla_op_t *loop, bool ordering)
 {
     (void) loop; (void) ordering; /* keep compilers quiet */
@@ -1031,10 +1031,10 @@ PFbui_op_numeric_idivide (const PFla_op_t *loop, bool ordering,
                              PFla_divide,
                              loop,
                              ordering).rel,
-                         att_cast, att_item, aat_int),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_cast)),
+                         col_cast, col_item, aat_int),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_cast)),
         .frag = PFla_empty_set () };
 }
 
@@ -1059,8 +1059,8 @@ PFbui_op_numeric_modulo (const PFla_op_t *loop, bool ordering,
  */
 static struct PFla_pair_t
 bin_comp (PFalg_simple_type_t t,
-          PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
-                            PFalg_att_t, PFalg_att_t),
+          PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
+                            PFalg_col_t, PFalg_col_t),
           struct PFla_pair_t *args,
           const PFla_op_t *loop,
           bool ordering)
@@ -1466,15 +1466,15 @@ numeric_fun_op (PFalg_simple_type_t t,
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
                             cast (args[0].rel,
-                                  att_cast,
-                                  att_item,
+                                  col_cast,
+                                  col_item,
                                   t),
                             kind,
-                            att_res,
-                            attlist (att_cast)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_cast)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -1599,16 +1599,16 @@ PFbui_fn_concat (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_fn_concat,
-                       att_res,
-                       attlist(att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -1626,12 +1626,12 @@ PFbui_fn_string_join (const PFla_op_t *loop, bool ordering,
                     fn_string_join (args[0].rel,
                                     project (
                                         args[1].rel,
-                                        proj (att_iter, att_iter),
-                                        proj (att_item, att_item)),
-                                    att_iter, att_pos, att_item,
-                                    att_iter, att_item,
-                                    att_iter, att_item),
-                    att_pos, lit_nat (1)),
+                                        proj (col_iter, col_iter),
+                                        proj (col_item, col_item)),
+                                    col_iter, col_pos, col_item,
+                                    col_iter, col_item,
+                                    col_iter, col_item),
+                    col_pos, lit_nat (1)),
         .frag = args[0].frag };
 }
 
@@ -1656,23 +1656,23 @@ PFbui_fn_substring (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (cast (args[1].rel,
-                                          att_cast,
-                                          att_item,
+                                          col_cast,
+                                          col_item,
                                           aat_dbl),
-                                    proj (att_iter1, att_iter),
-                                    proj (att_item1, att_cast)),
-                           att_iter,
-                           att_iter1),
+                                    proj (col_iter1, col_iter),
+                                    proj (col_item1, col_cast)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_substring,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -1700,31 +1700,31 @@ PFbui_fn_substring_dbl (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[0].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
                                project (cast (args[1].rel,
-                                              att_cast,
-                                              att_item,
+                                              col_cast,
+                                              col_item,
                                               aat_dbl),
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_cast)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_cast)),
+                               col_iter,
+                               col_iter1),
                            project (cast (args[2].rel,
-                                          att_cast,
-                                          att_item,
+                                          col_cast,
+                                          col_item,
                                           aat_dbl),
-                                    proj (att_iter2, att_iter),
-                                    proj (att_item2, att_cast)),
-                           att_iter,
-                           att_iter2),
+                                    proj (col_iter2, col_iter),
+                                    proj (col_item2, col_cast)),
+                           col_iter,
+                           col_iter2),
                        alg_fun_fn_substring_dbl,
-                       att_res,
-                       attlist (att_item, att_item1, att_item2)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1, col_item2)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -1749,15 +1749,15 @@ PFbui_fn_string_length (const PFla_op_t *loop, bool ordering,
                                    loop,
                                    project (
                                        args[0].rel,
-                                       proj (att_iter, att_iter))),
-                               att_pos, lit_nat (1)),
-                           att_item, lit_str (""))),
+                                       proj (col_iter, col_iter))),
+                               col_pos, lit_nat (1)),
+                           col_item, lit_str (""))),
                        alg_fun_fn_string_length,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -1781,15 +1781,15 @@ PFbui_fn_normalize_space (const PFla_op_t *loop, bool ordering,
                                    loop,
                                    project (
                                        args[0].rel,
-                                       proj (att_iter, att_iter))),
-                               att_pos, lit_nat (1)),
-                           att_item, lit_str (""))),
+                                       proj (col_iter, col_iter))),
+                               col_pos, lit_nat (1)),
+                           col_item, lit_str (""))),
                        alg_fun_fn_normalize_space,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -1813,15 +1813,15 @@ PFbui_fn_upper_case (const PFla_op_t *loop, bool ordering,
                                    loop,
                                    project (
                                        args[0].rel,
-                                       proj (att_iter, att_iter))),
-                               att_pos, lit_nat (1)),
-                           att_item, lit_str (""))),
+                                       proj (col_iter, col_iter))),
+                               col_pos, lit_nat (1)),
+                           col_item, lit_str (""))),
                        alg_fun_fn_upper_case,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -1845,15 +1845,15 @@ PFbui_fn_lower_case (const PFla_op_t *loop, bool ordering,
                                    loop,
                                    project (
                                        args[0].rel,
-                                       proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                           att_item, lit_str (""))),
+                                       proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                           col_item, lit_str (""))),
                        alg_fun_fn_lower_case,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -1880,25 +1880,25 @@ PFbui_fn_translate (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[0].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                            project (args[2].rel,
-                                    proj (att_iter2, att_iter),
-                                    proj (att_item2, att_item)),
-                           att_iter,
-                           att_iter2),
+                                    proj (col_iter2, col_iter),
+                                    proj (col_item2, col_item)),
+                           col_iter,
+                           col_iter2),
                        alg_fun_fn_translate,
-                       att_res,
-                       attlist (att_item, att_item1, att_item2)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1, col_item2)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
 
         .frag = PFla_empty_set () };
@@ -1922,16 +1922,16 @@ PFbui_fn_contains (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_fn_contains,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
         .frag = PFla_empty_set ()};
 }
 
@@ -1956,20 +1956,20 @@ PFbui_fn_contains_opt (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (args[1].rel,
-                                    proj (att_iter1, att_iter),
-                                    proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                    proj (col_iter1, col_iter),
+                                    proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_contains,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -1996,9 +1996,9 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (
                                disjunion (
                                    args[1].rel,
@@ -2008,19 +2008,19 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
-                               proj (att_iter1, att_iter),
-                               proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               proj (col_iter1, col_iter),
+                               proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_contains,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2047,9 +2047,9 @@ PFbui_fn_starts_with (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (
                                disjunion (
                                    args[1].rel,
@@ -2059,19 +2059,19 @@ PFbui_fn_starts_with (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
-                               proj (att_iter1, att_iter),
-                               proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               proj (col_iter1, col_iter),
+                               proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_starts_with,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2098,9 +2098,9 @@ PFbui_fn_ends_with (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (
                                disjunion (
                                    args[1].rel,
@@ -2110,19 +2110,19 @@ PFbui_fn_ends_with (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
-                               proj (att_iter1, att_iter),
-                               proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               proj (col_iter1, col_iter),
+                               proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_ends_with,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2149,9 +2149,9 @@ PFbui_fn_substring_before (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (
                                disjunion (
                                    args[1].rel,
@@ -2161,19 +2161,19 @@ PFbui_fn_substring_before (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
-                               proj (att_iter1, att_iter),
-                               proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               proj (col_iter1, col_iter),
+                               proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_substring_before,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2200,9 +2200,9 @@ PFbui_fn_substring_after (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (
                                disjunion (
                                    args[1].rel,
@@ -2212,19 +2212,19 @@ PFbui_fn_substring_after (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[1].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
-                               proj (att_iter1, att_iter),
-                               proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               proj (col_iter1, col_iter),
+                               proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_substring_after,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2254,20 +2254,20 @@ PFbui_fn_matches (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                                   att_item, lit_str (""))),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                                   col_item, lit_str (""))),
                            project (args[1].rel,
-                                    proj (att_iter1, att_iter),
-                                    proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                    proj (col_iter1, col_iter),
+                                    proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_matches,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2295,25 +2295,25 @@ PFbui_fn_matches_str (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[0].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                            project (args[2].rel,
-                                    proj (att_iter2, att_iter),
-                                    proj (att_item2, att_item)),
-                           att_iter,
-                           att_iter2),
+                                    proj (col_iter2, col_iter),
+                                    proj (col_item2, col_item)),
+                           col_iter,
+                           col_iter2),
                        alg_fun_fn_matches_flag,
-                       att_res,
-                       attlist (att_item, att_item1, att_item2)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1, col_item2)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2341,25 +2341,25 @@ PFbui_fn_replace (const PFla_op_t *loop, bool ordering,
                                                loop,
                                                project (
                                                    args[0].rel,
-                                                   proj (att_iter, att_iter))),
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str (""))),
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                            project (args[2].rel,
-                                    proj (att_iter2, att_iter),
-                                    proj (att_item2, att_item)),
-                           att_iter,
-                           att_iter2),
+                                    proj (col_iter2, col_iter),
+                                    proj (col_item2, col_item)),
+                           col_iter,
+                           col_iter2),
                        alg_fun_fn_replace,
-                       att_res,
-                       attlist (att_item, att_item1, att_item2)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1, col_item2)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2388,31 +2388,31 @@ PFbui_fn_replace_str (const PFla_op_t *loop, bool ordering,
                                                    loop,
                                                    project (
                                                        args[0].rel,
-                                                       proj (att_iter,
-                                                             att_iter))),
-                                               att_pos, lit_nat (1)),
-                                           att_item, lit_str (""))),
+                                                       proj (col_iter,
+                                                             col_iter))),
+                                               col_pos, lit_nat (1)),
+                                           col_item, lit_str (""))),
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                project (args[2].rel,
-                                        proj (att_iter2, att_iter),
-                                        proj (att_item2, att_item)),
-                               att_iter,
-                               att_iter2),
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
                             project (args[3].rel,
-                                        proj (att_iter3, att_iter),
-                                        proj (att_item3, att_item)),
-                            att_iter,
-                            att_iter3),
+                                        proj (col_iter3, col_iter),
+                                        proj (col_item3, col_item)),
+                            col_iter,
+                            col_iter3),
                        alg_fun_fn_replace_flag,
-                       att_res,
-                       attlist (att_item, att_item1, att_item2, att_item3)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1, col_item2, col_item3)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 
@@ -2432,9 +2432,9 @@ PFbui_fn_bln_lit (const PFla_op_t *loop,
     return (struct PFla_pair_t) {
         .rel = attach(
                    attach(loop,
-                          att_pos,
+                          col_pos,
                           lit_nat(1)),
-                   att_item,
+                   col_item,
                    lit_bln(value)),
         .frag = PFla_empty_set () };
 }
@@ -2525,10 +2525,10 @@ PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
 
     /* implement it as a simple cast to xs:QName */
     return (struct PFla_pair_t) {
-        .rel = project (cast (args[0].rel, att_cast, att_item, aat_qname),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_cast)),
+        .rel = project (cast (args[0].rel, col_cast, col_item, aat_qname),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_cast)),
         .frag = PFla_empty_set () };
 }
 
@@ -2553,21 +2553,21 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
                                            loop,
                                            project (
                                                args[0].rel,
-                                               proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
+                                               proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
                                    /* use '|' as invalid uri */
-                                   att_item, lit_str ("|"))),
+                                   col_item, lit_str ("|"))),
                            project (args[1].rel,
-                                    proj (att_iter1, att_iter),
-                                    proj (att_item1, att_item)),
-                           att_iter,
-                           att_iter1),
+                                    proj (col_iter1, col_iter),
+                                    proj (col_item1, col_item)),
+                           col_iter,
+                           col_iter1),
                        alg_fun_fn_qname,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                proj (att_iter, att_iter),
-                proj (att_pos, att_pos),
-                proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
 
         .frag = PFla_empty_set ()};
 }
@@ -2587,15 +2587,15 @@ PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
     PFla_op_t *strings = project (
                              fun_1to1 (
                                  project (args[0].rel,
-                                          proj (att_iter, att_iter),
-                                          proj (att_pos, att_pos),
-                                          proj (att_item, att_item)),
+                                          proj (col_iter, col_iter),
+                                          proj (col_pos, col_pos),
+                                          proj (col_item, col_item)),
                                  alg_fun_fn_name,
-                                 att_res,
-                                 attlist(att_item)),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_res));
+                                 col_res,
+                                 collist(col_item)),
+                             proj (col_iter, col_iter),
+                             proj (col_pos, col_pos),
+                             proj (col_item, col_res));
 
     PFla_op_t *res = disjunion (
                          strings,
@@ -2605,9 +2605,9 @@ PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
                                      loop,
                                      project (
                                          strings,
-                                         proj (att_iter, att_iter))),
-                                 att_pos, lit_nat (1)),
-                             att_item, lit_str ("")));
+                                         proj (col_iter, col_iter))),
+                                 col_pos, lit_nat (1)),
+                             col_item, lit_str ("")));
 
     return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
@@ -2625,15 +2625,15 @@ PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
     PFla_op_t *strings = project (
                              fun_1to1 (
                                  project (args[0].rel,
-                                          proj (att_iter, att_iter),
-                                          proj (att_pos, att_pos),
-                                          proj (att_item, att_item)),
+                                          proj (col_iter, col_iter),
+                                          proj (col_pos, col_pos),
+                                          proj (col_item, col_item)),
                                  alg_fun_fn_local_name,
-                                 att_res,
-                                 attlist(att_item)),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_res));
+                                 col_res,
+                                 collist(col_item)),
+                             proj (col_iter, col_iter),
+                             proj (col_pos, col_pos),
+                             proj (col_item, col_res));
 
     PFla_op_t *res = disjunion (
                          strings,
@@ -2643,9 +2643,9 @@ PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
                                      loop,
                                      project (
                                          strings,
-                                         proj (att_iter, att_iter))),
-                                 att_pos, lit_nat (1)),
-                             att_item, lit_str ("")));
+                                         proj (col_iter, col_iter))),
+                                 col_pos, lit_nat (1)),
+                             col_item, lit_str ("")));
 
     return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
@@ -2663,15 +2663,15 @@ PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
     PFla_op_t *strings = project (
                              fun_1to1 (
                                  project (args[0].rel,
-                                          proj (att_iter, att_iter),
-                                          proj (att_pos, att_pos),
-                                          proj (att_item, att_item)),
+                                          proj (col_iter, col_iter),
+                                          proj (col_pos, col_pos),
+                                          proj (col_item, col_item)),
                                  alg_fun_fn_namespace_uri,
-                                 att_res,
-                                 attlist(att_item)),
-                             proj (att_iter, att_iter),
-                             proj (att_pos, att_pos),
-                             proj (att_item, att_res));
+                                 col_res,
+                                 collist(col_item)),
+                             proj (col_iter, col_iter),
+                             proj (col_pos, col_pos),
+                             proj (col_item, col_res));
 
     PFla_op_t *res = disjunion (
                          strings,
@@ -2681,9 +2681,9 @@ PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
                                      loop,
                                      project (
                                          strings,
-                                         proj (att_iter, att_iter))),
-                                 att_pos, lit_nat (1)),
-                             att_item, lit_str ("")));
+                                         proj (col_iter, col_iter))),
+                                 col_pos, lit_nat (1)),
+                             col_item, lit_str ("")));
 
     return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set() };
 }
@@ -2712,17 +2712,17 @@ PFbui_fn_number (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
                                             loop,
                                             project (
                                                 args[0].rel,
-                                                proj (att_iter, att_iter))),
-                                        att_item,
+                                                proj (col_iter, col_iter))),
+                                        col_item,
                                         lit_bln (false)),
-                                    att_item,
+                                    col_item,
                                     err_string),
                                 alg_fun_fn_number,
-                                att_res,
-                                attlist (att_item)),
-                            proj (att_iter, att_iter),
-                            proj (att_pos, att_pos),
-                            proj (att_item, att_res)),
+                                col_res,
+                                collist (col_item)),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos),
+                            proj (col_item, col_res)),
                  .frag = args[0].frag };
 }
 
@@ -2743,18 +2743,18 @@ PFbui_op_is_same_node (const PFla_op_t *loop, bool ordering,
         .rel = project (PFla_eq (
                         eqjoin (
                             project (args[0].rel,
-                                     proj (att_iter, att_iter),
-                                     proj (att_pos, att_pos),
-                                     proj (att_item, att_item)),
+                                     proj (col_iter, col_iter),
+                                     proj (col_pos, col_pos),
+                                     proj (col_item, col_item)),
                             project (args[1].rel,
-                                     proj (att_iter1, att_iter),
-                                     proj (att_item1, att_item)),
-                            att_iter,
-                            att_iter1),
-                        att_res, att_item, att_item1),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_res)),
+                                     proj (col_iter1, col_iter),
+                                     proj (col_item1, col_item)),
+                            col_iter,
+                            col_iter1),
+                        col_res, col_item, col_item1),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos),
+                    proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -2775,18 +2775,18 @@ PFbui_op_node_before (const PFla_op_t *loop, bool ordering,
         .rel = project (PFla_gt (
                         eqjoin (
                             project (args[1].rel,
-                                     proj (att_iter, att_iter),
-                                     proj (att_pos, att_pos),
-                                     proj (att_item, att_item)),
+                                     proj (col_iter, col_iter),
+                                     proj (col_pos, col_pos),
+                                     proj (col_item, col_item)),
                             project (args[0].rel,
-                                     proj (att_iter1, att_iter),
-                                     proj (att_item1, att_item)),
-                            att_iter,
-                            att_iter1),
-                        att_res, att_item, att_item1),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_res)),
+                                     proj (col_iter1, col_iter),
+                                     proj (col_item1, col_item)),
+                            col_iter,
+                            col_iter1),
+                        col_res, col_item, col_item1),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos),
+                    proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -2807,18 +2807,18 @@ PFbui_op_node_after (const PFla_op_t *loop, bool ordering,
         .rel = project (PFla_gt (
                         eqjoin (
                             project (args[0].rel,
-                                     proj (att_iter, att_iter),
-                                     proj (att_pos, att_pos),
-                                     proj (att_item, att_item)),
+                                     proj (col_iter, col_iter),
+                                     proj (col_pos, col_pos),
+                                     proj (col_item, col_item)),
                             project (args[1].rel,
-                                     proj (att_iter1, att_iter),
-                                     proj (att_item1, att_item)),
-                            att_iter,
-                            att_iter1),
-                        att_res, att_item, att_item1),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_res)),
+                                     proj (col_iter1, col_iter),
+                                     proj (col_item1, col_item)),
+                            col_iter,
+                            col_iter1),
+                        col_res, col_item, col_item1),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos),
+                    proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -2846,28 +2846,28 @@ PFbui_fn_root (const PFla_op_t *loop, bool ordering,
                    PFla_step_simple (
                        PFla_set_to_la (args[0].frag),
                        project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_item, att_item)),
+                                proj (col_iter, col_iter),
+                                proj (col_item, col_item)),
                        anc_node_spec,
-                       att_iter, att_item, att_item),
-                   att_pos, sortby (att_item), att_iter);
+                       col_iter, col_item, col_item),
+                   col_pos, sortby (col_item), col_iter);
     
     /* select the first ancestor */
     sel = project (
               select_ (
-                  eq (attach (cast (node_scj, att_item1, att_pos, aat_int),
-                              att_item2,
+                  eq (attach (cast (node_scj, col_item1, col_pos, aat_int),
+                              col_item2,
                               lit_int (1)),
-                      att_res,
-                      att_item1,
-                      att_item2),
-                  att_res),
-              proj (att_iter, att_iter),
-              proj (att_item, att_item));
+                      col_res,
+                      col_item1,
+                      col_item2),
+                  col_res),
+              proj (col_iter, col_iter),
+              proj (col_item, col_item));
     
     /* add the position values */
     return (struct PFla_pair_t) {
-        .rel = attach (sel, att_pos, lit_nat (1)),
+        .rel = attach (sel, col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -2927,26 +2927,26 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop, bool ordering,
                                loop,
                                project (
                                    args[0].rel,
-                                   proj (att_iter, att_iter))),
-                                       att_pos, lit_nat (1)),
-                       att_item, lit_bln (false))),
+                                   proj (col_iter, col_iter))),
+                                       col_pos, lit_nat (1)),
+                       col_item, lit_bln (false))),
         .frag = PFla_empty_set () };
 }
 
 /**
  * Helper function for PFbui_fn_boolean_item
- * Returns those rows with att_item != case_->params.
+ * Returns those rows with col_item != case_->params.
  */
 static PFla_op_t *
 fn_boolean_atomic (PFla_op_t *n, PFalg_atom_t literal)
 {
     return project (not (eq (attach (n,
-                                     att_item1, literal),
-                             att_res, att_item, att_item1),
-                         att_res1, att_res),
-                    proj (att_iter, att_iter),
-                    proj (att_item, att_res1),
-                    proj (att_pos, att_pos));
+                                     col_item1, literal),
+                             col_res, col_item, col_item1),
+                         col_res1, col_res),
+                    proj (col_iter, col_iter),
+                    proj (col_item, col_res1),
+                    proj (col_pos, col_pos));
 }
 
 /**
@@ -2958,9 +2958,9 @@ fn_boolean_atomic (PFla_op_t *n, PFalg_atom_t literal)
 static PFla_op_t *
 fn_boolean_node (PFla_op_t *n)
 {
-    return attach (attach (distinct (project (n, proj (att_iter, att_iter))),
-                           att_pos, lit_nat (1)),
-                   att_item, lit_bln (true));
+    return attach (attach (distinct (project (n, proj (col_iter, col_iter))),
+                           col_pos, lit_nat (1)),
+                   col_item, lit_bln (true));
 }
 
 static PFla_op_t *
@@ -2983,10 +2983,10 @@ fn_boolean_callback (PFla_op_t *n, PFalg_simple_type_t type, void *params)
         return fn_boolean_atomic (n, lit_dec (0));
     case aat_uA:
         return fn_boolean_atomic (project (
-                                      cast (n, att_cast, att_item, aat_str),
-                                      proj (att_iter, att_iter),
-                                      proj (att_pos, att_pos),
-                                      proj (att_item, att_cast)),
+                                      cast (n, col_cast, col_item, aat_str),
+                                      proj (col_iter, col_iter),
+                                      proj (col_pos, col_pos),
+                                      proj (col_item, col_cast)),
                                   lit_str (""));
     case aat_str:
         return fn_boolean_atomic (n, lit_str (""));
@@ -3030,9 +3030,9 @@ PFbui_fn_boolean_item (const PFla_op_t *loop, bool ordering,
                                loop,
                                project (
                                    args[0].rel,
-                                   proj (att_iter,att_iter))),
-                           att_item, lit_bln (false)),
-                       att_pos, lit_nat (1))),
+                                   proj (col_iter,col_iter))),
+                           col_item, lit_bln (false)),
+                       col_pos, lit_nat (1))),
         .frag = PFla_empty_set ()};
 }
 
@@ -3061,15 +3061,15 @@ PFbui_fn_empty (const PFla_op_t *loop, bool ordering,
                disjunion (
                    attach (
                        distinct (project (args[0].rel,
-                                 proj (att_iter, att_iter))),
-                       att_item, lit_bln (false)),
+                                 proj (col_iter, col_iter))),
+                       col_item, lit_bln (false)),
                    attach (
                        difference (
                            loop,
                            project (args[0].rel,
-                                    proj (att_iter, att_iter))),
-                       att_item, lit_bln (true))),
-               att_pos, lit_nat (1)),
+                                    proj (col_iter, col_iter))),
+                       col_item, lit_bln (true))),
+               col_pos, lit_nat (1)),
         .frag = PFla_empty_set ()};
 }
 
@@ -3098,15 +3098,15 @@ PFbui_fn_exists (const PFla_op_t *loop, bool ordering,
                disjunion (
                    attach (
                        distinct (project (args[0].rel,
-                                 proj (att_iter, att_iter))),
-                       att_item, lit_bln (true)),
+                                 proj (col_iter, col_iter))),
+                       col_item, lit_bln (true)),
                    attach (
                        difference (
                            loop,
                            project (args[0].rel,
-                                    proj (att_iter, att_iter))),
-                       att_item, lit_bln (false))),
-               att_pos, lit_nat (1)),
+                                    proj (col_iter, col_iter))),
+                       col_item, lit_bln (false))),
+               col_pos, lit_nat (1)),
         .frag = PFla_empty_set ()};
 }
 
@@ -3123,9 +3123,9 @@ PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
                   .rel = rowid (
                              distinct (
                                  project (args[0].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item))),
-                             att_pos),
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item))),
+                             col_pos),
                   .frag = args[0].frag };
 }
 
@@ -3137,42 +3137,42 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
        the index position */
     PFla_op_t *partition = gt (eqjoin (
                                    cast (adjust_positions (args[0].rel),
-                                         att_cast,
-                                         att_pos,
+                                         col_cast,
+                                         col_pos,
                                          aat_int),
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
-                               att_res,
-                               att_item1,
-                               att_cast);
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
+                               col_res,
+                               col_item1,
+                               col_cast);
 
     /* select all the tuples whose index position is smaller than
        the second argument */
     PFla_op_t *first = attach (
                            project (
-                               select_ (partition, att_res),
-                               proj (att_iter, att_iter),
-                               proj (att_pos, att_pos),
-                               proj (att_item, att_item)),
-                           att_ord,
+                               select_ (partition, col_res),
+                               proj (col_iter, col_iter),
+                               proj (col_pos, col_pos),
+                               proj (col_item, col_item)),
+                           col_ord,
                            lit_nat (1));
 
-    PFla_op_t *second = attach (args[2].rel, att_ord, lit_nat (2));
+    PFla_op_t *second = attach (args[2].rel, col_ord, lit_nat (2));
 
     /* select all the tuples whose index position is bigger or equal to
        the second argument */
     PFla_op_t *third = attach (
                            project (
                                select_ (
-                                   not (partition, att_res1, att_res),
-                                   att_res1),
-                               proj (att_iter, att_iter),
-                               proj (att_pos, att_pos),
-                               proj (att_item, att_item)),
-                           att_ord,
+                                   not (partition, col_res1, col_res),
+                                   col_res1),
+                               proj (col_iter, col_iter),
+                               proj (col_pos, col_pos),
+                               proj (col_item, col_item)),
+                           col_ord,
                            lit_nat (3));
 
     (void) loop; (void) ordering;
@@ -3182,11 +3182,11 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
         .rel = project (
                     rank (
                         disjunion (first, disjunion (second, third)),
-                        att_pos1,
-                        sortby (att_ord, att_pos)),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos1),
-                    proj (att_item, att_item)),
+                        col_pos1,
+                        sortby (col_ord, col_pos)),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_pos1),
+                    proj (col_item, col_item)),
         .frag = args[0].frag };
 }
 
@@ -3207,22 +3207,22 @@ PFbui_fn_remove (const PFla_op_t *loop, bool ordering,
                    select_ (
                        not (eq (eqjoin (
                                     cast (adjust_positions (args[0].rel),
-                                          att_cast,
-                                          att_pos,
+                                          col_cast,
+                                          col_pos,
                                           aat_int),
                                     project (args[1].rel,
-                                             proj (att_iter1, att_iter),
-                                             proj (att_item1, att_item)),
-                                    att_iter,
-                                    att_iter1),
-                                att_res,
-                                att_cast,
-                                att_item1),
-                            att_res1, att_res),
-                       att_res1),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_item)),
+                                             proj (col_iter1, col_iter),
+                                             proj (col_item1, col_item)),
+                                    col_iter,
+                                    col_iter1),
+                                col_res,
+                                col_cast,
+                                col_item1),
+                            col_res1, col_res),
+                       col_res1),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_item)),
         .frag = args[0].frag };
 }
 
@@ -3240,11 +3240,11 @@ PFbui_fn_reverse (const PFla_op_t *loop, bool ordering,
         .rel  = project (
                     rank (
                         args[0].rel,
-                        att_res,
-                        PFord_refine (PFordering (), att_pos, DIR_DESC)),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_res),
-                    proj (att_item, att_item)),
+                        col_res,
+                        PFord_refine (PFordering (), col_pos, DIR_DESC)),
+                    proj (col_iter, col_iter),
+                    proj (col_pos, col_res),
+                    proj (col_item, col_item)),
         .frag = args[0].frag };
 }
 
@@ -3259,7 +3259,7 @@ PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
 #ifndef NDEBUG
     /* make sure that the second argument is of type integer */
     for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
-        if (startingLoc->schema.items[i].name == att_item) {
+        if (startingLoc->schema.items[i].name == col_item) {
             assert (startingLoc->schema.items[i].type == aat_int);
             break;
         }
@@ -3277,22 +3277,22 @@ PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
                    select_ (
                        not (gt (eqjoin (
                                     cast (adjust_positions (args[0].rel),
-                                          att_cast,
-                                          att_pos,
+                                          col_cast,
+                                          col_pos,
                                           aat_int),
                                     project (startingLoc,
-                                             proj (att_iter1, att_iter),
-                                             proj (att_item1, att_item)),
-                                    att_iter,
-                                    att_iter1),
-                                att_res,
-                                att_item1,
-                                att_cast),
-                            att_res1, att_res),
-                       att_res1),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_item)),
+                                             proj (col_iter1, col_iter),
+                                             proj (col_item1, col_item)),
+                                    col_iter,
+                                    col_iter1),
+                                col_res,
+                                col_item1,
+                                col_cast),
+                            col_res1, col_res),
+                       col_res1),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_item)),
         .frag = args[0].frag };
 }
 
@@ -3307,13 +3307,13 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
 #ifndef NDEBUG
     /* make sure that the second and the third argument are of type integer */
     for (unsigned int i = 0; i < startingLoc->schema.count; i++) {
-        if (startingLoc->schema.items[i].name == att_item) {
+        if (startingLoc->schema.items[i].name == col_item) {
             assert (startingLoc->schema.items[i].type == aat_int);
             break;
         }
     }
     for (unsigned int i = 0; i < length->schema.count; i++) {
-        if (length->schema.items[i].name == att_item) {
+        if (length->schema.items[i].name == col_item) {
             assert (length->schema.items[i].type == aat_int);
             break;
         }
@@ -3327,24 +3327,24 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
                      select_ (
                          not (gt (eqjoin (
                                       cast (adjust_positions (args[0].rel),
-                                            att_cast,
-                                            att_pos,
+                                            col_cast,
+                                            col_pos,
                                             aat_int),
                                       project (startingLoc,
-                                               proj (att_iter1, att_iter),
-                                               proj (att_item1, att_item)),
-                                      att_iter,
-                                      att_iter1),
-                                  att_res,
-                                  att_item1,
-                                  att_cast),
-                              att_res1, att_res),
-                         att_res1),
-                     proj (att_iter, att_iter),
-                     proj (att_pos, att_pos),
-                     proj (att_item, att_item),
-                     proj (att_cast, att_cast),    /* pos as int  */
-                     proj (att_item1, att_item1)); /* startingLoc */
+                                               proj (col_iter1, col_iter),
+                                               proj (col_item1, col_item)),
+                                      col_iter,
+                                      col_iter1),
+                                  col_res,
+                                  col_item1,
+                                  col_cast),
+                              col_res1, col_res),
+                         col_res1),
+                     proj (col_iter, col_iter),
+                     proj (col_pos, col_pos),
+                     proj (col_item, col_item),
+                     proj (col_cast, col_cast),    /* pos as int  */
+                     proj (col_item1, col_item1)); /* startingLoc */
 
     /* evaluate the second condition ($pos < $startingLoc + $length)
        and fill in new position values afterwards */
@@ -3355,20 +3355,20 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
                                eqjoin (
                                    first_cond,
                                    project (length,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item2, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item2, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                alg_fun_num_add,
-                               att_res,
-                               attlist (att_item2, att_item1)),
-                           att_res1,
-                           att_res,
-                           att_cast),
-                       att_res1),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_item)),
+                               col_res,
+                               collist (col_item2, col_item1)),
+                           col_res1,
+                           col_res,
+                           col_cast),
+                       col_res1),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_item)),
         .frag = args[0].frag };
 }
 
@@ -3384,9 +3384,9 @@ PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = rowid (
                     project (args[0].rel,
-                             proj (att_iter, att_iter),
-                             proj (att_item, att_item)),
-                    att_pos),
+                             proj (col_iter, col_iter),
+                             proj (col_item, col_item)),
+                    col_pos),
         .frag = args[0].frag };
 }
 
@@ -3405,10 +3405,10 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
     PFla_op_t *count = gt (attach (
                                count (
                                    project (args[0].rel,
-                                            proj (att_iter, att_iter)),
-                                   att_item, att_iter),
-                               att_item1, lit_int (2)),
-                           att_res, att_item1, att_item);
+                                            proj (col_iter, col_iter)),
+                                   col_item, col_iter),
+                               col_item1, lit_int (2)),
+                           col_res, col_item1, col_item);
 
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
                        "a sequence containing more than one item.";
@@ -3418,7 +3418,7 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
     return (struct  PFla_pair_t) {
                  .rel = cond_err (args[0].rel,
                                   count,
-                                  att_res,
+                                  col_res,
                                   err_string),
                  .frag = args[0].frag };
 }
@@ -3433,8 +3433,8 @@ PFbui_fn_exactly_one (const PFla_op_t *loop, bool ordering,
 {
     PFla_op_t *count = eq (attach (
                                PFbui_fn_count (loop, ordering, args).rel,
-                               att_item1, lit_int (1)),
-                           att_res, att_item1, att_item);
+                               col_item1, lit_int (1)),
+                           col_res, col_item1, col_item);
 
     char *err_string = "err:FORG0005, fn:exactly-one called with "
                        "a sequence containing zero or more than one item.";
@@ -3444,7 +3444,7 @@ PFbui_fn_exactly_one (const PFla_op_t *loop, bool ordering,
     return (struct  PFla_pair_t) {
                  .rel = cond_err (args[0].rel,
                                   count,
-                                  att_res,
+                                  col_res,
                                   err_string),
                  .frag = args[0].frag };
 }
@@ -3471,20 +3471,20 @@ PFbui_op_union (const PFla_op_t *loop, bool ordering,
 
     distinct = distinct (disjunion (
                              project (args[0].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item)),
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item)),
                              project (args[1].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item))));
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item))));
 
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rank (distinct,
-                         att_pos, sortby (att_item)),
+                         col_pos, sortby (col_item)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = rowid (distinct, att_pos),
+            .rel = rowid (distinct, col_pos),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -3507,20 +3507,20 @@ PFbui_op_intersect (const PFla_op_t *loop, bool ordering,
 
     distinct = distinct (intersect (
                              project (args[0].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item)),
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item)),
                              project (args[1].rel,
-                                      proj (att_iter, att_iter),
-                                      proj (att_item, att_item))));
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item))));
 
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rank (distinct,
-                         att_pos, sortby (att_item)),
+                         col_pos, sortby (col_item)),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = rowid (distinct, att_pos),
+            .rel = rowid (distinct, col_pos),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -3545,21 +3545,21 @@ PFbui_op_except (const PFla_op_t *loop, bool ordering,
 
     difference = difference (
                      distinct (project (args[0].rel,
-                                        proj (att_iter, att_iter),
-                                        proj (att_item, att_item))),
+                                        proj (col_iter, col_iter),
+                                        proj (col_item, col_item))),
                      project (args[1].rel,
-                              proj (att_iter, att_iter),
-                              proj (att_item, att_item)));
+                              proj (col_iter, col_iter),
+                              proj (col_item, col_item)));
 
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rank (difference,
-                         att_pos, sortby (att_item)),
+                         col_pos, sortby (col_item)),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = rowid (difference, att_pos),
+            .rel = rowid (difference, col_pos),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
@@ -3587,8 +3587,8 @@ PFbui_fn_count (const PFla_op_t *loop,
     (void) ordering;
 
     PFla_op_t *count = count (project (args[0].rel,
-                                       proj (att_iter, att_iter)),
-                              att_item, att_iter);
+                                       proj (col_iter, col_iter)),
+                              col_item, col_iter);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -3597,9 +3597,9 @@ PFbui_fn_count (const PFla_op_t *loop,
                     attach (
                         difference (
                             loop,
-                            project (count, proj (att_iter, att_iter))),
-                        att_item, lit_int (0))),
-                att_pos, lit_nat (1)),
+                            project (count, proj (col_iter, col_iter))),
+                        col_item, lit_int (0))),
+                col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -3623,11 +3623,11 @@ fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind, struct PFla_pair_t *args,
 
     return (struct PFla_pair_t) {
         .rel = attach(aggr (kind,
-                            project (cast(args[0].rel, att_cast, att_item, t),
-                                     proj (att_iter, att_iter),
-                                     proj (att_item, att_cast)),
-                            att_item, att_item, att_iter),
-                      att_pos, lit_nat (1)),
+                            project (cast(args[0].rel, col_cast, col_item, t),
+                                     proj (col_iter, col_iter),
+                                     proj (col_item, col_cast)),
+                            col_item, col_item, col_iter),
+                      col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -3743,10 +3743,10 @@ fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args,
     (void) ordering;
 
     PFla_op_t *sum = aggr (la_sum,
-                           project (cast(args[0].rel, att_cast, att_item, t),
-                                   proj (att_iter, att_iter),
-                                   proj (att_item, att_cast)),
-                           att_item, att_item, att_iter);
+                           project (cast(args[0].rel, col_cast, col_item, t),
+                                   proj (col_iter, col_iter),
+                                   proj (col_item, col_cast)),
+                           col_item, col_item, col_iter);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -3755,9 +3755,9 @@ fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args,
                     attach (
                         difference (
                             loop,
-                            project (sum, proj (att_iter, att_iter))),
-                        att_item, lit_int (0))),
-                att_pos, lit_nat (1)),
+                            project (sum, proj (col_iter, col_iter))),
+                        col_item, lit_int (0))),
+                col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -3818,10 +3818,10 @@ fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
     (void) ordering;
 
     PFla_op_t *sum = aggr (la_sum,
-                           project (cast (args[0].rel, att_cast, att_item, t),
-                                    proj (att_iter, att_iter),
-                                    proj (att_item, att_cast)),
-                           att_item, att_item, att_iter);
+                           project (cast (args[0].rel, col_cast, col_item, t),
+                                    proj (col_iter, col_iter),
+                                    proj (col_item, col_cast)),
+                           col_item, col_item, col_iter);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -3831,14 +3831,14 @@ fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
                          eqjoin (
                               difference (
                                    loop,
-                                   project (sum, proj (att_iter, att_iter))),
-                              project (cast(args[1].rel, att_cast, att_item, t),
-                                       proj (att_iter1, att_iter),
-                                       proj (att_item, att_cast)),
-                              att_iter, att_iter1),
-                         proj (att_iter, att_iter),
-                         proj (att_item, att_item))),
-                att_pos, lit_nat (1)),
+                                   project (sum, proj (col_iter, col_iter))),
+                              project (cast(args[1].rel, col_cast, col_item, t),
+                                       proj (col_iter1, col_iter),
+                                       proj (col_item, col_cast)),
+                              col_iter, col_iter1),
+                         proj (col_iter, col_iter),
+                         proj (col_item, col_item))),
+                col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -3890,25 +3890,25 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
                         to (eqjoin (
                                 project (
                                     args[0].rel,
-                                    proj (att_iter, att_iter),
-                                    proj (att_item, att_item)),
+                                    proj (col_iter, col_iter),
+                                    proj (col_item, col_item)),
                                 project (
                                     args[1].rel,
-                                    proj (att_iter1, att_iter),
-                                    proj (att_item1, att_item)),
-                                att_iter,
-                                att_iter1),
-                            att_res,
-                            att_item,
-                            att_item1),
-                        proj (att_iter, att_iter),
-                        proj (att_item, att_res));
+                                    proj (col_iter1, col_iter),
+                                    proj (col_item1, col_item)),
+                                col_iter,
+                                col_iter1),
+                            col_res,
+                            col_item,
+                            col_item1),
+                        proj (col_iter, col_iter),
+                        proj (col_item, col_res));
 
     return (struct PFla_pair_t) {
         .rel = rank (
                    to,
-                   att_pos,
-                   sortby (att_item)),
+                   col_pos,
+                   sortby (col_item)),
         .frag = PFla_empty_set () };
 }
 
@@ -3926,34 +3926,34 @@ fn_id (const PFla_op_t *loop, bool ordering,
              eqjoin (
                  project (
                      args[0].rel,
-                     proj (att_iter, att_iter),
-                     proj (att_item, att_item)),
+                     proj (col_iter, col_iter),
+                     proj (col_item, col_item)),
                  project (
                      args[1].rel,
-                     proj (att_iter1, att_iter),
-                     proj (att_item1, att_item)),
-                 att_iter,
-                 att_iter1),
-             proj (att_iter, att_iter),
-             proj (att_item, att_item),
-             proj (att_item1, att_item1));
+                     proj (col_iter1, col_iter),
+                     proj (col_item1, col_item)),
+                 col_iter,
+                 col_iter1),
+             proj (col_iter, col_iter),
+             proj (col_item, col_item),
+             proj (col_item1, col_item1));
 
     doc = PFla_set_to_la (args[1].frag);
 
     op = project (
              doc_index_join (doc, in,
                              id ? la_dj_id : la_dj_idref,
-                             att_item, att_res, att_item1),
-             proj (att_iter, att_iter),
-             proj (att_item, att_res));
+                             col_item, col_res, col_item1),
+             proj (col_iter, col_iter),
+             proj (col_item, col_res));
 
     if (ordering)
         return (struct PFla_pair_t) {
-            .rel = rank (distinct (op), att_pos, sortby (att_item)),
+            .rel = rank (distinct (op), col_pos, sortby (col_item)),
             .frag = args[1].frag };
     else
         return (struct PFla_pair_t) {
-            .rel = rowid (distinct (op), att_pos),
+            .rel = rowid (distinct (op), col_pos),
             .frag = args[1].frag };
 }
 
@@ -3994,13 +3994,13 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_doc);
+    PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_doc);
 
     return (struct PFla_pair_t) {
         .rel  = project (roots (doc),
-                         proj (att_iter, att_iter),
-                         proj (att_pos, att_pos),
-                         proj (att_item, att_res)),
+                         proj (col_iter, col_iter),
+                         proj (col_pos, col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_set (fragment (doc)) };
 }
 
@@ -4024,15 +4024,15 @@ PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
                                    loop,
                                    project (
                                        args[0].rel,
-                                       proj (att_iter, att_iter))),
-                               att_pos, lit_nat (1)),
-                           att_item, lit_str (""))),
+                                       proj (col_iter, col_iter))),
+                               col_pos, lit_nat (1)),
+                           col_item, lit_str (""))),
                        alg_fun_fn_doc_available,
-                       att_res,
-                       attlist(att_item)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist(col_item)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -4046,13 +4046,13 @@ PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
     (void) ordering; (void) loop;
 
     /* collection root nodes */
-    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_col);
+    PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_col);
 
     struct PFla_pair_t p = {
         .rel  = project (roots (doc),
-                         proj (att_iter, att_iter),
-                         proj (att_pos, att_pos),
-                         proj (att_item, att_res)),
+                         proj (col_iter, col_iter),
+                         proj (col_pos, col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_set (fragment (doc)) };
 
     /* child step */
@@ -4065,16 +4065,16 @@ PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
                           PFla_step_join_simple (
                               PFla_set_to_la (p.frag),
                               project (p.rel,
-                                       proj (att_iter, att_iter),
-                                       proj (att_item, att_item)),
+                                       proj (col_iter, col_iter),
+                                       proj (col_item, col_item)),
                               spec,
-                              att_item,
-                              att_item1),
-                          PFalg_proj (att_iter, att_iter),
-                          PFalg_proj (att_item, att_item1));
+                              col_item,
+                              col_item1),
+                          PFalg_proj (col_iter, col_iter),
+                          PFalg_proj (col_item, col_item1));
 
     return (struct  PFla_pair_t) {
-                   .rel = rank (step, att_pos, sortby (att_item)),
+                   .rel = rank (step, col_pos, sortby (col_item)),
                    .frag = p.frag };
 }
 
@@ -4145,19 +4145,19 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop, bool ordering,
 {
     PFla_op_t *distinct = distinct (
                               project (args[0].rel,
-                                   proj (att_iter, att_iter),
-                                   proj (att_item, att_item)));
+                                   proj (col_iter, col_iter),
+                                   proj (col_item, col_item)));
 
     (void) loop;
 
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rank (distinct,
-                         att_pos, sortby (att_item)),
+                         col_pos, sortby (col_item)),
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = rowid (distinct, att_pos),
+            .rel = rowid (distinct, col_pos),
             .frag = args[0].frag };
 }
 
@@ -4199,15 +4199,15 @@ pf_item_seq_to_node_seq_worker_single_atomic (const PFla_op_t *loop,
      */
     PFla_op_t *t_nodes = twig (textnode (
                                    cast (rel,
-                                         att_cast,
-                                         att_item,
+                                         col_cast,
+                                         col_item,
                                          aat_str),
-                                   att_iter, att_cast),
-                               att_iter, att_item);
+                                   col_iter, col_cast),
+                               col_iter, col_item);
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (roots (t_nodes), att_pos, lit_nat (1)),
+                 .rel  = attach (roots (t_nodes), col_pos, lit_nat (1)),
                  /* union of those nodes we had in the very beginning
                   * (those in frag) and those produced by text node
                   * creation
@@ -4240,30 +4240,30 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
     PFla_op_t *strings = fn_string_join (
                              project (
                                  cast (rel,
-                                       att_cast,
-                                       att_item,
+                                       col_cast,
+                                       col_item,
                                        aat_str),
-                                 proj (att_iter, att_iter),
-                                 proj (att_pos, att_pos),
-                                 proj (att_item, att_cast)),
+                                 proj (col_iter, col_iter),
+                                 proj (col_pos, col_pos),
+                                 proj (col_item, col_cast)),
                              project (
                                  attach (
-                                     attach (loop, att_pos, lit_nat (1)),
-                                     att_item, lit_str (" ")),
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_item)),
-                         att_iter, att_pos, att_item,
-                         att_iter, att_item,
-                         att_iter, att_item);
+                                     attach (loop, col_pos, lit_nat (1)),
+                                     col_item, lit_str (" ")),
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_item)),
+                         col_iter, col_pos, col_item,
+                         col_iter, col_item,
+                         col_iter, col_item);
 
     PFla_op_t *t_nodes = twig (textnode (
                                    strings,
-                                   att_iter, att_item),
-                               att_iter, att_item);
+                                   col_iter, col_item),
+                               col_iter, col_item);
 
     /* get the roots of the new text nodes and add pos column */
     return (struct  PFla_pair_t) {
-                 .rel  = attach (roots (t_nodes), att_pos, lit_nat (1)),
+                 .rel  = attach (roots (t_nodes), col_pos, lit_nat (1)),
                  /* union of those nodes we had in the very beginning
                   * (those in part1) and those produced by text node
                   * creation
@@ -4294,44 +4294,44 @@ pf_item_seq_to_node_seq_worker_attr (
     /*
      * carry out specific type test on type anode (attr/afrag)
      */
-    PFla_op_t *type = type (rel, att_res, att_item, aat_anode);
+    PFla_op_t *type = type (rel, col_res, col_item, aat_anode);
 
     /* select those rows that have type "attr" (part1) */
     PFla_op_t *part1 = project (
                            type_assert_pos (
-                               select_ (type, att_res),
-                               att_item, aat_anode),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                               select_ (type, col_res),
+                               col_item, aat_anode),
+                           proj (col_iter, col_iter),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
     /* select the remaining rows (part2) */
     PFla_op_t *part2 = project (
                            type_assert_neg (
-                               select_ (not (type, att_res1, att_res),
-                                        att_res1),
-                               att_item, aat_anode),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                               select_ (not (type, col_res1, col_res),
+                                        col_res1),
+                               col_item, aat_anode),
+                           proj (col_iter, col_iter),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
     /* call the translation of the atomics with only the
        atomic values (part2) */
     struct PFla_pair_t text = fun (loop, part2, frag);
 
     /* get the roots of the new text nodes, form union of roots and
-     * part1, and sort result on att_ord and att_pos column
+     * part1, and sort result on col_ord and col_pos column
      */
     return (struct  PFla_pair_t) {
                  .rel = project (
                             rank (
                                 disjunion (
-                                    attach (part1, att_ord, lit_nat (1)),
-                                    attach (text.rel, att_ord, lit_nat (2))),
-                                att_pos1, sortby (att_ord, att_pos)),
-                            proj (att_iter, att_iter),
-                            proj (att_pos, att_pos1),
-                            proj (att_item, att_item)),
+                                    attach (part1, col_ord, lit_nat (1)),
+                                    attach (text.rel, col_ord, lit_nat (2))),
+                                col_pos1, sortby (col_ord, col_pos)),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos1),
+                            proj (col_item, col_item)),
                  /* fill in frag union generated in the textnode
                   * generation for atomic values (fun).
                   */
@@ -4372,67 +4372,67 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
      * carry out specific type test on type split_type
      * (either aat_pnode or aat_node)
      */
-    PFla_op_t *type = type (input, att_res, att_item, split_type);
+    PFla_op_t *type = type (input, col_res, col_item, split_type);
 
     /* select those rows that have type "node" (part1) */
     PFla_op_t *part1 = project (
                            type_assert_pos (
-                               select_ (type, att_res),
-                               att_item, split_type),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                               select_ (type, col_res),
+                               col_item, split_type),
+                           proj (col_iter, col_iter),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
     /* select the remaining rows (part2) */
     PFla_op_t *part2 = project (
                            type_assert_neg (
-                               select_ (not (type, att_res1, att_res),
-                                        att_res1),
-                               att_item, split_type),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                               select_ (not (type, col_res1, col_res),
+                                        col_res1),
+                               col_item, split_type),
+                           proj (col_iter, col_iter),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
     /*
      * convert all items in part2 into strings ...
      */
-    PFla_op_t *strings = cast (part2, att_cast, att_item, aat_str);
+    PFla_op_t *strings = cast (part2, col_cast, col_item, aat_str);
 
     /*
      * compare columns pos and pos-1 to find adjacent strings
      */
     PFla_op_t *base = fun_1to1 (
                           cast (
-                              attach (strings, att_item1, lit_int (1)),
-                              att_pos1, att_pos, aat_int),
+                              attach (strings, col_item1, lit_int (1)),
+                              col_pos1, col_pos, aat_int),
                           alg_fun_num_subtract,
-                          att_res,
-                          attlist (att_pos1, att_item1));
+                          col_res,
+                          collist (col_pos1, col_item1));
 
     PFla_op_t *delim = project (
                            select_ (
                                eq (eqjoin (
                                        project (
                                            base,
-                                           proj (att_iter1, att_iter),
-                                           proj (att_res, att_res)),
+                                           proj (col_iter1, col_iter),
+                                           proj (col_res, col_res)),
                                        project (
                                            base,
-                                           proj (att_iter, att_iter),
-                                           proj (att_pos1, att_pos1),
-                                           proj (att_pos, att_pos)),
-                                       att_iter1, att_iter),
-                                   att_res1, att_res, att_pos1),
-                               att_res1),
-                           proj (att_iter, att_iter),
-                           proj (att_pos, att_pos));
+                                           proj (col_iter, col_iter),
+                                           proj (col_pos1, col_pos1),
+                                           proj (col_pos, col_pos)),
+                                       col_iter1, col_iter),
+                                   col_res1, col_res, col_pos1),
+                               col_res1),
+                           proj (col_iter, col_iter),
+                           proj (col_pos, col_pos));
 
     /*
      * for each pair of adjacent strings add a whitespace string
      */
     PFla_op_t *sep = attach (
-                         attach (delim, att_item, lit_str (" ")),
-                         att_ord, lit_nat (2));
+                         attach (delim, col_item, lit_str (" ")),
+                         col_ord, lit_nat (2));
 
     /*
      * create textnodes for each string
@@ -4441,18 +4441,18 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
     PFla_op_t *unq_strings = rowid (
                                  disjunion (
                                      attach (project (strings,
-                                                     proj (att_iter, att_iter),
-                                                     proj (att_pos, att_pos),
-                                                     proj (att_item, att_cast)),
-                                            att_ord, lit_nat (1)),
+                                                     proj (col_iter, col_iter),
+                                                     proj (col_pos, col_pos),
+                                                     proj (col_item, col_cast)),
+                                            col_ord, lit_nat (1)),
                                      sep),
-                                 att_inner);
+                                 col_inner);
 
-    PFla_op_t *t_nodes = twig (textnode (unq_strings, att_inner, att_item),
-                               att_iter, att_item);
+    PFla_op_t *t_nodes = twig (textnode (unq_strings, col_inner, col_item),
+                               col_iter, col_item);
 
     /* get the roots of the new text nodes, form union of roots and
-     * part1, and sort result on att_pos and att_ord column
+     * part1, and sort result on col_pos and col_ord column
      */
     return (struct  PFla_pair_t) {
                  .rel = project (
@@ -4463,20 +4463,20 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
                                             roots (t_nodes),
                                             project (
                                                 unq_strings,
-                                                proj (att_outer, att_iter),
-                                                proj (att_inner, att_inner),
-                                                proj (att_pos, att_pos),
-                                                proj (att_ord, att_ord)),
-                                            att_iter, att_inner),
-                                        proj (att_iter, att_outer),
-                                        proj (att_pos, att_pos),
-                                        proj (att_item, att_item),
-                                        proj (att_ord, att_ord)),
-                                    attach (part1, att_ord, lit_nat (1))),
-                                att_pos1, sortby (att_pos, att_ord)),
-                            proj (att_iter, att_iter),
-                            proj (att_pos, att_pos1),
-                            proj (att_item, att_item)),
+                                                proj (col_outer, col_iter),
+                                                proj (col_inner, col_inner),
+                                                proj (col_pos, col_pos),
+                                                proj (col_ord, col_ord)),
+                                            col_iter, col_inner),
+                                        proj (col_iter, col_outer),
+                                        proj (col_pos, col_pos),
+                                        proj (col_item, col_item),
+                                        proj (col_ord, col_ord)),
+                                    attach (part1, col_ord, lit_nat (1))),
+                                col_pos1, sortby (col_pos, col_ord)),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos1),
+                            proj (col_item, col_item)),
                  /* union of those nodes we had in the very beginning
                   * (those in part1) and those produced by text node
                   * creation
@@ -4516,7 +4516,7 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop, bool ordering,
  * Input: iter | pos | item table where all items are of type node.
  * Introduce new algebra operator which takes the current document and
  * the current algebra representation. It merges consecutive text nodes
- * (with same att_iter and consecutive att_pos values). If a text node
+ * (with same col_iter and consecutive col_pos values). If a text node
  * is empty, it is discarded.
  * The output are an algebra representation of all nodes (old and new,
  * i.e. unmerged and merged) and a fragment representation of the newly
@@ -4530,8 +4530,8 @@ PFbui_pf_merge_adjacent_text_nodes (
 
     PFla_op_t *merged
         = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel,
-                          att_iter, att_pos, att_item,
-                          att_iter, att_pos, att_item);
+                          col_iter, col_pos, col_item,
+                          col_iter, col_pos, col_item);
 
     return (struct  PFla_pair_t) {
                  .rel  = roots (merged),
@@ -4552,10 +4552,10 @@ PFbui_pf_string_value_attr (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
                                      args[0].rel,
-                                     att_res, att_item, doc_atext),
-                         proj (att_iter, att_iter),
-                         proj (att_pos,  att_pos),
-                         proj (att_item, att_res)),
+                                     col_res, col_item, doc_atext),
+                         proj (col_iter, col_iter),
+                         proj (col_pos,  col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -4571,10 +4571,10 @@ PFbui_pf_string_value_text (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
                                      args[0].rel,
-                                     att_res, att_item, doc_text),
-                         proj (att_iter, att_iter),
-                         proj (att_pos,  att_pos),
-                         proj (att_item, att_res)),
+                                     col_res, col_item, doc_text),
+                         proj (col_iter, col_iter),
+                         proj (col_pos,  col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -4590,10 +4590,10 @@ PFbui_pf_string_value_pi (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
                                      args[0].rel,
-                                     att_res, att_item, doc_pi_text),
-                         proj (att_iter, att_iter),
-                         proj (att_pos,  att_pos),
-                         proj (att_item, att_res)),
+                                     col_res, col_item, doc_pi_text),
+                         proj (col_iter, col_iter),
+                         proj (col_pos,  col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -4609,10 +4609,10 @@ PFbui_pf_string_value_comm (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
                                      args[0].rel,
-                                     att_res, att_item, doc_comm),
-                         proj (att_iter, att_iter),
-                         proj (att_pos,  att_pos),
-                         proj (att_item, att_res)),
+                                     col_res, col_item, doc_comm),
+                         proj (col_iter, col_iter),
+                         proj (col_pos,  col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_empty_set () };
 }
 
@@ -4637,11 +4637,11 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
                    PFla_step_join_simple (
                        PFla_set_to_la (args[0].frag),
                        project (args[0].rel,
-                                proj (att_iter, att_iter),
-                                proj (att_item, att_item)),
+                                proj (col_iter, col_iter),
+                                proj (col_item, col_item)),
                        desc_text_spec,
-                       att_item, att_item1),
-                   att_pos, sortby (att_item1));
+                       col_item, col_item1),
+                   col_pos, sortby (col_item1));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */
@@ -4650,22 +4650,22 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_res, att_item1, doc_text),
-                    proj (att_iter, att_iter),
-                    proj (att_pos,  att_pos),
-                    proj (att_item, att_res)),
+                        col_res, col_item1, doc_text),
+                    proj (col_iter, col_iter),
+                    proj (col_pos,  col_pos),
+                    proj (col_item, col_res)),
                 project (
                     attach (
-                        attach (loop, att_pos, lit_nat (1)),
-                        att_item, lit_str ("")),
-                    proj (att_iter, att_iter),
-                    proj (att_item, att_item)),
-                att_iter, att_pos, att_item,
-                att_iter, att_item,
-                att_iter, att_item);
+                        attach (loop, col_pos, lit_nat (1)),
+                        col_item, lit_str ("")),
+                    proj (col_iter, col_iter),
+                    proj (col_item, col_item)),
+                col_iter, col_pos, col_item,
+                col_iter, col_item,
+                col_iter, col_item);
 
     return (struct PFla_pair_t) {
-        .rel  = attach (nodes, att_pos, lit_nat (1)),
+        .rel  = attach (nodes, col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -4692,43 +4692,43 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
     sel_attr = project (
                    type_assert_pos (
                        select_ (
-                           type (args[0].rel, att_subty,
-                                 att_item, aat_anode),
-                           att_subty),
-                       att_item, aat_anode),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_item));
+                           type (args[0].rel, col_subty,
+                                 col_item, aat_anode),
+                           col_subty),
+                       col_item, aat_anode),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_item));
 
     attributes = project (doc_access (PFla_set_to_la (args[0].frag),
-                          sel_attr, att_res, att_item, doc_atext),
-                          proj (att_iter, att_iter),
-                          proj (att_item, att_res));
+                          sel_attr, col_res, col_item, doc_atext),
+                          proj (col_iter, col_iter),
+                          proj (col_item, col_res));
 
     /* select all other nodes and retrieve string values
        as in PFbui_pf_string_value_elem */
     sel_node = project (
                    type_assert_neg (
                        select_ (
-                           not (type (args[0].rel, att_subty,
-                                      att_item, aat_anode),
-                                att_notsub, att_subty),
-                           att_notsub),
-                       att_item, aat_anode),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_item));
+                           not (type (args[0].rel, col_subty,
+                                      col_item, aat_anode),
+                                col_notsub, col_subty),
+                           col_notsub),
+                       col_item, aat_anode),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_item));
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
     node_scj = rank (
                    PFla_step_join_simple (
                        PFla_set_to_la (args[0].frag),
                        project (sel_node,
-                                proj (att_iter, att_iter),
-                                proj (att_item, att_item)),
+                                proj (col_iter, col_iter),
+                                proj (col_item, col_item)),
                        desc_text_spec,
-                       att_item, att_item1),
-                   att_pos, sortby (att_item1));
+                       col_item, col_item1),
+                   col_pos, sortby (col_item1));
 
     /* concatenate all texts within an iteration using
        the empty string as delimiter */
@@ -4737,26 +4737,26 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_res, att_item1, doc_text),
-                    proj (att_iter, att_iter),
-                    proj (att_pos,  att_pos),
-                    proj (att_item, att_res)),
+                        col_res, col_item1, doc_text),
+                    proj (col_iter, col_iter),
+                    proj (col_pos,  col_pos),
+                    proj (col_item, col_res)),
                 project (
                     attach (
                             project (
                                      sel_node,
-                                     proj(att_iter, att_iter),
-                                     proj(att_pos, att_pos)),
-                        att_item, lit_str ("")),
-                    proj (att_iter, att_iter),
-                    proj (att_item, att_item)),
-                att_iter, att_pos, att_item,
-                att_iter, att_item,
-                att_iter, att_item);
+                                     proj(col_iter, col_iter),
+                                     proj(col_pos, col_pos)),
+                        col_item, lit_str ("")),
+                    proj (col_iter, col_iter),
+                    proj (col_item, col_item)),
+                col_iter, col_pos, col_item,
+                col_iter, col_item,
+                col_iter, col_item);
 
     return (struct PFla_pair_t) {
         .rel  = attach (disjunion (attributes, nodes),
-                        att_pos, lit_nat (1)),
+                        col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -4820,13 +4820,13 @@ PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_documents,  /* function kind */
                                PFqname (PFns_wild, NULL),  /* qname         */
                                NULL,                       /* ctx           */
-                               att_iter,                   /* iter          */
+                               col_iter,                   /* iter          */
                                alg_occ_unknown);    /* occurrence indicator */
 
     return (struct PFla_pair_t) {
         .rel = rank (res,
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         /* FIXME: if uncomment the next line there is a seqmentation fault */
         .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
 }
@@ -4846,13 +4846,13 @@ PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_documents_unsafe,
                                PFqname (PFns_wild, NULL),
                                NULL,
-                               att_iter,
+                               col_iter,
                                alg_occ_unknown);
 
     return (struct PFla_pair_t) {
         .rel = rank (res,
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         /* FIXME: if uncomment the next line, a seqmentation fault appears */
         .frag = PFla_empty_set() }; /* PFla_set (frag_extract (res, 2)) }; */
 }
@@ -4875,10 +4875,10 @@ PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_documents_str,
                                PFqname (PFns_wild, NULL),
                                NULL,
-                               att_iter,
+                               col_iter,
                                alg_occ_unknown),
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         .frag = PFla_empty_set() };
 }
 
@@ -4900,10 +4900,10 @@ PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_documents_str_unsafe,
                                PFqname (PFns_wild, NULL),
                                NULL,
-                               att_iter,
+                               col_iter,
                                alg_occ_unknown),
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         .frag = PFla_empty_set() };
 }
 
@@ -4919,11 +4919,11 @@ PFbui_pf_docname (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (args[0].rel,
                                   alg_fun_pf_docname,
-                                  att_res,
-                                  attlist (att_item)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                                  col_res,
+                                  collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -4936,13 +4936,13 @@ PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
 {
     (void) loop; (void) ordering;
 
-    PFla_op_t *doc = doc_tbl (args[0].rel, att_res, att_item, alg_dt_col);
+    PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_col);
 
     return (struct PFla_pair_t) {
         .rel  = project (roots (doc),
-                         proj (att_iter, att_iter),
-                         proj (att_pos, att_pos),
-                         proj (att_item, att_res)),
+                         proj (col_iter, col_iter),
+                         proj (col_pos, col_pos),
+                         proj (col_item, col_res)),
         .frag = PFla_set (fragment (doc)) };
 }
 
@@ -4961,13 +4961,13 @@ PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_collections,
                                PFqname (PFns_wild, NULL),
                                NULL,
-                               att_iter,
+                               col_iter,
                                alg_occ_unknown);
 
     return (struct PFla_pair_t) {
         .rel = rank (res,
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         .frag = PFla_empty_set() };
 
 }
@@ -4987,13 +4987,13 @@ PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
                                alg_fun_call_pf_collections_unsafe,
                                PFqname (PFns_wild, NULL),
                                NULL,
-                               att_iter,
+                               col_iter,
                                alg_occ_unknown);
 
     return (struct PFla_pair_t) {
         .rel = rank (res,
-                     att_pos,
-                     sortby (att_item)),
+                     col_pos,
+                     sortby (col_item)),
         .frag = PFla_empty_set() };
 
 }
@@ -5011,11 +5011,11 @@ PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
         .rel = project (fun_1to1 (
                             args[0].rel,
                             alg_fun_pf_fragment,
-                            att_res,
-                            attlist (att_item)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5035,21 +5035,21 @@ PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
                            doc_index_join (
                                PFla_set_to_la (args[0].frag),
                                eqjoin (project (args[0].rel,
-                                                proj (att_iter, att_iter),
-                                                proj (att_item, att_item)),
+                                                proj (col_iter, col_iter),
+                                                proj (col_item, col_item)),
                                        project (args[1].rel,
-                                                proj (att_iter1, att_iter),
-                                                proj (att_item1, att_item)),
-                                       att_iter,
-                                       att_iter1),
+                                                proj (col_iter1, col_iter),
+                                                proj (col_item1, col_item)),
+                                       col_iter,
+                                       col_iter1),
                                 la_dj_attr,
-                                att_item1,
-                                att_res,
-                                att_item),
-                            proj (att_iter, att_iter),
-                            proj (att_item, att_res))),
-                   att_pos,
-                   sortby (att_item)),
+                                col_item1,
+                                col_res,
+                                col_item),
+                            proj (col_iter, col_iter),
+                            proj (col_item, col_res))),
+                   col_pos,
+                   sortby (col_item)),
         .frag = args[0].frag };
 }
 
@@ -5069,21 +5069,21 @@ PFbui_pf_text (const PFla_op_t *loop, bool ordering,
                            doc_index_join (
                                PFla_set_to_la (args[0].frag),
                                eqjoin (project (args[0].rel,
-                                                proj (att_iter, att_iter),
-                                                proj (att_item, att_item)),
+                                                proj (col_iter, col_iter),
+                                                proj (col_item, col_item)),
                                        project (args[1].rel,
-                                                proj (att_iter1, att_iter),
-                                                proj (att_item1, att_item)),
-                                       att_iter,
-                                       att_iter1),
+                                                proj (col_iter1, col_iter),
+                                                proj (col_item1, col_item)),
+                                       col_iter,
+                                       col_iter1),
                                 la_dj_text,
-                                att_item1,
-                                att_res,
-                                att_item),
-                            proj (att_iter, att_iter),
-                            proj (att_item, att_res))),
-                   att_pos,
-                   sortby (att_item)),
+                                col_item1,
+                                col_res,
+                                col_item),
+                            proj (col_iter, col_iter),
+                            proj (col_item, col_res))),
+                   col_pos,
+                   sortby (col_item)),
         .frag = args[0].frag };
 }
 
@@ -5100,11 +5100,11 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
         .rel = project (fun_1to1 (
                             args[0].rel,
                             alg_fun_pf_supernode,
-                            att_res,
-                            attlist (att_item)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5187,7 +5187,7 @@ PFbui_tijah_query_HANDLER(
 		    alg_fun_call_tijah,
 		    PFqname (PFns_wild, query_name),
 		    NULL, /* ctx */
-		    att_iter, /* iter */
+		    col_iter, /* iter */
 		    alg_occ_one_or_more  /* occ_ind */
 		),
         .frag = PFla_empty_set () };
@@ -5331,7 +5331,7 @@ PFbui_tijah_manage_fti_HANDLER(
 		    alg_fun_call_tijah,
 		    PFqname (PFns_wild, fun_name),
 		    NULL, /* ctx */
-		    att_iter, /* iter */
+		    col_iter, /* iter */
 		    alg_occ_one_or_more  /* occ_ind */
 		),
         .frag = PFla_empty_set () };
@@ -5536,21 +5536,21 @@ PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
                                eqjoin (
                                    args[0].rel,
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                project (args[1].rel,
-                                        proj (att_iter2, att_iter),
-                                        proj (att_item2, att_item)),
-                               att_iter,
-                               att_iter2),
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
                             alg_fun_pf_add_doc_str,
-                            att_res,
-                            attlist (att_item, att_item1, att_item2)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item, col_item1, col_item2)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
 
         .frag = args[0].frag };
 }
@@ -5570,21 +5570,21 @@ PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
                                eqjoin (
                                    args[0].rel,
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                project (args[2].rel,
-                                        proj (att_iter2, att_iter),
-                                        proj (att_item2, att_item)),
-                               att_iter,
-                               att_iter2),
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
                             alg_fun_pf_add_doc_str,
-                            att_res,
-                            attlist (att_item, att_item1, att_item2)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item, col_item1, col_item2)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
 
         .frag = args[0].frag };
 }
@@ -5606,29 +5606,29 @@ PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
                                eqjoin (
                                    args[0].rel,
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                project (args[1].rel,
-                                        proj (att_iter2, att_iter),
-                                        proj (att_item2, att_item)),
-                               att_iter,
-                               att_iter2),
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
                             project (args[2].rel,
-                                     proj (att_iter3, att_iter),
-                                     proj (att_item3, att_item)),
-                            att_iter,
-                            att_iter3),
+                                     proj (col_iter3, col_iter),
+                                     proj (col_item3, col_item)),
+                            col_iter,
+                            col_iter3),
                             alg_fun_pf_add_doc_str_int,
-                            att_res,
-                            attlist (att_item,
-                                     att_item1,
-                                     att_item2,
-                                     att_item3)),
-                   proj(att_iter, att_iter),
-                   proj(att_pos, att_pos),
-                   proj(att_item, att_res)),
+                            col_res,
+                            collist (col_item,
+                                     col_item1,
+                                     col_item2,
+                                     col_item3)),
+                   proj(col_iter, col_iter),
+                   proj(col_pos, col_pos),
+                   proj(col_item, col_res)),
 
         .frag = args[0].frag };
 }
@@ -5650,29 +5650,29 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
                                eqjoin (
                                    args[0].rel,
                                    project (args[1].rel,
-                                            proj (att_iter1, att_iter),
-                                            proj (att_item1, att_item)),
-                                   att_iter,
-                                   att_iter1),
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
                                project (args[2].rel,
-                                        proj (att_iter2, att_iter),
-                                        proj (att_item2, att_item)),
-                               att_iter,
-                               att_iter2),
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
                             project (args[3].rel,
-                                     proj (att_iter3, att_iter),
-                                     proj (att_item3, att_item)),
-                            att_iter,
-                            att_iter3),
+                                     proj (col_iter3, col_iter),
+                                     proj (col_item3, col_item)),
+                            col_iter,
+                            col_iter3),
                             alg_fun_pf_add_doc_str_int,
-                            att_res,
-                            attlist (att_item,
-                                     att_item1,
-                                     att_item2,
-                                     att_item3)),
-                   proj(att_iter, att_iter),
-                   proj(att_pos, att_pos),
-                   proj(att_item, att_res)),
+                            col_res,
+                            collist (col_item,
+                                     col_item1,
+                                     col_item2,
+                                     col_item3)),
+                   proj(col_iter, col_iter),
+                   proj(col_pos, col_pos),
+                   proj(col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5689,11 +5689,11 @@ PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
         .rel = project (fun_1to1 (
                             args[0].rel,
                             alg_fun_pf_del_doc,
-                            att_res,
-                            attlist (att_item)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
 
         .frag = args[0].frag };
 }
@@ -5710,11 +5710,11 @@ PFbui_pf_nid (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
         .rel = project (fun_1to1 (
                             args[0].rel,
                             alg_fun_pf_nid,
-                            att_res,
-                            attlist (att_item)),
-                        proj (att_iter, att_iter),
-                        proj (att_pos, att_pos),
-                        proj (att_item, att_res)),
+                            col_res,
+                            collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
 
         .frag = args[0].frag };
 }
@@ -5746,16 +5746,16 @@ PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_rename,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5771,11 +5771,11 @@ PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
     return (struct PFla_pair_t) {
         .rel = project ( fun_1to1 ( args[0].rel,
                                     alg_fun_upd_delete,
-                                    att_res,
-                                    attlist (att_item)),
-                         proj (att_iter, att_iter),
-                         proj (att_pos, att_pos),
-                         proj (att_item, att_res)),
+                                    col_res,
+                                    collist (col_item)),
+                         proj (col_iter, col_iter),
+                         proj (col_pos, col_pos),
+                         proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5794,30 +5794,30 @@ PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
 
 
     PFla_op_t *rev = project (rank (args[1].rel,
-                                    att_pos1,
+                                    col_pos1,
                                     PFord_refine (PFordering (),
-                                                  att_pos,
+                                                  col_pos,
                                                   DIR_DESC)),
-                              proj (att_iter, att_iter),
-                              proj (att_pos, att_pos1),
-                              proj (att_item, att_item));
+                              proj (col_iter, col_iter),
+                              proj (col_pos, col_pos1),
+                              proj (col_item, col_item));
 
     return (struct PFla_pair_t) {
         .rel = project (
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (rev,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_pos1, att_pos),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_pos1, col_pos),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_insert_into_as_first,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos1),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos1),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5837,16 +5837,16 @@ PFbui_upd_insert_into_as_last (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_insert_into_as_last,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5865,16 +5865,16 @@ PFbui_upd_insert_before (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_insert_before,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5889,30 +5889,30 @@ PFbui_upd_insert_after (const PFla_op_t *loop, bool ordering,
     (void) loop; (void) ordering;
 
     PFla_op_t *rev = project (rank (args[1].rel,
-                                    att_pos1,
+                                    col_pos1,
                                     PFord_refine (PFordering (),
-                                                  att_pos,
+                                                  col_pos,
                                                   DIR_DESC)),
-                              proj (att_iter, att_iter),
-                              proj (att_pos, att_pos1),
-                              proj (att_item, att_item));
+                              proj (col_iter, col_iter),
+                              proj (col_pos, col_pos1),
+                              proj (col_item, col_item));
 
     return (struct PFla_pair_t) {
         .rel = project (
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (rev,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_pos1, att_pos),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_pos1, col_pos),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_insert_after,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos1),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos1),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5930,16 +5930,16 @@ PFbui_upd_replace_value_att (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_replace_value_att,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5959,16 +5959,16 @@ PFbui_upd_replace_value (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_replace_value,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -5986,16 +5986,16 @@ PFbui_upd_replace_element (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_replace_element,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 
@@ -6013,16 +6013,16 @@ PFbui_upd_replace_node (const PFla_op_t *loop, bool ordering,
                    fun_1to1 (
                        eqjoin (args[0].rel,
                                project (args[1].rel,
-                                        proj (att_iter1, att_iter),
-                                        proj (att_item1, att_item)),
-                               att_iter,
-                               att_iter1),
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
                        alg_fun_upd_replace_node,
-                       att_res,
-                       attlist (att_item, att_item1)),
-                   proj (att_iter, att_iter),
-                   proj (att_pos, att_pos),
-                   proj (att_item, att_res)),
+                       col_res,
+                       collist (col_item, col_item1)),
+                   proj (col_iter, col_iter),
+                   proj (col_pos, col_pos),
+                   proj (col_item, col_res)),
         .frag = args[0].frag };
 }
 

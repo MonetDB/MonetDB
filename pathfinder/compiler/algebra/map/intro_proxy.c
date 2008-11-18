@@ -49,6 +49,9 @@
 #include "alg_dag.h"
 #include "algopt.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -83,8 +86,8 @@ remove_semijoin_worker (PFla_op_t *p)
         PFalg_proj_t *top   = PFmalloc (p->schema.count *
                                         sizeof (PFalg_proj_t)),
                      *right = PFmalloc (sizeof (PFalg_proj_t));
-        PFalg_att_t   used_cols = 0,
-                      new_col = p->sem.eqjoin.att2,
+        PFalg_col_t   used_cols = 0,
+                      new_col = p->sem.eqjoin.col2,
                       cur_col;
 
         /* fill the 'top' projection and collect all used columns
@@ -103,14 +106,14 @@ remove_semijoin_worker (PFla_op_t *p)
                           ~used_cols);
 
         /* project away all columns except for the join column */
-        right[0] = PFalg_proj (new_col, p->sem.eqjoin.att2);
+        right[0] = PFalg_proj (new_col, p->sem.eqjoin.col2);
 
         /* replace the semijoin */
         *p = *PFla_project_ (
                   PFla_eqjoin (L(p),
                                PFla_distinct (
                                    PFla_project_ (R(p), 1, right)),
-                               p->sem.eqjoin.att1,
+                               p->sem.eqjoin.col1,
                                new_col),
                   p->schema.count,
                   top);
@@ -174,8 +177,8 @@ static bool
 join_resolve_conflict_worker (PFla_op_t *p,
                               PFla_op_t *lp,
                               PFla_op_t *rp,
-                              PFalg_att_t latt,
-                              PFalg_att_t ratt,
+                              PFalg_col_t lcol,
+                              PFalg_col_t rcol,
                               PFarray_t *conflict_list,
                               PFarray_t *exit_refs)
 {
@@ -224,7 +227,7 @@ join_resolve_conflict_worker (PFla_op_t *p,
             proj_list[i] = PFalg_proj (rp->schema.items[i].name,
                                        rp->schema.items[i].name);
 
-        *p  = *PFla_eqjoin (lp, PFla_distinct (L(rp)), latt, ratt);
+        *p  = *PFla_eqjoin (lp, PFla_distinct (L(rp)), lcol, rcol);
 
         /* make sure the exit reference is adjusted
            before the node is overwritten */
@@ -250,8 +253,8 @@ join_resolve_conflict_worker (PFla_op_t *p,
 
         *p  = *PFla_eqjoin (lp,
                             PFla_project_ (L(rp), count, proj_list1),
-                            latt,
-                            ratt);
+                            lcol,
+                            rcol);
 
         /* make sure the exit reference is adjusted
            before the node is overwritten */
@@ -280,7 +283,7 @@ join_resolve_conflict_worker (PFla_op_t *p,
         *p  = *PFla_eqjoin (lp, PFla_project_ (
                                     PFla_distinct (L(L(rp))),
                                     1, proj_list),
-                            latt, ratt);
+                            lcol, rcol);
 
         /* make sure the exit references are adjusted
            before the node is overwritten */
@@ -354,8 +357,8 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
     p = proxy_entry;
 
     /* This check is more restrictive as required... */
-    if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
-        !PFprop_key_right (p->prop, p->sem.eqjoin.att2))
+    if (!PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
+        !PFprop_key_right (p->prop, p->sem.eqjoin.col2))
         return CONFLICT;
 
     /* the subdomain relationship ensures that we only look at the child
@@ -366,47 +369,47 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
        domain information in the newly constructed nodes. */
     if (PFprop_subdom (p->prop,
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2),
+                                         p->sem.eqjoin.col2),
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1)) &&
+                                        p->sem.eqjoin.col1)) &&
         PFprop_subdom (p->prop,
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1),
+                                        p->sem.eqjoin.col1),
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2))) {
+                                         p->sem.eqjoin.col2))) {
         consistent = join_resolve_conflict_worker (p, L(p), R(p),
-                                                   p->sem.eqjoin.att1,
-                                                   p->sem.eqjoin.att2,
+                                                   p->sem.eqjoin.col1,
+                                                   p->sem.eqjoin.col2,
                                                    conflict_list,
                                                    exit_refs);
         if (! consistent) return CONFLICT;
         consistent = join_resolve_conflict_worker (p, R(p), L(p),
-                                                   p->sem.eqjoin.att2,
-                                                   p->sem.eqjoin.att1,
+                                                   p->sem.eqjoin.col2,
+                                                   p->sem.eqjoin.col1,
                                                    conflict_list,
                                                    exit_refs);
         if (! consistent) return CONFLICT;
     }
     else if (PFprop_subdom (p->prop,
                             PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2),
+                                              p->sem.eqjoin.col2),
                             PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1))) {
+                                             p->sem.eqjoin.col1))) {
         consistent = join_resolve_conflict_worker (p, L(p), R(p),
-                                                   p->sem.eqjoin.att1,
-                                                   p->sem.eqjoin.att2,
+                                                   p->sem.eqjoin.col1,
+                                                   p->sem.eqjoin.col2,
                                                    conflict_list,
                                                    exit_refs);
         if (! consistent) return CONFLICT;
     }
     else if (PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1),
+                                             p->sem.eqjoin.col1),
                             PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2))) {
+                                              p->sem.eqjoin.col2))) {
         consistent = join_resolve_conflict_worker (p, R(p), L(p),
-                                                   p->sem.eqjoin.att2,
-                                                   p->sem.eqjoin.att1,
+                                                   p->sem.eqjoin.col2,
+                                                   p->sem.eqjoin.col1,
                                                    conflict_list,
                                                    exit_refs);
         if (! consistent) return CONFLICT;
@@ -460,12 +463,12 @@ semijoin_entry (PFla_op_t *p)
              lp->schema.count == 1 &&
              PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1),
+                                             p->sem.eqjoin.col1),
                             PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2)) &&
+                                              p->sem.eqjoin.col2)) &&
              PFprop_subdom (p->prop,
                             PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2),
+                                              p->sem.eqjoin.col2),
                             PFprop_dom (rp->prop,
                                         rp->sem.rowid.res)))
             ||
@@ -476,12 +479,12 @@ semijoin_entry (PFla_op_t *p)
              rp->schema.count == 1 &&
              PFprop_subdom (p->prop,
                             PFprop_dom_right (p->prop,
-                                              p->sem.eqjoin.att2),
+                                              p->sem.eqjoin.col2),
                             PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1)) &&
+                                             p->sem.eqjoin.col1)) &&
              PFprop_subdom (p->prop,
                             PFprop_dom_left (p->prop,
-                                             p->sem.eqjoin.att1),
+                                             p->sem.eqjoin.col1),
                             PFprop_dom (lp->prop,
                                         lp->sem.rowid.res))));
 }
@@ -543,23 +546,23 @@ only_eqjoin_refs_worker (PFla_op_t *p, PFla_op_t *exit,
     else if (p->kind == la_eqjoin &&
         ((PFprop_subdom (p->prop,
                          PFprop_dom_left (p->prop,
-                                          p->sem.eqjoin.att1),
+                                          p->sem.eqjoin.col1),
                          PFprop_dom (entry->prop,
-                                     entry->sem.eqjoin.att1)) &&
+                                     entry->sem.eqjoin.col1)) &&
           PFprop_subdom (p->prop,
                          PFprop_dom_right (p->prop,
-                                           p->sem.eqjoin.att2),
+                                           p->sem.eqjoin.col2),
                          PFprop_dom (exit->prop,
                                      exit->sem.rowid.res)))
          ||
          (PFprop_subdom (p->prop,
                          PFprop_dom_right (p->prop,
-                                           p->sem.eqjoin.att2),
+                                           p->sem.eqjoin.col2),
                          PFprop_dom (entry->prop,
-                                     entry->sem.eqjoin.att1)) &&
+                                     entry->sem.eqjoin.col1)) &&
           PFprop_subdom (p->prop,
                          PFprop_dom_left (p->prop,
-                                          p->sem.eqjoin.att1),
+                                          p->sem.eqjoin.col1),
                          PFprop_dom (exit->prop,
                                      exit->sem.rowid.res)))))
         cur_op = OP_JOIN;
@@ -721,7 +724,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                        PFarray_t *checked_nodes)
 {
     int leaf_ref;
-    PFalg_att_t num_col, num_col1, num_col2, join_att2,
+    PFalg_col_t num_col, num_col1, num_col2, join_col2,
                 num_col_alias, num_col_alias1, num_col_alias2,
                 used_cols = 0;
     unsigned int i, j;
@@ -774,7 +777,7 @@ modify_semijoin_proxy (PFla_op_t *root,
     assert (rp->kind == la_distinct);
 
     /* the name of the single distinct column */
-    join_att2 = rp->schema.items[0].name;
+    join_col2 = rp->schema.items[0].name;
     rp = L(rp);
 
     /* we have now checked the additional requirements (conflicts
@@ -817,7 +820,7 @@ modify_semijoin_proxy (PFla_op_t *root,
     /* We mark the right join column used.
        (It possibly has a different name as we discarded
         renaming projections (rproject)) */
-    used_cols = used_cols | join_att2;
+    used_cols = used_cols | join_col2;
 
     /* Create 4 new column names for the two additional rowid operators
        and their backmapping equi-joins */
@@ -832,7 +835,7 @@ modify_semijoin_proxy (PFla_op_t *root,
 
     /* Create a new alias for the mapping rowid operator if its
        name conflicts with the column name of the sub-DAG */
-    if (join_att2 == num_col) {
+    if (join_col2 == num_col) {
         num_col_alias = PFalg_ori_name (
                             PFalg_unq_name (num_col),
                             ~used_cols);
@@ -855,12 +858,12 @@ modify_semijoin_proxy (PFla_op_t *root,
        possible projections (lproject and rproject) by looking up
        the correct previous names (case 1 and 2). */
     for (i = 0; i < proxy_entry->schema.count; i++) {
-        PFalg_att_t entry_col = proxy_entry->schema.items[i].name;
+        PFalg_col_t entry_col = proxy_entry->schema.items[i].name;
         /* Be aware that this also creates the correct projection if
            the proxy entry operator is not an equi-join but a semi-join:
-           then proxy_entry->sem.eqjoin.att2 will never occur in the schema. */
-        if (entry_col == proxy_entry->sem.eqjoin.att1 ||
-            entry_col == proxy_entry->sem.eqjoin.att2)
+           then proxy_entry->sem.eqjoin.col2 will never occur in the schema. */
+        if (entry_col == proxy_entry->sem.eqjoin.col1 ||
+            entry_col == proxy_entry->sem.eqjoin.col2)
             proxy_proj[i] = PFalg_proj (entry_col, num_col);
         else if (lproject) {
             for (j = 0; j < lproject->sem.proj.count; j++)
@@ -934,7 +937,7 @@ modify_semijoin_proxy (PFla_op_t *root,
                                              3, left_proj),
                                          rp,
                                          num_col_alias,
-                                         join_att2),
+                                         join_col2),
                                      2, dist_proj)),
                              num_col1,
                              num_col_alias1),
@@ -1008,20 +1011,20 @@ proxy_nest_entry (PFla_op_t *p)
     if (p->kind != la_eqjoin)
         return false;
 
-    if (PFprop_key_left (p->prop, p->sem.eqjoin.att1) &&
+    if (PFprop_key_left (p->prop, p->sem.eqjoin.col1) &&
         PFprop_subdom (p->prop,
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2),
+                                         p->sem.eqjoin.col2),
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1)))
+                                        p->sem.eqjoin.col1)))
         return false;
 
-    if (PFprop_key_right (p->prop, p->sem.eqjoin.att2) &&
+    if (PFprop_key_right (p->prop, p->sem.eqjoin.col2) &&
         PFprop_subdom (p->prop,
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1),
+                                        p->sem.eqjoin.col1),
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2)))
+                                         p->sem.eqjoin.col2)))
         return false;
 
     return true;
@@ -1035,7 +1038,7 @@ static bool
 proxy_nest_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *cur;
-    dom_t att1_dom, att2_dom, super_dom;
+    dom_t col1_dom, col2_dom, super_dom;
 
     if (p->kind != la_rowid)
         return false;
@@ -1051,12 +1054,12 @@ proxy_nest_exit (PFla_op_t *p, PFla_op_t *entry)
 
     /* look up the newly generated domain and the join domains */
     super_dom = PFprop_dom (p->prop, p->sem.rowid.res);
-    att1_dom = PFprop_dom_left (entry->prop, entry->sem.eqjoin.att1);
-    att2_dom = PFprop_dom_right (entry->prop, entry->sem.eqjoin.att2);
+    col1_dom = PFprop_dom_left (entry->prop, entry->sem.eqjoin.col1);
+    col2_dom = PFprop_dom_right (entry->prop, entry->sem.eqjoin.col2);
 
     /* compare the equi-join and rowid domains on subdomain relationship */
-    return PFprop_subdom (p->prop, att1_dom, super_dom) &&
-           PFprop_subdom (p->prop, att2_dom, super_dom);
+    return PFprop_subdom (p->prop, col1_dom, super_dom) &&
+           PFprop_subdom (p->prop, col2_dom, super_dom);
 }
 
 /**
@@ -1154,7 +1157,7 @@ nest_proxy (PFla_op_t *root,
                  *new_num,
                  *pi_upper_right,
                  *res;
-    PFalg_att_t   new_num_col,
+    PFalg_col_t   new_num_col,
                   used_cols,
                   cur_col,
                   new_col;
@@ -1230,7 +1233,7 @@ nest_proxy (PFla_op_t *root,
        of used variables. This list is then used to avoid
        naming conflicts at the lower join and the above rowid
        operator. */
-    used_cols = proxy_entry->sem.eqjoin.att1;
+    used_cols = proxy_entry->sem.eqjoin.col1;
 
     for (i = 0; i < L(proxy_entry)->schema.count; i++)
         used_cols = used_cols | L(proxy_entry)->schema.items[i].name;
@@ -1259,15 +1262,15 @@ nest_proxy (PFla_op_t *root,
        of the upper join and adds a new column holding the content
        of the original rowid column. */
     for (i = 0; i < proxy_entry->schema.count; i++)
-        if (proxy_entry->sem.eqjoin.att1 !=
+        if (proxy_entry->sem.eqjoin.col1 !=
             proxy_entry->schema.items[i].name)
             top_proj[i] = PFalg_proj (
                               proxy_entry->schema.items[i].name,
                               proxy_entry->schema.items[i].name);
         else
             top_proj[i] = PFalg_proj (
-                              proxy_entry->sem.eqjoin.att1,
-                              proxy_entry->sem.eqjoin.att2);
+                              proxy_entry->sem.eqjoin.col1,
+                              proxy_entry->sem.eqjoin.col2);
 
     /* generate the two projection lists that map the input to
        the originally left (now upper) branch without name
@@ -1283,7 +1286,7 @@ nest_proxy (PFla_op_t *root,
             upper_right_proj[i] = PFalg_proj (cur_col, new_col);
         }
         else {
-            lower_left_proj[i] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
+            lower_left_proj[i] = PFalg_proj (proxy_entry->sem.eqjoin.col1,
                                              cur_col);
             upper_right_proj[i] = PFalg_proj (cur_col, new_num_col);
         }
@@ -1298,8 +1301,8 @@ nest_proxy (PFla_op_t *root,
                           proxy_exit->schema.count,
                           lower_left_proj),
                       R(proxy_entry),
-                      proxy_entry->sem.eqjoin.att1,
-                      proxy_entry->sem.eqjoin.att2),
+                      proxy_entry->sem.eqjoin.col1,
+                      proxy_entry->sem.eqjoin.col2),
                   new_num_col);
 
     /* create the projection that builds the input
@@ -1329,7 +1332,7 @@ nest_proxy (PFla_op_t *root,
                       upper_left_proj),
                   L(proxy_entry),
                   new_num_col,
-                  proxy_entry->sem.eqjoin.att1),
+                  proxy_entry->sem.eqjoin.col1),
               proxy_entry->schema.count,
               top_proj);
 
@@ -1383,7 +1386,7 @@ step_join_prepare (PFla_op_t *root)
 static bool
 step_join_entry (PFla_op_t *p)
 {
-    PFalg_att_t join_att;
+    PFalg_col_t join_col;
     PFla_op_t  *cur,
                *rowid  = NULL,
                *step   = NULL;
@@ -1393,74 +1396,74 @@ step_join_entry (PFla_op_t *p)
 
     /* check left side */
     cur = L(p);
-    join_att = p->sem.eqjoin.att1;
+    join_col = p->sem.eqjoin.col1;
     /* cope with projection */
     if (cur->kind == la_project) {
         for (unsigned int i = 0; i < cur->sem.proj.count; i++)
-            if (cur->sem.proj.items[i].new == join_att) {
-                join_att = cur->sem.proj.items[i].old;
+            if (cur->sem.proj.items[i].new == join_col) {
+                join_col = cur->sem.proj.items[i].old;
                 break;
             }
         cur = L(cur);
     }
 
     if (cur->kind == la_rowid &&
-        cur->sem.rowid.res == join_att)
+        cur->sem.rowid.res == join_col)
         rowid = cur;
     else if ((cur->kind == la_step || cur->kind == la_guide_step) &&
-        cur->sem.step.iter == join_att) {
+        cur->sem.step.iter == join_col) {
         cur = R(cur);
 
         /* cope with projection */
         if (cur->kind == la_project) {
             for (unsigned int i = 0; i < cur->sem.proj.count; i++)
-                if (cur->sem.proj.items[i].new == join_att) {
-                    join_att = cur->sem.proj.items[i].old;
+                if (cur->sem.proj.items[i].new == join_col) {
+                    join_col = cur->sem.proj.items[i].old;
                     break;
                 }
             cur = L(cur);
         }
 
         if (cur->kind == la_rowid &&
-            cur->sem.rowid.res == join_att)
+            cur->sem.rowid.res == join_col)
             step = cur;
     } else
         return false;
 
     /* check right side */
     cur = R(p);
-    join_att = p->sem.eqjoin.att2;
+    join_col = p->sem.eqjoin.col2;
     /* cope with projection */
     if (cur->kind == la_project) {
         for (unsigned int i = 0; i < cur->sem.proj.count; i++)
-            if (cur->sem.proj.items[i].new == join_att) {
-                join_att = cur->sem.proj.items[i].old;
+            if (cur->sem.proj.items[i].new == join_col) {
+                join_col = cur->sem.proj.items[i].old;
                 break;
             }
         cur = L(cur);
     }
 
     if (cur->kind == la_rowid &&
-        cur->sem.rowid.res == join_att &&
+        cur->sem.rowid.res == join_col &&
         !rowid)
         rowid = cur;
     else if ((cur->kind == la_step || cur->kind == la_guide_step) &&
-        cur->sem.step.iter == join_att &&
+        cur->sem.step.iter == join_col &&
         !step) {
         cur = R(cur);
 
         /* cope with projection */
         if (cur->kind == la_project) {
             for (unsigned int i = 0; i < cur->sem.proj.count; i++)
-                if (cur->sem.proj.items[i].new == join_att) {
-                    join_att = cur->sem.proj.items[i].old;
+                if (cur->sem.proj.items[i].new == join_col) {
+                    join_col = cur->sem.proj.items[i].old;
                     break;
                 }
             cur = L(cur);
         }
 
         if (cur->kind == la_rowid &&
-            cur->sem.rowid.res == join_att)
+            cur->sem.rowid.res == join_col)
             step = cur;
     } else
         return false;
@@ -1532,7 +1535,7 @@ intro_step_join (PFla_op_t *root,
                  *proj = NULL,
                  *cur;
     PFalg_proj_t *proj_list;
-    PFalg_att_t   join_att,
+    PFalg_col_t   join_col,
                   item_res,
                   item = 0,
                   item_proj = 0,
@@ -1560,25 +1563,25 @@ intro_step_join (PFla_op_t *root,
        the step resides and prepare the transformation */
     if (L(proxy_entry)->kind == la_step ||
         L(proxy_entry)->kind == la_guide_step) {
-        join_att = proxy_entry->sem.eqjoin.att2;
+        join_col = proxy_entry->sem.eqjoin.col2;
         step     = L(proxy_entry);
         cur      = R(proxy_entry);
     } else if (L(proxy_entry)->kind == la_project &&
                (LL(proxy_entry)->kind == la_step ||
                 LL(proxy_entry)->kind == la_guide_step)) {
-        join_att = proxy_entry->sem.eqjoin.att2;
+        join_col = proxy_entry->sem.eqjoin.col2;
         proj     =  L(proxy_entry);
         step     = LL(proxy_entry);
         cur      =  R(proxy_entry);
     } else if (R(proxy_entry)->kind == la_step ||
                R(proxy_entry)->kind == la_guide_step) {
-        join_att = proxy_entry->sem.eqjoin.att1;
+        join_col = proxy_entry->sem.eqjoin.col1;
         step     = R(proxy_entry);
         cur      = L(proxy_entry);
     } else if (R(proxy_entry)->kind == la_project &&
                (RL(proxy_entry)->kind == la_step ||
                 RL(proxy_entry)->kind == la_guide_step)) {
-        join_att = proxy_entry->sem.eqjoin.att1;
+        join_col = proxy_entry->sem.eqjoin.col1;
         proj     =  R(proxy_entry);
         step     = RL(proxy_entry);
         cur      =  L(proxy_entry);
@@ -1594,20 +1597,20 @@ intro_step_join (PFla_op_t *root,
        the second join argument). */
     if (cur->kind == la_project) {
         for (i = 0; i < cur->sem.proj.count; i++) {
-            if (cur->sem.proj.items[i].new == join_att) {
-                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
+            if (cur->sem.proj.items[i].new == join_col) {
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.col1,
                                                  cur->sem.proj.items[i].old);
-                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.col2,
                                                  cur->sem.proj.items[i].old);
             } else
                 proj_list[count++] = cur->sem.proj.items[i];
         }
     } else {
         for (i = 0; i < cur->schema.count; i++) {
-            if (cur->schema.items[i].name == join_att) {
-                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att1,
+            if (cur->schema.items[i].name == join_col) {
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.col1,
                                                  cur->schema.items[i].name);
-                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
+                proj_list[count++] = PFalg_proj (proxy_entry->sem.eqjoin.col2,
                                                  cur->schema.items[i].name);
             } else
                 proj_list[count++] = PFalg_proj (cur->schema.items[i].name,
@@ -1638,7 +1641,7 @@ intro_step_join (PFla_op_t *root,
     used_cols = used_cols | item;
 
     /* Create a new column name for the result of the new path step. */
-    item_res = PFalg_ori_name (PFalg_unq_name (att_item), ~used_cols);
+    item_res = PFalg_ori_name (PFalg_unq_name (col_item), ~used_cols);
 
     /* Get the column of the resulting item column of the step */
     if (proj) {
@@ -1724,20 +1727,20 @@ join_entry (PFla_op_t *p)
     if (p->kind != la_eqjoin)
         return false;
 
-    if (PFprop_key_left (p->prop, p->sem.eqjoin.att1) &&
+    if (PFprop_key_left (p->prop, p->sem.eqjoin.col1) &&
         PFprop_subdom (p->prop,
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2),
+                                         p->sem.eqjoin.col2),
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1)))
+                                        p->sem.eqjoin.col1)))
         return true;
 
-    if (PFprop_key_right (p->prop, p->sem.eqjoin.att2) &&
+    if (PFprop_key_right (p->prop, p->sem.eqjoin.col2) &&
         PFprop_subdom (p->prop,
                        PFprop_dom_left (p->prop,
-                                        p->sem.eqjoin.att1),
+                                        p->sem.eqjoin.col1),
                        PFprop_dom_right (p->prop,
-                                         p->sem.eqjoin.att2)))
+                                         p->sem.eqjoin.col2)))
         return true;
 
     return false;
@@ -1763,16 +1766,16 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
         dom = PFprop_dom (p->prop, p->sem.rowid.res);
     }
 
-    /* look up the super domain of the two join attributes */
-    if (PFprop_key_right (entry->prop, entry->sem.eqjoin.att2) &&
+    /* look up the super domain of the two join columns */
+    if (PFprop_key_right (entry->prop, entry->sem.eqjoin.col2) &&
         PFprop_subdom (entry->prop,
                        PFprop_dom_left (entry->prop,
-                                        entry->sem.eqjoin.att1),
+                                        entry->sem.eqjoin.col1),
                        PFprop_dom_right (entry->prop,
-                                         entry->sem.eqjoin.att2)))
-        entry_dom = PFprop_dom_right (entry->prop, entry->sem.eqjoin.att2);
+                                         entry->sem.eqjoin.col2)))
+        entry_dom = PFprop_dom_right (entry->prop, entry->sem.eqjoin.col2);
     else
-        entry_dom = PFprop_dom_left (entry->prop, entry->sem.eqjoin.att1);
+        entry_dom = PFprop_dom_left (entry->prop, entry->sem.eqjoin.col1);
 
     /* compare the equi-join and rownum/rowid domains
        on equality */
@@ -1849,11 +1852,11 @@ generate_join_proxy (PFla_op_t *root,
                      PFarray_t *exit_refs,
                      PFarray_t *checked_nodes)
 {
-    PFalg_att_t num_col, new_num_col, num_col_alias, new_num_col_alias,
+    PFalg_col_t num_col, new_num_col, num_col_alias, new_num_col_alias,
                 icols = 0, used_cols = 0;
     unsigned int i, j, k, count, dist_count, base_count;
-    PFalg_attlist_t req_cols, new_cols,
-                    trace_ori, trace_mod;
+    PFalg_collist_t *req_cols, *new_cols,
+                    *trace_ori, *trace_mod;
     PFla_op_t *num_op, *exit_op, *entry_op, *proxy_op, *base_op;
 
     /* over estimate the projection size */
@@ -1888,12 +1891,10 @@ generate_join_proxy (PFla_op_t *root,
     if (proxy_exit->kind == la_rownum)
         return false;
 
-    /* prepare the list of attributes that are input to the proxy operator */
-    trace_ori.count = proxy_entry->schema.count;
-    trace_ori.atts = PFmalloc (proxy_entry->schema.count *
-                               sizeof (PFalg_attlist_t));
+    /* prepare the list of columns that are input to the proxy operator */
+    trace_ori = PFalg_collist (proxy_entry->schema.count);
     for (i = 0; i < proxy_entry->schema.count; i++)
-        trace_ori.atts[i] = proxy_entry->schema.items[i].name;
+        cladd (trace_ori) = proxy_entry->schema.items[i].name;
 
     /* assign unique names to track the names inside the proxy body */
     trace_mod = PFprop_trace_names (proxy_entry, proxy_exit, trace_ori);
@@ -1915,7 +1916,7 @@ generate_join_proxy (PFla_op_t *root,
        list that reconstructs the schema of the proxy base except for
        the rowid column. */
     for (i = 0; i < proxy_exit->schema.count; i++) {
-        PFalg_att_t exit_col = proxy_exit->schema.items[i].name;
+        PFalg_col_t exit_col = proxy_exit->schema.items[i].name;
         used_cols = used_cols | exit_col;
 
         for (j = 0; j < base_count; j++)
@@ -1964,9 +1965,7 @@ generate_join_proxy (PFla_op_t *root,
     left_proj[1] = PFalg_proj (num_col_alias, num_col);
 
     /* store the new columns (an upper limit is the whole relation) */
-    new_cols.count = 0;
-    new_cols.atts = PFmalloc (proxy_entry->schema.count *
-                              sizeof (PFalg_attlist_t));
+    new_cols = PFalg_collist (proxy_entry->schema.count);
 
     /* reset counters for the projection lists */
     count = 0;
@@ -1975,25 +1974,25 @@ generate_join_proxy (PFla_op_t *root,
     /* Add the second join argument to the projection that replaces
        proxy entry join. This will ensure that there are no dangling
        references. */
-    above_proj[count++] = PFalg_proj (proxy_entry->sem.eqjoin.att2,
+    above_proj[count++] = PFalg_proj (proxy_entry->sem.eqjoin.col2,
                                       num_col);
 
     /* map the input to the output names.
        For new columns create new 'free' names */
     for (i = 0; i < proxy_entry->schema.count; i++) {
-        PFalg_att_t entry_col = proxy_entry->schema.items[i].name;
-        PFalg_att_t base_col = att_NULL;
+        PFalg_col_t entry_col = proxy_entry->schema.items[i].name;
+        PFalg_col_t base_col = col_NULL;
 
         /* discard the second join argument in the projection lists.
            (It is already added to the outermost projection -- above_proj --
             to keep the plan consistent.) */
-        if (entry_col == proxy_entry->sem.eqjoin.att2)
+        if (entry_col == proxy_entry->sem.eqjoin.col2)
             continue;
 
         /* look up the original name of the entry column */
-        for (j = 0; j < trace_ori.count; j++)
-            if (entry_col == trace_ori.atts[j])
-                base_col = trace_mod.atts[j];
+        for (j = 0; j < clsize (trace_ori); j++)
+            if (entry_col == clat (trace_ori, j))
+                base_col = clat (trace_mod, j);
 
         /* check for duplicate column names */
         for (k = 0; k < dist_count; k++)
@@ -2014,7 +2013,7 @@ generate_join_proxy (PFla_op_t *root,
             /* For each entry column we try to find the respective exit
                column by comparing the unique names. */
             for (j = 0; j < base_count; j++) {
-                PFalg_att_t exit_col = base_proj[j].new;
+                PFalg_col_t exit_col = base_proj[j].new;
                 /* check whether this is an unchanged input column */
                 if (base_col && base_col == exit_col) {
                     /* map output name to the same name as the input column */
@@ -2037,12 +2036,12 @@ generate_join_proxy (PFla_op_t *root,
             /* create names for the new columns and prepare icols list */
             if (j == base_count) {
                 /* create new column name */
-                PFalg_att_t new_exit_col = PFalg_ori_name (
+                PFalg_col_t new_exit_col = PFalg_ori_name (
                                                PFalg_unq_name (entry_col),
                                                ~used_cols);
                 used_cols = used_cols | new_exit_col;
                 /* add column to the list of new columns */
-                new_cols.atts[new_cols.count++] = new_exit_col;
+                cladd (new_cols) = new_exit_col;
                 /* map columns similar to the above mapping (for already
                    existing columns) */
                 entry_proj[dist_count] = PFalg_proj (new_exit_col, entry_col);
@@ -2106,16 +2105,12 @@ generate_join_proxy (PFla_op_t *root,
 
     /* All the columns that are required at the exit point are required columns
        for the proxy */
-    req_cols.atts = PFmalloc (PFprop_icols_count (base_op->prop) *
-                              sizeof (PFalg_attlist_t));
-    count = 0;
+    req_cols = PFalg_collist (PFprop_icols_count (base_op->prop));
     /* copy all 'required' columns */
     for (i = 0; i < base_op->schema.count; i++)
         if (num_col != base_op->schema.items[i].name &&
             PFprop_icol (base_op->prop, base_op->schema.items[i].name))
-            req_cols.atts[count++] = base_op->schema.items[i].name;
-    /* adjust the count */
-    req_cols.count = count;
+            cladd (req_cols) = base_op->schema.items[i].name;
 
     /* We are certain that this join is only a mapping join
        (see join_entry ()). Any input column (at the proxy base)
@@ -2145,8 +2140,8 @@ generate_join_proxy (PFla_op_t *root,
                        PFla_project_ (num_op, 2, left_proj),
                        PFla_project_ (PFla_eqjoin (
                                           L(proxy_entry), R(proxy_entry),
-                                          proxy_entry->sem.eqjoin.att1,
-                                          proxy_entry->sem.eqjoin.att2),
+                                          proxy_entry->sem.eqjoin.col1,
+                                          proxy_entry->sem.eqjoin.col2),
                                       dist_count,
                                       entry_proj),
                        new_num_col_alias,
@@ -2298,49 +2293,49 @@ proxy_unnest_exit (PFla_op_t *proxy, PFla_op_t *entry)
  * in the first three arguments:
  * - res is set to null in req_col_names
  * - res is removed from new_col_names
- * - att1 and att2 are added to new_col_names if
+ * - col1 and col2 are added to new_col_names if
  *   they are not already present.
  */
 static void
-collect_mappings_worker (PFalg_att_t res,
-                         PFalg_attlist_t refs,
+collect_mappings_worker (PFalg_col_t res,
+                         PFalg_collist_t *refs,
                          unsigned int req_count,
                          PFalg_proj_t *req_col_names,
                          PFarray_t *new_col_names)
 {
-    PFalg_att_t col;
+    PFalg_col_t col;
     unsigned int i, j;
-    bool att_present;
+    bool col_present;
 
     /* reset name mapping of the result column
        in the list of required columns */
     for (i = 0; i < req_count; i++)
         if (res == req_col_names[i].old)
-            req_col_names[i].old = att_NULL;
+            req_col_names[i].old = col_NULL;
 
     /* Remove result column */
     for (i = 0; i < PFarray_last (new_col_names); i++) {
-        col = *(PFalg_att_t *) PFarray_at (new_col_names, i);
+        col = *(PFalg_col_t *) PFarray_at (new_col_names, i);
         if (col == res) {
-            *(PFalg_att_t *) PFarray_at (new_col_names, i)
-                = *(PFalg_att_t *) PFarray_top (new_col_names);
+            *(PFalg_col_t *) PFarray_at (new_col_names, i)
+                = *(PFalg_col_t *) PFarray_top (new_col_names);
             PFarray_del (new_col_names);
             i--;
         }
     }
 
     /* Add columns in refs if they are not already an available column. */
-    for (i = 0; i < refs.count; i++) {
-        att_present = false;
+    for (i = 0; i < clsize (refs); i++) {
+        col_present = false;
         for (j = 0; j < PFarray_last (new_col_names); j++) {
-            col = *(PFalg_att_t *) PFarray_at (new_col_names, j);
-            if (col == refs.atts[i]) {
-                att_present = true;
+            col = *(PFalg_col_t *) PFarray_at (new_col_names, j);
+            if (col == clat (refs, i)) {
+                col_present = true;
                 break;
             }
         }
-        if (!att_present)
-            *(PFalg_att_t *) PFarray_add (new_col_names) = refs.atts[i];
+        if (!col_present)
+            *(PFalg_col_t *) PFarray_add (new_col_names) = clat (refs, i);
     }
 }
 
@@ -2360,7 +2355,7 @@ collect_mappings (PFla_op_t *p,
         switch (p->kind) {
             case la_attach:
                 collect_mappings_worker (p->sem.attach.res,
-                                         PFalg_attlist_ (0, NULL),
+                                         PFalg_collist_ (0, NULL),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2368,7 +2363,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_project:
             {
-                PFalg_att_t col;
+                PFalg_col_t col;
                 unsigned int i, j;
 
                 for (i = 0; i < req_count; i++) {
@@ -2380,10 +2375,10 @@ collect_mappings (PFla_op_t *p,
                         }
                 }
                 for (i = 0; i < PFarray_last (new_col_names); i++) {
-                    col = *(PFalg_att_t *) PFarray_at (new_col_names, i);
+                    col = *(PFalg_col_t *) PFarray_at (new_col_names, i);
                     for (j = 0; j < p->sem.proj.count; j++)
                         if (col == p->sem.proj.items[j].new) {
-                            *(PFalg_att_t *) PFarray_at (new_col_names, i) =
+                            *(PFalg_col_t *) PFarray_at (new_col_names, i) =
                                 p->sem.proj.items[j].old;
                             break;
                         }
@@ -2403,9 +2398,9 @@ collect_mappings (PFla_op_t *p,
             case la_bool_and:
             case la_bool_or:
                 collect_mappings_worker (p->sem.binary.res,
-                                         PFalg_attlist (
-                                             p->sem.binary.att1,
-                                             p->sem.binary.att2),
+                                         collist (
+                                             p->sem.binary.col1,
+                                             p->sem.binary.col2),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2413,7 +2408,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_bool_not:
                 collect_mappings_worker (p->sem.unary.res,
-                                         PFalg_attlist (p->sem.unary.att),
+                                         collist (p->sem.unary.col),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2421,7 +2416,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_cast:
                 collect_mappings_worker (p->sem.type.res,
-                                         PFalg_attlist (p->sem.type.att),
+                                         collist (p->sem.type.col),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2429,7 +2424,7 @@ collect_mappings (PFla_op_t *p,
 
             case la_doc_access:
                 collect_mappings_worker (p->sem.doc_access.res,
-                                         PFalg_attlist (p->sem.doc_access.att),
+                                         collist (p->sem.doc_access.col),
                                          req_count,
                                          req_col_names,
                                          new_col_names);
@@ -2553,10 +2548,10 @@ unnest_proxy (PFla_op_t *root,
     PFalg_proj_t *req_col_names;
     PFarray_t    *new_col_names;
 
-    PFalg_att_t cur_col,
+    PFalg_col_t cur_col,
                 map_col_old, map_col_new,
                 num_col1, num_col2;
-    PFalg_att_t icols, used_cols;
+    PFalg_col_t icols, used_cols;
 
     unsigned int i, j,
                  req_count, top1_proj_count;
@@ -2590,13 +2585,13 @@ unnest_proxy (PFla_op_t *root,
     /* Ensure that the 'upper' proxy is not completely
        independent. (Otherwise the mvd optimization will
        rewrite it.) */
-    if (!proxy1->sem.proxy.req_cols.count)
+    if (!clsize (proxy1->sem.proxy.req_cols))
         return false;
 
     /* collect all required columns of the entry proxy */
     icols = 0;
-    for (i = 0; i < proxy1->sem.proxy.req_cols.count; i++)
-        icols = icols | proxy1->sem.proxy.req_cols.atts[i];
+    for (i = 0; i < clsize (proxy1->sem.proxy.req_cols); i++)
+        icols = icols | clat (proxy1->sem.proxy.req_cols, i);
 
     /* Start icols property inference with the collected 'required' columns */
     PFprop_infer_icol_specific (proxy1->sem.proxy.base1, icols);
@@ -2606,8 +2601,8 @@ unnest_proxy (PFla_op_t *root,
     for (i = 0; i < proxy2->schema.count; i++) {
         cur_col = proxy2->schema.items[i].name;
         if (PFprop_icol (proxy2->prop, cur_col))
-            for (j = 0; j < proxy2->sem.proxy.new_cols.count; j++)
-                if (cur_col == proxy2->sem.proxy.new_cols.atts[j])
+            for (j = 0; j < clsize (proxy2->sem.proxy.new_cols); j++)
+                if (cur_col == clat (proxy2->sem.proxy.new_cols, j))
                     return false;
     }
 
@@ -2629,15 +2624,15 @@ unnest_proxy (PFla_op_t *root,
             p = L(p);
     }
 
-    /* generate an initial list of required attribute names */
-    req_count     = proxy1->sem.proxy.req_cols.count;
+    /* generate an initial list of required column names */
+    req_count     = clsize (proxy1->sem.proxy.req_cols);
     req_col_names = PFmalloc (req_count *
                               sizeof (PFalg_proj_t));
     for (unsigned int i = 0; i < req_count; i++) {
-        cur_col = proxy1->sem.proxy.req_cols.atts[i];
+        cur_col = clat (proxy1->sem.proxy.req_cols, i);
         req_col_names[i] = PFalg_proj (cur_col, cur_col);
     }
-    new_col_names = PFarray (sizeof (PFalg_att_t), 10);
+    new_col_names = PFarray (sizeof (PFalg_col_t), 10);
 
     /* In req_col_names we store the mappings of the required column
        names (collect_mappings updates the columns names as side effect)
@@ -2655,7 +2650,7 @@ unnest_proxy (PFla_op_t *root,
             return false;
 
     /* dummy initialization */
-    map_col_new = map_col_old = att_NULL;
+    map_col_new = map_col_old = col_NULL;
 
     /* Ensure that at least one of the required columns is not used
        in the in-between proxy, such we can misuse it to transport
@@ -2663,7 +2658,7 @@ unnest_proxy (PFla_op_t *root,
     for (i = 0; i < req_count; i++) {
         cur_col = req_col_names[i].old;
         for (j = 0; j < PFarray_last (new_col_names); j++)
-            if (cur_col == *(PFalg_att_t *) PFarray_at (new_col_names, j))
+            if (cur_col == *(PFalg_col_t *) PFarray_at (new_col_names, j))
                 break;
         if (j == PFarray_last (new_col_names)) {
             map_col_new = req_col_names[i].new;
@@ -2692,7 +2687,7 @@ unnest_proxy (PFla_op_t *root,
                            sizeof (PFalg_proj_t));
     /* #new columns + join column + 1 required column is
        an upper bound for the size of the top1 projection */
-    top1_proj  = PFmalloc ((proxy1->sem.proxy.new_cols.count + 2) *
+    top1_proj  = PFmalloc ((clsize (proxy1->sem.proxy.new_cols) + 2) *
                            sizeof (PFalg_proj_t));
     base1_proj = PFmalloc (proxy1_num->schema.count *
                            sizeof (PFalg_proj_t));
@@ -2705,8 +2700,8 @@ unnest_proxy (PFla_op_t *root,
 
     /* collect all the used column names*/
     used_cols = 0;
-    for (i = 0; i < proxy1->sem.proxy.new_cols.count; i++)
-        used_cols = used_cols | proxy1->sem.proxy.new_cols.atts[i];
+    for (i = 0; i < clsize (proxy1->sem.proxy.new_cols); i++)
+        used_cols = used_cols | clat (proxy1->sem.proxy.new_cols, i);
     for (i = 0; i < proxy1_base->schema.count; i++)
         used_cols = used_cols | proxy1_base->schema.items[i].name;
     for (i = 0; i < proxy2_base->schema.count; i++)
@@ -2714,9 +2709,9 @@ unnest_proxy (PFla_op_t *root,
 
     /* Generate two new column names from the list
        of 'remaining' column names. */
-    num_col1 = PFalg_ori_name (PFalg_unq_name (att_iter), ~used_cols);
+    num_col1 = PFalg_ori_name (PFalg_unq_name (col_iter), ~used_cols);
     used_cols = used_cols | num_col1;
-    num_col2 = PFalg_ori_name (PFalg_unq_name (att_iter), ~used_cols);
+    num_col2 = PFalg_ori_name (PFalg_unq_name (col_iter), ~used_cols);
     /* used_cols = used_cols | num_col2; */
 
     /* create overall rowid operator */
@@ -2764,7 +2759,7 @@ unnest_proxy (PFla_op_t *root,
         cur_col = L(proxy2)->sem.proj.items[i].new;
         if (cur_col == map_col_old)
             top2_proj[i] = PFalg_proj (map_col_old,
-                                       L(L(proxy2))->sem.eqjoin.att1);
+                                       L(L(proxy2))->sem.eqjoin.col1);
         else
             top2_proj[i] = L(proxy2)->sem.proj.items[i];
     }
@@ -2792,14 +2787,14 @@ unnest_proxy (PFla_op_t *root,
         if (map_col_new == cur_col)
             top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
         else
-            for (j = 0; j < proxy1->sem.proxy.new_cols.count; j++)
-                if (proxy1->sem.proxy.new_cols.atts[j] == cur_col) {
+            for (j = 0; j < clsize (proxy1->sem.proxy.new_cols); j++)
+                if (clat (proxy1->sem.proxy.new_cols, j) == cur_col) {
                     top1_proj[top1_proj_count++] = L(proxy1)->sem.proj.items[i];
                     break;
                 }
     }
     top1_proj[top1_proj_count++] = PFalg_proj (num_col1,
-                                     L(L(proxy1))->sem.eqjoin.att1);
+                                     L(L(proxy1))->sem.eqjoin.col1);
 
     /* prepare the projection replacing the root of the pattern */
     for (i = 0; i < proxy1->schema.count; i++) {

@@ -2,8 +2,8 @@
  * @file
  *
  * Map relational algebra expression DAG with
- * bit-encoded attribute names into an equivalent
- * one with unique attribute names.
+ * bit-encoded column names into an equivalent
+ * one with unique column names.
  *
  * Copyright Notice:
  * -----------------
@@ -44,15 +44,18 @@
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
 #define SEEN(p) ((p)->bit_dag)
 
-/* lookup subtree with unique attribute names */
+/* lookup subtree with unique column names */
 #define U(p) (lookup (map, (p)))
 /* shortcut for function PFprop_unq_name */
-#define UNAME(p,att) (PFprop_unq_name ((p)->prop,(att)))
+#define UNAME(p,col) (PFprop_unq_name ((p)->prop,(col)))
 
 struct ori_unq_map {
     PFla_op_t *ori;
@@ -61,7 +64,7 @@ struct ori_unq_map {
 typedef struct ori_unq_map ori_unq_map;
 
 /* worker for macro 'U(p)': based on an original subtree
-   looks up the corresponding subtree with unique attribute names */
+   looks up the corresponding subtree with unique column names */
 static PFla_op_t *
 lookup (PFarray_t *map, PFla_op_t *ori)
 {
@@ -77,26 +80,26 @@ lookup (PFarray_t *map, PFla_op_t *ori)
 /* worker for unary operators */
 static PFla_op_t *
 unary_op (PFla_op_t *(*OP) (const PFla_op_t *,
-                            PFalg_att_t, PFalg_att_t),
+                            PFalg_col_t, PFalg_col_t),
           PFla_op_t *p,
           PFarray_t *map)
 {
     return OP (U(L(p)),
                UNAME(p, p->sem.unary.res),
-               UNAME(p, p->sem.unary.att));
+               UNAME(p, p->sem.unary.col));
 }
 
 /* worker for binary operators */
 static PFla_op_t *
-binary_op (PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
-                             PFalg_att_t, PFalg_att_t),
+binary_op (PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
+                             PFalg_col_t, PFalg_col_t),
            PFla_op_t *p,
            PFarray_t *map)
 {
     return OP (U(L(p)),
                UNAME(p, p->sem.binary.res),
-               UNAME(p, p->sem.binary.att1),
-               UNAME(p, p->sem.binary.att2));
+               UNAME(p, p->sem.binary.col1),
+               UNAME(p, p->sem.binary.col2));
 }
 
 /* worker for PFmap_unq_names */
@@ -127,13 +130,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_serialize_rel:
         {
-            PFalg_attlist_t items;
-            items.count = p->sem.ser_rel.items.count;
-            items.atts  = PFmalloc (items.count *
-                                    sizeof (PFalg_attlist_t));
-
-            for (unsigned int i = 0; i < items.count; i++)
-                items.atts[i] = UNAME(p, p->sem.ser_rel.items.atts[i]);
+            PFalg_collist_t *items = PFalg_collist_copy (p->sem.ser_rel.items);
+            for (unsigned int i = 0; i < clsize (items); i++)
+                clat (items, i) = UNAME(p, clat (items, i));
 
             res = serialize_rel (U(L(p)),
                                  UNAME(p, p->sem.ser_rel.iter),
@@ -143,15 +142,12 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_lit_tbl:
         {
-            PFalg_attlist_t attlist;
-            attlist.count = p->schema.count;
-            attlist.atts  = PFmalloc (attlist.count *
-                                      sizeof (PFalg_attlist_t));
+            PFalg_collist_t *collist = PFalg_collist (p->schema.count);
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                attlist.atts[i] = UNAME(p, p->schema.items[i].name);
+                cladd (collist) = UNAME(p, p->schema.items[i].name);
 
-            res = PFla_lit_tbl_ (attlist,
+            res = PFla_lit_tbl_ (collist,
                                  p->sem.lit_tbl.count,
                                  p->sem.lit_tbl.tuples);
         }   break;
@@ -188,7 +184,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
             res = PFla_ref_tbl_ (p->sem.ref_tbl.name,
                                  schema,
-                                 p->sem.ref_tbl.tatts,
+                                 p->sem.ref_tbl.tcols,
                                  p->sem.ref_tbl.keys);
         }   break;
 
@@ -205,7 +201,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                that all columns are renamed. */
             PFla_op_t *left, *right;
             PFalg_proj_t *projlist1, *projlist2;
-            PFalg_att_t ori, unq;
+            PFalg_col_t ori, unq;
             unsigned int count1, count2;
 
             left = U(L(p));
@@ -269,10 +265,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             PFalg_proj_t *projlist,
                          *projlist1,
                          *projlist2;
-            PFalg_att_t   ori,
+            PFalg_col_t   ori,
                           unq,
-                          att1  = UNAME (p, p->sem.eqjoin.att1),
-                          att2  = UNAME (p, p->sem.eqjoin.att2),
+                          col1  = UNAME (p, p->sem.eqjoin.col1),
+                          col2  = UNAME (p, p->sem.eqjoin.col2),
                           new_unq;
             unsigned int  count;
 
@@ -280,10 +276,10 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             projlist1 = PFmalloc (left->schema.count * sizeof (PFalg_proj_t));
             projlist2 = PFmalloc (right->schema.count * sizeof (PFalg_proj_t));
 
-            assert (att1 == att2);
-            /* Replace att2 by a new column name to ensure that
+            assert (col1 == col2);
+            /* Replace col2 by a new column name to ensure that
                the join columns use a different column name. */
-            att2 = PFalg_new_name (att2);
+            col2 = PFalg_new_name (col2);
             
             for (unsigned int i = 0; i < left->schema.count; i++) {
                 unq = left->schema.items[i].name;
@@ -297,24 +293,24 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                 ori     = PFprop_ori_name_right (p->prop, unq);
                 assert (ori);
                 new_unq = UNAME(p, ori);
-                if (new_unq == att1)
-                    projlist2[i] = proj (att2, unq);
+                if (new_unq == col1)
+                    projlist2[i] = proj (col2, unq);
                 else
                     projlist2[i] = proj (new_unq, unq);
             }
 
             res = eqjoin (PFla_project_ (left, left->schema.count, projlist1),
                           PFla_project_ (right, right->schema.count, projlist2),
-                          att1,
-                          att2);
+                          col1,
+                          col2);
 
-            /* Make sure that the new column name att2 is not visible.
+            /* Make sure that the new column name col2 is not visible.
                (Otherwise some mapping might fail due to the missing
                 properties collected for that column.) */
             count = 0;
             for (unsigned int i = 0; i < res->schema.count; i++) {
                 unq = res->schema.items[i].name;
-                if (unq != att2)
+                if (unq != col2)
                     projlist[count++] = proj (unq, unq);
             }
             res = PFla_project_ (res, count, projlist);
@@ -324,8 +320,8 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             /* Transform semi-join operations into equi-joins
                as these semi-joins might be superfluous as well. */
             if (PFprop_set (p->prop)) {
-                PFalg_att_t att1_unq,
-                            att2_unq;
+                PFalg_col_t col1_unq,
+                            col2_unq;
 
                 /* we have to make sure that only the columns from
                    the left side are visible */
@@ -338,18 +334,18 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                     projlist[i] = proj (left->schema.items[i].name,
                                         left->schema.items[i].name);
                 
-                att1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.att1);
-                att2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.att2);
+                col1_unq = PFprop_unq_name_left (p->prop, p->sem.eqjoin.col1);
+                col2_unq = PFprop_unq_name_right (p->prop, p->sem.eqjoin.col2);
                 
                 res = PFla_project_ (
-                          PFla_eqjoin (left, U(R(p)), att1_unq, att2_unq),
+                          PFla_eqjoin (left, U(R(p)), col1_unq, col2_unq),
                           left->schema.count,
                           projlist);
             } else {
                 res = semijoin (U(L(p)), U(R(p)),
-                                UNAME (p, p->sem.eqjoin.att1),
+                                UNAME (p, p->sem.eqjoin.col1),
                                 PFprop_unq_name_right (p->prop,
-                                                       p->sem.eqjoin.att2));
+                                                       p->sem.eqjoin.col2));
             }
             break;
 
@@ -358,7 +354,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             PFla_op_t *left;
             PFalg_proj_t *projlist = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
-            PFalg_att_t unq;
+            PFalg_col_t unq;
             unsigned int count = 0;
 
             left = U(L(p));
@@ -384,7 +380,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         }   break;
 
         case la_select:
-            res = select_ (U(L(p)), UNAME(p, p->sem.select.att));
+            res = select_ (U(L(p)), UNAME(p, p->sem.select.col));
             break;
 
         case la_pos_select:
@@ -416,7 +412,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                name (names matching in pairs again). */
             PFla_op_t *left, *right;
             PFalg_proj_t *projlist1, *projlist2;
-            PFalg_att_t ori, unq;
+            PFalg_col_t ori, unq;
 
             projlist1 = PFmalloc (p->schema.count *
                                   sizeof (PFalg_proj_t));
@@ -449,14 +445,9 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_fun_1to1:
         {
-            PFalg_attlist_t refs;
-
-            refs.count = p->sem.fun_1to1.refs.count;
-            refs.atts  = PFmalloc (refs.count *
-                                   sizeof (*(refs.atts)));
-
-            for (unsigned int i = 0; i < refs.count; i++)
-                refs.atts[i] = UNAME(p, p->sem.fun_1to1.refs.atts[i]);
+            PFalg_collist_t *refs = PFalg_collist_copy (p->sem.fun_1to1.refs);
+            for (unsigned int i = 0; i < clsize (refs); i++)
+                clat (refs, i) = UNAME(p, clat (refs, i));
 
             res = fun_1to1 (U(L(p)),
                             p->sem.fun_1to1.kind,
@@ -490,15 +481,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_sum:
             res = aggr (p->kind, U(L(p)),
                         UNAME(p, p->sem.aggr.res),
-                        /* attribute att is stored only in child operator */
-                        UNAME(L(p), p->sem.aggr.att),
-                        p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
+                        /* column col is stored only in child operator */
+                        UNAME(L(p), p->sem.aggr.col),
+                        p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_count:
             res = count (U(L(p)),
                          UNAME(p, p->sem.aggr.res),
-                         p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
+                         p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_rownum:
@@ -539,37 +530,37 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_type:
             res = type (U(L(p)),
                         UNAME(p, p->sem.type.res),
-                        UNAME(p, p->sem.type.att),
+                        UNAME(p, p->sem.type.col),
                         p->sem.type.ty);
             break;
 
         case la_type_assert:
             res = type_assert_pos (U(L(p)),
-                                   UNAME(p, p->sem.type.att),
+                                   UNAME(p, p->sem.type.col),
                                    p->sem.type.ty);
             break;
 
         case la_cast:
             res = cast (U(L(p)),
                         UNAME(p, p->sem.type.res),
-                        UNAME(p, p->sem.type.att),
+                        UNAME(p, p->sem.type.col),
                         p->sem.type.ty);
             break;
 
         case la_seqty1:
             res = seqty1 (U(L(p)),
                           UNAME(p, p->sem.aggr.res),
-                          /* attribute att is stored only in child operator */
-                          UNAME(L(p), p->sem.aggr.att),
-                          p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
+                          /* column col is stored only in child operator */
+                          UNAME(L(p), p->sem.aggr.col),
+                          p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_all:
             res = all (U(L(p)),
                        UNAME(p, p->sem.aggr.res),
-                       /* attribute att is stored only in child operator */
-                       UNAME(L(p), p->sem.aggr.att),
-                       p->sem.aggr.part?UNAME(p, p->sem.aggr.part):att_NULL);
+                       /* column col is stored only in child operator */
+                       UNAME(L(p), p->sem.aggr.col),
+                       p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_step:
@@ -577,7 +568,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         p->sem.step.spec,
                         p->sem.step.level,
                         UNAME(p, p->sem.step.iter),
-                        /* unique name of input attribute item is
+                        /* unique name of input column item is
                            stored in the child operator only */
                         UNAME(R(p), p->sem.step.item),
                         UNAME(p, p->sem.step.item_res));
@@ -598,7 +589,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                               p->sem.step.guides,
                               p->sem.step.level,
                               UNAME(p, p->sem.step.iter),
-                              /* unique name of input attribute item is
+                              /* unique name of input column item is
                                  stored in the child operator only */
                               UNAME(R(p), p->sem.step.item),
                               UNAME(p, p->sem.step.item_res));
@@ -625,14 +616,14 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_doc_tbl:
             res = doc_tbl (U(L(p)),
                            UNAME(p, p->sem.doc_tbl.res),
-                           UNAME(p, p->sem.doc_tbl.att),
+                           UNAME(p, p->sem.doc_tbl.col),
                            p->sem.doc_tbl.kind);
             break;
 
         case la_doc_access:
             res = doc_access (U(L(p)), U(R(p)),
                               UNAME(p, p->sem.doc_access.res),
-                              UNAME(p, p->sem.doc_access.att),
+                              UNAME(p, p->sem.doc_access.col),
                               p->sem.doc_access.doc_col);
             break;
 
@@ -694,7 +685,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_merge_adjacent:
             res = merge_adjacent (
                       U(L(p)), U(R(p)),
-                      /* unique name of input attributes iter_in, pos_in,
+                      /* unique name of input columns iter_in, pos_in,
                          and item_in are stored in the child operator only */
                       UNAME(R(p), p->sem.merge_adjacent.iter_in),
                       UNAME(R(p), p->sem.merge_adjacent.pos_in),
@@ -726,15 +717,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
 
         case la_error:
             res = PFla_error_ (U(L(p)),
-                               UNAME(L(p), p->sem.err.att),
-                               PFprop_type_of (p, p->sem.err.att));
+                               UNAME(L(p), p->sem.err.col),
+                               PFprop_type_of (p, p->sem.err.col));
             break;
 
         case la_cond_err:
             res = cond_err (U(L(p)), U(R(p)),
-                            /* unique name of input attribute att is
+                            /* unique name of input column col is
                                stored in the child operator only */
-                            UNAME(R(p), p->sem.err.att),
+                            UNAME(R(p), p->sem.err.col),
                             p->sem.err.str);
             break;
 
@@ -902,7 +893,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_string_join:
             res = fn_string_join (
                       U(L(p)), U(R(p)),
-                      /* unique name of input attributes iter, pos, item,
+                      /* unique name of input columns iter, pos, item,
                          iter_seq, and item_sep are stored in the child
                          operators only */
                       UNAME(L(p), p->sem.string_join.iter),

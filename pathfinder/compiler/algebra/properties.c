@@ -68,12 +68,12 @@ PFprop (void)
     /* initialize set property */
     ret->set      = false;
 
-    /* initialize icols attribute list */
+    /* initialize icols column list */
     ret->icols   = empty_list;
     ret->l_icols = empty_list;
     ret->r_icols = empty_list;
 
-    /* initialize key attribute list */
+    /* initialize key column list */
     ret->keys   = NULL;
     ret->l_keys = NULL;
     ret->r_keys = NULL;

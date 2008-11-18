@@ -48,6 +48,9 @@
 #include "ordering.h"
 #include "properties.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* filter out dummy error columns */
 #define ERR_TYPE_MASK(t)  ((t) & ~aat_error)
 
@@ -64,7 +67,7 @@
  * check for a column @a a in op @a p.
  */
 static bool
-check_col (const PFpa_op_t *p, PFalg_att_t a)
+check_col (const PFpa_op_t *p, PFalg_col_t a)
 {
     assert (p);
 
@@ -79,7 +82,7 @@ check_col (const PFpa_op_t *p, PFalg_att_t a)
  * check for the type of column @a a in op @a p.
  */
 static PFalg_simple_type_t
-type_of (const PFpa_op_t *p, PFalg_att_t a)
+type_of (const PFpa_op_t *p, PFalg_col_t a)
 {
     assert (p);
 
@@ -165,7 +168,7 @@ wire2 (enum PFpa_op_kind_t kind, const PFpa_op_t *n1, const PFpa_op_t *n2)
  * the expression root.
  */
 PFpa_op_t *
-PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item)
+PFpa_serialize (const PFpa_op_t *alg, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_serialize, alg);
 
@@ -178,13 +181,13 @@ PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item)
 
 /**
  * Construct an algebra node representing a literal table, given
- * an attribute list and a list of tuples.
+ * an column list and a list of tuples.
  *
  * @b Orderings
  *
  * We currently derive orderings only for tables that contain
  * exactly one tuple.  These tables are trivially ordered by all
- * permutations of the table's attributes.  (No need to generate
+ * permutations of the table's columns.  (No need to generate
  * all @em subsets, as the permutations imply their prefixes and
  * thus each possible ordering.)
  *
@@ -193,15 +196,15 @@ PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item)
  * Literal tables all have a cost value of 1.
  *
  *
- * @param attlist Attribute list of the literal table. (Most easily
- *                constructed using #PFalg_attlist() or its abbreviated
- *                macro #attlist().)
+ * @param collist Attribute list of the literal table. (Most easily
+ *                constructed using #PFalg_collist_worker() or its
+ *                abbreviated macro #collist().)
  * @param count  Number of tuples that follow
  * @param tuples Tuples of this literal table, as #PFalg_tuple_t.
  *               This array must be exactly @a count items long.
  */
 PFpa_op_t *
-PFpa_lit_tbl (PFalg_attlist_t attlist,
+PFpa_lit_tbl (PFalg_collist_t *collist,
               unsigned int count, PFalg_tuple_t *tuples)
 {
     PFpa_op_t    *ret;      /* return value we are building */
@@ -222,12 +225,12 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
 
     /* set its schema */
     ret->schema.items
-        = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
-    for (i = 0; i < attlist.count; i++) {
-        ret->schema.items[i].name = attlist.atts[i];
+        = PFmalloc (clsize (collist) * sizeof (*(ret->schema.items)));
+    for (i = 0; i < clsize (collist); i++) {
+        ret->schema.items[i].name = clat (collist, i);
         ret->schema.items[i].type = 0;
     }
-    ret->schema.count = attlist.count;
+    ret->schema.count = clsize (collist);
 
     /* pick all the given tuples from the variable argument list,
      * after allocating memory for them. */
@@ -248,15 +251,15 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
     /* ---- literal table orderings ---- */
     /*
      * If a literal table contains exactly one row, it is trivially
-     * sorted on all permutations of its attributes. (Note that this
+     * sorted on all permutations of its columns. (Note that this
      * includes all sublists thereof.)
      */
     if (count == 1) {
 
         PFord_ordering_t ord = PFordering ();
 
-        for (unsigned int i = 0; i < attlist.count; i++)
-            ord = PFord_refine (ord, attlist.atts[i], DIR_ASC);
+        for (unsigned int i = 0; i < clsize (collist); i++)
+            ord = PFord_refine (ord, clat (collist, i), DIR_ASC);
 
         /* PFord_permutations ignores the input direction and
            generates all permutations also for the directions. */
@@ -355,7 +358,7 @@ PFpa_empty_tbl (PFalg_schema_t schema)
  */
 PFpa_op_t *
 PFpa_attach (const PFpa_op_t *n,
-             PFalg_att_t attname, PFalg_atom_t value)
+             PFalg_col_t col, PFalg_atom_t value)
 {
     PFpa_op_t   *ret = wire1 (pa_attach, n);
 
@@ -370,9 +373,9 @@ PFpa_attach (const PFpa_op_t *n,
 
     /* add new column */
     ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = attname, .type = value.type };
+        = (PFalg_schm_item_t) { .name = col, .type = value.type };
 
-    ret->sem.attach.attname = attname;
+    ret->sem.attach.col = col;
     ret->sem.attach.value   = value;
 
     /* ---- ColumnAttach: orderings ---- */
@@ -397,8 +400,8 @@ PFpa_attach (const PFpa_op_t *n,
         /* interleave the new column everywhere possible */
         for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
 
-            PFord_ordering_t ord_asc  = PFord_refine (prefix, attname, DIR_ASC);
-            PFord_ordering_t ord_desc = PFord_refine (prefix, attname, DIR_DESC);
+            PFord_ordering_t ord_asc  = PFord_refine (prefix, col, DIR_ASC);
+            PFord_ordering_t ord_desc = PFord_refine (prefix, col, DIR_DESC);
 
             for (unsigned int k = j; k < PFord_count (current_in); k++) {
                 ord_asc  = PFord_refine (
@@ -430,7 +433,7 @@ PFpa_attach (const PFpa_op_t *n,
 
 /**
  * Cross product (Cartesian product) between two algebra expressions.
- * Arguments @a a and @a b must not have any equally named attribute.
+ * Arguments @a a and @a b must not have any equally named column.
  *
  * @b Orderings
  *
@@ -475,7 +478,7 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
     for (i = 0; i < a->schema.count; i++)
         ret->schema.items[i] = a->schema.items[i];
 
-    /* copy schema from argument 2, check for duplicate attribute names */
+    /* copy schema from argument 2, check for duplicate column names */
     for (j = 0; j < b->schema.count; j++)
         ret->schema.items[a->schema.count + j] = b->schema.items[j];
 
@@ -490,7 +493,7 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
             /* Ordering of a is the major ordering */
             ord = PFord_set_at (a->orderings, i);
 
-            /* refine attribute by attribute with current ordering of b */
+            /* refine column by column with current ordering of b */
             for (unsigned int k = 0;
                  k < PFord_count (PFord_set_at (b->orderings, j));
                  k++)
@@ -515,23 +518,23 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
  *           of the left operand.
  */
 PFpa_op_t *
-PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_leftjoin (PFalg_col_t col1, PFalg_col_t col2,
                const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
 
-    /* see if we can find attribute att1 in n1 */
-    if (check_col (n1, att1) && check_col (n2, att2)) {
-        ret->sem.eqjoin.att1 = att1;
-        ret->sem.eqjoin.att2 = att2;
+    /* see if we can find column col1 in n1 */
+    if (check_col (n1, col1) && check_col (n2, col2)) {
+        ret->sem.eqjoin.col1 = col1;
+        ret->sem.eqjoin.col2 = col2;
     }
-    else if (check_col (n2, att1)
-             && check_col (n1, att2)) {
-        ret->sem.eqjoin.att2 = att1;
-        ret->sem.eqjoin.att1 = att2;
+    else if (check_col (n2, col1)
+             && check_col (n1, col2)) {
+        ret->sem.eqjoin.col2 = col1;
+        ret->sem.eqjoin.col1 = col2;
     }
     else
-        PFoops (OOPS_FATAL, "problem with attributes in LeftJoin");
+        PFoops (OOPS_FATAL, "problem with columns in LeftJoin");
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -551,12 +554,12 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
     /*
      * We preserve any ordering of the left operand.
      *
-     * We may interleave this ordering with any attribute marked
+     * We may interleave this ordering with any column marked
      * constant in the right operand.
      *
-     * If the (left) join attribute is among the orderings in the
+     * If the (left) join column is among the orderings in the
      * left relation, we may add the corresponding right join
-     * attribute anywhere after the left join attribute.
+     * column anywhere after the left join column.
      */
 
     ret->orderings = PFord_set ();
@@ -569,15 +572,15 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
 
         /*
          * Walk over left ordering, and keep an eye for the left join
-         * attribute.
+         * column.
          */
         bool found = false;
         bool dir = DIR_ASC;
 
         for (unsigned int j = 0; j < PFord_count (left_ordering); j++) {
 
-            if (PFord_order_col_at (left_ordering, j) == ret->sem.eqjoin.att1) {
-                /* Hey, we found the left join attribute. */
+            if (PFord_order_col_at (left_ordering, j) == ret->sem.eqjoin.col1) {
+                /* Hey, we found the left join column. */
                 found = true;
                 /* remember the direction */
                 dir = PFord_order_dir_at (left_ordering, j);
@@ -586,15 +589,15 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
             if (found) {
 
                 /*
-                 * We already found the left join attribute. So we may
-                 * include the right attribute into the result ordering.
-                 * (We may include the right attribute anywhere after
-                 * or immediately before the left attribute.)
+                 * We already found the left join column. So we may
+                 * include the right column into the result ordering.
+                 * (We may include the right column anywhere after
+                 * or immediately before the left column.)
                  */
 
-                /* Insert the left join attribute */
+                /* Insert the left join column */
                 PFord_ordering_t ord2
-                    = PFord_refine (ord, ret->sem.eqjoin.att2, dir);
+                    = PFord_refine (ord, ret->sem.eqjoin.col2, dir);
 
                 /* Fill up with the remaining ordering of left relation */
                 for (unsigned int k = j; k < PFord_count (left_ordering); k++)
@@ -613,7 +616,7 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
         }
 
         if (found)
-            ord = PFord_refine (ord, ret->sem.eqjoin.att2, dir);
+            ord = PFord_refine (ord, ret->sem.eqjoin.col2, dir);
 
         PFord_set_add (ret->orderings, ord);
 
@@ -632,23 +635,23 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
  * EqJoin: Equi-Join of two relations.
  */
 PFpa_op_t *
-PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_eqjoin (PFalg_col_t col1, PFalg_col_t col2,
              const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t  *ret = wire2 (pa_eqjoin, n1, n2);
 
-    /* see if we can find attribute att1 in n1 */
-    if (check_col (n1, att1) && check_col (n2, att2)) {
-        ret->sem.eqjoin.att1 = att1;
-        ret->sem.eqjoin.att2 = att2;
+    /* see if we can find column col1 in n1 */
+    if (check_col (n1, col1) && check_col (n2, col2)) {
+        ret->sem.eqjoin.col1 = col1;
+        ret->sem.eqjoin.col2 = col2;
     }
-    else if (check_col (n2, att1)
-             && check_col (n1, att2)) {
-        ret->sem.eqjoin.att2 = att1;
-        ret->sem.eqjoin.att1 = att2;
+    else if (check_col (n2, col1)
+             && check_col (n1, col2)) {
+        ret->sem.eqjoin.col2 = col1;
+        ret->sem.eqjoin.col1 = col2;
     }
     else
-        PFoops (OOPS_FATAL, "problem with attributes in EqJoin");
+        PFoops (OOPS_FATAL, "problem with columns in EqJoin");
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -677,18 +680,18 @@ PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
  *           of the left operand.
  */
 PFpa_op_t *
-PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_semijoin (PFalg_col_t col1, PFalg_col_t col2,
                const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t  *ret = wire2 (pa_semijoin, n1, n2);
 
-    /* see if we can find attribute att1 in n1 */
-    if (check_col (n1, att1) && check_col (n2, att2)) {
-        ret->sem.eqjoin.att1 = att1;
-        ret->sem.eqjoin.att2 = att2;
+    /* see if we can find column col1 in n1 */
+    if (check_col (n1, col1) && check_col (n2, col2)) {
+        ret->sem.eqjoin.col1 = col1;
+        ret->sem.eqjoin.col2 = col2;
     }
     else
-        PFoops (OOPS_FATAL, "problem with attributes in SemiJoin");
+        PFoops (OOPS_FATAL, "problem with columns in SemiJoin");
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
@@ -722,18 +725,18 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
     unsigned int i;
     PFpa_op_t  *ret;
 
-    /* verify that the join attributes are all available */
+    /* verify that the join columns are all available */
     for (i = 0; i < count; i++)
         if (!check_col (n1, pred[i].left) ||
             !check_col (n2, pred[i].right))
             break;
 
-    /* did we find all attributes? */
+    /* did we find all columns? */
     if (i < count)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in theta-join not found",
+                "column `%s' referenced in theta-join not found",
                 check_col (n2, pred[i].right)
-                ? PFatt_str(pred[i].left) : PFatt_str(pred[i].right));
+                ? PFcol_str(pred[i].left) : PFcol_str(pred[i].right));
 
     ret = wire2 (pa_thetajoin, n1, n2);
 
@@ -774,8 +777,8 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
  *            of the left argument.
  */
 PFpa_op_t *
-PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
-                     PFalg_att_t ldist, PFalg_att_t rdist,
+PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
+                     PFalg_col_t ldist, PFalg_col_t rdist,
                      const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t  *ret = wire2 (pa_unq2_thetajoin, n1, n2);
@@ -827,8 +830,8 @@ PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
  *            eliminated. Preserves the order of the left argument.
  */
 PFpa_op_t *
-PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
-                     PFalg_att_t ldist, PFalg_att_t rdist,
+PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
+                     PFalg_col_t ldist, PFalg_col_t rdist,
                      const PFpa_op_t *n1, const PFpa_op_t *n2)
 {
     PFpa_op_t  *ret = wire2 (pa_unq1_thetajoin, n1, n2);
@@ -918,18 +921,18 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
          * and use its type for the result schema */
         for (j = 0; j < n->schema.count; j++)
             if (ret->sem.proj.items[i].old == n->schema.items[j].name) {
-                /* set name and type for this attribute in the result schema */
+                /* set name and type for this column in the result schema */
                 ret->schema.items[i].name = ret->sem.proj.items[i].new;
                 ret->schema.items[i].type = n->schema.items[j].type;
 
                 break;
             }
 
-        /* did we find the attribute? */
+        /* did we find the column? */
         if (j >= n->schema.count)
              PFoops (OOPS_FATAL,
-                    "attribute `%s' referenced in projection not found",
-                    PFatt_str (ret->sem.proj.items[i].old));
+                    "column `%s' referenced in projection not found",
+                    PFcol_str (ret->sem.proj.items[i].old));
     }
 
     /* ---- Project: orderings ---- */
@@ -979,7 +982,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 }
 
 PFpa_op_t *
-PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
+PFpa_select (const PFpa_op_t *n, PFalg_col_t col)
 {
     PFpa_op_t *ret = wire1 (pa_select, n);
 
@@ -993,7 +996,7 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
         ret->schema.items[i] = n->schema.items[i];
 
     /* keep the ordering we got in the `ord' argument */
-    ret->sem.select.att = att;
+    ret->sem.select.col = col;
 
     /* ---- Select: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -1007,7 +1010,7 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
 }
 
 PFpa_op_t *
-PFpa_value_select (const PFpa_op_t *n, PFalg_att_t att, PFalg_atom_t value)
+PFpa_value_select (const PFpa_op_t *n, PFalg_col_t col, PFalg_atom_t value)
 {
     PFpa_op_t *ret = wire1 (pa_val_select, n);
 
@@ -1021,7 +1024,7 @@ PFpa_value_select (const PFpa_op_t *n, PFalg_att_t att, PFalg_atom_t value)
         ret->schema.items[i] = n->schema.items[i];
 
     /* keep the ordering we got in the `ord' argument */
-    ret->sem.attach.attname = att;
+    ret->sem.attach.col = col;
     ret->sem.attach.value   = value;
 
     /* ---- Select: orderings ---- */
@@ -1044,7 +1047,7 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     PFpa_op_t    *ret = wire2 (pa_append_union, n1, n2);
     unsigned int  i, j;
 
-    /* see if both operands have same number of attributes */
+    /* see if both operands have same number of columns */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of UNION do not match");
@@ -1054,11 +1057,11 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* see if we find each attribute of n1 also in n2 */
+    /* see if we find each column of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
             if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
+                /* The two columns match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
                  * different.
@@ -1150,7 +1153,7 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     PFpa_op_t    *ret = wire2 (pa_merge_union, n1, n2);
     unsigned int  i, j;
 
-    /* see if both operands have same number of attributes */
+    /* see if both operands have same number of columns */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of UNION do not match");
@@ -1160,11 +1163,11 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* see if we find each attribute of n1 also in n2 */
+    /* see if we find each column of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
             if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
+                /* The two columns match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
                  * different.
@@ -1285,7 +1288,7 @@ PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
     PFpa_op_t    *ret = wire2 (pa_intersect, n1, n2);
     unsigned int  i, j;
 
-    /* see if both operands have same number of attributes */
+    /* see if both operands have same number of columns */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of Intersect do not match");
@@ -1295,11 +1298,11 @@ PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* see if we find each attribute of n1 also in n2 */
+    /* see if we find each column of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
             if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
+                /* The two columns match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
                  * different.
@@ -1332,7 +1335,7 @@ PFpa_difference (const PFpa_op_t *n1, const PFpa_op_t *n2)
     PFpa_op_t    *ret = wire2 (pa_difference, n1, n2);
     unsigned int  i, j;
 
-    /* see if both operands have same number of attributes */
+    /* see if both operands have same number of columns */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
                 "Schema of two arguments of Difference do not match");
@@ -1342,11 +1345,11 @@ PFpa_difference (const PFpa_op_t *n1, const PFpa_op_t *n2)
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* see if we find each attribute of n1 also in n2 */
+    /* see if we find each column of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
             if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
+                /* The two columns match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
                  * different.
@@ -1487,25 +1490,25 @@ PFpa_refine_sort (const PFpa_op_t *n,
 PFpa_op_t *
 PFpa_fun_1to1 (const PFpa_op_t *n,
                PFalg_fun_t kind,
-               PFalg_att_t res,
-               PFalg_attlist_t refs)
+               PFalg_col_t res,
+               PFalg_collist_t *refs)
 {
     PFpa_op_t          *ret;
-    unsigned int        i, j, ix[refs.count];
+    unsigned int        i, j, ix[clsize (refs)];
     PFalg_simple_type_t res_type = 0;
 
     assert (n);
 
-    /* verify that the referenced attributes in refs
-       are really attributes of n ... */
-    for (i = 0; i < refs.count; i++) {
+    /* verify that the referenced columns in refs
+       are really columns of n ... */
+    for (i = 0; i < clsize (refs); i++) {
         for (j = 0; j < n->schema.count; j++)
-            if (n->schema.items[j].name == refs.atts[i])
+            if (n->schema.items[j].name == clat (refs, i))
                 break;
         if (j == n->schema.count)
             PFoops (OOPS_FATAL,
-                    "attribute `%s' referenced in generic function"
-                    " operator not found", PFatt_str (refs.atts[i]));
+                    "column `%s' referenced in generic function"
+                    " operator not found", PFcol_str (clat (refs, i)));
         ix[i] = j;
     }
 
@@ -1517,8 +1520,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_num_multiply:
         case alg_fun_num_divide:
         case alg_fun_num_modulo:
-            assert (refs.count == 2);
-            /* make sure both attributes are of the same numeric type */
+            assert (clsize (refs) == 2);
+            /* make sure both columns are of the same numeric type */
             assert (n->schema.items[ix[0]].type == aat_nat ||
                     n->schema.items[ix[0]].type == aat_int ||
                     n->schema.items[ix[0]].type == aat_dec ||
@@ -1533,9 +1536,9 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_ceiling:
         case alg_fun_fn_floor:
         case alg_fun_fn_round:
-            assert (refs.count == 1);
+            assert (clsize (refs) == 1);
 
-            /* make sure the attribute is of numeric type */
+            /* make sure the column is of numeric type */
             assert (n->schema.items[ix[0]].type == aat_int ||
                     n->schema.items[ix[0]].type == aat_dec ||
                     n->schema.items[ix[0]].type == aat_dbl);
@@ -1544,9 +1547,9 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_substring:
-            assert (refs.count == 2);
+            assert (clsize (refs) == 2);
 
-            /* make sure both attributes are of type str & dbl */
+            /* make sure both columns are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
             assert (n->schema.items[ix[1]].type == aat_dbl);
 
@@ -1554,8 +1557,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_substring_dbl:
-            assert (refs.count == 3);
-            /* make sure attributes are of type str & dbl */
+            assert (clsize (refs) == 3);
+            /* make sure columns are of type str & dbl */
             assert (n->schema.items[ix[0]].type == aat_str);
             assert (n->schema.items[ix[1]].type == aat_dbl &&
                     n->schema.items[ix[2]].type == aat_dbl);
@@ -1566,8 +1569,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_concat:
         case alg_fun_fn_substring_before:
         case alg_fun_fn_substring_after:
-            assert (refs.count == 2);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 2);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str);
 
@@ -1575,8 +1578,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_string_length:
-            assert (refs.count == 1);
-            /* make sure the attribute is of type string */
+            assert (clsize (refs) == 1);
+            /* make sure the column is of type string */
             assert (n->schema.items[ix[0]].type == aat_str);
 
             res_type = aat_int;
@@ -1585,8 +1588,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_normalize_space:
         case alg_fun_fn_upper_case:
         case alg_fun_fn_lower_case:
-            assert (refs.count == 1);
-            /* make sure the attribute is of type string */
+            assert (clsize (refs) == 1);
+            /* make sure the column is of type string */
             assert (n->schema.items[ix[0]].type == aat_str);
 
             res_type = aat_str;
@@ -1596,8 +1599,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_starts_with:
         case alg_fun_fn_ends_with:
         case alg_fun_fn_matches:
-            assert (refs.count == 2);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 2);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str);
 
@@ -1605,8 +1608,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_matches_flag:
-            assert (refs.count == 3);
-            /* make sure all attributes are of type string */
+            assert (clsize (refs) == 3);
+            /* make sure all columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str &&
                     n->schema.items[ix[2]].type == aat_str);
@@ -1616,8 +1619,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
         case alg_fun_fn_translate:
         case alg_fun_fn_replace:
-            assert (refs.count == 3);
-            /* make sure all attributes are of type string */
+            assert (clsize (refs) == 3);
+            /* make sure all columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str &&
                     n->schema.items[ix[2]].type == aat_str);
@@ -1626,8 +1629,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_replace_flag:
-            assert (refs.count == 4);
-            /* make sure all attributes are of type string */
+            assert (clsize (refs) == 4);
+            /* make sure all columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str &&
                     n->schema.items[ix[2]].type == aat_str &&
@@ -1639,8 +1642,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_name:
         case alg_fun_fn_local_name:
         case alg_fun_fn_namespace_uri:
-            assert (refs.count == 1);
-            /* make sure attribute is of type node */
+            assert (clsize (refs) == 1);
+            /* make sure column is of type node */
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = aat_str;
@@ -1648,13 +1651,13 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
         case alg_fun_fn_number:
         case alg_fun_fn_number_lax:
-            assert (refs.count == 1);
+            assert (clsize (refs) == 1);
             res_type = aat_dbl;
             break;
 
         case alg_fun_fn_qname:
-            assert (refs.count == 2);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 2);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str &&
                     n->schema.items[ix[1]].type == aat_str);
 
@@ -1662,88 +1665,88 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             break;
 
         case alg_fun_fn_doc_available:
-            assert (refs.count == 1);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 1);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type == aat_str);
 
             res_type = aat_bln;
             break;
 
         case alg_fun_pf_fragment:
-            assert (refs.count == 1);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 1);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = aat_pnode;
             break;
 
         case alg_fun_pf_supernode:
-            assert (refs.count == 1);
-            /* make sure both attributes are of type string */
+            assert (clsize (refs) == 1);
+            /* make sure both columns are of type string */
             assert (n->schema.items[ix[0]].type & aat_node);
 
             res_type = n->schema.items[ix[0]].type;
             break;
 
         case alg_fun_pf_add_doc_str:
-            assert(refs.count == 3);
+            assert(clsize (refs) == 3);
 
-            /* make sure atts are of the correct type */
+            /* make sure cols are of the correct type */
             assert(n->schema.items[ix[0]].type == aat_str);
             assert(n->schema.items[ix[1]].type == aat_str);
             assert(n->schema.items[ix[2]].type == aat_str);
 
             /* the returning type of doc management functions
-             * is aat_docmgmt bitwise OR the attribute types*/
+             * is aat_docmgmt bitwise OR the column types*/
             res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
             break;
 
         case alg_fun_pf_add_doc_str_int:
-            assert(refs.count == 4);
+            assert(clsize (refs) == 4);
 
-            /* make sure atts are of the correct type */
+            /* make sure cols are of the correct type */
             assert(n->schema.items[ix[0]].type == aat_str);
             assert(n->schema.items[ix[1]].type == aat_str);
             assert(n->schema.items[ix[2]].type == aat_str);
             assert(n->schema.items[ix[3]].type == aat_int);
 
             /* the returning type of doc management functions
-             * is aat_docmgmt bitwise OR the attribute types */
+             * is aat_docmgmt bitwise OR the column types */
             res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
             break;
 
         case alg_fun_pf_del_doc:
-            assert(refs.count == 1);
+            assert(clsize (refs) == 1);
 
-            /* make sure atts are of the correct type */
+            /* make sure cols are of the correct type */
             assert(n->schema.items[ix[0]].type == aat_str);
 
             /* the returning type of doc management functions
-             * is aat_docmgmt bitwise OR the attribute types */
+             * is aat_docmgmt bitwise OR the column types */
             res_type = aat_docmgmt | aat_docnm;
             break;
 
         case alg_fun_pf_nid:
-            assert(refs.count == 1);
+            assert(clsize (refs) == 1);
 
-            /* make sure atts are of the correct type */
+            /* make sure cols are of the correct type */
             assert(n->schema.items[ix[0]].type == aat_pnode);
 
             res_type = aat_str;
             break;
 
         case alg_fun_pf_docname:
-            assert(refs.count == 1);
+            assert(clsize (refs) == 1);
 
-            /* make sure atts are of the correct type */
+            /* make sure cols are of the correct type */
             assert(n->schema.items[ix[0]].type & aat_node);
 
             res_type = aat_str;
             break;
 
         case alg_fun_upd_delete:
-            assert(refs.count == 1);
-            /* make sure that the attributes is a node */
+            assert(clsize (refs) == 1);
+            /* make sure that the columns is a node */
             assert(n->schema.items[ix[0]].type & aat_node);
 
             /* the result type is aat_update bitwise OR the type of
@@ -1761,7 +1764,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_upd_replace_value:
         case alg_fun_upd_replace_element:
         case alg_fun_upd_replace_node:
-            assert(refs.count == 2);
+            assert(clsize (refs) == 2);
 
             /* make some assertions according to the fun signature */
             switch (kind) {
@@ -1811,11 +1814,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
     /* insert semantic values into the result */
     ret->sem.fun_1to1.kind = kind;
     ret->sem.fun_1to1.res  = res;
-    ret->sem.fun_1to1.refs = (PFalg_attlist_t) {
-        .count = refs.count,
-        .atts  = memcpy (PFmalloc (refs.count * sizeof (PFalg_att_t)),
-                         refs.atts,
-                         refs.count * sizeof (PFalg_att_t)) };
+    ret->sem.fun_1to1.refs = PFalg_collist_copy (refs);
 
     /* allocate memory for the result schema (schema(n) + 'res') */
     ret->schema.count = n->schema.count + 1;
@@ -1826,7 +1825,7 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
     for (i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    /* add the information on the 'res' attribute */
+    /* add the information on the 'res' column */
     ret->schema.items[ret->schema.count - 1].name = res;
     ret->schema.items[ret->schema.count - 1].type = res_type;
 
@@ -1846,8 +1845,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
  * table columns).
  */
 static PFpa_op_t *
-bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
-          PFalg_att_t att1, PFalg_att_t att2)
+bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_col_t res,
+          PFalg_col_t col1, PFalg_col_t col2)
 {
     PFpa_op_t           *ret = wire1 (op, n);
 #ifndef NDEBUG
@@ -1868,9 +1867,9 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
         ret->schema.items[i] = n->schema.items[i];
 
 #ifndef NDEBUG
-        if (n->schema.items[i].name == att1)
+        if (n->schema.items[i].name == col1)
             t1 = n->schema.items[i].type;
-        if (n->schema.items[i].name == att2)
+        if (n->schema.items[i].name == col2)
             t2 = n->schema.items[i].type;
 #endif
     }
@@ -1883,14 +1882,14 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
                 "illegal types in arithmetic operation: %u vs. %u", t1, t2);
 #endif
 
-    /* finally add schema item for new attribute */
+    /* finally add schema item for new column */
     ret->schema.items[n->schema.count]
         = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
 
-    /* store information about attributes for arithmetics */
+    /* store information about columns for arithmetics */
     ret->sem.binary.res = res;
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
+    ret->sem.binary.col1 = col1;
+    ret->sem.binary.col2 = col2;
 
     /* ---- NumAdd: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -1910,31 +1909,31 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
 }
 
 PFpa_op_t *
-PFpa_eq (const PFpa_op_t *n, PFalg_att_t res,
-         PFalg_att_t att1, PFalg_att_t att2)
+PFpa_eq (const PFpa_op_t *n, PFalg_col_t res,
+         PFalg_col_t col1, PFalg_col_t col2)
 {
-    return bin_comp (pa_eq, n, res, att1, att2);
+    return bin_comp (pa_eq, n, res, col1, col2);
 }
 
 PFpa_op_t *
-PFpa_gt (const PFpa_op_t *n, PFalg_att_t res,
-         PFalg_att_t att1, PFalg_att_t att2)
+PFpa_gt (const PFpa_op_t *n, PFalg_col_t res,
+         PFalg_col_t col1, PFalg_col_t col2)
 {
-    return bin_comp (pa_gt, n, res, att1, att2);
+    return bin_comp (pa_gt, n, res, col1, col2);
 }
 
 PFpa_op_t *
-PFpa_and (const PFpa_op_t *n, PFalg_att_t res,
-          PFalg_att_t att1, PFalg_att_t att2)
+PFpa_and (const PFpa_op_t *n, PFalg_col_t res,
+          PFalg_col_t col1, PFalg_col_t col2)
 {
-    return bin_comp (pa_bool_and, n, res, att1, att2);
+    return bin_comp (pa_bool_and, n, res, col1, col2);
 }
 
 PFpa_op_t *
-PFpa_or (const PFpa_op_t *n, PFalg_att_t res,
-         PFalg_att_t att1, PFalg_att_t att2)
+PFpa_or (const PFpa_op_t *n, PFalg_col_t res,
+         PFalg_col_t col1, PFalg_col_t col2)
 {
-    return bin_comp (pa_bool_or, n, res, att1, att2);
+    return bin_comp (pa_bool_or, n, res, col1, col2);
 }
 
 
@@ -1943,7 +1942,7 @@ PFpa_or (const PFpa_op_t *n, PFalg_att_t res,
  */
 static PFpa_op_t *
 unary_arith (PFpa_op_kind_t op,
-             const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+             const PFpa_op_t *n, PFalg_col_t res, PFalg_col_t col)
 {
     PFpa_op_t           *ret = wire1 (op, n);
     PFalg_simple_type_t  t1 = 0;
@@ -1960,19 +1959,19 @@ unary_arith (PFpa_op_kind_t op,
 
         ret->schema.items[i] = n->schema.items[i];
 
-        if (n->schema.items[i].name == att)
+        if (n->schema.items[i].name == col)
             t1 = n->schema.items[i].type;
     }
 
     assert (t1);
 
-    /* finally add schema item for new attribute */
+    /* finally add schema item for new column */
     ret->schema.items[n->schema.count]
         = (PFalg_schm_item_t) { .name = res, .type = t1 };
 
-    /* store information about attributes for arithmetics */
+    /* store information about columns for arithmetics */
     ret->sem.unary.res = res;
-    ret->sem.unary.att = att;
+    ret->sem.unary.col = col;
 
     /* ---- UnaryArith: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -1991,17 +1990,17 @@ unary_arith (PFpa_op_kind_t op,
 }
 
 PFpa_op_t *
-PFpa_bool_not (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+PFpa_bool_not (const PFpa_op_t *n, PFalg_col_t res, PFalg_col_t col)
 {
-    return unary_arith (pa_bool_not, n, res, att);
+    return unary_arith (pa_bool_not, n, res, col);
 }
 
 /**
  * Constructor for op:to operator
  */
 PFpa_op_t *
-PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
-         PFalg_att_t att1, PFalg_att_t att2)
+PFpa_to (const PFpa_op_t *n, PFalg_col_t res,
+         PFalg_col_t col1, PFalg_col_t col2)
 {
     PFpa_op_t *ret = wire1 (pa_to, n);
 
@@ -2015,26 +2014,26 @@ PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
         ret->schema.items[i] = n->schema.items[i];
 
 #ifndef NDEBUG
-    /* verify that attributes 'att1' and 'att2' are attributes of n */
-    if (!check_col (n, att1))
+    /* verify that columns 'col1' and 'col2' are columns of n */
+    if (!check_col (n, col1))
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in op:to not found",
-                PFatt_str (att1));
-    if (!check_col (n, att2))
+                "column `%s' referenced in op:to not found",
+                PFcol_str (col1));
+    if (!check_col (n, col2))
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in op:to not found",
-                PFatt_str (att2));
+                "column `%s' referenced in op:to not found",
+                PFcol_str (col2));
 #endif
 
-    /* finally add schema item for new attribute */
+    /* finally add schema item for new column */
     ret->schema.items[n->schema.count].name = res;
     ret->schema.items[n->schema.count].type = aat_int;
 
-    /* insert semantic value (input attributes and result attribute)
+    /* insert semantic value (input columns and result column)
        into the result */
     ret->sem.binary.res = res;
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
+    ret->sem.binary.col1 = col1;
+    ret->sem.binary.col2 = col2;
 
     /* ---- orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
@@ -2063,7 +2062,7 @@ PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
  */
 PFpa_op_t *
 PFpa_count_ext (const PFpa_op_t *n1, const PFpa_op_t *n2,
-                PFalg_att_t res, PFalg_att_t part, PFalg_att_t loop)
+                PFalg_col_t res, PFalg_col_t part, PFalg_col_t loop)
 {
     PFpa_op_t *ret = wire2 (pa_count_ext, n1, n2);
 
@@ -2104,13 +2103,13 @@ PFpa_count_ext (const PFpa_op_t *n1, const PFpa_op_t *n2,
  * ordering.
  */
 PFpa_op_t *
-PFpa_count (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t part)
+PFpa_count (const PFpa_op_t *n, PFalg_col_t res, PFalg_col_t part)
 {
     PFpa_op_t *ret = wire1 (pa_count, n);
 
     ret->sem.count.res  = res;
     ret->sem.count.part = part;
-    ret->sem.count.loop = att_NULL;
+    ret->sem.count.loop = col_NULL;
 
     /* allocate memory for the result schema */
     ret->schema.count = part ? 2 : 1;
@@ -2129,8 +2128,8 @@ PFpa_count (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t part)
 #ifndef NDEBUG
         if (i == n->schema.count)
             PFoops (OOPS_FATAL,
-                    "HashCount: unable to find partitioning attribute `%s'",
-                    PFatt_str (part));
+                    "HashCount: unable to find partitioning column `%s'",
+                    PFcol_str (part));
 #endif
     }
 
@@ -2153,7 +2152,7 @@ PFpa_count (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t part)
  */
 PFpa_op_t *
 PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
-           PFalg_att_t res, PFalg_att_t att, PFalg_att_t part)
+           PFalg_col_t res, PFalg_col_t col, PFalg_col_t part)
 {
     PFpa_op_t *ret = wire1 (kind, n);
     unsigned int  i;
@@ -2163,22 +2162,22 @@ PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
 #endif
 
     ret->sem.aggr.res  = res;
-    ret->sem.aggr.att = att;
+    ret->sem.aggr.col = col;
     ret->sem.aggr.part = part;
 
     /* set number of schema items in the result schema
-     * (partitioning attribute plus result attribute)
+     * (partitioning column plus result column)
      */
     ret->schema.count = part ? 2 : 1;
 
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* verify that attributes 'att' and 'part' are attributes of n
+    /* verify that columns 'col' and 'part' are columns of n
      * and include them into the result schema
      */
     for (i = 0; i < n->schema.count; i++) {
-        if (att == n->schema.items[i].name) {
+        if (col == n->schema.items[i].name) {
             ret->schema.items[0] = n->schema.items[i];
             ret->schema.items[0].name = res;
 #ifndef NDEBUG
@@ -2194,18 +2193,18 @@ PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
     }
 
 #ifndef NDEBUG
-    /* did we find attribute 'att'? */
+    /* did we find column 'col'? */
     if (!c1)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in aggregation function not found",
-                PFatt_str (att));
+                "column `%s' referenced in aggregation function not found",
+                PFcol_str (col));
 
-    /* did we find attribute 'part'? */
+    /* did we find column 'part'? */
     if (part && !c2)
         PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in aggregation "
+                "partitioning column `%s' referenced in aggregation "
                 "function not found",
-                PFatt_str (part));
+                PFcol_str (part));
 #endif
 
     /* ---- Aggr: orderings ---- */
@@ -2218,12 +2217,12 @@ PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
 }
 
 PFpa_op_t *
-PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att)
+PFpa_mark (const PFpa_op_t *n, PFalg_col_t new_col)
 {
     PFpa_op_t *ret = wire1 (pa_mark, n);
 
-    ret->sem.mark.res  = new_att;
-    ret->sem.mark.part = att_NULL;
+    ret->sem.mark.res  = new_col;
+    ret->sem.mark.part = col_NULL;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;
@@ -2235,7 +2234,7 @@ PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att)
         ret->schema.items[i] = n->schema.items[i];
 
     ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = new_col, .type = aat_nat };
 
     /* ---- orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
@@ -2246,10 +2245,10 @@ PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att)
         PFord_set_add (ret->orderings,
                        PFord_refine (
                            PFord_set_at (n->orderings, i),
-                           new_att, DIR_ASC));
+                           new_col, DIR_ASC));
     }
 
-    PFord_set_add (ret->orderings, sortby (new_att));
+    PFord_set_add (ret->orderings, sortby (new_col));
 
     /* ---- costs ---- */
     ret->cost = DEFAULT_COST + n->cost;
@@ -2258,11 +2257,11 @@ PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att)
 }
 
 PFpa_op_t *
-PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att, PFord_ordering_t ord)
+PFpa_rank (const PFpa_op_t *n, PFalg_col_t new_col, PFord_ordering_t ord)
 {
     PFpa_op_t *ret = wire1 (pa_rank, n);
 
-    ret->sem.rank.res = new_att;
+    ret->sem.rank.res = new_col;
     ret->sem.rank.ord = ord;
 
     /* allocate memory for the result schema */
@@ -2275,7 +2274,7 @@ PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att, PFord_ordering_t ord)
         ret->schema.items[i] = n->schema.items[i];
 
     ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = new_col, .type = aat_nat };
 
     /* ---- orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
@@ -2286,10 +2285,10 @@ PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att, PFord_ordering_t ord)
         PFord_set_add (ret->orderings,
                        PFord_refine (
                            PFord_set_at (n->orderings, i),
-                           new_att, DIR_ASC));
+                           new_col, DIR_ASC));
     }
 
-    PFord_set_add (ret->orderings, sortby (new_att));
+    PFord_set_add (ret->orderings, sortby (new_col));
 
     /* ---- costs ---- */
     ret->cost = DEFAULT_COST + n->cost;
@@ -2298,7 +2297,7 @@ PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att, PFord_ordering_t ord)
 }
 
 PFpa_op_t *
-PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
+PFpa_mark_grp (const PFpa_op_t *n, PFalg_col_t new_col, PFalg_col_t part)
 {
     PFpa_op_t *ret      = wire1 (pa_mark_grp, n);
     bool       dir_asc  = false,
@@ -2306,7 +2305,7 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
 
     assert (part);
 
-    ret->sem.mark.res  = new_att;
+    ret->sem.mark.res  = new_col;
     ret->sem.mark.part = part;
 
     /* allocate memory for the result schema */
@@ -2319,7 +2318,7 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
         ret->schema.items[i] = n->schema.items[i];
 
     ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = new_col, .type = aat_nat };
 
     /* ---- MergeRowNum: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
@@ -2330,7 +2329,7 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
         PFord_set_add (ret->orderings,
                        PFord_refine (
                            PFord_set_at (n->orderings, i),
-                           new_att, DIR_ASC));
+                           new_col, DIR_ASC));
 
         /* get the direction of the partitioning column */
         if (part &&
@@ -2344,10 +2343,10 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
         }
     }
 
-    /* of course, the new attribute is also a valid ordering */
+    /* of course, the new column is also a valid ordering */
     if (part) {
         if (dir_asc)
-            PFord_set_add (ret->orderings, sortby (part, new_att));
+            PFord_set_add (ret->orderings, sortby (part, new_col));
 
         if (dir_desc)
             PFord_set_add (
@@ -2357,11 +2356,11 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
                         PFordering (),
                         part,
                         DIR_DESC),
-                    new_att,
+                    new_col,
                     DIR_ASC));
     }
     else
-        PFord_set_add (ret->orderings, sortby (new_att));
+        PFord_set_add (ret->orderings, sortby (new_col));
 
     /* ---- MergeRowNum: costs ---- */
     ret->cost = DEFAULT_COST + n->cost;
@@ -2375,9 +2374,9 @@ PFpa_mark_grp (const PFpa_op_t *n, PFalg_att_t new_att, PFalg_att_t part)
  */
 PFpa_op_t *
 PFpa_type (const PFpa_op_t *n,
-           PFalg_att_t att,
+           PFalg_col_t col,
            PFalg_simple_type_t ty,
-           PFalg_att_t res)
+           PFalg_col_t res)
 {
     unsigned int i;
     PFpa_op_t *ret = wire1 (pa_type, n);
@@ -2394,7 +2393,7 @@ PFpa_type (const PFpa_op_t *n,
     ret->schema.items[i]
         = (struct PFalg_schm_item_t) { .type = aat_bln, .name = res };
 
-    ret->sem.type.att = att;
+    ret->sem.type.col = col;
     ret->sem.type.ty  = ty;
     ret->sem.type.res = res;
 
@@ -2413,7 +2412,7 @@ PFpa_type (const PFpa_op_t *n,
  */
 PFpa_op_t *
 PFpa_type_assert (const PFpa_op_t *n,
-                  PFalg_att_t att,
+                  PFalg_col_t col,
                   PFalg_simple_type_t ty)
 {
     PFpa_op_t *ret = wire1 (pa_type_assert, n);
@@ -2428,16 +2427,16 @@ PFpa_type_assert (const PFpa_op_t *n,
     /* copy schema from n and change type of column  */
     for (unsigned int i = 0; i < n->schema.count; i++)
     {
-        if (att == n->schema.items[i].name)
+        if (col == n->schema.items[i].name)
         {
-            ret->schema.items[i].name = att;
+            ret->schema.items[i].name = col;
             ret->schema.items[i].type = ty;
         }
         else
             ret->schema.items[i] = n->schema.items[i];
     }
 
-    ret->sem.type.att = att;
+    ret->sem.type.col = col;
     ret->sem.type.ty  = ty;
 
     /* ordering stays the same */
@@ -2450,8 +2449,8 @@ PFpa_type_assert (const PFpa_op_t *n,
 }
 
 PFpa_op_t *
-PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
-           PFalg_att_t att, PFalg_simple_type_t ty)
+PFpa_cast (const PFpa_op_t *n, PFalg_col_t res,
+           PFalg_col_t col, PFalg_simple_type_t ty)
 {
     PFpa_op_t  *ret = wire1 (pa_cast, n);
 
@@ -2459,9 +2458,9 @@ PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    assert (att != res);
+    assert (col != res);
 
-    ret->sem.cast.att = att;
+    ret->sem.cast.col = col;
     ret->sem.cast.ty  = ty;
     ret->sem.cast.res = res;
 
@@ -2490,7 +2489,7 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
                PFalg_step_spec_t spec,
                const PFord_ordering_t in,
                const PFord_ordering_t out,
-               PFalg_att_t iter, PFalg_att_t item)
+               PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_llscjoin, ctx);
     PFord_ordering_t iter_item
@@ -2592,7 +2591,7 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
  * function.
  */
 PFpa_op_t *
-PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att,
+PFpa_doc_tbl (const PFpa_op_t *n, PFalg_col_t res, PFalg_col_t col,
               PFalg_doc_tbl_kind_t kind)
 {
     unsigned int i;
@@ -2602,7 +2601,7 @@ PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att,
 
     /* store columns to work on in semantical field */
     ret->sem.doc_tbl.res  = res;
-    ret->sem.doc_tbl.att  = att;
+    ret->sem.doc_tbl.col  = col;
     ret->sem.doc_tbl.kind = kind;
 
     /* allocate memory for the result schema */
@@ -2641,7 +2640,7 @@ PFpa_doc_tbl (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att,
  */
 PFpa_op_t *
 PFpa_doc_access (const PFpa_op_t *alg,
-                 PFalg_att_t res, PFalg_att_t att, PFalg_doc_t doc_col)
+                 PFalg_col_t res, PFalg_col_t col, PFalg_doc_t doc_col)
 {
     unsigned int i;
     PFpa_op_t *ret = wire1 (pa_doc_access, alg);
@@ -2659,7 +2658,7 @@ PFpa_doc_access (const PFpa_op_t *alg,
         = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
 
     ret->sem.doc_access.res = res;
-    ret->sem.doc_access.att = att;
+    ret->sem.doc_access.col = col;
     ret->sem.doc_access.doc_col = doc_col;
 
     /* ordering stays the same */
@@ -2675,7 +2674,7 @@ PFpa_doc_access (const PFpa_op_t *alg,
  * Constructor for twig root operators.
  */
 PFpa_op_t *
-PFpa_twig (const PFpa_op_t *n, PFalg_att_t iter, PFalg_att_t item)
+PFpa_twig (const PFpa_op_t *n, PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_twig, n);
 
@@ -2749,7 +2748,7 @@ PFpa_fcns (const PFpa_op_t *fc, const PFpa_op_t *ns)
  * and @a fcns is the content of the node.
  */
 PFpa_op_t *
-PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns, PFalg_att_t iter)
+PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns, PFalg_col_t iter)
 {
     PFpa_op_t *ret = wire2 (pa_docnode, scope, fcns);
 
@@ -2757,7 +2756,7 @@ PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns, PFalg_att_t iter)
 
     /* store columns to work on in semantical field */
     ret->sem.ii.iter = iter;
-    ret->sem.ii.item = att_NULL;
+    ret->sem.ii.item = col_NULL;
 
     /* Constructors have no schema */
     ret->schema.count = 0;
@@ -2779,7 +2778,7 @@ PFpa_docnode (const PFpa_op_t *scope, const PFpa_op_t *fcns, PFalg_att_t iter)
  */
 PFpa_op_t *
 PFpa_element (const PFpa_op_t *tag, const PFpa_op_t *fcns,
-              PFalg_att_t iter, PFalg_att_t item)
+              PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire2 (pa_element, tag, fcns);
 
@@ -2809,7 +2808,7 @@ PFpa_element (const PFpa_op_t *tag, const PFpa_op_t *fcns,
  */
 PFpa_op_t *
 PFpa_attribute (const PFpa_op_t *cont,
-                PFalg_att_t iter, PFalg_att_t qn, PFalg_att_t val)
+                PFalg_col_t iter, PFalg_col_t qn, PFalg_col_t val)
 {
     PFpa_op_t *ret = wire1 (pa_attribute, cont);
 
@@ -2842,7 +2841,7 @@ PFpa_attribute (const PFpa_op_t *cont,
  * nodes are constructed in.
  */
 PFpa_op_t *
-PFpa_textnode (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+PFpa_textnode (const PFpa_op_t *cont, PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_textnode, cont);
 
@@ -2872,7 +2871,7 @@ PFpa_textnode (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
  * nodes are constructed in.
  */
 PFpa_op_t *
-PFpa_comment (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+PFpa_comment (const PFpa_op_t *cont, PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_comment, cont);
 
@@ -2903,7 +2902,7 @@ PFpa_comment (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
  */
 PFpa_op_t *
 PFpa_processi (const PFpa_op_t *cont,
-               PFalg_att_t iter, PFalg_att_t target, PFalg_att_t val)
+               PFalg_col_t iter, PFalg_col_t target, PFalg_col_t val)
 {
     PFpa_op_t *ret = wire1 (pa_processi, cont);
 
@@ -2932,7 +2931,7 @@ PFpa_processi (const PFpa_op_t *cont,
  * Constructor for constructor content operators (elem|doc).
  */
 PFpa_op_t *
-PFpa_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+PFpa_content (const PFpa_op_t *cont, PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_content, cont);
 
@@ -2955,7 +2954,7 @@ PFpa_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 }
 
 PFpa_op_t *
-PFpa_slim_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
+PFpa_slim_content (const PFpa_op_t *cont, PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = PFpa_content (cont, iter, item);
     ret->kind = pa_slim_content;
@@ -2964,7 +2963,7 @@ PFpa_slim_content (const PFpa_op_t *cont, PFalg_att_t iter, PFalg_att_t item)
 
 PFpa_op_t *
 PFpa_merge_adjacent (const PFpa_op_t *n,
-                     PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
+                     PFalg_col_t iter, PFalg_col_t pos, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire1 (pa_merge_adjacent, n);
 
@@ -2993,7 +2992,7 @@ PFpa_merge_adjacent (const PFpa_op_t *n,
  * Constructor for error
  */
 PFpa_op_t *
-PFpa_error (const PFpa_op_t *n,  PFalg_att_t att, PFalg_simple_type_t att_ty)
+PFpa_error (const PFpa_op_t *n,  PFalg_col_t col, PFalg_simple_type_t col_ty)
 {
     PFpa_op_t *ret = wire1 (pa_error, n);
 
@@ -3007,12 +3006,12 @@ PFpa_error (const PFpa_op_t *n,  PFalg_att_t att, PFalg_simple_type_t att_ty)
     /* copy schema from n  */
     for (unsigned int i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
-        if (att == n->schema.items[i].name)
-            ret->schema.items[i].type = att_ty;
+        if (col == n->schema.items[i].name)
+            ret->schema.items[i].type = col_ty;
     }
 
-    ret->sem.err.att = att;
-    ret->sem.err.str = NULL; /* error message is stored in column @a att */
+    ret->sem.err.col = col;
+    ret->sem.err.str = NULL; /* error message is stored in column @a col */
 
     /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -3029,7 +3028,7 @@ PFpa_error (const PFpa_op_t *n,  PFalg_att_t att, PFalg_simple_type_t att_ty)
  */
 PFpa_op_t *
 PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
-               PFalg_att_t att, char *err_string)
+               PFalg_col_t col, char *err_string)
 {
     PFpa_op_t *ret = wire2 (pa_cond_err, n, err);
 
@@ -3046,7 +3045,7 @@ PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
     for (unsigned int i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    ret->sem.err.att = att;
+    ret->sem.err.col = col;
     ret->sem.err.str = err_string;
 
     /* ordering stays the same */
@@ -3085,8 +3084,8 @@ PFpa_nil (void)
 PFpa_op_t *
 PFpa_trace (const PFpa_op_t *n1,
             const PFpa_op_t *n2,
-            PFalg_att_t iter,
-            PFalg_att_t item)
+            PFalg_col_t iter,
+            PFalg_col_t item)
 {
     PFpa_op_t     *ret;
     unsigned int   i, found = 0;
@@ -3094,16 +3093,16 @@ PFpa_trace (const PFpa_op_t *n1,
     assert (n1);
     assert (n2);
 
-    /* verify that iter and item are attributes of n1 ... */
+    /* verify that iter and item are columns of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
         if (iter == n1->schema.items[i].name ||
             item == n1->schema.items[i].name)
             found++;
 
-    /* did we find all attributes? */
+    /* did we find all columns? */
     if (found != 2)
         PFoops (OOPS_FATAL,
-                "attributes referenced in trace operator not found");
+                "columns referenced in trace operator not found");
 
     /* create new trace node */
     ret = wire2 (pa_trace, n1, n2);
@@ -3136,8 +3135,8 @@ PFpa_trace (const PFpa_op_t *n1,
 PFpa_op_t *
 PFpa_trace_msg (const PFpa_op_t *n1,
                 const PFpa_op_t *n2,
-                PFalg_att_t iter,
-                PFalg_att_t item)
+                PFalg_col_t iter,
+                PFalg_col_t item)
 {
     PFpa_op_t     *ret;
     unsigned int   i, found = 0;
@@ -3145,16 +3144,16 @@ PFpa_trace_msg (const PFpa_op_t *n1,
     assert (n1);
     assert (n2);
 
-    /* verify that iter and item are attributes of n1 ... */
+    /* verify that iter and item are columns of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
         if (iter == n1->schema.items[i].name ||
             item == n1->schema.items[i].name)
             found++;
 
-    /* did we find all attributes? */
+    /* did we find all columns? */
     if (found != 2)
         PFoops (OOPS_FATAL,
-                "attributes referenced in trace message operator not found");
+                "columns referenced in trace message operator not found");
 
     /* create new trace node */
     ret = wire2 (pa_trace_msg, n1, n2);
@@ -3189,8 +3188,8 @@ PFpa_trace_msg (const PFpa_op_t *n1,
 PFpa_op_t *
 PFpa_trace_map (const PFpa_op_t *n1,
                 const PFpa_op_t *n2,
-                PFalg_att_t      inner,
-                PFalg_att_t      outer)
+                PFalg_col_t      inner,
+                PFalg_col_t      outer)
 {
     PFpa_op_t     *ret;
     unsigned int   i, found = 0;
@@ -3198,16 +3197,16 @@ PFpa_trace_map (const PFpa_op_t *n1,
     assert (n1);
     assert (n2);
 
-    /* verify that inner and outer are attributes of n1 ... */
+    /* verify that inner and outer are columns of n1 ... */
     for (i = 0; i < n1->schema.count; i++)
         if (inner == n1->schema.items[i].name ||
             outer == n1->schema.items[i].name)
             found++;
 
-    /* did we find all attributes? */
+    /* did we find all columns? */
     if (found != 2)
         PFoops (OOPS_FATAL,
-                "attributes referenced in trace operator not found");
+                "columns referenced in trace operator not found");
 
     /* create new trace map node */
     ret = wire2 (pa_trace_map, n1, n2);
@@ -3312,14 +3311,14 @@ PFpa_rec_arg (const PFpa_op_t *seed, const PFpa_op_t *recursion,
     assert (recursion);
     assert (base);
 
-    /* see if both operands have same number of attributes */
+    /* see if both operands have same number of columns */
     if (seed->schema.count != recursion->schema.count ||
         seed->schema.count != base->schema.count)
         PFoops (OOPS_FATAL,
                 "Schema of the arguments of recursion "
                 "argument to not match");
 
-    /* see if we find each attribute in all of the input relations */
+    /* see if we find each column in all of the input relations */
     for (i = 0; i < seed->schema.count; i++) {
         for (j = 0; j < recursion->schema.count; j++)
             if (seed->schema.items[i].name == recursion->schema.items[j].name) {
@@ -3420,7 +3419,7 @@ PFpa_rec_base (PFalg_schema_t schema, PFord_ordering_t ord)
         if (i == schema.count)
             PFoops (OOPS_FATAL,
                     "sort column '%s' does not appear in the schema",
-                    PFatt_str (PFord_order_col_at (ord, i)));
+                    PFcol_str (PFord_order_col_at (ord, i)));
     }
 
     /* create base operator for the recursion */
@@ -3484,7 +3483,7 @@ PFpa_op_t *
 PFpa_fun_call (const PFpa_op_t *loop, const PFpa_op_t *param_list,
                PFalg_schema_t schema, PFalg_fun_call_t kind,
                PFqname_t qname, void *ctx,
-               PFalg_att_t iter, PFalg_occ_ind_t occ_ind)
+               PFalg_col_t iter, PFalg_occ_ind_t occ_ind)
 {
     PFpa_op_t     *ret;
     unsigned int   i;
@@ -3567,7 +3566,7 @@ PFpa_fun_param (const PFpa_op_t *argument, const PFpa_op_t *param_list,
  */
 PFpa_op_t *
 PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
-                  PFalg_att_t iter, PFalg_att_t item)
+                  PFalg_col_t iter, PFalg_col_t item)
 {
     PFpa_op_t *ret = wire2 (pa_string_join, n1, n2);
 
@@ -3599,10 +3598,10 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
  */
 PFpa_op_t *
 PFpa_findnodes (const PFpa_op_t *n,
-                PFalg_att_t iter,
-                PFalg_att_t item,
-                PFalg_att_t item_doc,
-                PFalg_att_t item_res,
+                PFalg_col_t iter,
+                PFalg_col_t item,
+                PFalg_col_t item_doc,
+                PFalg_col_t item_res,
                 bool id)
 {
     PFpa_op_t *ret = wire1 (pa_findnodes, n);
@@ -3636,10 +3635,10 @@ PFpa_findnodes (const PFpa_op_t *n,
  */
 PFpa_op_t *
 PFpa_vx_lookup (const PFpa_op_t *n,
-                PFalg_att_t iter,
-                PFalg_att_t item,
-                PFalg_att_t item_doc,
-                PFalg_att_t item_res,
+                PFalg_col_t iter,
+                PFalg_col_t item,
+                PFalg_col_t item_doc,
+                PFalg_col_t item_res,
                 bool id)
 {
     PFpa_op_t *ret = wire1 (pa_vx_lookup, n);

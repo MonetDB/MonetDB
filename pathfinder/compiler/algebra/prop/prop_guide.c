@@ -58,7 +58,7 @@
 typedef struct PFguide_mapping_t PFguide_mapping_t;
 
 struct PFguide_mapping_t {
-    PFalg_att_t   column;        /* name of the column */
+    PFalg_col_t   column;        /* name of the column */
     int           first_guide;   /* first index for the sorted guide nodes */
     /* NOTE: keep guide_order and guide_list aligned */
     PFarray_t    *guide_order;   /* indexes for the sorted guide nodes */
@@ -72,7 +72,7 @@ struct PFguide_mapping_t {
  * @brief Create a new guide mapping for column @a column.
  */
 static PFguide_mapping_t *
-new_guide_mapping (PFalg_att_t column)
+new_guide_mapping (PFalg_col_t column)
 {
     PFguide_mapping_t *new_mapping;
 
@@ -133,7 +133,7 @@ add_guide_mapping (PFarray_t *map_list,
  *        names (@a column) are equal.
  */
 static PFguide_mapping_t *
-get_guide_mapping (PFarray_t *map_list, PFalg_att_t column)
+get_guide_mapping (PFarray_t *map_list, PFalg_col_t column)
 {
     PFguide_mapping_t *mapping;
 
@@ -253,7 +253,7 @@ copy_project (PFla_op_t *n)
     PFarray_t         *map_list     = MAPPING_LIST(L(n)),
                       *new_map_list = PFarray (sizeof (PFguide_mapping_t *),
                                                n->sem.proj.count);
-    PFalg_att_t        new,
+    PFalg_col_t        new,
                        old;
 
     if (map_list == NULL) {
@@ -533,7 +533,7 @@ copy_step (PFla_op_t *n)
     PFguide_mapping_t *mapping      = NULL, /* guide mapping for column */
                       *new_mapping;
     PFalg_axis_t       axis         = n->sem.step.spec.axis;
-    PFalg_att_t        item         = n->sem.step.item,     /* input col */
+    PFalg_col_t        item         = n->sem.step.item,     /* input col */
                        item_res     = n->sem.step.item_res; /* output col */
     PFarray_t         *map_list     = MAPPING_LIST(R(n)),   /* input mapping */
                       *guides       = NULL, /* list of guide nodes */
@@ -696,9 +696,9 @@ static void
 copy_doc_tbl (PFla_op_t *n, PFguide_list_t *guides)
 {
     /* Test if the document name is constant */
-    if (PFprop_const_left (n->prop, n->sem.doc_tbl.att) == true) {
+    if (PFprop_const_left (n->prop, n->sem.doc_tbl.col) == true) {
         /* value of the document name */
-        PFalg_atom_t a = PFprop_const_val_left (PROP(n), n->sem.doc_tbl.att);
+        PFalg_atom_t a = PFprop_const_val_left (PROP(n), n->sem.doc_tbl.col);
         if (a.type != aat_str) return;
        
         for (unsigned int i = 0; i < PFguide_list_last (guides); i++) {
@@ -927,7 +927,7 @@ PFprop_infer_guide (PFla_op_t *root, PFguide_list_t *guides)
  * @brief Return if the column @a column has a guide mapping.
  */
 bool
-PFprop_guide (PFprop_t *prop, PFalg_att_t column)
+PFprop_guide (PFprop_t *prop, PFalg_col_t column)
 {
     assert(prop);
 
@@ -941,7 +941,7 @@ PFprop_guide (PFprop_t *prop, PFalg_att_t column)
  *        mapping of column @a column.
  */
 unsigned int
-PFprop_guide_count (PFprop_t *prop, PFalg_att_t column)
+PFprop_guide_count (PFprop_t *prop, PFalg_col_t column)
 {
     PFguide_mapping_t *mapping;
 
@@ -963,7 +963,7 @@ PFprop_guide_count (PFprop_t *prop, PFalg_att_t column)
  *        as an array of PFguide_tree_t pointers.
  */
 PFguide_tree_t **
-PFprop_guide_elements (PFprop_t *prop, PFalg_att_t column)
+PFprop_guide_elements (PFprop_t *prop, PFalg_col_t column)
 {
     PFguide_mapping_t *mapping;
     PFguide_tree_t   **ret      = NULL;

@@ -59,7 +59,7 @@
             tm = PFtimer_stop (tm);                                         \
                                                                             \
             if (timing)                                                     \
-                PFlog ("   map to original attribute names:    %s",         \
+                PFlog ("   map to original column names:    %s",            \
                        PFtimer_str (tm));                                   \
                                                                             \
             unq_names = false;                                              \
@@ -405,7 +405,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
             case '[':
                 if (unq_names) {
                     PFinfo (OOPS_WARNING,
-                            "already using unique attribute names");
+                            "already using unique column names");
                     break;
                 }
                 REMOVE_PROXIES("variable name mapping")
@@ -416,7 +416,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("   map to unique attribute names:   %s",
+                    PFlog ("   map to unique column names:   %s",
                            PFtimer_str (tm));
 
                 unq_names = true;
@@ -425,7 +425,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
             case ']':
                 if (!unq_names) {
                     PFinfo (OOPS_WARNING,
-                            "already using original attribute names");
+                            "already using original column names");
                     break;
                 }
                 REMOVE_PROXIES("variable name mapping")
@@ -436,7 +436,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("   map to original attribute names: %s",
+                    PFlog ("   map to original column names: %s",
                            PFtimer_str (tm));
 
                 unq_names = false;

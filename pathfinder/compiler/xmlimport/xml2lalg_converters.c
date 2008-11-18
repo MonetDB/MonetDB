@@ -458,142 +458,142 @@ PFxml2la_conv_2PFLA_OpKind(const char* s)
 /******************************************************************************/
 /******************************************************************************/
 
-PFalg_att_t 
+PFalg_col_t 
 PFxml2la_conv_2PFLA_attributeName(const char* s)
 {
 
 
     if (strcmp(s, "(NULL)" ) == 0)
     {
-        return att_NULL;
+        return col_NULL;
     }
     else if (strcmp(s, "iter"   ) == 0)
     {
-        return att_iter;
+        return col_iter;
     }
     else if (strcmp(s, "item"   ) == 0)
     {
-        return att_item;
+        return col_item;
     }
     else if (strcmp(s, "pos"    ) == 0)
     {
-        return att_pos;
+        return col_pos;
     }
     else if (strcmp(s, "iter1"  ) == 0)
     {
-        return att_iter1;
+        return col_iter1;
     }
     else if (strcmp(s, "item1"  ) == 0)
     {
-        return att_item1;    
+        return col_item1;    
     }
     else if (strcmp(s, "pos1"   ) == 0)
     {
-        return att_pos1;
+        return col_pos1;
     }
     else if (strcmp(s, "inner"  ) == 0)
     {
-        return att_inner;
+        return col_inner;
     }
     else if (strcmp(s, "outer"  ) == 0)
     {
-        return att_outer;
+        return col_outer;
     }
     else if (strcmp(s, "sort"   ) == 0)
     {
-        return att_sort;
+        return col_sort;
     }
     else if (strcmp(s, "sort1"  ) == 0)
     {
-        return att_sort1;
+        return col_sort1;
     }
     else if (strcmp(s, "sort2"  ) == 0)
     {
-        return att_sort2;
+        return col_sort2;
     }
     else if (strcmp(s, "sort3"  ) == 0)
     {
-        return att_sort3;
+        return col_sort3;
     }
     else if (strcmp(s, "sort4"  ) == 0)
     {
-        return att_sort4;
+        return col_sort4;
     }
     else if (strcmp(s, "sort5"  ) == 0)
     {
-        return att_sort5;
+        return col_sort5;
     }
     else if (strcmp(s, "sort6"  ) == 0)
     {
-        return att_sort6;
+        return col_sort6;
     }
     else if (strcmp(s, "sort7"  ) == 0)
     {
-        return att_sort7;
+        return col_sort7;
     }
     else if (strcmp(s, "ord"    ) == 0)
     {
-        return att_ord;
+        return col_ord;
     }
     else if (strcmp(s, "iter2"  ) == 0)
     {
-        return att_iter2;
+        return col_iter2;
     }
     else if (strcmp(s, "iter3"  ) == 0)
     {
-        return att_iter3;
+        return col_iter3;
     }
     else if (strcmp(s, "iter4"  ) == 0)
     {
-        return att_iter4;
+        return col_iter4;
     }
     else if (strcmp(s, "iter5"  ) == 0)
     {
-        return att_iter5;
+        return col_iter5;
     }
     else if (strcmp(s, "iter6"  ) == 0)
     {
-        return att_iter6;
+        return col_iter6;
     }
     else if (strcmp(s, "res"    ) == 0)
     {
-        return att_res;
+        return col_res;
     }
     else if (strcmp(s, "res1"   ) == 0)
     {
-        return att_res1;
+        return col_res1;
     }
     else if (strcmp(s, "cast"   ) == 0)
     {
-        return att_cast;
+        return col_cast;
     }
     else if (strcmp(s, "item2"  ) == 0)
     {
-        return att_item2;
+        return col_item2;
     }
     else if (strcmp(s, "item3"  ) == 0)
     {
-        return att_item3;
+        return col_item3;
     }
     else if (strcmp(s, "item4"  ) == 0)
     {
-        return att_subty;
+        return col_subty;
     }
     else if (strcmp(s, "item5"  ) == 0)
     {
-        return att_itemty;
+        return col_itemty;
     }
     else if (strcmp(s, "item6"  ) == 0)
     {
-        return att_notsub;
+        return col_notsub;
     }
     else if (strcmp(s, "item7"  ) == 0)
     {
-        return att_isint;
+        return col_isint;
     }
     else if (strcmp(s, "item8"  ) == 0)
     {
-        return att_isdec;
+        return col_isdec;
     }
     else
     {
@@ -607,20 +607,20 @@ PFxml2la_conv_2PFLA_attributeName(const char* s)
 /******************************************************************************/
 /******************************************************************************/
 
-PFalg_att_t 
+PFalg_col_t 
 PFxml2la_conv_2PFLA_attributeName_unq(const char* s)
 {
 
 
 
    
-    PFalg_att_t ori;
+    PFalg_col_t ori;
     int id;
 
     if (PFstrUtils_beginsWith(s, "iter"))
     {
 
-        ori = att_iter;
+        ori = col_iter;
        if(strcmp(s, "iter"  ) == 0)
        {
            id = 0;
@@ -634,7 +634,7 @@ PFxml2la_conv_2PFLA_attributeName_unq(const char* s)
     }
     else if (PFstrUtils_beginsWith(s, "pos"))
     {
-       ori = att_pos;
+       ori = col_pos;
        if(strcmp(s, "pos"  ) == 0)
        {
            id = 0;
@@ -649,7 +649,7 @@ PFxml2la_conv_2PFLA_attributeName_unq(const char* s)
     }
     else if (PFstrUtils_beginsWith(s, "item"))
     {
-       ori = att_item;
+       ori = col_item;
        if(strcmp(s, "item"  ) == 0)
        {
            id = 0;

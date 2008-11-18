@@ -85,7 +85,7 @@ typedef unsigned int PFsql_aident_t;
  */
 struct PFsql_col_t {
     PFsql_special_t     spec;
-    PFalg_att_t         att;
+    PFalg_col_t         col;
     PFalg_simple_type_t ty;
     unsigned int        id;
 };
@@ -314,7 +314,7 @@ struct PFsql_alg_ann_t {
     unsigned    bound:1;       /**< indicates if the operator has been bound */
 
     PFarray_t   *colmap;       /**< Mapping table that maps (logical)
-                                    attribute/type  pairs to their
+                                    column/type  pairs to their
                                     SQL expression or in case of
                                     a binding to their column names.
                                     (select list) */
@@ -336,9 +336,9 @@ struct PFsql_alg_ann_t {
     /* annotations needed to improve the query-part that provides the
        result relation for the serialization */
     ser_report_t ser_report;   /**< serialization report */
-    PFalg_att_t  ser_list1;    /**< a list of columns to check further
+    PFalg_col_t  ser_list1;    /**< a list of columns to check further
                                     constraints */
-    PFalg_att_t  ser_list2;    /**< a list of columns to check further
+    PFalg_col_t  ser_list2;    /**< a list of columns to check further
                                     constraints */
     PFarray_t   *rank_map;     /**< an internal representation of all
                                     ignored rank operators. */
@@ -418,7 +418,7 @@ PFsql_t * PFsql_serialization_info_item (const PFsql_t *info,
 
 /**
  * Some specific schema information used by the serializer.
- * We communicate the special attributes, the serializer needs. 
+ * We communicate the special columns, the serializer needs. 
  */
 PFsql_t * PFsql_serialization_name_mapping (const PFsql_t *column,
                                             const PFsql_t *name);
@@ -556,7 +556,7 @@ PFsql_t * PFsql_select (bool distinct,
 PFsql_t * PFsql_select_list_ (unsigned int count, const PFsql_t ** list);
 /**
  * Create an SQL tree node representing the SQL
- * `AS' to bind SQL statements to attribute names.
+ * `AS' to bind SQL statements to column names.
  */
 PFsql_t * PFsql_column_assign (const PFsql_t *expr, const PFsql_t *column_name);
 /**
@@ -916,7 +916,7 @@ PFsql_t * PFsql_partition (const PFsql_t *partition_list);
 /**
  * Construct a SQL type. SQL supports several types
  * like integer or decimals. This is probably most
- * needed when you cast one attribut to another type.
+ * needed when you cast one column to another type.
  *
  * @param   t  The type.
  */

@@ -101,15 +101,15 @@ opt_dom (PFla_op_t *p)
             if (PFprop_subdom (
                     p->prop,
                     PFprop_dom_left (p->prop,
-                                     p->sem.eqjoin.att1),
+                                     p->sem.eqjoin.col1),
                     PFprop_dom_right (p->prop,
-                                      p->sem.eqjoin.att2)) &&
+                                      p->sem.eqjoin.col2)) &&
                 PFprop_subdom (
                     p->prop,
                     PFprop_dom_right (p->prop,
-                                      p->sem.eqjoin.att2),
+                                      p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
-                                     p->sem.eqjoin.att1))) {
+                                     p->sem.eqjoin.col1))) {
                 *p = *L(p);
                 break;
             }

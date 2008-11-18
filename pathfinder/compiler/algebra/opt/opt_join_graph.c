@@ -49,6 +49,9 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -90,7 +93,7 @@ opt_join_graph (PFla_op_t *p)
             if (PFord_count (p->sem.sort.sortby) > 1 &&
                 !PFprop_set (p->prop) && /* ignore nested rank operators */
                 L(p)->kind != la_distinct) /* introduce distinct only once */ {
-                PFalg_att_t col;
+                PFalg_col_t col;
                 PFalg_schema_t schema;
                 schema.count = 0;
                 schema.items = PFmalloc ((p->schema.count - 1) *
@@ -113,7 +116,7 @@ opt_join_graph (PFla_op_t *p)
               are replaced by columns of arbitrary type!!! */
         case la_rowid:
         {
-            PFalg_att_t key = att_NULL;
+            PFalg_col_t key = col_NULL;
 
             for (unsigned int i = 0; i < p->schema.count; i++)
                 if (p->sem.rowid.res != p->schema.items[i].name &&
@@ -142,24 +145,24 @@ opt_join_graph (PFla_op_t *p)
                a compound key we replace the rowid operator by a rank
                operator consuming the compound key. */
             else if (PFprop_req_unique_col (p->prop, p->sem.rowid.res)) {
-                PFalg_attlist_t attlist;
-                unsigned int    count = PFprop_ckeys_count (p->prop),
-                                i,
-                                j;
+                PFalg_collist_t *collist;
+                unsigned int     count = PFprop_ckeys_count (p->prop),
+                                 i,
+                                 j;
                 for (i = 0; i < count; i++) {
-                    attlist = PFprop_ckey_at (p->prop, i);
+                    collist = PFprop_ckey_at (p->prop, i);
                     /* make sure the result is not part of the compound key
                        and all columns of the new key are already used
                        elsewhere. */
-                    for (j = 0; j < attlist.count; j++)
-                        if (attlist.atts[j] == p->sem.rowid.res ||
-                            !PFprop_icol (p->prop, attlist.atts[j]))
+                    for (j = 0; j < clsize (collist); j++)
+                        if (clat (collist, j) == p->sem.rowid.res ||
+                            !PFprop_icol (p->prop, clat (collist, j)))
                             break;
-                    if (j == attlist.count) {
+                    if (j == clsize (collist)) {
                         PFord_ordering_t sortby = PFordering ();
-                        for (j = 0; j < attlist.count; j++)
+                        for (j = 0; j < clsize (collist); j++)
                             sortby = PFord_refine (sortby,
-                                                   attlist.atts[j],
+                                                   clat (collist, j),
                                                    DIR_ASC);
                         *p = *PFla_rank (L(p), p->sem.rowid.res, sortby);
                         break;
@@ -182,9 +185,9 @@ opt_join_graph (PFla_op_t *p)
                  (p->sem.step.spec.axis == alg_desc ||
                   p->sem.step.spec.axis == alg_desc_s))) {
 
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -219,9 +222,9 @@ opt_join_graph (PFla_op_t *p)
                  (p->sem.step.spec.axis == alg_desc ||
                   p->sem.step.spec.axis == alg_desc_s))) {
 
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -286,8 +289,8 @@ opt_set (PFla_op_t *p)
                           only on the join column */
                 PFalg_proj_t *top   = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_proj_t));
-                PFalg_att_t   used_cols = 0,
-                              new_col = p->sem.eqjoin.att2,
+                PFalg_col_t   used_cols = 0,
+                              new_col = p->sem.eqjoin.col2,
                               cur_col;
 
                 /* fill the 'top' projection and collect all used columns
@@ -314,8 +317,8 @@ opt_set (PFla_op_t *p)
                                            R(p),
                                            PFalg_proj (
                                                new_col,
-                                               p->sem.eqjoin.att2)),
-                                       p->sem.eqjoin.att1,
+                                               p->sem.eqjoin.col2)),
+                                       p->sem.eqjoin.col1,
                                        new_col),
                           p->schema.count,
                           top);
@@ -338,9 +341,9 @@ opt_set (PFla_op_t *p)
         case la_step:
             if (PFprop_set (p->prop)) {
 
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -366,9 +369,9 @@ opt_set (PFla_op_t *p)
         case la_guide_step:
             if (PFprop_set (p->prop)) {
 
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(p->sem.step.item |
                                  p->sem.step.iter));
 
@@ -420,7 +423,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
        operator by key property analysis at the end (if it is not needed). */
     if (root->kind == la_serialize_seq) {
         PFla_op_t *p = root;
-        PFalg_att_t item = p->sem.ser_seq.item;
+        PFalg_col_t item = p->sem.ser_seq.item;
 
         /* introduce a new distinct operator on top of the plan if the
            input already forms a key, ... */

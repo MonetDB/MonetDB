@@ -41,7 +41,7 @@
 /**
  * Simple atomic types that our algebra knows.
  *
- * Actual attribute types can be any combination of types from here
+ * Actual column types can be any combination of types from here
  * (polymorphism). We represent these polymorphic algebra types with
  * help of a bit-vector.  Each of the bits corresponds to one of the
  * const values here.
@@ -181,59 +181,64 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 #define DIR_DESC true
 #define DIR_ASC false
 
-/* ................ algebra attribute lists ................ */
+/* ................ algebra column lists ................ */
 
-/** An attribute (name) is represented by constants
+/** An column (name) is represented by constants
         (as these are bit vectors we don't use an enum) */
-#define att_NULL    0x00000000    /**< cope with empty partions */
-#define att_iter    0x00000001    /**< iter column */
-#define att_item    0x00000002    /**< item column */
-#define att_pos     0x00000004    /**< pos column */
-#define att_iter1   0x00000008    /**< iter1 column */
-#define att_item1   0x00000010    /**< item1 column */
-#define att_pos1    0x00000020    /**< pos1 column */
-#define att_inner   0x00000040    /**< inner column */
-#define att_outer   0x00000080    /**< outer column */
-#define att_sort    0x00000100    /**< sort column */
-#define att_sort1   0x00000200    /**< sort column 1 */
-#define att_sort2   0x00000400    /**< sort column 2 */
-#define att_sort3   0x00000800    /**< sort column 3 */
-#define att_sort4   0x00001000    /**< sort column 4 */
-#define att_sort5   0x00002000    /**< sort column 5 */
-#define att_sort6   0x00004000    /**< sort column 6 */
-#define att_sort7   0x00008000    /**< sort column 7 */
-#define att_ord     0x00010000    /**< ord column */
-#define att_iter2   0x00020000    /**< iter column 2 */
-#define att_iter3   0x00040000    /**< iter column 3 */
-#define att_iter4   0x00080000    /**< iter column 4 */
-#define att_iter5   0x00100000    /**< iter column 5 */
-#define att_iter6   0x00200000    /**< iter column 6 */
-#define att_res     0x00400000    /**< res column */
-#define att_res1    0x00800000    /**< res1 column */
-#define att_cast    0x01000000    /**< cast column */
-#define att_item2   0x02000000    /**< item2 column */
-#define att_subty   0x04000000    /**< subty column */
-#define att_itemty  0x08000000    /**< itemty column */
-#define att_notsub  0x10000000    /**< notsub column */
-#define att_isint   0x20000000    /**< isint column */
-#define att_isdec   0x40000000    /**< isdec column */
-#define att_item3   0x80000000    /**< item3 column */
+#define col_NULL    0x00000000    /**< cope with empty partions */
+#define col_iter    0x00000001    /**< iter column */
+#define col_item    0x00000002    /**< item column */
+#define col_pos     0x00000004    /**< pos column */
+#define col_iter1   0x00000008    /**< iter1 column */
+#define col_item1   0x00000010    /**< item1 column */
+#define col_pos1    0x00000020    /**< pos1 column */
+#define col_inner   0x00000040    /**< inner column */
+#define col_outer   0x00000080    /**< outer column */
+#define col_sort    0x00000100    /**< sort column */
+#define col_sort1   0x00000200    /**< sort column 1 */
+#define col_sort2   0x00000400    /**< sort column 2 */
+#define col_sort3   0x00000800    /**< sort column 3 */
+#define col_sort4   0x00001000    /**< sort column 4 */
+#define col_sort5   0x00002000    /**< sort column 5 */
+#define col_sort6   0x00004000    /**< sort column 6 */
+#define col_sort7   0x00008000    /**< sort column 7 */
+#define col_ord     0x00010000    /**< ord column */
+#define col_iter2   0x00020000    /**< iter column 2 */
+#define col_iter3   0x00040000    /**< iter column 3 */
+#define col_iter4   0x00080000    /**< iter column 4 */
+#define col_iter5   0x00100000    /**< iter column 5 */
+#define col_iter6   0x00200000    /**< iter column 6 */
+#define col_res     0x00400000    /**< res column */
+#define col_res1    0x00800000    /**< res1 column */
+#define col_cast    0x01000000    /**< cast column */
+#define col_item2   0x02000000    /**< item2 column */
+#define col_subty   0x04000000    /**< subty column */
+#define col_itemty  0x08000000    /**< itemty column */
+#define col_notsub  0x10000000    /**< notsub column */
+#define col_isint   0x20000000    /**< isint column */
+#define col_isdec   0x40000000    /**< isdec column */
+#define col_item3   0x80000000    /**< item3 column */
 
-/** attribute names */
-typedef unsigned int PFalg_att_t;
+/** column names */
+typedef unsigned int PFalg_col_t;
 
-/** A list of attributes (actually: attribute names) */
-struct PFalg_attlist_t {
-    unsigned int count;    /**< number of items in this list */
-    PFalg_att_t *atts;     /**< array that holds the actual list items */
-};
-typedef struct PFalg_attlist_t PFalg_attlist_t;
+/** A list of columns (actually: column names) */
+#define PFalg_collist_t            PFarray_t
+/** Constructor for a column list */
+#define PFalg_collist(size)        PFarray (sizeof (PFalg_col_t), (size))
+#define PFalg_collist_copy(cl)     PFarray_copy ((cl))
+/** Positional access to a column list */
+#define PFalg_collist_at(cl,i)     *(PFalg_col_t *) PFarray_at ((cl), (i))
+/** Append to a column list */
+#define PFalg_collist_add(cl)      *(PFalg_col_t *) PFarray_add ((cl))
+/** Size of a column list */
+#define PFalg_collist_size(cl)     PFarray_last ((cl))
 
 /* ............. algebra schema specification .............. */
 
 /** An algebra schema item is a (name, type) pair */
 struct PFalg_schm_item_t {
-    PFalg_att_t         name;
+    PFalg_col_t         name;
     PFalg_simple_type_t type;
 };
 typedef struct PFalg_schm_item_t PFalg_schm_item_t;
@@ -248,8 +253,8 @@ typedef struct PFalg_schema_t PFalg_schema_t;
 
 /** item in a projection list, an (new-name,old-name) pair */
 struct PFalg_proj_t {
-    PFalg_att_t new;   /**< new attribute name to assign */
-    PFalg_att_t old;   /**< old attribute name */
+    PFalg_col_t new;   /**< new column name to assign */
+    PFalg_col_t old;   /**< old column name */
 };
 typedef struct PFalg_proj_t PFalg_proj_t;
 
@@ -404,8 +409,8 @@ typedef enum PFalg_comp_t PFalg_comp_t;
 
 struct PFalg_sel_t {
     PFalg_comp_t comp;  /**< comparison > */
-    PFalg_att_t  left;  /**< left selection column > */
-    PFalg_att_t  right; /**< right selection column > */
+    PFalg_col_t  left;  /**< left selection column > */
+    PFalg_col_t  right; /**< right selection column > */
 };
 typedef struct PFalg_sel_t PFalg_sel_t;
 
@@ -452,24 +457,24 @@ PFalg_atom_t PFalg_lit_qname (PFqname_t value);
 /** Worker to construct a literal table tuple */
 PFalg_tuple_t PFalg_tuple_ (unsigned int count, PFalg_atom_t *atoms);
 
+#define PFalg_collist_worker(...)                              \
+    PFalg_collist_ ((sizeof ((PFalg_col_t[]) { __VA_ARGS__ })  \
+                       / sizeof (PFalg_col_t)),                \
+                   (PFalg_col_t[]) { __VA_ARGS__ })
 /**
- * Construct an attribute list (list of attribute names only).
+ * Construct an column list (list of column names only).
  */
-#define PFalg_attlist(...)                                     \
-    PFalg_attlist_ ((sizeof ((PFalg_att_t[]) { __VA_ARGS__ })   \
-                       / sizeof (PFalg_att_t)),                \
-                   (PFalg_att_t[]) { __VA_ARGS__ })
-PFalg_attlist_t PFalg_attlist_ (unsigned int count, PFalg_att_t *atts);
+PFalg_collist_t * PFalg_collist_ (unsigned int count, PFalg_col_t *cols);
 
 
-/* Returns the original schema without the attributes given in the list */
+/* Returns the original schema without the columns given in the list */
 #define PFalg_schema_diff(schema, ...) \
     PFalg_schema_diff_ (schema, \
-            (sizeof ((PFalg_att_t[]) { __VA_ARGS__ })   \
-                       / sizeof (PFalg_att_t)), \
-            (PFalg_att_t[]) {__VA_ARGS__})
+            (sizeof ((PFalg_col_t[]) { __VA_ARGS__ })   \
+                       / sizeof (PFalg_col_t)), \
+            (PFalg_col_t[]) {__VA_ARGS__})
 PFalg_schema_t PFalg_schema_diff_(PFalg_schema_t schema,
-                        unsigned int count, PFalg_att_t *atts);
+                        unsigned int count, PFalg_col_t *cols);
 
 /** 
  * Constructor for an empty schema with iter|pos|item and item of type item_t
@@ -482,7 +487,7 @@ PFalg_schema_t PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t);
 PFalg_schema_t PFalg_iter_item_schema(PFalg_simple_type_t item_t);
 
 /** Constructor for projection list item */
-PFalg_proj_t PFalg_proj (PFalg_att_t new, PFalg_att_t old);
+PFalg_proj_t PFalg_proj (PFalg_col_t new, PFalg_col_t old);
 
 /**
  * Test if two atomic values are comparable
@@ -495,9 +500,9 @@ bool PFalg_atom_comparable (PFalg_atom_t a, PFalg_atom_t b);
 int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
 
 /**
- * Print attribute name
+ * Print column name
  */
-char * PFatt_str (PFalg_att_t att);
+char * PFcol_str (PFalg_col_t col);
 
 /**
  * Initialize the column name counter.
@@ -507,32 +512,32 @@ void PFalg_init (void);
 /**
  * Checks whether a name is unique or not.
  */
-bool PFalg_is_unq_name (PFalg_att_t att);
+bool PFalg_is_unq_name (PFalg_col_t col);
 
 /**
  * Return a new unique column name
  */
-PFalg_att_t PFalg_new_name (PFalg_att_t att);
+PFalg_col_t PFalg_new_name (PFalg_col_t col);
 
 /**
  * Create a unique name based on an original bit-encoded name @a ori
  * that retains the usage information of the new variable (iter, pos
  * or item).
  */
-PFalg_att_t PFalg_unq_name (PFalg_att_t ori);
+PFalg_col_t PFalg_unq_name (PFalg_col_t ori);
 
 /**
  * Create an unique name based on an id @a id and
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
-PFalg_att_t PFalg_unq_fixed_name (PFalg_att_t ori, unsigned int id);
+PFalg_col_t PFalg_unq_fixed_name (PFalg_col_t ori, unsigned int id);
 
 /**
  * Create an original column name based on an unique name @a unq
  * and a list of free original variables @a free.
  */
-PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
+PFalg_col_t PFalg_ori_name (PFalg_col_t unq, PFalg_col_t free);
 
 /**
  * Print XPath axis
@@ -547,7 +552,7 @@ char * PFalg_node_kind_str (PFalg_node_kind_t kind);
 /**
  * Print simple type name
  */
-char * PFalg_simple_type_str (PFalg_simple_type_t att);
+char * PFalg_simple_type_str (PFalg_simple_type_t col);
 
 /**
  * Print function call kind
@@ -563,8 +568,8 @@ char * PFalg_fun_str (PFalg_fun_t fun);
  * Construct a predicate.
  */
 PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
-                       PFalg_att_t left,
-                       PFalg_att_t right);
+                       PFalg_col_t left,
+                       PFalg_col_t right);
 
 #ifdef HAVE_PFTIJAH
 

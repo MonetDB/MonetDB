@@ -40,6 +40,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -50,7 +53,7 @@
  * Add a new original name/current name pair to the list of name pairs @a np
  */
 static void
-add_name_pair (PFarray_t *np, PFalg_att_t ori, PFalg_att_t cur)
+add_name_pair (PFarray_t *np, PFalg_col_t ori, PFalg_col_t cur)
 {
     assert (np);
 
@@ -60,15 +63,15 @@ add_name_pair (PFarray_t *np, PFalg_att_t ori, PFalg_att_t cur)
 
 /**
  * diff_np marks the name pair invalid that is associated
- * with the current attribute name @a cur.
+ * with the current column name @a cur.
  */
 static void
-diff_np (PFarray_t *np_list, PFalg_att_t cur)
+diff_np (PFarray_t *np_list, PFalg_col_t cur)
 {
     for (unsigned int i = 0; i < PFarray_last (np_list); i++)
         if (CUR_AT(np_list, i) == cur) {
             /* mark the name pair as invalid */
-            CUR_AT(np_list, i) = att_NULL;
+            CUR_AT(np_list, i) = col_NULL;
             break;
         }
 }
@@ -79,7 +82,7 @@ diff_np (PFarray_t *np_list, PFalg_att_t cur)
  */
 static void
 map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
-           PFalg_att_t twig_iter)
+           PFalg_col_t twig_iter)
 {
     PFarray_t  *np_list = n->prop->name_pairs;
 
@@ -143,7 +146,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 add_name_pair (goal->prop->name_pairs,
                                ORI_AT(np_list, i),
-                               att_NULL);
+                               col_NULL);
             }
             break;
 
@@ -160,7 +163,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 /* ensure that we don't forget anything about modified columns */
-                if (CUR_AT(np_list, i) == att_NULL) {
+                if (CUR_AT(np_list, i) == col_NULL) {
                     add_name_pair (n->prop->l_name_pairs,
                                    ORI_AT(np_list, i),
                                    CUR_AT(np_list, i));
@@ -178,7 +181,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                         }
                 }
             }
-            map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
+            map_names (L(n), goal, n->prop->l_name_pairs, col_NULL);
         }   return;
 
         case la_cross:
@@ -195,7 +198,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                 /* ensure that we don't forget anything about
                    modified columns (thus add them into both branches) */
-                if (CUR_AT(np_list, i) == att_NULL) {
+                if (CUR_AT(np_list, i) == col_NULL) {
                     add_name_pair (n->prop->l_name_pairs,
                                    ORI_AT(np_list, i),
                                    CUR_AT(np_list, i));
@@ -210,13 +213,13 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                         }
                 }
             }
-            map_names (L(n), goal, n->prop->l_name_pairs, att_NULL);
+            map_names (L(n), goal, n->prop->l_name_pairs, col_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
 
             if (n->kind == la_semijoin) {
                 /* only propagate the name of the join column */
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++)
-                    if (n->sem.eqjoin.att2 == CUR_AT(np_list, i)) {
+                    if (n->sem.eqjoin.col2 == CUR_AT(np_list, i)) {
                         add_name_pair (n->prop->l_name_pairs,
                                        ORI_AT(np_list, i),
                                        CUR_AT(np_list, i));
@@ -227,7 +230,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                 for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
                     /* ensure that we don't forget anything about
                        modified columns (thus add them into both branches) */
-                    if (CUR_AT(np_list, i) == att_NULL) {
+                    if (CUR_AT(np_list, i) == col_NULL) {
                         add_name_pair (n->prop->l_name_pairs,
                                        ORI_AT(np_list, i),
                                        CUR_AT(np_list, i));
@@ -243,7 +246,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
                             }
                     }
                 }
-            map_names (R(n), goal, n->prop->l_name_pairs, att_NULL);
+            map_names (R(n), goal, n->prop->l_name_pairs, col_NULL);
             PFarray_last (n->prop->l_name_pairs) = 0;
         }   return;
 
@@ -327,7 +330,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* infer properties for children and
                return the resulting mapping */
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             map_names (R(n), goal, np_list, n->sem.docnode.iter);
             return;
 
@@ -339,7 +342,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* infer properties for children and
                return the resulting mapping */
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             map_names (R(n), goal, np_list, n->sem.iter_item.iter);
             return;
 
@@ -352,7 +355,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* infer properties for children and
                return the resulting mapping */
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             return;
 
         case la_attribute:
@@ -364,7 +367,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* infer properties for children and
                return the resulting mapping */
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             return;
 
         case la_content:
@@ -375,11 +378,11 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
             /* infer properties for children and
                return the resulting mapping */
-            map_names (R(n), goal, np_list, att_NULL);
+            map_names (R(n), goal, np_list, col_NULL);
 
             /* empty the name pair list */
             PFarray_last (np_list) = 0;
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             return;
 
         case la_merge_adjacent:
@@ -403,10 +406,10 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_trace_msg:
         case la_trace_map:
             /* do the recursive calls by hand */
-            map_names (L(n), goal, np_list, att_NULL);
+            map_names (L(n), goal, np_list, col_NULL);
             /* empty the name pair list */
             PFarray_last (np_list) = 0;
-            map_names (R(n), goal, np_list, att_NULL);
+            map_names (R(n), goal, np_list, col_NULL);
             return;
 
         case la_nil:
@@ -442,8 +445,8 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
 
     /* infer properties for children and
        return the resulting mapping */
-    if (L(n)) map_names (L(n), goal, np_list, att_NULL);
-    if (R(n)) map_names (R(n), goal, np_list, att_NULL);
+    if (L(n)) map_names (L(n), goal, np_list, col_NULL);
+    if (R(n)) map_names (R(n), goal, np_list, col_NULL);
 }
 
 #ifndef NDEBUG
@@ -486,16 +489,16 @@ reset_fun (PFla_op_t *n)
  * Trace a list of column names starting from the start
  * operator until the goal operator is reached.
  */
-PFalg_attlist_t
+PFalg_collist_t *
 PFprop_trace_names (PFla_op_t *start,
                     PFla_op_t *goal,
-                    PFalg_attlist_t list)
+                    PFalg_collist_t *list)
 {
-    PFalg_attlist_t new_list;
-    unsigned int    i,
-                    j;
-    PFarray_t      *map_list = PFarray (sizeof (name_pair_t), list.count),
-                   *new_map_list;
+    PFalg_collist_t *new_list;
+    unsigned int     i,
+                     j;
+    PFarray_t       *map_list = PFarray (sizeof (name_pair_t), clsize (list)),
+                    *new_map_list;
 
     /* collect number of incoming edges (parents) */
     PFprop_infer_refctr (start);
@@ -508,11 +511,11 @@ PFprop_trace_names (PFla_op_t *start,
     PFla_dag_reset (start);
 
     /* intialize the projection list */
-    for (i = 0; i < list.count; i++)
-        add_name_pair (map_list, list.atts[i], list.atts[i]);
+    for (i = 0; i < clsize (list); i++)
+        add_name_pair (map_list, clat (list, i), clat (list, i));
 
     /* collect the mapped names */
-    map_names (start, goal, map_list, att_NULL);
+    map_names (start, goal, map_list, col_NULL);
     new_map_list = goal->prop->name_pairs;
     assert (new_map_list);
     
@@ -525,7 +528,7 @@ PFprop_trace_names (PFla_op_t *start,
                 /* Mark the name pair as invalid if we have conflicting
                    current names. */
                 if (CUR_AT(new_map_list, i) != CUR_AT(new_map_list, j))
-                    CUR_AT(new_map_list, i) = att_NULL;
+                    CUR_AT(new_map_list, i) = col_NULL;
 
                 /* remove the entry at index j */
                 *(name_pair_t *) PFarray_at (new_map_list, j)
@@ -536,20 +539,19 @@ PFprop_trace_names (PFla_op_t *start,
     }
 
     /* create new list */
-    new_list.count = list.count;
-    new_list.atts  = PFmalloc (list.count * sizeof (PFalg_att_t));
+    new_list = PFalg_collist (clsize (list));
 
     /* fill the list of mapped variable names */
-    for (i = 0; i < list.count; i++) {
+    for (i = 0; i < clsize (list); i++) {
         for (j = 0; j < PFarray_last (new_map_list); j++)
-            if (list.atts[i] == ORI_AT(new_map_list, j)) {
-                new_list.atts[i] = CUR_AT(new_map_list, j);
+            if (clat (list, i) == ORI_AT(new_map_list, j)) {
+                cladd (new_list) = CUR_AT(new_map_list, j);
                 break;
             }
         if (j == PFarray_last (new_map_list))
             /* fill in NULL if the name column was
                introduced after the goal operator */
-            new_list.atts[i] = att_NULL;
+            cladd (new_list) = col_NULL;
     }
 
     return new_list;

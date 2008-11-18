@@ -42,50 +42,50 @@
 #include "child_mnemonic.h"
 
 /**
- * Test if @a attr is marked constant in property container @a prop.
+ * Test if @a col is marked constant in property container @a prop.
  */
 bool
-PFprop_const (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
     if (!prop->constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
-        if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
+        if (col == ((const_t *) PFarray_at (prop->constants, i))->col)
             return true;
 
     return false;
 }
 
 /**
- * Test if @a attr is marked constant in the left child
+ * Test if @a col is marked constant in the left child
  * (information is stored in property container @a prop)
  */
 bool
-PFprop_const_left (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const_left (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
     if (!prop->l_constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->l_constants); i++)
-        if (attr == ((const_t *) PFarray_at (prop->l_constants, i))->attr)
+        if (col == ((const_t *) PFarray_at (prop->l_constants, i))->col)
             return true;
 
     return false;
 }
 
 /**
- * Test if @a attr is marked constant in the left child
+ * Test if @a col is marked constant in the left child
  * (information is stored in property container @a prop)
  */
 bool
-PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const_right (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
     if (!prop->r_constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->r_constants); i++)
-        if (attr == ((const_t *) PFarray_at (prop->r_constants, i))->attr)
+        if (col == ((const_t *) PFarray_at (prop->r_constants, i))->col)
             return true;
 
     return false;
@@ -93,67 +93,67 @@ PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr)
 
 /* worker for PFprop_const_val(_left|_right)? */
 static PFalg_atom_t
-const_val (PFarray_t *constants, PFalg_att_t attr)
+const_val (PFarray_t *constants, PFalg_col_t col)
 {
     assert (constants);
 
     for (unsigned int i = 0; i < PFarray_last (constants); i++)
-        if (attr == ((const_t *) PFarray_at (constants, i))->attr)
+        if (col == ((const_t *) PFarray_at (constants, i))->col)
             return ((const_t *) PFarray_at (constants, i))->value;
 
     PFoops (OOPS_FATAL,
-            "could not find attribute that is supposed to be constant: `%s'",
-            PFatt_str (attr));
+            "could not find column that is supposed to be constant: `%s'",
+            PFcol_str (col));
 
     assert (0); /* never reached due to "exit" in PFoops */
     return PFalg_lit_int (0); /* pacify picky compilers */
 }
 
 /**
- * Lookup value of @a attr in property container @a prop.  Attribute
- * @a attr must be marked constant, otherwise the function will fail.
+ * Lookup value of @a col in property container @a prop.  Attribute
+ * @a col must be marked constant, otherwise the function will fail.
  */
 PFalg_atom_t
-PFprop_const_val (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const_val (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
 
-    return const_val (prop->constants, attr);
+    return const_val (prop->constants, col);
 }
 
 /**
- * Lookup value of @a attr in the list of constants of the left
+ * Lookup value of @a col in the list of constants of the left
  * child. (Information resides in property container @a prop.)
- * Attribute @a attr must be marked constant, otherwise
+ * Attribute @a col must be marked constant, otherwise
  * the function will fail.
  */
 PFalg_atom_t
-PFprop_const_val_left (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const_val_left (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
     assert (prop->l_constants);
 
-    return const_val (prop->l_constants, attr);
+    return const_val (prop->l_constants, col);
 }
 
 /**
- * Lookup value of @a attr in the list of constants of the right
+ * Lookup value of @a col in the list of constants of the right
  * child. (Information resides in property container @a prop.)
- * Attribute @a attr must be marked constant, otherwise
+ * Attribute @a col must be marked constant, otherwise
  * the function will fail.
  */
 PFalg_atom_t
-PFprop_const_val_right (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_const_val_right (const PFprop_t *prop, PFalg_col_t col)
 {
     assert (prop);
     assert (prop->r_constants);
 
-    return const_val (prop->r_constants, attr);
+    return const_val (prop->r_constants, col);
 }
 
 /* the following 3 functions are used for debug printing */
 /**
- * Return number of attributes marked const.
+ * Return number of columns marked const.
  */
 unsigned int
 PFprop_const_count (const PFprop_t *prop)
@@ -165,20 +165,20 @@ PFprop_const_count (const PFprop_t *prop)
 }
 
 /**
- * Return name of constant attribute number @a i (in container @a prop).
+ * Return name of constant column number @a i (in container @a prop).
  * (Needed, e.g., to iterate over constant columns.)
  */
-PFalg_att_t
+PFalg_col_t
 PFprop_const_at (const PFprop_t *prop, unsigned int i)
 {
     assert (prop);
     assert (prop->constants);
 
-    return ((const_t *) PFarray_at (prop->constants, i))->attr;
+    return ((const_t *) PFarray_at (prop->constants, i))->col;
 }
 
 /**
- * Return value of constant attribute number @a i (in container @a prop).
+ * Return value of constant column number @a i (in container @a prop).
  * (Needed, e.g., to iterate over constant columns.)
  */
 PFalg_atom_t
@@ -191,24 +191,24 @@ PFprop_const_val_at (const PFprop_t *prop, unsigned int i)
 }
 
 /**
- * Mark @a attr as constant with value @a value in node @a n.
+ * Mark @a col as constant with value @a value in node @a n.
  */
 static void
-PFprop_mark_const (PFprop_t *prop, PFalg_att_t attr, PFalg_atom_t value)
+PFprop_mark_const (PFprop_t *prop, PFalg_col_t col, PFalg_atom_t value)
 {
     assert (prop);
     assert (prop->constants);
 
 
 #ifndef NDEBUG
-    if (PFprop_const (prop, attr))
+    if (PFprop_const (prop, col))
         PFoops (OOPS_FATAL,
-                "attribute `%s' already declared constant",
-                PFatt_str (attr));
+                "column `%s' already declared constant",
+                PFcol_str (col));
 #endif
 
     *(const_t *) PFarray_add (prop->constants)
-        = (const_t) { .attr = attr, .value = value };
+        = (const_t) { .col = col, .value = value };
 }
 
 static void
@@ -346,15 +346,15 @@ infer_const (PFla_op_t *n)
 
         case la_select:
             /* the selection criterion itself will now also be const */
-            if (!PFprop_const (n->prop, n->sem.select.att))
+            if (!PFprop_const (n->prop, n->sem.select.col))
                 PFprop_mark_const (
-                        n->prop, n->sem.select.att, PFalg_lit_bln (true));
+                        n->prop, n->sem.select.col, PFalg_lit_bln (true));
             break;
 
         case la_disjunion:
         case la_intersect:
             /*
-             * add all attributes that are constant in both input relations
+             * add all columns that are constant in both input relations
              * and additionally both contain the same value
              */
             for (unsigned int i = 0; i < PFprop_const_count (L(n)->prop); i++)
@@ -397,23 +397,23 @@ infer_const (PFla_op_t *n)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-            /* if both involved attributes are constant and
+            /* if both involved columns are constant and
                we can be sure that the result is the same on all
                plattforms we mark the result as constant and calculate
                its value. (Note: Avoid inferring values that are
                ambiguous e.g. +(dbl, dbl) as the runtime might
                calculate a differing result.) */
-            if (PFprop_const (L(n)->prop, n->sem.binary.att1) &&
-                PFprop_const (L(n)->prop, n->sem.binary.att2)) {
-                PFalg_att_t att1, att2;
+            if (PFprop_const (L(n)->prop, n->sem.binary.col1) &&
+                PFprop_const (L(n)->prop, n->sem.binary.col2)) {
+                PFalg_col_t col1, col2;
                 PFalg_simple_type_t ty;
 
-                att1 = n->sem.binary.att1;
-                att2 = n->sem.binary.att2;
+                col1 = n->sem.binary.col1;
+                col2 = n->sem.binary.col2;
                 ty = 0;
 
                 for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (n->schema.items[i].name == n->sem.binary.att1) {
+                    if (n->schema.items[i].name == n->sem.binary.col1) {
                         ty = n->schema.items[i].type;
                         break;
                     }
@@ -422,8 +422,8 @@ infer_const (PFla_op_t *n)
                     (ty == aat_nat || ty == aat_int ||
                      ty == aat_bln || ty == aat_qname)) {
 
-                    !PFalg_atom_cmp (PFprop_const_val (L(n)->prop, att1),
-                                     PFprop_const_val (L(n)->prop, att2))
+                    !PFalg_atom_cmp (PFprop_const_val (L(n)->prop, col1),
+                                     PFprop_const_val (L(n)->prop, col2))
                     ?
                     PFprop_mark_const (
                         n->prop,
@@ -438,8 +438,8 @@ infer_const (PFla_op_t *n)
                 else if (n->kind == la_num_gt &&
                          (ty == aat_nat || ty == aat_int)) {
 
-                    (PFalg_atom_cmp (PFprop_const_val (L(n)->prop, att1),
-                                     PFprop_const_val (L(n)->prop, att2))
+                    (PFalg_atom_cmp (PFprop_const_val (L(n)->prop, col1),
+                                     PFprop_const_val (L(n)->prop, col2))
                     > 0)
                     ?
                     PFprop_mark_const (
@@ -457,24 +457,24 @@ infer_const (PFla_op_t *n)
                         n->prop,
                         n->sem.binary.res,
                         PFalg_lit_bln (
-                            (PFprop_const_val (L(n)->prop, att1)).val.bln &&
-                            (PFprop_const_val (L(n)->prop, att2)).val.bln));
+                            (PFprop_const_val (L(n)->prop, col1)).val.bln &&
+                            (PFprop_const_val (L(n)->prop, col2)).val.bln));
                 }
                 else if (n->kind == la_bool_or && ty == aat_bln) {
                     PFprop_mark_const (
                         n->prop,
                         n->sem.binary.res,
                         PFalg_lit_bln (
-                            (PFprop_const_val (L(n)->prop, att1)).val.bln ||
-                            (PFprop_const_val (L(n)->prop, att2)).val.bln));
+                            (PFprop_const_val (L(n)->prop, col1)).val.bln ||
+                            (PFprop_const_val (L(n)->prop, col2)).val.bln));
                 }
             }
             /* if one argument of the and operator has constant value
                false the result will be false as well */
             else if (n->kind == la_bool_and &&
-                     PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                     PFprop_const (L(n)->prop, n->sem.binary.col1) &&
                      !(PFprop_const_val (L(n)->prop,
-                                         n->sem.binary.att1)).val.bln)
+                                         n->sem.binary.col1)).val.bln)
                 PFprop_mark_const (
                     n->prop,
                     n->sem.binary.res,
@@ -482,9 +482,9 @@ infer_const (PFla_op_t *n)
             /* if one argument of the or operator has constant value
                true the result will be true as well */
             else if (n->kind == la_bool_or &&
-                     PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                     PFprop_const (L(n)->prop, n->sem.binary.col1) &&
                      (PFprop_const_val (L(n)->prop,
-                                        n->sem.binary.att1)).val.bln)
+                                        n->sem.binary.col1)).val.bln)
                 PFprop_mark_const (
                     n->prop,
                     n->sem.binary.res,
@@ -494,39 +494,39 @@ infer_const (PFla_op_t *n)
         case la_bool_not:
             /* if input is constant, output is constant as
                well with the switched value */
-            if (PFprop_const (n->prop, n->sem.unary.att))
+            if (PFprop_const (n->prop, n->sem.unary.col))
                 PFprop_mark_const (
                     n->prop,
                     n->sem.unary.res,
                     PFalg_lit_bln (!PFprop_const_val (
                                         n->prop,
-                                        n->sem.unary.att).val.bln));
+                                        n->sem.unary.col).val.bln));
             break;
 
         case la_to:
-            if (PFprop_const (L(n)->prop, n->sem.binary.att1) &&
-                PFprop_const (L(n)->prop, n->sem.binary.att2) &&
+            if (PFprop_const (L(n)->prop, n->sem.binary.col1) &&
+                PFprop_const (L(n)->prop, n->sem.binary.col2) &&
                 PFalg_atom_comparable (
-                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)) &&
+                    PFprop_const_val (L(n)->prop, n->sem.binary.col1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.col2)) &&
                 !PFalg_atom_cmp (
-                    PFprop_const_val (L(n)->prop, n->sem.binary.att1),
-                    PFprop_const_val (L(n)->prop, n->sem.binary.att2)))
+                    PFprop_const_val (L(n)->prop, n->sem.binary.col1),
+                    PFprop_const_val (L(n)->prop, n->sem.binary.col2)))
                 PFprop_mark_const (
                     n->prop,
                     n->sem.binary.res,
-                    PFprop_const_val (L(n)->prop, n->sem.binary.att1));
+                    PFprop_const_val (L(n)->prop, n->sem.binary.col1));
             break;
 
         case la_avg:
         case la_max:
         case la_min:
-            /* if column 'att' is constant the result 'res' will be as well */
-            if (PFprop_const (L(n)->prop, n->sem.aggr.att))
+            /* if column 'col' is constant the result 'res' will be as well */
+            if (PFprop_const (L(n)->prop, n->sem.aggr.col))
                 PFprop_mark_const (
                         n->prop,
                         n->sem.aggr.res,
-                        PFprop_const_val (L(n)->prop, n->sem.aggr.att));
+                        PFprop_const_val (L(n)->prop, n->sem.aggr.col));
         case la_sum:
         case la_count:
         case la_seqty1:
@@ -543,43 +543,43 @@ infer_const (PFla_op_t *n)
             /* Inference of the constant result columns
                is not possible as a cast is required. */
 
-            /* if the cast does not change the type res equals att */
-            if (PFprop_const (L(n)->prop, n->sem.type.att) &&
+            /* if the cast does not change the type res equals col */
+            if (PFprop_const (L(n)->prop, n->sem.type.col) &&
                 (PFprop_const_val (L(n)->prop,
-                                   n->sem.type.att)).type == n->sem.type.ty)
+                                   n->sem.type.col)).type == n->sem.type.ty)
                 PFprop_mark_const (
                         n->prop,
                         n->sem.type.res,
-                        PFprop_const_val (L(n)->prop, n->sem.type.att));
+                        PFprop_const_val (L(n)->prop, n->sem.type.col));
             /* In special cases a stable cast (in respect to different
                implementations) is possible (see e.g. from int to dbl). */
-            else if (PFprop_const (L(n)->prop, n->sem.type.att) &&
+            else if (PFprop_const (L(n)->prop, n->sem.type.col) &&
                      (PFprop_const_val (L(n)->prop,
-                                        n->sem.type.att)).type == aat_int &&
+                                        n->sem.type.col)).type == aat_int &&
                      n->sem.type.ty == aat_dbl)
                 PFprop_mark_const (
                         n->prop,
                         n->sem.type.res,
                         PFalg_lit_dbl ((PFprop_const_val (
                                             L(n)->prop,
-                                            n->sem.type.att)).val.int_));
+                                            n->sem.type.col)).val.int_));
             /* In special cases a stable cast (in respect to different
                implementations) is possible (see e.g. from nat to int). */
-            else if (PFprop_const (L(n)->prop, n->sem.type.att) &&
+            else if (PFprop_const (L(n)->prop, n->sem.type.col) &&
                      (PFprop_const_val (L(n)->prop,
-                                        n->sem.type.att)).type == aat_nat &&
+                                        n->sem.type.col)).type == aat_nat &&
                      n->sem.type.ty == aat_int)
                 PFprop_mark_const (
                         n->prop,
                         n->sem.type.res,
                         PFalg_lit_int ((PFprop_const_val (
                                             L(n)->prop,
-                                            n->sem.type.att)).val.nat_));
+                                            n->sem.type.col)).val.nat_));
             break;
 
         case la_type:
             for (unsigned int i = 0; i < n->schema.count; i++) {
-                if (n->sem.type.att == n->schema.items[i].name) {
+                if (n->sem.type.col == n->schema.items[i].name) {
                     if (n->sem.type.ty == n->schema.items[i].type)
                         PFprop_mark_const (
                                 n->prop,

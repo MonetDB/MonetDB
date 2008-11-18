@@ -47,9 +47,9 @@ typedef struct PFprop_t PFprop_t;
 struct PFprop_t {
     unsigned int card;       /**< Exact number of tuples in intermediate
                                   result. (0 means we don't know) */
-    PFarray_t   *constants;  /**< List of attributes marked constant,
+    PFarray_t   *constants;  /**< List of columns marked constant,
                                   along with their corresponding values. */
-    PFarray_t   *domains;    /**< List of attributes along with their
+    PFarray_t   *domains;    /**< List of columns along with their
                                   corresponding domain identifier. */
     PFarray_t   *subdoms;    /**< Subdomain relationships (parent/child
                                   relationships between domains) */
@@ -57,58 +57,58 @@ struct PFprop_t {
                                   disjoint domains) */
     bool         set;        /**< boolean flag that indicates whether the
                                   cardinality of an operator is important */
-    PFarray_t   *icols;      /**< List of attributes required by the
+    PFarray_t   *icols;      /**< List of columns required by the
                                   parent operators. */
-    PFarray_t   *keys;       /**< List of attributes that have
+    PFarray_t   *keys;       /**< List of columns that have
                                   unique values. */
     PFarray_t   *reqvals;    /**< List of columns their associated
                                   usage information. */
     PFarray_t   *req_node_vals;   /**< List of columns and their associated
                                        node usage information. */
-    PFarray_t   *name_pairs; /**< List of attributes with their corresponding
+    PFarray_t   *name_pairs; /**< List of columns with their corresponding
                                   unique names. */
-    PFalg_att_t  free_cols;  /**< List of columns that are not in use. */  
-    PFalg_att_t  left_cols;  /**< List of left columns (intro_thetajoin.c) */
-    PFalg_att_t  right_cols; /**< List of right columns (intro_thetajoin.c) */
-    PFarray_t   *level_mapping; /**< List of attributes annotated with
+    PFalg_col_t  free_cols;  /**< List of columns that are not in use. */  
+    PFalg_col_t  left_cols;  /**< List of left columns (intro_thetajoin.c) */
+    PFalg_col_t  right_cols; /**< List of right columns (intro_thetajoin.c) */
+    PFarray_t   *level_mapping; /**< List of columns annotated with
                                      level information. */
     PFarray_t   *guide_mapping_list; /**< List of guide mappings that contain
                                           a pair of column and list of guide
                                           nodes for the operator */
-    PFarray_t   *ckeys;      /**< List of composite lists of attributes that
+    PFarray_t   *ckeys;      /**< List of composite lists of columns that
                                   build a key for a relation. */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
-    PFarray_t  *l_constants; /**< List of attributes marked constant,
+    PFarray_t  *l_constants; /**< List of columns marked constant,
                                   along with their corresponding values. */
-    PFarray_t  *r_constants; /**< List of attributes marked constant,
+    PFarray_t  *r_constants; /**< List of columns marked constant,
                                   along with their corresponding values. */
-    PFarray_t  *l_domains;   /**< List of attributes along with their
+    PFarray_t  *l_domains;   /**< List of columns along with their
                                   corresponding domain identifier. */
-    PFarray_t  *r_domains;   /**< List of attributes along with their
+    PFarray_t  *r_domains;   /**< List of columns along with their
                                   corresponding domain identifier. */
-    PFarray_t  *l_icols;     /**< List of attributes required by the
+    PFarray_t  *l_icols;     /**< List of columns required by the
                                   parent operators. */
-    PFarray_t  *r_icols;     /**< List of attributes required by the
+    PFarray_t  *r_icols;     /**< List of columns required by the
                                   parent operators. */
-    PFarray_t  *l_keys;      /**< List of attributes that have
+    PFarray_t  *l_keys;      /**< List of columns that have
                                   unique values. */
-    PFarray_t  *r_keys;      /**< List of attributes that have
+    PFarray_t  *r_keys;      /**< List of columns that have
                                   unique values. */
-    PFarray_t  *l_name_pairs; /**< List of unique attributes with their
+    PFarray_t  *l_name_pairs; /**< List of unique columns with their
                                    corresponding new unique names. */
-    PFarray_t  *r_name_pairs; /**< List of unique attributes with their
+    PFarray_t  *r_name_pairs; /**< List of unique columns with their
                                    corresponding new unique names. */
-    PFarray_t  *l_level_mapping; /**< List of attributes annotated with
+    PFarray_t  *l_level_mapping; /**< List of columns annotated with
                                       level information. */
-    PFarray_t  *r_level_mapping; /**< List of attributes annotated with
+    PFarray_t  *r_level_mapping; /**< List of columns annotated with
                                       level information. */
 };
 
 /* constant item */
 struct const_t {
-    PFalg_att_t  attr;
+    PFalg_col_t  col;
     PFalg_atom_t value;
 };
 typedef struct const_t const_t;
@@ -117,7 +117,7 @@ typedef unsigned int dom_t;
 
 /* domain item */
 struct dom_pair_t {
-    PFalg_att_t  attr;
+    PFalg_col_t  col;
     dom_t dom;
 };
 typedef struct dom_pair_t dom_pair_t;
@@ -138,14 +138,14 @@ typedef struct disjdom_t disjdom_t;
 
 /* unique name item */
 struct name_pair_t {
-    PFalg_att_t ori;
-    PFalg_att_t unq;
+    PFalg_col_t ori;
+    PFalg_col_t unq;
 };
 typedef struct name_pair_t name_pair_t;
 
 /* level information */
 struct level_t {
-    PFalg_att_t attr;
+    PFalg_col_t col;
     int         level;
 };
 typedef struct level_t level_t;
@@ -224,64 +224,64 @@ unsigned int PFprop_ckey (const PFprop_t *prop, PFalg_schema_t schema);
 unsigned int PFprop_ckeys_count (const PFprop_t *prop);
 
 /**
- * Return attributes that build a composite key (at position @a i) as an attlist
+ * Return columns that build a composite key (at position @a i) as an collist
  */
-PFalg_attlist_t PFprop_ckey_at (const PFprop_t *prop, unsigned int i);
+PFalg_collist_t * PFprop_ckey_at (const PFprop_t *prop, unsigned int i);
 
 /* ---------------------- constant property accessors ---------------------- */
 
 /**
- * Test if @a attr is marked constant in container @a prop.
+ * Test if @a col is marked constant in container @a prop.
  */
-bool PFprop_const (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_const (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is marked constant in the left child
+ * Test if @a col is marked constant in the left child
  * (information is stored in property container @a prop)
  */
-bool PFprop_const_left (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_const_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is marked constant in the left child
+ * Test if @a col is marked constant in the left child
  * (information is stored in property container @a prop)
  */
-bool PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_const_right (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Lookup value of @a attr in property container @a prop.  Attribute
- * @a attr must be marked constant, otherwise the function will fail.
+ * Lookup value of @a col in property container @a prop.  Attribute
+ * @a col must be marked constant, otherwise the function will fail.
  */
-PFalg_atom_t PFprop_const_val (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_atom_t PFprop_const_val (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Lookup value of @a attr in the list of constants of the left
+ * Lookup value of @a col in the list of constants of the left
  * child. (Information resides in property container @a prop.)
- * Attribute @a attr must be marked constant, otherwise
+ * Attribute @a col must be marked constant, otherwise
  * the function will fail.
  */
-PFalg_atom_t PFprop_const_val_left (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_atom_t PFprop_const_val_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Lookup value of @a attr in the list of constants of the right
+ * Lookup value of @a col in the list of constants of the right
  * child. (Information resides in property container @a prop.)
- * Attribute @a attr must be marked constant, otherwise
+ * Attribute @a col must be marked constant, otherwise
  * the function will fail.
  */
-PFalg_atom_t PFprop_const_val_right (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_atom_t PFprop_const_val_right (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return number of attributes marked const.
+ * Return number of columns marked const.
  */
 unsigned int PFprop_const_count (const PFprop_t *prop);
 
 /**
- * Return name of constant attribute number @a i (in container @a prop).
+ * Return name of constant column number @a i (in container @a prop).
  * (Needed, e.g., to iterate over constant columns.)
  */
-PFalg_att_t PFprop_const_at (const PFprop_t *prop, unsigned int i);
+PFalg_col_t PFprop_const_at (const PFprop_t *prop, unsigned int i);
 
 /**
- * Return value of constant attribute number @a i (in container @a prop).
+ * Return value of constant column number @a i (in container @a prop).
  * (Needed, e.g., to iterate over constant columns.)
  */
 PFalg_atom_t PFprop_const_val_at (const PFprop_t *prop, unsigned int i);
@@ -296,21 +296,21 @@ bool PFprop_set (const PFprop_t *prop);
 /* ----------------------- domain property accessors ----------------------- */
 
 /**
- * Return domain of attribute @a attr stored in property container @a prop.
+ * Return domain of column @a col stored in property container @a prop.
  */
-dom_t PFprop_dom (const PFprop_t *prop, PFalg_att_t attr);
+dom_t PFprop_dom (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return domain of attribute @a attr in the domains of the
+ * Return domain of column @a col in the domains of the
  * left child node (stored in property container @a prop)
  */
-dom_t PFprop_dom_left (const PFprop_t *prop, PFalg_att_t attr);
+dom_t PFprop_dom_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return domain of attribute @a attr in the domains of the
+ * Return domain of column @a col in the domains of the
  * right child nod (stored in property container @a prop)
  */
-dom_t PFprop_dom_right (const PFprop_t *prop, PFalg_att_t attr);
+dom_t PFprop_dom_right (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if domain @a subdom is a subdomain of the domain @a dom
@@ -344,66 +344,66 @@ void PFprop_write_dom_rel_xml (PFarray_t *f, const PFprop_t *prop);
 /* ------------------------ icol property accessors ------------------------ */
 
 /**
- * Test if @a attr is in the list of icol columns in container @a prop
+ * Test if @a col is in the list of icol columns in container @a prop
  */
-bool PFprop_icol (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_icol (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is in the list of icol columns of the left child
+ * Test if @a col is in the list of icol columns of the left child
  * (information is stored in property container @a prop)
  */
-bool PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_icol_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is in the list of icol columns of the right child
+ * Test if @a col is in the list of icol columns of the right child
  * (information is stored in property container @a prop)
  */
-bool PFprop_icol_right (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_icol_right (const PFprop_t *prop, PFalg_col_t col);
 
 /*
- * count number of icols attributes
+ * count number of icols columns
  */
 unsigned int PFprop_icols_count (const PFprop_t *prop);
 
 /**
- * Return icols attributes as an attlist.
+ * Return icols columns as an collist.
  */
-PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
+PFalg_collist_t * PFprop_icols_to_collist (const PFprop_t *prop);
 
 /**
  * Infer icols property for a DAG rooted in @a root starting
  * with the icols collected in @a icols.
  */
-void PFprop_infer_icol_specific (PFla_op_t *root, PFalg_att_t icols);
+void PFprop_infer_icol_specific (PFla_op_t *root, PFalg_col_t icols);
 
 /* ------------------------- key property accessors ------------------------ */
 
 /**
- * Test if @a attr is in the list of key columns in container @a prop
+ * Test if @a col is in the list of key columns in container @a prop
  */
-bool PFprop_key (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_key (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is in the list of key columns of the left child
+ * Test if @a col is in the list of key columns of the left child
  * (information is stored in property container @a prop)
  */
-bool PFprop_key_left (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_key_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if @a attr is in the list of key columns of the right child
+ * Test if @a col is in the list of key columns of the right child
  * (information is stored in property container @a prop)
  */
-bool PFprop_key_right (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_key_right (const PFprop_t *prop, PFalg_col_t col);
 
 /*
- * count number of keys attributes
+ * count number of keys columns
  */
 unsigned int PFprop_keys_count (const PFprop_t *prop);
 
 /**
- * Return keys attributes as an attlist.
+ * Return keys columns as an collist.
  */
-PFalg_attlist_t PFprop_keys_to_attlist (const PFprop_t *prop);
+PFalg_collist_t * PFprop_keys_to_collist (const PFprop_t *prop);
 
 /**
  * Infer the key properties assuming that guides have been already inferred.
@@ -413,14 +413,14 @@ void PFprop_infer_key_with_guide (PFla_op_t *root);
 /* ------------------------ ocol property accessors ------------------------ */
 
 /**
- * Test if @a attr is in the list of ocol columns of node @a n
+ * Test if @a col is in the list of ocol columns of node @a n
  */
-bool PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr);
+bool PFprop_ocol (const PFla_op_t *n, PFalg_col_t col);
 
 /**
- * Return the type of @a attr in the list of ocol columns
+ * Return the type of @a col in the list of ocol columns
  */
-PFalg_simple_type_t PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr);
+PFalg_simple_type_t PFprop_type_of (const PFla_op_t *n, PFalg_col_t col);
 
 /**
  * Infer ocol property for a single node based on 
@@ -434,135 +434,135 @@ void PFprop_update_ocol (PFla_op_t *n);
  * Test if @a col is in the list of required value columns
  * in container @a prop
  */
-bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_bool_val (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Looking up required value of column @a col
  * in container @a prop
  */
-bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of order columns
  * in container @a prop
  */
-bool PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_order_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of bijective columns
  * in container @a prop
  */
-bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of multi-col columns
  * in container @a prop
  */
-bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of filter columns
  * in container @a prop
  */
-bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of value columns
  * in container @a prop
  */
-bool PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_value_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col may be represented by something that maintains
  * the same duplicates.
  */
-bool PFprop_req_unique_col (const PFprop_t *prop, PFalg_att_t col);
+bool PFprop_req_unique_col (const PFprop_t *prop, PFalg_col_t col);
 
 /* -------------------- required node property accessors ------------------- */
 
 /**
- * @brief Test if column @a attr is linked to any node properties.
+ * @brief Test if column @a col is linked to any node properties.
  */
-bool PFprop_node_property (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_node_property (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * @brief Test if the node ids of column @a attr are required.
+ * @brief Test if the node ids of column @a col are required.
  */
-bool PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_node_id_required (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * @brief Test if the node order of column @a attr are required.
+ * @brief Test if the node order of column @a col are required.
  */
-bool PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_node_order_required (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if the subtree of column @a attr is queried.
+ * Test if the subtree of column @a col is queried.
  */
-bool PFprop_node_content_queried (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_node_content_queried (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Test if the nodes of column @a attr are serialized.
+ * Test if the nodes of column @a col are serialized.
  */
-bool PFprop_node_serialize (const PFprop_t *prop, PFalg_att_t attr);
+bool PFprop_node_serialize (const PFprop_t *prop, PFalg_col_t col);
 
 /* --------------------- unique names property accessors ------------------- */
 
 /**
- * Return unique name of attribute @a attr stored
+ * Return unique name of column @a col stored
  * in property container @a prop.
  */
-PFalg_att_t PFprop_unq_name (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_unq_name (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return unique name of attribute @a attr stored
+ * Return unique name of column @a col stored
  * in the left name mapping field of property container @a prop.
  */
-PFalg_att_t PFprop_unq_name_left (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_unq_name_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return unique name of attribute @a attr stored
+ * Return unique name of column @a col stored
  * in the right name mapping field of property container @a prop.
  */
-PFalg_att_t PFprop_unq_name_right (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_unq_name_right (const PFprop_t *prop, PFalg_col_t col);
 
 /* -------------------- original names property accessors ------------------ */
 
 /**
- * Return original name of unique attribute @a attr stored
+ * Return original name of unique column @a col stored
  * in property container @a prop.
  */
-PFalg_att_t PFprop_ori_name (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_ori_name (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return original name of attribute @a attr stored
+ * Return original name of column @a col stored
  * in the left name mapping field of property container @a prop.
  */
-PFalg_att_t PFprop_ori_name_left (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_ori_name_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return original name of attribute @a attr stored
+ * Return original name of column @a col stored
  * in the right name mapping field of property container @a prop.
  */
-PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
+PFalg_col_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_col_t col);
 
 /* ------------------------ level property accessors ----------------------- */
 
 /**
- * Return the level of nodes stored in column @a attr.
+ * Return the level of nodes stored in column @a col.
  */
-int PFprop_level (const PFprop_t *prop, PFalg_att_t attr);
+int PFprop_level (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return the level of nodes stored in column @a attr
+ * Return the level of nodes stored in column @a col
  * in the left level mapping filed of property container @a prop.
  */
-int PFprop_level_left (const PFprop_t *prop, PFalg_att_t attr);
+int PFprop_level_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
- * Return the level of nodes stored in column @a attr
+ * Return the level of nodes stored in column @a col
  * in the right level mapping filed of property container @a prop.
  */
-int PFprop_level_right (const PFprop_t *prop, PFalg_att_t attr);
+int PFprop_level_right (const PFprop_t *prop, PFalg_col_t col);
 
 /* ------------------ reference counter property accessors ----------------- */
 
@@ -575,25 +575,25 @@ int PFprop_level_right (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Start from node @a start and keep track of column name changes of the
- * attributes in @a list. At the node @a goal return the updated column name
+ * columns in @a list. At the node @a goal return the updated column name
  * list.
  */
-PFalg_attlist_t PFprop_trace_names (PFla_op_t *start,
-                                    PFla_op_t *goal,
-                                    PFalg_attlist_t list);
+PFalg_collist_t * PFprop_trace_names (PFla_op_t *start,
+                                      PFla_op_t *goal,
+                                      PFalg_collist_t *list);
 
 
 /* ---------------------- guide property accessors ------------------------- */
 
 /* Return if the property @a prop has guide nodes for @a column  */
-bool PFprop_guide (PFprop_t *prop, PFalg_att_t column);
+bool PFprop_guide (PFprop_t *prop, PFalg_col_t column);
 
 /* Return how many guide nodes are in the property @a prop for @a column */
-unsigned int PFprop_guide_count (PFprop_t *prop, PFalg_att_t column);
+unsigned int PFprop_guide_count (PFprop_t *prop, PFalg_col_t column);
 
 /* Return an array of pointers of PFguide_tree_t of  guide nodes in the 
  * property @a prop for @a column */
-PFguide_tree_t** PFprop_guide_elements (PFprop_t *prop, PFalg_att_t column);
+PFguide_tree_t** PFprop_guide_elements (PFprop_t *prop, PFalg_col_t column);
 
 #endif  /* PROPERTIES_H */
 

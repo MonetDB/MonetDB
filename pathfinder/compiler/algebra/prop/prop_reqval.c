@@ -66,6 +66,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -79,7 +82,7 @@
 
 /* required value property list */
 struct req_val_t {
-    PFalg_att_t col;       /* column name ... */
+    PFalg_col_t col;       /* column name ... */
 
     /* ... and the corresponding property that tests if ... */
 
@@ -113,7 +116,7 @@ typedef struct req_val_t req_val_t;
  * @brief look up the property mapping (in @a l) for a given column @a col.
  */
 static req_val_t *
-find_map (PFarray_t *l, PFalg_att_t col)
+find_map (PFarray_t *l, PFalg_col_t col)
 {
     if (!l)
         return NULL;
@@ -130,7 +133,7 @@ find_map (PFarray_t *l, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_bool_val (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -145,7 +148,7 @@ PFprop_req_bool_val (const PFprop_t *prop, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -165,7 +168,7 @@ PFprop_req_bool_val_val (const PFprop_t *prop, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_filter_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -181,7 +184,7 @@ PFprop_req_filter_col (const PFprop_t *prop, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_value_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -198,7 +201,7 @@ PFprop_req_value_col (const PFprop_t *prop, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_order_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -215,7 +218,7 @@ PFprop_req_order_col (const PFprop_t *prop, PFalg_att_t col)
  * in container @a prop
  */
 bool
-PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_bijective_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -232,7 +235,7 @@ PFprop_req_bijective_col (const PFprop_t *prop, PFalg_att_t col)
  * Test if @a col may be represented by multiple columns
  */
 bool
-PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -250,7 +253,7 @@ PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_att_t col)
  * the same duplicates.
  */
 bool
-PFprop_req_unique_col (const PFprop_t *prop, PFalg_att_t col)
+PFprop_req_unique_col (const PFprop_t *prop, PFalg_col_t col)
 {
     req_val_t *reqval = find_map (prop->reqvals, col);
 
@@ -272,7 +275,7 @@ PFprop_req_unique_col (const PFprop_t *prop, PFalg_att_t col)
  * @brief look up the property mapping (in @a l) for a given column @a col.
  */
 static void
-adjust_map_ (PFarray_t *map_list, PFalg_att_t col,
+adjust_map_ (PFarray_t *map_list, PFalg_col_t col,
              char value, char join, char part, char order, char distinct,
              char filter, char sel_name, char sel_val)
 {
@@ -343,7 +346,7 @@ adjust_map_ (PFarray_t *map_list, PFalg_att_t col,
         adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  NO)
 
 static void
-adjust_map (PFla_op_t *n, PFalg_att_t col,
+adjust_map (PFla_op_t *n, PFalg_col_t col,
             char value, char join, char part, char order, char distinct,
             char filter, char sel_name, char sel_val)
 {
@@ -474,8 +477,8 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             adjust_order (n->sem.ser_rel.pos);
             adjust_value (n->sem.ser_rel.iter);
 
-            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
-                adjust_value (n->sem.ser_rel.items.atts[i]);
+            for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
+                adjust_value (clat (n->sem.ser_rel.items, i));
             break;
 
         case la_lit_tbl:
@@ -499,19 +502,19 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                columns or if they have to produce the exact values. */
             if ((PFprop_subdom (n->prop,
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2),
+                                                  n->sem.eqjoin.col2),
                                 PFprop_dom_left (n->prop,
-                                                 n->sem.eqjoin.att1)) ||
+                                                 n->sem.eqjoin.col1)) ||
                  PFprop_subdom (n->prop,
                                 PFprop_dom_left (n->prop,
-                                                 n->sem.eqjoin.att1),
+                                                 n->sem.eqjoin.col1),
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2)))) {
-                adjust_join (n->sem.eqjoin.att1);
-                adjust_join (n->sem.eqjoin.att2);
+                                                  n->sem.eqjoin.col2)))) {
+                adjust_join (n->sem.eqjoin.col1);
+                adjust_join (n->sem.eqjoin.col2);
             } else {
-                adjust_value (n->sem.eqjoin.att1);
-                adjust_value (n->sem.eqjoin.att2);
+                adjust_value (n->sem.eqjoin.col1);
+                adjust_value (n->sem.eqjoin.col2);
             }
             break;
 
@@ -522,19 +525,19 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                columns or if they have to produce the exact values. */
             if ((PFprop_subdom (n->prop,
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2),
+                                                  n->sem.eqjoin.col2),
                                 PFprop_dom_left (n->prop,
-                                                 n->sem.eqjoin.att1)) ||
+                                                 n->sem.eqjoin.col1)) ||
                  PFprop_subdom (n->prop,
                                 PFprop_dom_left (n->prop,
-                                                 n->sem.eqjoin.att1),
+                                                 n->sem.eqjoin.col1),
                                 PFprop_dom_right (n->prop,
-                                                  n->sem.eqjoin.att2)))) {
-                adjust_join (n->sem.eqjoin.att1);
-                adjust_join_ (rmap, n->sem.eqjoin.att2);
+                                                  n->sem.eqjoin.col2)))) {
+                adjust_join (n->sem.eqjoin.col1);
+                adjust_join_ (rmap, n->sem.eqjoin.col2);
             } else {
-                adjust_value (n->sem.eqjoin.att1);
-                adjust_value_ (rmap, n->sem.eqjoin.att2);
+                adjust_value (n->sem.eqjoin.col1);
+                adjust_value_ (rmap, n->sem.eqjoin.col2);
             }
 
             prop_infer_reqvals (L(n), MAP_LIST(n));
@@ -544,7 +547,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_thetajoin:
             /* add all join columns to the inferred icols */
             for (unsigned int i = 0; i < n->sem.thetajoin.count; i++) {
-                PFalg_att_t left  = n->sem.thetajoin.pred[i].left,
+                PFalg_col_t left  = n->sem.thetajoin.pred[i].left,
                             right = n->sem.thetajoin.pred[i].right;
 
                 if (n->sem.thetajoin.pred[i].comp == alg_comp_eq &&
@@ -589,11 +592,11 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
         case la_select:
             /* introduce new required value column */
-            adjust_sel (n->sem.select.att);
+            adjust_sel (n->sem.select.col);
 
             /* overrule any previous negative setting
                (which may be introduced by multiple parent edges) */
-            map = find_map (MAP_LIST(n), n->sem.select.att);
+            map = find_map (MAP_LIST(n), n->sem.select.col);
             map->sel_name = true;
             map->sel_val  = true;
             break;
@@ -617,7 +620,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                the values should be comparable. (Including domain
                information might improve this inference.) */
             for (unsigned int i = 0; i < n->schema.count; i++) {
-                PFalg_att_t cur = n->schema.items[i].name;
+                PFalg_col_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
 
                 if (map && map->value)
@@ -646,7 +649,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                the values should be comparable. (Including domain
                information might improve this inference.) */
             for (unsigned int i = 0; i < n->schema.count; i++) {
-                PFalg_att_t cur = n->schema.items[i].name;
+                PFalg_col_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
 
                 if (map && map->value)
@@ -684,7 +687,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             /* for all columns where we have no usage information
                we need to ensure at least the bijectivity */
             for (unsigned int i = 0; i < n->schema.count; i++) {
-                PFalg_att_t cur = n->schema.items[i].name;
+                PFalg_col_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
                 if (!map)
                     adjust_distinct (cur);
@@ -693,62 +696,62 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
         case la_fun_1to1:
             /* mark the input columns as value columns */
-            for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                adjust_value (n->sem.fun_1to1.refs.atts[i]);
+            for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
+                adjust_value (clat (n->sem.fun_1to1.refs, i));
             break;
 
         case la_num_eq:
             if (PFprop_req_bool_val (n->prop, n->sem.binary.res)) {
-                adjust_filter (n->sem.binary.att1);
-                adjust_filter (n->sem.binary.att2);
+                adjust_filter (n->sem.binary.col1);
+                adjust_filter (n->sem.binary.col2);
             }
             else {
-                adjust_value (n->sem.binary.att1);
-                adjust_value (n->sem.binary.att2);
+                adjust_value (n->sem.binary.col1);
+                adjust_value (n->sem.binary.col2);
             }
             break;
 
         case la_num_gt:
         case la_to:
-            adjust_value (n->sem.binary.att1);
-            adjust_value (n->sem.binary.att2);
+            adjust_value (n->sem.binary.col1);
+            adjust_value (n->sem.binary.col2);
             break;
 
         case la_bool_and:
             if (PFprop_req_bool_val (n->prop, n->sem.binary.res) &&
                 PFprop_req_bool_val_val (n->prop, n->sem.binary.res)) {
-                adjust_sel (n->sem.binary.att1);
-                adjust_sel (n->sem.binary.att2);
+                adjust_sel (n->sem.binary.col1);
+                adjust_sel (n->sem.binary.col2);
             }
             else {
-                adjust_value (n->sem.binary.att1);
-                adjust_value (n->sem.binary.att2);
+                adjust_value (n->sem.binary.col1);
+                adjust_value (n->sem.binary.col2);
             }
             break;
 
         case la_bool_or:
             if (PFprop_req_bool_val (n->prop, n->sem.binary.res) &&
                 !PFprop_req_bool_val_val (n->prop, n->sem.binary.res)) {
-                adjust_nosel (n->sem.binary.att1);
-                adjust_nosel (n->sem.binary.att2);
+                adjust_nosel (n->sem.binary.col1);
+                adjust_nosel (n->sem.binary.col2);
             }
             else {
-                adjust_value (n->sem.binary.att1);
-                adjust_value (n->sem.binary.att2);
+                adjust_value (n->sem.binary.col1);
+                adjust_value (n->sem.binary.col2);
             }
             break;
 
         case la_bool_not:
-            /* if res is a required value column also add att
+            /* if res is a required value column also add col
                with the switched boolean value */
             if (PFprop_req_bool_val (n->prop, n->sem.unary.res)) {
                 if (PFprop_req_bool_val_val (n->prop, n->sem.unary.res))
-                    adjust_nosel (n->sem.unary.att);
+                    adjust_nosel (n->sem.unary.col);
                 else
-                    adjust_sel (n->sem.unary.att);
+                    adjust_sel (n->sem.unary.col);
             }
             else
-                adjust_value (n->sem.unary.att);
+                adjust_value (n->sem.unary.col);
             break;
 
         case la_avg:
@@ -764,10 +767,10 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 /* we only have to provide the same groups */
                 adjust_part_ (lmap, n->sem.aggr.part);
 
-            if (n->sem.aggr.att)
+            if (n->sem.aggr.col)
                 /* to make up for the schema change
                    we add the input columns by hand */
-                adjust_value_ (lmap, n->sem.aggr.att);
+                adjust_value_ (lmap, n->sem.aggr.col);
 
             prop_infer_reqvals (L(n), lmap);
         }   return; /* only infer once */
@@ -793,40 +796,40 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
         case la_cast:
         {
-            bool att_adjusted = false;
+            bool col_adjusted = false;
 
             if (n->sem.type.ty == aat_bln) {
-                bool att_bln = false;
+                bool col_bln = false;
                 for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (n->sem.type.att == n->schema.items[i].name) {
-                        att_bln = (n->schema.items[i].type == aat_bln);
+                    if (n->sem.type.col == n->schema.items[i].name) {
+                        col_bln = (n->schema.items[i].type == aat_bln);
                         break;
                     }
 
-                if (att_bln && PFprop_req_bool_val (n->prop, n->sem.type.res)) {
+                if (col_bln && PFprop_req_bool_val (n->prop, n->sem.type.res)) {
                     if (PFprop_req_bool_val_val (n->prop, n->sem.type.res))
-                        adjust_sel (n->sem.type.att);
+                        adjust_sel (n->sem.type.col);
                     else
-                        adjust_nosel (n->sem.type.att);
-                    att_adjusted = true;
+                        adjust_nosel (n->sem.type.col);
+                    col_adjusted = true;
                 }
             }
-            if (!att_adjusted) {
+            if (!col_adjusted) {
                 req_val_t *map = find_map (MAP_LIST(n), n->sem.type.res);
                 if (!map || !map->order)
                     /* mark the input column as value columns */
-                    adjust_value (n->sem.type.att);
+                    adjust_value (n->sem.type.col);
                 else
                     /* mark the input column as order column if
                        not used differently */
-                    adjust_order (n->sem.type.att);
+                    adjust_order (n->sem.type.col);
             }
         }   break;
 
         case la_type:
         case la_type_assert:
             /* mark the input columns as value columns */
-            adjust_value (n->sem.type.att);
+            adjust_value (n->sem.type.col);
             break;
 
         case la_step:
@@ -859,12 +862,12 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
         case la_doc_tbl:
             /* mark the input column as value column */
-            adjust_value (n->sem.doc_tbl.att);
+            adjust_value (n->sem.doc_tbl.col);
             break;
 
         case la_doc_access:
             /* mark the input column as value column */
-            adjust_value (n->sem.doc_access.att);
+            adjust_value (n->sem.doc_access.col);
 
             prop_infer_reqvals_empty (L(n)); /* fragments */
             prop_infer_reqvals (R(n), MAP_LIST(n));
@@ -952,7 +955,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_cond_err:
         {
             PFarray_t *rmap = PFarray (sizeof (req_val_t), 1);
-            adjust_value_ (rmap, n->sem.err.att);
+            adjust_value_ (rmap, n->sem.err.col);
 
             prop_infer_reqvals (L(n), MAP_LIST(n));
             prop_infer_reqvals (R(n), rmap);

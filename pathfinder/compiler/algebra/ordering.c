@@ -40,7 +40,7 @@
 
 /** An ordering item */
 struct PFalg_order_item_t {
-    PFalg_att_t name;
+    PFalg_col_t name;
     bool        dir;
 };
 typedef struct PFalg_order_item_t PFalg_order_item_t;
@@ -52,15 +52,15 @@ PFordering (void)
 }
 
 PFord_ordering_t
-PFord_order_intro_ (unsigned int count, PFalg_att_t *atts)
+PFord_order_intro_ (unsigned int count, PFalg_col_t *cols)
 {
     /* construct new PFord_ordering_t object */
     PFord_ordering_t ret = PFordering ();
 
-    /* copy all attributes to return value */
+    /* copy all columns to return value */
     for (unsigned int i = 0; i < count; i++)
         *((PFalg_order_item_t *) PFarray_add (ret))
-            = (PFalg_order_item_t) { .name = atts[i], .dir = DIR_ASC };
+            = (PFalg_order_item_t) { .name = cols[i], .dir = DIR_ASC };
 
     return ret;
 }
@@ -73,7 +73,7 @@ PFord_set (void)
 
 PFord_ordering_t
 PFord_refine (const PFord_ordering_t ordering,
-              const PFalg_att_t attribute,
+              const PFalg_col_t col,
               const bool direction)
 {
     /* construct new PFord_ordering_t object */
@@ -85,7 +85,7 @@ PFord_refine (const PFord_ordering_t ordering,
             = *((PFalg_order_item_t *) PFarray_at (ordering, i));
 
     *((PFalg_order_item_t *) PFarray_add (ret))
-        = (PFalg_order_item_t) { .name = attribute, .dir = direction };
+        = (PFalg_order_item_t) { .name = col, .dir = direction };
 
     return ret;
 }
@@ -96,7 +96,7 @@ PFord_count (const PFord_ordering_t ordering)
     return PFarray_last (ordering);
 }
 
-PFalg_att_t
+PFalg_col_t
 PFord_order_col_at (const PFord_ordering_t ordering, unsigned int index)
 {
     assert (index < PFord_count (ordering));
@@ -114,7 +114,7 @@ PFord_order_dir_at (const PFord_ordering_t ordering, unsigned int index)
 
 void
 PFord_set_order_col_at (PFord_ordering_t ordering, unsigned int index,
-                        PFalg_att_t name)
+                        PFalg_col_t name)
 {
     assert (index < PFord_count (ordering));
 
@@ -133,11 +133,11 @@ PFord_set_order_dir_at (PFord_ordering_t ordering, unsigned int index,
 bool
 PFord_implies (const PFord_ordering_t a, const PFord_ordering_t b)
 {
-    /* For a to imply b, it must at least have as many attributes. */
+    /* For a to imply b, it must at least have as many columns. */
     if (PFord_count (a) < PFord_count (b))
         return false;
 
-    /* Attribute list of b must be a prefix of attribute list of a. */
+    /* Attribute list of b must be a prefix of column list of a. */
     for (unsigned int i = 0; i < PFord_count (b); i++)
         if (PFord_order_col_at (a, i) != PFord_order_col_at (b, i) ||
             PFord_order_dir_at (a, i) != PFord_order_dir_at (b, i))
@@ -163,7 +163,7 @@ PFord_str (const PFord_ordering_t o)
 
     for (unsigned int i = 0; i < PFord_count (o); i++)
         PFarray_printf (a, "%s%s (%s)", i ? "," : "",
-                        PFatt_str (PFord_order_col_at (o, i)),
+                        PFcol_str (PFord_order_col_at (o, i)),
                         PFord_order_dir_at (o, i) == DIR_ASC
                         ? "asc" : "desc");
 
@@ -347,7 +347,7 @@ PFord_permutations (const PFord_ordering_t ordering)
 
     for (unsigned int i = 0; i < PFord_count (ordering); i++) {
 
-        /* Compute all permutations with attribute at position i removed. */
+        /* Compute all permutations with column at position i removed. */
         PFord_ordering_t  removed = PFordering ();
         PFord_set_t       subperms;
 
@@ -359,7 +359,7 @@ PFord_permutations (const PFord_ordering_t ordering)
 
         subperms = PFord_permutations (removed);
 
-        /* Refine all this permutations with the attribute at position i. */
+        /* Refine all this permutations with the column at position i. */
         for (unsigned int j = 0; j < PFarray_last (subperms); j++) {
             PFord_set_add (ret,
                            PFord_refine (PFord_set_at (subperms, j),

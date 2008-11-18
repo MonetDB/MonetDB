@@ -43,6 +43,9 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/** mnemonic algebra constructors */
+#include "logical_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -50,16 +53,16 @@
 
 /* lookup the input name of an output column
    of a projection */
-static PFalg_att_t
-find_old_name (PFla_op_t *op, PFalg_att_t att)
+static PFalg_col_t
+find_old_name (PFla_op_t *op, PFalg_col_t col)
 {
     assert (op->kind == la_project);
 
     for (unsigned int i = 0; i < op->sem.proj.count; i++)
-         if (op->sem.proj.items[i].new == att)
+         if (op->sem.proj.items[i].new == col)
              return op->sem.proj.items[i].old;
 
-    return att_NULL;
+    return col_NULL;
 }
 
 /**
@@ -84,12 +87,12 @@ find_old_name (PFla_op_t *op, PFalg_att_t att)
  */
 static bool
 find_last_base (PFla_op_t *op,
-                PFalg_att_t item,
-                PFalg_att_t iter,
-                PFalg_att_t last)
+                PFalg_col_t item,
+                PFalg_col_t iter,
+                PFalg_col_t last)
 {
     PFla_op_t  *base = NULL;
-    PFalg_att_t base_iter = att_NULL;
+    PFalg_col_t base_iter = col_NULL;
 
     /* ignore projections */
     while (op->kind == la_project) {
@@ -100,33 +103,33 @@ find_last_base (PFla_op_t *op,
     }
 
     if (op->kind != la_eqjoin ||
-        (op->sem.eqjoin.att1 != iter &&
-         op->sem.eqjoin.att2 != iter))
+        (op->sem.eqjoin.col1 != iter &&
+         op->sem.eqjoin.col2 != iter))
         return false;
 
     /* Ensure that the join is a mapping join (and decide
        based on column item where to look for the aggregate). */
     if (PFprop_ocol (L(op), item) &&
-        PFprop_key_right (op->prop, op->sem.eqjoin.att2) &&
+        PFprop_key_right (op->prop, op->sem.eqjoin.col2) &&
         PFprop_subdom (op->prop,
                        PFprop_dom_left (op->prop,
-                                        op->sem.eqjoin.att1),
+                                        op->sem.eqjoin.col1),
                        PFprop_dom_right (op->prop,
-                                         op->sem.eqjoin.att2))) {
-        base_iter = op->sem.eqjoin.att1;
-        iter = op->sem.eqjoin.att2;
+                                         op->sem.eqjoin.col2))) {
+        base_iter = op->sem.eqjoin.col1;
+        iter = op->sem.eqjoin.col2;
         base = L(op);
         op   = R(op);
     }
     else if (PFprop_ocol (R(op), item) &&
-             PFprop_key_left (op->prop, op->sem.eqjoin.att1) &&
+             PFprop_key_left (op->prop, op->sem.eqjoin.col1) &&
              PFprop_subdom (op->prop,
                             PFprop_dom_right (op->prop,
-                                              op->sem.eqjoin.att2),
+                                              op->sem.eqjoin.col2),
                             PFprop_dom_left (op->prop,
-                                             op->sem.eqjoin.att1))) {
-        base_iter = op->sem.eqjoin.att2;
-        iter = op->sem.eqjoin.att1;
+                                             op->sem.eqjoin.col1))) {
+        base_iter = op->sem.eqjoin.col2;
+        iter = op->sem.eqjoin.col1;
         base = R(op);
         op   = L(op);
     }
@@ -199,12 +202,12 @@ find_last_base (PFla_op_t *op,
  *         |          o sel.item == =.res (sel)
  *        pi*_2       o =.att1 is not used above
  *         |          o =.att2 is not used above
- *         =          o =.att[1|2] == @.res (optional match)
- *         |          o =.att[1|2] == cast.res
+ *         =          o =.col[1|2] == @.res (optional match)
+ *         |          o =.col[1|2] == cast.res
  *        pi*_3       o cast.type == aat_int
  *         |          o cast.res is only used in =
- *         @?         o cast.att == row#.res
- *         |          o row#.res == cast.att
+ *         @?         o cast.col == row#.res
+ *         |          o row#.res == cast.col
  *        pi*_4       o row#.res is only used in cast
  *         |
  *        cast        Furthermore the operator underneath the rownum (..)
@@ -218,8 +221,8 @@ find_last_base (PFla_op_t *op,
 static void
 replace_pos_predicate (PFla_op_t *p)
 {
-    PFalg_att_t sel, eq1, eq2, eq = att_NULL, cast,
-                last = att_NULL, item, part;
+    PFalg_col_t sel, eq1, eq2, eq = col_NULL, cast,
+                last = col_NULL, item, part;
     PFla_op_t *op, *base;
     long long int pos = 0;
     unsigned int count = p->schema.count;
@@ -228,13 +231,13 @@ replace_pos_predicate (PFla_op_t *p)
     /* pi_1 && sel */
     if (p->kind != la_project ||
         L(p)->kind != la_select ||
-        PFprop_icol (L(p)->prop, L(p)->sem.select.att))
+        PFprop_icol (L(p)->prop, L(p)->sem.select.col))
         return;
 
     for (unsigned int i = 0; i < count; i++)
         map[i] = p->sem.proj.items[i];
 
-    sel = L(p)->sem.select.att;
+    sel = L(p)->sem.select.col;
     op = LL(p);
 
     /* pi*_2 */
@@ -250,12 +253,12 @@ replace_pos_predicate (PFla_op_t *p)
     /* = */
     if (op->kind != la_num_eq ||
         op->sem.binary.res != sel ||
-        PFprop_icol (op->prop, op->sem.binary.att1) ||
-        PFprop_icol (op->prop, op->sem.binary.att2))
+        PFprop_icol (op->prop, op->sem.binary.col1) ||
+        PFprop_icol (op->prop, op->sem.binary.col2))
         return;
 
-    eq1 = op->sem.binary.att1;
-    eq2 = op->sem.binary.att2;
+    eq1 = op->sem.binary.col1;
+    eq2 = op->sem.binary.col2;
 
     op = L(op);
 
@@ -302,11 +305,11 @@ replace_pos_predicate (PFla_op_t *p)
     if (op->kind != la_cast ||
         op->sem.type.ty != aat_int ||
         (op->sem.type.res != eq1 && op->sem.type.res != eq2) ||
-        PFprop_icol (op->prop, op->sem.type.att))
+        PFprop_icol (op->prop, op->sem.type.col))
         return;
 
     if (!pos) last = op->sem.type.res == eq1 ? eq2 : eq1;
-    cast = op->sem.type.att;
+    cast = op->sem.type.col;
 
     op = L(op);
 
@@ -360,12 +363,12 @@ replace_pos_predicate (PFla_op_t *p)
     /* replace pattern here:
     fprintf(stderr,"pos %lli;", pos);
     fprintf(stderr," sort by %s; partition by %s;",
-            PFatt_str(item),
-            PFatt_str(part));
+            PFcol_str(item),
+            PFcol_str(part));
     for (unsigned int i = 0; i < count; i++)
         fprintf(stderr," map %s to %s%s",
-                PFatt_str(map[i].new),
-                PFatt_str(map[i].old),
+                PFcol_str(map[i].new),
+                PFcol_str(map[i].old),
                 i == count - 1 ?"\n":";");
     */
 }
@@ -412,7 +415,7 @@ opt_complex (PFla_op_t *p)
 
                 PFla_op_t *res;
                 unsigned int count = PFprop_card (p->prop);
-                /* create projection list to avoid missing attributes */
+                /* create projection list to avoid missing columns */
                 PFalg_proj_t *proj = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
 
@@ -426,7 +429,7 @@ opt_complex (PFla_op_t *p)
                     tuples[i].count = 1;
                 }
 
-                res = PFla_lit_tbl_ (PFalg_attlist (p->sem.attach.res),
+                res = PFla_lit_tbl_ (collist (p->sem.attach.res),
                                      count, tuples);
 
                 /* Every column of the relation will point
@@ -495,14 +498,14 @@ opt_complex (PFla_op_t *p)
             bool left_arg_req = false;
             bool right_arg_req = false;
 
-            /* discard join attributes as one of them always remains */
+            /* discard join columns as one of them always remains */
             for (unsigned int i = 0; i < L(p)->schema.count; i++) {
                 left_arg_req = left_arg_req ||
                                (!PFprop_subdom (
                                      p->prop,
                                      PFprop_dom_left (
                                          p->prop,
-                                         p->sem.eqjoin.att1),
+                                         p->sem.eqjoin.col1),
                                      PFprop_dom_left (
                                          p->prop,
                                          L(p)->schema.items[i].name)) &&
@@ -510,13 +513,13 @@ opt_complex (PFla_op_t *p)
                                    p->prop,
                                    L(p)->schema.items[i].name));
             }
-            if ((PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+            if ((PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
                  PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop,
                                PFprop_dom_right (p->prop,
-                                                 p->sem.eqjoin.att2),
+                                                 p->sem.eqjoin.col2),
                                PFprop_dom_left (p->prop,
-                                                p->sem.eqjoin.att1)) &&
+                                                p->sem.eqjoin.col1)) &&
                 !left_arg_req) {
                 /* Every column of the left argument will point
                    to the join argument of the right argument to
@@ -530,7 +533,7 @@ opt_complex (PFla_op_t *p)
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
                                         L(p)->schema.items[i].name,
-                                        p->sem.eqjoin.att2);
+                                        p->sem.eqjoin.col2);
 
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
@@ -541,14 +544,14 @@ opt_complex (PFla_op_t *p)
                 break;
             }
 
-            /* discard join attributes as one of them always remains */
+            /* discard join columns as one of them always remains */
             for (unsigned int i = 0; i < R(p)->schema.count; i++) {
                 right_arg_req = right_arg_req ||
                                 (!PFprop_subdom (
                                       p->prop,
                                       PFprop_dom_right (
                                           p->prop,
-                                          p->sem.eqjoin.att2),
+                                          p->sem.eqjoin.col2),
                                       PFprop_dom_right (
                                           p->prop,
                                           R(p)->schema.items[i].name)) &&
@@ -556,13 +559,13 @@ opt_complex (PFla_op_t *p)
                                      p->prop,
                                      R(p)->schema.items[i].name));
             }
-            if ((PFprop_key_right (p->prop, p->sem.eqjoin.att2) ||
+            if ((PFprop_key_right (p->prop, p->sem.eqjoin.col2) ||
                  PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop,
                                PFprop_dom_left (p->prop,
-                                                p->sem.eqjoin.att1),
+                                                p->sem.eqjoin.col1),
                                PFprop_dom_right (p->prop,
-                                                 p->sem.eqjoin.att2)) &&
+                                                 p->sem.eqjoin.col2)) &&
                 !right_arg_req) {
                 /* Every column of the right argument will point
                    to the join argument of the left argument to
@@ -581,7 +584,7 @@ opt_complex (PFla_op_t *p)
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
                                         R(p)->schema.items[i].name,
-                                        p->sem.eqjoin.att1);
+                                        p->sem.eqjoin.col1);
 
                 *p = *PFla_project_ (L(p), count, proj);
                 break;
@@ -590,7 +593,7 @@ opt_complex (PFla_op_t *p)
 #if 0 /* disable join -> semijoin rewrites */
             /* introduce semi-join operator if possible */
             if (!left_arg_req &&
-                (PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+                (PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
                  PFprop_set (p->prop))) {
                 /* Every column of the left argument will point
                    to the join argument of the right argument to
@@ -603,13 +606,13 @@ opt_complex (PFla_op_t *p)
                 PFla_op_t *semijoin;
                 PFla_op_t *left = L(p);
                 PFla_op_t *right = R(p);
-                PFalg_att_t latt = p->sem.eqjoin.att1;
-                PFalg_att_t ratt = p->sem.eqjoin.att2;
+                PFalg_col_t lcol = p->sem.eqjoin.col1;
+                PFalg_col_t rcol = p->sem.eqjoin.col2;
 
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
                                         L(p)->schema.items[i].name,
-                                        p->sem.eqjoin.att2);
+                                        p->sem.eqjoin.col2);
 
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
@@ -618,29 +621,29 @@ opt_complex (PFla_op_t *p)
 
                 while (left->kind == la_project) {
                     for (unsigned int i = 0; i < left->sem.proj.count; i++)
-                        if (latt == left->sem.proj.items[i].new) {
-                            latt = left->sem.proj.items[i].old;
+                        if (lcol == left->sem.proj.items[i].new) {
+                            lcol = left->sem.proj.items[i].old;
                             break;
                         }
                     left = L(left);
                 }
                 while (right->kind == la_project) {
                     for (unsigned int i = 0; i < right->sem.proj.count; i++)
-                        if (ratt == right->sem.proj.items[i].new) {
-                            ratt = right->sem.proj.items[i].old;
+                        if (rcol == right->sem.proj.items[i].new) {
+                            rcol = right->sem.proj.items[i].old;
                             break;
                         }
                     right = L(right);
                 }
 
-                if (latt == ratt && left == right)
+                if (lcol == rcol && left == right)
                     semijoin = R(p);
                 else
                     semijoin = PFla_semijoin (
                                    R(p),
                                    L(p),
-                                   p->sem.eqjoin.att2,
-                                   p->sem.eqjoin.att1);
+                                   p->sem.eqjoin.col2,
+                                   p->sem.eqjoin.col1);
 
                 *p = *PFla_project_ (semijoin, count, proj);
                 break;
@@ -648,7 +651,7 @@ opt_complex (PFla_op_t *p)
 
             /* introduce semi-join operator if possible */
             if (!right_arg_req &&
-                (PFprop_key_right (p->prop, p->sem.eqjoin.att2) ||
+                (PFprop_key_right (p->prop, p->sem.eqjoin.col2) ||
                  PFprop_set (p->prop))) {
                 /* Every column of the right argument will point
                    to the join argument of the left argument to
@@ -661,8 +664,8 @@ opt_complex (PFla_op_t *p)
                 PFla_op_t *semijoin;
                 PFla_op_t *left = L(p);
                 PFla_op_t *right = R(p);
-                PFalg_att_t latt = p->sem.eqjoin.att1;
-                PFalg_att_t ratt = p->sem.eqjoin.att2;
+                PFalg_col_t lcol = p->sem.eqjoin.col1;
+                PFalg_col_t rcol = p->sem.eqjoin.col2;
 
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
@@ -672,33 +675,33 @@ opt_complex (PFla_op_t *p)
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     proj[count++] = PFalg_proj (
                                         R(p)->schema.items[i].name,
-                                        p->sem.eqjoin.att1);
+                                        p->sem.eqjoin.col1);
 
                 while (left->kind == la_project) {
                     for (unsigned int i = 0; i < left->sem.proj.count; i++)
-                        if (latt == left->sem.proj.items[i].new) {
-                            latt = left->sem.proj.items[i].old;
+                        if (lcol == left->sem.proj.items[i].new) {
+                            lcol = left->sem.proj.items[i].old;
                             break;
                         }
                     left = L(left);
                 }
                 while (right->kind == la_project) {
                     for (unsigned int i = 0; i < right->sem.proj.count; i++)
-                        if (ratt == right->sem.proj.items[i].new) {
-                            ratt = right->sem.proj.items[i].old;
+                        if (rcol == right->sem.proj.items[i].new) {
+                            rcol = right->sem.proj.items[i].old;
                             break;
                         }
                     right = L(right);
                 }
 
-                if (latt == ratt && left == right)
+                if (lcol == rcol && left == right)
                     semijoin = L(p);
                 else
                     semijoin = PFla_semijoin (
                                    L(p),
                                    R(p),
-                                   p->sem.eqjoin.att1,
-                                   p->sem.eqjoin.att2);
+                                   p->sem.eqjoin.col1,
+                                   p->sem.eqjoin.col2);
 
                 *p = *PFla_project_ (semijoin, count, proj);
                 break;
@@ -714,37 +717,37 @@ opt_complex (PFla_op_t *p)
             if (PFprop_subdom (
                     p->prop,
                     PFprop_dom_left (p->prop,
-                                     p->sem.eqjoin.att1),
+                                     p->sem.eqjoin.col1),
                     PFprop_dom_right (p->prop,
-                                      p->sem.eqjoin.att2)) &&
+                                      p->sem.eqjoin.col2)) &&
                 PFprop_subdom (
                     p->prop,
                     PFprop_dom_right (p->prop,
-                                      p->sem.eqjoin.att2),
+                                      p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
-                                     p->sem.eqjoin.att1))) {
+                                     p->sem.eqjoin.col1))) {
                 *p = *L(p);
                 break;
             }
             if (L(p)->kind == la_difference &&
                 (L(p)->schema.count == 1 ||
-                 PFprop_key (p->prop, p->sem.eqjoin.att1)) &&
+                 PFprop_key (p->prop, p->sem.eqjoin.col1)) &&
                 PFprop_subdom (
                     p->prop,
                     PFprop_dom_right (p->prop,
-                                      p->sem.eqjoin.att2),
+                                      p->sem.eqjoin.col2),
                     PFprop_dom_right (L(p)->prop,
-                                      p->sem.eqjoin.att1))) {
+                                      p->sem.eqjoin.col1))) {
                 *p = *PFla_empty_tbl_ (p->schema);
                 break;
             }
 
-            if (!PFprop_key_left (p->prop, p->sem.eqjoin.att1) ||
+            if (!PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
                 !PFprop_subdom (p->prop,
                                 PFprop_dom_right (p->prop,
-                                                  p->sem.eqjoin.att2),
+                                                  p->sem.eqjoin.col2),
                                 PFprop_dom_left (p->prop,
-                                                 p->sem.eqjoin.att1)))
+                                                 p->sem.eqjoin.col1)))
                 break;
 
             /* remove the distinct operator and redirect the
@@ -752,8 +755,8 @@ opt_complex (PFla_op_t *p)
             if (R(p)->kind == la_distinct) {
                 PFla_op_t *distinct = R(p);
                 R(p) = L(distinct);
-                *distinct = *PFla_project (p, PFalg_proj (p->sem.eqjoin.att2,
-                                                          p->sem.eqjoin.att1));
+                *distinct = *PFla_project (p, PFalg_proj (p->sem.eqjoin.col2,
+                                                          p->sem.eqjoin.col1));
             }
             else if (R(p)->kind == la_project &&
                      RL(p)->kind == la_distinct &&
@@ -764,15 +767,15 @@ opt_complex (PFla_op_t *p)
                 R(p) = L(distinct);
                 *project = *PFla_project (
                                 p,
-                                PFalg_proj (p->sem.eqjoin.att2,
-                                            p->sem.eqjoin.att1));
+                                PFalg_proj (p->sem.eqjoin.col2,
+                                            p->sem.eqjoin.col1));
                 *distinct = *PFla_project (
                                  p,
                                  PFalg_proj (distinct->schema.items[0].name,
-                                             p->sem.eqjoin.att1));
+                                             p->sem.eqjoin.col1));
 
                 /* we need to adjust the semijoin argument as well */
-                p->sem.eqjoin.att2 = R(p)->schema.items[0].name;
+                p->sem.eqjoin.col2 = R(p)->schema.items[0].name;
             }
             break;
 
@@ -798,38 +801,38 @@ opt_complex (PFla_op_t *p)
         /**
          * Rewrite the pattern (1) into expression (2):
          *
-         *          select_(att1) [icols:att2]          pi_(att2,...:att2)
+         *          select_(col1) [icols:col2]          pi_(col2,...:col2)
          *            |                                  |
-         *         ( pi_(att1,att2) )                 distinct
+         *         ( pi_(col1,col2) )                 distinct
          *            |                                  |
-         *           or_(att1:att3,att4)               union
+         *           or_(col1:col3,col4)               union
          *            |                              ____/\____
-         *         ( pi_(att2,att3,att4) )          /          \
-         *            |                            pi_(att2)   pi_(att2:att5)
-         *           |X|_(att2,att5)              /              \
-         *        __/   \__                    select_(att3)   select_(att4)
+         *         ( pi_(col2,col3,col4) )          /          \
+         *            |                            pi_(col2)   pi_(col2:col5)
+         *           |X|_(col2,col5)              /              \
+         *        __/   \__                    select_(col3)   select_(col4)
          *       /         \                     |                |
          *      /1\       /2\                   /1\              /2\
          *     /___\     /___\                 /___\            /___\
-         * (att2,att3) (att5,att4)            (att2,att3)      (att5,att4)
+         * (col2,col3) (col5,col4)            (col2,col3)      (col5,col4)
          *
          *           (1)                                 (2)
          */
         {
             unsigned int i;
-            PFalg_att_t att_sel,
-                        att_join1, att_join2,
-                        att_sel_in1, att_sel_in2;
+            PFalg_col_t col_sel,
+                        col_join1, col_join2,
+                        col_sel_in1, col_sel_in2;
             PFla_op_t *cur, *left, *right;
             PFalg_proj_t *lproj, *rproj, *top_proj;
 
             if (p->schema.count != 2 ||
                 PFprop_icols_count (p->prop) != 1 ||
-                PFprop_icol (p->prop, p->sem.select.att))
+                PFprop_icol (p->prop, p->sem.select.col))
                 break;
 
-            att_sel = p->sem.select.att;
-            att_join1 = p->schema.items[0].name != att_sel
+            col_sel = p->sem.select.col;
+            col_join1 = p->schema.items[0].name != col_sel
                         ? p->schema.items[0].name
                         : p->schema.items[1].name;
             cur = L(p);
@@ -837,55 +840,55 @@ opt_complex (PFla_op_t *p)
             /* cope with intermediate projections */
             if (cur->kind == la_project) {
                 for (i = 0; i < cur->sem.proj.count; i++)
-                    if (L(p)->sem.proj.items[i].new == att_sel)
-                        att_sel = L(p)->sem.proj.items[i].old;
-                    else if (L(p)->sem.proj.items[i].new == att_join1)
-                        att_join1 = L(p)->sem.proj.items[i].old;
+                    if (L(p)->sem.proj.items[i].new == col_sel)
+                        col_sel = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == col_join1)
+                        col_join1 = L(p)->sem.proj.items[i].old;
                 cur = L(cur);
             }
 
             if (cur->kind != la_bool_or ||
-                att_sel != cur->sem.binary.res)
+                col_sel != cur->sem.binary.res)
                 break;
 
-            att_sel_in1 = cur->sem.binary.att1;
-            att_sel_in2 = cur->sem.binary.att2;
+            col_sel_in1 = cur->sem.binary.col1;
+            col_sel_in2 = cur->sem.binary.col2;
 
             cur = L(cur);
 
             /* cope with intermediate projections */
             if (cur->kind == la_project) {
                 for (i = 0; i < cur->sem.proj.count; i++)
-                    if (L(p)->sem.proj.items[i].new == att_join1)
-                        att_join1 = L(p)->sem.proj.items[i].old;
-                    else if (L(p)->sem.proj.items[i].new == att_sel_in1)
-                        att_sel_in1 = L(p)->sem.proj.items[i].old;
-                    else if (L(p)->sem.proj.items[i].new == att_sel_in2)
-                        att_sel_in2 = L(p)->sem.proj.items[i].old;
+                    if (L(p)->sem.proj.items[i].new == col_join1)
+                        col_join1 = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == col_sel_in1)
+                        col_sel_in1 = L(p)->sem.proj.items[i].old;
+                    else if (L(p)->sem.proj.items[i].new == col_sel_in2)
+                        col_sel_in2 = L(p)->sem.proj.items[i].old;
                 cur = L(cur);
             }
 
             if (cur->kind != la_eqjoin ||
-                (att_join1 != cur->sem.eqjoin.att1 &&
-                 att_join1 != cur->sem.eqjoin.att2) ||
+                (col_join1 != cur->sem.eqjoin.col1 &&
+                 col_join1 != cur->sem.eqjoin.col2) ||
                 /* Make sure that both join arguments are key as
                    otherwise placing the distinct operator above
                    the plan fragment is incorrect. */
-                !PFprop_key_left (cur->prop, cur->sem.eqjoin.att1) ||
-                !PFprop_key_right (cur->prop, cur->sem.eqjoin.att2))
+                !PFprop_key_left (cur->prop, cur->sem.eqjoin.col1) ||
+                !PFprop_key_right (cur->prop, cur->sem.eqjoin.col2))
                 break;
 
-            if (PFprop_ocol (L(cur), att_sel_in1) &&
-                PFprop_ocol (R(cur), att_sel_in2)) {
-                att_join1 = cur->sem.eqjoin.att1;
-                att_join2 = cur->sem.eqjoin.att2;
+            if (PFprop_ocol (L(cur), col_sel_in1) &&
+                PFprop_ocol (R(cur), col_sel_in2)) {
+                col_join1 = cur->sem.eqjoin.col1;
+                col_join2 = cur->sem.eqjoin.col2;
                 left = L(cur);
                 right = R(cur);
             }
-            else if (PFprop_ocol (L(cur), att_sel_in2) &&
-                    PFprop_ocol (R(cur), att_sel_in1)) {
-                att_join1 = cur->sem.eqjoin.att2;
-                att_join2 = cur->sem.eqjoin.att1;
+            else if (PFprop_ocol (L(cur), col_sel_in2) &&
+                    PFprop_ocol (R(cur), col_sel_in1)) {
+                col_join1 = cur->sem.eqjoin.col2;
+                col_join2 = cur->sem.eqjoin.col1;
                 left = R(cur);
                 right = L(cur);
             }
@@ -897,19 +900,19 @@ opt_complex (PFla_op_t *p)
             rproj = PFmalloc (sizeof (PFalg_proj_t));
             top_proj = PFmalloc (2 * sizeof (PFalg_proj_t));
 
-            lproj[0] = PFalg_proj (att_join1, att_join1);
-            rproj[0] = PFalg_proj (att_join1, att_join2);
-            top_proj[0] = PFalg_proj (p->schema.items[0].name, att_join1);
-            top_proj[1] = PFalg_proj (p->schema.items[1].name, att_join1);
+            lproj[0] = PFalg_proj (col_join1, col_join1);
+            rproj[0] = PFalg_proj (col_join1, col_join2);
+            top_proj[0] = PFalg_proj (p->schema.items[0].name, col_join1);
+            top_proj[1] = PFalg_proj (p->schema.items[1].name, col_join1);
 
             *p = *PFla_project_ (
                       PFla_distinct (
                           PFla_disjunion (
                               PFla_project_ (
-                                  PFla_select (left, att_sel_in1),
+                                  PFla_select (left, col_sel_in1),
                                   1, lproj),
                               PFla_project_ (
-                                  PFla_select (right, att_sel_in2),
+                                  PFla_select (right, col_sel_in2),
                                   1, rproj))),
                       2, top_proj);
         }   break;
@@ -954,8 +957,8 @@ opt_complex (PFla_op_t *p)
                           PFla_select (
                               PFla_select (
                                   L(p),
-                                  p->sem.binary.att1),
-                              p->sem.binary.att2),
+                                  p->sem.binary.col1),
+                              p->sem.binary.col2),
                           p->sem.binary.res,
                           PFalg_lit_bln (true));
             }
@@ -1063,18 +1066,18 @@ opt_complex (PFla_op_t *p)
 
                 PFord_ordering_t sortby;
                 PFalg_proj_t *proj_list;
-                PFalg_att_t inner_att = rank->sem.sort.res;
-                unsigned int pos_att = 0, count = 0;
+                PFalg_col_t inner_col = rank->sem.sort.res;
+                unsigned int pos_col = 0, count = 0;
 
                 /* lookup position of the inner rank column in
                    the list of sort criteria of the outer rank */
                 for (i = 0; i < PFord_count (p->sem.sort.sortby); i++)
                     if (PFord_order_col_at (p->sem.sort.sortby, i)
-                            == inner_att &&
+                            == inner_col &&
                         /* make sure the order is the same */
                         PFord_order_dir_at (p->sem.sort.sortby, i)
                             == DIR_ASC) {
-                        pos_att = i;
+                        pos_col = i;
                         break;
                     }
 
@@ -1087,7 +1090,7 @@ opt_complex (PFla_op_t *p)
 
                 /* create new sort list where the sort criteria of the
                    inner rank substitute the inner rank column */
-                for (i = 0; i < pos_att; i++)
+                for (i = 0; i < pos_col; i++)
                     sortby = PFord_refine (sortby,
                                            PFord_order_col_at (
                                                p->sem.sort.sortby,
@@ -1105,7 +1108,7 @@ opt_complex (PFla_op_t *p)
                                                rank->sem.sort.sortby,
                                                i));
 
-                for (i = pos_att + 1;
+                for (i = pos_col + 1;
                      i < PFord_count (p->sem.sort.sortby);
                      i++)
                     sortby = PFord_refine (sortby,
@@ -1120,9 +1123,9 @@ opt_complex (PFla_op_t *p)
                     /* Introduce the projection above the new rank
                        operator to maintain the correct result schema.
                        As the result column name of the old outer rank
-                       may collide with the attribute name of one of the
+                       may collide with the column name of one of the
                        inner ranks sort criteria, we use the column name
-                       of the inner rank as resulting attribute name
+                       of the inner rank as resulting column name
                        and adjust the name in the new projection. */
 
                     count = 0;
@@ -1165,14 +1168,14 @@ opt_complex (PFla_op_t *p)
         case la_cast:
             if (PFprop_req_order_col (p->prop, p->sem.type.res) &&
                 p->sem.type.ty == aat_int &&
-                PFprop_type_of (p, p->sem.type.att) == aat_nat) {
+                PFprop_type_of (p, p->sem.type.col) == aat_nat) {
                 PFalg_proj_t *proj = PFmalloc (p->schema.count *
                                                sizeof (PFalg_proj_t));
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     proj[i] = PFalg_proj (L(p)->schema.items[i].name,
                                           L(p)->schema.items[i].name);
                 proj[L(p)->schema.count] = PFalg_proj (p->sem.type.res,
-                                                       p->sem.type.att);
+                                                       p->sem.type.col);
                 *p = *PFla_project_ (L(p), p->schema.count, proj);
             }
             break;
@@ -1273,7 +1276,7 @@ opt_complex (PFla_op_t *p)
                  PFprop_key (p->prop, p->sem.step.item_res))) {
 
                 bool          item_link_correct = false;
-                PFalg_att_t   item_res          = p->sem.step.item_res,
+                PFalg_col_t   item_res          = p->sem.step.item_res,
                               item_in           = p->sem.step.item,
                               old_item_res      = RL(p)->sem.step.item_res,
                               old_item_in       = RL(p)->sem.step.item;

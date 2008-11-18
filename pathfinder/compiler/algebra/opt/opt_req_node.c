@@ -111,7 +111,7 @@ loop_constant (PFla_op_t *p)
  *        (with output column @a iter).
  */
 static PFla_op_t *
-get_loop_relation (PFla_op_t *p, PFalg_att_t iter)
+get_loop_relation (PFla_op_t *p, PFalg_col_t iter)
 {
     switch (p->kind) {
         case la_docnode:
@@ -135,10 +135,10 @@ get_loop_relation (PFla_op_t *p, PFalg_att_t iter)
  * @brief Copy a constant fragment using a different loop relation (@a loop).
  */
 static PFla_op_t *
-build_constant_frag (PFla_op_t *p, PFla_op_t *loop, PFalg_att_t iter, bool unq)
+build_constant_frag (PFla_op_t *p, PFla_op_t *loop, PFalg_col_t iter, bool unq)
 {
-#define name_item  (unq ? PFalg_unq_fixed_name (att_item, 1) : att_item)
-#define name_item1 (unq ? PFalg_unq_fixed_name (att_item, 2) : att_item1)
+#define name_item  (unq ? PFalg_unq_fixed_name (col_item, 1) : col_item)
+#define name_item1 (unq ? PFalg_unq_fixed_name (col_item, 2) : col_item1)
     switch (p->kind) {
         case la_fcns:
             return fcns (build_constant_frag (L(p), loop, iter, unq),
@@ -268,14 +268,14 @@ opt_req_node (PFla_op_t *p)
              twig_constant (LL(p))) {
         /* Save the old item column name as well as the old loop relation
            before overwriting the references. */
-        PFalg_att_t iter = L(p)->sem.iter_item.iter,
+        PFalg_col_t iter = L(p)->sem.iter_item.iter,
                     item = L(p)->sem.iter_item.item;
         PFla_op_t  *loop = get_loop_relation (LL(p), L(p)->sem.iter_item.iter);
 
         /* relink the fragment operator */
         *L(p) = *twig (build_constant_frag (
                            LL(p),
-                           lit_tbl (attlist (iter), tuple (lit_nat (1))),
+                           lit_tbl (collist (iter), tuple (lit_nat (1))),
                            iter,
                            PFalg_is_unq_name (item)),
                        iter, item);

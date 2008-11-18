@@ -390,12 +390,12 @@ static PFsql_t *max_pre_frag;
  * Returns the type of an attribute.
  */
 static PFalg_simple_type_t
-type_of_ (const PFla_op_t * n, PFalg_att_t att)
+type_of_ (const PFla_op_t * n, PFalg_col_t col)
 {
     assert (n);
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (n->schema.items[i].name == att)
+        if (n->schema.items[i].name == col)
             return TYPE_MASK (n->schema.items[i].type);
 
 #ifndef NDEBUG
@@ -404,16 +404,16 @@ type_of_ (const PFla_op_t * n, PFalg_att_t att)
     PFoops (OOPS_FATAL,
             "SQLgen: cannot determine implementation type of "
             "column %s.",
-            PFatt_str (att));
+            PFcol_str (col));
 
     return aat_nat; /* satisfy picky compilers */
 #endif
 }
 #ifndef NDEBUG
-#define type_of(node,att) (assert (type_of_((node), (att))), \
-                           type_of_((node), (att)))
+#define type_of(node,col) (assert (type_of_((node), (col))), \
+                           type_of_((node), (col)))
 #else
-#define type_of(node,att) type_of_((node), (att))
+#define type_of(node,col) type_of_((node), (col))
 #endif
 
 /**
@@ -479,7 +479,7 @@ special_col (PFsql_special_t spc)
     return ret;
 }
 
-/* creates a special column like the attributes in the XML-document relation */
+/* creates a special column like the columns in the XML-document relation */
 #define PRE_        column_name (special_col (sql_col_pre))
 #define SIZE_       column_name (special_col (sql_col_size))
 #define LEVEL_      column_name (special_col (sql_col_level))
@@ -528,26 +528,26 @@ static unsigned int col_varno = PF_SQL_RES_COLUMN_COUNT;
  * (also storing its logical algebra name and its type).
  */
 static PFsql_col_t *
-new_col (PFalg_att_t att, PFalg_simple_type_t ty)
+new_col (PFalg_col_t col, PFalg_simple_type_t ty)
 {
     PFsql_col_t *ret = (PFsql_col_t *) PFmalloc (sizeof (PFsql_col_t));
-    ret->att = att;
+    ret->col = col;
     ret->ty  = ty;
     ret->id  = col_varno++;
     return ret;
 }
 
-/** creates a column (determining his type from the given att/ty pair) */
-#define COLUMN_NAME(att,ty)           (column_name (new_col ((att),(ty))))
-#define EXT_COLUMN_NAME(alias,att,ty) (ext_column_name ( \
-                                           (alias), new_col ((att),(ty))))
+/** creates a column (determining his type from the given col/ty pair) */
+#define COLUMN_NAME(col,ty)           (column_name (new_col ((col),(ty))))
+#define EXT_COLUMN_NAME(alias,col,ty) (ext_column_name ( \
+                                           (alias), new_col ((col),(ty))))
 
 /* .......... Column Environment Helper Functions .......... */
 
 struct sql_column_env_t
 {
     PFalg_simple_type_t type;
-    PFalg_att_t         att;
+    PFalg_col_t         col;
     PFsql_t            *expression;
     PFsql_aident_t      step_alias;
     bool                step_leaf;
@@ -560,11 +560,11 @@ typedef struct sql_column_env_t sql_column_env_t;
 #define col_env_new() (PFarray (sizeof (sql_column_env_t), 20))
 
 /**
- * Adds a (attribute/type -> expression)
+ * Adds a (column/type -> expression)
  * mapping to the column-environment.
  */
 static void
-col_env_add_full (PFarray_t * env, PFalg_att_t att,
+col_env_add_full (PFarray_t * env, PFalg_col_t col,
                   PFalg_simple_type_t ty, PFsql_t * expr,
                   PFsql_aident_t step_alias,
                   bool step_leaf)
@@ -580,7 +580,7 @@ col_env_add_full (PFarray_t * env, PFalg_att_t att,
 
     *(sql_column_env_t *) PFarray_add (env) =
         (sql_column_env_t) { .type = ty,
-                             .att = att,
+                             .col = col,
                              .expression = expr,
                              .step_alias = step_alias,
                              .step_leaf = step_leaf };
@@ -604,7 +604,7 @@ col_env_copy (PFarray_t * dest, PFarray_t * src)
     for (unsigned int i = 0; i < PFarray_last (src); i++) {
         sql_column_env_t entry = col_env_at (src, i);
         col_env_add_full (dest,
-                          entry.att,
+                          entry.col,
                           entry.type,
                           entry.expression,
                           entry.step_alias,
@@ -613,86 +613,86 @@ col_env_copy (PFarray_t * dest, PFarray_t * src)
 }
 
 /**
- * Returns the expression associated with a given attribute/type
+ * Returns the expression associated with a given column/type
  * pair. If there doesn't exist an expression, simply return NULL.
  */
 static PFsql_t *
-col_env_lookup_unsafe (const PFarray_t * env, PFalg_att_t att,
+col_env_lookup_unsafe (const PFarray_t * env, PFalg_col_t col,
                        PFalg_simple_type_t ty)
 {
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         sql_column_env_t entry =
             *(sql_column_env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        if (entry.att == att && TYPE_MASK (entry.type) == TYPE_MASK (ty))
+        if (entry.col == col && TYPE_MASK (entry.type) == TYPE_MASK (ty))
             return entry.expression;
     }
     return NULL;
 }
 
 /**
- * Returns the expression associated with a given attribute/type
+ * Returns the expression associated with a given column/type
  * pair. Abort the codegeneration and produce an error message,
- * when there is no expression, for the att/type pair.
+ * when there is no expression, for the col/type pair.
  */
 static PFsql_t *
-col_env_lookup_ (const PFarray_t * env, PFalg_att_t att,
+col_env_lookup_ (const PFarray_t * env, PFalg_col_t col,
                  PFalg_simple_type_t ty)
 {
     ty = TYPE_MASK (ty);
-    PFsql_t *expr = col_env_lookup_unsafe (env, att, ty);
+    PFsql_t *expr = col_env_lookup_unsafe (env, col, ty);
 
     if (expr)
         return expr;
 
 #ifndef NDEBUG
-    fprintf (stderr, "looking for att: %s, ty: 0x%X\n", PFatt_str (att), ty);
+    fprintf (stderr, "looking for col: %s, ty: 0x%X\n", PFcol_str (col), ty);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         sql_column_env_t entry =
             *(sql_column_env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        fprintf (stderr, "  att: %s, type: 0x%X, sql-op kind: %u\n",
-                 PFatt_str (entry.att), entry.type,
+        fprintf (stderr, "  col: %s, type: 0x%X, sql-op kind: %u\n",
+                 PFcol_str (entry.col), entry.type,
                  entry.expression->kind);
     }
 #else
     PFoops (OOPS_FATAL,
-            "SQLgen: attribute '%s' with type '0x%X' "
-            "not found in environment", PFatt_str (att), ty);
+            "SQLgen: column '%s' with type '0x%X' "
+            "not found in environment", PFcol_str (col), ty);
 #endif
     return NULL; /* satisfy picky compilers */
 }
 #ifndef NDEBUG
-#define col_env_lookup(env,att,ty) (assert (col_env_lookup_(env,att,ty)), \
-                                    col_env_lookup_(env,att,ty))
+#define col_env_lookup(env,col,ty) (assert (col_env_lookup_(env,col,ty)), \
+                                    col_env_lookup_(env,col,ty))
 #else
-#define col_env_lookup(env,att,ty) col_env_lookup_(env,att,ty)
+#define col_env_lookup(env,col,ty) col_env_lookup_(env,col,ty)
 #endif
 
 static PFsql_aident_t
-col_env_lookup_step (const PFarray_t * env, PFalg_att_t att,
+col_env_lookup_step (const PFarray_t * env, PFalg_col_t col,
                      PFalg_simple_type_t ty)
 {
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         sql_column_env_t entry =
             *(sql_column_env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        if (entry.att == att && TYPE_MASK (entry.type) == TYPE_MASK (ty))
+        if (entry.col == col && TYPE_MASK (entry.type) == TYPE_MASK (ty))
             return entry.step_alias;
     }
     return PF_SQL_ALIAS_UNBOUND;
 }
 
 static bool
-col_env_lookup_step_leaf (const PFarray_t * env, PFalg_att_t att,
+col_env_lookup_step_leaf (const PFarray_t * env, PFalg_col_t col,
                           PFalg_simple_type_t ty)
 {
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         sql_column_env_t entry =
             *(sql_column_env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        if (entry.att == att && TYPE_MASK (entry.type) == TYPE_MASK (ty))
+        if (entry.col == col && TYPE_MASK (entry.type) == TYPE_MASK (ty))
             return entry.step_leaf;
     }
     return false;
@@ -705,7 +705,7 @@ column_eq (PFsql_col_t *a, PFsql_col_t *b)
         b->id == PF_SQL_COLUMN_SPECIAL)
         return (a->spec == b->spec);
     else
-      return (a->att == b->att) &&
+      return (a->col == b->col) &&
              (a->ty  == b->ty); 
 }
 
@@ -746,7 +746,7 @@ transform_columnlist (PFarray_t *col_env)
     for (unsigned int i = 0; i < PFarray_last (col_env); i++) {
         sql_column_env_t colitem = col_env_at (col_env, i);
         collist = column_list (collist,
-                           column_name (new_col (colitem.att, colitem.type)));
+                           column_name (new_col (colitem.col, colitem.type)));
     }
     return collist;
 }
@@ -762,7 +762,7 @@ transform_selectlist (PFarray_t *col_env)
         sql_column_env_t colitem = col_env_at (col_env, i);
         sellist = select_list (sellist,
                        transform_expression (colitem.expression,
-                          column_name (new_col (colitem.att, colitem.type))));
+                          column_name (new_col (colitem.col, colitem.type))));
     }
     return sellist;
 }
@@ -927,8 +927,8 @@ sql_alg_ann_new (void)
     ret->fragment     = NULL;
     ret->content_size = NULL;
     ret->ser_report   = ser_no;
-    ret->ser_list1    = att_NULL;
-    ret->ser_list2    = att_NULL;
+    ret->ser_list1    = col_NULL;
+    ret->ser_list2    = col_NULL;
     ret->rank_map     = NULL;
 
     return ret;
@@ -1305,7 +1305,7 @@ step_guide_join (PFla_op_t *p, PFsql_aident_t step,
                                     NULL, iter, kind, value, name, uri)
 #define construct_twig(p,content,new_root,sortkey_list) \
             construct_twig_generic (p, content, new_root, false,       \
-                                    sortkey_list, att_iter, 0,         \
+                                    sortkey_list, col_iter, 0,         \
                                     NULL, NULL, NULL)
 /**
  * Construct a twig binding.
@@ -1321,13 +1321,13 @@ construct_twig_generic (PFla_op_t *p,
                         PFsql_aident_t new_root,
                         bool simple,
                         PFsql_t *sortkey_list,
-                        PFalg_att_t citer, int kind,
+                        PFalg_col_t citer, int kind,
                         PFsql_t *value, PFsql_t *name,
                         PFsql_t *uri)
 {
     PFsql_tident_t      twig_tbl = new_table_name ();
     PFsql_aident_t      max      = new_alias ();
-    PFalg_att_t         iter;
+    PFalg_col_t         iter;
     PFalg_simple_type_t iter_ty;
     PFsql_col_t        *iter_col;
     PFsql_t            *twig;
@@ -1445,7 +1445,7 @@ construct_twig_generic (PFla_op_t *p,
  * and values (@a value) differ.
  */
 static void
-construct_node (PFla_op_t *p, PFalg_att_t iter, int kind,
+construct_node (PFla_op_t *p, PFalg_col_t iter, int kind,
                 PFsql_t *value, PFsql_t *name, PFsql_t *uri)
 {
     PFalg_simple_type_t iter_ty = type_of (L(p), iter);
@@ -1514,7 +1514,7 @@ bind_operator (PFla_op_t *p, bool distinct)
        the new bindings for the column environment */
     for (unsigned int i = 0; i < PFarray_last (COLMAP(p)); i++) {
         entry = col_env_at (COLMAP(p), i);
-        colname = new_col (entry.att, entry.type);
+        colname = new_col (entry.col, entry.type);
 
         /* create columnlist for the table name */
         columnlist = column_list (columnlist, column_name (colname));
@@ -1856,7 +1856,7 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
  * serialization report (SER_REPORT).
  */
 struct rank_map_t {
-    PFalg_att_t name;
+    PFalg_col_t name;
     PFarray_t  *sort_list;
 };
 typedef struct rank_map_t rank_map_t;
@@ -1948,8 +1948,8 @@ reduce (PFla_op_t * p, int goalnt)
                of the next case block into which we fall through.
                Here we prepare the translation by resolving
                any renaming done by the projection operator. */
-            PFalg_att_t item = p->sem.ser_seq.item;
-            PFalg_att_t pos  = p->sem.ser_seq.pos;
+            PFalg_col_t item = p->sem.ser_seq.item;
+            PFalg_col_t pos  = p->sem.ser_seq.pos;
 
             assert (R(p)->schema.count <= 2);
             if (R(p)->sem.proj.items[0].new == item)
@@ -1990,8 +1990,8 @@ reduce (PFla_op_t * p, int goalnt)
             bool                distinct   = rule == 2 || rule == 4;
             /* use the second non-terminal as the query part */
             PFla_op_t          *query      = kids[1];
-            PFalg_att_t         item       = p->sem.ser_seq.item;
-            PFalg_att_t         pos        = p->sem.ser_seq.pos;
+            PFalg_col_t         item       = p->sem.ser_seq.item;
+            PFalg_col_t         pos        = p->sem.ser_seq.pos;
             PFalg_simple_type_t item_ty    = type_of (p, p->sem.ser_seq.item);
 
             PFalg_simple_type_t pos_ty     = type_of (p, p->sem.ser_seq.pos);
@@ -2026,7 +2026,7 @@ reduce (PFla_op_t * p, int goalnt)
                Transform the list of order columns into a SQL ORDER BY list. */
             else {
                 PFord_ordering_t sortby;
-                PFalg_att_t ord;
+                PFalg_col_t ord;
                 bool asc;
 
                 assert (R(p)->kind == la_project &&
@@ -2081,8 +2081,8 @@ reduce (PFla_op_t * p, int goalnt)
             /* the item information */
             for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(query), i);
-                if (((entry.att == item) && !(entry.type & aat_node))) {
-                    sername = COLUMN_NAME (att_item, entry.type);
+                if (((entry.col == item) && !(entry.type & aat_node))) {
+                    sername = COLUMN_NAME (col_item, entry.type);
                     colexpr = transform_expression (entry.expression, sername);
 
                     /* add the sql operation to the select list */
@@ -2444,10 +2444,10 @@ reduce (PFla_op_t * p, int goalnt)
         {
             PFla_op_t          *query      = L(p);
 
-            PFalg_att_t         iter       = p->sem.ser_rel.iter;
+            PFalg_col_t         iter       = p->sem.ser_rel.iter;
             PFalg_simple_type_t iter_ty    = type_of (p, p->sem.ser_rel.iter);
 
-            PFalg_att_t         pos        = p->sem.ser_rel.pos;
+            PFalg_col_t         pos        = p->sem.ser_rel.pos;
             PFalg_simple_type_t pos_ty     = type_of (p, p->sem.ser_rel.pos);
 
             PFsql_t* orderbyITER = col_env_lookup (COLMAP(query),
@@ -2504,7 +2504,7 @@ reduce (PFla_op_t * p, int goalnt)
             {
                 PFalg_schm_item_t schemaItem = schema.items[i];
 
-                PFalg_att_t columnName = schemaItem.name;
+                PFalg_col_t columnName = schemaItem.name;
                 PFalg_simple_type_t columnType = schemaItem.type;
 
                 PFsql_t* columnPseudoVal;
@@ -2680,7 +2680,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_schema_t schema = p->schema;
             /* lookup the "external"/"real" column names in the 
                semantical info */
-            PFarray_t* externalCNames = p->sem.ref_tbl.tatts;
+            PFarray_t* externalCNames = p->sem.ref_tbl.tcols;
 
             /* iterate the schema and generate a column-mapping for each
                "internal"-"external"-column-name-pair */
@@ -2689,7 +2689,7 @@ reduce (PFla_op_t * p, int goalnt)
             {
                 PFalg_schm_item_t schemaItem = schema.items[i];
 
-                PFalg_att_t columnNameInternal = schemaItem.name;
+                PFalg_col_t columnNameInternal = schemaItem.name;
                 char* columnNameExternal = 
                     *(char**) PFarray_at (externalCNames, i);
                 PFalg_simple_type_t columnType = schemaItem.type;
@@ -2749,7 +2749,7 @@ reduce (PFla_op_t * p, int goalnt)
             if (p->kind == la_eqjoin) {
                  PFalg_simple_type_t l_ty;
 
-                 l_ty = type_of (p, p->sem.eqjoin.att1);
+                 l_ty = type_of (p, p->sem.eqjoin.col1);
 
                  assert (monomorphic (l_ty));
 
@@ -2784,7 +2784,7 @@ reduce (PFla_op_t * p, int goalnt)
             if (p->kind == la_eqjoin) {
                  PFalg_simple_type_t r_ty;
 
-                 r_ty = type_of (p, p->sem.eqjoin.att2);
+                 r_ty = type_of (p, p->sem.eqjoin.col2);
 
                  assert (monomorphic (r_ty));
 
@@ -2814,13 +2814,13 @@ reduce (PFla_op_t * p, int goalnt)
             for (unsigned int i = 0; i < PFarray_last (COLMAP(R(p))); i++) {
                 sql_column_env_t entry = col_env_at (COLMAP(R(p)), i);
 
-                /* if the att/type value is just in the environment
+                /* if the col/type value is just in the environment
                  * throw an error, because the schema of the left and
                  * right child should be disjoint.
                  */
-                if (!col_env_lookup_unsafe (COLMAP(p), entry.att, entry.type))
+                if (!col_env_lookup_unsafe (COLMAP(p), entry.col, entry.type))
                     col_env_add_full (COLMAP(p),
-                                      entry.att,
+                                      entry.col,
                                       entry.type,
                                       entry.expression,
                                       entry.step_alias,
@@ -2828,7 +2828,7 @@ reduce (PFla_op_t * p, int goalnt)
                 else
                     PFoops (OOPS_FATAL,
                             "SQLgen: The join tables contains equal"
-                            " attribute/type mappings");
+                            " column/type mappings");
             }
 
             /* do not copy singleton relation */
@@ -2850,8 +2850,8 @@ reduce (PFla_op_t * p, int goalnt)
             if (p->kind == la_eqjoin) {
                  PFalg_simple_type_t l_ty, r_ty;
 
-                 l_ty = type_of (p, p->sem.eqjoin.att1);
-                 r_ty = type_of (p, p->sem.eqjoin.att2);
+                 l_ty = type_of (p, p->sem.eqjoin.col1);
+                 r_ty = type_of (p, p->sem.eqjoin.col2);
 
                  assert (l_ty == r_ty && monomorphic (l_ty));
 
@@ -2859,16 +2859,16 @@ reduce (PFla_op_t * p, int goalnt)
                  where_list_add (WHERELIST(p),
                                  eq (col_env_lookup (
                                          COLMAP(p),
-                                         p->sem.eqjoin.att1,
+                                         p->sem.eqjoin.col1,
                                          l_ty),
                                      col_env_lookup (
                                          COLMAP(p),
-                                         p->sem.eqjoin.att2,
+                                         p->sem.eqjoin.col2,
                                          r_ty)));
             }
             /* join predicates for the theta-join operator */
             else if (p->kind == la_thetajoin) {
-                PFalg_att_t left, right;
+                PFalg_col_t left, right;
                 PFsql_t *l_expr, *r_expr;
                 PFalg_simple_type_t l_ty, r_ty;
                 PFsql_t *cond;
@@ -2914,17 +2914,17 @@ reduce (PFla_op_t * p, int goalnt)
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[0]);
 
-            PFalg_att_t         att1 = p->sem.eqjoin.att1,
-                                att2 = p->sem.eqjoin.att2;
-            PFalg_simple_type_t ty   = type_of (L(p), att1);
+            PFalg_col_t         col1 = p->sem.eqjoin.col1,
+                                col2 = p->sem.eqjoin.col2;
+            PFalg_simple_type_t ty   = type_of (L(p), col1);
             PFsql_alg_ann_t    *right;
 
-            assert (type_of (R(p), att2) == ty);
+            assert (type_of (R(p), col2) == ty);
 
             /* reduce the first child */
             reduce (kids[0], nts[0]);
 
-            /* for the semijoin we only need the attributes of
+            /* for the semijoin we only need the columns of
              * the left relation */
             /* copy all existing column, from, and where lists
                of the left child */
@@ -2936,18 +2936,18 @@ reduce (PFla_op_t * p, int goalnt)
             /* If we need to ensure the correct cardinality
                we first need to bind the right argument. */
             if (!PFprop_set (p->prop) &&
-                !(PFprop_key_left (p->prop, att1) &&
-                  PFprop_key_right (p->prop, att2))) {
+                !(PFprop_key_left (p->prop, col1) &&
+                  PFprop_key_right (p->prop, col2))) {
                 PFsql_t            *expr     = col_env_lookup (
-                                                   COLMAP(R(p)), att2, ty);
-                PFsql_col_t        *colname  = new_col (att2, ty);
+                                                   COLMAP(R(p)), col2, ty);
+                PFsql_col_t        *colname  = new_col (col2, ty);
                 PFsql_tident_t      newtable = new_table_name ();
                 PFsql_aident_t      newalias = new_alias ();
 
                 assert (monomorphic(ty));
 
                 /* bind the right side and ensure the distinct
-                   is evaluated on the join attribute only */
+                   is evaluated on the join column only */
                 execute (comment ("binding due to semijoin"));
                 execute (bind (table_def (
                                    newtable,
@@ -2970,7 +2970,7 @@ reduce (PFla_op_t * p, int goalnt)
                                alias (newalias));
 
                 col_env_add (right->colmap,
-                             att2,
+                             col2,
                              ty,
                              ext_column_name (newalias, colname));
             }
@@ -2984,8 +2984,8 @@ reduce (PFla_op_t * p, int goalnt)
 
             /* add the constraint coming from semijoin */
             where_list_add (WHERELIST(p),
-                            eq (col_env_lookup (COLMAP(p), att1, ty),
-                                col_env_lookup (right->colmap, att2, ty)));
+                            eq (col_env_lookup (COLMAP(p), col1, ty),
+                                col_env_lookup (right->colmap, col2, ty)));
         }   break;
 
         /* Rel:    project (Rel) */
@@ -2998,13 +2998,13 @@ reduce (PFla_op_t * p, int goalnt)
             for (unsigned int i = 0; i < p->sem.proj.count; i++) {
                for (k = 0; k < PFarray_last (COLMAP(L(p))); k++) {
                    entry = col_env_at (COLMAP(L(p)), k);
-                   if (p->sem.proj.items[i].old == entry.att)
+                   if (p->sem.proj.items[i].old == entry.col)
                        break; 
                }
 
                if (k >= PFarray_last(COLMAP(L(p))))
                    PFoops (OOPS_FATAL, "Attribute %s not found in project",
-                           PFatt_str (p->sem.proj.items[i].old));
+                           PFcol_str (p->sem.proj.items[i].old));
             }
 
             /* copy the column map and update the column names
@@ -3012,7 +3012,7 @@ reduce (PFla_op_t * p, int goalnt)
             for (unsigned int i = 0; i < p->sem.proj.count; i++)
                 for (unsigned int j = 0; j < PFarray_last (COLMAP(L(p))); j++) {
                     entry = col_env_at (COLMAP(L(p)), j);
-                    if (p->sem.proj.items[i].old == entry.att) {
+                    if (p->sem.proj.items[i].old == entry.col) {
                         col_env_add_full (COLMAP(p),
                                           p->sem.proj.items[i].new,
                                           entry.type,
@@ -3037,10 +3037,10 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-            assert (type_of (p, p->sem.select.att) == aat_bln);
+            assert (type_of (p, p->sem.select.col) == aat_bln);
 
             sqlnode = col_env_lookup (COLMAP(L(p)),
-                                      p->sem.select.att,
+                                      p->sem.select.col,
                                       aat_bln);
 
             if (sqlnode->kind == sql_column_name ||
@@ -3064,14 +3064,14 @@ reduce (PFla_op_t * p, int goalnt)
                 (p->sem.pos_sel.pos == 1 || p->sem.pos_sel.pos == -1) &&
                 PFord_count (p->sem.pos_sel.sortby) == 1 &&
                 PFord_order_dir_at (p->sem.pos_sel.sortby, 0) == DIR_ASC) {
-                PFalg_att_t         att,
+                PFalg_col_t         col,
                                     part;
                 PFalg_simple_type_t ty,
                                     part_ty;
                 PFsql_t            *expr,
                                    *part_expr;
                 PFsql_col_t        *part_col,
-                                   *col;
+                                   *col_col;
                 PFsql_t            *selectlist = NULL;
                 PFsql_t            *columnlist = NULL;
                 PFsql_t            *groupbylist = NULL;
@@ -3128,24 +3128,24 @@ reduce (PFla_op_t * p, int goalnt)
                     groupbylist = column_list (groupbylist, part_expr);
                 }
 
-                att  = PFord_order_col_at (p->sem.pos_sel.sortby, 0);
-                ty   = type_of (p, att);
-                col  = new_col (att, ty);
-                expr = col_env_lookup (COLMAP(L(p)), att, ty);
+                col     = PFord_order_col_at (p->sem.pos_sel.sortby, 0);
+                ty      = type_of (p, col);
+                col_col = new_col (col, ty);
+                expr    = col_env_lookup (COLMAP(L(p)), col, ty);
 
                 /* generate the aggregation */
-                expr = p->sem.pos_sel.pos > 0 ? min_ (expr) : max_ (expr);
+                expr    = p->sem.pos_sel.pos > 0 ? min_ (expr) : max_ (expr);
 
-                col_env_add (COLMAP(p), att, ty,
-                             ext_column_name (newalias, col));
+                col_env_add (COLMAP(p), col, ty,
+                             ext_column_name (newalias, col_col));
 
-                columnlist = column_list (columnlist, column_name (col));
+                columnlist = column_list (columnlist, column_name (col_col));
 
                 /* add the aggregation to the selection list */
                 selectlist = select_list (selectlist,
                                           transform_expression (
                                               expr,
-                                              column_name (col)));
+                                              column_name (col_col)));
 
                 /* dump the operator binding */
                 execute (comment ("binding due to positional aggregate"));
@@ -3166,19 +3166,19 @@ reduce (PFla_op_t * p, int goalnt)
                 bool             change_order = p->sem.pos_sel.pos < 0;
                 int              pos          = (change_order ? -1 : 1)
                                                 * p->sem.pos_sel.pos;
-                PFalg_att_t      used_cols    = 0,
+                PFalg_col_t      used_cols    = 0,
                                  num;
                 PFsql_t         *srtbylist    = NULL;
                 PFsql_t         *partlist     = NULL;
                 PFord_ordering_t sortby       = p->sem.pos_sel.sortby;
-                PFalg_att_t      ord;
+                PFalg_col_t      ord;
                 bool             asc;
 
-                /* get ourselves a new attribute name */
+                /* get ourselves a new column name */
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     used_cols |= p->schema.items[i].name;
 
-                num = PFalg_ori_name (PFalg_unq_name (att_pos), ~used_cols);
+                num = PFalg_ori_name (PFalg_unq_name (col_pos), ~used_cols);
 
                 /* copy all existing column, from, and where lists */
                 copy_cols_from_where (p, L(p));
@@ -3229,7 +3229,7 @@ reduce (PFla_op_t * p, int goalnt)
 
                 /* remove the num variable from the column list */
                 assert ((*(sql_column_env_t *)
-                            PFarray_top (COLMAP(p))).att == num);
+                            PFarray_top (COLMAP(p))).col == num);
                 PFarray_del (COLMAP(p));
             }
             break;
@@ -3246,7 +3246,7 @@ reduce (PFla_op_t * p, int goalnt)
               PFsql_t *fromlist   = NULL;
               PFsql_t *wherelist  = NULL;
 
-              PFsql_t *att1 = NULL;
+              PFsql_t *col1 = NULL;
               PFsql_t *key  = NULL;
 
               /* lists for the recursion to
@@ -3256,7 +3256,7 @@ reduce (PFla_op_t * p, int goalnt)
               PFsql_t *recwherelist = NULL;
 
               PFsql_t *reckey  = NULL;
-              PFsql_t *recatt2 = NULL;
+              PFsql_t *reccol2 = NULL;
 
               PFsql_tident_t totbl   = new_table_name (); 
               PFsql_aident_t toalias = new_alias ();
@@ -3277,21 +3277,21 @@ reduce (PFla_op_t * p, int goalnt)
               fromlist   = transform_frommap    (L(p));
               wherelist  = transform_wheremap   (L(p));
 
-              att1 = col_env_lookup (COLMAP(L(p)),
-                         p->sem.binary.att1,
-                         type_of (p, p->sem.binary.att1));
+              col1 = col_env_lookup (COLMAP(L(p)),
+                         p->sem.binary.col1,
+                         type_of (p, p->sem.binary.col1));
              
               for (unsigned int i = 0;
                    i < PFarray_last (COLMAP(L(p))); i++) {
 
                   sql_column_env_t entry = col_env_at (COLMAP(L(p)), i);
-                  PFsql_col_t *newcolumn = new_col (entry.att, entry.type);
+                  PFsql_col_t *newcolumn = new_col (entry.col, entry.type);
 
                   recselectlist = select_list (recselectlist,
                                    ext_column_name (
                                        toalias,
                                        newcolumn));
-                  col_env_add (COLMAP(p), entry.att, entry.type,
+                  col_env_add (COLMAP(p), entry.col, entry.type,
                                ext_column_name (
                                        toalias,
                                        newcolumn));
@@ -3334,7 +3334,7 @@ reduce (PFla_op_t * p, int goalnt)
                       selectlist = select_list (selectlist,
                                        ext_column_name (
                                            keyalias,
-                                           new_col (entry.att, entry.type)));
+                                           new_col (entry.col, entry.type)));
                   }
                   selectlist = select_list (selectlist,
                                     SUR(keyalias));
@@ -3343,11 +3343,11 @@ reduce (PFla_op_t * p, int goalnt)
                                  alias_bind (table_name (keytbl),
                                              alias (keyalias)));
 
-                  att1 = ext_column_name (
+                  col1 = ext_column_name (
                               keyalias,
                               new_col (
-                                  p->sem.binary.att1,
-                                  type_of (L(p), p->sem.binary.att1)));
+                                  p->sem.binary.col1,
+                                  type_of (L(p), p->sem.binary.col1)));
 
                   key = SUR(keyalias);
                               
@@ -3381,7 +3381,7 @@ reduce (PFla_op_t * p, int goalnt)
 
               selectlist = select_list (selectlist, 
                                  column_assign (
-                                      att1,
+                                      col1,
                                       column_name (rescol)));
 
               recselectlist = select_list (recselectlist,
@@ -3392,10 +3392,10 @@ reduce (PFla_op_t * p, int goalnt)
                                             lit_int (1)),
                                        column_name (rescol)));
 
-              recatt2 = ext_column_name (
+              reccol2 = ext_column_name (
                             toalias,
-                            new_col (p->sem.binary.att2,
-                                type_of (L(p), p->sem.binary.att2)));
+                            new_col (p->sem.binary.col2,
+                                type_of (L(p), p->sem.binary.col2)));
 
               execute (bind (
                   table_def (totbl, columnlist),
@@ -3412,7 +3412,7 @@ reduce (PFla_op_t * p, int goalnt)
                                 alias (toalias))),
                         where_list (recwherelist,
                               eq (reckey, key),
-                              gt (recatt2,
+                              gt (reccol2,
                                   ext_column_name (
                                       toalias,rescol)))))));
                          
@@ -3440,7 +3440,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_t *selectlist1 = NULL;
             PFsql_t *selectlist2 = NULL;
             PFsql_t *columnlist  = NULL;
-            PFalg_att_t att;
+            PFalg_col_t col;
             PFalg_simple_type_t ty, t;
             PFsql_col_t *colname;
 
@@ -3457,24 +3457,24 @@ reduce (PFla_op_t * p, int goalnt)
             /* prepare the selection lists, the column list, and fill in
                the new bindings for the column environment */
             for (unsigned int i = 0; i < p->schema.count; i++) {
-                att = p->schema.items[i].name;
+                col = p->schema.items[i].name;
                 ty  = p->schema.items[i].type;
                 for (t = 1; t; t <<= 1)
                     if (t & TYPE_MASK (ty)) {
-                        colname = new_col (att, t);
+                        colname = new_col (col, t);
 
                         /* create columnlist for the table name */
                         columnlist = column_list (columnlist,
                                                   column_name (colname));
 
                         col_env_add (COLMAP(p),
-                                     att,
+                                     col,
                                      t,
                                      ext_column_name (newalias, colname));
 
                         /* Type t is in the result relation.
                            See if it is also in the left operand.  */
-                        if (!(t & type_of (L(p), att)))
+                        if (!(t & type_of (L(p), col)))
                             selectlist1 = select_list (
                                               selectlist1,
                                               column_assign (
@@ -3485,12 +3485,12 @@ reduce (PFla_op_t * p, int goalnt)
                                               selectlist1,
                                               transform_expression (
                                                   col_env_lookup (
-                                                      COLMAP(L(p)), att, t),
+                                                      COLMAP(L(p)), col, t),
                                                   column_name (colname)));
 
                         /* Type t is in the result relation.
                            See if it is also in the left operand. */
-                        if (!(t & type_of (R(p), att)))
+                        if (!(t & type_of (R(p), col)))
                             selectlist2 = select_list (
                                               selectlist2,
                                               column_assign (
@@ -3501,7 +3501,7 @@ reduce (PFla_op_t * p, int goalnt)
                                               selectlist2,
                                               transform_expression (
                                                   col_env_lookup (
-                                                      COLMAP(R(p)), att, t),
+                                                      COLMAP(R(p)), col, t),
                                                   column_name (colname)));
                     }
             }
@@ -3540,18 +3540,18 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    fun_1to1 (Rel) */
         case 25:
         {
-            unsigned int count = p->sem.fun_1to1.refs.count;
-            PFalg_att_t att[count];
+            unsigned int count = PFalg_collist_size (p->sem.fun_1to1.refs);
+            PFalg_col_t col[count];
             PFalg_simple_type_t ty[count];
             PFsql_t *expr[count];
-            PFalg_att_t res_att = p->sem.fun_1to1.res;
-            PFalg_simple_type_t res_ty = type_of (p, res_att);
+            PFalg_col_t res_col = p->sem.fun_1to1.res;
+            PFalg_simple_type_t res_ty = type_of (p, res_col);
             PFsql_t *res_expr = NULL;
 
             for (unsigned int i = 0; i < count; i++) {
-                att[i]  = p->sem.fun_1to1.refs.atts[i];
-                ty[i]   = type_of (p, att[i]);
-                expr[i] = col_env_lookup (COLMAP(L(p)), att[i], ty[i]);
+                col[i]  = PFalg_collist_at (p->sem.fun_1to1.refs, i);
+                ty[i]   = type_of (p, col[i]);
+                expr[i] = col_env_lookup (COLMAP(L(p)), col[i], ty[i]);
             }
 
             /* copy all existing column, from, and where lists */
@@ -3568,7 +3568,7 @@ reduce (PFla_op_t * p, int goalnt)
                     res_expr = div (expr[0], expr[1]); break;
                 case alg_fun_fn_contains:
                     /* adding check for constant expression */
-                    if (!PFprop_const (L(p)->prop, att[1]) || 
+                    if (!PFprop_const (L(p)->prop, col[1]) || 
                         ty[1]         != aat_str           ||
                         expr[1]->kind == sql_column_name)
                         PFoops (OOPS_FATAL, "fn_contains works only with constant "
@@ -3665,7 +3665,7 @@ reduce (PFla_op_t * p, int goalnt)
                     assert (!"missing");
                     break;
             }
-            col_env_add (COLMAP(p), res_att, res_ty, res_expr);
+            col_env_add (COLMAP(p), res_col, res_ty, res_expr);
 
         }   break;
         /* Rel:    num_eq (Rel) */
@@ -3688,11 +3688,11 @@ reduce (PFla_op_t * p, int goalnt)
                          p->sem.binary.res,
                          type_of (p, p->sem.binary.res),
                          op (col_env_lookup (COLMAP(p),
-                                             p->sem.binary.att1,
-                                             type_of (p, p->sem.binary.att1)),
+                                             p->sem.binary.col1,
+                                             type_of (p, p->sem.binary.col1)),
                              col_env_lookup (COLMAP(p),
-                                             p->sem.binary.att2,
-                                             type_of (p, p->sem.binary.att2))));
+                                             p->sem.binary.col2,
+                                             type_of (p, p->sem.binary.col2))));
         }   break;
 
         /* Rel:    bool_and (Rel) */
@@ -3708,8 +3708,8 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing column, from and where lists */
             copy_cols_from_where (p, L(p));
 
-            sqlnode1 = col_env_lookup (COLMAP(p), p->sem.binary.att1, aat_bln);
-            sqlnode2 = col_env_lookup (COLMAP(p), p->sem.binary.att2, aat_bln);
+            sqlnode1 = col_env_lookup (COLMAP(p), p->sem.binary.col1, aat_bln);
+            sqlnode2 = col_env_lookup (COLMAP(p), p->sem.binary.col2, aat_bln);
 
             if (sqlnode1->kind == sql_column_name)
                 sqlnode1 = eq (sqlnode1, lit_int (1));
@@ -3738,7 +3738,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-            sqlnode = col_env_lookup (COLMAP(p), p->sem.unary.att, aat_bln);
+            sqlnode = col_env_lookup (COLMAP(p), p->sem.unary.col, aat_bln);
 
             if (sqlnode->kind == sql_column_name)
                 sqlnode = eq (sqlnode, lit_int (1));
@@ -3765,9 +3765,9 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    cast (Rel) */
         case 33:
         {
-            PFalg_att_t att = p->sem.type.att;
-            PFalg_simple_type_t ty = TYPE_MASK (type_of (p, att));
-            PFalg_att_t res_att = p->sem.type.res;
+            PFalg_col_t col = p->sem.type.col;
+            PFalg_simple_type_t ty = TYPE_MASK (type_of (p, col));
+            PFalg_col_t res = p->sem.type.res;
             PFalg_simple_type_t res_ty = p->sem.type.ty;
             PFsql_t *expr;
 
@@ -3776,9 +3776,9 @@ reduce (PFla_op_t * p, int goalnt)
             if (monomorphic (ty)) {
                 copy_cols_from_where (p, L(p));
 
-                expr = col_env_lookup (COLMAP(L(p)), att, ty);
+                expr = col_env_lookup (COLMAP(L(p)), col, ty);
 
-                col_env_add (COLMAP(p), res_att, res_ty,
+                col_env_add (COLMAP(p), res, res_ty,
                              cast_ (expr, ty, res_ty));
             }
             else {
@@ -3792,7 +3792,7 @@ reduce (PFla_op_t * p, int goalnt)
                 /* new correlation name for bounded table */
                 PFsql_aident_t newalias = new_alias ();
 
-                PFsql_col_t *res_col = new_col (res_att, res_ty);
+                PFsql_col_t *res_col = new_col (res, res_ty);
 
                 PFsql_t * query = NULL;
 
@@ -3801,7 +3801,7 @@ reduce (PFla_op_t * p, int goalnt)
                 columnlist = transform_columnlist (COLMAP(L(p)));
                 selectlist = transform_selectlist (COLMAP(L(p)));
 
-                /* we can add the resulting attribute already
+                /* we can add the resulting column already
                  * here  to columnlist and environment. */
                 columnlist = column_list (columnlist,
                                       column_name (res_col));
@@ -3809,7 +3809,7 @@ reduce (PFla_op_t * p, int goalnt)
                 col_env_copy (COLMAP(p), COLMAP(L(p)));
                 /* bind every column to a new alias */
                 transform_colenv (COLMAP(p), newalias);
-                col_env_add (COLMAP(p), res_att, res_ty,
+                col_env_add (COLMAP(p), res, res_ty,
                              ext_column_name (newalias, res_col));
 
                 /* prepare fromlist */
@@ -3820,7 +3820,7 @@ reduce (PFla_op_t * p, int goalnt)
                 /* run over the possible types */
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & ty) {
-                         expr = col_env_lookup (COLMAP(L(p)), att, t);
+                         expr = col_env_lookup (COLMAP(L(p)), col, t);
 
                          /* prepare statement */
                          PFsql_t * temp =
@@ -3872,16 +3872,16 @@ reduce (PFla_op_t * p, int goalnt)
                 bind_operator (L(p), false);
             }
         {
-            PFalg_att_t att = p->sem.aggr.att,
+            PFalg_col_t col = p->sem.aggr.col,
                         part = p->sem.aggr.part,
-                        res_att = p->sem.aggr.res;
+                        res = p->sem.aggr.res;
             PFalg_simple_type_t part_ty,
                                 ty = 0 /* dummy type */,
-                                res_ty = type_of (p, res_att);
+                                res_ty = type_of (p, res);
             PFsql_t *expr = NULL,
                     *part_expr;
             PFsql_col_t *part_col,
-                        *res_col = new_col (res_att, res_ty);
+                        *res_col = new_col (res, res_ty);
 
             PFsql_t *selectlist = NULL;
             PFsql_t *columnlist = NULL;
@@ -3896,9 +3896,9 @@ reduce (PFla_op_t * p, int goalnt)
                            table_name (newtable),
                            alias (newalias));
 
-            if (att) /* cope with missing att column in case of count */ {
-                ty = type_of (p, att);
-                expr = col_env_lookup (COLMAP(L(p)), att, ty);
+            if (col) /* cope with missing col column in case of count */ {
+                ty = type_of (p, col);
+                expr = col_env_lookup (COLMAP(L(p)), col, ty);
             }
 
             /* add the partition criterion to all lists and environments */
@@ -3929,7 +3929,7 @@ reduce (PFla_op_t * p, int goalnt)
                 case la_max:   expr = max_ (expr);     break;
                 case la_min:   expr = min_ (expr);     break;
                 /* with la_all we have to ensure that each
-                 * attribute att is true for all rows within
+                 * column col is true for all rows within
                  * a group, since we express boolean values
                  * as literal integers, MIN does the job */ 
                 case la_all:   assert (ty == aat_bln);
@@ -3945,7 +3945,7 @@ reduce (PFla_op_t * p, int goalnt)
                 default: assert (0); break;
             }
 
-            col_env_add (COLMAP(p), res_att, res_ty,
+            col_env_add (COLMAP(p), res, res_ty,
                          ext_column_name (newalias, res_col));
 
             columnlist = column_list (columnlist, column_name (res_col));
@@ -4000,12 +4000,12 @@ reduce (PFla_op_t * p, int goalnt)
                   R(p)->sem.attach.value.val.int_ == 0 &&
                   RLL(p)->schema.count == 1 &&
                   RLR(p)->schema.count == 1 &&
-                  L(p)->sem.aggr.part != att_NULL &&
+                  L(p)->sem.aggr.part != col_NULL &&
                   L(p)->sem.aggr.part == RLR(p)->schema.items[0].name))
                 PFoops (OOPS_FATAL, "error in count translation");
 
         {
-            PFalg_att_t part, res_att;
+            PFalg_col_t part, res;
             PFalg_simple_type_t part_ty, res_ty;
             PFsql_col_t *part_col, *res_col;
             PFsql_t *loop, *part_expr, *loop_from, *part_from;
@@ -4018,9 +4018,9 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_aident_t newalias;
 
             part      = L(p)->sem.aggr.part;
-            res_att   = L(p)->sem.aggr.res;
+            res       = L(p)->sem.aggr.res;
             part_ty   = type_of (p, part);
-            res_ty    = type_of (p, res_att);
+            res_ty    = type_of (p, res);
 
             /* Bind the inner relation if it contains more
                than one input relation (as right outer join
@@ -4051,7 +4051,7 @@ reduce (PFla_op_t * p, int goalnt)
             }
 
             part_col  = new_col (part, part_ty);
-            res_col   = new_col (res_att, res_ty);
+            res_col   = new_col (res, res_ty);
             loop      = col_env_lookup (COLMAP(RLL(p)), part, part_ty);
             part_expr = col_env_lookup (COLMAP(LL(p)), part, part_ty);
             from      = from_list_at (FROMLIST(RLL(p)), 0);
@@ -4069,7 +4069,7 @@ reduce (PFla_op_t * p, int goalnt)
                            alias (newalias));
 
             /* PREPARE EVERYTHING FOR THE RESULT ATTRIBUTE */
-            col_env_add (COLMAP(p), res_att, res_ty,
+            col_env_add (COLMAP(p), res, res_ty,
                          ext_column_name (newalias, res_col));
 
             columnlist = column_list (columnlist, column_name (res_col));
@@ -4124,11 +4124,11 @@ reduce (PFla_op_t * p, int goalnt)
         case 43:
         {
             /* TOPDOWN */
-            PFalg_att_t txt_iter = p->sem.string_join.iter,
+            PFalg_col_t txt_iter = p->sem.string_join.iter,
                         txt_pos  = p->sem.string_join.pos,
                         txt_item = p->sem.string_join.item;
 
-            PFalg_att_t sep_iter = p->sem.string_join.iter_sep,
+            PFalg_col_t sep_iter = p->sem.string_join.iter_sep,
                         sep_item = p->sem.string_join.item_sep;
 
             PFsql_t *srtbylist = NULL, 
@@ -4330,7 +4330,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_t *srtbylist = NULL;
             PFsql_t *orderby  = NULL;
             PFsql_t *partlist = NULL;
-            PFalg_att_t ord;
+            PFalg_col_t ord;
             bool asc;
 
             /* copy all existing column, from, and where lists */
@@ -4387,7 +4387,7 @@ reduce (PFla_op_t * p, int goalnt)
                 PFord_ordering_t sortby = p->sem.sort.sortby;
                 
                 unsigned int     i, j, k;
-                PFalg_att_t      ord;
+                PFalg_col_t      ord;
                 PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *), 10);
                 bool             asc, cols_added;
                 rank_map_t      *rank_map;
@@ -4459,7 +4459,7 @@ reduce (PFla_op_t * p, int goalnt)
                    operator). */
                 PFord_ordering_t sortby = p->sem.sort.sortby;
                 PFsql_t *srtbylist = NULL;
-                PFalg_att_t ord;
+                PFalg_col_t ord;
                 bool asc;
                 PFsql_t* expr = NULL;
                 PFalg_simple_type_t expr_ty;
@@ -4523,7 +4523,7 @@ reduce (PFla_op_t * p, int goalnt)
         case 58:
         {
             PFarray_t *colmap = col_env_new ();
-            PFalg_att_t item = p->sem.step.item,
+            PFalg_col_t item = p->sem.step.item,
                         item_res = p->sem.step.item_res;
             PFalg_simple_type_t item_ty = type_of (R(p), item),
                                 item_res_ty = type_of (p, item_res);
@@ -4590,7 +4590,7 @@ reduce (PFla_op_t * p, int goalnt)
             }
 
             if (p->kind == la_step || p->kind == la_guide_step) {
-                PFalg_att_t iter = p->sem.step.iter;
+                PFalg_col_t iter = p->sem.step.iter;
                 PFalg_simple_type_t iter_ty = type_of (p, iter);
 
                 /* prune the selection list */
@@ -4626,7 +4626,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Rel:    doc_access (Frag, Rel) */
         case 60:
         {
-            PFalg_att_t item = p->sem.doc_access.att,
+            PFalg_col_t item = p->sem.doc_access.col,
                         item_res = p->sem.doc_access.res;
             PFalg_simple_type_t item_ty = type_of (p, item),
                                 item_res_ty = type_of (p, item_res);
@@ -4712,7 +4712,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: doc_tbl (Rel) */
         case 70:
         {
-            PFalg_att_t         att    = p->sem.doc_tbl.att,
+            PFalg_col_t         col    = p->sem.doc_tbl.col,
                                 res    = p->sem.doc_tbl.res;
             PFalg_simple_type_t res_ty = type_of (p, res);
             PFsql_t            *item_expr;
@@ -4721,7 +4721,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-            item_expr = col_env_lookup (COLMAP(p), att, aat_str);
+            item_expr = col_env_lookup (COLMAP(p), col, aat_str);
 
             /* throw away singleton relation */
             if (PFarray_last (FROMLIST(p)) == 1) {
@@ -4791,7 +4791,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: twig (element (Rel, fcns (nil, nil))) */
         case 73:
         {
-            PFalg_att_t item = L(p)->sem.iter_item.item;
+            PFalg_col_t item = L(p)->sem.iter_item.item;
             assert (type_of (LL(p), item) == aat_qname);
 
             construct_simple_twig (
@@ -4804,8 +4804,8 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: twig (attribute (Rel)) */
         case 74:
         {
-            PFalg_att_t item1 = L(p)->sem.iter_item1_item2.item1;
-            PFalg_att_t item2 = L(p)->sem.iter_item1_item2.item2;
+            PFalg_col_t item1 = L(p)->sem.iter_item1_item2.item1;
+            PFalg_col_t item2 = L(p)->sem.iter_item1_item2.item2;
 
             construct_simple_twig (
                 p, L(p)->sem.iter_item1_item2.iter,
@@ -4817,8 +4817,8 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: twig (processi (Rel)) */
         case 77:
         {
-            PFalg_att_t item1 = L(p)->sem.iter_item1_item2.item1;
-            PFalg_att_t item2 = L(p)->sem.iter_item1_item2.item2;
+            PFalg_col_t item1 = L(p)->sem.iter_item1_item2.item1;
+            PFalg_col_t item2 = L(p)->sem.iter_item1_item2.item2;
 
             construct_simple_twig (
                 p, L(p)->sem.iter_item1_item2.iter,
@@ -4833,7 +4833,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Constr: twig (comment (Rel)) */
         case 76:
         {
-            PFalg_att_t item = L(p)->sem.iter_item.item;
+            PFalg_col_t item = L(p)->sem.iter_item.item;
 
             construct_simple_twig (
                 p, L(p)->sem.iter_item.iter,
@@ -4882,7 +4882,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   docnode (Rel, List) */
         case 80:
             if (CSIZE(R(p))) {
-                PFalg_att_t     iter = p->sem.docnode.iter;
+                PFalg_col_t     iter = p->sem.docnode.iter;
                 sql_from_list_t name_from;
                 PFsql_aident_t  csize_alias;
                 PFsql_t        *iter_col;
@@ -4962,7 +4962,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   element (Rel, List) */
         case 82:
             if (CSIZE(R(p))) {
-                PFalg_att_t     iter = p->sem.iter_item.iter,
+                PFalg_col_t     iter = p->sem.iter_item.iter,
                                 item = p->sem.iter_item.item;
                 sql_from_list_t name_from;
                 PFsql_aident_t  csize_alias;
@@ -5058,7 +5058,7 @@ reduce (PFla_op_t * p, int goalnt)
                 FRAG(p) = union_ (FRAG(p), FRAG(R(p)));
             } else {
                 /* simple translation (as we already have all size values) */
-                PFalg_att_t item = p->sem.iter_item.item;
+                PFalg_col_t item = p->sem.iter_item.item;
 
                 construct_node (
                     p, p->sem.iter_item.iter, ELEM,
@@ -5073,7 +5073,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   element (Rel, fcns (nil, nil)) */
         case 83:
         {
-            PFalg_att_t item = p->sem.iter_item.item;
+            PFalg_col_t item = p->sem.iter_item.item;
 
             construct_node (
                 p, p->sem.iter_item.iter, ELEM,
@@ -5085,8 +5085,8 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   attribute (Rel) */
         case 84:
         {
-            PFalg_att_t item1 = p->sem.iter_item1_item2.item1;
-            PFalg_att_t item2 = p->sem.iter_item1_item2.item2;
+            PFalg_col_t item1 = p->sem.iter_item1_item2.item1;
+            PFalg_col_t item2 = p->sem.iter_item1_item2.item2;
 
             construct_node (
                 p, p->sem.iter_item1_item2.iter,
@@ -5098,8 +5098,8 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   processi (Rel) */
         case 87:
         {
-            PFalg_att_t item1 = p->sem.iter_item1_item2.item1;
-            PFalg_att_t item2 = p->sem.iter_item1_item2.item2;
+            PFalg_col_t item1 = p->sem.iter_item1_item2.item1;
+            PFalg_col_t item2 = p->sem.iter_item1_item2.item2;
 
             construct_node (
                 p, p->sem.iter_item1_item2.iter,
@@ -5114,7 +5114,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   comment (Rel) */
         case 86:
         {
-            PFalg_att_t item = p->sem.iter_item.item;
+            PFalg_col_t item = p->sem.iter_item.item;
 
             construct_node (
                 p, p->sem.iter_item.iter,
@@ -5126,7 +5126,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* Twig:   content (Frag, Rel) */
         case 88:
         {
-            PFalg_att_t         iter          = p->sem.iter_pos_item.iter,
+            PFalg_col_t         iter          = p->sem.iter_pos_item.iter,
                                 pos           = p->sem.iter_pos_item.pos,
                                 item          = p->sem.iter_pos_item.item;
             PFalg_simple_type_t iter_ty       = type_of (R(p), iter),
@@ -5263,7 +5263,7 @@ reduce (PFla_op_t * p, int goalnt)
         /* SELECT q.*                                           */
         /*   FROM q1 AS q, (SELECT CASE                         */
         /*                             WHEN MIN(CASE            */
-        /*                                      WHEN att THEN 1 */
+        /*                                      WHEN col THEN 1 */
         /*                                      ELSE 0          */
         /*                                      END) < 1        */
         /*                                  THEN raise_error    */
@@ -5287,10 +5287,10 @@ reduce (PFla_op_t * p, int goalnt)
 
             reduce (kids[1], nts[1]);
 
-            ty = type_of (R(p), p->sem.err.att);
+            ty = type_of (R(p), p->sem.err.col);
             assert (monomorphic (ty) && ty == aat_bln);
             expr = col_env_lookup (COLMAP(R(p)),
-                                   p->sem.err.att,
+                                   p->sem.err.col,
                                    ty);
 
             n = expr;
@@ -5792,7 +5792,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
     switch (p->kind) {
         case la_project:
         {
-            PFalg_att_t old, new;
+            PFalg_col_t old, new;
             /* projection has the ability to omit and change names */
             for (unsigned int i = 0; i < p->sem.proj.count; i++) {
                 old = p->sem.proj.items[i].old;
@@ -5853,8 +5853,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
             break;
 
         case la_doc_access:
-            if (ITEM_LIST(p) & p->sem.doc_access.att ||
-                RANK_LIST(p) & p->sem.doc_access.att) {
+            if (ITEM_LIST(p) & p->sem.doc_access.col ||
+                RANK_LIST(p) & p->sem.doc_access.col) {
                SER_REPORT(p) = ser_no;
                return;
              }
@@ -5863,7 +5863,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 
         case la_rank:
         {
-            PFalg_att_t ord;
+            PFalg_col_t ord;
             /* if the sort criterion contains an item in the list
              * the rank is not save.
              * Except the case where item is the last sort criterion
@@ -5883,10 +5883,10 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         }   break;
 
         case la_eqjoin:
-            if (ITEM_LIST(p) & p->sem.eqjoin.att1 ||
-                ITEM_LIST(p) & p->sem.eqjoin.att2 ||
-                RANK_LIST(p) & p->sem.eqjoin.att1 ||
-                RANK_LIST(p) & p->sem.eqjoin.att2) {
+            if (ITEM_LIST(p) & p->sem.eqjoin.col1 ||
+                ITEM_LIST(p) & p->sem.eqjoin.col2 ||
+                RANK_LIST(p) & p->sem.eqjoin.col1 ||
+                RANK_LIST(p) & p->sem.eqjoin.col2) {
                 SER_REPORT(p) = ser_no;
                 return;
             }

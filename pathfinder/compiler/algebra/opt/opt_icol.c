@@ -43,6 +43,12 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/** mnemonic algebra constructors */
+#include "logical_mnemonic.h"
+
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -86,8 +92,8 @@ opt_icol (PFla_op_t *p)
             /* prune columns that are not required as long as
                at least one column remains. */
             if (count && count < p->schema.count) {
-                /* create new list of attributes */
-                PFalg_att_t   *atts = PFmalloc (count * sizeof (PFalg_att_t));
+                /* create new list of columns */
+                PFalg_col_t   *cols = PFmalloc (count * sizeof (PFalg_col_t));
 
                 /* create list of tuples each containing a list of atoms */
                 PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
@@ -100,7 +106,7 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->schema.count; i++)
                     if (PFprop_icol (p->prop, p->schema.items[i].name)) {
                         /* retain matching values in literal table */
-                        atts[count] = p->schema.items[i].name;
+                        cols[count] = p->schema.items[i].name;
                         for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++)
                             tuples[j].atoms[count] =
                                     p->sem.lit_tbl.tuples[j].atoms[i];
@@ -110,15 +116,15 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++)
                     tuples[i].count = count;
 
-                *p = *PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
+                *p = *PFla_lit_tbl_ (PFalg_collist_ (count, cols),
                                      p->sem.lit_tbl.count,
                                      tuples);
                 SEEN(p) = true;
             } else if (!count && p->schema.count > 1) {
                 /* prune everything except one column */
 
-                /* create new list of attributes */
-                PFalg_att_t   *atts = PFmalloc (1 * sizeof (PFalg_att_t));
+                /* create new list of columns */
+                PFalg_col_t   *cols = PFmalloc (1 * sizeof (PFalg_col_t));
 
                 /* create list of tuples each containing a list of atoms */
                 PFalg_tuple_t *tuples = PFmalloc (p->sem.lit_tbl.count *
@@ -128,13 +134,13 @@ opt_icol (PFla_op_t *p)
                                                 sizeof (*(tuples[i].atoms)));
 
                 /* retain matching values in literal table */
-                atts[0] = p->schema.items[0].name;
+                cols[0] = p->schema.items[0].name;
                 for (unsigned int j = 0; j < p->sem.lit_tbl.count; j++) {
                     tuples[j].atoms[0] = PFalg_lit_nat (42);
                     tuples[j].count = 1;
                 }
 
-                *p = *PFla_lit_tbl_ (PFalg_attlist_ (1, atts),
+                *p = *PFla_lit_tbl_ (PFalg_collist_ (1, cols),
                                      p->sem.lit_tbl.count, tuples);
                 SEEN(p) = true;
             }
@@ -225,18 +231,18 @@ opt_icol (PFla_op_t *p)
                    union argument */
                 if (PFprop_icols_count (p->prop)) {
                     PFla_op_t *ret;
-                    PFalg_attlist_t icols =
-                                    PFprop_icols_to_attlist (p->prop);
-                    PFalg_proj_t *atts = PFmalloc (icols.count *
+                    PFalg_collist_t *icols =
+                                     PFprop_icols_to_collist (p->prop);
+                    PFalg_proj_t *cols = PFmalloc (clsize (icols) *
                                                    sizeof (PFalg_proj_t));
 
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        atts[i] = PFalg_proj (icols.atts[i], icols.atts[i]);
+                    for (unsigned int i = 0; i < clsize (icols); i++)
+                        cols[i] = PFalg_proj (clat (icols, i), clat (icols, i));
 
-                    ret = PFla_project_ (L(p), icols.count, atts);
+                    ret = PFla_project_ (L(p), clsize (icols), cols);
                     L(p) = ret;
 
-                    ret = PFla_project_ (R(p), icols.count, atts);
+                    ret = PFla_project_ (R(p), clsize (icols), cols);
                     R(p) = ret;
 
                     break;
@@ -245,18 +251,18 @@ opt_icol (PFla_op_t *p)
                    for generating the projection list (one item) */
                 else {
                     PFla_op_t *ret;
-                    PFalg_proj_t *atts = PFmalloc (1 * sizeof (PFalg_proj_t));
+                    PFalg_proj_t *cols = PFmalloc (1 * sizeof (PFalg_proj_t));
 
                     for (unsigned int i = 0; i < p->schema.count; i++)
                         if (PFprop_icol_left (p->prop,
                                               p->schema.items[i].name)) {
-                            atts[0] = PFalg_proj (p->schema.items[i].name,
+                            cols[0] = PFalg_proj (p->schema.items[i].name,
                                                   p->schema.items[i].name);
 
-                            ret = PFla_project_ (L(p), 1, atts);
+                            ret = PFla_project_ (L(p), 1, cols);
                             L(p) = ret;
 
-                            ret = PFla_project_ (R(p), 1, atts);
+                            ret = PFla_project_ (R(p), 1, cols);
                             R(p) = ret;
 
                             break;
@@ -312,7 +318,7 @@ opt_icol (PFla_op_t *p)
                     proj[0] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
                     ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
                 } else {
-                    ret = PFla_lit_tbl (PFalg_attlist (p->sem.aggr.res),
+                    ret = PFla_lit_tbl (collist (p->sem.aggr.res),
                                         PFalg_tuple (PFalg_lit_nat (42)));
                 }
                 *p = *ret;
@@ -353,7 +359,7 @@ opt_icol (PFla_op_t *p)
         case la_type_assert:
             /* prune type assertion if restricted column is not
                used afterwards */
-            if (!PFprop_icol (p->prop, p->sem.type.att)) {
+            if (!PFprop_icol (p->prop, p->sem.type.col)) {
                 *p = *PFla_dummy (L(p));
                 break;
             }

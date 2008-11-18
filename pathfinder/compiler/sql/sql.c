@@ -194,7 +194,7 @@ PFsql_serialization_info_item (const PFsql_t *info, const PFsql_t *list)
 
 /**
  * Some specific schema information used by the serializer.
- * We communicate the special attributes, the serializer needs. 
+ * We communicate the special columns, the serializer needs. 
  */
 PFsql_t *
 PFsql_serialization_name_mapping (const PFsql_t *column, const PFsql_t *name)
@@ -467,7 +467,7 @@ PFsql_select_list_ (unsigned int count, const PFsql_t ** list)
 
 /**
  * Create an SQL tree node representing the SQL
- * `AS' to bind SQL statements to attribute names.
+ * `AS' to bind SQL statements to column names.
  */
 PFsql_t *
 PFsql_column_assign (const PFsql_t *expr, const PFsql_t *column_name)
@@ -1091,7 +1091,7 @@ PFsql_partition (const PFsql_t *partition_list)
 /**
  * Construct a SQL type. SQL supports several types
  * like integer or decimals. This is probably most
- * needed when you cast one attribut to another type.
+ * needed when you cast one column to another type.
  *
  * @param   t  The type.
  */
@@ -1370,12 +1370,12 @@ PFsql_column_name_str (PFsql_col_t *name)
                 return res;
         }
     else {
-        char  *attstr = PFatt_str (name->att);
+        char  *colstr = PFcol_str (name->col);
         char  *tystr  = PFalg_simple_type_str (name->ty);
-        size_t len    = strlen (attstr) + strlen (tystr) + 2;
+        size_t len    = strlen (colstr) + strlen (tystr) + 2;
      
         res = (char *) PFmalloc (len);
-        snprintf (res, len, "%s_%s", attstr, tystr);
+        snprintf (res, len, "%s_%s", colstr, tystr);
         res[len - 1] = 0;
     }
     return res;

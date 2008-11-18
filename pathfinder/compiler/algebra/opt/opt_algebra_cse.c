@@ -47,14 +47,17 @@
 #include <string.h> /* strcmp */
 #include <stdio.h>
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
 /* prune already checked nodes           */
 #define SEEN(p)      ((p)->bit_dag)
 
-/* checks if an attribute is NULL */
-#define IS_NULL(a) (a == att_NULL)
+/* checks if an column is NULL */
+#define IS_NULL(a) (a == col_NULL)
 
 #define DEF_WIDTH 10
 
@@ -140,9 +143,9 @@ static char *ID[] = {
  */
 static PFarray_t *cse_map;
 /**
- *maps ori subtrees to their corresponding actual attributes
+ *maps ori subtrees to their corresponding actual columns
  */
-static PFarray_t *actatt_map;
+static PFarray_t *actcol_map;
 /**
  * maps cse subtrees to their original subtrees, triggered the
  * creation of the cse node
@@ -167,23 +170,23 @@ struct ori_cse_map_t {
 };
 typedef struct ori_cse_map_t ori_cse_map_t;
 
-/* structure to map the original attribute/type
- * pair to the effective attribute/type pair
+/* structure to map the original column/type
+ * pair to the effective column/type pair
  */
-struct actatt_map_t {
-    PFalg_att_t ori_att;
-    PFalg_att_t act_att;
+struct actcol_map_t {
+    PFalg_col_t ori_col;
+    PFalg_col_t act_col;
 };
-typedef struct actatt_map_t actatt_map_t;
+typedef struct actcol_map_t actcol_map_t;
 
 /* structure to map the original operator to
- * their effective attributes.
+ * their effective columns.
  */
-struct ori_actatt_map_t {
+struct ori_actcol_map_t {
     PFla_op_t *ori;
-    PFarray_t *actatts;
+    PFarray_t *actcols;
 };
-typedef struct ori_actatt_map_t ori_actatt_map_t;
+typedef struct ori_actcol_map_t ori_actcol_map_t;
 
 /* structure tp map the operators in the CSE plan
  * to their original operators who caused the insertion.
@@ -206,7 +209,7 @@ typedef struct cse_ori_map_t cse_ori_map_t;
  * plan                                  */
 #ifndef NDEBUG
 /* says us exactly where the lookup fails in the code */
-#define CSE(p)       (assert(lookup_cse((cse_map),(p)) != att_NULL), \
+#define CSE(p)       (assert(lookup_cse((cse_map),(p)) != col_NULL), \
                       lookup_cse((cse_map),(p)))
 #else
 #define CSE(p)       (lookup_cse((cse_map),(p)))
@@ -364,16 +367,16 @@ insert_ori (PFarray_t *map, PFla_op_t *cse,
  * of operators we annotate each         *
  * operator of the original plan with a  *
  * mapping list of their original and    *
- * actual attributes of CSE plan.        */
+ * actual columns of CSE plan.           */
 #ifndef NDEBUG
 /* says us exactly where the lookup fails in the code */
-#define ACT(p)       (assert (lookup_actatts((actatt_map),(p)) != NULL), \
-                      lookup_actatts((actatt_map),(p)))
+#define ACT(p)       (assert (lookup_actcols((actcol_map),(p)) != NULL), \
+                      lookup_actcols((actcol_map),(p)))
 #else
-#define ACT(p)       (lookup_actatts((actatt_map),(p)))
+#define ACT(p)       (lookup_actcols((actcol_map),(p)))
 #endif
 
-#define INACT(o,e)   (insert_actatts((actatt_map), (o), (e)))
+#define INACT(o,e)   (insert_actcols((actcol_map), (o), (e)))
 
 /**
  * Worker for 'INACT(o,p)'.
@@ -381,17 +384,17 @@ insert_ori (PFarray_t *map, PFla_op_t *cse,
  * a projection-list.
  */
 static void
-insert_actatts (PFarray_t *map, PFla_op_t *ori, PFarray_t *proj)
+insert_actcols (PFarray_t *map, PFla_op_t *ori, PFarray_t *proj)
 {
     assert (map);
     assert (ori);
     assert (proj);
 
     /* check if the operator has already a mapping */
-    ori_actatt_map_t *temp = NULL;
+    ori_actcol_map_t *temp = NULL;
     for (unsigned int i = 0; i < PFarray_last (map); i++) {
-        if (((ori_actatt_map_t *) (PFarray_at (map, i)))->ori == ori) {
-            temp = (ori_actatt_map_t *) PFarray_at (map, i);
+        if (((ori_actcol_map_t *) (PFarray_at (map, i)))->ori == ori) {
+            temp = (ori_actcol_map_t *) PFarray_at (map, i);
             break;
         }
     }
@@ -401,11 +404,11 @@ insert_actatts (PFarray_t *map, PFla_op_t *ori, PFarray_t *proj)
                 "No operator should be remapped");
     }
 
-    *(ori_actatt_map_t *) PFarray_add (map) =
-        (ori_actatt_map_t)
+    *(ori_actcol_map_t *) PFarray_add (map) =
+        (ori_actcol_map_t)
         {
             .ori = ori,
-            .actatts = proj
+            .actcols = proj
         };
 }
 
@@ -417,10 +420,10 @@ print_actmap (PFarray_t *actmap)
     fprintf (stderr, "actmap --->\n");
     for (unsigned int i = 0; i < PFarray_last (actmap); i++) {
         fprintf (stderr, "act_item: %s ---> %s\n",
-                 PFatt_str ((*(actatt_map_t *)
-                            PFarray_at (actmap, i)).ori_att),
-                 PFatt_str ((*(actatt_map_t *)
-                            PFarray_at (actmap, i)).act_att));
+                 PFcol_str ((*(actcol_map_t *)
+                            PFarray_at (actmap, i)).ori_col),
+                 PFcol_str ((*(actcol_map_t *)
+                            PFarray_at (actmap, i)).act_col));
     }
     fprintf (stderr, "end --->\n");
 }
@@ -471,23 +474,23 @@ print_literal (PFalg_atom_t atom)
  * Create a new unique name, based on the used
  * cols in @a n schema.
  */
-static PFalg_att_t
-create_unq_name (PFalg_schema_t schema, PFalg_att_t att)
+static PFalg_col_t
+create_unq_name (PFalg_schema_t schema, PFalg_col_t col)
 {
     bool name_conflict = false;
-    PFalg_att_t used_cols = att_NULL;
-    PFalg_att_t new_col = att;
+    PFalg_col_t used_cols = col_NULL;
+    PFalg_col_t new_col = col;
 
     for (unsigned int i = 0; i < schema.count; i++)
     {
         used_cols = used_cols | schema.items[i].name;
-        if (schema.items[i].name == att) {
+        if (schema.items[i].name == col) {
             name_conflict = true;
         }
     }
 
     if (name_conflict) {
-        new_col = PFalg_ori_name (PFalg_unq_name (att),
+        new_col = PFalg_ori_name (PFalg_unq_name (col),
                             ~used_cols);
     }
 
@@ -497,20 +500,20 @@ create_unq_name (PFalg_schema_t schema, PFalg_att_t att)
 /**
  * Worker for 'ACT(p)': based on the original
  * subtree looks up the corresponding subtree
- * with already annotated effective attributes.
+ * with already annotated effective columns.
  */
 static PFarray_t *
-lookup_actatts (PFarray_t *map, PFla_op_t *ori)
+lookup_actcols (PFarray_t *map, PFla_op_t *ori)
 {
     for (unsigned int i = 0; i < PFarray_last (map); i++) {
-        if (((ori_actatt_map_t *) (PFarray_at (map, i)))->ori == ori)
-            return ((ori_actatt_map_t *) PFarray_at (map, i))->actatts;
+        if (((ori_actcol_map_t *) (PFarray_at (map, i)))->ori == ori)
+            return ((ori_actcol_map_t *) PFarray_at (map, i))->actcols;
     }
 
 #ifndef NDEBUG
     return NULL;
 #else
-    PFoops (OOPS_FATAL, "actual attributes of the "
+    PFoops (OOPS_FATAL, "actual columns of the "
                         "%s operator not found", ID[ori->kind]);
 
     return NULL; /* satisfy picky compilers */
@@ -521,93 +524,93 @@ lookup_actatts (PFarray_t *map, PFla_op_t *ori)
  * Creates a new projection list.
  */
 static PFarray_t *
-create_actatt_map (void)
+create_actcol_map (void)
 {
-    return PFarray (sizeof(actatt_map_t), DEF_WIDTH);
+    return PFarray (sizeof(actcol_map_t), DEF_WIDTH);
 }
 
-/*........... Handling of actual attributes .........*/
+/*........... Handling of actual columns .........*/
 
 #ifndef NDEBUG
-#define ACTATT(n, att)  (assert (act_attribute_ (ACT(n), (att)) != att_NULL), \
-                                 act_attribute ((n), (att)))
+#define ACTCOL(n, col)  (assert (act_column_ (ACT(n), (col)) != col_NULL), \
+                                 act_column ((n), (col)))
 #else
-#define ACTATT(n, att)  act_attribute ((n), (att))
+#define ACTCOL(n, col)  act_column ((n), (col))
 #endif
 
-#define INACTATT(map,...)                                          \
-    insert_act_attribute ((map),                                   \
-                   (sizeof ((actatt_map_t[]) { __VA_ARGS__ })      \
-                       / sizeof (actatt_map_t)),                   \
-                   (actatt_map_t[]) { __VA_ARGS__ })
+#define INACTCOL(map,...)                                          \
+    insert_act_column ((map),                                   \
+                   (sizeof ((actcol_map_t[]) { __VA_ARGS__ })      \
+                       / sizeof (actcol_map_t)),                   \
+                   (actcol_map_t[]) { __VA_ARGS__ })
 
 /**
- * Worker for INACTATT
+ * Worker for INACTCOL
  */
 static void
-insert_act_attribute (PFarray_t *map, unsigned int count, actatt_map_t *act)
+insert_act_column (PFarray_t *map, unsigned int count, actcol_map_t *act)
 {
     unsigned int i = 0;
     unsigned int j = 0;
-    PFalg_att_t act_ori;
+    PFalg_col_t act_ori;
     for (i = 0; i < count; i++) {
-        act_ori = act[i].ori_att;
+        act_ori = act[i].ori_col;
         for (j = 0; j < PFarray_last (map); j++) {
-            if ((*(actatt_map_t *) PFarray_at (map, j)).ori_att ==  act_ori)
+            if ((*(actcol_map_t *) PFarray_at (map, j)).ori_col ==  act_ori)
                 assert (!"remapping not allowed");
         }
     }
 
     for (i = 0; i < count; i++) {
-        *(actatt_map_t *) PFarray_add (map) = act[i];
+        *(actcol_map_t *) PFarray_add (map) = act[i];
     }
 }
 
 /**
- * Worker for 'eff_attribute (map, att)'.
- * Checks the map and returns the effective attribute
+ * Worker for 'eff_column (map, col)'.
+ * Checks the map and returns the effective column
  */
-static PFalg_att_t
-act_attribute_ (PFarray_t *map, PFalg_att_t att)
+static PFalg_col_t
+act_column_ (PFarray_t *map, PFalg_col_t col)
 {
     assert (map);
     for (unsigned int i = 0;
          i < PFarray_last (map); i++) {
-        if ( (*(actatt_map_t *)PFarray_at (map, i)).ori_att == att)
-            return (*(actatt_map_t *)PFarray_at (map, i)).act_att;
+        if ( (*(actcol_map_t *)PFarray_at (map, i)).ori_col == col)
+            return (*(actcol_map_t *)PFarray_at (map, i)).act_col;
     }
 
 #ifndef NDEBUG
-    return att_NULL;
+    return col_NULL;
 #else
-    PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
+    PFoops (OOPS_FATAL, "Attribute %s not found", PFcol_str (col));
 
-    return att_NULL; /* pacify picky compilers */
+    return col_NULL; /* pacify picky compilers */
 #endif
 }
 
 /**
- * See 'act_attribute_ (map, att)' above.
- * Checks the map and returns the effective attribute.
+ * See 'act_column_ (map, col)' above.
+ * Checks the map and returns the effective column.
  */
-static PFalg_att_t
-act_attribute (PFla_op_t *n, PFalg_att_t att)
+static PFalg_col_t
+act_column (PFla_op_t *n, PFalg_col_t col)
 {
     PFarray_t *map = ACT (n);
 
-    return act_attribute_ (map, att);
+    return act_column_ (map, col);
 }
 
 /**
  * Creates a new mapping item for
- * original and actual attribute.
+ * original and actual column.
  */
-static actatt_map_t
-actatt (PFalg_att_t new, PFalg_att_t old)
+static actcol_map_t
+actcol (PFalg_col_t new, PFalg_col_t old)
 {
-    return (actatt_map_t) {
-                .ori_att = old,
-                .act_att = new
+    return (actcol_map_t) {
+                .ori_col = old,
+                .act_col = new
            };
 }
 
@@ -616,66 +619,63 @@ actatt (PFalg_att_t new, PFalg_att_t old)
  * @a actmap.
  */
 static PFarray_t *
-actatt_map_copy (PFarray_t *actmap)
+actcol_map_copy (PFarray_t *actmap)
 {
     return PFarray_copy (actmap);
 }
 
 /**
- * Worker for 'rev_act_attribute (map, att)'.
- * Checks the map and returns the original attribute.
+ * Worker for 'rev_act_column (map, col)'.
+ * Checks the map and returns the original column.
  */
-static PFalg_att_t
-rev_act_attribute_ (PFarray_t *map, PFalg_att_t att)
+static PFalg_col_t
+rev_act_column_ (PFarray_t *map, PFalg_col_t col)
 {
     for (unsigned int i = 0; i < PFarray_last (map);
             i++) {
-        if ( (*(actatt_map_t *)PFarray_at (map, i)).act_att == att)
-            return (*(actatt_map_t *)PFarray_at (map, i)).ori_att;
+        if ( (*(actcol_map_t *)PFarray_at (map, i)).act_col == col)
+            return (*(actcol_map_t *)PFarray_at (map, i)).ori_col;
     }
 
 #ifndef NDEBUG
-    return att_NULL;
+    return col_NULL;
 #else
-    PFoops (OOPS_FATAL, "Attribute %s not found", PFatt_str (att));
+    PFoops (OOPS_FATAL, "Attribute %s not found", PFcol_str (col));
 
     /* assert ("name not found"); */
-    return att_NULL; /* pacify picky compilers */
+    return col_NULL; /* pacify picky compilers */
 #endif
 }
 
 #ifndef NDEBUG
-#define REVACTATT(n, att)  (assert (rev_act_attribute_ (ACT(n), (att)) != att_NULL), \
-                                    rev_act_attribute ((n), (att)))
+#define REVACTCOL(n, col)  (assert (rev_act_column_ (ACT(n), (col)) != col_NULL), \
+                                    rev_act_column ((n), (col)))
 #else
-#define REVACTATT(n, att)  rev_act_attribute ((n), (att))
+#define REVACTCOL(n, col)  rev_act_column ((n), (col))
 #endif
 
 /**
- * See 'eff_attribute_ (map, att)' above.
- * Checks the map and returns the effective attribute
+ * See 'eff_column_ (map, col)' above.
+ * Checks the map and returns the effective column
  */
-static PFalg_att_t
-rev_act_attribute (PFla_op_t *n, PFalg_att_t att)
+static PFalg_col_t
+rev_act_column (PFla_op_t *n, PFalg_col_t col)
 {
     PFarray_t *map = ACT (n);
 
-    return rev_act_attribute_ (map, att);
+    return rev_act_column_ (map, col);
 }
 
 /**
- * Create attribute list from schema.
+ * Create column list from schema.
  */
-static PFalg_attlist_t
-create_attlist (PFalg_schema_t schema)
+static PFalg_collist_t *
+create_collist (PFalg_schema_t schema)
 {
-    PFalg_attlist_t ret;
-    ret.count = schema.count;
+    PFalg_collist_t *ret = PFalg_collist (schema.count);
 
-    ret.atts = (PFalg_att_t *) PFmalloc (ret.count * sizeof(PFalg_att_t));
-
-    for (unsigned int i = 0; i < ret.count; i++) {
-        ret.atts[i] = schema.items[i].name;
+    for (unsigned int i = 0; i < schema.count; i++) {
+        cladd (ret) = schema.items[i].name;
     }
 
     return ret;
@@ -695,7 +695,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
     bool mismatch = false;
 
     /* schemata are definitly not equal if they
-     * have a different number of attributes */
+     * have a different number of columns */
     if (a.count != b.count)
         return false;
 
@@ -764,23 +764,23 @@ match (PFla_op_t *a, PFla_op_t *b)
     /* special equivalence test for each operator */
     switch (a->kind) {
         case la_serialize_seq:
-            if ((ACTATT (R(a), a->sem.ser_seq.pos) ==
-                 ACTATT (R(b), b->sem.ser_seq.pos)) &&
-                (ACTATT (R(a), a->sem.ser_seq.item) ==
-                 ACTATT (R(b), b->sem.ser_seq.item)))
+            if ((ACTCOL (R(a), a->sem.ser_seq.pos) ==
+                 ACTCOL (R(b), b->sem.ser_seq.pos)) &&
+                (ACTCOL (R(a), a->sem.ser_seq.item) ==
+                 ACTCOL (R(b), b->sem.ser_seq.item)))
                 return true;
 
         case la_serialize_rel:
-			if ((ACTATT (L(a), a->sem.ser_rel.iter) != 
-				 ACTATT (L(b), b->sem.ser_rel.iter)) ||
-				(ACTATT (L(a), a->sem.ser_rel.pos) !=
-				 ACTATT (L(b), a->sem.ser_rel.pos)))
+			if ((ACTCOL (L(a), a->sem.ser_rel.iter) != 
+				 ACTCOL (L(b), b->sem.ser_rel.iter)) ||
+				(ACTCOL (L(a), a->sem.ser_rel.pos) !=
+				 ACTCOL (L(b), a->sem.ser_rel.pos)))
 				return false;
 
-			for (unsigned int i = 0; i < a->sem.ser_rel.items.count;
+			for (unsigned int i = 0; i < clsize (a->sem.ser_rel.items);
 			 		i++) {
-				if (ACTATT (L(a), a->sem.ser_rel.items.atts[i]) !=
-					ACTATT (L(b), b->sem.ser_rel.items.atts[i]))
+				if (ACTCOL (L(a), clat (a->sem.ser_rel.items, i)) !=
+					ACTCOL (L(b), clat (b->sem.ser_rel.items, i)))
 					return false;
 			}
 
@@ -820,16 +820,16 @@ match (PFla_op_t *a, PFla_op_t *b)
                          b->sem.ref_tbl.name))
                 return false;
 
-            if (PFarray_last (a->sem.ref_tbl.tatts) !=
-                PFarray_last (b->sem.ref_tbl.tatts))
+            if (PFarray_last (a->sem.ref_tbl.tcols) !=
+                PFarray_last (b->sem.ref_tbl.tcols))
                 return false;
 
             /* names have to be aligned; this makes life
              * much easier for us*/
             for (unsigned int i = 0;
-                 i < PFarray_last (a->sem.ref_tbl.tatts); i++) {
-                 if (strcmp ( *(char**) PFarray_at (a->sem.ref_tbl.tatts, i),
-                              *(char**) PFarray_at (b->sem.ref_tbl.tatts, i)))
+                 i < PFarray_last (a->sem.ref_tbl.tcols); i++) {
+                 if (strcmp ( *(char**) PFarray_at (a->sem.ref_tbl.tcols, i),
+                              *(char**) PFarray_at (b->sem.ref_tbl.tcols, i)))
                      return false;
             }
 
@@ -864,10 +864,10 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_eqjoin:
         case la_semijoin:
-            if ((ACTATT (L(a), a->sem.eqjoin.att1) ==
-                 ACTATT (L(b), b->sem.eqjoin.att1)) &&
-                (ACTATT (R(a), a->sem.eqjoin.att2) ==
-                 ACTATT (R(b), b->sem.eqjoin.att2)))
+            if ((ACTCOL (L(a), a->sem.eqjoin.col1) ==
+                 ACTCOL (L(b), b->sem.eqjoin.col1)) &&
+                (ACTCOL (R(a), a->sem.eqjoin.col2) ==
+                 ACTCOL (R(b), b->sem.eqjoin.col2)))
                 return true;
 
             return false;
@@ -878,10 +878,10 @@ match (PFla_op_t *a, PFla_op_t *b)
             unsigned int j = 0;
             for (i = 0; i < a->sem.thetajoin.count; i++) {
                  for (j = 0; j < b->sem.thetajoin.count; j++) {
-                     if ((ACTATT (L(a), a->sem.thetajoin.pred[i].left) ==
-                          ACTATT (L(b), b->sem.thetajoin.pred[j].left)) &&
-                         (ACTATT (R(a), a->sem.thetajoin.pred[i].right) ==
-                          ACTATT (R(b), b->sem.thetajoin.pred[j].right)) &&
+                     if ((ACTCOL (L(a), a->sem.thetajoin.pred[i].left) ==
+                          ACTCOL (L(b), b->sem.thetajoin.pred[j].left)) &&
+                         (ACTCOL (R(a), a->sem.thetajoin.pred[i].right) ==
+                          ACTCOL (R(b), b->sem.thetajoin.pred[j].right)) &&
                          (a->sem.thetajoin.pred[i].comp ==
                           b->sem.thetajoin.pred[j].comp))
                          break;
@@ -899,27 +899,27 @@ match (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
             for (unsigned int i = 0;  i < a->sem.proj.count; i++) {
-                if (ACTATT (L(a), a->sem.proj.items[i].old) !=
-                    ACTATT (L(b), b->sem.proj.items[i].old))
+                if (ACTCOL (L(a), a->sem.proj.items[i].old) !=
+                    ACTCOL (L(b), b->sem.proj.items[i].old))
                     return false;
             }
 
             return true;
 
         case la_select:
-            if (ACTATT (L(a), a->sem.select.att) ==
-                ACTATT (L(b), b->sem.select.att))
+            if (ACTCOL (L(a), a->sem.select.col) ==
+                ACTCOL (L(b), b->sem.select.col))
                 return true;
 
             return false;
 
         case la_pos_select:
 
-            /* partition attribute is not necesserily set */
-            if (IS_NULL(a->sem.pos_sel.part)?att_NULL:
-                    ACTATT (L(a), a->sem.pos_sel.part) !=
-                IS_NULL(b->sem.pos_sel.part)?att_NULL:
-                    ACTATT (L(b), b->sem.pos_sel.part))
+            /* partition column is not necesserily set */
+            if (IS_NULL(a->sem.pos_sel.part)?col_NULL:
+                    ACTCOL (L(a), a->sem.pos_sel.part) !=
+                IS_NULL(b->sem.pos_sel.part)?col_NULL:
+                    ACTCOL (L(b), b->sem.pos_sel.part))
                 return false;
 
             if (a->sem.pos_sel.pos != b->sem.pos_sel.pos)
@@ -928,11 +928,11 @@ match (PFla_op_t *a, PFla_op_t *b)
             /* sort criterions have to be aligned */
             for (unsigned int i = 0;
                  i < PFord_count (a->sem.sort.sortby); i++) {
-                PFalg_att_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
-                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
+                PFalg_col_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
+                PFalg_col_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
                 bool adir         = PFord_order_dir_at (a->sem.sort.sortby, i);
                 bool bdir         = PFord_order_dir_at (b->sem.sort.sortby, i);
-                if (!((ACTATT (L(a), aitem) == ACTATT (L(b), bitem)) &&
+                if (!((ACTCOL (L(a), aitem) == ACTCOL (L(b), bitem)) &&
                       (adir == bdir)))
                     return false;
             }
@@ -954,14 +954,13 @@ match (PFla_op_t *a, PFla_op_t *b)
                 b->sem.fun_1to1.kind)
                 return false;
 
-            if (a->sem.fun_1to1.refs.count !=
-                b->sem.fun_1to1.refs.count)
+            if (clsize (a->sem.fun_1to1.refs) !=
+                clsize (b->sem.fun_1to1.refs))
                 return false;
 
-            for (unsigned int i = 0;
-                 a->sem.fun_1to1.refs.count; i++)
-                 if (a->sem.fun_1to1.refs.atts[i] !=
-                     b->sem.fun_1to1.refs.atts[i])
+            for (unsigned int i = 0; clsize (a->sem.fun_1to1.refs); i++)
+                 if (clat (a->sem.fun_1to1.refs, i) !=
+                     clat (b->sem.fun_1to1.refs, i))
                      return false;
 
             return true;
@@ -971,17 +970,17 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_bool_and:
         case la_bool_or:
         case la_to:
-            if ((ACTATT (L(a), a->sem.binary.att1) &&
-                 ACTATT (L(b), b->sem.binary.att1)) ==
-                (ACTATT (L(a), a->sem.binary.att2) &&
-                 ACTATT (L(b), b->sem.binary.att2)))
+            if ((ACTCOL (L(a), a->sem.binary.col1) &&
+                 ACTCOL (L(b), b->sem.binary.col1)) ==
+                (ACTCOL (L(a), a->sem.binary.col2) &&
+                 ACTCOL (L(b), b->sem.binary.col2)))
                 return true ;
 
             return false;
 
         case la_bool_not:
-            if (ACTATT (L(a), a->sem.unary.att) ==
-                ACTATT (L(b), b->sem.unary.att))
+            if (ACTCOL (L(a), a->sem.unary.col) ==
+                ACTCOL (L(b), b->sem.unary.col))
                 return true;
 
             return false;
@@ -991,19 +990,19 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_min:
         case la_sum:
         case la_count:
-            /* partition attribute is not necesserily set */
-            if (IS_NULL(a->sem.aggr.part)?att_NULL:
-                    ACTATT (L(a), a->sem.aggr.part) !=
-                IS_NULL(b->sem.aggr.part)?att_NULL:
-                    ACTATT (L(b), b->sem.aggr.part))
+            /* partition column is not necesserily set */
+            if (IS_NULL(a->sem.aggr.part)?col_NULL:
+                    ACTCOL (L(a), a->sem.aggr.part) !=
+                IS_NULL(b->sem.aggr.part)?col_NULL:
+                    ACTCOL (L(b), b->sem.aggr.part))
                 return false;
 
 
-            /* even att is not necesserily set */
-            if (IS_NULL(a->sem.aggr.att)?att_NULL:
-                    ACTATT (L(a), a->sem.aggr.att) !=
-                IS_NULL(b->sem.aggr.att)?att_NULL:
-                    ACTATT (L(b), b->sem.aggr.att))
+            /* even col is not necesserily set */
+            if (IS_NULL(a->sem.aggr.col)?col_NULL:
+                    ACTCOL (L(a), a->sem.aggr.col) !=
+                IS_NULL(b->sem.aggr.col)?col_NULL:
+                    ACTCOL (L(b), b->sem.aggr.col))
                 return false;
 
             return true;
@@ -1019,20 +1018,20 @@ match (PFla_op_t *a, PFla_op_t *b)
             /* sort criterions have to be aligned */
             for (unsigned int i = 0;
                  i < PFord_count (a->sem.sort.sortby); i++) {
-                PFalg_att_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
-                PFalg_att_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
+                PFalg_col_t aitem = PFord_order_col_at (a->sem.sort.sortby, i);
+                PFalg_col_t bitem = PFord_order_col_at (b->sem.sort.sortby, i);
                 bool adir         = PFord_order_dir_at (a->sem.sort.sortby, i);
                 bool bdir         = PFord_order_dir_at (b->sem.sort.sortby, i);
-                if (!((ACTATT (L(a), aitem) == ACTATT (L(b), bitem)) &&
+                if (!((ACTCOL (L(a), aitem) == ACTCOL (L(b), bitem)) &&
                       (adir == bdir)))
                     return false;
             }
 
-            /* partition attribute is not necesserily set */
-            if (IS_NULL(a->sem.sort.part)?att_NULL:
-                    ACTATT (L(a), a->sem.sort.part) !=
-                IS_NULL(b->sem.sort.part)?att_NULL:
-                    ACTATT (L(b), b->sem.sort.part))
+            /* partition column is not necesserily set */
+            if (IS_NULL(a->sem.sort.part)?col_NULL:
+                    ACTCOL (L(a), a->sem.sort.part) !=
+                IS_NULL(b->sem.sort.part)?col_NULL:
+                    ACTCOL (L(b), b->sem.sort.part))
                 return false;
 
             return true;
@@ -1043,8 +1042,8 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_type:
         case la_type_assert:
         case la_cast:
-            if ((ACTATT (L(a), a->sem.type.att) ==
-                 ACTATT (L(b), b->sem.type.att)) &&
+            if ((ACTCOL (L(a), a->sem.type.col) ==
+                 ACTCOL (L(b), b->sem.type.col)) &&
                 a->sem.type.ty == b->sem.type.ty)
                 return true;
 
@@ -1052,31 +1051,31 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_seqty1:
         case la_all:
-            /* partition attribute is not necesserily set */
-            if (IS_NULL(a->sem.aggr.part)?att_NULL:
-                    ACTATT (L(a), a->sem.aggr.part) !=
-                IS_NULL(b->sem.aggr.part)?att_NULL:
-                    ACTATT (L(b), b->sem.aggr.part))
+            /* partition column is not necesserily set */
+            if (IS_NULL(a->sem.aggr.part)?col_NULL:
+                    ACTCOL (L(a), a->sem.aggr.part) !=
+                IS_NULL(b->sem.aggr.part)?col_NULL:
+                    ACTCOL (L(b), b->sem.aggr.part))
                 return false;
 
-            /* even att is not necesserily set */
-            if (IS_NULL(a->sem.aggr.att)?att_NULL:
-                    ACTATT (L(a), a->sem.aggr.att) !=
-                IS_NULL(b->sem.aggr.att)?att_NULL:
-                    ACTATT (L(b), b->sem.aggr.att))
+            /* even col is not necesserily set */
+            if (IS_NULL(a->sem.aggr.col)?col_NULL:
+                    ACTCOL (L(a), a->sem.aggr.col) !=
+                IS_NULL(b->sem.aggr.col)?col_NULL:
+                    ACTCOL (L(b), b->sem.aggr.col))
                 return false;
 
             return true;
 
         case la_step:
-	        if (!((ACTATT (R(a), a->sem.step.iter) ==
-	             ACTATT (R(b), b->sem.step.iter))))
+	        if (!((ACTCOL (R(a), a->sem.step.iter) ==
+	             ACTCOL (R(b), b->sem.step.iter))))
 				return false;
 			/* falling through */
 	
         case la_step_join:
-            if ((ACTATT (R(a), a->sem.step.item) ==
-                 ACTATT (R(b), b->sem.step.item))  &&
+            if ((ACTCOL (R(a), a->sem.step.item) ==
+                 ACTCOL (R(b), b->sem.step.item))  &&
                 (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
                 (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
                 (!PFqname_eq (a->sem.step.spec.qname,
@@ -1087,14 +1086,14 @@ match (PFla_op_t *a, PFla_op_t *b)
              return false;
 
         case la_guide_step:
-	        if (!((ACTATT (R(a), a->sem.step.iter) ==
-	             ACTATT (R(b), b->sem.step.iter))))
+	        if (!((ACTCOL (R(a), a->sem.step.iter) ==
+	             ACTCOL (R(b), b->sem.step.iter))))
 				return false;
 			/* falling through */
 			
         case la_guide_step_join:
-            if (!((ACTATT (R(a), a->sem.step.item) ==
-                 ACTATT (R(b), b->sem.step.item))  &&
+            if (!((ACTCOL (R(a), a->sem.step.item) ==
+                 ACTCOL (R(b), b->sem.step.item))  &&
                 (a->sem.step.spec.axis == b->sem.step.spec.axis) &&
                 (a->sem.step.spec.kind == b->sem.step.spec.kind) &&
                 (!PFqname_eq (a->sem.step.spec.qname,
@@ -1114,10 +1113,10 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_doc_index_join:
-            if ((ACTATT (R(a), a->sem.doc_join.item) ==
-                 ACTATT (R(b), b->sem.doc_join.item)) &&
-                (ACTATT (R(a), a->sem.doc_join.item_doc) ==
-                 ACTATT (R(b), b->sem.doc_join.item_doc)) &&
+            if ((ACTCOL (R(a), a->sem.doc_join.item) ==
+                 ACTCOL (R(b), b->sem.doc_join.item)) &&
+                (ACTCOL (R(a), a->sem.doc_join.item_doc) ==
+                 ACTCOL (R(b), b->sem.doc_join.item_doc)) &&
                 (a->sem.doc_join.kind ==
                  b->sem.doc_join.kind))
                 return true;
@@ -1125,8 +1124,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_doc_tbl:
-            if ((ACTATT (L(a), a->sem.doc_tbl.att) ==
-                 ACTATT (L(b), b->sem.doc_tbl.att)) &&
+            if ((ACTCOL (L(a), a->sem.doc_tbl.col) ==
+                 ACTCOL (L(b), b->sem.doc_tbl.col)) &&
                 (a->sem.doc_tbl.kind ==
                  b->sem.doc_tbl.kind))
                 return true;
@@ -1134,8 +1133,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_doc_access:
-            if ((ACTATT (R(a), a->sem.doc_access.att) ==
-                 ACTATT (R(b), b->sem.doc_access.att)) &&
+            if ((ACTCOL (R(a), a->sem.doc_access.col) ==
+                 ACTCOL (R(b), b->sem.doc_access.col)) &&
                 a->sem.doc_access.doc_col == b->sem.doc_access.doc_col)
                 return true;
 
@@ -1153,12 +1152,12 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_merge_adjacent:
-            if ((ACTATT (R(a), a->sem.merge_adjacent.iter_in) ==
-                 ACTATT (R(b), b->sem.merge_adjacent.iter_in)) &&
-                (ACTATT (R(a), a->sem.merge_adjacent.pos_in) ==
-                 ACTATT (R(b), b->sem.merge_adjacent.pos_in)) &&
-                (ACTATT (R(a), a->sem.merge_adjacent.item_in) ==
-                 ACTATT (R(b), b->sem.merge_adjacent.item_in)))
+            if ((ACTCOL (R(a), a->sem.merge_adjacent.iter_in) ==
+                 ACTCOL (R(b), b->sem.merge_adjacent.iter_in)) &&
+                (ACTCOL (R(a), a->sem.merge_adjacent.pos_in) ==
+                 ACTCOL (R(b), b->sem.merge_adjacent.pos_in)) &&
+                (ACTCOL (R(a), a->sem.merge_adjacent.item_in) ==
+                 ACTCOL (R(b), b->sem.merge_adjacent.item_in)))
                 return true;
 
             return false;
@@ -1172,17 +1171,17 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_error:
-            if (ACTATT (L(a), a->sem.err.att) ==
-                ACTATT (L(b), b->sem.err.att) &&
-                PFprop_type_of (a, a->sem.err.att) ==
-                PFprop_type_of (b, b->sem.err.att))
+            if (ACTCOL (L(a), a->sem.err.col) ==
+                ACTCOL (L(b), b->sem.err.col) &&
+                PFprop_type_of (a, a->sem.err.col) ==
+                PFprop_type_of (b, b->sem.err.col))
                 return true;
 
             return false;
 
         case la_cond_err:
-            if ((ACTATT (L(a), a->sem.err.att) ==
-                ACTATT (L(b), b->sem.err.att)) &&
+            if ((ACTCOL (L(a), a->sem.err.col) ==
+                ACTCOL (L(b), b->sem.err.col)) &&
                 !strcmp (a->sem.err.str, b->sem.err.str))
                 return true;
 
@@ -1208,16 +1207,16 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_string_join:
-            if ((ACTATT (L(a), a->sem.string_join.iter) ==
-                 ACTATT (L(b), b->sem.string_join.iter)) &&
-                (ACTATT (L(a), a->sem.string_join.pos) ==
-                 ACTATT (L(b), b->sem.string_join.pos)) &&
-                (ACTATT (L(a), a->sem.string_join.item) ==
-                 ACTATT (L(b), b->sem.string_join.item)) &&
-                (ACTATT (R(a), a->sem.string_join.iter_sep) ==
-                 ACTATT (R(b), b->sem.string_join.iter_sep)) &&
-                (ACTATT (R(a), a->sem.string_join.item_sep) ==
-                 ACTATT (R(b), b->sem.string_join.item_sep)))
+            if ((ACTCOL (L(a), a->sem.string_join.iter) ==
+                 ACTCOL (L(b), b->sem.string_join.iter)) &&
+                (ACTCOL (L(a), a->sem.string_join.pos) ==
+                 ACTCOL (L(b), b->sem.string_join.pos)) &&
+                (ACTCOL (L(a), a->sem.string_join.item) ==
+                 ACTCOL (L(b), b->sem.string_join.item)) &&
+                (ACTCOL (R(a), a->sem.string_join.iter_sep) ==
+                 ACTCOL (R(b), b->sem.string_join.iter_sep)) &&
+                (ACTCOL (R(a), a->sem.string_join.item_sep) ==
+                 ACTCOL (R(b), b->sem.string_join.item_sep)))
                 return true;
 
             return false;
@@ -1266,8 +1265,8 @@ column_eq (unsigned int col1, unsigned int col2,
  * and returns the corresponding name to the @a name
  * in littbl2
  */
-static PFalg_att_t
-littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
+static PFalg_col_t
+littbl_column (PFalg_col_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
                PFarray_t *seen)
 {
     assert (littbl1->kind == la_lit_tbl);
@@ -1289,7 +1288,7 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
     if (column >= littbl1->schema.count)
        PFoops (OOPS_FATAL,
                "Column %s not found in literal table",
-               PFatt_str (name));
+               PFcol_str (name));
 
     /* check for column equality and return the right name */
     bool match = false;
@@ -1300,7 +1299,7 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
              * if we want to use a column twice */
             for (unsigned int j = 0; j < PFarray_last (seen); j++)
                 if (littbl2->schema.items[i].name ==
-                    *((PFalg_att_t *)PFarray_at (seen, j)))
+                    *((PFalg_col_t *)PFarray_at (seen, j)))
                     match = true;
             if (match) continue;
 
@@ -1310,7 +1309,7 @@ littbl_column (PFalg_att_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
 
     PFoops (OOPS_FATAL,
             "This should not happen: no equal columns found");
-    return att_NULL; /* satisfy picky compilers */
+    return col_NULL; /* satisfy picky compilers */
 }
 
 /**
@@ -1325,29 +1324,24 @@ new_operator (PFla_op_t *n)
     switch (n->kind) {
         case la_serialize_seq:
             return PFla_serialize_seq (CSE(L(n)), CSE(R(n)),
-                                ACTATT(R(n), n->sem.ser_seq.pos),
-                                ACTATT(R(n), n->sem.ser_seq.item));
+                                ACTCOL(R(n), n->sem.ser_seq.pos),
+                                ACTCOL(R(n), n->sem.ser_seq.item));
 
         case la_serialize_rel:
         {
-            PFalg_attlist_t items = 
-                (PFalg_attlist_t) {
-                    .count = n->sem.ser_rel.items.count,
-                    .atts = PFmalloc (n->sem.ser_rel.items.count * 
-                                      sizeof(PFalg_att_t))
-            };
+            PFalg_collist_t *items = PFalg_collist_copy (n->sem.ser_rel.items);
                             
-            for (unsigned int i = 0; i < items.count; i++) {
-                items.atts[i] = ACTATT (L(n), n->sem.ser_rel.items.atts[i]);
+            for (unsigned int i = 0; i < clsize (items); i++) {
+                clat (items, i) = ACTCOL (L(n), clat (items, i));
             }
             
             return PFla_serialize_rel (CSE(L(n)),
-                                ACTATT (L(n), n->sem.ser_rel.iter),
-                                ACTATT (L(n), n->sem.ser_rel.pos),
+                                ACTCOL (L(n), n->sem.ser_rel.iter),
+                                ACTCOL (L(n), n->sem.ser_rel.pos),
                                 items);
         }
         case la_lit_tbl:
-            return PFla_lit_tbl_ (create_attlist (n->schema),
+            return PFla_lit_tbl_ (create_collist (n->schema),
                                   n->sem.lit_tbl.count,
                                   n->sem.lit_tbl.tuples);
 
@@ -1357,7 +1351,7 @@ new_operator (PFla_op_t *n)
         case la_ref_tbl:
             return PFla_ref_tbl_ (n->sem.ref_tbl.name,
                                 n->schema,
-                                n->sem.ref_tbl.tatts,
+                                n->sem.ref_tbl.tcols,
                                 n->sem.ref_tbl.keys);
 
         case la_attach:
@@ -1371,13 +1365,13 @@ new_operator (PFla_op_t *n)
         case la_semijoin:
         case la_thetajoin:
         {
-            PFalg_att_t  used_cols = 0;
+            PFalg_col_t  used_cols = 0;
             PFalg_proj_t *p = NULL;
             PFla_op_t    *proj = CSE(R(n));
             bool projection = false;
 
-            /* actual attribute mapping in case of a projection */
-            PFarray_t    *actmap = create_actatt_map ();
+            /* actual column mapping in case of a projection */
+            PFarray_t    *actmap = create_actcol_map ();
 
             /* fill used columns with columns of the left schema */
             for (unsigned int i = 0; i < CSE(L(n))->schema.count; i++)
@@ -1399,8 +1393,8 @@ new_operator (PFla_op_t *n)
                 for (unsigned int i = 0; i < CSE(R(n))->schema.count; i++) {
                     /* check for conflicting columns */
                     if (used_cols & CSE(R(n))->schema.items[i].name) {
-                       /* create new attribute name */
-                       PFalg_att_t t =
+                       /* create new column name */
+                       PFalg_col_t t =
                               PFalg_ori_name (
                                   PFalg_unq_name (
                                       CSE(R(n))->schema.items[i].name),
@@ -1408,8 +1402,8 @@ new_operator (PFla_op_t *n)
 
                        /* create new entry for projection */
                        p[i] = PFalg_proj (t, CSE(R(n))->schema.items[i].name);
-                       INACTATT (actmap,
-                                 actatt (t,
+                       INACTCOL (actmap,
+                                 actcol (t,
                                          R(n)->schema.items[i].name));
 
                         /* add new created name to used_cols */
@@ -1419,8 +1413,8 @@ new_operator (PFla_op_t *n)
                     else {
                         p[i] = PFalg_proj (CSE(R(n))->schema.items[i].name,
                                            CSE(R(n))->schema.items[i].name);
-                        INACTATT (actmap,
-                                  actatt (CSE(R(n))->schema.items[i].name,
+                        INACTCOL (actmap,
+                                  actcol (CSE(R(n))->schema.items[i].name,
                                           R(n)->schema.items[i].name));
 
                         /* add new name to conflicting column */
@@ -1442,7 +1436,7 @@ new_operator (PFla_op_t *n)
                                      R(n)->schema.items[i].name);
                 }
 
-                /* insert projection and actual attributes
+                /* insert projection and actual columns
                  * in the original plan */
                 R(n) = PFla_project_ (R(n), R(n)->schema.count, dummy_p);
                 INACT (R(n), actmap);
@@ -1458,13 +1452,13 @@ new_operator (PFla_op_t *n)
 
                 case la_eqjoin:
                     return PFla_eqjoin (CSE(L(n)), proj,
-                                        ACTATT (L(n), n->sem.eqjoin.att1),
-                                        ACTATT (R(n), n->sem.eqjoin.att2));
+                                        ACTCOL (L(n), n->sem.eqjoin.col1),
+                                        ACTCOL (R(n), n->sem.eqjoin.col2));
 
                 case la_semijoin:
                     return PFla_semijoin (CSE(L(n)), proj,
-                                          ACTATT (L(n), n->sem.eqjoin.att1),
-                                          ACTATT (R(n), n->sem.eqjoin.att2));
+                                          ACTCOL (L(n), n->sem.eqjoin.col1),
+                                          ACTCOL (R(n), n->sem.eqjoin.col2));
 
                 case la_thetajoin:
                 {
@@ -1476,9 +1470,9 @@ new_operator (PFla_op_t *n)
                     for (unsigned int i = 0; i < n->sem.thetajoin.count; i++)
                         sel[i] = (PFalg_sel_t) {
                                        .comp =  n->sem.thetajoin.pred[i].comp,
-                                       .left =  ACTATT (L(n),
+                                       .left =  ACTCOL (L(n),
                                                  n->sem.thetajoin.pred[i].left),
-                                       .right = ACTATT (R(n),
+                                       .right = ACTCOL (R(n),
                                                  n->sem.thetajoin.pred[i].right)
                                  };
 
@@ -1502,14 +1496,14 @@ new_operator (PFla_op_t *n)
             for (unsigned int i = 0; i < count; i++)
                 newproj[i] = (PFalg_proj_t) {
                                  .new = n->sem.proj.items[i].new,
-                                 .old = ACTATT (L(n), n->sem.proj.items[i].old)
+                                 .old = ACTCOL (L(n), n->sem.proj.items[i].old)
                              };
 
             return PFla_project_ (CSE(L(n)), count, newproj);
         }
 
         case la_select:
-            return PFla_select (CSE(L(n)), ACTATT (L(n), n->sem.select.att));
+            return PFla_select (CSE(L(n)), ACTCOL (L(n), n->sem.select.col));
 
         case la_pos_select:
         {
@@ -1519,7 +1513,7 @@ new_operator (PFla_op_t *n)
                  i < PFarray_last (n->sem.sort.sortby); i++) {
                  sortby = PFord_refine (
                                sortby,
-                               ACTATT(L(n),
+                               ACTCOL(L(n),
                                       PFord_order_col_at (
                                            n->sem.sort.sortby, i)),
                                PFord_order_dir_at (n->sem.sort.sortby, i));
@@ -1527,9 +1521,9 @@ new_operator (PFla_op_t *n)
 
             return PFla_pos_select (CSE(L(n)), n->sem.pos_sel.pos,
                                     sortby,
-                                    (n->sem.pos_sel.part == att_NULL)?
-                                    att_NULL:
-                                    ACTATT (L(n), n->sem.pos_sel.part));
+                                    (n->sem.pos_sel.part == col_NULL)?
+                                    col_NULL:
+                                    ACTCOL (L(n), n->sem.pos_sel.part));
         }
 
         case la_disjunion:
@@ -1539,12 +1533,12 @@ new_operator (PFla_op_t *n)
             /* function pointer to create the set operator */
             PFla_op_t * (*setop) (const PFla_op_t *n1, const PFla_op_t *n2);
 
-            PFarray_t    *actmap = create_actatt_map ();
+            PFarray_t    *actmap = create_actcol_map ();
             PFalg_proj_t *p      = NULL;
             PFla_op_t    *proj   = CSE(R(n));
 
             /* trivial check if both operands have the same number of
-             * attributes */
+             * columns */
             assert (CSE(L(n))->schema.count == CSE(R(n))->schema.count);
 
             /* check schema equivalence */
@@ -1556,15 +1550,15 @@ new_operator (PFla_op_t *n)
              * a projection if this is the case */
             for (i = 0; i < CSE(L(n))->schema.count; i++) {
                 for (j = 0; j < CSE(R(n))->schema.count; j++) {
-					PFalg_att_t rev_l = att_NULL,
-							  	rev_r = att_NULL;
-                    if ((rev_l = REVACTATT(
+					PFalg_col_t rev_l = col_NULL,
+							  	rev_r = col_NULL;
+                    if ((rev_l = REVACTCOL(
 									L(n), CSE(L(n))->schema.items[i].name)) ==
-                        (rev_r = REVACTATT(
+                        (rev_r = REVACTCOL(
 									R(n), CSE(R(n))->schema.items[j].name))) {
 						
-                        if (ACTATT(L(n), rev_l) !=
-                            ACTATT(R(n), rev_r))
+                        if (ACTCOL(L(n), rev_l) !=
+                            ACTCOL(R(n), rev_r))
 	                        	projection = true;
 	    
                         break;
@@ -1583,37 +1577,37 @@ new_operator (PFla_op_t *n)
                     PFmalloc (R(n)->schema.count * sizeof (PFalg_proj_t));
                 for (i = 0; i < CSE(L(n))->schema.count; i++) {
                     for (j = 0; j < CSE(R(n))->schema.count; j++) {
-						PFalg_att_t rev_l = att_NULL,
-									rev_r = att_NULL;
+						PFalg_col_t rev_l = col_NULL,
+									rev_r = col_NULL;
 									
-                        if ((rev_l = REVACTATT(L(n),
+                        if ((rev_l = REVACTCOL(L(n),
 										CSE(L(n))->schema.items[i].name)) ==
-                            (rev_r = REVACTATT(R(n),
+                            (rev_r = REVACTCOL(R(n),
 										CSE(R(n))->schema.items[j].name))) {
                             /* the names are conflicting */
-                            if (ACTATT(L(n), L(n)->schema.items[i].name) !=
-                                ACTATT(R(n), R(n)->schema.items[j].name)) {
+                            if (ACTCOL(L(n), L(n)->schema.items[i].name) !=
+                                ACTCOL(R(n), R(n)->schema.items[j].name)) {
                                 p[i] = PFalg_proj (
-                                      ACTATT(L(n),
+                                      ACTCOL(L(n),
                                              rev_l),
-                                      ACTATT(R(n),
+                                      ACTCOL(R(n),
                                              rev_r));
 
-                                INACTATT (actmap,
-                                    actatt (ACTATT(L(n),
+                                INACTCOL (actmap,
+                                    actcol (ACTCOL(L(n),
                                                rev_l),
-                                            REVACTATT (R(n),
+                                            REVACTCOL (R(n),
                                                CSE(R(n))->schema.items[j]
                                                    .name)));
                             }
                             else {
-								PFalg_att_t t = ACTATT(R(n), rev_r);
+								PFalg_col_t t = ACTCOL(R(n), rev_r);
 								
 								p[i] = PFalg_proj (t,t);
 
-                                INACTATT (
+                                INACTCOL (
                                     actmap,
-									actatt (t,t));
+									actcol (t,t));
                             }
                         }
                     }
@@ -1659,21 +1653,17 @@ new_operator (PFla_op_t *n)
 
         case la_fun_1to1:
         {
-            /* prepare attribute list */
-            PFalg_attlist_t attlist;
-            attlist.count = n->sem.fun_1to1.refs.count;
-            attlist.atts  = (PFalg_att_t *) PFmalloc (
-                                  attlist.count * sizeof(PFalg_att_t));
-
-            /* get the actual attribute from underlying node */
-            for (unsigned int i = 0; i < attlist.count; i++) {
-                attlist.atts[i] = ACTATT(L(n), n->sem.fun_1to1.refs.atts[i]);
+            /* prepare column list */
+            PFalg_collist_t *items = PFalg_collist_copy (n->sem.fun_1to1.refs);
+                            
+            for (unsigned int i = 0; i < clsize (items); i++) {
+                clat (items, i) = ACTCOL (L(n), clat (items, i));
             }
 
             return PFla_fun_1to1 (CSE(L(n)), n->sem.fun_1to1.kind,
                                   create_unq_name (CSE(L(n))->schema,
                                                    n->sem.fun_1to1.res),
-                                  attlist);
+                                  items);
         }
 
         case la_num_eq:
@@ -1682,8 +1672,8 @@ new_operator (PFla_op_t *n)
         case la_bool_or:
         case la_to:
         {
-            PFla_op_t * (*comp) (const PFla_op_t *n, PFalg_att_t res,
-                                 PFalg_att_t att1, PFalg_att_t att2);
+            PFla_op_t * (*comp) (const PFla_op_t *n, PFalg_col_t res,
+                                 PFalg_col_t att1, PFalg_col_t att2);
 
             switch (n->kind) {
                case la_num_eq:   comp = PFla_eq;  break;
@@ -1699,15 +1689,15 @@ new_operator (PFla_op_t *n)
             return comp (CSE(L(n)),
                          create_unq_name (CSE(L(n))->schema,
                                           n->sem.binary.res),
-                         ACTATT (L(n), n->sem.binary.att1),
-                         ACTATT (L(n), n->sem.binary.att2));
+                         ACTCOL (L(n), n->sem.binary.col1),
+                         ACTCOL (L(n), n->sem.binary.col2));
         }
 
         case la_bool_not:
             return PFla_not (CSE(L(n)),
                              create_unq_name (CSE(L(n))->schema,
                                               n->sem.unary.res),
-                             ACTATT (L(n), n->sem.unary.att));
+                             ACTCOL (L(n), n->sem.unary.col));
 
         case la_avg:
         case la_max:
@@ -1716,18 +1706,18 @@ new_operator (PFla_op_t *n)
             return PFla_aggr (n->kind, CSE(L(n)),
                               create_unq_name (CSE(L(n))->schema,
                                                n->sem.aggr.res),
-                              ACTATT (L(n), n->sem.aggr.att),
-                              (n->sem.aggr.part == att_NULL)?
-                              att_NULL:
-                              ACTATT (L(n), n->sem.aggr.part));
+                              ACTCOL (L(n), n->sem.aggr.col),
+                              (n->sem.aggr.part == col_NULL)?
+                              col_NULL:
+                              ACTCOL (L(n), n->sem.aggr.part));
 
         case la_count:
             return PFla_count (CSE(L(n)),
                                create_unq_name (CSE(L(n))->schema,
                                                 n->sem.aggr.res),
-                               (n->sem.aggr.part == att_NULL)?
-                               att_NULL:
-                               ACTATT (L(n), n->sem.aggr.part));
+                               (n->sem.aggr.part == col_NULL)?
+                               col_NULL:
+                               ACTCOL (L(n), n->sem.aggr.part));
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -1738,7 +1728,7 @@ new_operator (PFla_op_t *n)
                  i < PFarray_last (n->sem.sort.sortby); i++) {
                    sortby = PFord_refine (
                                     sortby,
-                                    ACTATT(L(n),
+                                    ACTCOL(L(n),
                                            PFord_order_col_at (
                                                   n->sem.sort.sortby, i)),
                                     PFord_order_dir_at (
@@ -1751,9 +1741,9 @@ new_operator (PFla_op_t *n)
                                  create_unq_name (CSE(L(n))->schema,
                                                   n->sem.sort.res),
                                  sortby,
-                                 (n->sem.sort.part == att_NULL)?
-                                 att_NULL:
-                                 ACTATT (L(n), n->sem.sort.part));
+                                 (n->sem.sort.part == col_NULL)?
+                                 col_NULL:
+                                 ACTCOL (L(n), n->sem.sort.part));
                 case la_rowrank:
                     return PFla_rowrank (CSE(L(n)),
                                  create_unq_name (CSE(L(n))->schema,
@@ -1780,12 +1770,12 @@ new_operator (PFla_op_t *n)
             return PFla_type (CSE(L(n)),
                               create_unq_name (CSE(L(n))->schema,
                                                n->sem.type.res),
-                              ACTATT (L(n), n->sem.type.att),
+                              ACTCOL (L(n), n->sem.type.col),
                               n->sem.type.ty);
 
         case la_type_assert:
             return PFla_type_assert (CSE(L(n)),
-                                     ACTATT (L(n), n->sem.type.att),
+                                     ACTCOL (L(n), n->sem.type.col),
                                      n->sem.type.ty,
                                      true);
 
@@ -1793,40 +1783,40 @@ new_operator (PFla_op_t *n)
             return PFla_cast (CSE(L(n)),
                               create_unq_name (CSE(L(n))->schema,
                                                n->sem.type.res),
-                              ACTATT (L(n), n->sem.type.att),
+                              ACTCOL (L(n), n->sem.type.col),
                               n->sem.type.ty);
 
         case la_seqty1:
             return PFla_seqty1 (CSE(L(n)),
                                 create_unq_name (CSE(L(n))->schema,
                                                  n->sem.aggr.res),
-                                ACTATT (L(n), n->sem.aggr.att),
-                                (n->sem.aggr.part == att_NULL)?
-                                att_NULL:
-                                ACTATT (L(n), n->sem.aggr.part));
+                                ACTCOL (L(n), n->sem.aggr.col),
+                                (n->sem.aggr.part == col_NULL)?
+                                col_NULL:
+                                ACTCOL (L(n), n->sem.aggr.part));
 
         case la_all:
             return PFla_all (CSE(L(n)),
                              create_unq_name (CSE(L(n))->schema,
                                               n->sem.aggr.res),
-                             ACTATT (L(n), n->sem.aggr.att),
-                             (n->sem.aggr.part == att_NULL)?
-                             att_NULL:
-                             ACTATT (L(n), n->sem.aggr.part));
+                             ACTCOL (L(n), n->sem.aggr.col),
+                             (n->sem.aggr.part == col_NULL)?
+                             col_NULL:
+                             ACTCOL (L(n), n->sem.aggr.part));
 
         case la_step:
             return PFla_step (CSE(L(n)), CSE(R(n)),
                               n->sem.step.spec,
                               n->sem.step.level,
-                              ACTATT (R(n), n->sem.step.iter),
-                              ACTATT (R(n), n->sem.step.item),
-                              ACTATT (R(n), n->sem.step.item));
+                              ACTCOL (R(n), n->sem.step.iter),
+                              ACTCOL (R(n), n->sem.step.item),
+                              ACTCOL (R(n), n->sem.step.item));
 
         case la_step_join:
             return PFla_step_join (CSE(L(n)), CSE(R(n)),
                                    n->sem.step.spec,
                                    n->sem.step.level,
-                                   ACTATT (R(n), n->sem.step.item),
+                                   ACTCOL (R(n), n->sem.step.item),
                                    create_unq_name (CSE(R(n))->schema,
                                                     n->sem.step.item_res));
 
@@ -1836,9 +1826,9 @@ new_operator (PFla_op_t *n)
                                     n->sem.step.guide_count,
                                     n->sem.step.guides,
                                     n->sem.step.level,
-                                    ACTATT (R(n), n->sem.step.iter),
-                                    ACTATT (R(n), n->sem.step.item),
-                                    ACTATT (R(n), n->sem.step.item));
+                                    ACTCOL (R(n), n->sem.step.iter),
+                                    ACTCOL (R(n), n->sem.step.item),
+                                    ACTCOL (R(n), n->sem.step.item));
 
         case la_guide_step_join:
             return PFla_guide_step_join (CSE(L(n)), CSE(R(n)),
@@ -1846,7 +1836,7 @@ new_operator (PFla_op_t *n)
                                          n->sem.step.guide_count,
                                          n->sem.step.guides,
                                          n->sem.step.level,
-                                         ACTATT (R(n), n->sem.step.item),
+                                         ACTCOL (R(n), n->sem.step.item),
                                          create_unq_name (
                                              CSE(R(n))->schema,
                                              n->sem.step.item_res));
@@ -1854,25 +1844,25 @@ new_operator (PFla_op_t *n)
         case la_doc_index_join:
             return PFla_doc_index_join (CSE(L(n)), CSE(R(n)),
                                         n->sem.doc_join.kind,
-                                        ACTATT (R(n), n->sem.doc_join.item),
+                                        ACTCOL (R(n), n->sem.doc_join.item),
                                         create_unq_name (
                                             CSE(R(n))->schema,
                                             n->sem.doc_join.item_res),
-                                        ACTATT (R(n),
+                                        ACTCOL (R(n),
                                                 n->sem.doc_join.item_doc));
 
         case la_doc_tbl:
             return PFla_doc_tbl (CSE(L(n)),
                                  create_unq_name (CSE(L(n))->schema,
                                                   n->sem.doc_tbl.res),
-                                 ACTATT (L(n), n->sem.doc_tbl.att),
+                                 ACTCOL (L(n), n->sem.doc_tbl.col),
                                  n->sem.doc_tbl.kind);
 
         case la_doc_access:
             return PFla_doc_access (CSE(L(n)), CSE(R(n)),
                                     create_unq_name (CSE(R(n))->schema,
                                                      n->sem.doc_access.res),
-                                    ACTATT (R(n), n->sem.doc_access.att),
+                                    ACTCOL (R(n), n->sem.doc_access.col),
                                     n->sem.doc_access.doc_col);
         case la_twig:
             return PFla_twig (CSE(L(n)),
@@ -1884,50 +1874,50 @@ new_operator (PFla_op_t *n)
 
         case la_docnode:
             return PFla_docnode (CSE(L(n)), CSE(R(n)),
-                                 ACTATT (R(n), n->sem.docnode.iter));
+                                 ACTCOL (R(n), n->sem.docnode.iter));
 
         case la_element:
             return PFla_element (CSE(L(n)), CSE(R(n)),
-                                 ACTATT (L(n), n->sem.iter_item.iter),
-                                 ACTATT (L(n), n->sem.iter_item.item));
+                                 ACTCOL (L(n), n->sem.iter_item.iter),
+                                 ACTCOL (L(n), n->sem.iter_item.item));
 
         case la_attribute:
             return PFla_attribute (CSE(L(n)),
-                                   ACTATT (L(n), n->sem.iter_item1_item2.iter),
-                                   ACTATT (L(n), n->sem.iter_item1_item2.item1),
-                                   ACTATT (L(n),
+                                   ACTCOL (L(n), n->sem.iter_item1_item2.iter),
+                                   ACTCOL (L(n), n->sem.iter_item1_item2.item1),
+                                   ACTCOL (L(n),
                                            n->sem.iter_item1_item2.item2));
 
         case la_textnode:
             return PFla_textnode (CSE(L(n)),
-                                  ACTATT (L(n), n->sem.iter_item.iter),
-                                  ACTATT (L(n), n->sem.iter_item.item));
+                                  ACTCOL (L(n), n->sem.iter_item.iter),
+                                  ACTCOL (L(n), n->sem.iter_item.item));
 
         case la_comment:
             return PFla_comment (CSE(L(n)),
-                                 ACTATT (L(n), n->sem.iter_item.iter),
-                                 ACTATT (L(n), n->sem.iter_item.item));
+                                 ACTCOL (L(n), n->sem.iter_item.iter),
+                                 ACTCOL (L(n), n->sem.iter_item.item));
 
         case la_processi:
             return PFla_processi (CSE(L(n)),
-                                  ACTATT (L(n), n->sem.iter_item1_item2.iter),
-                                  ACTATT (L(n), n->sem.iter_item1_item2.item1),
-                                  ACTATT (L(n), n->sem.iter_item1_item2.item2));
+                                  ACTCOL (L(n), n->sem.iter_item1_item2.iter),
+                                  ACTCOL (L(n), n->sem.iter_item1_item2.item1),
+                                  ACTCOL (L(n), n->sem.iter_item1_item2.item2));
 
         case la_content:
             return PFla_content (CSE(L(n)), CSE(R(n)),
-                                 ACTATT (R(n), n->sem.iter_pos_item.iter),
-                                 ACTATT (R(n), n->sem.iter_pos_item.pos),
-                                 ACTATT (R(n), n->sem.iter_pos_item.item));
+                                 ACTCOL (R(n), n->sem.iter_pos_item.iter),
+                                 ACTCOL (R(n), n->sem.iter_pos_item.pos),
+                                 ACTCOL (R(n), n->sem.iter_pos_item.item));
 
         case la_merge_adjacent:
             return PFla_pf_merge_adjacent_text_nodes (CSE(L(n)), CSE(R(n)),
-                                 ACTATT (R(n), n->sem.merge_adjacent.iter_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.pos_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.item_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.iter_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.pos_in),
-                                 ACTATT (R(n), n->sem.merge_adjacent.item_in));
+                                 ACTCOL (R(n), n->sem.merge_adjacent.iter_in),
+                                 ACTCOL (R(n), n->sem.merge_adjacent.pos_in),
+                                 ACTCOL (R(n), n->sem.merge_adjacent.item_in),
+                                 ACTCOL (R(n), n->sem.merge_adjacent.iter_in),
+                                 ACTCOL (R(n), n->sem.merge_adjacent.pos_in),
+                                 ACTCOL (R(n), n->sem.merge_adjacent.item_in));
             break;
 
         case la_roots:
@@ -1944,12 +1934,12 @@ new_operator (PFla_op_t *n)
 
         case la_error:
             return PFla_error_ (CSE(L(n)),
-                                ACTATT (L(n), n->sem.err.att),
-                                PFprop_type_of (n, n->sem.err.att));
+                                ACTCOL (L(n), n->sem.err.col),
+                                PFprop_type_of (n, n->sem.err.col));
 
         case la_cond_err:
             return PFla_cond_err (CSE(L(n)), CSE(R(n)),
-                                  ACTATT (R(n), n->sem.err.att),
+                                  ACTCOL (R(n), n->sem.err.col),
                                   n->sem.err.str);
 
         case la_nil:
@@ -1957,30 +1947,30 @@ new_operator (PFla_op_t *n)
 
         case la_trace:
             return PFla_trace (CSE(L(n)), CSE(R(n)),
-                               ACTATT (R(n), n->sem.iter_pos_item.iter),
-                               ACTATT (R(n), n->sem.iter_pos_item.pos),
-                               ACTATT (R(n), n->sem.iter_pos_item.item));
+                               ACTCOL (R(n), n->sem.iter_pos_item.iter),
+                               ACTCOL (R(n), n->sem.iter_pos_item.pos),
+                               ACTCOL (R(n), n->sem.iter_pos_item.item));
 
         case la_trace_msg:
             return PFla_trace_msg (CSE(L(n)), CSE(R(n)),
-                                   ACTATT (R(n), n->sem.iter_item.iter),
-                                   ACTATT (R(n), n->sem.iter_item.item));
+                                   ACTCOL (R(n), n->sem.iter_item.iter),
+                                   ACTCOL (R(n), n->sem.iter_item.item));
 
         case la_trace_map:
             return PFla_trace_msg (CSE(L(n)), CSE(R(n)),
-                                   ACTATT (R(n), n->sem.trace_map.inner),
-                                   ACTATT (R(n), n->sem.trace_map.outer));
+                                   ACTCOL (R(n), n->sem.trace_map.inner),
+                                   ACTCOL (R(n), n->sem.trace_map.outer));
 
         case la_string_join: {
             return PFla_fn_string_join (
                        CSE(L(n)), CSE(R(n)),
-                       ACTATT (L(n), n->sem.string_join.iter),
-                       ACTATT (L(n), n->sem.string_join.pos),
-                       ACTATT (L(n), n->sem.string_join.item),
-                       ACTATT (R(n), n->sem.string_join.iter_sep),
-                       ACTATT (R(n), n->sem.string_join.item_sep),
-                       ACTATT (L(n), n->sem.string_join.iter),
-                       ACTATT (L(n), n->sem.string_join.item));
+                       ACTCOL (L(n), n->sem.string_join.iter),
+                       ACTCOL (L(n), n->sem.string_join.pos),
+                       ACTCOL (L(n), n->sem.string_join.item),
+                       ACTCOL (R(n), n->sem.string_join.iter_sep),
+                       ACTCOL (R(n), n->sem.string_join.item_sep),
+                       ACTCOL (L(n), n->sem.string_join.iter),
+                       ACTCOL (L(n), n->sem.string_join.item));
 
 /*                       create_unq_name (CSE(R(n))->schema,
                                         n->sem.string_join.iter_res),
@@ -1999,8 +1989,8 @@ new_operator (PFla_op_t *n)
             PFla_op_t *seed   = CSE(L(n));
             PFla_op_t *result = CSE(R(n));
 
-            PFarray_t *seed_actmap = create_actatt_map ();
-            PFarray_t *res_actmap  = create_actatt_map ();
+            PFarray_t *seed_actmap = create_actcol_map ();
+            PFarray_t *res_actmap  = create_actcol_map ();
 
             assert (CSE(L(n))->schema.count ==
                     L(n)->schema.count);
@@ -2024,8 +2014,8 @@ new_operator (PFla_op_t *n)
                     p[i] = PFalg_proj (
                               L(n)->schema.items[i].name,
                               CSE(L(n))->schema.items[i].name);
-                    INACTATT (seed_actmap,
-                              actatt (L(n)->schema.items[i].name,
+                    INACTCOL (seed_actmap,
+                              actcol (L(n)->schema.items[i].name,
                                       CSE(L(n))->schema.items[i].name));
                 }
 
@@ -2067,8 +2057,8 @@ new_operator (PFla_op_t *n)
                     p[i] = PFalg_proj (
                               R(n)->schema.items[i].name,
                               CSE(R(n))->schema.items[i].name);
-                    INACTATT (res_actmap,
-                              actatt (R(n)->schema.items[i].name,
+                    INACTCOL (res_actmap,
+                              actcol (R(n)->schema.items[i].name,
                                       CSE(R(n))->schema.items[i].name));
                 }
 
@@ -2115,7 +2105,7 @@ new_operator (PFla_op_t *n)
             return PFla_fun_call (CSE(L(n)), CSE(R(n)),
                                   schema, n->sem.fun_call.kind,
                                   n->sem.fun_call.qname, n->sem.fun_call.ctx,
-                                  ACTATT (L(n), n->sem.fun_call.iter),
+                                  ACTCOL (L(n), n->sem.fun_call.iter),
                                   n->sem.fun_call.occ_ind);
         }
         case la_fun_param: {
@@ -2128,7 +2118,7 @@ new_operator (PFla_op_t *n)
 
             for (unsigned int i = 0; i < schema.count; i++)
                 schema.items[i] = (struct PFalg_schm_item_t) {
-                                      .name = ACTATT (L(n), n->schema.items[i].name),
+                                      .name = ACTCOL (L(n), n->schema.items[i].name),
                                       .type = n->schema.items[i].type
                                   };
 
@@ -2156,7 +2146,7 @@ new_operator (PFla_op_t *n)
 /**
  * Since we create new operators for every operator
  * in the original plan, we have to create a projection
- * list if the names of the attributes will change.
+ * list if the names of the columns will change.
  */
 static void
 adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
@@ -2168,103 +2158,103 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 
     switch (ori->kind) {
         case la_serialize_seq:
-            actmap = actatt_map_copy (ACT(R(ori)));
+            actmap = actcol_map_copy (ACT(R(ori)));
             break;
         case la_serialize_rel:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_lit_tbl:
         {
-            actmap =  create_actatt_map ();
+            actmap =  create_actcol_map ();
 
             /* during the creation of the map
              * we have to protocol the columns
              * we have just seen, to avoid a column to be
              * used twice */
-            PFarray_t *seen = PFarray (sizeof(PFalg_att_t), DEF_WIDTH);
+            PFarray_t *seen = PFarray (sizeof(PFalg_col_t), DEF_WIDTH);
             for (unsigned int i = 0; i < ori->schema.count; i++) {
-                PFalg_att_t col = littbl_column (ori->schema.items[i].name,
+                PFalg_col_t col = littbl_column (ori->schema.items[i].name,
                                                  ori, cse, seen);
 
-                *((PFalg_att_t *) PFarray_add (seen)) = col;
+                *((PFalg_col_t *) PFarray_add (seen)) = col;
 
-                INACTATT (actmap,
-                          actatt (col,
+                INACTCOL (actmap,
+                          actcol (col,
                                   ori->schema.items[i].name));
             }
         }   break;
 
         case la_empty_tbl:
         {
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
 
             assert (cse->schema.count == ori->schema.count);
 
             for (unsigned int i = 0; i < ori->schema.count; i++) {
-                INACTATT (actmap,
-                          actatt (cse->schema.items[i].name,
+                INACTCOL (actmap,
+                          actcol (cse->schema.items[i].name,
                                   ori->schema.items[i].name));
             }
         }   break;
 
         case la_ref_tbl:
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
 
             assert (ori->schema.count == cse->schema.count);
 
             /* we assume that columns are aligned, see match () */
             for (unsigned int i = 0; i < ori->schema.count; i++) {
-                 INACTATT (actmap,
-                           actatt (cse->schema.items[i].name,
+                 INACTCOL (actmap,
+                           actcol (cse->schema.items[i].name,
                                    ori->schema.items[i].name));
             }
             break;
 
         case la_attach:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT(actmap,
-                     actatt (cse->sem.attach.res, ori->sem.attach.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL(actmap,
+                     actcol (cse->sem.attach.res, ori->sem.attach.res));
             break;
 
         case la_cross:
         case la_eqjoin:
         case la_thetajoin:
         {
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             for (unsigned int i = 0; i < PFarray_last (ACT(R(ori))); i++) {
-                *(actatt_map_t *) PFarray_add (actmap) =
-                           *(actatt_map_t *) PFarray_at (ACT(R(ori)), i);
+                *(actcol_map_t *) PFarray_add (actmap) =
+                           *(actcol_map_t *) PFarray_at (ACT(R(ori)), i);
             }
         }   break;
 
         case la_semijoin:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_project:
         {
             unsigned int i = 0;
 
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
 
             assert (cse->sem.proj.count == ori->sem.proj.count);
 
             /* check for consistency */
             for (i = 0; i < cse->sem.proj.count; i++) {
                  if (cse->sem.proj.items[i].old !=
-                     ACTATT (L(ori), ori->sem.proj.items[i].old))
+                     ACTCOL (L(ori), ori->sem.proj.items[i].old))
                      PFoops (OOPS_FATAL,
                              "projection name not found");
             }
 
-            /* very restricted due to alignment of attributes */
+            /* very restricted due to alignment of columns */
             /* adjustment */
             for (i = 0; i < cse->sem.proj.count; i++) {
                  if (cse->sem.proj.items[i].old ==
-                     ACTATT (L(ori), ori->sem.proj.items[i].old)) {
-                     INACTATT (actmap,
-                               actatt (cse->sem.proj.items[i].new,
+                     ACTCOL (L(ori), ori->sem.proj.items[i].old)) {
+                     INACTCOL (actmap,
+                               actcol (cse->sem.proj.items[i].new,
                                        ori->sem.proj.items[i].new));
                  }
             }
@@ -2272,23 +2262,23 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 
         case la_select:
         case la_pos_select:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_disjunion:
         case la_intersect:
         case la_difference:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_distinct:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_fun_1to1:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT (actmap,
-                      actatt (cse->sem.fun_1to1.res,
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL (actmap,
+                      actcol (cse->sem.fun_1to1.res,
                               ori->sem.fun_1to1.res));
             break;
 
@@ -2297,204 +2287,204 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_bool_and:
         case la_bool_or:
         case la_to:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT(actmap,
-                     actatt (cse->sem.binary.res, ori->sem.binary.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL(actmap,
+                     actcol (cse->sem.binary.res, ori->sem.binary.res));
             break;
 
         case la_bool_not:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT(actmap,
-                     actatt (cse->sem.unary.res, ori->sem.unary.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL(actmap,
+                     actcol (cse->sem.unary.res, ori->sem.unary.res));
             break;
 
         case la_avg:
         case la_max:
         case la_min:
         case la_sum:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.aggr.res, ori->sem.aggr.res),
-                      actatt (cse->sem.aggr.att, ori->sem.aggr.att));
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.aggr.res, ori->sem.aggr.res),
+                      actcol (cse->sem.aggr.col, ori->sem.aggr.col));
 
-            assert ((cse->sem.aggr.part == att_NULL &&
-                     ori->sem.aggr.part == att_NULL) ||
-                    (cse->sem.aggr.part != att_NULL &&
-                     ori->sem.aggr.part != att_NULL));
+            assert ((cse->sem.aggr.part == col_NULL &&
+                     ori->sem.aggr.part == col_NULL) ||
+                    (cse->sem.aggr.part != col_NULL &&
+                     ori->sem.aggr.part != col_NULL));
 
-            if (cse->sem.aggr.part != att_NULL)
-                INACTATT (actmap,
-                          actatt (cse->sem.aggr.part, ori->sem.aggr.part));
+            if (cse->sem.aggr.part != col_NULL)
+                INACTCOL (actmap,
+                          actcol (cse->sem.aggr.part, ori->sem.aggr.part));
 
             break;
 
         case la_count:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.aggr.res, ori->sem.aggr.res));
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.aggr.res, ori->sem.aggr.res));
 
-            assert ((cse->sem.aggr.part == att_NULL &&
-                     ori->sem.aggr.part == att_NULL) ||
-                    (cse->sem.aggr.part != att_NULL &&
-                     ori->sem.aggr.part != att_NULL));
+            assert ((cse->sem.aggr.part == col_NULL &&
+                     ori->sem.aggr.part == col_NULL) ||
+                    (cse->sem.aggr.part != col_NULL &&
+                     ori->sem.aggr.part != col_NULL));
 
-            if (ori->sem.aggr.part != att_NULL)
-                INACTATT (actmap,
-                           actatt (cse->sem.aggr.part, ori->sem.aggr.part));
+            if (ori->sem.aggr.part != col_NULL)
+                INACTCOL (actmap,
+                           actcol (cse->sem.aggr.part, ori->sem.aggr.part));
             break;
 
         case la_rownum:
         case la_rowrank:
         case la_rank:
-           actmap = actatt_map_copy (ACT(L(ori)));
-           INACTATT (actmap,
-                     actatt (cse->sem.sort.res, ori->sem.sort.res));
+           actmap = actcol_map_copy (ACT(L(ori)));
+           INACTCOL (actmap,
+                     actcol (cse->sem.sort.res, ori->sem.sort.res));
            break;
 
         case la_rowid:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT (actmap,
-                      actatt (cse->sem.rowid.res, ori->sem.rowid.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL (actmap,
+                      actcol (cse->sem.rowid.res, ori->sem.rowid.res));
             break;
 
         case la_type:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT (actmap,
-                      actatt (cse->sem.type.res, ori->sem.type.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL (actmap,
+                      actcol (cse->sem.type.res, ori->sem.type.res));
             break;
 
         case la_type_assert:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_cast:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT (actmap,
-                      actatt (cse->sem.type.res, ori->sem.type.res));
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL (actmap,
+                      actcol (cse->sem.type.res, ori->sem.type.res));
             break;
 
         case la_seqty1:
         case la_all:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.aggr.res, ori->sem.aggr.res));
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.aggr.res, ori->sem.aggr.res));
 
-            assert ((cse->sem.aggr.part == att_NULL &&
-                     ori->sem.aggr.part == att_NULL) ||
-                    (cse->sem.aggr.part != att_NULL &&
-                     ori->sem.aggr.part != att_NULL));
+            assert ((cse->sem.aggr.part == col_NULL &&
+                     ori->sem.aggr.part == col_NULL) ||
+                    (cse->sem.aggr.part != col_NULL &&
+                     ori->sem.aggr.part != col_NULL));
 
-            if (cse->sem.aggr.part != att_NULL)
-                INACTATT (actmap,
-                    actatt (cse->sem.aggr.part, ori->sem.aggr.part));
+            if (cse->sem.aggr.part != col_NULL)
+                INACTCOL (actmap,
+                    actcol (cse->sem.aggr.part, ori->sem.aggr.part));
 
             break;
 
         case la_step:
         case la_guide_step:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.step.item_res, ori->sem.step.item_res),
-                      actatt (cse->sem.step.iter, ori->sem.step.iter));
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.step.item_res, ori->sem.step.item_res),
+                      actcol (cse->sem.step.iter, ori->sem.step.iter));
             break;
 
         case la_step_join:
         case la_guide_step_join:
-            actmap = actatt_map_copy (ACT(R(ori)));
-            INACTATT (actmap,
-                      actatt (cse->sem.step.item_res, ori->sem.step.item_res));
+            actmap = actcol_map_copy (ACT(R(ori)));
+            INACTCOL (actmap,
+                      actcol (cse->sem.step.item_res, ori->sem.step.item_res));
             break;
 
         case la_doc_index_join:
-            actmap = actatt_map_copy (ACT(R(ori)));
-            INACTATT (actmap,
-                      actatt (
+            actmap = actcol_map_copy (ACT(R(ori)));
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.doc_join.item_res,
                           ori->sem.doc_join.item_res));
             break;
 
         case la_doc_tbl:
-            actmap = actatt_map_copy (ACT(L(ori)));
-            INACTATT (actmap,
-                      actatt (
+            actmap = actcol_map_copy (ACT(L(ori)));
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.doc_tbl.res,
                           ori->sem.doc_tbl.res));
             break;
 
         case la_doc_access:
-            actmap = actatt_map_copy (ACT(R(ori)));
-            INACTATT (actmap,
-                      actatt (
+            actmap = actcol_map_copy (ACT(R(ori)));
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.doc_access.res,
                           ori->sem.doc_access.res));
             break;
 
         case la_twig:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.iter_item.item, ori->sem.iter_item.item),
-                      actatt (
+                      actcol (
                           cse->sem.iter_item.iter, ori->sem.iter_item.iter));
             break;
 
         case la_fcns:
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             break;
 
         case la_attribute:
         case la_processi:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.iter_item1_item2.item1,
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.iter_item1_item2.item1,
                               cse->sem.iter_item1_item2.item1),
-                      actatt (cse->sem.iter_item1_item2.item2,
+                      actcol (cse->sem.iter_item1_item2.item2,
                               ori->sem.iter_item1_item2.item2),
-                      actatt (cse->sem.iter_item1_item2.iter,
+                      actcol (cse->sem.iter_item1_item2.iter,
                               ori->sem.iter_item1_item2.iter));
             break;
 
         case la_docnode:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.docnode.iter, ori->sem.docnode.iter));
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.docnode.iter, ori->sem.docnode.iter));
             break;
 
         case la_content:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.iter_pos_item.item,
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.iter_pos_item.item,
                               ori->sem.iter_pos_item.item),
-                      actatt (cse->sem.iter_pos_item.pos,
+                      actcol (cse->sem.iter_pos_item.pos,
                               ori->sem.iter_pos_item.pos),
-                      actatt (cse->sem.iter_pos_item.iter,
+                      actcol (cse->sem.iter_pos_item.iter,
                               ori->sem.iter_pos_item.iter));
             break;
 
         case la_element:
         case la_textnode:
         case la_comment:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.iter_item.item, ori->sem.iter_item.item),
-                      actatt (
+                      actcol (
                           cse->sem.iter_item.iter, ori->sem.iter_item.iter));
             break;
 
         case la_merge_adjacent:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (cse->sem.merge_adjacent.iter_res,
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (cse->sem.merge_adjacent.iter_res,
                               ori->sem.merge_adjacent.iter_res),
-                      actatt (cse->sem.merge_adjacent.pos_res,
+                      actcol (cse->sem.merge_adjacent.pos_res,
                               ori->sem.merge_adjacent.pos_res),
-                      actatt (cse->sem.merge_adjacent.item_res,
+                      actcol (cse->sem.merge_adjacent.item_res,
                               ori->sem.merge_adjacent.item_res));
             break;
 
         case la_roots:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_fragment:
@@ -2502,16 +2492,16 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_frag_union:
             /* this operator doesn't have schema information and thus no
              * projection list */
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             break;
 
         case la_error:
         case la_cond_err:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_nil:
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             break;
 
         case la_trace:
@@ -2519,50 +2509,50 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_trace_map:
             assert (!"missing implementation");
         case la_rec_fix:
-            actmap = actatt_map_copy (ACT(R(ori)));
+            actmap = actcol_map_copy (ACT(R(ori)));
             break;
 
         case la_rec_param:
             /* this operator doesn't have schema information and thus no
              * projection list */
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             break;
 
         case la_rec_arg:
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
         case la_rec_base:
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
 
             assert (ori->schema.count == cse->schema.count);
 
             for (unsigned int i = 0; i < ori->schema.count; i++) {
-                INACTATT (actmap,
-                          actatt (
+                INACTCOL (actmap,
+                          actcol (
                              cse->schema.items[i].name,
                              ori->schema.items[i].name));
             }
             break;
 
         case la_fun_call:
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             /* the schema doesn't change for this operator */
             for (unsigned int i = 0; i < ori->schema.count; i++) {
-                INACTATT (actmap,
-                          actatt (
+                INACTCOL (actmap,
+                          actcol (
                              ori->schema.items[i].name,
                              ori->schema.items[i].name));
             }
             break;
         case la_fun_param:
             /* simply copy the schema of the left operator */
-            actmap = actatt_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(L(ori)));
             break;
         case la_fun_frag_param:
             /* since this operator doesn't has an associated schema,
              * we create an empty map */
-            actmap = create_actatt_map ();
+            actmap = create_actcol_map ();
             break;
         case la_proxy:
         case la_proxy_base:
@@ -2572,12 +2562,12 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                     ID[ori->kind]);
 
         case la_string_join:
-            actmap = create_actatt_map ();
-            INACTATT (actmap,
-                      actatt (
+            actmap = create_actcol_map ();
+            INACTCOL (actmap,
+                      actcol (
                           cse->sem.string_join.item_res,
                           ori->sem.string_join.item_res),
-                      actatt (
+                      actcol (
                           cse->sem.string_join.iter_res,
                           ori->sem.string_join.iter_res));
             break;
@@ -2652,10 +2642,10 @@ la_cse (PFla_op_t *n)
          * not set */
         temp = new_operator (n);
 
-        /* consistency check, no attribute in the schema
-         * has the name att_NULL*/
+        /* consistency check, no column in the schema
+         * has the name col_NULL*/
         for (unsigned int i = 0; i < temp->schema.count; i++) {
-             if (temp->schema.items[i].name == att_NULL)
+             if (temp->schema.items[i].name == col_NULL)
                  PFoops (OOPS_FATAL,
                          "(NULL) found in schema of %s", ID[temp->kind]);
         }
@@ -2724,7 +2714,7 @@ PFalgopt_cse (PFla_op_t *n)
 {
     /* initialize maps */
     cse_map = PFarray (sizeof (ori_cse_map_t), 256);
-    actatt_map = PFarray (sizeof (ori_actatt_map_t), 256);
+    actcol_map = PFarray (sizeof (ori_actcol_map_t), 256);
     ori_map = PFarray (sizeof (cse_ori_map_t), 256);
 
     /* initialize subexpression array (and clear it) */

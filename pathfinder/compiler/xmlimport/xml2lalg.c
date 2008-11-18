@@ -133,7 +133,7 @@
 ------------------------------------------------------------------------------*/
 
 /**              
- * Macro return-type:  PFalg_att_t 
+ * Macro return-type:  PFalg_col_t 
  * XPath return-type:  attribute(){1}
  */
 #define PFLA_ATT(xpath) \
@@ -142,14 +142,14 @@
             PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
- * Macro return-type:  PFalg_att_t 
+ * Macro return-type:  PFalg_col_t 
  * XPath return-type:  attribute()?
  */
 #define PFLA_ATT_O(xpath, fallback) \
             getPFLA_OptionalAttribute(ctx, nodePtr, xpath, fallback)
 
 /**              
- * Macro return-type:  PFalg_attlist_t 
+ * Macro return-type:  PFalg_collist_t *
  * XPath return-type:  element(column)*
  */
 #define PFLA_ATT_LST(xpath) \
@@ -378,12 +378,12 @@ getRootNode(XML2LALGContext* ctx);
 PFla_op_kind_t 
 getPFLAOpKind(XML2LALGContext* ctx, xmlNodePtr nodePtr);
 
-PFalg_att_t 
+PFalg_col_t 
 getPFLA_OptionalAttribute(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
     const char* xpathExpression, 
-    PFalg_att_t fallback);
+    PFalg_col_t fallback);
 
 PFalg_atom_t 
 getPFLA_Atom(
@@ -391,7 +391,7 @@ getPFLA_Atom(
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
 
-PFalg_attlist_t 
+PFalg_collist_t *
 getPFLA_AttributeList(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
@@ -974,7 +974,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              E2INT("/content/position"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;
@@ -1207,7 +1207,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;                       
@@ -1230,7 +1230,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              CHILDNODE(0), 
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;
@@ -1256,7 +1256,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ORDERING("/content/column[@function='sort']"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;
@@ -1419,7 +1419,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;
@@ -1444,7 +1444,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        att_NULL)
+                        col_NULL)
              );
         }  
         break;
@@ -2356,15 +2356,15 @@ getPFLAOpKind(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     return PFxml2la_conv_2PFLA_OpKind(nodeKindAsXMLString);
 }
 
-PFalg_att_t 
+PFalg_col_t 
 getPFLA_OptionalAttribute(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
     const char* xpathExpression, 
-    PFalg_att_t fallback)
+    PFalg_col_t fallback)
 {
 
-    PFalg_att_t value = fallback;
+    PFalg_col_t value = fallback;
 
     xmlNodePtr xml_att =  
         PFxml2la_xpath_getNthNode(XPATH(xpathExpression), 0);
@@ -2418,7 +2418,7 @@ getPFLA_Atom(
 /*
 todo: check order...
 */
-PFalg_attlist_t 
+PFalg_collist_t *
 getPFLA_AttributeList(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
@@ -2435,7 +2435,7 @@ getPFLA_AttributeList(
 
 
     /* (1) fetch the attributes from xml */
-    PFalg_att_t* atts = PFmalloc (attsCount * sizeof (PFalg_att_t));
+    PFalg_col_t* atts = PFmalloc (attsCount * sizeof (PFalg_col_t));
     for (int i = 0; i < attsCount; i++)
     {
         /*
@@ -2449,12 +2449,12 @@ getPFLA_AttributeList(
     }             
 
     /* (2) construct the attribute list  */
-    PFalg_attlist_t attlist = PFalg_attlist_(attsCount, atts);
+    PFalg_collist_t *collist = PFalg_collist_(attsCount, atts);
 
     if(atts_xml)
         xmlXPathFreeObject(atts_xml);
 
-    return attlist;
+    return collist;
 
 }
 
@@ -2483,7 +2483,7 @@ getPFLA_Schema(
 
         xmlNodePtr column_xml = PFxml2la_xpath_getNthNode(columns_xml, i);
 
-        PFalg_att_t columnName = ctx->convert2PFLA_attributeName(
+        PFalg_col_t columnName = ctx->convert2PFLA_attributeName(
             PFxml2la_xpath_getAttributeValueFromElementNode(
                 column_xml, "name"));
 
@@ -2535,7 +2535,7 @@ getPFLA_KeyInfos(
         {
             xmlNodePtr  keyColumn_xml;
             char       *columnName;
-            PFalg_att_t keyAttribute;
+            PFalg_col_t keyAttribute;
             
             keyColumn_xml = PFxml2la_xpath_getNthNode(keyColumns_xml, j);
             columnName = (char*) xmlXPathCastToString(
@@ -2795,7 +2795,7 @@ getPFLA_Ordering(
        to the specified sort columns */
     for (int i = 0; i < orderingsCount; i++)
     {
-        PFalg_att_t attribute = ctx->convert2PFLA_attributeName(
+        PFalg_col_t attribute = ctx->convert2PFLA_attributeName(
             PFxml2la_xpath_getAttributeValueFromElementNode(
                 PFxml2la_xpath_getNthNode(
                     sortColumns_xml, i), "name")); 

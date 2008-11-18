@@ -57,10 +57,11 @@
 #include "mem.h"          /* PFmalloc() */
 #include "oops.h"
 
-/* apply cse before rewriting */
-#include "algebra_cse.h"
 /* mnemonic algebra constructors */
 #include "logical_mnemonic.h"
+
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
 
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
@@ -73,14 +74,14 @@ static char opt_indicator;
 #define SEEN(p) ((p)->bit_dag)
 
 struct sort_struct {
-    PFalg_att_t  att; /* sort column */
+    PFalg_col_t  col; /* sort column */
     bool         dir; /* sort order direction */
     bool         vis; /* indicator if the sort column is visible */
 };
 typedef struct sort_struct sort_struct;
 
 /* mnemonic for a value lookup in the sort struct */
-#define ATT_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).att)
+#define ATT_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).col)
 #define DIR_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).dir)
 #define VIS_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).vis)
 
@@ -89,7 +90,7 @@ typedef struct sort_struct sort_struct;
  * (special variant).
  */
 static PFla_op_t *
-rank_opt (PFla_op_t *n, PFalg_att_t res, PFarray_t *sortby)
+rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
 {
     PFla_op_t *ret = PFla_rank_opt_internal (n, res, sortby);
     unsigned int i, j, count;
@@ -119,13 +120,13 @@ rank_opt (PFla_op_t *n, PFalg_att_t res, PFarray_t *sortby)
         /* make sure that all input columns (to the rank are available) */
         if (!PFprop_ocol (n, ATT_AT(sortby, i)))
            PFoops (OOPS_FATAL,
-                   "attribute '%s' not found in rank",
-                   PFatt_str (ATT_AT(sortby, i)));
+                   "column '%s' not found in rank",
+                   PFcol_str (ATT_AT(sortby, i)));
     }
     if (PFprop_ocol (n, res))
        PFoops (OOPS_FATAL,
                "result column '%s' found in rank input",
-               PFatt_str (res));
+               PFcol_str (res));
 #endif
 
     /* add the result column */
@@ -142,13 +143,13 @@ rank_opt (PFla_op_t *n, PFalg_att_t res, PFarray_t *sortby)
 /**
  * resolve_name_conflict renames a column of the rank
  * predicates if it conflicts with a newly introduced column
- * name @a att. (This can of course only happen if the
+ * name @a col. (This can of course only happen if the
  * conflicting column names are not visible anymore.)
  */
 static void
-resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
+resolve_name_conflict (PFla_op_t *n, PFalg_col_t col)
 {
-    PFalg_att_t  used_cols = 0;
+    PFalg_col_t  used_cols = 0;
     bool         conflict  = false;
     PFarray_t   *sortby;
     unsigned int i;
@@ -158,13 +159,13 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
     sortby = n->sem.rank_opt.sortby;
 
     /* collect all the names in use */
-    used_cols = att;
+    used_cols = col;
     for (i = 0; i < n->schema.count; i++)
         used_cols = used_cols | n->schema.items[i].name;
 
     /* check for conflicts */
     for (i = 0; i < PFarray_last (sortby); i++) {
-        if (ATT_AT(sortby, i) == att) {
+        if (ATT_AT(sortby, i) == col) {
             /* If the input to the order constraint is used above
                while it is still visible a thinking
                error has sneaked in. */
@@ -181,10 +182,10 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
     if (conflict) {
         PFalg_proj_t *proj = PFmalloc (L(n)->schema.count *
                                        sizeof (PFalg_proj_t));
-        PFalg_att_t new_col, cur_col;
+        PFalg_col_t new_col, cur_col;
 
         /* generate new column name */
-        new_col = PFalg_ori_name (PFalg_unq_name (att),
+        new_col = PFalg_ori_name (PFalg_unq_name (col),
                                   ~used_cols);
         used_cols = used_cols | new_col;
 
@@ -192,10 +193,10 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
         for (i = 0; i < L(n)->schema.count; i++) {
             cur_col = L(n)->schema.items[i].name;
 
-            if (cur_col != att)
+            if (cur_col != col)
                 proj[i] = PFalg_proj (cur_col, cur_col);
             else
-                proj[i] = PFalg_proj (new_col, att);
+                proj[i] = PFalg_proj (new_col, col);
         }
 
         /* place a renaming projection underneath the rank */
@@ -203,7 +204,7 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
 
         /* update all the references in the sort list */
         for (i = 0; i < PFarray_last (sortby); i++)
-            if (ATT_AT(sortby, i) == att)
+            if (ATT_AT(sortby, i) == col)
                 ATT_AT(sortby, i) = new_col;
     }
 }
@@ -218,7 +219,7 @@ resolve_name_conflict (PFla_op_t *n, PFalg_att_t att)
 static void
 resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
 {
-    PFalg_att_t  used_cols = 0,
+    PFalg_col_t  used_cols = 0,
                  conf_cols = 0,
                  sort_cols = 0;
     bool         conflict = false;
@@ -257,7 +258,7 @@ resolve_name_conflicts (PFla_op_t *n, PFalg_schema_t schema)
     if (conflict) {
         PFalg_proj_t *proj = PFmalloc (L(n)->schema.count *
                                        sizeof (PFalg_proj_t));
-        PFalg_att_t new_col, cur_col;
+        PFalg_col_t new_col, cur_col;
 
         /* fill renaming projection list */
         for (i = 0; i < L(n)->schema.count; i++) {
@@ -351,23 +352,23 @@ rank_stable_col_count (PFla_op_t *p)
 static bool
 modify_binary_op (PFla_op_t *p,
                   PFla_op_t * (* op) (const PFla_op_t *,
-                                      PFalg_att_t,
-                                      PFalg_att_t,
-                                      PFalg_att_t))
+                                      PFalg_col_t,
+                                      PFalg_col_t,
+                                      PFalg_col_t))
 {
     bool modified = false;
 
     if (is_rr (L(p)) &&
-        p->sem.binary.att1 != L(p)->sem.rank_opt.res &&
-        p->sem.binary.att2 != L(p)->sem.rank_opt.res) {
+        p->sem.binary.col1 != L(p)->sem.rank_opt.res &&
+        p->sem.binary.col2 != L(p)->sem.rank_opt.res) {
 
         resolve_name_conflict (L(p), p->sem.binary.res);
 
         *p = *(rank_opt (
                    op (LL(p),
                        p->sem.binary.res,
-                       p->sem.binary.att1,
-                       p->sem.binary.att2),
+                       p->sem.binary.col1,
+                       p->sem.binary.col2),
                    L(p)->sem.rank_opt.res,
                    L(p)->sem.rank_opt.sortby));
         modified = true;
@@ -450,12 +451,12 @@ opt_rank (PFla_op_t *p)
 
         case la_eqjoin:
             if (is_rr (L(p)) &&
-                p->sem.eqjoin.att1 != L(p)->sem.rank_opt.res) {
+                p->sem.eqjoin.col1 != L(p)->sem.rank_opt.res) {
                 resolve_name_conflicts (L(p), R(p)->schema);
                 *p = *(rank_opt (eqjoin (LL(p),
                                          R(p),
-                                         p->sem.eqjoin.att1,
-                                         p->sem.eqjoin.att2),
+                                         p->sem.eqjoin.col1,
+                                         p->sem.eqjoin.col2),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -463,12 +464,12 @@ opt_rank (PFla_op_t *p)
 
             }
             if (is_rr (R(p)) &&
-                p->sem.eqjoin.att2 != R(p)->sem.rank_opt.res) {
+                p->sem.eqjoin.col2 != R(p)->sem.rank_opt.res) {
                 resolve_name_conflicts (R(p), L(p)->schema);
                 *p = *(rank_opt (eqjoin (L(p),
                                          RL(p),
-                                         p->sem.eqjoin.att1,
-                                         p->sem.eqjoin.att2),
+                                         p->sem.eqjoin.col1,
+                                         p->sem.eqjoin.col2),
                                  R(p)->sem.rank_opt.res,
                                  R(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -479,8 +480,8 @@ opt_rank (PFla_op_t *p)
             if (opt_indicator == OPT_ROWID_SPLIT &&
                 is_rr (L(p)) &&
                 is_rr (R(p)) &&
-                p->sem.eqjoin.att1 == L(p)->sem.rank_opt.res &&
-                p->sem.eqjoin.att2 == R(p)->sem.rank_opt.res &&
+                p->sem.eqjoin.col1 == L(p)->sem.rank_opt.res &&
+                p->sem.eqjoin.col2 == R(p)->sem.rank_opt.res &&
                 PFarray_last (L(p)->sem.rank_opt.sortby) == 2 &&
                 PFarray_last (R(p)->sem.rank_opt.sortby) == 2 &&
                 DIR_AT (L(p)->sem.rank_opt.sortby, 0) == DIR_ASC &&
@@ -494,10 +495,10 @@ opt_rank (PFla_op_t *p)
                 /* we now normalized the input to read:
                  *
                  *                             |
-                 *                            |X|_latt=ratt
+                 *                            |X|_lcol=rcol
                  *                  __________/ \__________
                  *                 /                       \
-                 *           lp: int_latt:            rp: int_ratt
+                 *           lp: int_lcol:            rp: int_rcol
                  *                |  <lsort1,lsort2>       |  <rsort1,rsort2>
                  *                |                        |
                  *               pi                       / \ 
@@ -512,7 +513,7 @@ opt_rank (PFla_op_t *p)
                  *                          |
                  *                         pi_upproj
                  *                          |
-                 *                         int_latt:
+                 *                         int_lcol:
                  *                          |  <lsort1,lsort2>
                  *                          |
                  *                         |X|_lsort1=rsort1
@@ -529,8 +530,8 @@ opt_rank (PFla_op_t *p)
                  *          |            |
                  *  lcross: #    rcross: #
                  */
-                PFalg_att_t   latt,
-                              ratt,
+                PFalg_col_t   lcol,
+                              rcol,
                               lsort1,
                               lsort2,
                               rsort1,
@@ -561,8 +562,8 @@ opt_rank (PFla_op_t *p)
                     LLL(p)->kind == la_cross &&
                     LLLL(p)->kind == la_rowid &&
                     LLLR(p)->kind == la_rowid) {
-                    latt = p->sem.eqjoin.att1,
-                    ratt = p->sem.eqjoin.att2;
+                    lcol = p->sem.eqjoin.col1,
+                    rcol = p->sem.eqjoin.col2;
                     lp   = L(p);
                     rp   = R(p);
                 }
@@ -570,8 +571,8 @@ opt_rank (PFla_op_t *p)
                     RLL(p)->kind == la_cross &&
                     RLLL(p)->kind == la_rowid &&
                     RLLR(p)->kind == la_rowid) {
-                    latt = p->sem.eqjoin.att2,
-                    ratt = p->sem.eqjoin.att1;
+                    lcol = p->sem.eqjoin.col2,
+                    rcol = p->sem.eqjoin.col1;
                     lp   = R(p);
                     rp   = L(p);
                 }
@@ -583,8 +584,8 @@ opt_rank (PFla_op_t *p)
                 lsortby    = lp->sem.rank_opt.sortby,
                 lsort1     = ATT_AT (lsortby, 0);
                 lsort2     = ATT_AT (lsortby, 1);
-                lsort1_old = att_NULL;
-                lsort2_old = att_NULL;
+                lsort1_old = col_NULL;
+                lsort2_old = col_NULL;
                 lproj      = PFmalloc (L(lp)->schema.count *
                                        sizeof (PFalg_proj_t));
                 rproj      = PFmalloc (L(lp)->schema.count *
@@ -600,7 +601,7 @@ opt_rank (PFla_op_t *p)
                     if (lsort2 == L(lp)->sem.proj.items[i].new)
                         lsort2_old = L(lp)->sem.proj.items[i].old;
                 } 
-                assert (lsort1_old != att_NULL && lsort2_old != att_NULL);
+                assert (lsort1_old != col_NULL && lsort2_old != col_NULL);
 
                 /* find correct side of the cross product */
                 if (LLL(lp)->sem.rowid.res == lsort1_old &&
@@ -682,19 +683,19 @@ opt_rank (PFla_op_t *p)
                 upproj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
                 for (i = 0; i < p->schema.count; i++) {
                     cur = p->schema.items[i].name;
-                    if (cur == ratt)
-                        upproj[i] = proj (ratt, latt);
+                    if (cur == rcol)
+                        upproj[i] = proj (rcol, lcol);
                     else
                         upproj[i] = proj (cur, cur);
                 }
                 
                 sortby = PFarray (sizeof (sort_struct), 2);
                 *(sort_struct *) PFarray_add (sortby) =
-                    (sort_struct) { .att = lsort1_new,
+                    (sort_struct) { .col = lsort1_new,
                                     .dir = DIR_ASC,
                                     .vis = false };
                 *(sort_struct *) PFarray_add (sortby) =
-                    (sort_struct) { .att = lsort2_new,
+                    (sort_struct) { .col = lsort2_new,
                                     .dir = DIR_ASC,
                                     .vis = false };
 
@@ -702,34 +703,34 @@ opt_rank (PFla_op_t *p)
                 fprintf(stderr,"lproj: ");
                 for (i = 0; i < lcount; i++) {
                     fprintf(stderr,"%s:%s, ",
-                        PFatt_str(lproj[i].new),
-                        PFatt_str(lproj[i].old));
+                        PFcol_str(lproj[i].new),
+                        PFcol_str(lproj[i].old));
                 }
                 fprintf(stderr,"\n");
                 fprintf(stderr,"rproj: ");
                 for (i = 0; i < rcount; i++) {
                     fprintf(stderr,"%s:%s, ",
-                        PFatt_str(rproj[i].new),
-                        PFatt_str(rproj[i].old));
+                        PFcol_str(rproj[i].new),
+                        PFcol_str(rproj[i].old));
                 }
                 fprintf(stderr,"\n");
                 
                 fprintf(stderr,"L(rp): ");
                 for (i = 0; i < L(rp)->schema.count; i++) {
                     fprintf(stderr,"%s, ",
-                        PFatt_str(L(rp)->schema.items[i].name));
+                        PFcol_str(L(rp)->schema.items[i].name));
                 }
                 fprintf(stderr,"\n");
 
                 fprintf (stderr,"%s:%s %s:%s -- %s %s -- %s=%s\n",
-                        PFatt_str(lsort1_new),
-                        PFatt_str(lsort1),
-                        PFatt_str(lsort2_new),
-                        PFatt_str(lsort2),
-                        PFatt_str(rsort1),
-                        PFatt_str(rsort2),
-                        PFatt_str(latt),
-                        PFatt_str(ratt));
+                        PFcol_str(lsort1_new),
+                        PFcol_str(lsort1),
+                        PFcol_str(lsort2_new),
+                        PFcol_str(lsort2),
+                        PFcol_str(rsort1),
+                        PFcol_str(rsort2),
+                        PFcol_str(lcol),
+                        PFcol_str(rcol));
 #endif
 
                 /* Transform the pattern into two equi-joins and a split
@@ -745,7 +746,7 @@ opt_rank (PFla_op_t *p)
                                           rsort2),
                                   lsort1_new,
                                   rsort1),
-                              latt,
+                              lcol,
                               sortby),
                           p->schema.count,
                           upproj);
@@ -756,11 +757,11 @@ opt_rank (PFla_op_t *p)
 
         case la_semijoin:
             if (is_rr (L(p)) &&
-                p->sem.eqjoin.att1 != L(p)->sem.rank_opt.res) {
+                p->sem.eqjoin.col1 != L(p)->sem.rank_opt.res) {
                 *p = *(rank_opt (semijoin (LL(p),
                                            R(p),
-                                           p->sem.eqjoin.att1,
-                                           p->sem.eqjoin.att2),
+                                           p->sem.eqjoin.col1,
+                                           p->sem.eqjoin.col2),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -818,13 +819,13 @@ opt_rank (PFla_op_t *p)
         case la_project:
             /* Push project operator beyond the rank. */
             if (is_rr (L(p))) {
-                PFalg_att_t   res    = L(p)->sem.rank_opt.res;
+                PFalg_col_t   res    = L(p)->sem.rank_opt.res;
                 PFarray_t    *sortby = PFarray_copy (L(p)->sem.rank_opt.sortby);
                 unsigned int  i,
                               j,
                               count = 0;
                 PFalg_proj_t *proj;
-                PFalg_att_t   used_cols = 0;
+                PFalg_col_t   used_cols = 0;
                 bool          res_used = false;
 
                 /* prune the rank operator if it is not used anymore */
@@ -866,7 +867,7 @@ opt_rank (PFla_op_t *p)
                             VIS_AT (sortby, i) = false;
                         else
                             /* update the column name of all referenced
-                               join attributes */
+                               join columns */
                             ATT_AT (sortby, i) = p->sem.proj.items[j].new;
                     }
                     if (!VIS_AT (sortby, i))
@@ -904,7 +905,7 @@ opt_rank (PFla_op_t *p)
 
                         if (j == count) {
                             /* introduce a new column name ... */
-                            PFalg_att_t new_col;
+                            PFalg_col_t new_col;
                             new_col = PFalg_ori_name (
                                           PFalg_unq_name (ATT_AT(sortby, i)),
                                           ~used_cols);
@@ -916,7 +917,7 @@ opt_rank (PFla_op_t *p)
                                                         ATT_AT(sortby, i));
                         }
                         /* update the column name of the referenced
-                           join attributes */
+                           join columns */
                         ATT_AT (sortby, i) = proj[j].new;
                     }
 
@@ -937,9 +938,9 @@ opt_rank (PFla_op_t *p)
 
         case la_select:
             if (is_rr (L(p)) &&
-                p->sem.select.att != L(p)->sem.rank_opt.res) {
+                p->sem.select.col != L(p)->sem.rank_opt.res) {
                 *p = *(rank_opt (select_ (LL(p),
-                                          p->sem.select.att),
+                                          p->sem.select.col),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -1076,8 +1077,8 @@ opt_rank (PFla_op_t *p)
             if (is_rr (L(p))) {
                 bool res_used = false;
 
-                for (unsigned int i = 0; i < p->sem.fun_1to1.refs.count; i++)
-                    if (p->sem.fun_1to1.refs.atts[i] ==
+                for (unsigned int i = 0; i < clsize (p->sem.fun_1to1.refs); i++)
+                    if (clat (p->sem.fun_1to1.refs, i) ==
                         L(p)->sem.rank_opt.res) {
                         res_used = true;
                         break;
@@ -1112,12 +1113,12 @@ opt_rank (PFla_op_t *p)
 
         case la_bool_not:
             if (is_rr (L(p)) &&
-                p->sem.unary.att != L(p)->sem.rank_opt.res) {
+                p->sem.unary.col != L(p)->sem.rank_opt.res) {
                 resolve_name_conflict (L(p), p->sem.unary.res);
                 *p = *(rank_opt (
                            PFla_not (LL(p),
                                      p->sem.unary.res,
-                                     p->sem.unary.att),
+                                     p->sem.unary.col),
                            L(p)->sem.rank_opt.res,
                            L(p)->sem.rank_opt.sortby));
                 modified = true;
@@ -1215,7 +1216,7 @@ opt_rank (PFla_op_t *p)
         case la_rank:
             if (is_rr (L(p))) {
                 PFla_op_t *(* op) (const PFla_op_t *,
-                                   PFalg_att_t,
+                                   PFalg_col_t,
                                    PFord_ordering_t);
                 unsigned int i;
                 bool         res_used = false;
@@ -1331,7 +1332,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < i; j++)
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .att = ATT_AT (sortby, j),
+                                .col = ATT_AT (sortby, j),
                                 .dir = DIR_AT (sortby, j),
                                 .vis = VIS_AT (sortby, j)
                             };
@@ -1340,7 +1341,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < lcount; j++) {
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .att = ATT_AT (lsortby, j),
+                                .col = ATT_AT (lsortby, j),
                                 .dir = DIR_AT (lsortby, j),
                                 .vis = vis && VIS_AT (lsortby, j)
                             };
@@ -1350,7 +1351,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = i+1; j < count; j++)
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .att = ATT_AT (sortby, j),
+                                .col = ATT_AT (sortby, j),
                                 .dir = DIR_AT (sortby, j),
                                 .vis = VIS_AT (sortby, j)
                             };
@@ -1384,12 +1385,12 @@ opt_rank (PFla_op_t *p)
 
         case la_type:
             if (is_rr (L(p)) &&
-                p->sem.type.att != L(p)->sem.rank_opt.res) {
+                p->sem.type.col != L(p)->sem.rank_opt.res) {
                 resolve_name_conflict (L(p), p->sem.type.res);
                 *p = *(rank_opt (
                            type (LL(p),
                                  p->sem.type.res,
-                                 p->sem.type.att,
+                                 p->sem.type.col,
                                  p->sem.type.ty),
                            L(p)->sem.rank_opt.res,
                            L(p)->sem.rank_opt.sortby));
@@ -1399,10 +1400,10 @@ opt_rank (PFla_op_t *p)
 
         case la_type_assert:
             if (is_rr (L(p)) &&
-                p->sem.type.att != L(p)->sem.rank_opt.res) {
+                p->sem.type.col != L(p)->sem.rank_opt.res) {
                 *p = *(rank_opt (type_assert_pos (
                                      LL(p),
-                                     p->sem.type.att,
+                                     p->sem.type.col,
                                      p->sem.type.ty),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
@@ -1412,12 +1413,12 @@ opt_rank (PFla_op_t *p)
 
         case la_cast:
             if (is_rr (L(p)) &&
-                p->sem.type.att != L(p)->sem.rank_opt.res) {
+                p->sem.type.col != L(p)->sem.rank_opt.res) {
                 resolve_name_conflict (L(p), p->sem.type.res);
                 *p = *(rank_opt (
                            cast (LL(p),
                                  p->sem.type.res,
-                                 p->sem.type.att,
+                                 p->sem.type.col,
                                  p->sem.type.ty),
                            L(p)->sem.rank_opt.res,
                            L(p)->sem.rank_opt.sortby));
@@ -1487,12 +1488,12 @@ opt_rank (PFla_op_t *p)
 
         case la_doc_access:
             if (is_rr (R(p)) &&
-                p->sem.doc_access.att != R(p)->sem.rank_opt.res) {
+                p->sem.doc_access.col != R(p)->sem.rank_opt.res) {
                 resolve_name_conflict (R(p), p->sem.doc_access.res);
                 *p = *(rank_opt (
                            doc_access (L(p), RL(p),
                                        p->sem.doc_access.res,
-                                       p->sem.doc_access.att,
+                                       p->sem.doc_access.col,
                                        p->sem.doc_access.doc_col),
                            R(p)->sem.rank_opt.res,
                            R(p)->sem.rank_opt.sortby));
@@ -1505,17 +1506,17 @@ opt_rank (PFla_op_t *p)
                that is no constructor: roots-doc_tbl */
             if (L(p)->kind == la_doc_tbl &&
                 is_rr (LL(p)) &&
-                p->sem.doc_tbl.att != LL(p)->sem.rank_opt.res) {
+                p->sem.doc_tbl.col != LL(p)->sem.rank_opt.res) {
                 resolve_name_conflict (LL(p), p->sem.doc_tbl.res);
 
-                PFalg_att_t res    = LL(p)->sem.rank_opt.res;
+                PFalg_col_t res    = LL(p)->sem.rank_opt.res;
                 PFarray_t  *sortby = LL(p)->sem.rank_opt.sortby;
 
                 /* overwrite doc_tbl node to update
                    both roots and frag operators */
                 *(L(p)) = *(doc_tbl (L(LL(p)),
                                      L(p)->sem.doc_tbl.res,
-                                     L(p)->sem.doc_tbl.att,
+                                     L(p)->sem.doc_tbl.col,
                                      L(p)->sem.doc_tbl.kind));
                 /* push roots + doc_tbl through the rank */
                 *p = *(rank_opt (roots (L(p)), res, sortby));
@@ -1549,7 +1550,7 @@ opt_rank (PFla_op_t *p)
         case la_cond_err:
             if (is_rr (L(p))) {
                 *p = *(rank_opt (cond_err (LL(p), R(p),
-                                           p->sem.err.att,
+                                           p->sem.err.col,
                                            p->sem.err.str),
                                  L(p)->sem.rank_opt.res,
                                  L(p)->sem.rank_opt.sortby));
@@ -1619,7 +1620,7 @@ intro_internal_rank (PFla_op_t *p)
         for (i = 0; i < PFord_count (p->sem.sort.sortby); i++)
             *(sort_struct *) PFarray_add (sortby) =
                 (sort_struct) {
-                    .att = PFord_order_col_at (p->sem.sort.sortby, i),
+                    .col = PFord_order_col_at (p->sem.sort.sortby, i),
                     .dir = PFord_order_dir_at (p->sem.sort.sortby, i),
                     .vis = true
                 };
@@ -1639,7 +1640,7 @@ intro_internal_rank (PFla_op_t *p)
 static void
 remove_internal_rank (PFla_op_t *p)
 {
-    PFalg_att_t  cur_col;
+    PFalg_col_t  cur_col;
     unsigned int i;
 
     /* rewrite each node only once */
@@ -1703,16 +1704,16 @@ intro_internal_split_op (PFla_op_t *p)
         L(p)->kind == la_cross &&
         PFprop_req_multi_col_col (p->prop, p->sem.rowid.res)) {
         PFarray_t    *sortby = PFarray (sizeof (sort_struct), 2);
-        PFalg_att_t   rowid1 = att_NULL,
-                      rowid2 = att_NULL;
+        PFalg_col_t   rowid1 = col_NULL,
+                      rowid2 = col_NULL;
 
         /* create two new names */
         if (PFalg_is_unq_name (p->sem.rowid.res)) {
-            rowid1 = PFalg_unq_name (att_pos); 
-            rowid2 = PFalg_unq_name (att_pos); 
+            rowid1 = PFalg_unq_name (col_pos); 
+            rowid2 = PFalg_unq_name (col_pos); 
         }
         else {
-            PFalg_att_t used_cols = 0,
+            PFalg_col_t used_cols = 0,
                         cur;
 
             for (unsigned int i = 0; i < p->schema.count; i++)
@@ -1724,9 +1725,9 @@ intro_internal_split_op (PFla_op_t *p)
         }
         
         *(sort_struct *) PFarray_add (sortby) =
-            (sort_struct) { .att = rowid1, .dir = DIR_ASC, .vis = false };
+            (sort_struct) { .col = rowid1, .dir = DIR_ASC, .vis = false };
         *(sort_struct *) PFarray_add (sortby) =
-            (sort_struct) { .att = rowid2, .dir = DIR_ASC, .vis = false };
+            (sort_struct) { .col = rowid2, .dir = DIR_ASC, .vis = false };
 
         *p = *rank_opt (
                   cross (
@@ -1763,7 +1764,7 @@ remove_internal_split_op (PFla_op_t *p)
          (p->kind == la_content &&
           R(p)->sem.rank_opt.res == p->sem.iter_pos_item.pos)) &&
         R(p)->kind == la_internal_op) {
-        PFalg_att_t      cur_col;
+        PFalg_col_t      cur_col;
         PFarray_t       *sort_list = R(p)->sem.rank_opt.sortby;
         PFalg_proj_t    *proj      = PFmalloc (R(p)->schema.count *
                                                sizeof (PFalg_proj_t));

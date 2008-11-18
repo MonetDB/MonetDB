@@ -1,8 +1,7 @@
 /**
  * @file
  *
- * Mnemonic abbreviations for algebra constructors.
- * (Generic algebra constructors)
+ * Mnemonic abbreviations for column list constructors and accessors.
  *
  * Copyright Notice:
  * -----------------
@@ -30,40 +29,11 @@
  * $Id$
  */
 
-/** atomic natural number construction */
-#define lit_nat(n)      PFalg_lit_nat (n)
-
-/** atomic integer construction */
-#define lit_int(i)      PFalg_lit_int (i)
-
-/** atomic string construction */
-#define lit_str(s)      PFalg_lit_str (s)
-
-/** atomic float construction */
-#define lit_dec(f)      PFalg_lit_dec (f)
-
-/** atomic double construction */
-#define lit_dbl(d)      PFalg_lit_dbl (d)
-
-/** atomic boolean construction */
-#define lit_bln(b)      PFalg_lit_bln (b)
-
-/** atomic QName construction */
-#define lit_qname(b)    PFalg_lit_qname (b)
-
-/** tuple construction */
-#define tuple(...)      PFalg_tuple (__VA_ARGS__)
-
-/** column list construction */
-#define collist(...)    PFalg_collist_worker (__VA_ARGS__)
-
-/** item in the projection list */
-#define proj(a,b)       PFalg_proj ((a),(b))
-
-/** simple schema constructor iter|pos|item */
-#define ipi_schema(a) PFalg_iter_pos_item_schema((a))
-
-/** simple schema constructor iter|item*/
-#define ii_schema(a) PFalg_iter_item_schema((a))
+/** abbreviation for column list constructor */
+#define cl(s)       PFalg_collist((s))
+/** abbreviation for column list accessors */
+#define clat(cl,i)  PFalg_collist_at((cl),(i))
+#define cladd(cl)   PFalg_collist_add((cl))
+#define clsize(cl)  PFalg_collist_size((cl))
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -530,11 +530,11 @@ schema_eq (PFalg_schema_t a, PFalg_schema_t b)
 {
     int i, j;
 
-    /* schemata are not equal if they have a different number of attributes */
+    /* schemata are not equal if they have a different number of columns */
     if (a.count != b.count)
         return false;
 
-    /* see if any attribute in a is also available in b */
+    /* see if any column in a is also available in b */
     for (j = 0; i < a.count; i++) {
         for (j = 0; j < b.count; j++)
             if ((a.items[i].type == b.items[j].type)
@@ -553,70 +553,67 @@ schema_eq (PFalg_schema_t a, PFalg_schema_t b)
 
 /**
  * Constructor for an item in an algebra projection list;
- * a pair consisting of the new and old attribute name.
+ * a pair consisting of the new and old column name.
  * Particularly useful in combination with the constructor
  * function for the algebra projection operator (see
  * #PFla_project_() or its wrapper macro #project()).
  *
  * @param new Attribute name after the projection
- * @param old ``Old'' attribute name in the argument of
+ * @param old ``Old'' column name in the argument of
  *            the projection operator.
  */
 PFalg_proj_t
-PFalg_proj (PFalg_att_t new, PFalg_att_t old)
+PFalg_proj (PFalg_col_t new, PFalg_col_t old)
 {
     return (PFalg_proj_t) { .new = new, .old = old };
 }
 
 /**
- * Constructor for attribute lists (e.g., for literal table
+ * Constructor for column lists (e.g., for literal table
  * construction, or sort specifications in the rownum operator).
  *
  * @param count Number of array elements that follow.
- * @param atts  Array of attribute names.
+ * @param cols  Array of column names.
  *              Must be exactly @a count elements long.
  *
  * @note
  *   You typically won't need to call this function directly. Use
- *   the wrapper macro #PFalg_attlist() (or its abbreviation #attlist(),
- *   if you have included algebra_mnemonic.h). It will determine
- *   @a count on its own, so you only have to pass an arbitrary
- *   number of attribute names.
+ *   the wrapper macro #PFalg_collist_worker() (or its abbreviation
+ *   #collist(), if you have included algebra_mnemonic.h). It will
+ *   determine @a count on its own, so you only have to pass an
+ *   arbitrary number of column names.
  *
  * @b Example:
  *
  * @code
-   PFalg_attlist_t s = attlist ("iter", "pos");
+   PFalg_collist_t *s = collist (col_iter, col_pos);
 @endcode
  */
-PFalg_attlist_t
-PFalg_attlist_ (unsigned int count, PFalg_att_t *atts)
+PFalg_collist_t *
+PFalg_collist_ (unsigned int count, PFalg_col_t *cols)
 {
-    PFalg_attlist_t ret;
-    unsigned int    i;
-
-    ret.count = count;
-    ret.atts  = PFmalloc (count * sizeof (*(ret.atts)));
+    PFalg_collist_t *ret = PFalg_collist (count);
+    unsigned int     i;
 
     for (i = 0; i < count; i++)
-        ret.atts[i] = atts[i];
+        PFalg_collist_add (ret) = cols[i];
 
     return ret;
 }
 
 /**
- * Count the items in the schema different to attlist.
+ * Count the items in the schema different to collist.
  */
 static unsigned int
 schema_diff_count (PFalg_schema_t schema, unsigned int count,
-                PFalg_att_t *attlist)
+                PFalg_col_t *collist)
 {
     unsigned int c = 0;
     bool match = false;
 
     for (unsigned int i = 0; i < schema.count; i++) {
         for (unsigned int j = 0; j < count; j++) {
-            if (schema.items[i].name == attlist[j])
+            if (schema.items[i].name == collist[j])
                 match = true;
         }
 
@@ -628,16 +625,16 @@ schema_diff_count (PFalg_schema_t schema, unsigned int count,
 }
 
 /**
- * Return the schema without the attributes given
- * in the @a attlist argument.
+ * Return the schema without the columns given
+ * in the @a collist argument.
  */
 PFalg_schema_t
 PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
-                PFalg_att_t *attlist)
+                PFalg_col_t *collist)
 {
     unsigned int retc = 0;
     bool match = false;
-    unsigned int c = schema_diff_count (schema, count, attlist);
+    unsigned int c = schema_diff_count (schema, count, collist);
 
     PFalg_schema_t ret =
         (PFalg_schema_t)
@@ -650,7 +647,7 @@ PFalg_schema_diff_ (PFalg_schema_t schema, unsigned int count,
 
     for (unsigned int i = 0; i < schema.count; i++) {
         for (unsigned int j = 0; j < count; j++) {
-            if (schema.items[i].name == attlist[j]) {
+            if (schema.items[i].name == collist[j]) {
                 match = true;
                 break;
             }
@@ -673,11 +670,11 @@ PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t)
     schema.count = 3;
     schema.items = PFmalloc (3 * sizeof (PFalg_schema_t));
 
-    schema.items[0].name = att_iter;
+    schema.items[0].name = col_iter;
     schema.items[0].type = aat_nat;
-    schema.items[1].name = att_pos;
+    schema.items[1].name = col_pos;
     schema.items[1].type = aat_nat;
-    schema.items[2].name = att_item;
+    schema.items[2].name = col_item;
     schema.items[2].type = item_t;
 
     return schema;
@@ -693,9 +690,9 @@ PFalg_iter_item_schema(PFalg_simple_type_t item_t)
     schema.count = 2;
     schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
 
-    schema.items[0].name = att_iter;
+    schema.items[0].name = col_iter;
     schema.items[0].type = aat_nat;
-    schema.items[1].name = att_item;
+    schema.items[1].name = col_item;
     schema.items[1].type = item_t;
 
     return schema;
@@ -778,7 +775,7 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
             else if (type & aat_docmgmt)
                 return "docmgmt";
             else
-                PFoops (OOPS_FATAL, "unknown attribute simple type (%i)", type);
+                PFoops (OOPS_FATAL, "unknown column simple type (%i)", type);
     }
     return NULL;
 }
@@ -798,22 +795,22 @@ PFalg_init (void)
  * Checks whether a name is unique or not.
  */
 bool
-PFalg_is_unq_name (PFalg_att_t att)
+PFalg_is_unq_name (PFalg_col_t col)
 {
-    return ((1 << 3) & att) && (att & 7);
+    return ((1 << 3) & col) && (col & 7);
 }
 
 /**
  * Return a new unique column name
  */
-PFalg_att_t
-PFalg_new_name (PFalg_att_t att)
+PFalg_col_t
+PFalg_new_name (PFalg_col_t col)
 {
-    if (!PFalg_is_unq_name(att))
+    if (!PFalg_is_unq_name(col))
         PFoops (OOPS_FATAL,
                 "unique column name expected");
     
-    return (highest_col_name_id++ << 4) | (1 << 3) | (att & 7);
+    return (highest_col_name_id++ << 4) | (1 << 3) | (col & 7);
 }
     
 /**
@@ -821,62 +818,62 @@ PFalg_new_name (PFalg_att_t att)
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
-static PFalg_att_t
-unq_name (PFalg_att_t ori, unsigned int id)
+static PFalg_col_t
+unq_name (PFalg_col_t ori, unsigned int id)
 {
-    PFalg_att_t unq = att_NULL;
+    PFalg_col_t unq = col_NULL;
 
     if (PFalg_is_unq_name(ori))
         PFoops (OOPS_FATAL,
                 "bit-encoded column name expected");
 
     switch (ori) {
-        case att_iter:
-        case att_iter1:
-        case att_inner:
-        case att_outer:
-        case att_iter2:
-        case att_iter3:
-        case att_iter4:
-        case att_iter5:
-        case att_iter6:
-            unq = att_iter;
+        case col_iter:
+        case col_iter1:
+        case col_inner:
+        case col_outer:
+        case col_iter2:
+        case col_iter3:
+        case col_iter4:
+        case col_iter5:
+        case col_iter6:
+            unq = col_iter;
             break;
 
-        case att_pos:
-        case att_pos1:
-        case att_sort:
-        case att_sort1:
-        case att_sort2:
-        case att_sort3:
-        case att_sort4:
-        case att_sort5:
-        case att_sort6:
-        case att_sort7:
-        case att_ord:
-            unq = att_pos;
+        case col_pos:
+        case col_pos1:
+        case col_sort:
+        case col_sort1:
+        case col_sort2:
+        case col_sort3:
+        case col_sort4:
+        case col_sort5:
+        case col_sort6:
+        case col_sort7:
+        case col_ord:
+            unq = col_pos;
             break;
 
-        case att_item:
-        case att_item1:
-        case att_res:
-        case att_res1:
-        case att_cast:
-        case att_item2:
-        case att_item3:
-        case att_subty:
-        case att_itemty:
-        case att_notsub:
-        case att_isint:
-        case att_isdec:
-            unq = att_item;
+        case col_item:
+        case col_item1:
+        case col_res:
+        case col_res1:
+        case col_cast:
+        case col_item2:
+        case col_item3:
+        case col_subty:
+        case col_itemty:
+        case col_notsub:
+        case col_isint:
+        case col_isdec:
+            unq = col_item;
             break;
 
         default:
             PFoops (OOPS_FATAL,
                     "Mapping variable to an unique name failed. "
                     "(bit-encoded name: %s, id: %u)",
-                    PFatt_str (ori), id);
+                    PFcol_str (ori), id);
     }
 
     return (id << 4) | (1 << 3) | unq;
@@ -887,8 +884,8 @@ unq_name (PFalg_att_t ori, unsigned int id)
  * that retains the usage information of the new variable (iter, pos
  * or item).
  */
-PFalg_att_t
-PFalg_unq_name (PFalg_att_t ori)
+PFalg_col_t
+PFalg_unq_name (PFalg_col_t ori)
 {
     return unq_name (ori, highest_col_name_id++);
 }
@@ -898,8 +895,8 @@ PFalg_unq_name (PFalg_att_t ori)
  * an original name @a ori that retains the usage information
  * of the new variable (iter, pos or item).
  */
-PFalg_att_t
-PFalg_unq_fixed_name (PFalg_att_t ori, unsigned int id)
+PFalg_col_t
+PFalg_unq_fixed_name (PFalg_col_t ori, unsigned int id)
 {
     if (id > highest_col_name_id)
         highest_col_name_id = id;
@@ -911,73 +908,73 @@ PFalg_unq_fixed_name (PFalg_att_t ori, unsigned int id)
  * Create an original column name based on an unique name @a unq
  * and a list of free original variables @a free.
  */
-PFalg_att_t
-PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
+PFalg_col_t
+PFalg_ori_name (PFalg_col_t unq, PFalg_col_t free)
 {
-    switch (unq & (att_iter | att_pos | att_item)) {
-        case att_iter:
-            if (free & att_iter)   return att_iter;
-            if (free & att_iter1)  return att_iter1;
-            if (free & att_iter2)  return att_iter2;
-            if (free & att_iter3)  return att_iter3;
-            if (free & att_iter4)  return att_iter4;
-            if (free & att_iter5)  return att_iter5;
-            if (free & att_iter6)  return att_iter6;
-            if (free & att_inner)  return att_inner;
-            if (free & att_outer)  return att_outer;
+    switch (unq & (col_iter | col_pos | col_item)) {
+        case col_iter:
+            if (free & col_iter)   return col_iter;
+            if (free & col_iter1)  return col_iter1;
+            if (free & col_iter2)  return col_iter2;
+            if (free & col_iter3)  return col_iter3;
+            if (free & col_iter4)  return col_iter4;
+            if (free & col_iter5)  return col_iter5;
+            if (free & col_iter6)  return col_iter6;
+            if (free & col_inner)  return col_inner;
+            if (free & col_outer)  return col_outer;
             /* If we have relations whose schema has more than
                10 columns of the same kind we may also use names
                from another group. */
 
-        case att_pos:
-            if (free & att_pos)    return att_pos;
-            if (free & att_pos1)   return att_pos1;
-            if (free & att_sort)   return att_sort;
-            if (free & att_sort1)  return att_sort1;
-            if (free & att_sort2)  return att_sort2;
-            if (free & att_sort3)  return att_sort3;
-            if (free & att_sort4)  return att_sort4;
-            if (free & att_sort5)  return att_sort5;
-            if (free & att_sort6)  return att_sort6;
-            if (free & att_sort7)  return att_sort7;
-            if (free & att_ord)    return att_ord;
+        case col_pos:
+            if (free & col_pos)    return col_pos;
+            if (free & col_pos1)   return col_pos1;
+            if (free & col_sort)   return col_sort;
+            if (free & col_sort1)  return col_sort1;
+            if (free & col_sort2)  return col_sort2;
+            if (free & col_sort3)  return col_sort3;
+            if (free & col_sort4)  return col_sort4;
+            if (free & col_sort5)  return col_sort5;
+            if (free & col_sort6)  return col_sort6;
+            if (free & col_sort7)  return col_sort7;
+            if (free & col_ord)    return col_ord;
 
-        case att_item:
-            if (free & att_item)   return att_item;
-            if (free & att_item1)  return att_item1;
-            if (free & att_item2)  return att_item2;
-            if (free & att_item3)  return att_item3;
-            if (free & att_subty)  return att_subty;
-            if (free & att_itemty) return att_itemty;
-            if (free & att_notsub) return att_notsub;
-            if (free & att_isint)  return att_isint;
-            if (free & att_isdec)  return att_isdec;
-            if (free & att_res)    return att_res;
-            if (free & att_res1)   return att_res1;
-            if (free & att_cast)   return att_cast;
+        case col_item:
+            if (free & col_item)   return col_item;
+            if (free & col_item1)  return col_item1;
+            if (free & col_item2)  return col_item2;
+            if (free & col_item3)  return col_item3;
+            if (free & col_subty)  return col_subty;
+            if (free & col_itemty) return col_itemty;
+            if (free & col_notsub) return col_notsub;
+            if (free & col_isint)  return col_isint;
+            if (free & col_isdec)  return col_isdec;
+            if (free & col_res)    return col_res;
+            if (free & col_res1)   return col_res1;
+            if (free & col_cast)   return col_cast;
 
             /* repeat iter and pos columns to allow
                other names for item columns as well */
-            if (free & att_iter)   return att_iter;
-            if (free & att_iter1)  return att_iter1;
-            if (free & att_iter2)  return att_iter2;
-            if (free & att_iter3)  return att_iter3;
-            if (free & att_iter4)  return att_iter4;
-            if (free & att_iter5)  return att_iter5;
-            if (free & att_iter6)  return att_iter6;
-            if (free & att_inner)  return att_inner;
-            if (free & att_outer)  return att_outer;
-            if (free & att_pos)    return att_pos;
-            if (free & att_pos1)   return att_pos1;
-            if (free & att_sort)   return att_sort;
-            if (free & att_sort1)  return att_sort1;
-            if (free & att_sort2)  return att_sort2;
-            if (free & att_sort3)  return att_sort3;
-            if (free & att_sort4)  return att_sort4;
-            if (free & att_sort5)  return att_sort5;
-            if (free & att_sort6)  return att_sort6;
-            if (free & att_sort7)  return att_sort7;
-            if (free & att_ord)    return att_ord;
+            if (free & col_iter)   return col_iter;
+            if (free & col_iter1)  return col_iter1;
+            if (free & col_iter2)  return col_iter2;
+            if (free & col_iter3)  return col_iter3;
+            if (free & col_iter4)  return col_iter4;
+            if (free & col_iter5)  return col_iter5;
+            if (free & col_iter6)  return col_iter6;
+            if (free & col_inner)  return col_inner;
+            if (free & col_outer)  return col_outer;
+            if (free & col_pos)    return col_pos;
+            if (free & col_pos1)   return col_pos1;
+            if (free & col_sort)   return col_sort;
+            if (free & col_sort1)  return col_sort1;
+            if (free & col_sort2)  return col_sort2;
+            if (free & col_sort3)  return col_sort3;
+            if (free & col_sort4)  return col_sort4;
+            if (free & col_sort5)  return col_sort5;
+            if (free & col_sort6)  return col_sort6;
+            if (free & col_sort7)  return col_sort7;
+            if (free & col_ord)    return col_ord;
             break;
 
         default:
@@ -986,53 +983,53 @@ PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free)
 
     PFoops (OOPS_FATAL,
             "Mapping unique name to an original name failed. "
-            "(unique =%s, free=%s)", PFatt_str(unq), PFatt_str(free));
+            "(unique =%s, free=%s)", PFcol_str(unq), PFcol_str(free));
 
     return 0; /* in case a compiler does not understand PFoops */
 }
 
 /**
- * Print attribute name
+ * Print column name
  */
 char *
-PFatt_str (PFalg_att_t att) {
-    switch (att) {
-        case att_NULL:    return "(NULL)";
-        case att_iter:    return "iter";
-        case att_item:    return "item";
-        case att_pos:     return "pos";
-        case att_iter1:   return "iter1";
-        case att_item1:   return "item1";
-        case att_pos1:    return "pos1";
-        case att_inner:   return "inner";
-        case att_outer:   return "outer";
-        case att_sort:    return "sort";
-        case att_sort1:   return "sort1";
-        case att_sort2:   return "sort2";
-        case att_sort3:   return "sort3";
-        case att_sort4:   return "sort4";
-        case att_sort5:   return "sort5";
-        case att_sort6:   return "sort6";
-        case att_sort7:   return "sort7";
-        case att_ord:     return "ord";
-        case att_iter2:   return "iter2";
-        case att_iter3:   return "iter3";
-        case att_iter4:   return "iter4";
-        case att_iter5:   return "iter5";
-        case att_iter6:   return "iter6";
-        case att_res:     return "res";
-        case att_res1:    return "res1";
-        case att_cast:    return "cast";
-        case att_item2:   return "item2";
-        case att_item3:   return "item3";
-        case att_subty:   return "item4";
-        case att_itemty:  return "item5";
-        case att_notsub:  return "item6";
-        case att_isint:   return "item7";
-        case att_isdec:   return "item8";
+PFcol_str (PFalg_col_t col) {
+    switch (col) {
+        case col_NULL:    return "(NULL)";
+        case col_iter:    return "iter";
+        case col_item:    return "item";
+        case col_pos:     return "pos";
+        case col_iter1:   return "iter1";
+        case col_item1:   return "item1";
+        case col_pos1:    return "pos1";
+        case col_inner:   return "inner";
+        case col_outer:   return "outer";
+        case col_sort:    return "sort";
+        case col_sort1:   return "sort1";
+        case col_sort2:   return "sort2";
+        case col_sort3:   return "sort3";
+        case col_sort4:   return "sort4";
+        case col_sort5:   return "sort5";
+        case col_sort6:   return "sort6";
+        case col_sort7:   return "sort7";
+        case col_ord:     return "ord";
+        case col_iter2:   return "iter2";
+        case col_iter3:   return "iter3";
+        case col_iter4:   return "iter4";
+        case col_iter5:   return "iter5";
+        case col_iter6:   return "iter6";
+        case col_res:     return "res";
+        case col_res1:    return "res1";
+        case col_cast:    return "cast";
+        case col_item2:   return "item2";
+        case col_item3:   return "item3";
+        case col_subty:   return "item4";
+        case col_itemty:  return "item5";
+        case col_notsub:  return "item6";
+        case col_isint:   return "item7";
+        case col_isdec:   return "item8";
         default:
-            if (att & (1 << 3)) {
-                unsigned int id     = att >> 4,
+            if (col & (1 << 3)) {
+                unsigned int id     = col >> 4,
                              tmp_id = id;
                 size_t       len = sizeof ("iter");
                 char        *res;
@@ -1043,18 +1040,18 @@ PFatt_str (PFalg_att_t att) {
                 }
                 res = PFmalloc (len+1);
 
-                if (att & att_iter)
+                if (col & col_iter)
                     snprintf (res, len, "%s%u", "iter", id);
-                else if (att & att_pos)
+                else if (col & col_pos)
                     snprintf (res, len, "%s%u", "pos", id);
-                else if (att & att_item)
+                else if (col & col_item)
                     snprintf (res, len, "%s%u", "item", id);
                 res[len] = 0;
 
                 return res;
             }
             else
-                PFoops (OOPS_FATAL, "unknown attribute name (%i)", att);
+                PFoops (OOPS_FATAL, "unknown column name (%i)", col);
     }
     return NULL;
 }
@@ -1187,8 +1184,8 @@ PFalg_fun_str (PFalg_fun_t fun)
  * Construct a predicate.
  */
 PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
-                       PFalg_att_t left,
-                       PFalg_att_t right) {
+                       PFalg_col_t left,
+                       PFalg_col_t right) {
     return (PFalg_sel_t) { .comp = comp, .left = left, .right = right };
 }
 

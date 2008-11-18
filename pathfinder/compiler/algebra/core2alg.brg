@@ -290,8 +290,8 @@ CoreExpr:           recursion (var, seed (CoreExpr, CoreExpr))  =  72 (10);
 
 struct map_rel_info_t {
     PFla_op_t   *map;   /* map relation */
-    unsigned int count; /* attribute counter of the map relation */
-    unsigned int dir;   /* sort direction of the attributes in the
+    unsigned int count; /* column counter of the map relation */
+    unsigned int dir;   /* sort direction of the columns in the
                            map relation */
 };
 typedef struct map_rel_info_t map_rel_info_t;
@@ -307,7 +307,7 @@ typedef struct map_rel_info_t map_rel_info_t;
 #define MAP_COUNT (((map_rel_info_t *) PFarray_top (ctx->mapping))->count)
 
 /**
- * Sort direction of the attributes
+ * Sort direction of the columns
  * of the current map relation
  */
 #define MAP_DIR (((map_rel_info_t *) PFarray_top (ctx->mapping))->dir)
@@ -565,7 +565,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             reduce (ctx, kids[1], nts[1]);
             A(p) = (PFla_pair_t) {
                      .rel = serialize_seq (PFla_set_to_la (A(R(p)).frag),
-                                           A(R(p)).rel, att_pos, att_item),
+                                           A(R(p)).rel, col_pos, col_item),
                      .frag = NULL };
             break;
 
@@ -633,11 +633,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                       eqjoin (
                                           e.rel,
                                           e.map,
-                                          att_iter,
-                                          att_outer),
-                                      proj (att_iter, att_inner),
-                                      proj (att_pos,  att_pos),
-                                      proj (att_item, att_item));
+                                          col_iter,
+                                          col_outer),
+                                      proj (col_iter, col_inner),
+                                      proj (col_pos,  col_pos),
+                                      proj (col_item, col_item));
 
                     A(p) = (struct  PFla_pair_t) { .rel  = var_rel,
                                                    .frag = e.frag };
@@ -665,8 +665,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_str (p->sem.str)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_str (p->sem.str)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -682,8 +682,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_int (p->sem.num)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_int (p->sem.num)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -699,8 +699,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_dec (p->sem.dec)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_dec (p->sem.dec)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -716,8 +716,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_dbl (p->sem.dbl)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_dbl (p->sem.dbl)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -734,8 +734,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_bln (true)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_bln (true)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -751,8 +751,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (
                                 attach (LOOP,
-                                        att_pos, lit_nat (1)),
-                                att_item, lit_bln (false)),
+                                        col_pos, lit_nat (1)),
+                                col_item, lit_bln (false)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -771,11 +771,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* We know that iter and pos would have type nat.
                For item on the other side we have no type. */
-            schema.items[0].name = att_iter;
+            schema.items[0].name = col_iter;
             schema.items[0].type = aat_nat;
-            schema.items[1].name = att_pos;
+            schema.items[1].name = col_pos;
             schema.items[1].type = aat_nat;
-            schema.items[2].name = att_item;
+            schema.items[2].name = col_item;
             schema.items[2].type = 0;
 
             A(p) = (struct  PFla_pair_t) {
@@ -818,7 +818,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * to the map relation (sort_0, sort_1, ..., sort_n)
              *      or if an order by is present it removes all sort
              * criteria introduced by the for-loop and adds for each
-             * order specification a sort attribute (sort_0, sort_1,
+             * order specification a sort column (sort_0, sort_1,
              * ..., sort_n)
              */
 
@@ -853,13 +853,13 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     A(p) = (struct PFla_pair_t) {
                             .rel = project (rank (eqjoin (A(R(p)).rel,
                                                           MAP,
-                                                          att_iter,
-                                                          att_inner),
-                                                  att_pos1,
-                                                  sortby (att_iter, att_pos)),
-                                            proj (att_iter, att_outer),
-                                            proj (att_pos, att_pos1),
-                                            proj (att_item, att_item)),
+                                                          col_iter,
+                                                          col_inner),
+                                                  col_pos1,
+                                                  sortby (col_iter, col_pos)),
+                                            proj (col_iter, col_outer),
+                                            proj (col_pos, col_pos1),
+                                            proj (col_item, col_item)),
                             .frag = A(R(p)).frag };
                 else {
                     /**
@@ -873,50 +873,50 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                      * the row numbering needs to sort on:
                      * (sort_0, sort_1, ..., sort_n, pos).
                      */
-                    /* create sortby attribute list: */
+                    /* create sortby column list: */
                     PFord_ordering_t sortby = PFordering ();
                     if (R(p)->kind == c_orderby)
                     {
-                        PFalg_att_t cur;
+                        PFalg_col_t cur;
 
                         /* don't include columns inner and outer */
-                        /* starting from attribute sort add consecutive
-                           attributes ... */
+                        /* starting from column sort add consecutive
+                           columns ... */
                         for (unsigned int i = 0; i < MAP_COUNT - 2; i++) {
-                            cur = att_sort << i;
+                            cur = col_sort << i;
                             sortby = PFord_refine (sortby,
                                                    cur,
                                                    cur & MAP_DIR
                                                    ? DIR_DESC : DIR_ASC);
                         }
 
-                        /* ... and complete sortby list with attributes
+                        /* ... and complete sortby list with columns
                            iter and  pos */
-                        sortby = PFord_refine (sortby, att_iter, DIR_ASC);
-                        sortby = PFord_refine (sortby, att_pos, DIR_ASC);
+                        sortby = PFord_refine (sortby, col_iter, DIR_ASC);
+                        sortby = PFord_refine (sortby, col_pos, DIR_ASC);
                     } else {
                         /* don't include columns inner and outer */
-                        /* starting from attribute sort add consecutive
-                           attributes ... */
+                        /* starting from column sort add consecutive
+                           columns ... */
                         for (unsigned int i = 0; i < MAP_COUNT - 2; i++)
                             sortby = PFord_refine (sortby,
-                                                   att_sort << i,
+                                                   col_sort << i,
                                                    DIR_ASC);
 
-                        /* ... and complete sortby list with attribute pos */
-                        sortby = PFord_refine (sortby, att_pos, DIR_ASC);
+                        /* ... and complete sortby list with column pos */
+                        sortby = PFord_refine (sortby, col_pos, DIR_ASC);
                     }
 
                     A(p) = (struct PFla_pair_t) {
                             .rel = project (rank (eqjoin (A(R(p)).rel,
                                                           MAP,
-                                                          att_iter,
-                                                          att_inner),
-                                                  att_pos1,
+                                                          col_iter,
+                                                          col_inner),
+                                                  col_pos1,
                                                   sortby),
-                                            proj (att_iter, att_outer),
-                                            proj (att_pos, att_pos1),
-                                            proj (att_item, att_item)),
+                                            proj (col_iter, col_outer),
+                                            proj (col_pos, col_pos1),
+                                            proj (col_item, col_item)),
                             .frag = A(R(p)).frag };
                 }
             } else
@@ -924,7 +924,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* restore loop relation */
             LOOP = old_loop;
-            /* restore map relation and its attribute counter */
+            /* restore map relation and its column counter */
             PFarray_del (ctx->mapping);
             /* restore old environment */
             ENV = old_env;
@@ -992,16 +992,16 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              *        exists.)
              */
             rowid = rowid (rownum (A(LR(p)).rel,
-                                   att_pos1,
-                                   sortby (att_pos),
-                                   att_iter),
-                           att_inner);
+                                   col_pos1,
+                                   sortby (col_pos),
+                                   col_iter),
+                           col_inner);
 
             /* translate $v */
             var = attach (project (rowid,
-                                   proj (att_iter, att_inner),
-                                   proj (att_item, att_item)),
-                          att_pos, lit_nat (1));
+                                   proj (col_iter, col_inner),
+                                   proj (col_item, col_item)),
+                          col_pos, lit_nat (1));
 
             /* create new environment */
             ENV = PFarray (sizeof (PFla_env_t), 50);
@@ -1011,13 +1011,13 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 = enventry (LLL(p)->sem.var, var, NULL, A(LR(p)).frag);
 
             /* create new loop operator */
-            LOOP = project (var, proj (att_iter, att_iter));
+            LOOP = project (var, proj (col_iter, col_iter));
 
             /* create var_map relation. */
             var_map = project (rowid,
-                               proj (att_outer, att_iter),
-                               proj (att_sort, att_pos),
-                               proj (att_inner, att_inner));
+                               proj (col_outer, col_iter),
+                               proj (col_sort, col_pos),
+                               proj (col_inner, col_inner));
 
             /*
              * Handle optional variable ($p).
@@ -1029,12 +1029,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             if (LLR(p)->kind == c_var) {
                 assert (LLR(p)->sem.var);
                 opt_var = attach (project (cast (rowid,
-                                                 att_cast,
-                                                 att_pos1,
+                                                 col_cast,
+                                                 col_pos1,
                                                  aat_int),
-                                           proj (att_iter, att_inner),
-                                           proj (att_item, att_cast)),
-                                  att_pos, lit_nat (1));
+                                           proj (col_iter, col_inner),
+                                           proj (col_item, col_cast)),
+                                  col_pos, lit_nat (1));
 
                 /* insert $p into NEW environment */
                 *((PFla_env_t *) PFarray_add (ENV)) =
@@ -1051,23 +1051,23 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
                 if (!e.map)
                     new_map = project (var_map,
-                                       proj (att_outer, att_outer),
-                                       proj (att_inner, att_inner));
+                                       proj (col_outer, col_outer),
+                                       proj (col_inner, col_inner));
                 else
                     new_map = project (
                                   eqjoin (
                                       project (
                                           e.map,
-                                          proj (att_iter, att_inner),
-                                          proj (att_outer, att_outer)),
+                                          proj (col_iter, col_inner),
+                                          proj (col_outer, col_outer)),
                                       project (
                                           var_map,
-                                          proj (att_iter2, att_outer),
-                                          proj (att_inner, att_inner)),
-                                      att_iter,
-                                      att_iter2),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                          proj (col_iter2, col_outer),
+                                          proj (col_inner, col_inner)),
+                                      col_iter,
+                                      col_iter2),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
 
                 *((PFla_env_t *) PFarray_add (ENV)) =
                     enventry (e.var, e.rel, new_map, e.frag);
@@ -1083,33 +1083,33 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                  * (b) the current iteration values */
 
                 MAP_COUNT++;
-                PFalg_proj_t *atts = PFmalloc (MAP_COUNT *
+                PFalg_proj_t *cols = PFmalloc (MAP_COUNT *
                                                sizeof (PFalg_proj_t));
                 /* column outer remains the same */
-                atts[0].new = att_outer;
-                atts[0].old = att_outer;
+                cols[0].new = col_outer;
+                cols[0].old = col_outer;
                 /* column iter1 becomes the new inner column */
-                atts[1].new = att_inner;
-                atts[1].old = att_iter1;
+                cols[1].new = col_inner;
+                cols[1].old = col_iter1;
                 /* copy all old sort columns */
                 for (unsigned i = 2; i < MAP_COUNT - 1; i++)
-                    atts[i].new =
-                    atts[i].old = att_sort << (i - 2);
+                    cols[i].new =
+                    cols[i].old = col_sort << (i - 2);
                 /* we now have on additional sort column generated
                    from column pos */
                 /* the first sort criterion is column sort itself */
-                atts[MAP_COUNT -1].new = att_sort << (MAP_COUNT - 3);
-                atts[MAP_COUNT -1].old = att_pos;
+                cols[MAP_COUNT -1].new = col_sort << (MAP_COUNT - 3);
+                cols[MAP_COUNT -1].old = col_pos;
 
                 MAP = PFla_project_ (
                           eqjoin (MAP,
                                   project (rowid,
-                                           proj (att_iter1, att_inner),
-                                           proj (att_iter, att_iter),
-                                           proj (att_pos, att_pos)),
-                                  att_inner,
-                                  att_iter),
-                          MAP_COUNT, atts);
+                                           proj (col_iter1, col_inner),
+                                           proj (col_iter, col_iter),
+                                           proj (col_pos, col_pos)),
+                                  col_inner,
+                                  col_iter),
+                          MAP_COUNT, cols);
             }
 
             /* translate e2 under the specified conditions (updated
@@ -1122,14 +1122,14 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct PFla_pair_t) {
                      .rel = project (rownum (eqjoin(A(R(p)).rel,
                                                     var_map,
-                                                    att_iter,
-                                                    att_inner),
-                                             att_pos1,
-                                             sortby (att_sort, att_pos),
-                                             att_outer),
-                                     proj (att_iter, att_outer),
-                                     proj (att_pos, att_pos1),
-                                     proj (att_item, att_item)),
+                                                    col_iter,
+                                                    col_inner),
+                                             col_pos1,
+                                             sortby (col_sort, col_pos),
+                                             col_outer),
+                                     proj (col_iter, col_outer),
+                                     proj (col_pos, col_pos1),
+                                     proj (col_item, col_item)),
                      .frag = A(R(p)).frag };
             */
         } break;
@@ -1245,14 +1245,14 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             old_loop = LOOP;
 
             /* prepare the loop relation for the then-branch */
-            rowid    = rowid (select_ (A(L(p)).rel, att_item),
-                              att_inner);
+            rowid    = rowid (select_ (A(L(p)).rel, col_item),
+                              col_inner);
             /* create new loop operator */
-            LOOP     = project (rowid, proj (att_iter, att_inner));
+            LOOP     = project (rowid, proj (col_iter, col_inner));
             /* create var_map relation. */
             var_map  = project (rowid,
-                                proj (att_outer, att_iter),
-                                proj (att_inner, att_inner));
+                                proj (col_outer, col_iter),
+                                proj (col_inner, col_inner));
             /* store the variable map to retrieve the old iter values */
             then_map = var_map;
             
@@ -1269,23 +1269,23 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
                 if (!e.map)
                     new_map = project (var_map,
-                                       proj (att_outer, att_outer),
-                                       proj (att_inner, att_inner));
+                                       proj (col_outer, col_outer),
+                                       proj (col_inner, col_inner));
                 else
                     new_map = project (
                                   eqjoin (
                                       project (
                                           e.map,
-                                          proj (att_iter, att_inner),
-                                          proj (att_outer, att_outer)),
+                                          proj (col_iter, col_inner),
+                                          proj (col_outer, col_outer)),
                                       project (
                                           var_map,
-                                          proj (att_iter2, att_outer),
-                                          proj (att_inner, att_inner)),
-                                      att_iter,
-                                      att_iter2),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                          proj (col_iter2, col_outer),
+                                          proj (col_inner, col_inner)),
+                                      col_iter,
+                                      col_iter2),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
 
                 *((PFla_env_t *) PFarray_add (ENV)) =
                     enventry (e.var, e.rel, new_map, e.frag);
@@ -1295,15 +1295,15 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             reduce (ctx, kids[1], nts[1]);
 
             /* prepare the loop relation for the else-branch */
-            rowid    = rowid (select_ (not (A(L(p)).rel, att_res, att_item),
-                                       att_res),
-                              att_inner);
+            rowid    = rowid (select_ (not (A(L(p)).rel, col_res, col_item),
+                                       col_res),
+                              col_inner);
             /* create new loop operator */
-            LOOP     = project (rowid, proj (att_iter, att_inner));
+            LOOP     = project (rowid, proj (col_iter, col_inner));
             /* create var_map relation. */
             var_map  = project (rowid,
-                                proj (att_outer, att_iter),
-                                proj (att_inner, att_inner));
+                                proj (col_outer, col_iter),
+                                proj (col_inner, col_inner));
             /* store the variable map to retrieve the old iter values */
             else_map = var_map;
             
@@ -1317,23 +1317,23 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
                 if (!e.map)
                     new_map = project (var_map,
-                                       proj (att_outer, att_outer),
-                                       proj (att_inner, att_inner));
+                                       proj (col_outer, col_outer),
+                                       proj (col_inner, col_inner));
                 else
                     new_map = project (
                                   eqjoin (
                                       project (
                                           e.map,
-                                          proj (att_iter, att_inner),
-                                          proj (att_outer, att_outer)),
+                                          proj (col_iter, col_inner),
+                                          proj (col_outer, col_outer)),
                                       project (
                                           var_map,
-                                          proj (att_iter2, att_outer),
-                                          proj (att_inner, att_inner)),
-                                      att_iter,
-                                      att_iter2),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                          proj (col_iter2, col_outer),
+                                          proj (col_inner, col_inner)),
+                                      col_iter,
+                                      col_iter2),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
 
                 *((PFla_env_t *) PFarray_add (ENV)) =
                     enventry (e.var, e.rel, new_map, e.frag);
@@ -1348,17 +1348,17 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* merge back the old iter values */
             then_res = project (
-                           eqjoin (A(RL(p)).rel, then_map, att_iter, att_inner),
-                           proj (att_iter, att_outer),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                           eqjoin (A(RL(p)).rel, then_map, col_iter, col_inner),
+                           proj (col_iter, col_outer),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
             /* merge back the old iter values */
             else_res = project (
-                           eqjoin (A(RR(p)).rel, else_map, att_iter, att_inner),
-                           proj (att_iter, att_outer),
-                           proj (att_pos, att_pos),
-                           proj (att_item, att_item));
+                           eqjoin (A(RR(p)).rel, else_map, col_iter, col_inner),
+                           proj (col_iter, col_outer),
+                           proj (col_pos, col_pos),
+                           proj (col_item, col_item));
 
             A(p) = (struct  PFla_pair_t) {
                      .rel  = disjunion (then_res, else_res),
@@ -1402,13 +1402,13 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                     disjunion (
                                         attach (
                                             A(L(p)).rel,
-                                            att_ord, lit_nat (1)),
+                                            col_ord, lit_nat (1)),
                                         A(R(p)).rel),
-                                    att_pos1,
-                                    sortby (att_ord, att_pos)),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos1),
-                                proj (att_item, att_item)),
+                                    col_pos1,
+                                    sortby (col_ord, col_pos)),
+                                proj (col_iter, col_iter),
+                                proj (col_pos, col_pos1),
+                                proj (col_item, col_item)),
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
 
@@ -1432,15 +1432,15 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                     disjunion (
                                         attach (
                                             A(L(p)).rel,
-                                            att_ord, lit_nat (1)),
+                                            col_ord, lit_nat (1)),
                                         attach (
                                             A(R(p)).rel,
-                                            att_ord, lit_nat (2))),
-                                    att_pos1,
-                                    sortby (att_ord, att_pos)),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos1),
-                                proj (att_item, att_item)),
+                                            col_ord, lit_nat (2))),
+                                    col_pos1,
+                                    sortby (col_ord, col_pos)),
+                                proj (col_iter, col_iter),
+                                proj (col_pos, col_pos1),
+                                proj (col_item, col_item)),
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
 
@@ -1458,7 +1458,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                      .rel = disjunion (
                                 attach (
                                     A(L(p)).rel,
-                                    att_ord, lit_nat (cur_seq_count)),
+                                    col_ord, lit_nat (cur_seq_count)),
                                 A(R(p)).rel),
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
@@ -1475,10 +1475,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                      .rel = disjunion (
                                 attach (
                                     A(L(p)).rel,
-                                    att_ord, lit_nat (SEQ_COUNT)),
+                                    col_ord, lit_nat (SEQ_COUNT)),
                                 attach (
                                     A(R(p)).rel,
-                                    att_ord, lit_nat (SEQ_COUNT+1))),
+                                    col_ord, lit_nat (SEQ_COUNT+1))),
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
             break;
 
@@ -1493,8 +1493,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 /* throw away all sort criteria -- each orderspec
                    adds a new one instead */
                 MAP = project (MAP,
-                               proj (att_outer, att_outer),
-                               proj (att_inner, att_inner));
+                               proj (col_outer, col_outer),
+                               proj (col_inner, col_inner));
                 MAP_COUNT = 2;
 
                 /* translate OrderSpecs */
@@ -1514,19 +1514,19 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                      at the end of this block */
         {   /* TOPDOWN */
             PFla_op_t          *sort_attr;
-            PFalg_proj_t       *atts;
+            PFalg_proj_t       *cols;
             PFty_t              t;
             PFalg_simple_type_t algty;
             PFalg_atom_t        atom;
-            PFalg_att_t         sort_col;
+            PFalg_col_t         sort_col;
             unsigned int        empty = 0;
 
             /* translate order expression */
             reduce (ctx, kids[0], nts[0]);
 
             sort_attr = project (A(L(p)).rel,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_item));
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_item));
 
             /*
              * If we we know (from static typing) that all
@@ -1572,10 +1572,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 sort_attr = disjunion (
                                 attach (
                                     project (cast (sort_attr,
-                                                   att_cast, att_item, algty),
-                                             proj (att_iter, att_iter),
-                                             proj (att_item, att_cast)),
-                                    att_pos,
+                                                   col_cast, col_item, algty),
+                                             proj (col_iter, col_iter),
+                                             proj (col_item, col_cast)),
+                                    col_pos,
                                     lit_nat ((p->sem.mode.dir == p_desc) ^
                                              (p->sem.mode.empty == p_least))),
                                 attach (
@@ -1583,10 +1583,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                         difference (
                                             LOOP,
                                             project (A(L(p)).rel,
-                                                     proj (att_iter,
-                                                           att_iter))),
-                                        att_item, atom),
-                                    att_pos,
+                                                     proj (col_iter,
+                                                           col_iter))),
+                                        col_item, atom),
+                                    col_pos,
                                     lit_nat ((p->sem.mode.dir == p_desc) ^
                                              (p->sem.mode.empty != p_least))));
                 empty = 1;
@@ -1596,38 +1596,38 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * (a) position information of the for-loop input sequence and
              * (b) the current iteration values */
             MAP_COUNT++;
-            atts = PFmalloc ((MAP_COUNT + empty) * sizeof (PFalg_proj_t));
+            cols = PFmalloc ((MAP_COUNT + empty) * sizeof (PFalg_proj_t));
             /* columns outer and inner remain the same */
-            atts[0].new = att_outer;
-            atts[0].old = att_outer;
-            atts[1].new = att_inner;
-            atts[1].old = att_inner;
+            cols[0].new = col_outer;
+            cols[0].old = col_outer;
+            cols[1].new = col_inner;
+            cols[1].old = col_inner;
 
             /* copy all old sort columns */
             for (unsigned i = 2; i < MAP_COUNT - 1; i++)
-                atts[i].new =
-                atts[i].old = att_sort << (i - 2);
+                cols[i].new =
+                cols[i].old = col_sort << (i - 2);
 
             /* we now have on additional sort column generated
                from column item (and possible pos) */
             if (empty) {
-                sort_col = att_sort << (MAP_COUNT - 3);
-                atts[MAP_COUNT -1].new = sort_col;
-                atts[MAP_COUNT -1].old = att_pos;
+                sort_col = col_sort << (MAP_COUNT - 3);
+                cols[MAP_COUNT -1].new = sort_col;
+                cols[MAP_COUNT -1].old = col_pos;
                 MAP_COUNT++;
             }
             /* the first sort criterion is column sort itself */
-            sort_col = att_sort << (MAP_COUNT - 3);
-            atts[MAP_COUNT -1].new = sort_col;
-            atts[MAP_COUNT -1].old = att_item;
+            sort_col = col_sort << (MAP_COUNT - 3);
+            cols[MAP_COUNT -1].new = sort_col;
+            cols[MAP_COUNT -1].old = col_item;
 
             if (p->sem.mode.dir == p_desc)
                 /* mark the bit corresponding to the last
                    entry to cope with descending order */
                 MAP_DIR |= sort_col;
 
-            MAP = PFla_project_ (eqjoin (MAP, sort_attr, att_inner, att_iter),
-                                 MAP_COUNT, atts);
+            MAP = PFla_project_ (eqjoin (MAP, sort_attr, col_inner, col_iter),
+                                 MAP_COUNT, cols);
 
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         /* case 301: */
@@ -1732,8 +1732,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             /* map `loop' relation */
             old_loop = LOOP;
-            LOOP = project (select_ (tested_q1, att_subty),
-                            proj (att_iter, att_iter));
+            LOOP = project (select_ (tested_q1, col_subty),
+                            proj (col_iter, col_iter));
 
             /* map variable environment */
             old_env = ENV;
@@ -1745,17 +1745,17 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 if (!e.map)
                     new_map = project (
                                   LOOP,
-                                  proj (att_outer, att_iter),
-                                  proj (att_inner, att_iter));
+                                  proj (col_outer, col_iter),
+                                  proj (col_inner, col_iter));
                 else
                     new_map = project (
                                   eqjoin (
                                       e.map,
                                       LOOP,
-                                      att_inner,
-                                      att_iter),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                      col_inner,
+                                      col_iter),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
 
                 *((PFla_env_t *) PFarray_add (ENV))
                     = enventry (e.var, e.rel, new_map, e.frag);
@@ -1767,9 +1767,9 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             /* translate stuff in the `default' branch (equivalently) */
 
             /* map `loop' relation */
-            LOOP = project (select_ (not (tested_q1, att_notsub, att_subty),
-                                     att_notsub),
-                            proj (att_iter, att_iter));
+            LOOP = project (select_ (not (tested_q1, col_notsub, col_subty),
+                                     col_notsub),
+                            proj (col_iter, col_iter));
 
             ENV = PFarray (sizeof (PFla_env_t), 50);
 
@@ -1779,17 +1779,17 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 if (!e.map)
                     new_map = project (
                                   LOOP,
-                                  proj (att_outer, att_iter),
-                                  proj (att_inner, att_iter));
+                                  proj (col_outer, col_iter),
+                                  proj (col_inner, col_iter));
                 else
                     new_map = project (
                                   eqjoin (
                                       e.map,
                                       LOOP,
-                                      att_inner,
-                                      att_iter),
-                                  proj (att_outer, att_outer),
-                                  proj (att_inner, att_inner));
+                                      col_inner,
+                                      col_iter),
+                                  proj (col_outer, col_outer),
+                                  proj (col_inner, col_inner));
 
                 *((PFla_env_t *) PFarray_add (ENV))
                     = enventry (e.var, e.rel, new_map, e.frag);
@@ -1852,10 +1852,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 pair = PFbui_fn_zero_or_one (LOOP, ORDERING, &pair);
                     
             A(p) = (struct PFla_pair_t) {
-                .rel  = project (cast (pair.rel, att_cast, att_item, algty),
-                                 proj (att_iter, att_iter),
-                                 proj (att_pos, att_pos),
-                                 proj (att_item, att_cast)),
+                .rel  = project (cast (pair.rel, col_cast, col_item, algty),
+                                 proj (col_iter, col_iter),
+                                 proj (col_pos, col_pos),
+                                 proj (col_item, col_cast)),
                 .frag = pair.frag };
 
         } break;
@@ -1953,12 +1953,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              */
 
             PFla_op_t *twig = twig (A(p).rel,
-                                    att_iter,
-                                    att_item);
+                                    col_iter,
+                                    col_item);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (roots (twig),
-                                    att_pos, lit_nat (1)),
+                                    col_pos, lit_nat (1)),
                      .frag = PFla_set (fragment (twig))};
         }   break;
 
@@ -2001,7 +2001,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = content (PFla_set_to_la (A(p).frag), A(p).rel,
-                                     att_iter, att_pos, att_item),
+                                     col_iter, col_pos, col_item),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2023,7 +2023,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * information.
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = docnode (LOOP, A(L(p)).rel, att_iter),
+                     .rel = docnode (LOOP, A(L(p)).rel, col_iter),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2051,8 +2051,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              */
             A(p) = (struct  PFla_pair_t) {
                      .rel = element (A(L(p)).rel, A(R(p)).rel,
-                                     att_iter,
-                                     att_item),
+                                     col_iter,
+                                     col_item),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2084,10 +2084,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                 eqjoin (
                                     A(L(p)).rel,
                                     project (A(R(p)).rel,
-                                             proj (att_iter1, att_iter),
-                                             proj (att_item1, att_item)),
-                                    att_iter, att_iter1),
-                                att_iter, att_item, att_item1),
+                                             proj (col_iter1, col_iter),
+                                             proj (col_item1, col_item)),
+                                    col_iter, col_iter1),
+                                col_iter, col_item, col_item1),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2096,8 +2096,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = (struct PFla_pair_t) {
                 .rel = attach (
                            attach (LOOP,
-                                   att_pos, lit_nat (1)),
-                           att_item, lit_qname (p->sem.qname)),
+                                   col_pos, lit_nat (1)),
+                           col_item, lit_qname (p->sem.qname)),
                 .frag = PFla_empty_set () };
             break;
 
@@ -2123,7 +2123,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * information.
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = textnode (A(L(p)).rel, att_iter, att_item),
+                     .rel = textnode (A(L(p)).rel, col_iter, col_item),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2145,7 +2145,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              * information.
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = comment (A(L(p)).rel, att_iter, att_item),
+                     .rel = comment (A(L(p)).rel, col_iter, col_item),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2177,10 +2177,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                 eqjoin (
                                     A(L(p)).rel,
                                     project (A(R(p)).rel,
-                                             proj (att_iter1, att_iter),
-                                             proj (att_item1, att_item)),
-                                    att_iter, att_iter1),
-                                att_iter, att_item, att_item1),
+                                             proj (col_iter1, col_iter),
+                                             proj (col_item1, col_item)),
+                                    col_iter, col_iter1),
+                                col_iter, col_item, col_item1),
                      .frag = PFla_empty_set () };
             break;
 
@@ -2248,8 +2248,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         if (map) {
                             map_traces = trace_map (map,
                                                     map_traces,
-                                                    att_inner,
-                                                    att_outer);
+                                                    col_inner,
+                                                    col_outer);
                         }
                     }
 
@@ -2257,11 +2257,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         .rel  = trace (seq.rel,
                                        trace_msg (str.rel,
                                                   map_traces,
-                                                  att_iter,
-                                                  att_item),
-                                       att_iter,
-                                       att_pos,
-                                       att_item),
+                                                  col_iter,
+                                                  col_item),
+                                       col_iter,
+                                       col_pos,
+                                       col_item),
                         .frag = seq.frag };
                 } else {
                     /*
@@ -2387,9 +2387,9 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         .rel  = PFla_error_ (
                                    attach (
                                        attach (LOOP,
-                                           att_pos, lit_nat (1)),
-                                       att_item, lit_str ("recursion to deep")),
-                                   att_item,
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str ("recursion to deep")),
+                                   col_item,
                                    PFalg_type (ty)),
                         .frag = PFla_empty_set () };
                 }
@@ -2414,11 +2414,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             schema.count = 3;
             schema.items = PFmalloc (schema.count *
                                      sizeof (PFalg_schm_item_t));
-            schema.items[0].name = att_iter;
+            schema.items[0].name = col_iter;
             schema.items[0].type = aat_nat;
-            schema.items[1].name = att_pos;
+            schema.items[1].name = col_pos;
             schema.items[1].type = aat_nat;
-            schema.items[2].name = att_item;
+            schema.items[2].name = col_item;
             /* Note: the item type has to be adjusted for each parameter */
             schema.items[2].type = 0;
 
@@ -2473,7 +2473,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     = *(PFla_pair_t *) PFarray_at (FUN_ARGS, i-1);
 
                 /* adjust the item type */
-                schema.items[2].type = PFprop_type_of (curr_arg.rel, att_item);
+                schema.items[2].type = PFprop_type_of (curr_arg.rel, col_item);
                 /* create a new parameter */
                 param_list = fun_param (curr_arg.rel, param_list, schema);
 
@@ -2487,7 +2487,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             }
 
             /* As the top-most argument add the XRPC destination strings */
-            schema.items[2].type = PFprop_type_of (A(L(p)).rel, att_item);
+            schema.items[2].type = PFprop_type_of (A(L(p)).rel, col_item);
             param_list = fun_param (A(L(p)).rel, param_list, schema);
 
             /* Collect all result types */
@@ -2500,7 +2500,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                  alg_fun_call_xrpc,    /* function call kind */
                                  R(p)->sem.fun->qname, /* function name */
                                  R(p),                 /* context info */
-                                 att_iter,             /* loop column */
+                                 col_iter,             /* loop column */
                                  PFalg_type_occ (ty)); /* occurrence
                                                           indicator */
 
@@ -2671,11 +2671,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             schema = A(RL(p)).rel->schema;
             assert (schema.count == 3);
             for (i = 0; i < 3; i++) {
-                if (schema.items[i].name == att_iter)
+                if (schema.items[i].name == col_iter)
                     res_schema.items[0] = schema.items[i];
-                else if (schema.items[i].name == att_item)
+                else if (schema.items[i].name == col_item)
                     res_schema.items[1] = schema.items[i];
-                else if (schema.items[i].name == att_pos)
+                else if (schema.items[i].name == col_pos)
                     /* do nothing */;
                 else
                     PFoops (OOPS_FATAL,
@@ -2685,10 +2685,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
             seed = distinct (
                        project (A(RL(p)).rel,
-                                proj (att_iter,
-                                      att_iter),
-                                proj (att_item,
-                                      att_item)));
+                                proj (col_iter,
+                                      col_iter),
+                                proj (col_item,
+                                      col_item)));
 
             /* create a new base for variable $x */
             base_x = rec_base (schema);
@@ -2721,17 +2721,17 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     if (!e.map)
                         new_map = project (
                                       LOOP,
-                                      proj (att_outer, att_iter),
-                                      proj (att_inner, att_iter));
+                                      proj (col_outer, col_iter),
+                                      proj (col_inner, col_iter));
                     else
                         new_map = project (
                                       eqjoin (
                                           e.map,
                                           LOOP,
-                                          att_inner,
-                                          att_iter),
-                                      proj (att_outer, att_outer),
-                                      proj (att_inner, att_inner));
+                                          col_inner,
+                                          col_iter),
+                                      proj (col_outer, col_outer),
+                                      proj (col_inner, col_inner));
 
                     *((PFla_env_t *) PFarray_add (ENV))
                         = enventry (e.var, e.rel, new_map, e.frag);
@@ -2842,9 +2842,9 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         {
             unsigned int count = 0;
             for (unsigned int i = 0; i < A(p).rel->schema.count; i++)
-                if (A(p).rel->schema.items[i].name == att_iter ||
-                    A(p).rel->schema.items[i].name == att_pos  ||
-                    A(p).rel->schema.items[i].name == att_item)
+                if (A(p).rel->schema.items[i].name == col_iter ||
+                    A(p).rel->schema.items[i].name == col_pos  ||
+                    A(p).rel->schema.items[i].name == col_item)
                     count++;
             if (A(p).rel->schema.count != 3 && count !=3)
                 PFoops (OOPS_FATAL,
@@ -2897,15 +2897,15 @@ recursion_sql (int strategy,
     /* the result of the recursion body */
     res_body = distinct (
                    project (body,
-                       proj (att_iter, att_iter),
-                       proj (att_item, att_item)));
+                       proj (col_iter, col_iter),
+                       proj (col_item, col_item)));
 
     /* ------------------- BODY ----------------- */
 
     res_rec_param = rec_param (
                         rec_arg (
-                            rowid (seed, att_pos),
-                            rowid (res_body, att_pos),
+                            rowid (seed, col_pos),
+                            rowid (res_body, col_pos),
                             base
                         ),
                         nil ());
@@ -2928,10 +2928,10 @@ recursion_sql (int strategy,
                    rec_fix (
                        loop_rec_param,
                        res_body),
-                   proj (att_iter, att_iter),
-                   proj (att_item, att_item)),
-               att_pos,
-               sortby (att_item));
+                   proj (col_iter, col_iter),
+                   proj (col_item, col_item)),
+               col_pos,
+               sortby (col_item));
 }
 
 /* recursion strategy for Monet */
@@ -2970,21 +2970,21 @@ recursion_mil (int strategy,
 
     /* the result of the recursion body */
     res_body = distinct (project (body,
-                                  proj (att_iter, att_iter),
-                                  proj (att_item, att_item)));
+                                  proj (col_iter, col_iter),
+                                  proj (col_item, col_item)));
 
     /* get the really new nodes */
     delta = difference (res_body,
                         project (base_res,
-                                 proj (att_iter, att_iter),
-                                 proj (att_item, att_item)));
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_item)));
 
     /* add the new nodes (of this recursion step)
        to our already collected result */
     res = disjunion (delta,
                      project (base_res,
-                              proj (att_iter, att_iter),
-                              proj (att_item, att_item)));
+                              proj (col_iter, col_iter),
+                              proj (col_item, col_item)));
 
     /* ------------------- BODY ------------------- */
 
@@ -3034,12 +3034,12 @@ recursion_mil (int strategy,
            has been processed ... */
         updated_loop = project (eqjoin (distinct (
                                             project (delta,
-                                                     proj (att_iter1,
-                                                           att_iter))),
+                                                     proj (col_iter1,
+                                                           col_iter))),
                                         base_loop,
-                                        att_iter1,
-                                        att_iter),
-                                proj (att_iter, att_iter));
+                                        col_iter1,
+                                        col_iter),
+                                proj (col_iter, col_iter));
 
         /* ... and integrate the loop maintenance in the recursion */
         loop_rec_param = rec_param (rec_arg (old_loop,
@@ -3054,12 +3054,12 @@ recursion_mil (int strategy,
                           rec_arg (
                               rank (
                                   seed,
-                                  att_pos,
-                                  sortby (att_item)),
+                                  col_pos,
+                                  sortby (col_item)),
                               rank (
                                   body,
-                                  att_pos,
-                                  sortby (att_item)),
+                                  col_pos,
+                                  sortby (col_item)),
                               base),
                           loop_rec_param);
     else
@@ -3068,7 +3068,7 @@ recursion_mil (int strategy,
     /* ---------------- RECURSION ----------------- */
     return rank (
                 rec_fix (x_rec_param, res),
-                att_pos, sortby (att_item));
+                col_pos, sortby (col_item));
 }
 
 static PFalg_step_spec_t
@@ -3130,9 +3130,9 @@ locstep (core2alg_ctx_t *ctx,
          PFalg_axis_t axis, PFty_t ty,
          struct PFla_pair_t p)
 {
-    if (PFprop_type_of (p.rel, att_item) == aat_error)
+    if (PFprop_type_of (p.rel, col_item) == aat_error)
         return p;
-    else if (!(PFprop_type_of (p.rel, att_item) & aat_node))
+    else if (!(PFprop_type_of (p.rel, col_item) & aat_node))
         PFoops (OOPS_FATAL,
                 "err:XP0019: Argument to location step must be a node sequence.");
 
@@ -3149,21 +3149,21 @@ locstep (core2alg_ctx_t *ctx,
                           PFla_step_join_simple (
                               PFla_set_to_la (p.frag),
                               project (p.rel,
-                                       proj (att_iter, att_iter),
-                                       proj (att_item, att_item)),
+                                       proj (col_iter, col_iter),
+                                       proj (col_item, col_item)),
                               locstep_spec (axis, ty),
-                              att_item,
-                              att_item1),
-                          PFalg_proj (att_iter, att_iter),
-                          PFalg_proj (att_item, att_item1));
+                              col_item,
+                              col_item1),
+                          PFalg_proj (col_iter, col_iter),
+                          PFalg_proj (col_item, col_item1));
 
     if (ORDERING)
         return (struct  PFla_pair_t) {
-                   .rel = rank (step, att_pos, sortby (att_item)),
+                   .rel = rank (step, col_pos, sortby (col_item)),
                    .frag = p.frag };
     else
         return (struct  PFla_pair_t) {
-                   .rel = rowid (step, att_pos),
+                   .rel = rowid (step, col_pos),
                    .frag = p.frag };
 }
 
@@ -3181,7 +3181,7 @@ enventry (PFvar_t *var, PFla_op_t *rel, PFla_op_t *map, PFarray_t *doc)
  * Given an XQuery type @a ty, an algebra expression @a e, and the
  * loop relation @a loop, return an algebra expression that returns
  * the relation with schema (iter, subty), so that for each iter value
- * in @a loop there exists one tuple, with the subty attribute set to
+ * in @a loop there exists one tuple, with the subty column set to
  * true, if @a e has a subtype of @a ty, and false otherwise.
  */
 static PFla_op_t *
@@ -3219,13 +3219,13 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         return
             disjunion (
                 attach (
-                    distinct (project (e.rel, proj (att_iter, att_iter))),
-                    att_subty, lit_bln (false)),
+                    distinct (project (e.rel, proj (col_iter, col_iter))),
+                    col_subty, lit_bln (false)),
                 attach (
                     difference (
                         loop,
-                        distinct (project (e.rel, proj (att_iter, att_iter)))),
-                    att_subty, lit_bln (true)));
+                        distinct (project (e.rel, proj (col_iter, col_iter)))),
+                    col_subty, lit_bln (true)));
     /*
      * To test, e.g., for integer values, use
      *
@@ -3233,30 +3233,30 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
      *
      */
     else if (PFty_subtype (ty, PFty_star (PFty_xs_integer ())))
-        itemty = type (e.rel, att_itemty, att_item, aat_int);
+        itemty = type (e.rel, col_itemty, col_item, aat_int);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_decimal ())))
         /* xs:integer is a subtype of xs:decimal.
          * Test for both types. The `type' operator merely adds a boolean
          * column. We OR them after testing for for both types.
          */
-        itemty = or (type (type (e.rel, att_isint, att_item, aat_int),
-                           att_isdec, att_item, aat_dec),
-                     att_itemty, att_isint, att_isdec);
+        itemty = or (type (type (e.rel, col_isint, col_item, aat_int),
+                           col_isdec, col_item, aat_dec),
+                     col_itemty, col_isint, col_isdec);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
-        itemty = type (e.rel, att_itemty, att_item, aat_dbl);
+        itemty = type (e.rel, col_itemty, col_item, aat_dbl);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
-        itemty = type (e.rel, att_itemty, att_item, aat_bln);
+        itemty = type (e.rel, col_itemty, col_item, aat_bln);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
-        itemty = type (e.rel, att_itemty, att_item, aat_str);
+        itemty = type (e.rel, col_itemty, col_item, aat_str);
     else if (PFty_subtype (ty, PFty_star (PFty_untypedAtomic ())))
-        itemty = type (e.rel, att_itemty, att_item, aat_uA);
+        itemty = type (e.rel, col_itemty, col_item, aat_uA);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_anyNode ()))) {
         PFla_op_t *filter, *number, *in_loop;
         
         /* create a key for all rows */
-        number  = rowid (e.rel, att_inner);
+        number  = rowid (e.rel, col_inner);
         /* use this key as inner loop relation */
-        in_loop = project (number, proj (att_iter1, att_inner));
+        in_loop = project (number, proj (col_iter1, col_inner));
         /* evaluate for all nodes a self step that filters the correct
            kind and name */ 
         filter  = project (
@@ -3264,25 +3264,25 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                           PFla_set_to_la (e.frag),
                           type_assert_pos (
                               select_ (
-                                  type (number, att_itemty, att_item, aat_node),
-                                  att_itemty),
-                              att_item, aat_node),
+                                  type (number, col_itemty, col_item, aat_node),
+                                  col_itemty),
+                              col_item, aat_node),
                           locstep_spec (alg_self, PFty_prime (ty)), -1,
-                          att_item, att_item2),
-                      proj (att_iter1, att_inner));
+                          col_item, col_item2),
+                      proj (col_iter1, col_inner));
         
         /* Attach the Boolean value true for all rows that matched the
            self step filter and the value false for all other rows.
            Map back the old iter values to the new Boolean item column */
         itemty = eqjoin (number,
                          disjunion (attach (filter,
-                                            att_itemty,
+                                            col_itemty,
                                             lit_bln (true)),
                                     attach (difference (in_loop, filter),
-                                            att_itemty,
+                                            col_itemty,
                                             lit_bln (false))),
-                         att_inner,
-                         att_iter1);
+                         col_inner,
+                         col_iter1);
     }
     else
         PFoops (OOPS_FATAL,
@@ -3290,8 +3290,8 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                 PFty_str (ty));
 
     itemty = project (itemty,
-                      proj (att_iter, att_iter),
-                      proj (att_itemty, att_itemty));
+                      proj (col_iter, col_iter),
+                      proj (col_itemty, col_itemty));
         
     /*
      * Second part is the test for the occurence indicator.
@@ -3317,12 +3317,12 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_item ()))
         return
             disjunion (
-                seqty1 (itemty, att_subty, att_itemty, att_iter),
+                seqty1 (itemty, col_subty, col_itemty, col_iter),
                 attach (
                     difference (
                         loop,
-                        project (itemty, proj (att_iter, att_iter))),
-                    att_subty, lit_bln (false)));
+                        project (itemty, proj (col_iter, col_iter))),
+                    col_subty, lit_bln (false)));
 
     /*
      * Ocurrence indicator `?' (zero or one item).
@@ -3338,12 +3338,12 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_opt (PFty_item ())))
         return
             disjunion (
-                seqty1 (itemty, att_subty, att_itemty, att_iter),
+                seqty1 (itemty, col_subty, col_itemty, col_iter),
                 attach (
                     difference (
                         loop,
-                        project (itemty, proj (att_iter, att_iter))),
-                    att_subty, lit_bln (true)));
+                        project (itemty, proj (col_iter, col_iter))),
+                    col_subty, lit_bln (true)));
 
     /*
      * Ocurrence indicator `+' (one or more items).
@@ -3365,12 +3365,12 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_plus (PFty_item ())))
         return
             disjunion (
-                all (itemty, att_subty, att_itemty, att_iter),
+                all (itemty, col_subty, col_itemty, col_iter),
                 attach (
                     difference (
                         loop,
-                        project (itemty, proj (att_iter, att_iter))),
-                    att_subty, lit_bln (false)));
+                        project (itemty, proj (col_iter, col_iter))),
+                    col_subty, lit_bln (false)));
 
     /*
      * Ocurrence indicator `*' (zero or more items).
@@ -3386,12 +3386,12 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_star (PFty_item ())))
         return
             disjunion (
-                all (itemty, att_subty, att_itemty, att_iter),
+                all (itemty, col_subty, col_itemty, col_iter),
                 attach (
                     difference (
                         loop,
-                        project (itemty, proj (att_iter, att_iter))),
-                    att_subty, lit_bln (true)));
+                        project (itemty, proj (col_iter, col_iter))),
+                    col_subty, lit_bln (true)));
 
     /*
      * We should never reach this point.
@@ -3489,7 +3489,7 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query,
     /* get empty environment */
     ctx.env  = PFarray (sizeof (PFla_env_t), 50);
     /* loop is initially a table with just one tuple */
-    ctx.loop = lit_tbl (attlist (att_iter), tuple (lit_nat (1)));
+    ctx.loop = lit_tbl (collist (col_iter), tuple (lit_nat (1)));
     /* Create a stack for the map relation information */
     ctx.mapping = PFarray (sizeof (map_rel_info_t), 50);
     /* set ordering mode */

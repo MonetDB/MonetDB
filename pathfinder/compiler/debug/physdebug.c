@@ -47,6 +47,9 @@
 #include "oops.h"
 #include "pfstrings.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /** Node names to print out for all the Algebra tree nodes. */
 static char *a_id[]  = {
       [pa_serialize]       = "SERIALIZE"
@@ -282,13 +285,13 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
     switch (n->kind)
     {
         case pa_lit_tbl:
-            /* list the attributes of this table */
+            /* list the columns of this table */
             PFarray_printf (dot, "%s: (%s", a_id[n->kind],
-                            PFatt_str (n->schema.items[0].name));
+                            PFcol_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s",
-                                PFatt_str (n->schema.items[c].name));
+                                PFcol_str (n->schema.items[c].name));
 
             PFarray_printf (dot, ")");
 
@@ -306,13 +309,13 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             break;
 
         case pa_empty_tbl:
-            /* list the attributes of this table */
+            /* list the columns of this table */
             PFarray_printf (dot, "%s: (%s", a_id[n->kind],
-                            PFatt_str (n->schema.items[0].name));
+                            PFcol_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s",
-                                PFatt_str (n->schema.items[c].name));
+                                PFcol_str (n->schema.items[c].name));
 
             PFarray_printf (dot, ")");
             break;
@@ -320,7 +323,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_attach:
         case pa_val_select:
             PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
-                            PFatt_str (n->sem.attach.attname),
+                            PFcol_str (n->sem.attach.col),
                             literal (n->sem.attach.value));
             break;
 
@@ -328,8 +331,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_eqjoin:
         case pa_semijoin:
             PFarray_printf (dot, "%s: (%s= %s)", a_id[n->kind],
-                            PFatt_str (n->sem.eqjoin.att1),
-                            PFatt_str (n->sem.eqjoin.att2));
+                            PFcol_str (n->sem.eqjoin.col1),
+                            PFcol_str (n->sem.eqjoin.col2));
             break;
 
         case pa_thetajoin:
@@ -337,57 +340,57 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 
             for (c = 0; c < n->sem.thetajoin.count; c++)
                 PFarray_printf (dot, "\\n(%s %s %s)",
-                                PFatt_str (n->sem.thetajoin.pred[c].left),
+                                PFcol_str (n->sem.thetajoin.pred[c].left),
                                 comp_str (n->sem.thetajoin.pred[c].comp),
-                                PFatt_str (n->sem.thetajoin.pred[c].right));
+                                PFcol_str (n->sem.thetajoin.pred[c].right));
             break;
 
         case pa_unq2_thetajoin:
             PFarray_printf (dot, "%s:\\n(%s %s %s)\\ndist (%s, %s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.unq_thetajoin.left),
+                            PFcol_str (n->sem.unq_thetajoin.left),
                             comp_str (n->sem.unq_thetajoin.comp),
-                            PFatt_str (n->sem.unq_thetajoin.right),
-                            PFatt_str (n->sem.unq_thetajoin.ldist),
-                            PFatt_str (n->sem.unq_thetajoin.ldist));
+                            PFcol_str (n->sem.unq_thetajoin.right),
+                            PFcol_str (n->sem.unq_thetajoin.ldist),
+                            PFcol_str (n->sem.unq_thetajoin.ldist));
             break;
 
         case pa_unq1_thetajoin:
             PFarray_printf (dot, "%s:\\n(%s = %s)\\n"
                             "(%s %s %s)\\ndist (%s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.unq_thetajoin.ldist),
-                            PFatt_str (n->sem.unq_thetajoin.rdist),
-                            PFatt_str (n->sem.unq_thetajoin.left),
+                            PFcol_str (n->sem.unq_thetajoin.ldist),
+                            PFcol_str (n->sem.unq_thetajoin.rdist),
+                            PFcol_str (n->sem.unq_thetajoin.left),
                             comp_str (n->sem.unq_thetajoin.comp),
-                            PFatt_str (n->sem.unq_thetajoin.right),
-                            PFatt_str (n->sem.unq_thetajoin.ldist));
+                            PFcol_str (n->sem.unq_thetajoin.right),
+                            PFcol_str (n->sem.unq_thetajoin.ldist));
             break;
 
         case pa_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
                 PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
-                                PFatt_str (n->sem.proj.items[0].new),
-                                PFatt_str (n->sem.proj.items[0].old));
+                                PFcol_str (n->sem.proj.items[0].new),
+                                PFcol_str (n->sem.proj.items[0].old));
             else
                 PFarray_printf (dot, "%s (%s", a_id[n->kind],
-                                PFatt_str (n->sem.proj.items[0].old));
+                                PFcol_str (n->sem.proj.items[0].old));
 
             for (c = 1; c < n->sem.proj.count; c++)
                 if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
                     PFarray_printf (dot, ",%s:%s",
-                                    PFatt_str (n->sem.proj.items[c].new),
-                                    PFatt_str (n->sem.proj.items[c].old));
+                                    PFcol_str (n->sem.proj.items[c].new),
+                                    PFcol_str (n->sem.proj.items[c].old));
                 else
                     PFarray_printf (dot, ",%s",
-                                    PFatt_str (n->sem.proj.items[c].old));
+                                    PFcol_str (n->sem.proj.items[c].old));
 
             PFarray_printf (dot, ")");
             break;
 
         case pa_select:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                            PFatt_str (n->sem.select.att));
+                            PFcol_str (n->sem.select.col));
             break;
 
         case pa_merge_union:
@@ -415,11 +418,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_fun_1to1:
             PFarray_printf (dot, "%s [%s] (%s:<", a_id[n->kind],
                             PFalg_fun_str (n->sem.fun_1to1.kind),
-                            PFatt_str (n->sem.fun_1to1.res));
-            for (c = 0; c < n->sem.fun_1to1.refs.count;c++)
+                            PFcol_str (n->sem.fun_1to1.res));
+            for (c = 0; c < clsize (n->sem.fun_1to1.refs);c++)
                 PFarray_printf (dot, "%s%s",
                                 c ? ", " : "",
-                                PFatt_str (n->sem.fun_1to1.refs.atts[c]));
+                                PFcol_str (clat (n->sem.fun_1to1.refs, c)));
             PFarray_printf (dot, ">)");
             break;
 
@@ -429,29 +432,29 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_bool_or:
         case pa_to:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
-                            PFatt_str (n->sem.binary.res),
-                            PFatt_str (n->sem.binary.att1),
-                            PFatt_str (n->sem.binary.att2));
+                            PFcol_str (n->sem.binary.res),
+                            PFcol_str (n->sem.binary.col1),
+                            PFcol_str (n->sem.binary.col2));
             break;
 
         case pa_bool_not:
             PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                            PFatt_str (n->sem.unary.res),
-                            PFatt_str (n->sem.unary.att));
+                            PFcol_str (n->sem.unary.res),
+                            PFcol_str (n->sem.unary.col));
             break;
 
         case pa_count_ext:
         case pa_count:
-            if (n->sem.count.part == att_NULL)
+            if (n->sem.count.part == col_NULL)
                 PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                                PFatt_str (n->sem.count.res));
+                                PFcol_str (n->sem.count.res));
             else
                 PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
-                                PFatt_str (n->sem.count.res),
-                                PFatt_str (n->sem.count.part));
-            if (n->sem.count.loop != att_NULL)
+                                PFcol_str (n->sem.count.res),
+                                PFcol_str (n->sem.count.part));
+            if (n->sem.count.loop != col_NULL)
                 PFarray_printf (dot, " (%s)",
-                                PFatt_str (n->sem.count.loop));
+                                PFcol_str (n->sem.count.loop));
             break;
 
         case pa_avg:
@@ -460,51 +463,51 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_sum:
         case pa_seqty1:
         case pa_all:
-            if (n->sem.aggr.part == att_NULL)
+            if (n->sem.aggr.part == col_NULL)
                 PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                                PFatt_str (n->sem.aggr.res),
-                                PFatt_str (n->sem.aggr.att));
+                                PFcol_str (n->sem.aggr.res),
+                                PFcol_str (n->sem.aggr.col));
             else
                 PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
-                                PFatt_str (n->sem.aggr.res),
-                                PFatt_str (n->sem.aggr.att),
-                                PFatt_str (n->sem.aggr.part));
+                                PFcol_str (n->sem.aggr.res),
+                                PFcol_str (n->sem.aggr.col),
+                                PFcol_str (n->sem.aggr.part));
             break;
 
         case pa_mark:
         case pa_mark_grp:
             PFarray_printf (dot, "%s (%s", a_id[n->kind],
-                            PFatt_str (n->sem.mark.res));
-            if (n->sem.mark.part != att_NULL)
+                            PFcol_str (n->sem.mark.res));
+            if (n->sem.mark.part != col_NULL)
                 PFarray_printf (dot, "/%s",
-                                PFatt_str (n->sem.mark.part));
+                                PFcol_str (n->sem.mark.part));
 
             PFarray_printf (dot, ")");
             break;
 
         case pa_rank:
             PFarray_printf (dot, "%s (%s)", a_id[n->kind],
-                            PFatt_str (n->sem.rank.res));
+                            PFcol_str (n->sem.rank.res));
             break;
 
         case pa_type:
             PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
-                            PFatt_str (n->sem.type.res),
-                            PFatt_str (n->sem.type.att),
+                            PFcol_str (n->sem.type.res),
+                            PFcol_str (n->sem.type.col),
                             PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case pa_type_assert:
             PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
-                            PFatt_str (n->sem.type_a.att),
+                            PFcol_str (n->sem.type_a.col),
                             PFalg_simple_type_str (n->sem.type_a.ty));
             break;
 
         case pa_cast:
             PFarray_printf (dot, "%s (%s%s%s%s), type: %s", a_id[n->kind],
-                            n->sem.cast.res?PFatt_str(n->sem.cast.res):"",
+                            n->sem.cast.res?PFcol_str(n->sem.cast.res):"",
                             n->sem.cast.res?":<":"",
-                            PFatt_str (n->sem.cast.att),
+                            PFcol_str (n->sem.cast.col),
                             n->sem.cast.res?">":"",
                             PFalg_simple_type_str (n->sem.cast.ty));
             break;
@@ -549,8 +552,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             }
 
             PFarray_printf (dot, " (%s:<%s>)",
-                            PFatt_str (n->sem.doc_access.res),
-                            PFatt_str (n->sem.doc_access.att));
+                            PFcol_str (n->sem.doc_access.res),
+                            PFcol_str (n->sem.doc_access.col));
             break;
 
         case pa_twig:
@@ -563,31 +566,31 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_trace_msg:
             PFarray_printf (dot, "%s (%s, %s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.ii.iter),
-                            PFatt_str (n->sem.ii.item));
+                            PFcol_str (n->sem.ii.iter),
+                            PFcol_str (n->sem.ii.item));
             break;
 
         case pa_docnode:
             PFarray_printf (dot, "%s (%s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.ii.iter));
+                            PFcol_str (n->sem.ii.iter));
             break;
 
         case pa_attribute:
         case pa_processi:
             PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
-                            PFatt_str (n->sem.iter_item1_item2.iter),
-                            PFatt_str (n->sem.iter_item1_item2.item1),
-                            PFatt_str (n->sem.iter_item1_item2.item2));
+                            PFcol_str (n->sem.iter_item1_item2.iter),
+                            PFcol_str (n->sem.iter_item1_item2.item1),
+                            PFcol_str (n->sem.iter_item1_item2.item2));
             break;
 
         case pa_error:
             PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
-                            PFatt_str (n->sem.ii.item));
+                            PFcol_str (n->sem.ii.item));
             break;
         case pa_cond_err:
             PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
-                            PFatt_str (n->sem.err.att),
+                            PFcol_str (n->sem.err.col),
                             PFstrndup (n->sem.err.str, 16));
             break;
 
@@ -595,8 +598,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             PFarray_printf (dot,
                             "%s (%s, %s)",
                             a_id[n->kind],
-                            PFatt_str (n->sem.trace_map.inner),
-                            PFatt_str (n->sem.trace_map.outer));
+                            PFcol_str (n->sem.trace_map.inner),
+                            PFcol_str (n->sem.trace_map.outer));
             break;
 
         case pa_fun_call:
@@ -612,10 +615,10 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             for (unsigned int i = 0; i < n->schema.count; i++)
                 PFarray_printf (dot, "%s%s",
                                 i?", ":"",
-                                PFatt_str (n->schema.items[i].name));
+                                PFcol_str (n->schema.items[i].name));
             PFarray_printf (dot,
                             ")\\n(loop: %s)",
-                            PFatt_str (n->sem.fun_call.iter));
+                            PFcol_str (n->sem.fun_call.iter));
             break;
 
         case pa_fun_param:
@@ -623,7 +626,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             for (unsigned int i = 0; i < n->schema.count; i++)
                 PFarray_printf (dot, "%s%s",
                                 i?", ":"",
-                                PFatt_str (n->schema.items[i].name));
+                                PFcol_str (n->schema.items[i].name));
             PFarray_printf (dot, ")");
             break;
 
@@ -711,41 +714,41 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
             }
             if (*fmt == '+' || *fmt == 'O') {
-                /* list attributes marked const */
+                /* list columns marked const */
                 for (unsigned int i = 0;
                         i < PFprop_const_count (n->prop); i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                    PFatt_str (
+                                    PFcol_str (
                                         PFprop_const_at (n->prop, i)));
             }
             if (*fmt == '+' || *fmt == 'I') {
-                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_collist_t *icols = PFprop_icols_to_collist (n->prop);
 
-                /* list icols attributes */
-                for (unsigned int i = 0; i < icols.count; i++)
+                /* list icols columns */
+                for (unsigned int i = 0; i < clsize (icols); i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                    PFatt_str (icols.atts[i]));
+                                    PFcol_str (clat (icols, i)));
             }
             if (*fmt == '+' || *fmt == 'K') {
-                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
+                PFalg_collist_t *keys = PFprop_keys_to_collist (n->prop);
 
-                /* list keys attributes */
-                for (unsigned int i = 0; i < keys.count; i++)
+                /* list keys columns */
+                for (unsigned int i = 0; i < clsize (keys); i++)
                     PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
-                                    PFatt_str (keys.atts[i]));
+                                    PFcol_str (clat (keys, i)));
             }
             if (*fmt == '+' || *fmt == 'V') {
                 bool fst;
                 fst = true;
                 /* list required value columns and their values */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_bool_val (n->prop, att)) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_bool_val (n->prop, col)) {
                         PFarray_printf (
                             dot,
                             fst ? "\\nreq. val: %s=%s " : ", %s=%s ",
-                            PFatt_str (att),
-                            PFprop_req_bool_val_val (n->prop, att)
+                            PFcol_str (col),
+                            PFprop_req_bool_val_val (n->prop, col)
                             ?"true":"false");
                         fst = false;
                     }
@@ -753,74 +756,74 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                 fst = true;
                 /* list order columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_order_col (n->prop, att)) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_order_col (n->prop, col)) {
                         PFarray_printf (
                             dot,
                             fst ? "\\norder col: %s" : ", %s",
-                            PFatt_str (att));
+                            PFcol_str (col));
                         fst = false;
                     }
                 }
                 fst = true;
                 /* list bijective columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_bijective_col (n->prop, att)) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_bijective_col (n->prop, col)) {
                         PFarray_printf (
                             dot,
                             fst ? "\\nbijective col: %s" : ", %s",
-                            PFatt_str (att));
+                            PFcol_str (col));
                         fst = false;
                     }
                 }
                 fst = true;
                 /* list multi-col columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_multi_col_col (n->prop, att)) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_multi_col_col (n->prop, col)) {
                         PFarray_printf (
                             dot,
                             fst ? "\\nmulti-col col: %s" : ", %s",
-                            PFatt_str (att));
+                            PFcol_str (col));
                         fst = false;
                     }
                 }
                 fst = true;
                 /* list value columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    if (PFprop_req_value_col (n->prop, att)) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_value_col (n->prop, col)) {
                         PFarray_printf (
                             dot,
                             fst ? "\\nvalue col: %s" : ", %s",
-                            PFatt_str (att));
+                            PFcol_str (col));
                         fst = false;
                     }
                 }
             }
             if (*fmt == '+' || *fmt == 'D') {
-                /* list attributes and their corresponding domains */
+                /* list columns and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
                         PFarray_printf (dot, i ? ", %s " : "\\ndom: %s ",
-                                        PFatt_str (n->schema.items[i].name));
+                                        PFcol_str (n->schema.items[i].name));
                         PFprop_write_domain (
                             dot,
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
             }
             if (*fmt == '+' || *fmt == '[') {
-                /* list attributes and their unique names */
+                /* list columns and their unique names */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t ori = n->schema.items[i].name;
-                    PFalg_att_t unq = PFprop_unq_name (n->prop, ori);
+                    PFalg_col_t ori = n->schema.items[i].name;
+                    PFalg_col_t unq = PFprop_unq_name (n->prop, ori);
                     if (unq) {
-                        PFalg_att_t l_unq, r_unq;
+                        PFalg_col_t l_unq, r_unq;
                         PFarray_printf (
                             dot,
                             i ? " , %s=%s" : "\\nO->U names: %s=%s",
-                            PFatt_str (ori), PFatt_str (unq));
+                            PFcol_str (ori), PFcol_str (unq));
 
                         l_unq = PFprop_unq_name_left (n->prop, ori);
                         r_unq = PFprop_unq_name_right (n->prop, ori);
@@ -828,26 +831,26 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                         if (l_unq && l_unq != unq && r_unq && r_unq != unq)
                             PFarray_printf (dot,
                                             " [%s|%s]",
-                                            PFatt_str(l_unq),
-                                            PFatt_str(r_unq));
+                                            PFcol_str(l_unq),
+                                            PFcol_str(r_unq));
                         else if (l_unq && l_unq != unq)
-                            PFarray_printf (dot, " [%s|", PFatt_str(l_unq));
+                            PFarray_printf (dot, " [%s|", PFcol_str(l_unq));
                         else if (r_unq && r_unq != unq)
-                            PFarray_printf (dot, " |%s]", PFatt_str(r_unq));
+                            PFarray_printf (dot, " |%s]", PFcol_str(r_unq));
                     }
                 }
             }
             if (*fmt == '+' || *fmt == ']') {
-                /* list attributes and their original names */
+                /* list columns and their original names */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t unq = n->schema.items[i].name;
-                    PFalg_att_t ori = PFprop_ori_name (n->prop, unq);
+                    PFalg_col_t unq = n->schema.items[i].name;
+                    PFalg_col_t ori = PFprop_ori_name (n->prop, unq);
                     if (ori) {
-                        PFalg_att_t l_ori, r_ori;
+                        PFalg_col_t l_ori, r_ori;
                         PFarray_printf (
                             dot,
                             i ? " , %s=%s" : "\\nU->O names: %s=%s",
-                            PFatt_str (unq), PFatt_str (ori));
+                            PFcol_str (unq), PFcol_str (ori));
 
                         l_ori = PFprop_ori_name_left (n->prop, unq);
                         r_ori = PFprop_ori_name_right (n->prop, unq);
@@ -855,12 +858,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                         if (l_ori && l_ori != ori && r_ori && r_ori != ori)
                             PFarray_printf (dot,
                                             " [%s|%s]",
-                                            PFatt_str(l_ori),
-                                            PFatt_str(r_ori));
+                                            PFcol_str(l_ori),
+                                            PFcol_str(r_ori));
                         else if (l_ori && l_ori != ori)
-                            PFarray_printf (dot, " [%s|", PFatt_str(l_ori));
+                            PFarray_printf (dot, " [%s|", PFcol_str(l_ori));
                         else if (r_ori && r_ori != ori)
-                            PFarray_printf (dot, " |%s]", PFatt_str(r_ori));
+                            PFarray_printf (dot, " |%s]", PFcol_str(r_ori));
                     }
                 }
             }
@@ -873,14 +876,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                 /* print columns that have a level information attached */
                 bool first = true;
                 for (unsigned int i = 0; i < n->schema.count; i++) {
-                    PFalg_att_t att = n->schema.items[i].name;
-                    int level = PFprop_level (n->prop, att);
+                    PFalg_col_t col = n->schema.items[i].name;
+                    int level = PFprop_level (n->prop, col);
                     if (level >= 0) {
                         PFarray_printf (
                             dot,
                             "%s %s=%i",
                             first ? "\\nlevel:" : ",",
-                            PFatt_str (att),
+                            PFcol_str (col),
                             level);
                         first = false;
                     }
@@ -888,22 +891,22 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             }
             if (*fmt == '+' || *fmt == 'U') {
                 PFguide_tree_t **guides;
-                PFalg_att_t att;
+                PFalg_col_t col;
                 unsigned int i, j, count;
                 bool first = true;
 
                 for (i = 0; i < n->schema.count; i++) {
-                    att = n->schema.items[i].name;
-                    if (PFprop_guide (n->prop, att)) {
+                    col = n->schema.items[i].name;
+                    if (PFprop_guide (n->prop, col)) {
 
                         PFarray_printf (dot, "%s %s:",
                                         first ? "\\nGUIDE:" : ",",
-                                        PFatt_str(att));
+                                        PFcol_str(col));
                         first = false;
 
                         /* print guides */
-                        count  = PFprop_guide_count (n->prop, att);
-                        guides = PFprop_guide_elements (n->prop, att);
+                        count  = PFprop_guide_count (n->prop, col);
+                        guides = PFprop_guide_elements (n->prop, col);
                         for (j = 0; j < count; j++)
                             PFarray_printf (dot, " %i", guides[j]->guide);
                     }
@@ -911,7 +914,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             }
             if (*fmt == '+' || *fmt == 'Y') {
                 if (PFprop_ckeys_count (n->prop)) {
-                    PFalg_attlist_t list;
+                    PFalg_collist_t *list;
                     unsigned int i, j;
                     bool first = true;
 
@@ -920,10 +923,10 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                     for (i = 0; i < PFprop_ckeys_count (n->prop); i++) {
                         list = PFprop_ckey_at (n->prop, i);
                         first = true;
-                        for (j = 0; j < list.count; j++) {
+                        for (j = 0; j < clsize (list); j++) {
                             PFarray_printf (dot, "%s%s",
                                             first ? "\\n<" : ", ",
-                                            PFatt_str(list.atts[j]));
+                                            PFcol_str(clat (list, j)));
                             first = false;
                         }
                         PFarray_printf (dot, ">");

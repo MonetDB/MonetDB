@@ -57,8 +57,8 @@ enum PFpa_op_kind_t {
     , pa_unq2_thetajoin =  17 /**< Thetajoin implementation */
     , pa_unq1_thetajoin =  18 /**< Thetajoin implementation */
     , pa_project        =  19 /**< Project */
-    , pa_select         =  20 /**< Select: filter true rows in given att */
-    , pa_val_select     =  21 /**< Select: filter rows by value in given att */
+    , pa_select         =  20 /**< Select: filter true rows in given col */
+    , pa_val_select     =  21 /**< Select: filter rows by value in given col */
     , pa_append_union   =  23 /**< AppendUnion */
     , pa_merge_union    =  24 /**< MergeUnion */
     , pa_intersect      =  25 /**< Intersect */
@@ -135,7 +135,7 @@ union PFpa_op_sem_t {
 
     /* semantic content for serialize operator */
     struct {
-        PFalg_att_t     item;     /**< name of attribute item */
+        PFalg_col_t     item;     /**< name of column item */
     } serialize;
 
     /* semantic content for literal table constr. */
@@ -146,15 +146,15 @@ union PFpa_op_sem_t {
                                        constructor */
 
     struct {
-        PFalg_att_t     attname;  /**< names of new attribute */
-        PFalg_atom_t    value;    /**< value for the new attribute */
+        PFalg_col_t     col;  /**< names of new column */
+        PFalg_atom_t    value;    /**< value for the new column */
     } attach;                     /**< semantic content for column attachment
                                        operator (ColumnAttach) */
 
     /* semantic content for equi-join operator */
     struct {
-        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
-        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
+        PFalg_col_t     col1;     /**< name of column from "left" rel */
+        PFalg_col_t     col2;     /**< name of column from "right" rel */
     } eqjoin;
 
     /* semantic content for theta-join operator */
@@ -166,11 +166,11 @@ union PFpa_op_sem_t {
     /* semantic content for theta-join operator */
     struct {
         PFalg_comp_t    comp;     /**< comparison */
-        PFalg_att_t     left;     /**< name of attribute from "left" rel */
-        PFalg_att_t     right;    /**< name of attribute from "right" rel */
-        PFalg_att_t     ldist;    /**< name of distinct attribute
+        PFalg_col_t     left;     /**< name of column from "left" rel */
+        PFalg_col_t     right;    /**< name of column from "right" rel */
+        PFalg_col_t     ldist;    /**< name of distinct column
                                        from "left" rel */
-        PFalg_att_t     rdist;    /**< name of distinct attribute
+        PFalg_col_t     rdist;    /**< name of distinct column
                                        from "right" rel */
     } unq_thetajoin;
 
@@ -182,7 +182,7 @@ union PFpa_op_sem_t {
 
     /** semantic content for selection operator */
     struct {
-        PFalg_att_t     att;     /**< name of selected attribute */
+        PFalg_col_t     col;     /**< name of selected column */
     } select;
 
     struct {
@@ -205,15 +205,15 @@ union PFpa_op_sem_t {
     /* semantic content for generic (row based) function operator */
     struct {
         PFalg_fun_t         kind;  /**< kind of the function */
-        PFalg_att_t         res;   /**< attribute to hold the result */
-        PFalg_attlist_t     refs;  /**< list of attributes required 
-                                        to compute attribute res */
+        PFalg_col_t         res;   /**< column to hold the result */
+        PFalg_collist_t    *refs;  /**< list of columns required 
+                                        to compute column res */
     } fun_1to1;
 
     struct {
-        PFalg_att_t     att1;     /**< first operand */
-        PFalg_att_t     att2;     /**< second operand */
-        PFalg_att_t     res;      /**< attribute to hold the result */
+        PFalg_col_t     col1;     /**< first operand */
+        PFalg_col_t     col2;     /**< second operand */
+        PFalg_col_t     res;      /**< column to hold the result */
     } binary;
 
     /**
@@ -221,15 +221,15 @@ union PFpa_op_sem_t {
      * (e.g. Boolean negation)
      */
     struct {
-        PFalg_att_t     att;      /**< argument attribute */
-        PFalg_att_t     res;      /**< attribute to hold the result */
+        PFalg_col_t     col;      /**< argument column */
+        PFalg_col_t     res;      /**< column to hold the result */
     } unary;
 
     /** semantic content for Count operators */
     struct {
-        PFalg_att_t         res;  /**< Name of result attribute */
-        PFalg_att_t         part; /**< Partitioning attribute */
-        PFalg_att_t         loop; /**< loop attribute */
+        PFalg_col_t         res;  /**< Name of result column */
+        PFalg_col_t         part; /**< Partitioning column */
+        PFalg_col_t         loop; /**< loop column */
     } count;
 
     /*
@@ -237,43 +237,43 @@ union PFpa_op_sem_t {
      * (partitioned) aggregation function (sum, min, max and avg) on a column
      */
     struct {
-        PFalg_att_t     att;  /**< attribute to be used for the agg. func. */
-        PFalg_att_t     part; /**< partitioning attribute */
-        PFalg_att_t     res;  /**< attribute to hold the result */
+        PFalg_col_t     col;  /**< column to be used for the agg. func. */
+        PFalg_col_t     part; /**< partitioning column */
+        PFalg_col_t     res;  /**< column to hold the result */
     } aggr;
 
     /* semantic content for mark operators */
     struct {
-        PFalg_att_t     res;      /**< name of generated (integer) attribute */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
+        PFalg_col_t     res;      /**< name of generated (integer) column */
+        PFalg_col_t     part;     /**< optional partitioning column,
                                        otherwise NULL */
     } mark;
 
     /** semantic content for rank operator */
     struct {
-        PFalg_att_t      res;     /**< name of generated (integer) attribute */
+        PFalg_col_t      res;     /**< name of generated (integer) column */
         PFord_ordering_t ord;    /**< ordering to consider for duplicate
                                       elimination */
     } rank;
 
     /* semantic content for type test operator */
     struct {
-        PFalg_att_t     att;     /**< name of type-tested attribute */
+        PFalg_col_t     col;     /**< name of type-tested column */
         PFalg_simple_type_t ty;  /**< comparison type */
-        PFalg_att_t     res;     /**< column to store result of type test */
+        PFalg_col_t     res;     /**< column to store result of type test */
     } type;
 
     /* semantic content for type_assert operator */
     struct {
-        PFalg_att_t     att;     /**< name of the asserted attribute */
+        PFalg_col_t     col;     /**< name of the asserted column */
         PFalg_simple_type_t ty;  /**< restricted type */
     } type_a;
 
     /** semantic content for Cast operator */
     struct {
-        PFalg_att_t         att; /**< attribute to cast */
+        PFalg_col_t         col; /**< column to cast */
         PFalg_simple_type_t ty;  /**< target type */
-        PFalg_att_t         res; /**< column to store result of the cast */
+        PFalg_col_t         res; /**< column to store result of the cast */
     } cast;
 
     /** semantic content for staircase join operator */
@@ -281,8 +281,8 @@ union PFpa_op_sem_t {
         PFalg_step_spec_t spec;   /**< step specification */
         PFord_ordering_t in;      /**< input ordering */
         PFord_ordering_t out;     /**< output ordering */
-        PFalg_att_t      iter;    /**< iter column */
-        PFalg_att_t      item;    /**< item column */
+        PFalg_col_t      iter;    /**< iter column */
+        PFalg_col_t      item;    /**< item column */
     } scjoin;
 
     /* store the column names necessary for a twig root operator */
@@ -294,43 +294,43 @@ union PFpa_op_sem_t {
     /* semantic content for debug operator */
     /* semantic content for debug message operator */
     struct {
-        PFalg_att_t     iter;     /**< iter column */
-        PFalg_att_t     item;     /**< item column */
+        PFalg_col_t     iter;     /**< iter column */
+        PFalg_col_t     item;     /**< item column */
     } ii;
 
     /* store the column names necessary for a merge_adjacent operator */
     struct {
-        PFalg_att_t     iter;     /**< name of the iter column */
-        PFalg_att_t     pos;      /**< name of the pos column */
-        PFalg_att_t     item;     /**< name of the item column */
+        PFalg_col_t     iter;     /**< name of the iter column */
+        PFalg_col_t     pos;      /**< name of the pos column */
+        PFalg_col_t     item;     /**< name of the item column */
     } iter_pos_item;
 
     /* store the column names necessary for document access */
     struct {
-        PFalg_att_t     res;      /**< attribute to hold the result */
-        PFalg_att_t     att;      /**< name of the reference attribute */
+        PFalg_col_t     res;      /**< column to hold the result */
+        PFalg_col_t     col;      /**< name of the reference column */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
 
     /* store the column names necessary for an attribute constructor */
     /* store the column names necessary for a pi constructor */
     struct {
-        PFalg_att_t     iter;     /**< name of the iter column */
-        PFalg_att_t     item1;    /**< name of the first item column */
-        PFalg_att_t     item2;    /**< name of the second item column */
+        PFalg_col_t     iter;     /**< name of the iter column */
+        PFalg_col_t     item1;    /**< name of the first item column */
+        PFalg_col_t     item2;    /**< name of the second item column */
     } iter_item1_item2;
 
     /* semantic content for error and conditional error */
     struct {
-        PFalg_att_t     att;      /**< error:      column of error message
+        PFalg_col_t     col;      /**< error:      column of error message
                                        cond_error: name of the bool column */
         char *          str;      /**< error message (only used by cond_err) */
     } err;
 
     /* semantic content for debug relation map operator */
     struct {
-        PFalg_att_t      inner;    /**< name of the inner column */
-        PFalg_att_t      outer;    /**< name of the outer column */
+        PFalg_col_t      inner;    /**< name of the inner column */
+        PFalg_col_t      outer;    /**< name of the outer column */
         unsigned int     trace_id; /**< the trace identifier 
                                         (used in milgen.brg) */
     } trace_map;
@@ -346,7 +346,7 @@ union PFpa_op_sem_t {
         PFqname_t       qname;    /**< function name */
         void           *ctx;      /**< reference to the context node
                                        representing the function call */
-        PFalg_att_t     iter;     /**< the loop relation */
+        PFalg_col_t     iter;     /**< the loop relation */
         PFalg_occ_ind_t occ_ind;  /**< occurrence indicator for the
                                        iter column of the result
                                        (used for optimizations) */
@@ -354,27 +354,27 @@ union PFpa_op_sem_t {
 
     /* semantic content for physical operator fn:doc nad pf:collection */
     struct {
-        PFalg_att_t          att;  /**< argument attribute */
-        PFalg_att_t          res;  /**< attribute to hold the result */
+        PFalg_col_t          col;  /**< argument column */
+        PFalg_col_t          res;  /**< column to hold the result */
         PFalg_doc_tbl_kind_t kind; /**< kind of originator function */
     } doc_tbl;
 
     /* semantic content for physical operator of function fn:id/idref */
     struct {
         bool            id;       /**< id or idref */
-        PFalg_att_t     iter;     /**< the loop relation */
-        PFalg_att_t     item;     /**< column to look up the context nodes */
-        PFalg_att_t     item_doc; /**< column to store the fragment info */
-        PFalg_att_t     item_res; /**< column to store the resulting nodes */
+        PFalg_col_t     iter;     /**< the loop relation */
+        PFalg_col_t     item;     /**< column to look up the context nodes */
+        PFalg_col_t     item_doc; /**< column to store the fragment info */
+        PFalg_col_t     item_res; /**< column to store the resulting nodes */
     } findnodes;
 
     /* semantic content for physical operator of function pf:text/attribute */
     struct {
         bool            id;       /**< id or idref */
-        PFalg_att_t     iter;     /**< the loop relation */
-        PFalg_att_t     item;     /**< column to look up the context nodes */
-        PFalg_att_t     item_doc; /**< column to store the fragment info */
-        PFalg_att_t     item_res; /**< column to store the resulting nodes */
+        PFalg_col_t     iter;     /**< the loop relation */
+        PFalg_col_t     item;     /**< column to look up the context nodes */
+        PFalg_col_t     item_doc; /**< column to store the fragment info */
+        PFalg_col_t     item_res; /**< column to store the resulting nodes */
     } vx_lookup;
 };
 
@@ -420,11 +420,11 @@ struct PFpa_op_t {
  * A `serialize' node will be placed on the very top of the algebra
  * expression tree.
  */
-PFpa_op_t * PFpa_serialize (const PFpa_op_t *alg, PFalg_att_t item);
+PFpa_op_t * PFpa_serialize (const PFpa_op_t *alg, PFalg_col_t item);
 
 /****************************************************************/
 
-PFpa_op_t *PFpa_lit_tbl (PFalg_attlist_t attlist,
+PFpa_op_t *PFpa_lit_tbl (PFalg_collist_t *attlist,
                          unsigned int count, PFalg_tuple_t *tuples);
 
 /**
@@ -434,7 +434,7 @@ PFpa_op_t *PFpa_lit_tbl (PFalg_attlist_t attlist,
 PFpa_op_t *PFpa_empty_tbl (PFalg_schema_t schema);
 
 PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
-                        PFalg_att_t attname, PFalg_atom_t value);
+                        PFalg_col_t col, PFalg_atom_t value);
 
 /**
  * Cross product (Cartesian product) of two relations.
@@ -456,21 +456,21 @@ PFpa_op_t * PFpa_cross (const PFpa_op_t *n1, const PFpa_op_t *n2);
  *           of the left operand.
  */
 PFpa_op_t *
-PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_leftjoin (PFalg_col_t col1, PFalg_col_t col2,
                const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
  * EqJoin: Equi-Join. Does not provide any ordering guarantees.
  */
 PFpa_op_t *
-PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_eqjoin (PFalg_col_t col1, PFalg_col_t col2,
              const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
  * SemiJoin: Semi-Join. Preserves the order of the left argument.
  */
 PFpa_op_t *
-PFpa_semijoin (PFalg_att_t att1, PFalg_att_t att2,
+PFpa_semijoin (PFalg_col_t col1, PFalg_col_t col2,
                const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
@@ -486,8 +486,8 @@ PFpa_thetajoin (const PFpa_op_t *n1, const PFpa_op_t *n2,
  *            of the left argument.
  */
 PFpa_op_t *
-PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
-                     PFalg_att_t ldist, PFalg_att_t rdist,
+PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
+                     PFalg_col_t ldist, PFalg_col_t rdist,
                      const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
@@ -495,8 +495,8 @@ PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
  *            eliminated. Preserves the order of the left argument.
  */
 PFpa_op_t *
-PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_att_t left, PFalg_att_t right,
-                     PFalg_att_t ldist, PFalg_att_t rdist,
+PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
+                     PFalg_col_t ldist, PFalg_col_t rdist,
                      const PFpa_op_t *n1, const PFpa_op_t *n2);
 
 /**
@@ -509,15 +509,15 @@ PFpa_op_t *PFpa_project (const PFpa_op_t *n, unsigned int count,
                          PFalg_proj_t *proj);
 
 /**
- * Select: Filter rows by Boolean value in attribute @a att
+ * Select: Filter rows by Boolean value in column @a col
  */
-PFpa_op_t *PFpa_select (const PFpa_op_t *n, PFalg_att_t att);
+PFpa_op_t *PFpa_select (const PFpa_op_t *n, PFalg_col_t col);
 
 /**
- * Select: Filter rows by given value @a value in attribute @a att
+ * Select: Filter rows by given value @a value in column @a col
  */
 PFpa_op_t *PFpa_value_select (const PFpa_op_t *n,
-                              PFalg_att_t att, PFalg_atom_t value);
+                              PFalg_col_t col, PFalg_atom_t value);
 
 /**
  * Construct AppendUnion operator node.
@@ -571,43 +571,43 @@ PFpa_op_t *PFpa_refine_sort (const PFpa_op_t *,
     with a new column where each value is determined by the values
     of a single row (cardinality stays the same) */
 PFpa_op_t * PFpa_fun_1to1 (const PFpa_op_t *n, PFalg_fun_t kind,
-                           PFalg_att_t res, PFalg_attlist_t refs);
+                           PFalg_col_t res, PFalg_collist_t *refs);
 
 /**
  * Comparison operator eq.
  */
-PFpa_op_t *PFpa_eq (const PFpa_op_t *, PFalg_att_t res,
-                    PFalg_att_t att1, PFalg_att_t att2);
+PFpa_op_t *PFpa_eq (const PFpa_op_t *, PFalg_col_t res,
+                    PFalg_col_t col1, PFalg_col_t col2);
 
 /**
  * Comparison operator gt.
  */
-PFpa_op_t *PFpa_gt (const PFpa_op_t *, PFalg_att_t res,
-                    PFalg_att_t att1, PFalg_att_t att2);
+PFpa_op_t *PFpa_gt (const PFpa_op_t *, PFalg_col_t res,
+                    PFalg_col_t col1, PFalg_col_t col2);
 
 /**
  * Boolean negation
  */
 PFpa_op_t *PFpa_bool_not (const PFpa_op_t *,
-                          PFalg_att_t res, PFalg_att_t att);
+                          PFalg_col_t res, PFalg_col_t col);
 
 /**
  * Boolean and.
  */
-PFpa_op_t *PFpa_and (const PFpa_op_t *, PFalg_att_t res,
-                     PFalg_att_t att1, PFalg_att_t att2);
+PFpa_op_t *PFpa_and (const PFpa_op_t *, PFalg_col_t res,
+                     PFalg_col_t col1, PFalg_col_t col2);
 
 /**
  * Boolean or.
  */
-PFpa_op_t *PFpa_or (const PFpa_op_t *, PFalg_att_t res,
-                    PFalg_att_t att1, PFalg_att_t att2);
+PFpa_op_t *PFpa_or (const PFpa_op_t *, PFalg_col_t res,
+                    PFalg_col_t col1, PFalg_col_t col2);
 
 /**
  * Constructor for op:to operator
  */
-PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
-                     PFalg_att_t att1, PFalg_att_t att2);
+PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_col_t res,
+                     PFalg_col_t col1, PFalg_col_t col2);
 
 /**
  * Count: Count function operator with a loop relation to
@@ -616,7 +616,7 @@ PFpa_op_t * PFpa_to (const PFpa_op_t *n, PFalg_att_t res,
  * ordering.
  */
 PFpa_op_t *PFpa_count_ext (const PFpa_op_t *, const PFpa_op_t *,
-                           PFalg_att_t, PFalg_att_t, PFalg_att_t);
+                           PFalg_col_t, PFalg_col_t, PFalg_col_t);
 
 /**
  * Count: Count function operator. Does neither benefit from
@@ -624,45 +624,45 @@ PFpa_op_t *PFpa_count_ext (const PFpa_op_t *, const PFpa_op_t *,
  * ordering.
  */
 PFpa_op_t *PFpa_count (const PFpa_op_t *,
-                       PFalg_att_t, PFalg_att_t);
+                       PFalg_col_t, PFalg_col_t);
 
 /**
  * Aggr: Aggregation function operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res, 
-		     PFalg_att_t att, PFalg_att_t part);
+PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_col_t res, 
+		     PFalg_col_t col, PFalg_col_t part);
 
 /****************************************************************/
 
-PFpa_op_t *PFpa_mark (const PFpa_op_t *n, PFalg_att_t new_att);
-PFpa_op_t *PFpa_rank (const PFpa_op_t *n, PFalg_att_t new_att,
+PFpa_op_t *PFpa_mark (const PFpa_op_t *n, PFalg_col_t new_col);
+PFpa_op_t *PFpa_rank (const PFpa_op_t *n, PFalg_col_t new_col,
                       PFord_ordering_t ord);
 PFpa_op_t *PFpa_mark_grp (const PFpa_op_t *n,
-                          PFalg_att_t new_att,
-                          PFalg_att_t part);
+                          PFalg_col_t new_col,
+                          PFalg_col_t part);
 
 /**
  * Type operator
  */
 PFpa_op_t *PFpa_type (const PFpa_op_t *,
-                      PFalg_att_t,
-                      PFalg_simple_type_t, PFalg_att_t);
+                      PFalg_col_t,
+                      PFalg_simple_type_t, PFalg_col_t);
 
 /**
  * Constructor for type assertion check. The result is the
- * input relation n where the type of attribute att is replaced
+ * input relation n where the type of column col is replaced
  * by ty
  */
-PFpa_op_t * PFpa_type_assert (const PFpa_op_t *n, PFalg_att_t att,
+PFpa_op_t * PFpa_type_assert (const PFpa_op_t *n, PFalg_col_t col,
                               PFalg_simple_type_t ty);
 
 /**
  * Cast operator
  */
 PFpa_op_t *PFpa_cast (const PFpa_op_t *,
-                      PFalg_att_t, PFalg_att_t, 
+                      PFalg_col_t, PFalg_col_t, 
                       PFalg_simple_type_t);
 
 /****************************************************************/
@@ -676,29 +676,29 @@ PFpa_op_t *PFpa_llscjoin (const PFpa_op_t *ctx,
                           PFalg_step_spec_t spec,
                           const PFord_ordering_t in,
                           const PFord_ordering_t out,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_col_t iter,
+                          PFalg_col_t item);
 
 /**
  * Access to persistently stored document table.
  */
 PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
-                          PFalg_att_t res,
-                          PFalg_att_t att,
+                          PFalg_col_t res,
+                          PFalg_col_t col,
                           PFalg_doc_tbl_kind_t kind);
 
 /**
  * Access to the string content of loaded documents
  */
 PFpa_op_t * PFpa_doc_access (const PFpa_op_t *alg,
-                             PFalg_att_t res,
-                             PFalg_att_t att,
+                             PFalg_col_t res,
+                             PFalg_col_t col,
                              PFalg_doc_t doc_col);
 
 /** Constructor for twig root operators. */
 PFpa_op_t * PFpa_twig (const PFpa_op_t *twig,
-                       PFalg_att_t iter,
-                       PFalg_att_t item);
+                       PFalg_col_t iter,
+                       PFalg_col_t item);
 
 /** Constructor for twig constructor sequence operators. */
 PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
@@ -707,63 +707,63 @@ PFpa_op_t * PFpa_fcns (const PFpa_op_t *fc,
 /** Constructor for document node operators. */
 PFpa_op_t * PFpa_docnode (const PFpa_op_t *scope,
                           const PFpa_op_t *fcns,
-                          PFalg_att_t iter);
+                          PFalg_col_t iter);
 
 /** Constructor for element operators. */
 PFpa_op_t * PFpa_element (const PFpa_op_t *tags,
                           const PFpa_op_t *fcns,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_col_t iter,
+                          PFalg_col_t item);
 
 /** Constructor for attribute operators. */
 PFpa_op_t * PFpa_attribute (const PFpa_op_t *cont,
-                            PFalg_att_t iter,
-                            PFalg_att_t qn,
-                            PFalg_att_t val);
+                            PFalg_col_t iter,
+                            PFalg_col_t qn,
+                            PFalg_col_t val);
 
 /** Constructor for text node operators. */
 PFpa_op_t * PFpa_textnode (const PFpa_op_t *cont, 
-                           PFalg_att_t iter,
-                           PFalg_att_t item);
+                           PFalg_col_t iter,
+                           PFalg_col_t item);
 
 /** Constructor for comment operators. */
 PFpa_op_t * PFpa_comment (const PFpa_op_t *cont,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_col_t iter,
+                          PFalg_col_t item);
 
 /** Constructor for processing instruction operators. */
 PFpa_op_t * PFpa_processi (const PFpa_op_t *cont,
-                           PFalg_att_t iter,
-                           PFalg_att_t target,
-                           PFalg_att_t val);
+                           PFalg_col_t iter,
+                           PFalg_col_t target,
+                           PFalg_col_t val);
 
 /** Constructor for constructor content operators (elem|doc). */
 PFpa_op_t * PFpa_content (const PFpa_op_t *cont,
-                          PFalg_att_t iter,
-                          PFalg_att_t item);
+                          PFalg_col_t iter,
+                          PFalg_col_t item);
 
 /** Constructor for shallow constructor content operators (elem|doc). */
 PFpa_op_t * PFpa_slim_content (const PFpa_op_t *cont,
-                               PFalg_att_t iter,
-                               PFalg_att_t item);
+                               PFalg_col_t iter,
+                               PFalg_col_t item);
 
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
 PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *n,
-                                 PFalg_att_t,
-                                 PFalg_att_t,
-                                 PFalg_att_t);
+                                 PFalg_col_t,
+                                 PFalg_col_t,
+                                 PFalg_col_t);
 
 /**
  * Constructor for a runtime error message
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_att_t att,
-                        PFalg_simple_type_t att_ty);
+PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_col_t col,
+                        PFalg_simple_type_t col_ty);
 
 /**
  * Constructor for conditional error
  */
 PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
-                           PFalg_att_t att, char *err_string);
+                           PFalg_col_t col, char *err_string);
 
 /****************************************************************/
 
@@ -778,16 +778,16 @@ PFpa_op_t *PFpa_nil (void);
  */
 PFpa_op_t * PFpa_trace (const PFpa_op_t *n1,
                         const PFpa_op_t *n2,
-                        PFalg_att_t iter,
-                        PFalg_att_t item);
+                        PFalg_col_t iter,
+                        PFalg_col_t item);
 
 /**
  * Constructor for debug message operator
  */
 PFpa_op_t * PFpa_trace_msg (const PFpa_op_t *n1,
                            const PFpa_op_t *n2,
-                           PFalg_att_t iter,
-                           PFalg_att_t item);
+                           PFalg_col_t iter,
+                           PFalg_col_t item);
 
 /**
  * Constructor for debug relation map operator
@@ -796,8 +796,8 @@ PFpa_op_t * PFpa_trace_msg (const PFpa_op_t *n1,
  */
 PFpa_op_t * PFpa_trace_map (const PFpa_op_t *n1,
                             const PFpa_op_t *n2,
-                            PFalg_att_t      inner,
-                            PFalg_att_t      outer);
+                            PFalg_col_t      inner,
+                            PFalg_col_t      outer);
 
 /**
  * Constructor for a tail recursion operator
@@ -842,7 +842,7 @@ PFpa_op_t *PFpa_fun_call (const PFpa_op_t *loop,
                           PFalg_fun_call_t kind,
                           PFqname_t qname,
                           void *ctx,
-                          PFalg_att_t iter,
+                          PFalg_col_t iter,
                           PFalg_occ_ind_t occ_ind);
 
 /**
@@ -861,18 +861,18 @@ PFpa_op_t *PFpa_fun_param (const PFpa_op_t *argument,
  */
 PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1, 
                               const PFpa_op_t *n2,
-                              PFalg_att_t,
-                              PFalg_att_t);
+                              PFalg_col_t,
+                              PFalg_col_t);
 
 /**
  * Constructor for finding nodes based on id/idref
  */
 PFpa_op_t *
 PFpa_findnodes (const PFpa_op_t *n,
-                PFalg_att_t iter,
-                PFalg_att_t item,
-                PFalg_att_t item_res,
-                PFalg_att_t item_doc,
+                PFalg_col_t iter,
+                PFalg_col_t item,
+                PFalg_col_t item_res,
+                PFalg_col_t item_doc,
                 bool id);
 
 /**
@@ -880,10 +880,10 @@ PFpa_findnodes (const PFpa_op_t *n,
  */
 PFpa_op_t *
 PFpa_vx_lookup (const PFpa_op_t *n,
-                PFalg_att_t iter,
-                PFalg_att_t item,
-                PFalg_att_t item_res,
-                PFalg_att_t item_doc,
+                PFalg_col_t iter,
+                PFalg_col_t item,
+                PFalg_col_t item_res,
+                PFalg_col_t item_doc,
                 bool id);
 
 #endif  /* PHYSICAL_H */

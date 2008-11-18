@@ -39,23 +39,26 @@
 #include "mem.h"
 #include "qname.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
 /**
  * worker for PFprop_ckey;
- * Test if @a attlist is in the list of key columns in array @a keys
+ * Test if @a collist is in the list of key columns in array @a keys
  * and return the size of the key.
  */
 static unsigned int
-key_worker (PFarray_t *keys, PFalg_att_t attlist)
+key_worker (PFarray_t *keys, PFalg_col_t collist)
 {
     if (!keys) return 0;
 
     for (unsigned int i = 0; i < PFarray_last (keys); i++)
-        if ((attlist & *(PFalg_att_t *) PFarray_at (keys, i)) ==
-            *(PFalg_att_t *) PFarray_at (keys, i)) {
-            PFalg_att_t cols = *(PFalg_att_t *) PFarray_at (keys, i);
+        if ((collist & *(PFalg_col_t *) PFarray_at (keys, i)) ==
+            *(PFalg_col_t *) PFarray_at (keys, i)) {
+            PFalg_col_t cols = *(PFalg_col_t *) PFarray_at (keys, i);
             unsigned int counter = 0;
 
             while (cols) {
@@ -75,7 +78,7 @@ key_worker (PFarray_t *keys, PFalg_att_t attlist)
 unsigned int
 PFprop_ckey (const PFprop_t *prop, PFalg_schema_t schema)
 {
-    PFalg_att_t cols = 0;
+    PFalg_col_t cols = 0;
     for (unsigned int i = 0; i < schema.count; i++)
         cols |= schema.items[i].name;
 
@@ -95,15 +98,15 @@ PFprop_ckeys_count (const PFprop_t *prop)
 }
 
 /**
- * Return attributes that build a composite key (at position @a i)
- * as an PFalg_attlist_t.
+ * Return columns that build a composite key (at position @a i)
+ * as an PFalg_collist_t.
  */
-PFalg_attlist_t
+PFalg_collist_t *
 PFprop_ckey_at (const PFprop_t *prop, unsigned int i)
 {
-    PFalg_attlist_t new_list;
-    PFalg_att_t cols = *(PFalg_att_t *) PFarray_at (prop->ckeys, i);
-    PFalg_att_t ori_cols = cols;
+    PFalg_collist_t *new_list;
+    PFalg_col_t cols = *(PFalg_col_t *) PFarray_at (prop->ckeys, i);
+    PFalg_col_t ori_cols = cols;
     unsigned int counter = 0, bit_shift = 1;
 
     /* collect all columns */
@@ -112,34 +115,36 @@ PFprop_ckey_at (const PFprop_t *prop, unsigned int i)
         cols >>= 1;
     }
 
-    new_list.count = counter;
-    new_list.atts = PFmalloc (new_list.count * sizeof (*(new_list.atts)));
+    /* FIXME: sort this bit-shifting out */
+    new_list = PFalg_collist (counter);
+    clsize (new_list) = counter;
 
     counter = 0;
     cols = ori_cols;
 
-    /* unfold cols into a list of attributes */
+    /* unfold cols into a list of columns */
     while (cols) {
-        new_list.atts[counter] = ori_cols & bit_shift;
+        clat (new_list, counter) = ori_cols & bit_shift;
         bit_shift <<= 1;
 
         counter += cols & 1;
         cols >>= 1;
     }
+
     return new_list;
 }
 
 /**
  * Extends the composite key list @a with a single
- * attribute list @a cols if @a cols is not in the list.
+ * column list @a cols if @a cols is not in the list.
  */
 static void
-union_ (PFarray_t *a, PFalg_att_t cols)
+union_ (PFarray_t *a, PFalg_col_t cols)
 {
     assert (a);
 
     if (!key_worker (a, cols))
-        *(PFalg_att_t *) PFarray_add (a) = cols;
+        *(PFalg_col_t *) PFarray_add (a) = cols;
 }
 
 /**
@@ -150,14 +155,14 @@ union_ (PFarray_t *a, PFalg_att_t cols)
 static void
 union_list (PFarray_t *a, PFarray_t *b)
 {
-    PFalg_att_t cur;
+    PFalg_col_t cur;
 
     assert (a && b);
 
     for (unsigned int i = 0; i < PFarray_last (b); i++) {
-        cur = *(PFalg_att_t *) PFarray_at (b, i);
+        cur = *(PFalg_col_t *) PFarray_at (b, i);
         if (!key_worker (a, cur))
-            *(PFalg_att_t *) PFarray_add (a) = cur;
+            *(PFalg_col_t *) PFarray_add (a) = cur;
     }
 }
 
@@ -165,8 +170,8 @@ static void
 copy (PFarray_t *base, PFarray_t *content)
 {
     for (unsigned int i = 0; i < PFarray_last (content); i++)
-        *(PFalg_att_t *) PFarray_add (base) =
-            *(PFalg_att_t *) PFarray_at (content, i);
+        *(PFalg_col_t *) PFarray_add (base) =
+            *(PFalg_col_t *) PFarray_at (content, i);
 }
 
 /**
@@ -251,33 +256,33 @@ infer_ckey (PFla_op_t *n)
 
         case la_cross:
         {
-            PFalg_att_t l_list, r_list;
+            PFalg_col_t l_list, r_list;
             unsigned int i, j;
             /* combine all keys of the left argument
                with all keys of the right argument */
             for (i = 0; i < PFarray_last (L(n)->prop->ckeys); i++)
                 for (j = 0; j < PFarray_last (R(n)->prop->ckeys); j++) {
-                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->ckeys, i);
-                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->ckeys, j);
+                    l_list = *(PFalg_col_t *) PFarray_at (L(n)->prop->ckeys, i);
+                    r_list = *(PFalg_col_t *) PFarray_at (R(n)->prop->ckeys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
 
             for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
                 for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
-                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
-                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    l_list = *(PFalg_col_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_col_t *) PFarray_at (R(n)->prop->keys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
         }   break;
 
         case la_eqjoin:
         {
-            PFalg_att_t l_list, r_list;
+            PFalg_col_t l_list, r_list;
             unsigned int i, j;
 
             /* only a key-join retains all key properties */
-            if (PFprop_key (L(n)->prop, n->sem.eqjoin.att1) &&
-                PFprop_key (R(n)->prop, n->sem.eqjoin.att2)) {
+            if (PFprop_key (L(n)->prop, n->sem.eqjoin.col1) &&
+                PFprop_key (R(n)->prop, n->sem.eqjoin.col2)) {
                 PFarray_t *left, *right;
 
                 /* copy composite keys from the non-key join argument */
@@ -286,22 +291,22 @@ infer_ckey (PFla_op_t *n)
 
                 /* combine all composite keys from the non-key join argument
                    without the join argument with the keys from the key join
-                   argument: (x.keys - x.join_att + y.keys) */
+                   argument: (x.keys - x.join_col + y.keys) */
                 left  = L(n)->prop->ckeys;
                 right = R(n)->prop->ckeys;
                 for (i = 0; i < PFarray_last (left); i++)
                     for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (l_list & n->sem.eqjoin.att1)
+                        l_list = *(PFalg_col_t *) PFarray_at (left, i);
+                        r_list = *(PFalg_col_t *) PFarray_at (right, j);
+                        if (l_list & n->sem.eqjoin.col1)
                             union_ (n->prop->ckeys,
-                                    (l_list & (~n->sem.eqjoin.att1)) | r_list);
-                        if (r_list & n->sem.eqjoin.att2)
+                                    (l_list & (~n->sem.eqjoin.col1)) | r_list);
+                        if (r_list & n->sem.eqjoin.col2)
                             union_ (n->prop->ckeys,
-                                    (r_list & (~n->sem.eqjoin.att2)) | l_list);
+                                    (r_list & (~n->sem.eqjoin.col2)) | l_list);
                     }
             }
-            else if (PFprop_key (L(n)->prop, n->sem.eqjoin.att1)) {
+            else if (PFprop_key (L(n)->prop, n->sem.eqjoin.col1)) {
                 PFarray_t *left, *right;
 
                 /* copy composite keys from the non-key join argument */
@@ -309,18 +314,18 @@ infer_ckey (PFla_op_t *n)
 
                 /* combine all composite keys from the non-key join argument
                    without the join argument with the keys from the key join
-                   argument: (r.keys - r.join_att + l.keys) */
+                   argument: (r.keys - r.join_col + l.keys) */
                 left  = L(n)->prop->ckeys;
                 right = R(n)->prop->ckeys;
                 for (i = 0; i < PFarray_last (left); i++)
                     for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (r_list & n->sem.eqjoin.att2)
+                        l_list = *(PFalg_col_t *) PFarray_at (left, i);
+                        r_list = *(PFalg_col_t *) PFarray_at (right, j);
+                        if (r_list & n->sem.eqjoin.col2)
                             union_ (n->prop->ckeys,
-                                    (r_list & (~n->sem.eqjoin.att2)) | l_list);
+                                    (r_list & (~n->sem.eqjoin.col2)) | l_list);
                     }
-            } else if (PFprop_key (R(n)->prop, n->sem.eqjoin.att2)) {
+            } else if (PFprop_key (R(n)->prop, n->sem.eqjoin.col2)) {
                 PFarray_t *left, *right;
 
                 /* copy composite keys from the non-key join argument */
@@ -328,16 +333,16 @@ infer_ckey (PFla_op_t *n)
 
                 /* combine all composite keys from the non-key join argument
                    without the join argument with the keys from the key join
-                   argument: (l.keys - l.join_att + r.keys) */
+                   argument: (l.keys - l.join_col + r.keys) */
                 left  = L(n)->prop->ckeys;
                 right = R(n)->prop->ckeys;
                 for (i = 0; i < PFarray_last (left); i++)
                     for (j = 0; j < PFarray_last (right); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
-                        if (l_list & n->sem.eqjoin.att1)
+                        l_list = *(PFalg_col_t *) PFarray_at (left, i);
+                        r_list = *(PFalg_col_t *) PFarray_at (right, j);
+                        if (l_list & n->sem.eqjoin.col1)
                             union_ (n->prop->ckeys,
-                                    (l_list & (~n->sem.eqjoin.att1)) | r_list);
+                                    (l_list & (~n->sem.eqjoin.col1)) | r_list);
                     }
             } else {
                 PFarray_t *left, *right;
@@ -348,16 +353,16 @@ infer_ckey (PFla_op_t *n)
                 right = R(n)->prop->ckeys;
                 for (i = 0; i < PFarray_last (L(n)->prop->ckeys); i++)
                     for (j = 0; j < PFarray_last (R(n)->prop->ckeys); j++) {
-                        l_list = *(PFalg_att_t *) PFarray_at (left, i);
-                        r_list = *(PFalg_att_t *) PFarray_at (right, j);
+                        l_list = *(PFalg_col_t *) PFarray_at (left, i);
+                        r_list = *(PFalg_col_t *) PFarray_at (right, j);
                         union_ (n->prop->ckeys, l_list | r_list);
                     }
             }
 
             for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
                 for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
-                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
-                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    l_list = *(PFalg_col_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_col_t *) PFarray_at (R(n)->prop->keys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
         }   break;
@@ -395,21 +400,21 @@ infer_ckey (PFla_op_t *n)
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
             }
 
-            PFalg_att_t l_list, r_list;
+            PFalg_col_t l_list, r_list;
             unsigned int i, j;
             /* combine all keys of the left argument
                with all keys of the right argument */
             for (i = 0; i < PFarray_last (L(n)->prop->ckeys); i++)
                 for (j = 0; j < PFarray_last (R(n)->prop->ckeys); j++) {
-                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->ckeys, i);
-                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->ckeys, j);
+                    l_list = *(PFalg_col_t *) PFarray_at (L(n)->prop->ckeys, i);
+                    r_list = *(PFalg_col_t *) PFarray_at (R(n)->prop->ckeys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
 
             for (i = 0; i < PFarray_last (L(n)->prop->keys); i++)
                 for (j = 0; j < PFarray_last (R(n)->prop->keys); j++) {
-                    l_list = *(PFalg_att_t *) PFarray_at (L(n)->prop->keys, i);
-                    r_list = *(PFalg_att_t *) PFarray_at (R(n)->prop->keys, j);
+                    l_list = *(PFalg_col_t *) PFarray_at (L(n)->prop->keys, i);
+                    r_list = *(PFalg_col_t *) PFarray_at (R(n)->prop->keys, j);
                     union_ (n->prop->ckeys, l_list | r_list);
                 }
         }   break;
@@ -417,8 +422,8 @@ infer_ckey (PFla_op_t *n)
         case la_project:
         {
             PFarray_t *ckeys = L(n)->prop->ckeys;
-            PFalg_att_t ckey;
-            PFalg_att_t cols = 0;
+            PFalg_col_t ckey;
+            PFalg_col_t cols = 0;
             bool rename = false;
             unsigned int i, j;
 
@@ -431,7 +436,7 @@ infer_ckey (PFla_op_t *n)
             /* Copy all composite keys that are still valid
                after projecting away some columns. */
             for (i = 0; i < PFarray_last (ckeys); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                ckey = *(PFalg_col_t *) PFarray_at (ckeys, i);
                 if ((cols & ckey) == ckey)
                     union_ (n->prop->ckeys, ckey);
             }
@@ -442,13 +447,13 @@ infer_ckey (PFla_op_t *n)
             /* ... Otherwise we need to fix the column names. */
             ckeys = n->prop->ckeys;
             for (i = 0; i < PFarray_last (ckeys); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                ckey = *(PFalg_col_t *) PFarray_at (ckeys, i);
                 cols = 0;
 
                 for (j = 0; j < n->sem.proj.count; j++)
                     if (ckey & n->sem.proj.items[j].old)
                         cols |= n->sem.proj.items[j].new;
-                *(PFalg_att_t *) PFarray_at (ckeys, i) = cols;
+                *(PFalg_col_t *) PFarray_at (ckeys, i) = cols;
             }
         }   break;
 
@@ -474,7 +479,7 @@ infer_ckey (PFla_op_t *n)
                 copy (n->prop->ckeys, L(n)->prop->ckeys);
             else {
                 /* we have a new composite key */
-                PFalg_att_t cols = 0;
+                PFalg_col_t cols = 0;
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     cols |= n->schema.items[i].name;
                 union_ (n->prop->ckeys, cols);
@@ -517,12 +522,12 @@ infer_ckey (PFla_op_t *n)
         case la_to:
         {
             PFarray_t *ckeys = L(n)->prop->ckeys;
-            PFalg_att_t ckey;
+            PFalg_col_t ckey;
             unsigned int i;
 
             /* extend all keys with the result column */
             for (i = 0; i < PFarray_last (ckeys); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                ckey = *(PFalg_col_t *) PFarray_at (ckeys, i);
                 union_ (n->prop->ckeys, ckey | n->sem.binary.res);
             }
         }   break;
@@ -559,18 +564,18 @@ infer_ckey (PFla_op_t *n)
         case la_rank:
         {
             PFarray_t *ckeys = L(n)->prop->ckeys;
-            PFalg_att_t ckey, att;
-            PFalg_att_t cols = 0;
+            PFalg_col_t ckey, col;
+            PFalg_col_t cols = 0;
             unsigned int i;
 
             copy (n->prop->ckeys, ckeys);
 
             for (i = 0; i < PFord_count (n->sem.sort.sortby); i++) {
-                att = PFord_order_col_at (n->sem.sort.sortby, i);
+                col = PFord_order_col_at (n->sem.sort.sortby, i);
                 /* check normal keys ... */
-                if (PFprop_key (L(n)->prop, att))
+                if (PFprop_key (L(n)->prop, col))
                     break;
-                cols |= att;
+                cols |= col;
             }
             if (i < PFord_count (n->sem.sort.sortby)) {
                 union_ (n->prop->ckeys, n->sem.sort.res);
@@ -578,7 +583,7 @@ infer_ckey (PFla_op_t *n)
             }
             /* ... and composed keys */
             for (i = 0; i < PFarray_last (ckeys); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (ckeys, i);
+                ckey = *(PFalg_col_t *) PFarray_at (ckeys, i);
                 if ((cols & ckey) == ckey) {
                     union_ (n->prop->ckeys, n->sem.sort.res);
                     break;
@@ -621,9 +626,9 @@ infer_ckey (PFla_op_t *n)
         case la_guide_step_join:
         {
             PFarray_t *right = R(n)->prop->ckeys;
-            PFalg_att_t ckey;
+            PFalg_col_t ckey;
             for (unsigned int i = 0; i < PFarray_last (right); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (right, i);
+                ckey = *(PFalg_col_t *) PFarray_at (right, i);
 
                 if ((ckey & n->sem.step.item &&
                      (n->sem.step.spec.axis == alg_attr ||
@@ -661,9 +666,9 @@ infer_ckey (PFla_op_t *n)
         case la_doc_index_join:
         {
             PFarray_t *right = R(n)->prop->ckeys;
-            PFalg_att_t ckey;
+            PFalg_col_t ckey;
             for (unsigned int i = 0; i < PFarray_last (right); i++) {
-                ckey = *(PFalg_att_t *) PFarray_at (right, i);
+                ckey = *(PFalg_col_t *) PFarray_at (right, i);
                 union_ (n->prop->ckeys,
                         ckey | n->sem.doc_join.item_res);
             }
@@ -806,7 +811,7 @@ prop_infer (PFla_op_t *n)
         PFarray_last (n->prop->ckeys) = 0;
     else
         /* prepare the property for 10 composite keys */
-        n->prop->ckeys   = PFarray (sizeof (PFalg_att_t), 10);
+        n->prop->ckeys   = PFarray (sizeof (PFalg_col_t), 10);
 
     /* infer information on composite key columns */
     infer_ckey (n);

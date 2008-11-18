@@ -43,6 +43,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -56,7 +59,7 @@
 
 /* required node property list */
 struct req_node_t {
-    PFalg_att_t col;       /* column name ... */
+    PFalg_col_t col;       /* column name ... */
 
     /* ... and the corresponding property that tests if ... */
 
@@ -90,26 +93,26 @@ typedef struct req_node_t req_node_t;
 #define CONSTR_AT(n,i)    (((req_node_t *) PFarray_at ((n), (i)))->constr)
 
 /**
- * @brief look up the property mapping (in @a l) for a given column @a attr.
+ * @brief look up the property mapping (in @a l) for a given column @a col.
  */
 static req_node_t *
-find_map (PFarray_t *l, PFalg_att_t attr)
+find_map (PFarray_t *l, PFalg_col_t col)
 {
     if (!l)
         return NULL;
 
     for (unsigned int i = 0; i < PFarray_last (l); i++) {
-        if (attr == COL_AT(l, i))
+        if (col == COL_AT(l, i))
             return (req_node_t *) PFarray_at (l, i);
     }
     return NULL;
 }
 
 /**
- * @brief look up the property mapping (in @a l) for a given column @a attr.
+ * @brief look up the property mapping (in @a l) for a given column @a col.
  */
 static void
-add_map_ (PFla_op_t *n, PFalg_att_t attr,
+add_map_ (PFla_op_t *n, PFalg_col_t col,
           bool serialize, bool id, bool order,
           bool access, bool axis_down, bool axis_side,
           bool axis_up, bool axis_self, bool constr)
@@ -118,7 +121,7 @@ add_map_ (PFla_op_t *n, PFalg_att_t attr,
     assert (n);
 
     /* lookup the mapping (if present) */
-    map = find_map (MAP_LIST(n), attr);
+    map = find_map (MAP_LIST(n), col);
 
     /* add a new mapping */
     if (!map) {
@@ -127,7 +130,7 @@ add_map_ (PFla_op_t *n, PFalg_att_t attr,
             MAP_LIST(n) = PFarray (sizeof (req_node_t), 3);
 
         *((req_node_t *) PFarray_add (MAP_LIST(n)))
-            = (req_node_t) { .col       = attr,
+            = (req_node_t) { .col       = col,
                              .serialize = serialize,
                              .id        = id,
                              .order     = order,
@@ -152,55 +155,55 @@ add_map_ (PFla_op_t *n, PFalg_att_t attr,
     }
 }
 
-#define add_map(n,attr) add_map_ ((n),(attr), \
+#define add_map(n,col) add_map_ ((n),(col), \
                                   false, false, false \
                                   false, false, false \
                                   false, false, false)
-#define add_serialize_map(n,attr) \
-        add_map_ ((n),(attr), true , false, false, \
+#define add_serialize_map(n,col) \
+        add_map_ ((n),(col), true , false, false, \
                   false, false, false, false, false, false)
-#define add_id_map(n,attr) \
-        add_map_ ((n),(attr), false, true , false, \
+#define add_id_map(n,col) \
+        add_map_ ((n),(col), false, true , false, \
                   false, false, false, false, false, false)
-#define add_order_map(n,attr) \
-        add_map_ ((n),(attr), false, false, true , \
+#define add_order_map(n,col) \
+        add_map_ ((n),(col), false, false, true , \
                   false, false, false, false, false, false)
-#define add_access_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_access_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   true , false, false, false, false, false)
-#define add_axis_down_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_axis_down_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   false, true , false, false, false, false)
-#define add_axis_side_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_axis_side_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   false, false, true , false, false, false)
-#define add_axis_up_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_axis_up_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   false, false, false, true , false, false)
-#define add_axis_self_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_axis_self_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   false, false, false, false, true , false)
-#define add_constr_map(n,attr) \
-        add_map_ ((n),(attr), false, false, false, \
+#define add_constr_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
                   false, false, false, false, false, true)
 
 
 /**
- * @brief Test if column @a attr is linked to any node properties.
+ * @brief Test if column @a col is linked to any node properties.
  */
 bool
-PFprop_node_property (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_node_property (const PFprop_t *prop, PFalg_col_t col)
 {
-    return (find_map (prop->req_node_vals, attr) != NULL);
+    return (find_map (prop->req_node_vals, col) != NULL);
 }
 
 /**
- * @brief Test if the node ids of column @a attr are required.
+ * @brief Test if the node ids of column @a col are required.
  */
 bool
-PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_node_id_required (const PFprop_t *prop, PFalg_col_t col)
 {
-    req_node_t *map = find_map (prop->req_node_vals, attr);
+    req_node_t *map = find_map (prop->req_node_vals, col);
 
     if (!map)
         return true;
@@ -209,12 +212,12 @@ PFprop_node_id_required (const PFprop_t *prop, PFalg_att_t attr)
 }
 
 /**
- * @brief Test if the node order of column @a attr are required.
+ * @brief Test if the node order of column @a col are required.
  */
 bool
-PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_node_order_required (const PFprop_t *prop, PFalg_col_t col)
 {
-    req_node_t *map = find_map (prop->req_node_vals, attr);
+    req_node_t *map = find_map (prop->req_node_vals, col);
 
     if (!map)
         return true;
@@ -223,12 +226,12 @@ PFprop_node_order_required (const PFprop_t *prop, PFalg_att_t attr)
 }
 
 /**
- * @brief Test if the subtree of column @a attr is queried.
+ * @brief Test if the subtree of column @a col is queried.
  */
 bool
-PFprop_node_content_queried (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_node_content_queried (const PFprop_t *prop, PFalg_col_t col)
 {
-    req_node_t *map = find_map (prop->req_node_vals, attr);
+    req_node_t *map = find_map (prop->req_node_vals, col);
 
     if (!map)
         return true;
@@ -237,12 +240,12 @@ PFprop_node_content_queried (const PFprop_t *prop, PFalg_att_t attr)
 }
 
 /**
- * @brief Test if the nodes of column @a attr are serialized.
+ * @brief Test if the nodes of column @a col are serialized.
  */
 bool
-PFprop_node_serialize (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_node_serialize (const PFprop_t *prop, PFalg_col_t col)
 {
-    req_node_t *map = find_map (prop->req_node_vals, attr);
+    req_node_t *map = find_map (prop->req_node_vals, col);
 
     if (!map)
         return true;
@@ -329,9 +332,9 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (type_of (n, n->sem.ser_rel.pos) & aat_node)
                 add_order_map (n, n->sem.ser_rel.pos);
 
-            for (unsigned int i = 0; i < n->sem.ser_rel.items.count; i++)
-                if (type_of (n, n->sem.ser_rel.items.atts[i]) & aat_node)
-                    add_serialize_map (n, n->sem.ser_rel.items.atts[i]);
+            for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
+                if (type_of (n, clat (n->sem.ser_rel.items, i)) & aat_node)
+                    add_serialize_map (n, clat (n->sem.ser_rel.items, i));
             break;
 
         case la_lit_tbl:
@@ -351,9 +354,9 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_eqjoin:
         case la_semijoin:
-            if (type_of (n, n->sem.eqjoin.att1) & aat_node) {
-                add_id_map (n, n->sem.eqjoin.att1);
-                add_id_map (n, n->sem.eqjoin.att2);
+            if (type_of (n, n->sem.eqjoin.col1) & aat_node) {
+                add_id_map (n, n->sem.eqjoin.col1);
+                add_id_map (n, n->sem.eqjoin.col2);
             }
             break;
 
@@ -415,26 +418,26 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (type_of (n, n->sem.fun_1to1.res) & (aat_update|aat_docmgmt)) {
                 /* mark that we are not allowed to assume anything about
                    the input columns */
-                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                    if (type_of (n, n->sem.fun_1to1.refs.atts[i]) & aat_node)
-                        add_map_ (n, n->sem.fun_1to1.refs.atts[i],
+                for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
+                    if (type_of (n, clat (n->sem.fun_1to1.refs, i)) & aat_node)
+                        add_map_ (n, clat (n->sem.fun_1to1.refs, i),
                                   true, true, true,
                                   true, true, true,
                                   true, true, true);
             }
             else {
                 /* mark the input columns as access columns */
-                for (unsigned int i = 0; i < n->sem.fun_1to1.refs.count; i++)
-                    if (type_of (n, n->sem.fun_1to1.refs.atts[i]) & aat_node)
-                        add_access_map (n, n->sem.fun_1to1.refs.atts[i]);
+                for (unsigned int i = 0; i < clsize (n->sem.fun_1to1.refs); i++)
+                    if (type_of (n, clat (n->sem.fun_1to1.refs, i)) & aat_node)
+                        add_access_map (n, clat (n->sem.fun_1to1.refs, i));
             }
             break;
 
         case la_num_eq:
         case la_num_gt:
-            if (type_of (n, n->sem.binary.att1) & aat_node) {
-                add_id_map (n, n->sem.binary.att1);
-                add_id_map (n, n->sem.binary.att2);
+            if (type_of (n, n->sem.binary.col1) & aat_node) {
+                add_id_map (n, n->sem.binary.col1);
+                add_id_map (n, n->sem.binary.col2);
             }
             break;
 
@@ -442,12 +445,12 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_bool_or:
         case la_bool_and:
             /* the output cannot be of type node */
-            assert ((type_of (n, n->sem.binary.att1) & aat_node) == 0);
+            assert ((type_of (n, n->sem.binary.col1) & aat_node) == 0);
             break;
 
         case la_bool_not:
             /* the output cannot be of type node */
-            assert ((type_of (n, n->sem.unary.att) & aat_node) == 0);
+            assert ((type_of (n, n->sem.unary.col) & aat_node) == 0);
             break;
 
         case la_avg:
@@ -483,7 +486,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             break;
 
         case la_cast:
-            assert ((type_of (n, n->sem.type.att) & aat_node) == 0);
+            assert ((type_of (n, n->sem.type.col) & aat_node) == 0);
         case la_type:
             assert ((type_of (n, n->sem.type.res) & aat_node) == 0);
             break;
@@ -629,7 +632,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
 
         case la_doc_access:
             assert ((type_of (n, n->sem.doc_access.res) & aat_node) == 0);
-            add_access_map (n, n->sem.doc_access.att);
+            add_access_map (n, n->sem.doc_access.col);
 
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
@@ -644,7 +647,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 /* inherit the properties of the iter column */
                 if (map) {
                     req_node_t map_item = *map;
-                    map_item.col = att_iter;
+                    map_item.col = col_iter;
                     ADD(new_map, map_item);
                 }
 
@@ -653,7 +656,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 /* inherit the properties of the item column */
                 if (map) {
                     req_node_t map_item = *map;
-                    map_item.col = att_item;
+                    map_item.col = col_item;
                     /* if no downward axis step is applied
                        to the constructed fragment the id,
                        order, and access properties of the
@@ -679,7 +682,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
 
-                map = find_map (MAP_LIST(n), att_iter);
+                map = find_map (MAP_LIST(n), col_iter);
 
                 /* inherit the properties of the iter column */
                 if (map) {
@@ -697,7 +700,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
 
-                map = find_map (MAP_LIST(n), att_iter);
+                map = find_map (MAP_LIST(n), col_iter);
 
                 /* inherit the properties of the iter column */
                 if (map) {
@@ -717,7 +720,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 1);
 
-                map = find_map (MAP_LIST(n), att_iter);
+                map = find_map (MAP_LIST(n), col_iter);
 
                 /* inherit the properties of the iter column */
                 if (map) {
@@ -736,7 +739,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
                 PFarray_t *new_map = PFarray (sizeof (req_node_t), 2);
 
-                map = find_map (MAP_LIST(n), att_iter);
+                map = find_map (MAP_LIST(n), col_iter);
 
                 /* inherit the properties of the iter column */
                 if (map) {
@@ -755,7 +758,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             PFarray_t *new_map = PFarray (sizeof (req_node_t), 2),
                       *old_map;
 
-            map = find_map (MAP_LIST(n), att_iter);
+            map = find_map (MAP_LIST(n), col_iter);
 
             /* inherit the properties of the iter column */
             if (map) {
@@ -764,7 +767,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 ADD(new_map, map_item);
             }
 
-            map = find_map (MAP_LIST(n), att_item);
+            map = find_map (MAP_LIST(n), col_item);
 
             /* inherit the properties of the item column */
             if (map) {
@@ -842,7 +845,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             return; /* only infer once */
 
         case la_cond_err:
-            assert ((type_of (R(n), n->sem.err.att) & aat_node) == 0);
+            assert ((type_of (R(n), n->sem.err.col) & aat_node) == 0);
             prop_infer_req_node_vals (L(n), MAP_LIST(n));
             prop_infer_req_node_vals (R(n), NULL);
             return; /* only infer once */

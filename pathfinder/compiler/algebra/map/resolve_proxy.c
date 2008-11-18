@@ -82,9 +82,9 @@ resolve_proxies (PFla_op_t *p)
     */
     if (p->kind == la_step_join || p->kind == la_guide_step_join) {
         PFla_op_t    *rowid, *step;
-        PFalg_att_t   used_cols = 0,
-                      join_att1,
-                      join_att2,
+        PFalg_col_t   used_cols = 0,
+                      join_col1,
+                      join_col2,
                       cur;
         PFalg_proj_t *top_proj   = PFmalloc (p->schema.count *
                                              sizeof (PFalg_proj_t));
@@ -97,13 +97,13 @@ resolve_proxies (PFla_op_t *p)
             top_proj[i] = PFalg_proj (cur, cur);
         }
 
-        /* Generate two new column names (used for the join attributes). */
-        join_att1 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
-        used_cols = used_cols | join_att1;
-        join_att2 = PFalg_ori_name (PFalg_unq_name (att_iter, 0), ~used_cols);
+        /* Generate two new column names (used for the join columns). */
+        join_col1 = PFalg_ori_name (PFalg_unq_name (col_iter, 0), ~used_cols);
+        used_cols = used_cols | join_col1;
+        join_col2 = PFalg_ori_name (PFalg_unq_name (col_iter, 0), ~used_cols);
 
         /* Generate a new rowid operator. */
-        rowid = PFla_rowid (R(p), join_att2);
+        rowid = PFla_rowid (R(p), join_col2);
 
         /* Generate the pattern sketched above. The projection
            underneath the path step operator renames the
@@ -113,12 +113,12 @@ resolve_proxies (PFla_op_t *p)
                        L(p),
                        PFla_project (
                            rowid,
-                           PFalg_proj (join_att1, join_att2),
+                           PFalg_proj (join_col1, join_col2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
                        p->sem.step.spec,
                        p->sem.step.level,
-                       join_att1,
+                       join_col1,
                        p->sem.step.item_res,
                        p->sem.step.item_res);
         else
@@ -126,14 +126,14 @@ resolve_proxies (PFla_op_t *p)
                        L(p),
                        PFla_project (
                            rowid,
-                           PFalg_proj (join_att1, join_att2),
+                           PFalg_proj (join_col1, join_col2),
                            PFalg_proj (p->sem.step.item_res,
                                        p->sem.step.item)),
                        p->sem.step.spec,
                        p->sem.step.guide_count,
                        p->sem.step.guides,
                        p->sem.step.level,
-                       join_att1,
+                       join_col1,
                        p->sem.step.item_res,
                        p->sem.step.item_res);
 
@@ -141,8 +141,8 @@ resolve_proxies (PFla_op_t *p)
                   PFla_eqjoin (
                       step,
                       rowid,
-                      join_att1,
-                      join_att2),
+                      join_col1,
+                      join_col2),
                   p->schema.count,
                   top_proj);
     }

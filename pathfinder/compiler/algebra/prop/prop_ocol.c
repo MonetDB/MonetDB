@@ -39,6 +39,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -53,34 +56,34 @@
                                            sizeof (*((p)->schema.items)))
 
 /**
- * Test if @a attr is in the list of ocol columns of node @a n
+ * Test if @a col is in the list of ocol columns of node @a n
  */
 bool
-PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr)
+PFprop_ocol (const PFla_op_t *n, PFalg_col_t col)
 {
     assert (n);
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (attr == n->schema.items[i].name)
+        if (col == n->schema.items[i].name)
             return true;
 
     return false;
 }
 
 /**
- * Return the type of @a attr in the list of ocol columns
+ * Return the type of @a col in the list of ocol columns
  */
 PFalg_simple_type_t
-PFprop_type_of (const PFla_op_t *n, PFalg_att_t attr)
+PFprop_type_of (const PFla_op_t *n, PFalg_col_t col)
 {
     assert (n);
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (attr == n->schema.items[i].name)
+        if (col == n->schema.items[i].name)
             return n->schema.items[i].type;
 
     /* you should never get there */
     PFoops (OOPS_FATAL,
-                 "Type of %s not found in schema", PFatt_str (attr));
+                 "Type of %s not found in schema", PFcol_str (col));
 
     return aat_int; /* satisfy picky compilers */
 }
@@ -197,7 +200,7 @@ infer_ocol (PFla_op_t *n)
         {
             unsigned int  i, j;
 
-            /* see if both operands have same number of attributes */
+            /* see if both operands have same number of columns */
             if (ocols_count (L(n)) != ocols_count (R(n)))
                 PFoops (OOPS_FATAL,
                         "Schema of two arguments of UNION does not match");
@@ -208,7 +211,7 @@ infer_ocol (PFla_op_t *n)
             for (i = 0; i < ocols_count (n); i++) {
                 for (j = 0; j < ocols_count (R(n)); j++)
                     if ((ocol_at (n, i)).name == (ocol_at (R(n), j)).name) {
-                        /* The two attributes match, so include their name
+                        /* The two columns match, so include their name
                          * and type information into the result. This allows
                          * for the order of schema items in n1 and n2 to be
                          * different.
@@ -229,7 +232,7 @@ infer_ocol (PFla_op_t *n)
         {
             unsigned int  i, j;
 
-            /* see if both operands have same number of attributes */
+            /* see if both operands have same number of columns */
             if (ocols_count (L(n)) != ocols_count (R(n)))
                 PFoops (OOPS_FATAL,
                         "Schema of two arguments of INTERSECTION does not match");
@@ -240,7 +243,7 @@ infer_ocol (PFla_op_t *n)
             for (i = 0; i < ocols_count (n); i++) {
                 for (j = 0; j < ocols_count (R(n)); j++)
                     if ((ocol_at (n, i)).name == (ocol_at (R(n), j)).name) {
-                        /* The two attributes match, so include their name
+                        /* The two columns match, so include their name
                          * and type information into the result. This allows
                          * for the order of schema items in n1 and n2 to be
                          * different.
@@ -264,20 +267,20 @@ infer_ocol (PFla_op_t *n)
 
         case la_fun_1to1:
         {
-            unsigned int        i, j, ix[n->sem.fun_1to1.refs.count];
+            unsigned int        i, j, ix[clsize (n->sem.fun_1to1.refs)];
             PFalg_simple_type_t res_type = 0;
 
-            /* verify that the referenced attributes in refs
-               are really attributes of n ... */
-            for (i = 0; i < n->sem.fun_1to1.refs.count; i++) {
+            /* verify that the referenced columns in refs
+               are really columns of n ... */
+            for (i = 0; i < clsize (n->sem.fun_1to1.refs); i++) {
                 for (j = 0; j < ocols_count (L(n)); j++)
-                    if (ocol_at (L(n), j).name == n->sem.fun_1to1.refs.atts[i])
+                    if (ocol_at (L(n), j).name == clat (n->sem.fun_1to1.refs, i))
                         break;
                 if (j == ocols_count (L(n)))
                     PFoops (OOPS_FATAL,
-                            "attribute `%s' referenced in generic function"
+                            "column `%s' referenced in generic function"
                             " operator not found",
-                            PFatt_str (n->sem.fun_1to1.refs.atts[i]));
+                            PFcol_str (clat (n->sem.fun_1to1.refs, i)));
                 ix[i] = j;
             }
 
@@ -286,10 +289,10 @@ infer_ocol (PFla_op_t *n)
             switch (n->sem.fun_1to1.kind) {
                 /**
                  * Depending on the @a kind parameter, we add, subtract,
-                 * multiply, or divide the two values of columns @a att1
-                 * and @a att2 and store the result in newly created attribute
-                 * @a res. @a res gets the same data type as @a att1 and
-                 * @a att2. The result schema corresponds to the schema
+                 * multiply, or divide the two values of columns @a col1
+                 * and @a col2 and store the result in newly created column
+                 * @a res. @a res gets the same data type as @a col1 and
+                 * @a col2. The result schema corresponds to the schema
                  * of the input relation @a n plus @a res.
                  */
                 case alg_fun_num_add:
@@ -297,8 +300,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_num_multiply:
                 case alg_fun_num_divide:
                 case alg_fun_num_modulo:
-                    assert (n->sem.fun_1to1.refs.count == 2);
-                    /* make sure both attributes are of the same numeric type */
+                    assert (clsize (n->sem.fun_1to1.refs) == 2);
+                    /* make sure both columns are of the same numeric type */
                     assert (ocol_at (L(n), ix[0]).type == aat_nat ||
                             ocol_at (L(n), ix[0]).type == aat_int ||
                             ocol_at (L(n), ix[0]).type == aat_dec ||
@@ -313,8 +316,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_ceiling:
                 case alg_fun_fn_floor:
                 case alg_fun_fn_round:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure the attribute is of numeric type */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure the column is of numeric type */
                     assert (ocol_at (L(n), ix[0]).type == aat_int ||
                             ocol_at (L(n), ix[0]).type == aat_dec ||
                             ocol_at (L(n), ix[0]).type == aat_dbl);
@@ -323,9 +326,9 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_substring:
-                    assert (n->sem.fun_1to1.refs.count == 2);
+                    assert (clsize (n->sem.fun_1to1.refs) == 2);
 
-                    /* make sure both attributes are of type str & dbl */
+                    /* make sure both columns are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
                     assert (ocol_at (L(n), ix[1]).type == aat_dbl);
 
@@ -333,8 +336,8 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_substring_dbl:
-                    assert (n->sem.fun_1to1.refs.count == 3);
-                    /* make sure both attributes are of type str & dbl */
+                    assert (clsize (n->sem.fun_1to1.refs) == 3);
+                    /* make sure both columns are of type str & dbl */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
                     assert (ocol_at (L(n), ix[1]).type == aat_dbl &&
                             ocol_at (L(n), ix[2]).type == aat_dbl);
@@ -345,8 +348,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_concat:
                 case alg_fun_fn_substring_before:
                 case alg_fun_fn_substring_after:
-                    assert (n->sem.fun_1to1.refs.count == 2);
-                    /* make sure both attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 2);
+                    /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str);
 
@@ -354,8 +357,8 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_string_length:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure the attribute is of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure the column is of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
 
                     res_type = aat_int;
@@ -364,8 +367,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_normalize_space:
                 case alg_fun_fn_upper_case:
                 case alg_fun_fn_lower_case:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure the attribute is of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure the column is of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
 
                     res_type = aat_str;
@@ -375,8 +378,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
                 case alg_fun_fn_matches:
-                    assert (n->sem.fun_1to1.refs.count == 2);
-                    /* make sure both attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 2);
+                    /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str);
 
@@ -384,8 +387,8 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_matches_flag:
-                    assert (n->sem.fun_1to1.refs.count == 3);
-                    /* make sure all attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 3);
+                    /* make sure all columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str &&
                             ocol_at (L(n), ix[2]).type == aat_str);
@@ -395,8 +398,8 @@ infer_ocol (PFla_op_t *n)
 
                 case alg_fun_fn_translate:
                 case alg_fun_fn_replace:
-                    assert (n->sem.fun_1to1.refs.count == 3);
-                    /* make sure all attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 3);
+                    /* make sure all columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str &&
                             ocol_at (L(n), ix[2]).type == aat_str);
@@ -405,8 +408,8 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_replace_flag:
-                    assert (n->sem.fun_1to1.refs.count == 4);
-                    /* make sure all attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 4);
+                    /* make sure all columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str &&
                             ocol_at (L(n), ix[2]).type == aat_str &&
@@ -418,8 +421,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_name:
                 case alg_fun_fn_local_name:
                 case alg_fun_fn_namespace_uri:
-                    assert(n->sem.fun_1to1.refs.count == 1);
-                    /* make sure attribute is of type node */
+                    assert(clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure column is of type node */
                     assert (ocol_at (L(n), ix[0]).type & aat_node);
 
                     res_type = aat_str;
@@ -427,13 +430,13 @@ infer_ocol (PFla_op_t *n)
 
                 case alg_fun_fn_number:
                 case alg_fun_fn_number_lax:
-                    assert (n->sem.fun_1to1.refs.count == 1);
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
                     res_type = aat_dbl;
                     break;
 
                 case alg_fun_fn_qname:
-                    assert (n->sem.fun_1to1.refs.count == 2);
-                    /* make sure both attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 2);
+                    /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str &&
                             ocol_at (L(n), ix[1]).type == aat_str);
 
@@ -441,88 +444,88 @@ infer_ocol (PFla_op_t *n)
                     break;
 
                 case alg_fun_fn_doc_available:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure attributes is of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure columns is of type string */
                     assert (ocol_at (L(n), ix[0]).type == aat_str);
 
                     res_type = aat_bln;
                     break;
 
                 case alg_fun_pf_fragment:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure both attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type & aat_node);
 
                     res_type = aat_pnode;
                     break;
 
                 case alg_fun_pf_supernode:
-                    assert (n->sem.fun_1to1.refs.count == 1);
-                    /* make sure both attributes are of type string */
+                    assert (clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure both columns are of type string */
                     assert (ocol_at (L(n), ix[0]).type & aat_node);
 
                     res_type = ocol_at (L(n), ix[0]).type;
                     break;
 
                 case alg_fun_pf_add_doc_str:
-                    assert(n->sem.fun_1to1.refs.count == 3);
+                    assert(clsize (n->sem.fun_1to1.refs) == 3);
 
-                    /* make sure atts are of the correct type */
+                    /* make sure cols are of the correct type */
                     assert(ocol_at (L(n), ix[0]).type == aat_str);
                     assert(ocol_at (L(n), ix[1]).type == aat_str);
                     assert(ocol_at (L(n), ix[2]).type == aat_str);
 
                     /* the returning type of doc management functions
-                     * is aat_docmgmt bitwise OR the attribute types*/
+                     * is aat_docmgmt bitwise OR the column types*/
                     res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
                     break;
 
                 case alg_fun_pf_add_doc_str_int:
-                    assert(n->sem.fun_1to1.refs.count == 4);
+                    assert(clsize (n->sem.fun_1to1.refs) == 4);
 
-                    /* make sure atts are of the correct type */
+                    /* make sure cols are of the correct type */
                     assert(ocol_at (L(n), ix[0]).type == aat_str);
                     assert(ocol_at (L(n), ix[1]).type == aat_str);
                     assert(ocol_at (L(n), ix[2]).type == aat_str);
                     assert(ocol_at (L(n), ix[3]).type == aat_int);
 
                     /* the returning type of doc management functions
-                     * is aat_docmgmt bitwise OR the attribute types */
+                     * is aat_docmgmt bitwise OR the column types */
                     res_type = aat_docmgmt | aat_path | aat_docnm | aat_colnm;
                     break;
 
                 case alg_fun_pf_del_doc:
-                    assert(n->sem.fun_1to1.refs.count == 1);
+                    assert(clsize (n->sem.fun_1to1.refs) == 1);
 
-                    /* make sure atts are of the correct type */
+                    /* make sure cols are of the correct type */
                     assert(ocol_at (L(n), ix[0]).type == aat_str);
 
                     /* the returning type of doc management functions
-                     * is aat_docmgmt bitwise OR the attribute types */
+                     * is aat_docmgmt bitwise OR the column types */
                     res_type = aat_docmgmt | aat_docnm;
                     break;
 
                 case alg_fun_pf_nid:
-                    assert(n->sem.fun_1to1.refs.count == 1);
+                    assert(clsize (n->sem.fun_1to1.refs) == 1);
 
-                    /* make sure atts are of the correct type */
+                    /* make sure cols are of the correct type */
                     assert(ocol_at (L(n), ix[0]).type == aat_pnode);
 
                     res_type = aat_str;
                     break;
 
                 case alg_fun_pf_docname:
-                    assert(n->sem.fun_1to1.refs.count == 1);
+                    assert(clsize (n->sem.fun_1to1.refs) == 1);
 
-                    /* make sure atts are of the correct type */
+                    /* make sure cols are of the correct type */
                     assert(ocol_at (L(n), ix[0]).type & aat_node);
 
                     res_type = aat_str;
                     break;
 
                 case alg_fun_upd_delete:
-                    assert(n->sem.fun_1to1.refs.count == 1);
-                    /* make sure that the attribute is a node */
+                    assert(clsize (n->sem.fun_1to1.refs) == 1);
+                    /* make sure that the column is a node */
                     assert(ocol_at (L(n), ix[0]).type & aat_node);
 
                     /* the result type is aat_update bitwise OR the type of
@@ -540,7 +543,7 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_upd_replace_value:
                 case alg_fun_upd_replace_element:
                 case alg_fun_upd_replace_node:
-                    assert(n->sem.fun_1to1.refs.count == 2);
+                    assert(clsize (n->sem.fun_1to1.refs) == 2);
 
                     /* make some assertions according to the fun signature */
                     switch (n->sem.fun_1to1.kind) {
@@ -625,17 +628,17 @@ infer_ocol (PFla_op_t *n)
         case la_min:
         case la_sum:
             /* set number of schema items in the result schema:
-             * result attribute plus partitioning attribute
+             * result column plus partitioning column
              * (if available -- constant optimizations may
              *  have removed it).
              */
             new_ocols (n, n->sem.aggr.part ? 2 : 1);
 
-            /* verify that attributes 'att' and 'part' are attributes of n
+            /* verify that columns 'col' and 'part' are columns of n
              * and include them into the result schema
              */
             for (unsigned int i = 0; i < ocols_count (L(n)); i++) {
-                if (n->sem.aggr.att == ocol_at (L(n), i).name) {
+                if (n->sem.aggr.col == ocol_at (L(n), i).name) {
                     ocol_at (n, 0) = ocol_at (L(n), i);
                     ocol_at (n, 0).name = n->sem.aggr.res;
                 }
@@ -648,17 +651,17 @@ infer_ocol (PFla_op_t *n)
 
         case la_count:
             /* set number of schema items in the result schema:
-             * result attribute plus partitioning attribute
+             * result column plus partitioning column
              * (if available -- constant optimizations may
              *  have removed it).
              */
             new_ocols (n, n->sem.aggr.part ? 2 : 1);
 
-            /* insert result attribute into schema */
+            /* insert result column into schema */
             ocol_at (n, 0).name = n->sem.aggr.res;
             ocol_at (n, 0).type = aat_int;
 
-            /* copy the partitioning attribute */
+            /* copy the partitioning column */
             if (n->sem.aggr.part)
                 for (unsigned int i = 0; i < ocols_count (L(n)); i++)
                     if (ocol_at (L(n), i).name == n->sem.aggr.part) {
@@ -696,9 +699,9 @@ infer_ocol (PFla_op_t *n)
             /* copy schema from 'n' argument */
             for (unsigned int i = 0; i < ocols_count (L(n)); i++)
             {
-                if (n->sem.type.att == ocol_at (L(n), i).name)
+                if (n->sem.type.col == ocol_at (L(n), i).name)
                 {
-                    ocol_at (n, i).name = n->sem.type.att;
+                    ocol_at (n, i).name = n->sem.type.col;
                     ocol_at (n, i).type = n->sem.type.ty;
                 }
                 else
@@ -735,8 +738,8 @@ infer_ocol (PFla_op_t *n)
                     continue;
                 else
                     PFoops (OOPS_FATAL,
-                            "illegal attribute `%s' in path step",
-                            PFatt_str (R(n)->schema.items[i].name));
+                            "illegal column `%s' in path step",
+                            PFcol_str (R(n)->schema.items[i].name));
             }
             if (!(PFprop_type_of (R(n), n->sem.step.item) & aat_node))
                 PFoops (OOPS_FATAL,
@@ -773,13 +776,13 @@ infer_ocol (PFla_op_t *n)
 #ifndef NDEBUG
             if (PFprop_ocol (R(n), n->sem.step.item_res))
                 PFoops (OOPS_FATAL,
-                        "illegal attribute `%s' in the input "
+                        "illegal column `%s' in the input "
                         "of a path step",
-                        PFatt_str (n->sem.step.item_res));
+                        PFcol_str (n->sem.step.item_res));
             if (!PFprop_ocol (R(n), n->sem.step.item))
                 PFoops (OOPS_FATAL,
                         "column `%s' needed in path step is missing",
-                        PFatt_str (n->sem.step.item));
+                        PFcol_str (n->sem.step.item));
             if (!(PFprop_type_of (R(n), n->sem.step.item) & aat_node))
                 PFoops (OOPS_FATAL,
                         "wrong item type '0x%X' in the input of a path step",
@@ -809,13 +812,13 @@ infer_ocol (PFla_op_t *n)
 #ifndef NDEBUG
             if (PFprop_ocol (R(n), n->sem.doc_join.item_res))
                 PFoops (OOPS_FATAL,
-                        "illegal attribute `%s' in the input "
+                        "illegal column `%s' in the input "
                         "of a doc index join",
-                        PFatt_str (n->sem.doc_join.item_res));
+                        PFcol_str (n->sem.doc_join.item_res));
             if (!PFprop_ocol (R(n), n->sem.doc_join.item))
                 PFoops (OOPS_FATAL,
                         "column `%s' needed in doc index join is missing",
-                        PFatt_str (n->sem.doc_join.item));
+                        PFcol_str (n->sem.doc_join.item));
             if (!(PFprop_type_of (R(n), n->sem.doc_join.item) & aat_str))
                 PFoops (OOPS_FATAL,
                         "wrong item type '0x%X' in the input of doc index join",
@@ -823,7 +826,7 @@ infer_ocol (PFla_op_t *n)
             if (!PFprop_ocol (R(n), n->sem.doc_join.item_doc))
                 PFoops (OOPS_FATAL,
                         "column `%s' needed in doc index join is missing",
-                        PFatt_str (n->sem.doc_join.item_doc));
+                        PFcol_str (n->sem.doc_join.item_doc));
             if (!(PFprop_type_of (R(n), n->sem.doc_join.item_doc) & aat_node))
                 PFoops (OOPS_FATAL,
                         "wrong doc item type '0x%X' in the input "
@@ -952,10 +955,10 @@ infer_ocol (PFla_op_t *n)
 
         case la_error:
         {
-            PFalg_simple_type_t ty = PFprop_type_of (n, n->sem.err.att);
+            PFalg_simple_type_t ty = PFprop_type_of (n, n->sem.err.col);
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
             for (unsigned int i = 0; i < ocols_count (n); i++)
-                if (ocol_at (n, i).name == n->sem.err.att)
+                if (ocol_at (n, i).name == n->sem.err.col)
                     ocol_at (n, i).type = ty;
         }   break;
 
@@ -983,14 +986,14 @@ infer_ocol (PFla_op_t *n)
         {
             unsigned int  i, j;
 
-            /* see if both operands have same number of attributes */
+            /* see if both operands have same number of columns */
             if (ocols_count (L(n)) != ocols_count (R(n)) ||
                 ocols_count (L(n)) != ocols_count (n->sem.rec_arg.base))
                 PFoops (OOPS_FATAL,
                         "Schema of the arguments of recursion "
                         "argument to not match");
 
-            /* see if we find each attribute in all of the input relations */
+            /* see if we find each column in all of the input relations */
             for (i = 0; i < ocols_count (L(n)); i++) {
                 for (j = 0; j < ocols_count (R(n)); j++)
                     if (ocol_at (L(n), i).name == ocol_at (R(n), j).name) {
@@ -1032,7 +1035,7 @@ infer_ocol (PFla_op_t *n)
         {
             unsigned int  i, j;
 
-            /* see if we find each attribute in all of the input relations */
+            /* see if we find each column in all of the input relations */
             for (i = 0; i < ocols_count (L(n)); i++) {
                 for (j = 0; j < ocols_count (n); j++)
                     if (ocol_at (L(n), i).name == ocol_at (n, j).name) {

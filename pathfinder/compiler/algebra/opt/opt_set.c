@@ -74,9 +74,9 @@ opt_set (PFla_op_t *p)
             if (PFprop_set (p->prop) &&
                 L(p)->kind == la_step &&
                 PFprop_set (L(p)->prop)) {
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(L(p)->sem.step.item |
                                  L(p)->sem.step.iter));
                 *L(p) = *PFla_project (
@@ -96,9 +96,9 @@ opt_set (PFla_op_t *p)
             if (PFprop_set (p->prop) &&
                 R(p)->kind == la_step &&
                 PFprop_set (R(p)->prop)) {
-                PFalg_att_t item_res;
+                PFalg_col_t item_res;
                 item_res = PFalg_ori_name (
-                               PFalg_unq_name (att_item),
+                               PFalg_unq_name (col_item),
                                ~(R(p)->sem.step.item |
                                  R(p)->sem.step.iter));
                 *R(p) = *PFla_project (
@@ -151,7 +151,7 @@ opt_set (PFla_op_t *p)
             if (PFprop_set (p->prop) &&
                 PFprop_icols_count (p->prop) == 2 &&
                 PFprop_icol (p->prop, p->sem.step.item_res)) {
-                PFalg_att_t iter = 0,
+                PFalg_col_t iter = 0,
                             item = p->sem.step.item_res;
 
                 for (unsigned int i = 0; i < p->schema.count; i++)

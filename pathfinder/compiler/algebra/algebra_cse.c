@@ -42,6 +42,9 @@
 #include <assert.h>
 #include <string.h> /* strcmp */
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* prune already checked nodes */
 #define SEEN(p) ((p)->bit_dag)
 
@@ -67,7 +70,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
     unsigned int i;
     bool mismatch = false;
 
-    /* schemata are not equal if they have a different number of attributes */
+    /* schemata are not equal if they have a different number of columns */
     if (a.count != b.count)
         return false;
 
@@ -192,8 +195,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_eqjoin:
         case la_semijoin:
-            return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
-                    && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
+            return (a->sem.eqjoin.col1 == b->sem.eqjoin.col1
+                    && a->sem.eqjoin.col2 == b->sem.eqjoin.col2);
             break;
 
         case la_thetajoin:
@@ -262,7 +265,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_select:
-            return a->sem.select.att == b->sem.select.att;
+            return a->sem.select.col == b->sem.select.col;
             break;
 
         case la_pos_select:
@@ -279,7 +282,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     return false;
 
             /* either both positional selection are partitioned or none */
-            /* partitioning attribute must be equal (if available) */
+            /* partitioning column must be equal (if available) */
             if (a->sem.pos_sel.part != b->sem.pos_sel.part)
                 return false;
 
@@ -287,14 +290,14 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_fun_1to1:
-            if (a->sem.fun_1to1.kind        != b->sem.fun_1to1.kind      ||
-                a->sem.fun_1to1.res         != b->sem.fun_1to1.res       ||
-                a->sem.fun_1to1.refs.count  != b->sem.fun_1to1.refs.count)
+            if (a->sem.fun_1to1.kind          != b->sem.fun_1to1.kind        ||
+                a->sem.fun_1to1.res           != b->sem.fun_1to1.res         ||
+                clsize (a->sem.fun_1to1.refs) != clsize (b->sem.fun_1to1.refs))
                 return false;
 
-            for (unsigned int i = 0; i < a->sem.fun_1to1.refs.count; i++)
-                if (a->sem.fun_1to1.refs.atts[i] !=
-                    b->sem.fun_1to1.refs.atts[i])
+            for (unsigned int i = 0; i < clsize (a->sem.fun_1to1.refs); i++)
+                if (clat (a->sem.fun_1to1.refs, i) !=
+                    clat (b->sem.fun_1to1.refs, i))
                     return false;
 
             return true;
@@ -305,13 +308,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_bool_and:
         case la_bool_or:
         case la_to:
-            return (a->sem.binary.att1 == b->sem.binary.att1
-                    && a->sem.binary.att2 == b->sem.binary.att2
+            return (a->sem.binary.col1 == b->sem.binary.col1
+                    && a->sem.binary.col2 == b->sem.binary.col2
                     && a->sem.binary.res == b->sem.binary.res);
             break;
 
         case la_bool_not:
-            return (a->sem.unary.att == b->sem.unary.att
+            return (a->sem.unary.col == b->sem.unary.col
                     && a->sem.unary.res == b->sem.unary.res);
             break;
 
@@ -322,12 +325,12 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_count:
         case la_seqty1:
         case la_all:
-            if (a->sem.aggr.att != b->sem.aggr.att
+            if (a->sem.aggr.col != b->sem.aggr.col
                 || a->sem.aggr.res != b->sem.aggr.res)
                 return false;
 
             /* either both aggregates are partitioned or none */
-            /* partitioning attribute must be equal (if available) */
+            /* partitioning column must be equal (if available) */
             if (a->sem.aggr.part != b->sem.aggr.part)
                 return false;
 
@@ -347,7 +350,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     return false;
 
             /* either both operators are partitioned or none */
-            /* partitioning attribute must be equal (if available) */
+            /* partitioning column must be equal (if available) */
             if (a->sem.sort.part != b->sem.sort.part)
                 return false;
 
@@ -363,13 +366,13 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_type:
         case la_cast:
-            return (a->sem.type.att == b->sem.type.att
+            return (a->sem.type.col == b->sem.type.col
                     && a->sem.type.res == b->sem.type.res
                     && a->sem.type.ty == b->sem.type.ty);
             break;
 
         case la_type_assert:
-            return (a->sem.type.att == b->sem.type.att
+            return (a->sem.type.col == b->sem.type.col
                     && a->sem.type.ty == b->sem.type.ty);
             break;
 
@@ -405,12 +408,12 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_doc_access:
             return (a->sem.doc_access.res == b->sem.doc_access.res
-                    && a->sem.doc_access.att == b->sem.doc_access.att
+                    && a->sem.doc_access.col == b->sem.doc_access.col
                     && a->sem.doc_access.doc_col == b->sem.doc_access.doc_col);
             break;
 
         case la_doc_tbl:
-            return (a->sem.doc_tbl.att == b->sem.doc_tbl.att &&
+            return (a->sem.doc_tbl.col == b->sem.doc_tbl.col &&
                     a->sem.doc_tbl.res == b->sem.doc_tbl.res);
             break;
 
@@ -483,11 +486,11 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_error:
-            return (a->sem.err.att == b->sem.err.att);
+            return (a->sem.err.col == b->sem.err.col);
             break;
 
         case la_cond_err:
-            return (a->sem.err.att == b->sem.err.att
+            return (a->sem.err.col == b->sem.err.col
                     && a->sem.err.str == b->sem.err.str);
             break;
 

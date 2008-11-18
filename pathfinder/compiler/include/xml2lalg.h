@@ -44,7 +44,7 @@ typedef struct XML2LALGContext XML2LALGContext;
 struct XML2LALGContext {
     PFarray_t*    nodeStore;   
     void*         docXPathCtx;
-    PFalg_att_t (*convert2PFLA_attributeName)(const char* s);
+    PFalg_col_t (*convert2PFLA_attributeName)(const char* s);
 };
 
 XML2LALGContext* 

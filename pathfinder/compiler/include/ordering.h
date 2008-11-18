@@ -35,11 +35,11 @@
 /* Orderings use arrays of column names. */
 #include "array.h"
 
-/* We speak about algebra attribute names. */
+/* We speak about algebra column names. */
 #include "algebra.h"
 
 /**
- * We denote the lexicographic ordering @f$ O @f$ on attributes
+ * We denote the lexicographic ordering @f$ O @f$ on columns
  * @f$ A_1 @f$ (major) and @f$ A_2 @f$ (minor) of a relation @f$ R @f$
  * as @f$ O = [A_1, A_2] @f$.  An ordering may be @em refined:
  * @f[
@@ -62,13 +62,13 @@ typedef PFarray_t * PFord_set_t;
 PFord_ordering_t PFordering (void);
 
 /**
- * Construct an order list (based on the attribute list) with ascending order.
+ * Construct an order list (based on the column list) with ascending order.
  */
 #define PFord_order_intro(...)                                     \
-    PFord_order_intro_ ((sizeof ((PFalg_att_t[]) { __VA_ARGS__ }) \
-                         / sizeof (PFalg_att_t)),                  \
-                         (PFalg_att_t[]) { __VA_ARGS__ })
-PFord_ordering_t PFord_order_intro_ (unsigned int count, PFalg_att_t *atts);
+    PFord_order_intro_ ((sizeof ((PFalg_col_t[]) { __VA_ARGS__ }) \
+                         / sizeof (PFalg_col_t)),                  \
+                         (PFalg_col_t[]) { __VA_ARGS__ })
+PFord_ordering_t PFord_order_intro_ (unsigned int count, PFalg_col_t *cols);
 
 /**
  * Create an empty set of orderings.
@@ -76,22 +76,22 @@ PFord_ordering_t PFord_order_intro_ (unsigned int count, PFalg_att_t *atts);
 PFord_set_t PFord_set (void);
 
 /**
- * Refine an existing ordering by one more attribute.
+ * Refine an existing ordering by one more column.
  */
 PFord_ordering_t PFord_refine (const PFord_ordering_t, 
-                               const PFalg_att_t,
+                               const PFalg_col_t,
                                const bool);
 
 unsigned int PFord_count (const PFord_ordering_t ordering);
 
-PFalg_att_t PFord_order_col_at (const PFord_ordering_t ordering,
+PFalg_col_t PFord_order_col_at (const PFord_ordering_t ordering,
                                 unsigned int index);
 
 bool PFord_order_dir_at (const PFord_ordering_t ordering,
                          unsigned int index);
 
 void PFord_set_order_col_at (PFord_ordering_t ordering, unsigned int index,
-                             PFalg_att_t name);
+                             PFalg_col_t name);
 
 void PFord_set_order_dir_at (PFord_ordering_t ordering, unsigned int index,
                              bool dir);
