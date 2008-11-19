@@ -477,24 +477,10 @@ print_literal (PFalg_atom_t atom)
 static PFalg_col_t
 create_unq_name (PFalg_schema_t schema, PFalg_col_t col)
 {
-    bool name_conflict = false;
-    PFalg_col_t used_cols = col_NULL;
-    PFalg_col_t new_col = col;
-
     for (unsigned int i = 0; i < schema.count; i++)
-    {
-        used_cols = used_cols | schema.items[i].name;
-        if (schema.items[i].name == col) {
-            name_conflict = true;
-        }
-    }
-
-    if (name_conflict) {
-        new_col = PFalg_ori_name (PFalg_unq_name (col),
-                            ~used_cols);
-    }
-
-    return new_col;
+        if (schema.items[i].name == col)
+            return PFalg_new_name (col);
+    return col;
 }
 
 /**
@@ -1312,6 +1298,21 @@ littbl_column (PFalg_col_t name, PFla_op_t *littbl1, PFla_op_t *littbl2,
 }
 
 /**
+ * Check if a column @a b appears in list @a a.
+ */
+static bool
+in (PFalg_collist_t *a, PFalg_col_t b)
+{
+    if (!a) return false;
+
+    for (unsigned int i = 0; i < clsize (a); i++)
+        if (b == clat (a, i))
+            return true;
+
+    return false;
+}
+
+/**
  * Creates a new operator for every node not yet in
  * the CSE-plan.
  *
@@ -1364,7 +1365,8 @@ new_operator (PFla_op_t *n)
         case la_semijoin:
         case la_thetajoin:
         {
-            PFalg_col_t  used_cols = 0;
+            PFalg_collist_t *used_collist = PFalg_collist (L(n)->schema.count +
+                                                           R(n)->schema.count);
             PFalg_proj_t *p = NULL;
             PFla_op_t    *proj = CSE(R(n));
             bool projection = false;
@@ -1374,11 +1376,11 @@ new_operator (PFla_op_t *n)
 
             /* fill used columns with columns of the left schema */
             for (unsigned int i = 0; i < CSE(L(n))->schema.count; i++)
-               used_cols = used_cols | CSE(L(n))->schema.items[i].name;
+               cladd (used_collist) = CSE(L(n))->schema.items[i].name;
 
             /* determine number of conflicting columns */
             for (unsigned int i = 0; i < CSE(R(n))->schema.count; i++) {
-                if (used_cols & CSE(R(n))->schema.items[i].name) {
+                if (in (used_collist, CSE(R(n))->schema.items[i].name)) {
                     projection = true;
                     break;
                 }
@@ -1391,13 +1393,10 @@ new_operator (PFla_op_t *n)
                 /* create projection */
                 for (unsigned int i = 0; i < CSE(R(n))->schema.count; i++) {
                     /* check for conflicting columns */
-                    if (used_cols & CSE(R(n))->schema.items[i].name) {
+                    if (in (used_collist, CSE(R(n))->schema.items[i].name)) {
                        /* create new column name */
-                       PFalg_col_t t =
-                              PFalg_ori_name (
-                                  PFalg_unq_name (
-                                      CSE(R(n))->schema.items[i].name),
-                                      ~used_cols);
+                       PFalg_col_t t
+                           = PFalg_new_name (CSE(R(n))->schema.items[i].name);
 
                        /* create new entry for projection */
                        p[i] = PFalg_proj (t, CSE(R(n))->schema.items[i].name);
@@ -1405,8 +1404,8 @@ new_operator (PFla_op_t *n)
                                  actcol (t,
                                          R(n)->schema.items[i].name));
 
-                        /* add new created name to used_cols */
-                        used_cols = used_cols | t;
+                        /* add new created name to used_collist */
+                        cladd (used_collist) = t;
                     }
                     /* this is not a conflicting column */
                     else {
@@ -1417,7 +1416,7 @@ new_operator (PFla_op_t *n)
                                           R(n)->schema.items[i].name));
 
                         /* add new name to conflicting column */
-                        used_cols = used_cols | CSE(R(n))->schema.items[i].name;
+                        cladd (used_collist) = CSE(R(n))->schema.items[i].name;
                     }
                 }
 

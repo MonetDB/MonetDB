@@ -65,6 +65,25 @@
             unq_names = false;                                              \
         }
 
+#define MAP_UNQ_NAMES(phase)                                                \
+        if (!unq_names) {                                                   \
+            PFinfo (OOPS_WARNING,                                           \
+                    "%s requires unique names - "                           \
+                    "automatical mapping added", phase);                    \
+                                                                            \
+            tm = PFtimer_start ();                                          \
+                                                                            \
+            root = PFmap_unq_names (root);                                  \
+                                                                            \
+            tm = PFtimer_stop (tm);                                         \
+                                                                            \
+            if (timing)                                                     \
+                PFlog ("   map to unique column names:    %s",              \
+                       PFtimer_str (tm));                                   \
+                                                                            \
+            unq_names = true;                                               \
+        }
+
 #define REMOVE_PROXIES(phase)                                               \
         if (proxies_involved) {                                             \
             PFinfo (OOPS_WARNING,                                           \
@@ -141,7 +160,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'E':
-                MAP_ORI_NAMES("common subexpression elimination")
+                MAP_UNQ_NAMES("common subexpression elimination")
                 REMOVE_PROXIES("common subexpression elimination")
 
                 tm = PFtimer_start ();
