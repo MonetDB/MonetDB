@@ -127,12 +127,6 @@ typedef PFpa_op_t plan_t;
 /* Function call kind indicator */
 static PFalg_fun_call_t fun_call_kind;
 
-/* Information if we have unique or bit-encoded column names */
-static unsigned int unq_column_names;
-#define new_name(p,l) (unq_column_names                          \
-                       ? PFalg_unq_name (p)                      \
-                       : PFalg_ori_name (PFalg_unq_name (p), ~l))
-
 /* ensure some ordering on a given plan */
 static PFplanlist_t *ensure_ordering (const plan_t *unordered,
                                       PFord_ordering_t required);
@@ -839,7 +833,6 @@ static PFplanlist_t *
 plan_pos_select (const PFla_op_t *n)
 {
     PFalg_col_t      col,
-                     used_cols     = 0,
                      num,
                      cast;
     PFplanlist_t    *ret           = new_planlist (),
@@ -898,11 +891,8 @@ plan_pos_select (const PFla_op_t *n)
     sorted = prune_plans (sorted);
 
     /* get ourselves a new column name */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        used_cols |= n->schema.items[i].name;
-
-    num  = new_name (col_pos, used_cols);
-    cast = new_name (col_pos, (used_cols|num));
+    num  = PFalg_unq_name (col_pos);
+    cast = PFalg_unq_name (col_pos);
 
     for (unsigned int i = 0; i < count; i++)
         proj[i] = PFalg_proj (n->schema.items[i].name,
@@ -1627,7 +1617,6 @@ plan_step_join (const PFla_op_t *n)
                   item      = n->sem.step.item,
                   iter,
                   iter2;
-    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -1643,11 +1632,8 @@ plan_step_join (const PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        used_cols |= n->schema.items[i].name;
-
-    iter  = new_name (col_iter, used_cols);
-    iter2 = new_name (col_iter, (used_cols|iter));
+    iter  = PFalg_unq_name (col_iter);
+    iter2 = PFalg_unq_name (col_iter);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -1694,8 +1680,7 @@ plan_step_join_to_step (const PFla_op_t *n)
     PFalg_col_t   item_out  = n->sem.proj.items[0].new,
                   item_res  = n->sem.proj.items[0].old,
                   item,
-                  iter,
-                  used_cols = 0;
+                  iter;
     PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
                  *proj_in   = PFmalloc (sizeof (PFalg_proj_t));
     PFplanlist_t *ret       = new_planlist (),
@@ -1715,8 +1700,7 @@ plan_step_join_to_step (const PFla_op_t *n)
 
     /* find a free iter value */
     item      = L(n)->sem.step.item;
-    used_cols = item_res | item;
-    iter      = new_name (col_iter, used_cols);
+    iter      = PFalg_unq_name (col_iter);
     
     proj_out[0].new = item_out;
     proj_out[0].old = item;
@@ -2672,7 +2656,6 @@ plan_id_join (PFla_op_t *n)
                   item_doc  = n->sem.doc_join.item_doc,
                   iter,
                   iter2;
-    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count + 1,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -2690,11 +2673,8 @@ plan_id_join (PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        used_cols |= n->schema.items[i].name;
-
-    iter  = new_name (col_iter, used_cols);
-    iter2 = new_name (col_iter, (used_cols|iter));
+    iter  = PFalg_unq_name (col_iter);
+    iter2 = PFalg_unq_name (col_iter);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -2744,7 +2724,6 @@ plan_vx_join (PFla_op_t *n)
                   item_doc  = n->sem.doc_join.item_doc,
                   iter,
                   iter2;
-    PFalg_col_t   used_cols = 0;
     unsigned int  count     = n->schema.count + 1,
                   count_in  = 2;
     PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
@@ -2762,11 +2741,8 @@ plan_vx_join (PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        used_cols |= n->schema.items[i].name;
-
-    iter  = new_name (col_iter, used_cols);
-    iter2 = new_name (col_iter, (used_cols|iter));
+    iter  = PFalg_unq_name (col_iter);
+    iter2 = PFalg_unq_name (col_iter);
 
 
     /* create the inner projection list */
@@ -3529,11 +3505,10 @@ plan_subexpression (PFla_op_t *n)
                 col = p->schema.items[i].name;
                 /* check for an iter-like column (to avoid generating
                    a large amount of plans) */
-                if ((unq_column_names &&
-                     PFalg_ori_name (col, ~col_NULL) == col_iter) ||
-                    (!unq_column_names &&
-                     PFalg_unq_fixed_name (p->schema.items[i].name, 1) ==
-                     PFalg_unq_fixed_name (col_iter, 1)))
+                if (PFalg_is_unq_name (col)
+                  ? PFalg_ori_name (col, ~col_NULL) == col_iter
+                  : PFalg_unq_fixed_name (col, 1) ==
+                    PFalg_unq_fixed_name (col_iter, 1))
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
             }
 
@@ -3608,8 +3583,6 @@ PFplan (PFla_op_t *root)
     PFpa_op_t *ret = NULL;
 
     assert (root->kind == la_serialize_seq);
-
-    unq_column_names = PFalg_is_unq_name (root->sem.ser_seq.item);
 
     /* compute all interesting plans for root */
     plan_subexpression (root);
