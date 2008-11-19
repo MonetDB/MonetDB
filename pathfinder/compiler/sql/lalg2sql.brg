@@ -45,6 +45,9 @@
 #include "mem.h"
 #include "oops.h"             /* PFoops() */
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -927,8 +930,8 @@ sql_alg_ann_new (void)
     ret->fragment     = NULL;
     ret->content_size = NULL;
     ret->ser_report   = ser_no;
-    ret->ser_list1    = col_NULL;
-    ret->ser_list2    = col_NULL;
+    ret->ser_list1    = NULL;
+    ret->ser_list2    = NULL;
     ret->rank_map     = NULL;
 
     return ret;
@@ -3166,8 +3169,7 @@ reduce (PFla_op_t * p, int goalnt)
                 bool             change_order = p->sem.pos_sel.pos < 0;
                 int              pos          = (change_order ? -1 : 1)
                                                 * p->sem.pos_sel.pos;
-                PFalg_col_t      used_cols    = 0,
-                                 num;
+                PFalg_col_t      num;
                 PFsql_t         *srtbylist    = NULL;
                 PFsql_t         *partlist     = NULL;
                 PFord_ordering_t sortby       = p->sem.pos_sel.sortby;
@@ -3175,10 +3177,7 @@ reduce (PFla_op_t * p, int goalnt)
                 bool             asc;
 
                 /* get ourselves a new column name */
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                    used_cols |= p->schema.items[i].name;
-
-                num = PFalg_ori_name (PFalg_unq_name (col_pos), ~used_cols);
+                num = PFalg_unq_name (col_pos);
 
                 /* copy all existing column, from, and where lists */
                 copy_cols_from_where (p, L(p));
@@ -5720,6 +5719,21 @@ collect_twigs (PFla_op_t * p, PFarray_t *frags)
 /* rank list */
 #define RANK_LIST(p)  ((p)->sql_ann->ser_list2)
 
+/**
+ * Check if a column @a b appears in list @a a.
+ */
+static bool
+clin (PFalg_collist_t *a, PFalg_col_t b)
+{
+    if (!a) return false;
+
+    for (unsigned int i = 0; i < clsize (a); i++)
+        if (b == clat (a, i))
+            return true;
+
+    return false;
+}
+
 static void
 ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 {
@@ -5743,7 +5757,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
                    to be abused in the above operators */
 
                 /* add the item column */
-                ITEM_LIST(p) |= p->sem.iter_item.item;
+                ITEM_LIST(p) = PFalg_collist (1);
+                cladd (ITEM_LIST(p)) = p->sem.iter_item.item;
 
                 SER_REPORT(p) = ser_tc;
                 return;
@@ -5793,22 +5808,35 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         case la_project:
         {
             PFalg_col_t old, new;
+            if (ITEM_LIST(L(p)))
+                ITEM_LIST(p) = PFalg_collist (clsize (ITEM_LIST(L(p))));
+            if (RANK_LIST(L(p)))
+                RANK_LIST(p) = PFalg_collist (clsize (RANK_LIST(L(p))));
             /* projection has the ability to omit and change names */
             for (unsigned int i = 0; i < p->sem.proj.count; i++) {
                 old = p->sem.proj.items[i].old;
                 new = p->sem.proj.items[i].new;
 
-                if (ITEM_LIST(L(p)) & old) ITEM_LIST(p) |= new;
-                if (RANK_LIST(L(p)) & old) RANK_LIST(p) |= new;
+                if (clin (ITEM_LIST(L(p)), old)) cladd (ITEM_LIST(p)) = new;
+                if (clin (RANK_LIST(L(p)), old)) cladd (RANK_LIST(p)) = new;
             }
         }   break;
 
         case la_rank:
-            RANK_LIST(p) = p->sem.sort.res;
+            ITEM_LIST(p) = ITEM_LIST(L(p));
+
+            if (RANK_LIST(L(p)))
+                RANK_LIST(p) = PFalg_collist_copy (RANK_LIST(L(p)));
+            else
+                RANK_LIST(p) = PFalg_collist (1);
+
+            cladd (RANK_LIST(p)) = p->sem.sort.res;
+            break;
+
         case la_roots:
         case la_attach:
             ITEM_LIST(p) = ITEM_LIST(L(p));
-            RANK_LIST(p) |= RANK_LIST(L(p));
+            RANK_LIST(p) = RANK_LIST(L(p));
             break;
 
         case la_step_join:
@@ -5820,10 +5848,23 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 
         case la_eqjoin:
         case la_thetajoin:
-            ITEM_LIST(p) = ITEM_LIST(L(p));
-            RANK_LIST(p) = RANK_LIST(L(p));
-            ITEM_LIST(p) |= ITEM_LIST(R(p));
-            RANK_LIST(p) |= RANK_LIST(R(p));
+            if (ITEM_LIST(L(p)) && ITEM_LIST(R(p)))
+                ITEM_LIST(p) = PFalg_collist_concat (
+                                   PFalg_collist_copy (ITEM_LIST(L(p))),
+                                   ITEM_LIST(R(p)));
+            else if (ITEM_LIST(L(p)))
+                ITEM_LIST(p) = ITEM_LIST(L(p));
+            else
+                ITEM_LIST(p) = ITEM_LIST(R(p));
+
+            if (RANK_LIST(L(p)) && RANK_LIST(R(p)))
+                RANK_LIST(p) = PFalg_collist_concat (
+                                   PFalg_collist_copy (RANK_LIST(L(p))),
+                                   RANK_LIST(R(p)));
+            else if (RANK_LIST(L(p)))
+                RANK_LIST(p) = RANK_LIST(L(p));
+            else
+                RANK_LIST(p) = RANK_LIST(R(p));
             break;
 
         default:
@@ -5844,8 +5885,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         case la_step_join:
         case la_guide_step:
         case la_guide_step_join:
-            if (ITEM_LIST(p) & p->sem.step.item ||
-                RANK_LIST(p) & p->sem.step.item) {
+            if (clin (ITEM_LIST(p), p->sem.step.item) ||
+                clin (RANK_LIST(p), p->sem.step.item)) {
                 SER_REPORT(p) = ser_no;
                 return;
             }
@@ -5853,8 +5894,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
             break;
 
         case la_doc_access:
-            if (ITEM_LIST(p) & p->sem.doc_access.col ||
-                RANK_LIST(p) & p->sem.doc_access.col) {
+            if (clin (ITEM_LIST(p), p->sem.doc_access.col) ||
+                clin (RANK_LIST(p), p->sem.doc_access.col)) {
                SER_REPORT(p) = ser_no;
                return;
              }
@@ -5870,7 +5911,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
              * but we don't handle this. */
             for (int i = PFord_count (p->sem.sort.sortby) - 1; i >= 0; i--) {
                 ord = PFord_order_col_at (p->sem.sort.sortby, i);
-                if (ITEM_LIST(p) & ord) {
+                if (clin (ITEM_LIST(p), ord)) {
                     SER_REPORT(p) = ser_no;
                     return;
                 }
@@ -5883,10 +5924,10 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         }   break;
 
         case la_eqjoin:
-            if (ITEM_LIST(p) & p->sem.eqjoin.col1 ||
-                ITEM_LIST(p) & p->sem.eqjoin.col2 ||
-                RANK_LIST(p) & p->sem.eqjoin.col1 ||
-                RANK_LIST(p) & p->sem.eqjoin.col2) {
+            if (clin (ITEM_LIST(p), p->sem.eqjoin.col1) ||
+                clin (ITEM_LIST(p), p->sem.eqjoin.col2) ||
+                clin (RANK_LIST(p), p->sem.eqjoin.col1) ||
+                clin (RANK_LIST(p), p->sem.eqjoin.col2)) {
                 SER_REPORT(p) = ser_no;
                 return;
             }
@@ -5895,10 +5936,10 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 
         case la_thetajoin:
             for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
-                if (ITEM_LIST(p) & p->sem.thetajoin.pred[i].left  ||
-                    ITEM_LIST(p) & p->sem.thetajoin.pred[i].right ||
-                    RANK_LIST(p) & p->sem.thetajoin.pred[i].left  ||
-                    RANK_LIST(p) & p->sem.thetajoin.pred[i].right) {
+                if (clin (ITEM_LIST(p), p->sem.thetajoin.pred[i].left)  ||
+                    clin (ITEM_LIST(p), p->sem.thetajoin.pred[i].right) ||
+                    clin (RANK_LIST(p), p->sem.thetajoin.pred[i].left)  ||
+                    clin (RANK_LIST(p), p->sem.thetajoin.pred[i].right)) {
                     SER_REPORT(p) = ser_no;
                     return;
                 }

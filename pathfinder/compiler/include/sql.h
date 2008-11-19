@@ -311,39 +311,39 @@ typedef struct PFsql_t PFsql_t;
  * SQL code generation. (typedef resides in logical.h.)
  */
 struct PFsql_alg_ann_t {
-    unsigned    bound:1;       /**< indicates if the operator has been bound */
-
-    PFarray_t   *colmap;       /**< Mapping table that maps (logical)
-                                    column/type  pairs to their
-                                    SQL expression or in case of
-                                    a binding to their column names.
-                                    (select list) */
-    PFarray_t   *frommap;      /**< table--alias mappings */
-    PFarray_t   *wheremap;     /**< contains references to the boolean
-                                    in colmap */
+    unsigned        bound:1;       /**< indicates if the operator has been bound */
+                    
+    PFarray_t       *colmap;       /**< Mapping table that maps (logical)
+                                        column/type  pairs to their
+                                        SQL expression or in case of
+                                        a binding to their column names.
+                                        (select list) */
+    PFarray_t       *frommap;      /**< table--alias mappings */
+    PFarray_t       *wheremap;     /**< contains references to the boolean
+                                        in colmap */
     
     /* annotations needed to translate twig constructors (and path steps) */
-    PFsql_t     *fragment;     /**< a fragment reference */
-    PFsql_t     *content_size; /**< a reference to a content-size binding */
-
-    unsigned int twig_pre;     /**< local pre value for constructions
-                                    with the twig-constructor */
-    int          twig_size;    /**< local size value for constructions
-                                    with the twig-constructor */
-    unsigned int twig_level;   /**< local level value for constructions
-                                    with the twig-constructor */
+    PFsql_t         *fragment;     /**< a fragment reference */
+    PFsql_t         *content_size; /**< a reference to a content-size binding */
+                    
+    unsigned int     twig_pre;     /**< local pre value for constructions
+                                        with the twig-constructor */
+    int              twig_size;    /**< local size value for constructions
+                                        with the twig-constructor */
+    unsigned int     twig_level;   /**< local level value for constructions
+                                        with the twig-constructor */
 
     /* annotations needed to improve the query-part that provides the
        result relation for the serialization */
-    ser_report_t ser_report;   /**< serialization report */
-    PFalg_col_t  ser_list1;    /**< a list of columns to check further
-                                    constraints */
-    PFalg_col_t  ser_list2;    /**< a list of columns to check further
-                                    constraints */
-    PFarray_t   *rank_map;     /**< an internal representation of all
-                                    ignored rank operators. */
-};
-
+    ser_report_t     ser_report;   /**< serialization report */
+    PFalg_collist_t *ser_list1;    /**< a list of columns to check further
+                                        constraints */
+    PFalg_collist_t *ser_list2;    /**< a list of columns to check further
+                                        constraints */
+    PFarray_t       *rank_map;     /**< an internal representation of all
+                                        ignored rank operators. */
+};                                 
+                                   
 /* .......... General .......... */
 
 #define PFsql_generic_list(fun,...)                                         \
