@@ -138,4 +138,3 @@ between_on_strings.SF-2021508
 assert_fails_on_algebra_version.SF-2019349
 alter_table_set_not_null.SF-1997030
 range_join_any.SF-2041785
-between_no_columns.SF2102101
