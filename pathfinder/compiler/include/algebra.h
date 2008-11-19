@@ -223,17 +223,18 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 typedef unsigned int PFalg_col_t;
 
 /** A list of columns (actually: column names) */
-#define PFalg_collist_t            PFarray_t
+#define PFalg_collist_t               PFarray_t
 /** Constructor for a column list */
-#define PFalg_collist(size)        PFarray (sizeof (PFalg_col_t), (size))
-#define PFalg_collist_copy(cl)     PFarray_copy ((cl))
+#define PFalg_collist(size)           PFarray (sizeof (PFalg_col_t), (size))
+#define PFalg_collist_copy(cl)        PFarray_copy ((cl))
 /** Positional access to a column list */
-#define PFalg_collist_at(cl,i)     *(PFalg_col_t *) PFarray_at ((cl), (i))
-#define PFalg_collist_top(cl)      *(PFalg_col_t *) PFarray_top ((cl))
+#define PFalg_collist_at(cl,i)        *(PFalg_col_t *) PFarray_at ((cl), (i))
+#define PFalg_collist_top(cl)         *(PFalg_col_t *) PFarray_top ((cl))
 /** Append to a column list */
-#define PFalg_collist_add(cl)      *(PFalg_col_t *) PFarray_add ((cl))
+#define PFalg_collist_add(cl)         *(PFalg_col_t *) PFarray_add ((cl))
+#define PFalg_collist_concat(cl1,cl2) PFarray_concat ((cl1), (cl2))
 /** Size of a column list */
-#define PFalg_collist_size(cl)     PFarray_last ((cl))
+#define PFalg_collist_size(cl)        PFarray_last ((cl))
 
 /* ............. algebra schema specification .............. */
 
