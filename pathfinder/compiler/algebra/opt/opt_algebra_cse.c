@@ -958,7 +958,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                 clsize (b->sem.fun_1to1.refs))
                 return false;
 
-            for (unsigned int i = 0; clsize (a->sem.fun_1to1.refs); i++)
+            for (unsigned int i = 0; i < clsize (a->sem.fun_1to1.refs); i++)
                  if (clat (a->sem.fun_1to1.refs, i) !=
                      clat (b->sem.fun_1to1.refs, i))
                      return false;
