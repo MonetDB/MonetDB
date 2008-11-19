@@ -374,7 +374,7 @@ PFalg_collist_t * PFprop_icols_to_collist (const PFprop_t *prop);
  * Infer icols property for a DAG rooted in @a root starting
  * with the icols collected in @a icols.
  */
-void PFprop_infer_icol_specific (PFla_op_t *root, PFalg_col_t icols);
+void PFprop_infer_icol_specific (PFla_op_t *root, PFalg_collist_t *icols);
 
 /* ------------------------- key property accessors ------------------------ */
 

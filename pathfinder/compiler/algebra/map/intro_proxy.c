@@ -1853,10 +1853,10 @@ generate_join_proxy (PFla_op_t *root,
                      PFarray_t *checked_nodes)
 {
     PFalg_col_t num_col, new_num_col, num_col_alias, new_num_col_alias,
-                icols = 0, used_cols = 0;
+                used_cols = 0;
     unsigned int i, j, k, count, dist_count, base_count;
     PFalg_collist_t *req_cols, *new_cols,
-                    *trace_ori, *trace_mod;
+                    *trace_ori, *trace_mod, *icols;
     PFla_op_t *num_op, *exit_op, *entry_op, *proxy_op, *base_op;
 
     /* over estimate the projection size */
@@ -1967,6 +1967,9 @@ generate_join_proxy (PFla_op_t *root,
     /* store the new columns (an upper limit is the whole relation) */
     new_cols = PFalg_collist (proxy_entry->schema.count);
 
+    /* store the required input columns (an upper limit is the whole relation) */
+    icols = PFalg_collist (proxy_entry->schema.count);
+
     /* reset counters for the projection lists */
     count = 0;
     dist_count = 0;
@@ -2051,7 +2054,7 @@ generate_join_proxy (PFla_op_t *root,
 
                 /* collect all the columns that were generated
                    in the proxy body */
-                icols = icols | entry_col;
+                cladd (icols) = entry_col;
             }
         }
     }

@@ -913,33 +913,14 @@ prop_infer (PFla_op_t *n)
  * with the icols collected in @a icols.
  */
 void
-PFprop_infer_icol_specific (PFla_op_t *root, PFalg_col_t icols)
+PFprop_infer_icol_specific (PFla_op_t *root, PFalg_collist_t *icols)
 {
-    PFalg_collist_t *icol_list;
-    PFalg_col_t      mod_icols = icols;
-    unsigned int     count     = 0,
-                     bit_shift = 1;;
-
-    while (mod_icols) {
-        count += mod_icols & 1;
-        mod_icols >>= 1;
-    }
-    icol_list = PFalg_collist (count);
-
-    mod_icols = icols;
-    /* unfold icols into a list of columns */
-    while (mod_icols) {
-        union_ (icol_list, icols & bit_shift);
-        bit_shift <<= 1;
-        mod_icols >>= 1;
-    }
-
     /* collect number of incoming edges (parents) */
     prop_infer (root);
     PFla_dag_reset (root);
 
     /* second run infers icols property */
-    prop_infer_icols (root, icol_list);
+    prop_infer_icols (root, PFalg_collist_copy (icols));
 }
 
 /**
