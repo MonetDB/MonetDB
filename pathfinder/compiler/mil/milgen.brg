@@ -6878,7 +6878,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                        { ERROR ("..."); } else {} */
                     if_ (not (eq (count (var (sorting->name)),
                               count (tunique (var (sorting->name))))),
-                         error (lit_str ("err:XQDY0025: element names are not"
+                         error (lit_str ("err:XQDY0025: attribute names are not"
                                          " unique in constructed element.")),
                          nop ()));
                 unpin (sorting, 1);
