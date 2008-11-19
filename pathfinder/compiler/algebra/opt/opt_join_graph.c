@@ -289,8 +289,7 @@ opt_set (PFla_op_t *p)
                           only on the join column */
                 PFalg_proj_t *top   = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_proj_t));
-                PFalg_col_t   used_cols = 0,
-                              new_col = p->sem.eqjoin.col2,
+                PFalg_col_t   new_col = PFalg_new_name (p->sem.eqjoin.col2),
                               cur_col;
 
                 /* fill the 'top' projection and collect all used columns
@@ -300,13 +299,7 @@ opt_set (PFla_op_t *p)
                     cur_col = p->schema.items[i].name;
 
                     top[i] = PFalg_proj (cur_col, cur_col);
-                    used_cols |= cur_col;
                 }
-                /* rename the join argument in case a name conflict occurs */
-                if (used_cols & new_col)
-                    new_col = PFalg_ori_name (
-                                  PFalg_unq_name (new_col),
-                                  ~used_cols);
 
                 /* replace the semijoin */
                 *p = *PFla_project_ (
