@@ -761,7 +761,11 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	}
 	if (!temp && bat->ibid) { 
 		if (bat->ubid) {
-			bat->ubid = eubat_copy(bat->ubid, 0); 
+			if (c_isnew && tr->parent == gtrans) { 
+				obat->ubid = eubat_copy(bat->ubid, 0);
+			} else {
+				bat->ubid = eubat_copy(bat->ubid, 0); 
+			}
 		} else {
 			BAT *b = bat_new(TYPE_oid, type, sz);
 			bat_set_access(b, BAT_READ);
