@@ -146,7 +146,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'C':
-                MAP_ORI_NAMES("complex optimization")
                 REMOVE_PROXIES("complex optimization")
 
                 tm = PFtimer_start ();
@@ -227,13 +226,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'J':
-                if (!unq_names) {
-                    PFinfo (OOPS_WARNING,
-                            "equi-join pushdown requires unique names"
-                            " - automatical mapping added");
-                    root = PFmap_unq_names (root);
-                    unq_names = true;
-                }
+                MAP_UNQ_NAMES("equi-join pushdown")
                 REMOVE_PROXIES("equi-join pushdown")
 
                 tm = PFtimer_start ();
@@ -286,7 +279,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'Q':
-                MAP_ORI_NAMES("join-graph optimization")
                 proxies_involved = false;
 
                 tm = PFtimer_start ();
@@ -300,7 +292,8 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'R':
-                MAP_ORI_NAMES("rank optimization")
+                MAP_UNQ_NAMES("rank optimization")
+                proxies_involved = false;
 
                 tm = PFtimer_start ();
 
@@ -350,7 +343,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'V':
-                MAP_ORI_NAMES("required value optimization")
                 REMOVE_PROXIES("required value optimization")
 
                 tm = PFtimer_start ();
@@ -360,19 +352,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   required value optimization:\t    %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'Y':
-                MAP_ORI_NAMES("rowid split optimization")
-
-                tm = PFtimer_start ();
-
-                root = PFalgopt_rowid_split (root);
-
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("   rowid split optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
