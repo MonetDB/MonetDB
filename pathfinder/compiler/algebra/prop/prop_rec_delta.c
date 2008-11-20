@@ -50,8 +50,8 @@
 #undef IN
 #endif
 
-#define ITER(n) ((n)->prop->left_cols)
-#define POS(n) ((n)->prop->right_cols)
+#define ITER(n) ((n)->prop->iter_cols)
+#define POS(n) ((n)->prop->pos_cols)
 #define IN(n) ((n)->prop->set)
 
 #define REFS(n) ((n)->refctr)

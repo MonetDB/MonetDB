@@ -45,65 +45,68 @@ typedef struct PFprop_t PFprop_t;
 #include "logical.h"
 
 struct PFprop_t {
-    unsigned int card;       /**< Exact number of tuples in intermediate
-                                  result. (0 means we don't know) */
-    PFarray_t   *constants;  /**< List of columns marked constant,
-                                  along with their corresponding values. */
-    PFarray_t   *domains;    /**< List of columns along with their
-                                  corresponding domain identifier. */
-    PFarray_t   *subdoms;    /**< Subdomain relationships (parent/child
-                                  relationships between domains) */
-    PFarray_t   *disjdoms;   /**< Disjoint domains (list with pairs of
-                                  disjoint domains) */
-    bool         set;        /**< boolean flag that indicates whether the
-                                  cardinality of an operator is important */
-    PFarray_t   *icols;      /**< List of columns required by the
-                                  parent operators. */
-    PFarray_t   *keys;       /**< List of columns that have
-                                  unique values. */
-    PFarray_t   *reqvals;    /**< List of columns their associated
-                                  usage information. */
-    PFarray_t   *req_node_vals;   /**< List of columns and their associated
-                                       node usage information. */
-    PFarray_t   *name_pairs; /**< List of columns with their corresponding
-                                  unique names. */
-    PFalg_col_t  free_cols;  /**< List of columns that are not in use. */  
-    PFalg_col_t  left_cols;  /**< List of left columns (intro_thetajoin.c) */
-    PFalg_col_t  right_cols; /**< List of right columns (intro_thetajoin.c) */
-    PFarray_t   *level_mapping; /**< List of columns annotated with
-                                     level information. */
-    PFarray_t   *guide_mapping_list; /**< List of guide mappings that contain
-                                          a pair of column and list of guide
-                                          nodes for the operator */
-    PFarray_t   *ckeys;      /**< List of composite lists of columns that
-                                  build a key for a relation. */
+    unsigned int     card;       /**< Exact number of tuples in intermediate
+                                      result. (0 means we don't know) */
+    PFarray_t       *constants;  /**< List of columns marked constant,
+                                      along with their corresponding values. */
+    PFarray_t       *domains;    /**< List of columns along with their
+                                      corresponding domain identifier. */
+    PFarray_t       *subdoms;    /**< Subdomain relationships (parent/child
+                                      relationships between domains) */
+    PFarray_t       *disjdoms;   /**< Disjoint domains (list with pairs of
+                                      disjoint domains) */
+    bool             set;        /**< boolean flag that indicates whether the
+                                      cardinality of an operator is important */
+    PFalg_collist_t *icols;      /**< List of columns required by the
+                                      parent operators. */
+    PFalg_collist_t *keys;       /**< List of columns that have
+                                      unique values. */
+    PFarray_t       *reqvals;    /**< List of columns their associated
+                                      usage information. */
+    PFarray_t       *req_node_vals;   /**< List of columns and their associated
+                                           node usage information. */
+    PFarray_t       *name_pairs; /**< List of columns with their corresponding
+                                      unique names. */
+    PFalg_col_t      free_cols;  /**< List of bit-encoded columns that are not
+                                      in use. */  
+    PFalg_col_t      iter_cols;  /**< List of bit-encoded iter columns
+                                      (prop_rec_delta.c) */
+    PFalg_col_t      pos_cols;   /**< List of bit-encoded pos columns
+                                      (prop_rec_delta.c) */
+    PFarray_t       *level_mapping; /**< List of columns annotated with
+                                         level information. */
+    PFarray_t       *guide_mapping_list; /**< List of guide mappings that contain
+                                              a pair of column and list of guide
+                                              nodes for the operator */
+    PFarray_t       *ckeys;      /**< List of composite lists of columns that
+                                      build a key for a relation. */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
-    PFarray_t  *l_constants; /**< List of columns marked constant,
-                                  along with their corresponding values. */
-    PFarray_t  *r_constants; /**< List of columns marked constant,
-                                  along with their corresponding values. */
-    PFarray_t  *l_domains;   /**< List of columns along with their
-                                  corresponding domain identifier. */
-    PFarray_t  *r_domains;   /**< List of columns along with their
-                                  corresponding domain identifier. */
-    PFarray_t  *l_icols;     /**< List of columns required by the
-                                  parent operators. */
-    PFarray_t  *r_icols;     /**< List of columns required by the
-                                  parent operators. */
-    PFarray_t  *l_keys;      /**< List of columns that have
-                                  unique values. */
-    PFarray_t  *r_keys;      /**< List of columns that have
-                                  unique values. */
-    PFarray_t  *l_name_pairs; /**< List of unique columns with their
-                                   corresponding new unique names. */
-    PFarray_t  *r_name_pairs; /**< List of unique columns with their
-                                   corresponding new unique names. */
-    PFarray_t  *l_level_mapping; /**< List of columns annotated with
-                                      level information. */
-    PFarray_t  *r_level_mapping; /**< List of columns annotated with
-                                      level information. */
+    PFarray_t       *l_constants; /**< List of columns marked constant,
+                                       along with their corresponding values. */
+    PFarray_t       *r_constants; /**< List of columns marked constant,
+                                       along with their corresponding values. */
+    PFarray_t       *l_domains;   /**< List of columns along with their
+                                       corresponding domain identifier. */
+    PFarray_t       *r_domains;   /**< List of columns along with their
+                                       corresponding domain identifier. */
+    PFalg_collist_t *l_icols;     /**< List of columns required by the
+                                       parent operators. */
+    PFalg_collist_t *r_icols;     /**< List of columns required by the
+                                       parent operators. */
+    PFalg_collist_t *l_keys;      /**< List of columns that have
+                                       unique values. */
+    PFalg_collist_t *r_keys;      /**< List of columns that have
+                                       unique values. */
+    PFarray_t       *l_name_pairs; /**< List of unique columns with their
+                                        corresponding new unique names. */
+    PFarray_t       *r_name_pairs; /**< List of unique columns with their
+                                        corresponding new unique names. */
+    PFarray_t       *l_level_mapping; /**< List of columns annotated with
+                                           level information. */
+    PFarray_t       *r_level_mapping; /**< List of columns annotated with
+                                           level information. */
 };
 
 /* constant item */
