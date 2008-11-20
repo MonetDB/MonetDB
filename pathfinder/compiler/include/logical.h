@@ -560,7 +560,8 @@ PFla_op_t * PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left,
  * A dummy operator that is generated whenever some rewrite
  * throws away an operator (e.g., '*p = *L(p);') and the replacement
  * is an already existing node that may not be split into multiple
- * operators (e.g. a rowid operator).
+ * operators (e.g. a rowid operator). Furthermore it prevents operators
+ * from accidentally sharing properties (only a reference pointer is copied).
  */
 PFla_op_t * PFla_dummy (PFla_op_t *n);
 

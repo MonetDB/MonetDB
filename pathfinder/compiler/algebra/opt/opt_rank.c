@@ -1581,12 +1581,17 @@ opt_rank (PFla_op_t *p)
         case la_proxy_base:
             /* remove proxy operators as they might
                lead to inconsistencies */
-            *p = *L(p);
+            *p = *(dummy (L(p)));
             modified = true;
             break;
 
         case la_string_join:
+            break;
+
         case la_dummy:
+            *p = *(rank_opt (LL(p),
+                             L(p)->sem.rank_opt.res,
+                             L(p)->sem.rank_opt.sortby));
             break;
     }
 

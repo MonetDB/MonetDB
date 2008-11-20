@@ -110,7 +110,7 @@ opt_dom (PFla_op_t *p)
                                       p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
                                      p->sem.eqjoin.col1))) {
-                *p = *L(p);
+                *p = *PFla_dummy(L(p));
                 break;
             }
             break;

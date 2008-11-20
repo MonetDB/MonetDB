@@ -238,10 +238,15 @@ opt_req_node (PFla_op_t *p)
              RL(p)->kind == la_merge_adjacent &&
              PFprop_node_property (RL(p)->prop,
                                    RL(p)->sem.merge_adjacent.item_res) &&
-             !PFprop_node_content_queried (RL(p)->prop,
-                                           RL(p)->sem.merge_adjacent.item_res))
+             !PFprop_node_content_queried (
+                  RL(p)->prop,
+                  RL(p)->sem.merge_adjacent.item_res)) {
+        /* This rewrite splits up the L(p) operator... */
         *p = *L(p);
-
+        /* ... and we at least have to create a new property to avoid
+           inconsistencies (see also definition for PFla_dummy()). */
+        p->prop = PFprop ();
+    }
     /* Make sure that the above two patterns consistently remove the
        merge-adjacent-text-node operator. (Due to the top-down rewriting
        this check is never called before the previous ones.) */

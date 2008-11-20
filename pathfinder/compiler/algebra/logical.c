@@ -149,7 +149,8 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
  * Construct a dummy operator that is generated whenever some rewrite
  * throws away an operator (e.g., '*p = *L(p);') and the replacement
  * is an already existing node that may not be split into multiple
- * operators (e.g. a number operator).
+ * operators (e.g. a rowid operator). Furthermore it prevents operators
+ * from accidentally sharing properties (only a reference pointer is copied).
  */
 PFla_op_t *
 PFla_dummy (PFla_op_t *n)

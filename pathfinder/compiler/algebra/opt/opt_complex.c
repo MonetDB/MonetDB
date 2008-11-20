@@ -726,7 +726,7 @@ opt_complex (PFla_op_t *p)
                                       p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
                                      p->sem.eqjoin.col1))) {
-                *p = *L(p);
+                *p = *dummy (L(p));
                 break;
             }
             if (L(p)->kind == la_difference &&
