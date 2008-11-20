@@ -46,6 +46,9 @@
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -1163,6 +1166,35 @@ opt_complex (PFla_op_t *p)
             if (PFprop_card (p->prop) == 1) {
                 *p = *PFla_attach (L(p), p->sem.rowid.res, PFalg_lit_nat (1));
             }
+            /* Get rid of a rowid operator that is only used to maintain
+               the correct cardinality. In case other columns provide
+               a compound key we replace the rowid operator by a rank
+               operator consuming the compound key. */
+            else if (PFprop_req_unique_col (p->prop, p->sem.rowid.res)) {
+                PFalg_collist_t *collist;
+                unsigned int     count = PFprop_ckeys_count (p->prop),
+                                 i,
+                                 j;
+                for (i = 0; i < count; i++) {
+                    collist = PFprop_ckey_at (p->prop, i);
+                    /* make sure the result is not part of the compound key
+                       and all columns of the new key are already used
+                       elsewhere. */
+                    for (j = 0; j < clsize (collist); j++)
+                        if (clat (collist, j) == p->sem.rowid.res ||
+                            !PFprop_icol (p->prop, clat (collist, j)))
+                            break;
+                    if (j == clsize (collist)) {
+                        PFord_ordering_t sortby = PFordering ();
+                        for (j = 0; j < clsize (collist); j++)
+                            sortby = PFord_refine (sortby,
+                                                   clat (collist, j),
+                                                   DIR_ASC);
+                        *p = *PFla_rank (L(p), p->sem.rowid.res, sortby);
+                        break;
+                    }
+                }
+            }
             break;
 
         case la_cast:
@@ -1446,6 +1478,7 @@ PFalgopt_complex (PFla_op_t *root)
        and refctr properties first */
     PFprop_infer_key (root);
     PFprop_infer_level (root);
+    PFprop_infer_composite_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_set (root);
     PFprop_infer_reqval (root);
