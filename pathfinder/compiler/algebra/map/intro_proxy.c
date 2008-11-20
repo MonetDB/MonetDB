@@ -421,6 +421,7 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
 
 
 
+#if 0
 /**
  *
  * Functions specific to the semijoin - rowid - cross proxy
@@ -989,6 +990,7 @@ modify_semijoin_proxy (PFla_op_t *root,
 
     return true;
 }
+#endif
 
 
 
@@ -3084,6 +3086,7 @@ PFintro_proxies (PFla_op_t *root)
     remove_semijoin_operators (root);
 #endif
 
+#if 0
     /* find proxies and rewrite them in one go.
        They are based on semi-join - rowid/rownum pairs */
     if (intro_proxy_kind (root,
@@ -3097,6 +3100,7 @@ PFintro_proxies (PFla_op_t *root)
     /* As we match the same nodes (equi-joins) again we need to reset
        the list of checked nodes */
     PFarray_last (checked_nodes) = 0;
+#endif
 
     /* rewrite joins that are unnested (independent expressions
        on the left and the right side) into a nested variant
