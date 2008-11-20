@@ -283,7 +283,6 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_ref_tbl:
             case la_intersect:
             case la_difference:
-            case la_distinct:
             case la_avg:
             case la_max:
             case la_min:
@@ -745,10 +744,10 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 break;
 
             case la_disjunion:
-            /* disable the following rewrite as it leads to a plan                                                 
-               explosion for more complex queries (see bug #1991738) */                                            
+                /* disable the following rewrite as it leads to a plan
+                   explosion for more complex queries (see bug #1991738) */
                 break;
-#if 0   
+#if 0
             {
                 /* In situations where we apply actions on the
                    empty sequence and append the generated rows with a union
@@ -815,6 +814,24 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             } break;
 #endif
 
+            case la_distinct:
+                if (!PFprop_key (rp->prop, rcol) ||
+                    !PFprop_subdom (rp->prop,
+                                    PFprop_dom (lp->prop, lcol),
+                                    PFprop_dom (rp->prop, rcol)))
+                    /* Ensure that the values of the left join argument
+                       are a subset of the values of the right join argument
+                       and that the right join argument is keyed. These
+                       two tests make sure that we have exactly one match per
+                       tuple in the left relation and thus that all other
+                       columns in the right join partner are functionally
+                       dependent on the join column. */
+                    break;
+                
+                *p = *(distinct (eqjoin_opt (L(lp), rp, lproj, rproj)));
+                next_join = L(p);
+                break;
+            
             case la_fun_1to1:
                 if (!is_join_col (p, lp->sem.fun_1to1.res)) {
                     PFalg_collist_t *refs;
