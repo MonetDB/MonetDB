@@ -713,11 +713,12 @@ opt_complex (PFla_op_t *p)
         }   break;
 
         case la_semijoin:
-            /* the following if statement is a copy of code in opt_dom.c */
             /* if the semijoin operator does not prune a row
-               because the domains are identical we can safely
+               because the domains are identical and the left
+               side does not contain duplicates we can safely
                remove it. */
-            if (PFprop_subdom (
+            if (PFprop_ckey (p->prop, p->schema) &&
+                PFprop_subdom (
                     p->prop,
                     PFprop_dom_left (p->prop,
                                      p->sem.eqjoin.col1),
@@ -920,7 +921,7 @@ opt_complex (PFla_op_t *p)
                       2, top_proj);
         }   break;
 
-        case la_difference: /* this case is a copy of code in opt_dom.c */
+        case la_difference:
         {   /**
              * If the domains of the first relation are all subdomains
              * of the corresponding domains in the second argument
@@ -941,7 +942,10 @@ opt_complex (PFla_op_t *p)
                         break;
                     }
 
-            if (all_subdom == p->schema.count) {
+            if (all_subdom == p->schema.count &&
+                /* we have to make sure that the left side
+                   does not contain duplicates */
+                PFprop_ckey (p->prop, p->schema)) {
                 *p = *PFla_empty_tbl_ (p->schema);
                 SEEN(p) = true;
                 break;
@@ -1499,3 +1503,4 @@ PFalgopt_complex (PFla_op_t *root)
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set foldmarker=#if,#endif foldmethod=marker foldopen-=search: */

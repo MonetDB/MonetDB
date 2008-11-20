@@ -787,8 +787,6 @@ main (int argc, char *argv[])
                                             "property\n");
                 printf ("         K  apply optimization based on key "
                                             "property\n");
-                printf ("         D  apply optimization based on domain "
-                                            "property\n");
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
                 printf ("            (and icols based optimization will be "

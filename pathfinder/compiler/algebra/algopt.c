@@ -188,19 +188,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 const_no_attach = true;
                 break;
 
-            case 'D':
-                REMOVE_PROXIES("domain optimization")
-
-                tm = PFtimer_start ();
-
-                root = PFalgopt_dom (root);
-
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("   domain optimization:\t\t    %s",
-                           PFtimer_str (tm));
-                break;
-
             case 'G':
                 REMOVE_PROXIES("general optimization")
 

@@ -35,7 +35,6 @@ lib_opt = {
         SOURCES = \
                 opt_complex.c \
                 opt_const.c \
-                opt_dom.c \
                 opt_general.brg \
                 opt_guide.c \
                 opt_icol.c \
@@ -48,5 +47,5 @@ lib_opt = {
                 opt_rank.c \
                 opt_set.c \
                 opt_thetajoin.c \
-				opt_algebra_cse.c
+                opt_algebra_cse.c
 }
