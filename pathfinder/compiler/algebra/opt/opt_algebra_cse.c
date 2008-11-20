@@ -1166,8 +1166,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_cond_err:
-            if ((ACTCOL (L(a), a->sem.err.col) ==
-                ACTCOL (L(b), b->sem.err.col)) &&
+            if ((ACTCOL (R(a), a->sem.err.col) ==
+                ACTCOL (R(b), b->sem.err.col)) &&
                 !strcmp (a->sem.err.str, b->sem.err.str))
                 return true;
 
