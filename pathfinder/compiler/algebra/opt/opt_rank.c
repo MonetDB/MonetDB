@@ -65,7 +65,7 @@ struct sort_struct {
 typedef struct sort_struct sort_struct;
 
 /* mnemonic for a value lookup in the sort struct */
-#define ATT_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).col)
+#define COL_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).col)
 #define DIR_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).dir)
 #define VIS_AT(a,i) ((*(sort_struct *) PFarray_at ((a), (i))).vis)
 
@@ -88,7 +88,7 @@ rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
     /* copy schema from argument 'n' */
     for (i = 0; i < n->schema.count; i++) {
         for (j = 0; j < PFarray_last (sortby); j++)
-            if (ATT_AT(sortby, j) == n->schema.items[i].name) {
+            if (COL_AT(sortby, j) == n->schema.items[i].name) {
                 if (VIS_AT(sortby, j))
                     ret->schema.items[count++] = n->schema.items[i];
 
@@ -102,10 +102,10 @@ rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
 #ifndef NDEBUG
     for (i = 0; i < PFarray_last (sortby); i++) {
         /* make sure that all input columns (to the rank are available) */
-        if (!PFprop_ocol (n, ATT_AT(sortby, i)))
+        if (!PFprop_ocol (n, COL_AT(sortby, i)))
            PFoops (OOPS_FATAL,
                    "column '%s' not found in rank",
-                   PFcol_str (ATT_AT(sortby, i)));
+                   PFcol_str (COL_AT(sortby, i)));
     }
     if (PFprop_ocol (n, res))
        PFoops (OOPS_FATAL,
@@ -152,7 +152,7 @@ rank_identical (PFla_op_t *a, PFla_op_t *b)
         return false;
 
     for (unsigned int i = 0; i < PFarray_last (sortby1); i++)
-        if (ATT_AT (sortby1, i) != ATT_AT (sortby2, i) ||
+        if (COL_AT (sortby1, i) != COL_AT (sortby2, i) ||
             DIR_AT (sortby1, i) != DIR_AT (sortby2, i) ||
             VIS_AT (sortby1, i) != VIS_AT (sortby2, i))
             return false;
@@ -413,28 +413,28 @@ opt_rank (PFla_op_t *p)
                 for (i = 0; i < PFarray_last (sortby); i++) {
                     if (VIS_AT (sortby, i)) {
                         for (j = 0; j < p->sem.proj.count; j++)
-                            if (ATT_AT (sortby, i) == p->sem.proj.items[j].old)
+                            if (COL_AT (sortby, i) == p->sem.proj.items[j].old)
                                 break;
 
                         if (j == p->sem.proj.count) {
                             /* create a new unique column name */
-                            new_name = PFalg_new_name (ATT_AT (sortby, i));
+                            new_name = PFalg_new_name (COL_AT (sortby, i));
                             /* mark unreferenced join inputs invisible */
                             VIS_AT (sortby, i) = false;
-                            /* and assign it the new name */
-                            ATT_AT (sortby, i) = new_name;
                             /* rename from old to new unique name */
                             proj[count++] = PFalg_proj (new_name,
-                                                        ATT_AT (sortby, i));
+                                                        COL_AT (sortby, i));
+                            /* and assign input the new name */
+                            COL_AT (sortby, i) = new_name;
                         }
                         else
                             /* update the column name of all referenced
                                join columns */
-                            ATT_AT (sortby, i) = p->sem.proj.items[j].new;
+                            COL_AT (sortby, i) = p->sem.proj.items[j].new;
                     }
                     else {
-                        proj[count++] = PFalg_proj (ATT_AT (sortby, i),
-                                                    ATT_AT (sortby, i));
+                        proj[count++] = PFalg_proj (COL_AT (sortby, i),
+                                                    COL_AT (sortby, i));
                     }
                 }
 
@@ -508,7 +508,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < lcount; j++)
                         new_sortby = PFord_refine (
                                          new_sortby,
-                                         ATT_AT (lsortby, j),
+                                         COL_AT (lsortby, j),
                                          DIR_AT (lsortby, j));
                     
                     /* keep the remaining sort criteria */
@@ -699,7 +699,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < lcount; j++)
                         new_sortby = PFord_refine (
                                          new_sortby,
-                                         ATT_AT (lsortby, j),
+                                         COL_AT (lsortby, j),
                                          DIR_AT (lsortby, j));
                     
                     /* keep the remaining sort criteria */
@@ -775,7 +775,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < lcount; j++)
                         new_sortby = PFord_refine (
                                          new_sortby,
-                                         ATT_AT (lsortby, j),
+                                         COL_AT (lsortby, j),
                                          DIR_AT (lsortby, j));
                     
                     /* keep the remaining sort criteria */
@@ -804,7 +804,7 @@ opt_rank (PFla_op_t *p)
                 bool         res_used = false;
 
                 for (i = 0; i < PFarray_last (p->sem.rank_opt.sortby); i++)
-                    if (ATT_AT (p->sem.rank_opt.sortby, i) ==
+                    if (COL_AT (p->sem.rank_opt.sortby, i) ==
                         L(p)->sem.rank_opt.res) {
                         res_used = true;
                         break;
@@ -839,7 +839,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < i; j++)
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .col = ATT_AT (sortby, j),
+                                .col = COL_AT (sortby, j),
                                 .dir = DIR_AT (sortby, j),
                                 .vis = VIS_AT (sortby, j)
                             };
@@ -848,7 +848,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = 0; j < lcount; j++) {
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .col = ATT_AT (lsortby, j),
+                                .col = COL_AT (lsortby, j),
                                 .dir = DIR_AT (lsortby, j),
                                 .vis = vis && VIS_AT (lsortby, j)
                             };
@@ -858,7 +858,7 @@ opt_rank (PFla_op_t *p)
                     for (unsigned int j = i+1; j < count; j++)
                         *(sort_struct *) PFarray_add (new_sortby) =
                             (sort_struct) {
-                                .col = ATT_AT (sortby, j),
+                                .col = COL_AT (sortby, j),
                                 .dir = DIR_AT (sortby, j),
                                 .vis = VIS_AT (sortby, j)
                             };
@@ -1165,7 +1165,7 @@ remove_internal_rank (PFla_op_t *p)
         /* transform internal sort list into a normal sortby list */
         for (i = 0; i < PFarray_last (sort_list); i++)
             sortby = PFord_refine (sortby,
-                                   ATT_AT (sort_list, i),
+                                   COL_AT (sort_list, i),
                                    DIR_AT (sort_list, i));
 
         /* Create a pruning projection list that is placed on top
