@@ -13,26 +13,16 @@ stdout of test 'xml01` in directory 'src/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:37863/
-#b:= bat.new(:oid,:str);
-#bat.insert(b,0@0,"Mary Ann Walker");
-#bat.insert(b,1@0,"Annie Chapman");
-#
-#io.print(b);
-#
-#bc:= xml.attribute("name",b);
-#bj:= xml.str(bc);
-#io.print(bj);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_2:oid, _3:str) {G}
-    bat.insert(b,0@0,"Mary Ann Walker");#  2 _4:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _5:oid, _6:str) {G}
-    bat.insert(b,1@0,"Annie Chapman");  #  3 _7:bat[:oid,:str] := BKCinsert_bun(b:bat[:oid,:str], _8:oid, _9:str) {G}
-    io.print(b);                        #  4 _10:void := IOprint_val(b:bat[:oid,:str]) 
-    bc := xml.attribute("name",b);      #  5 bc:bat[:oid,:xml] := BATXMLattribute(_12:str, b:bat[:oid,:str]) {G}
-    bj := xml.str(bc);                  #  6 bj:bat[:oid,:str] := BATXMLxml2str(bc:bat[:oid,:xml]) {G}
-    io.print(bj);                       #  7 _14:void := IOprint_val(bj:bat[:oid,:str]) 
-end main;	# 8  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
+    b := bat.new(:oid,:str);
+    bat.insert(b,0@0,"Mary Ann Walker");
+    bat.insert(b,1@0,"Annie Chapman");
+    io.print(b);
+    bc := xml.attribute("name",b);
+    bj := xml.str(bc);
+    io.print(bj);
+end main;
 #---------------------------------#
 # h	t			  # name
 # void	str			  # type

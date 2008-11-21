@@ -10,72 +10,41 @@ stdout of test 'memo02` in directory 'src/scheduler` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_scheduler
 # Visit http://monetdb.cwi.nl/ for further information
-## The first memo driven execution
-## use a generic cost function
-#
-#	A:= bat.new(:int,:int);
-#	bat.insert(A,1,1);
-#	B:= bat.copy(A);
-#	bat.insert(B,2,2);
-#	C:= bat.copy(B);
-#	bat.insert(C,3,3);
-#	D:= bat.copy(C);
-#	bat.insert(D,3,3);
-#
-#	scheduler.choice("scheduler.volumeCost",T1,T2,T3);
-#	T1:= algebra.join(A,B);
-#	T2:= algebra.join(B,C);
-#	T3:= algebra.join(C,D);
-#	scheduler.choice("scheduler.volumeCost",T4,T5,T6,T7,T8);
-#	T4:= algebra.join(T1,C);
-#	T5:= algebra.join(A,T2);
-#	T6:= algebra.join(T2,D);
-#	T7:= algebra.join(B,T3);
-#	T8:= algebra.join(C,D);
-#	scheduler.choice("scheduler.volumeCost",T9,T10,T11,T12,T13);
-#	T9:= algebra.join(T4,D);
-#	T10:= algebra.join(T5,D);
-#	T11:= algebra.join(A,T6);
-#	T12:= algebra.join(A,T7);
-#	T13:= algebra.join(T1,T8);
-#	scheduler.choice("getVolume",T9,T10,T11,T12,T13);
-#	answer:= scheduler.pick(T9,T10,T11,T12,T13);
-#	io.print(answer);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 # The first memo driven execution 
 # use a generic cost function 
-    A := bat.new(:int,:int);            #  3 A:bat[:int,:int] := CMDBATnew(_4:int, _4:int) {G}
-    bat.insert(A,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(A:bat[:int,:int], _6:int, _6:int) {G}
-    B := algebra.copy(A);               #  5 B:bat[:int,:int] := ALGcopy(A:bat[:int,:int]) {G}
-    bat.setWriteMode(B);                #  6 _8:bat[:int,:int] := BKCsetWriteMode(B:bat[:int,:int]) {G}
-    bat.insert(B,2,2);                  #  7 _9:bat[:int,:int] := BKCinsert_bun(B:bat[:int,:int], _10:int, _10:int) {G}
-    C := algebra.copy(B);               #  8 C:bat[:int,:int] := ALGcopy(B:bat[:int,:int]) {G}
-    bat.setWriteMode(C);                #  9 _12:bat[:int,:int] := BKCsetWriteMode(C:bat[:int,:int]) {G}
-    bat.insert(C,3,3);                  # 10 _13:bat[:int,:int] := BKCinsert_bun(C:bat[:int,:int], _14:int, _14:int) {G}
-    D := algebra.copy(C);               # 11 D:bat[:int,:int] := ALGcopy(C:bat[:int,:int]) {G}
-    bat.setWriteMode(D);                # 12 _16:bat[:int,:int] := BKCsetWriteMode(D:bat[:int,:int]) {G}
-    bat.insert(D,3,3);                  # 13 _17:bat[:int,:int] := BKCinsert_bun(D:bat[:int,:int], _14:int, _14:int) {G}
-    scheduler.choice();                 # 14 _18:void := RUNchoice() 
-    T1 := algebra.join(A,B);            # 15 T1:bat[:int,:int] := ALGjoin(A:bat[:int,:int], B:bat[:int,:int]) {G}
-    T2 := algebra.join(B,C);            # 16 T2:bat[:int,:int] := ALGjoin(B:bat[:int,:int], C:bat[:int,:int]) {G}
-    T3 := algebra.join(C,D);            # 17 T3:bat[:int,:int] := ALGjoin(C:bat[:int,:int], D:bat[:int,:int]) {G}
-    scheduler.choice("getVolume",T1,T2,T3);# 18 _22:void := RUNchoice(_23:str, T1:bat[:int,:int], T2:bat[:int,:int], T3:bat[:int,:int]) 
-    T4 := algebra.join(T1,C);           # 19 T4:bat[:int,:int] := ALGjoin(T1:bat[:int,:int], C:bat[:int,:int]) {G}
-    T5 := algebra.join(A,T2);           # 20 T5:bat[:int,:int] := ALGjoin(A:bat[:int,:int], T2:bat[:int,:int]) {G}
-    T6 := algebra.join(T2,D);           # 21 T6:bat[:int,:int] := ALGjoin(T2:bat[:int,:int], D:bat[:int,:int]) {G}
-    T7 := algebra.join(B,T3);           # 22 T7:bat[:int,:int] := ALGjoin(B:bat[:int,:int], T3:bat[:int,:int]) {G}
-    T8 := algebra.join(C,D);            # 23 T8:bat[:int,:int] := ALGjoin(C:bat[:int,:int], D:bat[:int,:int]) {G}
-    scheduler.choice("getVolume",T4,T5,T6,T7,T8);# 24 _29:void := RUNchoice(_23:str, T4:bat[:int,:int], T5:bat[:int,:int], T6:bat[:int,:int], T7:bat[:int,:int], T8:bat[:int,:int]) 
-    T9 := algebra.join(T4,D);           # 25 T9:bat[:int,:int] := ALGjoin(T4:bat[:int,:int], D:bat[:int,:int]) {G}
-    T10 := algebra.join(T5,D);          # 26 T10:bat[:int,:int] := ALGjoin(T5:bat[:int,:int], D:bat[:int,:int]) {G}
-    T11 := algebra.join(A,T6);          # 27 T11:bat[:int,:int] := ALGjoin(A:bat[:int,:int], T6:bat[:int,:int]) {G}
-    T12 := algebra.join(A,T7);          # 28 T12:bat[:int,:int] := ALGjoin(A:bat[:int,:int], T7:bat[:int,:int]) {G}
-    T13 := algebra.join(T1,T8);         # 29 T13:bat[:int,:int] := ALGjoin(T1:bat[:int,:int], T8:bat[:int,:int]) {G}
-    scheduler.choice("getVolume",T9,T10,T11,T12,T13);# 30 _35:void := RUNchoice(_23:str, T9:bat[:int,:int], T10:bat[:int,:int], T11:bat[:int,:int], T12:bat[:int,:int], T13:bat[:int,:int]) 
-    answer := scheduler.pick(T9,T10,T11,T12,T13);# 31 answer:bat[:int,:int] := RUNpickResult(T9:bat[:int,:int], T10:bat[:int,:int], T11:bat[:int,:int], T12:bat[:int,:int], T13:bat[:int,:int]) {G}
-    io.print(answer);                   # 32 _37:void := IOprint_val(answer:bat[:int,:int]) 
-end main;	# 33  
+    A := bat.new(:int,:int);
+    bat.insert(A,1,1);
+    B := algebra.copy(A);
+    bat.setWriteMode(B);
+    bat.insert(B,2,2);
+    C := algebra.copy(B);
+    bat.setWriteMode(C);
+    bat.insert(C,3,3);
+    D := algebra.copy(C);
+    bat.setWriteMode(D);
+    bat.insert(D,3,3);
+    scheduler.choice();
+    T1 := algebra.join(A,B);
+    T2 := algebra.join(B,C);
+    T3 := algebra.join(C,D);
+    scheduler.choice("getVolume",T1,T2,T3);
+    T4 := algebra.join(T1,C);
+    T5 := algebra.join(A,T2);
+    T6 := algebra.join(T2,D);
+    T7 := algebra.join(B,T3);
+    T8 := algebra.join(C,D);
+    scheduler.choice("getVolume",T4,T5,T6,T7,T8);
+    T9 := algebra.join(T4,D);
+    T10 := algebra.join(T5,D);
+    T11 := algebra.join(A,T6);
+    T12 := algebra.join(A,T7);
+    T13 := algebra.join(T1,T8);
+    scheduler.choice("getVolume",T9,T10,T11,T12,T13);
+    answer := scheduler.pick(T9,T10,T11,T12,T13);
+    io.print(answer);
+end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type

@@ -10,44 +10,24 @@ stdout of test 'xml100` in directory 'src/modules/atoms` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2007 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://gio.ins.cwi.nl:30810/
-#b:= "Mary Ann Walker";
-#c:= "brown";
-#
-#n:= nil:xml;
-#io.print(n);
-#ns:= xml.str(n);
-#io.print(ns);
-#
-#bx:= xml.xml(b);
-#cx:= xml.xml(c);
-#
-#xp:= xml.element("person",bx);
-#sp:= xml.str(xp); io.print(sp);
-#xh:= xml.element("hair",nil:str,nil:str,cx);
-#sp:= xml.str(xh); io.print(sp);
-#
-#xx:= xml.forest(xp,xh);
-#xs:= xml.str(xx);
-#io.print(xs);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    b := "Mary Ann Walker";             #  1 b:str := _2:str {G}
-    c := "brown";                       #  2 c:str := _4:str {G}
-    n := nil:xml;                       #  3 n:xml := _6:xml {G}
-    io.print(n);                        #  4 _7:void := IOprint_val(n:xml) 
-    ns := xml.str(n);                   #  5 ns:str := XMLxml2str(n:xml) {G}
-    io.print(ns);                       #  6 _9:void := IOprint_val(ns:str) 
-    bx := xml.xml(b);                   #  7 bx:xml := XMLstr2xml(b:str) {G}
-    cx := xml.xml(c);                   #  8 cx:xml := XMLstr2xml(c:str) {G}
-    xp := xml.element("person",bx);     #  9 xp:xml := XMLelementSmall(_13:str, bx:xml) {G}
-    io.print(xp);                       # 10 _14:void := IOprint_val(xp:xml) 
-    xh := xml.element("hair",nil:xml,nil:xml,cx);# 11 xh:xml := XMLelement(_16:str, _6:xml, _6:xml, cx:xml) {G}
-    io.print(xh);                       # 12 _17:void := IOprint_val(xh:xml) 
-    xx := xml.forest(xp,xh);            # 13 xx:xml := XMLforest(xp:xml, xh:xml) {G}
-    xs := xml.str(xx);                  # 14 xs:str := XMLxml2str(xx:xml) {G}
-    io.print(xs);                       # 15 _20:void := IOprint_val(xs:str) 
-end main;	# 16  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
+    b := "Mary Ann Walker";
+    c := "brown";
+    n := nil:xml;
+    io.print(n);
+    ns := xml.str(n);
+    io.print(ns);
+    bx := xml.xml(b);
+    cx := xml.xml(c);
+    xp := xml.element("person",bx);
+    io.print(xp);
+    xh := xml.element("hair",nil:xml,nil:xml,cx);
+    io.print(xh);
+    xx := xml.forest(xp,xh);
+    xs := xml.str(xx);
+    io.print(xs);
+end main;
 [ nil ]
 [ nil ]
 [ <person>Mary Ann Walker</person> ]

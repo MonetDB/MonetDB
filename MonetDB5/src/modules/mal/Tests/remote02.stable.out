@@ -14,81 +14,41 @@ stdout of test 'remote02` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:39413/
-## for testweb, we need to ask the server itself how it is available, use
-## sabaoth for that
-#include sabaoth;
-#
-#h := sabaoth.getLocalConnectionHost();
-#p := sabaoth.getLocalConnectionPort();
-#
-## create a connecton to ourself
-#remote.create("test", h, p, nil:str, "monetdb", "monetdb");
-#
-#a := "Fabian!";
-#b := 4.3;
-#c := 12;
-#d := bat.new(:str, :int);
-#bat.insert(d, "bla", 1);
-#bat.insert(d, nil:str, 2);
-#bat.insert(d, "boe", nil:int);
-#
-## store the values
-#i := remote.put("test", a);
-#j := remote.put("test", b);
-#k := remote.put("test", c);
-#l := remote.put("test", d);
-#
-## retrieve the value
-#r := remote.get("test", i);
-#s := remote.get("test", j);
-#t := remote.get("test", k);
-#u := remote.get("test", l);
-#
-## see if it really is here
-#io.print(r);
-#io.print(s);
-#io.print(t);
-#io.print(u);
-#
-## help testweb a bit, since currently no cleanup is done on server
-## shutdown
-#remote.destroy("test");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 # for testweb, we need to ask the server itself how it is available, use 
 # sabaoth for that 
 #sabaoth.prelude(); 
-    h := sabaoth.getLocalConnectionHost();#  4 h:str := SABgetLocalConnectionHost() {G}
-    p := sabaoth.getLocalConnectionPort();#  5 p:int := SABgetLocalConnectionPort() 
+    h := sabaoth.getLocalConnectionHost();
+    p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
-    a:str  := "Fabian!";                #  8 a:str := _12:str {G}
-    b:flt  := 4.30000019;               #  9 b:flt := _14:flt 
-    c:int  := 12;                       # 10 c:int := _16:int 
-    d:bat[:str,:int]  := bat.new(:str,:int);# 11 d:bat[:str,:int] := CMDBATnew(_18:str, _19:int) {G}
-    bat.insert(d,"bla",1);              # 12 _20:bat[:str,:int] := BKCinsert_bun(d:bat[:str,:int], _21:str, _22:int) {G}
-    bat.insert(d,nil:str,2);            # 13 _23:bat[:str,:int] := BKCinsert_bun(d:bat[:str,:int], _9:str, _24:int) {G}
-    bat.insert(d,"boe",nil:int);        # 14 _25:bat[:str,:int] := BKCinsert_bun(d:bat[:str,:int], _26:str, _27:int) {G}
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    a := "Fabian!";
+    b := 4.30000019;
+    c := 12;
+    d := bat.new(:str,:int);
+    bat.insert(d,"bla",1);
+    bat.insert(d,nil:str,2);
+    bat.insert(d,"boe",nil:int);
 # store the values 
-    i:rmtobj  := remote.put("test",a);  # 16 i:rmtobj := RMTput(_8:str, a:str) {G}
-    j:rmtobj  := remote.put("test",b);  # 17 j:rmtobj := RMTput(_8:str, b:flt) {G}
-    k:rmtobj  := remote.put("test",c);  # 18 k:rmtobj := RMTput(_8:str, c:int) {G}
-    l:rmtobj  := remote.put("test",d);  # 19 l:rmtobj := RMTput(_8:str, d:bat[:str,:int]) {G}
+    i := remote.put("test",a);
+    j := remote.put("test",b);
+    k := remote.put("test",c);
+    l := remote.put("test",d);
 # retrieve the value 
-    r:str  := remote.get("test",i);     # 21 r:str := RMTget(_8:str, i:rmtobj) {G}
-    s:flt  := remote.get("test",j);     # 22 s:flt := RMTget(_8:str, j:rmtobj) 
-    t:int  := remote.get("test",k);     # 23 t:int := RMTget(_8:str, k:rmtobj) 
-    u:bat[:str,:int]  := remote.get("test",l);# 24 u:bat[:str,:int] := RMTget(_8:str, l:rmtobj) {G}
+    r := remote.get("test",i);
+    s := remote.get("test",j);
+    t := remote.get("test",k);
+    u := remote.get("test",l);
 # see if it really is here 
-    io.print(r);                        # 26 _39:void := IOprint_val(r:str) 
-    io.print(s);                        # 27 _40:void := IOprint_val(s:flt) 
-    io.print(t);                        # 28 _41:void := IOprint_val(t:int) 
-    io.print(u);                        # 29 _42:void := IOprint_val(u:bat[:str,:int]) 
+    io.print(r);
+    io.print(s);
+    io.print(t);
+    io.print(u);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 32 _45:void := RMTdestroy(_46:str) 
-end main;                               # 33  
+    remote.destroy("test");
+end main;
 [ "Fabian!" ]
 [ 4.30000019 ]
 [ 12 ]

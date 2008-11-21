@@ -11,28 +11,28 @@ stdout of test 'cluster00` in directory 'src/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38516/
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 #test clustering a small table 
-    b := bat.new(:oid,:int);            #  2 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-    c := bat.new(:oid,:int);            #  3 c:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
-barrier (v,i) := language.newRange(0:int);#  4 (v:bit, i:int) := RNGnewRange_int(_8:int) {J10}
-    j := calc.%(i,5);                   #  5 j:int := CALCbinarycheckMODintint(i:int, _10:int) 
-    bat.append(b,j);                    #  6 _11:bat[:int,:any] := BKCappend_val_wrap(b:bat[:oid,:int], j:int) {G}
-    j := calc.%(i,3);                   #  7 j:int := CALCbinarycheckMODintint(i:int, _12:int) 
-    bat.append(c,j);                    #  8 _13:bat[:int,:any] := BKCappend_val_wrap(c:bat[:oid,:int], j:int) {G}
-    redo (v,i) := language.nextElement(1:int,10:int);#  9 (v:bit, i:int) := RNGnextElement_int(_14:int, _15:int) {J5}
-exit (v,i);                             # 10 (v:bit, i:int) 
+    b := bat.new(:oid,:int);
+    c := bat.new(:oid,:int);
+barrier (v,i) := language.newRange(0:int);
+    j := calc.%(i,5);
+    bat.append(b,j);
+    j := calc.%(i,3);
+    bat.append(c,j);
+    redo (v,i) := language.nextElement(1:int,10:int);
+exit (v,i);
 #bat.append(b,b); 
-    io.print(b,c);                      # 12 _17:void := IOtable(b:bat[:oid,:int], c:bat[:oid,:int]) 
-    keys := cluster.key(b);             # 13 keys:bat[:oid,:oid] := CLUSTER_key(b:bat[:oid,:int]) {G}
-    io.print(keys);                     # 14 _19:void := IOprint_val(keys:bat[:oid,:oid]) 
-    map := cluster.new(keys);           # 15 map:bat[:oid,:oid] := CLUSTER_new(keys:bat[:oid,:oid]) {G}
-    io.print(map);                      # 16 _21:void := IOprint_val(map:bat[:oid,:oid]) 
-    b1 := algebra.join(map,b);          # 17 b1:bat[:oid,:int] := ALGjoin(map:bat[:oid,:oid], b:bat[:oid,:int]) {G}
-    c1 := algebra.join(map,c);          # 18 c1:bat[:oid,:int] := ALGjoin(map:bat[:oid,:oid], c:bat[:oid,:int]) {G}
-    io.print(b1,c1);                    # 19 _24:void := IOtable(b1:bat[:oid,:int], c1:bat[:oid,:int]) 
-end main;                               # 20  
+    io.print(b,c);
+    keys := cluster.key(b);
+    io.print(keys);
+    map := cluster.new(keys);
+    io.print(map);
+    b1 := algebra.join(map,b);
+    c1 := algebra.join(map,c);
+    io.print(b1,c1);
+end main;
 #-------------------------#
 # h	t		t		  # name
 # void	int		int		  # type

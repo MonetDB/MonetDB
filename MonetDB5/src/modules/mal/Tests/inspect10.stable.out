@@ -10,21 +10,21 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33499/
-function user.dummy(i:int):void;        #  0 dummy:void := user.dummy(i:int) {G}
-    io.print(i);                        #  1 _2:void := IOprint_val(i:int) 
-    b := mdb.getDefinition();           #  2 b:bat[:void,:str] := MDBgetDefinition() {G}
-    io.print(b);                        #  3 _4:void := IOprint_val(b:bat[:void,:str]) 
-    mdb.list();                         #  4 _5:void := MDBlist() 
-end dummy;	# 5  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.dummy(i:int):void;
+    io.print(i);
+    b := mdb.getDefinition();
+    io.print(b);
+    mdb.list();
+end dummy;
+function user.main():void;
 #self inspection of the code base 
-    user.dummy(1);                      #  2 _2:void := user.dummy(_3:int) 
-    io.printf("get function properties\n");#  3 _4:void := IOprintf(_5:str) 
-    l := inspect.getSignature("user","dummy");#  4 l:bat[:str,:str] := INSPECTgetSignature(_7:str, _8:str) {G}
-    io.print(l);                        #  5 _9:void := IOprint_val(l:bat[:str,:str]) 
-    mdb.list("user","dummy");           #  6 _10:void := MDBlist3(_7:str, _8:str) 
-end main;	# 7  
+    user.dummy(1);
+    io.printf("get function properties\n");
+    l := inspect.getSignature("user","dummy");
+    io.print(l);
+    mdb.list("user","dummy");
+end main;
 [ 1 ]
 #-------------------------------------------------#
 # view	fcn					  # name

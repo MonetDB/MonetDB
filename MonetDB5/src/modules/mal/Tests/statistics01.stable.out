@@ -12,80 +12,44 @@ stdout of test 'statistics01` in directory 'src/modules/mal` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information
-##test the statistics module
-#tz:= bbp.bind("timezones");
-#statistics.prelude();
-#statistics.dump();
-#statistics.deposit("timezones");
-#statistics.dump();
-#b:= statistics.getHotset();
-#io.print(b);
-#l:= statistics.getCount("timezones");
-#io.print(l);
-#catch MALException:str;
-#	io.print("could not get count from timezones");
-#exit MALException;
-#m:= statistics.getMin("timezones");
-#catch MALException:str;
-#	io.print("could not get minimum from timezones");
-#exit MALException;
-#io.print(m);
-#h:= statistics.getHistogram("timezones");
-#catch MALException:str;
-#	io.print("could not get histogram from timezones");
-#	io.print(MALException);
-#	h:= bat.new(:oid,:int);
-#exit MALException;
-#io.print("histogram");
-#io.print(h);
-#hc:= aggr.count(h);
-#io.print(hc);
-#statistics.discard("timezones");
-#statistics.epilogue();
-##d:= bbp.getRefCount();
-##dl:=bbp.getLRefCount();
-##dn:= bbp.getNames();
-##ds:= algebra.sort(dn);
-##io.table(dn,d,dl);
-#
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 #test the statistics module 
-    tz:bat[:str,:timezone]  := bbp.bind("timezones");#  2 tz:bat[:str,:timezone] := CMDbbpbind(_3:str) {G}
-    statistics.prelude();               #  3 _4:void := STATprelude() 
+    tz := bbp.bind("timezones");
+    statistics.prelude();
 #statistics.dump();		is size dependent 
-    statistics.deposit("timezones");    #  5 _6:void := STATdepositStr(_3:str) 
+    statistics.deposit("timezones");
 #statistics.dump();		is size dependent 
-    b := statistics.getHotset();        #  7 b:bat[:int,:str] := STATgetHotset() {G}
+    b := statistics.getHotset();
 #io.print(b); 
-    l := statistics.getCount("timezones");#  9 l:lng := STATgetCount(_3:str) 
-    io.print(l);                        # 10 _11:void := IOprint_val(l:lng) 
-catch MALException:str ;                # 11 MALException:str {J13}
-    io.print("could not get count from timezones");# 12 _13:void := IOprint_val(_14:str) 
-exit MALException:str ;                 # 13 MALException:str 
-    m := statistics.getMin("timezones");# 14 m:lng := STATgetMin(_3:str) 
-catch MALException:str ;                # 15 MALException:str {J17}
-    io.print("could not get minimum from timezones");# 16 _16:void := IOprint_val(_17:str) 
-exit MALException:str ;                 # 17 MALException:str 
-    io.print(m);                        # 18 _18:void := IOprint_val(m:lng) 
-    h := statistics.getHistogram("timezones");# 19 h:bat[:any,:any] := STATgetHistogram(_3:str) {G}
-catch MALException:str ;                # 20 MALException:str {J24}
-    io.print("could not get histogram from timezones");# 21 _20:void := IOprint_val(_21:str) 
-    io.print(MALException);             # 22 _22:void := IOprint_val(MALException:str) 
-    h := bat.new(:oid,:int);            # 23 h:bat[:any,:any] := CMDBATnew(_23:oid, _24:int) {G}
-exit MALException:str ;                 # 24 MALException:str 
-    io.print("histogram");              # 25 _25:void := IOprint_val(_26:str) 
-    io.print(h);                        # 26 _27:void := IOprint_val(h:bat[:any,:any]) 
-    hc := aggr.count(h);                # 27 hc:wrd := ALGcount_bat(h:bat[:any,:any]) 
-    io.print(hc);                       # 28 _29:void := IOprint_val(hc:wrd) 
-    statistics.discard("timezones");    # 29 _30:void := STATdiscard(_3:str) 
-    statistics.epilogue();              # 30 _31:void := STATepilogue() 
+    l := statistics.getCount("timezones");
+    io.print(l);
+catch MALException;
+    io.print("could not get count from timezones");
+exit MALException;
+    m := statistics.getMin("timezones");
+catch MALException;
+    io.print("could not get minimum from timezones");
+exit MALException;
+    io.print(m);
+    h := statistics.getHistogram("timezones");
+catch MALException;
+    io.print("could not get histogram from timezones");
+    io.print(MALException);
+    h := bat.new(:oid,:int);
+exit MALException;
+    io.print("histogram");
+    io.print(h);
+    hc := aggr.count(h);
+    io.print(hc);
+    statistics.discard("timezones");
+    statistics.epilogue();
 #d:= bbp.getRefCount();
 #dl:=bbp.getLRefCount();
 #dn:= bbp.getNames();
 #ds:= algebra.sort(dn); 
 #io.table(dn,d,dl); 
-end main;	# 36  
+end main;
 [ 24 ]
 [ nil ]
 [ "histogram" ]

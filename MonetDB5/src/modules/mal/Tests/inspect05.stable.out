@@ -10,20 +10,20 @@ stdout of test 'inspect05` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36941/
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 #Illustrate the modules loaded after start 
-    k := inspect.getKind();             #  2 k:bat[:oid,:str] := INSPECTgetkind() {G}
-    m := inspect.getModule();           #  3 m:bat[:oid,:str] := INSPECTgetAllModules() {G}
-    f := inspect.getFunction();         #  4 f:bat[:oid,:str] := INSPECTgetAllFunctions() {G}
-    f1 := bat.reverse(f);               #  5 f1:bat[:str,:oid] := BKCreverse(f:bat[:oid,:str]) {G}
-    f2 := algebra.ssort(f1);            #  6 f2:bat[:str,:oid] := ALGssort(f1:bat[:str,:oid]) {G}
-    fs := bat.reverse(f2);              #  7 fs:bat[:oid,:str] := BKCreverse(f2:bat[:str,:oid]) {G}
-    s := inspect.getSignatures();       #  8 s:bat[:oid,:str] := INSPECTgetAllSignatures() {G}
-    a := inspect.getAddresses();        #  9 a:bat[:oid,:str] := INSPECTgetAllAddresses() {G}
-    io.table(fs,k,m,s,a);               # 10 _10:void := IOttable(fs:bat[:oid,:str], k:bat[:oid,:str], m:bat[:oid,:str], s:bat[:oid,:str], a:bat[:oid,:str]) 
-end main;                               # 11  
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+    k := inspect.getKind();
+    m := inspect.getModule();
+    f := inspect.getFunction();
+    f1 := bat.reverse(f);
+    f2 := algebra.ssort(f1);
+    fs := bat.reverse(f2);
+    s := inspect.getSignatures();
+    a := inspect.getAddresses();
+    io.table(fs,k,m,s,a);
+end main;
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h				symbol		symbol		 symbol																	 symbol							  # name
 # str				str		str		str																	str							  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#

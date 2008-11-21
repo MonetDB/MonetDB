@@ -14,59 +14,32 @@ stdout of test 'remote04` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked using 2 threads
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:39919/
-## for testweb, we need to ask the server itself how it is available, use
-## sabaoth for that
-#include sabaoth;
-#
-#h := sabaoth.getLocalConnectionHost();
-#p := sabaoth.getLocalConnectionPort();
-#
-## create a connecton to ourself
-#remote.create("test", h, p, nil:str, "monetdb", "monetdb");
-#
-#b := bat.new(:str, :int);
-#bat.insert(b, "bla", 1);
-#bat.insert(b, "boe", 2);
-#bat.insert(b, "foo", 3);
-#bat.insert(b, "bar", 4);
-#bat.insert(b, "baz", 5);
-#
-#j := remote.put("test", b);
-#
-## perform a selection remote, and get the result back
-#t := remote.exec("test", "algebra", "select", j, 3, 10);
-#io.print(t);
-#
-## help testweb a bit, since currently no cleanup is done on server
-## shutdown
-#remote.destroy("test");
-#
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
 # for testweb, we need to ask the server itself how it is available, use 
 # sabaoth for that 
 #sabaoth.prelude(); 
-    h := sabaoth.getLocalConnectionHost();#  4 h:str := SABgetLocalConnectionHost() {G}
-    p := sabaoth.getLocalConnectionPort();#  5 p:int := SABgetLocalConnectionPort() 
+    h := sabaoth.getLocalConnectionHost();
+    p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");#  7 _7:void := RMTcreate(_8:str, h:str, p:int, _9:str, _10:str, _10:str) 
-    b := bat.new(:str,:int);            #  8 b:bat[:str,:int] := CMDBATnew(_12:str, _13:int) {G}
-    bat.insert(b,"bla",1);              #  9 _14:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _15:str, _16:int) {G}
-    bat.insert(b,"boe",2);              # 10 _17:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _18:str, _19:int) {G}
-    bat.insert(b,"foo",3);              # 11 _20:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _21:str, _22:int) {G}
-    bat.insert(b,"bar",4);              # 12 _23:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _24:str, _25:int) {G}
-    bat.insert(b,"baz",5);              # 13 _26:bat[:str,:int] := BKCinsert_bun(b:bat[:str,:int], _27:str, _28:int) {G}
-    k := remote.put("test",b);          # 14 k:rmtobj := RMTput(_8:str, b:bat[:str,:int]) {G}
-    l := remote.put("test",3);          # 15 l:rmtobj := RMTput(_8:str, _22:int) {G}
-    m := remote.put("test",10);         # 16 m:rmtobj := RMTput(_8:str, _32:int) {G}
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    b := bat.new(:str,:int);
+    bat.insert(b,"bla",1);
+    bat.insert(b,"boe",2);
+    bat.insert(b,"foo",3);
+    bat.insert(b,"bar",4);
+    bat.insert(b,"baz",5);
+    k := remote.put("test",b);
+    l := remote.put("test",3);
+    m := remote.put("test",10);
 # perform a selection remote, and get the result back 
-    t := remote.exec("test","algebra","select",k,l,m);# 18 t:rmtobj := RMTexec(_8:str, _35:str, _36:str, k:rmtobj, l:rmtobj, m:rmtobj) {G}
-    j:bat[:str,:int]  := remote.get("test",t);# 19 j:bat[:str,:int] := RMTget(_8:str, t:rmtobj) {G}
-    io.print(j);                        # 20 _38:void := IOprint_val(j:bat[:str,:int]) 
+    t := remote.exec("test","algebra","select",k,l,m);
+    j := remote.get("test",t);
+    io.print(j);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");             # 23 _41:void := RMTdestroy(_42:str) 
-end main;                               # 24  
+    remote.destroy("test");
+end main;
 #-----------------#
 # h	t	  # name
 # str	int	  # type

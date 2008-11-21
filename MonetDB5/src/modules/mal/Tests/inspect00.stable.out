@@ -5,46 +5,29 @@ stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 # 00:03:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect00.mal </dev/null
 # 00:03:55 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl/ for further information.
-## test analysis of stack frames
-#
-#function tst():void;
-#	i:= mdb.getStackDepth();
-#	io.printf("stack depth %d\n",i);
-#	t:= mdb.getStackTrace();
-#	io.print(t);
-#	b0:= mdb.getStackFrame(0);
-#	io.print(b0);
-#	b1:= mdb.getStackFrame(1);
-#	io.print(b1);
-#	# next one is illegal
-#	b1:= mdb.getStackFrame(2);
-#end tst;
-function user.tst():void;               #  0 tst:void := user.tst() {G}
-    i := mdb.getStackDepth();           #  1 i:int := MDBStkDepth() 
-    io.printf("stack depth %d\n",i);    #  2 _2:void := IOprintf(_3:str, i:int) 
-    t := mdb.getStackTrace();           #  3 t:bat[:void,:str] := MDBStkTrace() {G}
-    io.print(t);                        #  4 _5:void := IOprint_val(t:bat[:void,:str]) 
-    b0 := mdb.getStackFrame(0);         #  5 b0:bat[:str,:str] := MDBgetStackFrameN(_7:int) {G}
-    io.print(b0);                       #  6 _8:void := IOprint_val(b0:bat[:str,:str]) 
-    b1 := mdb.getStackFrame(1);         #  7 b1:bat[:str,:str] := MDBgetStackFrameN(_10:int) {G}
-    io.print(b1);                       #  8 _11:void := IOprint_val(b1:bat[:str,:str]) 
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.tst():void;
+    i := mdb.getStackDepth();
+    io.printf("stack depth %d\n",i);
+    t := mdb.getStackTrace();
+    io.print(t);
+    b0 := mdb.getStackFrame(0);
+    io.print(b0);
+    b1 := mdb.getStackFrame(1);
+    io.print(b1);
 # next one is illegal 
-    b1 := mdb.getStackFrame(2);         # 10 b1:bat[:str,:str] := MDBgetStackFrameN(_13:int) {G}
-end tst;	# 11  
-#
-#user.tst();
-#
-function user.main():void;              #  0 main:void := user.main() 
+    b1 := mdb.getStackFrame(2);
+end tst;
+function user.main():void;
 # test analysis of stack frames 
-    user.tst();                         #  2 _2:void := user.tst() 
-end main;	# 3  
+    user.tst();
+end main;
 stack depth 2
 #---------------------------------------------------------#
 # view	stk						  # name

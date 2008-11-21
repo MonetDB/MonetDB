@@ -30,7 +30,7 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_COMMONTERMS       show partial result */
+#define DEBUG_OPT_COMMONTERMS        /* show partial result */
 
 @c
 #include "mal_config.h"
@@ -80,16 +80,15 @@ are not common, because they have side effects.
 @{
 The current implementation is rather expensive nested-loop algorithm,
 which does not perform well for large MAL blocks.
-The search can be improved significantly by prefiltering.
-For, equality of instruction implies that
-all variables have been used before in a similar context.
+The search is improved significantly by prefiltering on the
+function name and not searching beyond the last assignment to
+the arguments.
 
 We should also immediately perform alias removal, because it
 creates opportunities for additional rewrites.
 
 Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
-
 @c
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -97,17 +96,18 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int i, j, k, barrier=0, last, n=1;
 	InstrPtr p, q;
 	int actions = 0;
-	int filter[1024];
-	int *mask,*alias,limit, slimit;
+	MALfcn *mask;
+	int *alias,limit, slimit;
 	InstrPtr *old;
-	int c;
+	int *lastassigned;
 	Lifespan span= newLifespan(mb);
 
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	mask= (int *) alloca(mb->stop * sizeof(int));
-	memset((void*) filter, 0, 1024 * sizeof(int));
+	mask= (MALfcn *) alloca(mb->stop * sizeof(MALfcn));
+	lastassigned = (int*) alloca(sizeof(int) * mb->vtop);
+	memset((void*) lastassigned, 0, mb->vtop * sizeof(int));
 
 	alias= (int*) alloca(sizeof(int)* mb->vtop);
 	for(i=0; i<mb->vtop; i++) 
@@ -123,17 +123,24 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 	for ( n= i = 0; i < limit; i++) {
 		p = old[i];
+		if ( hasSideEffects(p, TRUE) )
+		for ( k = p->retc; k < p->argc; k++)
+			lastassigned[getArg(p,k)]=i;
+		for ( k = 0; k < p->retc; k++)
+			lastassigned[getArg(p,k)]=i;
+		mask[n]= p->fcn;
 		pushInstruction(mb,p);
 		if(p->barrier)
 			barrier= getArg(p,0); /* at least one barrier block */
 		n++;
 		if (p->token == ENDsymbol){
+			/* wrap up the remainder */
 			for(i++; i<limit; i++)
 			if( old[i])
 				pushInstruction(mb,old[i]);
 			break;
 		}
-		if (p->token == NOOPsymbol) 
+		if (p->token == NOOPsymbol || barrier) 
 			continue;
 @-
 First recognize simple assignments for alias removal
@@ -148,6 +155,7 @@ and apply alias propagation, before considering a match.
 			getBeginLifespan(span,getArg(p,0)) == i &&
 			getLastUpdate(span,getArg(p,1)) <= i ){
 					alias[getArg(p,0)] = alias[getArg(p,1)];
+					lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
 					freeInstruction(p);
 					mb->stop--;
 					mb->stmt[mb->stop]=0;
@@ -156,35 +164,23 @@ and apply alias propagation, before considering a match.
 			} 
 		for(j=0; j<p->argc; j++)
 			getArg(p,j) = alias[getArg(p,j)];
-@-
-Use a hash filter to speed up matching
-@c
-		c = p->argc;
-		for(j=p->retc; j<p->argc; j++){
-			c *= 4;
-			if (!isVarConstant(mb,getArg(p,j)))
-				c += getArg(p,j);
-		}
-		c &= 1023;
-		mask[n-1] = c;
-		
-		if (filter[c] && p->retc != p->argc){
+		if (p->retc != p->argc){
 @-
 We look back in the code base to determine a candidate for
 replacement. We don't have to look further back then the last
 relevant assignment. Beware, we may miss opportunities due to
 multiple occurrences of the same constant in the symbol table.
 @c
-			last=1;
-			for (j = p->retc; j<p->argc; j++)
-				if( getBeginLifespan(span,getArg(p,j)) > last )
-					last = getBeginLifespan(span,getArg(p,j));
+			last= lastassigned[getArg(p,p->retc)];
+			for (j = p->retc+1; j<p->argc; j++)
+				if (lastassigned[getArg(p,j)]> last)
+					last= lastassigned[getArg(p,j)];
 
 			for (j = (n-1) - 1; j >= last-(i-(n-1)) && j>0; j--) 
-			if (mask[j] == c ){
+			if (mask[j] == p->fcn ){
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					break;
-#ifdef DEBUG_OPT_COMMONTERMS
+#ifdef DEBUG_OPT_COMMONTERMS_1
 				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 				stream_printf(cntxt->fdout,"%d, %d  %d %d ", i, j, 
@@ -213,7 +209,9 @@ handled by the alias removal part
 					allTargetsVisible(mb,span,j,n-1) 
 					) {
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(cntxt->fdout, "Found a common expression " "%d <-> %d\n", j, i);
+					stream_printf(cntxt->fdout, "Found a common expression " 
+						"%d <-> %d\n", j, i);
+					printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 #endif
 					clrFunction(p);
 					p->token = ASSIGNsymbol;
@@ -221,7 +219,7 @@ handled by the alias removal part
 					for (k = 0; k < q->retc; k++)
 						p->argv[p->retc + k] =  q->argv[k];
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(cntxt->fdout, "common modified expression");
+					stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
@@ -239,7 +237,6 @@ handled by the alias removal part
 				}
 			}
 		}
-		filter[c ]= 1;
 	}
 	for(; i<slimit; i++)
 	if( old[i])

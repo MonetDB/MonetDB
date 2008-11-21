@@ -50,174 +50,80 @@ stdout of test 'rdf` in directory 'src/modules/mal` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked running on 2 cores
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://ivysaur.ins.cwi.nl:31339/
-#include rdf;
-#
-#targetdir := unix.getenv("PWD");
-#exit correct;
-#barrier correct:= targetdir != "";
-#	targetdir := targetdir + "/";
-#exit correct;
-#
-#datafile := targetdir + "rdfdatafile.ttl";
-#io.printf("#source:%s\n",datafile);
-#
-#rdf.importGraph(datafile, "turtle", "db", "g", 1024:lng);
-#
-#xsdtypes:bat[:oid,:str] = bbp.bind("RDFtype2xsd");
-
-
-#io.print(xsdtypes);
-#
-#map:bat[:oid,:str] := bbp.bind("db_g_map");
-#io.print(map);
-#
-#Spot:bat[:oid,:oid] := bbp.bind("db_g_Spot");
-#sPot:bat[:oid,:oid] := bbp.bind("db_g_sPot");
-#spOt:bat[:oid,:oid] := bbp.bind("db_g_spOt");
-#spoT:bat[:oid,:bte] := bbp.bind("db_g_spoT");
-#
-#s := algebra.fetchjoin(Spot,map); 
-#p := algebra.fetchjoin(sPot,map); 
-#o := algebra.fetchjoin(spOt,map);
-#
-#io.print("order: SPO");
-#tablet.page(s,p,o,spoT);
-#
-#Sopt:bat[:oid,:oid] := bbp.bind("db_g_Sopt");
-#sOpt:bat[:oid,:oid] := bbp.bind("db_g_sOpt");
-#soPt:bat[:oid,:oid] := bbp.bind("db_g_soPt");
-#sopT:bat[:oid,:bte] := bbp.bind("db_g_sopT");
-#
-#s := algebra.fetchjoin(Sopt,map);
-#o := algebra.fetchjoin(sOpt,map);
-#p := algebra.fetchjoin(soPt,map);
-#
-#io.print("order: SOP");
-#tablet.page(s,o,p,sopT);
-#
-#Psot:bat[:oid,:oid] := bbp.bind("db_g_Psot");
-#pSot:bat[:oid,:oid] := bbp.bind("db_g_pSot");
-#psOt:bat[:oid,:oid] := bbp.bind("db_g_psOt");
-#psoT:bat[:oid,:bte] := bbp.bind("db_g_psoT");
-#
-#p := algebra.fetchjoin(Psot,map); 
-#s := algebra.fetchjoin(pSot,map); 
-#o := algebra.fetchjoin(psOt,map);
-#
-#io.print("order: PSO");
-#tablet.page(p,s,o,psoT);
-#
-#Post:bat[:oid,:oid] := bbp.bind("db_g_Post");
-#pOst:bat[:oid,:oid] := bbp.bind("db_g_pOst");
-#poSt:bat[:oid,:oid] := bbp.bind("db_g_poSt");
-#posT:bat[:oid,:bte] := bbp.bind("db_g_posT");
-#
-#p := algebra.fetchjoin(Post,map); 
-#o := algebra.fetchjoin(pOst,map); 
-#s := algebra.fetchjoin(poSt,map);
-#
-#io.print("order: POS");
-#tablet.page(p,o,s,posT);
-#
-#Opst:bat[:oid,:oid] := bbp.bind("db_g_Opst");
-#oPst:bat[:oid,:oid] := bbp.bind("db_g_oPst");
-#opSt:bat[:oid,:oid] := bbp.bind("db_g_opSt");
-#opsT:bat[:oid,:bte] := bbp.bind("db_g_opsT");
-#
-#o := algebra.fetchjoin(Opst,map); 
-#p := algebra.fetchjoin(oPst,map); 
-#s := algebra.fetchjoin(opSt,map);
-#
-#io.print("order: OPS");
-#tablet.page(o,p,s,opsT);
-#
-#Ospt:bat[:oid,:oid] := bbp.bind("db_g_Ospt");
-#oSpt:bat[:oid,:oid] := bbp.bind("db_g_oSpt");
-#osPt:bat[:oid,:oid] := bbp.bind("db_g_osPt");
-#ospT:bat[:oid,:bte] := bbp.bind("db_g_ospT");
-#
-#o := algebra.fetchjoin(Ospt,map); 
-#s := algebra.fetchjoin(oSpt,map); 
-#p := algebra.fetchjoin(osPt,map);
-#
-#io.print("order: OSP");
-#tablet.page(o,s,p,ospT);
-#
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    targetdir := unix.getenv("TSTTRGDIR");#  1 targetdir:str := UNIXgetenv(_2:str) {G}
-barrier correct := calc.==(targetdir,"");#  2 correct:bit := CALCcompEQstrstr(targetdir:str, _4:str) {J4}
-    targetdir := unix.getenv("PWD");    #  3 targetdir:str := UNIXgetenv(_5:str) {G}
-exit correct;                           #  4 correct:bit 
-barrier correct := calc.!=(targetdir,"");#  5 correct:bit := CALCcompNEQstrstr(targetdir:str, _4:str) {J7}
-    targetdir := calc.+(targetdir,"/"); #  6 targetdir:str := CALCstrConcat(targetdir:str, _6:str) {G}
-exit correct;                           #  7 correct:bit 
-    datafile := calc.+(targetdir,"rdf.testdata.ttl");#  8 datafile:str := CALCstrConcat(targetdir:str, _8:str) {G}
-    io.printf("#source:%s\n",datafile); #  9 _9:void := IOprintf(_10:str, datafile:str) 
-    rdf.importGraph(datafile,"turtle","db","g",1024:lng);# 10 _11:void := RDFimportGraph(datafile:str, _12:str, _13:str, _14:str, _15:lng) 
-    xsdtypes:bat[:oid,:str]  := bbp.bind("RDFtype2xsd");# 11 xsdtypes:bat[:oid,:str] := CMDbbpbind(_17:str) {G}
-    io.print("Datatypes");              # 12 _18:void := IOprint_val(_19:str) 
-    io.print(xsdtypes);                 # 13 _20:void := IOprint_val(xsdtypes:bat[:oid,:str]) 
-    map:bat[:oid,:str]  := bbp.bind("db_g_map");# 14 map:bat[:oid,:str] := CMDbbpbind(_22:str) {G}
-    io.print("Dictionary");             # 15 _23:void := IOprint_val(_24:str) 
-    io.print(map);                      # 16 _25:void := IOprint_val(map:bat[:oid,:str]) 
-    Spot:bat[:oid,:oid]  := bbp.bind("db_g_Spot");# 17 Spot:bat[:oid,:oid] := CMDbbpbind(_27:str) {G}
-    sPot:bat[:oid,:oid]  := bbp.bind("db_g_sPot");# 18 sPot:bat[:oid,:oid] := CMDbbpbind(_29:str) {G}
-    spOt:bat[:oid,:oid]  := bbp.bind("db_g_spOt");# 19 spOt:bat[:oid,:oid] := CMDbbpbind(_31:str) {G}
-    spoT:bat[:oid,:bte]  := bbp.bind("db_g_spoT");# 20 spoT:bat[:oid,:bte] := CMDbbpbind(_33:str) {G}
-    s := algebra.fetchjoin(Spot,map);   # 21 s:bat[:oid,:str] := ALGfetchjoin(Spot:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    p := algebra.fetchjoin(sPot,map);   # 22 p:bat[:oid,:str] := ALGfetchjoin(sPot:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    o := algebra.fetchjoin(spOt,map);   # 23 o:bat[:oid,:str] := ALGfetchjoin(spOt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: SPO");             # 24 _37:void := IOprint_val(_38:str) 
-    tablet.page(s,p,o,spoT);            # 25 _39:int := TABpage(s:bat[:oid,:str], p:bat[:oid,:str], o:bat[:oid,:str], spoT:bat[:oid,:bte]) 
-    Sopt:bat[:oid,:oid]  := bbp.bind("db_g_Sopt");# 26 Sopt:bat[:oid,:oid] := CMDbbpbind(_41:str) {G}
-    sOpt:bat[:oid,:oid]  := bbp.bind("db_g_sOpt");# 27 sOpt:bat[:oid,:oid] := CMDbbpbind(_43:str) {G}
-    soPt:bat[:oid,:oid]  := bbp.bind("db_g_soPt");# 28 soPt:bat[:oid,:oid] := CMDbbpbind(_45:str) {G}
-    sopT:bat[:oid,:bte]  := bbp.bind("db_g_sopT");# 29 sopT:bat[:oid,:bte] := CMDbbpbind(_47:str) {G}
-    s := algebra.fetchjoin(Sopt,map);   # 30 s:bat[:oid,:str] := ALGfetchjoin(Sopt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    o := algebra.fetchjoin(sOpt,map);   # 31 o:bat[:oid,:str] := ALGfetchjoin(sOpt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    p := algebra.fetchjoin(soPt,map);   # 32 p:bat[:oid,:str] := ALGfetchjoin(soPt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: SOP");             # 33 _48:void := IOprint_val(_49:str) 
-    tablet.page(s,o,p,sopT);            # 34 _50:int := TABpage(s:bat[:oid,:str], o:bat[:oid,:str], p:bat[:oid,:str], sopT:bat[:oid,:bte]) 
-    Psot:bat[:oid,:oid]  := bbp.bind("db_g_Psot");# 35 Psot:bat[:oid,:oid] := CMDbbpbind(_52:str) {G}
-    pSot:bat[:oid,:oid]  := bbp.bind("db_g_pSot");# 36 pSot:bat[:oid,:oid] := CMDbbpbind(_54:str) {G}
-    psOt:bat[:oid,:oid]  := bbp.bind("db_g_psOt");# 37 psOt:bat[:oid,:oid] := CMDbbpbind(_56:str) {G}
-    psoT:bat[:oid,:bte]  := bbp.bind("db_g_psoT");# 38 psoT:bat[:oid,:bte] := CMDbbpbind(_58:str) {G}
-    p := algebra.fetchjoin(Psot,map);   # 39 p:bat[:oid,:str] := ALGfetchjoin(Psot:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    s := algebra.fetchjoin(pSot,map);   # 40 s:bat[:oid,:str] := ALGfetchjoin(pSot:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    o := algebra.fetchjoin(psOt,map);   # 41 o:bat[:oid,:str] := ALGfetchjoin(psOt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: PSO");             # 42 _59:void := IOprint_val(_60:str) 
-    tablet.page(p,s,o,psoT);            # 43 _61:int := TABpage(p:bat[:oid,:str], s:bat[:oid,:str], o:bat[:oid,:str], psoT:bat[:oid,:bte]) 
-    Post:bat[:oid,:oid]  := bbp.bind("db_g_Post");# 44 Post:bat[:oid,:oid] := CMDbbpbind(_63:str) {G}
-    pOst:bat[:oid,:oid]  := bbp.bind("db_g_pOst");# 45 pOst:bat[:oid,:oid] := CMDbbpbind(_65:str) {G}
-    poSt:bat[:oid,:oid]  := bbp.bind("db_g_poSt");# 46 poSt:bat[:oid,:oid] := CMDbbpbind(_67:str) {G}
-    posT:bat[:oid,:bte]  := bbp.bind("db_g_posT");# 47 posT:bat[:oid,:bte] := CMDbbpbind(_69:str) {G}
-    p := algebra.fetchjoin(Post,map);   # 48 p:bat[:oid,:str] := ALGfetchjoin(Post:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    o := algebra.fetchjoin(pOst,map);   # 49 o:bat[:oid,:str] := ALGfetchjoin(pOst:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    s := algebra.fetchjoin(poSt,map);   # 50 s:bat[:oid,:str] := ALGfetchjoin(poSt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: POS");             # 51 _70:void := IOprint_val(_71:str) 
-    tablet.page(p,o,s,posT);            # 52 _72:int := TABpage(p:bat[:oid,:str], o:bat[:oid,:str], s:bat[:oid,:str], posT:bat[:oid,:bte]) 
-    Opst:bat[:oid,:oid]  := bbp.bind("db_g_Opst");# 53 Opst:bat[:oid,:oid] := CMDbbpbind(_74:str) {G}
-    oPst:bat[:oid,:oid]  := bbp.bind("db_g_oPst");# 54 oPst:bat[:oid,:oid] := CMDbbpbind(_76:str) {G}
-    opSt:bat[:oid,:oid]  := bbp.bind("db_g_opSt");# 55 opSt:bat[:oid,:oid] := CMDbbpbind(_78:str) {G}
-    opsT:bat[:oid,:bte]  := bbp.bind("db_g_opsT");# 56 opsT:bat[:oid,:bte] := CMDbbpbind(_80:str) {G}
-    o := algebra.fetchjoin(Opst,map);   # 57 o:bat[:oid,:str] := ALGfetchjoin(Opst:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    p := algebra.fetchjoin(oPst,map);   # 58 p:bat[:oid,:str] := ALGfetchjoin(oPst:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    s := algebra.fetchjoin(opSt,map);   # 59 s:bat[:oid,:str] := ALGfetchjoin(opSt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: OPS");             # 60 _81:void := IOprint_val(_82:str) 
-    tablet.page(o,p,s,opsT);            # 61 _83:int := TABpage(o:bat[:oid,:str], p:bat[:oid,:str], s:bat[:oid,:str], opsT:bat[:oid,:bte]) 
-    Ospt:bat[:oid,:oid]  := bbp.bind("db_g_Ospt");# 62 Ospt:bat[:oid,:oid] := CMDbbpbind(_85:str) {G}
-    oSpt:bat[:oid,:oid]  := bbp.bind("db_g_oSpt");# 63 oSpt:bat[:oid,:oid] := CMDbbpbind(_87:str) {G}
-    osPt:bat[:oid,:oid]  := bbp.bind("db_g_osPt");# 64 osPt:bat[:oid,:oid] := CMDbbpbind(_89:str) {G}
-    ospT:bat[:oid,:bte]  := bbp.bind("db_g_ospT");# 65 ospT:bat[:oid,:bte] := CMDbbpbind(_91:str) {G}
-    o := algebra.fetchjoin(Ospt,map);   # 66 o:bat[:oid,:str] := ALGfetchjoin(Ospt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    s := algebra.fetchjoin(oSpt,map);   # 67 s:bat[:oid,:str] := ALGfetchjoin(oSpt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    p := algebra.fetchjoin(osPt,map);   # 68 p:bat[:oid,:str] := ALGfetchjoin(osPt:bat[:oid,:oid], map:bat[:oid,:str]) {G}
-    io.print("order: OSP");             # 69 _92:void := IOprint_val(_93:str) 
-    tablet.page(o,s,p,ospT);            # 70 _94:int := TABpage(o:bat[:oid,:str], s:bat[:oid,:str], p:bat[:oid,:str], ospT:bat[:oid,:bte]) 
-end main;                               # 71  
-#source:/home/mark/programmi/MonetDB/mTests/src/modules/mal/rdf.testdata.ttl
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.main():void;
+    targetdir := unix.getenv("TSTTRGDIR");
+barrier correct := calc.==(targetdir,"");
+    targetdir := unix.getenv("PWD");
+exit correct;
+barrier correct := calc.!=(targetdir,"");
+    targetdir := calc.+(targetdir,"/");
+exit correct;
+    datafile := calc.+(targetdir,"rdf.testdata.ttl");
+    io.printf("#source:%s\n",datafile);
+    rdf.importGraph(datafile,"turtle","db","g",1024:lng);
+    xsdtypes := bbp.bind("RDFtype2xsd");
+    io.print("Datatypes");
+    io.print(xsdtypes);
+    map := bbp.bind("db_g_map");
+    io.print("Dictionary");
+    io.print(map);
+    Spot := bbp.bind("db_g_Spot");
+    sPot := bbp.bind("db_g_sPot");
+    spOt := bbp.bind("db_g_spOt");
+    spoT := bbp.bind("db_g_spoT");
+    s := algebra.fetchjoin(Spot,map);
+    p := algebra.fetchjoin(sPot,map);
+    o := algebra.fetchjoin(spOt,map);
+    io.print("order: SPO");
+    tablet.page(s,p,o,spoT);
+    Sopt := bbp.bind("db_g_Sopt");
+    sOpt := bbp.bind("db_g_sOpt");
+    soPt := bbp.bind("db_g_soPt");
+    sopT := bbp.bind("db_g_sopT");
+    s := algebra.fetchjoin(Sopt,map);
+    o := algebra.fetchjoin(sOpt,map);
+    p := algebra.fetchjoin(soPt,map);
+    io.print("order: SOP");
+    tablet.page(s,o,p,sopT);
+    Psot := bbp.bind("db_g_Psot");
+    pSot := bbp.bind("db_g_pSot");
+    psOt := bbp.bind("db_g_psOt");
+    psoT := bbp.bind("db_g_psoT");
+    p := algebra.fetchjoin(Psot,map);
+    s := algebra.fetchjoin(pSot,map);
+    o := algebra.fetchjoin(psOt,map);
+    io.print("order: PSO");
+    tablet.page(p,s,o,psoT);
+    Post := bbp.bind("db_g_Post");
+    pOst := bbp.bind("db_g_pOst");
+    poSt := bbp.bind("db_g_poSt");
+    posT := bbp.bind("db_g_posT");
+    p := algebra.fetchjoin(Post,map);
+    o := algebra.fetchjoin(pOst,map);
+    s := algebra.fetchjoin(poSt,map);
+    io.print("order: POS");
+    tablet.page(p,o,s,posT);
+    Opst := bbp.bind("db_g_Opst");
+    oPst := bbp.bind("db_g_oPst");
+    opSt := bbp.bind("db_g_opSt");
+    opsT := bbp.bind("db_g_opsT");
+    o := algebra.fetchjoin(Opst,map);
+    p := algebra.fetchjoin(oPst,map);
+    s := algebra.fetchjoin(opSt,map);
+    io.print("order: OPS");
+    tablet.page(o,p,s,opsT);
+    Ospt := bbp.bind("db_g_Ospt");
+    oSpt := bbp.bind("db_g_oSpt");
+    osPt := bbp.bind("db_g_osPt");
+    ospT := bbp.bind("db_g_ospT");
+    o := algebra.fetchjoin(Ospt,map);
+    s := algebra.fetchjoin(oSpt,map);
+    p := algebra.fetchjoin(osPt,map);
+    io.print("order: OSP");
+    tablet.page(o,s,p,ospT);
+end main;
+#source:/ufs/mk/monet5/Linux/mTests/src/modules/mal/rdf.testdata.ttl
 [ "Datatypes" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name

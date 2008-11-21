@@ -11,31 +11,20 @@ stdout of test 'sched00` in directory 'src/scheduler` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#function f();
-#	i{runonce, rows>4}:=1;	# just properties
-#    mdb.list();
-#    io.print("start running\n");
-#    scheduler.isolation();
-#    io.print("done\n");
-#    mdb.list();
-#end f;
-function user.f():void;                 #  0 f:void := user.f() 
-    i{runonce,rows>4} := 1;             #  1 i:int := _3:int 
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.f():void;
+    i := 1;
 # just properties 
-    mdb.List();                         #  3 _5:void := MDBlistDetail() 
-    io.print("start running\n");        #  4 _6:void := IOprint_val(_7:str) 
-    scheduler.isolation();              #  5 _8:void := RUNisolation() 
-    io.print("done\n");                 #  6 _9:void := IOprint_val(_10:str) 
-    mdb.List();                         #  7 _11:void := MDBlistDetail() 
-end f;	# 8  
-#
-#f(); #shows self-modification in action
-#
-#
-function user.main():void;              #  0 main:void := user.main() 
-    user.f();                           #  1 _1:void := user.f() 
+    mdb.List();
+    io.print("start running\n");
+    scheduler.isolation();
+    io.print("done\n");
+    mdb.List();
+end f;
+function user.main():void;
+    user.f();
 #shows self-modification in action 
-end main;	# 3  
+end main;
 function user.f():void;                 #  0 f:void := user.f() 
     i{runonce,rows>4} := 1;             #  1 i:int := _3:int 
 # just properties 

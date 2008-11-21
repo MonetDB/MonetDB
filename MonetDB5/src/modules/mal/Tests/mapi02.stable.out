@@ -35,9 +35,7 @@ stdout of test 'mapi02` in directory 'src/modules/mal` itself:
 #c:= remote.query("test","io.print(b);")
 !SyntaxException:parseError:io.print(c);
 !SyntaxException:parseError:^';' expected
-#
-#
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;
 #this example tests recieving tuple values as part of the 
 #MAL interface. 
 # now in a remote setting 
@@ -52,19 +50,19 @@ function user.main():void;              #  0 main:void := user.main()
 # for testweb, we need to ask the server itself how it is available, use 
 # sabaoth for that 
 #sabaoth.prelude(); 
-    h := sabaoth.getLocalConnectionHost();#  7 h:any := sabaoth.getLocalConnectionHost() {U}
-    p := sabaoth.getLocalConnectionPort();#  8 p:any := sabaoth.getLocalConnectionPort() {U}
+    h := sabaoth.getLocalConnectionHost();
+    p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");# 10 _10:any := remote.create(_11:str, h:any, p:any, _12:str, _13:str, _13:str) {U}
-    b := bat.new(:oid,:str);            # 11 b:any := bat.new(_15:oid, _16:str) {U}
-    bat.insert(0@0,"hello");            # 12 _17:any := bat.insert(_18:oid, _19:str) {U}
-    bat.insert(0@0,"world");            # 13 _20:any := bat.insert(_18:oid, _21:str) {U}
+    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    b := bat.new(:oid,:str);
+    bat.insert(0@0,"hello");
+    bat.insert(0@0,"world");
 # store the values 
-    remote.send("test",b);              # 15 _23:any := remote.send(_11:str, b:any) {U}
-    c := remote.query("test","io.print(b);");# 16 c:any := remote.query(_11:str, _25:str) {U}
+    remote.send("test",b);
+    c := remote.query("test","io.print(b);");
 # shutdown 
-    remote.destroy("test");             # 18 _27:any := remote.destroy(_11:str) {U}
-end main;                               # 19  {U}
+    remote.destroy("test");
+end main;
 
 # 04:46:54 >  
 # 04:46:54 >  Done.

@@ -11,41 +11,41 @@ stdout of test 'remoteInit` in directory 'src/modules/mal` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:34180/
-function user.remote_internal_servegetbat(type:str,o:bat[:any_1,:any_2]):void;#  0 remote_internal_servegetbat:void := user.remote_internal_servegetbat(type:str, o:bat[:any_1,:any_2]) {PG}
-    t := inspect.getType(o);            #  1 t:str := INSPECTtypeName(o:bat[:any_1,:any_2]) {G}
-barrier ifpart := calc.==(type,t);      #  2 ifpart:bit := CALCcompEQstrstr(type:str, t:str) {J6}
-    len := aggr.count(o);               #  3 len:wrd := ALGcount_bat(o:bat[:any_1,:any_2]) 
-    io.print(len);                      #  4 _6:void := IOprint_val(len:wrd) 
-    io.print(o);                        #  5 _7:void := IOprint_val(o:bat[:any_1,:any_2]) 
-exit ifpart;                            #  6 ifpart:bit 
-barrier ifpart := calc.isnil(type);     #  7 ifpart:bit := CALCisnil_str(type:str) {J9}
-    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");#  8 _8:void := IOprintf(_9:str) 
-exit ifpart;                            #  9 ifpart:bit 
-barrier ifpart := calc.!=(type,t);      # 10 ifpart:bit := CALCcompNEQstrstr(type:str, t:str) {J13}
-    io.printf("!MALException:user.serveget:object type (%s) ",t);# 11 _10:void := IOprintf(_11:str, t:str) 
-    io.printf("does not match required type (%s)\n",type);# 12 _12:void := IOprintf(_13:str, type:str) 
-exit ifpart;                            # 13 ifpart:bit 
-end remote_internal_servegetbat;        # 14  
-function user.remote_internal_serveget(type:str,o:any):void;#  0 remote_internal_serveget:void := user.remote_internal_serveget(type:str, o:any) {PG}
-    t := inspect.getType(o);            #  1 t:str := INSPECTtypeName(o:any) {G}
-barrier ifpart := calc.==(type,t);      #  2 ifpart:bit := CALCcompEQstrstr(type:str, t:str) {J4}
-    io.print(o);                        #  3 _5:void := IOprint_val(o:any) 
-exit ifpart;                            #  4 ifpart:bit 
-barrier ifpart := calc.isnil(type);     #  5 ifpart:bit := CALCisnil_str(type:str) {J7}
-    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");#  6 _6:void := IOprintf(_7:str) 
-exit ifpart;                            #  7 ifpart:bit 
-barrier ifpart := calc.!=(type,t);      #  8 ifpart:bit := CALCcompNEQstrstr(type:str, t:str) {J11}
-    io.printf("!MALException:user.serveget:object type (%s) ",t);#  9 _8:void := IOprintf(_9:str, t:str) 
-    io.printf("does not match required type (%s)\n",type);# 10 _10:void := IOprintf(_11:str, type:str) 
-exit ifpart;                            # 11 ifpart:bit 
-end remote_internal_serveget;           # 12  
-function user.main():void;              #  0 main:void := user.main() {G}
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
+function user.remote_internal_servegetbat(type:str,o:bat[:any_1,:any_2]):void;
+    t := inspect.getType(o);
+barrier ifpart := calc.==(type,t);
+    len := aggr.count(o);
+    io.print(len);
+    io.print(o);
+exit ifpart;
+barrier ifpart := calc.isnil(type);
+    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");
+exit ifpart;
+barrier ifpart := calc.!=(type,t);
+    io.printf("!MALException:user.serveget:object type (%s) ",t);
+    io.printf("does not match required type (%s)\n",type);
+exit ifpart;
+end remote_internal_servegetbat;
+function user.remote_internal_serveget(type:str,o:any):void;
+    t := inspect.getType(o);
+barrier ifpart := calc.==(type,t);
+    io.print(o);
+exit ifpart;
+barrier ifpart := calc.isnil(type);
+    io.printf("!MALException:user.serveget:nil type doesn't match anything\n");
+exit ifpart;
+barrier ifpart := calc.!=(type,t);
+    io.printf("!MALException:user.serveget:object type (%s) ",t);
+    io.printf("does not match required type (%s)\n",type);
+exit ifpart;
+end remote_internal_serveget;
+function user.main():void;
 #test basic interaction scheme 
-    remote_test_id_0 := bat.new(:int,:str,33);#  2 remote_test_id_0:bat[:int,:str] := CMDBATnewint(_3:int, _4:str, _5:int) {G}
-    bat.insert(remote_test_id_0,0:int,"void":str);#  3 _6:bat[:int,:str] := BKCinsert_bun(remote_test_id_0:bat[:int,:str], _7:int, _8:str) {G}
-    user.remote_internal_servegetbat("bat[:int,:str]",remote_test_id_0);#  4 _9:void := user.remote_internal_servegetbat(_10:str, remote_test_id_0:bat[:int,:str]) 
-end main;                               #  5  
+    remote_test_id_0 := bat.new(:int,:str,33);
+    bat.insert(remote_test_id_0,0:int,"void":str);
+    user.remote_internal_servegetbat("bat[:int,:str]",remote_test_id_0);
+end main;
 [ 1 ]
 #-----------------#
 # h	t	  # name
