@@ -1009,6 +1009,7 @@ void
 clrFunction(InstrPtr p)
 {
 	p->fcn = 0;
+	p->blk = 0;
 	setModuleId(p, NULL);
 	setFunctionId(p, NULL);
 }
