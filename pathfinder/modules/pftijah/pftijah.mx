@@ -1047,9 +1047,11 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(ftiName);
+      var ws := ws_create(0);
       uri@batloop() {
-        _tj_add2collection(ftiName, collBat, $h, $t, store);
+        _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
       }
+      ws_destroy(ws);
       _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1065,6 +1067,62 @@ PROC _timestr(lng v) : str
 {
     return str(v/1000000) + "." + str(v/1000) + "xs";
 }
+
+
+PROC _tj_add2collectionNEW(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
+{ 
+    var ms;
+    var t_start := usec();
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
+
+    var i_start;
+    if ( store ) {
+	var pf_collection := _tj_get_parameter(collBat,"pf_collection");
+	if ( isnil(uri_loc) and isnil(uri_name) ) {
+	    ERROR("_tj_add2collection: should specify doc_name or doc_uri.");
+	}
+        if ( isnil(uri_name) ) {
+	  uri_name := uri_loc;
+	} else if ( uri_name = "" ) {
+	  uri_name := uri_loc;
+	}
+        # var ws := ws_create(0);
+        if (not(bat("doc_name").reverse().exist(uri_name))) {
+            var s_start := usec();
+	    if ( isnil(pf_collection) ) {
+    	        shred_doc(uri_loc,uri_name);
+	    } else {
+    	        shred_doc(uri_loc,uri_name,pf_collection,0LL);
+	    }
+            if ( timing ) {
+	      ms := (usec()-s_start)/1000;
+              printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
+            }
+        } else {
+            if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
+	}
+        ws_opendoc(ws, bat(void,str,1).append(uri_name));
+	i_start := usec();
+        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
+        _tj_throw2collection(collBat,ws,uri_name);
+        # ws_destroy(ws);
+    } else {
+	i_start := usec();
+        _tj_throw2collection_index(collBat,uri_loc);
+    }
+    if ( timing ) {
+	ms := (usec()-i_start)/1000;
+        printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
+    }
+           
+    _tj_set_parameter(collBat, "status", "building");
+    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",ftiName);
+    if ( timing ) {
+	ms := (usec()-t_start)/1000;
+        printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
+    }
+}
+
 
 # main internal add2collection() function.
 PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
