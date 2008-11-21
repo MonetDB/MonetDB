@@ -84,7 +84,7 @@ add_attach (PFla_op_t *p, PFalg_col_t col, PFalg_atom_t value)
 
 /* worker for PFalgopt_const */
 static void
-opt_const (PFla_op_t *p, bool no_attach)
+opt_const_attach (PFla_op_t *p)
 {
     assert (p);
 
@@ -96,31 +96,7 @@ opt_const (PFla_op_t *p, bool no_attach)
 
     /* apply constant optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        opt_const (p->child[i], no_attach);
-
-    /* avoid applying rules that only introduce new attach
-       nodes (e.g. during second constant optimzation run)*/
-    if (no_attach)
-        switch (p->kind) {
-            case la_eqjoin:
-            case la_thetajoin:
-            case la_select:
-            case la_disjunion:
-            case la_difference:
-            case la_distinct:
-            case la_num_eq:
-            case la_avg:
-            case la_max:
-            case la_min:
-            case la_rownum:
-            case la_rank:
-            case la_cond_err:
-                /* these rules apply a 'real rewrite'
-                   and therefore continue */
-                break;
-            default:
-                return;
-        }
+        opt_const_attach (p->child[i]);
 
     /* action code */
     switch (p->kind) {
@@ -180,7 +156,112 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
+        case la_fun_1to1:
+            /* introduce attach if necessary */
+            for (unsigned int i = 0; i < clsize (p->sem.fun_1to1.refs); i++)
+                if (PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, i)))
+                    L(p) = add_attach (L(p), clat (p->sem.fun_1to1.refs, i),
+                                       PFprop_const_val (
+                                           p->prop,
+                                           clat (p->sem.fun_1to1.refs, i)));
+            break;
 
+        case la_num_eq:
+        case la_num_gt:   /* possible extensions for 'and' and 'or': */
+        case la_bool_and: /* if one arg is const && false replace by project */
+        case la_bool_or:  /* if one arg is const && true replace by project */
+            /* introduce attach if necessary */
+            if (PFprop_const (p->prop, p->sem.binary.col1)) {
+                L(p) = add_attach (L(p), p->sem.binary.col1,
+                                   PFprop_const_val (p->prop,
+                                                     p->sem.binary.col1));
+            }
+            if (PFprop_const (p->prop, p->sem.binary.col2)) {
+                L(p) = add_attach (L(p), p->sem.binary.col2,
+                                   PFprop_const_val (p->prop,
+                                                     p->sem.binary.col2));
+            }
+            break;
+
+        case la_bool_not:
+            /* introduce attach if necessary */
+            if (PFprop_const (p->prop, p->sem.unary.col)) {
+                L(p) = add_attach (L(p), p->sem.unary.col,
+                                   PFprop_const_val (p->prop,
+                                                     p->sem.unary.col));
+            }
+            break;
+
+        case la_sum:
+            /* introduce attach if necessary */
+            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
+                L(p) = add_attach (L(p), p->sem.aggr.col,
+                                   PFprop_const_val_left (p->prop,
+                                                          p->sem.aggr.col));
+            }
+            break;
+
+        case la_type:
+        case la_cast:
+            /* introduce attach if necessary */
+            if (PFprop_const_left (p->prop, p->sem.type.col)) {
+                L(p) = add_attach (L(p), p->sem.type.col,
+                                   PFprop_const_val_left (
+                                       p->prop,
+                                       p->sem.type.col));
+            }
+            break;
+
+        case la_all:
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.col)) {
+                PFla_op_t *op, *ret;
+                
+                op = distinct (
+                         project (L(p),
+                                  proj (p->sem.aggr.part,
+                                        p->sem.aggr.part)));
+
+                ret = add_attach (op, p->sem.aggr.col,
+                                  PFprop_const_val_left (
+                                      p->prop,
+                                      p->sem.aggr.col));
+                *p = *ret;
+                SEEN(p) = true;
+            }
+            /* fall through */
+        case la_seqty1:
+            /* introduce attach if necessary */
+            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
+                L(p) = add_attach (L(p), p->sem.aggr.col,
+                                   PFprop_const_val_left (p->prop,
+                                                          p->sem.aggr.col));
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
+/* worker for PFalgopt_const */
+static void
+opt_const (PFla_op_t *p)
+{
+    assert (p);
+
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    /* apply constant optimization for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        opt_const (p->child[i]);
+
+    /* action code */
+    switch (p->kind) {
         case la_eqjoin:
         {   /**
              * If both join columns are constant
@@ -466,6 +547,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 RL(p)->sem.attach.value.type == aat_int &&
                 RL(p)->sem.attach.value.val.int_ == 0 &&
                 RLL(p)->kind == la_difference &&
+                RLL(p)->schema.count == 1 &&
                 RLLR(p)->kind == la_project &&
                 RLLR(p)->sem.proj.items[0].old ==
                 LL(p)->sem.aggr.part &&
@@ -474,7 +556,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 /* check that the values in the loop are constant
                    and provide the same value */
                 assert (PFprop_const (RLLL(p)->prop,
-                                      LL(p)->sem.aggr.part));
+                                      RLLR(p)->sem.proj.items[0].new));
                 assert (
                     PFalg_atom_comparable (
                         PFprop_const_val (RLLL(p)->prop,
@@ -500,11 +582,9 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-        case la_difference:
-            /* as this rule does not cope with empty sequences
-               correctly it is disabled */
-            break;
+/* as this rule does not cope with empty sequences correctly it is disabled */
 #if 0
+        case la_difference:
         {   /**
              * difference can be pruned if all columns of both operands
              * are constant and the comparison between the single
@@ -587,12 +667,10 @@ opt_const (PFla_op_t *p, bool no_attach)
 
                 *p = *ret;
                 SEEN(p) = true;
-            } else if (!count) {
-                /* as this rule does not cope with empty sequences
-                   correctly it is disabled */
-                break;
-
+            }
+/* as this rule does not cope with empty sequences correctly it is disabled */
 #if 0
+            else if (!count) {
                 /* as all columns are constant, the distinct operator
                    can be replaced by lit_tbl of the current schema
                    whose single row contains the constant values */
@@ -608,19 +686,9 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *PFla_lit_tbl (collist, PFalg_tuple_ (i, atoms));
 
                 SEEN(p) = true;
-#endif
             }
+#endif
         } break;
-
-        case la_fun_1to1:
-            /* introduce attach if necessary */
-            for (unsigned int i = 0; i < clsize (p->sem.fun_1to1.refs); i++)
-                if (PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, i)))
-                    L(p) = add_attach (L(p), clat (p->sem.fun_1to1.refs, i),
-                                       PFprop_const_val (
-                                           p->prop,
-                                           clat (p->sem.fun_1to1.refs, i)));
-            break;
 
         case la_num_eq:
             if (PFprop_const (p->prop, p->sem.binary.col1) &&
@@ -634,30 +702,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                                            val1.val.int_ == val2.val.int_));
                     break;
                 }
-            }
-            if (no_attach) break; /* else continue */
-        case la_num_gt:   /* possible extensions for 'and' and 'or': */
-        case la_bool_and: /* if one arg is const && false replace by project */
-        case la_bool_or:  /* if one arg is const && true replace by project */
-            /* introduce attach if necessary */
-            if (PFprop_const (p->prop, p->sem.binary.col1)) {
-                L(p) = add_attach (L(p), p->sem.binary.col1,
-                                   PFprop_const_val (p->prop,
-                                                     p->sem.binary.col1));
-            }
-            if (PFprop_const (p->prop, p->sem.binary.col2)) {
-                L(p) = add_attach (L(p), p->sem.binary.col2,
-                                   PFprop_const_val (p->prop,
-                                                     p->sem.binary.col2));
-            }
-            break;
-
-        case la_bool_not:
-            /* introduce attach if necessary */
-            if (PFprop_const (p->prop, p->sem.unary.col)) {
-                L(p) = add_attach (L(p), p->sem.unary.col,
-                                   PFprop_const_val (p->prop,
-                                                     p->sem.unary.col));
             }
             break;
 
@@ -712,18 +756,11 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-        case la_sum:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                L(p) = add_attach (L(p), p->sem.aggr.col,
-                                   PFprop_const_val_left (p->prop,
-                                                          p->sem.aggr.col));
-            }
-
 #if 0 /* We are not allowed to create an unpartitioned aggregate
          as an empty loop relation might result in a single line
          result otherwise. */
          
+        case la_sum:
             /* if partitiong column is constant remove it
                and attach it after the operator */
             if (p->sem.aggr.part &&
@@ -759,8 +796,8 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
-#endif
             break;
+#endif
 
         case la_rownum:
         {
@@ -819,40 +856,26 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *PFla_attach (L(p), p->sem.sort.res, PFalg_lit_int (1));
         }   break;
 
-        case la_type:
-        case la_cast:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.type.col)) {
-                L(p) = add_attach (L(p), p->sem.type.col,
-                                   PFprop_const_val_left (
-                                       p->prop,
-                                       p->sem.type.col));
-            }
-            break;
+#if 0 /* We are not allowed to create an unpartitioned aggregate
+         as an empty loop relation might result in a single line
+         result otherwise. */
 
         case la_all:
             if (p->sem.aggr.part &&
                 PFprop_const_left (p->prop, p->sem.aggr.col)) {
                 PFla_op_t *op, *ret;
                 
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
-
                 if (PFprop_const_left (p->prop, p->sem.aggr.part)) {
                     op = lit_tbl (collist (p->sem.aggr.part),
                                   tuple (PFprop_const_val_left (
                                              p->prop,
                                              p->sem.aggr.part)));
                 } else {
-#endif
                     op = distinct (
                              project (L(p),
                                       proj (p->sem.aggr.part,
                                             p->sem.aggr.part)));
-#if 0
                 }
-#endif
 
                 ret = add_attach (op, p->sem.aggr.col,
                                   PFprop_const_val_left (
@@ -861,9 +884,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
 
             else if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
                 PFla_op_t *ret = lit_tbl (collist (p->sem.aggr.col),
@@ -874,7 +894,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                 SEEN(p) = true;
             }
             /* fall through */
-#endif
         case la_seqty1:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
@@ -882,10 +901,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                                    PFprop_const_val_left (p->prop,
                                                           p->sem.aggr.col));
             }
-
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
 
             /* if partitiong column is constant remove it
                and attach it after the operator */
@@ -909,8 +924,8 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             }
-#endif
             break;
+#endif
 
         case la_cond_err:
             if (PFprop_const_right (p->prop, p->sem.err.col) &&
@@ -935,11 +950,18 @@ PFalgopt_const (PFla_op_t *root, bool no_attach)
     /* Infer constant properties first */
     PFprop_infer_const (root);
 
+    if (!no_attach) {
+        /* Introduce attach operators */
+        opt_const_attach (root);
+        PFla_dag_reset (root);
+    }
+
     /* Optimize algebra tree */
-    opt_const (root, no_attach);
+    opt_const (root);
     PFla_dag_reset (root);
 
     return root;
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set foldmarker=#if,#endif foldmethod=marker foldopen-=search: */
