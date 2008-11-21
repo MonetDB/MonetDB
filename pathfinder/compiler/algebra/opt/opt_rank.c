@@ -73,8 +73,14 @@ typedef struct sort_struct sort_struct;
  * Rank constructor for rank and split operators used during optimization
  * (special variant).
  */
+#ifndef NDEBUG
+#define rank_opt(n,r,s) rank_opt_ (n,r,s,__LINE__)
+static PFla_op_t *
+rank_opt_ (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby, const int line)
+#else
 static PFla_op_t *
 rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
+#endif
 {
     PFla_op_t *ret = PFla_rank_opt_internal (n, res, sortby);
     unsigned int i, j, count;
@@ -102,15 +108,28 @@ rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
 #ifndef NDEBUG
     for (i = 0; i < PFarray_last (sortby); i++) {
         /* make sure that all input columns (to the rank are available) */
-        if (!PFprop_ocol (n, COL_AT(sortby, i)))
-           PFoops (OOPS_FATAL,
-                   "column '%s' not found in rank",
-                   PFcol_str (COL_AT(sortby, i)));
+        if (!PFprop_ocol (n, COL_AT(sortby, i))) {
+            fprintf (stderr, "input consists of: %s",
+                     PFcol_str (n->schema.items[0].name));
+            for (j = 1; j < n->schema.count; j++)
+                fprintf (stderr, ", %s",
+                         PFcol_str (n->schema.items[j].name));
+            fprintf (stderr, "\nsortby list consists of: %s",
+                     PFcol_str (COL_AT(sortby, 0)));
+            for (j = 1; j < PFarray_last (sortby); j++)
+                fprintf (stderr, ", %s",
+                         PFcol_str (COL_AT(sortby, j)));
+            fprintf (stderr, "\n");
+
+            PFoops (OOPS_FATAL,
+                    "column '%s' not found in rank (build in line %i)",
+                    PFcol_str (COL_AT(sortby, i)), line);
+        }
     }
     if (PFprop_ocol (n, res))
        PFoops (OOPS_FATAL,
-               "result column '%s' found in rank input",
-               PFcol_str (res));
+               "result column '%s' found in rank input (build in line %i)",
+               PFcol_str (res), line);
 #endif
 
     /* add the result column */
@@ -370,27 +389,30 @@ opt_rank (PFla_op_t *p)
         case la_project:
             /* Push project operator beyond the rank. */
             if (is_rr (L(p))) {
-                PFalg_col_t   res    = L(p)->sem.rank_opt.res,
+                PFalg_col_t   res     = L(p)->sem.rank_opt.res,
+                              new_res = col_NULL,
                               new_name;
-                PFarray_t    *sortby = PFarray_copy (L(p)->sem.rank_opt.sortby);
+                PFarray_t    *sortby  = PFarray_copy (L(p)->sem.rank_opt.sortby);
                 unsigned int  i,
                               j,
-                              count = 0;
+                              count = 0,
+                              res_used = 0;
                 PFalg_proj_t *proj;
-                bool          res_used = false;
 
                 /* prune the rank operator if it is not used anymore */
                 for (i = 0; i < p->sem.proj.count; i++)
                     if (p->sem.proj.items[i].old == res) {
-                        res_used = true;
-                        res = p->sem.proj.items[i].new; 
-                        break;
+                        new_res = p->sem.proj.items[i].new; 
+                        res_used++;
                     }
                 if (!res_used) {
                     L(p) = LL(p);
                     modified = true;
                     break;
                 }
+                /* we cannot split the rank operator */
+                else if (res_used > 1)
+                    break;
 
                 /* create projection list */
                 proj = PFmalloc ((p->schema.count + PFarray_last (sortby)) *
@@ -444,7 +466,7 @@ opt_rank (PFla_op_t *p)
 
                 *p = *(rank_opt (
                            PFla_project_ (LL(p), count, proj),
-                           res,
+                           new_res,
                            sortby));
                 modified = true;
                 break;
@@ -830,6 +852,7 @@ opt_rank (PFla_op_t *p)
                                 *new_sortby;
                     unsigned int count   = PFarray_last (sortby),
                                  lcount  = PFarray_last (lsortby);
+                    PFla_op_t   *lrank;
 
                     new_sortby = PFarray (sizeof (sort_struct), count + lcount);
 
@@ -863,14 +886,19 @@ opt_rank (PFla_op_t *p)
                                 .vis = VIS_AT (sortby, j)
                             };
 
+                    if (vis)
+                        lrank = rank_opt (
+                                    LL(p),
+                                    L(p)->sem.rank_opt.res,
+                                    lsortby);
+                    else
+                        lrank = LL(p);
+
                     /* adjust the schema of the rank operators */
                     *p = *(rank_opt (
-                              rank_opt (
-                                  LL(p),
-                                  L(p)->sem.rank_opt.res,
-                                  lsortby),
-                              p->sem.rank_opt.res,
-                              new_sortby));
+                               lrank,
+                               p->sem.rank_opt.res,
+                               new_sortby));
                     modified = true;
                     break;
                 }
