@@ -20,46 +20,25 @@ stdout of test 'time01` in directory 'src/modules/kernel` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-#
-#x0 := mtime.daytime("10:00:00");
-#x1 := mtime.daytime("10:00:20");
-#x2 := mtime.daytime("10:00:50");
-#
-#b0 := bat.new(:oid,:daytime);
-#bat.insert(b0, 0:oid, x0);
-#bat.insert(b0, 2:oid, x1);
-#bat.insert(b0, 1:oid, x2);
-#b2 := algebra.sort(b0);
-#
-#b1 := bat.new(:oid,:daytime);
-#bat.append(b1, x0);
-#bat.append(b1, x1);
-#bat.append(b1, x2);
-#
-#io.print(b2);
-#io.print(b1);
-#
-#c := batcalc.==(b2, b1);
-#io.print(c);
-#
-function user.main():void;              #  0 main:void := user.main() {G}
-    x0 := mtime.daytime("10:00:00");    #  1 x0:daytime := MTIMEdaytime_fromstr(_2:str) 
-    x1 := mtime.daytime("10:00:20");    #  2 x1:daytime := MTIMEdaytime_fromstr(_4:str) 
-    x2 := mtime.daytime("10:00:50");    #  3 x2:daytime := MTIMEdaytime_fromstr(_6:str) 
-    b0 := bat.new(:oid,:daytime);       #  4 b0:bat[:oid,:daytime] := CMDBATnew(_8:oid, _9:daytime) {G}
-    bat.insert(b0,0@0:oid,x0);          #  5 _10:bat[:oid,:daytime] := BKCinsert_bun(b0:bat[:oid,:daytime], _11:oid, x0:daytime) {G}
-    bat.insert(b0,2@0:oid,x1);          #  6 _12:bat[:oid,:daytime] := BKCinsert_bun(b0:bat[:oid,:daytime], _13:oid, x1:daytime) {G}
-    bat.insert(b0,1@0:oid,x2);          #  7 _14:bat[:oid,:daytime] := BKCinsert_bun(b0:bat[:oid,:daytime], _15:oid, x2:daytime) {G}
-    b2 := algebra.sort(b0);             #  8 b2:bat[:oid,:daytime] := ALGhsort(b0:bat[:oid,:daytime]) {G}
-    b1 := bat.new(:oid,:daytime);       #  9 b1:bat[:oid,:daytime] := CMDBATnew(_8:oid, _9:daytime) {G}
-    bat.append(b1,x0);                  # 10 _18:bat[:daytime,:any] := BKCappend_val_wrap(b1:bat[:oid,:daytime], x0:daytime) {G}
-    bat.append(b1,x1);                  # 11 _19:bat[:daytime,:any] := BKCappend_val_wrap(b1:bat[:oid,:daytime], x1:daytime) {G}
-    bat.append(b1,x2);                  # 12 _20:bat[:daytime,:any] := BKCappend_val_wrap(b1:bat[:oid,:daytime], x2:daytime) {G}
-    io.print(b2);                       # 13 _21:void := IOprint_val(b2:bat[:oid,:daytime]) 
-    io.print(b1);                       # 14 _22:void := IOprint_val(b1:bat[:oid,:daytime]) 
-    c := batcalc.==(b2,b1);             # 15 c:bat[:oid,:bit] := MTIMEbat_daytime_EQ(b2:bat[:oid,:daytime], b1:bat[:oid,:daytime]) {G}
-    io.print(c);                        # 16 _24:void := IOprint_val(c:bat[:oid,:bit]) 
-end main;	# 17  
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33006/
+function user.main():void;
+    x0 := mtime.daytime("10:00:00");
+    x1 := mtime.daytime("10:00:20");
+    x2 := mtime.daytime("10:00:50");
+    b0 := bat.new(:oid,:daytime);
+    bat.insert(b0,0@0:oid,x0);
+    bat.insert(b0,2@0:oid,x1);
+    bat.insert(b0,1@0:oid,x2);
+    b2 := algebra.sort(b0);
+    b1 := bat.new(:oid,:daytime);
+    bat.append(b1,x0);
+    bat.append(b1,x1);
+    bat.append(b1,x2);
+    io.print(b2);
+    io.print(b1);
+    c := batcalc.==(b2,b1);
+    io.print(c);
+end main;
 #-------------------------#
 # h	t		  # name
 # oid	daytime	  # type
