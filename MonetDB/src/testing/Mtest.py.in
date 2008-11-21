@@ -1242,7 +1242,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
             if par['M5']:
-                Warn("MonetDB/5: Check, whether required modules do exist, is not possible, yet!")
+                #Warn("MonetDB/5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
                 ErrMsg("Checking for Modules failed!")
