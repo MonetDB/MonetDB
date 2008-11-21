@@ -30,7 +30,7 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_COMMONTERMS        /* show partial result */
+/* #define DEBUG_OPT_COMMONTERMS        show partial result */
 
 @c
 #include "mal_config.h"
@@ -132,6 +132,15 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		pushInstruction(mb,p);
 		if(p->barrier)
 			barrier= getArg(p,0); /* at least one barrier block */
+@-
+Also block further optimization when you have seen an assert().
+This works particularly for SQL, because it is not easy to track
+the BAT identifier aliases to look for updates. The sql.assert
+at least tells us that an update is planned.
+Like all optimizer decisions, it is safe to stop.
+@c
+		if ( getFunctionId(p) == assertRef)
+			barrier= getArg(p,0); 
 		n++;
 		if (p->token == ENDsymbol){
 			/* wrap up the remainder */
