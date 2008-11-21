@@ -223,13 +223,24 @@ opt_req_node (PFla_op_t *p)
         /* we don't check for self steps or constructors as this kind
            of operator is only introduced directly underneath node
            constructors */) {
-        *p = *project (LR(p),
-                       proj (L(p)->sem.merge_adjacent.iter_res,
-                             L(p)->sem.merge_adjacent.iter_in),
-                       proj (L(p)->sem.merge_adjacent.pos_res,
-                             L(p)->sem.merge_adjacent.pos_in),
-                       proj (L(p)->sem.merge_adjacent.item_res,
-                             L(p)->sem.merge_adjacent.item_in));
+        if (L(p)->sem.merge_adjacent.pos_res ==
+            L(p)->sem.merge_adjacent.item_res) {
+            assert (L(p)->sem.merge_adjacent.pos_in ==
+                    L(p)->sem.merge_adjacent.item_in);
+            *p = *project (LR(p),
+                           proj (L(p)->sem.merge_adjacent.iter_res,
+                                 L(p)->sem.merge_adjacent.iter_in),
+                           proj (L(p)->sem.merge_adjacent.item_res,
+                                 L(p)->sem.merge_adjacent.item_in));
+        }
+        else
+            *p = *project (LR(p),
+                           proj (L(p)->sem.merge_adjacent.iter_res,
+                                 L(p)->sem.merge_adjacent.iter_in),
+                           proj (L(p)->sem.merge_adjacent.pos_res,
+                                 L(p)->sem.merge_adjacent.pos_in),
+                           proj (L(p)->sem.merge_adjacent.item_res,
+                                 L(p)->sem.merge_adjacent.item_in));
     }
     /* We also have to get rid of the fragment information
        -- as otherwise the SQL translation might stumble. */
