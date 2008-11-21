@@ -2587,7 +2587,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
 /**
  * Core of common subexpression elimination.
  */
-static PFla_op_t*
+static void
 la_cse (PFla_op_t *n)
 {
     PFarray_t *a = NULL;
@@ -2596,15 +2596,13 @@ la_cse (PFla_op_t *n)
 
     /* descend only once */
     if (SEEN (n))
-        return n;
+        return;
 
     /* bottom up traversal to construct the
      * DAG from the logical algebra plan
      */
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD &&
-            n->child[i]; i++) {
-        n->child[i] = la_cse (n->child[i]);
-    }
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        la_cse (n->child[i]);
 
     /* at this point every child of n is linked to a node
      * in the CSE plan */
@@ -2664,8 +2662,6 @@ la_cse (PFla_op_t *n)
     adjust_operator (n, temp);
 
     SEEN (n) = true;
-
-    return n;
 }
 
 /**
@@ -2673,41 +2669,39 @@ la_cse (PFla_op_t *n)
  * We swapped this out from CSE to reduce
  * complexity.
  */
-static PFla_op_t*
+static void
 remove_dummies (PFla_op_t *n)
 {
     assert (n);
 
     /* descend only once */
     if (SEEN (n))
-        return n;
+        return;
 
     /* top-down traversal to remove the dummies */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++) {
         while (n->child[i]->kind == la_dummy)
-            n->child[i] = n->child[i]->child[0];
+            n->child[i] = L(n->child[i]);
 
-        n->child[i] = remove_dummies (n->child[i]);
+        remove_dummies (n->child[i]);
     }
 
     SEEN (n) = true;
-
-    return n;
 }
 
 /**
  * Eliminate common subexpressions in logical algebra tree and
  * convert the expression @em tree into a @em DAG.  (Actually,
- * the input often is already a tree due to the way it was built
+ * the input often is already a DAG due to the way it was built
  * in core2alg.brg.  This function will detect @em any common
  * subexpression, though.)
  *
- * @param  n logical algebra tree
- * @return the equivalent of @a n, with common subexpressions
+ * @param  root logical algebra tree
+ * @return the equivalent of @a root, with common subexpressions
  *         translated into @em sharing in a DAG.
  */
 PFla_op_t *
-PFalgopt_cse (PFla_op_t *n)
+PFalgopt_cse (PFla_op_t *root)
 {
     /* initialize maps */
     cse_map = PFarray (sizeof (ori_cse_map_t), 256);
@@ -2717,21 +2711,16 @@ PFalgopt_cse (PFla_op_t *n)
     /* initialize subexpression array (and clear it) */
     subexps = PFcarray (sizeof (PFarray_t *), 128);
 
-    PFla_op_t *res = NULL;
-
     /* first remove the dummies */
-    res = remove_dummies (n);
+    remove_dummies (root);
+    PFla_dag_reset (root);
 
     /* eliminate subexpressions */
-    PFla_dag_reset (res);
-    res = la_cse (res);
-    PFla_dag_reset (res);
+    la_cse (root);
 
     /* search the root in the cse plan
      * and return the cse root */
-    res = CSE (res);
-
-    return res;
+    return CSE (root);
 }
 
 /* vim:set shiftwidth=4 expandtab: */
