@@ -77,16 +77,15 @@ find_old_name (PFla_op_t *op, PFalg_col_t col)
  *     \  |X|   /     Note: All joins |X| are mapping joins
  *        / \               (the right join column is key).
  *      |X|  \
- *      / \_______
- *      |         \
- *     pi*        U
- *      |     ___/ \________
- *      |    /              \
- *      |  count_last/iter  @last:0
- *      |   |                |
- *      |  pi*
- *      \  /
- *      (..)
+ *      / \
+ *     |   \
+ *    pi*  pi*
+ *     |    |
+ *     |   count_last/iter
+ *     |    |
+ *     |   pi*
+ *     \   /
+ *     (...)
  */
 static bool
 find_last_base (PFla_op_t *op,
@@ -95,7 +94,8 @@ find_last_base (PFla_op_t *op,
                 PFalg_col_t last)
 {
     PFla_op_t  *base = NULL;
-    PFalg_col_t base_iter = col_NULL;
+    PFalg_col_t base_iter = col_NULL,
+                base_last = col_NULL;
 
     /* ignore projections */
     while (op->kind == la_project) {
@@ -120,6 +120,7 @@ find_last_base (PFla_op_t *op,
                        PFprop_dom_right (op->prop,
                                          op->sem.eqjoin.col2))) {
         base_iter = op->sem.eqjoin.col1;
+        base_last = last;
         iter = op->sem.eqjoin.col2;
         base = L(op);
         op   = R(op);
@@ -132,6 +133,7 @@ find_last_base (PFla_op_t *op,
                             PFprop_dom_left (op->prop,
                                              op->sem.eqjoin.col1))) {
         base_iter = op->sem.eqjoin.col2;
+        base_last = last;
         iter = op->sem.eqjoin.col1;
         base = R(op);
         op   = L(op);
@@ -139,45 +141,25 @@ find_last_base (PFla_op_t *op,
     else
         return false;
 
-    /* operator union marks the begininng of the count aggregate */
-    if (op->kind == la_disjunion) {
+    /* ignore projections */
+    while (op->kind == la_project) {
+        iter = find_old_name (op, iter); if (!iter) break;
+        last = find_old_name (op, last); if (!last) break;
+        op = L(op);
+    }
+
+    /* check for count aggregate */
+    if (op->kind == la_count &&
+        op->sem.aggr.part &&
+        op->sem.aggr.part == iter &&
+        op->sem.aggr.res  == last) {
         /* follow the projection list to the base operator */
         while (base->kind == la_project) {
             base_iter = find_old_name (base, base_iter);
             if (!base_iter) return false;
             base = L(base);
         }
-
-        /**
-         * check for the following pattern
-         * (where the left and the right side can be switched):
-         *
-         *            U
-         *      _____/ \_____
-         *     /             \
-         * count_last/iter   @last:0
-         *
-         */
-        if (L(op)->kind == la_count &&
-            R(op)->kind == la_attach &&
-            L(op)->sem.aggr.part &&
-            L(op)->sem.aggr.part == iter &&
-            L(op)->sem.aggr.res  == last &&
-            R(op)->sem.attach.res == last &&
-            R(op)->sem.attach.value.type == aat_int &&
-            R(op)->sem.attach.value.val.int_ == 0)
-            op = LL(op);
-        else if (R(op)->kind == la_count &&
-                 L(op)->kind == la_attach &&
-                 R(op)->sem.aggr.part &&
-                 R(op)->sem.aggr.part == iter &&
-                 R(op)->sem.aggr.res  == last &&
-                 L(op)->sem.attach.res == last &&
-                 L(op)->sem.attach.value.type == aat_int &&
-                 L(op)->sem.attach.value.val.int_ == 0)
-            op = RL(op);
-        else
-            return false;
+        op = L(op);
 
         /* follow the projections underneath the count operator */
         while (op->kind == la_project) {
@@ -192,7 +174,7 @@ find_last_base (PFla_op_t *op,
     else
         /* recursively call find_last_base() to ignore projections
            AND mapping joins */
-        return find_last_base (base, item, base_iter, last);
+        return find_last_base (base, item, base_iter, base_last);
 }
 
 /**
@@ -446,6 +428,7 @@ opt_complex (PFla_op_t *p)
 
                 *p = *PFla_project_ (res, p->schema.count, proj);
             }
+/* ineffective without step operators */
             /* prune unnecessary attach-project operators */
             if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
@@ -479,6 +462,7 @@ opt_complex (PFla_op_t *p)
                                                 LL(p)->sem.step.iter),
                                     L(p)->sem.proj.items[0]);
                 break;
+/* end of: ineffective without step operators */
             }
 
             break;
@@ -591,6 +575,61 @@ opt_complex (PFla_op_t *p)
 
                 *p = *PFla_project_ (L(p), count, proj);
                 break;
+            }
+
+            /* this code makes the recognition of last()
+               predicates easier */
+            if (PFprop_subdom (p->prop,
+                               PFprop_dom_left (p->prop,
+                                                p->sem.eqjoin.col1),
+                               PFprop_dom_right (p->prop,
+                                                 p->sem.eqjoin.col2)) &&
+                R(p)->kind == la_project &&
+                RL(p)->kind == la_disjunion) {
+                PFalg_proj_t *proj     = R(p)->sem.proj.items;
+                unsigned int  count    = R(p)->schema.count;
+                PFalg_col_t   col1     = p->sem.eqjoin.col1,
+                              col2     = p->sem.eqjoin.col2;
+                for (unsigned int i = 0; i < count; i++)
+                    if (proj[i].new == col2) {
+                        col2 = proj[i].old;
+                        break;
+                    }
+
+                if (PFprop_disjdom (p->prop, 
+                                    PFprop_dom_left (RL(p)->prop, col2),
+                                    PFprop_dom_left (p->prop, col1)))
+                    R(p) = PFla_project_ (RLR(p), count, proj);
+                else if (PFprop_disjdom (p->prop, 
+                                         PFprop_dom_right (RL(p)->prop, col2),
+                                         PFprop_dom_left (p->prop, col1)))
+                    R(p) = PFla_project_ (RLL(p), count, proj);
+            }
+            if (PFprop_subdom (p->prop,
+                               PFprop_dom_right (p->prop,
+                                                p->sem.eqjoin.col2),
+                               PFprop_dom_left (p->prop,
+                                                 p->sem.eqjoin.col1)) &&
+                L(p)->kind == la_project &&
+                LL(p)->kind == la_disjunion) {
+                PFalg_proj_t *proj     = L(p)->sem.proj.items;
+                unsigned int  count    = L(p)->schema.count;
+                PFalg_col_t   col1     = p->sem.eqjoin.col1,
+                              col2     = p->sem.eqjoin.col2;
+                for (unsigned int i = 0; i < count; i++)
+                    if (proj[i].new == col1) {
+                        col1 = proj[i].old;
+                        break;
+                    }
+
+                if (PFprop_disjdom (p->prop, 
+                                    PFprop_dom_left (LL(p)->prop, col1),
+                                    PFprop_dom_right (p->prop, col2)))
+                    L(p) = PFla_project_ (LLR(p), count, proj);
+                else if (PFprop_disjdom (p->prop, 
+                                         PFprop_dom_right (LL(p)->prop, col1),
+                                         PFprop_dom_right (p->prop, col2)))
+                    L(p) = PFla_project_ (LLL(p), count, proj);
             }
 
 #if 0 /* disable join -> semijoin rewrites */
@@ -799,6 +838,12 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_dummy (L(p));
                 break;
             }
+            break;
+
+        /* Remove unnecessary distinct operators */
+        case la_distinct:
+            if (PFprop_ckey (L(p)->prop, p->schema))
+                *p = *PFla_dummy (L(p));
             break;
 
         case la_select:
@@ -1216,6 +1261,7 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+/* ineffective without step operators */
         case la_step:
             if (p->sem.step.level < 0)
                 p->sem.step.level = PFprop_level (p->prop,
@@ -1269,6 +1315,7 @@ opt_complex (PFla_op_t *p)
                 break;
             }
             break;
+/* end of: ineffective without step operators */
 
         case la_guide_step:
         case la_guide_step_join:
@@ -1309,6 +1356,7 @@ opt_complex (PFla_op_t *p)
                 RL(p)->sem.step.spec.kind == node_kind_node &&
                 !PFprop_icol (p->prop, p->sem.step.item) &&
                 (PFprop_set (p->prop) ||
+                 PFprop_ckey (p->prop, p->schema) ||
                  PFprop_key (p->prop, p->sem.step.item_res))) {
 
                 bool          item_link_correct = false;
