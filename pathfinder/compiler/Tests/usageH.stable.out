@@ -82,7 +82,7 @@ Usage: pf [OPTION] [FILE]
          {  remove proxy operators
          P  infer all properties
          _  does nothing (used for structuring the options)
-            (default for option -A is: '-o OIKCG_VGO_[JI]OKVCGN}IM__{_[JI]OKVCG}IM__{_[JI]OKVCGCG}IM__{_[JI]OKVCG}IMTS{_[JI]OKVCGCG}IMTS{_[JI]OKVCG}IMTS{_[JI]OKVCG[E]CGP')
+            (default for option -A is: '-o OIKCG_VG_[JISI_GECSVR_OK_N]}MT{[JISI_GECSVR_]}MT{[JISI_OK_GECSVR_GP')
             (default for option -S is: '-o OIKCG_VGO_[JI]OKVCGN}IM__{_[JI]OKVCG}IM__{_[JI]OKVCGCG}IM__{_[JI]OKVCG}IMTS{_[JI]OKVCGUCG}IMTS{_[JI]OKVCGU}IMTS{_[JI]OKVCGU[E]CGP}IQ[JI]}IQ[JI]IOKVCGQUCGP')
 
 = -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
