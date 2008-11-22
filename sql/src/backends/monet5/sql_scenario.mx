@@ -849,7 +849,7 @@ SQLsetTrace(Client c, bit onoff)
 	InstrPtr q;
 
 	c->itrace='c';
-	q = newStmt(c->curprg->def,"mdb","setTrace");
+	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
 /*
 	q = newStmt(c->curprg->def,"mdb","setThread");
