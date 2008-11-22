@@ -727,16 +727,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					showException(SQL,"sql","Unknown operator");
 				}
 
-				/* multiplex needs equal heads */
-				/* hml := head_mirror(l);
-				   tmr := tail_mirror(r);
-				   j := lhm.join(rtm);
-				   mhj := markH(j)
-				   mtj := markT(j)
-				   tmj.join(l);
-				   hmj := reverse(hmj);
-				   hmj.join(r);
-				*/
 				q = newStmt1(mb, batRef, "mirror" );
 				q = pushArgument(mb, q, l);
 				hml = getDestVar(q);
@@ -757,7 +747,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt2(mb, algebraRef, markTRef);
 				q = pushArgument(mb, q, j);
-				q = pushOid(mb, q, 0);
 				mtj = getDestVar(q);
 
 				q = newStmt2(mb, batRef, reverseRef );
