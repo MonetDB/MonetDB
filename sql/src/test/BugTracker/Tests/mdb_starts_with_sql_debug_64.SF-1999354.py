@@ -43,7 +43,7 @@ def client(lang, file):
 def main():
     dbinit = "include sql;"
     srv = server_start("--set sql_debug=64",dbinit)
-    client('SQL' , '%s/../../../sql/ms_functions.sql' % os.getenv('RELSRCDIR'))
+    client('SQL' , '%s/../../../sql/skyserver.sql' % os.getenv('RELSRCDIR'))
     client('SQL' , '%s/mdb_starts_with_sql_debug_64.SF-1999354.sql' % os.getenv('RELSRCDIR'))
     server_stop(srv)
 
