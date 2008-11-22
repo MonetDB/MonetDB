@@ -12,7 +12,7 @@ def main():
     clt1.close()
     clt1 = os.popen(clcmd1 + "<%s" % ('%s/../../../sql/cache.sql' % os.getenv('RELSRCDIR')), 'w')
     clt1.close()
-    clt1 = os.popen(clcmd1 + "<%s" % ('%s/../../../sql/ms_functions.sql' % os.getenv('RELSRCDIR')), 'w')
+    clt1 = os.popen(clcmd1 + "<%s" % ('%s/../../../sql/skyserver.sql' % os.getenv('RELSRCDIR')), 'w')
     clt1.close()
     clt1 = os.popen(clcmd1 + "<%s" % ('%s/../Skyserver_tables_v6.sql' % os.getenv('RELSRCDIR')), 'w')
     clt1.close()
