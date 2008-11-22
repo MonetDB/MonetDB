@@ -14,7 +14,24 @@
 -- Copyright August 2008- MonetDB B.V.
 -- All Rights Reserved.
 
--- Provide a simple equivalent for the UNIX times command
+-- The MonetDB kernel environment table
+create function environment()
+	returns table (nme string, val string)
+	external name sql.environment;
 
-create procedure times()
-external name sql.times;
+-- The BAT buffer pool overview
+create function bbp () 
+	returns table (id int, name string, htype string, 
+		ttype string, count BIGINT, refcnt int, lrefcnt int, 
+		location string, heat int, dirty string, 
+		status string, kind string) 
+	external name sql.bbp;
+
+-- Clustering of tables may improve IO performance
+create procedure cluster(name string)
+	external name sql.cluster;
+
+-- Change the whereabouts of the log file
+create procedure logfile(filename string) 
+	external name sql.logfile;
+
