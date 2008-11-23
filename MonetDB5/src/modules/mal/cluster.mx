@@ -132,6 +132,7 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	oid *ct, *ce;
 	BUN p;
 	BATiter bi= bat_iterator(b);
+	int cnt=0;
 	
 	r = (@1*)Tloc(nb, BUNfirst(nb));
 	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
@@ -139,7 +140,10 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	for ( ; ct < ce; ct++){
 		p = BUNfnd(b,(ptr) ct);
 		*r++ = *(@1*) BUNtail(bi,p);
+		if ( (++cnt % 1000000) == 0)
+			BATsave(nb);
 	}
+	BATsave(nb);
 	return MAL_SUCCEED;
 }
 
@@ -244,6 +248,8 @@ fit in memory.
 
 The bottomline is the number of elements that fit in a single
 diskblock.
+	N = 1 + BATcount(b) *sizeof(lng)/(64*1024);
+	bsize= rng/N;
 @c
 	N= (BUN)MT_npages() /10;
 	bsize= (BUN) (MT_pagesize()/sizeof(lng));
