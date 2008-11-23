@@ -1745,6 +1745,9 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f,
 				stmt *h, *v = stmt_dup(s->op1.lval->h->data);
 				stmt *o = stmt_dup(s->op1.lval->h->next->data);
 				stmt_destroy(s);
+
+				if (!o->t) /* not correct correlation result */
+					return sql_error(sql, 10, "SELECT: single column expected");
 				s = stmt_join(stmt_reverse(o), v, cmp_equal);
 				h = stmt_dup(s->h->t);
 				stmt_destroy(s->h);
