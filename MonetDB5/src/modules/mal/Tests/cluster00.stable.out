@@ -16,37 +16,45 @@ function user.main():void;
 #test clustering a small table 
     b := bat.new(:oid,:int);
     c := bat.new(:oid,:int);
+    d := bat.new(:oid,:int);
 barrier (v,i) := language.newRange(0:int);
     j := calc.%(i,5);
     bat.append(b,j);
     j := calc.%(i,3);
     bat.append(c,j);
+    j := calc.%(i,2);
+    bat.append(d,j);
     redo (v,i) := language.nextElement(1:int,10:int);
 exit (v,i);
 #bat.append(b,b); 
-    io.print(b,c);
+    io.print(b,c,d);
     keys := cluster.key(b);
     io.print(keys);
-    map := cluster.new(keys);
+    map := cluster.map(keys);
     io.print(map);
-    b1 := algebra.join(map,b);
-    c1 := algebra.join(map,c);
-    io.print(b1,c1);
+    b1 := cluster.column(map,b);
+    c1 := cluster.column(map,c);
+    d1 := cluster.column(map,d);
+    io.print(b1,c1,d1);
+# reshuffle 
+    map := cluster.table(c,d,b);
+    io.print(c,d,b);
+    io.print(map);
 end main;
-#-------------------------#
-# h	t		t		  # name
-# void	int		int		  # type
-#-------------------------#
-[ 0@0,	  0,	  0	  ]
-[ 1@0,	  1,	  1	  ]
-[ 2@0,	  2,	  2	  ]
-[ 3@0,	  3,	  0	  ]
-[ 4@0,	  4,	  1	  ]
-[ 5@0,	  0,	  2	  ]
-[ 6@0,	  1,	  0	  ]
-[ 7@0,	  2,	  1	  ]
-[ 8@0,	  3,	  2	  ]
-[ 9@0,	  4,	  0	  ]
+#---------------------------------#
+# h	t	t	t	  # name
+# void	int	int	int	  # type
+#---------------------------------#
+[ 0@0,	  0,	  0,	  0	  ]
+[ 1@0,	  1,	  1,	  1	  ]
+[ 2@0,	  2,	  2,	  0	  ]
+[ 3@0,	  3,	  0,	  1	  ]
+[ 4@0,	  4,	  1,	  0	  ]
+[ 5@0,	  0,	  2,	  1	  ]
+[ 6@0,	  1,	  0,	  0	  ]
+[ 7@0,	  2,	  1,	  1	  ]
+[ 8@0,	  3,	  2,	  0	  ]
+[ 9@0,	  4,	  0,	  1	  ]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -61,34 +69,88 @@ end main;
 [ 7@0,	  2@0	  ]
 [ 8@0,	  3@0	  ]
 [ 9@0,	  4@0	  ]
+bucket pages 2032835 size 2 max 4  N 2
+basket 0 0-0 0-2
+basket 1 5-5 2-4
+case 1 mov 0 0 basket 0 0-0 0-2
+case 1 mov 1 1 basket 0 0-1 0-2
+case 1 mov 2 2 basket 1 5-5 2-4
+case 1 mov 3 3 basket 1 5-6 2-4
+case 1 mov 4 4 basket 1 5-7 2-4
+case 1 mov 0 5 basket 0 0-2 0-2
+case 1 mov 1 6 basket 0 0-3 0-2
+case 1 mov 2 7 basket 1 5-8 2-4
+case 1 mov 3 8 basket 1 5-9 2-4
+case 2 mov 4 9 basket 1 5-10 2-4
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
-[ 2@0,	  2@0	  ]
-[ 3@0,	  3@0	  ]
-[ 4@0,	  4@0	  ]
-[ 5@0,	  5@0	  ]
-[ 6@0,	  6@0	  ]
-[ 7@0,	  7@0	  ]
-[ 8@0,	  8@0	  ]
-[ 9@0,	  9@0	  ]
-#-----------------------------------------#
-# h	t		t		  # name
-# void	int		int		  # type
-#-------------------------#
-[ 0@0,	  0,	  0	  ]
-[ 1@0,	  1,	  1	  ]
-[ 2@0,	  2,	  2	  ]
-[ 3@0,	  3,	  0	  ]
-[ 4@0,	  4,	  1	  ]
-[ 5@0,	  0,	  2	  ]
-[ 6@0,	  1,	  0	  ]
-[ 7@0,	  2,	  1	  ]
-[ 8@0,	  3,	  2	  ]
-[ 9@0,	  4,	  0	  ]
+[ 2@0,	  5@0	  ]
+[ 3@0,	  6@0	  ]
+[ 4@0,	  9@0	  ]
+[ 5@0,	  2@0	  ]
+[ 6@0,	  3@0	  ]
+[ 7@0,	  4@0	  ]
+[ 8@0,	  7@0	  ]
+[ 9@0,	  8@0	  ]
+#---------------------------------#
+# h	t	t	t	  # name
+# void	int	int	int	  # type
+#---------------------------------#
+[ 0@0,	  0,	  0,	  0	  ]
+[ 1@0,	  1,	  1,	  1	  ]
+[ 2@0,	  0,	  2,	  1	  ]
+[ 3@0,	  1,	  0,	  0	  ]
+[ 4@0,	  4,	  0,	  1	  ]
+[ 5@0,	  2,	  2,	  0	  ]
+[ 6@0,	  3,	  0,	  1	  ]
+[ 7@0,	  4,	  1,	  0	  ]
+[ 8@0,	  2,	  1,	  1	  ]
+[ 9@0,	  3,	  2,	  0	  ]
+bucket pages 2032835 size 1 max 2  N 2
+basket 0 0-0 0-1
+basket 1 5-5 1-2
+case 1 mov 0 0 basket 0 0-0 0-1
+case 1 mov 1 1 basket 1 5-5 1-2
+case 1 mov 2 2 basket 1 5-6 1-2
+case 1 mov 0 3 basket 0 0-1 0-1
+case 1 mov 0 4 basket 0 0-2 0-1
+case 1 mov 2 5 basket 1 5-7 1-2
+case 1 mov 0 6 basket 0 0-3 0-1
+case 1 mov 1 7 basket 1 5-8 1-2
+case 1 mov 1 8 basket 1 5-9 1-2
+case 2 mov 2 9 basket 1 5-10 1-2
+#---------------------------------#
+# h	t	t	t	  # name
+# void	int	int	int	  # type
+#---------------------------------#
+[ 0@0,	  0,	  0,	  0	  ]
+[ 1@0,	  0,	  0,	  1	  ]
+[ 2@0,	  0,	  1,	  4	  ]
+[ 3@0,	  0,	  1,	  3	  ]
+[ 4@0,	  2,	  0,	  3	  ]
+[ 5@0,	  1,	  1,	  1	  ]
+[ 6@0,	  2,	  1,	  0	  ]
+[ 7@0,	  2,	  0,	  2	  ]
+[ 8@0,	  1,	  0,	  4	  ]
+[ 9@0,	  1,	  1,	  2	  ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  3@0	  ]
+[ 2@0,	  4@0	  ]
+[ 3@0,	  6@0	  ]
+[ 4@0,	  9@0	  ]
+[ 5@0,	  1@0	  ]
+[ 6@0,	  2@0	  ]
+[ 7@0,	  5@0	  ]
+[ 8@0,	  7@0	  ]
+[ 9@0,	  8@0	  ]
 
 # 14:20:04 >  
 # 14:20:04 >  Done.

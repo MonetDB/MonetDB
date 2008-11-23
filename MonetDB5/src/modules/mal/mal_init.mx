@@ -211,6 +211,7 @@ include opt_statistics;
 include opt_trace;
 
 include chopper;
+include cluster;# experimental
 include txtsim;
 library sabaoth;
 
@@ -235,6 +236,7 @@ include crackers;
 
 include xml;
 include batxml;
+
 @-
 In practice, we have to introduce different startup for each
 client group or database.

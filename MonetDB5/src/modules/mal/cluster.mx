@@ -54,7 +54,7 @@ activity too. This means we can use it directly
 as a driver for redistributing value columns.
 
 The remaining step is to perform this in parallel
-for a large collection of BATs.
+for all BATs comprising a relational table.
 @mal
 module cluster;
 
@@ -62,13 +62,18 @@ command key(b:bat[:oid,:any_1]) :bat[:oid,:oid]
 address CLUSTER_key
 comment "Create the hash key list";
 
-command new(b:bat[:oid,:oid]) :bat[:oid,:oid]
-address CLUSTER_new
-comment "Recluster hash key table and produce a re-allocation map";
-
-pattern map(m:bat[:oid,:oid], b:bat[:oid,:int]):void
+command map(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CLUSTER_map
-comment "Reorder tail of the bates referred to a cluster map";
+comment "Recluster a hash key table and produce a re-allocation map";
+
+pattern column(m:bat[:oid,:oid], b:bat[:oid,:any_1]):bat[:oid,:any_1]
+address CLUSTER_apply
+comment "Reorder tail of the BAT using the cluster map";
+
+pattern table(b:bat[:oid,:any]...):bat[:oid,:oid]
+address CLUSTER_table
+comment "Cluster the BATs using the first one as reference.
+Return the oid map used";
 @{
 @h
 #ifndef _CLUSTER_H
@@ -78,7 +83,7 @@ comment "Reorder tail of the bates referred to a cluster map";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-/* #define _CLUSTER_DEBUG	for local debugging */
+#define _CLUSTER_DEBUG	/*for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -91,8 +96,9 @@ comment "Reorder tail of the bates referred to a cluster map";
 #endif
 
 cluster_export str  CLUSTER_key( bat *M, bat *B);
-cluster_export str  CLUSTER_new(bat *RB, bat *B);
-cluster_export str  CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cluster_export str  CLUSTER_map(bat *RB, bat *B);
+cluster_export str  CLUSTER_apply( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cluster_export str  CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
 @c
@@ -119,7 +125,7 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 }
 
 str  
-CLUSTER_map_@1(BAT *nb, BAT *b, BAT *cmap)
+CLUSTER_apply_@1(BAT *nb, BAT *b, BAT *cmap)
 {
 	@1 *r;
 	oid *ct, *ce;
@@ -127,7 +133,7 @@ CLUSTER_map_@1(BAT *nb, BAT *b, BAT *cmap)
 	BATiter bi= bat_iterator(b);
 	
 	r = (@1*)Tloc(nb, BUNfirst(nb));
-	ct = (oid *)Hloc(cmap, BUNfirst(cmap));
+	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
 	ce = ct + BATcount(cmap);
 	for ( ; ct < ce; ct++){
 		p = BUNfnd(b,(ptr) ct);
@@ -189,9 +195,7 @@ CLUSTER_key( bat *M, bat *B){
 Recluster the <oid,hash> table into a number of buckets
 on the high order bits,
 If the baskets are full before we have moved everything
-in place, we redistribute the free space again. This process
-continues until the amount of space to be redistribute is
-to small.
+in place, we seek forward for a bucket to dump the elements.
 
 The self-organizing version should determine the optimal
 number of buckets. Thereafter it can just call the
@@ -203,9 +207,9 @@ typedef struct{
 } Basket;
 
 str  
-CLUSTER_new(bat *RB, bat *B)
+CLUSTER_map(bat *RB, bat *B)
 {
-	BUN rng,bsize, bnr=0, h, N= 3; /* number of buckets */
+	BUN rng,bsize, bnr=0, h, N= 2; /* number of buckets */
 	BAT *b, *map;
 	BATiter bi,mi;
 	BUN p,q;
@@ -246,7 +250,7 @@ diskblock.
 		N = bsize;
 	bsize= rng / N;
 #ifdef _CLUSTER_DEBUG
-	N=3; bsize= rng / N; /* for debugging only */
+	N=2; bsize= rng / N; /* for debugging only */
 	stream_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
 		(int)MT_npages(),bsize,rng,N);
 #endif
@@ -343,7 +347,7 @@ Extend this operation to accept a sequence of BATs.
 We change the BAT in place using a temporary copy
 to guide the move.
 @c
-void 
+str 
 CLUSTER_column(BAT *nb, BAT *cmap)
 {
 	BAT *b;
@@ -355,89 +359,104 @@ CLUSTER_column(BAT *nb, BAT *cmap)
 	/* to be done, first assume that we can remap in one go */
 
 	switch(ATOMstorage(b->ttype)) {
-	case TYPE_chr: CLUSTER_map_chr(nb, b, cmap);break;
-	case TYPE_bte: CLUSTER_map_bte(nb, b, cmap);break;
-	case TYPE_sht: CLUSTER_map_sht(nb, b, cmap);break;
-	case TYPE_oid: CLUSTER_map_oid(nb, b, cmap);break;
-	case TYPE_wrd: CLUSTER_map_wrd(nb, b, cmap);break;
-	case TYPE_int: CLUSTER_map_int(nb, b, cmap);break;
-	case TYPE_lng: CLUSTER_map_lng(nb, b, cmap);break;
-	case TYPE_flt: CLUSTER_map_flt(nb, b, cmap);break;
-	case TYPE_dbl: CLUSTER_map_dbl(nb, b, cmap);break;
+	case TYPE_chr: CLUSTER_apply_chr(nb, b, cmap);break;
+	case TYPE_bte: CLUSTER_apply_bte(nb, b, cmap);break;
+	case TYPE_sht: CLUSTER_apply_sht(nb, b, cmap);break;
+	case TYPE_oid: CLUSTER_apply_oid(nb, b, cmap);break;
+	case TYPE_wrd: CLUSTER_apply_wrd(nb, b, cmap);break;
+	case TYPE_int: CLUSTER_apply_int(nb, b, cmap);break;
+	case TYPE_lng: CLUSTER_apply_lng(nb, b, cmap);break;
+	case TYPE_flt: CLUSTER_apply_flt(nb, b, cmap);break;
+	case TYPE_dbl: CLUSTER_apply_dbl(nb, b, cmap);break;
+	default:
+		throw(MAL,"cluster.column","Not supported");
 	}
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
+
 str  
-CLUSTER_map( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLUSTER_apply( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *res =(int *) getArgReference(stk, pci, 0);
 	bat *CMAP =(int *) getArgReference(stk, pci, 1);
 	bat *B =(int *) getArgReference(stk, pci, 2);
-	int *p, *q;
-	BAT *nb, *cmap = NULL, *b = NULL;
+	BAT *cmap = NULL, *b = NULL;
+	str msg= MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 	if ( (cmap = BATdescriptor(*CMAP)) == NULL )
-		throw(MAL, "cluster.map", "Cannot access  descriptor");
+		throw(MAL, "cluster.apply", "Cannot access  descriptor");
 	if ( (b = BATdescriptor(*B)) == NULL ){
 		BBPunfix(*CMAP);
-		throw(MAL, "cluster.map", "Cannot access  descriptor");
+		throw(MAL, "cluster.apply", "Cannot access  descriptor");
 	}
 
-	p = (int*)Tloc(b, BUNfirst(b));
-	q = p + BATcount(b);
-	for(; p<q; p++){
-#ifdef _CLUSTER_DEBUG
-		printf("recluster %d test\n", *(int*)p);
-#endif
-		if ( (nb = BATdescriptor(*(int*)p)) == NULL)
-			throw(MAL, "cluster.map", "Cannot access descriptor");
-		/* small-defense line */
-		switch(ATOMstorage(nb->ttype)) {
-		case TYPE_chr: case TYPE_bte: case TYPE_sht: case TYPE_oid:
-		case TYPE_wrd: case TYPE_int: case TYPE_lng: case TYPE_flt:
-		case TYPE_dbl: case TYPE_str:
-				/* doit */
-				break;
-		default:
-			BBPunfix(nb->batCacheid);
-			throw(MAL, "cluster.map", "Cannot recluster operand");
-		}
-		BBPunfix(nb->batCacheid);
-	}
-
-	p = (int*)Tloc(b, BUNfirst(b));
-	for(; p<q; p++){
-#ifdef _CLUSTER_DEBUG
-		printf("recluster %d\n", *(int*)p);
-#endif
-		nb = BATdescriptor(*(int*) p);
-		CLUSTER_column(nb,cmap);
-		BBPunfix(nb->batCacheid);
-	}
+	msg = CLUSTER_column(b,cmap);
 	BBPunfix(*CMAP);
+	BBPkeepref(*res= b->batCacheid);
+	return msg;
+}
+
+str  
+CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *map,*b;
+	int *res, hid, mid, *bid,i;
+	str msg;
+	(void) cntxt;
+	(void) mb;
+
+	res =(int *) getArgReference(stk, pci, 0);
+	bid = (int*) getArgReference(stk,pci,pci->retc);
+	msg = CLUSTER_key(&hid,bid);
+	if (msg)
+		return msg;
+	msg = CLUSTER_map(&mid,&hid);
+	if (msg)
+		return msg;
+	map = BATdescriptor(mid);
+	if (map== NULL)
+		throw(MAL,"cluster.table","Can not access descriptor");
+
+	for ( i=pci->retc; i<pci->argc; i++){
+		bid = (int*) getArgReference(stk,pci,i);
+		b = BATdescriptor(*bid);
+		if ( b== NULL)
+			throw(MAL,"cluster.table","Can not access descriptor");
+		msg = CLUSTER_column(b,map);
+		BBPunfix(b->batCacheid);
+	}
+	*res= mid;
 	return MAL_SUCCEED;
 }
 @-
-A test skeleton for re-clustering a specific SQL table.
-
-include cluster;
-function clusterTable(nme:str);
+@mal
+module sql;
+function cluster(nme:str);
+	mdb.setTrace(true);
 	t0:= alarm.time();
 	sql_catalog:bat[:int,:str] := bbp.bind("sql_catalog");
 	pat := "%_"+nme;
 	pat := pat+"_%";
-	items := pcre.like_uselect(sql_catalog,pat,"");
-	rn:= bat.reverse(items);
-	io.print(rn);
-	first:= algebra.fetch(rn,0);
-	b1:bat[:void,:any] := bbp.bind(first);
+	io.printf("[cluster %s]\n",pat);
+	nr := pcre.like_uselect(sql_catalog,pat,"");
+	items := algebra.semijoin(sql_catalog,nr);
+	io.print(items);
+	first:= algebra.fetch(items,0);
+	io.printf("[anchor %s]\n",first);
+	b1:bat[:oid,:any] := bbp.bind(first);
 	io.print(b1);
-	cmap:= cluster.new(first);
-	io.printf("cluster %s\n",pat);
-	cluster.map(cmap,rn);
+	cmap:= cluster.map(b1);
+barrier (go:lng,h:int,t:str):= bat.newIterator(items);
+	rn:= bbp.bind(t);
+	cluster.column(cmap,rn);
+redo (go,h,t):= bat.hasMoreElements(items);
+exit (go,h,t);
 	t1:= alarm.time();
 	t1:= t1-t0;
 	io.printf("time %d\n",t1);
-end clusterTable;
+	mdb.setTrace(false);
+end cluster;
 @}
