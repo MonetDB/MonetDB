@@ -833,13 +833,41 @@ opt_rank (PFla_op_t *p)
                     }
 
                 if (!res_used) {
+                    /* we have to maintain the visibility information for
+                       columns that are used in both operators */
+                    PFarray_t   *sortby, *lsortby;
+                    unsigned int count, lcount, matches, lmatches;
+
+                    sortby  = PFarray_copy (p->sem.rank_opt.sortby);
+                    lsortby = PFarray_copy (L(p)->sem.rank_opt.sortby);
+                    count   = PFarray_last (sortby);
+                    lcount  = PFarray_last (lsortby);
+
+                    for (unsigned int i = 0; i < count; i++) {
+                        matches = 0;
+                        for (unsigned int j = 0; j < lcount; j++) {
+                            lmatches = 0;
+                            if (COL_AT (sortby, i) == COL_AT (lsortby, j)) {
+                                /* maintain visibility over both operators */
+                                VIS_AT (lsortby, j) = VIS_AT (sortby, i);
+                                VIS_AT (sortby, i) = true;
+                                matches++;
+                                lmatches++;
+                            }
+                            if (lmatches > 1)
+                                break; /* do not rewrite */
+                        }
+                        if (matches > 1)
+                            break; /* do not rewrite */
+                    }
+
                     *p = *(rank_opt (
                               rank_opt (
                                   LL(p),
                                   p->sem.rank_opt.res,
-                                  p->sem.rank_opt.sortby),
+                                  sortby),
                               L(p)->sem.rank_opt.res,
-                              L(p)->sem.rank_opt.sortby));
+                              lsortby));
                     modified = true;
                     break;
                 }
