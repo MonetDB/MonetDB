@@ -67,7 +67,7 @@ address CLUSTER_map
 comment "Recluster a hash key table and produce a re-allocation map";
 
 pattern column(m:bat[:oid,:oid], b:bat[:oid,:any_1]):bat[:oid,:any_1]
-address CLUSTER_apply
+address CLUSTER_column
 comment "Reorder tail of the BAT using the cluster map";
 
 pattern table(b:bat[:oid,:any]...):bat[:oid,:oid]
@@ -83,7 +83,7 @@ Return the oid map used";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-#define _CLUSTER_DEBUG	/*for local debugging */
+/* #define _CLUSTER_DEBUG	for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -97,7 +97,8 @@ Return the oid map used";
 
 cluster_export str  CLUSTER_key( bat *M, bat *B);
 cluster_export str  CLUSTER_map(bat *RB, bat *B);
-cluster_export str  CLUSTER_apply( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cluster_export str	CLUSTER_apply(BAT *nb, BAT *cmap);
+cluster_export str  CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str  CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
@@ -125,7 +126,7 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 }
 
 str  
-CLUSTER_apply_@1(BAT *nb, BAT *b, BAT *cmap)
+CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 {
 	@1 *r;
 	oid *ct, *ce;
@@ -348,7 +349,7 @@ We change the BAT in place using a temporary copy
 to guide the move.
 @c
 str 
-CLUSTER_column(BAT *nb, BAT *cmap)
+CLUSTER_apply(BAT *nb, BAT *cmap)
 {
 	BAT *b;
 	b= BATcopy(nb, nb->htype, nb->ttype, TRUE);
@@ -359,15 +360,15 @@ CLUSTER_column(BAT *nb, BAT *cmap)
 	/* to be done, first assume that we can remap in one go */
 
 	switch(ATOMstorage(b->ttype)) {
-	case TYPE_chr: CLUSTER_apply_chr(nb, b, cmap);break;
-	case TYPE_bte: CLUSTER_apply_bte(nb, b, cmap);break;
-	case TYPE_sht: CLUSTER_apply_sht(nb, b, cmap);break;
-	case TYPE_oid: CLUSTER_apply_oid(nb, b, cmap);break;
-	case TYPE_wrd: CLUSTER_apply_wrd(nb, b, cmap);break;
-	case TYPE_int: CLUSTER_apply_int(nb, b, cmap);break;
-	case TYPE_lng: CLUSTER_apply_lng(nb, b, cmap);break;
-	case TYPE_flt: CLUSTER_apply_flt(nb, b, cmap);break;
-	case TYPE_dbl: CLUSTER_apply_dbl(nb, b, cmap);break;
+	case TYPE_chr: CLUSTER_column_chr(nb, b, cmap);break;
+	case TYPE_bte: CLUSTER_column_bte(nb, b, cmap);break;
+	case TYPE_sht: CLUSTER_column_sht(nb, b, cmap);break;
+	case TYPE_oid: CLUSTER_column_oid(nb, b, cmap);break;
+	case TYPE_wrd: CLUSTER_column_wrd(nb, b, cmap);break;
+	case TYPE_int: CLUSTER_column_int(nb, b, cmap);break;
+	case TYPE_lng: CLUSTER_column_lng(nb, b, cmap);break;
+	case TYPE_flt: CLUSTER_column_flt(nb, b, cmap);break;
+	case TYPE_dbl: CLUSTER_column_dbl(nb, b, cmap);break;
 	default:
 		throw(MAL,"cluster.column","Not supported");
 	}
@@ -376,7 +377,7 @@ CLUSTER_column(BAT *nb, BAT *cmap)
 }
 
 str  
-CLUSTER_apply( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res =(int *) getArgReference(stk, pci, 0);
 	bat *CMAP =(int *) getArgReference(stk, pci, 1);
@@ -387,13 +388,13 @@ CLUSTER_apply( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( (cmap = BATdescriptor(*CMAP)) == NULL )
-		throw(MAL, "cluster.apply", "Cannot access  descriptor");
+		throw(MAL, "cluster.column", "Cannot access  descriptor");
 	if ( (b = BATdescriptor(*B)) == NULL ){
 		BBPunfix(*CMAP);
-		throw(MAL, "cluster.apply", "Cannot access  descriptor");
+		throw(MAL, "cluster.column", "Cannot access  descriptor");
 	}
 
-	msg = CLUSTER_column(b,cmap);
+	msg = CLUSTER_apply(b,cmap);
 	BBPunfix(*CMAP);
 	BBPkeepref(*res= b->batCacheid);
 	return msg;
@@ -425,38 +426,10 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(*bid);
 		if ( b== NULL)
 			throw(MAL,"cluster.table","Can not access descriptor");
-		msg = CLUSTER_column(b,map);
+		msg = CLUSTER_apply(b,map);
 		BBPunfix(b->batCacheid);
 	}
 	*res= mid;
 	return MAL_SUCCEED;
 }
-@-
-@mal
-module sql;
-function cluster(nme:str);
-	mdb.setTrace(true);
-	t0:= alarm.time();
-	sql_catalog:bat[:int,:str] := bbp.bind("sql_catalog");
-	pat := "%_"+nme;
-	pat := pat+"_%";
-	io.printf("[cluster %s]\n",pat);
-	nr := pcre.like_uselect(sql_catalog,pat,"");
-	items := algebra.semijoin(sql_catalog,nr);
-	io.print(items);
-	first:= algebra.fetch(items,0);
-	io.printf("[anchor %s]\n",first);
-	b1:bat[:oid,:any] := bbp.bind(first);
-	io.print(b1);
-	cmap:= cluster.map(b1);
-barrier (go:lng,h:int,t:str):= bat.newIterator(items);
-	rn:= bbp.bind(t);
-	cluster.column(cmap,rn);
-redo (go,h,t):= bat.hasMoreElements(items);
-exit (go,h,t);
-	t1:= alarm.time();
-	t1:= t1-t0;
-	io.printf("time %d\n",t1);
-	mdb.setTrace(false);
-end cluster;
 @}
