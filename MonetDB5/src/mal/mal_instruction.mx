@@ -2671,7 +2671,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			str cv = NULL;
 
 			if (stk && flg & LIST_MAL_VALUE){
-				if ( flg & LIST_MAL_INSTR  && !isVarConstant(mb, getArg(p,i)))
+				if ( !isVarConstant(mb, getArg(p,i)))
 					snprintf(t,(len-(t-base)),"%s=", getArgName(mb, p, i));
 				advance(t,base,len);
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
