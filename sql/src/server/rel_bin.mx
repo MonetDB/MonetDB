@@ -398,7 +398,16 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			}
 		} else {
 			if (r2) {
-				s = stmt_uselect2(l, r, r2, (comp_type)e->flag);
+				if (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func(range2compare(e->flag&3)), tail_type(l), tail_type(r));
+					sql_subfunc *a = sql_bind_func(sql->session->schema, "and", bt, bt);
+					assert(f && a);
+					s = stmt_binop(
+						stmt_binop(r, stmt_dup(l), f), 
+						stmt_binop(l, r2, sql_dup_func(f)), a);
+				} else
+					s = stmt_uselect2(l, r, r2, (comp_type)e->flag);
 			} else {
 				/* value compare or select */
 				if (l->nrcols == 0 && r->nrcols == 0) {
