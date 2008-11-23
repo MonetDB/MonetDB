@@ -3513,10 +3513,18 @@ rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 			if (*rel) {
 				/* current projection list */
 				list *pre_proj = rel_projections(sql, *rel, NULL, 1);
-				sql_rel *p = rel_dup((*rel)->l);
+				sql_rel *p = *rel;
 
-				rel_destroy(*rel);
-				*rel = rel_crossproduct(p, r, op_join);
+				if (is_project((*rel)->op) && (*rel)->l) {
+					p = rel_dup((*rel)->l);
+					rel_destroy(*rel);
+				} 
+				if (is_project((*rel)->op) && !(*rel)->l) {
+					rel_destroy(*rel);
+					*rel = r;
+				} else {
+					*rel = rel_crossproduct(p, r, op_join);
+				}
 				*rel = rel_project(*rel, pre_proj);
 				return rel_lastexp(sql, r);
 			} else {
