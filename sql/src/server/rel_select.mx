@@ -3401,8 +3401,11 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 				sql->errstr[0] = '\0';
 
 				e = rel_order_by_column_exp(sql, rel, col);
+				if (e->card != rel->card) {
+					exp_destroy(e);
+					e = NULL;
+				}
 			}
-
 			if (!e) {
 				list_destroy(exps);
 				return NULL;
