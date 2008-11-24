@@ -461,63 +461,99 @@ type_bit_check (PFalg_simple_type_t ty)
     for (PFalg_simple_type_t t = 1; t; t <<= 1)
         if (t & ty) count++;
 
-    return count == 1 && !(ty & aat_nkind);
+    return count == 1 && !(ty & (aat_nkind | aat_nkind1));
 }
 
 /**
  * @brief MIL implementation types for algebra types
  */
 static PFmil_type_t
-impl_types (PFalg_simple_type_t ty)
+impl_types (PFalg_simple_type_t ty, PFalg_simple_type_t kind)
 {
-    switch (ty) {
-        case aat_nat:
-        case aat_qname_id:
-        case aat_qname_cont:
-        case aat_pre:
-        case aat_attr:
-        case aat_frag:
-        case aat_pre1:
-        case aat_attr1:
-        case aat_frag1:
-        case aat_error:
-            return mty_oid;
+    if (kind & aat_docmgmt) {
+        switch (ty) {
+            case aat_docmgmt:
+                return mty_lng;
 
-        case aat_int:
-        case aat_update:
-        case aat_docmgmt:
-            return mty_lng;
+            case aat_path:
+            case aat_colnm:
+            case aat_docnm:
+                return mty_str;
 
-        case aat_path:
-        case aat_colnm:
-        case aat_docnm:
-        case aat_str:
-        case aat_uA:
-            return mty_str;
+            default:
+                PFoops (OOPS_FATAL,
+                        "illegal type in document management column");
+                return mty_oid;
+        }
+    }
+    else if (kind & aat_update) {
+        switch (ty) {
+            case aat_qname_id:
+            case aat_qname_cont:
+            case aat_pre:
+            case aat_attr:
+            case aat_frag:
+            case aat_pre1:
+            case aat_attr1:
+            case aat_frag1:
+                return mty_oid;
 
-        case aat_dec:
-        case aat_dbl:
-            return mty_dbl;
+            case aat_update:
+                return mty_lng;
 
-        case aat_bln:
-            return mty_bit;
+            case aat_str:
+                return mty_str;
 
-        default:
-            PFoops (OOPS_FATAL, "illegal type in impl_types");
-            return mty_oid;
+            default:
+                PFoops (OOPS_FATAL,
+                        "illegal type in update column");
+                return mty_oid;
+        }
+    }
+    else {
+        switch (ty) {
+            case aat_nat:
+            case aat_qname_id:
+            case aat_qname_cont:
+            case aat_pre:
+            case aat_attr:
+            case aat_frag:
+            case aat_error:
+                return mty_oid;
+
+            case aat_int:
+                return mty_lng;
+
+            case aat_str:
+            case aat_uA:
+                return mty_str;
+
+            case aat_dec:
+            case aat_dbl:
+                return mty_dbl;
+
+            case aat_bln:
+                return mty_bit;
+
+            default:
+                PFoops (OOPS_FATAL,
+                        "illegal type in query column");
+                return mty_oid;
+        }
     }
 }
 
 #ifndef NDEBUG
 /** @brief implementation type for a given algebra type, as a MIL node */
-#define implty(n) type (type_bit_check ((n))                     \
-                        ? impl_types ((n))                       \
-                        : (assert (!"illegal type in implty()"), \
-                           (PFmil_type_t) 0))
+#define implty(n,k) type (type_bit_check ((n))                     \
+                          ? impl_types ((n),(k))                   \
+                          : (assert (!"illegal type in implty()"), \
+                             (PFmil_type_t) 0))
 #else
 /** @brief implementation type for a given algebra type, as a MIL node */
-#define implty(n) type (impl_types ((n)))
+#define implty(n,k) type (impl_types ((n),(k)))
 #endif
+#define implty_(n)  implty((n),0)
 /* fold) */
 
 /* fold( env_t / new_env() / env_*() / VAR() / ANY_VAR() definition */
@@ -1676,7 +1712,7 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
                assgn (var (v->name),
                       append (
                            seqbase (
-                                new (type (mty_void), implty (res_ty)),
+                                new (type (mty_void), implty_ (res_ty)),
                                 lit_oid (0)),
                            var (v->name))));
           env_add (p->env, res, res_ty, v);
@@ -2123,6 +2159,9 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
 
         /* Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec) */
         case 142:
+        {
+            PFalg_simple_type_t ty;
+
             /* relink the enviroment of arg to its base */
             L(p)->sem.rec_arg.base->env = p->env;
 
@@ -2135,15 +2174,17 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
                             "empty sequence should never "
                             "occur in MIL generation.");
 
-                for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                    if (t & TYPE_MASK(LL(p)->schema.items[col].type)) {
+                for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+                    ty = TYPE_MASK(LL(p)->schema.items[col].type);
+                    if (t & ty) {
                         mvar_t *tmp  = new_var (p->refctr +
                                                 L(p)->sem.rec_arg.base->refctr);
 
                         /* assign an empty BAT to the new variable */
                         execute (
                             assgn (var (tmp->name),
-                                   seqbase (new (type (mty_void), implty (t)),
+                                   seqbase (new (type (mty_void),
+                                                 implty (t, ty)),
                                             lit_oid (0))));
 
                         /* add the variable to the current environment
@@ -2153,6 +2194,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
                                  t,
                                  tmp);
                     }
+                }
             }
 
             /* translate all the remaining seeds */
@@ -2161,7 +2203,7 @@ reduce1 (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
             /* translate all expressions that are invariant to
                the recursion body */
             reduce_border (kids[0], nts[0], border_vars);
-            break;
+        }   break;
 
         /* Rec:      nil */
         case 143:
@@ -3611,7 +3653,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             assgn (
                                 var (v->name),
                                 seqbase (
-                                    new (type (mty_void), implty (t)),
+                                    new (type (mty_void), implty_ (t)),
                                     lit_oid (0))));
 
                         for (unsigned int row = 0;
@@ -3623,7 +3665,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                                       .atoms[col].type
                                     ? literal_ (p->sem.lit_tbl.tuples[row]
                                                               .atoms[col], t)
-                                    : cast (implty (t), nil ())));
+                                    : cast (implty_ (t), nil ())));
 
                         execute (access (var (v->name), BAT_READ));
                     }
@@ -4129,13 +4171,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 23: /* fold( */
         {
             PFalg_col_t         col;
-            PFalg_simple_type_t lty, rty;
+            PFalg_simple_type_t ty, lty, rty;
             for (unsigned int i = 0; i < p->schema.count; i++) {
                 col = p->schema.items[i].name;
+                ty  = TYPE_MASK(p->schema.items[i].type);
                 lty = type_of (L(p), col);
                 rty = type_of (R(p), col);
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                    if (t & TYPE_MASK(p->schema.items[i].type)) {
+                    if (t & ty) {
 
                         v = new_var (p->refctr);
 
@@ -4159,7 +4202,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                     access (
                                         project (
                                             ANY_VAR(L(p)->env),
-                                            cast (implty (t), nil ())),
+                                            cast (implty (t, ty), nil ())),
                                         BAT_APPEND)));
 
                         /*
@@ -4181,7 +4224,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                         var (v->name),
                                         project (
                                             ANY_VAR(R(p)->env),
-                                            cast (implty (t), nil ()))),
+                                            cast (implty (t, ty), nil ()))),
                                     BAT_READ));
 
                         env_add (p->env, col, t, v);
@@ -4193,7 +4236,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         case 25: /* fold( */
         {
             PFalg_col_t         grp_col;
-            PFalg_simple_type_t grp_ty;
+            PFalg_simple_type_t ty,
+                                grp_ty;
             PFmil_t            *args;
             v = new_var (1);
 
@@ -4219,9 +4263,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         assert_order (VAR (R(p)->env, grp_col, grp_ty)));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->schema.items[i].name != grp_col)
+                if (p->schema.items[i].name != grp_col) {
+                    ty = TYPE_MASK(p->schema.items[i].type);
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & TYPE_MASK(p->schema.items[i].type))
+                        if (t & ty)
                             for (unsigned short j = 0; j <= 1; j++) {
                                 /*
                                  * If t is among the operand's types, use the
@@ -4238,8 +4283,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                     args = arg (args,
                                                 project (
                                                     ANY_VAR (p->child[j]->env),
-                                                    cast (implty(t), nil ())));
+                                                    cast (implty(t, ty),
+                                                          nil ())));
                             }
+                }
 
             /* execute merged_union() and assign it to v */
             execute (assgn (var (v->name), merged_union (args)));
@@ -4632,14 +4679,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* because functions are only allowed for dbl
                        we need to cast before and afterwards:
                        res := `input'.[dbl]().[`op']().[`res_type'](); */
-                    if (impl_types (res_type) == mty_dbl)
+                    if (impl_types (res_type, 0) == mty_dbl)
                         execute (
                             assgn (var (res->name),
                                    op (VAR (L(p)->env, col, res_type))));
                     else
                         execute (
                             assgn (var (res->name),
-                                   mcast (implty (res_type),
+                                   mcast (implty_ (res_type),
                                           op (mcast (type (mty_dbl),
                                                      VAR (L(p)->env,
                                                           col,
@@ -4698,7 +4745,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                     execute (
                         assgn (var (res->name),
-                               mcast (implty (res_type),
+                               mcast (implty_ (res_type),
                                       mlength (
                                           VAR (L(p)->env, col, aat_str)))));
                 }   break; /* fold) */
@@ -5084,7 +5131,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             else
                                 casted
                                     = mcast (
-                                        implty (res_type),
+                                        implty_ (res_type),
                                         VAR (L(p)->env, col, t));
 
                             if (first) {
@@ -5105,7 +5152,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                            of generating NaN). */
                         execute (
                             if_ (exist (reverse (var (res->name)),
-                                        cast (implty (res_type), nil ())),
+                                        cast (implty_ (res_type), nil ())),
                                  error (
                                      lit_str ("We do not support the value NaN.")),
                                  nop ()));
@@ -6150,7 +6197,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         else
                             casted
                                 = mcast (
-                                    implty (p->sem.cast.ty),
+                                    implty_ (p->sem.cast.ty),
                                     VAR (L(p)->env, p->sem.cast.col, t));
 
                         if (parts)
@@ -6166,7 +6213,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     }
                 execute (
                     if_ (exist (reverse (var (res->name)),
-                                cast (implty (p->sem.cast.ty), nil ())),
+                                cast (implty_ (p->sem.cast.ty), nil ())),
                          error (lit_str ("err:FORG0001.")),
                          nop ()));
                 unpin (tmp, 1);
@@ -6234,7 +6281,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                       assgn (var (v->name),
                              append (
                                   seqbase (
-                                       new (type (mty_void), implty (aat_bln)),
+                                       new (type (mty_void), implty_ (aat_bln)),
                                        lit_oid (0)),
                                   var (v->name))));
                   env_add (p->env, res, aat_bln, v);
@@ -6296,7 +6343,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                       assgn (var (v->name),
                              append (
                                   seqbase (
-                                       new (type (mty_void), implty (aat_bln)),
+                                       new (type (mty_void), implty_ (aat_bln)),
                                        lit_oid (0)),
                                   var (v->name))));
                   env_add (p->env, res, aat_bln, v);
@@ -8612,18 +8659,19 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 /* make sure that the implicit type change
                    is correctly implemented */
                 if (env_at (L(p)->env, i).col == p->sem.err.col) {
-                    PFalg_simple_type_t ty = type_of (p, p->sem.err.col);
+                    PFalg_simple_type_t ty;
                     assert (env_at (L(p)->env, i).ty == aat_str);
 
+                    ty = TYPE_MASK(type_of (p, p->sem.err.col));
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & TYPE_MASK(ty)) {
+                        if (t & ty) {
                             /* create new variable */
                             v = new_var (p->refctr);
                             /* dummy assignment */
                             execute (
                                 assgn (var (v->name),
                                        seqbase (new (type (mty_void),
-                                                     implty (t)),
+                                                     implty (t, ty)),
                                                 lit_oid (0))));
                             env_add (p->env, p->sem.err.col, t, v);
                         }

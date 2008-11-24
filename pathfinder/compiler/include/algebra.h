@@ -71,66 +71,94 @@
 #define aat_uA          0x00000040 /**< algebra simple atomic type untypedAtomic  */
 
 /* qname representation in MIL and SQL */ 
-#define aat_qname_id    0x00000100 /**< MIL id column representing a QName */
-#define aat_qname_loc   0x00000100 /**< SQL local name column representing a QName */
-#define aat_qname_cont  0x00000200 /**< MIL container column representing a QName */
-#define aat_qname_uri   0x00000200 /**< SQL uri column representing a QName */
+#define aat_qname_id    0x00000080 /**< MIL id column representing a QName */
+#define aat_qname_loc   0x00000080 /**< SQL local name column representing a QName */
+#define aat_qname_cont  0x00000100 /**< MIL container column representing a QName */
+#define aat_qname_uri   0x00000100 /**< SQL uri column representing a QName */
 /* qname representation in the algebra */
-#define aat_qname       0x00000300 /**< algebra simple atomic type QName  */
+#define aat_qname       0x00000180 /**< algebra simple atomic type QName  */
+
+#define aat_unused1     0x00000200
+#define aat_unused2     0x00000400
+#define aat_unused3     0x00000800
+#define aat_unused4     0x00001000
+#define aat_unused5     0x00002000
+#define aat_unused6     0x00004000
+#define aat_unused7     0x00008000
+#define aat_unused8     0x00010000
+#define aat_unused9     0x00020000
+#define aat_unused10    0x00040000
+#define aat_unused11    0x00080000
+#define aat_unused12    0x01000000
+#define aat_unused13    0x02000000
+#define aat_unused14    0x04000000
+#define aat_unused15    0x08000000
 
 /* node representation in MIL and SQL */
-#define aat_frag        0x00001000 /**< node fragment */
-#define aat_pre         0x00002000 /**< pre value */
-#define aat_attr        0x00004000 /**< attr value */
-#define aat_nkind       0x00008000 /**< node kind indicating that
+#define aat_frag        0x00100000 /**< node fragment */
+#define aat_pre         0x00200000 /**< pre value */
+#define aat_attr        0x00400000 /**< attr value */
+#define aat_nkind       0x00800000 /**< node kind indicating that
                                         a node is not an attribute */
 /* attribute node representation in the algebra */
-#define aat_anode       0x00007000 /**< algebra simple atomic type attribute */
+#define aat_anode       0x00700000 /**< algebra simple atomic type attribute */
 /* element/document/text/pi/comment node representation in the algebra */
-#define aat_pnode       0x0000B000 /**< algebra simple atomic type 
+#define aat_pnode       0x00B00000 /**< algebra simple atomic type 
                                         representing all other nodes */
 /* node representation in the algebra */
-#define aat_node        0x0000F000 /**< algebra simple atomic type node */
+#define aat_node        0x00F00000 /**< algebra simple atomic type node */
 
-#define aat_charseq     0x00100000 /**< this type represents the CHAR type in SQL */
-#define aat_update      0x00100000 /**< and it represents the update kind in MIL */
-#define aat_error       0x00200000 /**< this type represents an error */
+#define aat_error       0x10000000 /**< this type represents an error */
+#define aat_charseq     0x20000000 /**< this type represents the CHAR type in SQL */
+
+/* Indicators for the return type: These two type bits
+   provide the overloading functionality of the types. */
+#define aat_update      0x40000000 /**< and it represents the update kind in MIL */
+#define aat_docmgmt     0x80000000 /**< represents the doc management type */
 
 /**
- * The following types represent the first parameter of an update function
- * (which is a always of kind node). This allows an update item to correctly
- * encode all information in separate types: update + node1 + str|qname|node
- * and to transport this (triple) information to the update tape
- * at the serialize operator.
+ * The following types are for the update functions. The following four types
+ * represent the first parameter of an update function (which is a always of
+ * kind node). This allows an update item to correctly encode all information
+ * in separate types: update + node1 + str|qname|node * and to transport this
+ * (triple) information to the update tape at the serialize operator.
  *
  * @note
  *    The bits encoding the node1 information #aat_frag1, #aat_pre1, #aat_attr1,
  *    and #aat_nkind1 represent the normal node information shifted 4 bits
  *    to the left.
+ *
+ * @note
+ *    The update types reuse the type bits of the normal (query) types for
+ *    nodes, strings, and QNames.
+ *
+ * @note
+ *    Update types may not be mixed with with query (here atomic and node types).
+ *    Therefore normal querying can overload the following bit ranges.
  */
 /* node representation in MIL and SQL */
-#define aat_frag1       0x00010000 /**< node fragment */
-#define aat_pre1        0x00020000 /**< pre value */
-#define aat_attr1       0x00040000 /**< attr value */
-#define aat_nkind1      0x00080000 /**< node kind indicating that
+#define aat_frag1       0x01000000 /**< node fragment */
+#define aat_pre1        0x02000000 /**< pre value */
+#define aat_attr1       0x04000000 /**< attr value */
+#define aat_nkind1      0x08000000 /**< node kind indicating that
                                         a node is not an attribute */
 /* attribute node representation in the algebra */
-#define aat_anode1      0x00070000 /**< algebra simple atomic type attribute */
+#define aat_anode1      0x07000000 /**< algebra simple atomic type attribute */
 /* element/document/text/pi/comment node representation in the algebra */
-#define aat_pnode1      0x000B0000 /**< algebra simple atomic type 
+#define aat_pnode1      0x0B000000 /**< algebra simple atomic type 
                                         representing all other nodes */
 /* node representation in the algebra */
-#define aat_node1       0x000F0000 /**< algebra simple atomic type node */
+#define aat_node1       0x0F000000 /**< algebra simple atomic type node */
 
 /**
  * The following types are for the document management functions. We introduce
  * one new type, aat_docmgmt, to signify document management queries, and 3 
- * new types for path, document name and collection name.
+ * new types for path, document name and collection name. As atomic types and
+ * document management types may not be mixed we can overload the lower bits.
  */
-#define aat_docmgmt  0x01000000 /**< represents the doc management type */
-#define aat_path     0x02000000 /**< the path where a document resides*/
-#define aat_docnm    0x04000000 /**< the name of the document */
-#define aat_colnm    0x08000000 /**< the name of the collection */
+#define aat_path        0x00000001 /**< the path where a document resides*/
+#define aat_docnm       0x00000002 /**< the name of the document */
+#define aat_colnm       0x00000004 /**< the name of the collection */
 
 /** Simple atomic types in our algebra */
 typedef unsigned int PFalg_simple_type_t;
