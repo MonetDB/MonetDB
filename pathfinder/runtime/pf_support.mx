@@ -8387,10 +8387,9 @@ int CMDpflock_end(lng *wsid)
          */
         if (*wsid == pf_special) {
             pf_special = -1;
+            MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for special docmgt");
         } else {
             pf_ndocmgt--;
-        }
-        if (pf_ndocmgt == 0) {
             MT_up_sema(PF_META_BARRIER, "pflock_end: metaBarrier for docmgt");
         }
     } else {
