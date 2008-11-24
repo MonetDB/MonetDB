@@ -173,6 +173,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'O':
+                MAP_UNQ_NAMES("constant optimization")
                 REMOVE_PROXIES("constant optimization")
 
                 tm = PFtimer_start ();

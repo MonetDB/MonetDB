@@ -301,7 +301,7 @@ opt_const (PFla_op_t *p)
                 PFprop_const_right (p->prop, col2)) {
                 PFla_op_t *ret, *left, *right;
                 PFalg_proj_t *left_cols, *right_cols;
-                PFalg_col_t res;
+                PFalg_col_t res = PFalg_unq_name (col_item);
                 PFalg_simple_type_t ty;
 
                 ty = (PFprop_const_val (p->prop, col1)).type;
@@ -323,10 +323,6 @@ opt_const (PFla_op_t *p)
                     break;
                 }
                 /* (b) otherwise: */
-
-                /* find unused column */
-                for (res = 1 << 30; res > 0; res >>= 1)
-                    if (!PFprop_ocol (p, res)) break;
 
                 /* prepare projection list for left subtree */
                 left_cols = PFmalloc (L(p)->schema.count
@@ -396,11 +392,7 @@ opt_const (PFla_op_t *p)
             else if (PFprop_const_left (p->prop, col1)) {
                 PFla_op_t *right;
                 PFalg_proj_t *right_cols;
-                PFalg_col_t res;
-
-                /* find unused column */
-                for (res = 1 << 30; res > 0; res >>= 1)
-                    if (!PFprop_ocol (p, res)) break;
+                PFalg_col_t res = PFalg_unq_name (col_item);
 
                 /* prepare projection list for right subtree */
                 right_cols = PFmalloc (R(p)->schema.count
@@ -431,11 +423,7 @@ opt_const (PFla_op_t *p)
             else if (PFprop_const_right (p->prop, col2)) {
                 PFla_op_t *left;
                 PFalg_proj_t *left_cols;
-                PFalg_col_t res;
-
-                /* find unused column */
-                for (res = 1 << 30; res > 0; res >>= 1)
-                    if (!PFprop_ocol (p, res)) break;
+                PFalg_col_t res = PFalg_unq_name (col_item);
 
                 /* prepare projection list for left subtree */
                 left_cols = PFmalloc (L(p)->schema.count
