@@ -96,6 +96,7 @@ end main;
 [ "bstream",	  nil	  ]
 [ "calc",	  nil	  ]
 [ "clients",	  nil	  ]
+[ "cluster",	  nil	  ]
 [ "color",	  nil	  ]
 [ "const",	  nil	  ]
 [ "constraints",  nil	  ]
