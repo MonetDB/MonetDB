@@ -3703,7 +3703,7 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int first=1;
 	bat mid, hid;
-	BAT *map, *b;
+	BAT *map= NULL, *b;
 	node *o;
 
 	if (msg)
@@ -3737,6 +3737,7 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         msg = CLUSTER_apply(b,map);
         BBPreleaseref(b->batCacheid);
     }
-	BBPreleaseref(map->batCacheid);
+	if ( map)
+		BBPreleaseref(map->batCacheid);
 	return MAL_SUCCEED;
 }
