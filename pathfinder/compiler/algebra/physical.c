@@ -1784,12 +1784,12 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
                     break;
                 case alg_fun_upd_replace_value_att:
                     assert(n->schema.items[ix[0]].type & aat_anode);
-                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert(n->schema.items[ix[1]].type == aat_uA);
                     assert((n->schema.items[ix[0]].type << 4) & aat_anode1);
                     break;
                 case alg_fun_upd_replace_value:
                     assert(n->schema.items[ix[0]].type & aat_pnode);
-                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert(n->schema.items[ix[1]].type == aat_uA);
                     assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
                     break;
                 case alg_fun_upd_replace_element:

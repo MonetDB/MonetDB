@@ -1645,12 +1645,12 @@ PFla_fun_1to1 (const PFla_op_t *n,
                     break;
                 case alg_fun_upd_replace_value_att:
                     assert(n->schema.items[ix[0]].type & aat_anode);
-                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert(n->schema.items[ix[1]].type == aat_uA);
                     assert((n->schema.items[ix[0]].type << 4) & aat_anode1);
                     break;
                 case alg_fun_upd_replace_value:
                     assert(n->schema.items[ix[0]].type & aat_pnode);
-                    assert(n->schema.items[ix[1]].type & aat_uA);
+                    assert(n->schema.items[ix[1]].type == aat_uA);
                     assert((n->schema.items[ix[0]].type << 4) & aat_pnode1);
                     break;
                 case alg_fun_upd_replace_element:
@@ -2986,7 +2986,7 @@ PFla_doc_index_join (const PFla_op_t *doc, const PFla_op_t *n,
         PFoops (OOPS_FATAL,
                 "column `%s' needed in doc index join is missing",
                 PFcol_str (item));
-    if (!(PFprop_type_of (n, item) & aat_str))
+    if (!(PFprop_type_of (n, item) == aat_str))
         PFoops (OOPS_FATAL,
                 "wrong item type '0x%X' in the input of a doc index join",
                 PFprop_type_of (n, item));

@@ -565,13 +565,13 @@ infer_ocol (PFla_op_t *n)
                             break;
                         case alg_fun_upd_replace_value_att:
                             assert(ocol_at (L(n), ix[0]).type & aat_anode);
-                            assert(ocol_at (L(n), ix[1]).type & aat_uA);
+                            assert(ocol_at (L(n), ix[1]).type == aat_uA);
                             assert((ocol_at (L(n), ix[0]).type << 4) &
                                    aat_anode1);
                             break;
                         case alg_fun_upd_replace_value:
                             assert(ocol_at (L(n), ix[0]).type & aat_pnode);
-                            assert(ocol_at (L(n), ix[1]).type & aat_uA);
+                            assert(ocol_at (L(n), ix[1]).type == aat_uA);
                             assert((ocol_at (L(n), ix[0]).type << 4) &
                                    aat_pnode1);
                             break;
@@ -819,7 +819,7 @@ infer_ocol (PFla_op_t *n)
                 PFoops (OOPS_FATAL,
                         "column `%s' needed in doc index join is missing",
                         PFcol_str (n->sem.doc_join.item));
-            if (!(PFprop_type_of (R(n), n->sem.doc_join.item) & aat_str))
+            if (!(PFprop_type_of (R(n), n->sem.doc_join.item) == aat_str))
                 PFoops (OOPS_FATAL,
                         "wrong item type '0x%X' in the input of doc index join",
                         PFprop_type_of (R(n), n->sem.doc_join.item));
