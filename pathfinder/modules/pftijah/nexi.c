@@ -499,6 +499,7 @@ int old_main(BAT* optbat, char* startNodes_name)
                 qenv_prox_val = (char*)strdup(optVal);
         } else if (strcmp(optName, "feedback-docs") == 0) {
                 qenv_fb_val = (char*)strdup(optVal);
+        } else if (strcmp(optName, "newversion") == 0) {
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }

@@ -7,10 +7,14 @@
 #define MAXMILSIZE      32000
 
 typedef struct tjc_config {
+	char* dotFile;
+	char* milFile;
+	/* */
 	char errBUFF[1024];
 	char milBUFF[MAXMILSIZE];
 	char dotBUFF[MAXMILSIZE];
 } tjc_config;
+
 
 #define TJCPRINTF sprintf
 #define MILOUT    &(tjc_c->milBUFF[strlen(tjc_c->milBUFF)])

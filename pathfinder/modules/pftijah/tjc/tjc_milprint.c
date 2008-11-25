@@ -122,7 +122,6 @@ char* milprint (tjc_config *tjc_c, TJpnode_t *root)
     short node_scope[TJPTREE_MAXSIZE];
     short node_printed[TJPTREE_MAXSIZE];
     
-    tjc_c->milBUFF[0] = 0;
     num = assign_numbers (root, 1);
     for (c = 0; c < num; c++) {
 	node_scope[c] = 0;
