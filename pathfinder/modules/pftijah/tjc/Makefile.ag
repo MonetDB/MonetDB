@@ -23,12 +23,10 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-SUBDIRS = tjc
+YFLAGS = -d -p tjc
+LFLAGS = -otjc_scan.yy.c
 
-INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
-PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
-
-YFLAGS = -d -p nexi
+INCLUDES = $(MONETDB4_INCS) $(MONETDB_INCS)
 
 #  Some versions of flex & bison seem to generate code
 #  that does not compile with `gcc -Wundef`;
@@ -48,54 +46,21 @@ CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 # with Sun Studio 12 compiler
 pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
 
-lib__pftijah = {
-	DIR = libdir/MonetDB4
+lib_tjc = {
+	NOINST
 	SOURCES = \
-	        termdb.mx \
-		pftijah.mx \
-		pftijah_stem.mx \
-		snb_header.h \
-		snb_utilities.c \
-		snb_api.h \
-		snb_api.c \
-		stem_UTF_8_dutch.h \
-		stem_UTF_8_dutch.c \
-		stem_UTF_8_english.h \
-		stem_UTF_8_english.c \
-		stem_UTF_8_porter.h \
-		stem_UTF_8_porter.c \
-		porter_eng.h \
-		porter_eng.c \
-		porter_dutch.h \
-		porter_dutch.c \
-		pftijah_tokenize.l \
-		pftijah_util.mx \
-		serialize_pftijah.mx \
-		serialize_pftijah_options.mx \
-		nexi.h \
-		nexi.c \
-		nexi.y \
-		nexi.l \
-		nexi_preprocessor.c \
-		nexi_rewriter.h \
-		nexi_rewriter.c \
-		nexi_generate_mil.h \
-		nexi_generate_mil.c \
-		nexi_generate_plan.h \
-		nexi_generate_plan.c
+	        tjc_main.c \
+		tjc_scan.l \
+		tjc_parse.y \
+		tjc_conf.h \
+		tjc_abssyn.h \
+		tjc_abssyn.c \
+		tjc_main.c \
+		tjc_milprint.h \
+		tjc_milprint.c \
+		tjc_normalize.h \
+		tjc_normalize.c \
+		tjc_optimize.h \
+		tjc_optimize.c
 
-	LIBS = \
-		./tjc/libtjc  \
-		../../runtime/libserialize \
-		../../runtime/lib_pf_support $(PF_LIBS) \
-		$(MONETDB_LIBS) -lbat -lstream $(MONETDB4_LIBS) -lmonet \
-		$(MONETDB4_MODS) -l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
-
-headers_mil = {
-	HEADERS = mil
-	DIR = libdir/MonetDB4
-	SOURCES = pftijah.mx
-}
-
-EXTRA_DIST_DIR = Tests

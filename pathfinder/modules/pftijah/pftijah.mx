@@ -1047,11 +1047,12 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(ftiName);
-      var ws := ws_create(0);
+      # var ws := ws_create(0);
       uri@batloop() {
-        _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
+        # _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
+        _tj_add2collection(ftiName, collBat, $h, $t, store);
       }
-      ws_destroy(ws);
+      # ws_destroy(ws);
       _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1157,7 +1158,7 @@ PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_
         } else {
             if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
 	}
-        ws_opendoc(ws, bat(void,str,1).append(uri_name));
+        ws_opendoc(ws, bat(void,str,1).append(uri_name)); # INCOMPLETE why create a WS for every doc
 	i_start := usec();
         if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
         _tj_throw2collection(collBat,ws,uri_name);
@@ -3506,6 +3507,8 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 
 extern char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF);
 
+extern char* tjc_new_parse(char* query, BAT* optbat, char* startNodes_name, char** errBUFF);
+
 static int nexiTmpCounter = 0;
 
 int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes) {
@@ -3534,9 +3537,34 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	    return GDK_FAIL;
 	}
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
-	if ( !(mil=tijahParse(optbat,startNodes_name,&err)) ) {
-            GDKerror("CMDtijah_query: %s.\n", err);
-	    return GDK_FAIL;
+
+        int newversion = 0;
+        BUN bun;
+        if ( (bun = BUNfnd(optbat,"newversion")) != BUN_NONE ) {
+            BATiter bi = bat_iterator(optbat);
+            str val = (str)BUNtail(bi,bun);
+	    if (strcmp(val,"true")==0)
+	        newversion = 1;
+        }
+	str query_text = NULL;
+
+        if ( (bun = BUNfnd(optbat,"_query")) != BUN_NONE ) {
+            BATiter bi = bat_iterator(optbat);
+            query_text = (str)BUNtail(bi,bun);
+        } else
+	    stream_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
+
+
+	if ( newversion ) {
+	    if ( !(mil=tjc_new_parse(query_text,optbat,startNodes_name,&err)) ) {
+                GDKerror("CMDtijah_query: %s.\n", err);
+	        return GDK_FAIL;
+	    }
+	} else {
+	    if ( !(mil=tijahParse(optbat,startNodes_name,&err)) ) {
+                GDKerror("CMDtijah_query: %s.\n", err);
+	        return GDK_FAIL;
+	    }
 	}
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish tijahParse.\n");
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start MIL script.\n");
