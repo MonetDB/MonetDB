@@ -9,7 +9,21 @@
 typedef struct tjc_config {
 	char* dotFile;
 	char* milFile;
-	/* */
+	short debug;
+	char timing;
+	char* ftindex;
+	char* irmodel;
+	char* orcomb;
+	char* andcomb;
+	char* upprop;
+	char* downprop;
+	char* prior;
+	double scorebase;
+	double lambda;
+	double okapik1;
+	double okapib;
+	char returnall;
+	char rmoverlap;
 	char errBUFF[1024];
 	char milBUFF[MAXMILSIZE];
 	char dotBUFF[MAXMILSIZE];

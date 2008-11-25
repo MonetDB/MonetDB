@@ -14,7 +14,7 @@
 #define TJPNODE_MAXCHILD 2
 #define TJPTREE_MAXSIZE 250
 #define TJPNODELIST_MAXSIZE 20
-#define TJQTERMLIST_MAXSIZE 20
+#define TJQTERMLIST_MAXSIZE 50
 
 typedef enum TJqtype_t TJqtype_t;
 

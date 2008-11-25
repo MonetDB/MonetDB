@@ -119,6 +119,22 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->milFile	= NULL;
     tjc_c->milBUFF[0]	= 0;
     tjc_c->dotBUFF[0]	= 0;
+    tjc_c->debug	= 0;
+    tjc_c->timing	= 0;
+    tjc_c->ftindex	= "DFLT_FT_INDEX";
+    tjc_c->irmodel	= "NLLR";
+    tjc_c->orcomb	= "SUM";
+    tjc_c->andcomb	= "PROD";
+    tjc_c->upprop	= "MAX";
+    tjc_c->downprop	= "MAX";
+    tjc_c->prior	= NULL;
+    tjc_c->scorebase	= 0.0;
+    tjc_c->lambda	= 0.8;
+    tjc_c->okapik1	= 1.2;
+    tjc_c->okapib	= 0.75;
+    tjc_c->returnall	= 0;
+    tjc_c->rmoverlap	= 0;
+
     /*
      * end of initialization
      */
@@ -129,232 +145,86 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
         str optVal  = (str)BUNtail(optbati,p);
 
         if ( strcmp(optName,"debug") == 0 ) {
-	    // if ( 0 ) {
-	        // /* set in serialize options for now, is earlier */
-	        // int v = atoi(optVal);
-	        // SET_TDEBUG(v);
-	        // if (TDEBUG(1)) stream_printf(GDKout,"# old_main: setting debug value to %d.\n",v);
-	    // }
-        } else if (strcmp(optName, "newversion") == 0) {
-        } else if (strcmp(optName, "_query") == 0) {
-	        /* OK, this is the regular query transfer option */
+	    tjc_c->debug = atoi(optVal);
 	} else if ( strcmp(optName,"timing") == 0 ) {
-            // if ( strcasecmp(optVal,"TRUE") == 0 ) {
-                // MILPRINTF(MILOUT, "timing := TRUE;\n" );
-            // } else {
-                // MILPRINTF(MILOUT, "timing := FALSE;\n" );
-            // }
-	} else if ( strcmp(optName,"milfile") == 0 ) {
-		tjc_c->milFile = GDKstrdup(optVal);
+            if ( strcasecmp(optVal,"TRUE") == 0 ) 
+                tjc_c->timing = 1;
+	} else if ( strcmp(optName,"milfile") == 0 ) { 
+	    tjc_c->milFile = GDKstrdup(optVal);
 	} else if ( strcmp(optName,"dotfile") == 0 ) {
-		tjc_c->dotFile = GDKstrdup(optVal);
+	    tjc_c->dotFile = GDKstrdup(optVal);
 	} else if ( strcmp(optName,"ft-index") == 0 ) {
-            // parserCtx->collection = optVal;
-	} else if ( strcmp(optName,"fragments") == 0 ) {
-	      // if (TDEBUG(1)) stream_printf(GDKout,"# old_main: ignoring fragmentation setting.\n");
-	} else if ( strcmp(optName,"background_collection") == 0 ) {
-            // strcpy(background_collection, optVal);
-#if 0
-        } else if ( strcmp(optName,"returnNumber") == 0 ) {
-            // int xx = atoi( optVal );
-	    // if ( xx < 0 ) {
-	    	// incomplete should check if number is OK
-	    // }
-#endif
-        } else if ( strcmp(optName,"algebraType") == 0 ) {
-            // if ( strcasecmp( optVal, "ASPECT" ) == 0 ) {
-                // algebra_type = ASPECT;
-            // } else if ( strcasecmp( optVal, "COARSE" ) == 0 ) {
-                // algebra_type = COARSE;
-            // } else if ( strcasecmp( optVal, "COARSE2" ) == 0 ) {
-                // algebra_type = COARSE2;
-            // }
-        
-        } else if ( strcmp(optName,"ir-model") == 0 ) { /* CHANGED: was txtmodel_model */
-            if ( strcasecmp(optVal,"BOOL") == 0 ) {
-                // txt_retr_model->model = MODEL_BOOL;
-            } else if ( strcasecmp(optVal,"LM") == 0 ) {
-                // txt_retr_model->model = MODEL_LM;
-                // qenv_scorebase = "1";
+            tjc_c->ftindex = GDKstrdup(optVal);
+        } else if ( strcmp(optName,"ir-model") == 0 ) {
+            if ( strcasecmp(optVal,"LM") == 0 ) {
+                tjc_c->irmodel = "LM";
+                tjc_c->scorebase = 1.0;
             } else if ( strcasecmp(optVal,"LMS") == 0 ) {
-                // txt_retr_model->model = MODEL_LMS;
-                // qenv_scorebase = "1";
-            } else if ( strcasecmp(optVal,"TFIDF") == 0 ) {
-                // txt_retr_model->model = MODEL_TFIDF;
+                tjc_c->irmodel = "LMs";
+                tjc_c->scorebase = 1.0;
             } else if ( strcasecmp(optVal,"OKAPI") == 0 ) {
-                // txt_retr_model->model = MODEL_OKAPI;
-            } else if ( strcasecmp(optVal,"GPX") == 0 ) {
-                // txt_retr_model->model = MODEL_GPX;
-            } else if ( strcasecmp(optVal,"LMA") == 0 ) {
-                // txt_retr_model->model = MODEL_LMA;
-            } else if ( strcasecmp(optVal,"LMSE") == 0 ) {
-                // txt_retr_model->model = MODEL_LMSE;
-            } else if ( strcasecmp(optVal,"LMVFLT") == 0 ) {
-                // txt_retr_model->model = MODEL_LMVFLT;
-            } else if ( strcasecmp(optVal,"LMVFLT") == 0 ) {
-                // txt_retr_model->model = MODEL_LMVLIN;
+                tjc_c->irmodel = "OKAPI";
             } else if ( strcasecmp(optVal,"NLLR") == 0 ) {
-                // txt_retr_model->model = MODEL_NLLR;
-            } else if ( strcasecmp(optVal,"PRF") == 0 ) {
-                // txt_retr_model->model = MODEL_PRF;
+                tjc_c->irmodel = "NLLR";
+            } else if ( strcasecmp(optVal,"PRFube") == 0 ) {
+                tjc_c->irmodel = "PRFube";
             }
-            
-        } else if ( strcmp(optName,"txtmodel_orcomb") == 0 ) {
+        } else if ( strcmp(optName,"orcomb") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                // txt_retr_model->or_comb = OR_SUM;
+                tjc_c->orcomb = "SUM";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                // txt_retr_model->or_comb = OR_MAX;
+                tjc_c->orcomb = "MAX";
             } else if ( strcasecmp(optVal,"PROB") == 0 ) {
-                // txt_retr_model->or_comb = OR_PROB;
+                tjc_c->orcomb = "PROB";
             } else if ( strcasecmp(optVal,"EXP") == 0 ) {
-                // txt_retr_model->or_comb = OR_EXP;
+                tjc_c->orcomb = "EXP";
             } else if ( strcasecmp(optVal,"MIN") == 0 ) {
-                // txt_retr_model->or_comb = OR_MIN;
+                tjc_c->orcomb = "MIN";
             } else if ( strcasecmp(optVal,"PROD") == 0 ) {
-                // txt_retr_model->or_comb = OR_PROD;
+                tjc_c->orcomb = "PROD";
             }
-        } else if ( strcmp(optName,"txtmodel_andcomb") == 0 ) {
+        } else if ( strcmp(optName,"andcomb") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                // txt_retr_model->and_comb = AND_SUM;
+                tjc_c->andcomb = "SUM";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                // txt_retr_model->and_comb = AND_MAX;
+                tjc_c->andcomb = "MAX";
             } else if ( strcasecmp(optVal,"PROB") == 0 ) {
-                // txt_retr_model->and_comb = AND_PROB;
+                tjc_c->andcomb = "PROB";
             } else if ( strcasecmp(optVal,"EXP") == 0 ) {
-                // txt_retr_model->and_comb = AND_EXP;
+                tjc_c->andcomb = "EXP";
             } else if ( strcasecmp(optVal,"MIN") == 0 ) {
-                // txt_retr_model->and_comb = AND_MIN;
+                tjc_c->andcomb = "MIN";
             } else if ( strcasecmp(optVal,"PROD") == 0 ) {
-                // txt_retr_model->and_comb = AND_PROD;
+                tjc_c->andcomb = "PROD";
             }
-        } else if ( strcmp(optName,"txtmodel_upprop") == 0 ) {        
+        } else if ( strcmp(optName,"upprop") == 0 ) {        
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                // txt_retr_model->up_prop = UP_SUM;
+                tjc_c->upprop = "SUM";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                // txt_retr_model->up_prop = UP_MAX;
-            } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
-                // txt_retr_model->up_prop = UP_WSUMD;
-            } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
-                // txt_retr_model->up_prop = UP_WSUMA;
+                tjc_c->upprop = "MAX";
             }
-
-        } else if ( strcmp(optName,"txtmodel_downprop") == 0 ) {
+        } else if ( strcmp(optName,"downprop") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                // txt_retr_model->down_prop = DOWN_SUM;
+                tjc_c->downprop = "SUM";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                // txt_retr_model->down_prop = DOWN_MAX;
-            } else if ( strcasecmp(optVal,"WSUMD") == 0 ) {
-                // txt_retr_model->down_prop = DOWN_WSUMD;
-            } else if ( strcasecmp(optVal,"WSUMA") == 0 ) {
-                // txt_retr_model->down_prop = DOWN_WSUMA;
+                tjc_c->downprop = "MAX";
             }
-            
-        } else if ( strcmp(optName,"ir-model-param1") == 0) {
-            // txt_retr_model->param1 = atof( optVal );
-        } else if ( strcmp(optName,"ir-model-param2") == 0) {
-            // txt_retr_model->param2 = atof( optVal );
-        } else if ( strcmp(optName,"ir-model-param3") == 0) {
-            // txt_retr_model->param3 = atof( optVal );
         } else if ( strcmp(optName,"collection-lambda") == 0) { 
-            // txt_retr_model->param1 = atof( optVal );
-	    // qenv_c_lambda = optVal;
+                tjc_c->lambda = atof (optVal);
         } else if ( strcmp(optName,"okapi-k1") == 0 ) {
-            // txt_retr_model->param1 = atof( optVal );
-            // qenv_okapi_k1 = optVal;
+                tjc_c->okapik1 = atof (optVal);
         } else if ( strcmp(optName,"okapi-b") == 0 ) {
-            // txt_retr_model->param2 = atof( optVal );
-            // qenv_okapi_b = optVal;
-        } else if ( strcmp(optName,"txtmodel_returnall") == 0 ) {
-            // if ( strcasecmp(optVal,"TRUE") == 0 ) {
-                // return_all = TRUE;
-            // } else {
-                // return_all = FALSE;
-            // }
-        
-        } else if ( strcmp(optName,"preprocessing_type") == 0 ) {
-	    /*
-            if ( strcasecmp(optVal,"PLAIN") == 0 ) 
-                preproc_type = PLAIN;
-            else if ( strcasecmp(optVal,"NO_MODIFIER") == 0 ) 
-                preproc_type = NO_MODIFIER;
-            else if ( strcasecmp(optVal,"VAGUE_NO_PHRASE") == 0 ) 
-                preproc_type = VAGUE_NO_PHRASE;
-            else if ( strcasecmp(optVal,"STRICT_NO_PHRASE") == 0 ) 
-                preproc_type = STRICT_NO_PHRASE;
-            else if ( strcasecmp(optVal,"VAGUE") == 0 ) 
-                preproc_type = VAGUE_MODIF;
-            else if ( strcasecmp(optVal,"STRICT") == 0 ) 
-                preproc_type = STRICT_MODIF;
-	    */
-        } else if ( strcmp(optName,"generator_type") == 0 ) {
-	    /*
-            if ( strcasecmp(optVal,"BASIC") == 0 ) 
-                rewrite_type = BASIC;
-            if ( strcasecmp(optVal,"SIMPLE") == 0 ) 
-                rewrite_type = SIMPLE;
-            if ( strcasecmp(optVal,"ADVANCED") == 0 ) 
-                rewrite_type = ADVANCED;
-            */
-        } else if ( strstr( optName, "equivalence_class" ) ) {
-            // if ( !eq_init ) {
-                // MILPRINTF(MILOUT, "tj_initEquivalences();\n" );
-                // eq_init = TRUE;
-            // } 
-            // MILPRINTF(MILOUT, "var eqclass := new(void, str).seqbase(oid(0));\n" );
-            // char delims[] = ", ";
-            // char *result = NULL;
-            // result = strtok( optVal, delims );
-            // while( result != NULL ) {
-                // MILPRINTF(MILOUT, "eqclass.append(\"%s\");\n", result );
-                // result = strtok( NULL, delims );
-            // }
-            // MILPRINTF(MILOUT, "tj_addEquivalenceClass( eqclass );\n" );
-            
-        } else if ( strcmp(optName,"use_equivalences") == 0 ) {
-            // if ( strcasecmp(optVal,"TRUE") == 0 ) { 
-                // strcpy(txt_retr_model->e_class, "TRUE");
-            // } else {
-                // strcpy(txt_retr_model->e_class, "FALSE");
-            // }
-            
-        } else if ( strcmp(optName,"sra_tracefile") == 0 ) {
-            // MILPRINTF(MILOUT, "trace     := TRUE;\n" );
-            // MILPRINTF(MILOUT, "tracefile := \"%s\";\n", optVal );
-           //  
- /*       } else if (strcmp(optName, "scoreBase") == 0) {
-            // if (strcasecmp(optVal, "ONE") == 0) {
-                // qenv_scorebase = "0";
-            // } else {
-                // qenv_scorebase = "1";
-            // } */
-        } else if (strcmp(optName, "stem_stop_query") == 0) {
-            // if (strcasecmp(optVal, "TRUE") == 0) {
-                // stem_stop_query = TRUE;
-            // } else {
-                // stem_stop_query = FALSE;
-            // }
-            
+                tjc_c->okapib = atof (optVal);
+        } else if ( strcmp(optName,"return-all") == 0 ) {
+            if ( strcasecmp(optVal,"TRUE") == 0 ) 
+                tjc_c->returnall = 1;
         } else if (strcmp(optName, "prior") == 0) {
-            // if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
-                // txt_retr_model->prior_type  = LENGTH_PRIOR;
-            // } else if (strcasecmp(optVal, "LOG_LENGTH_PRIOR") == 0) {
-                // txt_retr_model->prior_type  = LOG_LENGTH_PRIOR;
-            // } else {
-                // txt_retr_model->prior_type  = NO_PRIOR;
-            // }
-            
+            if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
+                tjc_c->prior = "ls";
+            }
         }  else if (strcmp(optName, "rmoverlap") == 0) {
-           // if (strcasecmp(optVal, "TRUE") == 0) {
-                // txt_retr_model->rmoverlap = TRUE;
-           // } else {
-               // txt_retr_model->rmoverlap=FALSE;
-           // }
-	} else if (strcmp(optName, "returnNumber") == 0) {
-	    // ignore, is handled by milprint_summer
-        } else if (strcmp(optName, "term-proximity") == 0) {
-                // qenv_prox_val = (char*)strdup(optVal);
-        } else if (strcmp(optName, "feedback-docs") == 0) {
-                // qenv_fb_val = (char*)strdup(optVal);
+           if (strcasecmp(optVal, "TRUE") == 0) 
+                tjc_c->rmoverlap = 1;
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }

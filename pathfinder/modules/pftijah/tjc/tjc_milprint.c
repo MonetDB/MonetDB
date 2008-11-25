@@ -27,6 +27,51 @@ void assign_scopes (TJpnode_t *node, short node_scope[]) {
     }
 }
 
+void milprint_init (tjc_config *tjc_c) {
+    if (tjc_c->debug) {
+	TJCPRINTF(MILOUT,"trace := TRUE;\n");
+    }
+    if (tjc_c->timing) {
+	TJCPRINTF(MILOUT,"timing := TRUE;\n");
+    }
+    if (tjc_c->returnall) {
+        TJCPRINTF(MILOUT,"returnAllElements := TRUE;\n");
+    } 
+    TJCPRINTF(MILOUT,"\n");
+}
+
+void milprint_end (tjc_config *tjc_c) {
+    TJCPRINTF(MILOUT,"\n");
+    if (tjc_c->rmoverlap) {
+	TJCPRINTF(MILOUT,"nexi_result := rm_overlap(nexi_result, qenv);\n");
+    }
+    if (tjc_c->prior) {
+	TJCPRINTF(MILOUT,"nexi_result := prior_%s(nexi_result, qenv);\n", tjc_c->prior);
+    }
+    TJCPRINTF(MILOUT,"nexi_result := nexi_result.tsort();\n");
+    if (tjc_c->debug) {
+	TJCPRINTF(MILOUT,"trace := FALSE;\n");
+    }
+    if (tjc_c->timing) {
+	TJCPRINTF(MILOUT,"timing := FALSE;\n");
+    }
+    if (tjc_c->returnall) {
+        TJCPRINTF(MILOUT,"returnAllElements := FALSE;\n");
+    } 
+}
+
+void milprint_qenv (tjc_config *tjc_c) {
+    TJCPRINTF(MILOUT,"var qenv := new(oid, str);\n");    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_FTINAME, \"%s\");\n", tjc_c->ftindex);    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_FTIBGNAME, \"%s\");\n", tjc_c->ftindex);    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_SCOREBASE, \"%f\");\n", tjc_c->scorebase);    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_C_LAMBDA, \"%f\");\n", tjc_c->lambda);    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_RECURSIVE_TAGS, \"0\");\n");    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_OKAPI_K1, \"%f\");\n", tjc_c->okapik1);    
+    TJCPRINTF(MILOUT,"qenv.insert(QENV_OKAPI_B, \"%f\");\n", tjc_c->okapib);
+    TJCPRINTF(MILOUT,"\n");
+}
+
 void milprint_qnode (tjc_config *tjc_c, TJqnode_t *qn, short nid) {
     int c;
     TJCPRINTF(MILOUT,"var R%d := new(str,dbl);\n", nid);    
@@ -57,12 +102,12 @@ void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short
 	    child[c] = 0;
 
     // print node 	
-    switch (node->kind) {
+    switch (node->kind) { 
 	case p_desc :
-	    TJCPRINTF(MILOUT,"var R%d := p_contained_by(R%d, R%d, qenv);\n", nid, child[1], child[0]);
+	    TJCPRINTF(MILOUT,"var R%d := p_contained_by_%s(R%d, R%d, qenv);\n", nid, tjc_c->downprop, child[1], child[0]);
 	    break;
 	case p_anc :
-	    TJCPRINTF(MILOUT,"var R%d := p_containing(R%d, R%d, qenv);\n", nid, child[1], child[0]);
+	    TJCPRINTF(MILOUT,"var R%d := p_containing_%s(R%d, R%d, qenv);\n", nid, tjc_c->upprop, child[1], child[0]);
 	    break;
 	case p_tag :
 	    if (strcmp (node->sem.str, "*") == 0)
@@ -77,16 +122,16 @@ void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short
 	    TJCPRINTF(MILOUT,"var R%d := select_startnodes(startNodes, qenv);\n", nid);
 	    break;
 	case p_about :
-	    TJCPRINTF(MILOUT,"var R%d := p_containing_q_NLLR(R%d, R%d, qenv);\n", nid, child[0], child[1]);
+	    TJCPRINTF(MILOUT,"var R%d := p_containing_q_%s(R%d, R%d, qenv);\n", nid, tjc_c->irmodel, child[0], child[1]);
 	    break;
 	case p_query :
 	    milprint_qnode (tjc_c, node->sem.qnode, nid);
 	    break;
 	case p_and :
-	    TJCPRINTF(MILOUT,"var R%d := and_sum(R%d, R%d);\n", nid, child[0], child[1]);
+	    TJCPRINTF(MILOUT,"var R%d := and_%s(R%d, R%d);\n", nid, tjc_c->andcomb, child[0], child[1]);
 	    break;
 	case p_or :
-	    TJCPRINTF(MILOUT,"var R%d := or_sum(R%d, R%d);\n", nid, child[0], child[1]);
+	    TJCPRINTF(MILOUT,"var R%d := or_%s(R%d, R%d);\n", nid, tjc_c->orcomb, child[0], child[1]);
 	    break;
 	case p_union :
 	    TJCPRINTF(MILOUT,"var R%d := set_union(R%d, R%d, qenv);\n", nid, child[0], child[1]);
@@ -129,8 +174,11 @@ char* milprint (tjc_config *tjc_c, TJpnode_t *root)
     }
     assign_scopes (root, node_scope);
     //for (c = 0; c < num; c++) TJCPRINTF(MILOUT,"node: %d, scope: %d\n", c, node_scope[c]);
-
+    
+    milprint_init (tjc_c);
+    milprint_qenv (tjc_c);
     milprint_node (tjc_c, root, node_scope, node_printed);
+    milprint_end (tjc_c);
 
     return &tjc_c->milBUFF[0];
 }
