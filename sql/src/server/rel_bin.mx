@@ -26,6 +26,7 @@
 #include "rel_semantic.h"
 #include "sql_statement.h"
 
+extern stmt * exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel);
 extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 extern stmt * output_rel_bin(mvc *sql, sql_rel *rel);
 
@@ -130,7 +131,7 @@ char *compare_func( comp_type t )
 	}
 }
 
-static stmt *
+stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel) 
 {
 	stmt *s = NULL;
@@ -146,7 +147,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			atom *a = e->l;
 			s = stmt_atom(atom_dup(a));
 		} else if (e->r) { 		/* parameters */
-			s = stmt_var(e->r, e->f, 0, e->flag);
+			s = stmt_var(_strdup(e->r), e->f, 0, e->flag);
 		} else { 			/* arguments */
 			s = stmt_varnr(e->flag, e->f);
 		}
@@ -605,7 +606,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2) {
 				/* handle select expressions */
-				assert(0);
+				//assert(0);
 				if (s->h == join->h) {
 					join = stmt_semijoin(join,s);
 				} else {

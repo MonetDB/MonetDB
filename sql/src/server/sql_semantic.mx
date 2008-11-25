@@ -34,6 +34,7 @@
 #define type_value	0
 #define type_predicate	1
 /* cardinality expected by enclosing operator */
+#define card_none	-1	/* psm call doesn't return anything */
 #define card_value	0
 #define card_row 	1
 #define card_column 	2
@@ -1190,6 +1191,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 			}
 			st = semantic(sql, scp, sym);
 			if (!st) { 
+				stack_pop_frame(sql);
 				return NULL;
 			}
 			stack_push_view(sql, name, st);

@@ -26,5 +26,5 @@ ORDER BY fieldID ASC LIMIT 1);
 END;
 
 
-drop function f2();
 drop function f3();
+drop function f2();

@@ -2199,6 +2199,9 @@ stmt_Nop(stmt *ops, sql_subfunc *op)
 		s->nrcols = o->nrcols;
 		s->key = o->key;
 		s->aggr = o->aggr;
+	} else {
+		s->nrcols = 0;
+		s->key = 1;
 	}
 	return s;
 }

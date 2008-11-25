@@ -529,6 +529,8 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate);
+	int create = (!instantiate && sql->emode != m_deps);
+	char emode = sql->emode;
 
 	dlist *columns = trigger_event->data.lval;
 	char *old_name = NULL, *new_name = NULL; 
@@ -547,18 +549,18 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 				new_name = n;
 		}
 	}
-	if (!instantiate && !schema_privs(sql->role_id, ss)) 
+	if (create && !schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if ((trigger = mvc_bind_trigger(sql, ss, tname )) != NULL && !instantiate) 
+	if (create && (trigger = mvc_bind_trigger(sql, ss, tname )) != NULL) 
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
 	
-	if (!instantiate && !(t = mvc_bind_table(sql, ss, table_name)))
+	if (create && !(t = mvc_bind_table(sql, ss, table_name)))
 		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
-	if (!instantiate && isView(t)) 
+	if (create && isView(t)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 	
 	
-	if (!instantiate) {
+	if (create) {
 		int event = (trigger_event->token == SQL_INSERT)?0:
 			    (trigger_event->token == SQL_DELETE)?1:2;
 		int orientation = triggered_action->h->data.i_val;
@@ -569,19 +571,26 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 		trigger = mvc_create_trigger(sql, t, tname, time, orientation, 
 			event, old_name, new_name, condition, q);
 	}
-	if (!instantiate) {
- 		scp = scope_open(NULL);
+	if (!create)
+		t = mvc_bind_table(sql, ss, table_name);
+
+	if (create) {
+		stack_push_frame(sql, "OLD-NEW");
 		/* we need to add the old and new tables */
 		if (new_name)
-			scope_add_table_columns(sql, scp, t, new_name, 0);
+			stack_push_table(sql, new_name, t);
 		if (old_name)
-			scope_add_table_columns(sql, scp, t, old_name, 0);
+			stack_push_table(sql, old_name, t);
 	}
-	sq = sequential_block(sql, scp, NULL, stmts, NULL, 1);
-	if (!instantiate)
-		scope_close(scp);
+	(void)scp;
+	if (create) /* for subtable we only need direct dependencies */
+		sql->emode = m_deps;
+	sq = sequential_block(sql, /*scp*/NULL, NULL, stmts, NULL, 1);
+	sql->emode = emode;
+	if (create)
+		stack_pop_frame(sql);
 	
-	if (sq && !instantiate) {
+	if (sq && create) {
 		list *col_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 		list *func_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);
 		list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
@@ -735,6 +744,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate || !persistent);
+	int create = (!instantiate && sql->emode != m_deps);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
@@ -744,11 +754,12 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 
 	(void) check;		/* Stefan: unused!? */
 
-	if ((t = mvc_bind_table(sql, s, name)) != NULL && !instantiate) {
+	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
 		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
-	} else if (!instantiate && !schema_privs(sql->role_id, s)) {
+	} else if (create && !schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
+		char emode = sql->emode;
 		exp_kind ek = {type_value, card_relation, TRUE};
 		stmt *sq = NULL;
 		char *q = QUERY(sql->scanner);
@@ -762,17 +773,20 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 		}
 
+		if (create) /* for subtable we only need direct dependencies */
+			sql->emode = m_deps;
 		sq = scope_subtable(sql, NULL, query, ek );
+		sql->emode = emode;
 		if (!sq)
 			return NULL;
 
-		if (!instantiate) {
+		if (create) {
 			t = mvc_create_view(sql, s, name, q, 0);
 			as_subquery( sql, t, sq, column_spec );
 		}
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( sql, name, sq, column_spec);
-		if (!instantiate && sq) {
+		if (create && sq && persistent) {
 			list *view_id_l = stmt_list_dependencies(sq, VIEW_DEPENDENCY);
 			list *id_l = stmt_list_dependencies(sq, COLUMN_DEPENDENCY);
 			list *func_id_l = stmt_list_dependencies(sq, FUNC_DEPENDENCY);

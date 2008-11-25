@@ -459,6 +459,7 @@ sql_insert_idxs(mvc *sql, sql_table *t, stmt **inserts, list *l)
 	return res;
 }
 
+/*
 void
 scope_add_inserted( scope *scp, stmt **inserts, sql_table *t, char *name) 
 {
@@ -474,6 +475,7 @@ scope_add_inserted( scope *scp, stmt **inserts, sql_table *t, char *name)
 		table_add_column(tv, inserted, NULL, c->base.name);
 	}
 }
+*/
 
 static int
 sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
@@ -489,18 +491,20 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 		int *trigger_id = NEW(int);
 		*trigger_id = trigger->base.id;
 
+		stack_push_frame(sql, "OLD-NEW");
 		if (trigger->event == 0) { 
-			scope *scp = scope_open(NULL);
+			//scope *scp = scope_open(NULL);
 			stmt *s = NULL;
 			char *n = trigger->new_name;
 
 			/* add name for the 'inserted' to the scope */
 			if (!n) n = "new"; 
 	
-			scope_add_inserted(scp, inserts, t, n);
-			s = scope_sqlparse(sql, scp, trigger->statement, m_instantiate);
+			//scope_add_inserted(scp, inserts, t, n);
+			stack_add_inserted(sql, inserts, n, t);
+			s = scope_sqlparse(sql, NULL /*scp*/, trigger->statement, m_instantiate);
 
-			scope_close(scp);
+			//scope_close(scp);
 			
 			if (!s) 
 				return 0;
@@ -509,6 +513,7 @@ sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
 			else
 				list_prepend(l, s);
 		}
+		stack_pop_frame(sql);
 	}
 	return res;
 }

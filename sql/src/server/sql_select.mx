@@ -3723,7 +3723,7 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 }
 
 static stmt *
-select_into( mvc *sql, SelectNode *sn, stmt *s) 
+sql_select_into( mvc *sql, SelectNode *sn, stmt *s) 
 {
 	/* SELECT ... INTO var_list */
 	if (sn->into) {
@@ -3838,7 +3838,7 @@ sql_simple_select(mvc *sql, scope *scp, SelectNode *sn )
 		stmt_destroy(subset);
 	list_destroy(sl);
 	s = stmt_list(rl);
-	s = select_into(sql, sn, s);
+	s = sql_select_into(sql, sn, s);
 	if (!s)
 		return sql_error(sql, 02, "SELECT: subquery result missing");
 	return s;
@@ -4278,7 +4278,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, exp_kind ek)
 	} else if (s && order && scp->p && ek.card == card_relation) {
 		s = sql_reorder(order, s);
 	}
-	s = select_into(sql, sn, s);
+	s = sql_select_into(sql, sn, s);
 	return s;
 }
 

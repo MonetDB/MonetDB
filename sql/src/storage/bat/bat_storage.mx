@@ -400,16 +400,21 @@ load_delta(sql_delta *bat, int bid, int ubid, int type)
 	BAT *b, *u;
 
 	b = quick_descriptor(bid);
+	if (!b)
+		return LOG_ERR;
 	bat->bid = temp_create(b);
 	bat->ibase = BATcount(b);
 	bat->cnt = bat->ibase; 
 	
-	u = quick_descriptor(ubid);
-	if (!u) {
+	if (ubid) {
+		u = quick_descriptor(ubid);
+	} else {
 		u = bat_new(TYPE_oid, type, 0);
 		bat_set_access(u, BAT_READ);
 		destroy = 1;
 	}
+	if (!u)
+		return LOG_ERR;
 	bat->ubid = temp_create(u);
 	if (destroy)
 		bat_destroy(u);

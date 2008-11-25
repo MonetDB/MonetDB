@@ -49,9 +49,13 @@
 #define m_inplace 1 
 #define m_execute 2
 #define m_prepare 3
-#define m_instantiate 4
-#define m_explain 5 
-#define m_plan 6 
+#define m_explain 4 
+#define m_plan 5 
+
+/* special modes for function/procedure and view instantiation and
+   dependency generation */
+#define m_instantiate 6
+#define m_deps 7
 
 /* different query execution modifiers (emod) */
 #define mod_none 0
@@ -209,8 +213,10 @@ extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db
 
 /* variable management */
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
+extern void stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type);
 extern void stack_push_view(mvc *sql, char *name, struct stmt *var);
 extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
+
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
@@ -218,6 +224,7 @@ extern sql_subtype *stack_find_type(mvc *sql, char *name);
 extern struct stmt *stack_find_view(mvc *sql, char *name);
 extern sql_rel *stack_find_rel_view(mvc *sql, char *name);
 extern struct stmt *stack_find_var(mvc *sql, char *name);
+extern sql_rel *stack_find_rel_var(mvc *sql, char *name);
 /* find var in current frame */
 extern int frame_find_var(mvc *sql, char *name);
 extern int stack_find_frame(mvc *sql, char *name);
@@ -1394,6 +1401,21 @@ stack_push_var(mvc *sql, char *name, stmt *var, sql_subtype *type)
 }
 
 void 
+stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type)
+{
+	if (sql->topvars == sql->sizevars) {
+		sql->sizevars <<= 1;
+		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	}
+	sql->vars[sql->topvars].s = rel_dup(var);
+	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].value.vtype = 0;
+	sql->vars[sql->topvars].type = *type;
+	sql->vars[sql->topvars].view = 0;
+	sql->topvars++;
+}
+
+void 
 stack_push_view(mvc *sql, char *name, stmt *var)
 {
 	if (sql->topvars == sql->sizevars) {
@@ -1549,6 +1571,19 @@ stack_find_var(mvc *sql, char *name)
 		if (sql->vars[i].s && !sql->vars[i].view &&
 			strcmp(sql->vars[i].name, name)==0)
 			return sql->vars[i].s;
+	}
+	return NULL;
+}
+
+sql_rel *
+stack_find_rel_var(mvc *sql, char *name)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && !sql->vars[i].view &&
+			strcmp(sql->vars[i].name, name)==0)
+			return rel_dup(sql->vars[i].s);
 	}
 	return NULL;
 }

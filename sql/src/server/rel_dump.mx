@@ -223,10 +223,12 @@ rel_print_(mvc *sql, sql_rel *rel, int depth)
 		if (rel->name) {
 			sql_table *t = rel->l;
 			print_indent(sql, depth);
-			printf("table(%s.%s) as %s", 
-				t->s->base.name,
-				t->base.name,
-				rel->name);
+			if (t->s)
+				printf("table(%s.%s)", 
+					t->s->base.name, t->base.name);
+			else
+				printf("table(%s)", t->base.name);
+			printf(" as %s", rel->name);
 		}
 		if (rel->exps) {
 			printf(" aliases");

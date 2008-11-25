@@ -26,7 +26,10 @@
 #include "rel_semantic.h"
 #include "sql_semantic.h"
 
-extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek );
+extern void stack_push_table(mvc *sql, char *tname, sql_table *t);
+extern void stack_add_inserted(mvc *sql, stmt **inserts, char *tname, sql_table *t);
+
+extern stmt *select_into(mvc *sql, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
 extern stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
@@ -49,45 +52,135 @@ extern stmt ** update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlis
 #include "sql_env.h"
 #include "sql_updates.h"
 
+void
+stack_push_table(mvc *sql, char *tname, sql_table *t)
+{
+	if (mvc_debug_on(sql,16384)) {
+		sql_rel *r = rel_basetable(t, tname );
+		
+		stack_push_rel_view(sql, tname, r);
+	} else {
+		stmt *s, *ts = stmt_basetable(t, tname);
+		list *l = create_stmt_list();
+		node *n;
+
+		for (n = t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+			stmt *sc = stmt_bat(c, stmt_dup(ts), 0);
+	
+			list_append(l, sc);
+		}
+		stmt_destroy(ts);
+		s = stmt_list(l);
+		s = stmt_table(s, 1);
+		stack_push_view(sql, tname, s);
+	}
+}
+
+void
+stack_add_inserted( mvc *sql, stmt **inserts, char *name, sql_table *t) 
+{
+	node *n;
+	if (mvc_debug_on(sql,16384)) {
+		sql_rel *r = rel_basetable(t, name );
+		
+		stack_push_rel_view(sql, name, r);
+	} else {
+		list *l = create_stmt_list();
+		stmt *s;
+
+		for (n = t->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data;
+			char *cn = _strdup(c->base.name);
+			stmt *inserted = stmt_dup(inserts[c->colnr]->op2.stval);
+
+			inserted = stmt_alias(inserted, _strdup(name), cn);
+			list_append(l, inserted);
+		}
+		s = stmt_list(l);
+		s = stmt_table(s, 1);
+		stack_push_view(sql, name, s);
+	}
+}
+
+
 static stmt *
-rel_scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek)
+_subquery(mvc *sql, symbol *sq, exp_kind ek)
 {
 	stmt *s = NULL;
 
-	if (mvc_debug_on(sql,16384)) {
-		int status = sql->session->status;
-		sql_rel *r = rel_subquery(sql, NULL, sq, ek);
-		if (!r && scp) {
-			sql_table *t;
+	int status = sql->session->status;
+	sql_rel *r = rel_subquery(sql, NULL, sq, ek);
 
-			sql->errstr[0] = 0;
+	if (!r) {
+		if (!sql->errstr[0]) 
 			sql->session->status = status;
-			/* create rel from scp */
-			assert(list_length(scp->bases) == 1);
-			t = scp->bases->h->data;
-			r = rel_basetable(t, t->base.name );
-			r = rel_subquery(sql, r, sq, ek);
+		return NULL;
+	} else {
+		r = rel_optimizer(sql, r);
+		s = rel_bin(sql, r);
+	}
+	return s;
+}
+
+static stmt *
+rel_select_into( mvc *sql, symbol *sq, exp_kind ek) 
+{
+	SelectNode *sn = (SelectNode*)sq;
+	dlist *into = sn->into;
+	/* SELECT ... INTO var_list */
+	stmt *s;
+
+	sn->into = NULL;
+	s = _subquery(sql, sq, ek);
+	if (into && s) {
+		list *rl = s->op1.lval;
+		node *m;
+		dnode *n;
+		list *nl = create_stmt_list();
+
+		assert(s->type == st_list);
+		for (m = rl->h, n = into->h; m && n; m = m->next, n = n->next) {
+			sql_subtype *tpe = NULL;
+			char *nme = n->data.sval;
+			stmt *a = NULL, *v = m->data, *var;
+			int level;
+
+			if ((var=stack_find_var(sql, nme)) == NULL) {
+				list_destroy(rl);
+				list_destroy(nl);
+				return sql_error(sql, 02, "SELECT INTO: variable '%s' unknown", nme);
+			}
+			/* dynamic check for single values */
+			v = stmt_dup(v);
+			if (!v->key) {
+				sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(v));
+				assert(zero_or_one);
+				v = stmt_aggr(v, NULL, zero_or_one, 1);
+			}
+			tpe = tail_type(var);
+			level = stack_find_frame(sql, nme);
+			v = check_types(sql, tpe, v, type_equal); 
+			if (!v) {
+				list_destroy(rl);
+				list_destroy(nl);
+				return NULL;
+			}
+			a = stmt_assign(nme, v, level);
+			list_append(nl, a);
 		}
-		if (!r) {
-			if (!sql->errstr[0]) 
-				sql->session->status = status;
-			return NULL;
-		} else {
-			r = rel_optimizer(sql, r);
-			s = rel_bin(sql, r);
-		}
+		stmt_destroy(s);
+		s = stmt_list(nl);
 	}
 	return s;
 }
 
 /* single value only */
-stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq, exp_kind ek )
+stmt *select_into(mvc *sql, symbol *sq, exp_kind ek )
 {
-	stmt *s = NULL;
-
-	if ((s = rel_scope_subquery(sql, scp, sq, ek)) == NULL)
-		return sql_scope_subquery(sql, scp, sq, ek);
-	return s;
+	if (mvc_debug_on(sql,16384)) 
+		return rel_select_into(sql, sq, ek);
+	return sql_scope_subquery(sql, NULL, sq, ek);
 }
 
 stmt *flat_subquery(mvc *sql, symbol *sq)
@@ -95,7 +188,7 @@ stmt *flat_subquery(mvc *sql, symbol *sq)
 	stmt *s = NULL;
 	exp_kind ek = {type_value, card_relation, TRUE};
 
-	if ((s = rel_scope_subquery(sql, NULL, sq, ek)) == NULL)
+	if ((s = _subquery(sql, sq, ek)) == NULL)
 		return sql_flat_subquery(sql, sq);
 	if (s && s->type == st_ordered) {
 		stmt *n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));
@@ -105,12 +198,71 @@ stmt *flat_subquery(mvc *sql, symbol *sq)
 	return s;
 }
 
+static stmt *
+_value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
+{
+	int is_last = 0;
+	stmt *s = NULL;
+	int status = sql->session->status;
+	sql_rel *r = NULL;
+	sql_exp *e = rel_value_exp2(sql, &r, sq, f, ek, &is_last);
+
+	if (!r && !e) {
+		if (!sql->errstr[0]) 
+			sql->session->status = status;
+		return NULL;
+	} else {
+		if (r) {
+			r = rel_optimizer(sql, r);
+			s = rel_bin(sql, r);
+		} else {
+			s = exp_bin(sql, e, NULL, NULL, NULL, NULL);
+		}
+
+		if (s && s->type == st_list && !s->op1.lval->h) {
+			assert(0);
+			stmt_destroy(s);
+			s = NULL;
+		}
+
+		if (r)
+			rel_destroy(r);
+		if (!r && e)
+			exp_destroy(e);
+	}
+	/* we need a relation */
+	if (ek.card == card_relation && s && s->type == st_ordered) {
+		stmt *order = stmt_dup(s->op1.stval);
+		stmt *ns = stmt_dup(s->op2.stval);
+			
+		stmt_destroy(s);
+		s = sql_reorder(order, ns);
+	}
+	if (ek.card == card_relation && s)
+		s = stmt_table(s, 1);
+	/* single column */
+	if (ek.card != card_relation && s && s->type == st_list) {
+		stmt *ns = stmt_dup(s->op1.lval->h->data); 
+
+		stmt_destroy(s);
+		s = ns;
+	}
+	/* single value */
+	if (ek.card == card_value && s && !s->key) {
+		sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
+		assert(zero_or_one);
+		s = stmt_aggr(s, NULL, zero_or_one, 1);
+	}
+	return s;
+}
+
 stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd)
 {
-/*
-	if (scp)
-		printf("#value_exp with scope \n");
-*/
+	assert(sql && se);
+	if (mvc_debug_on(sql,16384)) {
+		assert((!scp || list_length(scp->tables) == 0) && !grp && !subset);
+		return _value_exp( sql, se, f, knd);
+	}
 	return sql_value_exp(sql, scp, se, grp, subset, f, knd);
 }
 

@@ -1137,6 +1137,8 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
  * Push joins down, pushes the joins through group by expressions. 
  * When the join is on the group by columns, we can push the joins left
  * under the group by.
+ *
+ * Here we also try to reduce projections.
  */
 sql_rel *
 rel_push_join_down(int *changes, mvc *sql, sql_rel *rel) 
@@ -1146,6 +1148,53 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 
 	(void)sql;
 	*changes = 0;
+
+	/* push join through project(s) */
+	if (0 && is_join(rel->op)) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+
+		if (is_project(l->op) && !rel_is_ref(l) && !rel_is_ref(r)) {
+			node *n;
+			
+			exps = rel->exps;
+			/* here we need to fix aliases */
+			rel->exps = new_exp_list(); 
+			/* for each exp check if we can rename it */
+			for (n = exps->h; n; n = n->next) { 
+				sql_exp *e = n->data, *ne = NULL, *le, *re;
+				sql_rel *prj = l, *nr, *nl;
+	
+				if (e->type == e_cmp) {
+					ne = exp_push_down(sql, e, prj, prj->l);
+	
+					/* can we move it down */
+					if (ne && ne != e) {
+						(*changes)++;
+						nr = prj->l;
+					} else {
+						nr = rel;
+						exp_destroy(ne);
+						ne = exp_dup(e);
+					}
+ 					le = ne->l;
+					re = ne->r;
+					if (re->card >= CARD_AGGR) {
+						nl = rel_push_join(nr, le, re, ne);
+					} else {
+						nl = rel_push_select(nr, le, ne);
+					}
+					if (nl != nr)
+						prj->l = nl;
+				} else {
+					list_append(rel->exps, exp_dup(e));
+				}
+			}
+			list_destroy(exps);
+			return rel;
+		}
+		return rel;
+	}
 	if ((is_join(rel->op) || is_semi(rel->op)) && rel->l) {
 		gb = rel->r;
 		exps = rel->exps;
@@ -1513,7 +1562,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
 	   part done after. */
 
-	if (gp.cnt[op_join] && gp.cnt[op_groupby])
+	if (gp.cnt[op_join] && (gp.cnt[op_project] || gp.cnt[op_groupby]))
 		rel = rewrite(sql, rel, &rel_push_join_down); 
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
