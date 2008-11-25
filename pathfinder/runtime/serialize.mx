@@ -1578,9 +1578,11 @@ oid doc_startOid(XqueryCtx* ctx, oid docIndex) {
     
     if ( !(open_docid = fetchWsBaseBAT(ctx,ctx->ws,OPEN_DOCID)) )
     	return oid_nil;
+    if ( 0 ) stream_printf(GDKout,"#! find docIndex = " OIDFMT "\n", docIndex);
     if ( 0 ) BATprintf(GDKout,open_docid);
 
-    oid bloody_guess = 1;
+    /* oid bloody_guess = 1; ORIGINAL */
+    oid bloody_guess = docIndex;
     if ( (bun = BUNfnd(open_docid,&bloody_guess)) == BUN_NONE) {
             fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
 	          return oid_nil;
