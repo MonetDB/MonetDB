@@ -1047,12 +1047,20 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(ftiName);
-      # var ws := ws_create(0);
+      var ws := ws_create(0);
+      # uri.tmark(0@0).print();
+      # uri.reverse().tmark(0@0).print();
+      # ws_opendoc(ws,
+      # 	 uri.tmark(0@0),
+      # 	 bat(void,str).seqbase(0@0),
+      #		 bat(void,oid).seqbase(0@0),
+      #          bat(void,oid).seqbase(0@0),
+      #		 true);
       uri@batloop() {
-        # _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
-        _tj_add2collection(ftiName, collBat, $h, $t, store);
+        _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
+        # _tj_add2collection(ftiName, collBat, $h, $t, store);
       }
-      # ws_destroy(ws);
+      ws_destroy(ws);
       _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
