@@ -96,8 +96,7 @@ MALException:remote.exec:remote_test_id_0 := io.print.bla();
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
 [ 30,	  "rmtobj"	  ]
-[ 31,	  "xml"		  ]
-[ 32,	  "mapentry"	  ]
+[ 31,	  "mapentry"	  ]
 [ nil ]
 
 # 19:22:53 >  
