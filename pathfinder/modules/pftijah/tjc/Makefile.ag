@@ -43,10 +43,6 @@ INCLUDES = $(MONETDB4_INCS) $(MONETDB_INCS)
 #  (see also MonetDB/conf/monet.m4).
 CFLAGS = $(ICC_BISON_CFLAGS) $(GCC_BISON_CFLAGS)
 
-# ignore warning "too many struct/union initializers"
-# with Sun Studio 12 compiler
-pftijah_stem_CFLAGS = $(SUN_NOERR_CFLAGS)
-
 lib_tjc = {
 	NOINST
 	SOURCES = \
