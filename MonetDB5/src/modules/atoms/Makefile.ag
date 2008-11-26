@@ -45,6 +45,7 @@ lib__str = {
 }
 
 lib__xml = {
+	COND = HAVE_LIBXML2
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = xml.mx 

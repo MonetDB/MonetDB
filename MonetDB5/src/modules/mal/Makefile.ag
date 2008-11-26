@@ -53,6 +53,7 @@ lib_batExtensions = {
 }
 
 lib_batxml = {
+	COND = HAVE_LIBXML2
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = batxml.mx
