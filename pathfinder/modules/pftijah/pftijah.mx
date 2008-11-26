@@ -210,7 +210,7 @@ var timing := false;
 # elements that don't match any term at the beginning of a query, contain descendants
 # that do match terms.
 ##
-var returnAllElements := true;
+var returnAllElements := false;
 
 if (isnil(CATCH(bat("tj_collName").count()))) {
 	if (bat("tj_collName").count() > 0) {

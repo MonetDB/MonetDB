@@ -48,7 +48,8 @@ void milprint_end (tjc_config *tjc_c) {
     if (tjc_c->prior) {
 	TJCPRINTF(MILOUT,"nexi_result := prior_%s(nexi_result, qenv);\n", tjc_c->prior);
     }
-    TJCPRINTF(MILOUT,"nexi_result := nexi_result.tsort();\n");
+    TJCPRINTF(MILOUT,"nexi_result := nexi_result.tsort_rev();\n");
+    TJCPRINTF(MILOUT,"nexi_result := nexi_result.persists(true).rename(\"nexi_result\");\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
     }
@@ -74,13 +75,16 @@ void milprint_qenv (tjc_config *tjc_c) {
 
 void milprint_qnode (tjc_config *tjc_c, TJqnode_t *qn, short nid) {
     int c;
-    TJCPRINTF(MILOUT,"var R%d := new(str,dbl);\n", nid);    
+    /* TJCPRINTF(MILOUT,"var R%d := new(str,dbl);\n", nid); */   
+    TJCPRINTF(MILOUT,"var R%d := new(void,str).seqbase(0@0);\n", nid);   
     if (qn->kind == q_term)
         for (c = 0; c < qn->length; c++)
-	    TJCPRINTF(MILOUT,"R%d.insert(\"%s\",%f);\n", nid, qn->tlist[c], qn->wlist[c]);
+	    /* TJCPRINTF(MILOUT,"R%d.insert(\"%s\",%f);\n", nid, qn->tlist[c], qn->wlist[c]); */
+	    TJCPRINTF(MILOUT,"R%d.append(\"%s\");\n", nid, qn->tlist[c]);
     if (qn->kind == q_entity)
         for (c = 0; c < qn->length; c++)
-	    TJCPRINTF(MILOUT,"R%d.insert(\"%s:%s\",%f);\n", nid, qn->elist[c], qn->tlist[c], qn->wlist[c]);
+	    /* TJCPRINTF(MILOUT,"R%d.insert(\"%s:%s\",%f);\n", nid, qn->elist[c], qn->tlist[c], qn->wlist[c]); */
+	    TJCPRINTF(MILOUT,"R%d.append(\"%s:%s\");\n", nid, qn->elist[c], qn->tlist[c]);
 }
 
 void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short *node_printed) {
@@ -113,7 +117,7 @@ void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short
 	    if (strcmp (node->sem.str, "*") == 0)
 		TJCPRINTF(MILOUT,"var R%d := select_node(qenv);\n", nid);
 	    else
-		TJCPRINTF(MILOUT,"var R%d := select_node(%s, qenv);\n", nid, node->sem.str);
+		TJCPRINTF(MILOUT,"var R%d := select_node(\"%s\", qenv);\n", nid, node->sem.str);
 	    break;
 	case p_root :
 	    TJCPRINTF(MILOUT,"var R%d := select_root(qenv);\n", nid);
