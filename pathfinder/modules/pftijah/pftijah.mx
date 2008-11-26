@@ -723,7 +723,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
       }
 
       if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
-      tj_add2collection(ftiName,doclist,true);
+      tj_add2collection(ftiName,doclist,false);
       if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finish indexing existing collections.\n",ftiName);
     }
     if ( verbose ) printf("#TJ:tj_init_collection(\"%s\") finished.\n",ftiName);
@@ -743,7 +743,7 @@ PROC tj_extend_collection(str ftiName, BAT[void,str] v_pfc) : void :=
     if ( doclist.count() > 0 ) {
         if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") indexing existing collections.\n",ftiName);
         if ( verbose ) doclist.print();
-	tj_add2collection(ftiName,doclist,true);
+	tj_add2collection(ftiName,doclist,false);
         if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",ftiName);
     }
     if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finished.\n",ftiName);
@@ -993,42 +993,22 @@ ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
 - str ftiName: the name of the collection.\n
 - str uri_loc: the location of the xml document.\n
 - str uri_name: the name of the xml document (optional).\n
-- bit store: when true the doc is stored in pathfinder.\n\
+- bit shred: when true the doc is shredded when necessary.\n\
 DESCRIPTION:\n\
 Add a document to a pftijah collection. The document is indexed and if the \n\
-store parameter is true it is also stored in Pathfinder. When a document is\n\
-not stored in Pathfinder it will be shredded on the fly when nodes from the\n\
-document are returned by the XQUERY pftijah-node() function.\n\
+shred parameter is true it is also shredded in Pathfinder. 
 The index is automatically finalized at the end of the method.",
 "pftijah");
-PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit store) : void
+PROC tj_add2collection(str ftiName, str uri_loc, str uri_name, bit shred) : void
 {
-    if ( verbose ) printf("#TJ:tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
-    var coll_lock := tj_get_collection_lock(ftiName);
-    lock_set(coll_lock);
-    var err := CATCH({
-      var t_start := usec();
-      bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
-      bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
-      bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
-      var collBat := _tj_collection(ftiName);
-      _tj_add2collection(ftiName, collBat, uri_loc, uri_name, store);
-      _tj_finalize_collection(ftiName, collBat, FALSE);
-      _tj_commit(collBat); 
-      if ( timing ) {
-         var ms := (usec()-t_start)/1000;
-         printf("#C[%s]:tj_add2collection(): + aggregate time = %lld.%03llds.\n",ftiName,/(ms,1000),%(ms,1000));
-       }
-    });
-    lock_unset(coll_lock);
-    if (not(isnil(err))) ERROR(err);
+    tj_add2collection(ftiName,new(str,str).insert(uri_loc,uri_name),shred);
 }
 
 ADDHELP("tj_add2collection", "flokstra & rode", "Jan 2007",
 "PARAMETERS:\n\
 - str ftiName: the name of the collection.\n
 - BAT[str,str]: the bat containing the [location,name] pairs of the xml docs.\n\
-- bit store: when true the documents are stored in Pathfinder.\n\
+- bit shred: when true the doc is shredded when necessary.\n\
 DESCRIPTION:\n\
 The multidocument version of tj_add2collection. The main difference with the\n\
 other method is the [str,str] bat which contains the location of the document\n\
@@ -1036,7 +1016,7 @@ in the head and the name in the tail.\n\
 The advantage of this method is that the collection is finalized after all\n\
 xml documents in the bat are added to the collection.",
 "pftijah");
-PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
+PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
 {
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
@@ -1048,19 +1028,15 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit store) : void
       var collBat;
       collBat := _tj_collection(ftiName);
       var ws := ws_create(0);
-      # uri.tmark(0@0).print();
-      # uri.reverse().tmark(0@0).print();
-      # ws_opendoc(ws,
-      # 	 uri.tmark(0@0),
-      # 	 bat(void,str).seqbase(0@0),
-      #		 bat(void,oid).seqbase(0@0),
-      #          bat(void,oid).seqbase(0@0),
-      #		 true);
+      if ( not(shred) ) {
+        ws_opendoc(ws,uri.tmark(0@0));
+      }
+      #
       uri@batloop() {
-        _tj_add2collectionNEW(ftiName, ws, collBat, $h, $t, store);
-        # _tj_add2collection(ftiName, collBat, $h, $t, store);
+        _tj_add2collection(ftiName, ws, collBat, $h, $t, shred);
       }
       ws_destroy(ws);
+      _tj_set_parameter(collBat, "status", "building");
       _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
          var ms := (usec()-t_start)/1000;
@@ -1078,14 +1054,14 @@ PROC _timestr(lng v) : str
 }
 
 
-PROC _tj_add2collectionNEW(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
+PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : void
 { 
     var ms;
     var t_start := usec();
     if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
 
     var i_start;
-    if ( store ) {
+    if ( shred ) {
 	var pf_collection := _tj_get_parameter(collBat,"pf_collection");
 	if ( isnil(uri_loc) and isnil(uri_name) ) {
 	    ERROR("_tj_add2collection: should specify doc_name or doc_uri.");
@@ -1117,70 +1093,14 @@ PROC _tj_add2collectionNEW(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, s
         # ws_destroy(ws);
     } else {
 	i_start := usec();
-        _tj_throw2collection_index(collBat,uri_loc);
-    }
-    if ( timing ) {
-	ms := (usec()-i_start)/1000;
-        printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
-    }
-           
-    _tj_set_parameter(collBat, "status", "building");
-    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",ftiName);
-    if ( timing ) {
-	ms := (usec()-t_start)/1000;
-        printf("#C[%s]:add2coll(\"%s\"): total time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
-    }
-}
-
-
-# main internal add2collection() function.
-PROC _tj_add2collection(str ftiName, BAT[str,bat] collBat, str uri_loc, str uri_name, bit store) : void
-{ 
-    var ms;
-    var t_start := usec();
-    if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\",\"%s\",\"%s\") start.\n",ftiName,uri_loc,uri_name);
-
-    var i_start;
-    if ( store ) {
-	var pf_collection := _tj_get_parameter(collBat,"pf_collection");
-	if ( isnil(uri_loc) and isnil(uri_name) ) {
-	    ERROR("_tj_add2collection: should specify doc_name or doc_uri.");
-	}
-        if ( isnil(uri_name) ) {
-	  uri_name := uri_loc;
-	} else if ( uri_name = "" ) {
-	  uri_name := uri_loc;
-	}
-        var ws := ws_create(0);
-        if (not(bat("doc_name").reverse().exist(uri_name))) {
-            var s_start := usec();
-	    if ( isnil(pf_collection) ) {
-    	        shred_doc(uri_loc,uri_name);
-	    } else {
-    	        shred_doc(uri_loc,uri_name,pf_collection,0LL);
-	    }
-            if ( timing ) {
-	      ms := (usec()-s_start)/1000;
-              printf("#C[%s]:add2coll(\"%s\"): shred time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
-            }
-        } else {
-            if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
-	}
-        ws_opendoc(ws, bat(void,str,1).append(uri_name)); # INCOMPLETE why create a WS for every doc
-	i_start := usec();
-        if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
+        #_tj_throw2collection_index(collBat,uri_loc);
         _tj_throw2collection(collBat,ws,uri_name);
-        ws_destroy(ws);
-    } else {
-	i_start := usec();
-        _tj_throw2collection_index(collBat,uri_loc);
     }
     if ( timing ) {
 	ms := (usec()-i_start)/1000;
         printf("#C[%s]:add2coll(\"%s\"): index time = %lld.%03llds.\n",ftiName,uri_name,/(ms,1000),%(ms,1000));
     }
            
-    _tj_set_parameter(collBat, "status", "building");
     if ( verbose ) printf("#TJ:_tj_add2collection(\"%s\") finish.\n",ftiName);
     if ( timing ) {
 	ms := (usec()-t_start)/1000;
@@ -1927,7 +1847,7 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
             }
             fti_cluster@batloop() {
                 if ( verbose ) { printf("#TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
-                tj_add2collection($h,$t,true);
+                tj_add2collection($h,$t,false);
             }
 	} else {
 	    # pftijah is not active
@@ -2055,7 +1975,7 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
         }
         fti_cluster@batloop() {
             if ( verbose ) { printf("#TJ:tj_play_doc_tape() doing ft-index \"%s\".\n",$h); $t.print(); }
-            tj_add2collection($h,$t,true);
+            tj_add2collection($h,$t,false);
         }
         if ( verbose ) printf("#TJ:tj_play_doc_tape() finished.\n");
       }
