@@ -1678,7 +1678,9 @@ static PFplanlist_t *
 plan_step_join_to_step (const PFla_op_t *n)
 {
     PFalg_col_t   item_out  = n->sem.proj.items[0].new,
+#ifndef NDEBUG
                   item_res  = n->sem.proj.items[0].old,
+#endif
                   item,
                   iter;
     PFalg_proj_t *proj_out  = PFmalloc (sizeof (PFalg_proj_t)),
