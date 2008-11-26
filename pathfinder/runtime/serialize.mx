@@ -1547,6 +1547,28 @@ ws_documentIndex (BAT* ws, str docName)
         fatal_err(0,"ws_documentIndex: unable to find CONT_NAME in WS");
         return PROBLEM;
     }
+    open_name = BATmirror(open_name);
+    if (!BATprepareHash(open_name)) {
+	BATiter open_namei = bat_iterator(open_name);
+        BUN p;
+        HASHfnd_str(p, open_namei, docName);
+        if (p != BUN_NONE) {
+            res = p - BUNfirst(open_name);
+        }
+    }
+    BBPunfix( BBPcacheid( open_name ) );
+    return res;
+}
+
+static oid
+ws_documentContainer (BAT* ws, str docName)
+{
+    int res = PROBLEM;
+    BAT* open_name;
+    if ( !(open_name=wsADMbat(ws,OPEN_NAME)) ) {
+        fatal_err(0,"ws_documentIndex: unable to find CONT_NAME in WS");
+        return PROBLEM;
+    }
     BAT* open_cont;
     if ( !(open_cont=wsADMbat(ws,OPEN_CONT)) ) {
         fatal_err(0,"ws_documentIndex: unable to find CONT_COLLID in WS");
@@ -1560,6 +1582,7 @@ ws_documentIndex (BAT* ws, str docName)
         HASHfnd_str(p, open_namei, docName);
         if (p != BUN_NONE) {
             BUN idx = p - BUNfirst(open_name);
+	    res = idx;
             p = BUNfirst(open_cont) + idx;
             if (p < BUNlast(open_cont)) {
                 res = *(oid*) BUNtail(open_conti, p); 
@@ -1571,29 +1594,23 @@ ws_documentIndex (BAT* ws, str docName)
     return res;
 }
 
-oid doc_startOid(XqueryCtx* ctx, oid docIndex) {
+oid doc_startOid(XqueryCtx* ctx, oid docIndex, oid docContainer) {
     BUN bun;
 
     BAT* open_docid;
     
     if ( !(open_docid = fetchWsBaseBAT(ctx,ctx->ws,OPEN_DOCID)) )
     	return oid_nil;
-    if ( 0 ) stream_printf(GDKout,"#! find docIndex = " OIDFMT "\n", docIndex);
-    if ( 0 ) BATprintf(GDKout,open_docid);
 
-    /* oid bloody_guess = 1; ORIGINAL */
-    oid bloody_guess = docIndex;
-    if ( (bun = BUNfnd(open_docid,&bloody_guess)) == BUN_NONE) {
+    if ( (bun = BUNfnd(open_docid,&docIndex)) == BUN_NONE) {
             fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
 	          return oid_nil;
     }
     BATiter open_docidi = bat_iterator(open_docid);
     oid icdocId = *(oid*)BUNtail(open_docidi,bun);
-    /* stream_printf(GDKout,"# icdocId = " OIDFMT ".\n",icdocId); */
     BAT* frag_root;
     BATiter frag_rooti;
-    getWsBAT(frag_root, frag_rooti, ctx, docIndex,FRAG_ROOT);
-    if ( 0 ) BATprintf(GDKout,frag_root);
+    getWsBAT(frag_root, frag_rooti, ctx, docContainer, FRAG_ROOT);
     /* */
     if ( (bun = BUNfnd(frag_root,&icdocId)) == BUN_NONE ) {
             fatal_err(ctx,"doc_startOid: cannot find startOid for doc[" OIDFMT "]",docIndex);
@@ -1611,29 +1628,32 @@ xquery_print_doc_DRIVER (
     str                 docName)
 {
     TIMER_START();
-    int docIndex = ws_documentIndex(ws,docName);
+    oid docIndex	= ws_documentIndex(ws,docName);
+    oid docContainer	= ws_documentContainer(ws,docName);
+    if (0) stream_printf(GDKout,"ws_[documentIndex,container](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer);
     int res = GDK_FAIL;
     if (!docIndex) {
         GDKerror("serialize.mx: unable to find document \"%s\" in working set!\n", docName);
     } else { 
         XqueryCtx  ctx_struct, *ctx = &ctx_struct;
         if (createWsContext(ctx,ws,mode,driverFun,driverArg,GDKout)) {
-	    oid start_oid = doc_startOid(ctx,docIndex);
+	    oid start_oid = doc_startOid(ctx,docIndex, docContainer);
+            if (0) stream_printf(GDKout,"ws_[documentIndex,container,startOid](%s) = " OIDFMT "," OIDFMT "," OIDFMT "\n",docName,docIndex,docContainer,start_oid);
 	    if ( start_oid == oid_nil )
 	        return GDK_FAIL;
             if (ctx->driverFun->handle_startDocument(ctx,start_oid)) {
                 ptr p;
 
                 if ( 0 /* old implementation, restore if necessary */ ) {
-                  getWsValue(p, ctx, docIndex, PRE_SIZE, 0 /* start */);
-		  if (emitNodesInRange (ctx, 0,  *(int*) p, NULL, docIndex))
+                  getWsValue(p, ctx, docContainer, PRE_SIZE, 0 /* start */);
+		  if (emitNodesInRange (ctx, 0,  *(int*) p, NULL, docContainer))
 		    if (ctx->driverFun->handle_endDocument(ctx))
 		        res = GDK_SUCCEED;
 		} else { /* the new container implementation */
-                  getWsValue(p, ctx, docIndex, PRE_SIZE, start_oid);
+                  getWsValue(p, ctx, docContainer, PRE_SIZE, start_oid);
 		  /* oid sz = *(int*) p; */
 		  oid sz = (*(int*) p) & ~(1U<<31);
-                  if (emitNodesInRange (ctx, start_oid,start_oid+sz, NULL, docIndex)) {
+                  if (emitNodesInRange (ctx, start_oid,start_oid+sz, NULL, docContainer)) {
                     if (ctx->driverFun->handle_endDocument(ctx)) {
                         res = GDK_SUCCEED;
                     }
