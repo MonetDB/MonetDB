@@ -1018,6 +1018,7 @@ xml documents in the bat are added to the collection.",
 "pftijah");
 PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
 {
+    shred := true; #  INCOMPLETE, check what's wrong with ws_docIndex
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -1027,15 +1028,15 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
       bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
       var collBat;
       collBat := _tj_collection(ftiName);
-      var ws := ws_create(0);
+      var ws_opt := ws_create(0);
       if ( not(shred) ) {
-        ws_opendoc(ws,uri.tmark(0@0));
+        ws_opendoc(ws_opt,uri.tmark(0@0));
       }
       #
       uri@batloop() {
-        _tj_add2collection(ftiName, ws, collBat, $h, $t, shred);
+        _tj_add2collection(ftiName, ws_opt, collBat, $h, $t, shred);
       }
-      ws_destroy(ws);
+      ws_destroy(ws_opt);
       _tj_set_parameter(collBat, "status", "building");
       _tj_finalize_collection(ftiName, collBat, FALSE);
       if ( timing ) {
@@ -1054,7 +1055,7 @@ PROC _timestr(lng v) : str
 }
 
 
-PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : void
+PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws_opt, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : void
 { 
     var ms;
     var t_start := usec();
@@ -1071,7 +1072,7 @@ PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str 
 	} else if ( uri_name = "" ) {
 	  uri_name := uri_loc;
 	}
-        # var ws := ws_create(0);
+        var ws := ws_create(0);
         if (not(bat("doc_name").reverse().exist(uri_name))) {
             var s_start := usec();
 	    if ( isnil(pf_collection) ) {
@@ -1087,10 +1088,11 @@ PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws, BAT[str,bat] collBat, str 
             if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
 	}
         ws_opendoc(ws, bat(void,str,1).append(uri_name));
+        # ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
 	i_start := usec();
         if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
         _tj_throw2collection(collBat,ws,uri_name);
-        # ws_destroy(ws);
+        ws_destroy(ws);
     } else {
 	i_start := usec();
         #_tj_throw2collection_index(collBat,uri_loc);
