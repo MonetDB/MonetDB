@@ -66,6 +66,10 @@ pattern inspect(mod:str,fcn:str):void
 address MDBinspect
 comment "Run the debugger on a specific function";
 
+command modules():bat[:int,:str] 
+address CMDmodules
+comment "List available modules";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
@@ -200,6 +204,7 @@ comment "Returns a string representation of the current function
 #include <stdarg.h>
 #include <time.h>
 #include "mal_resolve.h"
+#include "mal_linker.h"
 #include "mal_client.h"
 #include "mal_exception.h"
 #include "mal_debugger.h"
@@ -923,4 +928,80 @@ str MDBdummy(int *ret){
 	(void) ret;
 	throw(MAL, "mdb.dummy", "Dummy routine called");
 }
+
+@- CMDmodules
+Obtains a list of modules by looking at what files are present in the
+module directory.
+
+
+@c
+BAT *
+TBL_getdir(void)
+{
+	BAT *b = BATnew(TYPE_int, TYPE_str, 100);
+	int i = 0;
+
+	char *mod_path;
+	size_t extlen = strlen(MAL_EXT);
+	size_t len;
+	struct dirent *dent;
+	DIR *dirp = NULL;
+
+	mod_path = GDKgetenv("monet_mod_path");
+	if (mod_path == NULL)
+		return b;
+	while (*mod_path == PATH_SEP)
+		mod_path++;
+	if (*mod_path == 0)
+		return b;
+
+	while (mod_path || dirp) {
+		if (dirp == NULL) {
+			char *cur_dir;
+			char *p;
+
+			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
+				i = (int) (p - mod_path);
+			} else {
+				i = (int) strlen(mod_path);
+			}
+			cur_dir = GDKmalloc(i + 1);
+			strncpy(cur_dir, mod_path, i);
+			cur_dir[i] = 0;
+			if ((mod_path = p) != NULL) {
+				while (*mod_path == PATH_SEP)
+					mod_path++;
+			}
+			dirp = opendir(cur_dir);
+			GDKfree(cur_dir);
+			if (dirp == NULL)
+				continue;
+		}
+		if ((dent = readdir(dirp)) == NULL) {
+			closedir(dirp);
+			dirp = NULL;
+			continue;
+		}
+		len = strlen(dent->d_name);
+		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
+			continue;
+		dent->d_name[len - extlen] = 0;
+		BUNins(b, &i, dent->d_name, FALSE);
+		i++;
+	}
+	return b;
+}
+
+str
+CMDmodules(int *bid)
+{
+	BAT *b = TBL_getdir();
+
+	if (b) {
+		*bid = b->batCacheid;
+		BBPkeepref(*bid);
+	}
+	return MAL_SUCCEED;
+}
+
 @}

@@ -47,6 +47,8 @@ For the time being we assume that all commands are statically linked.
 #ifndef _MAL_LINKER_H
 #include "mal_module.h"
 
+#define MAL_EXT ".mal"
+
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #else 
@@ -399,8 +401,6 @@ locate_file(const char *basename, const char *ext)
 	GDKfree(fullname);
 	return NULL;
 }
-
-#define MAL_EXT ".mal"
 
 char *
 MSP_locate_script(const char *filename)
