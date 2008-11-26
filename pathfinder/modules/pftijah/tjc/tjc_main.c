@@ -146,6 +146,8 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
 
         if ( strcmp(optName,"debug") == 0 ) {
 	    tjc_c->debug = atoi(optVal);
+	} else if ( strcmp(optName,"_query") == 0 ) {
+	} else if ( strcmp(optName,"newversion") == 0 ) {
 	} else if ( strcmp(optName,"timing") == 0 ) {
             if ( strcasecmp(optVal,"TRUE") == 0 ) 
                 tjc_c->timing = 1;
@@ -291,10 +293,11 @@ char* tjc_new_parse(char* query, BAT* optbat, char* startNodes_name, char** errB
 	free_tree(ptree);
     }
     else {
-	// error
 	*errBUFF = GDKstrdup(tjc_c->errBUFF);
+        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
 	return NULL;
     }
+    if (DEBUG) stream_printf(GDKout,"#!tjc succesfull end \n");
 
 
     TJCfree(tjc_c);

@@ -1018,7 +1018,6 @@ xml documents in the bat are added to the collection.",
 "pftijah");
 PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
 {
-    shred := true; #  INCOMPLETE, check what's wrong with ws_docIndex
     var coll_lock := tj_get_collection_lock(ftiName);
     lock_set(coll_lock);
     var err := CATCH({
@@ -1072,7 +1071,7 @@ PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws_opt, BAT[str,bat] collBat, 
 	} else if ( uri_name = "" ) {
 	  uri_name := uri_loc;
 	}
-        var ws := ws_create(0);
+        # var ws := ws_create(0);
         if (not(bat("doc_name").reverse().exist(uri_name))) {
             var s_start := usec();
 	    if ( isnil(pf_collection) ) {
@@ -1087,16 +1086,16 @@ PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws_opt, BAT[str,bat] collBat, 
         } else {
             if ( verbose ) printf("#TJ:_tj_add2collection(%s,..) doc(\"%s\") already shredded.\n",ftiName,uri_name);
 	}
-        ws_opendoc(ws, bat(void,str,1).append(uri_name));
-        # ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
+        # ws_opendoc(ws, bat(void,str,1).append(uri_name));
+        ws_opendoc(ws_opt, bat(void,str,1).append(uri_name));
 	i_start := usec();
         if ( verbose ) printf("#TJ:_tj_throw2collection(cb(%s),ws,\"%s\") call next.\n",ftiName,uri_name);
-        _tj_throw2collection(collBat,ws,uri_name);
-        ws_destroy(ws);
+        _tj_throw2collection(collBat,ws_opt,uri_name);
+        # ws_destroy(ws);
     } else {
 	i_start := usec();
         #_tj_throw2collection_index(collBat,uri_loc);
-        _tj_throw2collection(collBat,ws,uri_name);
+        _tj_throw2collection(collBat,ws_opt,uri_name);
     }
     if ( timing ) {
 	ms := (usec()-i_start)/1000;
