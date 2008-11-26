@@ -85,11 +85,8 @@ malBootstrap()
 	malInclude(c, bootfile, 0);
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
-	if (c->curprg->def->errors) {
+	if (c->curprg->def->errors)
 		showErrors(c);
-		GDKfatal("Failed to initialise system");
-		return 0;
-	}
 	MALengine(c);
 	return 1;
 }
