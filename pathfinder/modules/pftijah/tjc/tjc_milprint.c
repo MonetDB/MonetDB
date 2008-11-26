@@ -48,7 +48,8 @@ void milprint_end (tjc_config *tjc_c) {
     if (tjc_c->prior) {
 	TJCPRINTF(MILOUT,"nexi_result := prior_%s(nexi_result, qenv);\n", tjc_c->prior);
     }
-    TJCPRINTF(MILOUT,"nexi_result := nexi_result.tsort_rev();\n");
+    TJCPRINTF(MILOUT,"nexi_result := tj_nid2pre(nexi_result, qenv);\n");
+    TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
     TJCPRINTF(MILOUT,"nexi_result := nexi_result.persists(true).rename(\"nexi_result\");\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
