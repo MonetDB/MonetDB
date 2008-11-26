@@ -23,8 +23,9 @@
 # Universitaet Muenchen, respectively.  All Rights Reserved.
 #
 
-YFLAGS = -d -p tjc
-LFLAGS = -otjc_scan.yy.c
+PARSERNAME = tjc
+YFLAGS = -d -p $(PARSERNAME)
+LFLAGS = -P$(PARSERNAME)
 
 INCLUDES = $(MONETDB4_INCS) $(MONETDB_INCS)
 
