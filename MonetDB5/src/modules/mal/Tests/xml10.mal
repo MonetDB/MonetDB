@@ -1,3 +1,6 @@
+include xml;
+include batxml;
+
 # produce a more complex structure
 # such as 
 #<books>
