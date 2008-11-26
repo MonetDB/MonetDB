@@ -1184,6 +1184,20 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         t.start()
         if par['M5']:
             input = '''\
+                c := mdb.modules();
+                mods := algebra.kunique(c);
+                s := "\\nModules: ";
+                sep := "";
+                barrier (mloop:lng,h:int,t:str) := bat.newIterator(mods);
+                        s := s + sep;
+                        s := s + "\'";
+                        s := s + t;
+                        s := s + "\'";
+                        sep := ",";
+                redo (mloop:lng,h:int,t:str) := bat.hasMoreElements(mods);
+                exit mloop;
+                s := s + "\\n";
+                io.printf(s);
                 clients.quit();
             '''
         else:
@@ -1241,11 +1255,7 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
         if not env['TST_OIDS']:
             ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
-            if par['M5']:
-                #Warn("MonetDB/5: Check, whether required modules do exist, is not possible, yet!")
-                env['TST_MODS'].append("")
-            else:
-                ErrMsg("Checking for Modules failed!")
+            ErrMsg("Checking for Modules failed!")
         if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS']:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qOut)
@@ -1271,8 +1281,6 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
-    if par['M5']:
-        return missing
     if os.path.isfile(TST+".modules"):
         for m in open(TST+".modules"):
             m = m.strip()
@@ -1283,7 +1291,11 @@ def CheckMods(env, TST, SERVER, CALL) :
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "SQL":
-        for m in env['SQL_SERVER'], "streams", "ascii_io", "monettime", "alarm", "xtables", "aggrX3", "blob", "txtsim", "mmath", "mkey", "bat_arith", "pcre":
+        if par['M4']:
+            sql_mods = ["sql_server", "streams", "ascii_io", "monettime", "alarm", "xtables", "aggrX3", "blob", "txtsim", "mmath", "mkey", "bat_arith", "pcre"]
+        else:
+            sql_mods = ["sql"]
+        for m in sql_mods:
             if m not in env['TST_MODS']:
                 missing.append(m)
     if SERVER == "XQUERY":
@@ -3274,7 +3286,6 @@ def main(argv) :
 
     # find mil script for MIL and SQL server
     if THISFILE == "Mtest.py":
-        env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
 
     # fix up URLPREFIX
@@ -3288,7 +3299,7 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE == "Mtest.py":
-        vars_ = vars_ + ['XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM','SQL_SERVER']
+        vars_ = vars_ + ['XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM']
         vars_ = vars_ + ['setXQUERY_LOGDIR','setSQL_LOGDIR','setGDK_DBFARM','setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
@@ -3592,7 +3603,7 @@ def main(argv) :
 
         if par['PACKAGE'] == 'monetdb-geom':
             MissingMods = CheckMods(env, '', 'SQL', '')
-            if par['M4'] and 'geom' not in env['TST_MODS']:
+            if 'geom' not in env['TST_MODS']:
                 MissingMods.append('geom')
             if MissingMods:
                 ErrXit('Stopping Geom testing as modules "%s" are missing!' % str(MissingMods))

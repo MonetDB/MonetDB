@@ -107,7 +107,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      (all) mclient(s) have finished
      (optional)                                             (TST.epilogue5)(^,`)
   + a file that contains a list of modules (one per line)
-     required by the test  (optional; MonetDB4, only)       (TST.modules)  (^,`)
+     required by the test  (optional)                       (TST.modules)  (^,`)
   + a file that contains a list of BATs (one per line)
      (created by previous tests within the same directory)
      required by the test  (optional; MonetDB4, only)       (TST.BATs)     (^,`)
