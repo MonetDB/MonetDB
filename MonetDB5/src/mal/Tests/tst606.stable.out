@@ -59,12 +59,6 @@ function constants.release(v:any_1):void;
     BoxException := "releasing a constant is forbidden";
     raise BoxException;
 end release;
-#
-## accept the definition of a new constant
-#function deposit(v:any_1,name:str) 
-!MALException:MAL.getAddress:address of 'constants.space_deposit' not found
-#
-#
 
 # 08:01:25 >  
 # 08:01:25 >  Done.
