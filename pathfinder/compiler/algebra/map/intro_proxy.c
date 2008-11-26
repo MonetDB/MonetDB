@@ -59,7 +59,8 @@
 #define pfIN(p)  ((p)->bit_in)
 #define pfOUT(p) ((p)->bit_out)
 
-#if 0
+#if 0 /* do not enable this code block
+         as it uses deprecated bit-encoded column names */
 /**
  * worker for remove_semijoin_operators() that
  * replaces semijoin operators by equi-joins and
@@ -421,7 +422,8 @@ join_resolve_conflicts (PFla_op_t *proxy_entry,
 
 
 
-#if 0
+#if 0 /* do not enable this code block
+         as it uses deprecated bit-encoded column names */
 /**
  *
  * Functions specific to the semijoin - rowid - cross proxy
@@ -1160,7 +1162,6 @@ nest_proxy (PFla_op_t *root,
                  *pi_upper_right,
                  *res;
     PFalg_col_t   new_num_col,
-                  used_cols,
                   cur_col,
                   new_col;
     unsigned int  i,
@@ -1231,17 +1232,8 @@ nest_proxy (PFla_op_t *root,
     lower_left_proj  = PFmalloc (proxy_exit->schema.count *
                                  sizeof (PFalg_proj_t));
 
-    /* Generate the upper left projection and create a list
-       of used variables. This list is then used to avoid
-       naming conflicts at the lower join and the above rowid
-       operator. */
-    used_cols = proxy_entry->sem.eqjoin.col1;
-
-    for (i = 0; i < L(proxy_entry)->schema.count; i++)
-        used_cols = used_cols | L(proxy_entry)->schema.items[i].name;
-
+    /* Generate the upper left projection. */
     for (i = 0; i < R(proxy_entry)->schema.count; i++) {
-        used_cols = used_cols | R(proxy_entry)->schema.items[i].name;
         upper_left_proj[i] = PFalg_proj (
                                  R(proxy_entry)->schema.items[i].name,
                                  R(proxy_entry)->schema.items[i].name);
@@ -1249,10 +1241,7 @@ nest_proxy (PFla_op_t *root,
 
     /* Generate a new column name that will hold the values of the
        new upper rowid operator... */
-    new_num_col = PFalg_ori_name (
-                      PFalg_unq_name (proxy_exit->sem.rowid.res),
-                      ~used_cols);
-    used_cols = used_cols | new_num_col;
+    new_num_col = PFcol_new (proxy_exit->sem.rowid.res);
 
     /* add the column to the projection list of the left branch
        of the upper join thus adjusting the cardinality of
@@ -1281,8 +1270,7 @@ nest_proxy (PFla_op_t *root,
         cur_col = proxy_exit->schema.items[i].name;
 
         if (cur_col != proxy_exit->sem.rowid.res) {
-            new_col = PFalg_ori_name (PFalg_unq_name (cur_col), ~used_cols);
-            used_cols = used_cols | new_col;
+            new_col = PFcol_new (cur_col);
 
             lower_left_proj[i] = PFalg_proj (new_col, cur_col);
             upper_right_proj[i] = PFalg_proj (cur_col, new_col);
@@ -1353,7 +1341,8 @@ nest_proxy (PFla_op_t *root,
 
 
 
-#if 0
+#if 0 /* do not enable this code block
+         as it uses deprecated bit-encoded column names */
 /**
  *
  * Functions specific to the generation of duplicate generating
@@ -1757,16 +1746,11 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     dom_t entry_dom, dom;
 
-    if (p->kind != la_rownum && p->kind != la_rowid)
+    if (p->kind != la_rowid)
         return false;
 
     /* only allow key columns and look up the newly generated domain */
-    if (p->kind == la_rownum) {
-        if (p->sem.sort.part) return false;
-        dom = PFprop_dom (p->prop, p->sem.sort.res);
-    } else {
-        dom = PFprop_dom (p->prop, p->sem.rowid.res);
-    }
+    dom = PFprop_dom (p->prop, p->sem.rowid.res);
 
     /* look up the super domain of the two join columns */
     if (PFprop_key_right (entry->prop, entry->sem.eqjoin.col2) &&
@@ -1795,7 +1779,7 @@ join_exit (PFla_op_t *p, PFla_op_t *entry)
  * outside of the new proxy. All references are linked to the new
  * projection pi_(exit). A new rowid operator (#_(new_num_col))
  * introduces a new numbering that is only used for mapping inside the
- * proxy. (It flows trough t1 as the projection pi_(exit) replaces
+ * proxy. (It flows through t1 as the projection pi_(exit) replaces
  * the rowid column num_col with the new one.) The projection pi_(left)
  * maps the 'old' num_col with a new equi-join and the projection pi_(entry)
  * maps all columns to names of the base. The rational behind this decision
@@ -1854,8 +1838,7 @@ generate_join_proxy (PFla_op_t *root,
                      PFarray_t *exit_refs,
                      PFarray_t *checked_nodes)
 {
-    PFalg_col_t num_col, new_num_col, num_col_alias, new_num_col_alias,
-                used_cols = 0;
+    PFalg_col_t num_col, new_num_col, num_col_alias, new_num_col_alias;
     unsigned int i, j, k, count, dist_count, base_count;
     PFalg_collist_t *req_cols, *new_cols,
                     *trace_ori, *trace_mod, *icols;
@@ -1887,12 +1870,6 @@ generate_join_proxy (PFla_op_t *root,
                                  exit_refs))
         return false;
 
-    /* Discard proxies with rownum operators as these would probably never
-       benefit from the rewrites based on proxies. In addition checking the
-       usage of the rownum column requires quite some work. */
-    if (proxy_exit->kind == la_rownum)
-        return false;
-
     /* prepare the list of columns that are input to the proxy operator */
     trace_ori = PFalg_collist (proxy_entry->schema.count);
     for (i = 0; i < proxy_entry->schema.count; i++)
@@ -1919,7 +1896,6 @@ generate_join_proxy (PFla_op_t *root,
        the rowid column. */
     for (i = 0; i < proxy_exit->schema.count; i++) {
         PFalg_col_t exit_col = proxy_exit->schema.items[i].name;
-        used_cols = used_cols | exit_col;
 
         for (j = 0; j < base_count; j++)
             /* use unique names to get rid of duplicate columns */
@@ -1942,10 +1918,7 @@ generate_join_proxy (PFla_op_t *root,
 
     /* Generate a new column name that will hold the values of the
        new nested rowid operator... */
-    new_num_col = PFalg_ori_name (
-                      PFalg_unq_name (num_col),
-                      ~used_cols);
-    used_cols = used_cols | new_num_col;
+    new_num_col = PFcol_new (num_col);
 
     /* ... and replace the rowid column by the column generated
        by the new nested rowid operator */
@@ -1953,14 +1926,8 @@ generate_join_proxy (PFla_op_t *root,
 
     /* In addition create two names for mapping the old as well
        as the new rowid operators... */
-    new_num_col_alias = PFalg_ori_name (
-                            PFalg_unq_name (num_col),
-                            ~used_cols);
-    used_cols = used_cols | new_num_col_alias;
-    num_col_alias = PFalg_ori_name (
-                        PFalg_unq_name (num_col),
-                        ~used_cols);
-    used_cols = used_cols | num_col_alias;
+    new_num_col_alias = PFcol_new (num_col);
+    num_col_alias     = PFcol_new (num_col);
 
     /* ... and add them to the mapping projection list. */
     left_proj[0] = PFalg_proj (new_num_col_alias, new_num_col);
@@ -1994,12 +1961,8 @@ generate_join_proxy (PFla_op_t *root,
         if (entry_col == proxy_entry->sem.eqjoin.col2)
             continue;
 
-        /* look up the original name of the entry column */
-        for (j = 0; j < clsize (trace_ori); j++)
-            if (entry_col == clat (trace_ori, j))
-                base_col = clat (trace_mod, j);
-
-        /* check for duplicate column names */
+        /* check for duplicate column names and add duplicates
+           only in the projection pi_(above) */
         for (k = 0; k < dist_count; k++)
             /* use unique names to get rid of duplicate columns */
             if (PFprop_unq_name (proxy_entry->prop,
@@ -2012,54 +1975,58 @@ generate_join_proxy (PFla_op_t *root,
                                                   entry_proj[k].new);
                 break;
             }
-
         /* discard duplicate columns (thus keep a distinct list of columns */
-        if (k == dist_count) {
-            /* For each entry column we try to find the respective exit
-               column by comparing the unique names. */
-            for (j = 0; j < base_count; j++) {
-                PFalg_col_t exit_col = base_proj[j].new;
-                /* check whether this is an unchanged input column */
-                if (base_col && base_col == exit_col) {
-                    /* map output name to the same name as the input column */
-                    entry_proj[dist_count] = PFalg_proj (exit_col, entry_col);
-                    /* keep input names and replace the 'new_num_col'
-                       (disguised as 'num_col') by the real 'num_col' */
-                    proxy_proj[dist_count] = exit_col == num_col
-                                             ? PFalg_proj (exit_col,
-                                                           num_col_alias)
-                                             : PFalg_proj (exit_col,
-                                                           exit_col);
-                    dist_count++;
-                    /* Create a projection list that maps the output
-                       columns of the proxy operator such that the
-                       plan stays consistent. */
-                    above_proj[count++] = PFalg_proj (entry_col, exit_col);
-                    break;
-                }
-            }
-            /* create names for the new columns and prepare icols list */
-            if (j == base_count) {
-                /* create new column name */
-                PFalg_col_t new_exit_col = PFalg_ori_name (
-                                               PFalg_unq_name (entry_col),
-                                               ~used_cols);
-                used_cols = used_cols | new_exit_col;
-                /* add column to the list of new columns */
-                cladd (new_cols) = new_exit_col;
-                /* map columns similar to the above mapping (for already
-                   existing columns) */
-                entry_proj[dist_count] = PFalg_proj (new_exit_col, entry_col);
-                proxy_proj[dist_count] = PFalg_proj (new_exit_col, new_exit_col);
-                dist_count++;
-                above_proj[count++] = PFalg_proj (entry_col, new_exit_col);
+        if (k < dist_count)
+            continue;
 
-                /* collect all the columns that were generated
-                   in the proxy body */
-                cladd (icols) = entry_col;
+        /* look up the original name of the entry column */
+        for (j = 0; j < clsize (trace_ori); j++)
+            if (entry_col == clat (trace_ori, j))
+                base_col = clat (trace_mod, j);
+
+        /* For each entry column we try to find the respective exit
+           column by comparing their unique names. (pi_(base) is already
+           filled with the list of unique columns at the exit.) */
+        for (j = 0; j < base_count && base_col; j++) {
+            PFalg_col_t exit_col = base_proj[j].new;
+            /* check whether this is an unchanged input column */
+            if (base_col == exit_col) {
+                /* map output name to the same name as the input column */
+                entry_proj[dist_count] = PFalg_proj (exit_col, entry_col);
+                /* keep input names and replace the 'new_num_col'
+                   (disguised as 'num_col') by the real 'num_col' */
+                proxy_proj[dist_count] = exit_col == num_col
+                                         ? PFalg_proj (exit_col, num_col_alias)
+                                         : PFalg_proj (exit_col, exit_col);
+                dist_count++;
+                /* Create a projection list that maps the output
+                   columns of the proxy operator such that the
+                   plan stays consistent. */
+                above_proj[count++] = PFalg_proj (entry_col, exit_col);
+                break;
             }
         }
+        /* We have found no match between exit and entry columns
+           and thus assume that column entry_col is a new column
+           -- we generate a new name and add the old one to the icols list. */
+        if (!base_col || j == base_count) {
+            /* create new column name */
+            PFalg_col_t new_exit_col = PFcol_new (entry_col);
+            /* add column to the list of new columns */
+            cladd (new_cols) = new_exit_col;
+            /* map columns similar to the above mapping (for already
+               existing columns) */
+            entry_proj[dist_count] = PFalg_proj (new_exit_col, entry_col);
+            proxy_proj[dist_count] = PFalg_proj (new_exit_col, new_exit_col);
+            dist_count++;
+            above_proj[count++] = PFalg_proj (entry_col, new_exit_col);
+
+            /* collect all the columns that were generated
+               in the proxy body */
+            cladd (icols) = entry_col;
+        }
     }
+
     assert (count == proxy_entry->schema.count);
 
     /* We are certain that this join is only a mapping join
@@ -2110,31 +2077,7 @@ generate_join_proxy (PFla_op_t *root,
 
     /* All the columns that are required at the exit point are required columns
        for the proxy */
-    req_cols = PFalg_collist (PFprop_icols_count (base_op->prop));
-    /* copy all 'required' columns */
-    for (i = 0; i < base_op->schema.count; i++)
-        if (num_col != base_op->schema.items[i].name &&
-            PFprop_icol (base_op->prop, base_op->schema.items[i].name))
-            cladd (req_cols) = base_op->schema.items[i].name;
-
-    /* We are certain that this join is only a mapping join
-       (see join_entry ()). Any input column (at the proxy base)
-       that is propagated along the left *and* the right side
-       of the equi-join and which is not modified contains
-       the same values and can be pruned from the entry_proj
-       projection list. Here we can prune one of its occurrences
-       in the above renaming projection list. */
-    for (i = 0; i < dist_count; i++)
-        for (j = i+1; j < dist_count; j++)
-            if (entry_proj[i].new == entry_proj[j].new) {
-                /* copy the last projection pair to the
-                   current column that appears twice */
-                dist_count--;
-                entry_proj[i] = entry_proj[dist_count];
-                proxy_proj[i] = proxy_proj[dist_count];
-                i--;
-                break;
-            }
+    req_cols = PFprop_icols_to_collist (base_op->prop);
 
     /* Rebuild the proxy entry operator and extend it with a projection
        that maps the resulting column names to the names of the proxy
@@ -2182,7 +2125,8 @@ generate_join_proxy (PFla_op_t *root,
 
 
 
-#if 0
+#if 0 /* do not enable this code block
+         as it uses deprecated bit-encoded column names */
 /**
  *
  * Functions specific to the nested proxies rewrite.
@@ -3168,3 +3112,4 @@ PFintro_proxies (PFla_op_t *root)
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set foldmarker=#if,#endif foldmethod=marker foldopen-=search: */

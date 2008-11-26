@@ -1003,6 +1003,23 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             PFarray_printf (dot, ")");
             break;
 
+        case la_string_join:
+            PFarray_printf (dot,
+                            "%s\\n"
+                            "%s <%s, %s>,\\n"
+                            "<%s>,\\n"
+                            "%s <%s, %s>",
+                            a_id[n->kind],
+                            PFcol_str (n->sem.string_join.iter_res),
+                            PFcol_str (n->sem.string_join.iter),
+                            PFcol_str (n->sem.string_join.iter_sep),
+                            PFcol_str (n->sem.string_join.pos),
+                            PFcol_str (n->sem.string_join.item_res),
+                            PFcol_str (n->sem.string_join.item),
+                            PFcol_str (n->sem.string_join.item_sep));
+            break;
+
+
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -1020,7 +1037,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_rec_arg:
         case la_rec_base:
         case la_proxy_base:
-        case la_string_join:
         case la_dummy:
         case la_error:
             PFarray_printf (dot, "%s", a_id[n->kind]);
@@ -2387,7 +2403,7 @@ PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
 
         PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
-                        PFalg_is_unq_name (root->schema.items[0].name)
+                        PFcol_is_name_unq (root->schema.items[0].name)
                         ? "true" : "false");
 
         /* add domain subdomain relationships if required */

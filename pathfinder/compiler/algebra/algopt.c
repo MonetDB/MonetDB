@@ -113,13 +113,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
     bool debug_opt = getenv("PF_DEBUG_OPTIMIZATIONS") != NULL;
     long tm;
     bool const_no_attach = false;
-    bool unq_names = false;
+    bool unq_names = true;
     bool proxies_involved = false;
 
-    if (PFalg_is_unq_name(root->schema.items[0].name))
+    if (!PFcol_is_name_unq(root->schema.items[0].name))
     {
-        root = PFmap_ori_names (root);
+        tm = PFtimer_start ();
 
+        root = PFmap_unq_names (root);
+
+        tm = PFtimer_stop (tm);
+        if (timing)
+            PFlog ("   map to unique column names:\t    %s",
+                   PFtimer_str (tm));
     }
 
     if (debug_opt)
@@ -241,7 +247,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'M':
-                MAP_ORI_NAMES("mvd optimization")
+                MAP_UNQ_NAMES("mvd optimization")
 
                 tm = PFtimer_start ();
 
@@ -256,6 +262,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'N':
+                MAP_UNQ_NAMES("required nodes optimization")
                 tm = PFtimer_start ();
 
                 root = PFalgopt_req_node (root);
@@ -305,7 +312,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case 'T':
-                MAP_ORI_NAMES("thetajoin optimization")
+                MAP_UNQ_NAMES("thetajoin optimization")
 
                 tm = PFtimer_start ();
 
@@ -346,41 +353,24 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
             case 'P':
                 tm = PFtimer_start ();
 
-                if (unq_names)
-                    PFprop_infer (true  /* card */,
-                                  true  /* const */,
-                                  true  /* set */,
-                                  true  /* dom */,
-                                  true  /* icol */,
-                                  true  /* composite key */,
-                                  true  /* key */,
-                                  true  /* ocols */,
-                                  true  /* req_node */,
-                                  true  /* reqval */,
-                                  true  /* level */,
-                                  true  /* refctr */,
-                                  true  /* guides */,
-                                  true  /* original names */,
-                                  false /* unique names */,
-                                  root, guide_list);
-
-                else
-                    PFprop_infer (true  /* card */,
-                                  true  /* const */,
-                                  true  /* set */,
-                                  true  /* dom */,
-                                  true  /* icol */,
-                                  true  /* composite key */,
-                                  true  /* key */,
-                                  true  /* ocols */,
-                                  true  /* req_node */,
-                                  true  /* reqval */,
-                                  true  /* level */,
-                                  true  /* refctr */,
-                                  true  /* guides */,
-                                  false /* original names */,
-                                  true  /* unique names */,
-                                  root, guide_list);
+                PFprop_infer (true  /* card */,
+                              true  /* const */,
+                              true  /* set */,
+                              true  /* dom */,
+                              true  /* icol */,
+                              true  /* composite key */,
+                              true  /* key */,
+                              true  /* ocols */,
+                              true  /* req_node */,
+                              true  /* reqval */,
+                              true  /* level */,
+                              true  /* refctr */,
+                              true  /* guides */,
+                /* disable the following property as there might
+                   be too many columns involved */
+                              false /* original names */,
+                              true  /* unique names */,
+                              root, guide_list);
 
                 tm = PFtimer_stop (tm);
                 if (timing)
@@ -389,11 +379,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case '[':
-                if (unq_names) {
-                    PFinfo (OOPS_WARNING,
-                            "already using unique column names");
-                    break;
-                }
                 REMOVE_PROXIES("variable name mapping")
 
                 tm = PFtimer_start ();
@@ -402,7 +387,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("   map to unique column names:   %s",
+                    PFlog ("   map to unique column names:\t   %s",
                            PFtimer_str (tm));
 
                 unq_names = true;
@@ -429,7 +414,7 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 break;
 
             case '}':
-                MAP_ORI_NAMES("proxy introduction")
+                MAP_UNQ_NAMES("proxy introduction")
 
                 proxies_involved = true;
 

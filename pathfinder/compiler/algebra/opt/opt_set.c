@@ -230,3 +230,4 @@ PFalgopt_set (PFla_op_t *root)
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set foldmarker=#if,#endif foldmethod=marker foldopen-=search: */

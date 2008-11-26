@@ -1641,8 +1641,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 unsigned int  lcount    = 0,
                               rcount    = 0;
                 PFalg_col_t   dummy_col = lcross->schema.items[0].name,
-                              cur,
-                              used_cols = 0;
+                              cur;
                 PFalg_proj_t *proj_below = PFmalloc (cross->schema.count *
                                                      sizeof (PFalg_proj_t));
                 PFalg_proj_t *proj_above = PFmalloc (p->schema.count *
@@ -1691,19 +1690,16 @@ do_opt_mvd (PFla_op_t *p, bool modified)
 
                     proj_above[i] = proj (cur, cur);
 
-                    used_cols |= cur;
                 }
                 /* Create a fallback projection list with a new name
                    to ensure that at least one column remains as input
                    for the cross product. */
                 if (!lcount) {
-                    cur = PFalg_ori_name (PFalg_unq_name (col_iter),
-                                          ~used_cols);
+                    cur = PFcol_new (col_iter);
                     proj_lcross[0] = proj (cur, p->schema.items[0].name);
                     lcount++;
                 } else if (!rcount) {
-                    cur = PFalg_ori_name (PFalg_unq_name (col_iter),
-                                          ~used_cols);
+                    cur = PFcol_new (col_iter);
                     proj_rcross[0] = proj (cur, rcross->schema.items[0].name);
                     rcount++;
                 }

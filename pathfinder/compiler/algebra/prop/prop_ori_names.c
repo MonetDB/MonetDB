@@ -203,7 +203,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                 /* The proposed original column name is already
                    in use - thus replace it by a new one. */
                 if (!(FREE(n) & par_ori))
-                    par_ori = PFalg_ori_name (par_unq, FREE(n));
+                    par_ori = PFcol_ori_name (par_unq, FREE(n));
 
                 FREE(n) = diff (FREE(n), par_ori);
                 add_name_pair (np_list, par_ori, par_unq);
@@ -224,7 +224,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
     for (unsigned int i = 0; i < n->schema.count; i++) {
         unq = n->schema.items[i].name;
         if (!find_ori_name (np_list, unq)) {
-            PFalg_col_t ori = PFalg_ori_name (unq, FREE(n));
+            PFalg_col_t ori = PFcol_ori_name (unq, FREE(n));
             add_name_pair (np_list, ori, unq);
             FREE(n) = diff (FREE(n), ori);
         }
@@ -280,7 +280,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                              unq_new,
                              ori_new,
                              unq_col2 = proj_at (rproj, 0).old,
-                             ori_col2 = PFalg_ori_name (unq_col2, FREE(n));
+                             ori_col2 = PFcol_ori_name (unq_col2, FREE(n));
                 FREE(n) = diff (FREE(n), ori_col2);
 
                 /* create name pair list for the left operand */
@@ -495,13 +495,13 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             add_name_pair (n->prop->r_name_pairs, ori, unq);
 
             /* input pos column */
-            ori = PFalg_ori_name (n->sem.iter_pos_item.pos, ~col_iter);
+            ori = PFcol_ori_name (n->sem.iter_pos_item.pos, ~col_iter);
             unq = n->sem.iter_pos_item.pos;
             add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->r_name_pairs, ori, unq);
 
             /* input item column */
-            ori = PFalg_ori_name (n->sem.iter_pos_item.item,
+            ori = PFcol_ori_name (n->sem.iter_pos_item.item,
                                   ~(col_iter | ori));
             unq = n->sem.iter_pos_item.item;
             add_name_pair (np_list, ori, unq);
@@ -578,7 +578,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             n->prop->l_name_pairs = PFarray_copy (np_list);
             /* introduce new column for error branch */
             add_name_pair (n->prop->r_name_pairs,
-                           PFalg_ori_name (n->sem.err.col, ALL),
+                           PFcol_ori_name (n->sem.err.col, ALL),
                            n->sem.err.col);
             break;
 
@@ -652,7 +652,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
                (FREE(n) ensures that item and
                 res column names are not used) */
             unq = n->sem.string_join.pos;
-            ori = PFalg_ori_name (unq, FREE(n));
+            ori = PFcol_ori_name (unq, FREE(n));
             add_name_pair (np_list, ori, unq);
             add_name_pair (n->prop->l_name_pairs, ori, unq);
             FREE(n) = diff (FREE(n), ori);

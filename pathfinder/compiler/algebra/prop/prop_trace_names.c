@@ -386,10 +386,41 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             return;
 
         case la_merge_adjacent:
-            assert (n->sem.merge_adjacent.iter_res ==
-                    n->sem.merge_adjacent.iter_in);
-            diff_np (np_list, n->sem.merge_adjacent.item_res);
-            break;
+            /* if we have no additional name pair list then create one */
+            if (!n->prop->l_name_pairs)
+               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                                PFarray_last (np_list));
+
+            /* rename the name mappings */
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
+                /* ensure that we don't forget anything about
+                   modified columns (thus add them into both branches) */
+                if (CUR_AT(np_list, i) == col_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+                else if (CUR_AT(np_list, i) == n->sem.merge_adjacent.iter_res &&
+                         CUR_AT(np_list, i) != n->sem.merge_adjacent.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   n->sem.merge_adjacent.iter_in);
+                }
+                else if (CUR_AT(np_list, i) == n->sem.merge_adjacent.pos_res &&
+                         CUR_AT(np_list, i) != n->sem.merge_adjacent.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   n->sem.merge_adjacent.pos_in);
+                }
+                else if (CUR_AT(np_list, i) == n->sem.merge_adjacent.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   col_NULL);
+                }
+            }
+            map_names (L(n), goal, n->prop->l_name_pairs, col_NULL);
+            map_names (R(n), goal, n->prop->l_name_pairs, col_NULL);
+            return;
 
         case la_fragment:
         case la_frag_extract:
@@ -433,10 +464,58 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             break;
 
         case la_string_join:
-            assert (n->sem.string_join.iter == n->sem.string_join.iter_res &&
-                    n->sem.string_join.iter_sep == n->sem.string_join.iter_res);
-            diff_np (np_list, n->sem.string_join.item_res);
-            break;
+            /* if we have no additional name pair list then create one */
+            if (!n->prop->l_name_pairs)
+               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                                PFarray_last (np_list));
+
+            /* rename the name mappings */
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
+                /* ensure that we don't forget anything about
+                   modified columns (thus add them into both branches) */
+                if (CUR_AT(np_list, i) == col_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+                else if (CUR_AT(np_list, i) == n->sem.string_join.iter_res &&
+                         CUR_AT(np_list, i) != n->sem.string_join.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   n->sem.string_join.iter);
+                }
+                else if (CUR_AT(np_list, i) == n->sem.string_join.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   col_NULL);
+                }
+            }
+            map_names (L(n), goal, n->prop->l_name_pairs, col_NULL);
+
+            PFarray_last (n->prop->l_name_pairs) = 0;
+            /* rename the name mappings */
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
+                /* ensure that we don't forget anything about
+                   modified columns (thus add them into both branches) */
+                if (CUR_AT(np_list, i) == col_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+                else if (CUR_AT(np_list, i) == n->sem.string_join.iter_res &&
+                         CUR_AT(np_list, i) != n->sem.string_join.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   n->sem.string_join.iter_sep);
+                }
+                else if (CUR_AT(np_list, i) == n->sem.string_join.item_res) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   col_NULL);
+                }
+            }
+            map_names (R(n), goal, n->prop->l_name_pairs, col_NULL);
+            return;
 
         case la_internal_op:
             PFoops (OOPS_FATAL,

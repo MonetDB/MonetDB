@@ -488,4 +488,5 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
     return root;
 }
 
-/* vim:set shiftwidth=4 expandtab filetype=c: */
+/* vim:set shiftwidth=4 expandtab filetype=c: */ 
+/* vim:set foldmarker=#if,#endif foldmethod=marker foldopen-=search: */

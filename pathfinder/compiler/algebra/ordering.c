@@ -37,6 +37,7 @@
 #include "ordering.h"
 
 #include "array.h"
+#include "oops.h"
 
 /** An ordering item */
 struct PFalg_order_item_t {
@@ -370,6 +371,13 @@ PFord_permutations (const PFord_ordering_t ordering)
                                          PFord_order_col_at (ordering, i),
                                          DIR_DESC));
         }
+        
+        /* FIXME: This is no solution for the problem -- it however gives
+           us a clear indicator when something (during testing) goes wrong. */
+        if (PFord_set_count (ret) > 10000000)
+            PFoops (OOPS_FATAL,
+                    "trying to generate too many plan permutations -- please"
+                    " report bug");
     }
 
     return ret;

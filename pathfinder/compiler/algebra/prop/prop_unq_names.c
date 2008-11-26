@@ -110,7 +110,7 @@ add_name_pair (PFarray_t *np_list, PFalg_col_t ori, PFalg_col_t unq)
 static void
 new_name_pair (PFarray_t *np_list, PFalg_col_t ori)
 {
-    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+    add_name_pair (np_list, ori, PFcol_new (ori));
 }
 
 /**
@@ -198,7 +198,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = find_unq_name (np_list, ori_prev);
                 else
                     /* no match */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFcol_new (ori);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (left_np_list, ori, child_unq);
@@ -216,7 +216,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = find_unq_name (np_list, ori_prev);
                 else
                     /* no match */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFcol_new (ori);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (right_np_list, ori, child_unq);
@@ -273,12 +273,12 @@ infer_unq_names (PFla_op_t *n)
                         unq = find_unq_name (np_list, ori_prev);
                     else
                         /* no match */
-                        unq = PFalg_unq_name (ori);
+                        unq = PFcol_new (ori);
 
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == col2_unq)
-                    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+                    add_name_pair (np_list, ori, PFcol_new (ori));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -304,12 +304,12 @@ infer_unq_names (PFla_op_t *n)
                         unq = find_unq_name (np_list, ori_prev);
                     else
                         /* no match */
-                        unq = PFalg_unq_name (ori);
+                        unq = PFcol_new (ori);
 
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == col1_unq)
-                    add_name_pair (np_list, ori, PFalg_unq_name (ori));
+                    add_name_pair (np_list, ori, PFcol_new (ori));
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -376,7 +376,7 @@ infer_unq_names (PFla_op_t *n)
                     unq = l_unq;
                 else
                 */
-                    unq = PFalg_unq_name (ori);
+                    unq = PFcol_new (ori);
 
                 add_name_pair (np_list, ori, unq);
                 add_name_pair (n->prop->l_name_pairs, ori, l_unq);

@@ -670,7 +670,7 @@ PFxml2la_conv_2PFLA_attributeName_unq(const char* s)
     }
 
 
-    return PFalg_unq_fixed_name(ori, id);
+    return PFcol_new_fixed(ori, id);
 }
 
 

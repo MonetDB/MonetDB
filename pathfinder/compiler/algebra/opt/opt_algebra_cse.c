@@ -479,7 +479,7 @@ create_unq_name (PFalg_schema_t schema, PFalg_col_t col)
 {
     for (unsigned int i = 0; i < schema.count; i++)
         if (schema.items[i].name == col)
-            return PFalg_new_name (col);
+            return PFcol_new (col);
     return col;
 }
 
@@ -1396,7 +1396,7 @@ new_operator (PFla_op_t *n)
                     if (in (used_collist, CSE(R(n))->schema.items[i].name)) {
                        /* create new column name */
                        PFalg_col_t t
-                           = PFalg_new_name (CSE(R(n))->schema.items[i].name);
+                           = PFcol_new (CSE(R(n))->schema.items[i].name);
 
                        /* create new entry for projection */
                        p[i] = PFalg_proj (t, CSE(R(n))->schema.items[i].name);

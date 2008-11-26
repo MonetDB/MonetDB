@@ -532,32 +532,27 @@ void PFalg_init (void);
 /**
  * Checks whether a name is unique or not.
  */
-bool PFalg_is_unq_name (PFalg_col_t col);
+bool PFcol_is_name_unq (PFalg_col_t col);
 
 /**
- * Return a new unique column name
- */
-PFalg_col_t PFalg_new_name (PFalg_col_t col);
-
-/**
- * Create a unique name based on an original bit-encoded name @a ori
- * that retains the usage information of the new variable (iter, pos
- * or item).
- */
-PFalg_col_t PFalg_unq_name (PFalg_col_t ori);
-
-/**
- * Create an unique name based on an id @a id and
- * an original name @a ori that retains the usage information
+ * Create a new unique column name (based on an original bit-encoded 
+ * or unique column name @a col) that retains the usage information
  * of the new variable (iter, pos or item).
  */
-PFalg_col_t PFalg_unq_fixed_name (PFalg_col_t ori, unsigned int id);
+PFalg_col_t PFcol_new (PFalg_col_t col);
+
+/**
+ * Create an unique name based on an id @a id (and an original
+ * or unique column name @a col) that retains the usage information
+ * of the new variable (iter, pos or item).
+ */
+PFalg_col_t PFcol_new_fixed (PFalg_col_t col, unsigned int id);
 
 /**
  * Create an original column name based on an unique name @a unq
  * and a list of free original variables @a free.
  */
-PFalg_col_t PFalg_ori_name (PFalg_col_t unq, PFalg_col_t free);
+PFalg_col_t PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free);
 
 /**
  * Print XPath axis

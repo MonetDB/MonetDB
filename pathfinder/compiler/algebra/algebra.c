@@ -733,22 +733,20 @@ PFalg_init (void)
  * Checks whether a name is unique or not.
  */
 bool
-PFalg_is_unq_name (PFalg_col_t col)
+PFcol_is_name_unq (PFalg_col_t col)
 {
     return ((1 << 3) & col) && (col & 7);
 }
 
 /**
- * Return a new unique column name
+ * Create an unique name based on an id @a id and
+ * an unique name @a unq that retains the usage information
+ * of the new variable (iter, pos or item).
  */
-PFalg_col_t
-PFalg_new_name (PFalg_col_t col)
+static PFalg_col_t
+col_unq_unq (PFalg_col_t col, unsigned int id)
 {
-    if (!PFalg_is_unq_name(col))
-        PFoops (OOPS_FATAL,
-                "unique column name expected");
-    
-    return (highest_col_name_id++ << 4) | (1 << 3) | (col & 7);
+    return (id << 4) | (1 << 3) | (col & 7);
 }
     
 /**
@@ -757,11 +755,11 @@ PFalg_new_name (PFalg_col_t col)
  * of the new variable (iter, pos or item).
  */
 static PFalg_col_t
-unq_name (PFalg_col_t ori, unsigned int id)
+col_ori_unq (PFalg_col_t ori, unsigned int id)
 {
     PFalg_col_t unq = col_NULL;
 
-    if (PFalg_is_unq_name(ori))
+    if (PFcol_is_name_unq(ori))
         PFoops (OOPS_FATAL,
                 "bit-encoded column name expected");
 
@@ -818,28 +816,34 @@ unq_name (PFalg_col_t ori, unsigned int id)
 }
 
 /**
- * Create a unique name based on an original bit-encoded name @a ori
- * that retains the usage information of the new variable (iter, pos
- * or item).
- */
-PFalg_col_t
-PFalg_unq_name (PFalg_col_t ori)
-{
-    return unq_name (ori, highest_col_name_id++);
-}
-
-/**
- * Create an unique name based on an id @a id and
- * an original name @a ori that retains the usage information
+ * Create a new unique column name (based on an original bit-encoded 
+ * or unique column name @a col) that retains the usage information
  * of the new variable (iter, pos or item).
  */
 PFalg_col_t
-PFalg_unq_fixed_name (PFalg_col_t ori, unsigned int id)
+PFcol_new (PFalg_col_t col)
 {
-    if (id > highest_col_name_id)
-        highest_col_name_id = id;
+    if (PFcol_is_name_unq (col))
+        return col_unq_unq (col, highest_col_name_id++);
+    else
+        return col_ori_unq (col, highest_col_name_id++);
+}
 
-    return unq_name (ori, id);
+/**
+ * Create an unique name based on an id @a id (and an original
+ * or unique column name @a col) that retains the usage information
+ * of the new variable (iter, pos or item).
+ */
+PFalg_col_t
+PFcol_new_fixed (PFalg_col_t col, unsigned int id)
+{
+    if (id >= highest_col_name_id)
+        highest_col_name_id = id + 1;
+
+    if (PFcol_is_name_unq (col))
+        return col_unq_unq (col, id);
+    else
+        return col_ori_unq (col, id);
 }
 
 /**
@@ -847,7 +851,7 @@ PFalg_unq_fixed_name (PFalg_col_t ori, unsigned int id)
  * and a list of free original variables @a free.
  */
 PFalg_col_t
-PFalg_ori_name (PFalg_col_t unq, PFalg_col_t free)
+PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free)
 {
     switch (unq & (col_iter | col_pos | col_item)) {
         case col_iter:

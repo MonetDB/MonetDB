@@ -891,8 +891,8 @@ plan_pos_select (const PFla_op_t *n)
     sorted = prune_plans (sorted);
 
     /* get ourselves a new column name */
-    num  = PFalg_unq_name (col_pos);
-    cast = PFalg_unq_name (col_pos);
+    num  = PFcol_new (col_pos);
+    cast = PFcol_new (col_pos);
 
     for (unsigned int i = 0; i < count; i++)
         proj[i] = PFalg_proj (n->schema.items[i].name,
@@ -1632,8 +1632,8 @@ plan_step_join (const PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    iter  = PFalg_unq_name (col_iter);
-    iter2 = PFalg_unq_name (col_iter);
+    iter  = PFcol_new (col_iter);
+    iter2 = PFcol_new (col_iter);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -1702,7 +1702,7 @@ plan_step_join_to_step (const PFla_op_t *n)
 
     /* find a free iter value */
     item      = L(n)->sem.step.item;
-    iter      = PFalg_unq_name (col_iter);
+    iter      = PFcol_new (col_iter);
     
     proj_out[0].new = item_out;
     proj_out[0].old = item;
@@ -2675,8 +2675,8 @@ plan_id_join (PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    iter  = PFalg_unq_name (col_iter);
-    iter2 = PFalg_unq_name (col_iter);
+    iter  = PFcol_new (col_iter);
+    iter2 = PFcol_new (col_iter);
 
     /* create the inner projection list */
     proj_in[0] = PFalg_proj (iter2, iter);
@@ -2743,8 +2743,8 @@ plan_vx_join (PFla_op_t *n)
 
     /* get ourselves two new column name
        (for creating keys using mark and joining back) */
-    iter  = PFalg_unq_name (col_iter);
-    iter2 = PFalg_unq_name (col_iter);
+    iter  = PFcol_new (col_iter);
+    iter2 = PFcol_new (col_iter);
 
 
     /* create the inner projection list */
@@ -3507,10 +3507,7 @@ plan_subexpression (PFla_op_t *n)
                 col = p->schema.items[i].name;
                 /* check for an iter-like column (to avoid generating
                    a large amount of plans) */
-                if (PFalg_is_unq_name (col)
-                  ? PFalg_ori_name (col, ~col_NULL) == col_iter
-                  : PFalg_unq_fixed_name (col, 1) ==
-                    PFalg_unq_fixed_name (col_iter, 1))
+                if (PFcol_new_fixed (col, 1) == PFcol_new_fixed (col_iter, 1))
                     ord = PFord_refine (ord, p->schema.items[i].name, DIR_ASC);
             }
 

@@ -663,7 +663,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                     /* any new column will be added
                        with an unused column name */
                     if (j == lproj_old_size)
-                        proj_add (lproj) = proj (PFalg_new_name (cur), cur);
+                        proj_add (lproj) = proj (PFcol_new (cur), cur);
                 }
 
                 *p = *(PFla_project_ (eqjoin_opt (L(lp), rp, lproj, rproj),
@@ -1801,7 +1801,7 @@ remove_eqjoin_opt (PFla_op_t *p)
         col1_new = proj_at (lproj, 0).new;
         col2_old = proj_at (rproj, 0).old;
         /* get a new column name */
-        col2_new = PFalg_new_name (col2_old);
+        col2_new = PFcol_new (col2_old);
 
         projlist  = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
         lprojlist = PFmalloc (lcount * sizeof (PFalg_proj_t));

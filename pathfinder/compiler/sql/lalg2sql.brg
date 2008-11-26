@@ -3177,7 +3177,7 @@ reduce (PFla_op_t * p, int goalnt)
                 bool             asc;
 
                 /* get ourselves a new column name */
-                num = PFalg_unq_name (col_pos);
+                num = PFcol_new (col_pos);
 
                 /* copy all existing column, from, and where lists */
                 copy_cols_from_where (p, L(p));

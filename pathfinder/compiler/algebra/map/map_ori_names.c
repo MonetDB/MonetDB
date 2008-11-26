@@ -329,7 +329,7 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
                    avoided. */
                 for (i = 0; i < p->schema.count; i++)
                     used_cols |= ONAME(p, p->schema.items[i].name);
-                col2_new = PFalg_ori_name (col2_unq, ~used_cols);
+                col2_new = PFcol_ori_name (col2_unq, ~used_cols);
                 rprojlist[rcount++] = proj (col2_new, col2_old);
 
                 /* create the projection list for the right operand */

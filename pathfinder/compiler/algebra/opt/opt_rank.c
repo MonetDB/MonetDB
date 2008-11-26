@@ -440,7 +440,7 @@ opt_rank (PFla_op_t *p)
 
                         if (j == p->sem.proj.count) {
                             /* create a new unique column name */
-                            new_name = PFalg_new_name (COL_AT (sortby, i));
+                            new_name = PFcol_new (COL_AT (sortby, i));
                             /* mark unreferenced join inputs invisible */
                             VIS_AT (sortby, i) = false;
                             /* rename from old to new unique name */

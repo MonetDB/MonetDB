@@ -279,7 +279,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             assert (col1 == col2);
             /* Replace col2 by a new column name to ensure that
                the join columns use a different column name. */
-            col2 = PFalg_new_name (col2);
+            col2 = PFcol_new (col2);
             
             for (unsigned int i = 0; i < left->schema.count; i++) {
                 unq = left->schema.items[i].name;
@@ -925,6 +925,9 @@ PFla_op_t *
 PFmap_unq_names (PFla_op_t *root)
 {
     PFarray_t *map = PFarray (sizeof (ori_unq_map), 300);
+
+    /* reset the column name counter */
+    PFalg_init ();
 
     /* infer unique names */
     PFprop_infer_unq_names (root);
