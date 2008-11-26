@@ -1,0 +1,17 @@
+stderr of test 'monetdb-clients-conds` in directory 'conf` itself:
+
+
+# 20:32:43 >  
+# 20:32:43 >  ./monetdb-clients-conds.sh monetdb-clients-conds 
+# 20:32:43 >  
+
+
+# 20:32:43 >  
+# 20:32:43 >  Mtimeout -timeout 60 monetdb-clients-config --conds
+# 20:32:43 >  
+
+
+# 20:32:43 >  
+# 20:32:43 >  Done.
+# 20:32:43 >  
+
