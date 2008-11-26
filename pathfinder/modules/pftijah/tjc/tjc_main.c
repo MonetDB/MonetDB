@@ -246,9 +246,7 @@ int save2file(char* name, char *content) {
 
 char* tjc_new_parse(char* query, BAT* optbat, char* startNodes_name, char** errBUFF)
 {
-    (void) optbat;
     (void) startNodes_name;
-    (void) errBUFF;
 
     tjc_config *tjc_c = (tjc_config*)TJCmalloc(sizeof(struct tjc_config));
 

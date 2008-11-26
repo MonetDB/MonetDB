@@ -187,6 +187,5 @@ char* milprint (tjc_config *tjc_c, TJpnode_t *root)
     return &tjc_c->milBUFF[0];
 }
 
-
 /* vim:set shiftwidth=4 expandtab: */
 /* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */

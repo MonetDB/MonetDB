@@ -36,4 +36,6 @@ typedef struct tjc_config {
 
 extern tjc_config* tjc_c_GLOBAL;
 
+extern void setTJCscanstring(const char *);
+
 #endif

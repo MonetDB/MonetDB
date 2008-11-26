@@ -21,7 +21,7 @@
 TJpnode_t * 
 tjcp_leaf (TJptree_t *t, TJptype_t kind)
 {
-    TJpnode_t *n;
+    TJpnode_t *n = NULL;
     int c;
 
     //n = (TJpnode_t *) TJCmalloc (sizeof (TJpnode_t));

@@ -217,9 +217,6 @@ QueryClause		: TERM
 
 %%
 
-extern void setTJCscanstring(const char *);
-
-
 int tjc_parser (char* input, TJptree_t **res, char* err)
 {
   setTJCscanstring(input);
