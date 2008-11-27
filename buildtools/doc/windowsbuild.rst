@@ -703,6 +703,7 @@ available.  The following parameters are possible:
   used for creating a binary release);
 - ``HAVE_ICONV=1`` - the iconv library is available;
 - ``HAVE_JAVA=1`` - Java and Apache Ant are both available;
+- ``HAVE_LIBXML2=1`` - the libxml2 library is available;
 - ``HAVE_MONETDB4=1`` - for sql and pathfinder: MonetDB4 was compiled
   and installed;
 - ``HAVE_MONETDB5=1`` - for sql and pathfinder: MonetDB5 was compiled
