@@ -959,15 +959,16 @@ TBL_getdir(void)
 		if (dirp == NULL) {
 			char *cur_dir;
 			char *p;
+			size_t l;
 
 			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
-				i = (int) (p - mod_path);
+				l = p - mod_path;
 			} else {
-				i = (int) strlen(mod_path);
+				l = strlen(mod_path);
 			}
-			cur_dir = GDKmalloc(i + 1);
-			strncpy(cur_dir, mod_path, i);
-			cur_dir[i] = 0;
+			cur_dir = GDKmalloc(l + 1);
+			strncpy(cur_dir, mod_path, l);
+			cur_dir[l] = 0;
 			if ((mod_path = p) != NULL) {
 				while (*mod_path == PATH_SEP)
 					mod_path++;
