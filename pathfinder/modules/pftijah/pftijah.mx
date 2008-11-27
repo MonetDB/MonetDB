@@ -315,8 +315,6 @@ const dflt_ft_index   := "DFLT_FT_INDEX";
 const dflt_bg_index   := "DFLT_FT_INDEX";
 const dflt_score_base := "0";
 
-# var GQENV := create_qenv(dflt_ft_index,dflt_bg_index,dflt_score_base);
-
 PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
 {
     var res := dflt_ft_index;
@@ -330,20 +328,6 @@ PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
     }
     if ( verbose ) printf("#TJ:tj_get_ft_index() = %s.\n",res);
     return res;
-}
-
-ADDHELP("tj_ping", "flokstra & rode", "Jan 2007",
-"PARAMETERS:\n\
-- none.\n\
-DESCRIPTION:\n\
-debugging, when this help is removed Mtest/Mapi fails ",
-"pftijah");
-PROC tj_ping() : void :=
-{
-  lock_set(tj_adm_lock);
-  var err := CATCH({printf("# *** ping *****\n");} );
-  lock_unset(tj_adm_lock);
-  if (not(isnil(err))) ERROR(err);
 }
 
 ADDHELP("tj_init_global", "flokstra & rode", "Jan 2007",
@@ -1047,12 +1031,6 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
     lock_unset(coll_lock);
     if (not(isnil(err))) ERROR(err);
 }
-
-PROC _timestr(lng v) : str
-{
-    return str(v/1000000) + "." + str(v/1000) + "xs";
-}
-
 
 PROC _tj_add2collection(str ftiName, BAT[oid,bat] ws_opt, BAT[str,bat] collBat, str uri_loc, str uri_name, bit shred) : void
 { 
@@ -2124,7 +2102,6 @@ PROC select_startnodes(bat[void,oid] startNodes, BAT[oid,str] qenv) : bat[oid,db
     var cName := qenv.find(QENV_FTINAME);
     var res := startNodes.join(bat("tj_" + cName + "_Tags").reverse()).reverse();
     res := res.project(dbl(qenv.find(QENV_SCOREBASE))).sort();
-    if (res.count() = 0) tj_trace(sprintf("WARNING: start nodeset is empty")); 
     return res;
 }
 
@@ -2136,8 +2113,6 @@ PROC select_startnodes(bat[void,oid] startNodes, BAT[oid,str] qenv) : bat[oid,db
 ##
 PROC select_node(BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
-     if ( trace ) tj_trace( sprintf("BEGIN select_node('*')") );
-     
      var cName := qenv.find(QENV_FTINAME);
      var index := bat("tj_" + cName + "_TagIndex");
      var offset1 := index.fetch(1);
@@ -2150,8 +2125,6 @@ PROC select_node(BAT[oid,str] qenv) : bat[oid,dbl] :=
      # set the recursive tag flag on "true" because all tags are selected
      modify_qenv(qenv,QENV_RECURSIVE_TAGS,"1");
 
-     if ( trace ) tj_trace( sprintf("END select_node('*')") );
-    
     return res;
 }
 
@@ -2173,8 +2146,6 @@ PROC _getTagPositions(oid tid, str cName) : bat[void,oid] := {
 
 PROC select_node(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( sprintf("BEGIN select_node('%s')", name) );
-
     var tids := bat(_tj_TagBat(qenv.find(QENV_FTINAME))).select(name);
     if (tids.count() = 0) return new(oid,dbl);
     var tid := tids.reverse().fetch(0);
@@ -2188,7 +2159,6 @@ PROC select_node(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
     var result := _getTagPositions(tid, cName); 
     result := result.reverse().project(dbl(nil)); 
 
-    if ( trace ) tj_trace( sprintf("END   select_node('%s')", name) );
     return result;
 }
 
@@ -2237,8 +2207,6 @@ PROC split2frag(bat[oid,any] nodes, bat[void,oid] frags) : bat[oid,bat] :=
 ##
 PROC select_term(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( sprintf("BEGIN select_term('%s')", name) );
-    # 
     var stemmer := bat("tj_"+ qenv.find(QENV_FTINAME) +"_param").find("stemmer");
     var term    := tj_normalizeTerm( toLower(name), stemmer );
     
@@ -2251,7 +2219,6 @@ PROC select_term(str name, BAT[oid,str] qenv) : bat[oid,dbl] :=
     result := result.reverse().sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
     
 
-    if ( trace ) tj_trace( sprintf("END   select_term('%s')", name) );
     return result;
 }
 
@@ -2279,7 +2246,6 @@ PROC select_term(str name, int stemming, BAT[oid,str] qenv) : bat[oid,dbl] :=
 ##
 PROC select_phrase(bat[void,oid] terms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN select_phrase" );
     # Select the term positions from the global term dictionary. 
    
     var tid := terms.fetch(0);
@@ -2301,7 +2267,6 @@ PROC select_phrase(bat[void,oid] terms, BAT[oid,str] qenv) : bat[oid,dbl] :=
     
     res := res.sort().project(dbl(qenv.find(QENV_SCOREBASE))); 
     
-    if ( trace ) tj_trace( "END   select_phrase" );
     return res;
 }
 
@@ -2328,8 +2293,6 @@ PROC select_phrase(bat[void,oid] terms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 
 PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN contained_by" );
-   
     if ( count(left) = 0 ) return new(oid,dbl);
     if ( count(right) = 0 ) return new(oid,dbl);
     
@@ -2351,7 +2314,6 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : ba
        result := left.semijoin(anc_desc.reverse());
     }
     
-    if ( trace ) tj_trace( "END contained_by" );
     return result.sort();
 }
 
@@ -2365,12 +2327,9 @@ PROC contained_by(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : ba
 
 PROC contained_by(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN contained_by" );
-
     var all_nodes := select_node(qenv);
     var result := contained_by(all_nodes, region, qenv);
     
-    if ( trace ) tj_trace( "END  contained_by" );
     return result;
 }
 
@@ -2392,8 +2351,6 @@ PROC contained_by(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 
 PROC containing(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN containing_" );
-    
     # Check for the virtual root
     if ( count(left) = 1 )
        if ( left.reverse().fetch(0) = virtRoot ) 
@@ -2412,7 +2369,6 @@ PROC containing(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[
        result := left.semijoin(anc_desc);
     }
     
-    if ( trace ) tj_trace( "END   containing_" );
     return result.sort();
 }
 
@@ -2633,7 +2589,6 @@ PROC _score_OKAPI(int q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, int cNd
 
 PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_q_NLLR" );
     var t_total := 0;
     t_total :-= time();
   
@@ -2662,13 +2617,11 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] q
 
     t_total :+= time();
     if (timing) printf("# NLLR timing: total: %d\n", t_total);
-    if ( trace ) tj_trace( "END p_containing_q_NLLR" );
     return res;
 }
 
 PROC p_containing_q_LMs(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_q_LMs" );
     var t_total := 0;
     t_total :-= time();
     
@@ -2701,13 +2654,11 @@ PROC p_containing_q_LMs(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qe
 
     t_total :+= time();
     if (timing) printf("# LMs timing: total: %d\n", t_total);
-    if ( trace ) tj_trace( "END p_containing_q_LMs" );
     return res;
 }
 
 PROC p_containing_q_LM(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_q_LMs" );
     var t_total := 0;
     t_total :-= time();
     
@@ -2740,13 +2691,11 @@ PROC p_containing_q_LM(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qen
 
     t_total :+= time();
     if (timing) printf("# LM timing: total: %d\n", t_total);
-    if ( trace ) tj_trace( "END p_containing_q_LM" );
     return res;
 }
 
 PROC p_containing_q_OKAPI(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_q_OKAPI" );
     var t_total := 0;
     t_total :-= time();
 
@@ -2777,7 +2726,6 @@ PROC p_containing_q_OKAPI(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] 
 
     t_total :+= time();
     if (timing) printf("# OKAPI timing: total: %d\n", t_total);
-    if ( trace ) tj_trace( "END p_containing_q_OKAPI" );
     return res;
 }
 
@@ -2787,7 +2735,6 @@ PROC p_containing_q_OKAPI(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] 
 #
 PROC p_containing_q_PRF(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_q_PRF" );
     var t_total := 0;
     t_total :-= time();
 
@@ -2860,7 +2807,6 @@ PROC p_containing_q_PRF(bat[oid,dbl] left, bat[void,str] Qterms, BAT[oid,str] qe
 
     t_total :+= time();
     if (timing) printf("# PRF timing: total: %d\n", t_total);
-    if ( trace ) tj_trace( "END p_containing_q_PRF" );
     return qResults;
 }
 
@@ -2882,7 +2828,6 @@ PROC p_contained_by_@1(bat[oid,dbl] region, BAT[oid,str] qenv) : bat[oid,dbl] :=
 
 PROC p_contained_by_@1(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[oid,dbl] := 
 {
-    if ( trace ) tj_trace( "BEGIN p_contained_by_@1" );
     var t := 0 - time();
     
     if ( count(left) = 0 ) return new(oid,dbl);
@@ -2911,7 +2856,6 @@ PROC p_contained_by_@1(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv)
 
     t :+= time();
     if (timing) printf("# contained_by_@1 timing: %d\n", t);
-    if (trace) tj_trace( "END p_contained_by_@1" );
     return reg_score.sort();
 }
 @mil
@@ -2923,7 +2867,6 @@ PROC p_contained_by_@1(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv)
 @= p_containing
 PROC p_containing_@1(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) : bat[oid,dbl] :=
 {
-    if ( trace ) tj_trace( "BEGIN p_containing_@1" );
     var t := 0 - time();
     
     if ( count(left) = 0 ) return new(oid,dbl);
@@ -2946,7 +2889,6 @@ PROC p_containing_@1(bat[oid,dbl] left, bat[oid,dbl] right, BAT[oid,str] qenv) :
 
     t :+= time();
     if (timing) printf("# containing_@1 timing: %d\n", t);
-    if (trace) tj_trace( "END p_containing_@1" );
     return reg_score.sort();
 }
 @mil
@@ -3445,6 +3387,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	char* mil;
 	char  nameBUFF[32], *startNodes_name;
 
+        int parser_timing = 0;
 	lng time_start = GDKusec();
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start.\n");
@@ -3536,7 +3479,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: finish.\n");
 
-	if ( 1 ) {
+	if ( parser_timing ) {
 		long time_total = (time_end - time_start);
 		long time_parse = (time_mil_start - time_parse_start);
 		long time_mil   = (time_end - time_mil_start);

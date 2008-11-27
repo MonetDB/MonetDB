@@ -18,14 +18,12 @@ quit();
 
 Over..
 
-# 16:06:32 >  
-# 16:06:32 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31150 colltest2.xq
-# 16:06:32 >  
+# 09:11:32 >  
+# 09:11:32 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=ewi581 --port=37090 colltest2.xq
+# 09:11:32 >  
 
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><bubble>Speed is the key to success.</bubble><bubble>Snelheid is de sleutel tot succes.</bubble></XQueryResult>
 
-# 16:06:32 >  
-# 16:06:32 >  Done.
-# 16:06:32 >  
+# 09:11:32 >  
+# 09:11:32 >  Done.
+# 09:11:32 >  
 

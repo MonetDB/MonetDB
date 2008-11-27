@@ -51,7 +51,6 @@ module 'pftijah'
 [ "tj_init_global(BAT[str,str]) : void"																	  ]
 [ "tj_log(str, int) : void"																		  ]
 [ "tj_normalizeTerm(str, str) : str"																	  ]
-[ "tj_ping() : void"																			  ]
 [ "tj_setlog(str) : void"																		  ]
 [ "treemergejoin_sort(BAT[oid,oid], BAT[void,int], BAT[oid,oid]) : BAT[oid,oid]"											  ]
 [ "treemergejoin_sort_unnested(BAT[oid,oid], BAT[void,int], BAT[oid,oid]) : BAT[oid,oid]"										  ]
