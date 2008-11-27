@@ -366,10 +366,14 @@ PFord_permutations (const PFord_ordering_t ordering)
                            PFord_refine (PFord_set_at (subperms, j),
                                          PFord_order_col_at (ordering, i),
                                          DIR_ASC));
+            /* ignore reverse orders as the complexity then explodes
+               for wider relations */
+            /*
             PFord_set_add (ret,
                            PFord_refine (PFord_set_at (subperms, j),
                                          PFord_order_col_at (ordering, i),
                                          DIR_DESC));
+            */
         }
         
         /* FIXME: This is no solution for the problem -- it however gives
