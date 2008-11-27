@@ -314,13 +314,6 @@ PFla_lit_tbl_ (PFalg_collist_t *collist,
     unsigned int    i;
     unsigned int    j;
 
-    /*
-     * We have a better constructor/node kind for empty tables.
-     * (Facilitates optimization.)
-     */
-    if (count == 0)
-        return PFla_empty_tbl (collist);
-
     /* instantiate the new algebra operator node */
     ret = la_op_leaf (la_lit_tbl);
 
@@ -1247,31 +1240,17 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                               .type = ERR_TYPE_MASK (
                                           n1->schema.items[i].type
                                         | n2->schema.items[j].type) };
-                else if (kind == la_intersect) {
-                    /* return empty table in case of
-                       a complete column type mismatch */
-                    if (!(n1->schema.items[i].type &
-                          n2->schema.items[j].type))
-                        return PFla_empty_tbl_ (n1->schema);
-
+                else if (kind == la_intersect)
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t)
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type
                                     & n2->schema.items[j].type };
-                }
-                else if (kind == la_difference) {
-                    /* return lhs argument in case of
-                       a complete column type mismatch */
-                    if (!(n1->schema.items[i].type &
-                          n2->schema.items[j].type))
-                        return (PFla_op_t *) n1;
-
+                else if (kind == la_difference)
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t)
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type };
-                }
                 break;
             }
 
@@ -2430,26 +2409,16 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_col_t col,
                 PFcol_str (col));
 
     /* if we statically know that the type assertion would yield
-       an empty type we can replace it by an empty table */
+       an empty type we can replace it by an empty table. This
+       is done in ope/opt_general.brg. Until then we however have
+       to provide the expected type. */
     if (!assert_ty) {
-        /* instantiate the new algebra operator node */
-        ret = la_op_leaf (la_empty_tbl);
-
-        /* set its schema */
-        ret->schema.count = n->schema.count;
-        ret->schema.items
-            = PFmalloc (n->schema.count * sizeof (PFalg_schema_t));
-
-        for (i = 0; i < n->schema.count; i++)
-            if (col == n->schema.items[i].name)
-            {
-                ret->schema.items[i].name = col;
-                ret->schema.items[i].type = ty;
-            }
-            else
-                ret->schema.items[i] = n->schema.items[i];
-
-        return ret;
+        /* operator type_assert may only appear in combination
+           with type -- as the query generation will never filter
+           the same type twice we can be sure that !pos leads to
+           a non-empty assert_ty */
+        assert (pos);
+        assert_ty = ty;
     }
 
     /* create new type test node */

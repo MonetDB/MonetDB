@@ -443,6 +443,15 @@ reduce (PFla_op_t *p, int goalnt)
 
     /* action code */
     switch (rule) {
+        /* Rel:    lit_tbl */
+        case 3:
+            if (p->sem.lit_tbl.count == 0) {
+                *p = *PFla_empty_tbl_ (p->schema);
+                SEEN(p) = false;
+                label (p);
+            }
+            break;
+
         /* Rel:    attach (lit_tbl) */
         case 6:
         {
@@ -909,6 +918,34 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
+        /* Rel:    intersect (Rel, Rel) */
+        case 28:
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                if (!p->schema.items[i].type) {
+                    *p = *PFla_empty_tbl_ (p->schema);
+                    SEEN(p) = false;
+                    label (p);
+                    break;
+                }
+            break;
+
+        /* Rel:    difference (Rel, Rel) */
+        case 29:
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                /* return lhs argument in case of
+                   a complete column type mismatch */
+                if (!(PFprop_type_of (L(p), p->schema.items[i].name) &
+                      PFprop_type_of (R(p), p->schema.items[i].name))) {
+                    /* return left child */
+                    *p = *PFla_dummy (L(p));
+                    SEEN(p) = false;
+                    /* relabeling will be expensive
+                       if there is no real dummy node */
+                    relabel (p, kids);
+                    break;
+                }
+            break;
+
         /* Rel:    distinct (step (Frag, Rel)) */
         case 33:
             /* return left child */
@@ -960,6 +997,14 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    type_assert (Rel) */
         case 55:
+            /* if we statically know that the type assertion would yield
+               an empty type we can replace it by an empty table */
+            if (!(PFprop_type_of (L(p), p->sem.type.col) & p->sem.type.ty)) {
+                *p = *PFla_empty_tbl_ (p->schema);
+                SEEN(p) = false;
+                label (p);
+                break;
+            }
             /* throw out type_assert if it is not needed anymore */
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
                 if (p->sem.type.col == L(p)->schema.items[i].name) {
