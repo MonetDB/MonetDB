@@ -110,28 +110,28 @@ struct TJptree_t {
 
 /* interfaces to parse construction routines 
  */
-extern TJpnode_t *
+extern struct TJpnode_t *
 tjcp_leaf  (TJptree_t *t, TJptype_t type);
 
-extern TJpnode_t *
+extern struct TJpnode_t *
 tjcp_wire1 (TJptree_t *t, TJptype_t type, TJpnode_t *n1);
 
-extern TJpnode_t *
+extern struct TJpnode_t *
 tjcp_wire2 (TJptree_t *t, TJptype_t type, TJpnode_t *n1, TJpnode_t *n2);
 
-extern TJpfixme_t *
+extern struct TJpfixme_t *
 tjcp_fixme (TJpnode_t *n1, TJpnode_t **n2);
 
-extern TJqnode_t *
+extern struct TJqnode_t *
 tjcq_initnode ();
 
-extern TJqnode_t *
+extern struct TJqnode_t *
 tjcq_firstterm (char *term, char *entity, double weight);
 
-extern TJqnode_t *
+extern struct TJqnode_t *
 tjcq_addterm (TJqnode_t *n, char *term, char *entity, double weight);
 
-extern TJptree_t *
+extern struct TJptree_t *
 tjcp_inittree ();
 
 extern char *

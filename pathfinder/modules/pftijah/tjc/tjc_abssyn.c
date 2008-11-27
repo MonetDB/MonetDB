@@ -18,7 +18,7 @@
  * @param  kind kind of new leaf
  * @return new parse tree lead
  */
-TJpnode_t * 
+struct TJpnode_t * 
 tjcp_leaf (TJptree_t *t, TJptype_t kind)
 {
     TJpnode_t *n = NULL;
@@ -46,7 +46,7 @@ tjcp_leaf (TJptree_t *t, TJptype_t kind)
  * @param  n1   pointer to child
  * @return new parse tree node
  */
-TJpnode_t *
+struct TJpnode_t *
 tjcp_wire1 (TJptree_t *t, TJptype_t type, TJpnode_t *n1) 
 {
     TJpnode_t *n;
@@ -66,7 +66,7 @@ tjcp_wire1 (TJptree_t *t, TJptype_t type, TJpnode_t *n1)
  * @param  n2   pointer to second child
  * @return new parse tree node
  */
-TJpnode_t *
+struct TJpnode_t *
 tjcp_wire2 (TJptree_t *t, TJptype_t type, TJpnode_t *n1, TJpnode_t *n2) 
 {
     TJpnode_t *n;
@@ -77,7 +77,7 @@ tjcp_wire2 (TJptree_t *t, TJptype_t type, TJpnode_t *n1, TJpnode_t *n2)
     return n;
 } 
 
-TJpfixme_t *
+struct TJpfixme_t *
 tjcp_fixme (TJpnode_t *n1, TJpnode_t **n2)
 {
     TJpfixme_t *fm;
@@ -90,7 +90,7 @@ tjcp_fixme (TJpnode_t *n1, TJpnode_t **n2)
     return fm;
 }
 
-TJqnode_t *
+struct TJqnode_t *
 tjcq_initnode ()
 {
     TJqnode_t *n;
@@ -109,7 +109,7 @@ tjcq_initnode ()
     return n;
 }
 
-TJqnode_t *
+struct TJqnode_t *
 tjcq_firstterm (char *term, char *entity, double weight)
 {
     TJqnode_t *n;
@@ -117,7 +117,7 @@ tjcq_firstterm (char *term, char *entity, double weight)
     return tjcq_addterm (n, term, entity, weight);
 }
 
-TJqnode_t *
+struct TJqnode_t *
 tjcq_addterm (TJqnode_t *n, char *term, char *entity, double weight)
 {
     int l = n->length;
@@ -132,7 +132,7 @@ tjcq_addterm (TJqnode_t *n, char *term, char *entity, double weight)
     return n;
 }
 
-TJptree_t *
+struct TJptree_t *
 tjcp_inittree ()
 {
     TJptree_t *ptree;
