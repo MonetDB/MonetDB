@@ -449,9 +449,29 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_intersect:
-            copy (n->prop->keys, L(n)->prop->keys);
-            union_list (n->prop->keys, R(n)->prop->keys);
-            break;
+        {
+            bool key_left = false,
+                 key_right = false;
+
+            for (unsigned int i = 0; i < n->schema.count; i++) {
+                key_left = key_left ||
+                           key_worker (L(n)->prop->keys,
+                                       n->schema.items[i].name);
+                key_right = key_right ||
+                            key_worker (R(n)->prop->keys,
+                                        n->schema.items[i].name);
+            }
+
+            /* only a key-join retains all key properties */
+            if (key_left && key_right) {
+                copy (n->prop->keys, L(n)->prop->keys);
+                union_list (n->prop->keys, R(n)->prop->keys);
+            }
+            else if (key_left)
+                copy (n->prop->keys, R(n)->prop->keys);
+            else if (key_right)
+                copy (n->prop->keys, L(n)->prop->keys);
+        }   break;
 
         case la_distinct:
             if (n->schema.count == 1)

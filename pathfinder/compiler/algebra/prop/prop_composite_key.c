@@ -490,9 +490,29 @@ infer_ckey (PFla_op_t *n)
             break;
 
         case la_intersect:
-            copy (CKEYS, LCKEYS);
-            union_list (CKEYS, RCKEYS);
-            break;
+        {
+            bool key_left = false,
+                 key_right = false;
+
+            for (unsigned int i = 0; i < n->schema.count; i++) {
+                key_left = key_left ||
+                           PFprop_key (L(n)->prop, 
+                                       n->schema.items[i].name);
+                key_right = key_right ||
+                            PFprop_key (R(n)->prop, 
+                                        n->schema.items[i].name);
+            }
+
+            /* only a key-join retains all key properties */
+            if (key_left && key_right) {
+                copy (CKEYS, LCKEYS);
+                union_list (CKEYS, RCKEYS);
+            }
+            else if (key_left)
+                copy (CKEYS, RCKEYS);
+            else if (key_right)
+                copy (CKEYS, LCKEYS);
+        }   break;
 
         case la_distinct:
             if (PFprop_ckey (L(n)->prop, n->schema))
