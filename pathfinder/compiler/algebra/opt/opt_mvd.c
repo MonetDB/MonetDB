@@ -1797,7 +1797,10 @@ clean_up_cross (PFla_op_t *p)
             /* we can throw away the cross product if no column
                is required and the cross product does not change
                the cardinality */
-            if (PFprop_card (L(p)->prop) == 1)
+            if (PFprop_card (L(p)->prop) == 1 ||
+                /* check current op in case L(p) is a newly
+                   generated cross product */
+                PFprop_card (p->prop) == 1)
                 *p = *dummy (R(p));
             else {
                 PFalg_proj_t *proj_list2;
