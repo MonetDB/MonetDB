@@ -3982,8 +3982,11 @@ PFla_fun_param (const PFla_op_t *argument, const PFla_op_t *param_list,
     ret->schema.items
         = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
 
-    for (i = 0; i < schema.count; i++)
-        ret->schema.items[i] = schema.items[i];
+    for (i = 0; i < schema.count; i++) {
+        ret->schema.items[i].name = schema.items[i].name;
+        ret->schema.items[i].type = PFprop_type_of (argument,
+                                                    schema.items[i].name);
+    }
 
     return ret;
 }

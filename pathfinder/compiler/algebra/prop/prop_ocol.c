@@ -1039,6 +1039,8 @@ infer_ocol (PFla_op_t *n)
             for (i = 0; i < ocols_count (L(n)); i++) {
                 for (j = 0; j < ocols_count (n); j++)
                     if (ocol_at (L(n), i).name == ocol_at (n, j).name) {
+                        /* the type may have changed */
+                        ocol_at (n, j).type = ocol_at (L(n), i).type;
                         break;
                     }
 
