@@ -49,6 +49,8 @@ char  instring;
 		YY_FATAL_ERROR( "input in tijah flex scanner failed" );
 #endif
 
+#define ECHO	/* empty -- don't echo anything (we shouldn't get there anyway */
+
 static void
 gotoState (int s)
 {
