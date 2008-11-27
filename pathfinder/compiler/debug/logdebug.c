@@ -458,6 +458,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         , [la_proxy]           = "#DFFFFF"
         , [la_proxy_base]      = "#DFFFFF"
         , [la_string_join]     = "#C0C0C0"
+        , [la_internal_op]     = "#FF0000"
         , [la_dummy]           = "#FFFFFF"
     };
 
@@ -610,6 +611,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                         ? "" : ", ");
                 PFarray_printf (dot, ")");
             }
+            /* interpret this operator as internal cross product */
+            else if (n->sem.eqjoin_opt.kind == la_cross)
+                PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
 
         case la_project:
