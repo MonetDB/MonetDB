@@ -1736,7 +1736,7 @@ convertConstant(malType type, ValPtr vr)
 #ifdef STRUCT_ALIGNED
 	/* experiment against alternative 32 bit platforms */
 #else
-		showException(SYNTAX, "convertConstant", "missing implementation");
+	/*	showException(SYNTAX, "convertConstant", "missing implementation");*/
 #endif
 		if ( vr->vtype != type)
 			showException(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
