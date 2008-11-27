@@ -3445,6 +3445,8 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	char* mil;
 	char  nameBUFF[32], *startNodes_name;
 
+	lng time_start = GDKusec();
+
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start.\n");
 	if ( *use_startnodes ) {
 	    BATmode(startNodes,PERSISTENT);
@@ -3484,6 +3486,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	    stream_printf(GDKerr,"Error: cannot find \"_query\" tag.\n");
 
 
+	lng time_parse_start = GDKusec();
 	if ( newversion ) {
 	    if ( !(mil=tjc_new_parse(query_text,optbat,startNodes_name,&err)) ) {
                 GDKerror("CMDtijah_query: %s.\n", err);
@@ -3503,6 +3506,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 		stream_printf(GDKout,"# CMDtijah_query: end of MIL script:\n");
 	}
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: start executing MIL script.\n");
+	lng time_mil_start = GDKusec();
         if ( executeMIL(mil)<0 ) {
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
@@ -3528,8 +3532,16 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 	BATmode(scoreBAT,TRANSIENT);
 
 	*res = scoreBAT;
+	lng time_end = GDKusec();
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: finish.\n");
+
+	if ( 1 ) {
+		long time_total = (time_end - time_start);
+		long time_parse = (time_mil_start - time_parse_start);
+		long time_mil   = (time_end - time_mil_start);
+	        stream_printf(GDKout,"#! Tijah query timing: [total/parse/mil] = [ " "%ld" "us/" "%ld"  "us/" "%ld" "us]\n",time_total,time_parse,time_mil);
+	}
         return GDK_SUCCEED;
 }
 
