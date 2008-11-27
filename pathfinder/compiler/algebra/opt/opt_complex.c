@@ -1216,10 +1216,12 @@ opt_complex (PFla_op_t *p)
                 *p = *PFla_attach (L(p), p->sem.rowid.res, PFalg_lit_nat (1));
             }
             /* Get rid of a rowid operator that is only used to maintain
-               the correct cardinality. In case other columns provide
-               a compound key we replace the rowid operator by a rank
-               operator consuming the compound key. */
-            else if (PFprop_req_unique_col (p->prop, p->sem.rowid.res)) {
+               the correct cardinality or the correct order (in an unordered
+               scenario). In case other columns provide a compound key we
+               replace the rowid operator by a rank operator consuming the
+               compound key. */
+            else if (PFprop_req_unique_col (p->prop, p->sem.rowid.res) ||
+                     PFprop_req_order_col (p->prop, p->sem.rowid.res)) {
                 PFalg_collist_t *collist;
                 unsigned int     count = PFprop_ckeys_count (p->prop),
                                  i,
