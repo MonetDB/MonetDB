@@ -123,7 +123,7 @@ extern struct TJpfixme_t *
 tjcp_fixme (TJpnode_t *n1, TJpnode_t **n2);
 
 extern struct TJqnode_t *
-tjcq_initnode ();
+tjcq_initnode (void);
 
 extern struct TJqnode_t *
 tjcq_firstterm (char *term, char *entity, double weight);
@@ -132,7 +132,7 @@ extern struct TJqnode_t *
 tjcq_addterm (TJqnode_t *n, char *term, char *entity, double weight);
 
 extern struct TJptree_t *
-tjcp_inittree ();
+tjcp_inittree (void);
 
 extern char *
 TJstrndup (const char *str);
