@@ -155,40 +155,17 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
 PFla_op_t *
 PFla_dummy (PFla_op_t *n)
 {
-    /* always create the dummy node as otherwise
-       the general optimization will relabel quite
-       a long time. */
-    /*
-    assert (n);
-    switch (n->kind)
-    {
-        case la_rownum:
-        case la_number:
-        case la_roots:
-        case la_rec_fix:
-        case la_rec_base:
-        case la_proxy:
-        case la_proxy_base:
-        {
-    */
-            PFla_op_t *ret = la_op_wire1 (la_dummy, n);
+    PFla_op_t *ret = la_op_wire1 (la_dummy, n);
 
-            ret->schema.count = n->schema.count;
-            ret->schema.items
-                = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
-            /* copy schema from n */
-            for (unsigned int i = 0; i < n->schema.count; i++)
-                ret->schema.items[i] = n->schema.items[i];
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
 
-            return ret;
-    /*
-        }
-
-        default:
-            return n;
-    }
-    */
+    return ret;
 }
 
 
