@@ -63,6 +63,7 @@
 #include "properties.h"
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
+#include "map_names.h"
 
 /* mnemonic algebra constructors */
 #include "logical_mnemonic.h"
@@ -1626,7 +1627,9 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
                 }
 
         *p = *(PFla_project_ (LL(p), count, proj));
-        modified = true;
+
+        /* do not mark phase modified as this might
+           result in an infinite loop */
     }
 
     /* remove unnecessary joins
@@ -1843,12 +1846,12 @@ PFalgopt_join_pd (PFla_op_t *root)
     unsigned int tries = 0, max_tries = 1;
     bool modified = true;
 
-    /* replace la_eqjoin by la_internal_op operators */
-    introduce_eqjoin_opt (root);
-    PFla_dag_reset (root);
-
     /* Optimize algebra tree */
     while (modified || tries <= max_tries) {
+        /* replace la_eqjoin by la_internal_op operators */
+        introduce_eqjoin_opt (root);
+        PFla_dag_reset (root);
+
         PFprop_infer_refctr (root);
         PFprop_infer_key (root);
         /* key property inference already requires
@@ -1860,11 +1863,14 @@ PFalgopt_join_pd (PFla_op_t *root)
         modified = join_pushdown (root, clean_up_list);
         PFla_dag_reset (root);
         if (!modified) tries++;
-    }
 
-    /* replace la_internal_op by la_eqjoin operators */
-    remove_eqjoin_opt (root);
-    PFla_dag_reset (root);
+        /* replace la_internal_op by la_eqjoin operators */
+        remove_eqjoin_opt (root);
+        PFla_dag_reset (root);
+
+        /* make sure that column name splitting is removed */
+        root = PFmap_unq_names (root);
+    }
 
     return root;
 }
