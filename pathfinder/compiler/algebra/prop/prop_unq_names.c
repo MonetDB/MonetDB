@@ -225,7 +225,10 @@ infer_unq_names (PFla_op_t *n)
 
         case la_eqjoin:
         {
-            PFalg_col_t ori, join_unq, col1_unq, col2_unq, child_unq;
+            PFalg_col_t ori, join_unq,
+                        col1_unq, col2_unq,
+                        child_unq,
+                        col1_conflict, col2_conflict;
             PFarray_t *left_np_list, *right_np_list;
             bool proj_left = PFprop_key (L(n)->prop, n->sem.eqjoin.col1);
 
@@ -246,6 +249,11 @@ infer_unq_names (PFla_op_t *n)
 
             left_np_list  = n->prop->l_name_pairs;
             right_np_list = n->prop->r_name_pairs;
+
+            /* make sure to have stable column names for columns
+               conflicting with the join columns */
+            col1_conflict = PFcol_new (col1_unq);
+            col2_conflict = PFcol_new (col2_unq);
 
             /* Based on the boolean proj_left we decide whether
                we solve name conflicts at the left or the right side.
@@ -278,7 +286,7 @@ infer_unq_names (PFla_op_t *n)
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == col2_unq)
-                    add_name_pair (np_list, ori, PFcol_new (ori));
+                    add_name_pair (np_list, ori, col1_conflict);
                 else
                     add_name_pair (np_list, ori, child_unq);
 
@@ -309,7 +317,7 @@ infer_unq_names (PFla_op_t *n)
                     add_name_pair (np_list, ori, unq);
                 }
                 else if (child_unq == col1_unq)
-                    add_name_pair (np_list, ori, PFcol_new (ori));
+                    add_name_pair (np_list, ori, col2_conflict);
                 else
                     add_name_pair (np_list, ori, child_unq);
 
