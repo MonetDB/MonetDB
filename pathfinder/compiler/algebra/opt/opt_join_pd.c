@@ -671,6 +671,14 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                                       count,
                                       proj_list));
                 next_join = L(p);
+
+                /* Make sure that this rewrite only reports
+                   a modification if this rewrite wasn't
+                   the only one. Otherwise we might end up
+                   in an infinite loop. */
+                modified = join_pushdown_worker (next_join,
+                                                 clean_up_list);
+                next_join = NULL;
             }   break;
 
             case la_select:
