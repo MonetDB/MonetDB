@@ -36,6 +36,9 @@
 .COMMAND _tj_throw2collection(BAT[str,bat],BAT[oid,bat],str) : void = CMDtj_throw2collection;
  "INCOMPLETE"
 
+.COMMAND _tj_throw2collection_bat(BAT[str,bat],BAT[oid,bat],BAT[str,str]) : void = CMDtj_throw2collection_bat;
+ "INCOMPLETE"
+
 .COMMAND _tj_throw2collection_index(BAT[str,bat],str) : void = CMDtj_throw2collection_index;
  "INCOMPLETE"
  
@@ -1014,10 +1017,11 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
       var ws_opt := ws_create(0);
       if ( not(shred) ) {
         ws_opendoc(ws_opt,uri.tmark(0@0));
-      }
-      #
-      uri@batloop() {
-        _tj_add2collection(ftiName, ws_opt, collBat, $h, $t, shred);
+        _tj_throw2collection_bat(collBat,ws_opt,uri);
+      } else {
+        uri@batloop() {
+          _tj_add2collection(ftiName, ws_opt, collBat, $h, $t, shred);
+        }
       }
       ws_destroy(ws_opt);
       _tj_set_parameter(collBat, "status", "building");

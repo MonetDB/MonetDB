@@ -889,23 +889,6 @@ freeTijahContext(tjCtx* tjctx) {
 	return GDK_SUCCEED;
 }
 
-static int
-handle_doc_height(tjCtx* tjctx) {
-	str oldval = readCollParam(tjctx,"height");
-
-	if ( oldval == str_nil)
-	    return 0;
-	if ( tjctx->max_doc_height > atoi( (char*)oldval) ) {
-	   char buff[8];
-
-	   sprintf(&buff[0],"%d",tjctx->max_doc_height);
-	   if ( ! replaceCollParam(tjctx,"height",(str)&buff[0]))
-	       return 0;
-	}
-	if ( 1 ) stream_printf(GDKout,"# **** SET MAX DOC HEIGHT TO: %d\n",tjctx->max_doc_height);
-	return 1;
-}
-
 static oid
 tijahDocIndex(tjCtx* ctx, str docName) {
         BAT* mb = BATmirror(ctx->b_docName);
@@ -1383,9 +1366,6 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
-	/* finally do the maximum doc height administration */
-	if ( 0 && !handle_doc_height(tjctx) )
-	    return GDK_FAIL;
 	/* read elapsed time */
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) {
@@ -1400,6 +1380,63 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
 	}
 #endif
 	return freeTijahContext(tjctx);
+}
+
+static int
+add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
+	tjCtx* tjctx;
+
+	if (0) stream_printf(GDKout,"#! a2c_bat: start.\n");
+	if ( !(tjctx = loadTijahContext(tjCtx_BAT)) )
+		return GDK_FAIL;
+
+	/* return the main plane, the caller should check if the main plane
+	 * has changed and this one should be added.
+	 */ 
+	 
+
+	BUN p,q;
+        BATiter doci = bat_iterator(docs);
+	BATloop(docs, p, q) {
+	    ptr docsTAIL = BUNtail(doci, p);
+	    str docName    = (str) docsTAIL;
+
+	    if (0) stream_printf(GDKout,"#! a2c_bat: indexing doc(%s).\n",docName);
+	    if ( tijahDocIndex(tjctx,docName) != oid_nil ) {
+	        stream_printf(GDKerr,"add2collection_handler(CTX,%s) already in collection\n",docName);
+	        return GDK_FAIL;
+	    }
+	    oid start_oid = tjctx->tijahPre;
+    
+	    if ( !BUNappend(tjctx->b_docName, docName, 0) ||
+	         !BUNappend(tjctx->b_docFirstPre, &start_oid, 0) )
+	       stream_printf(GDKerr,"Error writing Tijah document record\n");;
+    
+	    GLOBAL_TJCTX = tjctx;
+	    if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
+	    	return GDK_FAIL;
+        }
+        if ( dbat_finalize(&tjctx->dbat_collPre, tjctx->tijahPre) < 0 )
+	    return GDK_FAIL;
+        if ( dbat_finalize(&tjctx->dbat_collSize, tjctx->tijahPre) < 0 )
+	    return GDK_FAIL;
+   
+        tjctx->b_collPre->batDirty   = TRUE;
+        tjctx->b_collSize->batDirty  = TRUE;
+        tjctx->b_collPfPre->batDirty = TRUE;
+        if ( 1 /* INCOMPLETE */ ) {
+           tjctx->b_dict->batDirty       = TRUE;
+           tjctx->b_dict_tid->batDirty   = TRUE;
+           tjctx->b_dict_elem->batDirty  = TRUE;
+           tjctx->b_dict_score->batDirty = TRUE;
+        }
+	if (0) stream_printf(GDKout,"#! a2c_bat: finish.\n");
+        return freeTijahContext(tjctx);
+}   
+
+int
+CMDtj_throw2collection_bat(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
+    return add2collection_bathandler(tjCtx_BAT,ws,docs);
 }
 
 int
