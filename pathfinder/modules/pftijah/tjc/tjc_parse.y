@@ -51,7 +51,6 @@ static TJpnode_t *c;
 
 /* parse tree */
 static TJptree_t *tjc_tree;
-static char*	  tjc_errbuff;
 
 void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 {
@@ -217,12 +216,11 @@ QueryClause		: TERM
 
 %%
 
-int tjc_parser (char* input, TJptree_t **res, char* err)
+int tjc_parser (char* input, TJptree_t **res)
 {
   setTJCscanstring(input);
 
-  tjc_tree       = tjcp_inittree();
-  tjc_errbuff = err;
+  tjc_tree   = tjcp_inittree();
   int result = tjcparse();
   *res = tjc_tree;
   tjc_tree = NULL;

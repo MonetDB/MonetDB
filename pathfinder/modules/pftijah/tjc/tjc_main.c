@@ -109,7 +109,7 @@ void free_tree(TJptree_t *ptree)
 tjc_config* tjc_c_GLOBAL;
 
 extern int
-tjc_parser (char* input, TJptree_t **res, char* err);
+tjc_parser (char* input, TJptree_t **res);
 
 int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     /* 
@@ -265,7 +265,7 @@ char* tjc_new_parse(char* query, BAT* optbat, char* startNodes_name, char** errB
 	return NULL;
     }
     if (DEBUG) stream_printf(GDKout,"#!tjc parsing[%s]\n!",query);
-    int status = tjc_parser(query,&ptree,&tjc_c->errBUFF[0]);
+    int status = tjc_parser(query,&ptree);
     if (DEBUG) stream_printf(GDKout,"#!tjc status = %d\n",status);
     if (ptree) {
 	root = &ptree->node[ptree->length - 1];
