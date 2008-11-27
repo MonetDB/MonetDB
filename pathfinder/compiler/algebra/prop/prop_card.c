@@ -136,7 +136,6 @@ infer_card (PFla_op_t *n)
         case la_frag_union:
         case la_empty_frag:
         case la_fun_frag_param:
-        case la_internal_op:
         case la_string_join:
             /* can't say something specific about cardinality */
             n->prop->card = 0;
@@ -250,6 +249,16 @@ infer_card (PFla_op_t *n)
                 n->prop->card = L(n)->prop->card;
             else
                 n->prop->card = 0;
+            break;
+
+        case la_internal_op:
+            /* interpret this operator as cross product */
+            if (n->sem.eqjoin_opt.kind == la_cross)
+                /* multiply both children cardinalities */
+                n->prop->card = L(n)->prop->card * R(n)->prop->card;
+            else
+                n->prop->card = 0;
+            break;
     }
 }
 
