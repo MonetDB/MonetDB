@@ -2241,6 +2241,8 @@ yes|no|auto)
 esac
 save_LIBS="$LIBS"
 LIBS="$LIBS $READLINE_LIBS"
+save_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $READLINE_INCS"
 if test "x$have_readline" != xno; then
 	dnl use different functions in the cascade of AC_CHECK_LIB
 	dnl calls since configure may cache the results
@@ -2269,6 +2271,7 @@ if test "x$have_readline" != xno; then
 		[ if test "x$have_readline" != xauto; then AC_MSG_ERROR([readline library does not contain rl_completion_matches]); fi; have_readline=no ],
 	      $READLINE_LIBS)
 fi
+CPPFLAGS="$save_CPPFLAGS"
 LIBS="$save_LIBS"
 if test "x$have_readline" != xno; then
 	AC_DEFINE(HAVE_LIBREADLINE, 1,
