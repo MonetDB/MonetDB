@@ -2806,6 +2806,9 @@ if test "x$have_iconv" != xno; then
 		AC_DEFINE(iconv_open, libiconv_open, [Wrapper])
 		AC_DEFINE(iconv_close, libiconv_close, [Wrapper])
 	fi
+	AC_MSG_CHECKING([whether the declaration of iconv() needs const for 2nd argument])
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $ICONV_CFLAGS"
 	AC_TRY_COMPILE([
 #include <stdlib.h>
 #if HAVE_ICONV_H
@@ -2820,9 +2823,10 @@ size_t iconv (iconv_t cd, char * *inbuf, size_t *inbytesleft, char * *outbuf, si
 #else
 size_t iconv();
 #endif
-], [], iconv_const="", iconv_const="const")
+], [], [ AC_MSG_RESULT(no); iconv_const="" ], [ AC_MSG_RESULT(yes); iconv_const="const" ])
 	AC_DEFINE_UNQUOTED(ICONV_CONST, $iconv_const, 
 		[Define as const if the declaration of iconv() needs const for 2nd argument.])
+	CPPFLAGS="$save_CPPFLAGS"
 else
 	ICONV_CFLAGS=""
 	ICONV_LIBS=""
