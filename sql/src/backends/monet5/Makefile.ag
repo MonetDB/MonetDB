@@ -18,7 +18,7 @@
 man_MANS = monetdb.1 merovingian.1
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
-	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS)
+	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
 
 EXTRA_DIST = $(man_MANS)
 
