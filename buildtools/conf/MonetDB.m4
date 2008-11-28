@@ -49,6 +49,7 @@ case "$CC" in
 	8.*)	CC="$CC -no-gcc";;
 	9.*)	CC="$CC -no-gcc";;
 	10.*)	CC="$CC -no-gcc";;
+	11.*)	CC="$CC -no-gcc";;
 	esac
 	;;
 esac
@@ -711,6 +712,7 @@ NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 GCC_BISON_CFLAGS=""
 ICC_BISON_CFLAGS=""
+ICC_BISONFLAGS=""
 GCC_SWIG_CFLAGS=""
 ICC_SWIG_CFLAGS=""
 SUN_NOERR_CFLAGS=""
@@ -838,6 +840,9 @@ yes-*-*)
 	10.*)	CFLAGS="$CFLAGS -wd1418" 
 		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
 		CC="$CC -fPIC"		 ;;
+	11.*)	CFLAGS="$CFLAGS -wd1418"
+		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
+		CC="$CC -fPIC"		 ;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
@@ -845,6 +850,7 @@ yes-*-*)
 	8.*)	;;
 	9.*)	;;
 	10.*)	;;
+	11.*)	ICC_BISONFLAGS="--no-lines" ;;
 	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
@@ -860,6 +866,7 @@ yes-*-*)
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
 	9.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572,1599" ;;
 	10.*)		X_CFLAGS="$X_CFLAGS,1572,1599" ;;
+	11.*)		X_CFLAGS="$X_CFLAGS,1572,1599" ;;
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
@@ -881,6 +888,7 @@ yes-*-*)
 	*2.0*)
 		ICC_BISON_CFLAGS="$ICC_BISON_CFLAGS -wd592"
 		dnl  # 592: variable "." is used before its value is set
+		;;
 	esac
 	
 	dnl  Some versions of flex & bison seem to generate code that icc does not like;
@@ -974,6 +982,7 @@ yes-*-*)
 -*icc*-linux*|-*ecc*-linux*)
       	case "$host-$icc_ver" in
         *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
+        *-*-*-11.*)   	CFLAGS="$CFLAGS -std=c99"	;;
       	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
       	esac   
 	;;
@@ -2019,6 +2028,8 @@ if test "x$enable_optim" = xyes; then
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
 
+      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -axWPT	";; 
+
       i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
 
@@ -2062,6 +2073,7 @@ AC_SUBST(CFLAGS_NO_OPT)
 AC_SUBST(NO_INLINE_CFLAGS)
 AC_SUBST(GCC_BISON_CFLAGS)
 AC_SUBST(ICC_BISON_CFLAGS)
+AC_SUBST(ICC_BISONFLAGS)
 AC_SUBST(GCC_SWIG_CFLAGS)
 AC_SUBST(ICC_SWIG_CFLAGS)
 AC_SUBST(SUN_NOERR_CFLAGS)
