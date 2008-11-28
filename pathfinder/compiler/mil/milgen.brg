@@ -502,6 +502,7 @@ impl_types (PFalg_simple_type_t ty, PFalg_simple_type_t kind)
                 return mty_lng;
 
             case aat_str:
+            case aat_uA:
                 return mty_str;
 
             default:
