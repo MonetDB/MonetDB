@@ -12,7 +12,7 @@ stdout of test 'monetdb5-conds` in directory 'conf` itself:
 
 BITS32=
 BITS64=#
-DOCTOOLS=#
+DOCTOOLS=
 HAVE_BUILDTOOLS=#
 HAVE_CLIENTS=#
 HAVE_EXTRA_MK=

@@ -12,7 +12,7 @@ stdout of test 'monetdb-conds` in directory 'conf` itself:
 
 BITS32=#
 BITS64=
-DOCTOOLS=#
+DOCTOOLS=
 HAVE_BUILDTOOLS=#
 HAVE_EXTRA_MK=
 HAVE_PCRE=#
