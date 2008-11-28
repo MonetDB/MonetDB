@@ -456,6 +456,13 @@ PFalg_lit_str (char *value)
     return (PFalg_atom_t) { .type = aat_str, .val = { .str = value } };
 }
 
+/** construct literal untypedAtomic (atom) */
+PFalg_atom_t
+PFalg_lit_uA (char *value)
+{
+    return (PFalg_atom_t) { .type = aat_uA, .val = { .str = value } };
+}
+
 /** construct literal decimal (atom) */
 PFalg_atom_t
 PFalg_lit_dec (float value)

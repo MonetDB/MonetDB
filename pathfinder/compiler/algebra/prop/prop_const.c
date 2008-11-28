@@ -552,6 +552,18 @@ infer_const (PFla_op_t *n)
                         n->sem.type.res,
                         PFprop_const_val (L(n)->prop, n->sem.type.col));
             /* In special cases a stable cast (in respect to different
+               implementations) is possible (see e.g. from str to uA). */
+            else if (PFprop_const (L(n)->prop, n->sem.type.col) &&
+                     (PFprop_const_val (L(n)->prop,
+                                        n->sem.type.col)).type == aat_str &&
+                     n->sem.type.ty == aat_uA)
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.type.res,
+                        PFalg_lit_uA ((PFprop_const_val (
+                                           L(n)->prop,
+                                           n->sem.type.col)).val.str));
+            /* In special cases a stable cast (in respect to different
                implementations) is possible (see e.g. from int to dbl). */
             else if (PFprop_const (L(n)->prop, n->sem.type.col) &&
                      (PFprop_const_val (L(n)->prop,
