@@ -11,8 +11,6 @@
 
 #include <stdlib.h>
 
-#include <gdk.h>
-
 #include "tjc_abssyn.h"
 /* import tokens from parser specification */
 #include "tjc_parse.tab.h"
