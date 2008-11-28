@@ -21,8 +21,8 @@
 
 #ifdef OUTSIDE_PF /* JF */
 
-FILE* pfin = NULL;
-char* pfinput = NULL;
+FILE* pf_in = NULL;
+char* pf_input = NULL;
 int   inputpos;
 int   cur_col;
 int   cur_row;
@@ -63,26 +63,26 @@ void
 TJscanner_init (char *buf)
 {
     /*
-     * In case yyin/pfin is not set, initialize it to /dev/null (Unix)
+     * In case yyin/pf_in is not set, initialize it to /dev/null (Unix)
      * resp. C:nul (Windows); otherwise it gets initialized to stdin,
      * which might conflict with Mserver's console:
-     * The lexer eventually calls fileno() for yyin/pfin, which in
-     * case of yyin/pfin=stdin might be blocked as there is a waiting
+     * The lexer eventually calls fileno() for yyin/pf_in, which in
+     * case of yyin/pf_in=stdin might be blocked as there is a waiting
      * select/read on the console(=stdin)...
      */
-    if (!pfin) {
+    if (!pf_in) {
 #ifdef __MINGW32__              /* or any kind of native Windows */
-        pfin = fopen("C:nul","r");
+        pf_in = fopen("C:nul","r");
 #else
-        pfin = fopen("/dev/null","r");
+        pf_in = fopen("/dev/null","r");
 #endif
     }
-    if (pfinput) {
+    if (pf_input) {
         YY_FLUSH_BUFFER;
         gotoState(0);
     }
 
-    pfinput  = buf;
+    pf_input  = buf;
     inputpos = 0;
     cur_col  = 0;
     cur_row  = 1;
