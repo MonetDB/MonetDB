@@ -2388,13 +2388,8 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_col_t col,
     /* if we statically know that the type assertion would yield
        an empty type we can replace it by an empty table. This
        is done in ope/opt_general.brg. Until then we however have
-       to provide the expected type. */
-    if (!assert_ty) {
-        /* operator type_assert may only appear in combination
-           with type -- as the query generation will never filter
-           the same type twice we can be sure that !pos leads to
-           a non-empty assert_ty */
-        assert (pos);
+       to provide the expected type (if we have given an exact type). */
+    if (!assert_ty && pos) {
         assert_ty = ty;
     }
 
