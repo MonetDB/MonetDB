@@ -100,6 +100,7 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_TRACE_REL   56
 
 #ifdef HAVE_PFTIJAH
+#define PF_MIL_TIJAH_DUMMYPOS  57
 #define PF_MIL_TIJAH_SCORE_DB  58
 #define PF_MIL_TIJAH_FTI_TAPE  59
 #endif

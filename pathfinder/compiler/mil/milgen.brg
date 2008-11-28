@@ -1906,8 +1906,11 @@ llscj (const PFpa_op_t *p)
 
 /* PFTIJAH helper functions */
 
+#define PFT_NOT_ORDERED	0
+#define PFT_ORDERED	1
+
 static mvar_t *
-pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
+pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t, int ordered)
 {
 	mvar_t *res;
 	if ( p ) {
@@ -1923,13 +1926,20 @@ pft_create_pfop (PFpa_op_t *p, PFalg_simple_type_t t)
                     assgn (var (p_frag->name), lit_int(0))
 		);
 	    }
-	    PFalg_simple_type_t postype = p->schema.items[1].type;
-	    mvar_t *p_pos  = env_mvar (p->env, p->schema.items[1].name /* pos */, postype);
-	    if ( !(p_iter && p_item && p_frag && p_pos) )
-		PFoops(OOPS_FATAL,"pft_create_pfop: missing [iter|item|frag|pos] child");
+	    PFmil_t *mil_p_pos;
+
+	    if ( ordered ) {
+	        PFalg_simple_type_t postype = p->schema.items[1].type;
+	        mvar_t *p_pos  = env_mvar (p->env, p->schema.items[1].name /* pos */, postype);
+	        if ( !(p_iter && p_item && p_frag && p_pos) )
+		    PFoops(OOPS_FATAL,"pft_create_pfop: missing [iter|item|frag|pos] child");
+	    	mil_p_pos  =  var (p_pos->name);
+	    } else {
+	    	mil_p_pos  =  var (PF_MIL_TIJAH_DUMMYPOS);
+	    }
 	    execute (
                 assgn (var (res->name), 
-                          tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),var(p_pos->name)))
+                          tj_pfop(var (p_iter->name),var(p_item->name),var(p_frag->name),mil_p_pos))
 	    );
 	    if ( t != aat_pre )
 	        unpin(p_frag,1);
@@ -9174,19 +9184,19 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    mvar_t *pfop_sn, *pfop_query, *pfop_opt;
 
 		    if ( PTF_QUERY_STARTNODES(fcname) ) {
-		        pfop_sn    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+		        pfop_sn    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre,PFT_NOT_ORDERED);
 			fcci++;
 		    } else {
-		        pfop_sn    = pft_create_pfop(NULL,aat_pre);
+		        pfop_sn    = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
 		    }
 
-		    pfop_query = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str);
+		    pfop_query = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str,PFT_NOT_ORDERED);
 		    fcci++;
 
 		    if ( PTF_QUERY_OPTIONS(fcname) ) {
-		        pfop_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+		        pfop_opt   = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre,PFT_NOT_ORDERED);
 		    } else {
-		        pfop_opt   = pft_create_pfop(NULL,aat_pre);
+		        pfop_opt   = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
 		    }
 
 		    mvar_t *tjqres = new_var(1);
@@ -9230,16 +9240,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    mvar_t *pfop_coll, *pfop_opt;
 
 		    if ( PFT_FUN_MANAGE_COLL(fcname) ) {
-		        pfop_coll    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str);
+		        pfop_coll    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_str,PFT_NOT_ORDERED);
 			fcci++;
 		    } else {
-		        pfop_coll    = pft_create_pfop(NULL,aat_pre);
+		        pfop_coll    = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
 		    }
 		    if ( PFT_FUN_MANAGE_OPT(fcname) ) {
-		        pfop_opt    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre);
+		        pfop_opt    = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,fcci),aat_pre,PFT_NOT_ORDERED);
 			fcci++;
 		    } else {
-		        pfop_opt    = pft_create_pfop(NULL,aat_pre);
+		        pfop_opt    = pft_create_pfop(NULL,aat_pre,PFT_NOT_ORDERED);
 		    }
 
                     execute (
@@ -9287,8 +9297,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    mvar_t *pfop_id;
 		    mvar_t *pfop_nodes;
 
-		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int);
-		    pfop_nodes = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre);
+		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int,PFT_NOT_ORDERED);
+		    pfop_nodes = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,1),aat_pre,PFT_NOT_ORDERED);
 
 		    mvar_t *tjsres = new_var(1);
 		    execute(
@@ -9310,7 +9320,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		} else if (strcmp(fcname,PFT_NODES) == 0 ) {
 		    mvar_t *pfop_id;
 
-		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int);
+		    pfop_id = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_int,PFT_NOT_ORDERED);
 
 		    mvar_t *tjnres = new_var(1);
 		    execute(
@@ -9378,9 +9388,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    int fpsz = PFarray_last (fun_params);
 
 		    if ( fpsz == 0 ) {
-		        pfop_names = pft_create_pfop(NULL,aat_str);
+		        pfop_names = pft_create_pfop(NULL,aat_str,PFT_NOT_ORDERED);
 		    } else {
-		        pfop_names = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_str);
+		        pfop_names = pft_create_pfop(*(PFpa_op_t **)PFarray_at (fun_params,0),aat_str,PFT_NOT_ORDERED);
 		    }
 
 		    mvar_t *tjires = new_var(1);
@@ -9742,6 +9752,9 @@ PFmilgen (PFpa_op_t *n, char *genType)
                    assgn (var (PF_MIL_TIJAH_SCORE_DB), 
                           seqbase (new (type (mty_void), type(mty_bat) ),
                                             lit_oid (0))),
+    		   declare (var (PF_MIL_TIJAH_DUMMYPOS)),
+                   assgn (var (PF_MIL_TIJAH_DUMMYPOS), 
+                          new (type (mty_oid), type(mty_oid) ) ),
 		   append (var (PF_MIL_TIJAH_SCORE_DB),
 		          seqbase (new (type (mty_void), type(mty_oid) ),
 			           lit_oid (0))),
