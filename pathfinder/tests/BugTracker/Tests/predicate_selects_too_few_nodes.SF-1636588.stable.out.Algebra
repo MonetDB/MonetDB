@@ -22,7 +22,7 @@ Over..
 # 17:16:04 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><res rank="0.79411764705882359">Die Hard</res><res rank="0.79411764705882359">Die Hard 2</res><res rank="1">Die Hard: With a Vengeance</res><res rank="1">King Kong</res></XQueryResult>
+<XQueryResult><res rank="0.79411764705882293">Die Hard</res><res rank="0.79411764705882293">Die Hard 2</res><res rank="0.99999999999999889">Die Hard: With a Vengeance</res><res rank="0.99999999999999889">King Kong</res></XQueryResult>
 
 # 17:16:06 >  
 # 17:16:06 >  Done.
