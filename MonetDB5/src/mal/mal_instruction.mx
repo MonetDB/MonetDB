@@ -1733,11 +1733,6 @@ convertConstant(malType type, ValPtr vr)
 		VALset(vr, type, d);
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
-#ifdef STRUCT_ALIGNED
-	/* experiment against alternative 32 bit platforms */
-#else
-	/*	showException(SYNTAX, "convertConstant", "missing implementation");*/
-#endif
 		if ( vr->vtype != type)
 			showException(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
 		return vr->vtype != type;
@@ -1878,7 +1873,6 @@ end.
 				GDKfree(d);
 			GDKfree(w);
 		} else { /* what we're converting from is a string */
-#ifdef STRUCT_ALIGNED
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
 				showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
@@ -1888,7 +1882,6 @@ end.
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
-#endif
 		}
 	}
 	}
