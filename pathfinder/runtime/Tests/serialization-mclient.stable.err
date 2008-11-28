@@ -28,7 +28,7 @@ mode="seq"
 mode="text"
 MAPI  = monetdb@corona:39161
 QUERY = (1, 2.3, attribute attr { "val" }, 3E1, "string", doc("nodekinds.xml")/descendant-or-self::node())
-ERROR = !ERROR: xquery_print_result_loop: operation failed.
+ERROR = !ERROR: xquery_print_result_main: operation failed.
 
 mode="text" (w/o top-level attribute)
 
