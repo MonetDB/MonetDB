@@ -34,7 +34,7 @@ Over..
 % count_ # name
 % wrd # type
 % 2 # length
-[ 82	]
+[ 80	]
 % . # table_name
 % single_value # name
 % tinyint # type
@@ -44,7 +44,7 @@ Over..
 % count_ # name
 % wrd # type
 % 2 # length
-[ 82	]
+[ 80	]
 
 # 22:03:05 >  
 # 22:03:05 >  Done.
