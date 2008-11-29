@@ -1298,11 +1298,13 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 		dlist *values;
 		dnode *o;
 
+		scp = scope_open(scp);
 		for (o = rowlist->h; o; o = o->next) {
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
 				cleanup_stmts(inserts, len);
+				scp = scope_close(scp);
 				return sql_error(sql, 02, "INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				dnode *n;
@@ -1337,6 +1339,7 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 
 			}
 		}
+		scp = scope_close(scp);
 	} else {
 		stmt *s = flat_subquery(sql, val_or_q);
 

@@ -408,9 +408,16 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			if (tv && strcmp(cname, "NID") == 0) {
 				cvar *cv = tv->columns->h->data;
 				cs = stmt_mirror(stmt_dup(cv->s));
-			} else {
-				return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
+			} else if (!tv && (cs = stack_find_view(sql, tname )) != NULL) {
+				assert(cs->type == st_table);
+				tv = scope_add_temp_view(scp, stmt_dup(cs->op1.stval), tname);
+				stmt_destroy(cs);
+				cs = NULL;
+				if (tv)
+					cs = scope_bind( scp, tname, cname);
 			}
+			if (!cs) 
+				return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
