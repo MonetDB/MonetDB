@@ -3510,20 +3510,28 @@ def main(argv) :
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStatic(env):
                 sys.exit(1)
-            STDERR.flush()
-            if not quiet:
-                print "Bits: ", env['TST_BITS']
-                print "OIDs: ", env['TST_OIDS']
-                print "Modules: ", env['TST_MODS']
-            STDOUT.flush()
         else:
+            if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
+                env['TST_BITS'] = "32bit"
+            elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
+                env['TST_BITS'] = "64bit"
+            else:
+                env['TST_BITS'] = ""
+            if   CONDITIONALS.has_key('LINK_STATIC') and CONDITIONALS['LINK_STATIC']:
+                env['TST_STATIC'] = "STATIC"
+            else:
+                env['TST_STATIC'] = ""
             env['TST_MODS'] = []
-            env['TST_BITS'] = ""
             env['TST_OIDS'] = ""
             env['TST_FIVE'] = ""
-            env['TST_STATIC'] = ""
             env['TST_ALGEBRA'] = ""
             env['TST_NOALGEBRA'] = ""
+        STDERR.flush()
+        if not quiet:
+            print "Bits: ", env['TST_BITS']
+            print "OIDs: ", env['TST_OIDS']
+            print "Modules: ", env['TST_MODS']
+        STDOUT.flush()
 
         is_sql = par['PACKAGE'] == 'monetdb-sql'
         if not is_sql:
