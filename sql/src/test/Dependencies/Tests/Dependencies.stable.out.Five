@@ -55,7 +55,7 @@ Dependencies between database objects
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
 % sys.t,	sys.tri,	. # table_name
-% name,	name,	single_value # name
+% name,	trigname,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
