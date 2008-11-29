@@ -30,6 +30,7 @@ extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 extern sql_rel *rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
 extern sql_rel * rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f);
+extern sql_exp * rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f);
 extern sql_rel * rel_project(sql_rel *l, list *e);
 extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern list * rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname , int intern);
@@ -1917,7 +1918,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	return rel;
 }
 
-static sql_exp *
+sql_exp *
 rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 {
 	exp_kind ek = {type_value, card_column, FALSE};

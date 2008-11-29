@@ -33,7 +33,7 @@ extern stmt *select_into(mvc *sql, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
 extern stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
-extern stmt *logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd);
+extern stmt *logical_value_exp(mvc *sql, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd);
 
 extern stmt * update_logical_exp(mvc *sql, scope *scp, symbol *sc, tvar *tv, sql_table *t);
 extern stmt ** update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlist, sql_table *t, tvar *tv, stmt **rows_affected);
@@ -266,52 +266,72 @@ stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int 
 	return sql_value_exp(sql, scp, se, grp, subset, f, knd);
 }
 
-#if 0
 static stmt *
-rel_scope_logical_exp(mvc *sql, scope *scp, symbol *sc, int f)
+logical_value_exp_(mvc *sql, symbol *sc, int f, exp_kind ek)
 {
 	stmt *s = NULL;
+	int status = sql->session->status;
+	sql_rel *r = NULL;
+	sql_exp *e = rel_logical_value_exp(sql, &r, sc, f);
 
-	if (mvc_debug_on(sql,16384)) {
-		int status = sql->session->status;
-		sql_rel *r = rel_logical_exp(sql, NULL, sc, f);
-		if (!r && scp) {
-			sql_table *t;
-			sql_exp *e;
-
-			sql->errstr[0] = 0;
+	if (!r && !e) {
+		if (!sql->errstr[0]) 
 			sql->session->status = status;
-			/* create rel from scp */
-			assert(list_length(scp->bases) == 1);
-			t = scp->bases->h->data;
-			r = rel_basetable(t, t->base.name );
-			r = rel_logical_exp(sql, r, sc, f);
-			e = exp_column(r->name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			r = rel_project(r, append(new_exp_list(), e));
-		}
-		if (!r) {
-			if (!sql->errstr[0]) 
-				sql->session->status = status;
-			return NULL;
-		} else {
+		return NULL;
+	} else {
+		if (r) {
 			r = rel_optimizer(sql, r);
 			s = rel_bin(sql, r);
+		} else {
+			s = exp_bin(sql, e, NULL, NULL, NULL, NULL);
 		}
+
+		if (s && s->type == st_list && !s->op1.lval->h) {
+			assert(0);
+			stmt_destroy(s);
+			s = NULL;
+		}
+
+		if (r)
+			rel_destroy(r);
+		if (!r && e)
+			exp_destroy(e);
+	}
+	/* we need a relation */
+	if (ek.card == card_relation && s && s->type == st_ordered) {
+		stmt *order = stmt_dup(s->op1.stval);
+		stmt *ns = stmt_dup(s->op2.stval);
+			
+		stmt_destroy(s);
+		s = sql_reorder(order, ns);
+	}
+	if (ek.card == card_relation && s)
+		s = stmt_table(s, 1);
+	/* single column */
+	if (ek.card != card_relation && s && s->type == st_list) {
+		stmt *ns = stmt_dup(s->op1.lval->h->data); 
+
+		stmt_destroy(s);
+		s = ns;
+	}
+	/* single value */
+	if (ek.card == card_value && s && !s->key) {
+		sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", tail_type(s));
+		assert(zero_or_one);
+		s = stmt_aggr(s, NULL, zero_or_one, 1);
 	}
 	return s;
 }
-#endif
 
-stmt *logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd)
+stmt *logical_value_exp(mvc *sql, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd)
 {
-//	stmt *s;
-
 	assert(!grp && !subset);
-//	if ((s = rel_scope_logical_exp(sql, scp, sc, f)) == NULL)
-		return sql_logical_exp(sql, scp, sc, grp, subset, f, knd);
-//	return s;
+	if (mvc_debug_on(sql,16384)) {
+		return logical_value_exp_(sql, sc, f, knd);
+	} else {
+		return sql_logical_exp(sql, NULL, sc, grp, subset, f, knd);
+	}
 }
-
 
 stmt *
 sql_update_logical_exp(mvc *sql, scope *scp, symbol *sc, tvar *tv)

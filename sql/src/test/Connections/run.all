@@ -19,8 +19,8 @@
 
 PWD=`pwd`
 echo $PWD
-SQL='mclient -p500000 -lsql -umonetdb -Pmonetdb'
-M5='mserver5 --dbname=demo --set mapi_port=40000 --dbinit="include sql;"'
+SQL='mclient -p50000 -lsql -umonetdb -Pmonetdb'
+
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi
@@ -28,13 +28,15 @@ fi
 #Generate Data...
 
 #Bulk-Load into SQL server...
-$M5
+mserver5 --dbname=demo --set mapi_port=50000 --dbinit="include sql;" --daemon=yes &
+mserver5 --dbname=demo2 --set mapi_port=40000 --dbinit="include sql;" --daemon=yes &
+sleep 5
 
 echo syntax
-$SQL < connections_syntax.sql
+cat connections_syntax.sql | sed -e 's/port_num/40000/g' | $SQL 
 
 echo semantic
-$SQL < connections_semantic.sql
+cat connections_semantic.sql | sed -e 's/port_num/40000/g' | $SQL 
 
 echo default values
-$SQL < connections_default_values.sql
+cat connections_default_values.sql | sed -e 's/port_num/40000/g' | $SQL 

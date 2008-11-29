@@ -196,7 +196,7 @@ psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
 		dnode *n = w;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = logical_exp(sql, NULL, n->data.sym, NULL, NULL, sql_sel, ek); 
+		cond = logical_value_exp(sql, n->data.sym, NULL, NULL, sql_sel, ek); 
 		n = n->next;
 		whilestmts = sequential_block(sql, NULL, res, n->data.lval, n->next->data.sval, is_func);
 
@@ -226,7 +226,7 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		dnode *n = elseif;
 		exp_kind ek = {type_value, card_value, FALSE };
 
-		cond = logical_exp(sql, NULL, n->data.sym, NULL, NULL, sql_sel, ek); 
+		cond = logical_value_exp(sql, n->data.sym, NULL, NULL, sql_sel, ek); 
 		n = n->next;
 		ifstmts = sequential_block(sql, NULL, res, n->data.lval, NULL, is_func);
 		n = n->next;
@@ -329,7 +329,7 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		n = whenlist->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond = logical_exp(sql, NULL, m->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *cond = logical_value_exp(sql, m->data.sym, NULL, NULL, sql_sel, ek);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
