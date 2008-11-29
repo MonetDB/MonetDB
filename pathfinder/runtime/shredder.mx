@@ -1345,7 +1345,10 @@ shred_external_subset(void *xmlCtx,
             if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
 
-            xmlFreeDtd(dtd);
+            if (ctx->myDoc && ctx->myDoc->extSubset == NULL)
+                ctx->myDoc->extSubset = dtd;
+            else 
+                xmlFreeDtd(dtd);
         } else {
             GDKerror("shred_external_subset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n", SystemID);
             GDKerror("shred_external_subset: NOTE   : maybe using absolute filenames works, sorry!\n");
