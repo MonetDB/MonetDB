@@ -1423,15 +1423,18 @@ if test "x$have_python" != xno; then
 		have_python_incdir=yes
 		;;
 	esac
-	if test "x$have_python_incdir" != xno -a ! -f "$PYTHON_INCS/Python.h"; then
-		if test "x$have_python_incdir" = xyes; then
-			AC_MSG_ERROR([No Python.h found, is Python installed properly?])
-		fi
-		have_python_incdir=no
-	fi
 	if test "x$have_python_incdir" != xno; then
 		PYTHON_INCS="-I$PYTHON_INCS"
-	fi
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
+		AC_CHECK_HEADER(Python.h, :, [
+			if test "x$have_python_incdir" = xyes; then
+				AC_MSG_ERROR([No Python.h found, is Python installed properly?]);
+			fi;
+			have_python_incdir=no
+		])
+        	CPPFLAGS="$save_CPPFLAGS"
+        fi
 
 	have_python_library=auto
 	AC_ARG_WITH(python-library,
@@ -1494,8 +1497,9 @@ fi
 if test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
-	AC_TRY_COMPILE([#include <Python.h>], [], [],
-		[ if test "x$have_python_incdir" != xauto -o "x$have_python_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python_incdir=no have_python_libdir=no ])
+	AC_MSG_CHECKING([whether we can compile with Python])
+	AC_TRY_COMPILE([#include <Python.h>], [], [AC_MSG_RESULT(yes)],
+		[ AC_MSG_RESULT(no); if test "x$have_python_incdir" != xauto -o "x$have_python_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python_incdir=no have_python_libdir=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 AC_SUBST(PYTHON)
@@ -1555,15 +1559,18 @@ if test "x$have_perl" != xno; then
 		have_perl_incdir=yes
 		;;
 	esac
-	if test "x$have_perl_incdir" != xno -a ! -f "$PERL_INCS/perl.h"; then
-		if test "x$have_perl_incdir" = xyes; then
-			AC_MSG_ERROR([No perl.h found, is Perl installed properly?])
-		fi
-		have_perl_incdir=no
-	fi
 	if test "x$have_perl_incdir" != xno; then
 		PERL_INCS="-I$PERL_INCS"
-	fi
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $PERL_INCS"
+		AC_CHECK_HEADER(perl.h, :, [
+			if test "x$have_perl_incdir" = xyes; then
+				AC_MSG_ERROR([No perl.h found, is Perl installed properly?]);
+			fi;
+			have_perl_incdir=no
+		])
+        	CPPFLAGS="$save_CPPFLAGS"
+        fi
 
 	have_perl_library=auto
 	AC_ARG_WITH(perl-library,
@@ -1613,9 +1620,10 @@ if test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno; then
 	save_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $PERL_INCS"
 	LIBS="$LIBS $PERL_LIBS"
+	AC_MSG_CHECKING([whether we can compile with Perl])
 	AC_TRY_LINK([#include <EXTERN.h>
-#include <perl.h>], [], [],
-		[ if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
+#include <perl.h>], [], [AC_MSG_RESULT(yes)],
+		[ AC_MSG_RESULT(no); if test "x$have_perl_incdir" != xauto -o "x$have_perl_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Perl]); fi; have_perl_incdir=no have_perl_libdir=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 	LIBS="$save_LIBS"
 fi
@@ -1676,15 +1684,18 @@ if test "x$have_ruby" != xno; then
 		have_ruby_incdir=yes
 		;;
 	esac
-	if test "x$have_ruby_incdir" != xno -a ! -f "$RUBY_INCS/ruby.h"; then
-		if test "x$have_ruby_incdir" = xyes; then
-			AC_MSG_ERROR([No ruby.h found, is Ruby installed properly?])
-		fi
-		have_ruby_incdir=no
-	fi
 	if test "x$have_ruby_incdir" != xno; then
 		RUBY_INCS="-I$RUBY_INCS"
-	fi
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $RUBY_INCS"
+		AC_CHECK_HEADER(ruby.h, :, [
+			if test "x$have_ruby_incdir" = xyes; then
+				AC_MSG_ERROR([No ruby.h found, is Ruby installed properly?]);
+			fi;
+			have_ruby_incdir=no
+		])
+        	CPPFLAGS="$save_CPPFLAGS"
+        fi
 
 	have_ruby_library=auto
 	AC_ARG_WITH(ruby-library,
@@ -1736,8 +1747,9 @@ if test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno; then
 	save_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $RUBY_INCS"
 	LIBS="$LIBS $RUBY_LIBS"
-	AC_TRY_LINK([#include <ruby.h>], [], [],
-		[ if test "x$have_ruby_incdir" != xauto -o "x$have_ruby_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Ruby]); fi; have_ruby_incdir=no have_ruby_libdir=no ])
+	AC_MSG_CHECKING([whether we can compile with Ruby])
+	AC_TRY_LINK([#include <ruby.h>], [], [AC_MSG_RESULT(yes)],
+		[ AC_MSG_RESULT(no); if test "x$have_ruby_incdir" != xauto -o "x$have_ruby_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Ruby]); fi; have_ruby_incdir=no have_ruby_libdir=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 	LIBS="$save_LIBS"
 fi
