@@ -1386,7 +1386,7 @@ yes|no|auto)
 	;;
 esac
 if test "x$have_python" != xno; then
-	if test $cross_compiling != xyes; then
+	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
 		if test "x$PYTHON" = xno; then
 			if test "x$have_python" != xauto; then
@@ -1404,7 +1404,7 @@ if test "x$have_python" != xno; then
 		have_python_incdir="$withval")
 	case "$have_python_incdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
 		fi
 		PYTHON_INCS=`"$PYTHON" -c 'from distutils.sysconfig import get_python_inc; print get_python_inc()' 2>/dev/null`
@@ -1415,7 +1415,7 @@ if test "x$have_python" != xno; then
 		;;
 	esac
 	if test "x$have_python_incdir" != xno -a ! -f "$PYTHON_INCS/Python.h"; then
-		if test "x$have_python_incdir" = yes; then
+		if test "x$have_python_incdir" = xyes; then
 			AC_MSG_ERROR([No Python.h found, is Python installed properly?])
 		fi
 		have_python_incdir=no
@@ -1431,7 +1431,7 @@ if test "x$have_python" != xno; then
 		have_python_library="$withval")
 	case "$have_python_library" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
 		fi
 		PYTHON_LIBS=`"$PYTHON" -c 'import distutils.sysconfig, os, sys; print "-L%s -lpython%s" % (os.path.dirname(distutils.sysconfig.get_makefile_filename()), sys.version[[:3]])' 2>/dev/null`
@@ -1449,7 +1449,7 @@ if test "x$have_python" != xno; then
 		have_python_libdir="$withval")
 	case "$have_python_libdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
 		fi
 		case "$host_os-`"$PYTHON" -V 2>&1`" in
@@ -1465,7 +1465,7 @@ if test "x$have_python" != xno; then
 		;;
 	esac
 
-	if test $cross_compiling = xyes; then
+	if test x$cross_compiling = xyes; then
 		case "$PYTHON_LIBS" in
 		*/python2.[0-9]/*)
 			PYTHON_VERSION=`expr "$PYTHON_LIBS" : '.*/python\(2\.[0-9]\)/.*'`
@@ -1518,7 +1518,7 @@ yes|no|auto)
 	;;
 esac
 if test "x$have_perl" != xno; then
-	if test $cross_compiling != xyes; then
+	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PERL,$PERL,no,$PATH)
 		if test "x$PERL" = xno; then
 			if test "x$have_perl" != xauto; then
@@ -1536,7 +1536,7 @@ if test "x$have_perl" != xno; then
 		have_perl_incdir="$withval")
 	case "$have_perl_incdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
 		fi
 		PERL_INCS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
@@ -1546,13 +1546,13 @@ if test "x$have_perl" != xno; then
 		have_perl_incdir=yes
 		;;
 	esac
-	if test "x$have_perl_incdir" != no -a ! -f "$PERL_INCS/perl.h"; then
-		if test "x$have_perl_incdir" = yes; then
+	if test "x$have_perl_incdir" != xno -a ! -f "$PERL_INCS/perl.h"; then
+		if test "x$have_perl_incdir" = xyes; then
 			AC_MSG_ERROR([No perl.h found, is Perl installed properly?])
 		fi
 		have_perl_incdir=no
 	fi
-	if test "x$have_perl_incdir" != no; then
+	if test "x$have_perl_incdir" != xno; then
 		PERL_INCS="-I$PERL_INCS"
 	fi
 
@@ -1563,7 +1563,7 @@ if test "x$have_perl" != xno; then
 		have_perl_library="$withval")
 	case "$have_perl_library" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
 		fi
 		PERL_LIBS=`"$PERL" -MConfig -e 'print "$Config{archlib}/CORE"' 2>/dev/null`
@@ -1573,7 +1573,7 @@ if test "x$have_perl" != xno; then
 		have_perl_library=yes
 		;;
 	esac
-	if test "x$have_perl_library" != no; then
+	if test "x$have_perl_library" != xno; then
 		PERL_LIBS="-L$PERL_LIBS -lperl"
 	fi
 
@@ -1584,7 +1584,7 @@ if test "x$have_perl" != xno; then
 		have_perl_libdir="$withval")
 	case "$have_perl_libdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-perl-incdir --with-perl-libdir --with-perl-library when cross compiling])
 		fi
 		PERL_LIBDIR=`"$PERL" -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;' 2>/dev/null`
@@ -1638,7 +1638,7 @@ yes|no|auto)
 	;;
 esac
 if test "x$have_ruby" != xno; then
-	if test $cross_compiling != xyes; then
+	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
 		if test "x$RUBY" = xno; then
 			if test "x$have_ruby" != xauto; then
@@ -1656,7 +1656,7 @@ if test "x$have_ruby" != xno; then
 		have_ruby_incdir="$withval")
 	case "$have_ruby_incdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
 		fi
 		RUBY_INCS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["archdir"]];' 2>/dev/null`
@@ -1667,13 +1667,13 @@ if test "x$have_ruby" != xno; then
 		have_ruby_incdir=yes
 		;;
 	esac
-	if test "x$have_ruby_incdir" != no -a ! -f "$RUBY_INCS/ruby.h"; then
-		if test "x$have_ruby_incdir" = yes; then
+	if test "x$have_ruby_incdir" != xno -a ! -f "$RUBY_INCS/ruby.h"; then
+		if test "x$have_ruby_incdir" = xyes; then
 			AC_MSG_ERROR([No ruby.h found, is Ruby installed properly?])
 		fi
 		have_ruby_incdir=no
 	fi
-	if test "x$have_ruby_incdir" != no; then
+	if test "x$have_ruby_incdir" != xno; then
 		RUBY_INCS="-I$RUBY_INCS"
 	fi
 
@@ -1684,7 +1684,7 @@ if test "x$have_ruby" != xno; then
 		have_ruby_library="$withval")
 	case "$have_ruby_library" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
 		fi
 		RUBY_LIBS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["libdir"]];' 2>/dev/null`
@@ -1694,7 +1694,7 @@ if test "x$have_ruby" != xno; then
 		have_ruby_library=yes
 		;;
 	esac
-	if test "x$have_ruby_library" != no; then
+	if test "x$have_ruby_library" != xno; then
 		RUBY_LIBS="-L$RUBY_LIBS -lruby"
 	fi
 
@@ -1705,7 +1705,7 @@ if test "x$have_ruby" != xno; then
 		have_ruby_libdir="$withval")
 	case "$have_ruby_libdir" in
 	yes|auto)
-		if test $cross_compiling = xyes; then
+		if test x$cross_compiling = xyes; then
 			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
 		fi
 		ruby_prefix=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["prefix"]];' 2>/dev/null`
@@ -1786,7 +1786,7 @@ AC_ARG_WITH(translatepath,
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.]),
 	[translatepath="$withval"
 	 anttranslatepath="$withval"],
-	[if test $cross_compiling = yes; then
+	[if test x$cross_compiling = xyes; then
 		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
 	fi])
 AC_SUBST(translatepath)
@@ -2925,7 +2925,7 @@ if test "x$have_php" != xno; then
 				have_php_extensiondir="$withval")
 		case "$have_php_extensiondir" in
 		yes|auto)
-			if test $cross_compiling = xyes; then
+			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-php-extensiondir when cross compiling])
 				have_php=no
 			fi
