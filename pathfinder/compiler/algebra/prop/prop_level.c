@@ -41,8 +41,6 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
-#define UNKNOWN_LEVEL -1
-
 static int
 level_lookup (PFarray_t *level_mapping, PFalg_col_t col)
 {
@@ -225,7 +223,7 @@ infer_level (PFla_op_t *n)
             for (unsigned int i = 0; i < n->sem.proj.count; i++) {
                 int level = PFprop_level (L(n)->prop,
                                           n->sem.proj.items[i].old);
-                if (level >= 0)
+                if (LEVEL_KNOWN(level))
                     mark_level (n->prop,
                                 n->sem.proj.items[i].new,
                                 level);
@@ -246,7 +244,7 @@ infer_level (PFla_op_t *n)
                         l_level = PFprop_level (L(n)->prop, col);
                         r_level = PFprop_level (R(n)->prop, col);
 
-                        if (l_level >= 0 && l_level == r_level)
+                        if (LEVEL_KNOWN(l_level) && l_level == r_level)
                             mark_level (n->prop, col, l_level);
                         break;
                     }
@@ -257,12 +255,12 @@ infer_level (PFla_op_t *n)
             copy_level_info (n, R(n));
         case la_step:
         case la_guide_step:
-            if (n->sem.step.level >= 0)
+            if (LEVEL_KNOWN(n->sem.step.level))
                 mark_level (n->prop, n->sem.step.item_res, n->sem.step.level);
             else {
                 PFalg_col_t item_res = n->sem.step.item_res;
                 int level = PFprop_level (R(n)->prop, n->sem.step.item);
-                if (level >= 0)
+                if (LEVEL_KNOWN(level))
                     switch (n->sem.step.spec.axis) {
                         case alg_attr:
                         case alg_chld:
@@ -298,7 +296,10 @@ infer_level (PFla_op_t *n)
             /* level stays the same */
             copy_level_info (n, L(n));
 
-            mark_level (n->prop, n->sem.doc_tbl.res, 0);
+            if (n->sem.doc_tbl.kind == alg_dt_doc) 
+                mark_level (n->prop, n->sem.doc_tbl.res, 0);
+            else
+                mark_level (n->prop, n->sem.doc_tbl.res, -1);
             break;
     }
 }

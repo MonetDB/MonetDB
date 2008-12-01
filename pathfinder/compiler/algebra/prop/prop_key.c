@@ -624,7 +624,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                                 n->sem.step.guides) <= 1)
                 copy (n->prop->keys, R(n)->prop->keys);
             if (with_guide_info &&
-                PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                LEVEL_KNOWN(PFprop_level_right (n->prop, n->sem.step.item)) &&
                 (n->sem.step.spec.axis == alg_desc ||
                  n->sem.step.spec.axis == alg_desc_s) &&
                 PFprop_guide (R(n)->prop, n->sem.step.item) &&
@@ -639,7 +639,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                  (n->sem.step.spec.axis == alg_attr ||
                   n->sem.step.spec.axis == alg_chld ||
                   n->sem.step.spec.axis == alg_self)) ||
-                (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                (LEVEL_KNOWN(PFprop_level_right (n->prop, n->sem.step.item)) &&
                  key_worker (R(n)->prop->keys, n->sem.step.item) &&
                  (n->sem.step.spec.axis == alg_desc ||
                   n->sem.step.spec.axis == alg_desc_s))) {

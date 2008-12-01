@@ -1265,7 +1265,7 @@ opt_complex (PFla_op_t *p)
 
 /* ineffective without step operators */
         case la_step:
-            if (p->sem.step.level < 0)
+            if (!LEVEL_KNOWN(p->sem.step.level))
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 
@@ -1321,7 +1321,7 @@ opt_complex (PFla_op_t *p)
 
         case la_guide_step:
         case la_guide_step_join:
-            if (p->sem.step.level < 0 && p->sem.step.guide_count) {
+            if (!LEVEL_KNOWN(p->sem.step.level) && p->sem.step.guide_count) {
                 int level = p->sem.step.guides[0]->level;
                 for (unsigned int i = 1; i < p->sem.step.guide_count; i++)
                     if (level != p->sem.step.guides[i]->level)
@@ -1338,7 +1338,7 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_step_join:
-            if (p->sem.step.level < 0)
+            if (!LEVEL_KNOWN(p->sem.step.level))
                 p->sem.step.level = PFprop_level (p->prop,
                                                   p->sem.step.item_res);
 

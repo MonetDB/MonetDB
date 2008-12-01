@@ -838,7 +838,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                 PFcol_str (n->sem.step.item_res),
                                 PFcol_str (n->sem.step.item));
 
-            if (n->sem.step.level >= 0)
+            if (LEVEL_KNOWN(n->sem.step.level))
                 PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
             break;
 
@@ -1288,7 +1288,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_col_t col = n->schema.items[i].name;
                     int level = PFprop_level (n->prop, col);
-                    if (level >= 0) {
+                    if (LEVEL_KNOWN(level)) {
                         PFarray_printf (
                             dot,
                             "%s %s=%i",
@@ -2034,7 +2034,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                 }
                 PFarray_printf (xml, "\"");
             }
-            if (n->sem.step.level >= 0)
+            if (LEVEL_KNOWN(n->sem.step.level))
                 PFarray_printf (xml, " level=\"%i\"", n->sem.step.level);
 
             if (n->kind == la_step || n->kind == la_guide_step)

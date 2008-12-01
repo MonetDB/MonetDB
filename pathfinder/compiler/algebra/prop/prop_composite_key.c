@@ -676,7 +676,8 @@ infer_ckey (PFla_op_t *n)
                      (n->sem.step.spec.axis == alg_attr ||
                       n->sem.step.spec.axis == alg_chld ||
                       n->sem.step.spec.axis == alg_self)) ||
-                    (PFprop_level_right (n->prop, n->sem.step.item) >= 0 &&
+                    (LEVEL_KNOWN(PFprop_level_right (n->prop,
+                                                     n->sem.step.item)) &&
                      in (ckey, n->sem.step.item) &&
                      (n->sem.step.spec.axis == alg_desc ||
                       n->sem.step.spec.axis == alg_desc_s))) {

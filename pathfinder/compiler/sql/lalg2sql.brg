@@ -1201,7 +1201,7 @@ static void
 step_level (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
             PFalg_axis_t axis, int level)
 {
-    if (level >= 0)
+    if (LEVEL_KNOWN(level))
         where_list_add (WHERELIST(p), eq (LEVEL(step), lit_int (level)));
     else
         switch (axis) {

@@ -2603,7 +2603,7 @@ PFla_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
                   PFalg_col_t iter, PFalg_col_t item,
                   PFalg_col_t item_res)
 {
-    return PFla_step (doc, n, spec, -1, iter, item, item_res);
+    return PFla_step (doc, n, spec, UNKNOWN_LEVEL, iter, item, item_res);
 }
 
 
@@ -2691,7 +2691,7 @@ PFla_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
                        PFalg_step_spec_t spec,
                        PFalg_col_t item, PFalg_col_t item_res)
 {
-    return PFla_step_join (doc, n, spec, -1, item, item_res);
+    return PFla_step_join (doc, n, spec, UNKNOWN_LEVEL, item, item_res);
 }
 
 
@@ -2794,7 +2794,7 @@ PFla_guide_step_simple (const PFla_op_t *doc, const PFla_op_t *n,
                doc, n,
                spec,
                guide_count, guides,
-               -1,
+               UNKNOWN_LEVEL,
                iter, item, item_res);
 }
 
@@ -2893,7 +2893,7 @@ PFla_guide_step_join_simple (const PFla_op_t *doc, const PFla_op_t *n,
                doc, n,
                spec,
                guide_count, guides,
-               -1, item, item_res);
+               UNKNOWN_LEVEL, item, item_res);
 }
 
 

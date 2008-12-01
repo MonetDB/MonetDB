@@ -878,7 +878,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_col_t col = n->schema.items[i].name;
                     int level = PFprop_level (n->prop, col);
-                    if (level >= 0) {
+                    if (LEVEL_KNOWN(level)) {
                         PFarray_printf (
                             dot,
                             "%s %s=%i",

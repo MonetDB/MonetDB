@@ -181,7 +181,7 @@ opt_join_graph (PFla_op_t *p)
                   p->sem.step.spec.axis == alg_chld ||
                   p->sem.step.spec.axis == alg_self)) ||
                 (PFprop_key_right (p->prop, p->sem.step.item) &&
-                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 LEVEL_KNOWN(PFprop_level_right (p->prop, p->sem.step.item)) &&
                  (p->sem.step.spec.axis == alg_desc ||
                   p->sem.step.spec.axis == alg_desc_s))) {
 
@@ -218,7 +218,7 @@ opt_join_graph (PFla_op_t *p)
                   p->sem.step.spec.axis == alg_self)) ||
                 ((PFprop_key_right (p->prop, p->sem.step.item) ||
                   PFprop_ckey (R(p)->prop, p->schema)) &&
-                 PFprop_level_right (p->prop, p->sem.step.item) >= 0 &&
+                 LEVEL_KNOWN(PFprop_level_right (p->prop, p->sem.step.item)) &&
                  (p->sem.step.spec.axis == alg_desc ||
                   p->sem.step.spec.axis == alg_desc_s))) {
 

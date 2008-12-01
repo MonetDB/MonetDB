@@ -567,6 +567,10 @@ int PFprop_level_left (const PFprop_t *prop, PFalg_col_t col);
  */
 int PFprop_level_right (const PFprop_t *prop, PFalg_col_t col);
 
+/* define the unknown level to be smaller than the collection level */
+#define UNKNOWN_LEVEL -2
+#define LEVEL_KNOWN(l) (l > UNKNOWN_LEVEL)
+
 /* ------------------ reference counter property accessors ----------------- */
 
 /**
