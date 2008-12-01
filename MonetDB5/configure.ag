@@ -172,7 +172,7 @@ if test "x$have_raptor" != xno; then
 	AC_MSG_CHECKING([for raptor >= $RAPTOR_VERSION_REQUIRED_MIN])
 	RAPTOR_VERSION="`$RAPTOR_CONFIG --version`"
 	if test MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION) -lt MONETDB_VERSION_TO_NUMBER(echo $RAPTOR_VERSION_REQUIRED_MIN); then
-		AC_MSG_RESULT(no, found $RAPTOR_VERSION)
+		AC_MSG_RESULT([no, found $RAPTOR_VERSION])
 		wrong="raptor version $RAPTOR_VERSION is older than $RAPTOR_VERSION_REQUIRED_MIN"
 		if test "x$have_raptor" != xauto; then
 			AC_MSG_ERROR([$wrong])
@@ -180,7 +180,7 @@ if test "x$have_raptor" != xno; then
 		have_raptor=no
 	else
 		have_raptor=yes
-		AC_MSG_RESULT(yes, found $RAPTOR_VERSION)
+		AC_MSG_RESULT([yes, found $RAPTOR_VERSION])
 	fi
 fi
 if test "x$have_raptor" != xno; then
