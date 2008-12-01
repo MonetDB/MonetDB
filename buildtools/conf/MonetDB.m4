@@ -1706,7 +1706,7 @@ if test "x$have_ruby" != xno; then
 		;;
 	esac
 	if test "x$have_ruby_library" != xno; then
-		RUBY_LIBS="-L$RUBY_LIBS -lruby"
+		RUBY_LIBS="-L$RUBY_LIBS `"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["LIBRUBYARG"]];'`"
 	fi
 
 	have_ruby_libdir=auto
