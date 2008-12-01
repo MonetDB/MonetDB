@@ -4049,10 +4049,7 @@ PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_col);
 
     struct PFla_pair_t p = {
-        .rel  = project (roots (doc),
-                         proj (col_iter, col_iter),
-                         proj (col_pos, col_pos),
-                         proj (col_item, col_res)),
+        .rel  = roots (doc),
         .frag = PFla_set (fragment (doc)) };
 
     /* child step */
@@ -4064,11 +4061,9 @@ PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
     PFla_op_t *step = PFla_project (
                           PFla_step_join_simple (
                               PFla_set_to_la (p.frag),
-                              project (p.rel,
-                                       proj (col_iter, col_iter),
-                                       proj (col_item, col_item)),
+                              p.rel,
                               spec,
-                              col_item,
+                              col_res,
                               col_item1),
                           PFalg_proj (col_iter, col_iter),
                           PFalg_proj (col_item, col_item1));
