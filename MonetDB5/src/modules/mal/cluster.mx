@@ -120,7 +120,7 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 	bt = (@1*)Tloc(b, BUNfirst(b));
 	be = bt + BATcount(b);
 	for ( ; bt < be; bt++){
-		BUN h = hash_@2(b->T->hash,bt);
+		BUN h = hash_@1(b->T->hash,bt);
 		*o++= h;
 	}
 }
@@ -128,18 +128,16 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 str  
 CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 {
-	@1 *r;
+	@1 *r,*qb;
 	oid *ct, *ce;
-	BUN p;
-	BATiter bi= bat_iterator(b);
 	int cnt=0;
 	
 	r = (@1*)Tloc(nb, BUNfirst(nb));
+	qb = (@1*)Tloc(b, BUNfirst(b));
 	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
 	ce = ct + BATcount(cmap);
 	for ( ; ct < ce; ct++){
-		p = BUNfnd(b,(ptr) ct);
-		*r++ = *(@1*) BUNtail(bi,p);
+		*r++ = qb[*ct];
 		if ( ((++cnt) % 1000000) == 0)
 			BATsave(nb);
 	}
@@ -147,20 +145,53 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 }
 
 @c
-@:map_fixed(chr,chr)@
-@:map_fixed(bte,bte)@
-@:map_fixed(sht,sht)@
-@:map_fixed(oid,oid)@
-@:map_fixed(wrd,wrd)@
-@:map_fixed(int,int)@
-@:map_fixed(lng,lng)@
-@:map_fixed(flt,flt)@
-@:map_fixed(dbl,dbl)@
+@:map_fixed(chr)@
+@:map_fixed(bte)@
+@:map_fixed(sht)@
+@:map_fixed(oid)@
+@:map_fixed(wrd)@
+@:map_fixed(int)@
+@:map_fixed(lng)@
+@:map_fixed(flt)@
+@:map_fixed(dbl)@
+
+void
+CLUSTER_key_str( BAT *map, BAT *b)
+{
+	var_t *bt, *be;
+	oid *o;
+
+	o = (oid*)Tloc(map, BUNfirst(map));
+	bt = (var_t *)Tloc(b, BUNfirst(b));
+	be = bt + BATcount(b);
+	for ( ; bt < be; bt++){
+	/* hash on the string reference */
 #ifdef MONET_OID32
-@:map_fixed(str,int)@
+		BUN h = hash_int(b->T->hash,bt);
 #else
-@:map_fixed(str,oid)@
+		BUN h = hash_oid(b->T->hash,bt);
 #endif
+		*o++= h;
+	}
+}
+str  
+CLUSTER_column_str(BAT *nb, BAT *b, BAT *cmap)
+{
+	var_t *r,*qb;
+	oid *ct, *ce;
+	int cnt=0;
+	
+	r = (var_t *)Tloc(nb, 0);
+	qb = (var_t *)Tloc(b, 0);
+	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
+	ce = ct + BATcount(cmap);
+	for ( ; ct < ce; ct++){
+		*r++ = qb[*ct];
+		if ( ((++cnt) % 1000000) == 0)
+			BATsave(nb);
+	}
+	return MAL_SUCCEED;
+}
 @-
 The hash key and the oid are materialized to prepare for reclustering.
 @c
