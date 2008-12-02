@@ -689,7 +689,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
         subcommit(extra_del_bat);
     }
     subcommit(_tj_collection_str(ftiName));
-    lock_unset(coll_lock);
+   lock_unset(coll_lock);
     #
     if (not(isnil(err))) ERROR(err);
     #
@@ -1623,7 +1623,7 @@ PROC ALG_tj_query_handler(
          var xdoc_name := bat("tj_" + ftindex + "_doc_name");
          var xdoc_firstpre := bat("tj_" + ftindex + "_doc_firstpre");
          var xpfpre := bat("tj_" + ftindex + "_pfpre");
-         var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
+         var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
          if ( verbose ) printf("# ALG_tj_query_handler: compute startnodes\n");
          startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
         } else {
@@ -1651,6 +1651,7 @@ PROC ALG_tj_query_handler(
         var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
         ws_opendoc(par_ws, docs_to_load);
         var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
+	doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
         var fid_pffid := needed_docs.join(doc_loaded.reverse());
         frag := frag.join(fid_pffid).sort().tmark();
         if ( verbose ) printf("# ALG_tj_query_handler: handled new frags/documents.\n");
@@ -3708,13 +3709,19 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
         if ( debug ) stream_printf(GDKout,"* Start of CMDpf2tijah_node():\n");
 	if ( 1 && debug ) {
+	    stream_printf(GDKout,"#!BAT: item\n");
 	    BATprintf(GDKout,item);
+	    stream_printf(GDKout,"#!BAT: kind\n");
 	    BATprintf(GDKout,kind);
+	    stream_printf(GDKout,"#!BAT: doc_loaded\n");
 	    BATprintf(GDKout,doc_loaded);
 	}
 	if ( 1 && debug ) {
+	    stream_printf(GDKout,"#!BAT: tijah:doc_name\n");
 	    BATprintf(GDKout,doc_name);
+	    stream_printf(GDKout,"#!BAT: tijah:doc_firstpre\n");
 	    BATprintf(GDKout,doc_firstpre);
+	    stream_printf(GDKout,"#!BAT: tijah:doc_pfpre\n");
 	    BATprintf(GDKout,doc_pfpre);
 	}
 
