@@ -95,11 +95,11 @@ Return the oid map used";
 #define cluster_export extern
 #endif
 
-cluster_export str  CLUSTER_key( bat *M, bat *B);
-cluster_export str  CLUSTER_map(bat *RB, bat *B);
-cluster_export str	CLUSTER_apply(BAT *nb, BAT *cmap);
-cluster_export str  CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-cluster_export str  CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cluster_export str CLUSTER_key( bat *M, bat *B);
+cluster_export str CLUSTER_map(bat *RB, bat *B);
+cluster_export str CLUSTER_apply(BAT *nb, BAT *cmap);
+cluster_export str CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _CLUSTER_H */
 @c
@@ -116,6 +116,8 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 	@1 *bt, *be;
 	oid *o;
 
+	assert(BUNfirst(map) == 0);
+	assert(BUNfirst(b) == 0);
 	o = (oid*)Tloc(map, BUNfirst(map));
 	bt = (@1*)Tloc(b, BUNfirst(b));
 	be = bt + BATcount(b);
@@ -136,6 +138,9 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	qb = (@1*)Tloc(b, BUNfirst(b));
 	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
 	ce = ct + BATcount(cmap);
+	assert(BUNfirst(nb) == 0);
+	assert(BUNfirst(b) == 0);
+	assert(BUNfirst(cmap) == 0);
 	for ( ; ct < ce; ct++){
 		*r++ = qb[*ct];
 		if ( ((++cnt) % 1000000) == 0)
@@ -166,9 +171,9 @@ CLUSTER_key_str( BAT *map, BAT *b)
 	be = bt + BATcount(b);
 	for ( ; bt < be; bt++){
 	/* hash on the string reference */
-#ifdef MONET_OID32
+#if SIZEOF_VAR_T == SIZEOF_INT
 		BUN h = hash_int(b->T->hash,bt);
-#else
+#else 
 		BUN h = hash_oid(b->T->hash,bt);
 #endif
 		*o++= h;
@@ -211,6 +216,8 @@ CLUSTER_key( bat *M, bat *B){
 	map->tdense= FALSE;
 	BATseqbase(map, b->H->seq);
 	BATsetcount(map, BATcount(b));
+	map->H->nonil = b->H->nonil;
+	map->T->nonil = b->T->nonil;
 
 	switch(ATOMstorage(b->ttype)) {
 		case TYPE_chr: CLUSTER_key_chr(map,b); break;
@@ -252,9 +259,8 @@ CLUSTER_map(bat *RB, bat *B)
 {
 	BUN rng,bsize, bnr=0, h, N= 2; /* number of buckets */
 	BAT *b, *map;
-	BATiter bi,mi;
 	BUN p,q;
-	oid *mp, ocur,idx = 0;
+	oid *mp, idx = 0, *bp;
 	BUN i;
 	Basket *basket;
 	(void) RB;
@@ -272,9 +278,10 @@ CLUSTER_map(bat *RB, bat *B)
 	map->tsorted= FALSE;
 	map->tdense= FALSE;
 	BATsetcount(map, BATcount(b));
-	mi= bat_iterator(map);
-	bi= bat_iterator(b);
+	map->H->nonil = b->H->nonil;
+	map->T->nonil = TRUE;
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
+	rng++; 
 @-
 The key challenge is to determine the number of clusters.
 A large number of clusters benefits subsequent performance,
@@ -295,15 +302,15 @@ diskblock.
 	N=2; bsize= rng / N; /* for debugging only */
 #endif
 	stream_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
-		(int)MT_npages(), bsize, rng, N);
+		(int)MT_npages(), (int)bsize, (int)rng, (int)N);
 	basket = (Basket*) alloca((N+1) * sizeof(Basket));
 	if (basket==NULL)
 		throw(MAL, "cluster.new", "Not enough space");
 
 	/* prepare buffers */
-	basket[0].base= 0;
-	basket[0].limit= BATcount(b) / N;
-	basket[0].nxt= -1;
+	basket[0].base = 0;
+	basket[0].limit = BATcount(b) / N;
+	basket[0].nxt = -1;
 	for (h=1; h < N; h++){
 		basket[h].base= basket[h-1].limit;
 		basket[h].limit= basket[h-1].limit + basket[0].limit;
@@ -311,11 +318,13 @@ diskblock.
 	}
 	basket[N-1].limit= BATcount(b); /* last piece */
 
-	mp= (oid*) BUNtail(mi, BUNfirst(map));
+	mp = (oid*) Tloc(map, BUNfirst(map));
+	bp = (oid*) Tloc(b, 0);
 	BATloop(b,p,q){
-		ocur= *(oid*) BUNtail(bi,p);
-		bnr = ocur/bsize;
+		oid ocur = bp[p];
 
+		bnr = ocur/bsize;
+		assert(bnr<N);
 		if (basket[bnr].base == basket[bnr].limit){ /* full */
 			if (basket[bnr].nxt == -1 ||
 				basket[basket[bnr].nxt].base == basket[basket[bnr].nxt].limit){
@@ -333,7 +342,7 @@ diskblock.
 				basket[bnr].nxt = max;
 			} else bnr = basket[bnr].nxt;
 		}
-		mp[basket[bnr].base]= idx++;
+		mp[basket[bnr].base] = idx++;
 		basket[bnr].base++;
 	}
 	BBPkeepref(*RB= map->batCacheid);
@@ -372,16 +381,12 @@ CLUSTER_apply(BAT *nb, BAT *cmap)
 	case TYPE_flt: CLUSTER_column_flt(nb, b, cmap);break;
 	case TYPE_dbl: CLUSTER_column_dbl(nb, b, cmap);break;
 	case TYPE_str: 
-#ifdef MONET_OID32
-		if( sizeof(var_t)== sizeof(int)) {
-			CLUSTER_column_int(nb, b, cmap);
-			break;
-		}
+#if SIZEOF_VAR_T == SIZEOF_INT
+		CLUSTER_column_int(nb, b, cmap);
+		break;
 #else
-		if( sizeof(var_t)== sizeof(oid)) {
-			CLUSTER_column_oid(nb, b, cmap);
-			break;
-		} else
+		CLUSTER_column_oid(nb, b, cmap);
+		break;
 #endif
 	default:
 		throw(MAL,"cluster.column","Not supported");
