@@ -1651,7 +1651,11 @@ PROC ALG_tj_query_handler(
         var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
         ws_opendoc(par_ws, docs_to_load);
         var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
-	doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+	# On the forced document loading size we keep using the old interface
+	# until ws.fetch(OPEN_CONT|OPEN_DOC) disappears. This interface is
+	# much cheaper for us and works also correct when the OPEN_CONT|DOC
+	# bats are not complete.
+	# var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
         var fid_pffid := needed_docs.join(doc_loaded.reverse());
         frag := frag.join(fid_pffid).sort().tmark();
         if ( verbose ) printf("# ALG_tj_query_handler: handled new frags/documents.\n");
