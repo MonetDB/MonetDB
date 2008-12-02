@@ -152,14 +152,9 @@ PFstate_init (PFstate_t *status)
     status->opt_alg             = "OIKCG_VG_JISI_GECSVR_OK_N"
                                        "}MT{JISI_GECSVR_"
                                        "}MT{JISI_OK_GECSVR_GP";
-    status->opt_sql             = "OIKCG_VGO_[JI]OKVCGN"
-                                     "}IM__{_[JI]OKVCG"
-                                     "}IM__{_[JI]OKVCGCG"
-                                     "}IM__{_[JI]OKVCG"
-                                     "}IMTS{_[JI]OKVCGUCG"
-                                     "}IMTS{_[JI]OKVCGU"
-                                     "}IMTS{_[JI]OKVCGU[E]CGP"
-                                     "}IQ[JI]}IQ[JI]IOKVCGQUCGP";
+    status->opt_sql             = "OIKCG_VG_JISI_GECSVR_OK_N"
+                                       "}MT{JISI_GECSVR_Q_"
+                                       "}MT{JISI_OK_GECSVR_QGP";
 
     status->format              = NULL;
     status->genType             = "xml";

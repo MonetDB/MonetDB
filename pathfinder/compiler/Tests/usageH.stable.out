@@ -83,7 +83,7 @@ Usage: pf [OPTION] [FILE]
          P  infer all properties
          _  does nothing (used for structuring the options)
             (default for option -A is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_}MT{JISI_OK_GECSVR_GP')
-            (default for option -S is: '-o OIKCG_VGO_[JI]OKVCGN}IM__{_[JI]OKVCG}IM__{_[JI]OKVCGCG}IM__{_[JI]OKVCG}IMTS{_[JI]OKVCGUCG}IMTS{_[JI]OKVCGU}IMTS{_[JI]OKVCGU[E]CGP}IQ[JI]}IQ[JI]IOKVCGQUCGP')
+            (default for option -S is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_Q_}MT{JISI_OK_GECSVR_QGP')
 
 = -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
          0  disable dead code elimination
