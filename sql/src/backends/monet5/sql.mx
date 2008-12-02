@@ -3736,6 +3736,10 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
             throw(MAL,"sql.cluster","Can not access descriptor");
         msg = CLUSTER_apply(b,map);
         BBPreleaseref(b->batCacheid);
+		if (msg){
+			BBPreleaseref(map->batCacheid);
+			return msg;
+		}
     }
 	if ( map)
 		BBPreleaseref(map->batCacheid);
