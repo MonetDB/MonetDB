@@ -27,7 +27,7 @@
 @m
 .MODULE pftijah;
 
-.COMMAND _run_tijah_query(BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,oid] rtag, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -1411,6 +1411,8 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
 {
 	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
 	var parambat := bat("tj_" + ftiName + "_param");
+	var rtagbat  := _tj_RTagBat(ftiName);
+
 	var delfin   := lng(parambat.find("delay_finalize"));
         if ( delfin > lng(0) ) {
 	    if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) checking delayed finalize.\n",ftiName);
@@ -1423,7 +1425,7 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
                 _tj_commit(collBat); 
 	    }
 	}
-	return _run_tijah_query(opt,use_startnodes,nodes);
+	return _run_tijah_query(opt,rtagbat,use_startnodes,nodes);
 }
 
 #####################################################################
@@ -3387,11 +3389,11 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 
 extern char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF);
 
-extern char* tjc_new_parse(char* query, BAT* optbat, char* startNodes_name, char** errBUFF);
+extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_name, char** errBUFF);
 
 static int nexiTmpCounter = 0;
 
-int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes) {
+int CMDtijah_query(BAT** res, BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNodes) {
 	char* err;
 	char* mil;
 	char  nameBUFF[32], *startNodes_name;
@@ -3440,7 +3442,7 @@ int CMDtijah_query(BAT** res, BAT* optbat, bit* use_startnodes, BAT* startNodes)
 
 	lng time_parse_start = GDKusec();
 	if ( newversion ) {
-	    if ( !(mil=tjc_new_parse(query_text,optbat,startNodes_name,&err)) ) {
+	    if ( !(mil=tjc_new_parse(query_text,optbat,rtagbat,startNodes_name,&err)) ) {
                 GDKerror("CMDtijah_query: %s.\n", err);
 	        return GDK_FAIL;
 	    }
