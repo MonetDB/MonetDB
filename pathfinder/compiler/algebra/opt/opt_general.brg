@@ -1025,7 +1025,64 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-            
+        /* Rel:    rownum (Rel) */
+        case 47:
+        {
+            /**
+             * row#_a<b>/   Throw away a key-generating rownum operator
+             *   |          that numbers its output based on a single
+             *  pi*         order criterion stemming from a key-generating
+             *   |          rownum operator below the superfluous rownum.
+             * row#_b<...>/
+             */
+            PFalg_col_t   col;
+            PFla_op_t    *op;
+            PFalg_proj_t *proj;
+
+            /* check for key-generation, single order criterion, and
+               ascending order */
+            if (p->sem.sort.part ||
+                PFord_count (p->sem.sort.sortby) != 1 ||
+                PFord_order_dir_at (p->sem.sort.sortby, 0) != DIR_ASC)
+                break;
+
+            op = L(p);
+            col = PFord_order_col_at (p->sem.sort.sortby, 0);
+
+            /* ignore intermediate project operators */
+            while (op->kind == la_project) {
+                for (unsigned int i = 0; i < op->schema.count; i++)
+                    if (op->sem.proj.items[i].new == col) {
+                        col = op->sem.proj.items[i].old;
+                        op = L(op);
+                        break;
+                    }
+            }
+               
+            /* check for rownum operator that generates key values
+               and provides the sort criterion for the upper rownum */
+            if (op->kind != la_rownum ||
+                op->sem.sort.part ||
+                col != op->sem.sort.res)
+                break;
+
+            /* replace rownum operator by a projection */
+            proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                if (p->sem.sort.res == p->schema.items[i].name)
+                    proj[i] = PFalg_proj (p->sem.sort.res,
+                                          PFord_order_col_at (
+                                              p->sem.sort.sortby,
+                                              0));
+                else
+                    proj[i] = PFalg_proj (p->schema.items[i].name,
+                                          p->schema.items[i].name);
+
+            *p = *PFla_project_ (L(p), p->schema.count, proj);
+            SEEN(p) = false;
+            relabel (p, kids);
+        }   break;
+
         /* Rel:    rownum (lit_tbl) */
         case 48:
             /* for a rownum operator with a single order column of type
