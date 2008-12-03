@@ -38,6 +38,9 @@
 #include "oops.h"
 #include "mem.h"
 
+/* mnemonic column list accessors */
+#include "alg_cl_mnemonic.h"
+
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
@@ -391,6 +394,22 @@ infer_const (PFla_op_t *n)
             break;
             
         case la_error:
+            break;
+
+        case la_fun_1to1:
+            if (n->sem.fun_1to1.kind == alg_fun_num_add) {
+                PFalg_col_t col1 = clat (n->sem.fun_1to1.refs, 0),
+                            col2 = clat (n->sem.fun_1to1.refs, 1);
+                if (PFprop_const (L(n)->prop, col1) &&
+                    PFprop_const (L(n)->prop, col2) &&
+                    PFprop_type_of (n, n->sem.fun_1to1.res) == aat_int)
+                    PFprop_mark_const (
+                        n->prop,
+                        n->sem.fun_1to1.res,
+                        PFalg_lit_int (
+                            (PFprop_const_val (L(n)->prop, col1).val.int_ +
+                             PFprop_const_val (L(n)->prop, col2).val.int_)));
+            }
             break;
 
         case la_num_eq:
@@ -753,9 +772,6 @@ infer_const (PFla_op_t *n)
         case la_thetajoin:
         case la_pos_select:
         case la_distinct:
-        /* we also might calculate some result constants.
-           Leave it out as it isn't a common case */
-        case la_fun_1to1:
         case la_rownum:
         case la_rowrank:
         case la_rank:
