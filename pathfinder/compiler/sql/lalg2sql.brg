@@ -1821,6 +1821,8 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
                             (t == aat_int) || \
                             (t == aat_dec) || \
                             (t == aat_dbl))
+    #define INT_TYPE(t)    ((t == aat_int) || \
+                            (t == aat_nat))
     #define CHAR_TYPE(t)   ((t == aat_str) || \
                             (t == aat_uA))
     #define NUM_NOTEXPR(t) ((t == aat_int))
@@ -1831,6 +1833,12 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
      * perform a cast if res_ty is a CHAR_TYPE and
      * and input type is a CHAR_TYPE */
     if (CHAR_TYPE(ty) && CHAR_TYPE(res_ty)) return expr;
+
+    /* Since we handle NAT and INT the same
+     * way in SQL, its obvious we don't have to
+     * perform a cast if res_ty is a INT_TYPE and
+     * and input type is a INT_TYPE */
+    if (INT_TYPE(ty) && INT_TYPE(res_ty)) return expr;
 
     if (BOOL_TYPE(ty))
         return cast_from_bool (expr, res_ty);
