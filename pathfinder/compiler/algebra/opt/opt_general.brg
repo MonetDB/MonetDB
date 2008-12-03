@@ -169,6 +169,7 @@ Rel:    cross (lit_tbl, lit_tbl)                  =   8 (10);
 Rel:    cross (Rel, lit_tbl)                      =   9 (10);
 Rel:    cross (lit_tbl, Rel)                      =  10 (10);
 Rel:    eqjoin (Rel, Rel)                         =  11 (10);
+Rel:    eqjoin (lit_tbl, lit_tbl)                 =  12 (10);
 Rel:    semijoin (Rel, Rel)                       =  13 (10);
 Rel:    semijoin (distinct (Rel), Rel)            =  14 (10);
 Rel:    thetajoin (Rel, Rel)                      =  15 (10);
@@ -199,7 +200,8 @@ Rel:    max_ (Rel)                                =  42 (10);
 Rel:    min_ (Rel)                                =  43 (10);
 Rel:    sum (Rel)                                 =  44 (10);
 Rel:    count (Rel)                               =  45 (10);
-Rel:    rownum (Rel)                              =  48 (10);
+Rel:    rownum (Rel)                              =  47 (10);
+Rel:    rownum (lit_tbl)                          =  48 (10);
 Rel:    rowrank (Rel)                             =  49 (10);
 Rel:    rank (Rel)                                =  50 (10);
 Rel:    rowid (Rel)                               =  51 (10);
@@ -209,17 +211,18 @@ Rel:    type (Rel)                                =  54 (10);
 Rel:    type_assert (Rel)                         =  55 (10);
 Rel:    cast (cast (Rel))                         =  56 (10);
 Rel:    cast (project (cast (Rel)))               =  57 (10);
-Rel:    cast (Rel)                                =  58 (10);
-Rel:    seqty1 (Rel)                              =  59 (10);
-Rel:    all (Rel)                                 =  60 (10);
-Rel:    ScjRel                                    =  61 (10);
-ScjRel: step (Frag, Rel)                          =  62 (10);
-ScjRel: step (Frag, ScjRel)                       =  63 (10);
-ScjRel: step (Frag, distinct (Rel))               =  64 (10);
-Rel:    step_join (Frag, Rel)                     =  65 (10);
-Rel:    guide_step (Frag, Rel)                    =  66 (10);
-Rel:    guide_step_join (Frag, Rel)               =  67 (10);
-Rel:    doc_index_join (Frag, Rel)                =  68 (10);
+Rel:    cast (lit_tbl)                            =  58 (10);
+Rel:    cast (Rel)                                =  59 (10);
+Rel:    seqty1 (Rel)                              =  60 (10);
+Rel:    all (Rel)                                 =  61 (10);
+Rel:    ScjRel                                    =  62 (10);
+ScjRel: step (Frag, Rel)                          =  63 (10);
+ScjRel: step (Frag, ScjRel)                       =  64 (10);
+ScjRel: step (Frag, distinct (Rel))               =  65 (10);
+Rel:    step_join (Frag, Rel)                     =  66 (10);
+Rel:    guide_step (Frag, Rel)                    =  67 (10);
+Rel:    guide_step_join (Frag, Rel)               =  68 (10);
+Rel:    doc_index_join (Frag, Rel)                =  69 (10);
 Rel:    doc_access (Frag, Rel)                    =  70 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  75 (10);
@@ -522,6 +525,72 @@ reduce (PFla_op_t *p, int goalnt)
                 SEEN(p) = false;
                 relabel (p, kids);
                 break;
+            }
+            break;
+
+        /* Rel:    eqjoin (lit_tbl, lit_tbl) */
+        case 12:
+            if (PFprop_type_of (p, p->sem.eqjoin.col1) == aat_nat &&
+                L(p)->sem.lit_tbl.count == R(p)->sem.lit_tbl.count) {
+                unsigned int     i, j,
+                                 count   = p->schema.count,
+                                 lcount  = L(p)->schema.count,
+                                 rcount  = R(p)->schema.count,
+                                 tcount  = L(p)->sem.lit_tbl.count,
+                                 lidx,
+                                 ridx;
+                PFalg_collist_t *collist = PFalg_collist (count);
+                PFalg_tuple_t   *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t));
+                PFalg_tuple_t    ltuple,
+                                 rtuple;
+
+                /* lookup the column index where the join columns reside */ 
+                lidx = lcount+1;
+                ridx = rcount+1;
+                for (i = 0; i < lcount; i++)
+                    if (L(p)->schema.items[i].name == p->sem.eqjoin.col1) {
+                        lidx = i;
+                        break;
+                    }
+                assert (lidx != lcount+1);
+                for (i = 0; i < rcount; i++)
+                    if (R(p)->schema.items[i].name == p->sem.eqjoin.col2) {
+                        ridx = i;
+                        break;
+                    }
+                assert (ridx != rcount+1);
+
+                /* copy the tuples and apply a merge the columns */
+                for (i = 0; i < tcount; i++) {
+                    ltuple = L(p)->sem.lit_tbl.tuples[i];
+                    rtuple = R(p)->sem.lit_tbl.tuples[i];
+
+                    /* check if the value in this line has the correct value */
+                    if (ltuple.atoms[lidx].val.nat_ != i+1 &&
+                        rtuple.atoms[ridx].val.nat_ != i+1)
+                        break;
+
+                    tuples[i].count = count;
+                    tuples[i].atoms = PFmalloc (count * sizeof (PFalg_atom_t));
+
+                    for (j = 0; j < lcount; j++)
+                        tuples[i].atoms[j] = ltuple.atoms[j];
+                    for (j = 0; j < rcount; j++)
+                        tuples[i].atoms[j+lcount] = rtuple.atoms[j];
+                }
+                /* abort if the values were not already dense and sorted */
+                if (i < tcount)
+                    break;
+
+                /* copy the aligned column names */
+                for (j = 0; j < lcount; j++)
+                    cladd (collist) = L(p)->schema.items[j].name;
+                for (j = 0; j < rcount; j++)
+                    cladd (collist) = R(p)->schema.items[j].name;
+
+                *p = *PFla_lit_tbl_ (collist, tcount, tuples);
+                SEEN(p) = false;
+                label (p);
             }
             break;
 
@@ -956,6 +1025,61 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
+            
+        /* Rel:    rownum (lit_tbl) */
+        case 48:
+            /* for a rownum operator with a single order column of type
+               nat we check whether the order column is already identical
+               to the result (under the assumption that the table is
+               ordered). */
+            if (!p->sem.sort.part &&
+                L(p)->sem.lit_tbl.count &&
+                PFord_count (p->sem.sort.sortby) == 1 &&
+                PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC &&
+                PFprop_type_of (p, PFord_order_col_at (p->sem.sort.sortby, 0))
+                    == aat_nat) {
+                PFalg_col_t      sort_col;
+                unsigned int     i,
+                                 tcount  = L(p)->sem.lit_tbl.count,
+                                 idx;
+                PFalg_proj_t *proj = PFmalloc (
+                                         p->schema.count
+                                         * sizeof (PFalg_proj_t));
+
+                /* lookup the column index where the sort column resides */ 
+                sort_col = PFord_order_col_at (p->sem.sort.sortby, 0);
+                idx = p->schema.count;
+                for (i = 0; i < L(p)->schema.count; i++)
+                    if (L(p)->schema.items[i].name == sort_col) {
+                        idx = i;
+                        break;
+                    }
+                assert (idx != p->schema.count);
+
+                /* check for the correct values in the order column */
+                for (i = 0; i < tcount; i++)
+                    /* check if the value in this line has the correct value */
+                    if (L(p)->sem.lit_tbl.tuples[i].atoms[idx].val.nat_ != i+1)
+                        break;
+                /* abort if the values were not already sorted */
+                if (i < tcount)
+                    break;
+
+                /* copy projection list */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->sem.sort.res == p->schema.items[i].name)
+                        proj[i] = PFalg_proj (p->sem.sort.res,
+                                              sort_col);
+                    else
+                        proj[i] = PFalg_proj (p->schema.items[i].name,
+                                              p->schema.items[i].name);
+
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+            }
+            break;
+
         /* Rel:    rowid (rowid (Rel)) */
         case 52:
         {
@@ -1099,8 +1223,51 @@ reduce (PFla_op_t *p, int goalnt)
             }
         } /* fall trough otherwise */
 
-        /* Rel:    cast (Rel) */
+        /* Rel:    cast (lit_tbl) */
         case 58:
+            if (p->sem.type.ty == aat_int &&
+                PFprop_type_of (p, p->sem.type.col) == aat_nat) {
+                unsigned int     i, j,
+                                 count  = p->schema.count,
+                                 tcount  = L(p)->sem.lit_tbl.count,
+                                 idx;
+                PFalg_collist_t *collist = PFalg_collist (count);
+                PFalg_tuple_t   *tuples  = PFmalloc (tcount * sizeof (PFalg_tuple_t));
+                PFalg_tuple_t    tuple;
+
+                idx = p->schema.count;
+                for (i = 0; i < L(p)->schema.count; i++)
+                    if (L(p)->schema.items[i].name == p->sem.type.col) {
+                        idx = i;
+                        break;
+                    }
+                assert (idx != p->schema.count);
+
+                /* copy the tuples and cast the value
+                   of the input column in every tuple */
+                for (i = 0; i < tcount; i++) {
+                    tuple = L(p)->sem.lit_tbl.tuples[i];
+                    tuples[i].count = count;
+                    tuples[i].atoms = PFmalloc (count * sizeof (PFalg_atom_t));
+                    for (j = 0; j < count - 1; j++)
+                        tuples[i].atoms[j] = tuple.atoms[j];
+                    /* cast the value to integer */
+                    tuples[i].atoms[j] 
+                        = PFalg_lit_int (tuple.atoms[idx].val.nat_);
+                }
+                /* copy the aligned column names */
+                for (j = 0; j < count - 1; j++)
+                    cladd (collist) = L(p)->schema.items[j].name;
+                cladd (collist) = p->sem.type.res;
+
+                *p = *PFla_lit_tbl_ (collist, tcount, tuples);
+                SEEN(p) = false;
+                label (p);
+            }
+            break;
+
+        /* Rel:    cast (Rel) */
+        case 59:
         {
             /*
              * If an algebra expression already has the requested
@@ -1135,7 +1302,7 @@ reduce (PFla_op_t *p, int goalnt)
         } break;
 
         /* ScjRel: step (Frag, ScjRel) */
-        case 63:
+        case 64:
             /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
             if (R(p)->sem.step.spec.axis == alg_desc_s &&
@@ -1162,7 +1329,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* ScjRel: step (Frag, distinct (Rel)) */
-        case 64:
+        case 65:
             R(p) = L(R(p));
             SEEN(p) = false;
             relabel (p, kids);
