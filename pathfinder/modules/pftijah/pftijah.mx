@@ -1411,7 +1411,7 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
 {
 	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
 	var parambat := bat("tj_" + ftiName + "_param");
-	var rtagbat  := _tj_RTagBat(ftiName);
+	var rtagbat  := bat(_tj_RTagBat(ftiName));
 
 	var delfin   := lng(parambat.find("delay_finalize"));
         if ( delfin > lng(0) ) {
