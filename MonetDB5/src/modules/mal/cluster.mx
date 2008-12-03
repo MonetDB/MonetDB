@@ -83,7 +83,7 @@ Return the oid map used";
 #include "mal_interpreter.h"
 #include "mal_client.h"
 
-/* #define _CLUSTER_DEBUG	for local debugging */
+/*#define _CLUSTER_DEBUG	for local debugging */
 
 #ifdef WIN32
 #ifndef LIBCLUSTER
@@ -261,7 +261,7 @@ CLUSTER_map(bat *RB, bat *B)
 	BAT *b, *map;
 	BUN p,q;
 	oid *mp, idx = 0, *bp;
-	BUN i;
+	int i;
 	Basket *basket;
 	(void) RB;
 
@@ -297,12 +297,12 @@ diskblock.
 	if (N > (rng / bsize))
 		N = rng / bsize;
 	if ( N ==0) N++;
-	bsize= rng / N;
+	bsize= (rng+N-1) / N;
 #ifdef _CLUSTER_DEBUG
-	N=2; bsize= rng / N; /* for debugging only */
-#endif
+	N=2; /* for debugging only */
 	stream_printf(GDKout,"bucket pages %d size %d max %d  N %d\n", 
 		(int)MT_npages(), (int)bsize, (int)rng, (int)N);
+#endif
 	basket = (Basket*) alloca((N+1) * sizeof(Basket));
 	if (basket==NULL)
 		throw(MAL, "cluster.new", "Not enough space");
@@ -318,7 +318,7 @@ diskblock.
 	}
 	basket[N-1].limit= BATcount(b); /* last piece */
 
-	mp = (oid*) Tloc(map, BUNfirst(map));
+	mp = (oid*) Tloc(map, 0);
 	bp = (oid*) Tloc(b, 0);
 	BATloop(b,p,q){
 		oid ocur = bp[p];
@@ -329,17 +329,18 @@ diskblock.
 			if (basket[bnr].nxt == -1 ||
 				basket[basket[bnr].nxt].base == basket[basket[bnr].nxt].limit){
 				/* find a maximal empty slot somewhere*/
-				BUN nr, max= bnr;
+				BUN nr, max= (bnr+1) % N;
 				nr= bnr;
-				i= N;
+				i= (int) N;
 				do {
 					nr= (nr+1) % N;
 					if (basket[nr].limit-basket[nr].base >
 						basket[max].limit-basket[max].base)
 						max = nr;
-				} while( --i );
+				} while( --i >=0);
 				/* last basket bounds */
 				basket[bnr].nxt = max;
+				bnr= max;
 			} else bnr = basket[bnr].nxt;
 		}
 		mp[basket[bnr].base] = idx++;
