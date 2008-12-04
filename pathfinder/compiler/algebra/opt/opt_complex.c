@@ -69,6 +69,267 @@ find_old_name (PFla_op_t *op, PFalg_col_t col)
 }
 
 /**
+ * This function checks for the following bigger pattern:
+ *
+ *                    |
+ *                   sel_d
+ *                    |
+ *                   eq_d:<pos1,pos2>
+ *                    |
+ *                   pi*
+ *                    |
+ *                   |X|_<iter1,iter2>
+ *         __________/ \_________
+ *        /                      \
+ *       pi*                     pi*
+ *       |                        |
+ *      row#_pos1:<col1>/iter1   row#_pos2:<col2>/iter2
+ *       |                        |
+ *       pi*                     pi*
+ *        \__________   _________/
+ *                   \ /
+ *                    op
+ *
+ * where at operator op the following conditions need to
+ * be fulfilled: col1 = col2 and iter1 = iter2.
+ *
+ * The pattern describes a split of two columns that
+ * are merged back together (zip) based on their iter and pos
+ * values. (The aligned row# operators ensure that iter+pos
+ * provide a comparable key.)
+ *
+ * The result pattern avoids the splitting and correctly
+ * reflects the renaming of the various projection operators
+ * (in pi_...):
+ *
+ *                    |
+ *                   pi_pos1:pos',pos2:pos',d:d',...
+ *                    |
+ *                    @_d':true
+ *                    |
+ *                   row#_pos':<col1>/iter1
+ *                    |
+ *                    op
+ *
+ * As the pattern checking is more complicated than the
+ * replacement we marked all code snippets that prepare
+ * the transformation as ACTION code to make the pattern
+ * detection code more readible.
+ */
+static bool
+zip_alignment (PFla_op_t *p)
+{
+    PFalg_col_t   pos1,
+                  pos2,
+                  iter1,
+                  iter2,
+                  sort1,
+                  sort2;
+    PFla_op_t    *op = p,
+                 *lop,
+                 *rop;
+    /* ACTION: local variables needed for the transformation */
+    unsigned int  count  = p->schema.count,
+                  lcount = 0,
+                  rcount = 0;
+    PFalg_proj_t *proj,
+                 *lproj,
+                 *rproj;
+    PFalg_col_t   new_rownum,
+                  new_eq,
+                  rownum1,
+                  rownum2,
+                  eq;
+    /* end of action code part */
+
+    /* check for pattern 'sel (eq (_))' where the selection
+       consumes the output of comparison */
+    if (op->kind != la_select ||
+        L(op)->kind != la_num_eq ||
+        op->sem.select.col != L(op)->sem.binary.res)
+        return false;
+
+    /* ACTION: initialize column name mapping
+               to correctly rename all columns */
+    proj = PFmalloc (count * sizeof (PFalg_proj_t));
+    for (unsigned int i = 0; i < count; i++)
+        proj[i] = PFalg_proj (p->schema.items[i].name,
+                              p->schema.items[i].name);
+    /* end of action code part */
+
+    pos1 = L(op)->sem.binary.col1;
+    pos2 = L(op)->sem.binary.col2;
+
+    op = LL(op);
+
+    /* update the important column names
+       for all projection operators on the way */
+    while (op->kind == la_project) {
+        pos1 = find_old_name (op, pos1); if (!pos1) return false;
+        pos2 = find_old_name (op, pos2); if (!pos2) return false;
+        /* ACTION: update column name mapping */
+        for (unsigned int i = 0; i < count; i++)
+            proj[i].old = find_old_name (op, proj[i].old);
+        /* end of action code part */
+        op   = L(op);
+    }
+
+    /* check for join */
+    if (op->kind != la_eqjoin)
+        return false;
+
+    iter1 = op->sem.eqjoin.col1;
+    iter2 = op->sem.eqjoin.col2;
+
+    lop = L(op);
+    rop = R(op);
+    
+    /* ACTION: split up column name mapping into
+               a left and a right mapping */
+    lproj = PFmalloc (lop->schema.count * sizeof (PFalg_proj_t));
+    rproj = PFmalloc (rop->schema.count * sizeof (PFalg_proj_t));
+    for (unsigned int i = 0; i < count; i++) {
+        if (PFprop_ocol (lop, proj[i].old))
+            lproj[lcount++] = proj[i];
+        else
+            rproj[rcount++] = proj[i];
+    }
+    /* end of action code part */
+
+    /* update the important column names
+       for all projection operators on the way */
+    while (lop->kind == la_project) {
+        iter1 = find_old_name (lop, iter1); if (!iter1) return false;
+        pos1  = find_old_name (lop, pos1);  if (!pos1)  return false;
+        /* ACTION: update left column name mapping */
+        for (unsigned int i = 0; i < lcount; i++)
+            lproj[i].old = find_old_name (lop, lproj[i].old);
+        /* end of action code part */
+        lop   = L(lop);
+    }
+    while (rop->kind == la_project) {
+        iter2 = find_old_name (rop, iter2); if (!iter2) return false;
+        pos2  = find_old_name (rop, pos2);  if (!pos2)  return false;
+        /* ACTION: update right column name mapping */
+        for (unsigned int i = 0; i < rcount; i++)
+            rproj[i].old = find_old_name (rop, rproj[i].old);
+        /* end of action code part */
+        rop   = L(rop);
+    }
+
+    /* check for the correct rownumber usage in the left
+       and the right side of the equi-join */
+    if (lop->kind != la_rownum ||
+        rop->kind != la_rownum ||
+        lop->sem.sort.res != pos1 ||
+        rop->sem.sort.res != pos2 ||
+        lop->sem.sort.part != iter1 ||
+        rop->sem.sort.part != iter2 ||
+        PFord_count (lop->sem.sort.sortby) != 1 ||
+        PFord_count (rop->sem.sort.sortby) != 1 ||
+        PFord_order_dir_at (lop->sem.sort.sortby, 0) != DIR_ASC ||
+        PFord_order_dir_at (rop->sem.sort.sortby, 0) != DIR_ASC)
+        return false;
+   
+    sort1 = PFord_order_col_at (lop->sem.sort.sortby, 0);
+    sort2 = PFord_order_col_at (rop->sem.sort.sortby, 0);
+
+    lop = L(lop);
+    rop = L(rop);
+
+    /* update the important column names
+       for all projection operators on the way */
+    while (lop->kind == la_project) {
+        iter1 = find_old_name (lop, iter1); if (!iter1) return false;
+        sort1 = find_old_name (lop, sort1); if (!sort1) return false;
+        /* ACTION: update left column name mapping */
+        for (unsigned int i = 0; i < lcount; i++)
+            lproj[i].old = find_old_name (lop, lproj[i].old);
+        /* end of action code part */
+        lop   = L(lop);
+    }
+    while (rop->kind == la_project) {
+        iter2 = find_old_name (rop, iter2); if (!iter2) return false;
+        sort2 = find_old_name (rop, sort2); if (!sort2) return false;
+        /* ACTION: update right column name mapping */
+        for (unsigned int i = 0; i < rcount; i++)
+            rproj[i].old = find_old_name (rop, rproj[i].old);
+        /* end of action code part */
+        rop   = L(rop);
+    }
+
+    /* check if we have a common operator
+       and if all column names match */
+    if (lop != rop ||
+        iter1 != iter2 ||
+        sort1 != sort2)
+        return false;
+
+    /* consistency check - we have to find all updated column names  */
+    for (unsigned int i = 0; i < lcount; i++)
+        if (lproj[i].old == col_NULL &&
+            lproj[i].new != L(p)->sem.binary.col1)
+            return false;
+
+    /* consistency check - we have to find all updated column names  */
+    for (unsigned int i = 0; i < rcount; i++)
+        if (rproj[i].old == col_NULL &&
+            rproj[i].new != L(p)->sem.binary.col2 &&
+            rproj[i].new != L(p)->sem.binary.res)
+            return false;
+
+    /* ACTION: */
+    /* create two new column names to avoid name conflicts */
+    new_rownum = PFcol_new (col_pos);
+    new_eq     = PFcol_new (col_item);
+    rownum1    = L(p)->sem.binary.col1;
+    rownum2    = L(p)->sem.binary.col2;
+    eq         = L(p)->sem.binary.res;
+
+    /* merge back the modified column names of the left
+       name mapping into the initial list */
+    for (unsigned int i = 0; i < lcount; i++)
+        for (unsigned int j = 0; j < count; j++)
+            if (lproj[i].new == proj[j].new) {
+                proj[j].old = lproj[i].old;
+                break;
+            }
+    /* merge back the modified column names of the right
+       name mapping into the initial list */
+    for (unsigned int i = 0; i < rcount; i++)
+        for (unsigned int j = 0; j < count; j++)
+            if (rproj[i].new == proj[j].new) {
+                proj[j].old = rproj[i].old;
+                break;
+            }
+    /* Adjust the column names of the three columns
+       generated in the pattern (comparison and rownumber
+       operators). */
+    for (unsigned int j = 0; j < count; j++) {
+        if (rownum1 == proj[j].new ||
+            rownum2 == proj[j].new)
+            proj[j].old = new_rownum;
+        else if (eq == proj[j].new)
+            proj[j].old = new_eq;
+    }
+
+    /* link the base only once and thus ignore the aligning
+       join on columns iter and pos */
+    *p = *PFla_project_ (
+              attach (rownum (lop, new_rownum, sortby (sort1), iter1),
+                      new_eq,
+                      PFalg_lit_bln (true)),
+              count,
+              proj);
+    /* end of action code part */
+
+    /* we have rewritten the query plan
+       based on the pattern */
+    return true;
+}
+
+
+/**
  * find_last_base checks for the following
  * small DAG fragment:
  *
@@ -847,6 +1108,10 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_select:
+            /* check for the alignment of columns produced
+               by the zip operator in the ferryc compiler */
+            if (zip_alignment (p))
+                break;
         /**
          * Rewrite the pattern (1) into expression (2):
          *
