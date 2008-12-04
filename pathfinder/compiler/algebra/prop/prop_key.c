@@ -236,7 +236,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             else
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     unsigned int j = 0;
-                    unsigned int k = 0;
+                    unsigned int k = j+1;
 
                     /* skip all columns where the comparison
                        might be unstable in respect to
@@ -247,11 +247,11 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
                     /* compare each tuple with all others */
                     while (j < n->sem.lit_tbl.count) {
-                        if (!PFalg_atom_cmp (n->sem.lit_tbl.tuples[j].atoms[i],
-                                             n->sem.lit_tbl.tuples[k].atoms[i]))
+                        if (k == n->sem.lit_tbl.count)
+                            { j++; k = j+1; }
+                        else if (!PFalg_atom_cmp (n->sem.lit_tbl.tuples[j].atoms[i],
+                                                  n->sem.lit_tbl.tuples[k].atoms[i]))
                             break;
-                        else if (k == n->sem.lit_tbl.count)
-                            { k = 0; j++; }
                         else
                             k++;
                     }
