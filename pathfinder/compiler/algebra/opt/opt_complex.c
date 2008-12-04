@@ -1616,10 +1616,34 @@ opt_complex (PFla_op_t *p)
 
             /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
-            if (p->sem.step.spec.axis == alg_chld &&
-                R(p)->kind == la_project &&
+            if (R(p)->kind == la_project &&
                 RL(p)->kind == la_step_join &&
-                RL(p)->sem.step.spec.axis == alg_desc_s &&
+                /* check for the different step combinations */
+                ((/* descendant-or-self::node()/child:: */
+                  p->sem.step.spec.axis == alg_chld &&
+                  RL(p)->sem.step.spec.axis == alg_desc_s) ||
+                 (/* child::node()/descendant-or-self:: */
+                  p->sem.step.spec.axis == alg_desc_s &&
+                  RL(p)->sem.step.spec.axis == alg_chld) ||
+                 (/* coll_node/descendant::node()/child:: */
+                  /* Works correctly as the collection node is not
+                     reachable in the query and thus descendant behaves
+                     like a descendant-or-self step starting from a
+                     document node. */
+                  p->sem.step.spec.axis == alg_chld &&
+                  PFprop_level (RL(p)->prop, RL(p)->sem.step.item) == -1 &&
+                  RL(p)->sem.step.spec.axis == alg_desc &&
+                  /* check for node kind to avoid that this pattern
+                     is triggered multiple times */
+                  p->sem.step.spec.kind != node_kind_node) ||
+                 (/* coll_node/child::node()/descendant:: */
+                  /* Works correctly as the descendant step filter
+                     discards the document nodes. */
+                  p->sem.step.spec.axis == alg_desc &&
+                  PFprop_level (RL(p)->prop, RL(p)->sem.step.item) == -1 &&
+                  RL(p)->sem.step.spec.axis == alg_chld &&
+                  p->sem.step.spec.kind != node_kind_node &&
+                  p->sem.step.spec.kind != node_kind_doc)) &&
                 RL(p)->sem.step.spec.kind == node_kind_node &&
                 !PFprop_icol (p->prop, p->sem.step.item) &&
                 (PFprop_set (p->prop) ||
