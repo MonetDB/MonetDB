@@ -250,8 +250,7 @@ number of buckets. Thereafter it can just call the
 remapping;
 @c
 typedef struct{
-	BUN base,limit;
-	int nxt;
+		BUN base,limit,nxt;
 } Basket;
 
 str  
@@ -310,11 +309,11 @@ diskblock.
 	/* prepare buffers */
 	basket[0].base = 0;
 	basket[0].limit = BATcount(b) / N;
-	basket[0].nxt = -1;
+	basket[0].nxt = BUN_NONE;
 	for (h=1; h < N; h++){
 		basket[h].base= basket[h-1].limit;
 		basket[h].limit= basket[h-1].limit + basket[0].limit;
-		basket[h].nxt= -1;
+		basket[h].nxt= BUN_NONE;
 	}
 	basket[N-1].limit= BATcount(b); /* last piece */
 
@@ -326,7 +325,7 @@ diskblock.
 		bnr = ocur/bsize;
 		assert(bnr<N);
 		if (basket[bnr].base == basket[bnr].limit){ /* full */
-			if (basket[bnr].nxt == -1 ||
+			if (basket[bnr].nxt == BUN_NONE ||
 				basket[basket[bnr].nxt].base == basket[basket[bnr].nxt].limit){
 				/* find a maximal empty slot somewhere*/
 				BUN nr, max= (bnr+1) % N;
