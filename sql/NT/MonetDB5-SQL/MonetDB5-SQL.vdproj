@@ -377,8 +377,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A84919C97283494D8F2BAA3126ACE616"
             {
-            "SourcePath" = "8:share\\MonetDB\\sql\\ms_functions.sql"
-            "TargetName" = "8:ms_functions.sql"
+            "SourcePath" = "8:share\\MonetDB\\sql\\skyserver.sql"
+            "TargetName" = "8:skyserver.sql"
             "Tag" = "8:"
             "Folder" = "8:_F79470FE41534FBD8E558EE214FAF2A9"
             "Condition" = "8:"
