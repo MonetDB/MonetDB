@@ -87,7 +87,10 @@ struct PFfun_t {
     unsigned int sig_count;    /**< number of signatures, >1 for dynamically
                                     overloaded functions. */
     PFfun_sig_t   *sigs;       /**< signatures */
-    struct PFla_pair_t (*alg) (const struct PFla_op_t *, bool, struct PFla_pair_t *);
+    struct PFla_pair_t (*alg) (const struct PFla_op_t *,
+                               bool,
+                               struct PFla_op_t **,
+                               struct PFla_pair_t *);
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
     int            fid;        /**< id for variable environment mapping
@@ -108,6 +111,7 @@ extern PFenv_t *PFfun_env;
 PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, unsigned int, PFfun_sig_t *,
                     struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                                bool,
+                                               struct PFla_op_t **,
                                                struct PFla_pair_t *),
                     PFvar_t **params, char *atURI);
 

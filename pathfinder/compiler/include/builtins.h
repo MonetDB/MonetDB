@@ -50,340 +50,430 @@
 /* 2. ACCESSORS */
 /* 2.1. fn:node_name */
 struct PFla_pair_t PFfn_bui_node_name_attr (const PFla_op_t *loop,
-					     					bool ordering,
-    				     					struct PFla_pair_t *args);
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFfn_bui_node_name_elem (const PFla_op_t *loop,
-						 					bool ordering,
-						 					struct PFla_pair_t *args);
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFfn_bui_node_name_node (const PFla_op_t *loop,
-						 					bool ordering,
-    					 					struct PFla_pair_t *args);
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
 
 /* 2.3. fn:string */
 struct PFla_pair_t PFbui_fn_string_attr (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_text (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_pi (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_comm (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_elem (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_elem_attr (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 /* 2.4. fn:data */
 struct PFla_pair_t PFbui_fn_data_attr (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data_text (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data_pi (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data_comm (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data_elem (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data_elem_attr (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_data (const PFla_op_t *loop,
                                   bool ordering,
+                                  PFla_op_t **side_effects,
                                   struct PFla_pair_t *args);
 
 /* 3. THE ERROR FUNCTION */
 struct PFla_pair_t PFbui_fn_error_empty (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_error (const PFla_op_t *loop,
                                    bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_error_str (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
 /* 6.2. Operators on Numeric Values */
 struct PFla_pair_t PFbui_op_numeric_add (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_numeric_subtract (const PFla_op_t *loop,
                                                bool ordering,
+                                               PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_numeric_multiply (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_numeric_divide (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_numeric_idivide (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_numeric_modulo (const PFla_op_t *loop,
-                                                bool ordering,
-                                                struct PFla_pair_t *args);
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
 
 /* 6.3. Comparison Operators on Numeric Values */
 struct PFla_pair_t PFbui_op_eq_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_eq_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_eq_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_eq_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_eq_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_ne_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ne_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ne_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ne_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ne_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_lt_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_lt_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_lt_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_lt_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_lt_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_le_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_le_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_le_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_le_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_le_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_gt_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_gt_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_gt_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_gt_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_gt_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_ge_int (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ge_dec (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ge_dbl (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ge_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_ge_str (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 /* 6.4. Functions on Numeric Values */
 struct PFla_pair_t PFbui_fn_abs_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_abs_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_abs_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_ceiling_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_ceiling_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_ceiling_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_floor_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_floor_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_floor_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_round_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_round_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_round_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 /* 7. FUNCTIONS ON STRINGS */
 /* 7.4. Functions on String Values */
 struct PFla_pair_t PFbui_fn_concat (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_join (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_substring (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_substring_dbl (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_string_length (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_normalize_space (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_upper_case (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_lower_case (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_translate (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 /* 7.5. Functions Based on Substring Matching */
 struct PFla_pair_t PFbui_fn_contains (const PFla_op_t *loop,
                                       bool ordering,
+                                      PFla_op_t **side_effects,
                                       struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_contains_opt (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_contains_opt_opt (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_starts_with (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_ends_with (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_substring_before (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_substring_after (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 
 /* 7.6. String Functions that Use Pattern Matching */
 
 struct PFla_pair_t PFbui_fn_matches (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_matches_str (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_replace (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_replace_str (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 /* 9. FUNCTIONS AND OPERATORS ON BOOLEAN VALUES */
 /* 9.1. Additional Boolean Constructor Functions */
 struct PFla_pair_t PFbui_fn_true (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_false (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 /* 9.2. Operators on Boolean Values */
@@ -391,13 +481,18 @@ struct PFla_pair_t PFbui_fn_false (const PFla_op_t *loop,
 /* 9.3. Functions on Boolean Values */
 struct PFla_pair_t PFbui_fn_not_bln (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */
-struct PFla_pair_t PFbui_fn_resolve_qname
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_fn_resolve_qname (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop,
+                                   bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 /* 14 FUNCTIONS AND OPERATORS ON NODES */
@@ -405,203 +500,250 @@ struct PFla_pair_t PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 
 struct PFla_pair_t PFbui_fn_name (const PFla_op_t *loop,
                                   bool ordering,
+                                  PFla_op_t **side_effects,
                                   struct PFla_pair_t *args);
 
 /* 14.2. fn:local-name */
 
 struct PFla_pair_t PFbui_fn_local_name (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 /* 14.3. fn:namespace-uri */
 
 struct PFla_pair_t PFbui_fn_namespace_uri (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 /* 14.4. fn:number */
 struct PFla_pair_t PFbui_fn_number (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 /* 14.6. op:is-same-node */
 struct PFla_pair_t PFbui_op_is_same_node (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 
 /* 14.7. op:node-before */
 struct PFla_pair_t PFbui_op_node_before (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 /* 14.8. op:node-after */
 struct PFla_pair_t PFbui_op_node_after (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 /* 14.9. fn:root */
 struct PFla_pair_t PFbui_fn_root (const PFla_op_t *loop,
                                   bool ordering,
+                                  PFla_op_t **side_effects,
                                   struct PFla_pair_t *args);
 
 /* 15. FUNCTIONS AND OPERATORS ON SEQUENCES */
 /* 15.1. General Functions and Operators on Sequences */
 struct PFla_pair_t PFbui_fn_boolean_optbln (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_boolean_item (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_boolean_bln (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_empty (const PFla_op_t *loop,
                                    bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_exists (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_distinct_values (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_insert_before (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_remove (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_reverse (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_subsequence_till_end (const PFla_op_t *loop,
                                                   bool ordering,
+                                                  PFla_op_t **side_effects,
                                                   struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_subsequence (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_unordered (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 /* 15.2. Functions That Test the Cardinality of Sequences */
 struct PFla_pair_t PFbui_fn_zero_or_one (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_exactly_one (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 /* 15.3. Equals, Union, Intersection and Except */
 struct PFla_pair_t PFbui_op_union (const PFla_op_t *loop,
                                    bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_intersect (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_except (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 /* 15.4. Aggregate Functions */
 struct PFla_pair_t PFbui_fn_count (const PFla_op_t *loop,
                                    bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_avg (const PFla_op_t *loop,
                                  bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_max_str (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_max_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_max_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_max_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_min_str (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_min_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_min_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_min_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_zero_int (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_int (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_dec (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_dbl (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 /* 15.5. Functions and Operators that Generate Sequences */
 struct PFla_pair_t PFbui_op_to (const PFla_op_t *loop,
                                 bool ordering,
+                                PFla_op_t **side_effects,
                                 struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_id (const PFla_op_t *loop,
                                 bool ordering,
+                                PFla_op_t **side_effects,
                                 struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_idref (const PFla_op_t *loop,
                                    bool ordering,
+                                   PFla_op_t **side_effects,
                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_doc (const PFla_op_t *loop,
                                  bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_doc_available (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_collection (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 /* 16. CONTEXT FUNCTIONS */
@@ -612,159 +754,230 @@ struct PFla_pair_t PFbui_fn_collection (const PFla_op_t *loop,
 /* #1. PATHFINDER SPECIFIC HELPER FUNCTIONS */
 struct PFla_pair_t PFbui_op_or_bln (const PFla_op_t *loop,
                                     bool ordering,
+                                    PFla_op_t **side_effects,
                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_op_and_bln (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_distinct_doc_order (const PFla_op_t *loop,
                                                 bool ordering,
+                                                PFla_op_t **side_effects,
                                                 struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_single_atomic
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_atomic
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_attr_single
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_attr
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_wo_attr
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_item_seq_to_node_seq
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_merge_adjacent_text_nodes
-               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+               (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_string_value_attr (const PFla_op_t *loop,
                                                bool ordering,
+                                               PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_text (const PFla_op_t *loop,
                                                bool ordering,
+                                               PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_pi (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_comm (const PFla_op_t *loop,
                                                bool ordering,
+                                               PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_elem (const PFla_op_t *loop,
                                                bool ordering,
+                                               PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
                                                     bool ordering,
+                                                    PFla_op_t **side_effects,
                                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           bool ordering,
+                                          PFla_op_t **side_effects,
                                           struct PFla_pair_t *args);
 
 /* #2. PATHFINDER SPECIFIC DOCUMENT MANAGEMENT FUNCTIONS */
 
 struct PFla_pair_t PFbui_fn_put (const PFla_op_t *loop,
                                  bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_documents (const PFla_op_t *loop,
                                        bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_documents_unsafe (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_documents_str (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_documents_str_unsafe (const PFla_op_t *loop,
                                                   bool ordering,
+                                                  PFla_op_t **side_effects,
                                                   struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_docname (const PFla_op_t *loop,
                                      bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_collection (const PFla_op_t *loop,
                                         bool ordering,
+                                        PFla_op_t **side_effects,
                                         struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_collections (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_collections_unsafe (const PFla_op_t *loop,
                                                 bool ordering,
+                                                PFla_op_t **side_effects,
                                                 struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_fragment (const PFla_op_t *loop,
+                                      bool ordering,
+                                      PFla_op_t **side_effects,
                                       struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_attribute (const PFla_op_t *loop,
+                                       bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_text (const PFla_op_t *loop,
+                                   bool ordering,
+                                   PFla_op_t **side_effects,
                                   struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_supernode (const PFla_op_t *loop,
+                                       bool ordering,
+                                       PFla_op_t **side_effects,
                                        struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_add_doc (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_add_doc_str (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_add_doc_int (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_add_doc_str_int (const PFla_op_t *loop,
                                              bool ordering,
+                                             PFla_op_t **side_effects,
                                              struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_del_doc (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_nid (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_pf_nid (const PFla_op_t *loop,
+                                 bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args);
 
 /* #3. UPDATE FUNCTIONS */
-struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_upd_rename (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
+struct PFla_pair_t PFbui_upd_delete (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
                                                    bool ordering,
+                                                   PFla_op_t **side_effects,
                                                    struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_insert_into_as_last (const PFla_op_t *loop,
                                                   bool ordering,
+                                                  PFla_op_t **side_effects,
                                                   struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_insert_before (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_insert_after (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_replace_value_att (const PFla_op_t *loop,
                                                 bool ordering,
+                                                PFla_op_t **side_effects,
                                                 struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_replace_value (const PFla_op_t *loop,
                                             bool ordering,
+                                            PFla_op_t **side_effects,
                                             struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_replace_element (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_upd_replace_node (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
 #ifdef HAVE_PFTIJAH
@@ -773,75 +986,97 @@ struct PFla_pair_t PFbui_upd_replace_node (const PFla_op_t *loop,
 /*
  * The fti management functions
  */
-struct PFla_pair_t PFbui_manage_fti_c_xx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_c_cx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_c_xo(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_c_co(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_e_cx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_e_co(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_r_xx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_manage_fti_r_xo(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_xx (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_cx (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_xo (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_c_co (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_e_cx (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_e_co (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_r_xx (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_manage_fti_r_xo (const PFla_op_t *loop,
+                                          bool ordering,
+                                          PFla_op_t **side_effects,
+                                          struct PFla_pair_t *args);
 
 /*
  * The main query functions
  */
 struct PFla_pair_t PFbui_tijah_query_i_xx (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_i_xo (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_i_sx (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_i_so (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_n_xx (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_n_xo (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_n_sx (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_query_n_so (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_nodes      (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_score      (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_ft_index_info (const PFla_op_t *loop,
                                               bool ordering,
+                                              PFla_op_t **side_effects,
                                               struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_ft_index_info_s (const PFla_op_t *loop,
                                                 bool ordering,
+                                                PFla_op_t **side_effects,
                                                 struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_tokenize (const PFla_op_t *loop,
                                          bool ordering,
+                                         PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_tijah_resultsize (const PFla_op_t *loop,
                                            bool ordering,
+                                           PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 #endif
 

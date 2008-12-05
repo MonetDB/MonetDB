@@ -355,15 +355,19 @@ un_op (PFalg_simple_type_t t,
 static struct PFla_pair_t
 fn_bui_node_name (struct PFla_pair_t
                     (*nodes)
-                    (const PFla_op_t *, bool, PFla_pair_t *args),
+                    (const PFla_op_t * loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
+                     PFla_pair_t *args),
                   const PFla_op_t *loop,
                   bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
     PFla_op_t *qnames = project (
                             doc_access (
                                 PFla_set_to_la (args[0].frag),
-                                nodes (loop, ordering, args).rel,
+                                nodes (loop, ordering, side_effects, args).rel,
                                 col_res, col_item, doc_qname),
                             proj (col_iter, col_iter),
                             proj (col_pos, col_pos),
@@ -378,18 +382,20 @@ fn_bui_node_name (struct PFla_pair_t
 static struct PFla_pair_t
 fn_bui_node_name_attr_ (const PFla_op_t* loop,
                         bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void)ordering; (void)loop;
+    (void) loop; (void) ordering; (void) side_effects;
     return args[0];
 }
 
 static struct PFla_pair_t
 fn_bui_node_name_elem_ (const PFla_op_t *loop,
                         bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void)ordering; (void)loop;
+    (void) loop; (void) ordering; (void) side_effects;
     return args[0];
 }
 
@@ -397,9 +403,10 @@ fn_bui_node_name_elem_ (const PFla_op_t *loop,
 static struct PFla_pair_t
 fn_bui_node_name_attr_filter (const PFla_op_t* loop,
                               bool ordering,
+                              PFla_op_t **side_effects,
                               struct PFla_pair_t *args)
 {
-    (void)loop; (void)ordering;
+    (void) loop; (void) ordering; (void) side_effects;
     
     PFla_op_t *attributes = NULL;
     PFalg_step_spec_t self_attr_spec;
@@ -429,9 +436,10 @@ fn_bui_node_name_attr_filter (const PFla_op_t* loop,
 static struct PFla_pair_t
 fn_bui_node_name_element_filter (const PFla_op_t* loop,
                                  bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args)
 {
-    (void)loop; (void)ordering;
+    (void) loop; (void) ordering; (void) side_effects;
     
     PFla_op_t *elements = NULL;
     PFalg_step_spec_t self_elem_spec;
@@ -460,14 +468,17 @@ fn_bui_node_name_element_filter (const PFla_op_t* loop,
 static struct PFla_pair_t
 fn_bui_node_name_node_ (const PFla_op_t *loop,
                         bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     PFla_op_t *union_ = disjunion (
                             fn_bui_node_name_attr_filter (loop,
                                                           ordering,
+                                                          side_effects,
                                                           args).rel,
                             fn_bui_node_name_element_filter (loop,
                                                              ordering,
+                                                             side_effects,
                                                              args).rel);
                                                     
     return (struct PFla_pair_t) {
@@ -480,27 +491,33 @@ fn_bui_node_name_node_ (const PFla_op_t *loop,
 struct PFla_pair_t
 PFfn_bui_node_name_attr (const PFla_op_t *loop,
                          bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    return fn_bui_node_name (fn_bui_node_name_attr_, loop, ordering, args);
+    return fn_bui_node_name (fn_bui_node_name_attr_,
+                             loop, ordering, side_effects, args);
 }
 
 /* node-name for elements */
 struct PFla_pair_t 
 PFfn_bui_node_name_elem (const PFla_op_t *loop,
                          bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    return fn_bui_node_name (fn_bui_node_name_elem_, loop, ordering, args);
+    return fn_bui_node_name (fn_bui_node_name_elem_,
+                             loop, ordering, side_effects, args);
 }
 
 /* node-name for general nodes */
 struct PFla_pair_t
 PFfn_bui_node_name_node (const PFla_op_t *loop,
                          bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    return fn_bui_node_name (fn_bui_node_name_node_, loop, ordering, args);
+    return fn_bui_node_name (fn_bui_node_name_node_,
+                             loop, ordering, side_effects, args);
 }
 
 
@@ -515,9 +532,13 @@ PFfn_bui_node_name_node (const PFla_op_t *loop,
  */
 static struct PFla_pair_t
 fn_string (struct PFla_pair_t (*data)
-             (const PFla_op_t *, bool, struct PFla_pair_t *),
+             (const PFla_op_t * loop,
+              bool ordering,
+              PFla_op_t **side_effects,
+              struct PFla_pair_t *args),
            const PFla_op_t *loop,
            bool ordering,
+           PFla_op_t **side_effects,
            struct PFla_pair_t *args)
 {
     /* as long as fn:data uses #pf:string-value()
@@ -527,6 +548,7 @@ fn_string (struct PFla_pair_t (*data)
                                  data (
                                      loop,
                                      ordering,
+                                     side_effects,
                                      args).rel,
                                  col_cast,
                                  col_item,
@@ -557,9 +579,10 @@ fn_string (struct PFla_pair_t (*data)
 struct PFla_pair_t
 PFbui_fn_string_attr (const PFla_op_t *loop,
                       bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_attr, loop, ordering, args);
+    return fn_string (PFbui_fn_data_attr, loop, ordering, side_effects, args);
 }
 
 /**
@@ -568,9 +591,10 @@ PFbui_fn_string_attr (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string_text (const PFla_op_t *loop,
                       bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_text, loop, ordering, args);
+    return fn_string (PFbui_fn_data_text, loop, ordering, side_effects, args);
 }
 
 /**
@@ -579,9 +603,10 @@ PFbui_fn_string_text (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string_pi (const PFla_op_t *loop,
                     bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_pi, loop, ordering, args);
+    return fn_string (PFbui_fn_data_pi, loop, ordering, side_effects, args);
 }
 
 /**
@@ -590,9 +615,10 @@ PFbui_fn_string_pi (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string_comm (const PFla_op_t *loop,
                       bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_comm, loop, ordering, args);
+    return fn_string (PFbui_fn_data_comm, loop, ordering, side_effects, args);
 }
 
 /**
@@ -601,9 +627,10 @@ PFbui_fn_string_comm (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string_elem (const PFla_op_t *loop,
                       bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_elem, loop, ordering, args);
+    return fn_string (PFbui_fn_data_elem, loop, ordering, side_effects, args);
 }
 
 /**
@@ -612,9 +639,11 @@ PFbui_fn_string_elem (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string_elem_attr (const PFla_op_t *loop,
                            bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data_elem_attr, loop, ordering, args);
+    return fn_string (PFbui_fn_data_elem_attr,
+                      loop, ordering, side_effects, args);
 }
 
 /**
@@ -623,9 +652,10 @@ PFbui_fn_string_elem_attr (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_string (const PFla_op_t *loop,
                  bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return fn_string (PFbui_fn_data, loop, ordering, args);
+    return fn_string (PFbui_fn_data, loop, ordering, side_effects, args);
 }
 
 /* ------------ */
@@ -638,13 +668,17 @@ PFbui_fn_string (const PFla_op_t *loop,
  */
 static struct PFla_pair_t
 fn_data (struct PFla_pair_t (*str_val)
-             (const PFla_op_t *, bool, struct PFla_pair_t *),
+             (const PFla_op_t *loop,
+              bool ordering,
+              PFla_op_t **side_effects,
+              struct PFla_pair_t *args),
          PFalg_simple_type_t node_type,
          const PFla_op_t *loop,
          bool ordering,
+         PFla_op_t **side_effects,
          struct PFla_pair_t *args)
 {
-    (void) loop;
+    (void) loop; (void) side_effects;
 
     /*
      * carry out specific type test on type
@@ -692,6 +726,7 @@ fn_data (struct PFla_pair_t (*str_val)
                              cast(str_val (project (q, proj (col_iter,
                                                              col_inner)),
                                            ordering,
+                                           side_effects,
                                            &str_args).rel,
                                   col_cast,
                                   col_item,
@@ -714,9 +749,11 @@ fn_data (struct PFla_pair_t (*str_val)
 struct PFla_pair_t
 PFbui_fn_data_attr (const PFla_op_t *loop,
                     bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value_attr, aat_anode, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value_attr, aat_anode,
+                    loop, ordering, side_effects, args);
 }
 
 /**
@@ -725,9 +762,11 @@ PFbui_fn_data_attr (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data_text (const PFla_op_t *loop,
                     bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value_text, aat_pnode, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value_text, aat_pnode,
+                    loop, ordering, side_effects, args);
 }
 
 /**
@@ -736,9 +775,11 @@ PFbui_fn_data_text (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data_pi (const PFla_op_t *loop,
                   bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value_pi, aat_pnode, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value_pi, aat_pnode,
+                    loop, ordering, side_effects, args);
 }
 
 /**
@@ -747,9 +788,11 @@ PFbui_fn_data_pi (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data_comm (const PFla_op_t *loop,
                     bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value_comm, aat_pnode, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value_comm, aat_pnode,
+                    loop, ordering, side_effects, args);
 }
 
 /**
@@ -758,9 +801,11 @@ PFbui_fn_data_comm (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data_elem (const PFla_op_t *loop,
                     bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value_elem, aat_pnode, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value_elem, aat_pnode,
+                    loop, ordering, side_effects, args);
 }
 
 /**
@@ -769,10 +814,11 @@ PFbui_fn_data_elem (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data_elem_attr (const PFla_op_t *loop,
                          bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
     return fn_data(PFbui_pf_string_value_elem_attr,
-                   aat_node, loop, ordering, args);
+                   aat_node, loop, ordering, side_effects, args);
 }
 
 /**
@@ -781,9 +827,11 @@ PFbui_fn_data_elem_attr (const PFla_op_t *loop,
 struct PFla_pair_t
 PFbui_fn_data (const PFla_op_t *loop,
                bool ordering,
+               PFla_op_t **side_effects,
                struct PFla_pair_t *args)
 {
-    return fn_data(PFbui_pf_string_value, aat_node, loop, ordering, args);
+    return fn_data (PFbui_pf_string_value, aat_node,
+                    loop, ordering, side_effects, args);
 }
 
 /* --------------------- */
@@ -794,10 +842,12 @@ PFbui_fn_data (const PFla_op_t *loop,
  * Build up operator tree for built-in function 'fn:error()'.
  */
 struct PFla_pair_t
-PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
+PFbui_fn_error_empty (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) args;
+    (void) loop; (void) ordering; (void) side_effects; (void) args;
 
     return (struct PFla_pair_t) {
         .rel  = error (
@@ -813,9 +863,12 @@ PFbui_fn_error_empty (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function 'fn:error(string)'.
  */
 struct PFla_pair_t
-PFbui_fn_error (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+PFbui_fn_error (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = error (args[0].rel, col_item),
@@ -826,10 +879,12 @@ PFbui_fn_error (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
  * Build up operator tree for built-in function 'fn:error(string?, string)'.
  */
 struct PFla_pair_t
-PFbui_fn_error_str (const PFla_op_t *loop, bool ordering,
+PFbui_fn_error_str (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = error(
@@ -909,12 +964,14 @@ bin_arith_callback (PFla_op_t *n1,
  * @see bin_op()
  */
 static struct PFla_pair_t
-bin_arith (struct PFla_pair_t *args,
-           PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
+bin_arith (PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
                              PFalg_col_t, PFalg_col_t),
-           const PFla_op_t *loop, bool ordering)
+           const PFla_op_t *loop,
+           bool ordering,
+           PFla_op_t **side_effects,
+           struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; /* keep compilers quiet */
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *res = typeswitch2 (args[0].rel,
                                   args[1].rel,
@@ -931,10 +988,12 @@ bin_arith (struct PFla_pair_t *args,
  * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_add (const PFla_op_t *loop, bool ordering,
+PFbui_op_numeric_add (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    return bin_arith (args, PFla_add, loop, ordering);
+    return bin_arith (PFla_add, loop, ordering, side_effects, args);
 }
 
 /**
@@ -942,10 +1001,12 @@ PFbui_op_numeric_add (const PFla_op_t *loop, bool ordering,
  * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_subtract (const PFla_op_t *loop, bool ordering,
+PFbui_op_numeric_subtract (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    return bin_arith (args, PFla_subtract, loop, ordering);
+    return bin_arith (PFla_subtract, loop, ordering, side_effects, args);
 }
 
 /**
@@ -953,10 +1014,12 @@ PFbui_op_numeric_subtract (const PFla_op_t *loop, bool ordering,
  * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_multiply (const PFla_op_t *loop, bool ordering,
+PFbui_op_numeric_multiply (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    return bin_arith (args, PFla_multiply, loop, ordering);
+    return bin_arith (PFla_multiply, loop, ordering, side_effects, args);
 }
 
 /**
@@ -999,10 +1062,12 @@ divide_callback (PFla_op_t *n1,
  * promoted to decimal (see special helper function above).
  */
 struct PFla_pair_t
-PFbui_op_numeric_divide (const PFla_op_t *loop, bool ordering,
+PFbui_op_numeric_divide (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *res = typeswitch2 (args[0].rel,
                                   args[1].rel,
@@ -1021,16 +1086,19 @@ PFbui_op_numeric_divide (const PFla_op_t *loop, bool ordering,
  * NB: ($a idiv $b) <=> ($a div $b) cast as xs:integer
  */
 struct PFla_pair_t
-PFbui_op_numeric_idivide (const PFla_op_t *loop, bool ordering,
-                              struct PFla_pair_t *args)
+PFbui_op_numeric_idivide (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
+                          struct PFla_pair_t *args)
 {
     return (struct PFla_pair_t) {
         .rel = project (
                    cast (bin_arith (
-                             args,
                              PFla_divide,
                              loop,
-                             ordering).rel,
+                             ordering,
+                             side_effects,
+                             args).rel,
                          col_cast, col_item, aat_int),
                    proj (col_iter, col_iter),
                    proj (col_pos, col_pos),
@@ -1043,10 +1111,12 @@ PFbui_op_numeric_idivide (const PFla_op_t *loop, bool ordering,
  * @see bin_arith()
  */
 struct PFla_pair_t
-PFbui_op_numeric_modulo (const PFla_op_t *loop, bool ordering,
-                             struct PFla_pair_t *args)
+PFbui_op_numeric_modulo (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
+                         struct PFla_pair_t *args)
 {
-    return bin_arith (args, PFla_modulo, loop, ordering);
+    return bin_arith (PFla_modulo, loop, ordering, side_effects, args);
 }
 
 /* ------------------------------------------- */
@@ -1061,11 +1131,12 @@ static struct PFla_pair_t
 bin_comp (PFalg_simple_type_t t,
           PFla_op_t *(*OP) (const PFla_op_t *, PFalg_col_t,
                             PFalg_col_t, PFalg_col_t),
-          struct PFla_pair_t *args,
           const PFla_op_t *loop,
-          bool ordering)
+          bool ordering,
+          PFla_op_t **side_effects,
+          struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; /* keep compilers quiet */
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *res = bin_op (t,
                              OP,
@@ -1080,10 +1151,12 @@ bin_comp (PFalg_simple_type_t t,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_eq_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_eq_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_int, PFla_eq, args, loop, ordering);
+    return bin_comp (aat_int, PFla_eq, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1091,10 +1164,12 @@ PFbui_op_eq_int (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_eq_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_eq_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_dec, PFla_eq, args, loop, ordering);
+    return bin_comp (aat_dec, PFla_eq, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1102,10 +1177,12 @@ PFbui_op_eq_dec (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_eq_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_eq_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_dbl, PFla_eq, args, loop, ordering);
+    return bin_comp (aat_dbl, PFla_eq, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1113,10 +1190,12 @@ PFbui_op_eq_dbl (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_eq_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_eq_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_bln, PFla_eq, args, loop, ordering);
+    return bin_comp (aat_bln, PFla_eq, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1124,10 +1203,12 @@ PFbui_op_eq_bln (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_eq_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_eq_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_str, PFla_eq, args, loop, ordering);
+    return bin_comp (aat_str, PFla_eq, loop, ordering, side_effects, args);
 }
 
 
@@ -1136,11 +1217,14 @@ PFbui_op_eq_str (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ne_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_ne_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_int, PFla_eq, args, loop, ordering));
+                  bin_comp (aat_int, PFla_eq,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1148,11 +1232,14 @@ PFbui_op_ne_int (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ne_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_ne_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dec, PFla_eq, args, loop, ordering));
+                  bin_comp (aat_dec, PFla_eq,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1160,11 +1247,14 @@ PFbui_op_ne_dec (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ne_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_ne_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dbl, PFla_eq, args, loop, ordering));
+                  bin_comp (aat_dbl, PFla_eq,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1172,11 +1262,14 @@ PFbui_op_ne_dbl (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ne_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_ne_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_bln, PFla_eq, args, loop, ordering));
+                  bin_comp (aat_bln, PFla_eq,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1184,11 +1277,14 @@ PFbui_op_ne_bln (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ne_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_ne_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln,  PFla_not,
-                  bin_comp (aat_str, PFla_eq, args, loop, ordering));
+                  bin_comp (aat_str, PFla_eq,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1196,12 +1292,16 @@ PFbui_op_ne_str (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_lt_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_lt_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return bin_comp (aat_int, PFla_gt,
-                      (struct PFla_pair_t []) { args[1], args[0] },
-                      loop, ordering);
+                     loop,
+                     ordering,
+                     side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
 }
 
 /**
@@ -1209,12 +1309,16 @@ PFbui_op_lt_int (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_lt_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_lt_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return bin_comp (aat_dec, PFla_gt,
-                      (struct PFla_pair_t []) { args[1], args[0] },
-                      loop, ordering);
+                     loop,
+                     ordering,
+                     side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
 }
 
 /**
@@ -1222,12 +1326,16 @@ PFbui_op_lt_dec (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_lt_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_lt_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return bin_comp (aat_dbl, PFla_gt,
-                      (struct PFla_pair_t []) { args[1], args[0] },
-                      loop, ordering);
+                     loop,
+                     ordering,
+                     side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
 }
 
 /**
@@ -1235,12 +1343,16 @@ PFbui_op_lt_dbl (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_lt_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_lt_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return bin_comp (aat_bln, PFla_gt,
-                      (struct PFla_pair_t []) { args[1], args[0] },
-                      loop, ordering);
+                     loop,
+                     ordering,
+                     side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
 }
 
 /**
@@ -1248,12 +1360,16 @@ PFbui_op_lt_bln (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_lt_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_lt_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return bin_comp (aat_str, PFla_gt,
-                      (struct PFla_pair_t []) { args[1], args[0] },
-                      loop, ordering);
+                     loop,
+                     ordering,
+                     side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
 }
 
 /**
@@ -1261,11 +1377,14 @@ PFbui_op_lt_str (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_le_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_le_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_int, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_int, PFla_gt,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1273,11 +1392,14 @@ PFbui_op_le_int (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_le_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_le_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dec, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_dec, PFla_gt,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1285,11 +1407,14 @@ PFbui_op_le_dec (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_le_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_le_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dbl, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_dbl, PFla_gt,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1297,11 +1422,14 @@ PFbui_op_le_dbl (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_le_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_le_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_bln, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_bln, PFla_gt,
+                            loop, ordering, side_effects, args));
 }
 
 /**
@@ -1309,21 +1437,26 @@ PFbui_op_le_bln (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_le_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_le_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_str, PFla_gt, args, loop, ordering));
+                  bin_comp (aat_str, PFla_gt,
+                            loop, ordering, side_effects, args));
 }
 /**
  * Algebra implementation for op:gt(integer?,integer?)
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_gt_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_gt_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_int, PFla_gt, args, loop, ordering);
+    return bin_comp (aat_int, PFla_gt, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1331,10 +1464,12 @@ PFbui_op_gt_int (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_gt_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_gt_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_dec, PFla_gt, args, loop, ordering);
+    return bin_comp (aat_dec, PFla_gt, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1342,10 +1477,12 @@ PFbui_op_gt_dec (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_gt_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_gt_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_dbl, PFla_gt, args, loop, ordering);
+    return bin_comp (aat_dbl, PFla_gt, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1353,10 +1490,12 @@ PFbui_op_gt_dbl (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_gt_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_gt_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_bln, PFla_gt, args, loop, ordering);
+    return bin_comp (aat_bln, PFla_gt, loop, ordering, side_effects, args);
 }
 
 /**
@@ -1364,10 +1503,12 @@ PFbui_op_gt_bln (const PFla_op_t *loop, bool ordering,
  * @see bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_gt_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_gt_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    return bin_comp (aat_str, PFla_gt, args, loop, ordering);
+    return bin_comp (aat_str, PFla_gt, loop, ordering, side_effects, args);
 }
 
 
@@ -1376,15 +1517,17 @@ PFbui_op_gt_str (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ge_int (const PFla_op_t *loop, bool ordering,
+PFbui_op_ge_int (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_int,
-                               PFla_gt,
-                               (struct PFla_pair_t []) { args[1], args[0] },
-                               loop,
-                               ordering));
+                  bin_comp (aat_int, PFla_gt,
+                            loop,
+                            ordering,
+                            side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
 }
 
 /**
@@ -1392,15 +1535,17 @@ PFbui_op_ge_int (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ge_dec (const PFla_op_t *loop, bool ordering,
+PFbui_op_ge_dec (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dec,
-                               PFla_gt,
-                               (struct PFla_pair_t []) { args[1], args[0] },
-                               loop,
-                               ordering));
+                  bin_comp (aat_dec, PFla_gt,
+                            loop,
+                            ordering,
+                            side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
 }
 
 /**
@@ -1408,15 +1553,17 @@ PFbui_op_ge_dec (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ge_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_op_ge_dbl (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_dbl,
-                               PFla_gt,
-                               (struct PFla_pair_t []) { args[1], args[0] },
-                               loop,
-                               ordering));
+                  bin_comp (aat_dbl, PFla_gt,
+                            loop,
+                            ordering,
+                            side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
 }
 
 /**
@@ -1424,15 +1571,17 @@ PFbui_op_ge_dbl (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ge_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_ge_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_bln,
-                               PFla_gt,
-                               (struct PFla_pair_t []) { args[1], args[0] },
-                               loop,
-                               ordering));
+                  bin_comp (aat_bln, PFla_gt,
+                            loop,
+                            ordering,
+                            side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
 }
 
 /**
@@ -1440,15 +1589,17 @@ PFbui_op_ge_bln (const PFla_op_t *loop, bool ordering,
  * @see un_op() and bin_comp()
  */
 struct PFla_pair_t
-PFbui_op_ge_str (const PFla_op_t *loop, bool ordering,
+PFbui_op_ge_str (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     return un_op (aat_bln, PFla_not,
-                  bin_comp (aat_str,
-                               PFla_gt,
-                               (struct PFla_pair_t []) { args[1], args[0] },
-                               loop,
-                               ordering));
+                  bin_comp (aat_str, PFla_gt,
+                            loop,
+                            ordering,
+                            side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
 }
 
 /* -------------------------------- */
@@ -1458,10 +1609,12 @@ PFbui_op_ge_str (const PFla_op_t *loop, bool ordering,
 static PFla_pair_t
 numeric_fun_op (PFalg_simple_type_t t,
                 PFalg_fun_t kind,
-                const PFla_op_t *loop, bool ordering,
+                const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -1479,101 +1632,126 @@ numeric_fun_op (PFalg_simple_type_t t,
 }
 
 struct PFla_pair_t
-PFbui_fn_abs_int (const PFla_op_t *loop, bool ordering,
+PFbui_fn_abs_int (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_int, alg_fun_fn_abs, loop, ordering, args);
+    return numeric_fun_op (aat_int, alg_fun_fn_abs,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_abs_dec (const PFla_op_t *loop,
                   bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dec, alg_fun_fn_abs, loop, ordering, args);
+    return numeric_fun_op (aat_dec, alg_fun_fn_abs,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_abs_dbl (const PFla_op_t *loop,
                   bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dbl, alg_fun_fn_abs, loop, ordering, args);
+    return numeric_fun_op (aat_dbl, alg_fun_fn_abs,
+                           loop, ordering, side_effects, args);
 }
 
 
 struct PFla_pair_t
 PFbui_fn_ceiling_int (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_int, alg_fun_fn_ceiling, loop, ordering, args);
+    return numeric_fun_op (aat_int, alg_fun_fn_ceiling,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_ceiling_dec (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dec, alg_fun_fn_ceiling, loop, ordering, args);
+    return numeric_fun_op (aat_dec, alg_fun_fn_ceiling,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_ceiling_dbl (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dbl, alg_fun_fn_ceiling, loop, ordering, args);
+    return numeric_fun_op (aat_dbl, alg_fun_fn_ceiling,
+                           loop, ordering, side_effects, args);
 }
 
 
 struct PFla_pair_t
 PFbui_fn_floor_int (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_int, alg_fun_fn_floor, loop, ordering, args);
+    return numeric_fun_op (aat_int, alg_fun_fn_floor,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_floor_dec (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dec, alg_fun_fn_floor, loop, ordering, args);
+    return numeric_fun_op (aat_dec, alg_fun_fn_floor,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_floor_dbl (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dbl, alg_fun_fn_floor, loop, ordering, args);
+    return numeric_fun_op (aat_dbl, alg_fun_fn_floor,
+                           loop, ordering, side_effects, args);
 }
 
 
 struct PFla_pair_t
 PFbui_fn_round_int (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_int, alg_fun_fn_round, loop, ordering, args);
+    return numeric_fun_op (aat_int, alg_fun_fn_round,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_round_dec (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dec, alg_fun_fn_round, loop, ordering, args);
+    return numeric_fun_op (aat_dec, alg_fun_fn_round,
+                           loop, ordering, side_effects, args);
 }
 
 struct PFla_pair_t
 PFbui_fn_round_dbl (const PFla_op_t *loop,
-                  bool ordering,
-                  struct PFla_pair_t *args)
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
 {
-    return numeric_fun_op (aat_dbl, alg_fun_fn_round, loop, ordering, args);
+    return numeric_fun_op (aat_dbl, alg_fun_fn_round,
+                           loop, ordering, side_effects, args);
 }
 
 /* ----------------------- */
@@ -1589,10 +1767,12 @@ PFbui_fn_round_dbl (const PFla_op_t *loop,
  * The fn:concat function is wrapped in the generic function operator
  */
 struct PFla_pair_t
-PFbui_fn_concat (const PFla_op_t *loop, bool ordering,
+PFbui_fn_concat (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1616,10 +1796,12 @@ PFbui_fn_concat (const PFla_op_t *loop, bool ordering,
  * The fn:string_join function is also available as primitive
  */
 struct PFla_pair_t
-PFbui_fn_string_join (const PFla_op_t *loop, bool ordering,
+PFbui_fn_string_join (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = attach (
@@ -1639,10 +1821,12 @@ PFbui_fn_string_join (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:substring (xs:string?, xs:double)</code>
  */
 struct PFla_pair_t
-PFbui_fn_substring (const PFla_op_t *loop, bool ordering,
+PFbui_fn_substring (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1682,10 +1866,12 @@ PFbui_fn_substring (const PFla_op_t *loop, bool ordering,
  * <code>fn:substring(xs:string?, xs:double, xs:double)</code>
  */
 struct PFla_pair_t
-PFbui_fn_substring_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_fn_substring_dbl (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1733,10 +1919,12 @@ PFbui_fn_substring_dbl (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:string-length(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_string_length (const PFla_op_t *loop, bool ordering,
+PFbui_fn_string_length (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1765,10 +1953,12 @@ PFbui_fn_string_length (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:normalize-space(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_normalize_space (const PFla_op_t *loop, bool ordering,
+PFbui_fn_normalize_space (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
                           struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1797,10 +1987,12 @@ PFbui_fn_normalize_space (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:upper-case(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_upper_case (const PFla_op_t *loop, bool ordering,
+PFbui_fn_upper_case (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1829,10 +2021,12 @@ PFbui_fn_upper_case (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:lower-case(xs:string?)</code>
  */
 struct PFla_pair_t
-PFbui_fn_lower_case (const PFla_op_t *loop, bool ordering,
+PFbui_fn_lower_case (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1862,10 +2056,12 @@ PFbui_fn_lower_case (const PFla_op_t *loop, bool ordering,
  * <code>fn:translate(xs:string?, xs:string, xs:string)</code>
  */
 struct PFla_pair_t
-PFbui_fn_translate (const PFla_op_t *loop, bool ordering,
+PFbui_fn_translate (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1912,10 +2108,12 @@ PFbui_fn_translate (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:contains (xs:string, xs:string)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_contains (const PFla_op_t *loop, bool ordering,
+PFbui_fn_contains (const PFla_op_t *loop,
+                   bool ordering,
+                   PFla_op_t **side_effects,
                    struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1939,10 +2137,12 @@ PFbui_fn_contains (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:contains (xs:string?, xs:string)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_contains_opt (const PFla_op_t *loop, bool ordering,
+PFbui_fn_contains_opt (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -1979,10 +2179,12 @@ PFbui_fn_contains_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:contains (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
+PFbui_fn_contains_opt_opt (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2030,10 +2232,12 @@ PFbui_fn_contains_opt_opt (const PFla_op_t *loop, bool ordering,
  * <code>fn:starts-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_starts_with (const PFla_op_t *loop, bool ordering,
+PFbui_fn_starts_with (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2081,10 +2285,12 @@ PFbui_fn_starts_with (const PFla_op_t *loop, bool ordering,
  * <code>fn:ends-with (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_ends_with (const PFla_op_t *loop, bool ordering,
+PFbui_fn_ends_with (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2132,10 +2338,12 @@ PFbui_fn_ends_with (const PFla_op_t *loop, bool ordering,
  * <code>fn:substring-before (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_substring_before (const PFla_op_t *loop, bool ordering,
+PFbui_fn_substring_before (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2183,10 +2391,12 @@ PFbui_fn_substring_before (const PFla_op_t *loop, bool ordering,
  * <code>fn:substring_after (xs:string?, xs:string?)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_substring_after (const PFla_op_t *loop, bool ordering,
+PFbui_fn_substring_after (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
                           struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2237,10 +2447,12 @@ PFbui_fn_substring_after (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:matches(xs:string?, xs:string)</code>
  */
 struct PFla_pair_t
-PFbui_fn_matches (const PFla_op_t *loop, bool ordering,
+PFbui_fn_matches (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2277,10 +2489,12 @@ PFbui_fn_matches (const PFla_op_t *loop, bool ordering,
  * <code>fn:matches(xs:string?, xs:string, xs:string)</code>
  */
 struct PFla_pair_t
-PFbui_fn_matches_str (const PFla_op_t *loop, bool ordering,
+PFbui_fn_matches_str (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2323,10 +2537,12 @@ PFbui_fn_matches_str (const PFla_op_t *loop, bool ordering,
  * <code>fn:replace(xs:string?, xs:string, xs:string)</code>
  */
 struct PFla_pair_t
-PFbui_fn_replace (const PFla_op_t *loop, bool ordering,
+PFbui_fn_replace (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2369,10 +2585,12 @@ PFbui_fn_replace (const PFla_op_t *loop, bool ordering,
  * <code>fn:replace(xs:string?, xs:string, xs:string, xs:string)</code>
  */
 struct PFla_pair_t
-PFbui_fn_replace_str (const PFla_op_t *loop, bool ordering,
+PFbui_fn_replace_str (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2443,10 +2661,12 @@ PFbui_fn_bln_lit (const PFla_op_t *loop,
  * Algebra implementation for <code>fn:true ()</code>.
  */
 struct PFla_pair_t
-PFbui_fn_true (const PFla_op_t *loop, bool ordering,
+PFbui_fn_true (const PFla_op_t *loop,
+               bool ordering,
+               PFla_op_t **side_effects,
                struct PFla_pair_t *args __attribute__((unused)))
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     return PFbui_fn_bln_lit(loop, true);
 }
@@ -2455,10 +2675,12 @@ PFbui_fn_true (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for <code>fn:false ()</code>.
  */
 struct PFla_pair_t
-PFbui_fn_false (const PFla_op_t *loop, bool ordering,
+PFbui_fn_false (const PFla_op_t *loop,
+               bool ordering,
+               PFla_op_t **side_effects,
                struct PFla_pair_t *args __attribute__((unused)))
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     return PFbui_fn_bln_lit(loop, false);
 }
@@ -2479,10 +2701,12 @@ PFbui_fn_false (const PFla_op_t *loop, bool ordering,
  * @see un_op()
  */
 struct PFla_pair_t
-PFbui_fn_not_bln (const PFla_op_t *loop, bool ordering,
+PFbui_fn_not_bln (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return un_op (aat_bln, PFla_not, args[0]);
 }
@@ -2518,10 +2742,12 @@ PFbui_fn_not_bln (const PFla_op_t *loop, bool ordering,
  * for QNames inputs.
  */
 struct PFla_pair_t
-PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
+PFbui_fn_resolve_qname (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /* implement it as a simple cast to xs:QName */
     return (struct PFla_pair_t) {
@@ -2536,10 +2762,12 @@ PFbui_fn_resolve_qname (const PFla_op_t *loop, bool ordering,
  * fn:QName (xs:string?, xs:string)
  */
 struct PFla_pair_t
-PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
+PFbui_fn_qname (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -2580,9 +2808,12 @@ PFbui_fn_qname (const PFla_op_t *loop, bool ordering,
 /* ------------ */
 
 struct PFla_pair_t
-PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+PFbui_fn_name (const PFla_op_t *loop,
+               bool ordering,
+               PFla_op_t **side_effects,
+               struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *strings = project (
                              fun_1to1 (
@@ -2617,10 +2848,12 @@ PFbui_fn_name (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
 /* ------------------- */
 
 struct PFla_pair_t
-PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
+PFbui_fn_local_name (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *strings = project (
                              fun_1to1 (
@@ -2655,10 +2888,12 @@ PFbui_fn_local_name (const PFla_op_t *loop, bool ordering,
 /* --------------------- */
 
 struct PFla_pair_t
-PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
+PFbui_fn_namespace_uri (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *strings = project (
                              fun_1to1 (
@@ -2693,14 +2928,17 @@ PFbui_fn_namespace_uri (const PFla_op_t *loop, bool ordering,
 /* --------------- */
 
 struct PFla_pair_t
-PFbui_fn_number (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+PFbui_fn_number (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
+                 struct PFla_pair_t *args)
 {
     /* As we do not support the value NaN we need to generate an error
        for all tuples that are empty (instead of attaching NaN). */
 
     char *err_string = "We do not support the value NaN.";
 
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct  PFla_pair_t) {
                  .rel = project (
@@ -2734,10 +2972,12 @@ PFbui_fn_number (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
  * Algebra implementation for op:is-same-node (node?, node?)
  */
 struct PFla_pair_t
-PFbui_op_is_same_node (const PFla_op_t *loop, bool ordering,
+PFbui_op_is_same_node (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (PFla_eq (
@@ -2766,10 +3006,12 @@ PFbui_op_is_same_node (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for op:node-before (node?, node?)
  */
 struct PFla_pair_t
-PFbui_op_node_before (const PFla_op_t *loop, bool ordering,
+PFbui_op_node_before (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (PFla_gt (
@@ -2798,10 +3040,12 @@ PFbui_op_node_before (const PFla_op_t *loop, bool ordering,
  * Algebra implementation for op:node-after (node?, node?)
  */
 struct PFla_pair_t
-PFbui_op_node_after (const PFla_op_t *loop, bool ordering,
+PFbui_op_node_after (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (PFla_gt (
@@ -2826,10 +3070,12 @@ PFbui_op_node_after (const PFla_op_t *loop, bool ordering,
 /* 14.9. fn:root */
 /* ------------- */
 struct PFla_pair_t
-PFbui_fn_root (const PFla_op_t *loop, bool ordering,
+PFbui_fn_root (const PFla_op_t *loop,
+               bool ordering,
+               PFla_op_t **side_effects,
                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t        *node_scj,
                      *sel;
@@ -2886,10 +3132,12 @@ PFbui_fn_root (const PFla_op_t *loop, bool ordering,
  * the boolean value itself.
  */
 struct PFla_pair_t
-PFbui_fn_boolean_bln (const PFla_op_t *loop, bool ordering,
+PFbui_fn_boolean_bln (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return args[0];
 }
@@ -2913,10 +3161,12 @@ PFbui_fn_boolean_bln (const PFla_op_t *loop, bool ordering,
  * )
  */
 struct PFla_pair_t
-PFbui_fn_boolean_optbln (const PFla_op_t *loop, bool ordering,
+PFbui_fn_boolean_optbln (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = disjunion (
@@ -3001,10 +3251,12 @@ fn_boolean_callback (PFla_op_t *n, PFalg_simple_type_t type, void *params)
  * xs:boolean|xs:integer|xs:decimal|xs:double|xs:string)</code>.
  */
 struct PFla_pair_t
-PFbui_fn_boolean_item (const PFla_op_t *loop, bool ordering,
+PFbui_fn_boolean_item (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     /* Typeswitch, for helper functions see above. */
     PFla_op_t *res  = typeswitch (args[0].rel,
@@ -3051,10 +3303,12 @@ PFbui_fn_boolean_item (const PFla_op_t *loop, bool ordering,
  * )
  */
 struct PFla_pair_t
-PFbui_fn_empty (const PFla_op_t *loop, bool ordering,
+PFbui_fn_empty (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -3088,10 +3342,12 @@ PFbui_fn_empty (const PFla_op_t *loop, bool ordering,
  * )
  */
 struct PFla_pair_t
-PFbui_fn_exists (const PFla_op_t *loop, bool ordering,
+PFbui_fn_exists (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -3114,10 +3370,12 @@ PFbui_fn_exists (const PFla_op_t *loop, bool ordering,
  * The fn:distinct-values function removes its duplicates
  */
 struct PFla_pair_t
-PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
+PFbui_fn_distinct_values (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
                           struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
                   .rel = rowid (
@@ -3130,7 +3388,9 @@ PFbui_fn_distinct_values (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
+PFbui_fn_insert_before (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     /* mark all rows true where the second argument is greather than
@@ -3175,7 +3435,7 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
                            col_ord,
                            lit_nat (3));
 
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         /* patch the third function argument into the middle*/
@@ -3191,10 +3451,12 @@ PFbui_fn_insert_before (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_remove (const PFla_op_t *loop, bool ordering,
+PFbui_fn_remove (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /*
      * Join the index position with the sequence,
@@ -3227,10 +3489,12 @@ PFbui_fn_remove (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_reverse (const PFla_op_t *loop, bool ordering,
+PFbui_fn_reverse (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /*
      * Use column pos to introduce a new column pos
@@ -3249,12 +3513,14 @@ PFbui_fn_reverse (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
+PFbui_fn_subsequence_till_end (const PFla_op_t *loop,
+                               bool ordering,
+                               PFla_op_t **side_effects,
                                struct PFla_pair_t *args)
 {
     PFla_op_t *startingLoc = args[1].rel;
 
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
 #ifndef NDEBUG
     /* make sure that the second argument is of type integer */
@@ -3297,7 +3563,9 @@ PFbui_fn_subsequence_till_end (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
+PFbui_fn_subsequence (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
     PFla_op_t *startingLoc = args[1].rel;
@@ -3320,7 +3588,7 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
     }
 #endif
 
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /* evaluate the first condition (startingLoc) */
     first_cond = project (
@@ -3373,10 +3641,12 @@ PFbui_fn_subsequence (const PFla_op_t *loop, bool ordering,
 }
 
 struct PFla_pair_t
-PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
+PFbui_fn_unordered (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /*
      * project away pos column
@@ -3399,7 +3669,9 @@ PFbui_fn_unordered (const PFla_op_t *loop, bool ordering,
  * length of the input relation and triggers an error.
  */
 struct PFla_pair_t
-PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
+PFbui_fn_zero_or_one (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
     PFla_op_t *count = gt (attach (
@@ -3413,7 +3685,7 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
                        "a sequence containing more than one item.";
 
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct  PFla_pair_t) {
                  .rel = cond_err (args[0].rel,
@@ -3428,18 +3700,21 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop, bool ordering,
  * length of the input relation and triggers an error.
  */
 struct PFla_pair_t
-PFbui_fn_exactly_one (const PFla_op_t *loop, bool ordering,
+PFbui_fn_exactly_one (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
     PFla_op_t *count = eq (attach (
-                               PFbui_fn_count (loop, ordering, args).rel,
+                               PFbui_fn_count (
+                                   loop, ordering, side_effects, args).rel,
                                col_item1, lit_int (1)),
                            col_res, col_item1, col_item);
 
     char *err_string = "err:FORG0005, fn:exactly-one called with "
                        "a sequence containing zero or more than one item.";
 
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct  PFla_pair_t) {
                  .rel = cond_err (args[0].rel,
@@ -3462,12 +3737,14 @@ PFbui_fn_exactly_one (const PFla_op_t *loop, bool ordering,
  * are equal if they are op:is-same-node().
  */
 struct PFla_pair_t
-PFbui_op_union (const PFla_op_t *loop, bool ordering,
+PFbui_op_union (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
     PFla_op_t *distinct;
 
-    (void) loop;
+    (void) loop; (void) side_effects;
 
     distinct = distinct (disjunion (
                              project (args[0].rel,
@@ -3498,12 +3775,14 @@ PFbui_op_union (const PFla_op_t *loop, bool ordering,
  * Two nodes are equal if they are op:is-same-node().
  */
 struct PFla_pair_t
-PFbui_op_intersect (const PFla_op_t *loop, bool ordering,
+PFbui_op_intersect (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
     PFla_op_t *distinct;
 
-    (void) loop;
+    (void) loop; (void) side_effects;
 
     distinct = distinct (intersect (
                              project (args[0].rel,
@@ -3536,12 +3815,14 @@ PFbui_op_intersect (const PFla_op_t *loop, bool ordering,
  * they are op:is-same-node().
  */
 struct PFla_pair_t
-PFbui_op_except (const PFla_op_t *loop, bool ordering,
+PFbui_op_except (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
     PFla_op_t *difference;
 
-    (void) loop;
+    (void) loop; (void) side_effects;
 
     difference = difference (
                      distinct (project (args[0].rel,
@@ -3582,9 +3863,10 @@ PFbui_op_except (const PFla_op_t *loop, bool ordering,
 struct PFla_pair_t
 PFbui_fn_count (const PFla_op_t *loop,
                 bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *count = count (project (args[0].rel,
                                        proj (col_iter, col_iter)),
@@ -3616,10 +3898,13 @@ PFbui_fn_count (const PFla_op_t *loop,
  *                                ()
  */
 static struct PFla_pair_t
-fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind, struct PFla_pair_t *args,
-         const PFla_op_t *loop, bool ordering)
+fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind,
+         const PFla_op_t *loop,
+         bool ordering,
+         PFla_op_t **side_effects,
+         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = attach(aggr (kind,
@@ -3635,90 +3920,108 @@ fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind, struct PFla_pair_t *args,
  * Build up operator tree for built-in function 'fn:avg ($arg)'.
  */
 struct PFla_pair_t
-PFbui_fn_avg (const PFla_op_t *loop, bool ordering,
+PFbui_fn_avg (const PFla_op_t *loop,
+              bool ordering,
+              PFla_op_t **side_effects,
               struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_avg, args, loop, ordering);
+    return fn_aggr(aat_dbl, la_avg, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:max (string*)'.
  */
 struct PFla_pair_t
-PFbui_fn_max_str (const PFla_op_t *loop, bool ordering,
+PFbui_fn_max_str (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_str, la_max, args, loop, ordering);
+    return fn_aggr(aat_str, la_max, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:max (integer*)'.
  */
 struct PFla_pair_t
-PFbui_fn_max_int (const PFla_op_t *loop, bool ordering,
+PFbui_fn_max_int (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_int, la_max, args, loop, ordering);
+    return fn_aggr(aat_int, la_max, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:max (decimal*)'.
  */
 struct PFla_pair_t
-PFbui_fn_max_dec (const PFla_op_t *loop, bool ordering,
+PFbui_fn_max_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dec, la_max, args, loop, ordering);
+    return fn_aggr(aat_dec, la_max, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:max (double*)'.
  */
 struct PFla_pair_t
-PFbui_fn_max_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_fn_max_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_max, args, loop, ordering);
+    return fn_aggr(aat_dbl, la_max, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:min (string*)'.
  */
 struct PFla_pair_t
-PFbui_fn_min_str (const PFla_op_t *loop, bool ordering,
+PFbui_fn_min_str (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_str, la_min, args, loop, ordering);
+    return fn_aggr(aat_str, la_min, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:min (integer*)'.
  */
 struct PFla_pair_t
-PFbui_fn_min_int (const PFla_op_t *loop, bool ordering,
+PFbui_fn_min_int (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_int, la_min, args, loop, ordering);
+    return fn_aggr(aat_int, la_min, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:min (decimal*)'.
  */
 struct PFla_pair_t
-PFbui_fn_min_dec (const PFla_op_t *loop, bool ordering,
+PFbui_fn_min_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dec, la_min, args, loop, ordering);
+    return fn_aggr(aat_dec, la_min, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:min (double*)'.
  */
 struct PFla_pair_t
-PFbui_fn_min_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_fn_min_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_min, args, loop, ordering);
+    return fn_aggr(aat_dbl, la_min, loop, ordering, side_effects, args);
 }
 
 /**
@@ -3737,10 +4040,13 @@ PFbui_fn_min_dbl (const PFla_op_t *loop, bool ordering,
  *                                ()
  */
 static struct PFla_pair_t
-fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args,
-        bool ordering)
+fn_sum (PFalg_simple_type_t t,
+        const PFla_op_t *loop,
+        bool ordering,
+        PFla_op_t **side_effects,
+        struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *sum = aggr (la_sum,
                            project (cast(args[0].rel, col_cast, col_item, t),
@@ -3765,30 +4071,36 @@ fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args,
  * Build up operator tree for built-in function 'fn:sum (integer*)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_int (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_int (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_sum(aat_int, loop, args, ordering);
+    return fn_sum(aat_int, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:sum (decimal*)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_dec (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_dec (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_sum(aat_dec, loop, args, ordering);
+    return fn_sum(aat_dec, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:sum (double*)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_sum(aat_dbl, loop, args, ordering);
+    return fn_sum(aat_dbl, loop, ordering, side_effects, args);
 }
 
 /**
@@ -3812,10 +4124,13 @@ PFbui_fn_sum_dbl (const PFla_op_t *loop, bool ordering,
  *                                ()
  */
 static struct PFla_pair_t
-fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
-             struct PFla_pair_t *args, bool ordering)
+fn_sum_zero (PFalg_simple_type_t t,
+             const PFla_op_t *loop,
+             bool ordering,
+             PFla_op_t **side_effects,
+             struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *sum = aggr (la_sum,
                            project (cast (args[0].rel, col_cast, col_item, t),
@@ -3846,30 +4161,36 @@ fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
  * Build up operator tree for built-in function 'fn:sum (integer*, integer?)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_zero_int (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_zero_int (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    return fn_sum_zero(aat_int, loop, args, ordering);
+    return fn_sum_zero(aat_int, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:sum (decimal*, decimal?)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_zero_dec (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    return fn_sum_zero(aat_dec, loop, args, ordering);
+    return fn_sum_zero(aat_dec, loop, ordering, side_effects, args);
 }
 
 /**
  * Build up operator tree for built-in function 'fn:sum (double*, double?)'.
  */
 struct PFla_pair_t
-PFbui_fn_sum_zero_dbl (const PFla_op_t *loop, bool ordering,
+PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
-    return fn_sum_zero(aat_dbl, loop, args, ordering);
+    return fn_sum_zero(aat_dbl, loop, ordering, side_effects, args);
 }
 
 /* ----------------------------------------------------- */
@@ -3880,11 +4201,13 @@ PFbui_fn_sum_zero_dbl (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function 'op:to (int, int)'.
  */
 struct PFla_pair_t
-PFbui_op_to (const PFla_op_t *loop, bool ordering,
+PFbui_op_to (const PFla_op_t *loop,
+             bool ordering,
+             PFla_op_t **side_effects,
              struct PFla_pair_t *args)
 {
-    (void) loop;
-    (void) ordering;
+    (void) loop; (void) side_effects;
+    (void) ordering; (void) side_effects;
 
     PFla_op_t *to = project (
                         to (eqjoin (
@@ -3914,13 +4237,15 @@ PFbui_op_to (const PFla_op_t *loop, bool ordering,
 
 
 static struct PFla_pair_t
-fn_id (const PFla_op_t *loop, bool ordering,
+fn_id (const PFla_op_t *loop,
+       bool ordering,
+       PFla_op_t **side_effects,
        struct PFla_pair_t *args, bool id)
 {
     PFla_op_t *in, *op, *doc;
 
-    (void) loop;
-    (void) ordering;
+    (void) loop; (void) side_effects;
+    (void) ordering; (void) side_effects;
 
     in = project (
              eqjoin (
@@ -3962,10 +4287,12 @@ fn_id (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function 'fn:id (string*, node)'.
  */
 struct PFla_pair_t
-PFbui_fn_id (const PFla_op_t *loop, bool ordering,
+PFbui_fn_id (const PFla_op_t *loop,
+             bool ordering,
+             PFla_op_t **side_effects,
              struct PFla_pair_t *args)
 {
-    return fn_id (loop, ordering, args, true);
+    return fn_id (loop, ordering, side_effects, args, true);
 }
 
 
@@ -3973,10 +4300,12 @@ PFbui_fn_id (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function 'fn:idref (string*, node)'.
  */
 struct PFla_pair_t
-PFbui_fn_idref (const PFla_op_t *loop, bool ordering,
+PFbui_fn_idref (const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    return fn_id (loop, ordering, args, false);
+    return fn_id (loop, ordering, side_effects, args, false);
 }
 
 
@@ -3989,10 +4318,12 @@ PFbui_fn_idref (const PFla_op_t *loop, bool ordering,
  * us. No need to access the loop relation in any way.
  */
 struct PFla_pair_t
-PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
+PFbui_fn_doc (const PFla_op_t *loop,
+              bool ordering,
+              PFla_op_t **side_effects,
               struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_doc);
 
@@ -4008,10 +4339,12 @@ PFbui_fn_doc (const PFla_op_t *loop, bool ordering,
  *  function fn:doc-available (string?) as boolean
  */
 struct PFla_pair_t
-PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
+PFbui_fn_doc_available (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -4040,10 +4373,12 @@ PFbui_fn_doc_available (const PFla_op_t *loop, bool ordering,
  *  function fn:collection (string) as node*
  */
 struct PFla_pair_t
-PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
+PFbui_fn_collection (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) ordering; (void) loop;
+    (void) ordering; (void) side_effects; (void) loop; (void) side_effects;
 
     /* collection root nodes */
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_col);
@@ -4099,10 +4434,12 @@ PFbui_fn_collection (const PFla_op_t *loop, bool ordering,
  * @see bin_op()
  */
 struct PFla_pair_t
-PFbui_op_or_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_or_bln (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; /* keep compilers quiet */
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *res = bin_op (aat_bln,
                              PFla_or,
@@ -4117,10 +4454,12 @@ PFbui_op_or_bln (const PFla_op_t *loop, bool ordering,
  * @see bin_op()
  */
 struct PFla_pair_t
-PFbui_op_and_bln (const PFla_op_t *loop, bool ordering,
+PFbui_op_and_bln (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; /* keep compilers quiet */
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *res = bin_op (aat_bln,
                              PFla_and,
@@ -4135,7 +4474,9 @@ PFbui_op_and_bln (const PFla_op_t *loop, bool ordering,
  * nodes by document order and removes duplicates.
  */
 struct PFla_pair_t
-PFbui_pf_distinct_doc_order (const PFla_op_t *loop, bool ordering,
+PFbui_pf_distinct_doc_order (const PFla_op_t *loop,
+                             bool ordering,
+                             PFla_op_t **side_effects,
                              struct PFla_pair_t *args)
 {
     PFla_op_t *distinct = distinct (
@@ -4143,7 +4484,7 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop, bool ordering,
                                    proj (col_iter, col_iter),
                                    proj (col_item, col_item)));
 
-    (void) loop;
+    (void) loop; (void) side_effects;
 
     if (ordering)
         return (struct  PFla_pair_t) {
@@ -4213,10 +4554,12 @@ pf_item_seq_to_node_seq_worker_single_atomic (const PFla_op_t *loop,
 
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq_single_atomic
-    (const PFla_op_t *loop, bool ordering,
+    (const PFla_op_t *loop,
+     bool ordering,
+     PFla_op_t **side_effects,
      struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return pf_item_seq_to_node_seq_worker_single_atomic (loop,
                                                          args[0].rel,
@@ -4269,10 +4612,12 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
 
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq_atomic
-    (const PFla_op_t *loop, bool ordering,
+    (const PFla_op_t *loop,
+     bool ordering,
+     PFla_op_t **side_effects,
      struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return pf_item_seq_to_node_seq_worker_atomic (loop,
                                                   args[0].rel,
@@ -4335,9 +4680,12 @@ pf_item_seq_to_node_seq_worker_attr (
 
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq_attr_single
-    (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+    (const PFla_op_t *loop,
+     bool ordering,
+     PFla_op_t **side_effects,
+     struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return pf_item_seq_to_node_seq_worker_attr (
                loop, args[0].rel, args[0].frag,
@@ -4346,9 +4694,12 @@ PFbui_pf_item_seq_to_node_seq_attr_single
 
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq_attr
-    (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+    (const PFla_op_t *loop,
+     bool ordering,
+     PFla_op_t **side_effects,
+     struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return pf_item_seq_to_node_seq_worker_attr (
                loop, args[0].rel, args[0].frag,
@@ -4482,9 +4833,12 @@ pf_item_seq_to_node_seq_worker (struct PFla_pair_t *args,
 
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq_wo_attr
-    (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+    (const PFla_op_t *loop,
+     bool ordering,
+     PFla_op_t **side_effects,
+     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /*
      * translate is2ns function using its worker
@@ -4493,10 +4847,12 @@ PFbui_pf_item_seq_to_node_seq_wo_attr
 }
 
 struct PFla_pair_t
-PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop, bool ordering,
+PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop,
+                               bool ordering,
+                               PFla_op_t **side_effects,
                                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /*
      * translate is2ns function using its worker
@@ -4519,9 +4875,12 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop, bool ordering,
  */
 struct PFla_pair_t
 PFbui_pf_merge_adjacent_text_nodes (
-        const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+        const PFla_op_t *loop,
+        bool ordering,
+        PFla_op_t **side_effects,
+        struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *merged
         = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel,
@@ -4539,10 +4898,12 @@ PFbui_pf_merge_adjacent_text_nodes (
  * Built-in function #pf:typed-value(attr="text").
  */
 struct PFla_pair_t
-PFbui_pf_string_value_attr (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_attr (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
                             struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
@@ -4558,10 +4919,12 @@ PFbui_pf_string_value_attr (const PFla_op_t *loop, bool ordering,
  * Built-in function #pf:typed-value(text {"text"}).
  */
 struct PFla_pair_t
-PFbui_pf_string_value_text (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_text (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
                             struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
@@ -4577,10 +4940,12 @@ PFbui_pf_string_value_text (const PFla_op_t *loop, bool ordering,
  * Built-in function #pf:typed-value(processing-instruction {"text"}).
  */
 struct PFla_pair_t
-PFbui_pf_string_value_pi (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_pi (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
                           struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
@@ -4596,10 +4961,12 @@ PFbui_pf_string_value_pi (const PFla_op_t *loop, bool ordering,
  * Built-in function #pf:typed-value(comment {"text"}).
  */
 struct PFla_pair_t
-PFbui_pf_string_value_comm (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_comm (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
                             struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
@@ -4615,7 +4982,9 @@ PFbui_pf_string_value_comm (const PFla_op_t *loop, bool ordering,
  * Built-in function #pf:typed-value(<code>text</code>).
  */
 struct PFla_pair_t
-PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_elem (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
                             struct PFla_pair_t *args)
 {
     PFla_op_t *node_scj, *nodes;
@@ -4625,7 +4994,7 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
     /* missing QName */
     desc_text_spec.qname = PFqname (PFns_wild, NULL);
 
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
     node_scj = rank (
@@ -4668,7 +5037,9 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop, bool ordering,
  * Built-in function #pf:typed-value(attribute foo {"text"}, <code>text</code>).
  */
 struct PFla_pair_t
-PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
+                                 bool ordering,
+                                 PFla_op_t **side_effects,
                                  struct PFla_pair_t *args)
 {
     PFla_op_t *sel_attr, *sel_node, *attributes,
@@ -4681,7 +5052,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
 
     /* we know that we have no empty sequences and
        thus can skip the treating for empty sequences */
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     /* select all attributes and retrieve their string values */
     sel_attr = project (
@@ -4759,7 +5130,9 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function '#pf:string-value'.
  */
 struct PFla_pair_t
-PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
+PFbui_pf_string_value (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
                        struct PFla_pair_t *args)
 {
     /* We cannot cope with a mix of certain node kinds.
@@ -4778,7 +5151,7 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
             "Algebra implementation for function "
             "`#pf:string-value' is missing.");
 
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return args[0];
 }
@@ -4791,9 +5164,12 @@ PFbui_pf_string_value (const PFla_op_t *loop, bool ordering,
  * Build in function fn:put(node, xs:string) as empty-sequence()
  */
 struct PFla_pair_t 
-PFbui_fn_put (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+PFbui_fn_put (const PFla_op_t *loop,
+              bool ordering,
+              PFla_op_t **side_effects,
+              struct PFla_pair_t *args)
 {
-    (void) ordering, (void) loop;
+    (void) ordering, (void) loop; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = NULL,
@@ -4804,10 +5180,12 @@ PFbui_fn_put (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
  *  Build in function pf:documents() as element()*
  */
 struct PFla_pair_t 
-PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
+PFbui_pf_documents (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     PFla_op_t *res = fun_call (loop,                       /* loop relation */
                                nil(),                      /* param_list    */
@@ -4830,10 +5208,12 @@ PFbui_pf_documents (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:documents-unsafe() as element()*
  */
 struct PFla_pair_t
-PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
+PFbui_pf_documents_unsafe (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     PFla_op_t *res = fun_call (loop,
                                nil(),
@@ -4856,10 +5236,12 @@ PFbui_pf_documents_unsafe (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:documents(string) as element()*
  */
 struct PFla_pair_t
-PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
+PFbui_pf_documents_str (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = rank (fun_call (loop,
@@ -4881,10 +5263,12 @@ PFbui_pf_documents_str (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:documents-unsafe(string) as element()*
  */
 struct PFla_pair_t
-PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
+PFbui_pf_documents_str_unsafe (const PFla_op_t *loop,
+                               bool ordering,
+                               PFla_op_t **side_effects,
                                struct PFla_pair_t *args)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = rank (fun_call (loop,
@@ -4906,10 +5290,12 @@ PFbui_pf_documents_str_unsafe (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:docname(node*) as string*
  */
 struct PFla_pair_t
-PFbui_pf_docname (const PFla_op_t *loop, bool ordering,
+PFbui_pf_docname (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (args[0].rel,
@@ -4926,10 +5312,12 @@ PFbui_pf_docname (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:collection(string) as node
  */
 struct PFla_pair_t
-PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
+PFbui_pf_collection (const PFla_op_t *loop,
+                     bool ordering,
+                     PFla_op_t **side_effects,
                      struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_col);
 
@@ -4945,10 +5333,12 @@ PFbui_pf_collection (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:collections() as element()*
  */
 struct PFla_pair_t
-PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
+PFbui_pf_collections (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     PFla_op_t *res = fun_call (loop,
                                nil(),
@@ -4971,10 +5361,12 @@ PFbui_pf_collections (const PFla_op_t *loop, bool ordering,
  *  Build in function pf:collections-unsafe() as element()*
  */
 struct PFla_pair_t
-PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
+PFbui_pf_collections_unsafe (const PFla_op_t *loop,
+                             bool ordering,
+                             PFla_op_t **side_effects,
                              struct PFla_pair_t *args)
 {
-    (void) ordering; (void) args;
+    (void) ordering; (void) side_effects; (void) args;
 
     PFla_op_t *res = fun_call (loop,
                                nil(),
@@ -4997,10 +5389,12 @@ PFbui_pf_collections_unsafe (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function '#pf:fragment'.
  */
 struct PFla_pair_t
-PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
+PFbui_pf_fragment (const PFla_op_t *loop,
+                   bool ordering,
+                   PFla_op_t **side_effects,
                    struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5018,10 +5412,12 @@ PFbui_pf_fragment (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function '#pf:attribute'.
  */
 struct PFla_pair_t
-PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
+PFbui_pf_attribute (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = rank (
@@ -5052,10 +5448,12 @@ PFbui_pf_attribute (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function '#pf:text'.
  */
 struct PFla_pair_t
-PFbui_pf_text (const PFla_op_t *loop, bool ordering,
+PFbui_pf_text (const PFla_op_t *loop,
+               bool ordering,
+               PFla_op_t **side_effects,
                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = rank (
@@ -5086,10 +5484,12 @@ PFbui_pf_text (const PFla_op_t *loop, bool ordering,
  * Build up operator tree for built-in function '#pf:supernode'.
  */
 struct PFla_pair_t
-PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
+PFbui_pf_supernode (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5109,55 +5509,56 @@ PFbui_pf_supernode (const PFla_op_t *loop, bool ordering,
 /* ----------------------------------------------------- */
 
 static struct PFla_pair_t
-pft_query_param0() {
+pft_query_param0 (void)
+{
     return (struct PFla_pair_t) {
-    	.rel  = nil(),
-	.frag = PFla_empty_set () };
+        .rel  = nil(),
+        .frag = PFla_empty_set () };
 }
 
 static struct PFla_pair_t
-pft_query_param1(
-		struct PFla_pair_t *p1,PFalg_simple_type_t itemType) {
+pft_query_param1 (struct PFla_pair_t *p1,PFalg_simple_type_t itemType)
+{
     return (struct PFla_pair_t) {
-    	.rel  = fun_param(
-			p1->rel,
-			nil(),
-			ipi_schema(itemType)), 
-	.frag = PFla_empty_set () };
+        .rel  = fun_param(
+                        p1->rel,
+                        nil(),
+                        ipi_schema(itemType)), 
+        .frag = PFla_empty_set () };
 }
 
 static struct PFla_pair_t
-pft_query_param2(
-		struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
-		struct PFla_pair_t *p2, PFalg_simple_type_t itemType2) {
+pft_query_param2 (struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
+                  struct PFla_pair_t *p2, PFalg_simple_type_t itemType2)
+{
     return (struct PFla_pair_t) {
-    	.rel  = fun_param(
-			p1->rel,
-			fun_param(
-				p2->rel,
-				nil(),
-				ipi_schema(itemType2)), 
-			ipi_schema(itemType1)), 
-	.frag = PFla_empty_set () };
+        .rel  = fun_param(
+                        p1->rel,
+                        fun_param(
+                                p2->rel,
+                                nil(),
+                                ipi_schema(itemType2)), 
+                        ipi_schema(itemType1)), 
+        .frag = PFla_empty_set () };
 }
 
 static struct PFla_pair_t
-pft_query_param3(
-		struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
-		struct PFla_pair_t *p2, PFalg_simple_type_t itemType2,
-		struct PFla_pair_t *p3, PFalg_simple_type_t itemType3) {
+pft_query_param3 (struct PFla_pair_t *p1, PFalg_simple_type_t itemType1,
+                  struct PFla_pair_t *p2, PFalg_simple_type_t itemType2,
+                  struct PFla_pair_t *p3, PFalg_simple_type_t itemType3)
+{
     return (struct PFla_pair_t) {
-    	.rel  = fun_param(
-			p1->rel,
-			fun_param(
-				p2->rel,
-				fun_param(
-					p3->rel,
-					nil(),
-					ipi_schema(itemType3)), 
-				ipi_schema(itemType2)), 
-			ipi_schema(itemType1)), 
-	.frag = PFla_empty_set () };
+        .rel  = fun_param(
+                        p1->rel,
+                        fun_param(
+                                p2->rel,
+                                fun_param(
+                                        p3->rel,
+                                        nil(),
+                                        ipi_schema(itemType3)), 
+                                ipi_schema(itemType2)), 
+                        ipi_schema(itemType1)), 
+        .frag = PFla_empty_set () };
 }
 
 /*
@@ -5165,26 +5566,26 @@ pft_query_param3(
  */
 
 static struct PFla_pair_t
-PFbui_tijah_query_HANDLER(
-		const PFla_op_t *loop,
-		bool ordering,
-		char* query_name,
-		PFalg_simple_type_t funcall_t,
-		PFla_pair_t p_fun_param)
+PFbui_tijah_query_HANDLER (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
+                           char* query_name,
+                           PFalg_simple_type_t funcall_t,
+                           PFla_pair_t p_fun_param)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel =  fun_call(
-		    loop,
-		    p_fun_param.rel,
-		    ipi_schema(funcall_t),
-		    alg_fun_call_tijah,
-		    PFqname (PFns_wild, query_name),
-		    NULL, /* ctx */
-		    col_iter, /* iter */
-		    alg_occ_one_or_more  /* occ_ind */
-		),
+                    loop,
+                    p_fun_param.rel,
+                    ipi_schema(funcall_t),
+                    alg_fun_call_tijah,
+                    PFqname (PFns_wild, query_name),
+                    NULL, /* ctx */
+                    col_iter, /* iter */
+                    alg_occ_one_or_more  /* occ_ind */
+                ),
         .frag = PFla_empty_set () };
 }
 
@@ -5198,55 +5599,78 @@ PFbui_tijah_query_HANDLER(
  */
 
 struct PFla_pair_t
-PFbui_tijah_query_i_xx(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_i_xx (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_I_XX,
-		aat_int,
-    		pft_query_param1(&args[0],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_I_XX,
+                aat_int,
+                pft_query_param1(&args[0],aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_i_sx(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_i_sx (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_I_SX,
-		aat_int,
-     		pft_query_param2(&args[0],PFTIJAH_NODEKIND,&args[1],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_I_SX,
+                aat_int,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_i_xo(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_i_xo (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_I_XO,
-		aat_int,
-    		pft_query_param2(&args[0],aat_str,&args[1],PFTIJAH_NODEKIND)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_I_XO,
+                aat_int,
+                pft_query_param2(&args[0],
+                                 aat_str,
+                                 &args[1],
+                                 PFTIJAH_NODEKIND)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_i_so(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_i_so (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_I_SO,
-		aat_int,
-    		pft_query_param3(&args[0],PFTIJAH_NODEKIND,&args[1],aat_str,&args[2],PFTIJAH_NODEKIND)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_I_SO,
+                aat_int,
+                pft_query_param3(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str,
+                                 &args[2],
+                                 PFTIJAH_NODEKIND)
+                );
 }
 
 /*
@@ -5254,55 +5678,79 @@ PFbui_tijah_query_i_so(const PFla_op_t *loop, bool ordering,
  */
 
 struct PFla_pair_t
-PFbui_tijah_query_n_xx(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_n_xx (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_N_XX,
-		PFTIJAH_NODEKIND,
-    		pft_query_param1(&args[0],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_N_XX,
+                PFTIJAH_NODEKIND,
+                pft_query_param1(&args[0],
+                                 aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_n_sx(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_n_sx (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_N_SX,
-		PFTIJAH_NODEKIND,
-     		pft_query_param2(&args[0],PFTIJAH_NODEKIND,&args[1],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_N_SX,
+                PFTIJAH_NODEKIND,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_n_xo(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_n_xo (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_N_XO,
-		PFTIJAH_NODEKIND,
-    		pft_query_param2(&args[0],aat_str,&args[1],PFTIJAH_NODEKIND)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_N_XO,
+                PFTIJAH_NODEKIND,
+                pft_query_param2(&args[0],
+                                 aat_str,
+                                 &args[1],
+                                 PFTIJAH_NODEKIND)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_query_n_so(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_query_n_so (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_QUERY_N_SO,
-		PFTIJAH_NODEKIND,
-    		pft_query_param3(&args[0],PFTIJAH_NODEKIND,&args[1],aat_str,&args[2],PFTIJAH_NODEKIND)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_QUERY_N_SO,
+                PFTIJAH_NODEKIND,
+                pft_query_param3(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str,
+                                 &args[2],
+                                 PFTIJAH_NODEKIND)
+                );
 }
 
 /*
@@ -5311,123 +5759,158 @@ PFbui_tijah_query_n_so(const PFla_op_t *loop, bool ordering,
 
 struct PFla_pair_t
 PFbui_tijah_manage_fti_HANDLER(
-		const PFla_op_t *loop,
-		bool ordering,
-		char* fun_name,
-		PFla_pair_t p_fun_param)
+                const PFla_op_t *loop,
+                bool ordering,
+                PFla_op_t **side_effects,
+                char* fun_name,
+                PFla_pair_t p_fun_param)
 {
-    (void) ordering;
+    (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel =  fun_call(
-		    loop,
-		    p_fun_param.rel,
-		    ipi_schema(DOCMGMTTYPE),
-		    alg_fun_call_tijah,
-		    PFqname (PFns_wild, fun_name),
-		    NULL, /* ctx */
-		    col_iter, /* iter */
-		    alg_occ_one_or_more  /* occ_ind */
-		),
+                    loop,
+                    p_fun_param.rel,
+                    ipi_schema(DOCMGMTTYPE),
+                    alg_fun_call_tijah,
+                    PFqname (PFns_wild, fun_name),
+                    NULL, /* ctx */
+                    col_iter, /* iter */
+                    alg_occ_one_or_more  /* occ_ind */
+                ),
         .frag = PFla_empty_set () };
 }
 
-struct PFla_pair_t PFbui_manage_fti_c_xx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_c_xx (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	(void)args;
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_C_XX,
-		    pft_query_param0()
-	       );
+    (void)args;
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_C_XX,
+                pft_query_param0()
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_c_cx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_c_cx (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_C_CX,
-    		    pft_query_param1(&args[0],aat_str)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_C_CX,
+                pft_query_param1(&args[0],
+                                 aat_str)
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_c_xo(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_c_xo (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_C_XO,
-    		    pft_query_param1(&args[0],PFTIJAH_NODEKIND)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_C_XO,
+                pft_query_param1(&args[0],
+                                 PFTIJAH_NODEKIND)
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_c_co(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_c_co (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_C_CO,
-    		    pft_query_param2(&args[0],aat_str,&args[1],PFTIJAH_NODEKIND)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_C_CO,
+                pft_query_param2(&args[0],
+                                 aat_str,
+                                 &args[1],
+                                 PFTIJAH_NODEKIND)
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_e_cx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_e_cx (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_E_CX,
-    		    pft_query_param1(&args[0],aat_str)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_E_CX,
+                pft_query_param1(&args[0],
+                                 aat_str)
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_e_co(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_e_co (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_E_CO,
-    		    pft_query_param2(&args[0],aat_str,&args[1],PFTIJAH_NODEKIND)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_E_CO,
+                pft_query_param2(&args[0],
+                                 aat_str,
+                                 &args[1],
+                                 PFTIJAH_NODEKIND)
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_r_xx(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_r_xx (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	(void)args;
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_R_XX,
-    		    pft_query_param0()
-	       );
+    (void) args;
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_R_XX,
+                pft_query_param0()
+           );
 }
 
-struct PFla_pair_t PFbui_manage_fti_r_xo(const PFla_op_t *loop,
-                                         bool ordering,
-                                         struct PFla_pair_t *args)
+struct PFla_pair_t
+PFbui_manage_fti_r_xo (const PFla_op_t *loop,
+                       bool ordering,
+                       PFla_op_t **side_effects,
+                       struct PFla_pair_t *args)
 {
-	return PFbui_tijah_manage_fti_HANDLER(
-		    loop,
-		    ordering,
-		    PFT_MANAGE_FTI_R_XO,
-    		    pft_query_param1(&args[0],PFTIJAH_NODEKIND)
-	       );
+    return PFbui_tijah_manage_fti_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_MANAGE_FTI_R_XO,
+                pft_query_param1(&args[0],
+                                 PFTIJAH_NODEKIND)
+           );
 }
 
 /*
@@ -5435,83 +5918,108 @@ struct PFla_pair_t PFbui_manage_fti_r_xo(const PFla_op_t *loop,
  */
 
 struct PFla_pair_t
-PFbui_tijah_score(const PFla_op_t *loop, bool ordering,
-                        struct PFla_pair_t *args)
+PFbui_tijah_score (const PFla_op_t *loop,
+                   bool ordering,
+                   PFla_op_t **side_effects,
+                   struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_SCORE,
-		aat_dbl,
-    		pft_query_param2(&args[0],aat_int,&args[1],PFTIJAH_NODEKIND)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_SCORE,
+                aat_dbl,
+                pft_query_param2(&args[0],
+                                 aat_int,
+                                 &args[1],
+                                 PFTIJAH_NODEKIND)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_nodes(const PFla_op_t *loop, bool ordering,
-                        struct PFla_pair_t *args)
+PFbui_tijah_nodes (const PFla_op_t *loop,
+                   bool ordering,
+                   PFla_op_t **side_effects,
+                   struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_NODES,
-		PFTIJAH_NODEKIND,
-    		pft_query_param1(&args[0],aat_int)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_NODES,
+                PFTIJAH_NODEKIND,
+                pft_query_param1(&args[0],
+                                 aat_int)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_ft_index_info(const PFla_op_t *loop, bool ordering,
-                        struct PFla_pair_t *args)
+PFbui_tijah_ft_index_info (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
+                           struct PFla_pair_t *args)
 {
-    (void)args;
+    (void) args;
 
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_INFO,
-		PFTIJAH_NODEKIND,
-    		pft_query_param0()
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_INFO,
+                PFTIJAH_NODEKIND,
+                pft_query_param0()
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_ft_index_info_s(const PFla_op_t *loop, bool ordering,
-                        struct PFla_pair_t *args)
+PFbui_tijah_ft_index_info_s (const PFla_op_t *loop,
+                             bool ordering,
+                             PFla_op_t **side_effects,
+                             struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_INFO,
-		PFTIJAH_NODEKIND,
-    		pft_query_param1(&args[0],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_INFO,
+                PFTIJAH_NODEKIND,
+                pft_query_param1(&args[0],
+                                 aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_tokenize(const PFla_op_t *loop, bool ordering,
-                        struct PFla_pair_t *args)
+PFbui_tijah_tokenize (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_TOKENIZE,
-		aat_str,
-    		pft_query_param1(&args[0],aat_str)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_TOKENIZE,
+                aat_str,
+                pft_query_param1(&args[0],
+                                 aat_str)
+                );
 }
 
 struct PFla_pair_t
-PFbui_tijah_resultsize(const PFla_op_t *loop, bool ordering,
+PFbui_tijah_resultsize (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
     return PFbui_tijah_query_HANDLER(
-    		loop,
-		ordering,
-		PFT_RESSIZE,
-		aat_int,
-    		pft_query_param1(&args[0],aat_int)
-		);
+                loop,
+                ordering,
+                side_effects,
+                PFT_RESSIZE,
+                aat_int,
+                pft_query_param1(&args[0],
+                                 aat_int)
+                );
 }
 
 #endif /* PFTIJAH */
@@ -5520,10 +6028,12 @@ PFbui_tijah_resultsize(const PFla_op_t *loop, bool ordering,
  * Built-in function pf:add-doc(string, string)
  */
 struct PFla_pair_t
-PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
+PFbui_pf_add_doc (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5554,10 +6064,12 @@ PFbui_pf_add_doc (const PFla_op_t *loop, bool ordering,
  * Built-in function pf:add-doc(string, string, string)
  */
 struct PFla_pair_t
-PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
+PFbui_pf_add_doc_str (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5588,10 +6100,12 @@ PFbui_pf_add_doc_str (const PFla_op_t *loop, bool ordering,
  * Built-in function pf:add-doc(string, string, int)
  */
 struct PFla_pair_t
-PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
+PFbui_pf_add_doc_int (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5632,10 +6146,12 @@ PFbui_pf_add_doc_int (const PFla_op_t *loop, bool ordering,
  * Built-in function pf:add-doc(string, string, string, int)
  */
 struct PFla_pair_t
-PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
+PFbui_pf_add_doc_str_int (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
                           struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5675,10 +6191,12 @@ PFbui_pf_add_doc_str_int (const PFla_op_t *loop, bool ordering,
  * Built-in function pf:del-doc(string)
  */
 struct PFla_pair_t
-PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
+PFbui_pf_del_doc (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5697,9 +6215,12 @@ PFbui_pf_del_doc (const PFla_op_t *loop, bool ordering,
  * Built-in function pf:nid(element) as string
  */
 struct PFla_pair_t
-PFbui_pf_nid (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
+PFbui_pf_nid (const PFla_op_t *loop,
+              bool ordering,
+              PFla_op_t **side_effects,
+              struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (fun_1to1 (
@@ -5731,10 +6252,12 @@ PFbui_pf_nid (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args)
  * Built-in function upd:rename(node, QName)
  */
 struct PFla_pair_t
-PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
+PFbui_upd_rename (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5758,10 +6281,12 @@ PFbui_upd_rename (const PFla_op_t *loop, bool ordering,
  * Built-in function upd:delete(node)
  */
 struct PFla_pair_t
-PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
+PFbui_upd_delete (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project ( fun_1to1 ( args[0].rel,
@@ -5782,9 +6307,10 @@ PFbui_upd_delete (const PFla_op_t *loop, bool ordering,
 struct PFla_pair_t
 PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
                                 bool ordering,
+                                PFla_op_t **side_effects,
                                 struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
 
 
@@ -5822,10 +6348,12 @@ PFbui_upd_insert_into_as_first (const PFla_op_t *loop,
  * this should be node+ ...
  */
 struct PFla_pair_t
-PFbui_upd_insert_into_as_last (const PFla_op_t *loop, bool ordering,
+PFbui_upd_insert_into_as_last (const PFla_op_t *loop,
+                               bool ordering,
+                               PFla_op_t **side_effects,
                                struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5850,10 +6378,12 @@ PFbui_upd_insert_into_as_last (const PFla_op_t *loop, bool ordering,
  * this should be node+ ...
  */
 struct PFla_pair_t
-PFbui_upd_insert_before (const PFla_op_t *loop, bool ordering,
+PFbui_upd_insert_before (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5878,10 +6408,12 @@ PFbui_upd_insert_before (const PFla_op_t *loop, bool ordering,
  * this should be node+ ...
  */
 struct PFla_pair_t
-PFbui_upd_insert_after (const PFla_op_t *loop, bool ordering,
+PFbui_upd_insert_after (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     PFla_op_t *rev = project (rank (args[1].rel,
                                     col_pos1,
@@ -5915,10 +6447,12 @@ PFbui_upd_insert_after (const PFla_op_t *loop, bool ordering,
  * Built-in function upd:replaceValue(anyAttribute, untypedAtomic)
  */
 struct PFla_pair_t
-PFbui_upd_replace_value_att (const PFla_op_t *loop, bool ordering,
+PFbui_upd_replace_value_att (const PFla_op_t *loop,
+                             bool ordering,
+                             PFla_op_t **side_effects,
                              struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5944,10 +6478,12 @@ PFbui_upd_replace_value_att (const PFla_op_t *loop, bool ordering,
  * Built-in function upd:replaceValue(comment(), untypedAtomic)
  */
 struct PFla_pair_t
-PFbui_upd_replace_value (const PFla_op_t *loop, bool ordering,
+PFbui_upd_replace_value (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5971,10 +6507,12 @@ PFbui_upd_replace_value (const PFla_op_t *loop, bool ordering,
  * Built-in function upd:replaceElementContent(element(), text()?))
  */
 struct PFla_pair_t
-PFbui_upd_replace_element (const PFla_op_t *loop, bool ordering,
+PFbui_upd_replace_element (const PFla_op_t *loop,
+                           bool ordering,
+                           PFla_op_t **side_effects,
                            struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (
@@ -5998,10 +6536,12 @@ PFbui_upd_replace_element (const PFla_op_t *loop, bool ordering,
  * Built-in function upd:replaceNode (node, node)
  */
 struct PFla_pair_t
-PFbui_upd_replace_node (const PFla_op_t *loop, bool ordering,
+PFbui_upd_replace_node (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
                         struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering;
+    (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
         .rel = project (

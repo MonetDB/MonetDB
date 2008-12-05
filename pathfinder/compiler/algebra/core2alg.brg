@@ -345,6 +345,7 @@ typedef struct fun_active_t fun_active_t;
 struct core2alg_ctx_t {
     PFarray_t   *env;          /* Variable environment (Gamma in our papers) */
     PFla_op_t   *loop;         /* Current loop relation */
+    PFla_op_t   *side_effects; /* list of side effects (error or trace nodes) */
     PFarray_t   *mapping;      /* Mapping stack */
     bool         ordering;     /* ordering mode indicator */
     unsigned int seq_count;    /* sequence item counter (for long sequences) */
@@ -364,6 +365,7 @@ typedef struct core2alg_ctx_t core2alg_ctx_t;
 
 #define ENV          (ctx->env)
 #define LOOP         (ctx->loop)
+#define SIDE_EFFECTS (ctx->side_effects)
 #define ORDERING     (ctx->ordering)
 #define SEQ_COUNT    (ctx->seq_count)
 #define FUN_ARGS     (ctx->fun_args)
@@ -1844,12 +1846,18 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                may be less or more than a single item add a runtime check */
             if (PFty_subtype (L(p)->sem.type, PFty_item ()) &&
                 !PFty_subtype (R(p)->type, PFty_item ()))
-                pair = PFbui_fn_exactly_one (LOOP, ORDERING, &pair);
+                pair = PFbui_fn_exactly_one (LOOP,
+                                             ORDERING,
+                                             &SIDE_EFFECTS,
+                                             &pair);
             /* in case we require zero or one items and the input
                may be more than a single item add a runtime check */
             else if (PFty_subtype (L(p)->sem.type, PFty_opt (PFty_item ())) &&
                      !PFty_subtype (R(p)->type, PFty_opt (PFty_item ())))
-                pair = PFbui_fn_zero_or_one (LOOP, ORDERING, &pair);
+                pair = PFbui_fn_zero_or_one (LOOP,
+                                             ORDERING,
+                                             &SIDE_EFFECTS,
+                                             &pair);
                     
             A(p) = (struct PFla_pair_t) {
                 .rel  = project (cast (pair.rel, col_cast, col_item, algty),
@@ -2274,7 +2282,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                             "Algebra implementation for function `%s' unknown.",
                             PFqname_str (p->sem.fun->qname));
 
-                    A(p) = p->sem.fun->alg (LOOP, ORDERING, FUN_ARGS->base);
+                    A(p) = p->sem.fun->alg (LOOP, ORDERING, &SIDE_EFFECTS, FUN_ARGS->base);
                 }
             }
             else {
@@ -3490,6 +3498,8 @@ PFcore2alg (PFcnode_t *r, PFquery_t *query,
     ctx.env  = PFarray (sizeof (PFla_env_t), 50);
     /* loop is initially a table with just one tuple */
     ctx.loop = lit_tbl (collist (col_iter), tuple (lit_nat (1)));
+    /* side_effects is initally an empty list */
+    ctx.side_effects = nil ();
     /* Create a stack for the map relation information */
     ctx.mapping = PFarray (sizeof (map_rel_info_t), 50);
     /* set ordering mode */

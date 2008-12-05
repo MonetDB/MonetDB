@@ -487,6 +487,7 @@ PFfun_new (PFqname_t      qn,
            PFfun_sig_t   *sigs,
            struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                       bool,
+                                      struct PFla_op_t **,
                                       struct PFla_pair_t *),
            PFvar_t      **params,
            char          *atURI)

@@ -71,6 +71,7 @@ PFfun_xquery_fo (void)
         PFfun_sig_t sigs[XQUERY_FO_MAX_SIGS];
         struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                    bool,
+                                   struct PFla_op_t **,
                                    struct PFla_pair_t *);
     } xquery_fo[] =
     /**
