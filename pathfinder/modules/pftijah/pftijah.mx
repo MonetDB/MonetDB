@@ -27,7 +27,7 @@
 @m
 .MODULE pftijah;
 
-.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,oid] rtag, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -390,7 +390,7 @@ PROC tj_init_global(BAT[str,str] param, bit doLock) : void :=
       if ( GLOBAL_TTBAT ) {
           new(oid,str).persists(true).bbpname(_tj_TermBat(""));
           new(oid,str).persists(true).bbpname(_tj_TagBat(""));
-          new(oid,oid).persists(true).bbpname(_tj_RTagBat(""));
+          new(oid,str).persists(true).bbpname(_tj_RTagBat(""));
       }
       new(oid,str).persists(true).bbpname("tj_collName");
       new(str,str).persists(true).bbpname("tj_pfc_fti_dep");
@@ -561,7 +561,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
                   new(oid,str).persists(true).bbpname(_tj_TermBat(ftiName));
                   new(oid,str).persists(true).bbpname(_tj_TagBat(ftiName));
 	      }
-              new(oid,oid).persists(true).bbpname(_tj_RTagBat(ftiName));
+              new(oid,str).persists(true).bbpname(_tj_RTagBat(ftiName));
 	  }
       }
       extra_del_bat := new(void,str).seqbase(0@0);

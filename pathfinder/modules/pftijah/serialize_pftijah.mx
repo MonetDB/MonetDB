@@ -837,7 +837,16 @@ freeTijahContext(tjCtx* tjctx) {
 	    if ( tjctx->tagswitch[i] == 2) {
 		oid store = (oid)i;
 		if ( BUNfnd(tjctx->b_globalRTag,&store) == BUN_NONE ) {
-		    if ( !BUNins(tjctx->b_globalRTag, &store,&store, 0)) {
+                    str tagname = (str)0;
+        	    BUN bun = BUNfnd(tjctx->b_globalTag,&store);
+        	    if ( bun != BUN_NONE ) {
+               	        BATiter mbi = bat_iterator(tjctx->b_globalTag);
+               	        tagname = (str)BUNtail(mbi,bun);
+        	    } else {
+	    	        GDKerror("error retrieving recursive tagname");
+		        return GDK_FAIL;
+		    }
+		    if ( !BUNins(tjctx->b_globalRTag, &store,tagname, 0)) {
 	    	        GDKerror("error writing recursive tagbat");
 		        return GDK_FAIL;
 		    }
