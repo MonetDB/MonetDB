@@ -3107,6 +3107,8 @@ PROC rm_overlap(BAT ctx, BAT[oid,str] qenv) : bat :=
    return ctx;
  }
  else {
+   if (qenv.find(QENV_RECURSIVE_TAGS) = "0") {return ctx;}
+
    var a_d := anc_desc(ctx, ctx, qenv);
    var x_a := a_d.hmark(0@0);
    var x_d := a_d.tmark(0@0);

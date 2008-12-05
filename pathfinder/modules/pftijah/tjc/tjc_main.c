@@ -123,10 +123,10 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->timing	= 0;
     tjc_c->ftindex	= "DFLT_FT_INDEX";
     tjc_c->irmodel	= "NLLR";
-    tjc_c->orcomb	= "SUM";
-    tjc_c->andcomb	= "PROD";
-    tjc_c->upprop	= "MAX";
-    tjc_c->downprop	= "MAX";
+    tjc_c->orcomb	= "sum";
+    tjc_c->andcomb	= "prod";
+    tjc_c->upprop	= "max";
+    tjc_c->downprop	= "max";
     tjc_c->prior	= NULL;
     tjc_c->scorebase	= 0.0;
     tjc_c->lambda	= 0.8;
@@ -173,43 +173,43 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
             }
         } else if ( strcmp(optName,"orcomb") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                tjc_c->orcomb = "SUM";
+                tjc_c->orcomb = "sum";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                tjc_c->orcomb = "MAX";
+                tjc_c->orcomb = "max";
             } else if ( strcasecmp(optVal,"PROB") == 0 ) {
-                tjc_c->orcomb = "PROB";
+                tjc_c->orcomb = "prob";
             } else if ( strcasecmp(optVal,"EXP") == 0 ) {
-                tjc_c->orcomb = "EXP";
+                tjc_c->orcomb = "exp";
             } else if ( strcasecmp(optVal,"MIN") == 0 ) {
-                tjc_c->orcomb = "MIN";
+                tjc_c->orcomb = "min";
             } else if ( strcasecmp(optVal,"PROD") == 0 ) {
-                tjc_c->orcomb = "PROD";
+                tjc_c->orcomb = "prod";
             }
         } else if ( strcmp(optName,"andcomb") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                tjc_c->andcomb = "SUM";
+                tjc_c->andcomb = "sum";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                tjc_c->andcomb = "MAX";
+                tjc_c->andcomb = "max";
             } else if ( strcasecmp(optVal,"PROB") == 0 ) {
-                tjc_c->andcomb = "PROB";
+                tjc_c->andcomb = "prob";
             } else if ( strcasecmp(optVal,"EXP") == 0 ) {
-                tjc_c->andcomb = "EXP";
+                tjc_c->andcomb = "exp";
             } else if ( strcasecmp(optVal,"MIN") == 0 ) {
-                tjc_c->andcomb = "MIN";
+                tjc_c->andcomb = "min";
             } else if ( strcasecmp(optVal,"PROD") == 0 ) {
-                tjc_c->andcomb = "PROD";
+                tjc_c->andcomb = "prod";
             }
         } else if ( strcmp(optName,"upprop") == 0 ) {        
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                tjc_c->upprop = "SUM";
+                tjc_c->upprop = "sum";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                tjc_c->upprop = "MAX";
+                tjc_c->upprop = "max";
             }
         } else if ( strcmp(optName,"downprop") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {
-                tjc_c->downprop = "SUM";
+                tjc_c->downprop = "sum";
             } else if ( strcasecmp(optVal,"MAX") == 0 ) {
-                tjc_c->downprop = "MAX";
+                tjc_c->downprop = "max";
             }
         } else if ( strcmp(optName,"collection-lambda") == 0) { 
                 tjc_c->lambda = atof (optVal);
