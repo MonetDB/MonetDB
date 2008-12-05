@@ -1025,6 +1025,30 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
+        /* Rel:    num_eq (Rel) */
+        case 36:
+            /* merge back operators that were splitted
+               due to a join push down */
+            if (L(p)->kind == la_num_eq &&
+                p->sem.binary.col1 == L(p)->sem.binary.col1 &&
+                p->sem.binary.col2 == L(p)->sem.binary.col2) {
+                PFalg_proj_t *proj;
+                /* replace upper equality operator by a projection */
+                proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->sem.binary.res == p->schema.items[i].name)
+                        proj[i] = PFalg_proj (p->sem.binary.res,
+                                              L(p)->sem.binary.res);
+                    else
+                        proj[i] = PFalg_proj (p->schema.items[i].name,
+                                              p->schema.items[i].name);
+
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+            }
+            break;
+
         /* Rel:    rownum (Rel) */
         case 47:
         {
