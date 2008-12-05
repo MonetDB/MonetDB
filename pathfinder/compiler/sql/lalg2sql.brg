@@ -3904,13 +3904,13 @@ reduce (PFla_op_t * p, int goalnt)
                            alias (newalias));
 
             if (col) /* cope with missing col column in case of count */ {
-                ty = type_of (p, col);
+                ty = type_of (L(p), col);
                 expr = col_env_lookup (COLMAP(L(p)), col, ty);
             }
 
             /* add the partition criterion to all lists and environments */
             if (part) {
-                part_ty = type_of (p, part);
+                part_ty = type_of (L(p), part);
                 part_col = new_col (part, part_ty);
                 part_expr = col_env_lookup (COLMAP(L(p)), part, part_ty);
 
