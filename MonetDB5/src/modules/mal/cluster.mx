@@ -146,6 +146,8 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 		if ( ((++cnt) % 1000000) == 0)
 			BATsave(nb);
 	}
+	b->tsorted= FALSE;
+	b->tdense= FALSE;
 	return MAL_SUCCEED;
 }
 
