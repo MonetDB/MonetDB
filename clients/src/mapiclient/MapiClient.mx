@@ -689,6 +689,7 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 
 	SQLseparator(len, fields, '-');
 	stream_printf(toConsole, "next page? (continue,quit,next)");
+	stream_flush(toConsole);
 	c = getc(fromConsole);
 	if (c == 'c')
 		*ps = 0;
@@ -1318,6 +1319,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 		oldbuf = buf = malloc(BUFSIZ);
 
 	do {
+		stream_flush(toConsole);
 		timerPause();
 #ifdef HAVE_LIBREADLINE
 		if (prompt) {
