@@ -763,10 +763,13 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_all:
         {
             PFarray_t *lmap = PFarray (sizeof (req_val_t), 2);
-            if (n->sem.aggr.part)
+            if (n->sem.aggr.part) {
+                /* keep properties */
+                req_val_t *map  = find_map (MAP_LIST(n), n->sem.aggr.part);
+                if (map) ADD(lmap, *map);
                 /* we only have to provide the same groups */
                 adjust_part_ (lmap, n->sem.aggr.part);
-
+            }
             if (n->sem.aggr.col)
                 /* to make up for the schema change
                    we add the input columns by hand */
