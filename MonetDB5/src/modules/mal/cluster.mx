@@ -197,6 +197,10 @@ CLUSTER_column_str(BAT *nb, BAT *b, BAT *cmap)
 		if ( ((++cnt) % 1000000) == 0)
 			BATsave(nb);
 	}
+    if (nb->H != nb->T) {
+        BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
+    }
+    BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
 @-
@@ -276,6 +280,7 @@ CLUSTER_map(bat *RB, bat *B)
 	map->hsorted= TRUE;
 	map->hdense= TRUE;
 	BATseqbase(map, 0);
+	BATkey(map,TRUE);
 	map->tsorted= FALSE;
 	map->tdense= FALSE;
 	BATsetcount(map, BATcount(b));
