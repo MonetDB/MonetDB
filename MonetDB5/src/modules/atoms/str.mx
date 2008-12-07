@@ -212,7 +212,7 @@ command locate(s1:str,s2:str):int
 address STRlocate
 comment "Locate the start position of a string";
 
-command locate(s1:str,s2:str,start:int)
+command locate(s1:str,s2:str,start:int):int
 address STRlocate2
 comment "Locate the start position of a string";
 
