@@ -80,7 +80,7 @@ Over..
 [ 1	]
 [ 1	]
 % sys.kwtemp # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
@@ -96,7 +96,7 @@ Over..
 % 31 # length
 [ "dropping kwTemp"	]
 % sys.kwmtemp # table_name
-% count_ # name
+% L4 # name
 % wrd # type
 % 2 # length
 [ 20	]
@@ -112,12 +112,12 @@ Over..
 % 27 # length
 [ "dropping kwmTemp"	]
 % .,	sys.s4_keywords # table_name
-% single_value,	count_ # name
+% single_value,	L7 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
 % .,	sys.s4_kwm # table_name
-% single_value,	count_ # name
+% single_value,	L10 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]

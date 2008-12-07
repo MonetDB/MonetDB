@@ -31,7 +31,7 @@ Over..
 % int # type
 % 1 # length
 % sys.,	sys.a # table_name
-% bug_alias,	sum_f2 # name
+% bug_alias,	L1 # name
 % varchar,	wrd # type
 % 0,	1 # length
 
