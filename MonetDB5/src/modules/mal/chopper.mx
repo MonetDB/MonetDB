@@ -224,7 +224,7 @@ CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(bi, yy));
 	}
-	assert(b->ttype == getArgType(mb,pci,2));
+	assert(b->ttype==TYPE_bat || b->ttype == getArgType(mb,pci,2));
 	VALinit(tail, b->ttype, BUNtail(bi, yy));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
