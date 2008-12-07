@@ -1208,7 +1208,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
 
-	v = &stk->stk[getArg(p,0)]; /* don't count memory for persistent bats */
+	v = getArgReference(stk,p,0); /* don't count memory for persistent bats */
 	if ((v->vtype == TYPE_bat) && (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT))
 		wr = 0;
 
@@ -1416,7 +1416,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (p->argc == 2){
 		if(getArgType(mb,p,1)==TYPE_bat || 
 			isaBatType(getArgType(mb, p,1)) ){
- 			v = &stk->stk[getArg(p,1)];
+			v = getArgReference(stk,p,1);
 			if(v->vtype == TYPE_bat && v->val.bval )
 				b[btop++] = v->val.bval;
 		}
@@ -1429,7 +1429,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 			if (getName("bind",4)== getFunctionId(q) && getModuleId(q)==getName("sql",3)){
 				for (j=p->retc; j<p->argc; j++)
-					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+					if( VALcmp( getArgReference(stk,p,j), &getVarConstant(recycleBlk,getArg(q,j))))
 					break;
 				if (j == p->argc){
 					v = &getVarConstant(recycleBlk,getArg(q,0));
