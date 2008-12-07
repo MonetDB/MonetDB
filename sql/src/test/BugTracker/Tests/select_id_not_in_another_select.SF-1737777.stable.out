@@ -15,12 +15,16 @@ Ready.
 
 Over..
 
-# 09:42:27 >  
-# 09:42:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32420 
-# 09:42:27 >  
+# 19:38:49 >  
+# 19:38:49 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37754 
+# 19:38:49 >  
 
+% sys.Match # table_name
+% objid1 # name
+% bigint # type
+% 1 # length
 
-# 09:42:28 >  
-# 09:42:28 >  Done.
-# 09:42:28 >  
+# 19:38:49 >  
+# 19:38:49 >  Done.
+# 19:38:49 >  
 

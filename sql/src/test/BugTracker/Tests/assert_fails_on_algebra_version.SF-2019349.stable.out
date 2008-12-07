@@ -24,7 +24,7 @@ Over..
 # 17:27:51 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37472 
 # 17:27:51 >  
 
-% .trip,	sys.trip,	sys.trip # table_name
+% .,	sys.b,	sys.b # table_name
 % prop,	obj,	cnt # name
 % char,	int,	wrd # type
 % 16,	1,	1 # length

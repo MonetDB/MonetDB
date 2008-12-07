@@ -51,12 +51,12 @@ Over..
 [ 1,	"wendy",	"Wendy\nWones"	]
 [ 2,	"fred",	"Fred Flintstone"	]
 % sys.sequences # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
 % sys.sequences # table_name
-% count_ # name
+% L2 # name
 % wrd # type
 % 1 # length
 [ 0	]

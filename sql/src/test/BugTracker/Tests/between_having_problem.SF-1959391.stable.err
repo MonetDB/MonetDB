@@ -12,9 +12,9 @@ stderr of test 'between_having_problem.SF-1959391` in directory 'src/test/BugTra
 # 09:56:54 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34633 
 # 09:56:54 >  
 
-MAPI  = monetdb@alf:34633
+MAPI  = monetdb@alf:37754
 QUERY = select id from t31959391 where (id between 0 and 62) having (id = id+.1 or id = id
-ERROR = !SELECT: cannot compare sets with values (did you forget an aggregate function?)
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 
 # 09:56:54 >  
 # 09:56:54 >  Done.

@@ -29,8 +29,8 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .b # table_name
-% count_ # name
+% .a # table_name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]

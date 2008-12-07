@@ -13,7 +13,7 @@ stdout of test 'mdb_starts_with_sql_debug_64.SF-1999354` in directory 'src/test/
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34243/
 # MonetDB/SQL module v2.24.0 loaded
 % . # table_name
-% f2_single_value # name
+% single_value # name
 % varchar # type
 % 7 # length
 [ "0004044"	]

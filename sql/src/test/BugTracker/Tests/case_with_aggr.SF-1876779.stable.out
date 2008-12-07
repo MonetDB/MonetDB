@@ -25,17 +25,17 @@ Over..
 # 11:27:48 >  
 
 % sys.casebug # table_name
-% sum_a # name
+% L1 # name
 % wrd # type
 % 20 # length
 [ NULL	]
 % sys.casebug # table_name
-% min_a # name
+% L2 # name
 % int # type
 % 11 # length
 [ NULL	]
 % sys. # table_name
-% ifthenelse_not_isnull_min_a # name
+% ifthenelse_not_isnull_L3 # name
 % int # type
 % 1 # length
 [ 0	]

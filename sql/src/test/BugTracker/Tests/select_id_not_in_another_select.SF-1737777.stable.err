@@ -12,9 +12,6 @@ stderr of test 'select_id_not_in_another_select.SF-1737777` in directory 'src/te
 # 09:42:27 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=32420 
 # 09:42:27 >  
 
-MAPI  = monetdb@koala:32420
-QUERY = select objID1 from "Match" where objID1 not in (select objID1 from
-ERROR = !SELECT: outer reference in the selection part is not supported
 
 # 09:42:28 >  
 # 09:42:28 >  Done.

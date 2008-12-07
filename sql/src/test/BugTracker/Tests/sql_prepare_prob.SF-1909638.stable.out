@@ -25,17 +25,17 @@ Over..
 # 13:44:41 >  
 
 % . # table_name
-% feq_single_value # name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 % . # table_name
-% feq_single_value # name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 % . # table_name
-% feq_single_value # name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]

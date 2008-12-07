@@ -26,7 +26,7 @@ Over..
 # 00:15:33 >  
 
 % . # table_name
-% foo_single_value # name
+% single_value # name
 % int # type
 % 1 # length
 [ 2	]

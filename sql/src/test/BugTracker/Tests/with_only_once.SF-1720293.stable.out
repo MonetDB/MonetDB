@@ -24,13 +24,13 @@ Over..
 # 22:41:45 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32869 
 # 22:41:45 >  
 
-% .t # table_name
-% count_ # name
+% sys.t # table_name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 26	]
-% .t # table_name
-% count_ # name
+% sys.t # table_name
+% L2 # name
 % wrd # type
 % 2 # length
 [ 26	]

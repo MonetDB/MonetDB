@@ -25,12 +25,12 @@ Over..
 # 00:15:33 >  
 
 % . # table_name
-% mod_single_value # name
+% single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]
 % . # table_name
-% mod_single_value # name
+% single_value # name
 % decimal # type
 % 5 # length
 [ 2	]
