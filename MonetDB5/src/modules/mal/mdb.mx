@@ -98,7 +98,7 @@ pattern setFlow(b:bit):void
 address MDBsetFlow
 comment "Turn on/off memory flow debugger";
 
-command setMemory(b:bit):void
+pattern setMemory(b:bit):void
 address MDBsetMemory
 comment "Turn on/off memory statistics tracing.";
 
