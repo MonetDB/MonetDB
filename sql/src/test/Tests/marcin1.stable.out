@@ -80,8 +80,8 @@ Over..
 [ 5,	1	]
 [ 5,	2	]
 [ 5,	3	]
-% sys.t1,	sys.t2 # table_name
-% id,	zero_or_one_id # name
+% sys.t1,	sys.L2 # table_name
+% id,	L2 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
@@ -89,8 +89,8 @@ Over..
 [ 3,	3	]
 [ 4,	NULL	]
 [ 5,	NULL	]
-% sys.t1,	sys.t2 # table_name
-% id,	zero_or_one_id # name
+% sys.t1,	sys.L4 # table_name
+% id,	L4 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]

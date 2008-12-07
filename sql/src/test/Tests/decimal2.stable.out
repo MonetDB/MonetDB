@@ -1,20 +1,23 @@
 stdout of test 'decimal2` in directory 'src/test` itself:
 
 
-# 20:26:51 >  
-# 20:26:51 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=39101 --set monet_prompt= --trace "--dbname=mTests_src_test" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 20:26:51 >  
+# 18:28:16 >  
+# 18:28:16 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39921 --set xrpc_port=45986 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 18:28:16 >  
 
-#mem_bigsize 256KB vm_minsize 12MB
-# Monet Database Server V4.13.1
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39921/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 

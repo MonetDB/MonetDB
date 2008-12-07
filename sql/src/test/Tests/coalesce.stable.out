@@ -47,7 +47,7 @@ Over..
 [ 1	]
 [ 1	]
 % sys. # table_name
-% ifthenelse_not_isnull_age # name
+% L1 # name
 % double # type
 % 22 # length
 [ 30.5	]
@@ -68,7 +68,7 @@ Over..
 [ 3,	-1	]
 [ 4,	-1	]
 % . # table_name
-% ifthenelse_not_isnull_NULL # name
+% single_value # name
 % char # type
 % 0 # length
 [ "x"	]
