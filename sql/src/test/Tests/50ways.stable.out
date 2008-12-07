@@ -1,0 +1,326 @@
+stdout of test '50ways` in directory 'src/test` itself:
+
+
+# 16:07:26 >  
+# 16:07:26 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36831 --set xrpc_port=40633 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 16:07:26 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36831/
+# MonetDB/SQL module v2.27.0 loaded
+
+Ready.
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 16:07:26 >  
+# 16:07:26 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=36831  -G
+# 16:07:26 >  
+
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 1 # length
+[ 2	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 10	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 11	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 12	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 21	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 22	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 23	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 24	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 25	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 26	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 27	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 28	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 29	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 30	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 31	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 32	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 33	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 34	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 35	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 36	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 37	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 38	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 39	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 41	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 42	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 44	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 45	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 47	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 48	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 50	]
+% sys.s # table_name
+% sname # name
+% varchar # type
+% 0 # length
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 51	]
+% . # table_name
+% single_value # name
+% tinyint # type
+% 2 # length
+[ 52	]
+
+# 16:07:26 >  
+# 16:07:26 >  Done.
+# 16:07:26 >  
+
