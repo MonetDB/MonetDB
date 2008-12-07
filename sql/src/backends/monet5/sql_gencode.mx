@@ -62,7 +62,6 @@ sql5_export str backend_name(cq *cq);
 #include "opt_prelude.h"
 #include "mal_builder.h"
 
-#include <sql_optimize.h>
 #include <sql_rel2bin.h>
 #include <rel_subquery.h>
 
