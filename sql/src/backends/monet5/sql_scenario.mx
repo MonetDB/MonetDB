@@ -666,7 +666,7 @@ SQLcompile(str *ret, str *expr){
 	str msg;
 
 	*ret = NULL;
-	msg= SQLstatementIntern(expr, "SQLcompile", FALSE, FALSE);
+	msg = SQLstatementIntern(expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= _strdup("SQLcompile");
 	return msg;
@@ -876,7 +876,7 @@ SQLparser(Client c)
 {
 	bstream *in = c->fdin;
 	stream *out = c->fdout;
-	str msg = 0;
+	str msg = NULL;
 	backend *be;
 	mvc *m;
 	int oldvtop,oldstop;
@@ -1008,6 +1008,7 @@ produce code.
 			goto finalize;
 		}
 		m->emode = m_inplace;
+		scanner_query_processed(&(m->scanner));
 	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id))) {
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
@@ -1015,6 +1016,7 @@ produce code.
 			SQLsetTrace(c, TRUE);
 		if (m->emode != m_explain && !(m->emod & (mod_debug|mod_trace)))
 			m->emode = m_inplace;
+		scanner_query_processed(&(m->scanner));
 	} else {
 		stmt *s;
 
@@ -1034,7 +1036,8 @@ produce code.
 			SQLsetTrace(c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none){
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none) {
+			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
 			if( m->emode == m_inplace)
 				m->emode = m_normal; 
@@ -1049,6 +1052,7 @@ produce code.
 					  m->type,/* the type of the statement */
 					  sql_escape_str(QUERY(m->scanner)));
 
+			scanner_query_processed(&(m->scanner));
 			be->q->code = 
 				(backend_code)backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
@@ -1061,10 +1065,6 @@ produce code.
 		} 
 		stmt_destroy(s);
 	}
-#ifdef _SQL_PARSER_DEBUG
-	else
-		stream_printf(GDKout, "#parse result %d\n", err);
-#endif
 	if (be->q){
 		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
@@ -1081,7 +1081,6 @@ In the final phase we add any debugging control
 		SQLsetTrace(c, FALSE);
 	if (m->emod & mod_debug) 
 		SQLsetDebugger(c, m, FALSE);
-	scanner_query_processed(&(m->scanner));
 
 @-
 During the execution of the query exceptions can be raised.
@@ -1273,7 +1272,7 @@ in the context of a user global environment. We have a private
 environment.
 @c
 	if( MALcommentsOnly(c->curprg->def)) {
-		msg= MAL_SUCCEED;
+		msg = MAL_SUCCEED;
 	} else {
 		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 	}

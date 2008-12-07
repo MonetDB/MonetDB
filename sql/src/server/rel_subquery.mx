@@ -28,15 +28,23 @@
 
 extern void stack_push_table(mvc *sql, char *tname, sql_table *t);
 extern void stack_add_inserted(mvc *sql, stmt **inserts, char *tname, sql_table *t);
+extern void stack_add_deleted(mvc *sql, stmt *deletes, char *tname, sql_table *t);
+extern void stack_add_updated(mvc *sql, stmt **updates, char *on, char *nn, sql_table *t);
 
 extern stmt *select_into(mvc *sql, symbol *sq, exp_kind ek );
 extern stmt *flat_subquery(mvc *sql, symbol *sq);
 
-extern stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd);
-extern stmt *logical_value_exp(mvc *sql, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd);
+extern stmt *value_exp(mvc *sql, symbol *se, int f, exp_kind knd);
+extern stmt *logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind knd);
 
-extern stmt * update_logical_exp(mvc *sql, scope *scp, symbol *sc, tvar *tv, sql_table *t);
-extern stmt ** update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlist, sql_table *t, tvar *tv, stmt **rows_affected);
+extern stmt * update_logical_exp(mvc *sql, symbol *sc, sql_table *t);
+extern stmt ** update_exp(mvc *sql, symbol *sc, dlist *assignmentlist, sql_table *t, stmt **rows_affected);
+
+extern stmt *sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs);
+extern stmt *sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs);
+extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
+
+extern stmt *rel_parse_value(mvc *m, char *query, char emode);
 
 #endif /*_REL_SUBQUERY_H_*/
 
@@ -48,46 +56,210 @@ extern stmt ** update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlis
 #include "rel_exp.h"
 #include "rel_optimizer.h"
 #include "rel_bin.h"
-#include "sql_select.h"
 #include "sql_env.h"
 #include "sql_updates.h"
+
+stmt *
+sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
+{
+	sql_subtype *rt = NULL;
+	sql_subfunc *f = NULL;
+
+	if (!s)
+		s = sql->session->schema;
+	rt = tail_type(rs);
+	f = sql_bind_func(s, fname, rt, NULL);
+	/* try to find the function without a type, and convert
+	 * the value to the type needed by this function!
+	 */
+	if (!f && (f = sql_find_func(s, fname, 1)) != NULL) {
+		sql_arg *a = f->func->ops->h->data;
+
+		rs = check_types(sql, &a->type, rs, type_equal);
+		if (!rs) {
+			sql_subfunc_destroy(f);
+			f = NULL;
+		}
+	}
+	if (f) {
+		if (f->func->res.scale == INOUT) {
+			f->res.digits = rt->digits;
+			f->res.scale = rt->scale;
+		}
+		return stmt_unop(rs, f);
+	} else if (rs) {
+		char *type = tail_type(rs)->type->sqlname;
+
+		stmt_destroy(rs);
+		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
+	}
+	return NULL;
+}
+
+stmt *
+sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
+{
+	stmt *res = NULL;
+	sql_subtype *t1, *t2;
+	sql_subfunc *f = NULL;
+
+	t1 = tail_type(ls);
+	t2 = tail_type(rs);
+
+	if (!s)
+		s = sql->session->schema;
+	f = sql_bind_func(s, fname, t1, t2);
+	if (!f && is_commutative(fname)) {
+		f = sql_bind_func(s, fname, t2, t1);
+		if (f) {
+			sql_subtype *tmp = t1;
+			t1 = t2;	
+			t2 = tmp;
+			res = ls;		
+			ls = rs;
+			rs = res;
+		}
+	}
+	if (f) {
+		if (f->func->fix_scale == SCALE_FIX) {
+			ls = fix_scale(sql, t2, ls, 0, 0);
+			rs = fix_scale(sql, t1, rs, 0, 0);
+		} else if (f->func->fix_scale == SCALE_SUB) {
+			ls = scale_algebra(sql, f, ls, rs);
+		} else if (f->func->fix_scale == SCALE_ADD) {
+			ls = sum_scales(sql, f, ls, rs);
+		} else if (f->func->fix_scale == DIGITS_ADD) {
+			f->res.digits = t1->digits + t2->digits;
+		}
+		return stmt_binop(ls, rs, f);
+	} else {
+		int digits = t1->digits + t2->digits;
+		stmt *ols = stmt_dup(ls);
+		stmt *ors = stmt_dup(rs);
+
+		/* try finding function based on first argument */
+		if (!EC_NUMBER(t1->type->eclass) &&
+		   (f = sql_bind_member(s, fname, t1, 2)) != NULL) {
+			node *m = f->func->ops->h;
+			sql_arg *a = m->data;
+
+			ls = check_types(sql, &a->type, ls, type_equal);
+			a = m->next->data;
+			rs = check_types(sql, &a->type, rs, type_equal);
+			if (ls && rs) {
+				stmt_destroy(ols);
+				stmt_destroy(ors);
+				return stmt_binop(ls, rs, f);
+			}
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		if (ls)
+			stmt_destroy(ls);
+		if (rs)
+			stmt_destroy(rs);
+		ls = ols;
+		rs = ors;
+		ols = stmt_dup(ls);
+		ors = stmt_dup(rs);
+		/* try finding function based on both arguments */
+		if (convert_types(sql, &ls, &rs, 1, type_equal) >= 0) {
+			/* try operators */
+			t1 = tail_type(ls);
+			t2 = tail_type(rs);
+			f = sql_bind_func(s, fname, t1, t2);
+			if (f) {
+				if (f->func->fix_scale == SCALE_FIX) {
+					ls = fix_scale(sql, t2, ls, 0, 0);
+					rs = fix_scale(sql, t1, rs, 0, 0);
+				} else if (f->func->fix_scale == SCALE_SUB) {
+					ls = scale_algebra(sql, f, ls, rs);
+				} else if (f->func->fix_scale == SCALE_ADD) {
+					ls = sum_scales(sql, f, ls, rs);
+				} else if (f->func->fix_scale == DIGITS_ADD) {
+					f->res.digits = digits;
+				}
+				stmt_destroy(ols);
+				stmt_destroy(ors);
+				return stmt_binop(ls, rs, f);
+			}
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		if (ls)
+			stmt_destroy(ls);
+		if (rs)
+			stmt_destroy(rs);
+		ls = ols;
+		rs = ors;
+		/* everything failed, fall back to bind on function name only */
+		if ((f = sql_find_func(s, fname, 2)) != NULL) {
+			node *m = f->func->ops->h;
+			sql_arg *a = m->data;
+
+			ls = check_types(sql, &a->type, ls, type_equal);
+			a = m->next->data;
+			rs = check_types(sql, &a->type, rs, type_equal);
+			if (ls && rs) 
+				return stmt_binop(ls, rs, f);
+		}
+	}
+	if (rs && ls)
+		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
+	cond_stmt_destroy(ls);
+	cond_stmt_destroy(rs);
+	return res;
+}
+
+stmt *
+sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
+{
+	list *sl = create_stmt_list();
+	list *tl = list_create(NULL);
+	sql_subfunc *f = NULL;
+
+	list_append(sl, a1);
+	list_append(tl, tail_type(a1));
+	list_append(sl, a2);
+	list_append(tl, tail_type(a2));
+	list_append(sl, a3);
+	list_append(tl, tail_type(a3));
+	if (a4) {
+		list_append(sl, a4);
+		list_append(tl, tail_type(a4));
+	}
+
+	f = sql_bind_func_(sql->session->schema, fname, tl);
+	list_destroy(tl);
+	if (f)
+		return stmt_Nop(stmt_list(sl), f);
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+}
+
 
 void
 stack_push_table(mvc *sql, char *tname, sql_table *t)
 {
-	if (mvc_debug_on(sql,16384)) {
-		sql_rel *r = rel_basetable(t, tname );
+	sql_rel *r = rel_basetable(t, tname );
 		
-		stack_push_rel_view(sql, tname, r);
-	} else {
-		stmt *s, *ts = stmt_basetable(t, tname);
-		list *l = create_stmt_list();
-		node *n;
-
-		for (n = t->columns.set->h; n; n = n->next) {
-			sql_column *c = n->data;
-			stmt *sc = stmt_bat(c, stmt_dup(ts), 0);
-	
-			list_append(l, sc);
-		}
-		stmt_destroy(ts);
-		s = stmt_list(l);
-		s = stmt_table(s, 1);
-		stack_push_view(sql, tname, s);
-	}
+	stack_push_rel_view(sql, tname, r);
 }
 
 void
 stack_add_inserted( mvc *sql, stmt **inserts, char *name, sql_table *t) 
 {
-	node *n;
-	if (mvc_debug_on(sql,16384)) {
-		sql_rel *r = rel_basetable(t, name );
+	sql_rel *r = rel_basetable(t, name );
 		
-		stack_push_rel_view(sql, name, r);
-	} else {
+	stack_push_rel_view(sql, name, r);
+	(void)inserts;
+/*
 		list *l = create_stmt_list();
 		stmt *s;
+		node *n;
 
 		for (n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
@@ -100,8 +272,75 @@ stack_add_inserted( mvc *sql, stmt **inserts, char *name, sql_table *t)
 		s = stmt_list(l);
 		s = stmt_table(s, 1);
 		stack_push_view(sql, name, s);
-	}
+*/
 }
+
+void
+stack_add_deleted(mvc *sql, stmt *deletes, char *name, sql_table *t)
+{
+	sql_rel *r = rel_basetable(t, name );
+		
+	stack_push_rel_view(sql, name, r);
+	(void)deletes;
+/*
+	node *n;
+	tvar *tv = scope_add_table(scp, NULL, name, NULL); 
+	stmt *ts = stmt_basetable(t, t->base.name);
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *cn = _strdup(c->base.name);
+		stmt *deleted = stmt_bat(c, stmt_dup(ts), RDONLY);
+
+		deleted = stmt_semijoin(deleted, stmt_dup(deletes));
+		deleted = stmt_alias(deleted, _strdup(name), cn);
+		table_add_column(tv, deleted, NULL, c->base.name);
+	}
+*/
+}
+
+void
+stack_add_updated(mvc *sql, stmt **updates, char *on, char *nn, sql_table *t)
+{
+	sql_rel *or = rel_basetable(t, on );
+	sql_rel *nr = rel_basetable(t, nn );
+		
+	stack_push_rel_view(sql, on, or);
+	stack_push_rel_view(sql, nn, nr);
+	(void)updates;
+/*
+	node *n;
+	tvar *tv = scope_add_table(scp, NULL, on, NULL); 
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		if (updates[c->colnr]) {
+			char *cn = _strdup(c->base.name);
+			stmt *h = stmt_dup(updates[c->colnr]->op2.stval);
+			//stmt *updated = stmt_dup(updates[c->colnr]->op1.stval);
+			stmt *updated = stmt_bat(c, stmt_dup(tv->s), RDONLY);
+
+			updated = stmt_semijoin(updated, h);
+			updated = stmt_alias(updated, _strdup(on), cn);
+			table_add_column(tv, updated, NULL, c->base.name);
+		}
+	}
+	tv = scope_add_table(scp, NULL, nn, NULL); 
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		if (updates[c->colnr]) {
+			char *cn = _strdup(c->base.name);
+			stmt *updated = stmt_dup(updates[c->colnr]->op2.stval);
+
+			updated = stmt_alias(updated, _strdup(nn), cn);
+			table_add_column(tv, updated, NULL, c->base.name);
+		}
+	}
+*/
+}
+
+
 
 
 static stmt *
@@ -123,8 +362,9 @@ _subquery(mvc *sql, symbol *sq, exp_kind ek)
 	return s;
 }
 
-static stmt *
-rel_select_into( mvc *sql, symbol *sq, exp_kind ek) 
+/* single value only */
+stmt *
+select_into( mvc *sql, symbol *sq, exp_kind ek) 
 {
 	SelectNode *sn = (SelectNode*)sq;
 	dlist *into = sn->into;
@@ -175,21 +415,54 @@ rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 	return s;
 }
 
-/* single value only */
-stmt *select_into(mvc *sql, symbol *sq, exp_kind ek )
+static stmt *
+find_order(stmt *s)
 {
-	if (mvc_debug_on(sql,16384)) 
-		return rel_select_into(sql, sq, ek);
-	return sql_scope_subquery(sql, NULL, sq, ek);
+	if (s->type == st_limit) 
+		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
+	else
+		assert(s->type == st_order || s->type == st_reorder);
+		
+	while(s->type == st_reorder)
+		s = s->op1.stval;
+	return s;
 }
 
-stmt *flat_subquery(mvc *sql, symbol *sq)
+static stmt *
+sql_reorder(stmt *order, stmt *s) 
+{
+	list *l = create_stmt_list();
+	node *n;
+	/* we need to keep the order by column, to propagate the sort property*/
+	stmt *o = find_order(order);
+	stmt *x = o->op1.stval;
+
+	order = stmt_mark(stmt_reverse(order), 0);
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *sc = n->data;
+		char *cname = column_name(sc);
+		char *tname = table_name(sc);
+
+		if (sc != x)
+			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
+		else	/* first order by column */
+			sc = stmt_mark(stmt_dup(o), 0);
+		sc = stmt_alias(sc, tname, cname );
+		list_append(l, sc);
+		
+	}
+	stmt_destroy(s);
+	stmt_destroy(order);
+	return stmt_list(l);
+}
+
+stmt *
+flat_subquery(mvc *sql, symbol *sq)
 {
 	stmt *s = NULL;
 	exp_kind ek = {type_value, card_relation, TRUE};
 
-	if ((s = _subquery(sql, sq, ek)) == NULL)
-		return sql_flat_subquery(sql, sq);
+	s = _subquery(sql, sq, ek);
 	if (s && s->type == st_ordered) {
 		stmt *n = sql_reorder(stmt_dup(s->op1.stval), stmt_dup(s->op2.stval));
 		stmt_destroy(s);
@@ -198,8 +471,8 @@ stmt *flat_subquery(mvc *sql, symbol *sq)
 	return s;
 }
 
-static stmt *
-_value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
+stmt *
+value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 {
 	int is_last = 0;
 	stmt *s = NULL;
@@ -256,18 +529,78 @@ _value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 	return s;
 }
 
-stmt *value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f, exp_kind knd)
+/* Used for default values,
+	select default
+	       next value 
+	       now 
+ */
+stmt *
+rel_parse_value(mvc *m, char *query, char emode)
 {
-	assert(sql && se);
-	if (mvc_debug_on(sql,16384)) {
-		assert((!scp || list_length(scp->tables) == 0) && !grp && !subset);
-		return _value_exp( sql, se, f, knd);
+	mvc o = *m;
+	stmt *s = NULL;
+	buffer *b;
+	char *n;
+	int len = _strlen(query);
+	exp_kind ek = {type_value, card_value, FALSE};
+
+	m->qc = NULL;
+
+	m->cache = 0;
+	m->emode = emode;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	m->params = NULL;
+	/*m->args = NULL;*/
+	m->argc = 0;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB;
+
+	(void) sqlparse(m);	/* blindly ignore errors */
+	
+	/* get out the single value as we don't want an enclosing projection! */
+	if (m->sym->token == SQL_SELECT) {
+		SelectNode *sn = (SelectNode *)m->sym;
+		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
+			s = value_exp(m, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek);
+		}
 	}
-	return sql_value_exp(sql, scp, se, grp, subset, f, knd);
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
+		char errstr[ERRSIZE];
+
+		strcpy(errstr, m->errstr);
+		*m = o;
+		m->session->status = status;
+		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
+	}
+	return s;
 }
 
-static stmt *
-logical_value_exp_(mvc *sql, symbol *sc, int f, exp_kind ek)
+stmt *
+logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind ek)
 {
 	stmt *s = NULL;
 	int status = sql->session->status;
@@ -323,46 +656,8 @@ logical_value_exp_(mvc *sql, symbol *sc, int f, exp_kind ek)
 	return s;
 }
 
-stmt *logical_value_exp(mvc *sql, symbol *sc, group *grp, stmt *subset, int f, exp_kind knd)
-{
-	assert(!grp && !subset);
-	if (mvc_debug_on(sql,16384)) {
-		return logical_value_exp_(sql, sc, f, knd);
-	} else {
-		return sql_logical_exp(sql, NULL, sc, grp, subset, f, knd);
-	}
-}
-
 stmt *
-sql_update_logical_exp(mvc *sql, scope *scp, symbol *sc, tvar *tv)
-{
-	exp_kind ek = {type_value, card_column, TRUE};
-	stmt *s = sql_logical_exp(sql, scp, sc, NULL, NULL, sql_where, ek);
-
-	if (s && s->type == st_filter) { /* filter on table ? */
-		ptable_statements(scp->ptable) = stmt_set(s);
-		s = stmt_dup(scope_first_column(scp)->s);
-	}
-	if (s && s->type != st_set && s->type != st_sets) {
-		s = stmt_set(s);
-	}
-	if (s) {
-		/* check if the table is used in the query */
-		stmt *tmp = complex_find_subset(s, tv->s);
-
-		if (!tmp) { /* not used do a select all */
-			cvar *cv = tv->columns->h->data;
-
-			tmp = stmt_dup(cv->s);
-			s = sql_and(sql, scp, s, tmp, sql_where);
-		}
-		s = stmt2pivot(scp,s);
-	}
-	return s;
-}
-
-static stmt *
-rel_update_logical_exp(mvc *sql, symbol *sc, sql_table *t)
+update_logical_exp(mvc *sql, symbol *sc, sql_table *t)
 {
 	stmt *s = NULL;
 	int status = sql->session->status;
@@ -399,19 +694,8 @@ rel_update_logical_exp(mvc *sql, symbol *sc, sql_table *t)
 	return s;
 }
 
-stmt *
-update_logical_exp(mvc *sql, scope *scp, symbol *sc, tvar *tv, sql_table *t)
-{
-	if (mvc_debug_on(sql,16384)) {
-		return rel_update_logical_exp(sql, sc, t);
-	} else {
-		return sql_update_logical_exp(sql, scp, sc, tv);
-	}
-}
-
-
 stmt **
-rel_update_exp(mvc *sql, symbol *sc, dlist *assignmentlist, sql_table *t, stmt **rows_affected)
+update_exp(mvc *sql, symbol *sc, dlist *assignmentlist, sql_table *t, stmt **rows_affected)
 {
 	int len;
 	stmt *s = NULL, **updates, *tid;
@@ -513,94 +797,3 @@ rel_update_exp(mvc *sql, symbol *sc, dlist *assignmentlist, sql_table *t, stmt *
 	stmt_destroy(s);
 	return updates;
 }
-
-stmt **
-sql_update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlist, sql_table *t, tvar *tv, stmt **rows_affected)
-{
-	int i, len;
-	stmt *s = NULL;
-	stmt **updates;
-	dnode *n;
-	list *l;
-
-	if (sc) {
-		s = sql_update_logical_exp(sql, scp, sc, tv );
-		if (!s) 
-			return NULL;
-	} else {	/* update all */
-		cvar *c = tv->columns->h->data;
-
-		s = stmt2pivot(scp, stmt_dup(c->s));
-	}
-	l = create_stmt_list();
-
-	updates = table_update_array(t, &len);
-
-	for (n = assignmentlist->h, i = 0; n; n = n->next, i++) {
-		symbol *a = NULL;
-		stmt *v = NULL;
-		dlist *assignment = n->data.sym->data.lval;
-		char *cname = assignment->h->data.sval;
-		sql_column *c = mvc_bind_column(sql, t, cname);
-
-		if (!c) {
-			stmt_destroy(s);
-			list_destroy(l);
-			cleanup_stmts(updates, len);
-			return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", tv->tname, assignment->h->data.sval);
-		}
-		a = assignment->h->next->data.sym;
-		if (a) {
-			exp_kind ek = {type_value, card_column, FALSE};
-			v = value_exp(sql, scp, a, NULL, s, sql_sel, ek);
-		} else
-			v = stmt_atom(atom_general(&c->type, NULL, 0));
-
-		if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
-			stmt_destroy(s);
-			list_destroy(l);
-			cleanup_stmts(updates, len);
-			return NULL;
-		}
-
-		if (v->nrcols <= 0) {
-			v = stmt_const(stmt_reverse(s ? first_subset(s) : stmt_bat(c, stmt_dup(tv->s), RDONLY)), v);
-		} else {
-			if (v->type == st_list && list_length(v->op1.lval) == 2) { /* sub query with outer refs */
-				node *o = v->op1.lval->h;
-				stmt *oref = stmt_dup(o->next->data);
-				stmt *sqa = stmt_dup(o->data);
-				stmt *cmp, *h;
-
-				cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
-				/* need to fix the cmp head */
-				h = stmt_dup(cmp->h->t);
-				stmt_destroy(cmp->h);
-				cmp->h = h;
-				stmt_destroy(v);
-				v = cmp;
-			}
-			/* s is a table result ie new oid, original oid 
-			 * v is a result based on subset s, new oid, val
-			 * So a join is needed to get original oid, val
-			 */
-			v = stmt_join(stmt_reverse(first_subset(s)), v, cmp_equal);
-		}
-		updates[c->colnr] = stmt_update_col(c, v);
-	}
-	*rows_affected = stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1));
-	stmt_destroy(s);
-	return updates;
-}
-
-stmt **
-update_exp(mvc *sql, scope *scp, symbol *sc, dlist *assignmentlist, sql_table *t, tvar *tv, stmt **rows_affected)
-{
-	if (mvc_debug_on(sql,16384)) {
-		return rel_update_exp(sql, sc, assignmentlist, t, rows_affected);
-	} else {
-		return sql_update_exp(sql, scp, sc, assignmentlist, t, tv, rows_affected);
-	}
-}
-
-

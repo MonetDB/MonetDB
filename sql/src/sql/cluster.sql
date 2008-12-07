@@ -21,4 +21,6 @@
 create procedure cluster(sys string, tab string)
 	external name sql.cluster;
 
+create procedure cluster2(sys string, tab string)
+	external name sql.cluster2;
 

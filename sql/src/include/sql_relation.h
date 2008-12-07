@@ -84,6 +84,7 @@ typedef enum operator_type {
 	op_except,
 	op_groupby,	/* currently includes the projection (aggr) */
 	op_topn
+	/* TODO op_modify (ie insert, update, delete) */
 } operator_type;
 
 #define is_column(et) \
@@ -112,6 +113,8 @@ typedef enum operator_type {
 	(op == op_groupby)
 #define is_sort(rel) \
 	((rel->op == op_project && rel->r) || rel->op == op_topn)
+#define is_topn(op) \
+	(op == op_topn)
 
 /* NO NIL semantics of aggr operations */
 #define has_no_nil(e) \

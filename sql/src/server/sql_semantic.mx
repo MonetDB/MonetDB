@@ -28,7 +28,6 @@
 #include <sql_list.h>
 #include "sql_symbol.h"
 #include "sql_parser.h"
-#include "sql_scope.h"
 
 /* value vs predicate (boolean) */
 #define type_value	0
@@ -51,13 +50,13 @@ typedef struct exp_kind_t {
 #define sql_from 0	/* nothing */
 #define sql_where 1	/* relate to any column from the from */
 #define sql_having 2	/* special flag which is used within the having fase */
-#define sql_sel   3	/* relate to the pivots (subquery) */
+#define sql_sel   3	
 
 
 #define create_string_list() list_create((fdestroy)&GDKfree)
 
-extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
-extern stmt *output_semantic(mvc *sql, scope *scp, symbol *s);
+extern stmt *semantic(mvc *sql, symbol *sym);
+extern stmt *output_semantic(mvc *sql, symbol *s);
 
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
@@ -66,10 +65,6 @@ extern char *qname_table(dlist *qname);
 extern char *qname_catalog(dlist *qname);
 #define qname_module(qname) qname_schema(qname)
 #define qname_fname(qname) qname_table(qname)
-
-extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
-extern tvar *scope_add_temp_table(scope *scp, sql_table *t, stmt *temp_table, char *tname);
-extern tvar *scope_add_temp_view(scope *scp, stmt *temp_table, char *tname);
 
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 
@@ -85,9 +80,7 @@ extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
 extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query, char mode);
-
-extern stmt *first_subset(stmt *subset);
+extern stmt *sql_parse(mvc *m, char *query, char mode);
 
 /* literals in the parser are kept outside of the abstract syntax tree
    in the arg array, this to allow for more reuse of cached queries */
@@ -124,7 +117,6 @@ extern char * toUpperCopy(char *dest, const char *src);
 #include "sql_trans.h"
 #include "sql_schema.h"
 #include "sql_updates.h"
-#include "sql_select.h"
 #include "sql_env.h"
 #include "sql_sequence.h"
 #include "sql_privileges.h"
@@ -306,7 +298,7 @@ qname_catalog(dlist *qname)
 }
 
 stmt *
-scope_sqlparse(mvc *m, scope *scp, char *query, char mode)
+sql_parse(mvc *m, char *query, char mode)
 {
 	mvc *o = NULL;
 	stmt *sq = NULL;
@@ -358,7 +350,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query, char mode)
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
 				"internal query: %s", query);
 	} else {
-		sq = semantic(m, scp, m->sym);
+		sq = semantic(m, m->sym);
 	}
 
 	GDKfree(query);
@@ -394,102 +386,6 @@ scope_sqlparse(mvc *m, scope *scp, char *query, char mode)
 	_DELETE(o);
 	m->last = NULL;
 	return sq;
-}
-
-tvar *
-scope_add_temp_table(scope *scp, sql_table *t, stmt *temp_table, char *tname)
-{
-	node *n;
-	tvar *tv = scope_add_table(scp, stmt_dup(temp_table), tname, NULL);
-
-	assert(t->persistence == SQL_DECLARED_TABLE);
-	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		stmt *sc = stmt_bat(c, stmt_dup(temp_table), RDONLY);
-
-		table_add_column(tv, sc, NULL, c->base.name);
-	}
-
-	//node *m, *n;
-	//assert(temp_table->type == st_list);
-
-	/* foreach column add column name */
-/*
-	for (m = t->columns.set->h, n = temp_table->op1.lval->h; m && n; 
-			m = m->next, n = n->next) {
-		sql_column *c = m->data;
-		char *cname = _strdup(c->base.name);
-		stmt *sc = stmt_dup(n->data);
-
-		sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
-		sc = stmt_column(sc, stmt_dup(temp_table), NULL);
-		table_add_column(tv, sc, NULL, cname);
-	}
-*/
-	return tv;
-}
-
-tvar *
-scope_add_temp_view(scope *scp, stmt *temp_table, char *tname)
-{
-	node *n;
-	stmt *nme = stmt_atom_string(_strdup(tname));
-	tvar *tv = scope_add_table(scp, nme, tname, NULL);
-
-	assert(temp_table->type == st_list);
-
-	/* foreach column add column name */
-	for (n = temp_table->op1.lval->h; n; n = n->next) {
-		stmt *sc = stmt_dup(n->data);
-		char *cname = column_name(sc);
-
-		sc = stmt_alias(sc, _strdup(tname), cname);
-		sc = stmt_column(sc, stmt_dup(nme), NULL);
-		table_add_column(tv, sc, NULL, cname);
-	}
-	return tv;
-}
-
-tvar *
-scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access)
-{
-	node *n, *m;
-	tvar *tv = NULL;
-
-	if (isView(t)) {
-
-		stmt *sq = scope_sqlparse(sql, NULL, t->query, m_instantiate);
-
-		if (!sq)
-			return NULL;
-		tv = scope_add_table(scp, sq, tname, NULL);
-		for (n = t->columns.set->h, m = sq->op1.lval->h; n && m; n = n->next, m = m->next) {
-			sql_column *c = n->data;
-			stmt *sc = stmt_dup(m->data);
-
-			sc = stmt_alias(sc, _strdup(tname), _strdup(c->base.name));
-			sc = stmt_column(sc, stmt_dup(sq), t);
-			table_add_column(tv, sc, NULL, c->base.name);
-		}
-	} else if (isGenerated(t)) {
-		/* just a complex type, ie cannot be used directly as table */
-		(void) sql_error(
-			sql, 07,
-			"Generated Tables cannot be used directly"
-		);
-		return NULL;
-	} else {
-		stmt *ts;
-
-		tv = scope_add_table(scp, ts = stmt_basetable(t, tname), tname, t);
-		for (n = t->columns.set->h; n; n = n->next) {
-			sql_column *c = n->data;
-			stmt *sc = stmt_bat(c, stmt_dup(ts), access);
-
-			table_add_column(tv, sc, NULL, c->base.name);
-		}
-	}
-	return tv;
 }
 
 static lng
@@ -940,19 +836,6 @@ convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing, check_type tpe)
 	return -1;
 }
 
-stmt *
-first_subset(stmt *subset)
-{
-	node *n;
-
-	assert(subset->type == st_ptable);
-
-	n = ptable_pivots(subset)->h;
-	if (n)
-		return stmt_dup(n->data);
-	return NULL;
-}
-
 char * toUpperCopy(char *dest, const char *src) 
 {
 	int i, len;
@@ -1090,7 +973,7 @@ char *symbol2string(mvc *sql, symbol *se)
 
 
 stmt *
-semantic(mvc *sql, scope *scp, symbol *s)
+semantic(mvc *sql, symbol *s)
 {
 	stmt *res = NULL;
 	if (!s)
@@ -1132,7 +1015,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_CONNECT:
 	case SQL_DISCONNECT:
 	{
-		res = schemas(sql, scp, s);
+		res = schemas(sql, s);
 		break;
 	}
 	case SQL_CREATE_SEQ:
@@ -1148,17 +1031,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 	case SQL_UPDATE:
 	case SQL_DELETE:
 	{
-		res = updates(sql, scp, s);
-		break;
-	}
-	case SQL_SELECT:
-	case SQL_JOIN:
-	case SQL_CROSS:
-	case SQL_UNION:
-	case SQL_EXCEPT:
-	case SQL_INTERSECT:
-	{
-		res = selects(sql, scp, s);
+		res = updates(sql, s);
 		break;
 	}
 	case SQL_CREATE_FUNC:
@@ -1179,6 +1052,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 		symbol *select = d->next->data.sym;
 		stmt *st;
 
+		assert(0);
 		stack_push_frame(sql, "WITH");
 		/* first handle all with's (ie inlined views) */
 		for (d = d->data.lval->h; d; d = d->next) {
@@ -1189,14 +1063,14 @@ semantic(mvc *sql, scope *scp, symbol *s)
 			if (frame_find_var(sql, name)) {
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
 			}
-			st = semantic(sql, scp, sym);
+			st = semantic(sql, sym);
 			if (!st) { 
 				stack_pop_frame(sql);
 				return NULL;
 			}
 			stack_push_view(sql, name, st);
 		}
-		res = semantic(sql, scp, select);
+		res = semantic(sql, select);
 		stack_pop_frame(sql);
 		break;
 	}
@@ -1209,7 +1083,7 @@ semantic(mvc *sql, scope *scp, symbol *s)
 
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
-			stmt *st = semantic(sql, scp, sym);
+			stmt *st = semantic(sql, sym);
 
 			if (!st) {
 				list_destroy(l);
@@ -1228,12 +1102,12 @@ semantic(mvc *sql, scope *scp, symbol *s)
 }
 
 stmt *
-output_semantic(mvc *sql, scope *scp, symbol *s)
+output_semantic(mvc *sql, symbol *s)
 {
-	stmt *ret = semantic(sql, scp, s);
+	stmt *ret = semantic(sql, s);
 	if (ret) {
 		if (sql->type == Q_TABLE) {
-			if (!scp && ret)
+			if (ret)
 				ret = stmt_output(ret);
 		}
 	}

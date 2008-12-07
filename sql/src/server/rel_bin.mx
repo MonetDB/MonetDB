@@ -383,6 +383,25 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				if (r2) stmt_destroy(r2);
 				return NULL;
 			}
+			if (l->nrcols == 0) {
+				stmt *lstmt;
+				sql_subtype *s = sql_bind_localtype("str");
+				sql_subfunc *like = sql_bind_func3(sql->session->schema, "like", s, s, s);
+				list *ops = create_stmt_list();
+
+				assert(s && like);
+				
+				list_append(ops, l);
+				list_append(ops, r);
+				list_append(ops, r2);
+				lstmt = stmt_Nop(stmt_list(ops), like);
+				if (e->flag == cmp_notlike) {
+					sql_subtype *bt = sql_bind_localtype("bit");
+					sql_subfunc *not = sql_bind_func(sql->session->schema, "not", bt, NULL);
+					lstmt = stmt_unop(lstmt, not);
+				}
+				return lstmt;
+			}
 			return stmt_likeselect(l, r, r2, (comp_type)e->flag);
 		}
 		if (left && right && re->card > CARD_ATOM && !is_select) {
@@ -999,10 +1018,33 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	stmt_destroy(s);
+	sub = stmt_list(stmts);
+
+	/* TODO put in sep function !!!, and add to all is_project(op) */
+	/* except can be a projection too */
+	if (rel->exps) {
+		node *en;
+		list *l = create_stmt_list();
+
+		for( en = rel->exps->h; en; en = en->next ) {
+			sql_exp *exp = en->data;
+			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				cond_stmt_destroy(sub);
+				list_destroy(l);
+				return NULL;
+			}
+			s = stmt_rename(rel, exp, s);
+			list_append(l, s);
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(l);
+	}
 
 	stmt_destroy(left);
 	stmt_destroy(right);
-	sub = stmt_list(stmts);
 	if (need_distinct(rel))
 		sub = rel2bin_distinct(sub);
 	return sub;
@@ -1104,10 +1146,33 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		list_append(stmts, c1);
 	}
 	stmt_destroy(s);
+	sub = stmt_list(stmts);
+
+	/* TODO put in sep function !!!, and add to all is_project(op) */
+	/* intersection can be a projection too */
+	if (rel->exps) {
+		node *en;
+		list *l = create_stmt_list();
+
+		for( en = rel->exps->h; en; en = en->next ) {
+			sql_exp *exp = en->data;
+			stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				cond_stmt_destroy(sub);
+				list_destroy(l);
+				return NULL;
+			}
+			s = stmt_rename(rel, exp, s);
+			list_append(l, s);
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(l);
+	}
 
 	stmt_destroy(left);
 	stmt_destroy(right);
-	sub = stmt_list(stmts);
 	if (need_distinct(rel))
 		sub = rel2bin_distinct(sub);
 	return sub;
@@ -1271,7 +1336,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		if (s->nrcols == 0){ 
 			if (!predicate) 
 				predicate = rel2bin_predicate();
-			predicate = stmt_uselect(predicate, s, cmp_equal);
+			predicate = stmt_select(predicate, s, cmp_equal);
 		} else {
 			/*
 			if (sel) 

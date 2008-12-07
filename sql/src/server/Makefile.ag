@@ -44,14 +44,11 @@ lib_sqlserver = {
 		sql_atom.mx \
 		sql_datetime.mx \
 		sql_decimal.mx \
-		sql_scope.mx \
 		sql_statement.mx \
 		sql_trans.mx \
 		sql_schema.mx \
 		sql_updates.mx \
-		sql_select.mx \
 		sql_semantic.mx \
-		sql_optimize.mx \ 
 		sql_rel2bin.mx \
 		bin_optimizer.mx \
 		sql_qc.mx \
@@ -63,7 +60,6 @@ lib_sqlserver = {
 		sql_privileges.mx \  
 		sql_sequence.mx \  
 		sql_psm.mx \  
-		sql_xml.mx \
 		rel_semantic.mx \
 		rel_select.mx \
 		rel_subquery.mx \

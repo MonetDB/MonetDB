@@ -26,11 +26,10 @@
 #include <sql_list.h>
 #include "sql_symbol.h"
 #include "sql_statement.h"
-#include "sql_scope.h"
 
 extern stmt *psm(mvc *sql, symbol *sym);
 
-extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *blk, char *opt_name, int is_func);
+extern stmt * sequential_block (mvc *sql, sql_subtype *res, dlist *blk, char *opt_name, int is_func);
 
 
 #endif /* _SQL_PSM_H_ */
@@ -38,7 +37,6 @@ extern stmt * sequential_block (mvc *sql, scope *scp, sql_subtype *res, dlist *b
 #include "sql_config.h"
 #include "sql_psm.h"
 #include "sql_schema.h"
-#include "sql_select.h"
 #include "sql_updates.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
@@ -53,7 +51,7 @@ psm_call(mvc * sql, symbol *se)
 
 	stmt *res = NULL;
 	exp_kind ek = {type_value, card_none, FALSE};
-	res = value_exp(sql, NULL, se, NULL, NULL, sql_sel, ek);
+	res = value_exp(sql, se, sql_sel, ek);
 	return res;
 }
 
@@ -85,7 +83,7 @@ psm_set(mvc *sql, dnode *n)
 		tpe = tail_type(var);
 	}
 
-	r = value_exp(sql, NULL, val, NULL, NULL, sql_sel, ek);
+	r = value_exp(sql, val, sql_sel, ek);
 	if (!r)
 		return NULL;
 
@@ -147,6 +145,7 @@ find_basetable(stmt *s)
 static stmt *
 psm_declare_table(mvc *sql, dnode *n)
 {
+	sql_rel *rel;
 	dlist *qname = n->next->data.lval;
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -168,12 +167,8 @@ psm_declare_table(mvc *sql, dnode *n)
 	ctype.comp_type = find_basetable(ret); 
 
 	r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
-	if (mvc_debug_on(sql,16384)) {
-		sql_rel *rel = rel_basetable(ctype.comp_type, _strdup(name));
-		stack_push_rel_var(sql, name, rel, &ctype);
-	} else {
-		stack_push_var(sql, name, r, &ctype);
-	}
+	rel = rel_basetable(ctype.comp_type, _strdup(name));
+	stack_push_rel_var(sql, name, rel, &ctype);
 	stmt_destroy(ret);
 	return r;
 }
@@ -196,9 +191,9 @@ psm_while_do( mvc *sql, sql_subtype *res, dnode *w, int is_func )
 		dnode *n = w;
 		exp_kind ek = {type_value, card_value, FALSE};
 
-		cond = logical_value_exp(sql, n->data.sym, NULL, NULL, sql_sel, ek); 
+		cond = logical_value_exp(sql, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		whilestmts = sequential_block(sql, NULL, res, n->data.lval, n->next->data.sval, is_func);
+		whilestmts = sequential_block(sql, res, n->data.lval, n->next->data.sval, is_func);
 
 		if (sql->session->status || !cond || !whilestmts) {
 			cond_stmt_destroy(cond);
@@ -226,9 +221,9 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		dnode *n = elseif;
 		exp_kind ek = {type_value, card_value, FALSE };
 
-		cond = logical_value_exp(sql, n->data.sym, NULL, NULL, sql_sel, ek); 
+		cond = logical_value_exp(sql, n->data.sym, sql_sel, ek); 
 		n = n->next;
-		ifstmts = sequential_block(sql, NULL, res, n->data.lval, NULL, is_func);
+		ifstmts = sequential_block(sql, res, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
 
@@ -244,7 +239,7 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 
 		if (e==NULL || (e->token != SQL_ELSE))
 			return NULL;
-		return sequential_block( sql, NULL, res, e->data.lval, NULL, is_func);
+		return sequential_block( sql, res, e->data.lval, NULL, is_func);
 	}
 }
 
@@ -276,13 +271,13 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		symbol *case_value = n->data.sym;
 		dlist *when_statements = n->next->data.lval;
 		dlist *else_statements = n->next->next->data.lval;
-		stmt *else_stmt = NULL, *v = value_exp(sql, NULL, case_value, NULL, NULL, sql_sel, ek);
+		stmt *else_stmt = NULL, *v = value_exp(sql, case_value, sql_sel, ek);
 		stmt *cur_if = NULL, *top = NULL;
 
 		if (!v)
 			return NULL;
 		if (else_statements) {
-			else_stmt = sequential_block( sql, NULL, res, else_statements, NULL, is_func);
+			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
 			if (!else_stmt) {
 				stmt_destroy(v);
 				return NULL;
@@ -291,13 +286,13 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		n = when_statements->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond=0, *when_value = value_exp(sql, NULL, m->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *cond=0, *when_value = value_exp(sql, m->data.sym, sql_sel, ek);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
 			if (!when_value || 
-			   (cond = sql_compare(sql, NULL, stmt_dup(v), when_value, "=", sql_sel, ek)) == NULL || 
-			   (if_stmts = sequential_block( sql, NULL, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (cond = sql_binop_(sql, NULL /* default schema */, "=", stmt_dup(v), when_value)) == NULL || 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
 				stmt_destroy(v);
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
@@ -322,19 +317,19 @@ psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		stmt *else_stmt = NULL, *cur_if = NULL, *top = NULL;
 
 		if (else_statements) {
-			else_stmt = sequential_block( sql, NULL, res, else_statements, NULL, is_func);
+			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
 			if (!else_stmt) 
 				return NULL;
 		}
 		n = whenlist->h;
 		while(n) {
 			dnode *m = n->data.sym->data.lval->h;
-			stmt *cond = logical_value_exp(sql, m->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *cond = logical_value_exp(sql, m->data.sym, sql_sel, ek);
 			stmt *if_stmts = NULL;
 			stmt *case_stmt = NULL;
 
 			if (!cond || 
-			   (if_stmts = sequential_block( sql, NULL, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
 				cond_stmt_destroy(else_stmt);
 				cond_stmt_destroy(cond);
 				return NULL;
@@ -363,7 +358,7 @@ psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 
 	if (restype->comp_type)
 		ek.card = card_relation;
-	res = value_exp(sql, NULL, return_sym, NULL, NULL, sql_sel, ek);
+	res = value_exp(sql, return_sym, sql_sel, ek);
 	if (!res || (res = check_types(sql, restype, res, type_equal)) == NULL)
 		return NULL;
 	return stmt_return(res, stack_nr_of_declared_tables(sql));
@@ -386,7 +381,7 @@ has_return(stmt *s )
 }
 
 stmt *
-sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *opt_label, int is_func) 
+sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, int is_func) 
 {
 	list *l=0;
 	dnode *n;
@@ -447,7 +442,7 @@ sequential_block (mvc *sql, scope *scp, sql_subtype *restype, dlist *blk, char *
 		case SQL_INSERT:
 		case SQL_UPDATE:
 		case SQL_DELETE:
-			res = updates(sql, scp, s);
+			res = updates(sql, s);
 			break;
 		default:
 			res = sql_error(sql, 01, 
@@ -606,7 +601,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	
 				if (create) /* for subtable we only need direct dependencies */
 					sql->emode = m_deps;
-				b = sequential_block(sql, NULL, restype, body, NULL, is_func);
+				b = sequential_block(sql, restype, body, NULL, is_func);
 				sql->emode = emode;
 				if (!b) {
 					sql_destroy_params(sql);

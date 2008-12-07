@@ -44,6 +44,7 @@ extern comp_type range2compare( int r );
 #include "sql_symbol.h"
 #include "rel_semantic.h"
 #include "rel_select.h"
+#include "rel_exp.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -225,7 +226,13 @@ rel_semantic(mvc *sql, symbol *s)
 				stack_pop_frame(sql);
 				return NULL;
 			}
-			rel_setname(rel, name);
+			assert(is_project(rel->op));
+			if (is_project(rel->op) && rel->exps) {
+				node *ne = rel->exps->h;
+
+				for (; ne; ne = ne->next) 
+					exp_setname( ne->data, name, NULL );
+			}
 			stack_push_rel_view(sql, name, rel);
 		}
 		rel = rel_semantic(sql, select);

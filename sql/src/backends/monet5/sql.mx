@@ -682,6 +682,10 @@ pattern cluster(sch:str, tbl:str)
 address SQLcluster
 comment "Cluster the columns of a table on the (first) primary key";
 
+pattern cluster2(sch:str, tbl:str)
+address SQLcluster2
+comment "Cluster the columns of a table on the (first) primary key";
+
 command prelude()
 address SQLprelude;
 
@@ -723,12 +727,10 @@ include sql_bpm;
 #include <blob.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
-#include "sql_optimize.h"
 #include "sql_rel2bin.h"
 #include <bin_optimizer.h>
 #include "sql_decimal.h"
 #include "sql_string.h"
-#include "sql_scope.h"
 #include "sql_qc.h"
 #include "sql_env.h"
 
@@ -1016,38 +1018,34 @@ stmt *
 sql_symbol2stmt(mvc *c, symbol *sym)
 {
 	stmt *s = NULL;
+	int status = c->session->status;
+	sql_rel *r = rel_semantic(c, sym);
 
-	if (mvc_debug_on(c,16384)) {
-		int status = c->session->status;
-		sql_rel *r = rel_semantic(c, sym);
-		if (!r) {
-			if (c->errstr[0]) {
-				return NULL;
-			} else {
-				c->session->status = status;
-				printf("# falling back to direct mode \n");
-				s = output_semantic(c, NULL, sym);
-			}
+	if (!r) {
+		if (c->errstr[0]) {
+			return NULL;
 		} else {
-			r = rel_optimizer(c, r);
-			if (c->emode == m_plan) {
-				c->emode = m_inplace;
-				rel_print(c, r, 0);
-			}
-			s = output_rel_bin(c, r);
-			if (s) {
-				stmt *opt;
-
-				/* only needed for delta tables */
-				opt = rel2bin(c, s); 	
-				stmt_destroy(s);
-				s = bin_optimizer(c, opt);
-				stmt_destroy(opt);
-				return s;
-			}
+			c->session->status = status;
+			printf("# falling back to direct mode \n");
+			s = output_semantic(c, sym);
 		}
-	}  else {
-		s = output_semantic(c, NULL, sym);
+	} else {
+		r = rel_optimizer(c, r);
+		if (c->emode == m_plan) {
+			c->emode = m_inplace;
+			rel_print(c, r, 0);
+		}
+		s = output_rel_bin(c, r);
+		if (s) {
+			stmt *opt;
+
+			/* only needed for delta tables */
+			opt = rel2bin(c, s); 	
+			stmt_destroy(s);
+			s = bin_optimizer(c, opt);
+			stmt_destroy(opt);
+			return s;
+		}
 	}
 
 	if (s){
@@ -1055,21 +1053,16 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 
 		if (mvc_debug_on(c,128)) 
 			stmt2dot(s, 1, "/tmp/g1.dot");
-		opt = optimize(c, s);
-		stmt_destroy(s);
-		s = opt;
-		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 2, "/tmp/g2.dot");
 		opt = rel2bin(c, s);
 		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 3, "/tmp/g3.dot");
+			stmt2dot(s, 2, "/tmp/g2.dot");
 		opt = bin_optimizer(c, s);
 		stmt_destroy(s);
 		s = opt;
 		if (mvc_debug_on(c,128)) 
-			stmt2dot(s, 4, "/tmp/g4.dot");
+			stmt2dot(s, 3, "/tmp/g3.dot");
 	}
 	return s;
 }
@@ -3716,14 +3709,15 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
-		if ( first){
-			first =0;
+		if (first) {
+			first = 0;
 			b = store_funcs.bind_col(tr, c, 0);
 			msg = CLUSTER_key(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
 				return msg;
 			msg = CLUSTER_map(&mid,&hid);
+			BBPdecref(hid, TRUE);
 			if (msg)
 				return msg;
 			map = BATdescriptor(mid);
@@ -3732,16 +3726,82 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		}
 
 		b = store_funcs.bind_col(tr, c, 0);
-        if ( b== NULL)
-            throw(MAL,"sql.cluster","Can not access descriptor");
-        msg = CLUSTER_apply(b,map);
-        BBPreleaseref(b->batCacheid);
+        	if (b == NULL)
+			throw(MAL,"sql.cluster","Can not access descriptor");
+		msg = CLUSTER_apply(b,map);
+		BBPreleaseref(b->batCacheid);
 		if (msg){
 			BBPreleaseref(map->batCacheid);
 			return msg;
 		}
-    }
-	if ( map)
+	}
+	if (map) {
 		BBPreleaseref(map->batCacheid);
+		BBPdecref(mid, TRUE);
+	}
+	return MAL_SUCCEED;
+}
+
+str 
+SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *sch = (str *) getArgReference(stk,pci,1);
+	str *tbl = (str *) getArgReference(stk,pci,2);
+	sql_trans	*tr;
+	sql_schema	*s;
+	sql_table 	*t;
+	sql_column	*c;
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	int first=1;
+	bat mid, hid, bid;
+	BAT *map= NULL, *b;
+	node *o;
+
+	if (msg)
+		return msg;
+   	s = mvc_bind_schema(m, *sch);
+	t = mvc_bind_table(m, s, *tbl);
+	tr = m->session->tr;
+
+	/* actually build the hash on the multi-column primary key */
+	for (o = t->columns.set->h; o; o = o->next) {
+		sql_delta *d;
+		c = o->data;
+		if (first) {
+			bat psum;
+			unsigned int bits = 10;
+			first = 0;
+			b = store_funcs.bind_col(tr, c, 0);
+			msg = voidbathash(&hid, b);
+			BBPreleaseref(b->batCacheid);
+			if (msg)
+				return msg;
+			msg = CLS_create(&psum, &mid, &hid, &bits);
+			BBPdecref(hid, TRUE);
+			BBPdecref(psum, TRUE);
+			if (msg)
+				return msg;
+		}
+
+		b = store_funcs.bind_col(tr, c, 0);
+        	if (b == NULL)
+			throw(MAL,"sql.cluster","Can not access descriptor");
+		msg = CLS_map(&bid,&mid,&b->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		if (msg){
+			BBPreleaseref(bid);
+			return msg;
+		}
+		BBPdecref(b->batCacheid, TRUE);
+		d = c->data;
+		d->bid = bid;
+	}
+	/* bat was cleared */
+	t->cleared = 1;
+	if (map) {
+		BBPreleaseref(map->batCacheid);
+		BBPdecref(mid, TRUE);
+	}
 	return MAL_SUCCEED;
 }

@@ -87,7 +87,6 @@ extern int qc_size(qc *cache);
 #include "sql_config.h"
 
 #include "sql_qc.h"
-#include "sql_scope.h"
 #include "sql_atom.h"
 
 qc *

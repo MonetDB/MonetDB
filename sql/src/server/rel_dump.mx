@@ -287,7 +287,7 @@ rel_print_(mvc *sql, sql_rel *rel, int depth)
 			rel_print_(sql, rel->r, depth+1);
 		print_indent(sql, depth);
 		printf(")");
-		exps_print(sql, rel->exps, depth, 0, 0);
+		exps_print(sql, rel->exps, depth, 1, 0);
 		if (rel->name)
 			printf(" as %s", rel->name);
 		break;

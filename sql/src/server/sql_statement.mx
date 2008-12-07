@@ -76,7 +76,6 @@ typedef enum stmt_type {
 	st_affected_rows,
 
 	st_atom,
-	st_filter,
 	st_select,
 	st_select2,
 	st_uselect,
@@ -109,19 +108,12 @@ typedef enum stmt_type {
 	st_derive,
 	st_unique,
 	st_convert,
-	st_op,
 	st_unop,
 	st_binop,
 	st_Nop,
 	st_aggr,
 
 	st_alias,
-
-	st_set,
-	st_sets,
-
-	st_ptable,		/* (R(tables) */
-	st_pivot,		/* binary relation between R and input table */
 
 	st_connection,		/*To handle support sql connections*/
 
@@ -202,16 +194,11 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
 #define basetable_table(s) s->op1.tval
 
-#define ptable_pivots(s)		((s)->op1.lval)
-#define ptable_parent(s)		((s)->op2.stval)
-#define ptable_statements(s)	((s)->op3.stval)
-
 extern stmt *stmt_column(stmt *i, stmt *basetable, sql_table *t);	/* relational column */
 extern stmt *stmt_rs_column(stmt *result_set, stmt *v, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_delta_table_bat(sql_column *c, stmt *basetable, int access );
-extern stmt *stmt_tbat(sql_table *t, int access);
 extern stmt *stmt_idxbat(sql_idx * i, int access);
 extern stmt *stmt_delta_table_idxbat(sql_idx * i, int access);
 
@@ -233,7 +220,6 @@ extern stmt *stmt_atom_int(int i);
 extern stmt *stmt_atom_wrd(wrd i);
 extern stmt *stmt_atom_lng(lng l);
 extern stmt *stmt_bool(int b);
-extern stmt *stmt_filter(stmt *sel);
 extern stmt *stmt_select(stmt *op1, stmt *op2, comp_type cmptype);
 extern stmt *stmt_likeselect(stmt *op1, stmt *op2, stmt *op3, comp_type cmptype);
 extern stmt *stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype);
@@ -250,7 +236,6 @@ extern stmt *stmt_semijoin(stmt *op1, stmt *op2);
 
 extern stmt *stmt_relselect_init(void);
 extern void stmt_relselect_fill(stmt *relselect, stmt *select);
-extern stmt *stmt_relselect(list *sels);
 
 extern stmt *stmt_releqjoin_init(void);
 extern void stmt_releqjoin_fill(stmt *releqjoin, stmt *lc, stmt *rc);
@@ -265,12 +250,7 @@ extern stmt *stmt_diff(stmt *op1, stmt *op2);
 extern stmt *stmt_union(stmt *op1, stmt *op2);
 extern stmt *stmt_list(list *l);
 extern void stmt_set_nrcols(stmt *s);
-extern stmt *stmt_set(stmt *s1);
-extern stmt *stmt_sets(list *s1);
-extern stmt *stmt_ptable(stmt *p);
-extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 extern stmt *stmt_connection(int *id, char *server, int *port, char *db, char *db_alias, char *user, char *passwd, char *lang);
-
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
@@ -288,7 +268,6 @@ extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
 extern stmt *stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to);
-extern stmt *stmt_op(sql_subfunc *op);
 extern stmt *stmt_unop(stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(stmt *ops, sql_subfunc *op);
@@ -312,9 +291,6 @@ extern sql_subtype *head_type(stmt *st);
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null( stmt *s );
 
-/* return max(s1.nrcols, .. , sn.nrcols where si in l ) */
-extern int stmt_list_nrcols(list *l);
-
 extern char *column_name(stmt *st);
 extern char *table_name(stmt *st);
 extern char *schema_name(stmt *st);
@@ -327,10 +303,8 @@ extern stmt *stmt_dup(stmt *s);
 extern list* stmt_list_dependencies(stmt *s, int depend_type);
 
 extern group *grp_create(stmt *s, group *og, stmt *col);
-extern group *grp_semijoin(group *og, stmt *s);
 extern void grp_destroy(group *g);
 extern group *grp_dup(group *g);
-extern stmt *grp_find_groupby_col(group *g, stmt *s);
 
 extern stmt *stmt_group(stmt *s);
 extern stmt *stmt_derive(stmt *g, stmt *s);
@@ -380,7 +354,6 @@ st_type2string(st_type type)
 
 		ST(atom);
 
-		ST(filter);
 		ST(select);
 		ST(select2);
 		ST(uselect);
@@ -414,7 +387,6 @@ st_type2string(st_type type)
 		ST(derive);
 		ST(unique);
 		ST(convert);
-		ST(op);
 		ST(unop);
 		ST(binop);
 		ST(Nop);
@@ -423,10 +395,6 @@ st_type2string(st_type type)
 		ST(alias);
 		ST(connection);
 
-		ST(set);
-		ST(sets);
-		ST(ptable);
-		ST(pivot);
 		ST(list);
 	
 		ST(while);
@@ -619,26 +587,6 @@ grp_create(stmt *s, group *og, stmt *col)
 	return g;
 }
 
-static stmt *
-stmt_semijoin_tail(stmt *op1, stmt *op2)
-{
-	return stmt_reverse(stmt_semijoin(stmt_reverse(op1), op2));
-}
-
-group *
-grp_semijoin(group *og, stmt *s)
-{
-	group *g = NEW(group);
-
-	sql_ref_init(&g->ref);
-	g->grp = stmt_semijoin_tail(stmt_dup(og->grp), s);
-	g->ext = stmt_semijoin(stmt_dup(og->ext), stmt_dup(s));
-	g->cols = og->cols;
-	og->cols = NULL;
-	grp_destroy(og);
-	return g;
-}
-
 void
 cond_stmt_destroy(stmt *s)
 {
@@ -676,7 +624,6 @@ stmt_destroy(stmt *s)
 		case st_unique:
 		case st_alias:
 		case st_append:
-		case st_pivot:
 		case st_rs_column:
 		case st_sql:
 
@@ -694,18 +641,9 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op3.stval);
 			break;
 
-		case st_set:
-		case st_sets:
 		case st_list:
-
-		case st_ptable:
 			list_destroy(s->op1.lval);
-			if (s->op2.stval)
-				stmt_destroy(s->op2.stval);
-			if (s->op3.stval)
-				stmt_destroy(s->op3.stval);
 			break;
-
 		case st_var:
 			if (s->op1.sval)
 				_DELETE(s->op1.sval);
@@ -764,7 +702,6 @@ stmt_destroy(stmt *s)
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
 			break;
-		case st_op:
 		case st_unop:
 		case st_binop:
 		case st_Nop:
@@ -804,7 +741,6 @@ stmt_destroy(stmt *s)
 		case st_group:
 		case st_group_ext:
 
-		case st_filter:
 		case st_select:
 		case st_select2:
 		case st_uselect:
@@ -883,16 +819,6 @@ list_deps(list *dep_list, list *l, int depend_type, int dir)
 	}
 }
 
-static void 
-list_list_deps(list *dep_list, list *l, int depend_type, int dir)
-{
-	if (l) {
-		node *n;
-		for (n = l->h; n; n = n->next) 
-			list_deps(dep_list, n->data, depend_type, dir);
-	}
-}
-
 #define push(s) stack[top++] = s
 #define pop()	stack[--top]
 static void 
@@ -909,11 +835,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 	while((s=pop()) != NULL) {
 	   if ((dir < 0 && s->optimized < 0) || (dir >=0 && s->optimized >= 0)){
 		switch (s->type) {
-		case st_sets:
-			list_list_deps(dep_list, s->op1.lval, depend_type, dir);
-			break;
-
-		case st_set:
 		case st_list:
 		case st_relselect:
 			list_deps(dep_list, s->op1.lval, depend_type, dir);
@@ -929,11 +850,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 				push(s->op1.stval);
 			if (s->op2.lval)
 				list_deps(dep_list, s->op2.lval, depend_type, dir);
-			break;
-
-		case st_pivot:
-			if (s->op2.stval)
-				push(s->op2.stval);
 			break;
 
 		case st_sql:
@@ -958,13 +874,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_exception:
 			if (s->op1.stval)
 				push(s->op1.stval);
-			if (s->op2.stval)
-				push(s->op2.stval);
-			if (s->op3.stval)
-				push(s->op3.stval);
-			break;
-
-		case st_ptable:
 			if (s->op2.stval)
 				push(s->op2.stval);
 			if (s->op3.stval)
@@ -1028,7 +937,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			if (s->op1.stval)
 				push(s->op1.stval);
 			break;
-		case st_op:
 		case st_unop:
 		case st_binop:
 		case st_Nop:
@@ -1066,7 +974,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_group:
 		case st_group_ext:
 
-		case st_filter:
 		case st_select:
 		case st_select2:
 		case st_uselect:
@@ -1207,6 +1114,19 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 	return s;
 }
 
+static stmt *
+stmt_tbat(sql_table *t, int access)
+{
+	stmt *s = stmt_create(st_dbat);
+
+	assert(access == RD_INS);
+
+	s->nrcols = 0;
+	s->flag = access;
+	s->op1.tval = t;
+	return s;
+}
+
 stmt *
 stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 {
@@ -1226,19 +1146,6 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 		stmt *d = stmt_tbat(c->t, RD_INS);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
-	return s;
-}
-
-stmt *
-stmt_tbat(sql_table *t, int access)
-{
-	stmt *s = stmt_create(st_dbat);
-
-	assert(access == RD_INS);
-
-	s->nrcols = 0;
-	s->flag = access;
-	s->op1.tval = t;
 	return s;
 }
 
@@ -1346,6 +1253,24 @@ push_project(stmt *rows, stmt *val)
 	case st_convert:
 		val->op1.stval = push_project(rows, val->op1.stval);
 		break;
+	case st_Nop:
+		if (val->op4.funcval->func->side_effect) {
+			stmt *l = val->op1.stval;
+			node *n = l->op1.lval->h;
+			if (n) {
+				n->data = stmt_const_(stmt_dup(rows), n->data);
+			} else {  /* no args, ie. change into a st_unop */
+				val->type = st_unop;
+				stmt_destroy(val->op1.stval);
+				val->op1.stval = stmt_const_(stmt_dup(rows), stmt_atom_int(0));
+			}
+		} else {
+			/* push through arguments of Nop */
+			node *n;
+			for(n=val->op1.lval->h; n; n = n->next) 
+				n->data = push_project(rows, n->data);
+		}
+		break;
 	case st_binop:
 		if (val->op4.funcval->func->side_effect) {
 			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
@@ -1359,15 +1284,6 @@ push_project(stmt *rows, stmt *val)
 			val->op1.stval = stmt_const_(stmt_dup(rows), val->op1.stval);
 		} else {
 			val->op1.stval = push_project(rows, val->op1.stval);
-		}
-		break;
-	case st_op:
-		if (val->op4.funcval->func->side_effect) {
-			/* change into a st_unop */
-			val->type = st_unop;
-			val->op1.stval = stmt_const_(stmt_dup(rows), stmt_atom_int(0));
-		} else {
-			val = stmt_const_(stmt_dup(rows), val);
 		}
 		break;
 	default:
@@ -1388,6 +1304,15 @@ has_side_effect(stmt *val)
 	case st_convert:
 		se = has_side_effect(val->op1.stval);
 		break;
+	case st_Nop:
+		se = val->op4.funcval->func->side_effect;
+		if (!se) {
+			stmt *l = val->op1.stval;
+			node *n;
+			for (n=l->op1.lval->h; n; n = n->next) 
+				se += has_side_effect(n->data);
+		}
+		break;
 	case st_binop:
 		se = val->op4.funcval->func->side_effect;
 		if (!se) 
@@ -1398,9 +1323,6 @@ has_side_effect(stmt *val)
 		se = val->op4.funcval->func->side_effect;
 		if (!se) 
 			se = has_side_effect(val->op1.stval);
-		break;
-	case st_op:
-		se = val->op4.funcval->func->side_effect;
 		break;
 	default:
 		return se;
@@ -1569,17 +1491,6 @@ stmt_atom(atom *op1)
 }
 
 stmt *
-stmt_filter(stmt *sel)
-{
-	stmt *s = stmt_create(st_filter);
-
-	s->op1.stval = sel;
-	s->nrcols = 1;
-	s->h = stmt_dup(s->op1.stval->h);
-	return s;
-}
-
-stmt *
 stmt_relselect_init()
 {
 	stmt *s = stmt_create(st_relselect);
@@ -1595,17 +1506,6 @@ stmt_relselect_fill(stmt *rs, stmt *sel)
 	list_append(rs->op1.lval, sel);
 	if (!rs->h)
 		rs->h = stmt_dup(((stmt *) (rs->op1.lval->h->data))->h);
-}
-
-stmt *
-stmt_relselect(list *sels)
-{
-	stmt *s = stmt_create(st_relselect);
-
-	s->op1.lval = sels;
-	s->nrcols = 1;
-	s->h = stmt_dup(((stmt *) (s->op1.lval->h->data))->h);
-	return s;
 }
 
 stmt *
@@ -1975,74 +1875,6 @@ stmt_affected_rows(stmt *l)
 	return s;
 }
 
-
-stmt *
-stmt_set(stmt *s1)
-{
-	stmt *s = stmt_create(st_set);
-
-	s->op1.lval = list_append(list_create((fdestroy) &stmt_destroy), s1);
-	s->nrcols = s1->nrcols;
-	return s;
-}
-
-stmt *
-stmt_sets(list *l1)
-{
-	node *n;
-	int nrcols = 0;
-	stmt *s = stmt_create(st_sets);
-
-	s->op1.lval = l1;
-	for (n = l1->h; n; n = n->next) {
-		list *l = n->data;
-		node *m;
-
-		for (m = l->h; m; m = m->next) {
-			stmt *t = m->data;
-
-			if (t->nrcols > nrcols)
-				nrcols = t->nrcols;
-		}
-	}
-	assert(nrcols <= 2);
-	s->nrcols = nrcols;
-	return s;
-}
-
-/* ptable
-		list of pivots
-		parent
-		statements
- */
-
-stmt *
-stmt_ptable(stmt *ptable)
-{
-	stmt *s = stmt_create(st_ptable);
-
-	s->op1.lval = list_create((fdestroy) NULL);
-	s->op2.stval = ptable;
-	s->nrcols = 2;
-	return s;
-}
-
-stmt *
-stmt_pivot(stmt *base, stmt *ptable)
-{
-	stmt *s = stmt_create(st_pivot);
-
-	assert(ptable->type == st_ptable);
-
-	s->op1.stval = base;
-	s->op2.stval = ptable;
-	s->h = stmt_dup(ptable);	/* the ptable is the new base table */
-	s->t = stmt_dup(base);	/* pivots have oid's in the tail */
-	s->nrcols = 2;
-	list_append(ptable_pivots(ptable), s /* no dup since ptable points to pivot and vs*/);
-	return s;
-}
-
 stmt*
 stmt_connection(int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
 {
@@ -2119,19 +1951,6 @@ stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
 	s->key = v->key;
 	s->nrcols = v->nrcols;
 	s->aggr = v->aggr;
-	return s;
-}
-
-stmt *
-stmt_op(sql_subfunc *op)
-{
-	stmt *s = stmt_create(st_op);
-
-	assert(op);
-
-	s->op4.funcval = op;
-	s->nrcols = 0;		/* function without arguments returns single value */
-	s->key = 1;
 	return s;
 }
 
@@ -2296,7 +2115,6 @@ tail_type(stmt *st)
 			return tail_type(st->op2.lval->h->data);
 
 	case st_diff:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
@@ -2308,7 +2126,6 @@ tail_type(stmt *st)
 	case st_append:
 	case st_alias:
 	case st_column:
-	case st_pivot:
 	case st_gen_group:
 	case st_order:
 		return tail_type(st->op1.stval);
@@ -2338,7 +2155,6 @@ tail_type(stmt *st)
 
 	case st_aggr:
 		return &st->op4.aggrval->res;
-	case st_op:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
@@ -2383,14 +2199,12 @@ head_type(stmt *st)
 	case st_outerjoin:
 	case st_semijoin:
 	case st_mirror:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
 	case st_column:
 	case st_append:
-	case st_pivot:
 	case st_gen_group:
 	case st_group:
 	case st_group_ext:
@@ -2459,21 +2273,6 @@ stmt_has_null( stmt *s )
 	}
 }
 
-int
-stmt_list_nrcols(list *l)
-{
-	int nrcols = 0;
-	node *n;
-
-	for (n = l->h; n; n = n->next) {
-		stmt *s = n->data;
-
-		if (s->nrcols > nrcols)
-			nrcols = s->nrcols;
-	}
-	return nrcols;
-}
-
 static char *
 func_name(char *n1, char *n2)
 {
@@ -2526,7 +2325,6 @@ column_name(stmt *st)
 	case st_append:
 	case st_mark:
 	case st_gen_group:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
@@ -2535,12 +2333,9 @@ column_name(stmt *st)
 	case st_semijoin:
 	case st_diff:
 	case st_unique:
-	case st_pivot:
 	case st_convert:
 		return column_name(st->op1.stval);
 
-	case st_op:
-		return _strdup(st->op4.funcval->func->base.name);
 	case st_unop:
 	case st_binop:
 	case st_Nop:
@@ -2603,7 +2398,6 @@ table_name(stmt *st)
 	case st_append:
 	case st_mark:
 	case st_gen_group:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
@@ -2612,7 +2406,6 @@ table_name(stmt *st)
 	case st_diff:
 	case st_aggr:
 	case st_unique:
-	case st_pivot:
 		return table_name(st->op1.stval);
 
 	case st_basetable:
@@ -2661,7 +2454,6 @@ schema_name(stmt *st)
 	case st_append:
 	case st_mark:
 	case st_gen_group:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
@@ -2670,15 +2462,12 @@ schema_name(stmt *st)
 	case st_semijoin:
 	case st_diff:
 	case st_unique:
-	case st_pivot:
 	case st_convert:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
 	case st_aggr:
 		return schema_name(st->op1.stval);
-	case st_op:
-		return NULL;
 	case st_alias:
 		/* there are no schema aliases, ie look into the base column */
 		return schema_name(st->op1.stval);
@@ -2703,25 +2492,6 @@ schema_name(stmt *st)
 	default:
 		return NULL;
 	}
-}
-
-stmt *
-grp_find_groupby_col(group *g, stmt *s)
-{
-	node *n;
-
-	/* groups built for outer references or implicit groups
-	   can always find columns */
-	if (!g->cols)
-		return s;
-
-	for (n = g->cols->h; n; n = n->next) {
-		stmt *gs = n->data;
-
-		if (gs == s)
-			return s;
-	}
-	return NULL;
 }
 
 stmt *stmt_while(stmt *cond, stmt *whilestmts )
@@ -2765,8 +2535,8 @@ stmt *stmt_assign(char *varname, stmt *val, int level)
 static int 
 stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 {
-	node *n,*m;
-	int j,k;
+	node *n;
+	int j;
 
 	assert(s);
 	if (s->optimized >= l) {
@@ -2802,9 +2572,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 				fprintf(fp," value='%s'", 
 					atom2string(s->op1.aval));
 			break;
-		case st_op: case st_unop: case st_binop: case st_Nop:
-			fprintf(fp," func='%s'", s->op4.funcval->func->base.name);
-			break;
 		default:
 			break;
 		}
@@ -2834,42 +2601,13 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
 			break;
 
-		case st_sets: 
-			if (s->op1.lval)
-			   for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
-			     for (k=1, m=((list*)n->data)->h; m; m=m->next, k++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d.%d\"];\n",
-					stmt_stmt2dot(m->data, l, i, fp), -(s->optimized), j, k);
-			break;
-
-		case st_set: case st_list:
+		case st_list:
 			if (s->op1.lval)
 			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
 				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
 					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
 
 
-			break;
-
-		case st_ptable:
-			/* 
-				do not headlable the pivots as could be unused
-				and therefor allready freed
-
-			if (s->op1.lval)
-			    for (j=1, n=s->op1.lval->h; n; n=n->next, j++)
-				fprintf(fp, "id%d -> id%d [headlabel=\"1.%d\"];\n",
-					stmt_stmt2dot(n->data, l, i, fp), -(s->optimized), j);
-			*/
-			if (s->op2.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"2\"];\n",
-					stmt_stmt2dot(s->op2.stval, l, i, fp), -(s->optimized));
-			if (s->op3.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
-					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			if (s->op4.stval) 
-				fprintf(fp, "id%d -> id%d [headlabel=\"4\"];\n",
-					stmt_stmt2dot(s->op4.stval, l, i, fp), -(s->optimized));
 			break;
 
 		case st_var:
@@ -2914,7 +2652,7 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_column:
 		case st_temp:
 		case st_aggr:
-		case st_op: case st_unop: case st_binop: case st_Nop:
+		case st_unop: case st_binop: case st_Nop:
 		case st_diff: case st_union:
 		case st_join: case st_join2: case st_outerjoin:
 		case st_derive:
@@ -2922,7 +2660,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_alias:
 		case st_append: 
 		case st_exception:
-		case st_pivot:
 	  	case st_rs_column:
 		case st_sql:
 
@@ -2933,7 +2670,6 @@ stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 
 		case st_group: case st_group_ext:
 
-		case st_filter:
 		case st_select: case st_select2:
 		case st_uselect: case st_uselect2:
 		case st_semijoin:
@@ -2982,11 +2718,6 @@ stmt2dot(stmt *s, int i, char *fn)
 		return res;
 	}
 	return -1;
-}
-
-static void dump0(stmt *s, char *name)
-{
-	printf("s%d = %s();\n", -s->nr, name);
 }
 
 static void dump1(stmt *s, char *name, int *nr)
@@ -3055,7 +2786,6 @@ print_stmt(stmt *s, int *nr)
 			printf("s%d = %s\n", -s->nr, a);
 			GDKfree(a);
 			break;
-	case st_filter:
 	case st_column:  s->nr = -print_stmt(s->op1.stval, nr); break;
 	case st_sql: 	 dump1(s, "sql", nr); break;
 				
@@ -3093,7 +2823,6 @@ print_stmt(stmt *s, int *nr)
 	case st_group_ext:	dump1(s, "extent", nr); break;
 	case st_derive:	dump2(s, "derive", nr); break;
 	case st_convert:dump1(s, "convert", nr); break;
-	case st_op:	dump0(s, s->op4.funcval->func->imp); break;
 	case st_unop:	dump1(s, s->op4.funcval->func->imp, nr); break;
 	case st_binop:	dump2(s, s->op4.funcval->func->imp, nr); break;
 	case st_aggr:	
@@ -3126,9 +2855,7 @@ print_stmt(stmt *s, int *nr)
 	case st_alias: 	dump1(s, "alias", nr); break;
 	case st_output: dump1(s, "output", nr); break;
 	case st_table:  dump1(s, "table", nr); break;
-	case st_set:
 	case st_list:
-	case st_sets:
 	case st_relselect:
 		for (n = s->op1.lval->h; n; n = n->next) 
 			(void) print_stmt(n->data, nr);
@@ -3153,15 +2880,6 @@ print_stmt(stmt *s, int *nr)
 				(void) print_stmt(n->data, nr);
 		printf("))\n");
 		break;
-	case st_ptable:
-		if (ptable_parent(s)) 
-			print_stmt(ptable_parent(s), nr);
-		if (ptable_statements(s))
-			printf("s%d = ptable( s%d )\n", -s->nr, 
-				print_stmt(ptable_statements(s), nr));
-		break;
-	case st_pivot:
-		s->nr = -print_stmt(s->op2.stval, nr); break;
 	case st_basetable:	
 		printf("basetable\n"); break;
 	case st_connection:

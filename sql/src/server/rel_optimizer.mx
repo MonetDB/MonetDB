@@ -232,12 +232,13 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_groupby: 
 	case op_topn: 
 	case op_select: 
-		/* propagate relation names */
+		/* propagate relation names 
 		if (!rel->name && rel->l) {
 			sql_rel *l = rel->l;
 			if (l->name)
 				rel->name = _strdup(l->name);
 		}
+*/
 		break;
 	}
 }
@@ -879,10 +880,96 @@ printf("AFTER\n");
 	return rel;
 }
 
+/* exp_rename */
+static sql_exp *
+exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
+{
+	sql_exp *ne = NULL, *l, *r, *r2;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) { 
+			ne = exps_bind_column2(f->exps, e->l, e->r);
+			/* if relation name matches expressions relation name, find column based on column name alone */
+			if (!ne && f->name && strcmp(e->l, f->name) == 0) 
+				ne = exps_bind_column(f->exps, e->r);
+		} else {
+			ne = exps_bind_column(f->exps, e->r);
+		}
+		if (!ne)
+			return exp_dup(e);
+		e = NULL;
+		if (ne->name && ne->r){ 
+			if (ne->l) {
+				e = rel_bind_column2(sql, t, ne->l, ne->r);
+				if (!e && t->name && strcmp(ne->l, t->name) == 0) 
+					e = rel_bind_column(sql, t, ne->r);
+			}
+		}
+		if (!e && ne->r)
+			e = rel_bind_column(sql, t, ne->r);
+		if (!e && exp_is_atom(ne))
+			return exp_dup(ne);
+		return e;
+	case e_cmp: 
+		l = exp_rename(sql, e->l, f, t);
+		r = exp_rename(sql, e->r, f, t);
+		if (e->f) {
+			r2 = exp_rename(sql, e->f, f, t);
+			if (l && r && r2)
+				return exp_compare2( l, r, r2, e->flag);
+		} else if (l && r) {
+			return exp_compare( l, r, e->flag);
+		}
+		assert(0);
+		exp_destroy(l);
+		exp_destroy(r);
+		return NULL;
+	case e_convert:
+		l = exp_rename(sql, e->l, f, t);
+		if (l)
+			return exp_convert( l, exp_fromtype(e), exp_totype(e));
+		exp_destroy(l);
+		assert(0);
+		return NULL;
+	case e_aggr:
+	case e_func: {
+		list *l = e->l, *nl = NULL;
+
+		if (!l) {
+			return exp_dup(e);
+		} else {
+			node *n;
+
+			nl = new_exp_list();
+			for(n=l->h; n; n=n->next) {
+				sql_exp *arg = n->data;
+
+				arg = exp_rename(sql, arg, f, t);
+				if (!arg) {
+					list_destroy(nl);
+					return NULL;
+				}
+				append(nl, arg);
+			}
+		}
+		if (e->type == e_func)
+			return exp_op(nl, sql_dup_func(e->f));
+		else 
+			return exp_aggr(nl, sql_dup_aggr(e->f), e->flag&1, (e->flag>>1), e->card, has_nil(e));
+	}	
+	case e_atom:
+		return exp_dup(e);
+	}
+	assert(0);
+	return NULL;
+}
+
 /* push the expression down, ie translate colum references from relation f into expression of relation t */ 
 static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
+	int flag = e->flag;
 	sql_exp *ne = NULL, *l, *r, *r2;
 
 	switch(e->type) {
@@ -906,6 +993,8 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r);
+		if (e && flag)
+			e->flag = flag;
 		return e;
 	case e_cmp: 
 		l = exp_push_down(sql, e->l, f, t);
@@ -1081,6 +1170,24 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		}
 		if (all) {
 			/* we can now remove the intermediate project */
+			/* push order by expressions */
+			if (rel->r) {
+				list *nr = new_exp_list(), *res = rel->r; 
+				for (n = res->h; n; n = n->next) { 
+					sql_exp *e = n->data, *ne = NULL;
+					sql_rel *prj = r;
+	
+					ne = exp_push_down(sql, e, prj, prj->l);
+					/* can we move it down */
+					if (ne && ne != e) {
+						/* we need to keep the alias */
+						exp_setname(ne, e->rname, e->name);
+						list_append(nr, ne);
+					}
+				}
+				list_destroy(res);
+				rel->r = nr;
+			}
 			rel->l = r->l;
 			r->l = NULL;
 			rel_destroy(r);
@@ -1137,8 +1244,6 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
  * Push joins down, pushes the joins through group by expressions. 
  * When the join is on the group by columns, we can push the joins left
  * under the group by.
- *
- * Here we also try to reduce projections.
  */
 sql_rel *
 rel_push_join_down(int *changes, mvc *sql, sql_rel *rel) 
@@ -1149,56 +1254,10 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	*changes = 0;
 
-	/* push join through project(s) */
-	if (0 && is_join(rel->op)) {
-		sql_rel *l = rel->l;
-		sql_rel *r = rel->r;
-
-		if (is_project(l->op) && !rel_is_ref(l) && !rel_is_ref(r)) {
-			node *n;
-			
-			exps = rel->exps;
-			/* here we need to fix aliases */
-			rel->exps = new_exp_list(); 
-			/* for each exp check if we can rename it */
-			for (n = exps->h; n; n = n->next) { 
-				sql_exp *e = n->data, *ne = NULL, *le, *re;
-				sql_rel *prj = l, *nr, *nl;
-	
-				if (e->type == e_cmp) {
-					ne = exp_push_down(sql, e, prj, prj->l);
-	
-					/* can we move it down */
-					if (ne && ne != e) {
-						(*changes)++;
-						nr = prj->l;
-					} else {
-						nr = rel;
-						exp_destroy(ne);
-						ne = exp_dup(e);
-					}
- 					le = ne->l;
-					re = ne->r;
-					if (re->card >= CARD_AGGR) {
-						nl = rel_push_join(nr, le, re, ne);
-					} else {
-						nl = rel_push_select(nr, le, ne);
-					}
-					if (nl != nr)
-						prj->l = nl;
-				} else {
-					list_append(rel->exps, exp_dup(e));
-				}
-			}
-			list_destroy(exps);
-			return rel;
-		}
-		return rel;
-	}
-	if ((is_join(rel->op) || is_semi(rel->op)) && rel->l) {
+	if (((is_join(rel->op) && rel->exps) || is_semi(rel->op)) && rel->l) {
 		gb = rel->r;
 		exps = rel->exps;
-		if (gb->op == op_groupby && gb->r) { 
+		if (gb->op == op_groupby && gb->r && list_length(gb->r)) { 
 			list *jes = new_exp_list();
 			node *n, *m;
 			list *gbes = gb->r;
@@ -1250,6 +1309,146 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 			}
 			return rel;
 		} 
+	}
+	return rel;
+}
+
+/* Pushing projects up the tree. Done very early in the optimizer.
+ * Makes later steps easier. 
+ */
+sql_rel *
+rel_push_project_up(int *changes, mvc *sql, sql_rel *rel) 
+{
+	/* project/project cleanup is done later */
+	if (is_join(rel->op) || is_select(rel->op)) {
+		node *n;
+		list *exps = NULL, *l_exps, *r_exps;
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		sql_rel *t;
+
+		/* Don't rewrite refs, non projections or constant or 
+		   order by projections  */
+		if (!l || rel_is_ref(l) || 
+		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
+		   (is_select(rel->op) && l->op != op_project) ||
+		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
+		  ((l->op == op_project && (!l->l || l->r)) ||
+		   (is_join(rel->op) && 
+		    r->op == op_project && (!r->l || r->r)))) 
+			return rel;
+
+		if (l->op == op_project && l->l) {
+			/* Go through the list of project expressions.
+			   Check if they can be pushed up, ie are they not
+			   changing or introducing any columns used
+			   by the upper operator. */
+
+			exps = new_exp_list();
+			for (n = l->exps->h; n; n = n->next) { 
+				sql_exp *e = exp_dup(n->data);
+
+				if (is_column(e->type) && exp_is_atom(e)) {
+					list_append(exps, e);
+				} else if (e->type == e_column) {
+					if (e->name && e->name[0] == 'L')
+						return rel;
+					list_append(exps, e);
+				} else {
+					return rel;
+				}
+			}
+		} else {
+			exps = rel_projections(sql, l, rel->name, 1, 1);
+		}
+		/* also handle right hand of join */
+		if (is_join(rel->op) && r->op == op_project && r->l) {
+			/* Here we also check all expressions of r like above
+			   but also we need to check for ambigious names. */ 
+
+			for (n = r->exps->h; n; n = n->next) { 
+				sql_exp *e = exp_dup(n->data);
+
+				if (is_column(e->type) && exp_is_atom(e)) {
+					list_append(exps, e);
+				} else if (e->type == e_column) {
+					if (e->name && e->name[0] == 'L')
+						return rel;
+					list_append(exps, e);
+				} else {
+					return rel;
+				}
+			}
+		} else if (is_join(rel->op)) {
+			list *r_exps = rel_projections(sql, r, rel->name, 1, 1);
+
+			list_merge(exps, r_exps, (fdup)&exp_dup);
+			list_destroy(r_exps);
+		}
+		/* Here we should check for ambigious names ? */
+		if (is_join(rel->op) && r) {
+			t = (l->op == op_project && l->l)?l->l:l;
+			l_exps = rel_projections(sql, t, NULL, 0, 1);
+			t = (r->op == op_project && r->l)?r->l:r;
+			r_exps = rel_projections(sql, t, NULL, 0, 1);
+			for(n = l_exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+	
+				if (exp_is_atom(e))
+					continue;
+				if (e->l)
+					if (exps_bind_column2(r_exps, e->l, e->r) != NULL)
+						return rel;
+				if (exps_bind_column(r_exps, e->r) != NULL)
+					return rel;
+			}
+			list_destroy(l_exps);
+			list_destroy(r_exps);
+		}
+
+		/* rename operator expressions */
+		if (l->op == op_project) {
+			/* rewrite rel from rel->l into rel->l->l */
+			if (rel->exps) {
+				list *nexps = new_exp_list();
+
+				for (n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = exp_dup(n->data);
+	
+					e = exp_rename(sql, e, l, l->l);
+					assert(e);
+					list_append(nexps, e);
+				}
+				list_destroy(rel->exps);
+				rel->exps = nexps;
+			}
+			rel->l = l->l;
+			l->l = NULL;
+			rel_destroy(l);
+		}
+		if (is_join(rel->op) && r->op == op_project) {
+			/* rewrite rel from rel->r into rel->r->l */
+			if (rel->exps) {
+				list *nexps = new_exp_list();
+
+				for (n = rel->exps->h; n; n = n->next) {
+					sql_exp *e = exp_dup(n->data);
+
+					e = exp_rename(sql, e, r, r->l);
+					assert(e);
+					list_append(nexps, e);
+				}
+				list_destroy(rel->exps);
+				rel->exps = nexps;
+			}
+			rel->r = r->l;
+			r->l = NULL;
+			rel_destroy(r);
+		} 
+		/* Done, ie introduce new project */
+		rel = rel_project(rel, exps);
+		*changes = 1;
+		return rel;
 	}
 	return rel;
 }
@@ -1488,6 +1687,9 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 {
 	int changes = 0;
 
+	if (!rel)
+		return rel;
+
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
@@ -1510,8 +1712,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
-		if (rel->l)
-			rel->l = rewrite(sql, rel->l, rewriter);
+		rel->l = rewrite(sql, rel->l, rewriter);
 		break;
 	}
 	if (rel_is_ref(rel))
@@ -1551,7 +1752,11 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	/* TODO common sub relation/expression optimizer */
 
-	/* TODO rewrite op_anti/semi (A,C=join(A,B)) [ A.tid  = C.A.tid ] */
+	/* push (simple renaming) projections up */
+	if (gp.cnt[op_project])
+		rel = rewrite(sql, rel, &rel_push_project_up); 
+
+	/* rewrite op_anti/semi (A,C=join(A,B)) [ A.tid  = C.A.tid ] */
 	if (gp.cnt[op_anti] || gp.cnt[op_semi])
 		rel = rewrite(sql, rel, &rel_rewrite_semijoin);
 
@@ -1562,7 +1767,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
 	   part done after. */
 
-	if (gp.cnt[op_join] && (gp.cnt[op_project] || gp.cnt[op_groupby]))
+	if (gp.cnt[op_join] && gp.cnt[op_groupby])
 		rel = rewrite(sql, rel, &rel_push_join_down); 
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])

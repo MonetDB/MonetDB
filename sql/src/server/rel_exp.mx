@@ -23,12 +23,6 @@
 #ifndef _REL_EXP_H_
 #define _REL_EXP_H_
 
-/*
-typedef struct pair {
-	void *l, *r;
-} pair;
-*/
-
 #define new_exp_list() list_create((fdestroy)&exp_destroy)
 
 extern sql_exp *exp_dup(sql_exp* e);
@@ -79,6 +73,7 @@ extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_is_join(sql_exp *e);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
+extern int exp_is_atom(sql_exp *e);
 
 extern sql_exp *exps_bind_column( list *exps, char *cname);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
@@ -324,10 +319,11 @@ exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, in
 void 
 exp_setname( sql_exp *e, char *rname, char *name )
 {
-	if (e->name)
-		_DELETE(e->name);
-	e->name = _strdup(name);
-
+	if (name) {
+		if (e->name)
+			_DELETE(e->name);
+		e->name = _strdup(name);
+	}
 	if (e->rname)
 		_DELETE(e->rname);
 	e->rname = (rname)?_strdup(rname):NULL;
@@ -565,6 +561,34 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 	}
 	return -1;
 }
+
+int
+exp_is_atom( sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		return 1;
+	case e_convert:
+		return exp_is_atom(e->l);
+	case e_func:
+	case e_aggr:
+	{	
+		int r = 1;
+		node *n;
+		list *l = e->l;
+
+		if (l)
+			for (n = l->h; n; n = n->next) 
+				r &= exp_is_atom(n->data);
+		return r;
+	}
+	case e_column:
+	case e_cmp:
+		return 0;
+	}
+	return 0;
+}
+
 
 sql_exp *
 exps_bind_column( list *exps, char *cname ) 

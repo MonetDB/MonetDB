@@ -58,13 +58,13 @@ sql5_export str backend_name(cq *cq);
 #include "sql_gencode.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
-#include "sql_scope.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "mal_builder.h"
 
 #include <sql_optimize.h>
 #include <sql_rel2bin.h>
+#include <rel_subquery.h>
 
 static int _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s);
 static void backend_create_func(backend *be, sql_func *f);
@@ -1242,15 +1242,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 			break;
 		}
-		case st_op:{
-			char *mod = sql_func_mod(s->op4.funcval->func);
-			char *fimp = sql_func_imp(s->op4.funcval->func);
-
-			backend_create_func(sql, s->op4.funcval->func); 
-			q = newStmt(mb, mod, fimp);
-			s->nr = getDestVar(q);
-			break;
-		}
 		case st_unop:{
 			char *mod = sql_func_mod(s->op4.funcval->func);
 			char *fimp = sql_func_imp(s->op4.funcval->func);
@@ -1498,22 +1489,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_alias:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
-		case st_set:
 		case st_list:{
 			for (n = s->op1.lval->h; n; n = n->next) {
 				_dumpstmt(sql, mb, n->data);
-			}
-		}
-			break;
-		case st_sets:{
-			for (n = s->op1.lval->h; n; n = n->next) {
-				list *l = n->data;
-				node *ml = l->h;
-
-				while (ml) {
-					_dumpstmt(sql, mb, ml->data);
-					ml = ml->next;
-				}
 			}
 		}
 			break;
@@ -1599,9 +1577,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 			}
 		}
-			break;
-		case st_filter:
-			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
 		case st_ordered:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
@@ -1869,8 +1844,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			/* todo */
 		case st_basetable:
-		case st_ptable:
-		case st_pivot:
 		case st_relselect:
 		case st_releqjoin:
 		case st_reljoin:
@@ -2098,16 +2071,15 @@ backend_create_func(backend *be, sql_func *f)
 	if (!f->sql || f->sql > 1)
 		return;
 	f->sql++;
-	s = scope_sqlparse(m, NULL, f->imp, m_instantiate);
+	s = sql_parse(m, f->imp, m_instantiate);
 	if (!s) {
 		fprintf(stderr, m->errstr);
 		return;
 	} else {
 		stmt *opt;
-		opt = optimize(m, s);
+		opt = rel2bin(m, s);
 		stmt_destroy(s);
-		s = rel2bin(m, opt);
-		stmt_destroy(opt);
+		s = opt;
 	}
 	assert(s);
 

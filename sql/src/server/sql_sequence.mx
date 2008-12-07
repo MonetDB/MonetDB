@@ -37,7 +37,7 @@ extern char* sql_next_seq_name(mvc *sql);
 #include "sql_sequence.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
-#include "sql_select.h"
+#include "rel_subquery.h"
 
 stmt *
 sql_create_seq(
@@ -130,7 +130,7 @@ sql_alter_seq(
 		val = stmt_atom_lng(seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		val = sql_value_exp(sql, NULL, start_list->h->next->data.sym, NULL, NULL, sql_sel, ek);
+		val = value_exp(sql, start_list->h->next->data.sym, sql_sel, ek);
 
 		if (!val || !(val = check_types(sql, lng_t, val, type_equal)))
 			return NULL;

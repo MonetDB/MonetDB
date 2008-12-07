@@ -199,7 +199,6 @@ is_reduced( stmt *s )
 	switch(s->type) 
 	{
 	case st_relselect:
-	case st_filter:
 	case st_select:
 	case st_select2:
 	case st_uselect:
@@ -512,7 +511,6 @@ bin_optimizer(mvc *c, stmt *s)
 	}
 
 	case st_temp:
-	case st_filter:
 	case st_diff:
 	case st_union:
 	case st_outerjoin:
@@ -534,7 +532,6 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_exception:
 
 	case st_aggr:
-	case st_op:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
@@ -610,10 +607,6 @@ bin_optimizer(mvc *c, stmt *s)
 	case st_releqjoin:
 	case st_relselect:
 
-	case st_pivot:
-	case st_ptable:
-	case st_set:
-	case st_sets:
 	default:
 		assert(0);	/* these should have been rewriten by now */
 	}

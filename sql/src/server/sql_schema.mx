@@ -27,10 +27,9 @@
 #include <stdarg.h>
 #include <sql_list.h>
 #include "sql_symbol.h"
-#include "sql_scope.h"
 #include "sql_statement.h"
 
-extern stmt *schemas(mvc *sql, scope *scp, symbol *sym);
+extern stmt *schemas(mvc *sql, symbol *sym);
 extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action);
 
 #endif /*_SQL_SCHEMA_H_*/
@@ -41,7 +40,6 @@ extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, 
 #include "sql_schema.h"
 #include "sql_parser.h"
 #include "sql_updates.h"
-#include "sql_select.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "sql_psm.h"
@@ -520,7 +518,7 @@ create_type(mvc *sql, dlist *qname, char *impl)
 }
 
 static stmt *
-create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_event, 
+create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
@@ -582,10 +580,9 @@ create_trigger(mvc *sql, scope *scp, dlist *qname, int time, symbol *trigger_eve
 		if (old_name)
 			stack_push_table(sql, old_name, t);
 	}
-	(void)scp;
 	if (create) /* for subtable we only need direct dependencies */
 		sql->emode = m_deps;
-	sq = sequential_block(sql, /*scp*/NULL, NULL, stmts, NULL, 1);
+	sq = sequential_block(sql, NULL, stmts, NULL, 1);
 	sql->emode = emode;
 	if (create)
 		stack_pop_frame(sql);
@@ -714,6 +711,7 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 	}
 }
 
+#if 0
 static stmt *
 view_rename_columns( mvc *sql, char *name, stmt *sq, dlist *column_spec)
 {
@@ -803,6 +801,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	}
 	return NULL;
 }
+#endif
 
 static stmt *
 drop_view(mvc *sql, dlist *qname, int drop_action)
@@ -879,6 +878,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
 			}
 		}
+#if 0
 		/* now we need to create the cluster table */
 		if (!idx_is_column(itype)) {
 			char buf[BUFSIZ];
@@ -915,6 +915,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 			l += snprintf(buf+l, BUFSIZ-l, "where del.NID = %s.NID;", t->base.name);
 			return stmt_sql(_strdup(buf));
 		}
+#endif
 		return stmt_none();
 	}
 }
@@ -1237,7 +1238,7 @@ column_option(
 		{
 			char *r;
 			exp_kind ek = {type_value, card_value, FALSE};
-			stmt *tmp = value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel, ek);
+			stmt *tmp = value_exp(sql, s->data.sym, sql_sel, ek);
 
 			if (!tmp || (tmp = check_types(sql, &cs->type, tmp, type_equal)) == NULL) 
 				return SQL_ERR;
@@ -1341,28 +1342,25 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				if (a)
 					res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
 			} else {
-				stmt *sq, *val;
+				stmt *sq;
 				char *msg = NULL;
 
 				msg = sql_message("select %s;", cs->def);
-				sq = scope_sqlparse(sql, NULL, msg, sql->emode);
+				sq = rel_parse_value(sql, msg, sql->emode);
 				_DELETE(msg);
-				if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1) {
+				if (!sq) {
 					cond_stmt_destroy(sq);
 					return NULL;
 				}
-				val = stmt_dup(sq->op1.lval->h->data);
-				val = check_types(sql, &cs->type, val, type_equal);
-				if (!val) {
-					stmt_destroy(sq);
+				sq = check_types(sql, &cs->type, sq, type_equal);
+				if (!sq) 
 					return NULL;
-				}
-				stmt_destroy(sq);
 				/* default could be a function such as 
 				   next value for, this should be called once
-				   foreach new value.
+				   foreach new value. This is handled by
+				   stmt_const and push_project.
 				*/
-				res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), val));
+				res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), sq));
 			}
 			if (!res) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");
@@ -1601,7 +1599,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		if (!c) 
 			return sql_error(sql, 02, "column '%s' not found\n", cname);
- 		tmp = value_exp(sql, NULL, sym, NULL, NULL, sql_sel, ek);
+ 		tmp = value_exp(sql, sym, sql_sel, ek);
 		if (!tmp || (tmp = check_types(sql, &c->type, tmp, type_equal)) == NULL) 
 			return NULL;
 		stmt_destroy(tmp);
@@ -1786,7 +1784,6 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 		/* insert query result into this table */
 		if (with_data) {
 			node *n, *m;
-			scope *scp = scope_open(NULL);
 			list *l = create_stmt_list();
 			list *cl = t->columns.set;
 
@@ -1795,7 +1792,6 @@ sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table
 				stmt *ins = stmt_dup(n->data);
 				list_append(l, stmt_append_col(c, ins));
 			}
-			scope_close(scp);
 			res = stmt_list(l);
 		} else {
 			res = stmt_none();
@@ -1939,7 +1935,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 
 				assert(l->h->next->next->next->type == type_int);
 				assert(l->h->next->next->next->next->type == type_int);
-				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
+				//res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 			}
 			if (!res) {
 				list_destroy(table_elements);
@@ -1977,7 +1973,7 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 }
 
 stmt *
-schemas(mvc *sql, scope *scp, symbol *s)
+schemas(mvc *sql, symbol *s)
 {
 	stmt *ret = NULL;
 
@@ -2036,6 +2032,7 @@ schemas(mvc *sql, scope *scp, symbol *s)
 		sql->type = Q_SCHEMA;
 	}
 		break;
+#if 0
 	case SQL_CREATE_VIEW:
 	{
 		dlist *l = s->data.lval;
@@ -2046,6 +2043,7 @@ schemas(mvc *sql, scope *scp, symbol *s)
 		sql->type = Q_SCHEMA;
 	}
 		break;
+#endif
 	case SQL_CREATE_INDEX:
 	{
 		dlist *l = s->data.lval;
@@ -2183,7 +2181,7 @@ schemas(mvc *sql, scope *scp, symbol *s)
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = create_trigger(sql, scp, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
