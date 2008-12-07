@@ -74,6 +74,17 @@ pattern table(b:bat[:oid,:any]...):bat[:oid,:oid]
 address CLUSTER_table
 comment "Cluster the BATs using the first one as reference.
 Return the oid map used";
+
+command new(b:bat[:oid,:wrd], bits:int) 
+	(psum:bat[:oid,:wrd], map:bat[:oid,:wrd])
+address CLS_create
+comment "Compute the cluster map for bat b of hash key values. A cluster map is a list of unique (new) BUN positions. The p(refix) sum is a by product which returns the prefix sum of the per masked key frequency.";
+
+command map(cluster:bat[:oid,:wrd], b:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CLS_map
+comment "Reorder tail of bat b, using a cluster map";
+
+
 @{
 @h
 #ifndef _CLUSTER_H
@@ -100,6 +111,9 @@ cluster_export str CLUSTER_map(bat *RB, bat *B);
 cluster_export str CLUSTER_apply(BAT *nb, BAT *cmap);
 cluster_export str CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+cluster_export str  CLS_create(bat *rpsum, bat *rcmap, bat *b, unsigned int *bits);
+cluster_export str  CLS_map(bat *rb, bat *cmap, bat *b);
 
 #endif /* _CLUSTER_H */
 @c
@@ -289,6 +303,7 @@ CLUSTER_map(bat *RB, bat *B)
 	}
 	map->hsorted= TRUE;
 	map->hdense= TRUE;
+	BATkey(map, TRUE);
 	BATseqbase(map, 0);
 	BATkey(map,TRUE);
 	map->tsorted= FALSE;
@@ -470,3 +485,183 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 @}
+
+@c
+
+#include "mal_config.h"
+#include "cluster.h"
+#include <mal_exception.h>
+
+str
+CLS_create( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits)
+{
+	BAT *psum, *cmap, *b;
+	int i, mask = 0;
+	wrd *bt, *be, *cnt, *pos, sum, *m;
+
+	if (*bits >= sizeof(int)*8)
+		throw(MAL, "cluster.new", "To many bits used for clustering");
+
+	mask = (1<<*bits) - 1;
+	if ((b = BATdescriptor(*B)) == NULL)
+		throw(MAL, "cluster.new", "Cannot access descriptor");
+
+	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1)) == NULL) {
+		BBPunfix(*B);
+		throw(MAL, "cluster.new", "Cannot create prefix sum bat");
+	}
+	BATseqbase(psum,0);
+	BATsetcount(psum, mask+1);
+	psum->tsorted= TRUE;
+	psum->tdense= FALSE;
+	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
+	for (i=0 ; i <= mask; i++)
+		cnt[i] = 0;
+
+	bt = (wrd*)Tloc(b, BUNfirst(b));
+	be = bt + BATcount(b);
+	/* First make a histogram */
+	for ( ; bt < be; bt++) {
+		int h = ((int)(*bt)) & mask;
+		cnt[h]++;
+	}
+
+	/* convert histogram into prefix sum */
+	pos = (wrd*)alloca(sizeof(wrd) * (mask+1)); 
+	for (sum = 0, i=0 ; i <= mask; i++) {
+		wrd psum = sum;
+
+		sum += cnt[i];
+		pos[i] = cnt[i] = psum;
+	}
+	
+	/* time to create the cluster map */
+	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b))) == NULL) {
+		BBPunfix(*B);
+		BBPunfix(psum->batCacheid);
+		throw(MAL, "cluster.new", "Cannot create cluster map bat");
+	}
+	BATseqbase(cmap, b->H->seq);
+	BATsetcount(cmap, BATcount(b));
+	cmap->tsorted= FALSE;
+	cmap->tdense= FALSE;
+	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
+
+	bt = (wrd*)Tloc(b, BUNfirst(b));
+	be = bt + BATcount(b);
+	for ( ; bt < be; ) {
+		int h = ((int)(*bt++)) & mask;
+		*m++ = pos[h]++;
+	}
+
+	BBPunfix(*B);
+	BBPkeepref(*rpsum = psum->batCacheid);
+	BBPkeepref(*rcmap = cmap->batCacheid);
+	return MAL_SUCCEED;
+}
+
+@= map2_fixed
+str  
+CLS_map_@1(BAT *rb, BAT *cmap, BAT *b)
+{
+	wrd *m;
+	@1 *r, *bt, *be;
+
+	r = (@1*)Tloc(rb, BUNfirst(rb));
+	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
+	bt = (@1*)Tloc(b, BUNfirst(b));
+	be = bt + BATcount(b);
+	for ( ; bt < be; ) 
+		r[*m++] = *bt++;
+	BBPunfix(cmap->batCacheid);
+	BBPunfix(b->batCacheid);
+	BBPkeepref(rb->batCacheid);
+	return MAL_SUCCEED;
+}
+
+@c
+@:map2_fixed(bte)@
+@:map2_fixed(sht)@
+@:map2_fixed(int)@
+@:map2_fixed(lng)@
+
+@c
+/* calling CLS_map on both marked views of head and tail + some view magic should work
+   when we need both head and tail reordered 
+*/
+str  
+CLS_map(bat *RB, bat *CMAP, bat *B)
+{
+	BATiter bi;
+	BAT *rb, *cmap = NULL, *b = NULL;
+	wrd i = 0, bf, mf, *m;
+
+	if ((cmap = BATdescriptor(*CMAP)) == NULL ||
+	    (b = BATdescriptor(*B)) == NULL) {
+		if (cmap) 
+			BBPunfix(*CMAP);
+		throw(MAL, "cluster.map", "Cannot access descriptor");
+	}
+	if (BATcount(cmap) != BATcount(b) ||
+	    cmap->H->seq != b->H->seq) {
+		BBPunfix(*CMAP);
+		BBPunfix(*B);
+		throw(MAL, "cluster.map", "Cluster map and attribute bat are not aligned");
+	}
+
+	if ((rb = BATnew(TYPE_void, b->ttype, BATcount(b))) == NULL) {
+		BBPunfix(*CMAP);
+		BBPunfix(*B);
+		throw(MAL, "cluster.map", "Cannot create result bat");
+	} 
+	BATseqbase(rb, b->H->seq);
+	BATsetcount(rb, BATcount(b));
+	rb->tsorted= FALSE;
+	rb->tdense= FALSE;
+	rb->H->nonil = b->H->nonil;
+	rb->T->nonil = b->T->nonil;
+	*RB = rb->batCacheid;
+
+	switch(ATOMstorage(b->ttype)) {
+	case TYPE_chr:
+	case TYPE_bte:
+			return CLS_map_bte(rb, cmap, b);
+	case TYPE_sht:
+			return CLS_map_sht(rb, cmap, b);
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+	case TYPE_oid:
+#endif
+	case TYPE_flt:
+	case TYPE_int:
+			return CLS_map_int(rb, cmap, b);
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+	case TYPE_oid:
+#endif
+	case TYPE_dbl:
+	case TYPE_lng:
+			return CLS_map_lng(rb, cmap, b);
+	default:
+		break;
+	}
+	bi = bat_iterator(b);
+	bf = BUNfirst(b);
+	mf = BUNfirst(cmap);
+	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
+	if (b->T->varsized) {
+		for (i = 0; i < (wrd)BATcount(b); i++) {
+			BUNinplace(rb, m[mf+i], NULL, BUNtvar(bi, bf+i), 0);
+		}
+	} else {
+		for (i = 0; i < (wrd)BATcount(b); i++) {
+			BUNinplace(rb, m[mf+i], NULL, BUNtloc(bi, bf+i), 0);
+		}
+	}
+	BBPunfix(*CMAP);
+	BBPunfix(*B);
+	BBPkeepref(*RB = rb->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/* per chunk do xxx */
