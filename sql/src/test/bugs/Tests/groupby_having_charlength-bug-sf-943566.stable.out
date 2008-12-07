@@ -25,7 +25,7 @@ Over..
 # 11:55:30 >  
 
 % sys.s,	sys.,	sys.s # table_name
-% name,	char_length_name,	count_name # name
+% name,	L13,	L14 # name
 % varchar,	int,	wrd # type
 % 3,	1,	2 # length
 [ "sys",	3,	10	]

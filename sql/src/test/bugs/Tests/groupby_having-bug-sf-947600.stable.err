@@ -7,5 +7,11 @@ stderr of test 'groupby_having-bug-sf-947600` in directory 'src/test/bugs` itsel
 
 
 
+MAPI  = monetdb@alf:31350
+QUERY = select name from tables where "type" = 0 and "system" = true
+ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
+MAPI  = monetdb@alf:31350
+QUERY = select name from tables where "type" = 0 and "system" = true having 1=0;
+ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
 
 

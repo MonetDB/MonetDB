@@ -21,25 +21,25 @@ Over..
 
 [ 24	]
 % sys.tmp # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 24	]
 [ 24	]
 % sys.tmp # table_name
-% count_ # name
+% L2 # name
 % wrd # type
 % 1 # length
 [ 0	]
 [ 24	]
 % sys.tmp # table_name
-% count_ # name
+% L3 # name
 % wrd # type
 % 2 # length
 [ 24	]
 [ 24	]
 % sys.tmp # table_name
-% count_ # name
+% L4 # name
 % wrd # type
 % 1 # length
 [ 0	]

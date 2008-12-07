@@ -10,9 +10,9 @@ stderr of test 'create_insert_select_aggr-bug-00001` in directory 'src/test/bugs
 # 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < create_insert_select_aggr-bug-00001.sql
 # 21:23:44 >  
 
-MAPI  = monetdb@localhost:35185
+MAPI  = monetdb@alf:31350
 QUERY = select name, count(*) from _tables;
-ERROR = !SELECT: single value in column expression
+ERROR = !cannot use non GROUP BY column 'name' in query results without an aggregate function
 
 # 21:23:44 >  
 # 21:23:44 >  Done.
