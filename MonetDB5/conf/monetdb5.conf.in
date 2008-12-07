@@ -219,7 +219,7 @@ mapi_open=false     # should be set to 'true' to allow for
 # SQL Interface Section
 #====================================
 # The SQL debug level (should be disabled for normal use)
-sql_debug=0
+# sql_debug=0
 
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium
