@@ -256,13 +256,13 @@ Over..
 [ "oid",	"str",	1039	]
 [ "oid",	"str",	2895	]
 [ "oid",	"str",	2895	]
-% .,	. # table_name
-% single_value,	count_ # name
+% .,	.bbp # table_name
+% single_value,	L1 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	176	]
-% .,	. # table_name
-% single_value,	count_ # name
+[ "transient",	155	]
+% .,	.bbp # table_name
+% single_value,	L2 # name
 % char,	wrd # type
 % 10,	3 # length
 [ "persistent",	227	]
