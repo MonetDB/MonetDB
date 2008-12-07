@@ -35,8 +35,8 @@ Over..
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
-% 7,	2 # length
-[ "joinidx",	9	]
+% 7,	1 # length
+[ "joinidx",	7	]
 
 # 09:17:12 >  
 # 09:17:12 >  Done.
