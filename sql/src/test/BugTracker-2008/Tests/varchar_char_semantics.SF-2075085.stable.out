@@ -32,8 +32,8 @@ Over..
 % 2,	11,	10 # length
 [ 10,	"1234567890",	"1234567890"	]
 [ 5,	"12345 ",	"12345"	]
-% sys. # table_name
-% count_ # name
+% sys.t850 # table_name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]

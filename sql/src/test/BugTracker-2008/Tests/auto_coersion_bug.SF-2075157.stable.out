@@ -32,7 +32,7 @@ Over..
 [ 9135780246913578	]
 [ 1	]
 % . # table_name
-% sql_mul_single_value # name
+% L1 # name
 % bigint # type
 % 6 # length
 [ 246864	]
