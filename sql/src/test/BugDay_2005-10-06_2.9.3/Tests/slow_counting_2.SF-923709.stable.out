@@ -20,7 +20,7 @@ Over..
 # 19:06:11 >  
 
 % sys.slow_count # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 131072	]

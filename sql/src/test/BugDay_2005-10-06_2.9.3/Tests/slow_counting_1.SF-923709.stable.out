@@ -38,12 +38,12 @@ Over..
 [ 32768	]
 [ 65536	]
 % . # table_name
-% gen_insert_single_value # name
+% single_value # name
 % int # type
 % 1 # length
 [ 0	]
 % sys.slow_count # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 131072	]

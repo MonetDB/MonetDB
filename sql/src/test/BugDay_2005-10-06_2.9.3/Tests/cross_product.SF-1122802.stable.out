@@ -27,17 +27,17 @@ Over..
 [ 20	]
 [ 20	]
 % sys.t1 # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
 % sys.t2 # table_name
-% count_ # name
+% L2 # name
 % wrd # type
 % 2 # length
 [ 20	]
-% sys.t2 # table_name
-% count_ # name
+% sys.t1 # table_name
+% L3 # name
 % wrd # type
 % 3 # length
 [ 400	]
