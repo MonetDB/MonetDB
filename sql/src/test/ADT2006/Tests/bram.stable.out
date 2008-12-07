@@ -141,7 +141,7 @@ Over..
 % name,	date # name
 % varchar,	date # type
 % 0,	10 # length
-% .,	. # table_name
+% .,	.v # table_name
 % mon,	murders # name
 % tinyint,	wrd # type
 % 2,	1 # length
@@ -196,7 +196,7 @@ Over..
 [ "Inspector Edmund Reid",	3	]
 [ "James Monro",	2	]
 [ "Sir Melville Macnaghten",	2	]
-% .,	. # table_name
+% .,	.inspector # table_name
 % grade,	inspectors # name
 % char,	wrd # type
 % 9,	1 # length

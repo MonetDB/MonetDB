@@ -1,19 +1,51 @@
 stdout of test 'woud` in directory 'src/test/ADT2006` itself:
 
 
-# 17:57:17 >  
-# 17:57:17 >  Mtimeout -timeout 180 Mserver "--config=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB:/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB/lib:/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/lib/MonetDB/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB_Release/monetdb4/var/MonetDB/xquery_logs" --set mapi_port=31795 --set monet_prompt= --trace "--dbname=mTests_src_test_ADT2006" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 17:57:17 >  
+# 18:31:50 >  
+# 18:31:50 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38592 --set xrpc_port=45862 --set monet_prompt= --trace  "--dbname=mTests_src_test_ADT2006" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 18:31:50 >  
 
-# Monet Database Server V4.14.0
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_ADT2006', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38592/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -33,8 +65,8 @@ Over..
 % substring_murderdate # name
 % int # type
 % 1 # length
-% .numbers # table_name
-% avg_num # name
+% sys.numbers # table_name
+% L5 # name
 % double # type
 % 22 # length
 [ NULL	]
@@ -43,7 +75,7 @@ Over..
 % varchar,	varchar # type
 % 0,	0 # length
 % sys.victim,	sys.victim # table_name
-% min_murderdate,	max_murderdate # name
+% L6,	L7 # name
 % varchar,	varchar # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -51,7 +83,7 @@ Over..
 % doctor # name
 % varchar # type
 % 0 # length
-% .allnames # table_name
+% sys.allnames # table_name
 % name # name
 % varchar # type
 % 0 # length
