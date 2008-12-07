@@ -75,12 +75,12 @@ Over..
 [ 1	]
 [ 1	]
 % sys. # table_name
-% count_ # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 50	]
 % sys.,	sys.test_aggre_limit # table_name
-% type,	count_type # name
+% type,	L2 # name
 % varchar,	wrd # type
 % 3,	2 # length
 [ "int",	29	]

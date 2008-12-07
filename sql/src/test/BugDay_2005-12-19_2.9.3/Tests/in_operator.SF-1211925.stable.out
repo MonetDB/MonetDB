@@ -1,19 +1,23 @@
 stdout of test 'in_operator.SF-1211925` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 11:44:01 >  
-# 11:44:01 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./SQL/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=31544 --set sql_port=49229 --set xquery_port=55108 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 11:44:01 >  
+# 19:30:31 >  
+# 19:30:31 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39107 --set xrpc_port=47016 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:30:31 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_BugDay_2005-12-19_2.9.3', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39107/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -22,17 +26,17 @@ Over..
 # 11:51:00 >  
 
 % . # table_name
-% exist_single_value # name
+% =_isnull_L1 # name
 % boolean # type
 % 5 # length
 [ true	]
 % . # table_name
-% exist_single_value # name
+% =_isnull_L3 # name
 % boolean # type
 % 5 # length
 [ true	]
 % . # table_name
-% exist_single_value # name
+% =_isnull_L5 # name
 % boolean # type
 % 5 # length
 [ true	]
