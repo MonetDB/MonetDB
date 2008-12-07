@@ -26,7 +26,7 @@ Over..
 # 11:46:53 >  
 
 % sys.day_name,	sys.day_name,	sys.day_name # table_name
-% day_name,	day_code,	count_day_code # name
+% day_name,	day_code,	L1 # name
 % char,	decimal,	wrd # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -37,7 +37,7 @@ Over..
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 % sys.day_name,	sys.day_name # table_name
-% day_name,	count_day_name # name
+% day_name,	L2 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "MONDAY",	64	]
@@ -56,7 +56,7 @@ Over..
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
 % sys.day_name,	sys.flight_day,	sys.day_name # table_name
-% day_name,	day_code,	count_day_name # name
+% day_name,	day_code,	L3 # name
 % char,	decimal,	wrd # type
 % 9,	2,	2 # length
 [ "MONDAY",	1,	64	]
@@ -67,57 +67,57 @@ Over..
 [ "SATURDAY",	6,	64	]
 [ "SUNDAY",	7,	64	]
 % sys.aircraft # table_name
-% sum_engines # name
+% L4 # name
 % decimal # type
 % 2 # length
 [ 278	]
 % sys.aircraft # table_name
-% avg_engines # name
+% L5 # name
 % double # type
 % 22 # length
 [ 2.0592592592592593	]
 % sys.aircraft # table_name
-% avg_engines # name
+% L6 # name
 % double # type
 % 22 # length
 [ 2.3760683760683761	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
-% count_,	min_pay_load,	max_pay_load # name
+% L7,	L10,	L11 # name
 % wrd,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 % sys.flight,	sys.flight # table_name
-% min_flight_code,	min_flight_code # name
+% L12,	L13 # name
 % int,	int # type
 % 6,	6 # length
 [ 101908,	101908	]
 % sys.flight,	sys.flight # table_name
-% min_from_airport,	min_to_airport # name
+% L14,	L15 # name
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
 % sys.aircraft # table_name
-% count_ # name
+% L16 # name
 % wrd # type
 % 2 # length
 [ 50	]
 % sys.aircraft # table_name
-% count_ # name
+% L17 # name
 % wrd # type
 % 2 # length
 [ 94	]
 % sys.flight # table_name
-% count_ # name
+% L20 # name
 % wrd # type
 % 3 # length
 [ 279	]
 % sys.flight,	sys.flight,	sys.flight # table_name
-% from_airport,	to_airport,	avg_time_elapsed # name
+% from_airport,	to_airport,	L21 # name
 % char,	char,	double # type
 % 3,	3,	22 # length
 [ "ATL",	"BOS",	154.36842105263159	]
 % sys.ground_service,	sys.ground_service # table_name
-% city_code,	avg_ground_fare # name
+% city_code,	L22 # name
 % char,	double # type
 % 4,	22 # length
 [ "MATL",	9	]
@@ -132,7 +132,7 @@ Over..
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 % sys.ground_service,	sys.ground_service # table_name
-% count_city_code,	city_code # name
+% L23,	city_code # name
 % wrd,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -155,7 +155,7 @@ Over..
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 % sys.aircraft,	sys.aircraft # table_name
-% category,	count_category # name
+% category,	L26 # name
 % char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]

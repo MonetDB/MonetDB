@@ -25,7 +25,7 @@ Over..
 # 11:47:19 >  
 
 % sys.model232,	sys.model232,	sys.model232 # table_name
-% is_mutagen,	logp,	count_no_nil_model_id # name
+% is_mutagen,	logp,	L1 # name
 % char,	int,	wrd # type
 % 3,	1,	1 # length
 [ "F",	8,	1	]

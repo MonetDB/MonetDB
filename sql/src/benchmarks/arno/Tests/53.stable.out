@@ -25,7 +25,7 @@ Over..
 # 11:47:19 >  
 
 % sys.model237,	sys.model237 # table_name
-% is_mutagen,	count_no_nil_model_id # name
+% is_mutagen,	L1 # name
 % char,	wrd # type
 % 3,	1 # length
 [ "T",	3	]
