@@ -4809,7 +4809,7 @@ end main;
 [ "setDebug",			  "command",	  "mdb",	  "(flg:str):int ",															  "MDBsetDebugStr;"					  ]
 [ "setCount",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetCount;"					  ]
 [ "setIO",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetIO;"						  ]
-[ "setMemory",			  "command",	  "mdb",	  "(b:bit):void ",															  "MDBsetMemory;"					  ]
+[ "setMemory",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetMemory;"				  ]
 [ "setFlow",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetFlow;"						  ]
 [ "setMemoryTrace",		  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetBigfoot;"					  ]
 [ "setTimer",			  "pattern",	  "mdb",	  "(b:bit):void ",															  "MDBsetTimer;"					  ]
