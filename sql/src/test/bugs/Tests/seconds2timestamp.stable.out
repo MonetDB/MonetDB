@@ -10,13 +10,16 @@ stdout of test 'seconds2timestamp` in directory 'src/test/bugs` itself:
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:37931/
-# MonetDB/SQL module v2.22.0 loaded
-
-printf("\nReady.\n");
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34282/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+# falling back to direct mode 
+# falling back to direct mode 
+# falling back to direct mode 
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -25,17 +28,17 @@ Over..
 # 22:40:46 >  
 
 % . # table_name
-% epoch_single_value # name
+% single_value # name
 % timestamp # type
 % 26 # length
 [ 2004-06-17 16:00:00.000000	]
 % . # table_name
-% epoch_single_value # name
+% single_value # name
 % int # type
 % 10 # length
 [ 1087488000	]
 % . # table_name
-% epoch_single_value # name
+% single_value # name
 % int # type
 % 10 # length
 [ 1203170400	]
@@ -46,7 +49,7 @@ Over..
 % 10,	26 # length
 [ 1202900916,	2008-02-13 11:08:06.000000	]
 % . # table_name
-% epoch_single_value # name
+% single_value # name
 % timestamp # type
 % 26 # length
 [ 2008-02-16 14:00:00.000000	]

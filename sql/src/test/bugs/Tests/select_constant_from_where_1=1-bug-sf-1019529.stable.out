@@ -61,17 +61,17 @@ Over..
 % 1 # length
 [ 1	]
 % .,	sys.t1019529 # table_name
-% single_value,	count_ # name
+% single_value,	L1 # name
 % tinyint,	wrd # type
 % 1,	1 # length
 [ 1,	3	]
-% .,	. # table_name
-% single_value,	count_ # name
+% .,	sys.t1019529 # table_name
+% single_value,	L2 # name
 % tinyint,	wrd # type
 % 1,	1 # length
 [ 1,	0	]
 % .,	. # table_name
-% single_value,	count_single_value # name
+% single_value,	L3 # name
 % tinyint,	wrd # type
 % 1,	1 # length
 [ 1,	0	]

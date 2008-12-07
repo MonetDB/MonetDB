@@ -10,9 +10,9 @@ stderr of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'src
 # 13:45:16 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=57322  < select_constant_from_where_1=1-bug-sf-1019529.sql
 # 13:45:16 >  
 
-MAPI  = monetdb@localhost:35185
+MAPI  = monetdb@alf:34282
 QUERY = select name, count(*) from t1019529; -- should fail
-ERROR = !SELECT: single value in column expression
+ERROR = !cannot use non GROUP BY column 'name' in query results without an aggregate function
 
 # 13:45:16 >  
 # 13:45:16 >  Done.

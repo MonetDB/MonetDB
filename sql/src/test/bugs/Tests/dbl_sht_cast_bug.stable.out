@@ -26,7 +26,7 @@ Over..
 
 [ 1	]
 % sys.dbl_sht_cast_bug # table_name
-% count_no_nil_g # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]

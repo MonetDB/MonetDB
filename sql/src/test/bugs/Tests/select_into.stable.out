@@ -26,7 +26,7 @@ Over..
 
 [ 1	]
 % . # table_name
-% test5 # name
+% single_value # name
 % int # type
 % 1 # length
 [ 5	]

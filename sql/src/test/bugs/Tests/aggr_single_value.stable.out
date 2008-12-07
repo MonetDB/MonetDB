@@ -25,57 +25,57 @@ Over..
 # 19:26:22 >  
 
 % . # table_name
-% single_value # name
-% int # type
-% 1 # length
-[ 1	]
-% . # table_name
-% count_no_nil_single_value # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
 % . # table_name
-% count_no_nil_single_value # name
+% L2 # name
+% wrd # type
+% 1 # length
+[ 1	]
+% . # table_name
+% L3 # name
 % wrd # type
 % 1 # length
 [ 0	]
 % . # table_name
-% avg_single_value # name
+% L4 # name
 % double # type
 % 22 # length
 [ 1	]
 % . # table_name
-% avg_single_value # name
+% L5 # name
 % double # type
 % 22 # length
 [ NULL	]
 % . # table_name
-% sum_single_value # name
+% L6 # name
 % smallint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% sum_single_value # name
+% L7 # name
 % wrd # type
 % 20 # length
 [ NULL	]
 % . # table_name
-% max_single_value # name
+% L10 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% max_single_value # name
+% L11 # name
 % int # type
 % 11 # length
 [ NULL	]
 % . # table_name
-% min_single_value # name
+% L12 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% min_single_value # name
+% L13 # name
 % int # type
 % 11 # length
 [ NULL	]
