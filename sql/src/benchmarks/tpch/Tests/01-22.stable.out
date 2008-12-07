@@ -1189,7 +1189,7 @@ Over..
 # 11:48:06 >  
 
 % sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.lineitem # table_name
-% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L5 # name
 % varchar,	int,	int,	date,	decimal,	wrd # type
 % 18,	3,	5,	10,	17,	3 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
@@ -1243,7 +1243,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	3	]
+[ "joinidx",	8	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
