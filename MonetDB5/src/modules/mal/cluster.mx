@@ -141,13 +141,20 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	assert(BUNfirst(nb) == 0);
 	assert(BUNfirst(b) == 0);
 	assert(BUNfirst(cmap) == 0);
+	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 	for ( ; ct < ce; ct++){
 		*r++ = qb[*ct];
-		if ( ((++cnt) % 1000000) == 0)
+		if ( ((++cnt) % 1000000) == 0){
 			BATsave(nb);
+			nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
+		}
 	}
 	b->tsorted= FALSE;
 	b->tdense= FALSE;
+    if (nb->H != nb->T) {
+        BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
+    }
+    BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
 
@@ -192,10 +199,13 @@ CLUSTER_column_str(BAT *nb, BAT *b, BAT *cmap)
 	qb = (var_t *)Tloc(b, 0);
 	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
 	ce = ct + BATcount(cmap);
+	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 	for ( ; ct < ce; ct++){
 		*r++ = qb[*ct];
-		if ( ((++cnt) % 1000000) == 0)
+		if ( ((++cnt) % 1000000) == 0){
 			BATsave(nb);
+			nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
+		}
 	}
     if (nb->H != nb->T) {
         BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
@@ -352,6 +362,7 @@ diskblock.
 		mp[basket[bnr].base] = idx++;
 		basket[bnr].base++;
 	}
+	BBPunfix(*B);
 	BBPkeepref(*RB= map->batCacheid);
 	return MAL_SUCCEED;
 }

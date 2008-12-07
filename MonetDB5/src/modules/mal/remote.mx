@@ -291,7 +291,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
 
 	rtype = getArgType(mb, pci, 0);
-	v = &stk->stk[getArg(pci, 0)];
+	v = getArgReference(stk,pci,0);
 
 	if (rtype == TYPE_any || isAnyExpression(rtype)) {
 		throw(MAL, "remote.get", "cannot deal with any (%s) type",
@@ -517,7 +517,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 
 	/* return the identifier */
-	v = &stk->stk[getArg(pci, 0)];
+	v = getArgReference(stk,pci,0);
 	v->vtype = TYPE_str;
 	v->val.sval = GDKstrdup(ident);
 	return(MAL_SUCCEED);
@@ -592,7 +592,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
 	/* return the rident */
-	VALset(&stk->stk[getArg(pci, 0)],
+	VALset(getArgReference(stk,pci,0),
 			stk->stk[getArg(pci, 0)].vtype, GDKstrdup(ident));
 	return(MAL_SUCCEED);
 }

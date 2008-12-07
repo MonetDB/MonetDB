@@ -659,7 +659,7 @@ STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	OpenBox("take");
 	name = (str) getArgName(mb, pci, 1);
-	v = &stk->stk[getArg(pci, 0)];
+	v = getArgReference(stk,pci,0);
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
 		throw(MAL, "statistics.take", "Failed to take object from box");
 	return MAL_SUCCEED;
@@ -771,7 +771,7 @@ STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
 		throw(MAL, "statistics.toString", "Illegal value");
-	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
+	VALset(getArgReference(stk,pci,0),TYPE_str, s);
 	return MAL_SUCCEED;
 }
 
@@ -786,7 +786,7 @@ STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[getArg(pci, 1)];
+	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
@@ -802,7 +802,7 @@ STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[getArg(pci, 1)];
+	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }

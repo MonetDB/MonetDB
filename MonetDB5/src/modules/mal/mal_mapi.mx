@@ -368,7 +368,6 @@ mal_mapi_export str SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 mal_mapi_export str SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_mapi_export str SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_mapi_export str SERVERclient(int *res, stream **In, stream **Out);
-mal_mapi_export str SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_mapi_export str SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
@@ -1908,7 +1907,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_str:
 				SERVERfieldAnalysis(fld, 
 					getVarType(mb,getArg(pci,j)),
-					&stk->stk[getArg(pci,j)]);
+					getArgReference(stk,pci,j));
 				break;
 			default:
 				throw(MAL, "mapi.rpc",

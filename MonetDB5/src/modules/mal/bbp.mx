@@ -333,7 +333,7 @@ CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name) < 0 )
 		throw(MAL, "bbp.deposit", "identifier expected");
-	v = &stk->stk[getArg(pci, 2)];
+	v = getArgReference(stk,pci,2); 
 	flg = findVariable(box->sym, name) >= 0;
 	if (depositBox(box, name, v))
 		throw(MAL, "bbp.deposit", "failed to deposit into box");
@@ -372,7 +372,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	lhs = &stk->stk[getArg(pci, 0)];
+	lhs = getArgReference(stk,pci,0); 
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", "identifier expected");
@@ -513,7 +513,7 @@ CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.take", "identifier expected");
 	if (strstr(name, "M5system_auth") == name)
 		throw(MAL, "bbp.take", "access denied");
-	v = &stk->stk[getArg(pci, 0)];
+	v = getArgReference(stk,pci,0); 
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
 		int bid = BBPindex(name);
 
@@ -695,10 +695,10 @@ CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (i < 0)
 		throw(MAL, "bbp.toString", "failed to take value from box");
 	v = &box->val->stk[i];
-	garbageElement(cntxt, &stk->stk[getArg(pci, 0)]);
+	garbageElement(cntxt, getArgReference(stk,pci,0));
 	if (VALconvert(TYPE_str, v) == ILLEGALVALUE)
 		throw(MAL, "bbp.toString", "illegal value conversion");
-	VALcopy(&stk->stk[getArg(pci, 0)], v);
+	VALcopy( getArgReference(stk,pci,0), v);
 	return MAL_SUCCEED;
 }
 
@@ -713,7 +713,7 @@ CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
 	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[getArg(pci, 1)];
+	v = getArgReference(stk,pci,1);
 	if (nextBoxElement(box, cursor, v))
 		throw(MAL, "bbp.iterator", "failed");
 	return MAL_SUCCEED;

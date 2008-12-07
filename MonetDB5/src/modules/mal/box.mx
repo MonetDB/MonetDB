@@ -162,7 +162,7 @@ BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk, pci, 2);
-	v = &stk->stk[getArg(pci, 3)];
+	v = getArgReference(stk,pci,3); 
 	if (depositBox(box, name, v))
 		throw(MAL, "box.deposit", "failed to deposit into box");
 	return MAL_SUCCEED;
@@ -178,7 +178,7 @@ BOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	@:OpenBox(take)@
 	name = (str) getArgValue(stk, pci, 2);
-	v = &stk->stk[getArg(pci, 0)];
+	v = getArgReference(stk,pci,0); 
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
 		throw(MAL, "box.take", "failed to take object from box");
 	(void) mb;
@@ -258,7 +258,7 @@ BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/*fool compiler */
 	@:OpenBox(iterator)@
 	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[getArg(pci, 2)];
+	v = getArgReference(stk,pci,2); 
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }

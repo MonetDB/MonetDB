@@ -939,7 +939,7 @@ FLEETmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			case TYPE_str:
 				FLEETfieldAnalysis(fld, 
 					getVarType(mb,getArg(pci,j)),
-					&stk->stk[getArg(pci,j)]);
+					getArgReference(stk,pci,j));
 				break;
 			default:
 				throw(MAL, "mapi.rpc",

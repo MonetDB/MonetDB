@@ -199,8 +199,8 @@ CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 0);
-	head = &stk->stk[pci->argv[1]];
-	tail = &stk->stk[pci->argv[2]];
+	head = getArgReference(stk,pci,1); 
+	tail = getArgReference(stk,pci,2); 
 	bid = (int *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -243,8 +243,8 @@ CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 0);
-	head = &stk->stk[pci->argv[1]];
-	tail = &stk->stk[pci->argv[2]];
+	head = getArgReference(stk,pci,1); 
+	tail = getArgReference(stk,pci,2); 
 	bid = (bat *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -296,7 +296,7 @@ CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 2);
 	bid = (int *) getArgReference(stk, pci, 1);
-	head = &stk->stk[pci->argv[0]];
+	head = getArgReference(stk,pci,0); 
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.getHead", "Cannot access 'bid' descriptor");
@@ -332,7 +332,7 @@ CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	cursor = (lng *) getArgReference(stk, pci, 2);
 	bid = (int *) getArgReference(stk, pci, 1);
-	tail = &stk->stk[pci->argv[0]];
+	tail = getArgReference(stk,pci,0); 
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.getTail", "Cannot access 'bid' descriptor");

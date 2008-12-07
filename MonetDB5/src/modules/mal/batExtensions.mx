@@ -424,8 +424,8 @@ CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.unpack", "Cannot access descriptor");
 	}
 
-	head = &stk->stk[pci->argv[0]];
-	tail = &stk->stk[pci->argv[1]];
+	head =  getArgReference(stk,pci,0); 
+	tail =  getArgReference(stk,pci,1); 
 	p = BUNfirst(b);
 	if (p < BUNlast(b)) {
 		BATiter bi = bat_iterator(b);
