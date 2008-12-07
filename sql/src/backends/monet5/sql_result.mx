@@ -50,7 +50,6 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #include "sql_result.h"
 #include <tablet.h>
 #include <mtime.h>
-#include <sql_scope.h>
 #include <bat/res_table.h>
 
 @= dec_tostr
