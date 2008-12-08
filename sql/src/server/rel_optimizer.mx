@@ -1388,18 +1388,16 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		/* Here we should check for ambigious names ? */
 		if (is_join(rel->op) && r) {
 			t = (l->op == op_project && l->l)?l->l:l;
-			l_exps = rel_projections(sql, t, NULL, 0, 1);
+			l_exps = rel_projections(sql, t, NULL, 1, 1);
 			t = (r->op == op_project && r->l)?r->l:r;
-			r_exps = rel_projections(sql, t, NULL, 0, 1);
+			r_exps = rel_projections(sql, t, NULL, 1, 1);
 			for(n = l_exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
+				sql_exp *e = n->data, *re;
 	
 				if (exp_is_atom(e))
 					continue;
-				if (e->l)
-					if (exps_bind_column2(r_exps, e->l, e->r) != NULL)
-						return rel;
-				if (exps_bind_column(r_exps, e->r) != NULL)
+				if ((e->l && exps_bind_column2(r_exps, e->l, e->r) != NULL) || 
+				   ((re = exps_bind_column(r_exps, e->r)) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 			list_destroy(l_exps);
@@ -1650,8 +1648,41 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
+static int
+is_identity( sql_exp *e, sql_rel *r)
+{
+	switch(e->type) {
+	case e_column:
+		if (r && is_project(r->op)) {
+			sql_exp *re = NULL;
+			if (e->l)
+				re = exps_bind_column2(r->exps, e->l, e->r);
+			if (!re && ((char*)e->r)[0] == 'L')
+				re = exps_bind_column(r->exps, e->r);
+			if (re)
+				return is_identity(re, r->l);
+		}
+		return 0;
+	case e_func: {
+		sql_subfunc *f = e->f;
+		return (strcmp(f->func->base.name, "identity") == 0);
+	}
+	default:
+		return 0;
+	}
+}
 
+static int
+is_identity_of(sql_exp *e, sql_rel *l) 
+{
+	if (e->type != e_cmp)
+		return 0;
+	if (!is_identity(e->l, l) || !is_identity(e->r, l))
+		return 0;
+	return 1;
+}
+
+/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
 static sql_rel *
 rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -1659,10 +1690,20 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 	if (is_semi(rel->op)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
+		sql_rel *rl = (r->l)?r->l:NULL;
 
-		if (l->ref.refcnt == 3 && is_join(r->op) && l == r->l ) {
-			/* okay to rewrite, maybe later we should check 
-			   the semi/anti join condition (should be tid based) */
+		if (l->ref.refcnt == 3 && 
+		   ((is_join(r->op) && l == r->l) || 
+		    (is_project(r->op) && rl && is_join(rl->op) && l == rl->l))){
+			sql_rel *or = r;
+
+			if (!rel->exps || list_length(rel->exps) != 1 ||
+			    !is_identity_of(rel->exps->h->data, l)) 
+				return rel;
+			
+			if (is_project(r->op)) 
+				r = rl;
+
 #ifdef DEBUG
 			rel_print(sql, rel, 0);
 #endif
@@ -1672,12 +1713,13 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 			rel->exps = r->exps;
 			r->exps = NULL;
 			rel_destroy(l);
-			rel_destroy(r);
+			rel_destroy(or);
 #ifdef DEBUG
 			rel_print(sql, rel, 0);
 #endif
 			(*changes)++;
 		}
+
 	}
 	return rel;
 }

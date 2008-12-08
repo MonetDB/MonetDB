@@ -178,6 +178,22 @@ exp_label( sql_exp *e, int nr)
 	return e;
 }
 
+/* we don't name relations directly, but sometimes we need the relation 
+   name. So we look it up in the first expression
+ */
+static char *
+rel_name( sql_rel *r )
+{
+	assert(is_project(r->op));
+	if (r->exps && list_length(r->exps)) {
+		sql_exp *e = r->exps->h->data;
+		if (e->rname)
+			return e->rname;
+		return e->l;
+	}
+	return NULL;
+}
+
 static sql_rel *
 rel_label( mvc *sql, sql_rel *r)
 {
@@ -185,10 +201,6 @@ rel_label( mvc *sql, sql_rel *r)
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
-/*
-	assert(r->name == NULL);
-	r->name = _strdup(nme);
-*/
 	if (!is_project(r->op)) 
 		r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
 	if (is_project(r->op) && r->exps) {
@@ -3935,7 +3947,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	
 					assert(e->type == e_cmp);
 					assert(re->type == e_column);
-					re = exp_column(inner->name, re->r, exp_subtype(re), inner->card, has_nil(re), is_intern(re));
+					re = exp_column(rel_name(inner), re->r, exp_subtype(re), inner->card, has_nil(re), is_intern(re));
 					e = exp_compare( exp_dup(e->l), re, e->flag);
 					append(jexps, e);
 				}
