@@ -153,8 +153,6 @@ rm -fr $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/mserver5
 %{_bindir}/Mbeddedmal
-%{_bindir}/mcheckpoint
-%{_bindir}/mrecover
 %{_bindir}/stethoscope
 
 %{_libdir}/*.so.*

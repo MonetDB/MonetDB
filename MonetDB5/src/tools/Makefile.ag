@@ -50,12 +50,5 @@ bin_Mbeddedmal = {
 }
 
 
-scripts_sh = {
-	COND = NOT_WIN32
-	EXT = ""
-	DIR = bindir
-	SOURCES = mcheckpoint mrecover
-}
-
 EXTRA_DIST = embeddedclient.h
 EXTRA_DIST_DIR = Tests
