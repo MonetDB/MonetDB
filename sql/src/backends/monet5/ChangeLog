@@ -1,0 +1,6 @@
+# ChangeLog file for sql/src/backends/monet5
+# This file is updated with mchangelog (Gentoo echangelog bastard script)
+
+  08 Dec 2008; Fabian Groffen <fabian@cwi.nl> merovingian.1:
+  Fix manpage header
+
