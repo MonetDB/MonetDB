@@ -33,9 +33,8 @@ TJpnode_t* find_node_by_children(TJpnode_t **nl, int length, TJpnode_t *n)
  *    /  \            x
  *  root  x
  */
-void rule4(TJptree_t *ptree, TJpnode_t *root)
+void rule4(TJptree_t *ptree)
 {
-    (void) root;
     int childno, c, num_desc, num_del;
     TJpnode_child_t nl_desc[TJPNODELIST_MAXSIZE];
     TJpnode_t *nl_del[TJPNODELIST_MAXSIZE];
@@ -65,9 +64,8 @@ void rule4(TJptree_t *ptree, TJpnode_t *root)
  *   /  \   /  \        /  \ /  \
  *  t1  t2 t2  t3      t1   t2   t3
  */
-void rule5(TJptree_t *ptree, TJpnode_t *root)
+void rule5(TJptree_t *ptree)
 {
-    (void) root;
     int childno, c, num_tag_cur, num_tag, num_del;
     char *str;
     TJpnode_child_t nl_tag_cur[TJPNODELIST_MAXSIZE];
@@ -102,9 +100,8 @@ void rule5(TJptree_t *ptree, TJpnode_t *root)
  *    | /\ |         t1  t2
  *    t1  t2         
  */
-void rule6(TJptree_t *ptree, TJpnode_t *root)
+void rule6(TJptree_t *ptree)
 {
-    (void) root;
     int childno, c, num_desc_cur, num_desc, num_del;
     TJpnode_child_t nl_desc_cur[TJPNODELIST_MAXSIZE];
     TJpnode_t *nl_desc[TJPNODELIST_MAXSIZE];
@@ -138,9 +135,8 @@ void rule6(TJptree_t *ptree, TJpnode_t *root)
  *      /   \ /    \              /   \ 
  *   term1   x    term2          x    term1, term2 
  */
-void rule7(TJptree_t *ptree, TJpnode_t *root)
+void rule7(TJptree_t *ptree)
 {
-    (void) root;
     int childno, c, num_and, d, num_del;
     TJpnode_child_t nl_and[TJPNODELIST_MAXSIZE];
     TJpnode_t *nl_del[TJPNODELIST_MAXSIZE];
@@ -204,12 +200,136 @@ void rule7(TJptree_t *ptree, TJpnode_t *root)
     mark_deleted_nodes(nl_del, num_del);
 }
 
+/* union push-up: node set unions lead to nested node sets and should be
+ * avoided in the lower tree.
+ * unions on the right side of desc and left side of anc are never pushed up, 
+ * since they do not influence the nestedness of the result.
+ * we do not want to recursively push up unions
+ * since the overhead of additional introduced operators in the tree
+ * becomes too high.
+ * trade-off: apply push-up first with 'about' parent,
+ *            then with 'anc' parent, then with 'desc' parent,
+ *            but not further then that.
+ *
+ *          par                 par              
+ *           |                   |  
+ *         about               union
+ *         /   \     -->       /   \      
+ *      union              about  about
+ *      /   \              /  \   /  \
+ *     t1   t2            t1     t2
+ *
+ *          par                par              
+ *           |                  |  
+ *          anc               union
+ *          / \      -->      /   \      
+ *           union          anc   anc
+ *           /   \          / \   / \
+ *          t1   t2           t1    t2
+ *
+ *          par                par              
+ *           |                  |  
+ *         desc               union
+ *         /  \      -->      /   \      
+ *      union              desc   desc
+ *      /   \              /  \   /  \
+ *     t1   t2            t1     t2
+ *
+ * if we find more than one union below about|anc|desc nodes:
+ *
+ *          par                par              
+ *           |                  |  
+ *         desc               union
+ *         /  \      -->     /     \      
+ *      union             union    desc
+ *      /   \             /   \     / \
+ *   union  t3          desc desc  t3
+ *    /  \              / \  / \
+ *   t1  t2            t1   t2
+ */
+void rule8(TJptree_t *ptree)
+{
+    int childno, c, num_about_par;
+    TJpnode_child_t nl_about_par[TJPNODELIST_MAXSIZE];
+    TJpnode_t *n_about_par, *n_about, *n_union, *n_union_child;
+
+    num_about_par = find_all_par_tree (ptree, p_about, nl_about_par);
+    for (c = 0; c < num_about_par; c++) {
+	n_about_par = nl_about_par[c].node;
+	childno = nl_about_par[c].childno;
+	n_about = n_about_par->child[childno];
+
+	if (n_about->child[0]->kind == p_union) {
+	    n_about_par->child[childno] = n_about->child[0];
+	    n_union = n_about;
+	    while (n_union->child[0]->kind == p_union) {
+		n_union = n_union->child[0];
+		n_union_child = n_union->child[1];
+		n_union->child[1] = tjcp_wire2 (ptree, p_about, n_union_child, n_about->child[1]);
+	    } 
+	    n_union_child = n_union->child[0];
+	    n_union->child[0] = n_about;
+	    n_about->child[0] = n_union_child;
+	}
+    }
+
+    // anc part: we do not introduce new variables, so about reads as anc here
+    num_about_par = find_all_par_tree (ptree, p_anc, nl_about_par);
+    for (c = 0; c < num_about_par; c++) {
+	n_about_par = nl_about_par[c].node;
+	childno = nl_about_par[c].childno;
+	n_about = n_about_par->child[childno];
+
+	if (n_about->child[1]->kind == p_union) {
+ 	    n_union = n_about->child[1];
+	    n_about_par->child[childno] = n_union;
+	    n_union_child = n_union->child[1];
+	    n_union->child[1] = tjcp_wire2 (ptree, p_anc, n_about->child[0], n_union_child);
+	    while (n_union->child[0]->kind == p_union) {
+		n_union = n_union->child[0];
+		n_union_child = n_union->child[1];
+		n_union->child[1] = tjcp_wire2 (ptree, p_anc, n_about->child[0], n_union_child);
+	    } 
+	    n_union_child = n_union->child[0];
+	    n_union->child[0] = n_about;
+	    n_about->child[1] = n_union_child;
+	}
+    }
+
+    // desc part: we do not introduce new variables, so about reads as desc here
+    num_about_par = find_all_par_tree (ptree, p_desc, nl_about_par);
+    for (c = 0; c < num_about_par; c++) {
+	n_about_par = nl_about_par[c].node;
+	childno = nl_about_par[c].childno;
+	n_about = n_about_par->child[childno];
+
+	if (n_about->child[0]->kind == p_union) {
+	    n_about_par->child[childno] = n_about->child[0];
+	    n_union = n_about;
+	    while (n_union->child[0]->kind == p_union) {
+		n_union = n_union->child[0];
+		n_union_child = n_union->child[1];
+		n_union->child[1] = tjcp_wire2 (ptree, p_desc, n_union_child, n_about->child[1]);
+	    } 
+	    n_union_child = n_union->child[0];
+	    n_union->child[0] = n_about;
+	    n_about->child[0] = n_union_child;
+	}
+    }
+}
+
+
+
+
 void optimize(TJptree_t *ptree, TJpnode_t *root)
 {
-    rule4 (ptree, root);
-    rule5 (ptree, root);
-    rule6 (ptree, root);
-    rule7 (ptree, root);
+    //root is not used in the current optimization rules
+    (void) root;
+    rule4 (ptree);
+    rule5 (ptree);
+    rule6 (ptree);
+    rule7 (ptree);
+    rule8 (ptree);
 }
 
 

@@ -168,7 +168,7 @@ NameTest		: "*"
 TagnameSeq		: TAG
        			  { ($$ = tjcp_leaf (tjc_tree, p_tag))->sem.str = $1; } 
 	    		| TagnameSeq "|" TAG
-       			  { $$ = tjcp_wire2 (tjc_tree, p_union, (c = tjcp_leaf (tjc_tree, p_tag), c->sem.str = $3, c), $1); } 
+       			  { $$ = tjcp_wire2 (tjc_tree, p_union, $1, (c = tjcp_leaf (tjc_tree, p_tag), c->sem.str = $3, c)); } 
 	    		;
 PredicateList		: Predicate
 	     		  { $$ = $1; }
