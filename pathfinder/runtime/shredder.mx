@@ -1559,7 +1559,8 @@ shredder_free(shredCtxStruct *shredCtx,
                         memset(sb->bat->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
                     }
                 }
-                shredBAT_setcount(&shredCtx->dstBAT[i], sb->abortSize);
+                shredBAT_setcount(sb, sb->abortSize);
+                HASHdestroy(sb->bat);
             }
             BBPunfix(sb->bat->batCacheid);
         }
@@ -1769,7 +1770,7 @@ shredder_create(char *location,
                                               .kind  = COLLECTION })))
         {
             GDKerror("shredder_create: writing super root fails!\n");
-            return shredder_free(shredCtx,-shredCtx->updatable);
+            return shredder_free(shredCtx,-shredCtx->incremental);
         }
         shredCtx->nnode_pre = 1; 
         shredCtx->nnode_nid = 1; 
@@ -1813,7 +1814,7 @@ shredder_create(char *location,
     oid zero = 0; /* 0 is an impossible doc_id; the right docid is substituted here later */
     if (BUNins(shredCtx->dstBAT[FRAG_ROOT].bat, &zero, &shredCtx->nnode_nid, TRUE) == NULL) {
         GDKerror("shredder_create: saving frag_root fails!\n");
-        return shredder_free(shredCtx,-shredCtx->updatable);
+        return shredder_free(shredCtx,-shredCtx->incremental);
     }
 
     /* allocate some buffers used during parse */
@@ -1821,7 +1822,7 @@ shredder_create(char *location,
     shredCtx->lifo = (node_t *) GDKmalloc((XML_DEPTH_MAX+1) * sizeof(node_t));
     shredCtx->content_buf = (char*) GDKmalloc(PFSHRED_STRLEN_MAX);
     if (shredCtx->val == NULL || shredCtx->content_buf == NULL || shredCtx->lifo == NULL) {
-        return shredder_free(shredCtx,-shredCtx->updatable);
+        return shredder_free(shredCtx,-shredCtx->incremental);
     }
     return shredCtx;
 }
@@ -2038,7 +2039,7 @@ shred(BAT *docBAT,
             }
           }
           if ( shredCtx->base_dir ) GDKfree(shredCtx->base_dir);
-          shredder_free(shredCtx, res?1:-shredCtx->updatable);
+          shredder_free(shredCtx, res?1:-shredCtx->incremental);
     }
     if (coll_lock) {
         MT_lock_unset(coll_lock, "shredder_end"); 
