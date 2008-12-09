@@ -97,11 +97,17 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	InstrPtr p, q;
 	int actions = 0;
 	MALfcn *mask;
-	int *alias,limit, slimit;
+	int limit, slimit;
 	InstrPtr *old;
 	int *lastassigned;
 	Lifespan span= newLifespan(mb);
 
+#if 0
+	int *alias= (int*) alloca(sizeof(int)* mb->vtop);
+
+	for(i=0; i<mb->vtop; i++) 
+		alias[i]=i;
+#endif
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
@@ -109,9 +115,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	lastassigned = (int*) alloca(sizeof(int) * mb->vtop);
 	memset((void*) lastassigned, 0, mb->vtop * sizeof(int));
 
-	alias= (int*) alloca(sizeof(int)* mb->vtop);
-	for(i=0; i<mb->vtop; i++) 
-		alias[i]=i;
 
 #ifdef DEBUG_OPT_COMMONTERMS
 	stream_printf(cntxt->fdout,"START COMMONTERMS\n");
@@ -155,6 +158,7 @@ Like all optimizer decisions, it is safe to stop.
 First recognize simple assignments for alias removal
 and apply alias propagation, before considering a match.
 @c
+#if 0
 		if( p->token == ASSIGNsymbol &&
 			barrier== 0 &&
 			p->argc == 2 &&
@@ -163,23 +167,24 @@ and apply alias propagation, before considering a match.
 			getLastUpdate(span,getArg(p,0)) == i &&
 			getBeginLifespan(span,getArg(p,0)) == i &&
 			getLastUpdate(span,getArg(p,1)) <= i ){
-					alias[getArg(p,0)] = alias[getArg(p,1)];
-					lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
-					freeInstruction(p);
-					mb->stop--;
-					mb->stmt[mb->stop]=0;
-					n--;
-					continue;
-			} 
+				alias[getArg(p,0)] = alias[getArg(p,1)];
+				lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
+				freeInstruction(p);
+				mb->stop--;
+				mb->stmt[mb->stop]=0;
+				n--;
+				continue;
+		} 
 		for(j=0; j<p->argc; j++)
 			getArg(p,j) = alias[getArg(p,j)];
-		if (p->retc != p->argc){
+#endif
 @-
 We look back in the code base to determine a candidate for
 replacement. We don't have to look further back then the last
 relevant assignment. Beware, we may miss opportunities due to
 multiple occurrences of the same constant in the symbol table.
 @c
+		if (p->retc != p->argc) {
 			last= lastassigned[getArg(p,p->retc)];
 			for (j = p->retc+1; j<p->argc; j++)
 				if (lastassigned[getArg(p,j)]> last)
@@ -232,6 +237,7 @@ handled by the alias removal part
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
+#if 0
 					if( p->argc== 2 &&
 						getLastUpdate(span,getArg(p,0)) == i &&
 						getBeginLifespan(span,getArg(p,0)) == i &&
@@ -242,6 +248,7 @@ handled by the alias removal part
 							mb->stmt[mb->stop]=0;
 							n--;
 					}
+#endif
 					j= 0; /* end of search */
 				}
 			}
