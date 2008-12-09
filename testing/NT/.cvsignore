@@ -11,7 +11,7 @@ lady.gif
 lib
 libexec
 man
-monetdb_config.h
+testing_config.h
 sbin
 scripts
 share

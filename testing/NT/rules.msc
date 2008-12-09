@@ -23,7 +23,7 @@ W_CFLAGS = -WX
 !INCLUDE $(TOPDIR)\winrules.msc
 
 pkg = MonetDB
-CONFIG_H=monetdb_config.h
+CONFIG_H=testing_config.h
 VERSION=1.27.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!

@@ -17,7 +17,7 @@
  * All Rights Reserved.
  */
 
-#include "monetdb_config.h"
+#include "testing_config.h"
 #include "helpers.h"
 #include <ctype.h>
 #include <stdlib.h>

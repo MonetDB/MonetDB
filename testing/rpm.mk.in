@@ -44,14 +44,14 @@ $(rpmtopdir)/rpmmacros:
 	echo "%packager MonetDB Database System <monet@cwi.nl>" >> $(rpmtopdir)/rpmmacros
 	if test "@oids@" -eq 32; then echo "%oid32 1" >> $(rpmtopdir)/rpmmacros; fi
 
-rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+rpm:	MonetDB-testing.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 	$(RPMBUILD) --macros "$(rpmmacros)" --rcfile $(rpmtopdir)/rpmrc -ta --target `uname -m` --define="buildsystem 1" --define="comp_cc @CC@" $(top_builddir)/$(distdir).tar.gz
 	for i in $(rpmtopdir)/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \
 	done
 	rm -rf $(rpmtopdir)/BUILD
 
-srpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
+srpm:	MonetDB-testing.spec $(top_builddir)/$(distdir).tar.gz $(rpmtopdir)/rpmmacros
 	$(RPMBUILD) --macros "$(rpmmacros)" --rcfile $(rpmtopdir)/rpmrc -ts --define="buildsystem 1" $(top_builddir)/$(distdir).tar.gz
 	for i in $(rpmtopdir)/SRPMS/*_@LINUX_DIST@.oid@oids@* ; do \
 		mv "$$i" "`echo "$$i" | sed 's|_@LINUX_DIST@.oid@oids@||'`" ; \

@@ -131,7 +131,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,root,root)
-%{_bindir}/monetdb-config
+%{_bindir}/monetdb-testing-config
 
 %dir %{_includedir}/%{name}
 %dir %{_includedir}/%{name}/*

@@ -84,7 +84,7 @@ goto shift
 
 :usage
 	echo.
-	echo Usage: monetdb-config [OPTION]
+	echo Usage: monetdb-testing-config [OPTION]
 	echo.
 	echo Known values for OPTION are:
 	echo.

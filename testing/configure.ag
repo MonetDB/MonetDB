@@ -31,8 +31,8 @@ AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/gdk/gdk.mx])
-AM_CONFIG_HEADER([monetdb_config.h:conf/config.h.in])
-CONFIG_H=monetdb_config.h
+AM_CONFIG_HEADER([testing_config.h:conf/config.h.in])
+CONFIG_H=testing_config.h
 AC_SUBST(CONFIG_H)
 
 MONETDB_CONFDIR='$(top_srcdir)/conf'
@@ -45,7 +45,7 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
-# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-config
+# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-testing-config
 # MONETDB_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
