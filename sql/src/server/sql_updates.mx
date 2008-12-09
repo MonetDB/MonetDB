@@ -1535,15 +1535,13 @@ sql_update(mvc *sql, sql_schema *schema, sql_table *t, stmt **updates)
 static stmt *
 sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where)
 {
-	stmt *temp_table = NULL;
 	sql_table *t = mvc_bind_table(sql, schema, tname);
 
 	if (!t && !schema) {
 		sql_subtype *tpe;
-		if ((tpe = stack_find_type(sql, tname)) != NULL) {
-			temp_table = stack_find_var(sql, tname);
+
+		if ((tpe = stack_find_type(sql, tname)) != NULL) 
 			t = tpe->comp_type;
-		}
 	}
 	if (!t) {
 		return sql_error(sql, 02, "UPDATE: no such table '%s'", tname);
@@ -1749,7 +1747,6 @@ sql_delete(mvc *sql, sql_schema *schema, sql_table *t, stmt *s, int output, int 
 static stmt *
 delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 {
-	stmt *temp_table = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *schema = NULL;
@@ -1767,7 +1764,6 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		t = mvc_bind_table(sql, schema, tname);
 		if (!t) {
 			sql_subtype *tpe = stack_find_type(sql, tname);
-			temp_table = stack_find_var(sql, tname);
 			if (tpe)
 				t = tpe->comp_type;
 		}
