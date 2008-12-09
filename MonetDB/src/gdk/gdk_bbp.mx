@@ -1873,7 +1873,7 @@ BBPsave(BAT *b)
 	bat bid = ABS(b->batCacheid);
 	int ret = 0;
 
-	if (BBP_lrefs(bid) == 0 || !BATdirty(b))
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
 		/* do nothing */
 		return 0;
 
@@ -2263,9 +2263,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		else
 			vmtarget = 0;
 	}
-	THRprintf(GDKout, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_inuse(), GDKvm_cursize());
+	PERFDEBUG THRprintf(GDKout, "BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_inuse(), GDKvm_cursize());
 
-	THRprintf(GDKout, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n", memtarget, vmtarget);
+	PERFDEBUG THRprintf(GDKout, "BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n", memtarget, vmtarget);
 	PERFDEBUG THRprintf(GDKout, "#BBPtrim(mem=%d,vm=%d)\n", memtarget > 0, vmtarget > 0);
 
 	scan = (bbptrimfirst == BBPMAXTRIM);
@@ -2325,7 +2325,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 			break;
 	}
 	/* done trimming */
-	THRprintf(GDKout, "BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_cursize(), GDKvm_cursize());
+	PERFDEBUG THRprintf(GDKout, "BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_cursize(), GDKvm_cursize());
 	PERFDEBUG THRprintf(GDKout, "#BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", did_scan, bats_unloaded, bats_written, GDKms() - msec);
 
 	BBP_notrim = 0;
