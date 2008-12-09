@@ -17,6 +17,8 @@ clients/bootstrap
 clients/de-bootstrap
 java/bootstrap
 java/de-bootstrap
+testing/bootstrap
+testing/de-bootstrap
 template/bootstrap
 template/de-bootstrap
 sql/bootstrap
@@ -34,7 +36,7 @@ EOF
 WARNING:
 
 The file "$dir/$f" should be kept identical in
-MonetDB, MonetDB4, MonetDB5, clients, java, template, sql, pathfinder, geom, datacell !
+MonetDB, MonetDB4, MonetDB5, clients, java, testing, template, sql, pathfinder, geom, datacell !
 
 (If necessary, please contact Stefan.Manegold@cwi.nl for details.)
 
