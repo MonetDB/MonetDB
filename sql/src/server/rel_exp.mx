@@ -616,9 +616,9 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 		
 			if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
 				return e;
-			if (e && is_column(e->type) && e->name && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && is_column(e->type) && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
-			if (e && is_column(e->type) && !e->name && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && is_column(e->type) && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
 		}
 	}

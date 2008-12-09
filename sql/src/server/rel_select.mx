@@ -3760,14 +3760,16 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
 }
 
 static sql_rel *
-join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
+join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 {
-	int found = 0;
+	int nr = ++sql->label, found = 0, full = (op != op_join);
+	char name[16], *nme;
 	list *exps = rel_projections(sql, t1, NULL, 1, 0);
 	list *r_exps = rel_projections(sql, t2, NULL, 1, 0);
 	list *outexps = new_exp_list();
 	node *n;
 
+	nme = number2name(name, 16, nr);
 	if (!exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
@@ -3776,17 +3778,17 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 		sql_exp *re = exps_bind_column(r_exps, nm);
 
 		if (re) {
-			sql_exp *cond;
 			found = 1;
 			rel = rel_compare_exp(sql, rel, exp_dup(le), exp_dup(re), "=", NULL, sql_where);
-			cond = rel_unop_(sql, exp_dup(le), NULL, "isnull");
-			le = rel_nop_(sql, cond, exp_dup(re), exp_dup(le), NULL, NULL, "ifthenelse");
-			exp_setname(le, NULL, nm);
-			append(outexps, le);
+			if (full) {
+				sql_exp *cond;
+				cond = rel_unop_(sql, exp_dup(le), NULL, "isnull");
+				le = rel_nop_(sql, cond, exp_dup(re), exp_dup(le), NULL, NULL, "ifthenelse");
+			}
+			exp_setname(le, nme, nm = _strdup(nm));
+			_DELETE(nm);
+			append(outexps, exp_dup(le));
 			list_remove_data(r_exps, re);
-		} else if (all) {
-			found = 0;
-			break;
 		} else {
 			append(outexps, exp_dup(le));
 		}
@@ -4389,14 +4391,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		list_destroy(exps);
 		rel = rel_project(rel, outexps);
 	} else {		/* ! js -> natural join */
-		rel = join_on_column_name(sql, rel, t1, t2, 0);
-		/* As the natural join only returns a new relation with 
-		   join columns, we should rename this relation too beable
-		   to uniquely describe a column of this relation again
-		   (not refering to the lower relation columns).
-		 */
-		if (!rel->name)
-			rel = rel_label(sql, rel);
+		rel = join_on_column_name(sql, rel, t1, t2, op);
 	}
 	if (!rel)
 		return NULL;
