@@ -1392,12 +1392,12 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			t = (r->op == op_project && r->l)?r->l:r;
 			r_exps = rel_projections(sql, t, NULL, 1, 1);
 			for(n = l_exps->h; n; n = n->next) {
-				sql_exp *e = n->data, *re;
+				sql_exp *e = n->data;
 	
 				if (exp_is_atom(e))
 					continue;
 				if ((e->l && exps_bind_column2(r_exps, e->l, e->r) != NULL) || 
-				   ((re = exps_bind_column(r_exps, e->r)) != NULL && (!e->l || !e->r)))
+				   (exps_bind_column(r_exps, e->r) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 			list_destroy(l_exps);
