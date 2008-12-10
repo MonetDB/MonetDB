@@ -651,11 +651,11 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
 	if (b->T->varsized) {
 		for (i = 0; i < (wrd)BATcount(b); i++) {
-			BUNinplace(rb, m[mf+i], NULL, BUNtvar(bi, bf+i), 0);
+			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtvar(bi, bf+i), 0);
 		}
 	} else {
 		for (i = 0; i < (wrd)BATcount(b); i++) {
-			BUNinplace(rb, m[mf+i], NULL, BUNtloc(bi, bf+i), 0);
+			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtloc(bi, bf+i), 0);
 		}
 	}
 	BBPunfix(*CMAP);
