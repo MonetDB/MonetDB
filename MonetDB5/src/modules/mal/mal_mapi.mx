@@ -1259,9 +1259,6 @@ SERVERdisconnectALL(int *key){
 
 	mal_set_lock(mal_contextLock,"SERVERdisconnect");
 
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Start to close all session\n");
-#endif
 	for(i=1; i< MAXSESSIONS; i++)
 		if( SERVERsessions[i].c != 0 ) {
 #ifdef MAPI_TEST
@@ -1276,9 +1273,6 @@ SERVERdisconnectALL(int *key){
 
 	mal_unset_lock(mal_contextLock,"SERVERdisconnect");
 
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -1305,10 +1299,6 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	}
 
 	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
-
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
-#endif
 
 	return MAL_SUCCEED;
 }
