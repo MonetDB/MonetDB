@@ -1873,7 +1873,7 @@ BBPsave(BAT *b)
 	bat bid = ABS(b->batCacheid);
 	int ret = 0;
 
-	if (BBP_lrefs(bid) == 0 || !BATdirty(b))
+	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
 		/* do nothing */
 		return 0;
 

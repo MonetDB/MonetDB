@@ -76,6 +76,7 @@ prelude(int cnt, bat *subcommit)
 					return -1;
 			}
 			if (b) {
+				assert(!isVIEW(b));
 				BATcommit(b);
 			}
 		}
@@ -106,7 +107,7 @@ epilogue(int cnt, bat *subcommit)
 			BAT *b = BBP_cache(bid);
 			if (b) (void) BATcheckmodes(b, TRUE); /* check mmap modes */
 		} 
-                if ((BBP_status(bid) & (BBPDELETED | BBPTMP)) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+                if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
 			BAT *b = BBPquickdesc(bid, TRUE);
 
 			/* the unloaded ones are deleted without loading deleted disk images */
