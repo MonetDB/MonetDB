@@ -3829,7 +3829,10 @@ PROC do_update_end(bat[void,bat] ws, bat[void,oid] affected_conts) : void
     lock_set(pf_short);
     var err := CATCH(_ws_precommit(ws, cont, sel_modified_page, sel_modified_attr, map_pid_changed));
     lock_unset(pf_short);
-    if (not(isnil(err))) ERROR(err);
+    if (not(isnil(err))) {
+      coll_lock_unset(ws, cont, COLL_LONGLOCK, "===================== COMMIT ABORTED", ws_logstarttime); 
+      ERROR(err);
+    }
   }
 
   var ws_logtime := usec();
@@ -3841,7 +3844,10 @@ PROC do_update_end(bat[void,bat] ws, bat[void,oid] affected_conts) : void
   log_trans_start(pf_logger);
   var err := CATCH(do_log_updates(ws, cont_order, map_pid_changed_bat));
   lock_unset(pf_wal);
-  if (not(isnil(err))) ERROR(err);
+  if (not(isnil(err))) {
+    coll_lock_unset(ws, cont, COLL_LONGLOCK, "===================== COMMIT ABORTED", ws_logstarttime); 
+    ERROR(err);
+  }
 
   if (ws_log_active)
     ws_log(ws, "===================== WAL RELEASED exec" + str(ws_logtime - (ws_logtime := usec()))); 
