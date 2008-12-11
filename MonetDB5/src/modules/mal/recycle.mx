@@ -226,7 +226,7 @@ RECYCLEdump(stream *s)
 	stream_printf(s,"#RPremoved = %d RPactive= %d RPmisses = %d\n",
                  recycleRem, incache-recycleRem, recycleMiss);
 #endif
-	stream_printf(s,"#Cache search time= %d(usec)\n",recycleSearchTime);
+	stream_printf(s,"#Cache search time= %d(usec) cleanCache: %d calls evicted "LLFMT" instructions for "LLFMT" usec\t Discarded by CRD "LLFMT"\n",recycleSearchTime, ccCalls,ccInstr,ccTime,crdInstr);
 
 	/* and dump the statistics per instruction*/
         stream_printf(s,"# CL\t   lru\t\tcnt\t ticks\t rd\t wr\t Instr\n");

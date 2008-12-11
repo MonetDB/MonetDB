@@ -118,6 +118,10 @@ mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 mal_export double recycleFresh;
 mal_export lng time0; /*start time of query */
+mal_export int ccCalls;	/* Number of calls to cleanCache */
+mal_export lng ccTime;   /* Time spent  */
+mal_export lng ccInstr; /* Number of instructions cleaned */
+mal_export lng crdInstr; /* Number of instructions not admited in RP by CRD */
 
 
 mal_export int statements;	/* total number of statements executed */
@@ -195,7 +199,10 @@ lng recycleVolume = 0;
 
 int recycleMiss = 0;
 int recycleRem = 0;
-
+lng ccTime = 0;
+lng ccInstr = 0;
+int ccCalls = 0;
+lng crdInstr = 0;
 
 @-
 REUSE_EXACT only looks at precisely matching instructions.
@@ -512,8 +519,7 @@ static void RECYCLEcleanCache(lng wr0){
 	int k, *lvs, *vm;
 	int limit, mem, idx, pc;
 	int cont, reserve;
-	lng wr;
-	lng oldclk;
+	lng oldclk, starttm, wr;
 	dbl mincrd, crd;
 	bte maxcat, cat, *used;
 	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
@@ -524,6 +530,8 @@ static void RECYCLEcleanCache(lng wr0){
 	if (!recycleBlk) 
 		return;
 
+	ccCalls++;
+	starttm = GDKusec();
 newpass:
 	cont = 0;	
 	wr = wr0;
@@ -748,6 +756,7 @@ newpass:
                         recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
                         p->token = NOOPsymbol;
 			recycleRem ++;
+			ccInstr++;
 			if ( recycleBlk->profiler[i].counter >1) {
                                 getIPtr(p,r,j,pc);
                                 if (r && r->recycle <REC_MAX_INTEREST)
@@ -774,6 +783,7 @@ newpass:
 					r->recycle++;
 			}
 			freeInstruction(p);
+			ccInstr++;
 		}
 		else {
 			pushInstruction(recycleBlk,p);
@@ -788,6 +798,8 @@ newpass:
 #endif
 	GDKfree(dmask);
 	if (cont) goto newpass;
+	ccTime = GDKusec() - starttm;
+
 }
 
 @-
@@ -1118,8 +1130,10 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
                                         r->recycle++;
                         }
 			recycleBlk->profiler[i].clk = GDKusec();
-			recycled++;
-			if (!isBindInstr(q)) updateQryStat(q->recycle,gluse);
+			if (!isBindInstr(q)){
+				recycled++;
+				updateQryStat(q->recycle,gluse);
+			}
 			recycleRecent = i;
 			return i;
 			notfound: 
@@ -1208,7 +1222,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
 
-	v = getArgReference(stk,p,0); /* don't count memory for persistent bats */
+	v = &stk->stk[getArg(p,0)]; /* don't count memory for persistent bats */
 	if ((v->vtype == TYPE_bat) && (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT))
 		wr = 0;
 
@@ -1236,8 +1250,11 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		break;
 	case RETAIN_INTEREST:
 		/* RETAIN_INTEREST: refinement per instruction, retain if evidences for previous reuse */
-		if (p->recycle > REC_MIN_INTEREST && RECYCLEfind(cntxt,mb,stk,p)< 0)
-			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+		if (RECYCLEfind(cntxt,mb,stk,p)< 0){
+			if (p->recycle > REC_MIN_INTEREST)
+				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+			else crdInstr++;
+		}
 		break;
 	case RETAIN_ADAPT:
 		/* RETAIN_ADAPT: searching the cache may take too long? */
@@ -1283,6 +1300,10 @@ RECYCLEshutdown(Client cntxt){
 	recycled = statements = 0;
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
+	ccCalls = 0;
+	ccTime = 0;
+	ccInstr = 0;
+	crdInstr = 0;
 #ifdef _DEBUG_CACHE_
 	recycleMiss = 0;
 	recycleRem = 0;
@@ -1416,7 +1437,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (p->argc == 2){
 		if(getArgType(mb,p,1)==TYPE_bat || 
 			isaBatType(getArgType(mb, p,1)) ){
-			v = getArgReference(stk,p,1);
+ 			v = &stk->stk[getArg(p,1)];
 			if(v->vtype == TYPE_bat && v->val.bval )
 				b[btop++] = v->val.bval;
 		}
@@ -1429,7 +1450,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 			if (getName("bind",4)== getFunctionId(q) && getModuleId(q)==getName("sql",3)){
 				for (j=p->retc; j<p->argc; j++)
-					if( VALcmp( getArgReference(stk,p,j), &getVarConstant(recycleBlk,getArg(q,j))))
+					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					break;
 				if (j == p->argc){
 					v = &getVarConstant(recycleBlk,getArg(q,0));
