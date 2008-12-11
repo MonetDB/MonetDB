@@ -24,19 +24,19 @@
 #include <monetdb_winconfig.h>
 
 /* architecture-dependent files */
-#define MONETDB_EXEC_PREFIX "${prefix}"
+#define TESTING_EXEC_PREFIX "${prefix}"
 
 /* object code libraries */
-#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+#define TESTING_LIBDIR "${exec_prefix}\\lib"
 
 /* modifiable single-machine data */
-#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+#define TESTING_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "@QXprefix@"
+#define TESTING_PREFIX "@QXprefix@"
 
 /* read-only single-machine data */
-#define MONETDB_SYSCONFDIR "${prefix}\\etc"
+#define TESTING_SYSCONFDIR "${prefix}\\etc"
 
 /* Version number of package */
 #define VERSION "@VERSION@"

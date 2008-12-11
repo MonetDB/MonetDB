@@ -18,11 +18,11 @@
 EXTRA_DIST = Mtest.py.in Mtest.py.bat Mlog.in Mlog.bat Mfilter.py.in \
 	     MkillUsers.in
 
-INCLUDES = ../common
+INCLUDES = $(MONETDB_INCS)
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
-	LIBS = ../common/libmutils $(MALLOC_LIBS)
+	LIBS = $(MONETDB_LIBS) -lmutils $(MALLOC_LIBS)
 }
 
 bin_Mtimeout = {
@@ -46,8 +46,8 @@ scripts_py = {
 
 headers_python = {
 	HEADERS = py
-	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
-	SOURCES = trace.py subprocess26.py
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDBtesting
+	SOURCES = trace.py subprocess26.py __init__.py
 }
 
 scripts_sh = {

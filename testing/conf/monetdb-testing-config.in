@@ -17,9 +17,9 @@
 # Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
-pkg="MonetDB"
-source="@QMONETDB_SOURCE@"
-build="@QMONETDB_BUILD@"
+pkg="@PACKAGE@"
+source="@QTESTING_SOURCE@"
+build="@QTESTING_BUILD@"
 prefix="@Qprefix@"
 exec_prefix="@Qexec_prefix@"
 
@@ -34,9 +34,9 @@ infodir="@Qinfodir@"
 mandir="@Qmandir@"
 includedir="@Qincludedir@"
 
-pkglibdir="${libdir}/${pkg}"
-pkgdatadir="${datadir}/${pkg}"
-pkgincludedir="${includedir}/${pkg}"
+pkglibdir="${libdir}/MonetDB"
+pkgdatadir="${datadir}/MonetDB"
+pkgincludedir="${includedir}/MonetDB"
 pythonlibdir="${prefix}/@PYTHON_LIBDIR@"
 
 usage()
@@ -115,16 +115,12 @@ while test $# -gt 0; do
 
     --includes)
        	echo \
-		-I\${MONETDB_INCLUDEDIR} \
-		-I\${MONETDB_INCLUDEDIR}/common \
-		-I\${MONETDB_INCLUDEDIR}/gdk
+		-I\${TESTING_INCLUDEDIR}
        	;;
 
     --cflags)
        	echo \
-		-I$pkgincludedir \
-		-I$pkgincludedir/common \
-		-I$pkgincludedir/gdk
+		-I$pkgincludedir
        	;;
 
     --libs)
@@ -138,6 +134,7 @@ while test $# -gt 0; do
 	echo DOCTOOLS=@DOCTOOLS_FALSE@
 	echo HAVE_BUILDTOOLS=@HAVE_BUILDTOOLS_FALSE@
 	echo HAVE_EXTRA_MK=@HAVE_EXTRA_MK_FALSE@
+	echo HAVE_MONETDB=@HAVE_MONETDB_FALSE@
 	echo HAVE_PCRE=@HAVE_PCRE_FALSE@
 	echo HAVE_PERL_DEVEL=@HAVE_PERL_DEVEL_FALSE@
 	echo HAVE_PERL=@HAVE_PERL_FALSE@

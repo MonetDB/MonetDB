@@ -94,7 +94,7 @@ if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
         try:
-            from MonetDB import trace
+            from MonetDBtesting import trace
         except ImportError:
             # if running from the build directory trace is not in MonetDB module
             import trace

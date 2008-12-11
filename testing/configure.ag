@@ -20,8 +20,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([MonetDB Common], [1.27.0], [monet@cwi.nl], [MonetDB])
-#                          ^^^^^^
+AC_INIT([MonetDB Testing], [1.27.0], [monet@cwi.nl], [MonetDB-testing])
+#                           ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 AC_CONFIG_AUX_DIR(conf)
@@ -30,13 +30,10 @@ AC_CANONICAL_TARGET
 AH_TOP([#include "sysdefs.h"])
 AH_BOTTOM([#include "stddef.h"])
 AM_INIT_AUTOMAKE
-AC_CONFIG_SRCDIR([src/gdk/gdk.mx])
+AC_CONFIG_SRCDIR([src/Mtimeout.c])
 AM_CONFIG_HEADER([testing_config.h:conf/config.h.in])
 CONFIG_H=testing_config.h
 AC_SUBST(CONFIG_H)
-
-MONETDB_CONFDIR='$(top_srcdir)/conf'
-AC_SUBST(MONETDB_CONFDIR)
 
 HOST=[$target]
 AC_DEFINE_UNQUOTED(HOST, "$HOST", [Host identifier])
@@ -45,8 +42,8 @@ if test x"$target_os" = xcygwin; then
 	AC_DEFINE(WIN32, 1, [Define on MS Windows (also under Cygwin)])
 fi
 
-# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-testing-config
-# MONETDB_SOURCE is the absolute path name of the source directory
+# TESTING_BUILD and TESTING_SOURCE are *only* used for monetdb-testing-config
+# TESTING_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
 # The Q versions of various variables are used in places where \'s
@@ -54,21 +51,33 @@ fi
 # in path names, so there is no need to do anything special here
 # except set the variables.  The command to set them in case we do
 # need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
-MONETDB_BUILD=[`pwd`]
-AC_SUBST(MONETDB_BUILD)
+TESTING_BUILD=[`pwd`]
+AC_SUBST(TESTING_BUILD)
 
-MONETDB_SOURCE=[`(cd $srcdir && pwd)`]
-AC_SUBST(MONETDB_SOURCE)
+TESTING_SOURCE=[`(cd $srcdir && pwd)`]
+AC_SUBST(TESTING_SOURCE)
 
 AM_MONETDB_XQ_VARS_1()
 
 
+# Check for Monet 
+req_monetdb_ver='1.26.0'
+#                ^^^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+AM_MONETDB_COMMON($req_monetdb_ver)
+if test "x$have_monetdb" != xyes; then
+	if test "x$MONETDB_VERSION" = "x"; then
+		AC_MSG_ERROR([MonetDB was not found. Testing requires at least version $req_monetdb_ver of MonetDB.])
+	else
+		AC_MSG_ERROR([Testing requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDB_VERSION was found.])
+	fi
+fi
 AM_MONETDB_DEFAULTS()
-
-# Checks for programs.
 AM_MONETDB_COMPILER()
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
+AM_MONETDB_LIBS()
 AM_MONETDB_UTILS()
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
@@ -78,53 +87,34 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([libintl.h stddef.h])
-AC_CHECK_HEADERS([fcntl.h io.h malloc.h pwd.h signal.h])
-AC_CHECK_HEADERS([sys/file.h sys/mman.h sys/param.h sys/resource.h])
-AC_CHECK_HEADERS([sys/sysctl.h sys/time.h sys/wait.h])
+AC_CHECK_HEADERS([fcntl.h io.h signal.h])
+AC_CHECK_HEADERS([sys/wait.h])
 AM_MONETDB_LIBS()
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * restrict p) { return *p; }]),
-	AC_DEFINE(HAVE_RESTRICT, 1,
-		[Define if the compiler supports the restrict keyword]),
-	AC_COMPILE_IFELSE(AC_LANG_SOURCE([int foo(int * __restrict__ p) { return *p; }]),
-		AC_DEFINE(HAVE___RESTRICT__, 1,
-			[Define if the compiler supports the __restrict__ keyword])))
-
 # Checks for library functions.
-AC_FUNC_MEMCMP
-AC_CHECK_FUNCS([memset])
-AC_CHECK_FUNCS([fcntl ftime getopt getrlimit getuid kill lockf madvise nanosleep pipe posix_fadvise posix_madvise setenv shutdown strdup strtof uname strtoll fsync fdatasync])
-AC_CHECK_DECLS([strdup, strtof])
+AC_CHECK_FUNCS([getopt kill strdup])
+AC_CHECK_DECLS([strdup])
 
 
 dnl provide different versions of the paths derived above
 AM_MONETDB_XQ_VARS_2()
-AC_DEFINE_UNQUOTED(MONETDB_PREFIX,"$QXprefix",[architecture-independent files])
-AC_DEFINE_UNQUOTED(MONETDB_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
-QMONETDB_BUILD="$MONETDB_BUILD"
-XMONETDB_BUILD="`$translatepath "$MONETDB_BUILD"`"
-QXMONETDB_BUILD="`echo "$XMONETDB_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDB_BUILD)
-AC_SUBST(XMONETDB_BUILD)
-AC_SUBST(QXMONETDB_BUILD)
-QMONETDB_SOURCE="$MONETDB_SOURCE"
-XMONETDB_SOURCE="`$translatepath "$MONETDB_SOURCE"`"
-QXMONETDB_SOURCE="`echo "$XMONETDB_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QMONETDB_SOURCE)
-AC_SUBST(XMONETDB_SOURCE)
-AC_SUBST(QXMONETDB_SOURCE)
-AC_DEFINE_UNQUOTED(MONETDB_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
-AC_DEFINE_UNQUOTED(MONETDB_LIBDIR,"$QXlibdir",[object code libraries])
-AC_DEFINE_UNQUOTED(MONETDB_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
-
-QPYTHON="$PYTHON"
-XPYTHON="`$translatepath "$PYTHON"`"
-QXPYTHON="`echo "$XPYTHON" | sed 's/\\\\/\\\\\\\\/g'`"
-AC_SUBST(QPYTHON)
-AC_SUBST(XPYTHON)
-AC_SUBST(QXPYTHON)
+AC_DEFINE_UNQUOTED(TESTING_PREFIX,"$QXprefix",[architecture-independent files])
+AC_DEFINE_UNQUOTED(TESTING_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
+QTESTING_BUILD="$TESTING_BUILD"
+XTESTING_BUILD="`$translatepath "$TESTING_BUILD"`"
+QXTESTING_BUILD="`echo "$XTESTING_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QTESTING_BUILD)
+AC_SUBST(XTESTING_BUILD)
+AC_SUBST(QXTESTING_BUILD)
+QTESTING_SOURCE="$TESTING_SOURCE"
+XTESTING_SOURCE="`$translatepath "$TESTING_SOURCE"`"
+QXTESTING_SOURCE="`echo "$XTESTING_SOURCE" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_SUBST(QTESTING_SOURCE)
+AC_SUBST(XTESTING_SOURCE)
+AC_SUBST(QXTESTING_SOURCE)
+AC_DEFINE_UNQUOTED(TESTING_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
+AC_DEFINE_UNQUOTED(TESTING_LIBDIR,"$QXlibdir",[object code libraries])
+AC_DEFINE_UNQUOTED(TESTING_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 
 
 case "$host_os" in

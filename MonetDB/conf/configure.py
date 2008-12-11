@@ -51,6 +51,7 @@ subs = [("@exec_prefix@", r'%prefix%'),
 
 packages = {
     'MONETDB':  'monetdb',
+    'TESTING':  'monetdb-testing',
     'CLIENTS':  'monetdb-clients',
     'MONETDB4': 'monetdb4',
     'MONETDB5': 'monetdb5',

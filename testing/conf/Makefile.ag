@@ -18,7 +18,7 @@
 EXTRA_DIST = \
 	config.guess config.sub \
 	install-sh missing \
-	ltmain.sh config.h.in
+	ltmain.sh
 
 scripts_sh = {
 	COND = NOT_WIN32

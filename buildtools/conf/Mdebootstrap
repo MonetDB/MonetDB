@@ -67,7 +67,7 @@ elif [ -f autogen/autogen.py  -a  -f mel/mel.mx  -a  -f Mx/Mx.h  -a  -f burg/bur
 	what="buildtools"
 else
 	# otherwise, use the current directory's (base)name to guess, which of
-	# buildtools java, MonetDB, clients, MonetDB4, MonetDB5, template, sql, geom, pathfinder, datacell
+	# buildtools java, MonetDB, testing, clients, MonetDB4, MonetDB5, template, sql, geom, pathfinder, datacell
 	# we are.
 	what="`pwd`"
 	what="`basename $what`"

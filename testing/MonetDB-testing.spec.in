@@ -1,4 +1,4 @@
-%define name MonetDB
+%define name MonetDB-testing
 %define version @VERSION@
 %define release 1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
@@ -24,59 +24,26 @@ Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 URL: http://monetdb.cwi.nl/
-Source: http://downloads.sourceforge.net/monetdb/%{name}-%{version}.tar.gz
+Source: http://downloads.sourceforge.net/monetdb/MonetDB-testing-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
+Requires: MonetDB >= 1.26
+#                    ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+Requires: MonetDB-python
 BuildRequires: python
-BuildRequires: zlib-devel, bzip2-devel, openssl-devel
+
+%if !%{?buildsystem}
+BuildRequires: MonetDB-devel >= 1.26
+#                               ^^^^
+# Maintained via vertoo. Please don't modify by hand!
+# Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+%endif
 
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 
 %description
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the core components of MonetDB.  If you want to
-use MonetDB, you will certainly need this package.
-
-%package devel
-Summary: MonetDB development package
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: python
-Requires: zlib-devel, bzip2-devel, openssl-devel
-
-%description devel
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to develop with MonetDB.
-
-%package python
-Summary: MonetDB development package
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: python
-
-%description python
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains Python support files.
-
-%package testing
-Summary: MonetDB testing package
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: %{name}-python
-
-%description testing
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -125,34 +92,22 @@ rm -fr $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%{_libdir}/libmutils.so.*
-%{_libdir}/libstream.so.*
-%{_libdir}/libbat.so.*
-
-%files devel
-%defattr(-,root,root)
+%exclude %{_bindir}/*.pyc
+%exclude %{_bindir}/*.pyo
 %{_bindir}/monetdb-testing-config
-
-%dir %{_includedir}/%{name}
-%dir %{_includedir}/%{name}/*
-%{_includedir}/%{name}/*.h
-%{_includedir}/%{name}/*/*.[hcm]
-%{_libdir}/libmutils.so
-%{_libdir}/libstream.so
-%{_libdir}/libbat.so
-
-%files python
-%dir %{python_sitearch}/%{name}
-%{python_sitearch}/%{name}/*
-
-%files testing
-%{_bindir}/Mtest.py*
-%{_bindir}/Mapprove.py*
+%{_bindir}/Mtest.py
+%{_bindir}/Mapprove.py
 %{_bindir}/Mdiff
-%{_bindir}/Mfilter.py*
+%{_bindir}/Mfilter.py
 %{_bindir}/MkillUsers
 %{_bindir}/Mlog
 %{_bindir}/Mtimeout
+%dir %{python_sitearch}/MonetDBtesting
+%exclude %{python_sitearch}/MonetDBtesting/*.pyc
+%exclude %{python_sitearch}/MonetDBtesting/*.pyo
+%{python_sitearch}/MonetDBtesting/__init__.py
+%{python_sitearch}/MonetDBtesting/subprocess26.py
+%{python_sitearch}/MonetDBtesting/trace.py
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}

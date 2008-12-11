@@ -3,10 +3,10 @@
 REM	set prefix=%~dp0
 REM	set prefix=%prefix:~0,-4%
 
-set pkg=MonetDB
+set pkg=@PACKAGE@
 set version=@VERSION@
-set source=@MONETDB_SOURCE@
-set build=@MONETDB_BUILD@
+set source=@TESTING_SOURCE@
+set build=@TESTING_BUILD@
 set prefix=@prefix@
 set exec_prefix=@exec_prefix@
 set bindir=@bindir@
@@ -19,9 +19,9 @@ set libdir=@libdir@
 set infodir=@infodir@
 set mandir=@mandir@
 set includedir=@includedir@
-set pkglibdir=%libdir%\%pkg%
-set pkgdatadir=%datadir%\%pkg%
-set pkgincludedir=%includedir%\%pkg%
+set pkglibdir=%libdir%\MonetDB
+set pkgdatadir=%datadir%\MonetDB
+set pkgincludedir=%includedir%\MonetDB
 set pythonlibdir=%prefix%\@PYTHON_LIBDIR@
 
 if "%1" == ""	goto usage
@@ -62,6 +62,7 @@ if not "%1" == "--conds"	goto usage
 	echo DOCTOOLS=@DOCTOOLS_FALSE@
 	echo HAVE_BUILDTOOLS=@HAVE_BUILDTOOLS_FALSE@
 	echo HAVE_EXTRA_MK=@HAVE_EXTRA_MK_FALSE@
+	echo HAVE_MONETDB=@HAVE_MONETDB_FALSE@
 	echo HAVE_PCRE=@HAVE_PCRE_FALSE@
 	echo HAVE_PERL_DEVEL=@HAVE_PERL_DEVEL_FALSE@
 	echo HAVE_PERL=@HAVE_PERL_FALSE@

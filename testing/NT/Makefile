@@ -11,7 +11,6 @@ prefix = $(MAKEDIR)
 
 UNISTD_H = unistd.h
 
-INSTALLER = MonetDB-Common
 !IF $(bits) == 32
 IBITS =
 !ELSE
@@ -25,20 +24,8 @@ check: "$(SRCDIR)\Makefile.msc"
 	$(MAKE) /nologo /i /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" check
 	call RunMtest.bat
 
-install: targetdirs monetdb_winconfig.h testing_config.h winrules.msc all
-	$(INSTALL) monetdb_winconfig.h "$(includedir)\MonetDB"
-	$(INSTALL) winrules.msc "$(pkgdatadir)"
+install: targetdirs testing_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) banner.bmp "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) monetdb.ico "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) license.rtf "$(prefix)"
-	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) website.html "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
-	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
-	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
-	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
-	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
-	@-c:\cygwin\bin\chmod a+rx "$(prefix)\$(INSTALLER)$(IBITS).msi"
 
 $(SRCDIR)\Makefile.msc: "$(SRCDIR)\Makefile.ag"
         $(CD) "$(SRCDIR)" && autogen.py

@@ -68,6 +68,7 @@ BINPATH=""
 if [ ! "$CONCURRENT" ] ; then
 	BINPATH="$THISPATH"
 	if [    "$MONETDB_PREFIX" ] ; then BINPATH="$BINPATH    $MONETDB_PREFIX/bin" ; fi
+	if [    "$TESTING_PREFIX" ] ; then BINPATH="$BINPATH    $TESTING_PREFIX/bin" ; fi
 	if [    "$CLIENTS_PREFIX" ] ; then BINPATH="$BINPATH    $CLIENTS_PREFIX/bin" ; fi
 	if [   "$MONETDB4_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB4_PREFIX/bin" ; fi
 	if [   "$MONETDB5_PREFIX" ] ; then BINPATH="$BINPATH   $MONETDB5_PREFIX/bin" ; fi

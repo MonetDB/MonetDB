@@ -17,4 +17,4 @@
 
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = common gdk testing
+SUBDIRS = common gdk

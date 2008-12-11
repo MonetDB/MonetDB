@@ -17,9 +17,7 @@
 
 SUBDIRS = src conf
 
-EXTRA_DIST = configure.ag rpm.mk.in sysdefs.h.in \
+EXTRA_DIST = configure.ag rpm.mk.in \
 		MonetDB-testing.spec MonetDB-testing.spec.in
 
 EXTRA_DIST_DIR = NT
-
-EXTRA_HEADERS = sysdefs.h

@@ -70,22 +70,6 @@ accelerators, SQL- and XML- frontends.
 
 This package contains Python support files.
 
-%package testing
-Summary: MonetDB testing package
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: %{name}-python
-
-%description testing
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the programs and files needed for testing the
-MonetDB packages.  You probably don't need this, unless you are a
-developer.
-
 %prep
 rm -rf $RPM_BUILD_ROOT
 
@@ -144,15 +128,6 @@ rm -fr $RPM_BUILD_ROOT
 %files python
 %dir %{python_sitearch}/%{name}
 %{python_sitearch}/%{name}/*
-
-%files testing
-%{_bindir}/Mtest.py*
-%{_bindir}/Mapprove.py*
-%{_bindir}/Mdiff
-%{_bindir}/Mfilter.py*
-%{_bindir}/MkillUsers
-%{_bindir}/Mlog
-%{_bindir}/Mtimeout
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}

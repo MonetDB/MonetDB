@@ -110,7 +110,7 @@ except ImportError:
     if os.environ.has_key('PYTHONPATH'):
         p = p + os.pathsep + os.environ['PYTHONPATH']
     os.environ['PYTHONPATH'] = p
-import MonetDB.subprocess26 as subprocess
+import MonetDBtesting.subprocess26 as subprocess
 import threading, signal
 
 randomPortRepeat = 9
@@ -3844,7 +3844,7 @@ VALUES (%s, '%s', '%s', '%s',
 if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
-        from MonetDB import trace
+        from MonetDBtesting import trace
         t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
         t.runfunc(main, sys.argv)
     else:

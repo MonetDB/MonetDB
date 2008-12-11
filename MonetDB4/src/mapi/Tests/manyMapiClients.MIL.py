@@ -42,7 +42,7 @@ def main(argv) :
 if __name__ == "__main__":
     if '--trace' in sys.argv:
         sys.argv.remove('--trace')
-        import trace
+        from MonetDBtesting import trace
         t = trace.Trace(trace=1, count=0)
         t.runfunc(main, sys.argv)
     else:

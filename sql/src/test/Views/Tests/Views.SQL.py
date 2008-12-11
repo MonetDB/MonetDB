@@ -3,7 +3,7 @@ try:
     import subprocess
 except ImportError:
     # use private copy for old Python versions
-    import MonetDB.subprocess26 as subprocess
+    import MonetDBtesting.subprocess26 as subprocess
 
 
 def client(cmd):

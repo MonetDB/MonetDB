@@ -1,1 +1,2 @@
-monetdb = major:1; minor:27; release:0; rc:x; build:1;
+monetdb = major:1; minor:26; release:0; rc:x; build:1;
+testing = major:1; minor:27; release:0; rc:x; build:1;
