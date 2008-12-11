@@ -1658,9 +1658,9 @@ PROC __ws_opencoll(BAT[void,BAT] ws,
         pre := [remap](reverse(ws_rid).leftjoin(dsk), const pid_map, false);
         mem := [rcopy](reverse(ws_mem).leftjoin(dsk)); 
     } else {
-        # read-only doc; no isolation needed 
-        pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
-        mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
+        # read-only doc; isolation is also needed due to concurrent add-doc()s
+        pre := [rcopy](reverse(ws_rid).leftjoin(dsk));
+        mem := [rcopy](reverse(ws_mem).leftjoin(dsk));
     }
 
     # register new container in ws, and append all bats to it
@@ -1746,10 +1746,11 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
             var suffix := str(abs(int(idx)));
             var free_nids := empty_bat;
 
+            # create the shared hash table on ATTR_OWN (essential during serialization of anything)
+            reverse(own := copy(own)).accbuild("hash");
+
             # updatable document ?
             if (isolate) { 
-                # create the shared hash table on ATTR_OWN (essential during serialization of anything)
-                reverse(own := copy(own)).accbuild("hash");
                 free_nids := ws.fetch(NID_RID).fetch(cont).uselect(oid_nil).access(BAT_WRITE).revert();
                 if ((free_nids.count() = 0) and (free_nids.htype() = void)) {
                   free_nids.seqbase(0@0);
@@ -1784,10 +1785,10 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
                 vxm.bbpname(prefix + "_vx_hsh_nid" + suffix);
                 vxi.bbpname(prefix + "_vx_hsh_nid_ins" + suffix);
                 vxd.bbpname(prefix + "_vx_hsh_nid_del" + suffix);
-                own.bbpname(prefix + "_attr_own" + suffix);
                 page_ws.bbpname(prefix + "_page_ws" + suffix);
                 attr_ws.bbpname(prefix + "_attr_ws" + suffix);
             }
+            own.bbpname(prefix + "_attr_own" + suffix);
             unq.bbpname(prefix + "_qn_nid_unq" + suffix);
 
             # insert QN_NID index (nsloc) to the shared runtime bat
