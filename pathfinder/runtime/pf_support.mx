@@ -998,97 +998,106 @@ PROC trace_items (BAT[void,any] ws,
 
         # print item value
         var j := 0;
-        var node_id := oid(nil);
-        var frag := oid(nil);
-        var kind;
+        var node_id  := oid(nil);
+        var attr_id  := oid(nil);
+        var frag     := oid(nil);
+        var kind     := ELEM;
+        var type_id  := int(nil);
+        var item     := oid(nil);
+        var type_str := str(nil);
         # iterate over the list of item relations
         # (to cope with polymorphic sequences)
         while (j < item_set_count) {
-            var type_id := types.fetch(j);
-            var item := item_set.fetch(j).fetch(i + offset);
-            var type_str;
+            type_id := types.fetch(j);
+            item    := item_set.fetch(j).fetch(i + offset);
             # the types are aligned with the aat_* types in
             # struct PFalg_simple_type_t (compiler/include/algebra.h)
-            if (type_id = 2) {
-                type_str := "integer";
-            } else if (type_id = 4) {
-                type_str := "string";
-            } else if (type_id = 8) {
-                type_str := "decimal";
-            } else if (type_id = 16) {
-                type_str := "double";
-            } else if (type_id = 32) {
-                type_str := "boolean";
-            } else if (type_id = 64) {
-                type_str := "QName";
-            } else if (type_id = 128) {
-                type_str := "untypedAtomic";
-            } else if (type_id = 256) {
-                type_str := "node";
-                frag := item;
-            } else if (type_id = 512) {
-                type_str := "node";
-                node_id := item;
-                kind := ELEM;
-            } else if (type_id = 1024) {
-                type_str := "attribute";
-                frag := item;
-            } else if (type_id = 2048) {
-                type_str := "attribute";
-                node_id := item;
-                kind := ATTR;
-            } else {
-                printf("\n");
-                ERROR ("unknown type (%i) appears in "
-                       + "trace output generation",
-                       type_id);
-            }
-            # we have found the correct type -- so generate output for it
-            if (not(isnil (item))) {
-                # qnames
-                if (type_id = 64) {
-                    printf (" type=\"%s\"", type_str);
-                    var name := trace_qname_uri (item, WS);
-                    printf (">%s", name);
+            if (not (isnil (item))) {
+                if (type_id = 2) {
+                    type_str := "integer";
                     break;
-                # all primitive types
-                } else if (and (isnil (node_id), isnil (frag))) {
-                    printf (" type=\"%s\">", type_str);
-                    printf ("%s", item.str());
+                } else if (type_id = 4) {
+                    type_str := "string";
                     break;
-                # nodes
-                } else if (and (not (isnil (node_id)),
-                                not (isnil (frag)))) {
-                    printf (" type=\"%s\"", type_str);
-                    printf (" id=\"%i\"", node_id);
-                    printf (" fragment=\"%i\"", frag);
-                    if (kind = ELEM) {
-                        # element, text, comment, pi, and doc nodes
-                        printf (">");
-                        print_result ("xml-noroot-noheader",
-                                      ws,
-                                      new (void,oid).seqbase(0@0)
-                                                    .append(node_id),
-                                      new (void,oid).seqbase(0@0)
-                                                    .append(frag)
-                                                    .set_kind(kind),
-                                      new (void,lng).seqbase(0@0),
-                                      new (void,dbl).seqbase(0@0),
-                                      new (void,dbl).seqbase(0@0),
-                                      new (void,str).seqbase(0@0));
-                    } else {
-                        # attribute nodes
-                        var qn_id := mposjoin (node_id, frag, ws.fetch(ATTR_QN)).fetch(0);
-                        var qn_frag := mposjoin (node_id, frag, ws.fetch(ATTR_CONT)).fetch(0);
-                        var prop := mposjoin (node_id, frag, ws.fetch(ATTR_PROP)).fetch(0);
-                        var val := mposjoin (prop, qn_frag, ws.fetch(PROP_VAL)).fetch(0);
-                        var name := trace_qname_uri (qn_id, qn_frag);
-                        printf (" name=\"%s\" value=\"%s\">", name, val);
-                    }
+                } else if (type_id = 8) {
+                    type_str := "decimal";
                     break;
+                } else if (type_id = 16) {
+                    type_str := "double";
+                    break;
+                } else if (type_id = 32) {
+                    type_str := "boolean";
+                    break;
+                } else if (type_id = 64) {
+                    type_str := "untypedAtomic";
+                    break;
+                } else if (type_id = 128) {
+                    type_str := "QName";
+                    node_id := item;
+                } else if (type_id = 256) {
+                    type_str := "QName";
+                    frag := item;
+                } else if (type_id = 1048576) {
+                    frag := item;
+                } else if (type_id = 2097152) {
+                    type_str := "node";
+                    node_id := item;
+                } else if (type_id = 4194304) {
+                    type_str := "attribute";
+                    attr_id := item;
+                    kind := ATTR;
+                } else {
+                    printf("\n");
+                    ERROR ("unknown type (%i) appears in "
+                           + "trace output generation",
+                           type_id);
                 }
             }
             j :+= 1;
+        }
+        if (isnil (type_str)) {
+            printf("\n");
+            ERROR ("no value found in trace output generation");
+        }
+        # we have found the correct type -- so generate output for it
+        printf (" type=\"%s\"", type_str);
+
+        if (type_str = "QName") {
+            var name := trace_qname_uri (node_id, frag);
+            printf (">%s", name);
+        }
+        else if (type_str = "node") {
+            printf (" id=\"%i\"", node_id);
+            printf (" fragment=\"%i\">", frag);
+            # element, text, comment, pi, and doc nodes
+            print_result ("xml-noroot-noheader",
+                          ws,
+                          new (void,oid).seqbase(0@0)
+                                        .append(node_id),
+                          new (void,oid).seqbase(0@0)
+                                        .append(frag)
+                                        .set_kind(kind),
+                          new (void,lng).seqbase(0@0),
+                          new (void,dbl).seqbase(0@0),
+                          new (void,dbl).seqbase(0@0),
+                          new (void,str).seqbase(0@0));
+        }
+        else if (type_str = "attribute") {
+            printf (" id=\"%i\"", attr_id);
+            if (not (isnil (node_id))) {
+                printf (" parent_id=\"%i\"", node_id);
+            }
+            printf (" fragment=\"%i\"", frag);
+            # attribute nodes
+            var qn_id := mposjoin (attr_id, frag, ws.fetch(ATTR_QN)).fetch(0);
+            var qn_frag := mposjoin (attr_id, frag, ws.fetch(ATTR_CONT)).fetch(0);
+            var prop := mposjoin (attr_id, frag, ws.fetch(ATTR_PROP)).fetch(0);
+            var val := mposjoin (prop, qn_frag, ws.fetch(PROP_VAL)).fetch(0);
+            var name := trace_qname_uri (qn_id, qn_frag);
+            printf (" name=\"%s\" value=\"%s\">", name, val);
+        }
+        else { # all primitive types
+            printf (">%s", item.str());
         }
             
         printf("</item>\n");
