@@ -39,18 +39,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_634139416DB9450DA3A957EC3461378C"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7A81BBE87CE141E49C746C0FC9845708"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_BB4791ABAA4349E4A0DE1EDA0772E622"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -99,13 +87,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_EF907EF0C7F844628B8BFA5B84A08C05"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_EB614167C42F4F82ABC86676DC366BE8"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_F068D91803A44A1D8FD11A831791C76E"
+        "MsmKey" = "8:_EF907EF0C7F844628B8BFA5B84A08C05"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -263,26 +251,6 @@
             "TargetName" = "8:zlib1.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7A81BBE87CE141E49C746C0FC9845708"
-            {
-            "SourcePath" = "8:share\\MonetDB\\python\\MonetDB\\trace.py"
-            "TargetName" = "8:trace.py"
-            "Tag" = "8:"
-            "Folder" = "8:_0FEF9966DD9E4CB8BAEB166371C7F673"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -461,26 +429,6 @@
             {
             "SourcePath" = "8:share\\MonetDB\\python\\MonetDB\\monet_options.py"
             "TargetName" = "8:monet_options.py"
-            "Tag" = "8:"
-            "Folder" = "8:_0FEF9966DD9E4CB8BAEB166371C7F673"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F068D91803A44A1D8FD11A831791C76E"
-            {
-            "SourcePath" = "8:share\\MonetDB\\python\\MonetDB\\subprocess26.py"
-            "TargetName" = "8:subprocess26.py"
             "Tag" = "8:"
             "Folder" = "8:_0FEF9966DD9E4CB8BAEB166371C7F673"
             "Condition" = "8:"
@@ -1284,7 +1232,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_634139416DB9450DA3A957EC3461378C"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_EB614167C42F4F82ABC86676DC366BE8"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
