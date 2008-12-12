@@ -91,6 +91,7 @@ mal_export int retainPolicy;
 #define RETAIN_INTEREST	3
 #define RETAIN_ADAPT	4
 
+#define NO_RECYCLING -1
 #define REC_NO_INTEREST 0
 #define REC_MAX_INTEREST 5
 #define REC_MIN_INTEREST 1
@@ -189,10 +190,9 @@ of scanning the recycler pool to derive the time high-water mark.
 int retainPolicy = RETAIN_ALL;  /* recycle retainment policy
 			RETAIN_NONE: baseline, keeps stat, no retain, no reuse
 			RETAIN_ALL: infinite case, retain all
-			RETAIN_TIME: time-based semantics, retain if beneficial 
-			RETAIN_SIZE: size cost model 
-			RETAIN_VOL: volumetric cost model (time x size )
-			RETAIN_ADAP: adaptive temporal */
+            RETAIN_CAT: uses query category 
+			RETAIN_INTEREST: uses credits 
+			RETAIN_ADAPT: adaptive temporal */
 lng recycleTime = 0;
 lng recycleSearchTime = 0;	/* cache search time in ms*/
 lng recycleVolume = 0;
@@ -209,7 +209,7 @@ REUSE_EXACT only looks at precisely matching instructions.
 REUSE_COVER exploits potentional overlap in range selects
 to reduce the amount of scanning.
 @c
-int reusePolicy = REUSE_NONE;	/* recycle reuse policy
+int reusePolicy = REUSE_COVER;	/* recycle reuse policy
 			REUSE_NONE: baseline, keeps stat, no retain, no reuse
 			REUSE_COVER: reuse smallest select covering 
 			REUSE_EXACT: exact covering  */
@@ -1048,6 +1048,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return -1;
+    mal_set_lock(recycleLock,"recycle");
 
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
@@ -1135,6 +1136,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 				updateQryStat(q->recycle,gluse);
 			}
 			recycleRecent = i;
+            mal_unset_lock(recycleLock,"recycle");
 			return i;
 			notfound: 
 				continue;
@@ -1158,23 +1160,24 @@ We execute it in place and safe the result upon need.
 		s->stk[getArg(p,1)].val.bval = bid;
 		BBPincref(bid, TRUE);
 		/* make sure the garbage collector is not called */
-		j=s->keepAlive ;
-		s->keepAlive= TRUE;
-		k= p->recycle;
-		p->recycle= 0;
+		j = s->keepAlive ;
+		s->keepAlive = TRUE;
+		k = p->recycle;
+		p->recycle = NO_RECYCLING; /* No recycling for instructions with subsumption */
 		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
 		p->recycle= k;
 		/* restore the situation */
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
 		BBPdecref(bid, TRUE);
-	        recycled++;
-	        recycleBlk->profiler[pc].counter++;
-        	if ( recycleBlk->profiler[pc].clk < time0 )
-	            gluse = recycleBlk->profiler[pc].trace = TRUE;
+	    recycled++;
+	    recycleBlk->profiler[pc].counter++;
+       	if ( recycleBlk->profiler[pc].clk < time0 )
+	        gluse = recycleBlk->profiler[pc].trace = TRUE;
 		updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse);
 	        recycleBlk->profiler[pc].clk = GDKusec();
-		RECYCLEexit(cntxt, mb, s, p);
+        mal_unset_lock(recycleLock,"recycle");
+        RECYCLEexit(cntxt, mb, s, p);
 		return pc;
 	}
 #ifdef _DEBUG_CACHE_
@@ -1182,6 +1185,7 @@ We execute it in place and safe the result upon need.
 #else
 	(void) evicted;
 #endif
+    mal_unset_lock(recycleLock,"recycle");
 	return pc;
 }
 
@@ -1191,7 +1195,9 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i=0;
 
 	stk->clk= GDKusec();
-	statements++;
+    if ( p->recycle == NO_RECYCLING )
+        return 0;       /* don't count subsumption instructions */
+    statements++;
 	if ( recycleBlk == NULL )
 		return 0;
     if ( !RECYCLEinterest(mb,p) )  /* don't scan RP for non-monitored instructions */
