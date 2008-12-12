@@ -677,7 +677,7 @@ update_logical_exp(mvc *sql, symbol *sc, sql_table *t)
 	if (!r) {
 		return NULL;
 	} else {
-		sql_exp *e = exp_column(r->name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		sql_exp *e = exp_column(rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 
 		r = rel_project(r, append(new_exp_list(), e));
 		r = rel_optimizer(sql, r);
@@ -733,7 +733,7 @@ update_exp(mvc *sql, symbol *sc, dlist *assignmentlist, sql_table *t, stmt **row
 	/* We simply create a relation %TID%, updates */
 
 	/* first create the project */
-	e = exp_column(r->name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(rel_name(r), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	r = rel_project(r, append(new_exp_list(),e));
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;

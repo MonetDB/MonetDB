@@ -29,8 +29,8 @@ fi
 
 #T=-
 T=
-#SF='sf-0.01'
-SF='sf-1'
+SF='sf-0.01'
+#SF='sf-1'
 #SF='sf-2'
 #SF='sf-5'
 

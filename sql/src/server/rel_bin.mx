@@ -454,10 +454,9 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 	char *name = exp->name;
 	char *rname = exp->rname;
 
+	(void)rel;
 	if (!name)
 		name = column_name(s);
-	if (!rname) 	
-		rname = rel->name;
 	if (!rname)
 		rname = table_name(s);
 	name = _strdup(name);
@@ -473,11 +472,19 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 	stmt *ts, *sub = NULL;
 	sql_table *t = rel->l;
 	node *n;
+	char *tname = t->base.name;
 			
 	(void)sql;
 	(void)refs;
+	if (rel->exps) {
+		sql_exp *e = rel->exps->h->data;
+
+		if (e->rname)
+			tname = e->rname;
+	}
 	l = create_stmt_list();
-	ts = stmt_basetable(t, (rel->name)?rel->name:t->base.name);
+	ts = stmt_basetable(t, t->base.name);
+	assert(rel->exps);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -488,9 +495,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 	if (t->columns.set->h) { 
 		sql_column *c = t->columns.set->h->data;
 		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
-		char *rnme = (rel->name)?rel->name:t->base.name;
+		char *rnme = _strdup(t->base.name);
 
-		rnme = (rnme)?_strdup(rnme):NULL;
 		sc = stmt_mirror(sc);
 		sc = stmt_alias(sc, rnme, _strdup("%TID%"));
 		list_append(l, sc);
@@ -499,9 +505,8 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
 			stmt *sc = stmt_idxbat(i, RDONLY);
-			char *rnme = (rel->name)?rel->name:t->base.name;
+			char *rnme = _strdup(tname);
 
-			rnme = (rnme)?_strdup(rnme):NULL;
 			sc = stmt_alias(sc, rnme, _strdup(i->base.name));
 			list_append(l, sc);
 		}
@@ -514,7 +519,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 		for( en = rel->exps->h; en; en = en->next ) {
 			sql_exp *exp = en->data;
 			stmt *s = bin_find_column(sub, exp->l, exp->r);
-			char *rname = exp->rname;
+			char *rname = exp->rname?exp->rname:exp->l;
 	
 			if (!s) {
 				assert(0);
@@ -522,7 +527,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 				return NULL;
 			}
 			rname = rname?_strdup(rname):NULL;
-			s = stmt_alias(s, NULL, _strdup(exp->name));
+			s = stmt_alias(s, rname, _strdup(exp->name));
 			list_append(l, s);
 		}
 	}
@@ -546,7 +551,7 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
 		stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
-		char *rnme = rel->name;
+		char *rnme = exp->rname?exp->rname:exp->l;
 
 		if (!s) {
 			assert(0);
@@ -860,7 +865,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		n = n->next, m = m->next ) {
 		stmt *c1 = n->data;
 		stmt *c2 = stmt_dup(m->data);
-		char *rnme = rel->name;
+		char *rnme = NULL;
 		char *nme = column_name(c1);
 		stmt *s;
 
@@ -870,8 +875,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		   so we create append on copies.
 		*/
 		s = stmt_append(column(c1), c2);
-		if (!rnme)
-			rnme = table_name(c1);
+		rnme = table_name(c1);
 		nme = _strdup(nme);
 		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, nme);
@@ -1003,15 +1007,13 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	/* project columns of left hand expression */
 	for (n = left->op1.lval->h; n; n = n->next) {
 		stmt *c1 = column(n->data);
-		char *rnme = rel->name;
+		char *rnme = NULL;
 		char *nme = column_name(c1);
 
 		/* retain name via the stmt_alias */
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
-		if (!rnme)
-			rnme = table_name(c1);
-		
+		rnme = table_name(c1);
 		nme = _strdup(nme);
 		rnme = (rnme)?_strdup(rnme):NULL;
 		c1 = stmt_alias(c1, rnme, nme);
@@ -1131,14 +1133,13 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	/* project columns of left hand expression */
 	for (n = left->op1.lval->h; n; n = n->next) {
 		stmt *c1 = column(n->data);
-		char *rnme = rel->name;
+		char *rnme = NULL;
 		char *nme = column_name(c1);
 
 		/* retain name via the stmt_alias */
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
-		if (!rnme)
-			rnme = table_name(c1);
+		rnme = table_name(c1);
 		
 		nme = _strdup(nme);
 		rnme = (rnme)?_strdup(rnme):NULL;
@@ -1547,15 +1548,12 @@ refs_find_rel(list *refs, sql_rel *rel)
 {
 	node *n;
 
-	for(n=refs->h; n; n = n->next) {
-		stmt *s = n->data;
-		char *name = table_name(s->op1.lval->h->data);
+	for(n=refs->h; n; n = n->next->next) {
+		sql_rel *ref = n->data;
+		stmt *s = n->next->data;
 		
-		if (rel->name && strcmp(name, rel->name) == 0) {
-			_DELETE(name);
+		if (rel == ref) 
 			return stmt_dup(s);
-		}
-		_DELETE(name);
 	}
 	return NULL;
 }
@@ -1569,6 +1567,7 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 		return s;
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
+		/* needs a proper fix!! */
 		if (s)
 			return s;
 	}
@@ -1613,8 +1612,10 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 	default:
 		printf("todo: print %u\n", rel->op);
 	}
-	if (s && rel_is_ref(rel)) 
+	if (s && rel_is_ref(rel)) {
+		list_append(refs, rel);
 		list_append(refs, stmt_dup(s));
+	}
 	return s;
 }
 
@@ -1630,7 +1631,7 @@ rel_bin(mvc *sql, sql_rel *rel)
 stmt *
 output_rel_bin(mvc *sql, sql_rel *rel ) 
 {
-	list *refs = create_stmt_list();
+	list *refs = list_create(NULL);
 	stmt *s = subrel_bin( sql, rel, refs);
 	if (s && s->type != st_none) {
 		s = stmt_output(s);

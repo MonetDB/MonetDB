@@ -90,7 +90,7 @@ Over..
 [ "tmp",	"keys",	"rkey"	]
 [ "tmp",	"keys",	"table_id"	]
 [ "tmp",	"keys",	"type"	]
-% sys.s,	sys.tables,	sys.c # table_name
+% sys.s,	sys.t,	sys.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
 % 3,	10,	11 # length

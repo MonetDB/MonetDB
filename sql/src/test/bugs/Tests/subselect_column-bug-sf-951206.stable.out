@@ -25,12 +25,12 @@ Over..
 # 12:49:16 >  
 
 [ 3	]
-% sys.t951206 # table_name
+% sys.t # table_name
 % x # name
 % wrd # type
 % 1 # length
 [ 1	]
-% sys.t951206 # table_name
+% sys.t # table_name
 % x # name
 % varchar # type
 % 6 # length

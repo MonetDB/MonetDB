@@ -56,6 +56,7 @@ extern sql_exp * exp_atom_clob(str s);
 extern sql_exp * exp_atom_ref(int i, sql_subtype *tpe);
 extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
 extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
+extern sql_exp * exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern void exp_setname( sql_exp *e, char *rname, char *name );
 
 extern void exp_swap( sql_exp *e );
@@ -296,6 +297,25 @@ exp_param(char *name, sql_subtype *tpe, int frame)
 }
 
 sql_exp * 
+exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+{
+	sql_exp *e = exp_create(e_column);
+
+	assert(acname && org_rname && org_cname);
+	e->card = card;
+	e->rname = (arname)?_strdup(arname):_strdup(org_rname);
+	e->name = _strdup(acname);
+	e->l = _strdup(org_rname);
+	e->r = _strdup(org_cname);
+	e->f = t;
+	if (!has_nils)
+		set_has_no_nil(e);
+	if (intern)
+		set_intern(e);
+	return e;
+}
+
+sql_exp * 
 exp_column( char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
 	sql_exp *e = exp_create(e_column);
@@ -445,25 +465,21 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->l && !rel->name) { 
+		if (e->l) { 
 			ne = exps_bind_column2(rel->exps, e->l, e->r);
-		/* if relation name matches expressions relation name, find column based on column name alone */
-		} else if (e->l && rel->name) { 
-			if (strcmp(e->l, rel->name) == 0) 
-				ne = exps_bind_column(rel->exps, e->r);
 		} else {
 			ne = exps_bind_column(rel->exps, e->r);
 		}
 		return ne;
 	case e_convert:
-		return rel_find_exp(rel, e->l);
+		return rel_find_exp_(rel, e->l);
 	case e_aggr:
 	case e_func: {
 		list *l = e->l;
 		node *n = l->h;
 
 		while (ne == NULL && n != NULL) {
-			ne = rel_find_exp(rel, n->data);
+			ne = rel_find_exp_(rel, n->data);
 			n = n->next;
 		}
 		return ne;
@@ -491,48 +507,25 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 				ne = rel_find_exp(rel->r, e);
 			break;
 		case op_table:
-			if (e->l && rel->name && strcmp(e->l, rel->name) != 0)
-				return NULL;
-			if (rel->exps && exps_bind_column(rel->exps, e->r)) 
+			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r)) 
 				ne = e;
 			break;
 		case op_union:
 		case op_except:
 		case op_inter:
 		{
-			if (!rel->name) {
-				if (rel->l)
-					ne = rel_find_exp(rel->l, e);
-				else if (rel->exps)
-					ne = exps_bind_column(rel->exps, e->r);
-			}
+			if (rel->l)
+				ne = rel_find_exp(rel->l, e);
+			else if (rel->exps && e->l)
+				ne = exps_bind_column2(rel->exps, e->l, e->r);
+			else if (rel->exps)
+				ne = exps_bind_column(rel->exps, e->r);
 		}
 		break;
 		case op_basetable: 
-	    	{
-			sql_table *t = rel->l;
-
-			if (e->l) {
-				if (rel->name && strcmp(e->l, rel->name) != 0)
-					return NULL;
-				else if (!rel->name && strcmp(e->l, t->base.name) != 0)
-					return NULL;
-			}
-			if (rel->exps) { 
-				ne = exps_bind_column(rel->exps, e->r);
-			} else {
-				node *n;
-				for (n = t->columns.set->h; n; n = n->next) {
-					sql_column *c = n->data;
-					if (e->r && strcmp(c->base.name, e->r) == 0) {
-						ne = e;
-						break;
-					}
-				}
-			}
+			if (rel->exps && e->type == e_column && e->l) 
+				ne = exps_bind_column2(rel->exps, e->l, e->r);
 			break;
-	    	}
-		
 		default:
 			if (!is_project(rel->op) && rel->l)
 				ne = rel_find_exp(rel->l, e);
@@ -616,9 +609,9 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 		
 			if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
 				return e;
-			if (e && is_column(e->type) && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
-			if (e && is_column(e->type) && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && e->type == e_column && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
 		}
 	}

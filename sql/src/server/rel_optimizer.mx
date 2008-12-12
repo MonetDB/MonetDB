@@ -65,12 +65,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_basetable: {
 		node *cn;
 		sql_table *t = rel->l;
-		if (rname) {
-			if (rel->name && strcmp(rname, rel->name) != 0)
-				return NULL;
-			else if (!rel->name && strcmp(rname, t->base.name) != 0)
-				return NULL;
-		}
+
 		if (rel->exps) {
 			sql_exp *rename = exps_bind_column(rel->exps, name);
 			if (!rename ||
@@ -87,8 +82,6 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		}
 	}
 	case op_table:
-		if (rname && rel->name && strcmp(rname, rel->name) != 0)
-			return NULL;
 		if (rel->exps)
 			alias = exps_bind_column(rel->exps, name);
 		/* table func */
@@ -114,17 +107,11 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_groupby: 
 		if (!rel->exps)
 			break;
-		if (rel->name && rname) { /* both have relation names */
-			if (strcmp(rel->name, rname) != 0) 
-				break;
-			alias = exps_bind_column(rel->exps, name);
-		/*
+		/* ??
 		} else if (rname) {
 			alias = exps_bind_column2(rel->exps, rname, name);
 		*/
-		} else {
-			alias = exps_bind_column(rel->exps, name);
-		}
+		alias = exps_bind_column(rel->exps, name);
 		break;
 	}
 	if (alias) { /* we found an expression with the correct name, but
@@ -232,47 +219,9 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_groupby: 
 	case op_topn: 
 	case op_select: 
-		/* propagate relation names 
-		if (!rel->name && rel->l) {
-			sql_rel *l = rel->l;
-			if (l->name)
-				rel->name = _strdup(l->name);
-		}
-*/
 		break;
 	}
 }
-
-#if 0
-static void
-get_tables(mvc *sql, sql_rel *rel, list *tables) 
-{
-	switch (rel->op) {
-	case op_basetable:
-	case op_table:
-		append(tables, rel);
-		break;
-	case op_join: 
-	case op_left: 
-	case op_right: 
-	case op_full: 
-	case op_semi: 
-	case op_anti: 
-	case op_union: 
-	case op_inter: 
-	case op_except: 
-		get_tables(sql, rel->l, tables);
-		get_tables(sql, rel->r, tables);
-		break;
-	case op_project:
-	case op_select: 
-	case op_groupby: 
-	case op_topn: 
-		get_tables(sql, rel->l, tables);
-		break;
-	}
-}
-#endif
 
 static void
 get_relations(sql_rel *rel, list *rels)
@@ -891,21 +840,14 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->l) { 
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 			/* if relation name matches expressions relation name, find column based on column name alone */
-			if (!ne && f->name && strcmp(e->l, f->name) == 0) 
-				ne = exps_bind_column(f->exps, e->r);
 		} else {
 			ne = exps_bind_column(f->exps, e->r);
 		}
 		if (!ne)
 			return exp_dup(e);
 		e = NULL;
-		if (ne->name && ne->r){ 
-			if (ne->l) {
-				e = rel_bind_column2(sql, t, ne->l, ne->r);
-				if (!e && t->name && strcmp(ne->l, t->name) == 0) 
-					e = rel_bind_column(sql, t, ne->r);
-			}
-		}
+		if (ne->name && ne->r && ne->l) 
+			e = rel_bind_column2(sql, t, ne->l, ne->r);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r);
 		if (!e && exp_is_atom(ne))
@@ -977,24 +919,20 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (e->l) { 
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 			/* if relation name matches expressions relation name, find column based on column name alone */
-			if (!ne && f->name && strcmp(e->l, f->name) == 0) 
-				ne = exps_bind_column(f->exps, e->r);
 		}
 		if (!ne)
 			ne = exps_bind_column(f->exps, e->r);
 		assert(ne);
 		e = NULL;
-		if (ne->name && ne->r){ 
-			if (ne->l) {
-				e = rel_bind_column2(sql, t, ne->l, ne->r);
-				if (!e && t->name && strcmp(ne->l, t->name) == 0) 
-					e = rel_bind_column(sql, t, ne->r);
-			}
-		}
+		if (ne->name && ne->r && ne->l) 
+			e = rel_bind_column2(sql, t, ne->l, ne->r);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r);
 		if (e && flag)
 			e->flag = flag;
+		/* if the upper exp was an alias, keep this */ 
+		if (e && ne->rname) 
+			exp_setname(e, ne->rname, ne->name);
 		return e;
 	case e_cmp: 
 		l = exp_push_down(sql, e->l, f, t);
@@ -1159,8 +1097,11 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				ne = exp_push_down(sql, e, prj, prj->l);
 				/* can we move it down */
 				if (ne && ne != e) {
+					char *tname = e->rname;
 					/* we need to keep the alias */
-					exp_setname(ne, e->rname, e->name);
+					if (!tname && ne->rname)
+						tname = _strdup(ne->rname);
+					exp_setname(ne, tname, e->name);
 					list_append(rel->exps, ne);
 				} else {
 					all = 0;
@@ -1180,8 +1121,11 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 					ne = exp_push_down(sql, e, prj, prj->l);
 					/* can we move it down */
 					if (ne && ne != e) {
+						char *tname = e->rname;
 						/* we need to keep the alias */
-						exp_setname(ne, e->rname, e->name);
+						if (!tname && ne->rname)
+							tname = _strdup(ne->rname);
+						exp_setname(ne, tname, e->name);
 						list_append(nr, ne);
 					}
 				}
@@ -1266,7 +1210,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 			for(n = gbes->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
 				int fnd = 0;
-				char *rname = (gbe->rname)?gbe->rname:gb->name;
+				char *rname = gbe->rname;
 				for (m = exps->h; m && !fnd; m = m->next) {
 					sql_exp *je = m->data;
 
@@ -1359,7 +1303,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 		} else {
-			exps = rel_projections(sql, l, rel->name, 1, 1);
+			exps = rel_projections(sql, l, NULL, 1, 1);
 		}
 		/* also handle right hand of join */
 		if (is_join(rel->op) && r->op == op_project && r->l) {
@@ -1380,7 +1324,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 		} else if (is_join(rel->op)) {
-			list *r_exps = rel_projections(sql, r, rel->name, 1, 1);
+			list *r_exps = rel_projections(sql, r, NULL, 1, 1);
 
 			list_merge(exps, r_exps, (fdup)&exp_dup);
 			list_destroy(r_exps);

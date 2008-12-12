@@ -165,7 +165,6 @@ typedef struct relation {
 	sql_ref ref;
 
 	operator_type op;	
-	char *name;   
 	void *l;
 	void *r;
 	list *exps; 

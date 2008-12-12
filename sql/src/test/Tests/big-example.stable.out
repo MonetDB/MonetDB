@@ -141,7 +141,7 @@ Over..
 [ 8,	"texxst",	0.0001	]
 [ 9,	"testx",	9.0999999999999996	]
 [ 9,	"testx",	9.0999999999999996	]
-% sys.example,	sys.example,	sys.example # table_name
+% sys.example_view,	sys.example_view,	sys.example_view # table_name
 % val1,	val2,	val3 # name
 % int,	varchar,	double # type
 % 1,	6,	22 # length
