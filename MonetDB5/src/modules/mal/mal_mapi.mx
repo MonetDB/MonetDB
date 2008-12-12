@@ -1264,7 +1264,6 @@ SERVERdisconnectALL(int *key){
 #ifdef MAPI_TEST
 	stream_printf(SERVERsessions[i].c->fdout,"Close session %d\n",i);
 #endif
-			MCcloseClient(SERVERsessions[i].c);
 			SERVERsessions[i].c = 0;
 			if( SERVERsessions[i].dbalias)
 				GDKfree(SERVERsessions[i].dbalias);
@@ -1287,7 +1286,6 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	for(i=0; i<MAXSESSIONS; i++)
 		 if( SERVERsessions[i].dbalias &&
 			 strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
-				MCcloseClient(SERVERsessions[i].c);
 				SERVERsessions[i].c = 0;
 				if( SERVERsessions[i].dbalias)
 					GDKfree(SERVERsessions[i].dbalias);
@@ -1398,7 +1396,6 @@ SERVERdisconnect(int *ret, int *key){
 	Mapi mid;
 	@:accessTest(*key,disconnect)@
 	mapi_disconnect(mid);
-	MCcloseClient(SERVERsessions[i].c);
 	if( SERVERsessions[i].dbalias)
 		GDKfree(SERVERsessions[i].dbalias);
 	SERVERsessions[i].c= 0;
