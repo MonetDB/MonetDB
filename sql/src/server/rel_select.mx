@@ -1276,15 +1276,20 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			return temp_table;
 		} else if (isView(t) /*&& sql->emode != m_instantiate */) { 
 		   	/* instantiate base view */
-			char mode = (sql->emode == m_deps)?m_deps:m_instantiate;
 			node *n,*m;
-			sql_rel *rel = rel_parse(sql, t->query, mode);
+			sql_rel *rel;
+
+
+			if (sql->emode == m_deps)
+				rel = rel_basetable(t, tname);
+			else
+			 	rel = rel_parse(sql, t->query, m_instantiate);
 
 			if (!rel)
 				return rel;
 
 			/* Direct renaming of rel_parse relation */
-			if (mode != m_deps) {
+			if (sql->emode != m_deps) {
 				assert(is_project(rel->op));
 				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
