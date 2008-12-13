@@ -922,7 +922,8 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (!ne)
 			ne = exps_bind_column(f->exps, e->r);
-		assert(ne);
+		if (!ne)
+			return NULL;
 		e = NULL;
 		if (ne->name && ne->r && ne->l) 
 			e = rel_bind_column2(sql, t, ne->l, ne->r);
@@ -951,7 +952,6 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		l = exp_push_down(sql, e->l, f, t);
 		if (l)
 			return exp_convert( l, exp_fromtype(e), exp_totype(e));
-		exp_destroy(l);
 		return NULL;
 	case e_aggr:
 	case e_func: {
@@ -1038,9 +1038,8 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return r;
 	}
 	exps = rel->exps;
+
 	/* push select through set */
-/* disabled, currently crashes on assert */
-#if 0
 	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(); 
 		for (n = exps->h; n; n = n->next) { 
@@ -1074,12 +1073,11 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				list_append(rel->exps, exp_dup(e));
 			} 
 		}
-		/* TODO looks buggy */
 		list_destroy(exps);
 		(*changes)++;
 		return r;
 	}
-#endif
+
 	/* merge projects */
 	if (rel->op == op_project && r && r->op == op_project && !(rel_is_ref(r))) {
 		int all = 1;
