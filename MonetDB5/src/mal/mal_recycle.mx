@@ -1234,6 +1234,8 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if ( wr > memLimit)
 		return;
+    if ( p->recycle == NO_RECYCLING ) 
+        return; 
 	if (recycleBlk){
 		if ( recyclerUsedMemory +  wr > memLimit ||
 	    		recycleSize >= cacheLimit )
