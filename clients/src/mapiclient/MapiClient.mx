@@ -1287,7 +1287,6 @@ showCommands(void)
 		stream_printf(toConsole, "\\a      - disable auto commit\n");
 	}
 	if (mode == SQL || mode == XQUERY) {
-		stream_printf(toConsole, "\\G      - switch to algebra frontend\n");
 		stream_printf(toConsole, "\\g      - switch to old frontend\n");
 	}
 	if (mode == XQUERY) {
@@ -1709,7 +1708,6 @@ usage(const char *prog)
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
-	fprintf(stderr, " -G          | --algebra          use algebra frontend\n");
 	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
