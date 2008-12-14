@@ -1286,7 +1286,8 @@ showCommands(void)
 		stream_printf(toConsole, "\\A      - enable auto commit\n");
 		stream_printf(toConsole, "\\a      - disable auto commit\n");
 	}
-	if (mode == SQL || mode == XQUERY) {
+	if (mode == XQUERY) {
+		stream_printf(toConsole, "\\G      - switch to algebra frontend\n");
 		stream_printf(toConsole, "\\g      - switch to old frontend\n");
 	}
 	if (mode == XQUERY) {
@@ -1427,12 +1428,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					mapi_setAutocommit(mid, 0);
 					continue;
 				case 'G':
-					if (mode != SQL && mode != XQUERY)
+					if (mode != XQUERY)
 						break;
 					mapi_setAlgebra(mid, 1);
 					continue;
 				case 'g':
-					if (mode != SQL && mode != XQUERY)
+					if (mode != XQUERY)
 						break;
 					mapi_setAlgebra(mid, 0);
 					continue;
@@ -1708,7 +1709,6 @@ usage(const char *prog)
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
-	fprintf(stderr, " -g          | --no-algebra       use old frontend\n");
 
 	fprintf(stderr, "\nXQuery specific options\n");
 	fprintf(stderr, " -C colname  | --collection=colname  collection name\n");
@@ -1998,7 +1998,7 @@ main(int argc, char **argv)
 	if (logfile)
 		mapi_log(mid, logfile);
 
-	if (algebra != -1 && (mode == SQL || mode == XQUERY))
+	if (algebra != -1 && mode == XQUERY)
 		mapi_setAlgebra(mid, algebra);
 	mapi_profile(mid, mark != NULL);
 	mapi_trace(mid, trace);

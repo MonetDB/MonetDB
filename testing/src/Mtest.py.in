@@ -2202,9 +2202,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
         if par['ALGEBRA']:
-            Srvr += ' --set sql_debug=16384 --set xquery_backend=algebra'
+            Srvr += ' --set xquery_backend=algebra'
         if par['NOALGEBRA']:
-            Srvr += '                       --set xquery_backend=milprint_summer'
+            Srvr += ' --set xquery_backend=milprint_summer'
 
         DBINIT=""
         if os.path.isfile(TST+".dbinit") and par['M4']:
@@ -2269,9 +2269,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         elif CALL in ["mal", "malXs", "milS", "milSXs"]:
             cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
             if par['ALGEBRA']:
-                cmd += ' --set sql_debug=16384 --set xquery_backend=algebra'
+                cmd += ' --set xquery_backend=algebra'
             if par['NOALGEBRA']:
-                cmd += '                       --set xquery_backend=milprint_summer'
+                cmd += ' --set xquery_backend=milprint_summer'
             if CALL in ["mal", "milS"]:
                 X=""
             else:
@@ -2886,9 +2886,9 @@ def main(argv) :
         ('MonetDB5', '5', 'MonetDB5', None,
          "use mserver5 of MonetDB Version 5 (default with <package> in {monetdb5, monetdb-datacell})"),
         ('algebra', 'G', 'algebra', None,
-         "use the algebra version of the SQL or XQuery compiler"),
+         "use the algebra version of the XQuery compiler"),
         ('no-algebra', 'g', 'no-algebra', None,
-         "do not use the algebra version of the SQL or XQuery compiler"),
+         "do not use the algebra version of the XQuery compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -3045,10 +3045,7 @@ def main(argv) :
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE == "Mtest.py":
-        if par['ALGEBRA'] and par['PACKAGE'] == 'monetdb-sql':
-            _IGNORE = '^[#%]'
-        else:
-            _IGNORE = dftIGNORE
+        _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
         par['CONTEXT'] = opts.get('context', '1')
         a = int(opts.get('accuracy', 1))

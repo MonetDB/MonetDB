@@ -34,8 +34,6 @@ SQL specific opions
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
- -G          | --algebra          use algebra frontend
- -g          | --no-algebra       use old frontend
 
 XQuery specific options
  -C colname  | --collection=colname  collection name
