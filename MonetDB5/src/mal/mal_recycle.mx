@@ -258,9 +258,15 @@ double recycleFresh = 0.95; /* fresh instructions are protected from deletion */
 				c = defConstant(recycleBlk,TYPE_int, &cst); \
 				q = pushArgument(recycleBlk,q,c); \
 				setVarUsed(recycleBlk,c); }
-#define getIPtr(p,r,j,pc) {	j = p->argv[p->argc-1];\
+#define getIPtr(p,r,j,pc) {	MalBlkPtr smb; \
+				j = p->argv[p->argc-1];\
 				pc = *(int*)getVarValue(recycleBlk,j); \
-				r = getInstrPtr(getSrcMalBlk(p), pc); }
+				r = NULL; \
+				if ((p)->recycle >= 0 ){ \
+					smb = recycleQPat->ptrn[(p)->recycle]->mb; \
+					if (smb) r = getInstrPtr(smb, pc);	\
+				}\
+			      }
 
 
 #ifdef _DEBUG_CACHE_
@@ -338,8 +344,8 @@ static void updateQryStat(int qidx, bit gluse)
 {	
 	QryStatPtr qs;
 	
-	if (qidx >= recycleQPat->cnt){
-		fprintf(stderr, "Query pattern %d does not exist\n",qidx);
+	if ( qidx < 0 || qidx >= recycleQPat->cnt){
+	/*	fprintf(stderr, "Query pattern %d does not exist\n",qidx);*/
 		return;
 	}		
 	qs = recycleQPat->ptrn[qidx];
@@ -393,6 +399,7 @@ static void RECYCLEspace()
 
 void RECYCLEinit(void){
 	MT_init_lock(recycleLock,"recycleLock");
+	RECYCLEinitQPat(20);
 }
 
 @-
