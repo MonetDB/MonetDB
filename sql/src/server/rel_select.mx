@@ -3615,7 +3615,7 @@ rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 }
 
 static sql_rel *
-rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
+rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int distinct)
 {
 	dnode *n = selection->h;
 
@@ -3658,6 +3658,10 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
 	}
 	if (rel)
 		set_processed(rel);
+
+	if (rel && distinct) 
+		rel = rel_distinct(rel);
+
 	return rel;
 }
 
@@ -3766,7 +3770,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	int decorrelated = 0;
 
 	if (!sn->from)
-		return rel_simple_select(sql, rel, sn->where, sn->selection);
+		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 
 	/* if within the selection, keep the current projections */
 	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer)) {
@@ -4091,7 +4095,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		}
 
 	} else if (toplevel || !res) {	/* only on top level query */
-		return rel_simple_select(sql, rel, sn->where, sn->selection);
+		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 	}
 	if (res)
 		rel = rel_select_exp(sql, res, rel, sn, ek);
