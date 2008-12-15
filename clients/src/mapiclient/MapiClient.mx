@@ -168,6 +168,7 @@ static int echoquery = 0;
 static char *encoding;
 static iconv_t cd_in;
 #endif
+static int errseen = 0;
 
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -1013,6 +1014,7 @@ format_result(MapiHdl hdl)
 				mapi_explain_result(hdl, stderr);
 			else
 				stream_printf(toConsole, "%s", reply);
+			errseen = 1;
 		}
 		if (mapi_get_querytype(hdl) == Q_UPDATE) {
 			if (formatter == RAWformatter)
@@ -1073,6 +1075,7 @@ format_result(MapiHdl hdl)
 	if (stream_errnr(toConsole)) {
 		stream_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
+		errseen = 1;
 	}
 
 #ifdef HAVE_POPEN
@@ -1097,6 +1100,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	if ((hdl = mapi_query(mid, buf)) == NULL || mapi_error(mid) || mapi_result_error(hdl)) {
 		mapi_explain_result(hdl, stderr);
 		mapi_close_handle(hdl);
+		errseen = 1;
 		return 1;
 	}
 
@@ -1120,6 +1124,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 				hdl = NULL;				\
 			} else						\
 				mapi_explain(mid, stderr);		\
+			errseen = 1;					\
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
@@ -1129,6 +1134,7 @@ doRequest(Mapi mid, const char *buf, int interactive)
 				hdl = NULL;				\
 			} else						\
 				mapi_explain(mid, stderr);		\
+			errseen = 1;					\
 			timerEnd();					\
 			free(buf);					\
 			return 1;					\
@@ -1240,7 +1246,7 @@ doFile(Mapi mid, const char *file)
 	if (file != NULL)
 		fclose(fp);
 	stream_flush(toConsole);
-	return 0;
+	return errseen;
 }
 
 @-
@@ -1358,6 +1364,10 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 			buf = oldbuf; 
 			line = fgets(buf, BUFSIZ, fp);
 		}
+		if (prompt) {
+			/* clear errors when interactive */
+			errseen = 0;
+		}
 #ifdef HAVE_ICONV
 		if (line != NULL && encoding != NULL && cd_in != (iconv_t) -1) {
 			ICONV_CONST char *from = line;
@@ -1379,7 +1389,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				if (line != NULL)
 					continue;
 				/* nothing more to do */
-				return 0;
+				return errseen;
 			}
 
 			/* hdl != NULL, we should finish the current query */
@@ -1404,7 +1414,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 				switch (line[1]) {
 				case 'q':
 					free(buf);
-					return 0;
+					return errseen;
 				case 't':
 					mark = mark ? NULL : "Timer";
 					if (mark2)
@@ -1674,7 +1684,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 	} while (line != NULL || (mode == XQUERY && sent));
 	/* reached on end of file */
 	assert(hdl == NULL);
-	return 0;
+	return errseen;
 }
 
 static void
