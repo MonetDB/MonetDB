@@ -601,8 +601,6 @@ createHole(shredCtxStruct *shredCtx)
     return GDK_SUCCEED;
 }
 
-#define INHOLE(P) (P->pageFree && (P->nnode_pre&REMAP_PAGE_MASK) == ((oid)P->pageFree))
-
 #define _NEXT_PRE_IMP(P) if ((P->nnode_pre++ == GDK_oid_max  || P->nnode_nid++ == GDK_oid_max) ||\
                              (P->pageFree && (P->nnode_pre&REMAP_PAGE_MASK) == ((oid)P->pageFree) && !createHole(P)))\
                         {   GDKerror("shredder: failed inserting RID tuple " OIDFMT " \n", (P->nnode_pre-1)); 
@@ -1797,17 +1795,6 @@ shredder_create(char *location,
                     break;
                 }
             }
-	    /* Now check if by coincedence the shredder starts in a not yet 
-	     * created hole. If soo a proper hole has to be created after
-	     * which the document can start.
-	     */
-	    if ( INHOLE(shredCtx) ) {
-	        if ( !createHole(shredCtx) ) {
-            	    GDKerror("shredder_create: recover from starting in a hole fails!\n");
-                    return shredder_free(shredCtx,-shredCtx->updatable);
-			
-		}
-	    }
         } 
         if (shredCtx->nnode_pre <= pre_min) {
             shredCtx->nnode_pre = pre_min;
@@ -1835,7 +1822,6 @@ shredder_create(char *location,
     if (shredCtx->val == NULL || shredCtx->content_buf == NULL || shredCtx->lifo == NULL) {
         return shredder_free(shredCtx,-shredCtx->incremental);
     }
-    
     return shredCtx;
 }
 
