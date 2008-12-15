@@ -202,7 +202,7 @@ main (int argc, char *argv[])
 
     char *opt_args  = "OIKCG_VG_JISI_GECSVR_OK_N"
                            "}MT{JISI_GECSVR_Q_"
-                           "}MT{JISI_OK_GECSVR_QGP";
+                           "}MT{JISI_OK_GECSVR_QGP",
          *prop_args = NULL;
 
     /* URL of query file (if present) */
