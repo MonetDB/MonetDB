@@ -1116,6 +1116,7 @@ InsertTreeSimple_@1(struct NodeSimple ** head, oid position, @1 value, struct No
         current->height = (lh > rh? lh : rh) + 1;
         return current;
 }
+
 @
 
 
@@ -1194,6 +1195,7 @@ getNextNonLocalNode(struct Node * current){
 	}
 	return res;
 }
+
 @
 
 @= AVLtreeLocalFunctions2

@@ -44,19 +44,19 @@
 
 @= TypeSwitch_3
 /* TODO: add the rest of the type combinations once code is stable */
-@:@1(int,int,simple,,,@2)@
-@:@1(int,str,simple,,,@2)@
-@:@1(int,date,atom,TYPE_,,@2)@
-@:@1(dbl,date,atom,TYPE_,,@2)@
-@:@1(dbl,str,atom,TYPE_,,@2)@
-@:@1(dbl,int,simple,,,@2)@
-@:@1(dbl,dbl,simple,,,@2)@
+@:@1(int,int,simple,,int,@2)@
+@:@1(int,str,simple,,int,@2)@
+@:@1(int,date,simple,,int,@2)@
+@:@1(dbl,date,simple,,dbl,@2)@
+@:@1(dbl,str,simple,,dbl,@2)@
+@:@1(dbl,int,simple,,dbl,@2)@
+@:@1(dbl,dbl,simple,,dbl,@2)@
 
-@:@1(date,int,atom,TYPE_,,@2)@
-@:@1(date,str,atom,TYPE_,,@2)@
-@:@1(date,lng,atom,TYPE_,,@2)@
-@:@1(date,dbl,atom,TYPE_,,@2)@
-@:@1(date,date,atom,TYPE_,,@2)@
+@:@1(date,int,atom,TYPE_,loc,@2)@
+@:@1(date,str,atom,TYPE_,loc,@2)@
+@:@1(date,lng,atom,TYPE_,loc,@2)@
+@:@1(date,dbl,atom,TYPE_,loc,@2)@
+@:@1(date,date,atom,TYPE_,loc,@2)@
 @
 
 @= TypeSwitch_4
@@ -109,13 +109,14 @@ int newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid);
 
 @= SidewaysSharedFunctions_decl_3
 str Sync_@1_@2(int m, int h);
+str selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position);
 @
 
 @- Exported signatures
  
 @= SidewaysFunctions_decl_0
 crackers_export str CRKsizePendingInsertions(int *k, int *bid, int *pbid);
-crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, oid positions);
+crackers_export str CRKextendCrackerMap(int *k, int *bid, int *pbid, lng *positions);
 crackers_export str CRKprintPendingInsertions(int *k, int *bid, int  *pbid);
 crackers_export str CRKinsert(int *k, int *bid, int *pbid, int *insertions);
 crackers_export str DeleteCrackerMap(int *k, int *bid, int *pbid);
@@ -165,13 +166,13 @@ crackers_export str CRKdProject_@1_@2(int *res, int *bid, int *pbid, int *pivot)
 @:NewIndexSidewaysCracking_0@
 @:TypeSwitch_2(NewIndexSidewaysCracking_2,)@
 @:TypeSwitch_3(SyncOperation,)@
-@:TypeSwitch_2(updatesSideways,)@
 @:TypeSwitch_3(crackOperationsSideways,)@
 @:TypeSwitch_1(JoinSelectOperationsSideways,WithoutPivot)@
 @:TypeSwitch_3(JoinSelectOperationsSideways,)@
 
 /* Functions shared within the crackers module/library */
 @:TypeSwitch_2(TapeOperations,)@
+@:TypeSwitch_3(updatesSideways,)@
 
 /* Exported functions */
 @:SidewaysFunctions_impl_0@
@@ -203,7 +204,7 @@ CRKsizePendingInsertions(int *k, int *bid, int *pbid){
 }
 
 str
-CRKextendCrackerMap(int *k, int *bid, int *pbid, oid positions){
+CRKextendCrackerMap(int *k, int *bid, int *pbid, lng *positions){
         BAT *b;
         int position = existsCrackerIndexSideways(*bid,*pbid);
         (void) k;
@@ -213,8 +214,17 @@ CRKextendCrackerMap(int *k, int *bid, int *pbid, oid positions){
         if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerMap", "Cannot access cracker Map");
 
-        if (BATextend(b, positions) == NULL)
+	if ( (oid)*positions > BATcapacity(b) - BATcount(b) ){
+		BUN ncap;
+		BUN grows;
+		oid needed = (oid)positions - (BATcapacity(b) - BATcount(b));
+                ncap = BATcapacity(b) + needed;
+                grows = BATgrows(b);
+                if (ncap > grows)
+                        grows = ncap;
+                if (BATextend(b, grows) == NULL)
                 throw(MAL, "crackers.CRKextendCrackerMap", "Failed to extend the cracker Map");
+        }
 
         BBPunfix(b->batCacheid);
 
@@ -448,7 +458,7 @@ CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *incl
                 
         	CrackerIndex[m].accesses += 1;
 	}
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 		
 	if (@3_EQ(low,ATOMnilptr(TYPE_@1),@4@1)) 
@@ -506,7 +516,7 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
 	}else
         	CrackerIndex[m].accesses += 1;
 
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
         if ((pair = BATdescriptor(CrackerIndex[m].cbid)) == NULL) 
@@ -596,7 +606,7 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
 	}
 
 	/* Align the map based on the cracker tape of this set */
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
 
@@ -696,7 +706,7 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
 	}
 
 	/* Align the map based on the cracker tape of this set */
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
 
@@ -795,7 +805,7 @@ CRKMarkedProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hg
 	}
 
 	/* Align the map based on the cracker tape of this set */
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
 	Sync_@1_@2(m,existsCrackerIndexSideways(*bid, -1));
 
 
@@ -1720,8 +1730,8 @@ createView:
 @
 
 @= updatesSideways
-static str
-selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
+str
+selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *inclusiveHgh, int position){
 	BAT *u,*b;
 	oid updates, updatesStart, updatesEnd;
 	BUN l;
@@ -1790,7 +1800,7 @@ selectMergeInsertionsPart_@1Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, bit *
                 throw(MAL, "crackers.crackRangeInsertionPart", "Cannot access cracker map");
 	BATmirror(b);
 
-	mergeInsertionsBRipple_@1(b, u, updatesStart, updatesEnd, hgh, *inclusiveHgh, position);	
+	mergeInsertionsBRipple_@1_@2(b, u, updatesStart, updatesEnd, hgh, *inclusiveHgh, position);	
 
 	BATmirror(u);
 	BBPunfix(u->batCacheid);
@@ -1945,7 +1955,7 @@ createView:
 	/* Align the map based on the position of its cursor in the cracker tape */
 	Sync_@1_@2(m,h);        
         
-	selectMergeInsertionsPart_@1Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
+	selectMergeInsertionsPart_@1_@2_Sideways(low, inclusiveLow, hgh, inclusiveHgh, m);
         
         /* find out where in the index the low falls */
         foundLow = GetLow_@1(*low, *inclusiveLow, CrackerIndex[m].Tree, c, BUNfirst(c), &cl1, &ch1, 0, BUNlast(b)-(oid)1);

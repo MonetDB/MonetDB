@@ -677,17 +677,17 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 		
 	if (CrackerIndex[position].mergeDeletions == 0){	
 		/* merge completely */
-		mergeDeletions_@1(bid, &CrackerIndex[position].did, 0, updates-1);
+		mergeDeletions_@1_oid(bid, &CrackerIndex[position].did, 0, updates-1);
 		CrackerIndex[position].mergeDeletions = -1 ;
 		CrackerIndex[position].did = -1;
 
 	} else if (CrackerIndex[position].mergeDeletions == 1)
 		/* merge only the requested values */			
-		mergeDeletionsGradually_@1(bid, &CrackerIndex[position].did, updatesStart, updatesEnd);
+		mergeDeletionsGradually_@1_oid(bid, &CrackerIndex[position].did, updatesStart, updatesEnd);
 			
 	else if (CrackerIndex[position].mergeDeletions == 2){
 		/* merge only the requested values using the ripple strategy */
-		mergeDeletionsGraduallyRipple_@1(bid, &CrackerIndex[position].did, updatesStart, updatesEnd, low, *inclusiveLow, hgh, *inclusiveHgh);	
+		mergeDeletionsGraduallyRipple_@1_oid(bid, &CrackerIndex[position].did, updatesStart, updatesEnd, low, *inclusiveLow, hgh, *inclusiveHgh);	
 		*rippledDeletions = TRUE;
 	}
 
@@ -763,20 +763,20 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 		/* merge completely */
 		BBPunfix(u->batCacheid);
 
-		mergeInsertionsB_@1(bid, &CrackerIndex[position].iid, 0, updates-1);
+		mergeInsertionsB_@1_oid(bid, &CrackerIndex[position].iid, 0, updates-1);
 		CrackerIndex[position].mergeInsertions = -1 ;
 		CrackerIndex[position].iid = -1;
 
 	} else if (CrackerIndex[position].mergeInsertions == 1){
 		/* merge only the requested values */			
 		BBPunfix(u->batCacheid);
-		mergeInsertionsBGradually_@1(bid, &CrackerIndex[position].iid, updatesStart, updatesEnd);
+		mergeInsertionsBGradually_@1_oid(bid, &CrackerIndex[position].iid, updatesStart, updatesEnd);
 	}
 	 else if (CrackerIndex[position].mergeInsertions == 2){
 		/* merge only the requested values using the ripple strategy */
 		if ((b = BATdescriptor(CrackerIndex[position].cbid)) == NULL)
                         throw(MAL, "crackers.crackRange", "Cannot access crack index");
-		mergeInsertionsBRipple_@1(b, u, updatesStart, updatesEnd, hgh, *inclusiveHgh, position);	
+		mergeInsertionsBRipple_@1_oid(b, u, updatesStart, updatesEnd, hgh, *inclusiveHgh, position);	
 		BBPunfix(u->batCacheid);
 		BBPunfix(b->batCacheid);
 	}	
