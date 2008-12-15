@@ -48,6 +48,7 @@ end main;
 [ "InsertAVLIndex",		  "command",	  "crackers",	  "(b:bat[:any_1,:chr],u:bat[:any_1,:chr]):void ",											  "CRKInsertAVLIndex_chr;"				  ]
 [ "alignedJoin",		  "command",	  "crackers",	  "(b1:bat[:oid,:int],b2:bat[:oid,:int],b3:bat[:oid,:int]):bat[:oid,:oid] ",								  "CRKAlreadyAlignedJoin_int;"				  ]
 [ "alignJoin",			  "command",	  "crackers",	  "(b1:bat[:oid,:int],b2:bat[:oid,:int],b3:bat[:oid,:int]):bat[:oid,:oid] ",								  "CRKAlignJoin_int;"					  ]
+[ "activeCacheConsciousCrackHashJoin", "command",	  "crackers",	  "(b1:bat[:oid,:int],b2:bat[:oid,:int],b3:bat[:oid,:int],b4:bat[:oid,:int],pieceSize:lng,joinThreshold:lng,minLeft:int,maxLeft:int,minRight:int,maxRight:int,mode:int):bat[:oid,:oid] ", "CRKactiveCacheConsciousCrackHashJoin_int;"	  ]
 [ "bandJoin",			  "command",	  "crackers",	  "(b1:bat[:oid,:int],b2:bat[:oid,:int],c1:int,c2:int,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid] ",				  "CRKbandJoin_int;"					  ]
 [ "buildAVLIndex",		  "command",	  "crackers",	  "(b:bat[:any_1,:date]):void ",													  "CRKmakeAVLIndex_date;"				  ]
 [ "buildAVLIndex",		  "command",	  "crackers",	  "(b:bat[:any_1,:dbl]):void ",														  "CRKmakeAVLIndex_dbl;"				  ]
