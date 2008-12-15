@@ -586,7 +586,9 @@ rel_project_exp(sql_exp *e)
 static sql_rel *
 rel_distinct(sql_rel *l) 
 {
-	if (l->card > CARD_AGGR)
+	if (l->card >= CARD_AGGR) /* incase of CARD_AGGR, we could
+				     do better, ie check the group by
+				     list etc */
 		set_distinct(l);
 	return l;
 }
