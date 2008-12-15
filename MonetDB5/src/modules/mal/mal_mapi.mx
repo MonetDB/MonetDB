@@ -1258,16 +1258,14 @@ SERVERdisconnectALL(int *key){
 
 	mal_set_lock(mal_contextLock,"SERVERdisconnect");
 
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Start to close all session\n");
-#endif
 	for(i=1; i< MAXSESSIONS; i++)
 		if( SERVERsessions[i].c != 0 ) {
 #ifdef MAPI_TEST
 	stream_printf(SERVERsessions[i].c->fdout,"Close session %d\n",i);
 #endif
-			MCcloseClient(SERVERsessions[i].c);
 			SERVERsessions[i].c = 0;
+			if( SERVERsessions[i].dbalias)
+				GDKfree(SERVERsessions[i].dbalias);
 			SERVERsessions[i].dbalias = NULL;
 			*key = SERVERsessions[i].key;
 			mapi_disconnect(SERVERsessions[i].mid);
@@ -1275,9 +1273,6 @@ SERVERdisconnectALL(int *key){
 
 	mal_unset_lock(mal_contextLock,"SERVERdisconnect");
 
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -1290,8 +1285,9 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	for(i=0; i<MAXSESSIONS; i++)
 		 if( SERVERsessions[i].dbalias &&
 			 strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
-				MCcloseClient(SERVERsessions[i].c);
 				SERVERsessions[i].c = 0;
+				if( SERVERsessions[i].dbalias)
+					GDKfree(SERVERsessions[i].dbalias);
 				SERVERsessions[i].dbalias = NULL;
 				*key = SERVERsessions[i].key;
 				mapi_disconnect(SERVERsessions[i].mid);
@@ -1304,11 +1300,6 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	}
 
 	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
-
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Succeeded to close all session\n");
-#endif
-
 	return MAL_SUCCEED;
 }
 
@@ -1403,11 +1394,7 @@ SERVERdisconnect(int *ret, int *key){
 	int i;
 	Mapi mid;
 	@:accessTest(*key,disconnect)@
-#ifdef MAPI_TEST
-	stream_printf(SERVERsessions[i].c->fdout,"Close a session %d\n",i);
-#endif
 	mapi_disconnect(mid);
-	MCcloseClient(SERVERsessions[i].c);
 	if( SERVERsessions[i].dbalias)
 		GDKfree(SERVERsessions[i].dbalias);
 	SERVERsessions[i].c= 0;
