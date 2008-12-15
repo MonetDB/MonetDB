@@ -98,7 +98,7 @@ def _configure(str):
     return str
 
 try:
-    from MonetDB import monet_options
+    import MonetDBtesting.subprocess26 as subprocess
 except ImportError:
     import distutils.sysconfig
     if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
@@ -106,11 +106,38 @@ except ImportError:
     else:
         p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(1,0,"")))
     sys.path.insert(0, p)
+    import MonetDBtesting.subprocess26 as subprocess
+    if os.environ.has_key('PYTHONPATH'):
+        p = p + os.pathsep + os.environ['PYTHONPATH']
+    os.environ['PYTHONPATH'] = p
+
+def GetConfig(cfg, arg) :
+    cmd = CheckExec(cfg)
+    proc = subprocess.Popen([cmd,arg], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
+    qOut, qErr = proc.communicate()
+    return _configure(qOut.split('\n', 1)[0].strip())
+### GetConfig(pkg, arg) #
+
+def GetMonetConfig(pkg, arg) :
+    monetdb_config = pkg+'-config'
+    try:
+        return GetConfig(monetdb_config, arg)
+    except:
+        ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
+    return ''
+### GetMonetConfig(pkg, arg) #
+
+try:
+    from MonetDB import monet_options
+except ImportError:
+    import distutils.sysconfig
+    p = GetConfig('monetdb-config', '--pythonlibdir')
+    sys.path.insert(0, p)
     from MonetDB import monet_options
     if os.environ.has_key('PYTHONPATH'):
         p = p + os.pathsep + os.environ['PYTHONPATH']
     os.environ['PYTHONPATH'] = p
-import MonetDBtesting.subprocess26 as subprocess
+
 import threading, signal
 
 randomPortRepeat = 9
@@ -2805,22 +2832,6 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             Warn('Could not find "%s-config" in your $PATH:\n%s' % (par['PACKAGE'],os.environ['PATH']))
             par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
-
-def GetConfig(cfg, arg) :
-    cmd = CheckExec(cfg)
-    proc = subprocess.Popen([cmd,arg], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
-    qOut, qErr = proc.communicate()
-    return _configure(qOut.split('\n', 1)[0].strip())
-### GetConfig(pkg, arg) #
-
-def GetMonetConfig(pkg, arg) :
-    monetdb_config = pkg+'-config'
-    try:
-        return GetConfig(monetdb_config, arg)
-    except:
-        ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
-    return ''
-### GetMonetConfig(pkg, arg) #
 
 SQLprefix = ''
 dft = {}
