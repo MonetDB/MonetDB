@@ -118,6 +118,7 @@ bin_pfopt = {
 bin_pfsql = {
         LIBS = \
                 algebra/liblogopt \
+                algebra/map/libmap \
                 algebra/prop/libprop \
                 xmlimport/libxmlimport \
                 algebra/liblogical \

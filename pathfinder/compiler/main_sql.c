@@ -164,6 +164,7 @@ jmp_buf PFexitPoint;
 /* include libxml2 library to parse module definitions from an URI */
 #include "libxml/xmlIO.h"
 #include "xml2lalg.h"     /* xml importer */
+#include "map_names.h"
 #include "properties.h"
 #include "lalg2sql.h"
 #include "sql_opt.h"
@@ -328,24 +329,30 @@ main (int argc, char *argv[])
         laroot = PFxml2la_importXMLFromMemory (ctx, xml, strlen (xml));
     }
 
+    if (!PFcol_is_name_unq(laroot->schema.items[0].name))
+        laroot = PFmap_unq_names (laroot);
+
     /* Infer properties required by the SQL Code Generation and
        generate the SQL code. */
-    PFprop_infer (false /* card */,
+    PFprop_infer (true  /* card */,
                   true  /* const */,
                   true  /* set */,
-                  false /* dom */,
-                  false /* icol */,
-                  false /* composite key */,
+                  true  /* dom */,
+                  true  /* icol */,
+                  true  /* composite key */,
                   true  /* key */,
-                  false /* ocols */,
+                  true  /* ocols */,
                   true  /* req_node */,
-                  false /* reqval */,
+                  true  /* reqval */,
                   true  /* level */,
                   true  /* refctr */,
-                  false /* guides */,
+                  true  /* guides */,
+    /* disable the following property as there might
+       be too many columns involved */
                   false /* original names */,
-                  false /* unique names */,
+                  true  /* unique names */,
                   laroot, NULL);
+
     sqlroot = PFlalg2sql (laroot);
     sqlroot = PFsql_opt (sqlroot);
     PFsql_print (stdout, sqlroot);

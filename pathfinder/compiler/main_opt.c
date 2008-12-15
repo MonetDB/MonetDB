@@ -200,14 +200,9 @@ main (int argc, char *argv[])
      */
     static char *progname = 0;
 
-    char *opt_args  = "OIKDCG_VGO_[J]OKVCGN"
-                          "}IM__{_[J]OKVCG"
-                          "}IM__{_[J]OKVCGCG"
-                          "}IM__{_[J]OKVCG"
-                          "}IMTS{_[J]OKVCGUCG"
-                          "}IMTS{_[J]OKVCGU"
-                          "}IMTS{_[J]OKVCGUE[]CGP"
-                          "}IQ[J]}IQ[J]IOKVCGQUCGP",
+    char *opt_args  = "OIKCG_VG_JISI_GECSVR_OK_N"
+                           "}MT{JISI_GECSVR_Q_"
+                           "}MT{JISI_OK_GECSVR_QGP";
          *prop_args = NULL;
 
     /* URL of query file (if present) */
