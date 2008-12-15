@@ -1,13 +1,13 @@
 
 This "geom" directory contains the nessesary configure files and scripts
-to build a simple example module (src/monetdb5/geom.mx) for the MonetDB database
+to build a simple example module (src/monetdb[45]/geom.mx) for the MonetDB database
 engine.
 
 
 Prerequisites
 =============
 
-Before compiling the "geom" module, make sure you have version 5.6 (or
+Before compiling the "geom" module, make sure you have version 4.26 (or
 newer) of MonetDB installed, and "monetdb-config" is reachable via your
 $PATH.
 See http://monetdb.cwi.nl/ for details.
@@ -15,7 +15,7 @@ See http://monetdb.cwi.nl/ for details.
 Further, make sure that you also have the "buildtools" installed, and
 "autogen.py", "Mx" and "mel" are reachable via your $PATH.
 You can get the "buildtools" via
-	cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout -P -rMonetDB_1-24 buildtools
+	cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout -P -rMonetDB_4-26 buildtools
 See the buildtools' README file for more details.
 
 

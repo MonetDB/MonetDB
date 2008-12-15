@@ -23,13 +23,26 @@ builddir=@QGEOM_BUILD@
 srcdir=`cd '@srcdir@'; pwd`
 uname=`uname`
 
+# if both M4 & M5 are available, M5 is default;
+# otherwise, the available one is default
+@HAVE_MONETDB4_TRUE@V=4
+@HAVE_MONETDB5_TRUE@V=5
+# commandline option overrules default
+for arg
+do
+    case "$arg" in
+    -4) V=4;;
+    -5) V=5;;
+    esac
+done
+
 # where compiled modules are to be found
-for d in src/monetdb5
+for d in src/monetdb$V
 do
 	MOD_PATH="${MOD_PATH}${builddir}/$d/.libs:${builddir}/$d:"
 done
-MOD_PATH="${MOD_PATH}`monetdb5-config --modpath`"
-MOD_PATH="${MOD_PATH}:`monetdb-sql-config --modpath5`"
+MOD_PATH="${MOD_PATH}`monetdb$V-config --modpath`"
+MOD_PATH="${MOD_PATH}:`monetdb-sql-config --modpath$V`"
 
 # make sure scripts are executable
 for x in "${builddir}/conf/${pkg}-config"
@@ -75,4 +88,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
