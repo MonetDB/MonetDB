@@ -193,7 +193,7 @@ CRKextendCrackerBAT(int *k, int *bid, lng *positions){
 	if ( (oid)*positions > BATcapacity(b) - BATcount(b) ){
 		BUN ncap;
 		BUN grows;
-		oid needed = (oid)positions - (BATcapacity(b) - BATcount(b));
+		oid needed = (oid)*positions - (BATcapacity(b) - BATcount(b));
                 ncap = BATcapacity(b) + needed;
                 grows = BATgrows(b);
                 if (ncap > grows)
