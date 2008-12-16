@@ -6710,7 +6710,7 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{2D5D1A48-BDFD-489C-AE5E-7E527C3E6205}"
+        "ProductCode" = "8:{4A1ED3DA-F919-4753-8AEC-134B2323A5B3}"
         "PackageCode" = "8:{5DCEA2DC-A920-4025-B4C0-405A17447F68}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
