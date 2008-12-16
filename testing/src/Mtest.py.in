@@ -111,6 +111,26 @@ except ImportError:
         p = p + os.pathsep + os.environ['PYTHONPATH']
     os.environ['PYTHONPATH'] = p
 
+def isexecutable(TST, ext = '.sh') :
+    if   os.name == "nt":
+        for ext in ".exe", ".com", ".bat", ".cmd":
+            if TST.lower().endswith(ext):
+                ext = ''
+            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
+                return [ 1, ext ]
+    elif os.name == "posix":
+        #TODO:
+        # check with "file", and set executable
+        TST = TST + ext
+        if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
+           ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
+            return [ 1, ext ]
+    #TODO:
+    #else:
+        # ???
+    return [ 0, "" ]
+### isexecutable(TST, ext = '.sh') #
+
 def CheckExec(cmd) :
     for p in os.environ['PATH'].split(os.pathsep):
         x = isexecutable(os.path.join(p,cmd),'')
@@ -1147,26 +1167,6 @@ def ApproveOutput (env, TST) :
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
     return sem
 ### ApproveOutput (env, TST) #
-
-def isexecutable(TST, ext = '.sh') :
-    if   os.name == "nt":
-        for ext in ".exe", ".com", ".bat", ".cmd":
-            if TST.lower().endswith(ext):
-                ext = ''
-            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
-                return [ 1, ext ]
-    elif os.name == "posix":
-        #TODO:
-        # check with "file", and set executable
-        TST = TST + ext
-        if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
-           ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
-            return [ 1, ext ]
-    #TODO:
-    #else:
-        # ???
-    return [ 0, "" ]
-### isexecutable(TST, ext = '.sh') #
 
 # this function is a slightly modified copy of the posixpath version
 # the difference is the doubling of \'s in the replacement value under
