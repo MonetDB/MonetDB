@@ -111,6 +111,14 @@ except ImportError:
         p = p + os.pathsep + os.environ['PYTHONPATH']
     os.environ['PYTHONPATH'] = p
 
+def CheckExec(cmd) :
+    for p in os.environ['PATH'].split(os.pathsep):
+        x = isexecutable(os.path.join(p,cmd),'')
+        if x[0]:
+            return os.path.join(p, cmd + x[1])
+    return ""
+### CheckExec(cmd) #
+
 def GetConfig(cfg, arg) :
     cmd = CheckExec(cfg)
     proc = subprocess.Popen([cmd,arg], stdin = subprocess.PIPE, stdout = subprocess.PIPE, universal_newlines = True)
@@ -2536,14 +2544,6 @@ def Check(command, input) :
         STDERR.flush()
     return 0
 ### Check(command, input) #
-
-def CheckExec(cmd) :
-    for p in os.environ['PATH'].split(os.pathsep):
-        x = isexecutable(os.path.join(p,cmd),'')
-        if x[0]:
-            return os.path.join(p, cmd + x[1])
-    return ""
-### CheckExec(cmd) #
 
 def CheckClassPath(quiet) :
     if os.environ.has_key('CLASSPATH'):
