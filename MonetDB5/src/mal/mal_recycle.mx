@@ -114,7 +114,6 @@ mal_export int rcachePolicy;
 mal_export int recycleCacheLimit;
 mal_export lng recycleMemory;	/* Units of memory permitted */
 mal_export lng recyclerUsedMemory;
-mal_export MT_Lock recycleLock;
 mal_export MalBlkPtr recycleBlk;
 mal_export double recycleAlpha;
 mal_export double recycleFresh;
@@ -173,7 +172,7 @@ mal_export bit isBindInstr(InstrPtr p);
 #include "mal_function.h"
 #include "mal_client.h"
 
-MT_Lock recycleLock ;
+static MT_Lock recycleLock ;
 MalBlkPtr recycleBlk = NULL;
 
 static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -1055,7 +1054,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return -1;
-    mal_set_lock(recycleLock,"recycle");
+	mal_set_lock(recycleLock,"recycle");
 
 	for (i = 0; i < recycleBlk->stop; i++){
 		q = getInstrPtr(recycleBlk,i);
@@ -1143,7 +1142,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 				updateQryStat(q->recycle,gluse);
 			}
 			recycleRecent = i;
-            mal_unset_lock(recycleLock,"recycle");
+            		mal_unset_lock(recycleLock,"recycle");
 			return i;
 			notfound: 
 				continue;
@@ -1192,7 +1191,7 @@ We execute it in place and safe the result upon need.
 #else
 	(void) evicted;
 #endif
-    mal_unset_lock(recycleLock,"recycle");
+    	mal_unset_lock(recycleLock,"recycle");
 	return pc;
 }
 
@@ -1241,8 +1240,6 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if ( wr > memLimit)
 		return;
-    if ( p->recycle == NO_RECYCLING ) 
-        return; 
 	if (recycleBlk){
 		if ( recyclerUsedMemory +  wr > memLimit ||
 	    		recycleSize >= cacheLimit )

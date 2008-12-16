@@ -1923,7 +1923,7 @@ registered.
 @= MALrecycleStart
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
-	if( pci->recycle )
+	if( pci->recycle > 0 )
 		RECYCLEexit(cntxt, mb,stk,pci);
 @}
 @-
