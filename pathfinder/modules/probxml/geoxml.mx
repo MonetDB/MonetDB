@@ -11,8 +11,6 @@
 @' License for the specific language governing rights and limitations
 @' under the License.
 @' 
-@' The Original Code is the ProbXml system.
-@' 
 @' The Initial Developer of the Original Code is the "University of Twente".
 @' Portions created by the "University of Twente" are 
 @' Copyright (C) 2006-2008 "University of Twente".
@@ -26,8 +24,23 @@
 @m
 .MODULE geoxml;
 
+.USE geom;
+
 .COMMAND geoxml_test_c(str) : str = CMDgeoxml_test;
  "INCOMPLETE"
+
+.COMMAND serialize_geometry(
+                      BAT[void,bat] ws,
+                      int	    niters,
+                      BAT[void,oid] loop,
+                      BAT[void,oid] iter,
+                      BAT[void,oid] item,
+		      BAT[void,int] kind,
+                      BAT[void,lng] int_values,
+		      BAT[void,dbl] dbl_values,
+		      BAT[void,str] str_values)
+		       : BAT[oid,str] = serialize_geometry_DRIVER;
+ "C interface to geoxml geometry serializer"
 
 .PRELUDE = geoxml_prelude;
 .EPILOGUE = geoxml_epilogue;
@@ -46,6 +59,37 @@ DESCRIPTION:\n\
 PROC geoxml_ping() : void :=
 {
     printf("#PX:geoxml_ping() called.\n");
+}
+
+PROC wkb_point(dbl x, dbl y) : wkb :=
+{
+	var res := wkb("POINT("+str(x)+" "+str(y)+")");
+	# res.print();
+	return res;
+}
+
+PROC wkb_geometry(BAT[void,BAT] ws, BAT[void,oid] id_iter, BAT[void,oid] id_item, BAT[void,int] id_kind) : BAT[oid,wkb]
+{
+    var id_conts := get_container(id_kind);
+    var id_roots := get_root(ws, id_item, id_kind, id_conts).mposjoin(id_conts, ws.fetch(PRE_NID));
+    var res_cont := id_roots.hmark(0@0).leftfetchjoin(id_conts);
+    var res_iter := id_roots.hmark(0@0).leftfetchjoin(id_iter);
+    var res_docid:= id_roots.tmark(0@0).mvaljoin(res_cont, ws.fetch(FRAG_ROOT)).tmark(0@0);
+    var res := reverse(res_iter).leftfetchjoin(res_docid);
+    lock_set(pf_short);
+    var err := CATCH(res := res.leftjoin(doc_name));
+    lock_unset(pf_short);
+    if (not(isnil(err))) ERROR(err);
+    #
+    var par_int_values := new(void,lng);
+    var par_dbl_values := new(void,dbl);
+    var par_str_values := new(void,str);
+    var wkb_bat := serialize_geometry(ws,1,id_iter,id_iter,id_item,id_kind,par_int_values,par_dbl_values,par_str_values);
+    # wkb_bat.print();
+    if ( true )
+    	res := [wkb](wkb_bat);
+    #
+    return res;
 }
 
 @h

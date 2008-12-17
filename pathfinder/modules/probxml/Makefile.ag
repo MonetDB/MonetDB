@@ -28,7 +28,7 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 lib__geoxml = {
 	DIR = libdir/MonetDB4
-	SOURCES = geoxml.mx
+	SOURCES = geoxml.mx serialize_geometry.mx
 
 	LIBS = \
 		../../runtime/lib_pf_support $(PF_LIBS) \
