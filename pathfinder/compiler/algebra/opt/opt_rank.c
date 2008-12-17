@@ -263,6 +263,7 @@ opt_rank (PFla_op_t *p)
     switch (p->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
+        case la_side_effects:
             break;
 
         case la_lit_tbl:
@@ -1099,22 +1100,12 @@ opt_rank (PFla_op_t *p)
         case la_empty_frag:
             break;
 
-        case la_error: /* don't rewrite errors */
-            break;
-
-        case la_cond_err:
-            if (is_rr (L(p))) {
-                *p = *(rank_opt (cond_err (LL(p), R(p),
-                                           p->sem.err.col,
-                                           p->sem.err.str),
-                                 L(p)->sem.rank_opt.res,
-                                 L(p)->sem.rank_opt.sortby));
-                modified = true;
-            }
-            break;
-
+        case la_error: /* don't rewrite runtime errors */
         case la_nil:
-        case la_trace:
+        case la_trace: /* don't rewrite side effects */
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             /* we may not modify the cardinality */

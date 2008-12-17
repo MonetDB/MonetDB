@@ -324,7 +324,7 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             if (type_of (n, n->sem.ser_seq.pos) & aat_node)
                 add_order_map (n, n->sem.ser_seq.pos);
 
-            prop_infer_req_node_vals (L(n), NULL); /* fragments */
+            prop_infer_req_node_vals (L(n), NULL); /* side effects */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
@@ -335,7 +335,16 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
                 if (type_of (n, clat (n->sem.ser_rel.items, i)) & aat_node)
                     add_serialize_map (n, clat (n->sem.ser_rel.items, i));
-            break;
+
+            prop_infer_req_node_vals (L(n), NULL); /* side effects */
+            prop_infer_req_node_vals (R(n), MAP_LIST(n));
+            return; /* only infer once */
+
+        case la_side_effects:
+            prop_infer_req_node_vals (L(n), NULL); /* side effects */
+            prop_infer_req_node_vals (R(n), NULL); /* params */
+            return; /* only infer once */
+
 
         case la_lit_tbl:
         case la_empty_tbl:
@@ -830,7 +839,6 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
-        case la_error:
             /* propagate required property list to left subtree */
             break;
 
@@ -844,13 +852,14 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             prop_infer_req_node_vals (R(n), NULL); /* fragments */
             return; /* only infer once */
 
-        case la_cond_err:
-            assert ((type_of (R(n), n->sem.err.col) & aat_node) == 0);
-            prop_infer_req_node_vals (L(n), MAP_LIST(n));
-            prop_infer_req_node_vals (R(n), NULL);
+        case la_error:
+        case la_trace:
+            prop_infer_req_node_vals (L(n), NULL); /* side effects */
+            prop_infer_req_node_vals (R(n), NULL); /* trace */
             return; /* only infer once */
 
-        case la_trace:
+        case la_trace_items:
+            assert ((type_of (n, n->sem.iter_pos_item.iter) & aat_node) == 0);
             if (type_of (n, n->sem.iter_pos_item.item) & aat_node)
                 add_serialize_map (n, n->sem.iter_pos_item.item);
 

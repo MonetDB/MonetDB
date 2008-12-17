@@ -86,6 +86,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term serialize_rel   =  2 /**< serialize algebra expression representing
                                 a relation (Placed on the very top of the
                                 tree.) */
+%term side_effects    =  3 /**< maintain side effects in a separate list */
 %term lit_tbl         =  4 /**< literal table */
 %term empty_tbl       =  5 /**< empty literal table */
 %term ref_tbl         =  6 /**< referenced table */
@@ -161,10 +162,11 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 union of fragments */
 %term empty_frag      = 74 /**< representation of an empty fragment */
 
-%term cond_err        = 80 /**< facility to trigger runtime errors */
-%term nil             = 81 /**< end of the list of parameters */
-%term trace           = 82 /**< debug operator */
-%term trace_msg       = 83 /**< debug operator */
+%term error           = 79 /**< facility to trigger runtime errors */
+%term nil             = 80 /**< end of the list of parameters */
+%term trace           = 81 /**< debug operator */
+%term trace_items     = 82 /**< debug items operator */
+%term trace_msg       = 83 /**< debug message operator */
 %term trace_map       = 84 /**< debug relation map operator */
 %term rec_fix         = 85 /**< operator representing a tail recursion */
 %term rec_param       = 86 /**< list of parameters of the recursion */
@@ -187,19 +189,28 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 %%
 
-Query:  serialize_seq (Frag, Rel)                    =   1 (10);
-Query:  serialize_seq (Frag, distinct (Rel))         =   2 (10);
-Query:  serialize_seq (Frag, project (rank (Rel)))   =   3 (10);
-Query:  serialize_seq (Frag,
-                       project (
-                           rank (distinct (Rel))))   =   4 (10);
 Query:  serialize_seq (
-            frag_union (
-                empty_frag, fragment (twig (Twig))),
-            roots_ (twig (Twig)))                    =   5 (10);
-Query:  serialize_seq (Frag, empty_tbl)              =   6 (10);
-Query:  serialize_rel (Rel)                          =   7 (10);
-Query:  serialize_rel (empty_tbl)                    =   8 (10);
+            side_effects (Side, Frag),
+            Rel)                                     =   1 (10); /* FIXME: side effect changes */
+Query:  serialize_seq (
+            side_effects (Side, Frag),
+            distinct (Rel))                          =   2 (10); /* FIXME: side effect changes */
+Query:  serialize_seq (side_effects (Side, Frag),
+                       project (rank (Rel)))         =   3 (10); /* FIXME: side effect changes */
+Query:  serialize_seq (side_effects (Side, Frag),
+                       project (
+                           rank (distinct (Rel))))   =   4 (10); /* FIXME: side effect changes */
+Query:  serialize_seq (
+            side_effects (
+                Side,
+                frag_union (
+                    empty_frag,
+                    fragment (twig (Twig)))),
+            roots_ (twig (Twig)))                    =   5 (10); /* FIXME: side effect changes */
+Query:  serialize_seq (side_effects (Side, Frag),
+                       empty_tbl)                    =   6 (10); /* FIXME: side effect changes */
+Query:  serialize_rel (Side, Rel)                    =   7 (10); /* FIXME: side effect changes */
+Query:  serialize_rel (Side, empty_tbl)              =   8 (10); /* FIXME: side effect changes */
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
 Rel:    attach (Rel)                                 =  11 (10);
@@ -287,12 +298,13 @@ Twig:   content (Frag, Rel)                          =  88 (10);
 
 Constr: merge_adjacent (Frag, Rel)                   =  89 (10);
 
-Rel:    cond_err (Rel, Rel)                          =  99 (10);
-
-Rel:    trace (Rel, Msg)                             = 100 (10);
-Msg:    trace_msg (Rel, Map)                         = 101 (10);
-Map:    trace_map (Rel, Map)                         = 102 (10);
-Map:    nil                                          = 103 (10);
+Side:   error (Side, Rel)                            =  98 (10); /* FIXME: side effect changes */
+Side:   nil                                          =  99 (10); /* FIXME: side effect changes */
+Side:   trace (Side, Trc)                            = 100 (10); /* FIXME: side effect changes */
+Trc:    trace_items (Rel, Msg)                       = 101 (10); /* FIXME: side effect changes */
+Msg:    trace_msg (Rel, Map)                         = 102 (10); /* FIXME: side effect changes */
+Map:    trace_map (Rel, Map)                         = 103 (10); /* FIXME: side effect changes */
+Map:    nil                                          = 104 (10); /* FIXME: side effect changes */
 
 Rel:    rec_base                                     = 105 (10);
 Rec:    nil                                          = 106 (10);
@@ -300,15 +312,16 @@ Arg:    rec_arg (Rel, Rel)                           = 107 (10);
 Arg:    rec_arg (Rel, distinct (Rel))                = 108 (10); 
 
 Rel:    rec_fix (
-           rec_param (
-              rec_arg (Rel, Rel), 
-              rec_param(
-                  Arg,
-                  nil)), Rel)                        = 109 (10);
+            side_effects (
+                Side,
+                rec_param (
+                   rec_arg (Rel, Rel), 
+                   rec_param(Arg, nil))),
+            Rel)                                     = 109 (10); /* FIXME: side effect changes */
 Rel:    rec_fix (
-           rec_param (
-              Arg, 
-              nil), Rel)                             = 110 (10);
+            side_effects (Side,
+                          rec_param (Arg, nil)),
+            Rel)                                     = 110 (10); /* FIXME: side effect changes */
 
 Rel:    dummy (Rel)                                  = 115 (10);
 Rel:    proxy (Rel)                                  = 116 (10);
@@ -1763,13 +1776,10 @@ rec_allowed (PFla_op_t *p)
         case la_frag_union:
         case la_empty_frag:
         case la_error:
-        case la_cond_err:
             return true;
         case la_nil:
-            /* FIXME */
-            assert (!"not yet implemented");
-            break;
         case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             /* FIXME */
@@ -1920,23 +1930,24 @@ reduce (PFla_op_t * p, int goalnt)
         case 14:
         /* Rel:    thetajoin (Rel, Rel) */
         case 15:
-        /* Rel:    cond_err (Rel, Rel) */
-        case 99:
+        /* Side:   error (Side, Rel) */
+        case 98:
         /* Arg:    rec_arg (Rel, Rel) */
         case 107:
         /* Arg;    rec_arg (Rel, distinct (Rel)) */
         case 108:
         /* Rel:    rec_fix (
-                       rec_param (
-                          rec_arg (Rel, Rel), 
-                          rec_param(
-                              Arg,
-                              nil)), Rel) */
+                       side_effects (
+                           Side,
+                           rec_param (
+                              rec_arg (Rel, Rel), 
+                              rec_param(Arg, nil))),
+                       Rel) */
         case 109:
         /* Rel:    rec_fix (
-                       rec_param (
-                          Arg, 
-                          nil), Rel) */
+                       side_effects (Side
+                                     rec_param (Arg, nil)),
+                       Rel) */
         case 110:
             /* top-down translation */
             break;
@@ -1948,9 +1959,10 @@ reduce (PFla_op_t * p, int goalnt)
     }
 
     switch (rule) {
-        /* Query:  serialize_seq (Frag, project (rank (Rel))) */
+        /* Query:  serialize_seq (side_effects (Side, Frag),
+                                  project (rank (Rel))) */
         case 3:
-        /* Query:  serialize_seq (Frag,
+        /* Query:  serialize_seq (side_effects (Side, Frag),
                                   project (
                                       rank (distinct (Rel)))) */
         case 4:
@@ -1992,9 +2004,13 @@ reduce (PFla_op_t * p, int goalnt)
 
         }   /* fall through */
         
-        /* Query:  serialize_seq (Frag, Rel) */
+        /* Query:  serialize_seq (
+                       side_effects (Side, Frag),
+                       Rel) */
         case 1:
-        /* Query:  serialize_seq (Frag, distinct (Rel)) */
+        /* Query:  serialize_seq (
+                       side_effects (Side, Frag),
+                       distinct (Rel)) */
         case 2:
         {
             /* lookup whether we need a SELECT or a SELECT DISTINCT */
@@ -2352,9 +2368,12 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Query:  serialize_seq (
-         *              frag_union (empty_frag, Frag),
-         *              roots_ (twig (Twig)))
-         */
+                       side_effects (
+                           Side,
+                           frag_union (
+                               empty_frag,
+                               fragment (twig (Twig)))),
+                       roots_ (twig (Twig))) */
         case 5:
         {
             PFsql_aident_t      content      = new_alias ();
@@ -2443,14 +2462,14 @@ reduce (PFla_op_t * p, int goalnt)
 
         }   break;
 
-        /* Query:  serialize_seq (Frag, empty_tbl) */
+        /* Query:  serialize_seq (side_effects (Side, Frag),
+                                  empty_tbl) */
         case 6:
             /* FIXME: implementation is missting */
             assert (!"missing");
             break;
 
-
-        /* Query:  serialize_rel(Rel) */
+        /* Query:  serialize_rel (Side, Rel) */
         case 7:
         {
             PFla_op_t          *query      = L(p);
@@ -2497,7 +2516,7 @@ reduce (PFla_op_t * p, int goalnt)
         }
         break;
 
-        /* Query:  serialize_rel(empty_tbl) */
+        /* Query:  serialize_rel (Side, empty_tbl) */
         case 8:
         {
             /*
@@ -5255,7 +5274,7 @@ reduce (PFla_op_t * p, int goalnt)
             FRAG(p) = FRAG(L(p));
             break;
 
-        /* Rel:    cond_err (Rel, Rel) */
+        /* Side:   error (Side, Rel) */
 
         /********************************************************/
         /*            cond_err                                  */
@@ -5277,7 +5296,7 @@ reduce (PFla_op_t * p, int goalnt)
         /*                             ELSE 1 END               */
         /*                  FROM q2 AS err) AS foo;             */
         /********************************************************/
-        case 99: {
+        case 98: {
 #define ERR_SQLSTATE "70001"
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
@@ -5285,7 +5304,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_t *expr = NULL,
                     *n = NULL;
             PFalg_simple_type_t ty;
-            char *msg = p->sem.err.str;
+            char *msg = "error info now resides in p->sem.err.col";
 
             reduce (kids[0], nts[0]);
 
@@ -5324,14 +5343,18 @@ reduce (PFla_op_t * p, int goalnt)
                            ), alias (nalias));
         }   break;
 
-        /* Rel:    trace (Rel, Msg) */
+        /* Side:   nil */
+        case 99:
+        /* Side:   trace (Side, Trc) */
         case 100:
-        /* Msg:    trace_msg (Rel, Map) */
+        /* Trc:    trace_items (Rel, Msg) */
         case 101:
-        /* Map:    trace_map (Rel, Map) */
+        /* Msg:    trace_msg (Rel, Map) */
         case 102:
-        /* Map:    nil */
+        /* Map:    trace_map (Rel, Map) */
         case 103:
+        /* Map:    nil */
+        case 104:
             /* FIXME: implementation is missing */
             PFoops (OOPS_FATAL,
                     "SQLgen: Translation for the logical "
@@ -5462,12 +5485,14 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    rec_fix (
-                       rec_param (
-                          rec_arg (Rel, Rel), 
-                          rec_param(
-                              Arg,
-                              nil)), Rel) */
-        case 109: {
+                       side_effects (
+                           Side,
+                           rec_param (
+                              rec_arg (Rel, Rel), 
+                              rec_param(Arg, nil))),
+                       Rel) */
+        case 109:
+        {
             /*** TOPDOWN ***/
             PFla_op_t *loop_param = LL(p),
                       *base  = LL(p)->sem.rec_arg.base;
@@ -5497,10 +5522,11 @@ reduce (PFla_op_t * p, int goalnt)
             execute (comment ("Binding due to recursion"));
         } break;
         /* Rel:    rec_fix (
-                       rec_param (
-                          Arg, 
-                          nil), Rel) */
-        case 110: {
+                       side_effects (Side,
+                                     rec_param (Arg, nil)),
+                       Rel) */
+        case 110:
+        {
             /*** TOPDOWN ***/
             PFla_op_t *overall_result = R(p);
             PFla_op_t *recarg = LL(p);
@@ -6136,4 +6162,4 @@ PFlalg2sql (PFla_op_t * n)
     return sql_stmts;
 }
 
-
+/* vim:set shiftwidth=4 expandtab filetype=c: */

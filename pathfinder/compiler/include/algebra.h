@@ -513,6 +513,14 @@ PFalg_schema_t PFalg_iter_item_schema(PFalg_simple_type_t item_t);
 PFalg_proj_t PFalg_proj (PFalg_col_t new, PFalg_col_t old);
 
 /**
+ * Merge adjacent projection lists.
+ */
+PFalg_proj_t * PFalg_proj_merge (PFalg_proj_t *upper_proj,
+                                 unsigned int upper_count,
+                                 PFalg_proj_t *lower_proj,
+                                 unsigned int lower_count);
+
+/**
  * Test if two atomic values are comparable
  */
 bool PFalg_atom_comparable (PFalg_atom_t a, PFalg_atom_t b);

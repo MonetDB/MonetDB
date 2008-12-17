@@ -142,11 +142,11 @@ infer_unq_names (PFla_op_t *n)
 
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
             bulk_add_name_pairs (np_list, R(n));
             break;
 
-        case la_serialize_rel:
-            bulk_add_name_pairs (np_list, L(n));
+        case la_side_effects:
             break;
 
         case la_lit_tbl:
@@ -553,8 +553,13 @@ infer_unq_names (PFla_op_t *n)
             break;
 
         case la_error:
-        case la_cond_err:
+            bulk_add_name_pairs (np_list, R(n));
+            break;
+
         case la_trace:
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             bulk_add_name_pairs (np_list, L(n));
@@ -745,8 +750,10 @@ prop_infer (PFla_op_t *n)
     {
         case la_rec_fix:
             /* infer the unique names of the arguments */
-            prop_infer_rec_seed (L(n));
-            prop_infer_rec_body (L(n));
+            prop_infer_rec_seed (LR(n));
+            reset_property (L(n));
+            prop_infer (LL(n));
+            prop_infer_rec_body (LR(n));
             prop_infer (R(n));
             bottom_up = false;
             break;

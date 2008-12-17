@@ -82,6 +82,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
  */
 %term  serialize_seq   =   1
 %term  serialize_rel   =   2
+%term  side_effects    =   3
 %term  lit_tbl         =   4
 %term  empty_tbl       =   5
 %term  ref_tbl         =   6
@@ -141,9 +142,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  frag_union      =  73
 %term  empty_frag      =  74
 %term  error           =  79
-%term  cond_err        =  80
-%term  nil             =  81
-%term  trace           =  82
+%term  nil             =  80
+%term  trace           =  81
+%term  trace_items     =  82
 %term  trace_msg       =  83
 %term  trace_map       =  84
 %term  rec_fix         =  85
@@ -158,8 +159,10 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 %%
 
-Query:  serialize_seq (Frag, Rel)                 =   1 (10);
-Query:  serialize_rel (Rel)                       =   2 (10);
+Query:  serialize_seq (
+            side_effects (Side, Frag),
+            Rel)                                  =   1 (10);
+Query:  serialize_rel (Side, Rel)                 =   2 (10);
 Rel:    lit_tbl                                   =   3 (10);
 Rel:    ref_tbl                                   =   4 (10);
 Rel:    attach (Rel)                              =   5 (10);
@@ -241,15 +244,15 @@ Twig:   nil                                       =  85 (10);
 Fcns:   fcns (Twig, Fcns)                         =  86 (10);
 Fcns:   nil                                       =  87 (10);
 
-Rel:    cond_err (Rel, Rel)                       =  88 (10);
-Rel:    cond_err (Rel, EmptyRel)                  =  89  (0);
-Rel:    error (Rel)                               =  90 (10);
-Rel:    trace (Rel, Msg)                          =  93 (10);
+Side:   error (Side, Rel)                         =  90 (10);
+Side:   nil                                       =  91 (10);
+Side:   trace (Side, Trc)                         =  92 (10);
+Trc:    trace_items (Rel, Msg)                    =  93 (10);
 Msg:    trace_msg (Rel, Map)                      =  94 (10);
 Map:    trace_map (Rel, Map)                      =  95 (10);
 Map:    nil                                       =  96 (10);
 
-Rel:    rec_fix (Rec, Rel)                        =  98 (10);
+Rel:    rec_fix (side_effects (Side, Rec), Rel)   =  98 (10);
 Rel:    rec_base                                  =  99 (10);
 Rec:    rec_param (Arg, Rec)                      = 100 (10);
 Rec:    nil                                       = 101 (10);
@@ -273,7 +276,6 @@ Frag:    fragment (merge_adjacent (Frag, Rel))    = 116 (10);
 Frag:    frag_extract (Rel)                       = 117 (10);
 Frag:    frag_union (Frag, Frag)                  = 118 (10);
 Frag:    empty_frag                               = 119 (10);
-
 
 EmptyRel:    empty_tbl                            = 120  (0);
 
@@ -333,11 +335,23 @@ EmptyRel:    roots_ (twig (content (Frag,
 EmptyRel:    roots_ (twig (nil))                  = 188  (0);
 EmptyRel:    roots_ (merge_adjacent (Frag,
                                      EmptyRel))   = 189  (0);
-EmptyRel:    error (EmptyRel)                     = 190  (0);
-EmptyRel:    cond_err (EmptyRel, Rel)             = 191  (0);
-EmptyRel:    fun_call (EmptyRel, Param)           = 192  (0);
-EmptyRel:    string_join (EmptyRel, Rel)          = 201  (0);
-EmptyRel:    dummy (EmptyRel)                     = 202  (0);
+EmptyRel:    fun_call (EmptyRel, Param)           = 190  (0);
+EmptyRel:    string_join (EmptyRel, Rel)          = 191  (0);
+EmptyRel:    dummy (EmptyRel)                     = 192  (0);
+
+/* get rid of non-effective errors */
+Query:  serialize_seq (
+            side_effects (error (Side, EmptyRel),
+                          Frag),
+            Rel)                                  = 193  (0);
+Query:  serialize_rel (error (Side, EmptyRel),
+                       Rel)                       = 194  (0);
+Side:   error (error (Side, EmptyRel), Rel)       = 195  (0);
+Side:   trace (error (Side, EmptyRel), Trc)       = 196  (0);
+Rel:    rec_fix (side_effects (
+                    error (Side, EmptyRel),
+                    Rec),
+                Rel)                              = 197  (0);
 
 %%
 
@@ -544,7 +558,7 @@ reduce (PFla_op_t *p, int goalnt)
                 PFalg_tuple_t    ltuple,
                                  rtuple;
 
-                /* lookup the column index where the join columns reside */ 
+                /* lookup the column index where the join columns reside */
                 lidx = lcount+1;
                 ridx = rcount+1;
                 for (i = 0; i < lcount; i++)
@@ -678,37 +692,18 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    project (project (Rel)) */
         case 18:
-        {   /* combine two projections */
-            PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                               sizeof (PFalg_proj_t));
-
-            unsigned int i, j, count = 0;
-            for (i = 0; i < p->schema.count; i++)
-                for (j = 0; j < L(p)->schema.count; j++)
-                    if (p->sem.proj.items[i].old ==
-                        L(p)->sem.proj.items[j].new) {
-                        proj[count++] = PFalg_proj (
-                                            p->sem.proj.items[i].new,
-                                            L(p)->sem.proj.items[j].old);
-                        break;
-                    }
-
-            /* ensure that at least one column remains! */
-            if (!count)
-                for (j = 0; j < L(p)->schema.count; j++)
-                    if (p->sem.proj.items[0].old ==
-                        L(p)->sem.proj.items[j].new) {
-                        proj[count++] = PFalg_proj (
-                                            p->sem.proj.items[0].new,
-                                            L(p)->sem.proj.items[j].old);
-                        break;
-                    }
-
-            *p = *PFla_project_ (L(L(p)), count, proj);
+            /* combine two projections */
+            *p = *PFla_project_ (LL(p),
+                                 p->schema.count,
+                                 PFalg_proj_merge (
+                                     p->sem.proj.items,
+                                     p->sem.proj.count,
+                                     L(p)->sem.proj.items,
+                                     L(p)->sem.proj.count));
 
             SEEN(p) = false;
             relabel (p, kids);
-        } break;
+            break;
 
         /* Rel:    project (lit_tbl) */
         case 19:
@@ -1082,7 +1077,7 @@ reduce (PFla_op_t *p, int goalnt)
                         break;
                     }
             }
-               
+
             /* check for rownum operator that generates key values
                and provides the sort criterion for the upper rownum */
             if (op->kind != la_rownum ||
@@ -1127,7 +1122,7 @@ reduce (PFla_op_t *p, int goalnt)
                                          p->schema.count
                                          * sizeof (PFalg_proj_t));
 
-                /* lookup the column index where the sort column resides */ 
+                /* lookup the column index where the sort column resides */
                 sort_col = PFord_order_col_at (p->sem.sort.sortby, 0);
                 idx = p->schema.count;
                 for (i = 0; i < L(p)->schema.count; i++)
@@ -1368,7 +1363,7 @@ reduce (PFla_op_t *p, int goalnt)
                     for (j = 0; j < count - 1; j++)
                         tuples[i].atoms[j] = tuple.atoms[j];
                     /* cast the value to integer */
-                    tuples[i].atoms[j] 
+                    tuples[i].atoms[j]
                         = PFalg_lit_int (tuple.atoms[idx].val.nat_);
                 }
                 /* copy the aligned column names */
@@ -1416,17 +1411,6 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-        /* Rel:    cond_err (Rel, EmptyRel) */
-        case 89:
-            /* an error node with an empty condition
-               relation triggers no error */
-            *p = *PFla_dummy (L(p));
-            SEEN(p) = false;
-            /* relabeling will be expensive
-               if there is no real dummy node */
-            relabel (p, kids);
-            break;
-
         /* Rel:    EmptyRel */
         case 112:
         {
@@ -1438,6 +1422,28 @@ reduce (PFla_op_t *p, int goalnt)
             SEEN(p) = true;
             label (p);
         } break;
+
+        /* Query:  serialize_seq (
+                       side_effects (error (Side, EmptyRel), Frag),
+                       Rel) */
+        case 193:
+        /* Rel:    rec_fix (side_effects (error (Side, EmptyRel), Rec), Rel) */
+        case 197:
+            LL(p) = LLL(p);
+            SEEN(p) = false;
+            relabel (p, kids);
+            break;
+
+        /* Query:  serialize_rel (error (Side, EmptyRel), Rel) */
+        case 194:
+        /* Side:   error (error (Side, EmptyRel), Rel) */
+        case 195:
+        /* Side:   trace (error (Side, EmptyRel), Trc) */
+        case 196:
+            L(p) = LL(p);
+            SEEN(p) = false;
+            relabel (p, kids);
+            break;
 
         default:
             /* every occurrence of EmptyRel already copes with

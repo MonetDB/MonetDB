@@ -65,6 +65,7 @@
 static char *ID[] = {
       [la_serialize_seq]   = "la_serialize_seq"
     , [la_serialize_rel]   = "la_serialize_rel"
+    , [la_side_effects]    = "la_side_effects"
     , [la_lit_tbl]         = "la_lit_tbl"
     , [la_empty_tbl]       = "la_empty_tbl"
     , [la_ref_tbl]         = "la_ref_tbl"
@@ -119,9 +120,9 @@ static char *ID[] = {
     , [la_roots]           = "la_roots"
     , [la_frag_union]      = "la_frag_union"
     , [la_error]           = "la_error"
-    , [la_cond_err]        = "la_cond_err"
     , [la_nil]             = "la_nil"
     , [la_trace]           = "la_trace"
+    , [la_trace_items]     = "la_trace_items"
     , [la_trace_msg]       = "la_trace_msg"
     , [la_trace_map]       = "la_trace_map"
     , [la_rec_fix]         = "la_rec_fix"
@@ -757,20 +758,23 @@ match (PFla_op_t *a, PFla_op_t *b)
                 return true;
 
         case la_serialize_rel:
-			if ((ACTCOL (L(a), a->sem.ser_rel.iter) != 
-				 ACTCOL (L(b), b->sem.ser_rel.iter)) ||
-				(ACTCOL (L(a), a->sem.ser_rel.pos) !=
-				 ACTCOL (L(b), a->sem.ser_rel.pos)))
-				return false;
+            if ((ACTCOL (R(a), a->sem.ser_rel.iter) != 
+                 ACTCOL (R(b), b->sem.ser_rel.iter)) ||
+                (ACTCOL (R(a), a->sem.ser_rel.pos) !=
+                 ACTCOL (R(b), a->sem.ser_rel.pos)))
+                return false;
 
-			for (unsigned int i = 0; i < clsize (a->sem.ser_rel.items);
-			 		i++) {
-				if (ACTCOL (L(a), clat (a->sem.ser_rel.items, i)) !=
-					ACTCOL (L(b), clat (b->sem.ser_rel.items, i)))
-					return false;
-			}
+            for (unsigned int i = 0; i < clsize (a->sem.ser_rel.items);
+                     i++) {
+                if (ACTCOL (R(a), clat (a->sem.ser_rel.items, i)) !=
+                    ACTCOL (R(b), clat (b->sem.ser_rel.items, i)))
+                    return false;
+            }
+            return true;
+                        
+        case la_side_effects:
+            return true;
 
-			return true;
         case la_lit_tbl:
             if (a->sem.lit_tbl.count !=
                 b->sem.lit_tbl.count)
@@ -1054,11 +1058,11 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_step:
-	        if (!((ACTCOL (R(a), a->sem.step.iter) ==
-	             ACTCOL (R(b), b->sem.step.iter))))
-				return false;
-			/* falling through */
-	
+            if (!((ACTCOL (R(a), a->sem.step.iter) ==
+                 ACTCOL (R(b), b->sem.step.iter))))
+                return false;
+            /* falling through */
+    
         case la_step_join:
             if ((ACTCOL (R(a), a->sem.step.item) ==
                  ACTCOL (R(b), b->sem.step.item))  &&
@@ -1072,11 +1076,11 @@ match (PFla_op_t *a, PFla_op_t *b)
              return false;
 
         case la_guide_step:
-	        if (!((ACTCOL (R(a), a->sem.step.iter) ==
-	             ACTCOL (R(b), b->sem.step.iter))))
-				return false;
-			/* falling through */
-			
+            if (!((ACTCOL (R(a), a->sem.step.iter) ==
+                 ACTCOL (R(b), b->sem.step.iter))))
+                return false;
+            /* falling through */
+            
         case la_guide_step_join:
             if (!((ACTCOL (R(a), a->sem.step.item) ==
                  ACTCOL (R(b), b->sem.step.item))  &&
@@ -1158,17 +1162,7 @@ match (PFla_op_t *a, PFla_op_t *b)
 
         case la_error:
             if (ACTCOL (L(a), a->sem.err.col) ==
-                ACTCOL (L(b), b->sem.err.col) &&
-                PFprop_type_of (a, a->sem.err.col) ==
-                PFprop_type_of (b, b->sem.err.col))
-                return true;
-
-            return false;
-
-        case la_cond_err:
-            if ((ACTCOL (R(a), a->sem.err.col) ==
-                ACTCOL (R(b), b->sem.err.col)) &&
-                !strcmp (a->sem.err.str, b->sem.err.str))
+                ACTCOL (L(b), b->sem.err.col))
                 return true;
 
             return false;
@@ -1177,6 +1171,7 @@ match (PFla_op_t *a, PFla_op_t *b)
             return true;
 
         case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
         case la_rec_fix:
@@ -1332,14 +1327,18 @@ new_operator (PFla_op_t *n)
             PFalg_collist_t *items = PFalg_collist_copy (n->sem.ser_rel.items);
                             
             for (unsigned int i = 0; i < clsize (items); i++) {
-                clat (items, i) = ACTCOL (L(n), clat (items, i));
+                clat (items, i) = ACTCOL (R(n), clat (items, i));
             }
             
-            return PFla_serialize_rel (CSE(L(n)),
-                                ACTCOL (L(n), n->sem.ser_rel.iter),
-                                ACTCOL (L(n), n->sem.ser_rel.pos),
+            return PFla_serialize_rel (CSE(L(n)), CSE(R(n)),
+                                ACTCOL (R(n), n->sem.ser_rel.iter),
+                                ACTCOL (R(n), n->sem.ser_rel.pos),
                                 items);
         }
+
+        case la_side_effects:
+            return PFla_side_effects (CSE(L(n)), CSE(R(n)));
+
         case la_lit_tbl:
             return PFla_lit_tbl_ (create_collist (n->schema),
                                   n->sem.lit_tbl.count,
@@ -1548,17 +1547,17 @@ new_operator (PFla_op_t *n)
              * a projection if this is the case */
             for (i = 0; i < CSE(L(n))->schema.count; i++) {
                 for (j = 0; j < CSE(R(n))->schema.count; j++) {
-					PFalg_col_t rev_l = col_NULL,
-							  	rev_r = col_NULL;
+                    PFalg_col_t rev_l = col_NULL,
+                                  rev_r = col_NULL;
                     if ((rev_l = REVACTCOL(
-									L(n), CSE(L(n))->schema.items[i].name)) ==
+                                    L(n), CSE(L(n))->schema.items[i].name)) ==
                         (rev_r = REVACTCOL(
-									R(n), CSE(R(n))->schema.items[j].name))) {
-						
+                                    R(n), CSE(R(n))->schema.items[j].name))) {
+                        
                         if (ACTCOL(L(n), rev_l) !=
                             ACTCOL(R(n), rev_r))
-	                        	projection = true;
-	    
+                                projection = true;
+        
                         break;
                     }
                 }
@@ -1575,13 +1574,13 @@ new_operator (PFla_op_t *n)
                     PFmalloc (R(n)->schema.count * sizeof (PFalg_proj_t));
                 for (i = 0; i < CSE(L(n))->schema.count; i++) {
                     for (j = 0; j < CSE(R(n))->schema.count; j++) {
-						PFalg_col_t rev_l = col_NULL,
-									rev_r = col_NULL;
-									
+                        PFalg_col_t rev_l = col_NULL,
+                                    rev_r = col_NULL;
+                                    
                         if ((rev_l = REVACTCOL(L(n),
-										CSE(L(n))->schema.items[i].name)) ==
+                                        CSE(L(n))->schema.items[i].name)) ==
                             (rev_r = REVACTCOL(R(n),
-										CSE(R(n))->schema.items[j].name))) {
+                                        CSE(R(n))->schema.items[j].name))) {
                             /* the names are conflicting */
                             if (ACTCOL(L(n), L(n)->schema.items[i].name) !=
                                 ACTCOL(R(n), R(n)->schema.items[j].name)) {
@@ -1599,13 +1598,13 @@ new_operator (PFla_op_t *n)
                                                    .name)));
                             }
                             else {
-								PFalg_col_t t = ACTCOL(R(n), rev_r);
-								
-								p[i] = PFalg_proj (t,t);
+                                PFalg_col_t t = ACTCOL(R(n), rev_r);
+                                
+                                p[i] = PFalg_proj (t,t);
 
                                 INACTCOL (
                                     actmap,
-									actcol (t,t));
+                                    actcol (t,t));
                             }
                         }
                     }
@@ -1931,33 +1930,31 @@ new_operator (PFla_op_t *n)
             return PFla_empty_frag ();
 
         case la_error:
-            return PFla_error_ (CSE(L(n)),
-                                ACTCOL (L(n), n->sem.err.col),
-                                PFprop_type_of (n, n->sem.err.col));
-
-        case la_cond_err:
-            return PFla_cond_err (CSE(L(n)), CSE(R(n)),
-                                  ACTCOL (R(n), n->sem.err.col),
-                                  n->sem.err.str);
+            return PFla_error (CSE(L(n)),
+                               CSE(R(n)),
+                               ACTCOL (R(n), n->sem.err.col));
 
         case la_nil:
             return PFla_nil ();
 
         case la_trace:
-            return PFla_trace (CSE(L(n)), CSE(R(n)),
-                               ACTCOL (R(n), n->sem.iter_pos_item.iter),
-                               ACTCOL (R(n), n->sem.iter_pos_item.pos),
-                               ACTCOL (R(n), n->sem.iter_pos_item.item));
+            return PFla_trace (CSE(L(n)), CSE(R(n)));
+
+        case la_trace_items:
+            return PFla_trace_items (CSE(L(n)), CSE(R(n)),
+                                     ACTCOL (L(n), n->sem.iter_pos_item.iter),
+                                     ACTCOL (L(n), n->sem.iter_pos_item.pos),
+                                     ACTCOL (L(n), n->sem.iter_pos_item.item));
 
         case la_trace_msg:
             return PFla_trace_msg (CSE(L(n)), CSE(R(n)),
-                                   ACTCOL (R(n), n->sem.iter_item.iter),
-                                   ACTCOL (R(n), n->sem.iter_item.item));
+                                   ACTCOL (L(n), n->sem.iter_item.iter),
+                                   ACTCOL (L(n), n->sem.iter_item.item));
 
         case la_trace_map:
-            return PFla_trace_msg (CSE(L(n)), CSE(R(n)),
-                                   ACTCOL (R(n), n->sem.trace_map.inner),
-                                   ACTCOL (R(n), n->sem.trace_map.outer));
+            return PFla_trace_map (CSE(L(n)), CSE(R(n)),
+                                   ACTCOL (L(n), n->sem.trace_map.inner),
+                                   ACTCOL (L(n), n->sem.trace_map.outer));
 
         case la_string_join: {
             return PFla_fn_string_join (
@@ -2158,8 +2155,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_serialize_seq:
             actmap = actcol_map_copy (ACT(R(ori)));
             break;
+
         case la_serialize_rel:
-            actmap = actcol_map_copy (ACT(L(ori)));
+            actmap = actcol_map_copy (ACT(R(ori)));
+            break;
+
+        case la_side_effects:
+            actmap = actcol_map_copy (ACT(R(ori)));
             break;
 
         case la_lit_tbl:
@@ -2493,7 +2495,6 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break;
 
         case la_error:
-        case la_cond_err:
             actmap = actcol_map_copy (ACT(L(ori)));
             break;
 
@@ -2502,9 +2503,14 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             break;
 
         case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
-            assert (!"missing implementation");
+            /* this operator doesn't have schema information and thus no
+             * projection list */
+            actmap = create_actcol_map ();
+            break;
+
         case la_rec_fix:
             actmap = actcol_map_copy (ACT(R(ori)));
             break;

@@ -130,9 +130,20 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_type_assert:
         case la_roots:
         case la_error:
+        case la_trace:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
+            break;
+
+        case la_side_effects:
+            /* do not infer name pairs to the children */
+
+            /* empty the name pair list */
+            PFarray_last (np_list) = 0;
             break;
 
         case la_lit_tbl:
@@ -431,17 +442,6 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             /* empty the name pair list */
             PFarray_last (np_list) = 0;
             break;
-
-        case la_cond_err:
-        case la_trace:
-        case la_trace_msg:
-        case la_trace_map:
-            /* do the recursive calls by hand */
-            map_names (L(n), goal, np_list, col_NULL);
-            /* empty the name pair list */
-            PFarray_last (np_list) = 0;
-            map_names (R(n), goal, np_list, col_NULL);
-            return;
 
         case la_nil:
             /* we do not have properties */

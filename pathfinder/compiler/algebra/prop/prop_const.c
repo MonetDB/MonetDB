@@ -274,7 +274,8 @@ infer_const (PFla_op_t *n)
         case la_processi:
         case la_content:
         case la_roots:
-        case la_trace:
+        case la_error:
+        case la_trace_items:
         case la_dummy:
 
             /* propagate information from both input operators */
@@ -381,7 +382,6 @@ infer_const (PFla_op_t *n)
 
         case la_semijoin:
         case la_difference:
-        case la_cond_err:
             /* propagate information from the first input operator */
                 for (unsigned int j = 0;
                         j < PFprop_const_count (L(n)->prop); j++)
@@ -393,9 +393,6 @@ infer_const (PFla_op_t *n)
                                 PFprop_const_val_at (L(n)->prop, j));
             break;
             
-        case la_error:
-            break;
-
         case la_fun_1to1:
             if (n->sem.fun_1to1.kind == alg_fun_num_add) {
                 PFalg_col_t col1 = clat (n->sem.fun_1to1.refs, 0),
@@ -700,7 +697,10 @@ infer_const (PFla_op_t *n)
             }
             break;
 
+        case la_error:
         case la_nil:
+        case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             /* we have no have properties */
@@ -765,6 +765,7 @@ infer_const (PFla_op_t *n)
 
         case la_serialize_seq:
         case la_serialize_rel:
+        case la_side_effects:
         case la_empty_tbl:
         case la_ref_tbl:
         case la_cross:
@@ -796,7 +797,6 @@ infer_const (PFla_op_t *n)
         case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
-        case la_trace:
         case la_fun_frag_param:
         case la_dummy:
             break;

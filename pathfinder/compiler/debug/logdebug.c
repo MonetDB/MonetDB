@@ -53,6 +53,7 @@
 static char *a_id[]  = {
       [la_serialize_seq]    = "SERIALIZE"
     , [la_serialize_rel]    = "REL SERIALIZE"
+    , [la_side_effects]     = "SIDE EFFECTS"
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
     , [la_ref_tbl ]         = "REF_TBL"
@@ -112,9 +113,9 @@ static char *a_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "!ERROR"
-    , [la_cond_err]         = "!ERROR"
     , [la_nil]              = "nil"
     , [la_trace]            = "trace"
+    , [la_trace_items]      = "trace_items"
     , [la_trace_msg]        = "trace_msg"
     , [la_trace_map]        = "trace_map"
     , [la_rec_fix]          = "rec fix"
@@ -135,6 +136,7 @@ static char *a_id[]  = {
 static char *xml_id[]  = {
       [la_serialize_seq]    = "serialize sequence"
     , [la_serialize_rel]    = "serialize relation"
+    , [la_side_effects]     = "observe side effects"
     , [la_lit_tbl]          = "table"
     , [la_empty_tbl]        = "empty_tbl"
     , [la_ref_tbl ]         = "ref_tbl"
@@ -194,9 +196,9 @@ static char *xml_id[]  = {
     , [la_frag_union]       = "FRAG_UNION"
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_error]            = "error"
-    , [la_cond_err]         = "error"
     , [la_nil]              = "nil"
     , [la_trace]            = "trace"
+    , [la_trace_items]      = "trace items"
     , [la_trace_msg]        = "trace msg"
     , [la_trace_map]        = "trace map"
     , [la_rec_fix]          = "recursion fix"
@@ -229,8 +231,15 @@ literal (PFalg_atom_t a)
 
         case aat_str:
         case aat_uA:
-            PFarray_printf (s, "\\\"%s\\\"", PFesc_string (a.val.str));
-            break;
+        {
+            unsigned int split = 29;
+            if (strlen(a.val.str) > split)
+                PFarray_printf (s, "\\\"%s\\n%s\\\"",
+                                PFesc_string (PFstrndup (a.val.str, split)),
+                                PFesc_string (a.val.str+split));
+            else
+                PFarray_printf (s, "\\\"%s\\\"", PFesc_string (a.val.str));
+        }   break;
 
         case aat_dec:
             PFarray_printf (s, "%g", a.val.dec_);
@@ -376,14 +385,17 @@ comp_str (PFalg_comp_t comp) {
  * @param n The current node to print (function is recursive)
  */
 static void
-la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
+la_dot (PFarray_t *dot, PFarray_t *side_effects,
+        PFla_op_t *n, bool print_frag_info, char *prop_args)
 {
+#define OUT (n->bit_in ? dot : side_effects)
     unsigned int c;
     assert(n->node_id);
 
     static char *color[] = {
           [la_serialize_seq]   = "#C0C0C0"
         , [la_serialize_rel]   = "#C0C0C0"
+        , [la_side_effects]    = "#C0C0C0"
         , [la_lit_tbl]         = "#C0C0C0"
         , [la_empty_tbl]       = "#C0C0C0"
         , [la_ref_tbl]         = "#C0C0C0"
@@ -443,9 +455,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         , [la_frag_union]      = "#E0E0E0"
         , [la_empty_frag]      = "#E0E0E0"
         , [la_error]           = "#C0C0C0"
-        , [la_cond_err]        = "#C0C0C0"
         , [la_nil]             = "#FFFFFF"
         , [la_trace]           = "#FF5500"
+        , [la_trace_items]     = "#FF5500"
         , [la_trace_msg]       = "#FF5500"
         , [la_trace_map]       = "#FF5500"
         , [la_rec_fix]         = "#FF00FF"
@@ -463,100 +475,100 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
     };
 
     /* open up label */
-    PFarray_printf (dot, "node%i [label=\"", n->node_id);
+    PFarray_printf (OUT, "node%i [label=\"", n->node_id);
 
     /* the following line enables id printing to simplify comparison with
        generated XML plans */
-    PFarray_printf (dot, "id: %i\\n", n->node_id);
+    PFarray_printf (OUT, "id: %i\\n", n->node_id);
 
     /* create label */
     switch (n->kind)
     {
         case la_serialize_seq:
-            PFarray_printf (dot, "%s (%s) order by (%s)",
+            PFarray_printf (OUT, "%s (%s) order by (%s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.ser_seq.item),
                             PFcol_str (n->sem.ser_seq.pos));
             break;
 
         case la_serialize_rel:
-            PFarray_printf (dot, "%s (%s",
+            PFarray_printf (OUT, "%s (%s",
                             a_id[n->kind],
                             PFcol_str (clat (n->sem.ser_rel.items, 0)));
             for (c = 1; c < clsize (n->sem.ser_rel.items); c++)
-                PFarray_printf (dot, ", %s",
+                PFarray_printf (OUT, ", %s",
                                 PFcol_str (clat (n->sem.ser_rel.items, c)));
-            PFarray_printf (dot, ")\\norder by (%s) partition by (%s)",
+            PFarray_printf (OUT, ")\\norder by (%s) partition by (%s)",
                             PFcol_str (n->sem.ser_rel.pos),
                             PFcol_str (n->sem.ser_rel.iter));
             break;
 
         case la_lit_tbl:
             /* list the columns of this table */
-            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
+            PFarray_printf (OUT, "%s: (%s", a_id[n->kind],
                             PFcol_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s",
+                PFarray_printf (OUT, " | %s",
                                 PFcol_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
 
             /* print out tuples in table, if table is not empty */
             for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++) {
-                PFarray_printf (dot, "\\n[");
+                PFarray_printf (OUT, "\\n[");
 
                 for (c = 0; c < n->sem.lit_tbl.tuples[i].count; c++) {
                     if (c != 0)
-                        PFarray_printf (dot, ",");
-                    PFarray_printf (dot, "%s",
+                        PFarray_printf (OUT, ",");
+                    PFarray_printf (OUT, "%s",
                                     literal (n->sem.lit_tbl
                                                    .tuples[i].atoms[c]));
                 }
 
-                PFarray_printf (dot, "]");
+                PFarray_printf (OUT, "]");
             }
             break;
 
         case la_empty_tbl:
             /* list the columns of this table */
-            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
+            PFarray_printf (OUT, "%s: (%s", a_id[n->kind],
                             PFcol_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s",
+                PFarray_printf (OUT, " | %s",
                                 PFcol_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_ref_tbl :
-            PFarray_printf (dot, "%s: ", a_id[n->kind]);
+            PFarray_printf (OUT, "%s: ", a_id[n->kind]);
             for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (dot, "%s%s", c ? " | " : "(",
+                PFarray_printf (OUT, "%s%s", c ? " | " : "(",
                                 PFcol_str (n->schema.items[c].name));
-            PFarray_printf (dot, ")\\ncolumn name ");
+            PFarray_printf (OUT, ")\\ncolumn name ");
             for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (dot, "%s%s", c ? " | " : "(",
+                PFarray_printf (OUT, "%s%s", c ? " | " : "(",
                                 *((char**) PFarray_at (n->sem.ref_tbl.tcols,
                                                        c)));
-            PFarray_printf (dot, ")\\ntype ");
+            PFarray_printf (OUT, ")\\ntype ");
             for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (dot, "%s%s", c ? " | " : "(",
+                PFarray_printf (OUT, "%s%s", c ? " | " : "(",
                                 PFalg_simple_type_str (
                                     n->schema.items[c].type));
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_attach:
-            PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s), val: %s", a_id[n->kind],
                             PFcol_str (n->sem.attach.res),
                             literal (n->sem.attach.value));
             break;
 
         case la_eqjoin:
         case la_semijoin:
-            PFarray_printf (dot, "%s (%s = %s)",
+            PFarray_printf (OUT, "%s (%s = %s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.eqjoin.col1),
                             PFcol_str (n->sem.eqjoin.col2));
@@ -564,12 +576,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
         case la_thetajoin:
             /* overwrite standard node layout */
-            PFarray_printf (dot, "\", shape=polygon peripheries=2, label=\"");
+            PFarray_printf (OUT, "\", shape=polygon peripheries=2, label=\"");
 
-            PFarray_printf (dot, "%s", a_id[n->kind]);
+            PFarray_printf (OUT, "%s", a_id[n->kind]);
 
             for (c = 0; c < n->sem.thetajoin.count; c++)
-                PFarray_printf (dot, "\\n(%s %s %s)",
+                PFarray_printf (OUT, "\\n(%s %s %s)",
                                 PFcol_str (n->sem.thetajoin.pred[c].left),
                                 comp_str (n->sem.thetajoin.pred[c].comp),
                                 PFcol_str (n->sem.thetajoin.pred[c].right));
@@ -580,74 +592,74 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             if (n->sem.eqjoin_opt.kind == la_eqjoin) {
 #define proj_at(l,i) (*(PFalg_proj_t *) PFarray_at ((l),(i)))
                 PFarray_printf (
-                    dot,
+                    OUT,
                     "%s (%s:%s = %s)",
                     a_id[n->kind],
                     PFcol_str (proj_at(n->sem.eqjoin_opt.lproj,0).new),
                     PFcol_str (proj_at(n->sem.eqjoin_opt.lproj,0).old),
                     PFcol_str (proj_at(n->sem.eqjoin_opt.rproj,0).old));
-                PFarray_printf (dot, "\\nleft proj: (");
+                PFarray_printf (OUT, "\\nleft proj: (");
                 for (unsigned int i = 1;
                      i < PFarray_last (n->sem.eqjoin_opt.lproj);
                      i++)
                     PFarray_printf (
-                        dot,
+                        OUT,
                         "%s:%s%s",
                         PFcol_str (proj_at(n->sem.eqjoin_opt.lproj,i).new),
                         PFcol_str (proj_at(n->sem.eqjoin_opt.lproj,i).old),
                         i+1 == PFarray_last (n->sem.eqjoin_opt.lproj)
                         ? "" : ", ");
-                PFarray_printf (dot, ")");
-                PFarray_printf (dot, "\\nright proj: (");
+                PFarray_printf (OUT, ")");
+                PFarray_printf (OUT, "\\nright proj: (");
                 for (unsigned int i = 1;
                      i < PFarray_last (n->sem.eqjoin_opt.rproj);
                      i++)
                     PFarray_printf (
-                        dot,
+                        OUT,
                         "%s:%s%s",
                         PFcol_str (proj_at(n->sem.eqjoin_opt.rproj,i).new),
                         PFcol_str (proj_at(n->sem.eqjoin_opt.rproj,i).old),
                         i+1 == PFarray_last (n->sem.eqjoin_opt.rproj)
                         ? "" : ", ");
-                PFarray_printf (dot, ")");
+                PFarray_printf (OUT, ")");
             }
             /* interpret this operator as internal cross product */
             else if (n->sem.eqjoin_opt.kind == la_cross)
-                PFarray_printf (dot, "%s", a_id[n->kind]);
+                PFarray_printf (OUT, "%s", a_id[n->kind]);
             break;
 
         case la_project:
             if (n->sem.proj.items[0].new != n->sem.proj.items[0].old)
-                PFarray_printf (dot, "%s (%s:%s", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s:%s", a_id[n->kind],
                                 PFcol_str (n->sem.proj.items[0].new),
                                 PFcol_str (n->sem.proj.items[0].old));
             else
-                PFarray_printf (dot, "%s (%s", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s", a_id[n->kind],
                                 PFcol_str (n->sem.proj.items[0].old));
 
             for (c = 1; c < n->sem.proj.count; c++)
                 if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
-                    PFarray_printf (dot, ", %s:%s",
+                    PFarray_printf (OUT, ", %s:%s",
                                     PFcol_str (n->sem.proj.items[c].new),
                                     PFcol_str (n->sem.proj.items[c].old));
                 else
-                    PFarray_printf (dot, ", %s",
+                    PFarray_printf (OUT, ", %s",
                                     PFcol_str (n->sem.proj.items[c].old));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_select:
-            PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s)", a_id[n->kind],
                             PFcol_str (n->sem.select.col));
             break;
 
         case la_pos_select:
-            PFarray_printf (dot, "%s (%i, <", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%i, <", a_id[n->kind],
                             n->sem.pos_sel.pos);
 
             if (PFord_count (n->sem.pos_sel.sortby))
-                PFarray_printf (dot, "%s%s",
+                PFarray_printf (OUT, "%s%s",
                                 PFcol_str (
                                     PFord_order_col_at (
                                         n->sem.pos_sel.sortby, 0)),
@@ -656,7 +668,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                 ? "" : " (desc)");
 
             for (c = 1; c < PFord_count (n->sem.pos_sel.sortby); c++)
-                PFarray_printf (dot, ", %s%s",
+                PFarray_printf (OUT, ", %s%s",
                                 PFcol_str (
                                     PFord_order_col_at (
                                         n->sem.pos_sel.sortby, c)),
@@ -664,26 +676,26 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                     n->sem.pos_sel.sortby, c) == DIR_ASC
                                 ? "" : " (desc)");
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (OUT, ">");
 
             if (n->sem.pos_sel.part != col_NULL)
-                PFarray_printf (dot, "/%s",
+                PFarray_printf (OUT, "/%s",
                                 PFcol_str (n->sem.pos_sel.part));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
             break;
 
         case la_fun_1to1:
-            PFarray_printf (dot, "%s [%s] (%s:<", a_id[n->kind],
+            PFarray_printf (OUT, "%s [%s] (%s:<", a_id[n->kind],
                             PFalg_fun_str (n->sem.fun_1to1.kind),
                             PFcol_str (n->sem.fun_1to1.res));
             for (c = 0; c < clsize (n->sem.fun_1to1.refs);c++)
-                PFarray_printf (dot, "%s%s",
+                PFarray_printf (OUT, "%s%s",
                                 c ? ", " : "",
                                 PFcol_str (clat (n->sem.fun_1to1.refs, c)));
-            PFarray_printf (dot, ">)");
+            PFarray_printf (OUT, ">)");
             break;
 
         case la_num_eq:
@@ -691,14 +703,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_bool_and:
         case la_bool_or:
         case la_to:
-            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFcol_str (n->sem.binary.res),
                             PFcol_str (n->sem.binary.col1),
                             PFcol_str (n->sem.binary.col2));
             break;
 
         case la_bool_not:
-            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s:<%s>)", a_id[n->kind],
                             PFcol_str (n->sem.unary.res),
                             PFcol_str (n->sem.unary.col));
             break;
@@ -710,11 +722,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_seqty1:
         case la_all:
             if (n->sem.aggr.part == col_NULL)
-                PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s:<%s>)", a_id[n->kind],
                                 PFcol_str (n->sem.aggr.res),
                                 PFcol_str (n->sem.aggr.col));
             else
-                PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s:<%s>/%s)", a_id[n->kind],
                                 PFcol_str (n->sem.aggr.res),
                                 PFcol_str (n->sem.aggr.col),
                                 PFcol_str (n->sem.aggr.part));
@@ -722,10 +734,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
         case la_count:
             if (n->sem.aggr.part == col_NULL)
-                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s)", a_id[n->kind],
                                 PFcol_str (n->sem.aggr.res));
             else
-                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
+                PFarray_printf (OUT, "%s (%s:/%s)", a_id[n->kind],
                                 PFcol_str (n->sem.aggr.res),
                                 PFcol_str (n->sem.aggr.part));
             break;
@@ -733,11 +745,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_rownum:
         case la_rowrank:
         case la_rank:
-            PFarray_printf (dot, "%s (%s:<", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s:<", a_id[n->kind],
                             PFcol_str (n->sem.sort.res));
 
             if (PFord_count (n->sem.sort.sortby))
-                PFarray_printf (dot, "%s%s",
+                PFarray_printf (OUT, "%s%s",
                                 PFcol_str (
                                     PFord_order_col_at (
                                         n->sem.sort.sortby, 0)),
@@ -746,7 +758,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                 ? "" : " (desc)");
 
             for (c = 1; c < PFord_count (n->sem.sort.sortby); c++)
-                PFarray_printf (dot, ", %s%s",
+                PFarray_printf (OUT, ", %s%s",
                                 PFcol_str (
                                     PFord_order_col_at (
                                         n->sem.sort.sortby, c)),
@@ -754,35 +766,35 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                     n->sem.sort.sortby, c) == DIR_ASC
                                 ? "" : " (desc)");
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (OUT, ">");
 
             if (n->sem.sort.part != col_NULL)
-                PFarray_printf (dot, "/%s",
+                PFarray_printf (OUT, "/%s",
                                 PFcol_str (n->sem.sort.part));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_rowid:
-            PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s)", a_id[n->kind],
                             PFcol_str (n->sem.rowid.res));
             break;
 
         case la_type:
-            PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s:<%s>), type: %s", a_id[n->kind],
                             PFcol_str (n->sem.type.res),
                             PFcol_str (n->sem.type.col),
                             PFalg_simple_type_str (n->sem.type.ty));
             break;
 
         case la_type_assert:
-            PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s), type: %i", a_id[n->kind],
                             PFcol_str (n->sem.type.col),
                             n->sem.type.ty);
             break;
 
         case la_cast:
-            PFarray_printf (dot, "%s (%s%s%s%s), type: %s", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s%s%s%s), type: %s", a_id[n->kind],
                             n->sem.type.res?PFcol_str(n->sem.type.res):"",
                             n->sem.type.res?":<":"",
                             PFcol_str (n->sem.type.col),
@@ -793,40 +805,40 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_guide_step:
         case la_guide_step_join:
             /* overwrite standard node layout */
-            PFarray_printf (dot, "\", fontcolor=\"#FFFFFF\", label=\"");
+            PFarray_printf (OUT, "\", fontcolor=\"#FFFFFF\", label=\"");
         case la_step:
         case la_step_join:
-            PFarray_printf (dot, "%s %s::%s",
+            PFarray_printf (OUT, "%s %s::%s",
                             a_id[n->kind],
                             PFalg_axis_str (n->sem.step.spec.axis),
                             PFalg_node_kind_str (n->sem.step.spec.kind));
 
             if (n->sem.step.spec.kind == node_kind_elem ||
                 n->sem.step.spec.kind == node_kind_attr)
-                PFarray_printf (dot, "(%s)",
+                PFarray_printf (OUT, "(%s)",
                                 PFqname_str (n->sem.step.spec.qname));
             else if (n->sem.step.spec.kind == node_kind_pi &&
                      PFqname_loc (n->sem.step.spec.qname))
-                PFarray_printf (dot, "(%s)", PFqname_loc (n->sem.step.spec.qname));
+                PFarray_printf (OUT, "(%s)", PFqname_loc (n->sem.step.spec.qname));
             else
-                PFarray_printf (dot, "()");
+                PFarray_printf (OUT, "()");
 
             /* print guide info */
             if (n->kind == la_guide_step ||
                 n->kind == la_guide_step_join) {
                 bool first = true;
-                PFarray_printf (dot, "- (");
+                PFarray_printf (OUT, "- (");
 
                 for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
-                    PFarray_printf (dot, "%s%i", first ? "" : ", ",
+                    PFarray_printf (OUT, "%s%i", first ? "" : ", ",
                                     n->sem.step.guides[i]->guide);
                     first = false;
                 }
-                PFarray_printf (dot, ") ");
+                PFarray_printf (OUT, ") ");
             }
 
             if (n->kind == la_step || n->kind == la_guide_step)
-                PFarray_printf (dot, "(%s, %s%s%s)",
+                PFarray_printf (OUT, "(%s, %s%s%s)",
                                 PFcol_str (n->sem.step.iter),
                                 PFcol_str (n->sem.step.item_res),
                                 n->sem.step.item_res != n->sem.step.item
@@ -834,12 +846,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                                 n->sem.step.item_res != n->sem.step.item
                                 ? PFcol_str (n->sem.step.item) : "");
             else
-                PFarray_printf (dot, "(%s:%s)",
+                PFarray_printf (OUT, "(%s:%s)",
                                 PFcol_str (n->sem.step.item_res),
                                 PFcol_str (n->sem.step.item));
 
             if (LEVEL_KNOWN(n->sem.step.level))
-                PFarray_printf (dot, "\\nlevel=%i", n->sem.step.level);
+                PFarray_printf (OUT, "\\nlevel=%i", n->sem.step.level);
             break;
 
         case la_doc_index_join:
@@ -852,7 +864,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                 case la_dj_text:  name = "pf:text";  break;
                 case la_dj_attr:  name = "pf:attr";  break;
             }
-            PFarray_printf (dot, "%s (%s:<%s, %s>)",
+            PFarray_printf (OUT, "%s (%s:<%s, %s>)",
                             name,
                             PFcol_str (n->sem.doc_join.item_res),
                             PFcol_str (n->sem.doc_join.item),
@@ -867,37 +879,37 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                 case alg_dt_doc: name = "fn:doc";        break;
                 case alg_dt_col: name = "fn:collection"; break;
             }
-            PFarray_printf (dot, "%s (%s:<%s>)",
+            PFarray_printf (OUT, "%s (%s:<%s>)",
                             name,
                             PFcol_str (n->sem.doc_tbl.res),
                             PFcol_str (n->sem.doc_tbl.col));
         }   break;
 
         case la_doc_access:
-            PFarray_printf (dot, "%s ", a_id[n->kind]);
+            PFarray_printf (OUT, "%s ", a_id[n->kind]);
 
             switch (n->sem.doc_access.doc_col)
             {
                 case doc_atext:
-                    PFarray_printf (dot, "attribute value");
+                    PFarray_printf (OUT, "attribute value");
                     break;
                 case doc_text:
-                    PFarray_printf (dot, "textnode content");
+                    PFarray_printf (OUT, "textnode content");
                     break;
                 case doc_comm:
-                    PFarray_printf (dot, "comment text");
+                    PFarray_printf (OUT, "comment text");
                     break;
                 case doc_pi_text:
-                    PFarray_printf (dot, "processing instruction");
+                    PFarray_printf (OUT, "processing instruction");
                     break;
 				case doc_qname:
-					PFarray_printf (dot, "qname");
+					PFarray_printf (OUT, "qname");
 					break;
                 default: PFoops (OOPS_FATAL,
-                        "unknown document access in dot output");
+                        "unknown document access in OUT output");
             }
 
-            PFarray_printf (dot, " (%s:<%s>)",
+            PFarray_printf (OUT, " (%s:<%s>)",
                             PFcol_str (n->sem.doc_access.res),
                             PFcol_str (n->sem.doc_access.col));
             break;
@@ -907,29 +919,29 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_textnode:
         case la_comment:
         case la_trace_msg:
-            PFarray_printf (dot, "%s (%s, %s)",
+            PFarray_printf (OUT, "%s (%s, %s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.iter_item.iter),
                             PFcol_str (n->sem.iter_item.item));
             break;
 
         case la_docnode:
-            PFarray_printf (dot, "%s (%s)",
+            PFarray_printf (OUT, "%s (%s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.docnode.iter));
             break;
 
         case la_attribute:
         case la_processi:
-            PFarray_printf (dot, "%s (%s, %s, %s)", a_id[n->kind],
+            PFarray_printf (OUT, "%s (%s, %s, %s)", a_id[n->kind],
                             PFcol_str (n->sem.iter_item1_item2.iter),
                             PFcol_str (n->sem.iter_item1_item2.item1),
                             PFcol_str (n->sem.iter_item1_item2.item2));
             break;
 
         case la_content:
-        case la_trace:
-            PFarray_printf (dot,
+        case la_trace_items:
+            PFarray_printf (OUT,
                             "%s (%s, %s, %s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.iter_pos_item.iter),
@@ -937,14 +949,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                             PFcol_str (n->sem.iter_pos_item.item));
             break;
 
-        case la_cond_err:
-            PFarray_printf (dot, "%s (%s)\\n%s ...", a_id[n->kind],
-                            PFcol_str (n->sem.err.col),
-                            PFstrndup (n->sem.err.str, 16));
+        case la_error:
+            PFarray_printf (OUT, "%s (%s)", a_id[n->kind],
+                            PFcol_str (n->sem.err.col));
             break;
 
         case la_trace_map:
-            PFarray_printf (dot,
+            PFarray_printf (OUT,
                             "%s (%s, %s)",
                             a_id[n->kind],
                             PFcol_str (n->sem.trace_map.inner),
@@ -953,62 +964,62 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
         case la_fun_call:
             if (PFqname_loc (n->sem.fun_call.qname))
-                PFarray_printf (dot,
+                PFarray_printf (OUT,
                                 "%s function \\\"%s\\\" (",
                                 PFalg_fun_call_kind_str (n->sem.fun_call.kind),
                                 PFqname_uri_str (n->sem.fun_call.qname));
             else
-                PFarray_printf (dot,
+                PFarray_printf (OUT,
                                 "%s function (",
                                 PFalg_fun_call_kind_str (n->sem.fun_call.kind));
             for (unsigned int i = 0; i < n->schema.count; i++)
-                PFarray_printf (dot, "%s%s",
+                PFarray_printf (OUT, "%s%s",
                                 i?", ":"",
                                 PFcol_str (n->schema.items[i].name));
-            PFarray_printf (dot,
+            PFarray_printf (OUT,
                             ")\\n(loop: %s)",
                             PFcol_str (n->sem.fun_call.iter));
             break;
 
         case la_fun_param:
-            PFarray_printf (dot, "%s (", a_id[n->kind]);
+            PFarray_printf (OUT, "%s (", a_id[n->kind]);
             for (unsigned int i = 0; i < n->schema.count; i++)
-                PFarray_printf (dot, "%s%s",
+                PFarray_printf (OUT, "%s%s",
                                 i?", ":"",
                                 PFcol_str (n->schema.items[i].name));
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_frag_extract:
         case la_fun_frag_param:
-            PFarray_printf (dot, "%s (referencing column %i)",
+            PFarray_printf (OUT, "%s (referencing column %i)",
                             a_id[n->kind], n->sem.col_ref.pos);
             break;
 
         case la_proxy:
-            PFarray_printf (dot, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
+            PFarray_printf (OUT, "%s %i (", a_id[n->kind], n->sem.proxy.kind);
 
             if (clsize (n->sem.proxy.new_cols))
-                PFarray_printf (dot, "%s",
+                PFarray_printf (OUT, "%s",
                                 PFcol_str (clat (n->sem.proxy.new_cols, 0)));
 
             for (c = 1; c < clsize (n->sem.proxy.new_cols); c++)
-                PFarray_printf (dot, ", %s",
+                PFarray_printf (OUT, ", %s",
                                 PFcol_str (clat (n->sem.proxy.new_cols, c)));
 
             if (clsize (n->sem.proxy.req_cols))
-                PFarray_printf (dot, ")\\n(req cols: %s",
+                PFarray_printf (OUT, ")\\n(req cols: %s",
                                 PFcol_str (clat (n->sem.proxy.req_cols, 0)));
 
             for (c = 1; c < clsize (n->sem.proxy.req_cols); c++)
-                PFarray_printf (dot, ", %s",
+                PFarray_printf (OUT, ", %s",
                                 PFcol_str (clat (n->sem.proxy.req_cols, c)));
 
-            PFarray_printf (dot, ")");
+            PFarray_printf (OUT, ")");
             break;
 
         case la_string_join:
-            PFarray_printf (dot,
+            PFarray_printf (OUT,
                             "%s\\n"
                             "%s <%s, %s>,\\n"
                             "<%s>,\\n"
@@ -1023,7 +1034,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                             PFcol_str (n->sem.string_join.item_sep));
             break;
 
-
+        case la_side_effects:
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -1036,14 +1047,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
+        case la_trace:
         case la_rec_fix:
         case la_rec_param:
         case la_rec_arg:
         case la_rec_base:
         case la_proxy_base:
         case la_dummy:
-        case la_error:
-            PFarray_printf (dot, "%s", a_id[n->kind]);
+            PFarray_printf (OUT, "%s", a_id[n->kind]);
             break;
     }
 
@@ -1068,13 +1079,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
             if (*fmt == '+' || *fmt == 'A') {
                 /* if present print cardinality */
                 if (PFprop_card (n->prop))
-                    PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
+                    PFarray_printf (OUT, "\\ncard: %i", PFprop_card (n->prop));
             }
             if (*fmt == '+' || *fmt == 'O') {
                 /* list columns marked const */
                 for (unsigned int i = 0;
                         i < PFprop_const_count (n->prop); i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                    PFarray_printf (OUT, i ? ", %s" : "\\nconst: %s",
                                     PFcol_str (
                                         PFprop_const_at (n->prop, i)));
             }
@@ -1083,7 +1094,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
                 /* list icols columns */
                 for (unsigned int i = 0; i < clsize (icols); i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                    PFarray_printf (OUT, i ? ", %s" : "\\nicols: %s",
                                     PFcol_str (clat (icols, i)));
             }
             if (*fmt == '+' || *fmt == 'K') {
@@ -1091,7 +1102,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
                 /* list keys columns */
                 for (unsigned int i = 0; i < clsize (keys); i++)
-                    PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
+                    PFarray_printf (OUT, i ? ", %s" : "\\nkeys: %s",
                                     PFcol_str (clat (keys, i)));
             }
             if (*fmt == '+' || *fmt == 'V') {
@@ -1102,7 +1113,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_bool_val (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nreq. val: %s=%s " : ", %s=%s ",
                             PFcol_str (col),
                             PFprop_req_bool_val_val (n->prop, col)
@@ -1116,7 +1127,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_order_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\norder col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1128,7 +1139,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_bijective_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nbijective col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1140,7 +1151,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_multi_col_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nmulti-col col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1152,7 +1163,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_filter_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nfilter col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1164,7 +1175,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_unique_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nunique col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1176,7 +1187,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     PFalg_col_t col = n->schema.items[i].name;
                     if (PFprop_req_value_col (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nvalue col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1192,7 +1203,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     if (PFprop_node_property (n->prop, col) &&
                         PFprop_node_content_queried (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nnode content queried: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1205,7 +1216,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     if (PFprop_node_property (n->prop, col) &&
                         PFprop_node_serialize (n->prop, col)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             fst ? "\\nnode serialized: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
@@ -1216,10 +1227,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                 /* list columns and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
-                        PFarray_printf (dot, i ? ", %s " : "\\ndom: %s ",
+                        PFarray_printf (OUT, i ? ", %s " : "\\ndom: %s ",
                                         PFcol_str (n->schema.items[i].name));
                         PFprop_write_domain (
-                            dot,
+                            OUT,
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
             }
@@ -1231,7 +1242,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     if (unq) {
                         PFalg_col_t l_unq, r_unq;
                         PFarray_printf (
-                            dot,
+                            OUT,
                             i ? " , %s=%s" : "\\nO->U names: %s=%s",
                             PFcol_str (ori), PFcol_str (unq));
 
@@ -1239,14 +1250,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                         r_unq = PFprop_unq_name_right (n->prop, ori);
 
                         if (l_unq && l_unq != unq && r_unq && r_unq != unq)
-                            PFarray_printf (dot,
+                            PFarray_printf (OUT,
                                             " [%s|%s]",
                                             PFcol_str(l_unq),
                                             PFcol_str(r_unq));
                         else if (l_unq && l_unq != unq)
-                            PFarray_printf (dot, " [%s|", PFcol_str(l_unq));
+                            PFarray_printf (OUT, " [%s|", PFcol_str(l_unq));
                         else if (r_unq && r_unq != unq)
-                            PFarray_printf (dot, " |%s]", PFcol_str(r_unq));
+                            PFarray_printf (OUT, " |%s]", PFcol_str(r_unq));
                     }
                 }
             }
@@ -1258,7 +1269,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     if (ori) {
                         PFalg_col_t l_ori, r_ori;
                         PFarray_printf (
-                            dot,
+                            OUT,
                             i ? " , %s=%s" : "\\nU->O names: %s=%s",
                             PFcol_str (unq), PFcol_str (ori));
 
@@ -1266,21 +1277,21 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                         r_ori = PFprop_ori_name_right (n->prop, unq);
 
                         if (l_ori && l_ori != ori && r_ori && r_ori != ori)
-                            PFarray_printf (dot,
+                            PFarray_printf (OUT,
                                             " [%s|%s]",
                                             PFcol_str(l_ori),
                                             PFcol_str(r_ori));
                         else if (l_ori && l_ori != ori)
-                            PFarray_printf (dot, " [%s|", PFcol_str(l_ori));
+                            PFarray_printf (OUT, " [%s|", PFcol_str(l_ori));
                         else if (r_ori && r_ori != ori)
-                            PFarray_printf (dot, " |%s]", PFcol_str(r_ori));
+                            PFarray_printf (OUT, " |%s]", PFcol_str(r_ori));
                     }
                 }
             }
             if (*fmt == '+' || *fmt == 'S') {
                 /* print whether columns do have to respect duplicates */
                 if (PFprop_set (n->prop))
-                    PFarray_printf (dot, "\\nset");
+                    PFarray_printf (OUT, "\\nset");
             }
             if (*fmt == '+' || *fmt == 'L') {
                 /* print columns that have a level information attached */
@@ -1290,7 +1301,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     int level = PFprop_level (n->prop, col);
                     if (LEVEL_KNOWN(level)) {
                         PFarray_printf (
-                            dot,
+                            OUT,
                             "%s %s=%i",
                             first ? "\\nlevel:" : ",",
                             PFcol_str (col),
@@ -1309,7 +1320,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     col = n->schema.items[i].name;
                     if (PFprop_guide (n->prop, col)) {
 
-                        PFarray_printf (dot, "%s %s:",
+                        PFarray_printf (OUT, "%s %s:",
                                         first ? "\\nGUIDE:" : ",",
                                         PFcol_str(col));
                         first = false;
@@ -1318,7 +1329,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                         count  = PFprop_guide_count (n->prop, col);
                         guides = PFprop_guide_elements (n->prop, col);
                         for (j = 0; j < count; j++)
-                            PFarray_printf (dot, " %i", guides[j]->guide);
+                            PFarray_printf (OUT, " %i", guides[j]->guide);
                     }
                 }
             }
@@ -1328,18 +1339,18 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
                     unsigned int i, j;
                     bool first = true;
 
-                    PFarray_printf (dot, "\\ncomposite keys:");
+                    PFarray_printf (OUT, "\\ncomposite keys:");
 
                     for (i = 0; i < PFprop_ckeys_count (n->prop); i++) {
                         list = PFprop_ckey_at (n->prop, i);
                         first = true;
                         for (j = 0; j < clsize (list); j++) {
-                            PFarray_printf (dot, "%s%s",
+                            PFarray_printf (OUT, "%s%s",
                                             first ? "\\n<" : ", ",
                                             PFcol_str(clat (list, j)));
                             first = false;
                         }
-                        PFarray_printf (dot, ">");
+                        PFarray_printf (OUT, ">");
                     }
                 }
             }
@@ -1353,17 +1364,34 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
     }
 
     /* close up label */
-    PFarray_printf (dot, "\", color=\"%s\" ];\n", color[n->kind]);
+    PFarray_printf (OUT, "\", color=\"%s\" ];\n", color[n->kind]);
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
         /* Avoid printing the fragment info to make the graphs
            more readable. */
         if (print_frag_info &&
             (n->child[c]->kind == la_frag_union ||
-             n->child[c]->kind == la_empty_frag ||
-             (n->kind == la_fcns && c == 1 && n->child[c]->kind == la_nil)))
+             n->child[c]->kind == la_empty_frag))
             continue;
-        PFarray_printf (dot, "node%i -> node%i;\n",
+        /* do not print the last list item (nil) */
+        if (((n->kind == la_serialize_rel ||
+              n->kind == la_side_effects ||
+              n->kind == la_error ||
+              n->kind == la_trace) &&
+             c == 0 &&
+             n->child[c]->kind == la_nil) ||
+            (n->kind == la_fcns &&
+             c == 1 &&
+             n->child[c]->kind == la_nil))
+            continue;
+        /* do not print empty side effects */
+        if (n->kind == la_serialize_seq &&
+            c == 0 &&
+            n->child[c]->kind == la_side_effects &&
+            n->child[c]->child[0]->kind == la_nil)
+            continue;
+        PFarray_printf (n->bit_in || n->child[c]->bit_in ? dot : side_effects,
+                        "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
     }
 
@@ -1372,12 +1400,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
     {
         case la_rec_arg:
             if (n->sem.rec_arg.base) {
-                PFarray_printf (dot,
+                PFarray_printf (OUT,
                                 "node%i -> node%i "
                                 "[style=dashed label=seed dir=back];\n",
                                 n->sem.rec_arg.base->node_id,
                                 n->child[0]->node_id);
-                PFarray_printf (dot,
+                PFarray_printf (OUT,
                                 "node%i -> node%i "
                                 "[style=dashed label=recurse];\n",
                                 n->child[1]->node_id,
@@ -1387,15 +1415,15 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
 
         case la_proxy:
             if (n->sem.proxy.base1)
-                PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
+                PFarray_printf (OUT, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base1->node_id);
 
             if (n->sem.proxy.base2)
-                PFarray_printf (dot, "node%i -> node%i [style=dashed];\n",
+                PFarray_printf (OUT, "node%i -> node%i [style=dashed];\n",
                                 n->node_id, n->sem.proxy.base2->node_id);
 
             if (n->sem.proxy.ref)
-                PFarray_printf (dot,
+                PFarray_printf (OUT,
                                 "node%i -> node%i "
                                 "[style=dashed label=ref];\n",
                                 n->node_id, n->sem.proxy.ref->node_id);
@@ -1413,11 +1441,27 @@ la_dot (PFarray_t *dot, PFla_op_t *n, bool print_frag_info, char *prop_args)
            more readable. */
         if (print_frag_info &&
             (n->child[c]->kind == la_frag_union ||
-             n->child[c]->kind == la_empty_frag ||
-             (n->kind == la_fcns && c == 1 && n->child[c]->kind == la_nil)))
+             n->child[c]->kind == la_empty_frag))
+            continue;
+        /* do not print the last list item (nil) */
+        if (((n->kind == la_serialize_rel ||
+              n->kind == la_side_effects ||
+              n->kind == la_error ||
+              n->kind == la_trace) &&
+             c == 0 &&
+             n->child[c]->kind == la_nil) ||
+            (n->kind == la_fcns &&
+             c == 1 &&
+             n->child[c]->kind == la_nil))
+            continue;
+        /* do not print empty side effects */
+        if (n->kind == la_serialize_seq &&
+            c == 0 &&
+            n->child[c]->kind == la_side_effects &&
+            n->child[c]->child[0]->kind == la_nil)
             continue;
         if (!n->child[c]->bit_dag)
-            la_dot (dot, n->child[c], print_frag_info, prop_args);
+            la_dot (dot, side_effects, n->child[c], print_frag_info, prop_args);
     }
 }
 
@@ -2185,7 +2229,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
             break;
 
         case la_content:
-        case la_trace:
+        case la_trace_items:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" function=\"iter\"/>\n"
@@ -2214,16 +2258,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"false\"/>\n"
                             "    </content>\n",
-                            PFcol_str (n->sem.iter_pos_item.item));
-
-        case la_cond_err:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"false\"/>\n"
-                            "      <error>%s</error>\n"
-                            "    </content>\n",
-                            PFcol_str (n->sem.err.col),
-                            PFstrdup (n->sem.err.str));
+                            PFcol_str (n->sem.err.col));
             break;
 
         case la_trace_map:
@@ -2273,10 +2308,14 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                             "      <column name=\"%s\" function=\"iter\"/>\n"
                             "      <column name=\"%s\" function=\"pos\"/>\n"
                             "      <column name=\"%s\" function=\"item\"/>\n"
+                            "      <column name=\"%s\" function=\"iter sep\"/>\n"
+                            "      <column name=\"%s\" function=\"item sep\"/>\n"
                             "    </content>\n",
                             PFcol_str (n->sem.string_join.iter),
                             PFcol_str (n->sem.string_join.pos),
-                            PFcol_str (n->sem.string_join.item));
+                            PFcol_str (n->sem.string_join.item),
+                            PFcol_str (n->sem.string_join.iter_sep),
+                            PFcol_str (n->sem.string_join.item_sep));
             break;
 
         default:
@@ -2293,6 +2332,37 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
 
     /* mark node visited */
     n->bit_dag = true;
+}
+
+static void
+mark_body_worker (PFla_op_t *n)
+{
+    if (n->bit_dag)
+        return;
+    else
+        n->bit_dag = true;
+
+    /* do not mark side effects ... */ 
+    if (n->kind == la_side_effects) 
+        mark_body_worker (n->child[1]);
+    else if (n->kind == la_serialize_rel) {
+        n->bit_in = true;
+        mark_body_worker (n->child[1]);
+    }
+    /* ... but mark the rest of the body */
+    else {
+        n->bit_in = true;
+
+        for (unsigned int c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++)
+            mark_body_worker (n->child[c]);
+    }
+}
+
+static void
+mark_body (PFla_op_t *n)
+{
+    mark_body_worker (n);
+    PFla_dag_reset (n);
 }
 
 static unsigned int
@@ -2351,23 +2421,29 @@ PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
 {
     if (root) {
         /* initialize array to hold dot output */
-        PFarray_t *dot = PFarray (sizeof (char), 32000);
+        PFarray_t *dot          = PFarray (sizeof (char), 32000),
+                  *side_effects = PFarray (sizeof (char),  4000);
 
-        PFarray_printf (dot, "digraph XQueryAlgebra {\n"
-                             "ordering=out;\n"
-                             "node [shape=box];\n"
-                             "node [height=0.1];\n"
-                             "node [width=0.2];\n"
-                             "node [style=filled];\n"
-                             "node [color=\"#C0C0C0\"];\n"
-                             "node [fontsize=10];\n"
-                             "edge [fontsize=9];\n"
-                             "edge [dir=back];\n");
+        fprintf (f, "digraph XQueryAlgebra {\n"
+                    "ordering=out;\n"
+                    "node [shape=box];\n"
+                    "node [height=0.1];\n"
+                    "node [width=0.2];\n"
+                    "node [style=filled];\n"
+                    "node [color=\"#C0C0C0\"];\n"
+                    "node [fontsize=10];\n"
+                    "edge [fontsize=9];\n"
+                    "edge [dir=back];\n");
 
         /* inside debugging we need to reset the dag bits first */
         PFla_dag_reset (root);
         create_node_id (root);
-        la_dot (dot, root, getenv("PF_DEBUG_PRINT_FRAG") != NULL, prop_args);
+        mark_body (root);
+        la_dot (dot,
+                side_effects,
+                root,
+                getenv("PF_DEBUG_PRINT_FRAG") != NULL,
+                prop_args);
         PFla_dag_reset (root);
         reset_node_id (root);
 
@@ -2383,10 +2459,21 @@ PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
             }
         }
 
-        PFarray_printf (dot, "}\n");
-
         /* put content of array into file */
-        fprintf (f, "%s", (char *) dot->base);
+        fprintf (f,
+                 "subgraph clusterSideEffects {\n"
+                 "label=\"SIDE EFFECTS\";\n"
+                 "fontsize=10;\n"
+                 "fontcolor=\"#808080\";\n"
+                 "color=\"#C0C0C0\";\n"
+                 "fillcolor=\"#F7F7F7\";\n"
+                 "style=filled;\n"
+                 "%s"
+                 "}\n"
+                 "%s"
+                 "}\n", 
+                 (char *) side_effects->base,
+                 (char *) dot->base);
     }
 }
 

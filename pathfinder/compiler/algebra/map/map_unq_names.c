@@ -134,11 +134,15 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             for (unsigned int i = 0; i < clsize (items); i++)
                 clat (items, i) = UNAME(p, clat (items, i));
 
-            res = serialize_rel (U(L(p)),
+            res = serialize_rel (U(L(p)), U(R(p)),
                                  UNAME(p, p->sem.ser_rel.iter),
                                  UNAME(p, p->sem.ser_rel.pos),
                                  items);
         }   break;
+
+        case la_side_effects:
+            res = PFla_side_effects (U(L(p)), U(R(p)));
+            break;
 
         case la_lit_tbl:
         {
@@ -716,21 +720,16 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res = PFla_error_ (U(L(p)),
-                               UNAME(L(p), p->sem.err.col),
-                               PFprop_type_of (p, p->sem.err.col));
-            break;
-
-        case la_cond_err:
-            res = cond_err (U(L(p)), U(R(p)),
-                            /* unique name of input column col is
-                               stored in the child operator only */
-                            UNAME(R(p), p->sem.err.col),
-                            p->sem.err.str);
+            res = PFla_error (U(L(p)), U(R(p)),
+                              UNAME(R(p), p->sem.err.col));
             break;
 
         case la_trace:
-            res = trace (
+            res = trace (U(L(p)), U(R(p)));
+            break;
+
+        case la_trace_items:
+            res = trace_items (
                       U(L(p)),
                       U(R(p)),
                       UNAME(p, p->sem.iter_pos_item.iter),

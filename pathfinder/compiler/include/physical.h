@@ -110,19 +110,20 @@ enum PFpa_op_kind_t {
     , pa_slim_content   = 131 /**< shallow constructor content operator */
     , pa_merge_adjacent = 132
     , pa_error          = 139 /**< error operator */
-    , pa_cond_err       = 140 /**< conditional error operator */
-    , pa_nil            = 141 /**< end of the list of parameters */
-    , pa_trace          = 142 /**< debug operator */
+    , pa_nil            = 140 /**< end of the list of parameters */
+    , pa_trace          = 141 /**< debug operator */
+    , pa_trace_items    = 142 /**< debug operator */
     , pa_trace_msg      = 143 /**< debug message operator */
     , pa_trace_map      = 144 /**< debug relation map operator */
     , pa_rec_fix        = 145 /**< operator representing a tail recursion */
-    , pa_rec_param      = 146 /**< list of parameters of the recursion */
-    , pa_rec_arg        = 147 /**< reference to the arguments of a parameter
+    , pa_side_effects   = 146 /**< side effects in a tail recursion */
+    , pa_rec_param      = 147 /**< list of parameters of the recursion */
+    , pa_rec_arg        = 148 /**< reference to the arguments of a parameter
                                   in the recursion */
-    , pa_rec_base       = 148 /**< base of the DAG describing the recursion */
-    , pa_rec_border     = 149 /**< border of the DAG describing the recursion */
-    , pa_fun_call       = 150 /**< function application */
-    , pa_fun_param      = 151 /**< function application parameter */
+    , pa_rec_base       = 149 /**< base of the DAG describing the recursion */
+    , pa_rec_border     = 150 /**< border of the DAG describing the recursion */
+    , pa_fun_call       = 151 /**< function application */
+    , pa_fun_param      = 152 /**< function application parameter */
     , pa_string_join    = 160 /**< Concatenation of multiple strings */
     , pa_findnodes      = 170 /**< find nodes given the id/idref string */
     , pa_vx_lookup      = 171 /**< find nodes given the value index */
@@ -320,11 +321,9 @@ union PFpa_op_sem_t {
         PFalg_col_t     item2;    /**< name of the second item column */
     } iter_item1_item2;
 
-    /* semantic content for error and conditional error */
+    /* semantic content for runtime error */
     struct {
-        PFalg_col_t     col;      /**< error:      column of error message
-                                       cond_error: name of the bool column */
-        char *          str;      /**< error message (only used by cond_err) */
+        PFalg_col_t     col;      /**< error: column of error message */
     } err;
 
     /* semantic content for debug relation map operator */
@@ -420,7 +419,8 @@ struct PFpa_op_t {
  * A `serialize' node will be placed on the very top of the algebra
  * expression tree.
  */
-PFpa_op_t * PFpa_serialize (const PFpa_op_t *alg, PFalg_col_t item);
+PFpa_op_t * PFpa_serialize (const PFpa_op_t *side_effects,
+                            const PFpa_op_t *alg, PFalg_col_t item);
 
 /****************************************************************/
 
@@ -756,14 +756,8 @@ PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *n,
 /**
  * Constructor for a runtime error message
  */
-PFpa_op_t * PFpa_error (const PFpa_op_t *n,  PFalg_col_t col,
-                        PFalg_simple_type_t col_ty);
-
-/**
- * Constructor for conditional error
- */
-PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
-                           PFalg_col_t col, char *err_string);
+PFpa_op_t * PFpa_error (const PFpa_op_t *side_effects,
+                        const PFpa_op_t *n,  PFalg_col_t col);
 
 /****************************************************************/
 
@@ -776,10 +770,15 @@ PFpa_op_t *PFpa_nil (void);
 /**
  * Constructor for debug operator
  */
-PFpa_op_t * PFpa_trace (const PFpa_op_t *n1,
-                        const PFpa_op_t *n2,
-                        PFalg_col_t iter,
-                        PFalg_col_t item);
+PFpa_op_t * PFpa_trace (const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * Constructor for debug operator
+ */
+PFpa_op_t * PFpa_trace_items (const PFpa_op_t *n1,
+                              const PFpa_op_t *n2,
+                              PFalg_col_t iter,
+                              PFalg_col_t item);
 
 /**
  * Constructor for debug message operator
@@ -802,8 +801,14 @@ PFpa_op_t * PFpa_trace_map (const PFpa_op_t *n1,
 /**
  * Constructor for a tail recursion operator
  */
-PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *paramList,
+PFpa_op_t *PFpa_rec_fix (const PFpa_op_t *side_effects_and_paramList,
                          const PFpa_op_t *res);
+
+/**
+ * Constructor for side effects in a tail recursion operator
+ */
+PFpa_op_t *PFpa_side_effects (const PFpa_op_t *side_effects,
+                              const PFpa_op_t *paramList);
 
 /**
  * Constructor for a list item of a parameter list

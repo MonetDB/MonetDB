@@ -428,6 +428,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
     switch (p->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
+        case la_side_effects:
             break;
 
         case la_lit_tbl:
@@ -1588,25 +1589,12 @@ do_opt_mvd (PFla_op_t *p, bool modified)
         case la_empty_frag:
             break;
 
-        case la_error: /* don't rewrite errors */
-            break;
-
-        case la_cond_err:
-            /* We push the error operator into the left input
-               as we do not know whether it relates to the left or
-               to the right input. */
-            if (is_tj (L(p))) {
-                *p = *(thetajoin_opt (cond_err (LL(p), R(p),
-                                                p->sem.err.col,
-                                                p->sem.err.str),
-                                      LR(p),
-                                      L(p)->sem.thetajoin_opt.pred));
-                modified = true;
-            }
-            break;
-
+        case la_error: /* don't rewrite runtime errors */
         case la_nil:
-        case la_trace:
+        case la_trace: /* don't rewrite side effects */
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             /* we may not modify the cardinality */

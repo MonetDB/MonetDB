@@ -10,7 +10,7 @@
  * 1.) operators that do not support equi-join pushdown (e.g. the ones
  *     with a fixed schema or leaf operators)
  * 2.) operators that always support the transformation (select,
- *     conditional error, roots, and type assertion)
+ *     roots, and type assertion)
  * 3.) operators that support the transformation if the do not create
  *     a join column (e.g. comparisons and calculations)
  * 4.) operators that fit into the 4. category and additionally require
@@ -279,6 +279,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
         switch (lp->kind) {
             case la_serialize_seq:
             case la_serialize_rel:
+            case la_side_effects:
             case la_lit_tbl:
             case la_empty_tbl:
             case la_ref_tbl:
@@ -1153,85 +1154,18 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
                 break;
 
             case la_error:
-                if (!PFprop_key (rp->prop, rcol) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, lcol),
-                                    PFprop_dom (rp->prop, rcol)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       error operator stays stable. */
-                    break;
-
-                if (!is_join_col (p, lp->sem.err.col)) {
-                    *p = *(PFla_error_ (eqjoin_opt (L(lp), rp, lproj, rproj),
-                                        map_col (lp->sem.err.col),
-                                        PFprop_type_of (lp, lp->sem.err.col)));
-                    next_join = L(p);
-                    break;
-                }
-                break;
-
-            case la_cond_err:
-                /* this breaks proxy generation - thus don't
-                   rewrite conditional errors */
-                /*
-                *p = *(cond_err (eqjoin_opt (L(lp), rp, lproj, rproj),
-                                 R(lp),
-                                 lp->sem.err.col,
-                                 lp->sem.err.str));
-                next_join = L(p);
-                */
-                break;
-
             case la_nil:
+            case la_trace:
                 break;
 
-            case la_trace:
-                if (!PFprop_key (rp->prop, rcol) ||
-                    !PFprop_subdom (rp->prop,
-                                    PFprop_dom (lp->prop, lcol),
-                                    PFprop_dom (rp->prop, rcol)))
-                    /* Ensure that the values of the left join argument
-                       are a subset of the values of the right join argument
-                       and that the right join argument is keyed. These
-                       two tests make sure that we have exactly one match per
-                       tuple in the left relation and thus the result of the
-                       trace operator stays stable. */
-                    break;
-
-            {
-                /* create projection list */
-                PFalg_proj_t *proj_list;
-                unsigned int  count = 0;
-                PFalg_col_t   cur;
-                proj_list = PFmalloc (lp->schema.count *
-                                      sizeof (*(proj_list)));
-                for (unsigned int i = 0; i < lp->schema.count; i++) {
-                    cur = map_col (lp->schema.items[i].name);
-                    proj_list[count++] = proj (lp->schema.items[i].name,
-                                               cur);
-                }
-
-                *p = *(trace (eqjoin_opt (L(lp), rp, lproj, rproj),
-                              R(lp),
-                              map_col (lp->sem.iter_pos_item.iter),
-                              map_col (lp->sem.iter_pos_item.pos),
-                              map_col (lp->sem.iter_pos_item.item)));
-
-                /* the schema of the new trace operator has to
-                   be pruned to maintain the schema of the original
-                   trace operator -- its pointer is replaced */
-                *lp = *(PFla_project_ (p, count, proj_list));
-
-                next_join = L(p);
-            }   break;
+            case la_trace_items:
+                /* this operator will always be referenced
+                   by a la_trace operator */
+                break;
 
             case la_trace_msg:
                 /* this operator will always be referenced
-                   by a la_trace operator */
+                   by a la_trace_items operator */
                 break;
 
             case la_trace_map:
@@ -1287,6 +1221,7 @@ map_name (PFla_op_t *p, PFalg_col_t col)
     switch (p->kind) {
         case la_serialize_seq:
         case la_serialize_rel:
+        case la_side_effects:
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
@@ -1316,7 +1251,10 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_merge_adjacent:
         case la_roots:
         case la_string_join:
+        case la_error:
         case la_nil:
+        case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
         case la_rec_fix:
@@ -1338,8 +1276,6 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_disjunion:
         case la_semijoin:
         case la_thetajoin:
-        case la_trace:
-        case la_error:
             /* name does not change */
             break;
 
@@ -1356,7 +1292,6 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
-        case la_cond_err:
             PFoops (OOPS_FATAL,
                     "subtree marking should not reach this operator");
             break;
@@ -1478,11 +1413,6 @@ mark_left_path (PFla_op_t *p, PFalg_col_t col)
         LEFT(p) = true;
         return;
     }
-    else if (p->kind == la_cond_err) {
-        mark_left_path (L(p), col);
-        LEFT(p) = true;
-        return;
-    }
     else if (p->kind == la_disjunion ||
              p->kind == la_intersect ||
              p->kind == la_difference) {
@@ -1530,11 +1460,6 @@ mark_right_path (PFla_op_t *p, PFalg_col_t col)
              col == res(p)) {
         mark_right_path (L(p), lcol(p));
         mark_right_path (R(p), rcol(p));
-        LEFT(p) = true;
-        return;
-    }
-    else if (p->kind == la_cond_err) {
-        mark_right_path (L(p), col);
         LEFT(p) = true;
         return;
     }

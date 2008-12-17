@@ -208,11 +208,17 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
             for (unsigned int i = 0; i < clsize (items); i++)
                 clat (items, i) = ONAME(p, clat (items, i));
 
-            res = serialize_rel (PROJ(LEFT, p),
+            res = serialize_rel (O(L(p)),
+                                 PROJ(RIGHT, p),
                                  ONAME(p, p->sem.ser_rel.iter),
                                  ONAME(p, p->sem.ser_rel.pos),
                                  items);
         }   break;
+
+        case la_side_effects:
+            res = PFla_side_effects (O(L(p)), O(R(p)));
+            break;
+
 
         case la_lit_tbl:
         {
@@ -803,15 +809,8 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_error:
-            res = PFla_error_ (O(L(p)),
-                               PFprop_ori_name_left (p->prop, p->sem.err.col),
-                               PFprop_type_of (p, p->sem.err.col));
-            break;
-
-        case la_cond_err:
-            res = cond_err (PROJ(LEFT, p), O(R(p)),
-                            PFprop_ori_name_right (p->prop, p->sem.err.col),
-                            p->sem.err.str);
+            res = PFla_error (O(L(p)), O(R(p)),
+                              PFprop_ori_name_right (p->prop, p->sem.err.col));
             break;
 
         case la_nil:
@@ -819,7 +818,11 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
             break;
 
         case la_trace:
-            res = trace (
+            res = trace (O(L(p)), O(R(p)));
+            break;
+
+        case la_trace_items:
+            res = trace_items (
                       PROJ(LEFT, p),
                       O(R(p)),
                       ONAME(p, p->sem.iter_pos_item.iter),

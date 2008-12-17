@@ -59,6 +59,7 @@ enum PFla_op_kind_t {
     , la_serialize_rel   =  2 /**< serialize algebra expression representing
                                    a relation (Placed on the very top of the
                                    tree.) */
+    , la_side_effects    =  3 /**< maintain side effects in a separate list */
     , la_lit_tbl         =  4 /**< literal table */
     , la_empty_tbl       =  5 /**< empty literal table */
     , la_ref_tbl         =  6 /**< referenced table */
@@ -151,11 +152,11 @@ enum PFla_op_kind_t {
                                    union of fragments */
     , la_empty_frag      = 74 /**< representation of an empty fragment */
 
-    , la_error           = 79 /**< error operator for the fn:error function*/
-    , la_cond_err        = 80 /**< facility to trigger runtime errors */
-    , la_nil             = 81 /**< end of the list of parameters */
-    , la_trace           = 82 /**< debug operator */
-    , la_trace_msg       = 83 /**< debug operator */
+    , la_error           = 79 /**< facility to trigger runtime errors */
+    , la_nil             = 80 /**< end of the list of parameters */
+    , la_trace           = 81 /**< debug operator */
+    , la_trace_items     = 82 /**< debug items operator */
+    , la_trace_msg       = 83 /**< debug message operator */
     , la_trace_map       = 84 /**< debug relation map operator */
     , la_rec_fix         = 85 /**< operator representing a tail recursion */
     , la_rec_param       = 86 /**< list of parameters of the recursion */
@@ -428,11 +429,9 @@ union PFla_op_sem_t {
         PFalg_col_t     item_res; /**< item column of result relation */
     } merge_adjacent;
 
-    /* semantic content for error and conditional error */
+    /* semantic content for error */
     struct {
-        PFalg_col_t     col;      /**< error:      column of error message
-                                       cond_error: name of the bool column */
-        char *          str;      /**< error message (only used by cond_err) */
+        PFalg_col_t     col;      /**< column of error message */
     } err;
 
     /* semantic content for debug relation map operator */
@@ -576,10 +575,21 @@ PFla_op_t * PFla_serialize_seq (const PFla_op_t *doc, const PFla_op_t *alg,
  * A `serialize_rel' node will be placed on the very top of the algebra
  * expression tree that represents a relation.
  */
-PFla_op_t * PFla_serialize_rel (const PFla_op_t *alg,
+PFla_op_t * PFla_serialize_rel (const PFla_op_t *side, const PFla_op_t *alg,
                                 PFalg_col_t iter,
                                 PFalg_col_t pos,
                                 PFalg_collist_t *items);
+
+/**
+ * A `side_effects' node will be placed directly below a serialize operator
+ * or below a `rec_fix' operator if the side effects appear in the recursion
+ * body.
+ * The `side_effects' operator contains a (possibly empty) list of operations
+ * that may trigger side effects (operators `error' and `trace') in its left
+ * child and the fragment or recursion parameters in the right child.
+ */
+PFla_op_t * PFla_side_effects (const PFla_op_t *side_effects,
+                               const PFla_op_t *params);
 
 /**
  * Construct algebra node representing a literal table (actually just
@@ -1135,15 +1145,8 @@ PFla_op_t * PFla_empty_frag (void);
 /**
  * Constructor for a runtime error message
  */
-PFla_op_t * PFla_error_ (const PFla_op_t *n, PFalg_col_t col,
-                         PFalg_simple_type_t col_ty);
-PFla_op_t * PFla_error (const PFla_op_t *n, PFalg_col_t col);
-
-/**
- * Constructor for conditional error
- */
-PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
-                           PFalg_col_t col, char *err_string);
+PFla_op_t * PFla_error (const PFla_op_t *n1, const PFla_op_t *n2,
+                        PFalg_col_t col);
 
 /**
  * Constructor for the last item of a parameter list
@@ -1154,10 +1157,16 @@ PFla_op_t *PFla_nil (void);
  * Constructor for debug operator
  */
 PFla_op_t * PFla_trace (const PFla_op_t *n1,
-                        const PFla_op_t *n2,
-                        PFalg_col_t iter,
-                        PFalg_col_t pos,
-                        PFalg_col_t item);
+                        const PFla_op_t *n2);
+
+/**
+ * Constructor for debug items operator
+ */
+PFla_op_t * PFla_trace_items (const PFla_op_t *n1,
+                              const PFla_op_t *n2,
+                              PFalg_col_t iter,
+                              PFalg_col_t pos,
+                              PFalg_col_t item);
 
 /**
  * Constructor for debug message operator

@@ -219,13 +219,28 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
             /* just copy keys from right child */
             copy (n->prop->keys, R(n)->prop->keys);
             break;
 
-        case la_serialize_rel:
-            /* just copy keys from left child */
-            copy (n->prop->keys, L(n)->prop->keys);
+        case la_side_effects:
+        case la_empty_tbl:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_fun_frag_param:
+            /* no keys */
             break;
 
         case la_lit_tbl:
@@ -300,24 +315,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                         union_ (n->prop->keys, key_col);
                 }
             }
-            break;
-
-        case la_empty_tbl:
-        case la_fcns:
-        case la_docnode:
-        case la_element:
-        case la_attribute:
-        case la_textnode:
-        case la_comment:
-        case la_processi:
-        case la_content:
-        case la_merge_adjacent:
-        case la_fragment:
-        case la_frag_extract:
-        case la_frag_union:
-        case la_empty_frag:
-        case la_fun_frag_param:
-            /* no keys */
             break;
 
         case la_attach:
@@ -432,8 +429,9 @@ infer_key (PFla_op_t *n, bool with_guide_info)
         case la_difference:
         case la_type_assert:
         case la_roots:
-        case la_error:
-        case la_cond_err:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
             /* key columns are propagated */
             copy (n->prop->keys, L(n)->prop->keys);
             break;
@@ -721,11 +719,12 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             }
             break;
 
+        case la_error:
+            copy (n->prop->keys, R(n)->prop->keys);
+            break;
+
         case la_nil:
         case la_trace:
-        case la_trace_msg:
-        case la_trace_map:
-            /* delete keys to avoid rewrites */
             break;
 
         case la_rec_fix:

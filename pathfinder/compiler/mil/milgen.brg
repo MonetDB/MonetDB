@@ -194,18 +194,19 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term slim_content   = 131
 %term merge_adjacent = 132
 %term error          = 139
-%term cond_err       = 140
-%term nil            = 141
-%term trace          = 142
+%term nil            = 140
+%term trace          = 141
+%term trace_items    = 142
 %term trace_msg      = 143
 %term trace_map      = 144
 %term rec_fix        = 145
-%term rec_param      = 146
-%term rec_arg        = 147
-%term rec_base       = 148
-%term rec_border     = 149
-%term fun_call       = 150
-%term fun_param      = 151
+%term side_effects   = 146
+%term rec_param      = 147
+%term rec_arg        = 148
+%term rec_base       = 149
+%term rec_border     = 150
+%term fun_call       = 151
+%term fun_param      = 152
 %term string_join    = 160
 %term findnodes      = 170
 %term vx_lookup      = 171
@@ -215,8 +216,8 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %%
 
 /* fold( grammar */
-Query:    serialize (Rel)                                          =   1 (10);
-Query:    serialize (empty_tbl)                                    =   2 (10);
+Query:    serialize (Side, Rel)                                    =   1 (10);
+Query:    serialize (Side, empty_tbl)                              =   2 (10);
 
 Rel:      lit_tbl                                                  =  10 (10);
 Rel:      empty_tbl                                                =  11 (10);
@@ -284,15 +285,14 @@ Twig:     content (Rel)                                            = 115 (10);
 Twig:     slim_content (Rel)                                       = 116 (10);
 Rel:      merge_adjacent (Rel)                                     = 117 (10);
 
-Rel:      error (Rel)                                              = 129 (10);
-Rel:      cond_err (Rel, Rel)                                      = 130 (10);
-Rel:      cond_err (Rel, empty_tbl)                                = 131 (10);
-Rel:      trace (Rel, trace_msg (Rel, Map))                        = 135 (10);
-Rel:      trace (Rel, trace_msg (Rel, nil))                        = 136 (10);
+Side:     error (Side, Rel)                                        = 129 (10);
+Side:     nil                                                      = 130 (10);
+Side:     trace (Side, trace_items (Rel, trace_msg (Rel, Map)))    = 135 (10);
+Side:     trace (Side, trace_items (Rel, trace_msg (Rel, nil)))    = 136 (10);
 Map:      trace_map (Rel, Map)                                     = 137 (10);
 Map:      trace_map (Rel, nil)                                     = 138 (10);
 
-Rel:      rec_fix (Rec, Rel)                                       = 140 (10);
+Rel:      rec_fix (side_effects (Side, Rec), Rel)                  = 140 (10);
 Rec:      rec_param (rec_arg (Rel, Rel), Rec)                      = 141 (10);
 Rec:      rec_param (rec_arg (empty_tbl, Rel), Rec)                = 142 (10);
 Rec:      nil                                                      = 143 (10);
@@ -2032,10 +2032,10 @@ reduce_border (PFpa_op_t * p, int goalnt, PFarray_t *border_vars)
     PFmilgen_kids (p, rule, kids);
 
     switch (rule) {
-        /* Rel:      rec_fix (Rec, Rel) */
+        /* Rel:      rec_fix (side_effects (Side, Rec), Rel) */
         case 140:
             /* only follow the parameters */
-            reduce_border (kids[0], nts[0], border_vars);
+            reduce_border (kids[1], nts[1], border_vars);
             break;
 
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */
@@ -2492,9 +2492,9 @@ reduce (PFpa_op_t * p, int goalnt)
     /* PFinfo (OOPS_NOTICE, "in rule %u", rule); */
 
     switch (rule) {
-        /* Query:    serialize (Rel) */
+        /* Query:    serialize (Side, Rel) */
         case 1:
-        /* Query:    serialize (empty_tbl) */
+        /* Query:    serialize (Side, empty_tbl) */
         case 2:
         /* Rel:      twig (Twig) */
         case 102:
@@ -2504,7 +2504,7 @@ reduce (PFpa_op_t * p, int goalnt)
         case 108:
         /* Twig:     element (Rel, Fcns) */
         case 110:
-        /* Rel:      rec_fix (Rec, Rel) */
+        /* Rel:      rec_fix (side_effects (Side, Rec), Rel) */
         case 140:
         /* FunRel:   fun_call (Rel, Param) */
         case 151:
@@ -2546,7 +2546,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
     mvar_t *v;
 
     switch (rule) {
-        /* Query:   serialize (Rel) */
+        /* Query:   serialize (Side, Rel) */
         case 1: /* fold( */
         {
             PFalg_simple_type_t ty;
@@ -2562,7 +2562,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             milprog = nop ();
 
             /* decide which type of new_ws should invoke */
-            if (aat_update & type_of (L(p), pa_item)) {
+            if (aat_update & type_of (R(p), pa_item)) {
                 try = new_var(1);
                 execute (
                     comment ("volatile variable environment "
@@ -2574,7 +2574,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 lit_int(1))));
             }
             else {
-                if (aat_docmgmt & type_of (L(p), pa_item))
+                if (aat_docmgmt & type_of (R(p), pa_item))
                     create = CREATE_DOCMGM_WS;
                 else
                     create = CREATE_READ_ONLY_WS;
@@ -2585,6 +2585,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
 
             reduce (kids[0], nts[0]);
+            reduce (kids[1], nts[1]);
 
             /* add timing information */
             time = new_var (1);
@@ -2592,7 +2593,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* check if the type of the root node is aat_update
                and if yes play the update tape */
-            if (aat_update & type_of (L(p), pa_item)) { /* fold( */
+            if (aat_update & type_of (R(p), pa_item)) { /* fold( */
                 /* Set up all the value containers for update_tape(). */
 
                 /* UpdateTape (
@@ -2624,12 +2625,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                        *attr_ins               = new_var (1),
                        *attr_cont_ins          = new_var (1);
 
-                ty = type_of (L(p), pa_item);
+                ty = type_of (R(p), pa_item);
 
                 /* consider update kind */
                 execute (
                     assgn (var (upd_kind->name),
-                           VAR (L(p)->env, pa_item, aat_update)),
+                           VAR (R(p)->env, pa_item, aat_update)),
                 );
 
                 /* consider node tgt */
@@ -2637,9 +2638,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* all nodes but not attributes */
                     execute (
                         assgn (var (pre_tgt->name),
-                               VAR (L(p)->env, pa_item, aat_pre1)),
+                               VAR (R(p)->env, pa_item, aat_pre1)),
                         assgn (var (pre_cont_tgt->name),
-                               VAR (L(p)->env, pa_item, aat_frag1)));
+                               VAR (R(p)->env, pa_item, aat_frag1)));
                 }
                 else if (ty & aat_nkind1 && ty & aat_attr1) {
                     /* We have a mixed set of result nodes here
@@ -2649,7 +2650,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_pre1),
+                                   VAR (R(p)->env, pa_item, aat_pre1),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (v->name),
@@ -2658,7 +2659,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                        misnil (
                                            leftjoin (
                                                mirror (var (v->name)),
-                                               VAR (L(p)->env,
+                                               VAR (R(p)->env,
                                                     pa_item,
                                                     aat_attr1))),
                                        lit_bit (true)))),
@@ -2667,13 +2668,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        var (v->name),
-                                       VAR (L(p)->env, pa_item, aat_pre1)))),
+                                       VAR (R(p)->env, pa_item, aat_pre1)))),
                         assgn (var (pre_cont_tgt->name),
                                 outerjoin (
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        var (v->name),
-                                       VAR (L(p)->env, pa_item, aat_frag1)))));
+                                       VAR (R(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2691,9 +2692,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* only attr and no nkinds */
                     execute (
                         assgn (var (attr_tgt->name),
-                               VAR (L(p)->env, pa_item, aat_attr1)),
+                               VAR (R(p)->env, pa_item, aat_attr1)),
                         assgn (var (attr_cont_tgt->name),
-                               VAR (L(p)->env, pa_item, aat_frag1)));
+                               VAR (R(p)->env, pa_item, aat_frag1)));
                 }
                 else if (ty & aat_attr1) {
                     /* Because frag is shared for all nodes
@@ -2703,7 +2704,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_attr1),
+                                   VAR (R(p)->env, pa_item, aat_attr1),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_tgt->name),
@@ -2715,7 +2716,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        mirror (var (v->name)),
-                                       VAR (L(p)->env, pa_item, aat_frag1)))));
+                                       VAR (R(p)->env, pa_item, aat_frag1)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2734,7 +2735,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 if (ty & aat_uA)
                     execute (
                         assgn (var (replace_strings->name),
-                               VAR (L(p)->env, pa_item, aat_uA)));
+                               VAR (R(p)->env, pa_item, aat_uA)));
                 else
                     execute (
                         assgn (var (replace_strings->name),
@@ -2752,13 +2753,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         /* a range select(a,nil,nil) will return all BUNS
                          * that dont have nil on the tail                */
                         assgn (var (qn_id_no_nil->name),
-                               select2 (VAR (L(p)->env,
+                               select2 (VAR (R(p)->env,
                                              pa_item,
                                              aat_qname_id),
                                         cast (type (mty_oid), nil()),
                                         cast (type (mty_oid), nil()))),
                         assgn (var (qn_cont_no_nil->name),
-                               select2 (VAR (L(p)->env,
+                               select2 (VAR (R(p)->env,
                                              pa_item,
                                              aat_qname_cont),
                                         cast (type (mty_oid), nil()),
@@ -2831,9 +2832,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* all nodes but not attributes */
                     execute (
                         assgn (var (pre_ins->name),
-                               VAR (L(p)->env, pa_item, aat_pre)),
+                               VAR (R(p)->env, pa_item, aat_pre)),
                         assgn (var (pre_cont_ins->name),
-                               VAR (L(p)->env, pa_item, aat_frag)));
+                               VAR (R(p)->env, pa_item, aat_frag)));
                 }
                 else if (ty & aat_nkind && ty & aat_attr) {
                     /* We have a mixed set of result nodes here
@@ -2843,7 +2844,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_pre),
+                                   VAR (R(p)->env, pa_item, aat_pre),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (v->name),
@@ -2852,7 +2853,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                        misnil (
                                            leftjoin (
                                                mirror (var (v->name)),
-                                               VAR (L(p)->env,
+                                               VAR (R(p)->env,
                                                     pa_item,
                                                     aat_attr))),
                                        lit_bit (true)))),
@@ -2861,13 +2862,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        var (v->name),
-                                       VAR (L(p)->env, pa_item, aat_pre)))),
+                                       VAR (R(p)->env, pa_item, aat_pre)))),
                         assgn (var (pre_cont_ins->name),
                                outerjoin (
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        var (v->name),
-                                       VAR (L(p)->env, pa_item, aat_frag)))));
+                                       VAR (R(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2885,9 +2886,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* only attr and no nkinds */
                     execute (
                         assgn (var (attr_ins->name),
-                               VAR (L(p)->env, pa_item, aat_attr)),
+                               VAR (R(p)->env, pa_item, aat_attr)),
                         assgn (var (attr_cont_ins->name),
-                               VAR (L(p)->env, pa_item, aat_frag)));
+                               VAR (R(p)->env, pa_item, aat_frag)));
                 }
                 else if (ty & aat_attr) {
                     /* Because frag is shared for all nodes
@@ -2897,7 +2898,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_attr),
+                                   VAR (R(p)->env, pa_item, aat_attr),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (attr_ins->name),
@@ -2909,7 +2910,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    mirror (var (upd_kind->name)),
                                    leftjoin (
                                        mirror (var (v->name)),
-                                       VAR (L(p)->env, pa_item, aat_frag)))));
+                                       VAR (R(p)->env, pa_item, aat_frag)))));
                     unpin (v, 1);
                 }
                 else {
@@ -2959,26 +2960,26 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             } /* fold) */
             /* docmgmt query */
-            else if (aat_docmgmt & type_of (L(p), pa_item)) { /* fold( */
+            else if (aat_docmgmt & type_of (R(p), pa_item)) { /* fold( */
 
                 mvar_t *docmgmt  = new_var (1),
                        *docname  = new_var (1),
                        *colname  = new_var (1),
                        *filepath = new_var (1);
 
-                ty = type_of (L(p), pa_item);
+                ty = type_of (R(p), pa_item);
 
                 /* consider docmgmt kind / percentage */
                 execute (
                     assgn (var (docmgmt->name),
-                           VAR (L(p)->env, pa_item, aat_docmgmt))
+                           VAR (R(p)->env, pa_item, aat_docmgmt))
                 );
 
                 /* consider file path */
                 if (ty & aat_path)
                     execute (
                         assgn (var (filepath->name),
-                               VAR (L(p)->env, pa_item, aat_path)));
+                               VAR (R(p)->env, pa_item, aat_path)));
                 else
                     execute (
                         assgn (var (filepath->name),
@@ -2988,13 +2989,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 /* consider document names */
                 execute (
                     assgn (var (docname->name),
-                           VAR (L(p)->env, pa_item, aat_docnm)));
+                           VAR (R(p)->env, pa_item, aat_docnm)));
 
                 /* consider colection names */
                 if (ty & aat_colnm)
                     execute (
                         assgn (var (colname->name),
-                               VAR (L(p)->env, pa_item, aat_colnm)));
+                               VAR (R(p)->env, pa_item, aat_colnm)));
                 else
                     execute (
                         assgn (var (colname->name),
@@ -3081,15 +3082,15 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                     lit_oid(0)))
                     );
 
-                ty = type_of (L(p), pa_item);
+                ty = type_of (R(p), pa_item);
 
                 /* consider attribute results */
                 if (ty == aat_anode) {
                     execute (
                         assgn (var (item->name),
-                               VAR (L(p)->env, pa_item, aat_attr)),
+                               VAR (R(p)->env, pa_item, aat_attr)),
                         assgn (var (kind->name),
-                               set_kind (VAR (L(p)->env,
+                               set_kind (VAR (R(p)->env,
                                               pa_item,
                                               aat_frag),
                                          var (PF_MIL_VAR_ATTR))));
@@ -3103,7 +3104,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_attr),
+                                   VAR (R(p)->env, pa_item, aat_attr),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         binsert (var (item->name),
@@ -3112,7 +3113,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  leftjoin (
                                      mirror (var (v->name)),
                                      set_kind (
-                                         VAR (L(p)->env, pa_item, aat_frag),
+                                         VAR (R(p)->env, pa_item, aat_frag),
                                          var (PF_MIL_VAR_ATTR)))));
                     unpin (v, 1);
                 }
@@ -3121,9 +3122,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 if (ty == aat_pnode) {
                     execute (
                         assgn (var (item->name),
-                               VAR (L(p)->env, pa_item, aat_pre)),
+                               VAR (R(p)->env, pa_item, aat_pre)),
                         assgn (var (kind->name),
-                               set_kind (VAR (L(p)->env,
+                               set_kind (VAR (R(p)->env,
                                               pa_item,
                                               aat_frag),
                                          var (PF_MIL_VAR_ELEM))));
@@ -3137,7 +3138,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         assgn (var (v->name),
                                select2 (
-                                   VAR (L(p)->env, pa_item, aat_pre),
+                                   VAR (R(p)->env, pa_item, aat_pre),
                                    cast (type (mty_oid), nil ()),
                                    cast (type (mty_oid), nil ()))),
                         assgn (var (v->name),
@@ -3146,18 +3147,18 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                        misnil (
                                            leftjoin (
                                                mirror (var (v->name)),
-                                               VAR (L(p)->env,
+                                               VAR (R(p)->env,
                                                     pa_item,
                                                     aat_attr))),
                                        lit_bit (true)))),
                         binsert (var (item->name),
                                  leftjoin (var (v->name),
-                                           VAR (L(p)->env, pa_item, aat_pre))),
+                                           VAR (R(p)->env, pa_item, aat_pre))),
                         binsert (var (kind->name),
                                  leftjoin (
                                      var (v->name),
                                      set_kind (
-                                         VAR (L(p)->env, pa_item, aat_frag),
+                                         VAR (R(p)->env, pa_item, aat_frag),
                                          var (PF_MIL_VAR_ELEM)))));
                     unpin (v, 1);
                 }
@@ -3165,12 +3166,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (
                         binsert (var (item->name),
                                  select2 (
-                                     VAR (L(p)->env, pa_item, aat_pre),
+                                     VAR (R(p)->env, pa_item, aat_pre),
                                      cast (type (mty_oid), nil ()),
                                      cast (type (mty_oid), nil ()))),
                         binsert (var (kind->name),
                                  select2 (
-                                     set_kind (VAR (L(p)->env,
+                                     set_kind (VAR (R(p)->env,
                                                     pa_item,
                                                     aat_frag),
                                                var (PF_MIL_VAR_ELEM)),
@@ -3184,7 +3185,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  reverse (
                                      kunique (
                                          reverse (
-                                             select2 (VAR (L(p)->env,
+                                             select2 (VAR (R(p)->env,
                                                            pa_item,
                                                            aat_str),
                                                       cast (type (mty_str),
@@ -3196,11 +3197,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (item->name),
-                                leftjoin (VAR (L(p)->env, pa_item, aat_str),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_str),
                                           reverse (var (strVAL->name)))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_str),
+                                project (VAR (R(p)->env, pa_item, aat_str),
                                          var (PF_MIL_VAR_STR)))
                             );
                         sorted = true;
@@ -3209,11 +3210,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             binsert (
                                 var (item->name),
-                                join (VAR (L(p)->env, pa_item, aat_str),
+                                join (VAR (R(p)->env, pa_item, aat_str),
                                       reverse (var (strVAL->name)))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_str),
                                                   cast (type (mty_str),
@@ -3232,7 +3233,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  reverse (
                                      kunique (
                                          reverse (
-                                             select2 (VAR (L(p)->env,
+                                             select2 (VAR (R(p)->env,
                                                            pa_item,
                                                            aat_uA),
                                                       cast (type (mty_str),
@@ -3244,11 +3245,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (item->name),
-                                leftjoin (VAR (L(p)->env, pa_item, aat_uA),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_uA),
                                           reverse (var (strVAL->name)))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_uA),
+                                project (VAR (R(p)->env, pa_item, aat_uA),
                                          var (PF_MIL_VAR_STR)))
                             );
                         sorted = true;
@@ -3257,11 +3258,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             binsert (
                                 var (item->name),
-                                join (VAR (L(p)->env, pa_item, aat_uA),
+                                join (VAR (R(p)->env, pa_item, aat_uA),
                                       reverse (var (strVAL->name)))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_uA),
                                                   cast (type (mty_str),
@@ -3280,7 +3281,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  reverse (
                                      kunique (
                                          reverse (
-                                             select2 (VAR (L(p)->env,
+                                             select2 (VAR (R(p)->env,
                                                            pa_item,
                                                            aat_int),
                                                       cast (type (mty_lng),
@@ -3292,11 +3293,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (item->name),
-                                leftjoin (VAR (L(p)->env, pa_item, aat_int),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_int),
                                           reverse (var (intVAL->name)))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_int),
+                                project (VAR (R(p)->env, pa_item, aat_int),
                                          var (PF_MIL_VAR_INT)))
                             );
                         sorted = true;
@@ -3305,11 +3306,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             binsert (
                                 var (item->name),
-                                join (VAR (L(p)->env, pa_item, aat_int),
+                                join (VAR (R(p)->env, pa_item, aat_int),
                                       reverse (var (intVAL->name)))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_int),
                                                   cast (type (mty_lng),
@@ -3328,7 +3329,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  reverse (
                                      kunique (
                                          reverse (
-                                             select2 (VAR (L(p)->env,
+                                             select2 (VAR (R(p)->env,
                                                            pa_item,
                                                            aat_dbl),
                                                       cast (type (mty_dbl),
@@ -3340,11 +3341,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (item->name),
-                                leftjoin (VAR (L(p)->env, pa_item, aat_dbl),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_dbl),
                                           reverse (var (dblVAL->name)))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_dbl),
+                                project (VAR (R(p)->env, pa_item, aat_dbl),
                                          var (PF_MIL_VAR_DBL)))
                             );
                         sorted = true;
@@ -3353,11 +3354,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             binsert (
                                 var (item->name),
-                                join (VAR (L(p)->env, pa_item, aat_dbl),
+                                join (VAR (R(p)->env, pa_item, aat_dbl),
                                       reverse (var (dblVAL->name)))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dbl),
                                                   cast (type (mty_dbl),
@@ -3376,7 +3377,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                  reverse (
                                      kunique (
                                          reverse (
-                                             select2 (VAR (L(p)->env,
+                                             select2 (VAR (R(p)->env,
                                                            pa_item,
                                                            aat_dec),
                                                       cast (type (mty_dbl),
@@ -3388,11 +3389,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (item->name),
-                                leftjoin (VAR (L(p)->env, pa_item, aat_dec),
+                                leftjoin (VAR (R(p)->env, pa_item, aat_dec),
                                           reverse (var (decVAL->name)))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_dec),
+                                project (VAR (R(p)->env, pa_item, aat_dec),
                                          var (PF_MIL_VAR_DEC)))
                             );
                         sorted = true;
@@ -3401,11 +3402,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             binsert (
                                 var (item->name),
-                                join (VAR (L(p)->env, pa_item, aat_dec),
+                                join (VAR (R(p)->env, pa_item, aat_dec),
                                       reverse (var (decVAL->name)))),
                             binsert (
                                 var (kind->name),
-                                project (select2 (VAR (L(p)->env,
+                                project (select2 (VAR (R(p)->env,
                                                        pa_item,
                                                        aat_dec),
                                                   cast (type (mty_dbl),
@@ -3424,10 +3425,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             assgn (
                                 var (item->name),
                                 mcast (type (mty_oid),
-                                       VAR (L(p)->env, pa_item, aat_bln))),
+                                       VAR (R(p)->env, pa_item, aat_bln))),
                             assgn (
                                 var (kind->name),
-                                project (VAR (L(p)->env, pa_item, aat_bln),
+                                project (VAR (R(p)->env, pa_item, aat_bln),
                                          var (PF_MIL_VAR_BOOL)))
                             );
                         sorted = true;
@@ -3437,7 +3438,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         execute (
                             assgn (
                                 var (v->name),
-                                select2 (VAR (L(p)->env, pa_item, aat_bln),
+                                select2 (VAR (R(p)->env, pa_item, aat_bln),
                                          cast (type (mty_bit), nil ()),
                                          cast (type (mty_bit), nil ()))),
                             binsert (
@@ -3514,7 +3515,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             err = new_var (1);
 
             /* update queries should loop around until they succeed */
-            if (aat_update & type_of (L(p), pa_item)) {
+            if (aat_update & type_of (R(p), pa_item)) {
 
                 execute (
                     assgn (var (try->name), lit_int (CREATE_UPDATE_WS)),
@@ -3551,7 +3552,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unpin (err, 1);
         }   break; /* fold) */
 
-        /* Query:   serialize (empty_tbl) */
+        /* Query:   serialize (Side, empty_tbl) */
         case 2: /* fold( */
         {
             mvar_t *intVAL, *dblVAL, *decVAL, *strVAL;
@@ -3563,6 +3564,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* create a new empty milprog */
             milprog = nop ();
+
+            execute (
+                comment ("volatile variable environment"),
+                assgn (var (PF_MIL_VAR_WS),
+                       new_ws (lit_int (CREATE_READ_ONLY_WS))));
+
+            reduce (kids[0], nts[0]);
 
             /* add timing information */
             time = new_var (1);
@@ -3583,8 +3591,6 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             kind = new_var (1);
 
             execute (
-                assgn (var (PF_MIL_VAR_WS), 
-                       new_ws (lit_int(CREATE_READ_ONLY_WS))),
                 assgn (
                     var (intVAL->name),
                     seqbase (new (type (mty_void), type (mty_lng)),
@@ -5237,12 +5243,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     execute (assgn (var (res->name), str),
                              assgn (var (cont->name),
                                     project (var (res->name),
-                                             var (PF_MIL_VAR_WS))));
+                                             var (PF_MIL_VAR_WS_CONT))));
 
                     unpin (offset, 1);
                     unpin (prefix, 1);
                     unpin (local, 1);
                     unpin (err_str, 1);
+                    unpin (err_chk, 1);
 
                     /* and put the result into p's environment */
                     env_add (p->env, p->sem.fun_1to1.res, aat_qname_cont, cont);
@@ -8656,68 +8663,24 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
         }   break; /* fold) */
 
-        /* Rel:      error (Rel) */
+        /* Side:     error (Side, Rel) */
         case 129: /* fold( */
             execute (
-                if_ (eq (count (VAR (L(p)->env, p->sem.err.col, aat_str)),
+                if_ (eq (count (VAR (R(p)->env, p->sem.err.col, aat_str)),
                          lit_int (0)),
                      nop(),
-                     error (fetch (VAR (L(p)->env, p->sem.err.col, aat_str),
+                     error (fetch (VAR (R(p)->env, p->sem.err.col, aat_str),
                                    lit_int (0)))));
-
-            /* copy all the columns */
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                /* make sure that the implicit type change
-                   is correctly implemented */
-                if (env_at (L(p)->env, i).col == p->sem.err.col) {
-                    PFalg_simple_type_t ty;
-                    assert (env_at (L(p)->env, i).ty == aat_str);
-
-                    ty = TYPE_MASK(type_of (p, p->sem.err.col));
-                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                        if (t & ty) {
-                            /* create new variable */
-                            v = new_var (p->refctr);
-                            /* dummy assignment */
-                            execute (
-                                assgn (var (v->name),
-                                       seqbase (new (type (mty_void),
-                                                     implty (t, ty)),
-                                                lit_oid (0))));
-                            env_add (p->env, p->sem.err.col, t, v);
-                        }
-                }
-                else {
-                    pin (env_at (L(p)->env, i).mvar, p->refctr);
-                    env_add (p->env,
-                             env_at (L(p)->env, i).col,
-                             env_at (L(p)->env, i).ty,
-                             env_at (L(p)->env, i).mvar);
-                }
-            }
             break; /* fold) */
 
-        /* Rel:      cond_err (Rel, Rel) */
-        case 130: /* fold( */
-            execute (
-                if_ (exist (reverse (VAR (R(p)->env, p->sem.err.col, aat_bln)),
-                            lit_bit (false)),
-                     error (lit_str (p->sem.err.str)),
-                     nop ()));
+        /* Side:     nil */
+        case 130:
+            /* end of parameter list */
+            break;
 
-            /* copy the complete environment of the argument */
-            env_copy (p, L(p)->env);
-            break; /* fold) */
-
-        /* Rel:      cond_err (Rel, empty_tbl) */
-        case 131: /* fold( */
-            /* copy the complete environment of the argument */
-            env_copy (p, L(p)->env);
-            break; /* fold) */
-
-        /* Rel:      trace (Rel, trace_msg (Rel, Map)) */
+        /* Side:     trace (Side, trace_items (Rel, trace_msg (Rel, Map))) */
         case 135:
-        /* Rel:      trace (Rel, trace_msg (Rel, nil)) */
+        /* Side:     trace (Side, trace_items (Rel, trace_msg (Rel, nil))) */
         case 136: /* fold( */
         {
             unsigned trace_id = new_trace_id ();
@@ -8725,37 +8688,31 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     *item = NULL;
 
             /* copy all the columns */
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
-                pin (env_at (L(p)->env, i).mvar, p->refctr);
-                env_add (p->env,
-                         env_at (L(p)->env, i).col,
-                         env_at (L(p)->env, i).ty,
-                         env_at (L(p)->env, i).mvar);
-
+            for (unsigned int i = 0; i < env_count (RL(p)->env); i++) {
                 /* as a side effect fill in the trace information */
-                if (env_at (L(p)->env, i).col == p->sem.ii.iter) {
+                if (env_at (RL(p)->env, i).col == R(p)->sem.ii.iter) {
                     /* fill in the iter information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITER),
                                 lit_oid (trace_id),
-                                var (env_at (L(p)->env, i).mvar->name)));
+                                var (env_at (RL(p)->env, i).mvar->name)));
                 }
-                else if (env_at (L(p)->env, i).col == p->sem.ii.item) {
+                else if (env_at (RL(p)->env, i).col == R(p)->sem.ii.item) {
                     /* fill in the item information */
                     execute (
                         insert (var (PF_MIL_VAR_TRACE_ITEM),
                                 lit_oid (trace_id),
-                                var (env_at (L(p)->env, i).mvar->name)),
+                                var (env_at (RL(p)->env, i).mvar->name)),
                         insert (var (PF_MIL_VAR_TRACE_TYPE),
                                 lit_oid (trace_id),
-                                lit_int (env_at (L(p)->env, i).ty)));
+                                lit_int (env_at (RL(p)->env, i).ty)));
                 }
             }
 
             /* collect the message information */
-            iter = VAR (RL(p)->env, R(p)->sem.ii.iter, aat_nat);
+            iter = VAR (RRL(p)->env, RR(p)->sem.ii.iter, aat_nat);
             assert (iter);
-            item = VAR (RL(p)->env, R(p)->sem.ii.item, aat_str);
+            item = VAR (RRL(p)->env, RR(p)->sem.ii.item, aat_str);
             assert (item);
 
             execute (
@@ -8765,7 +8722,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* fill in the relationship between the trace and the
                last map relation */
-            if (RR(p)->kind == pa_nil)
+            if (RRR(p)->kind == pa_nil)
                 execute (
                     insert (var (PF_MIL_VAR_TRACE_REL),
                             lit_oid (0),
@@ -8773,7 +8730,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             else
                 execute (
                     insert (var (PF_MIL_VAR_TRACE_REL),
-                            lit_oid (RR(p)->sem.trace_map.trace_id),
+                            lit_oid (RRR(p)->sem.trace_map.trace_id),
                             lit_oid (trace_id)));
         }   break; /* fold) */
 
@@ -8816,7 +8773,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             lit_oid (trace_id)));
         }   break; /* fold) */
 
-        /* Rel:      rec_fix (Rec, Rel) */
+        /* Rel:      rec_fix (side_effects (Side, Rec), Rel) */
         case 140: /* fold( */
         {
             PFmil_t *oldmilprog, *bodymilprog;
@@ -8830,7 +8787,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                a rec_border operator) and pin the variables holding the
                results once more such they are not released in the recursion
                body (references stored in border_vars). */
-            reduce1(kids[0], nts[0], border_vars);
+            reduce_border(kids[0], nts[0], border_vars);
+            reduce1(kids[1], nts[1], border_vars);
 
             old_count = new_var (1);
             new_count = new_var (1);
@@ -8850,10 +8808,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
             /* translate the recursion body and
                reassign the recursion variables */
-            reduce2(kids[0], nts[0]);
+            reduce(kids[0], nts[0]);
+            reduce2(kids[1], nts[1]);
 
             /* get the result environment */
-            reduce(kids[1], nts[1]);
+            reduce(kids[2], nts[2]);
             res_env = R(p)->env;
 
             /* update the result counters */
@@ -8895,12 +8854,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 unpin (*(mvar_t **) PFarray_at (border_vars, i), 1);
 
             /* release all the pins of the while loop arguments */
-            reduce3(kids[0], nts[0]);
+            reduce3(kids[1], nts[1]);
 
             /* ensure that the child of p (the first argument) still
                has one pin left to release (see bottom of function reduce) */
-            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++)
-                pin (env_at (L(p)->env, i).mvar, 1);
+            for (unsigned int i = 0; i < PFarray_last (LR(p)->env); i++)
+                pin (env_at (LR(p)->env, i).mvar, 1);
         }   break; /* fold) */
 
         /* Rec:      rec_param (rec_arg (Rel, Rel), Rec) */

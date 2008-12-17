@@ -66,6 +66,93 @@ opt_set (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+        case la_cross:
+            /* We can throw away an argument of a cross product
+               if it does not need to produce duplicates and if the columns
+               of the (other) child argument are not referenced. */
+            if (PFprop_set (p->prop)) {
+                PFalg_col_t new_col = PFcol_new (col_iter);
+                bool referenced;
+
+                /* check for references of the left side */
+                referenced = false;
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    if (PFprop_icol (p->prop, L(p)->schema.items[i].name)) {
+                        referenced = true;
+                        break;
+                    }
+
+                /* check we do not apply the rewrite twice */
+                if (!referenced && L(p)->schema.count == 1 &&
+                    PFprop_const (p->prop, L(p)->schema.items[0].name)) {
+                    /* in case the distinct got lost add it once more */
+                    if (L(p)->kind != la_distinct &&
+                        (L(p)->kind != la_project ||
+                         LL(p)->kind != la_distinct))
+                        L(p) = PFla_distinct (L(p));
+
+                    break;
+                }
+                /* replace the cross product by a projection */
+                else if (!referenced) {
+                    PFalg_proj_t *proj = PFmalloc (L(p)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                        proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                                              new_col);
+                    L(p) = PFla_project_ (
+                               PFla_distinct (
+                                   PFla_project (
+                                       PFla_attach (
+                                           L(p),
+                                           new_col,
+                                           PFalg_lit_nat(42)),
+                                       PFalg_proj (new_col, new_col))),
+                               L(p)->schema.count,
+                               proj);
+                    break;
+                }
+                /* check for references of the right side */
+                referenced = false;
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    if (PFprop_icol (p->prop, R(p)->schema.items[i].name)) {
+                        referenced = true;
+                        break;
+                    }
+
+                /* check we do not apply the rewrite twice */
+                if (!referenced && R(p)->schema.count == 1 &&
+                    PFprop_const (p->prop, R(p)->schema.items[0].name)) {
+                    /* in case the distinct got lost add it once more */
+                    if (R(p)->kind != la_distinct &&
+                        (R(p)->kind != la_project ||
+                         RL(p)->kind != la_distinct))
+                        R(p) = PFla_distinct (R(p));
+
+                    break;
+                }
+                /* replace the cross product by a projection */
+                else if (!referenced) {
+                    PFalg_proj_t *proj = PFmalloc (R(p)->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                        proj[i] = PFalg_proj (R(p)->schema.items[i].name,
+                                              new_col);
+                    R(p) = PFla_project_ (
+                               PFla_distinct (
+                                   PFla_project (
+                                       PFla_attach (
+                                           R(p),
+                                           new_col,
+                                           PFalg_lit_nat(42)),
+                                       PFalg_proj (new_col, new_col))),
+                               R(p)->schema.count,
+                               proj);
+                    break;
+                }
+            }
+            break;
+
 #if 0 /* steps not used anymore */
         case la_eqjoin:
             /* Rewrite step into duplicate generating step
@@ -218,10 +305,9 @@ PFla_op_t *
 PFalgopt_set (PFla_op_t *root)
 {
     /* Infer set properties first */
-    PFprop_infer_set (root);
-#if 0 /* steps and thus icols not used anymore */
+    PFprop_infer_set_extended (root);
     PFprop_infer_icol (root);
-#endif
+    PFprop_infer_const (root);
 
     /* Optimize algebra tree */
     opt_set (root);

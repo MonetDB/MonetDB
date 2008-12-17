@@ -847,15 +847,18 @@ PFbui_fn_error_empty (const PFla_op_t *loop,
                       PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) side_effects; (void) args;
+    (void) ordering; (void) args;
+
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            loop,
+                            col_item,
+                            lit_str ("http://www.w3.org/2005/xqt-errors#FOER0000")),
+                        col_item);
 
     return (struct PFla_pair_t) {
-        .rel  = error (
-                    attach (
-                        attach (loop, col_pos, lit_nat (1)),
-                        col_item,
-                        lit_str ("http://www.w3.org/2005/xqt-errors#FOER0000")),
-                    col_item),
+        .rel  = PFla_empty_tbl_ (ipi_schema(0)),
         .frag = PFla_empty_set ()};
 }
 
@@ -868,10 +871,15 @@ PFbui_fn_error (const PFla_op_t *loop,
                 PFla_op_t **side_effects,
                 struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) side_effects;
+    (void) loop; (void) ordering;
+
+    *side_effects = error (
+                        *side_effects,
+                        args[0].rel,
+                        col_item);
 
     return (struct PFla_pair_t) {
-        .rel  = error (args[0].rel, col_item),
+        .rel  = PFla_empty_tbl_ (ipi_schema(0)),
         .frag = PFla_empty_set ()};
 }
 
@@ -884,36 +892,40 @@ PFbui_fn_error_str (const PFla_op_t *loop,
                     PFla_op_t **side_effects,
                     struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) side_effects;
+    (void) ordering;
+
+    *side_effects = error (
+                        *side_effects,
+                        project (
+                            fun_1to1 (
+                                eqjoin (
+                                    disjunion (
+                                        args[0].rel,
+                                        attach (
+                                            attach (
+                                                difference (
+                                                    loop,
+                                                    project (
+                                                        args[0].rel,
+                                                        proj (col_iter,
+                                                              col_iter))),
+                                                col_pos, lit_nat (1)),
+                                            col_item, lit_str (""))),
+                                        project (args[1].rel,
+                                                 proj (col_iter1, col_iter),
+                                                 proj (col_item1, col_item)),
+                                        col_iter,
+                                        col_iter1),
+                                alg_fun_fn_concat,
+                                col_res,
+                                collist(col_item, col_item1)),
+                            proj (col_iter, col_iter),
+                            proj (col_pos, col_pos),
+                            proj (col_item, col_res)),
+                        col_item);
 
     return (struct PFla_pair_t) {
-        .rel = error(
-                   project (
-                       fun_1to1 (
-                           eqjoin (
-                               disjunion (
-                                   args[0].rel,
-                                   attach (
-                                       attach (
-                                           difference (
-                                               loop,
-                                               project (
-                                                   args[0].rel,
-                                                   proj (col_iter, col_iter))),
-                                           col_pos, lit_nat (1)),
-                                       col_item, lit_str (""))),
-                                   project (args[1].rel,
-                                            proj (col_iter1, col_iter),
-                                            proj (col_item1, col_item)),
-                                   col_iter,
-                                   col_iter1),
-                           alg_fun_fn_concat,
-                           col_res,
-                           collist(col_item, col_item1)),
-                       proj (col_iter, col_iter),
-                       proj (col_pos, col_pos),
-                       proj (col_item, col_res)),
-                   col_item),
+        .rel  = PFla_empty_tbl_ (ipi_schema(0)),
         .frag = PFla_empty_set ()};
 }
 
@@ -2933,28 +2945,26 @@ PFbui_fn_number (const PFla_op_t *loop,
                  PFla_op_t **side_effects,
                  struct PFla_pair_t *args)
 {
+    (void) ordering;
+
     /* As we do not support the value NaN we need to generate an error
        for all tuples that are empty (instead of attaching NaN). */
-
-    char *err_string = "We do not support the value NaN.";
-
-    (void) ordering; (void) side_effects;
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            difference (
+                                loop,
+                                project (
+                                    args[0].rel,
+                                    proj (col_iter, col_iter))),
+                            col_item,
+                            lit_str ("We do not support the value NaN.")),
+                        col_item);
 
     return (struct  PFla_pair_t) {
                  .rel = project (
                             fun_1to1 (
-                                cond_err (
-                                    args[0].rel,
-                                    attach (
-                                        difference (
-                                            loop,
-                                            project (
-                                                args[0].rel,
-                                                proj (col_iter, col_iter))),
-                                        col_item,
-                                        lit_bln (false)),
-                                    col_item,
-                                    err_string),
+                                args[0].rel,
                                 alg_fun_fn_number,
                                 col_res,
                                 collist (col_item)),
@@ -3674,24 +3684,32 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop,
                       PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    PFla_op_t *count = gt (attach (
-                               count (
-                                   project (args[0].rel,
-                                            proj (col_iter, col_iter)),
-                                   col_item, col_iter),
-                               col_item1, lit_int (2)),
-                           col_res, col_item1, col_item);
+    PFla_op_t *count = select_ (
+                           not (eq (attach (
+                                        count (
+                                            project (args[0].rel,
+                                                     proj (col_iter, col_iter)),
+                                            col_item, col_iter),
+                                        col_item1, lit_int (1)),
+                                    col_item2, col_item1, col_item),
+                                col_res, col_item2),
+                           col_res);
 
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
                        "a sequence containing more than one item.";
 
-    (void) loop; (void) ordering; (void) side_effects;
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            project (count, proj (col_iter, col_iter)),
+                            col_item,
+                            lit_str (err_string)),
+                        col_item);
+
+    (void) loop; (void) ordering;
 
     return (struct  PFla_pair_t) {
-                 .rel = cond_err (args[0].rel,
-                                  count,
-                                  col_res,
-                                  err_string),
+                 .rel = args[0].rel,
                  .frag = args[0].frag };
 }
 
@@ -3705,22 +3723,49 @@ PFbui_fn_exactly_one (const PFla_op_t *loop,
                       PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    PFla_op_t *count = eq (attach (
-                               PFbui_fn_count (
-                                   loop, ordering, side_effects, args).rel,
-                               col_item1, lit_int (1)),
-                           col_res, col_item1, col_item);
+    PFla_op_t *count = count (project (args[0].rel,
+                                       proj (col_iter, col_iter)),
+                              col_item, col_iter);
 
-    char *err_string = "err:FORG0005, fn:exactly-one called with "
-                       "a sequence containing zero or more than one item.";
+    char *err_string = "err:FORG0003, fn:exactly-one called with "
+                       "a sequence containing more than one item.";
 
-    (void) ordering; (void) side_effects;
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            project (
+                                select_ (
+                                    not (eq (attach (
+                                                count,
+                                                col_item1,
+                                                lit_int (1)),
+                                             col_item2,
+                                             col_item1,
+                                             col_item),
+                                         col_res, col_item2),
+                                    col_res),
+                                proj (col_iter, col_iter)),
+                            col_item,
+                            lit_str (err_string)),
+                        col_item);
+
+    err_string = "err:FORG0005, fn:exactly-one called with "
+                 "an empty sequence.";
+
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            difference (
+                                loop,
+                                project (count, proj (col_iter, col_iter))),
+                            col_item,
+                            lit_str (err_string)),
+                        col_item);
+
+    (void) ordering;
 
     return (struct  PFla_pair_t) {
-                 .rel = cond_err (args[0].rel,
-                                  count,
-                                  col_res,
-                                  err_string),
+                 .rel = args[0].rel,
                  .frag = args[0].frag };
 }
 

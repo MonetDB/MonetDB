@@ -402,7 +402,8 @@ typedef PFla_op_t * (rec_strategy_t) (
                                  bool x_used,
                                  bool loop_used,
                                  PFla_op_t *old_loop,
-                                 PFla_op_t *base_loop);
+                                 PFla_op_t *base_loop,
+                                 PFla_op_t *side_effects);
 
 /* recursion translation strategy for SQL */
 static PFla_op_t *recursion_sql (int strategy,
@@ -414,7 +415,8 @@ static PFla_op_t *recursion_sql (int strategy,
                                  bool x_used,
                                  bool loop_used,
                                  PFla_op_t *old_loop,
-                                 PFla_op_t *base_loop);
+                                 PFla_op_t *base_loop,
+                                 PFla_op_t *side_effects);
 
 /* recursion translation strategy for Monet */
 static PFla_op_t *recursion_mil (int strategy,
@@ -426,7 +428,8 @@ static PFla_op_t *recursion_mil (int strategy,
                                  bool x_used,
                                  bool loop_used,
                                  PFla_op_t *old_loop,
-                                 PFla_op_t *base_loop);
+                                 PFla_op_t *base_loop,
+                                 PFla_op_t *side_effects);
 
 enum PFoutput_format_t PFoutput_format;
 
@@ -566,7 +569,9 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              */
             reduce (ctx, kids[1], nts[1]);
             A(p) = (PFla_pair_t) {
-                     .rel = serialize_seq (PFla_set_to_la (A(R(p)).frag),
+                     .rel = serialize_seq (PFla_side_effects (
+                                               SIDE_EFFECTS,
+                                               PFla_set_to_la (A(R(p)).frag)),
                                            A(R(p)).rel, col_pos, col_item),
                      .frag = NULL };
             break;
@@ -2261,15 +2266,18 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                         }
                     }
 
+                    SIDE_EFFECTS = trace (SIDE_EFFECTS,
+                                          trace_items (seq.rel,
+                                                       trace_msg (str.rel,
+                                                                  map_traces,
+                                                                  col_iter,
+                                                                  col_item),
+                                                       col_iter,
+                                                       col_pos,
+                                                       col_item));
+
                     A(p) = (struct PFla_pair_t) {
-                        .rel  = trace (seq.rel,
-                                       trace_msg (str.rel,
-                                                  map_traces,
-                                                  col_iter,
-                                                  col_item),
-                                       col_iter,
-                                       col_pos,
-                                       col_item),
+                        .rel  = seq.rel,
                         .frag = seq.frag };
                 } else {
                     /*
@@ -2282,7 +2290,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                             "Algebra implementation for function `%s' unknown.",
                             PFqname_str (p->sem.fun->qname));
 
-                    A(p) = p->sem.fun->alg (LOOP, ORDERING, &SIDE_EFFECTS, FUN_ARGS->base);
+                    A(p) = p->sem.fun->alg (LOOP,
+                                            ORDERING,
+                                            &SIDE_EFFECTS,
+                                            FUN_ARGS->base);
                 }
             }
             else {
@@ -2389,16 +2400,14 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                    and add a runtime error in case this recursion depth
                    is reached */
                 else {
-                    PFty_t ty = p->type;
+                    SIDE_EFFECTS = error (SIDE_EFFECTS,
+                                          attach (LOOP,
+                                                  col_item,
+                                                  lit_str ("recursion to deep")),
+                                          col_item);
 
                     A(p) = (struct PFla_pair_t) {
-                        .rel  = PFla_error_ (
-                                   attach (
-                                       attach (LOOP,
-                                           col_pos, lit_nat (1)),
-                                       col_item, lit_str ("recursion to deep")),
-                                   col_item,
-                                   PFalg_type (ty)),
+                        .rel  = PFla_empty_tbl_ (ipi_schema (PFalg_type (p->type))),
                         .frag = PFla_empty_set () };
                 }
             }
@@ -2666,6 +2675,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             PFla_op_t     *seed, *res_seed;
             PFla_op_t     *new_map;
             PFla_op_t     *old_loop, *base_loop;
+            PFla_op_t     *old_side_effects;
 
             /* initiate translation of e1 */
             reduce (ctx, kids[0], nts[0]);
@@ -2750,6 +2760,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             *((PFla_env_t *) PFarray_add (ENV))
                 = enventry (L(p)->sem.var, base_x, NULL, A(RL(p)).frag);
 
+            /* save old side effects list ... */
+            old_side_effects = SIDE_EFFECTS;
+            /* ... and prepare a new side effects list */
+            SIDE_EFFECTS = nil ();
+
             /* translate e2 under the specified conditions
              * (updated environment, updated loop)
              */
@@ -2759,9 +2774,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                (the result of the checks are used later
                to discard recursion parameters if possible) */
             PFla_dag_mark (A(RR(p)).rel);
+            PFla_dag_mark (SIDE_EFFECTS);
             x_used = SEEN(base_x);
             loop_used = SEEN(base_loop);
             PFla_dag_reset (A(RR(p)).rel);
+            PFla_dag_reset (SIDE_EFFECTS);
 
 #if RESULT == STAR
     res_seed = seed;
@@ -2780,9 +2797,12 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                                     x_used,
                                                     loop_used,
                                                     old_loop,
-                                                    base_loop),
+                                                    base_loop,
+                                                    SIDE_EFFECTS),
                         .frag = A(RR(p)).frag
                    };
+
+            SIDE_EFFECTS = old_side_effects;
 
             /* clean up environment and loop relation */
             if (strategy != IFP) {
@@ -2884,7 +2904,8 @@ recursion_sql (int strategy,
                bool x_used,
                bool loop_used,
                PFla_op_t *old_loop,
-               PFla_op_t *base_loop)
+               PFla_op_t *base_loop,
+               PFla_op_t *side_effects)
 {
     (void)strategy;
     (void)base_res;
@@ -2895,7 +2916,8 @@ recursion_sql (int strategy,
 
     /* check whether we may modify the strategy and
        if the DELTA approach is allowed */
-    if (!PFprop_check_rec_delta (body))
+    if (!PFprop_check_rec_delta (body) ||
+        !PFprop_check_rec_delta (side_effects))
         PFoops (OOPS_FATAL, "SQL cannot cope with this query");
 
     PFla_op_t *res_body = NULL;
@@ -2934,7 +2956,9 @@ recursion_sql (int strategy,
     return rank (
                project (
                    rec_fix (
-                       loop_rec_param,
+                       PFla_side_effects (
+                           side_effects,
+                           loop_rec_param),
                        res_body),
                    proj (col_iter, col_iter),
                    proj (col_item, col_item)),
@@ -2953,7 +2977,8 @@ recursion_mil (int strategy,
                bool x_used,
                bool loop_used,
                PFla_op_t *old_loop,
-               PFla_op_t *base_loop)
+               PFla_op_t *base_loop,
+               PFla_op_t *side_effects)
 {
     PFla_op_t  *res_body,
                *delta,
@@ -2973,7 +2998,8 @@ recursion_mil (int strategy,
     /* check whether we may modify the strategy and
        if the DELTA approach is allowed */
     if (VAR_STRATEGY(strategy) &&
-        PFprop_check_rec_delta (body))
+        PFprop_check_rec_delta (body) &&
+        PFprop_check_rec_delta (side_effects))
         strategy = DELTA;
 
     /* the result of the recursion body */
@@ -3075,7 +3101,7 @@ recursion_mil (int strategy,
 
     /* ---------------- RECURSION ----------------- */
     return rank (
-                rec_fix (x_rec_param, res),
+                rec_fix (PFla_side_effects (side_effects, x_rec_param), res),
                 col_pos, sortby (col_item));
 }
 

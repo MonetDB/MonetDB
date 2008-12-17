@@ -576,6 +576,33 @@ PFalg_proj (PFalg_col_t new, PFalg_col_t old)
 }
 
 /**
+ * Merge adjacent projection lists. The new projection list will
+ * be as wide as the upper projection (@a upper_count).
+ */
+PFalg_proj_t *
+PFalg_proj_merge (PFalg_proj_t *upper_proj, unsigned int upper_count,
+                  PFalg_proj_t *lower_proj, unsigned int lower_count)
+{
+    unsigned int  i,
+                  j;
+    PFalg_proj_t *proj = PFmalloc (upper_count * sizeof (*(proj)));
+
+    for (i = 0; i < upper_count; i++) {
+        for (j = 0; j < lower_count; j++)
+            if (upper_proj[i].old ==
+                lower_proj[j].new) {
+                proj[i] = PFalg_proj (upper_proj[i].new,
+                                      lower_proj[j].old);
+                break;
+            }
+        if (j == lower_count)
+            PFoops (OOPS_FATAL,
+                    "unreferenced column in algebra plan");
+    }
+    return proj;
+}
+
+/**
  * Constructor for column lists (e.g., for literal table
  * construction, or sort specifications in the rownum operator).
  *

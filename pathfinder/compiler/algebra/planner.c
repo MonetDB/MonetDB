@@ -206,7 +206,10 @@ plan_serialize (const PFla_op_t *n)
     PFplanlist_t *ret    = new_planlist ();
     PFplanlist_t *sorted = new_planlist ();
 
-    assert (n); assert (n->kind == la_serialize_seq);
+    assert (n);
+    assert (n->kind == la_serialize_seq);
+    assert (L(n)->kind == la_side_effects);
+    assert (LL(n)); assert (LL(n)->plans);
     assert (R(n)); assert (R(n)->plans);
 
     /* The serialize operator requires its input to be properly sorted. */
@@ -220,11 +223,13 @@ plan_serialize (const PFla_op_t *n)
     sorted = prune_plans (sorted);
 
     /* for each remaining plan, generate a Serialize operator */
-    for (unsigned int i = 0; i < PFarray_last (sorted); i++)
-        add_plan (ret,
-                  serialize (
-                      *(plan_t **) PFarray_at (sorted, i),
-                      n->sem.ser_seq.item));
+    for (unsigned int i = 0; i < PFarray_last (LL(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (sorted); j++)
+            add_plan (ret,
+                      serialize (
+                          *(plan_t **) PFarray_at (LL(n)->plans, i),
+                          *(plan_t **) PFarray_at (sorted, j),
+                          n->sem.ser_seq.item));
 
     return ret;
 }
@@ -876,15 +881,21 @@ plan_pos_select (const PFla_op_t *n)
 
     /* ensure correct input ordering for positional predicate */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++) {
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_asc));
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_desc));
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_wo_part));
+        if (n->sem.pos_sel.part) {
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_asc));
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_desc));
+        } else {
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_wo_part));
+        }
     }
 
     /* throw out those plans that are too expensive */
@@ -1393,15 +1404,21 @@ plan_rownum (const PFla_op_t *n)
 
     /* ensure correct input ordering for MergeRowNumber */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++) {
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_asc));
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_desc));
-        add_plans (sorted,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i), ord_wo_part));
+        if (n->sem.pos_sel.part) {
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_asc));
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_desc));
+        } else {
+            add_plans (sorted,
+                       ensure_ordering (
+                           *(plan_t **) PFarray_at (L(n)->plans, i),
+                           ord_wo_part));
+        }
     }
 
     /* throw out those plans that are too expensive */
@@ -2264,37 +2281,21 @@ plan_merge_texts (const PFla_op_t *n)
 
 /**
  * 'error' operator in the logical algebra just get a 1:1 mapping
- * into the physical error operator (just like cond_err).
+ * into the physical error operator.
  */
 static PFplanlist_t *
 plan_error (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
 
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret, error(*(plan_t **) PFarray_at (L(n)->plans, i),
-                             n->sem.err.col,
-                             type_of (n->schema, n->sem.err.col)));
-
-    return ret;
-}
-
-/**
- * `cond_err' operator in the logical algebra just get a 1:1 mapping
- * into the physical cond_err operator.
- */
-static PFplanlist_t *
-plan_cond_err (const PFla_op_t *n)
-{
-    PFplanlist_t *ret = new_planlist ();
-
+    /* for each plan, generate an error */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
-        add_plan (ret,
-                  cond_err (
-                      *(plan_t **) PFarray_at (L(n)->plans, i),
-                      *(plan_t **) PFarray_at (R(n)->plans, j),
-                      n->sem.err.col, n->sem.err.str));
+            add_plan (ret,
+                      error (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j),
+                          n->sem.err.col));
 
     return ret;
 }
@@ -2304,6 +2305,25 @@ plan_cond_err (const PFla_op_t *n)
  */
 static PFplanlist_t *
 plan_trace (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    /* for each plan, generate a trace operator */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
+            add_plan (ret,
+                      trace (
+                          *(plan_t **) PFarray_at (L(n)->plans, i),
+                          *(plan_t **) PFarray_at (R(n)->plans, j)));
+
+    return ret;
+}
+
+/**
+ * Constructor for a debug item operator
+ */
+static PFplanlist_t *
+plan_trace_items (const PFla_op_t *n)
 {
     PFplanlist_t *ret = new_planlist ();
     PFplanlist_t *sorted_n1 = new_planlist ();
@@ -2319,7 +2339,7 @@ plan_trace (const PFla_op_t *n)
     for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
         for (unsigned int j = 0; j < PFarray_last (R(n)->plans); j++)
             add_plan (ret,
-                      trace (
+                      trace_items (
                           *(plan_t **) PFarray_at (sorted_n1, i),
                           *(plan_t **) PFarray_at (R(n)->plans, j),
                           n->sem.iter_pos_item.iter,
@@ -2539,15 +2559,17 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
                  *base,
                  *arg,
                  *new_params,
-                 *params = new_planlist ();
+                 *params = new_planlist (),
+                 *side_effect_plans = new_planlist ();
     plan_t       *cheapest_res_plan = NULL;
     plan_t       *cheapest_params   = NULL;
     PFla_op_t    *cur;
 
-    assert (n->kind == la_rec_fix);
+    assert (n->kind == la_rec_fix &&
+            L(n)->kind == la_side_effects);
 
     /* get the first parameter */
-    cur = L(n);
+    cur = LR(n);
     /* start physical paramter list with the end of the list */
     add_plan (params, nil ());
 
@@ -2616,15 +2638,22 @@ plan_recursion (PFla_op_t *n, PFord_ordering_t ord)
         cur = R(cur);
     }
 
+    for (unsigned int i = 0; i < PFarray_last (LL(n)->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (params); j++)
+            add_plan (side_effect_plans,
+                      side_effects (
+                          *(plan_t **) PFarray_at (LL(n)->plans, i),
+                          *(plan_t **) PFarray_at (params, j)));
+
     /* prune all plans except one as we otherwise might end up with plans
        that might evaluate the recursion more than once */
 
-    /* find the cheapest plan for the params */
-    for (unsigned int i = 0; i < PFarray_last (params); i++)
+    /* find the cheapest plan for the side_effects */
+    for (unsigned int i = 0; i < PFarray_last (side_effect_plans); i++)
         if (!cheapest_params
-            || costless (*(plan_t **) PFarray_at (params, i),
+            || costless (*(plan_t **) PFarray_at (side_effect_plans, i),
                          cheapest_params))
-            cheapest_params = *(plan_t **) PFarray_at (params, i);
+            cheapest_params = *(plan_t **) PFarray_at (side_effect_plans, i);
 
     /* get the plans for the result of the recursion */
     res = R(n)->plans;
@@ -2872,9 +2901,10 @@ clean_up_body_plans (PFla_op_t *n)
     PFla_op_t *cur;
     bool code;
 
-    assert (n->kind == la_rec_fix);
+    assert (n->kind == la_rec_fix &&
+            L(n)->kind == la_side_effects);
 
-    cur = L(n);
+    cur = LR(n);
     /* collect base operators */
     while (cur->kind != la_nil) {
         assert (cur->kind == la_rec_param && L(cur)->kind == la_rec_arg);
@@ -2882,7 +2912,7 @@ clean_up_body_plans (PFla_op_t *n)
         cur = R(cur);
     }
 
-    cur = L(n);
+    cur = LR(n);
     /* clean up the plans */
     while (cur->kind != la_nil) {
         code = clean_up_body_plans_worker (LR(cur), bases);
@@ -2894,6 +2924,11 @@ clean_up_body_plans (PFla_op_t *n)
         assert (code);
         cur = R(cur);
     }
+    code = clean_up_body_plans_worker (LL(n), bases);
+    /* if a constructor was detected we can stop processing now. */
+    if (code == 2)
+        return false; /* constructor appeared - bail out */
+
     code = clean_up_body_plans_worker (R(n), bases);
     assert (code);
 
@@ -3145,6 +3180,9 @@ plan_subexpression (PFla_op_t *n)
     /* Compute possible plans. */
     switch (n->kind) {
         case la_serialize_seq:  plans = plan_serialize (n);    break;
+        case la_side_effects:
+            /* dummy plans (they are not used anyway) */
+            plans = new_planlist (); break;
 
         case la_lit_tbl:        plans = plan_lit_tbl (n);      break;
         case la_empty_tbl:      plans = plan_empty_tbl (n);    break;
@@ -3333,7 +3371,6 @@ plan_subexpression (PFla_op_t *n)
                                 plans = new_planlist ();          break;
 
         case la_error:          plans = plan_error (n);           break;
-        case la_cond_err:       plans = plan_cond_err (n);        break;
 
         case la_nil:
             plans = new_planlist ();
@@ -3341,6 +3378,7 @@ plan_subexpression (PFla_op_t *n)
             break;
 
         case la_trace:          plans = plan_trace (n);           break;
+        case la_trace_items:    plans = plan_trace_items (n);     break;
         case la_trace_msg:      plans = plan_trace_msg (n);       break;
         case la_trace_map:      plans = plan_trace_map (n);       break;
 
@@ -3354,7 +3392,8 @@ plan_subexpression (PFla_op_t *n)
             plans = new_planlist ();
 
             /* get the plans for all the seeds */
-            cur = L(n);
+            assert (L(n)->kind == la_side_effects);
+            cur = LR(n);
             while (cur->kind != la_nil) {
                 assert (cur->kind == la_rec_param &&
                         L(cur)->kind == la_rec_arg);
@@ -3379,7 +3418,7 @@ plan_subexpression (PFla_op_t *n)
                for each ordering */
             for (unsigned int i = 0; i < PFord_set_count (orderings); i++) {
                 ord = PFord_set_at (orderings, i);
-                cur = L(n);
+                cur = LR(n);
 
                 /* create base operators with the correct ordering */
                 while (cur->kind != la_nil) {
@@ -3391,7 +3430,7 @@ plan_subexpression (PFla_op_t *n)
                 }
 
                 /* generate the plans for the body */
-                cur = L(n);
+                cur = LR(n);
                 while (cur->kind != la_nil) {
                     assert (cur->kind == la_rec_param &&
                             L(cur)->kind == la_rec_arg);
@@ -3399,6 +3438,9 @@ plan_subexpression (PFla_op_t *n)
                     plan_subexpression (R(rec_arg));
                     cur = R(cur);
                 }
+
+                /* create plans for the side effects */
+                plan_subexpression (LL(n));
 
                 /* create plans for the result relation */
                 plan_subexpression (R(n));
@@ -3461,6 +3503,7 @@ plan_subexpression (PFla_op_t *n)
     assert (plans);
 #ifndef NDEBUG
     switch (n->kind) {
+        case la_side_effects:
         case la_fragment:
         case la_frag_extract:
         case la_frag_union:
@@ -3475,6 +3518,7 @@ plan_subexpression (PFla_op_t *n)
     /* Introduce some more orders (on iter columns of length 1 or 2)
        in the hope to share more sort operations. */
     switch (n->kind) {
+        case la_side_effects:
         case la_element:
         case la_attribute:
         case la_textnode:
@@ -3487,6 +3531,7 @@ plan_subexpression (PFla_op_t *n)
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
+        case la_trace:
         case la_trace_msg:
         case la_trace_map:
         case la_fun_call:

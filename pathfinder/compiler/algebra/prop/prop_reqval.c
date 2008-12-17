@@ -228,7 +228,7 @@ PFprop_req_bijective_col (const PFprop_t *prop, PFalg_col_t col)
         /* column col is only used inside equi-joins or as
            partition column */
         return (reqval->part || reqval->join) &&
-               !reqval->order && !reqval->value;
+               !reqval->distinct && !reqval->order && !reqval->value;
 }
 
 /**
@@ -244,7 +244,7 @@ PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_col_t col)
     else
         /* column col is only used inside equi-joins or
            ordering operators */
-        return (reqval->join || reqval->order) &&
+        return (reqval->join || reqval->order || reqval->distinct) &&
                !reqval->part && !reqval->value;
 }
 
@@ -469,7 +469,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             adjust_order (n->sem.ser_seq.pos);
             adjust_value (n->sem.ser_seq.item);
 
-            prop_infer_reqvals_empty (L(n)); /* fragments */
+            prop_infer_reqvals_empty (L(n)); /* side effects */
             prop_infer_reqvals (R(n), MAP_LIST(n));
             return; /* only infer once */
 
@@ -479,7 +479,16 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
             for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
                 adjust_value (clat (n->sem.ser_rel.items, i));
-            break;
+
+            prop_infer_reqvals_empty (L(n)); /* side effects */
+            prop_infer_reqvals (R(n), MAP_LIST(n));
+            return; /* only infer once */
+
+        case la_side_effects:
+            prop_infer_reqvals_empty (L(n)); /* side effects */
+            prop_infer_reqvals_empty (R(n)); /* params */
+            return; /* only infer once */
+
 
         case la_lit_tbl:
         case la_empty_tbl:
@@ -626,6 +635,17 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 if (map && map->value)
                     continue;
 
+                if (!map &&
+                    (PFprop_subdom (n->prop,
+                                    PFprop_dom_right (n->prop, cur),
+                                    PFprop_dom_left (n->prop, cur)) ||
+                     PFprop_subdom (n->prop,
+                                    PFprop_dom_left (n->prop, cur),
+                                    PFprop_dom_right (n->prop, cur)))) {
+                    adjust_join (cur);
+                    continue;
+                }
+
                 /* Keep order, join, and part columns if they stem from
                    the same operator.  For all other columns we require
                    the real values. */
@@ -654,6 +674,17 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
                 if (map && map->value)
                     continue;
+
+                if (!map &&
+                    (PFprop_subdom (n->prop,
+                                    PFprop_dom_right (n->prop, cur),
+                                    PFprop_dom_left (n->prop, cur)) ||
+                     PFprop_subdom (n->prop,
+                                    PFprop_dom_left (n->prop, cur),
+                                    PFprop_dom_right (n->prop, cur)))) {
+                    adjust_join (cur);
+                    continue;
+                }
 
                 /* Keep order, join, and part columns if they stem from
                    the same operator.  For all other columns we require
@@ -941,7 +972,6 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
-        case la_error:
             /* propagate required values list to left subtree */
             break;
 
@@ -955,42 +985,56 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             prop_infer_reqvals_empty (R(n)); /* fragments */
             return; /* only infer once */
 
-        case la_cond_err:
+        case la_error:
         {
             PFarray_t *rmap = PFarray (sizeof (req_val_t), 1);
             adjust_value_ (rmap, n->sem.err.col);
 
-            prop_infer_reqvals (L(n), MAP_LIST(n));
+            prop_infer_reqvals_empty (L(n)); /* side effects */
             prop_infer_reqvals (R(n), rmap);
         }   return; /* only infer once */
 
         case la_trace:
-            /* mark the input columns as value columns */
-            adjust_value (n->sem.iter_pos_item.iter);
-            adjust_value (n->sem.iter_pos_item.pos);
-            adjust_value (n->sem.iter_pos_item.item);
-
-            prop_infer_reqvals_empty (L(n)); /* trace */
-            prop_infer_reqvals (R(n), MAP_LIST(n));
+            prop_infer_reqvals_empty (L(n)); /* side effects */
+            prop_infer_reqvals_empty (R(n)); /* traces */
             return; /* only infer once */
+
+        case la_trace_items:
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 3);
+            /* mark the input columns as value columns */
+            adjust_value_ (lmap, n->sem.iter_pos_item.iter);
+            adjust_value_ (lmap, n->sem.iter_pos_item.pos);
+            adjust_value_ (lmap, n->sem.iter_pos_item.item);
+
+            prop_infer_reqvals (L(n), lmap);
+            prop_infer_reqvals_empty (R(n)); /* traces */
+
+        }   return; /* only infer once */
 
         case la_trace_msg:
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 3);
             /* mark the input columns as value columns */
-            adjust_value (n->sem.iter_item.iter);
-            adjust_value (n->sem.iter_item.item);
+            adjust_value_ (lmap, n->sem.iter_item.iter);
+            adjust_value_ (lmap, n->sem.iter_item.item);
 
-            prop_infer_reqvals (L(n), MAP_LIST(n));
-            prop_infer_reqvals_empty (R(n)); /* trace */
-            return; /* only infer once */
+            prop_infer_reqvals (L(n), lmap);
+            prop_infer_reqvals_empty (R(n)); /* traces */
+
+        }   return; /* only infer once */
 
         case la_trace_map:
+        {
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), 3);
             /* mark the input columns as value columns */
-            adjust_value (n->sem.trace_map.inner);
-            adjust_value (n->sem.trace_map.outer);
+            adjust_value_ (lmap, n->sem.trace_map.inner);
+            adjust_value_ (lmap, n->sem.trace_map.outer);
 
-            prop_infer_reqvals (L(n), MAP_LIST(n));
-            prop_infer_reqvals_empty (R(n)); /* trace */
-            return; /* only infer once */
+            prop_infer_reqvals (L(n), lmap);
+            prop_infer_reqvals_empty (R(n)); /* traces */
+
+        }   return; /* only infer once */
 
         case la_rec_fix:
             for (unsigned int i = 0; i < n->schema.count; i++)

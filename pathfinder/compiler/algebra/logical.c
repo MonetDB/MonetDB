@@ -209,11 +209,11 @@ PFla_serialize_seq (const PFla_op_t *doc, const PFla_op_t *alg,
  * algebra expression.
  */
 PFla_op_t *
-PFla_serialize_rel (const PFla_op_t *alg,
+PFla_serialize_rel (const PFla_op_t *side, const PFla_op_t *alg,
                     PFalg_col_t iter, PFalg_col_t pos,
                     PFalg_collist_t *items)
 {
-    PFla_op_t *ret = la_op_wire1 (la_serialize_rel, alg);
+    PFla_op_t *ret = la_op_wire2 (la_serialize_rel, side, alg);
 
 #ifndef NDEBUG
     unsigned int i, j;
@@ -250,6 +250,33 @@ PFla_serialize_rel (const PFla_op_t *alg,
     /* copy schema from alg */
     for (unsigned int i = 0; i < alg->schema.count; i++)
         ret->schema.items[i] = alg->schema.items[i];
+
+    return ret;
+}
+
+
+/**
+ * A `side_effects' node will be placed directly below a serialize operator
+ * or below a `rec_fix' operator if the side effects appear in the recursion
+ * body.
+ * The `side_effects' operator contains a (possibly empty) list of operations
+ * that may trigger side effects (operators `error' and `trace') in its left
+ * child and the fragment or recursion parameters in the right child.
+ */
+PFla_op_t *
+PFla_side_effects (const PFla_op_t *side_effects, const PFla_op_t *params)
+{
+    PFla_op_t *ret = la_op_wire2 (la_side_effects, side_effects, params);
+
+    assert (side_effects);
+    assert (side_effects->kind == la_error ||
+            side_effects->kind == la_trace ||
+            side_effects->kind == la_nil);
+    assert (params);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
 
     return ret;
 }
@@ -3515,93 +3542,26 @@ PFla_empty_frag (void)
  * @a col) if a tuple flows through it.
  */
 PFla_op_t *
-PFla_error_ (const PFla_op_t *n, PFalg_col_t col, PFalg_simple_type_t col_ty)
+PFla_error (const PFla_op_t *n1, const PFla_op_t *n2, PFalg_col_t col)
 {
     PFla_op_t   *ret;
     unsigned int i;
 
-    assert(n);
+    assert(n1);
 
-    ret = la_op_wire1 (la_error, n);
+    ret = la_op_wire2 (la_error, n1, n2);
 
     /* allocate memory for the result schema; it's the same schema as n's */
-    ret->schema.count = n->schema.count;
+    ret->schema.count = n2->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     /* copy schema from argument 'n' */
-    for (i = 0; i < n->schema.count; i++) {
-        ret->schema.items[i] = n->schema.items[i];
-        if (col == n->schema.items[i].name)
-            ret->schema.items[i].type = col_ty;
+    for (i = 0; i < n2->schema.count; i++) {
+        ret->schema.items[i] = n2->schema.items[i];
     }
 
     ret->sem.err.col = col;
-    ret->sem.err.str = NULL; /* error message is stored in column @a col */
-
-    return ret;
-}
-
-/**
- * Constructor for a runtime error message.
- *
- * This operator generates a runtime error (using the string in column
- * @a col) if a tuple flows through it.
- */
-PFla_op_t *
-PFla_error (const PFla_op_t *n, PFalg_col_t col)
-{
-    return PFla_error_ (n, col, aat_error);
-}
-
-/**
- * Constructor for a conditional error message.
- *
- * @a err is the relational expression that checks conditions
- * at runtime. If column @a col contains any false values an
- * error is triggered (@a err_string) and the execution is aborted.
- * Otherwise the regular query plan @a n is the return expression.
- */
-PFla_op_t *
-PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
-               PFalg_col_t col, char *err_string)
-{
-    PFla_op_t     *ret;
-    unsigned int   i;
-
-    assert (n);
-    assert (err);
-    assert (err_string);
-
-    /* verify that col is a column of n ... */
-    for (i = 0; i < err->schema.count; i++)
-        if (col == err->schema.items[i].name)
-            break;
-
-    /* did we find column col? */
-    if (i >= err->schema.count)
-        PFoops (OOPS_FATAL,
-                "column `%s' referenced in conditional error not found",
-                PFcol_str (col));
-
-    /* create new conditional error node */
-    ret = la_op_wire2 (la_cond_err, n, err);
-
-    /*
-     * insert semantic value (error column and error string)
-     * into the result
-     */
-    ret->sem.err.col = col;
-    ret->sem.err.str = err_string;
-
-    /* allocate memory for the result schema (= schema(n)) */
-    ret->schema.count = n->schema.count;
-
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    for (i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
 
     return ret;
 }
@@ -3611,32 +3571,49 @@ PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
  * Constructor for a debug operator
  */
 PFla_op_t *
-PFla_trace (const PFla_op_t *n1,
-            const PFla_op_t *n2,
-            PFalg_col_t iter,
-            PFalg_col_t pos,
-            PFalg_col_t item)
+PFla_trace (const PFla_op_t *n1, const PFla_op_t *n2)
 {
     PFla_op_t     *ret;
-    unsigned int   i, found = 0;
+
+    assert (n1);
+    assert (n2);
+
+    /* create new trace node */
+    ret = la_op_wire2 (la_trace, n1, n2);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    return ret;
+}
+
+
+/**
+ * Constructor for a debug items operator
+ */
+PFla_op_t *
+PFla_trace_items (const PFla_op_t *n1,
+                  const PFla_op_t *n2,
+                  PFalg_col_t iter,
+                  PFalg_col_t pos,
+                  PFalg_col_t item)
+{
+    PFla_op_t     *ret;
+    unsigned int   i;
 
     assert (n1);
     assert (n2);
 
     /* verify that iter, pos, and item are columns of n1 ... */
-    for (i = 0; i < n1->schema.count; i++)
-        if (iter == n1->schema.items[i].name ||
-            pos  == n1->schema.items[i].name ||
-            item == n1->schema.items[i].name)
-            found++;
-
-    /* did we find all columns? */
-    if (found != 3)
+    if (!PFprop_ocol (n1, iter) ||
+        !PFprop_ocol (n1, pos) ||
+        !PFprop_ocol (n1, item))
         PFoops (OOPS_FATAL,
-                "columns referenced in trace operator not found");
+                "columns referenced in trace items operator not found");
 
-    /* create new trace node */
-    ret = la_op_wire2 (la_trace, n1, n2);
+    /* create new trace items node */
+    ret = la_op_wire2 (la_trace_items, n1, n2);
 
     /* insert semantic values (column names) into the result */
     ret->sem.iter_pos_item.iter = iter;
@@ -4145,10 +4122,13 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                        n->sem.ser_seq.item);
 
         case la_serialize_rel:
-            return PFla_serialize_rel (left,
+            return PFla_serialize_rel (left, right,
                                        n->sem.ser_rel.iter,
                                        n->sem.ser_rel.pos,
                                        n->sem.ser_rel.items);
+
+        case la_side_effects:
+            return PFla_side_effects (left, right);
 
         case la_lit_tbl:
         {
@@ -4437,22 +4417,21 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
             return PFla_empty_frag ();
 
         case la_error:
-            return PFla_error_ (left, n->sem.err.col,
-                                PFprop_type_of (n, n->sem.err.col));
-
-        case la_cond_err:
-            return PFla_cond_err (left, right,
-                                  n->sem.err.col,
-                                  n->sem.err.str);
+            return PFla_error (left,
+                               right,
+                               n->sem.err.col);
 
         case la_nil:
             return PFla_nil ();
 
         case la_trace:
-            return PFla_trace (left, right,
-                               n->sem.iter_pos_item.iter,
-                               n->sem.iter_pos_item.pos,
-                               n->sem.iter_pos_item.item);
+            return PFla_trace (left, right);
+
+        case la_trace_items:
+            return PFla_trace_items (left, right,
+                                     n->sem.iter_pos_item.iter,
+                                     n->sem.iter_pos_item.pos,
+                                     n->sem.iter_pos_item.item);
 
         case la_trace_msg:
             return PFla_trace_msg (left, right,
@@ -4460,7 +4439,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                                    n->sem.iter_item.item);
 
         case la_trace_map:
-            return PFla_trace_msg (left, right,
+            return PFla_trace_map (left, right,
                                    n->sem.trace_map.inner,
                                    n->sem.trace_map.outer);
 

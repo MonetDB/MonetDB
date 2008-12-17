@@ -59,6 +59,107 @@
 #define pfIN(p)  ((p)->bit_in)
 #define pfOUT(p) ((p)->bit_out)
 
+/**
+ * Make a copy of a complete DAG until an operator
+ * is hit that may not be split.
+ */
+static PFla_op_t *
+plan_copy (PFla_op_t *p)
+{
+    switch (p->kind) {
+        case la_serialize_seq:
+        case la_serialize_rel:
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_ref_tbl:
+        case la_rownum:
+        case la_rowrank:
+        case la_rowid:
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_nil:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+        case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+        case la_proxy:
+        case la_proxy_base:
+        case la_internal_op:
+            /* do not split up this operator */
+            return p;
+            
+        case la_side_effects:
+        case la_cross:
+        case la_eqjoin:
+        case la_semijoin:
+        case la_thetajoin:
+        case la_disjunion:
+        case la_intersect:
+        case la_difference:
+        case la_step:
+        case la_step_join:
+        case la_guide_step:
+        case la_guide_step_join:
+        case la_doc_index_join:
+        case la_doc_access:
+        case la_error:
+        case la_trace:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
+        case la_string_join:
+            /* split this operator and its descendants */
+            return PFla_op_duplicate (p, plan_copy (L(p)), plan_copy (R(p)));
+
+        case la_attach:
+        case la_project:
+        case la_select:
+        case la_pos_select:
+        case la_distinct:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_to:
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_sum:
+        case la_count:
+        case la_rank:
+        case la_type:
+        case la_type_assert:
+        case la_cast:
+        case la_seqty1:
+        case la_all:
+        case la_doc_tbl:
+        case la_roots:
+        case la_dummy:
+            /* split this operator and its descendant */
+            return PFla_op_duplicate (p, plan_copy (L(p)), NULL);
+    }
+
+    PFoops (OOPS_FATAL, "incorrect control flow in DAG duplication.");
+    return NULL;
+}
+
 #if 0 /* do not enable this code block
          as it uses deprecated bit-encoded column names */
 /**
@@ -2861,7 +2962,9 @@ find_proxy_exit (PFla_op_t *p,
        inside the proxy). We might end up somewhere in the DAG.
        (we rely on the fact that frag_union is the first fragment
         node for each operator that consumes fragment information. */
-    else if (p->kind == la_frag_union || p->kind == la_empty_frag)
+    else if (p->kind == la_frag_union ||
+             p->kind == la_empty_frag ||
+             p->kind == la_nil)
         return NULL;
     /* look at each node only once */
     else if (SEEN(p))
@@ -3022,6 +3125,12 @@ PFla_op_t *
 PFintro_proxies (PFla_op_t *root)
 {
     PFarray_t *checked_nodes = PFarray (sizeof (PFla_op_t *), 50);
+
+    /* Make sure that side effects do not lead to conflicts 
+       (by creating a plan copy for side-effects). */
+    assert (root->kind == la_serialize_seq ||
+            root->kind == la_serialize_rel);
+    L(root) = plan_copy (L(root));
 
 #if 0
     /* remove all semijoin operators as most of our

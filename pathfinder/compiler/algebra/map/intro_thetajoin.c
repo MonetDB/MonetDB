@@ -224,6 +224,13 @@ find_join_worker (PFla_op_t       *n,
             assert (!"this operator should never occur");
             break;
 
+        case la_side_effects:
+            /* a thetajoin cannot be pushed through
+               a side effect list operator */
+            LEFT_COLS(n)  = NULL;
+            RIGHT_COLS(n) = NULL;
+            break;
+
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
@@ -238,7 +245,6 @@ find_join_worker (PFla_op_t       *n,
         case la_cross:
         case la_semijoin:
         case la_select:
-        case la_pos_select:
         case la_disjunion:
         case la_intersect:
         case la_difference:
@@ -304,6 +310,10 @@ find_join_worker (PFla_op_t       *n,
             LEFT_COLS(n)  = left_cols;
             RIGHT_COLS(n) = right_cols;
         }   break;
+
+        case la_pos_select:
+            LEFT_COLS(n) = NULL;
+            break;
 
         case la_fun_1to1:
             diff (BOOL_COLS(n), n->sem.fun_1to1.res);
@@ -569,42 +579,16 @@ find_join_worker (PFla_op_t       *n,
             break;
 
         case la_error:
-            /* FIXME: for now we assume that a theta-join
-               cannot be pushed through an error */
+        case la_trace:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
+            /* a theta-join cannot be pushed through */
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
 
-        case la_cond_err:
-        case la_trace:
-            /* propagate input columns to the left child ... */
-            if (find_join_worker (
-                    L(n),
-                    join,
-                    BOOL_COLS(n),
-                    LEFT_COLS(n),
-                    RIGHT_COLS(n)))
-                return true;
-
-            /* ... and propagate nothing to the right child */
-            if (find_join_worker (
-                    R(n),
-                    join,
-                    NULL, NULL, NULL))
-                return true;
-
-            return false;
-            break;
-
         case la_nil:
-            break;
-
-        case la_trace_msg:
-            /* this operator cannot be reached */
-            break;
-
-        case la_trace_map:
-            /* this operator cannot be reached */
             break;
 
         case la_rec_fix:

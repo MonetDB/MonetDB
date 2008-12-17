@@ -55,7 +55,7 @@
 bool
 PFprop_set (const PFprop_t *prop)
 {
-    return prop->set;
+    return prop->set && prop->set_col == col_NULL;
 }
 
 /**
@@ -84,14 +84,16 @@ prop_infer_set (PFla_op_t *n, bool set)
     /* infer set property for children */
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
+        case la_side_effects:
         case la_trace:
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             l_set = false;
             r_set = false;
             break;
 
-        case la_serialize_rel:
         case la_pos_select:
         case la_avg:
         case la_sum:
@@ -152,7 +154,6 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_min:
         case la_seqty1:
         case la_all:
-        case la_error:
             l_set = true;
             break;
 
@@ -191,8 +192,8 @@ prop_infer_set (PFla_op_t *n, bool set)
             l_set = false;
             break;
 
-        case la_cond_err:
-            l_set = n->prop->set;
+        case la_error:
+            l_set = false;
             r_set = true;
             break;
 
@@ -247,6 +248,252 @@ prop_infer_set (PFla_op_t *n, bool set)
         prop_infer_set (n->child[i], i==0?l_set:r_set);
 }
 
+/**
+ * worker for PFprop_infer_set_extended
+ * infers the set property during the second run
+ * (uses edge counter stored in EDGE(n) from the first run)
+ */
+static void
+prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
+{
+    PFalg_col_t l_col,
+                r_col;
+    bool l_set,
+         r_set;
+
+    assert (n);
+
+    /* collect the set properties of all parents */
+    if (!n->prop->set || !set)
+        n->prop->set = false;
+    else if (n->prop->set_col && col &&
+             n->prop->set_col != col)
+        n->prop->set = false;
+    else if (!n->prop->set_col && col)
+        n->prop->set_col = col;
+
+    /* nothing to do if we haven't collected
+       all incoming set properties of the parents */
+    if (EDGE(n) > 1) {
+        EDGE(n)--;
+        return;
+    }
+
+    if (n->prop->set && n->prop->set_col &&
+        !PFprop_ocol (n, n->prop->set_col)) {
+        n->prop->set = false;
+        n->prop->set_col = col_NULL;
+    }
+
+    /* keep input properties */
+    l_set = n->prop->set;
+    r_set = n->prop->set;
+    l_col = n->prop->set_col;
+    r_col = n->prop->set_col;
+
+    /* infer set property for children */
+    switch (n->kind) {
+        case la_serialize_seq:
+        case la_serialize_rel:
+        case la_side_effects:
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_ref_tbl:
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_nil:
+        case la_trace:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+        case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+        case la_string_join:
+            /* do not infer set information to the children */
+            l_set = false;
+            r_set = false;
+            break;
+
+        case la_attach:
+        case la_cross:
+        case la_eqjoin:
+        case la_thetajoin:
+        case la_select:
+        case la_disjunion:
+        case la_intersect:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_to:
+        case la_rowrank:
+        case la_rank:
+        case la_type:
+        case la_cast:
+        case la_type_assert:
+        case la_doc_tbl:
+        case la_roots:
+        case la_dummy:
+            /* adopt set information for the children */
+            break;
+
+        case la_semijoin:
+        case la_difference:
+            /* adopt set information for left argument
+               and allow duplicates in the right argument */
+            r_set = true;
+            break;
+
+        case la_project:
+            /* maintain the set column name */
+            if (n->prop->set_col) {
+                unsigned int i;
+                for (i = 0; i < n->sem.proj.count; i++)
+                    if (n->prop->set_col == n->sem.proj.items[i].new) {
+                        l_col = n->sem.proj.items[i].old;
+                        break;
+                    }
+                assert (i < n->sem.proj.count);
+            }
+            break;
+
+        case la_pos_select:
+        case la_rownum:
+            /* Switch the set property from TRUE to MAYBE (TRUE+col)
+               if there is a partition column col and keep the MAYBE
+               information if it stores the same column name. */
+            if (n->prop->set && n->sem.sort.part) {
+                if ((n->prop->set_col && n->prop->set_col == n->sem.sort.part) ||
+                    !n->prop->set_col) {
+                    l_col = n->sem.sort.part;
+                    l_set = true;
+                    break;
+                }
+            }
+            l_set = false;
+            break;
+
+        case la_distinct:
+        case la_max:
+        case la_min:
+        case la_seqty1:
+        case la_all:
+            /* allow duplicates for the argument */
+            l_set = true;
+            break;
+
+        case la_avg:
+        case la_sum:
+        case la_count:
+            /* Switch the set property from TRUE to MAYBE (TRUE+col)
+               if there is a partition column col and keep the MAYBE
+               information if it stores the same column name. */
+            if (n->prop->set && n->sem.aggr.part) {
+                if ((n->prop->set_col && n->prop->set_col == n->sem.aggr.part) ||
+                    !n->prop->set_col) {
+                    l_col = n->sem.aggr.part;
+                    l_set = true;
+                    break;
+                }
+            }
+            l_set = false;
+            break;
+
+        case la_rowid:
+            /* Introduce a set property for the children if
+               duplicates are MAYBE (TRUE+col) allowed and
+               column col is generated by the rowid operator.
+
+               Furthermore ensure that the real values of the 
+               generated column are never used. */
+            if (n->prop->set && n->prop->set_col &&
+                n->prop->set_col == n->sem.rowid.res &&
+                PFprop_req_bijective_col (n->prop, n->prop->set_col)) {
+                l_col = col_NULL;
+                l_set = true;
+                break;
+            }
+            l_set = false;
+            break;
+
+        case la_step:
+        case la_guide_step:
+            /* ignore fragment information */
+            l_set = false;
+            r_set = true;
+            break;
+
+        case la_step_join:
+        case la_guide_step_join:
+        case la_doc_index_join:
+            /* ignore fragment information */
+            l_set = false;
+            r_set = n->prop->set;
+            break;
+
+        case la_doc_access:
+            /* ignore fragment information */
+            l_set = false;
+            r_set = n->prop->set;
+            break;
+
+        case la_error:
+            /* ignore side_effect information */
+            l_set = false;
+            /* allow duplicates for runtime errors */
+            r_set = true;
+            break;
+
+        /* For proxies we overwrite inferred property at its
+           base by the input property of the proxy. */
+        case la_proxy:
+            prop_infer_set_extended (L(n), n->prop->set, l_col);
+            if (n->sem.proxy.kind == 1)
+                n->sem.proxy.base1->prop->set = n->prop->set;
+
+            /* start the property inference for the base operator */
+            prop_infer_set_extended (L(n->sem.proxy.base1),
+                            n->sem.proxy.base1->prop->set,
+                            l_col);
+            return;
+
+        case la_proxy_base:
+            /* avoid the inference as the proxy node
+               may overwrite the property after traversal */
+            return;
+
+        case la_internal_op:
+            PFoops (OOPS_FATAL,
+                    "internal optimization operator is not allowed here");
+    }
+
+    if (!l_set) l_col = col_NULL;
+    if (!r_set) r_col = col_NULL;
+
+    /* infer properties for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prop_infer_set_extended (n->child[i], i==0?l_set:r_set, i==0?l_col:r_col);
+}
+
 /* worker for PFprop_infer_set */
 static void
 prop_infer (PFla_op_t *n)
@@ -272,6 +519,7 @@ prop_infer (PFla_op_t *n)
 
     /* reset set property */
     n->prop->set = true;
+    n->prop->set_col = col_NULL;
 }
 
 /**
@@ -286,6 +534,21 @@ PFprop_infer_set (PFla_op_t *root) {
 
     /* second run infers set property */
     prop_infer_set (root, false);
+}
+
+/**
+ * Infer set property (duplicates can be thrown away)
+ * for a DAG rooted in @a root
+ */
+void
+PFprop_infer_set_extended (PFla_op_t *root) {
+    PFprop_infer_reqval (root);
+    /* collect number of incoming edges (parents) */
+    prop_infer (root);
+    PFla_dag_reset (root);
+
+    /* second run infers set property */
+    prop_infer_set_extended (root, false, col_NULL);
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */

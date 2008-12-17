@@ -305,6 +305,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
 
     case la_serialize_seq:
     case la_serialize_rel:
+    case la_side_effects:
         break;
 
     case la_lit_tbl:
@@ -484,8 +485,10 @@ do_opt_mvd (PFla_op_t *p, bool modified)
     case la_project:
         /* Split project operator and push it beyond the cross product. */
         if (is_cross (L(p))) {
-            PFalg_proj_t *proj_list1, *proj_list2;
-            unsigned int count1 = 0, count2 = 0;
+            PFalg_proj_t *proj_list1,
+                         *proj_list2;
+            unsigned int  count1 = 0,
+                          count2 = 0;
 
             /* create first projection list */
             proj_list1 = PFmalloc (p->schema.count *
@@ -512,9 +515,34 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             /* Ensure that both arguments add at least one column to
                the result. */
             if (count1 && count2) {
-                *p = *(cross_can (
-                          PFla_project_ (LL(p), count1, proj_list1),
-                          PFla_project_ (LR(p), count2, proj_list2)));
+                PFla_op_t *lp,
+                          *rp;
+
+                /* merge adjacent projections to detect more rewrites
+                   (e.g., for union operators */
+                if (LL(p)->kind == la_project)
+                    lp = PFla_project_ (LLL(p),
+                                        count1,
+                                        PFalg_proj_merge (
+                                            proj_list1,
+                                            count1,
+                                            LL(p)->sem.proj.items,
+                                            LL(p)->sem.proj.count));
+                else
+                    lp = PFla_project_ (LL(p), count1, proj_list1);
+
+                if (LR(p)->kind == la_project)
+                    rp = PFla_project_ (LRL(p),
+                                        count2,
+                                        PFalg_proj_merge (
+                                            proj_list2,
+                                            count2,
+                                            LR(p)->sem.proj.items,
+                                            LR(p)->sem.proj.count));
+                else
+                    rp = PFla_project_ (LR(p), count2, proj_list2);
+
+                *p = *(cross_can (lp, rp));
                 modified = true;
             }
         }
@@ -1489,20 +1517,11 @@ do_opt_mvd (PFla_op_t *p, bool modified)
         break;
 
     case la_error: /* don't rewrite runtime errors */
-        break;
-
-    case la_cond_err:
-        if (is_cross (L(p))) {
-            *p = *(cross_can (cond_err (LL(p), R(p),
-                                        p->sem.err.col,
-                                        p->sem.err.str),
-                              LR(p)));
-            modified = true;
-        }
-        break;
-
     case la_nil:
-    case la_trace:
+    case la_trace: /* don't rewrite side effects */
+        break;
+
+    case la_trace_items:
     case la_trace_msg:
     case la_trace_map:
         /* we may not modify the cardinality */
@@ -1725,11 +1744,25 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 break;
             }
         }
+        /* Remove proxy if a cross product wants to escape its focus. */
+        else if (is_cross (L(p)) && p->sem.proxy.kind == 1) {
+            *(p->sem.proxy.base1) = *dummy (L(p->sem.proxy.base1));
+            *p = *(cross_can (LL(p), LR(p)));
+            modified = true;
+            break;
+        }
         break;
 
     case la_proxy_base:
     case la_string_join:
+        break;
+
     case la_dummy:
+        if (is_cross (L(p))) {
+            *p = *(cross_can (LL(p), LR(p)));
+            modified = true;
+            break;
+        }
         break;
     }
 
@@ -1838,11 +1871,45 @@ clean_up_cross (PFla_op_t *p)
 }
 
 /**
+ * Re-route operators that reference rowid operators
+ * (but effectively ignore them).
+ */
+static void
+rowid_removal (PFla_op_t *p)
+{
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        rowid_removal (p->child[i]);
+
+    /* re-route operators in case the underlying
+       rowid operator is ignored by the DAG-branch. */
+    if (L(p) && L(p)->kind == la_rowid &&
+        !PFprop_icol_left (p->prop, L(p)->sem.rowid.res)) {
+        L(p) = PFla_attach (LL(p), L(p)->sem.rowid.res, PFalg_lit_nat(1));
+    }
+    if (R(p) && R(p)->kind == la_rowid &&
+        !PFprop_icol_right (p->prop, R(p)->sem.rowid.res)) {
+        R(p) = PFla_attach (RL(p), R(p)->sem.rowid.res, PFalg_lit_nat(1));
+    }
+}
+
+/**
  * Invoke algebra optimization.
  */
 PFla_op_t *
 PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
 {
+    /* Move rowid operators out of the way (to detect more patterns)
+       if possible. */
+    PFprop_infer_icol (root);
+    rowid_removal (root);
+    PFla_dag_reset (root);
+
     /* remove all common subexpressions to
        detect more patterns */
     PFla_cse (root);

@@ -118,11 +118,12 @@ infer_ocol (PFla_op_t *n)
     switch (n->kind)
     {
         case la_serialize_seq:
+        case la_serialize_rel:
             ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
             break;
 
-        case la_serialize_rel:
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+        case la_side_effects:
+            /* keep empty schema */
             break;
 
         /* only a rewrite can change the ocol property
@@ -954,16 +955,14 @@ infer_ocol (PFla_op_t *n)
             break;
 
         case la_error:
-        {
-            PFalg_simple_type_t ty = PFprop_type_of (n, n->sem.err.col);
-            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
-            for (unsigned int i = 0; i < ocols_count (n); i++)
-                if (ocol_at (n, i).name == n->sem.err.col)
-                    ocol_at (n, i).type = ty;
-        }   break;
+            ocols (n) = copy_ocols (ocols (R(n)), ocols_count (R(n)));
+            break;
 
-        case la_cond_err:
         case la_trace:
+            /* trace does not have a schema */
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
@@ -1172,8 +1171,9 @@ prop_infer (PFla_op_t *n)
     {
         case la_rec_fix:
             /* infer the ocols of the arguments */
-            prop_infer_rec_seed (L(n));
-            prop_infer_rec_body (L(n));
+            prop_infer_rec_seed (LR(n));
+            prop_infer (LL(n));
+            prop_infer_rec_body (LR(n));
             prop_infer (R(n));
             bottom_up = false;
             break;

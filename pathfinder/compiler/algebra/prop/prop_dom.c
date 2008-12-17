@@ -515,11 +515,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
 {
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
             bulk_add_dom (n->prop, R(n));
             break;
 
-        case la_serialize_rel:
-            bulk_add_dom (n->prop, L(n));
+        case la_side_effects:
             break;
 
         case la_lit_tbl:
@@ -1145,25 +1145,18 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_error:
-            /* use a new domain for the result of the error operator */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++)
-                if (L(n)->schema.items[i].name != n->sem.err.col)
-                    add_dom (n->prop,
-                             L(n)->schema.items[i].name,
-                             PFprop_dom (L(n)->prop, L(n)->schema.items[i].name));
-                else
-                    add_dom (n->prop, n->sem.err.col, id++);
-            break;
-
-        case la_cond_err:
-        case la_trace:
-            bulk_add_dom (n->prop, L(n));
+            bulk_add_dom (n->prop, R(n));
             break;
 
         case la_nil:
+        case la_trace:
+            /* we have no properties */
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
-            /* we have no properties */
+            bulk_add_dom (n->prop, L(n));
             break;
 
         case la_rec_fix:

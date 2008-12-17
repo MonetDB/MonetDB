@@ -32,7 +32,7 @@
 /* Also import generic algebra stuff */
 #include "algebra_mnemonic.h"
 
-#define serialize(a,b)       PFpa_serialize ((a), (b))
+#define serialize(a,b,c)     PFpa_serialize ((a), (b), (c))
 
 /** literal table construction */
 #define lit_tbl(a,b,c)       PFpa_lit_tbl ((a), (b), (c))
@@ -142,14 +142,15 @@
 #define merge_adjacent(a,b,c,d) PFpa_merge_adjacent ((a),(b),(c),(d))
 
 #define error(a,b,c)         PFpa_error ((a), (b), (c))
-#define cond_err(a,b,c,d)    PFpa_cond_err ((a), (b), (c), (d))
 #define nil()                PFpa_nil ()
-#define trace(a,b,c,d)       PFpa_trace ((a),(b),(c),(d))
+#define trace(a,b)           PFpa_trace ((a),(b))
+#define trace_items(a,b,c,d) PFpa_trace_items ((a),(b),(c),(d))
 #define trace_msg(a,b,c,d)   PFpa_trace_msg ((a), (b), (c), (d))
 #define trace_map(a,b,c,d)   PFpa_trace_map ((a), (b), (c), (d))
 
 /* recursion operators */
 #define rec_fix(a,b)         PFpa_rec_fix ((a),(b))
+#define side_effects(a,b)    PFpa_side_effects ((a),(b))
 #define rec_param(a,b)       PFpa_rec_param ((a),(b))
 #define rec_arg(a,b,c)       PFpa_rec_arg ((a),(b),(c))
 #define rec_base(a,b)        PFpa_rec_base ((a),(b))

@@ -39,6 +39,9 @@
 /** atomic string construction */
 #define lit_str(s)      PFalg_lit_str (s)
 
+/** atomic uA construction */
+#define lit_uA(s)       PFalg_lit_uA (s)
+
 /** atomic float construction */
 #define lit_dec(f)      PFalg_lit_dec (f)
 

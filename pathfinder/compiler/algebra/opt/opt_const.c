@@ -117,41 +117,39 @@ opt_const_attach (PFla_op_t *p)
             break;
 
 
-    case la_serialize_rel:
+        case la_serialize_rel:
+            /* Introduce (superfluous) attach-ops for constant columns.
+               This rewrite ensures, that constants are introduced at
+               the latest possible point in the plan.
+            */
+
+            /* Rewrite for the iter-column. */
+            if (PFprop_const_right (p->prop, p->sem.ser_rel.iter)) {
+                R(p) = add_attach (R(p), p->sem.ser_rel.iter,
+                                   PFprop_const_val_right (
+                                       p->prop,
+                                       p->sem.ser_rel.iter));
+
+            }
+
+            /* Rewrite for the pos-column. */
+            if (PFprop_const_right (p->prop, p->sem.ser_rel.pos)) {
+                R(p) = add_attach (R(p), p->sem.ser_rel.pos,
+                                   PFprop_const_val_right (
+                                       p->prop,
+                                       p->sem.ser_rel.pos));
+            }
+
+            /* Rewrite for the item-columns. */
+            PFalg_collist_t *items = p->sem.ser_rel.items;
+            for (unsigned int i = 0; i < clsize (items); i++)
             {
-                /* Introduce (superfluous) attach-ops for constant columns.
-                   This rewrite ensures, that constants are introduced at
-                   the latest possible point in the plan.
-                */
-
-                /* Rewrite for the iter-column. */
-                if (PFprop_const_left (p->prop, p->sem.ser_rel.iter)) {
-                    L(p) = add_attach (L(p), p->sem.ser_rel.iter,
-                                       PFprop_const_val_left (
+                PFalg_col_t item = clat (items, i);
+                if (PFprop_const_right (p->prop, item)) {
+                    R(p) = add_attach (R(p), item,
+                                       PFprop_const_val_right (
                                            p->prop,
-                                           p->sem.ser_rel.iter));
-
-                }
-
-                /* Rewrite for the pos-column. */
-                if (PFprop_const_left (p->prop, p->sem.ser_rel.pos)) {
-                    L(p) = add_attach (L(p), p->sem.ser_rel.pos,
-                                       PFprop_const_val_left (
-                                           p->prop,
-                                           p->sem.ser_rel.pos));
-                }
-
-                /* Rewrite for the item-columns. */
-                PFalg_collist_t *items = p->sem.ser_rel.items;
-                for (unsigned int i = 0; i < clsize (items); i++)
-                {
-                    PFalg_col_t item = clat (items, i);
-                    if (PFprop_const_left (p->prop, item)) {
-                        L(p) = add_attach (L(p), item,
-                                           PFprop_const_val_left (
-                                               p->prop,
-                                               item));
-                    }
+                                           item));
                 }
             }
             break;
@@ -914,15 +912,6 @@ opt_const (PFla_op_t *p)
             }
             break;
 #endif
-
-        case la_cond_err:
-            if (PFprop_const_right (p->prop, p->sem.err.col) &&
-                PFprop_type_of (R(p), p->sem.err.col) == aat_bln &&
-                PFprop_const_val_right (p->prop, p->sem.err.col).val.bln) {
-                *p = *PFla_dummy (L(p));
-                break;
-            }
-            break;
 
         default:
             break;

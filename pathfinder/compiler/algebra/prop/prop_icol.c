@@ -224,7 +224,11 @@ static void prop_infer_icols (PFla_op_t *, PFalg_collist_t *);
 static void
 prop_infer_icols_rec_body (PFla_op_t *n)
 {
-    if (n->kind == la_rec_param) {
+    if (n->kind == la_side_effects) {
+        prop_infer_icols (L(n), n->prop->l_icols);
+        prop_infer_icols_rec_body (R(n));
+    }
+    else if (n->kind == la_rec_param) {
         prop_infer_icols_rec_body (L(n));
         prop_infer_icols_rec_body (R(n));
     }
@@ -282,10 +286,16 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
             break;
 
         case la_serialize_rel:
-            union_ (n->prop->l_icols, n->sem.ser_rel.iter);
-            union_ (n->prop->l_icols, n->sem.ser_rel.pos);
+            union_ (n->prop->r_icols, n->sem.ser_rel.iter);
+            union_ (n->prop->r_icols, n->sem.ser_rel.pos);
             for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
-                union_ (n->prop->l_icols, clat (n->sem.ser_rel.items, i));
+                union_ (n->prop->r_icols, clat (n->sem.ser_rel.items, i));
+            break;
+
+        case la_side_effects:
+            /* infer empty list for side effects */
+            n->prop->r_icols = NULL;
+            n->prop->l_icols = NULL;
             break;
 
         case la_lit_tbl:
@@ -715,13 +725,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
             break;
 
         case la_error:
-            copy (n->prop->l_icols, n->prop->icols);
-            union_ (n->prop->l_icols, n->sem.err.col);
-            break;
-
-        case la_cond_err:
-            /* infer incoming icols for input relation */
-            copy (n->prop->l_icols, n->prop->icols);
+            /* infer empty list for other side effects */
+            n->prop->l_icols = NULL;
             /* infer column that triggers error generation
                for error checking relation  */
             union_ (n->prop->r_icols, n->sem.err.col);
@@ -731,7 +736,13 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
             break;
 
         case la_trace:
-            copy (n->prop->l_icols, n->prop->icols);
+            /* infer empty list for other side effects */
+            n->prop->l_icols = NULL;
+            /* infer empty list for traces */
+            n->prop->l_icols = NULL;
+            break;
+
+        case la_trace_items:
             union_ (n->prop->l_icols, n->sem.iter_pos_item.iter);
             union_ (n->prop->l_icols, n->sem.iter_pos_item.pos);
             union_ (n->prop->l_icols, n->sem.iter_pos_item.item);

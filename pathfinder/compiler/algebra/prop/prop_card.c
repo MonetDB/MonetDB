@@ -63,13 +63,38 @@ infer_card (PFla_op_t *n)
 {
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
         case la_doc_access:
         case la_content:
             /* cardinality stays the same */
             n->prop->card = R(n)->prop->card;
             break;
 
-        case la_serialize_rel:
+        case la_side_effects:
+        case la_eqjoin:
+        case la_semijoin:
+        case la_thetajoin:
+        case la_select:
+        case la_pos_select:
+        case la_intersect:
+        case la_difference:
+        case la_distinct:
+        case la_step:
+        case la_step_join:
+        case la_doc_index_join:
+        case la_fcns:
+        case la_textnode:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_fun_frag_param:
+        case la_string_join:
+            /* can't say something specific about cardinality */
+            n->prop->card = 0;
+            break;
+
         case la_attach:
         case la_project:
         case la_fun_1to1:
@@ -117,30 +142,6 @@ infer_card (PFla_op_t *n)
             n->prop->card = L(n)->prop->card * R(n)->prop->card;
             break;
 
-        case la_eqjoin:
-        case la_semijoin:
-        case la_thetajoin:
-        case la_select:
-        case la_pos_select:
-        case la_intersect:
-        case la_difference:
-        case la_distinct:
-        case la_step:
-        case la_step_join:
-        case la_doc_index_join:
-        case la_fcns:
-        case la_textnode:
-        case la_merge_adjacent:
-        case la_fragment:
-        case la_frag_extract:
-        case la_frag_union:
-        case la_empty_frag:
-        case la_fun_frag_param:
-        case la_string_join:
-            /* can't say something specific about cardinality */
-            n->prop->card = 0;
-            break;
-
         case la_disjunion:
             /* add cardinalities of both children if we know
                both of them */
@@ -177,24 +178,9 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_error:
-        case la_cond_err:
-            /* Optimizations are allowed to prune errors
-               as long as the cardinality stays the same.
-               Therefore we do not infer the cardinality to
-               avoid optimizations based on the cardinality. */
-            n->prop->card = 0;
-            break;
-
         case la_nil:
-            /* there is no property to infer */
-            break;
-
         case la_trace:
-            /* we do not propagate the cardinality
-               to avoid that the operator is pruned */
-            n->prop->card = 0;
-            break;
-
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             /* there is no property to infer */

@@ -430,7 +430,7 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
             /* once again check for the join graph
                this time ensuring that the result does
                not produce new nodes */
-            PFla_op_t *frag = L(p);
+            PFla_op_t *frag = LR(p);
             while (frag->kind == la_frag_union) {
                 assert (R(frag)->kind == la_fragment);
                 if (RL(frag)->kind != la_doc_tbl)

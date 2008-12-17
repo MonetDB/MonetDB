@@ -37,7 +37,7 @@
 
 /** serialization */
 #define serialize_seq(a,b,c,d) PFla_serialize_seq ((a),(b),(c),(d))
-#define serialize_rel(a,b,c,d) PFla_serialize_rel ((a),(b),(c),(d))
+#define serialize_rel(a,b,c,d,e) PFla_serialize_rel ((a),(b),(c),(d),(e))
 
 /** literal table construction */
 #define lit_tbl(...)      PFla_lit_tbl (__VA_ARGS__)
@@ -201,18 +201,18 @@
 #define empty_frag()      PFla_empty_frag ()
 
 /* error operator */
-#define error(a, b) PFla_error ((a), (b))
+#define error(a,b,c)      PFla_error ((a), (b), (c))
 
-/* conditional error operator */
-#define cond_err(a,b,c,d) PFla_cond_err ((a),(b),(c),(d))
-
-#define nil() PFla_nil ()
+#define nil()             PFla_nil ()
 
 /* duplicates a node with its given children */
 #define duplicate(n, l, r)  PFla_op_duplicate ((n), (l), (r))
 
 /* Constructor for debug operator */
-#define trace(a,b,c,d,e) PFla_trace ((a),(b),(c),(d),(e))
+#define trace(a,b)        PFla_trace ((a),(b))
+
+/* Constructor for debug items operator */
+#define trace_items(a,b,c,d,e) PFla_trace_items ((a),(b),(c),(d),(e))
 
 /* Constructor for debug message operator */
 #define trace_msg(a,b,c,d) PFla_trace_msg ((a),(b),(c),(d))

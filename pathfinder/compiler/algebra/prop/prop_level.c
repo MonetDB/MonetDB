@@ -135,46 +135,15 @@ infer_level (PFla_op_t *n)
 
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
         case la_doc_index_join:
         case la_doc_access:
+        case la_error:
             /* level stays the same */
             copy_level_info (n, R(n));
             break;
 
-        case la_serialize_rel:
-        case la_attach:
-        case la_semijoin:
-        case la_select:
-        case la_pos_select:
-        case la_difference:
-        case la_distinct:
-        case la_fun_1to1:
-        case la_num_eq:
-        case la_num_gt:
-        case la_bool_and:
-        case la_bool_or:
-        case la_bool_not:
-        case la_to:
-        case la_rownum:
-        case la_rowrank:
-        case la_rank:
-        case la_rowid:
-        case la_type:
-        case la_type_assert:
-        case la_cast:
-        case la_roots:
-        case la_error:
-        case la_cond_err:
-        case la_trace:
-        case la_trace_msg:
-        case la_trace_map:
-        case la_proxy:
-        case la_proxy_base:
-        case la_dummy:
-            /* level stays the same */
-            copy_level_info (n, L(n));
-            break;
-
+        case la_side_effects:
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
@@ -199,6 +168,7 @@ infer_level (PFla_op_t *n)
         case la_frag_union:
         case la_empty_frag:
         case la_nil:
+        case la_trace:
         case la_rec_fix:
         case la_rec_param:
         case la_rec_arg:
@@ -208,6 +178,37 @@ infer_level (PFla_op_t *n)
         case la_fun_frag_param:
         case la_string_join:
             n->prop->level_mapping = NULL;
+            break;
+
+        case la_attach:
+        case la_semijoin:
+        case la_select:
+        case la_pos_select:
+        case la_difference:
+        case la_distinct:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_to:
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+        case la_rowid:
+        case la_type:
+        case la_type_assert:
+        case la_cast:
+        case la_roots:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
+        case la_proxy:
+        case la_proxy_base:
+        case la_dummy:
+            /* level stays the same */
+            copy_level_info (n, L(n));
             break;
 
         case la_cross:

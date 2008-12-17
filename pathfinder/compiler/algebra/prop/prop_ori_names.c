@@ -233,11 +233,12 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
     /* create name pair lists for the child operators */
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
             n->prop->r_name_pairs = PFarray_copy (np_list);
             break;
 
-        case la_serialize_rel:
-            n->prop->l_name_pairs = PFarray_copy (np_list);
+        case la_side_effects:
+            /* do not infer name pairs to the children */
             break;
 
         case la_lit_tbl:
@@ -571,18 +572,15 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             break;
 
         case la_error:
-            n->prop->l_name_pairs = PFarray_copy (np_list);
-            break;
-
-        case la_cond_err:
-            n->prop->l_name_pairs = PFarray_copy (np_list);
-            /* introduce new column for error branch */
-            add_name_pair (n->prop->r_name_pairs,
-                           PFcol_ori_name (n->sem.err.col, ALL),
-                           n->sem.err.col);
+            /* do not infer name pairs to the other sie effects */
+            n->prop->r_name_pairs = PFarray_copy (np_list);
             break;
 
         case la_trace:
+            /* do not infer name pairs to the children */
+            break;
+
+        case la_trace_items:
         case la_trace_msg:
         case la_trace_map:
             n->prop->l_name_pairs = PFarray_copy (np_list);

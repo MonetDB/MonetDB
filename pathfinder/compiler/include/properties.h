@@ -57,6 +57,9 @@ struct PFprop_t {
                                       disjoint domains) */
     bool             set;        /**< boolean flag that indicates whether the
                                       cardinality of an operator is important */
+    PFalg_col_t      set_col;    /**< extended set information to overcome
+                                      some limitations of the simple set
+                                      property inference */
     PFalg_collist_t *icols;      /**< List of columns required by the
                                       parent operators. */
     PFalg_collist_t *keys;       /**< List of columns that have
@@ -192,6 +195,7 @@ void PFprop_infer_card (PFla_op_t *root);
 void PFprop_infer_composite_key (PFla_op_t *root);
 void PFprop_infer_const (PFla_op_t *root);
 void PFprop_infer_set (PFla_op_t *root);
+void PFprop_infer_set_extended (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
 void PFprop_infer_nat_dom (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
@@ -290,6 +294,11 @@ PFalg_col_t PFprop_const_at (const PFprop_t *prop, unsigned int i);
 PFalg_atom_t PFprop_const_val_at (const PFprop_t *prop, unsigned int i);
 
 /* ---------------------- set property accessors ---------------------- */
+
+/**
+ * Test if container @a prop allows the cardinality to be changed
+ */
+bool PFprop_set (const PFprop_t *prop);
 
 /**
  * Test if container @a prop allows the cardinality to be changed

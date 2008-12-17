@@ -168,13 +168,14 @@ wire2 (enum PFpa_op_kind_t kind, const PFpa_op_t *n1, const PFpa_op_t *n2)
  * the expression root.
  */
 PFpa_op_t *
-PFpa_serialize (const PFpa_op_t *alg, PFalg_col_t item)
+PFpa_serialize (const PFpa_op_t *side_effects,
+                const PFpa_op_t *alg, PFalg_col_t item)
 {
-    PFpa_op_t *ret = wire1 (pa_serialize, alg);
+    PFpa_op_t *ret = wire2 (pa_serialize, side_effects, alg);
 
     ret->sem.serialize.item = item;
 
-    ret->cost = alg->cost;
+    ret->cost = side_effects->cost + alg->cost;
 
     return ret;
 }
@@ -2989,12 +2990,12 @@ PFpa_merge_adjacent (const PFpa_op_t *n,
 }
 
 /**
- * Constructor for error
+ * Constructor for a runtime error
  */
 PFpa_op_t *
-PFpa_error (const PFpa_op_t *n,  PFalg_col_t col, PFalg_simple_type_t col_ty)
+PFpa_error (const PFpa_op_t *side_effects, const PFpa_op_t *n,  PFalg_col_t col)
 {
-    PFpa_op_t *ret = wire1 (pa_error, n);
+    PFpa_op_t *ret = wire2 (pa_error, side_effects, n);
 
     assert (n);
 
@@ -3006,53 +3007,12 @@ PFpa_error (const PFpa_op_t *n,  PFalg_col_t col, PFalg_simple_type_t col_ty)
     /* copy schema from n  */
     for (unsigned int i = 0; i < n->schema.count; i++) {
         ret->schema.items[i] = n->schema.items[i];
-        if (col == n->schema.items[i].name)
-            ret->schema.items[i].type = col_ty;
     }
 
     ret->sem.err.col = col;
-    ret->sem.err.str = NULL; /* error message is stored in column @a col */
-
-    /* ordering stays the same */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* costs */
-    ret->cost = DEFAULT_COST + n->cost;
-
-    return ret;
-}
-
-/**
- * Constructor for conditional error
- */
-PFpa_op_t *
-PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
-               PFalg_col_t col, char *err_string)
-{
-    PFpa_op_t *ret = wire2 (pa_cond_err, n, err);
-
-    assert (n);
-    assert (err);
-    assert (err_string);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n  */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    ret->sem.err.col = col;
-    ret->sem.err.str = err_string;
-
-    /* ordering stays the same */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-    /* costs */
-    ret->cost = DEFAULT_COST + n->cost + err->cost;
+    ret->cost = DEFAULT_COST + side_effects->cost + n->cost;
 
     return ret;
 }
@@ -3079,13 +3039,34 @@ PFpa_nil (void)
 }
 
 /**
- * Constructor for a debug operator
+ * Constructor for a debug operator 
  */
 PFpa_op_t *
-PFpa_trace (const PFpa_op_t *n1,
-            const PFpa_op_t *n2,
-            PFalg_col_t iter,
-            PFalg_col_t item)
+PFpa_trace (const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t     *ret;
+
+    /* create new trace node */
+    ret = wire2 (pa_trace, n1, n2);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* costs */
+    ret->cost = DEFAULT_COST + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for a debug item operator 
+ */
+PFpa_op_t *
+PFpa_trace_items (const PFpa_op_t *n1,
+                  const PFpa_op_t *n2,
+                  PFalg_col_t iter,
+                  PFalg_col_t item)
 {
     PFpa_op_t     *ret;
     unsigned int   i, found = 0;
@@ -3105,7 +3086,7 @@ PFpa_trace (const PFpa_op_t *n1,
                 "columns referenced in trace operator not found");
 
     /* create new trace node */
-    ret = wire2 (pa_trace, n1, n2);
+    ret = wire2 (pa_trace_items, n1, n2);
 
     /* insert semantic values (column names) into the result */
     ret->sem.ii.iter = iter;
@@ -3239,16 +3220,16 @@ PFpa_trace_map (const PFpa_op_t *n1,
  * Constructor for a tail recursion operator
  */
 PFpa_op_t *
-PFpa_rec_fix (const PFpa_op_t *paramList, const PFpa_op_t *res)
+PFpa_rec_fix (const PFpa_op_t *side_effects_and_paramList, const PFpa_op_t *res)
 {
     PFpa_op_t     *ret;
     unsigned int   i;
 
-    assert (paramList);
+    assert (side_effects_and_paramList);
     assert (res);
 
     /* create recursion operator */
-    ret = wire2 (pa_rec_fix, paramList, res);
+    ret = wire2 (pa_rec_fix, side_effects_and_paramList, res);
 
     /* allocate memory for the result schema (= schema(n)) */
     ret->schema.count = res->schema.count;
@@ -3264,7 +3245,31 @@ PFpa_rec_fix (const PFpa_op_t *paramList, const PFpa_op_t *res)
         PFord_set_add (ret->orderings, PFord_set_at (res->orderings, i));
 
     /* costs */
-    ret->cost = DEFAULT_COST + res->cost + paramList->cost;
+    ret->cost = DEFAULT_COST + res->cost + side_effects_and_paramList->cost;
+
+    return ret;
+}
+
+/**
+ * Constructor for side effects in a tail recursion operator
+ */
+PFpa_op_t *
+PFpa_side_effects (const PFpa_op_t *side_effects, const PFpa_op_t *paramList)
+{
+    PFpa_op_t     *ret;
+
+    assert (side_effects);
+    assert (paramList);
+
+    /* create side effects operator */
+    ret = wire2 (pa_side_effects, side_effects, paramList);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 0;
+    ret->schema.items = NULL;
+
+    /* costs */
+    ret->cost = DEFAULT_COST + side_effects->cost + paramList->cost;
 
     return ret;
 }

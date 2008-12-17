@@ -215,13 +215,30 @@ infer_ckey (PFla_op_t *n)
 {
     switch (n->kind) {
         case la_serialize_seq:
+        case la_serialize_rel:
             /* just copy composite keys from right child */
             copy (CKEYS, RCKEYS);
             break;
 
-        case la_serialize_rel:
-            /* just copy composite keys from the child */
-            copy (CKEYS, LCKEYS);
+        case la_side_effects:
+        case la_empty_tbl:
+        case la_ref_tbl:
+        case la_disjunion: /* disjoint domains could help here */
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_fun_frag_param:
+            /* no composite keys */
             break;
 
         case la_lit_tbl:
@@ -255,26 +272,6 @@ infer_ckey (PFla_op_t *n)
                     if (j == n->sem.lit_tbl.count)
                         union_ (CKEYS, collist (n->schema.items[i].name));
                 }
-            break;
-
-        case la_empty_tbl:
-        case la_ref_tbl:
-        case la_disjunion: /* disjoint domains could help here */
-        case la_fcns:
-        case la_docnode:
-        case la_element:
-        case la_attribute:
-        case la_textnode:
-        case la_comment:
-        case la_processi:
-        case la_content:
-        case la_merge_adjacent:
-        case la_fragment:
-        case la_frag_extract:
-        case la_frag_union:
-        case la_empty_frag:
-        case la_fun_frag_param:
-            /* no composite keys */
             break;
 
         case la_attach:
@@ -483,8 +480,9 @@ infer_ckey (PFla_op_t *n)
         case la_difference:
         case la_type_assert:
         case la_roots:
-        case la_error:
-        case la_cond_err:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
             /* composite key columns are propagated */
             copy (CKEYS, LCKEYS);
             break;
@@ -780,11 +778,12 @@ infer_ckey (PFla_op_t *n)
             }
             break;
 
+        case la_error:
+            copy (CKEYS, RCKEYS);
+            break;
+
         case la_nil:
         case la_trace:
-        case la_trace_msg:
-        case la_trace_map:
-            /* delete keys to avoid rewrites */
             break;
 
         case la_rec_fix:

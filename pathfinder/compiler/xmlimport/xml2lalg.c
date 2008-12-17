@@ -714,6 +714,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_serialize_rel 
              (
              CHILDNODE(0),
+             CHILDNODE(1),
              PFLA_ATT(
                  "/content/column[@new='false' and @function='iter']/@name"), 
              PFLA_ATT(
@@ -721,6 +722,16 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT_LST("/content/column[@new='false' and @function='item']")
              );
                                       
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+    
+    case la_side_effects             : 
+
+        {
+            newAlgNode = PFla_side_effects(CHILDNODE(0), CHILDNODE(1));
         }  
         break;
 
@@ -1920,31 +1931,9 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
     case la_error                :
         {
-            PFoops (OOPS_FATAL,
-                    "Import of error operator is not implemented yet");
+            newAlgNode = PFla_error (CHILDNODE(0), CHILDNODE(1),
+                                     PFLA_ATT("/content/column/@name"));
         }
-        break;
-
-/******************************************************************************/
-/******************************************************************************/
-
-    case la_cond_err             : 
-
-        {
-            /*
-             <content>
-               <column name="COLNAME" new="false"/>
-               <error>ERROR</error>
-             </content>
-            */
-
-            newAlgNode = PFla_cond_err
-             (
-             CHILDNODE(0), CHILDNODE(1),
-             PFLA_ATT("/content/column[@new='false']/@name"),
-             E2STR("/content/error")
-             );
-        }  
         break;
 
 /******************************************************************************/
@@ -1963,6 +1952,16 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_trace                : 
 
         {
+            newAlgNode = PFla_trace (CHILDNODE(0), CHILDNODE(1));
+        }  
+        break;
+
+/******************************************************************************/
+/******************************************************************************/
+
+    case la_trace_items          : 
+
+        {
             /*
              <content>
                <column name="COLNAME" function="iter"/>
@@ -1971,7 +1970,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              </content>
             */
 
-            newAlgNode = PFla_trace
+            newAlgNode = PFla_trace_items
              (
              CHILDNODE(0), CHILDNODE(1),
              PFLA_ATT("/content/column[@function='iter']/@name"),
@@ -2144,6 +2143,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
                <column name="COLNAME" function"iter"/>
                <column name="COLNAME" function"pos"/>
                <column name="COLNAME" function"item"/>
+               <column name="COLNAME" function"iter sep"/>
+               <column name="COLNAME" function"item sep"/>
              </content>
             */
 
@@ -2153,8 +2154,8 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@function='iter']/@name"),
              PFLA_ATT("/content/column[@function='pos']/@name"),
              PFLA_ATT("/content/column[@function='item']/@name"),
-             PFLA_ATT("/content/column[@function='iter']/@name"),            
-             PFLA_ATT("/content/column[@function='item']/@name"),
+             PFLA_ATT("/content/column[@function='iter sep']/@name"),            
+             PFLA_ATT("/content/column[@function='item sep']/@name"),
              PFLA_ATT("/content/column[@function='iter']/@name"),
              PFLA_ATT("/content/column[@function='item']/@name")
              );

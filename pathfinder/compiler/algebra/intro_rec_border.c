@@ -67,6 +67,9 @@ introduce_rec_borders_worker (PFpa_op_t *n, PFarray_t *bases)
         case pa_rec_fix:
             base_path = introduce_rec_borders_worker (L(n), bases);
             break;
+        case pa_side_effects:
+            base_path = introduce_rec_borders_worker (R(n), bases);
+            break;
         case pa_rec_param:
             base_path = introduce_rec_borders_worker (L(n), bases);
             base_path = introduce_rec_borders_worker (R(n), bases)
@@ -200,7 +203,8 @@ introduce_rec_borders (PFpa_op_t *n)
             PFpa_op_t *cur;
 
             /* collect base operators */
-            cur = L(n);
+            assert (L(n)->kind == pa_side_effects);
+            cur = LR(n);
             while (cur->kind != pa_nil) {
                 assert (cur->kind == pa_rec_param &&
                         L(cur)->kind == pa_rec_arg);
@@ -211,7 +215,12 @@ introduce_rec_borders (PFpa_op_t *n)
             /* call the path traversal worker, that introduces
                the border operator and marks all 'inside' nodes,
                for all recursion arguments as well as the result */
-            cur = L(n);
+            cur = LL(n);
+            while (cur->kind != pa_nil) {
+                introduce_rec_borders_worker (R(cur), bases);
+                cur = L(cur);
+            }
+            cur = LR(n);
             while (cur->kind != pa_nil) {
                 introduce_rec_borders_worker (LR(cur), bases);
                 cur = R(cur);
@@ -219,7 +228,12 @@ introduce_rec_borders (PFpa_op_t *n)
             introduce_rec_borders_worker (R(n), bases);
 
             /* Remove the 'in' flag for all nodes */
-            cur = L(n);
+            cur = LL(n);
+            while (cur->kind != pa_nil) {
+                in_reset (R(cur));
+                cur = L(cur);
+            }
+            cur = LR(n);
             while (cur->kind != pa_nil) {
                 in_reset (LR(cur));
                 cur = R(cur);

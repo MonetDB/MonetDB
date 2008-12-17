@@ -73,12 +73,12 @@ check_op (PFla_op_t *n, bool op_used)
            in initial plans */
         case la_semijoin:
         case la_thetajoin:
-        case la_step_join:
         case la_guide_step_join:
         case la_proxy:
         case la_proxy_base:
         case la_internal_op:
         case la_dummy:
+            fprintf(stderr,"%i\n", n->kind);
             PFoops (OOPS_FATAL,
                     "This property checking phase should be run "
                     "before optimization and inside recursion "
@@ -93,6 +93,7 @@ check_op (PFla_op_t *n, bool op_used)
         case la_frag_union:
         case la_empty_frag:
         case la_fun_frag_param:
+        case la_error:
             /* do not propagate or introduce any column information */
             break;
 
@@ -111,9 +112,6 @@ check_op (PFla_op_t *n, bool op_used)
         case la_type_assert:
         case la_doc_tbl:
         case la_roots:
-        case la_trace:
-        case la_error:
-        case la_cond_err:
             /* just propagate all column information */
             ITER (n) = ITER (L(n));
             POS  (n) = POS  (L(n));
@@ -263,6 +261,7 @@ check_op (PFla_op_t *n, bool op_used)
 
         case la_step:
         case la_guide_step:
+        case la_step_join:
         case la_doc_index_join:
         case la_doc_access:
             ITER (n) = ITER (R(n));
@@ -293,15 +292,29 @@ check_op (PFla_op_t *n, bool op_used)
             break;
 
         case la_nil:
-        case la_trace_msg:
+        case la_trace:
+        case la_trace_items:
         case la_trace_map:
             /* do not propagate or introduce any column information */
+            break;
+
+        case la_trace_msg:
+            if (IN(n))
+                /* every observation inside the recursion breaks the delta
+                   evaluation */
+                return true;
             break;
 
         /* we have to assume that we see a nested recursion */
         case la_rec_fix:
             if (ITER(L(n)))
                 ITER(n) = col_iter;
+            break;
+
+        /* in case side effects appear in the recursion
+           we have to propagate the iter column */
+        case la_side_effects:
+            ITER(n) = ITER (R(n));
             break;
 
         case la_rec_param:

@@ -451,6 +451,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_serialize_seq:
         case la_serialize_rel:
+        case la_side_effects:
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -489,16 +490,12 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return (a->sem.err.col == b->sem.err.col);
             break;
 
-        case la_cond_err:
-            return (a->sem.err.col == b->sem.err.col
-                    && a->sem.err.str == b->sem.err.str);
-            break;
-
         case la_nil:
             return true;
             break;
 
         case la_trace:
+        case la_trace_items:
         case la_trace_msg:
             return false;
             break;

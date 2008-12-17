@@ -728,6 +728,7 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
     switch (n->kind) {
         /* copy R */
         case la_serialize_seq:
+        case la_serialize_rel:
         case la_doc_index_join:
         case la_doc_access:
             /* Deep copy of right children guide_mapping_list */
@@ -735,7 +736,6 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
             break;
 
         /* copy L */
-        case la_serialize_rel:
         case la_attach:
         case la_semijoin:
         case la_select:
@@ -757,11 +757,6 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_type_assert:
         case la_cast:
         case la_roots:
-        case la_error:
-        case la_cond_err:
-        case la_trace:
-        case la_trace_msg:
-        case la_trace_map:
         case la_proxy:
         case la_proxy_base:
         case la_dummy:
@@ -770,6 +765,7 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
             break;
 
         /* do nothing */
+        case la_side_effects:
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
@@ -794,6 +790,12 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
+        case la_error:
+        case la_nil:
+        case la_trace:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
         case la_rec_fix:
         case la_rec_param:
         case la_rec_arg:
@@ -803,7 +805,6 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_fun_frag_param:
         case la_internal_op:
         case la_string_join:
-        case la_nil:
             break;
 
         /* copy L+R*/
