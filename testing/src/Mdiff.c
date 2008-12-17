@@ -30,8 +30,6 @@
 #endif
 #include <string.h>
 
-#include "monet_options.h"
-
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else
