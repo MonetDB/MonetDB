@@ -179,7 +179,6 @@ if test "x$have_raptor" != xno; then
 		fi
 		have_raptor=no
 	else
-		have_raptor=yes
 		AC_MSG_RESULT([yes, found $RAPTOR_VERSION])
 	fi
 fi
@@ -188,13 +187,23 @@ if test "x$have_raptor" != xno; then
 	RAPTOR_INCS="`$RAPTOR_CONFIG --cflags`"
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $RAPTOR_INCS"
-	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]), AC_MSG_ERROR([raptor.h could not be found/used]))
+	AC_CHECK_HEADER(raptor.h, AC_DEFINE(HAVE_RAPTOR_H, 1, [Define to 1 if you have the <raptor.h> header file.]),
+		if test "x$have_raptor" != xauto; then
+			AC_MSG_ERROR([raptor.h could not be found/used])
+		fi
+		have_raptor=no
+	)
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 if test "x$have_raptor" != xno; then
 	save_LIBS="$LIBS"
     	LIBS="$LIBS $RAPTOR_LIBS"
-    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :, AC_MSG_ERROR([-lraptor could not be found/used]))
+    	AC_CHECK_LIB(raptor, raptor_uri_as_string, :,
+		if test "x$have_raptor" != xauto; then
+			AC_MSG_ERROR([-lraptor could not be found/used])
+		fi
+		have_raptor=no
+	)
     	LIBS="$save_LIBS"
 fi
 AC_MSG_CHECKING([whether to use raptor for rdf])
