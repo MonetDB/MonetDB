@@ -124,8 +124,8 @@ static void start_point(struct GEOENV* geoenv) {
     if ( !geoenv->wkb_kind )
     	geoenv->wkb_kind = "LINESTRING";
     if ( !geoenv->geobuff[0] ) {
-    	sprintf(&geoenv->geobuff[0],"%s(",geoenv->wkb_kind);
-        geoenv->p = &geoenv->geobuff[strlen(&geoenv->geobuff[0])];
+    	sprintf((char*)&geoenv->geobuff[0],"%s(",geoenv->wkb_kind);
+        geoenv->p = &geoenv->geobuff[strlen((char*)&geoenv->geobuff[0])];
 	if (geoenv->wkb_par2 ) {
     	    *geoenv->p++ = '(';
     	    *geoenv->p   = 0;
