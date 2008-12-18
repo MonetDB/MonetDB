@@ -1,0 +1,345 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the PfTijah Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://dbappl.cs.utwente.nl/Legal/PfTijah-1.1.html
+@' 
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@' 
+@' The Original Code is the PfTijah system.
+@' 
+@' The Initial Developer of the Original Code is the "University of Twente".
+@' Portions created by the "University of Twente" are 
+@' Copyright (C) 2006-2007 "University of Twente".
+@' All Rights Reserved.
+@'
+
+@f serialize_geometry
+@a Jan Flokstra
+@t serialize_geometry
+
+@h
+
+extern int serialize_geometry_DRIVER(
+	BAT**			res;
+        BAT*			ws,
+        BUN			niters,
+        BAT*			loop,
+        BAT*			iter,
+        BAT*			item, 
+        BAT*			kind,
+        BAT*			intVAL,
+        BAT*			dblVAL,
+        BAT*			strVAL);
+
+@c
+#include <pf_config.h>
+#include <ctype.h>
+#include <gdk.h>
+
+/*******************************************
+ * serialize_geometry.c : GEOXML options serialization
+ *
+ */
+
+#include "serialize.h"
+/* contains dummy callback functions */
+#include "serialize_null.h"
+
+typedef struct GEOENV {
+    int  cnt;			/* count the number of tags here */
+    BAT* bat;			/* [str,str] result BAT */
+    int  fill_wkb;
+    char* wkb_kind;
+    int	  wkb_par2;
+    unsigned char geobuff[65536];
+    unsigned char *p;
+
+    const char* errorMessage;	/* error message buffer */
+} GEOENV;
+
+static struct GEOENV* GLOBAL_GEOENV = NULL;
+
+/**
+ *
+ * Definition of the structure containing the functions
+ */
+static bool
+serialize_geometry_init(XqueryCtx* ctx, char* args, char *restag, char *resprefix) {
+    (void) args;
+    (void) restag;
+    (void) resprefix;
+
+    ctx->driverWs		= GLOBAL_GEOENV;
+    GLOBAL_GEOENV->errorMessage	= NULL;
+    GLOBAL_GEOENV->fill_wkb 	= 0;
+    GLOBAL_GEOENV->geobuff[0] 	= 0;
+
+
+    GLOBAL_GEOENV->bat = BATnew(TYPE_void, TYPE_str, 32);
+    BATseqbase(GLOBAL_GEOENV->bat, 0);
+#ifdef DEBUG
+    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_init() called.\n");
+#endif
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX startDocument() event.
+ */
+static bool
+serialize_geometry_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
+    struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
+    (void)ns;
+    (void)pre;
+
+    if ( strcmp(name,"LinearRing")==0) {
+    	// geoenv->wkb_kind = "LINEARRING"; 
+    } else if ( strcmp(name,"coordinates")==0) {
+    	geoenv->fill_wkb--;
+    }
+#ifdef DEBUG
+    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_startElement(%s) SUCCES.\n",name);
+#endif
+    return 1;
+}
+
+static bool
+serialize_geometry_handle_endElement (XqueryCtx* ctx, str prefix, str name) {
+    struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
+    (void)prefix;
+
+    if ( strcmp(name,"coordinates")==0) {
+    	geoenv->fill_wkb--;
+    }
+    return 1;
+}
+
+static void start_point(struct GEOENV* geoenv) {
+    if ( !geoenv->wkb_kind )
+    	geoenv->wkb_kind = "LINESTRING";
+    if ( !geoenv->geobuff[0] ) {
+    	sprintf(&geoenv->geobuff[0],"%s(",geoenv->wkb_kind);
+        geoenv->p = &geoenv->geobuff[strlen(&geoenv->geobuff[0])];
+	if (geoenv->wkb_par2 ) {
+    	    *geoenv->p++ = '(';
+    	    *geoenv->p   = 0;
+	}
+    } else {
+    	*geoenv->p++ = ',';
+    	*geoenv->p   = 0;
+    }
+}
+
+static void 
+add_point2buff(struct GEOENV* geoenv, unsigned char* p_start, unsigned char* p_end) {
+    size_t sz = (size_t)(p_end - p_start);
+    memcpy(geoenv->p,p_start,sz);
+    geoenv->p += sz;
+    *geoenv->p = 0;
+}
+
+static bool scan_for_points(struct GEOENV* geoenv, unsigned char* p) {
+    while( *p ) {
+        while( isspace(*p) ) p++;
+        if ( *p ) {
+            unsigned char *lp = p;
+    
+            // stream_printf(GDKout,"#! SP-1: %s\n",p);
+	    start_point(geoenv);
+            while (*p && *p!=',') p++;
+	    if (*p==',') {
+                // stream_printf(GDKout,"#! SP-2: %s\n",p);
+	        // emit
+	        add_point2buff(geoenv,lp,p);
+                *geoenv->p++ = ' ';
+	        p++;
+                while( isspace(*p) ) p++;
+	        lp = p;
+	        while( *p && !isspace(*p) ) p++;
+	        // emit
+	        add_point2buff(geoenv,lp,p);
+	    }
+        }
+        // stream_printf(GDKout,"# %s\n",&geoenv->geobuff[0]);
+    }
+    return 1;
+}
+
+static bool 
+serialize_geometry_handle_characters (XqueryCtx* ctx, str chars) {
+    struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
+
+    if ( geoenv->fill_wkb ) {
+	if ( 0 ) {
+	    FILE *f = fopen("/tmp/x","a");
+	    fprintf(f,"HC[\"%s\"]\n",chars);
+	    fclose(f);
+	}
+	return scan_for_points(geoenv,(unsigned char*)chars);
+    } else
+    	return 1;
+}
+
+/**
+ * Output generation handler. This one of my own invented event describing
+ * the usage of an attribute. A sequence of these events will be ended
+ * by a handle_attributeEnd() call.
+ */
+static bool
+serialize_geometry_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
+    (void)ctx;
+    (void)prefix;
+    (void)loc;
+    (void)value;
+#ifdef DEBUG
+    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_attribute(%s,%s) SUCCES.\n",loc,value);
+#endif
+    return 1;
+}
+
+// bool null_seqStart (XqueryCtx* ctx, int count);
+// bool null_complete_seqStart (XqueryCtx* ctx);
+// bool null_seqEnd (XqueryCtx* ctx);
+// bool null_seqItemStart (XqueryCtx* ctx, int kind);
+// bool null_seqItemEnd (XqueryCtx* ctx, int kind);
+// bool null_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2);
+
+bool serialize_geometry_seqItemStart (XqueryCtx* ctx, int kind) {
+    (void)kind;
+    struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
+    geoenv->wkb_kind   = NULL;
+    geoenv->wkb_par2   = 0;
+    geoenv->geobuff[0] = 0;
+    geoenv->p          = &geoenv->geobuff[0];
+#ifdef DEBUG
+    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemStart() SUCCES.\n");
+#endif
+    return 1;
+}
+
+bool serialize_geometry_seqItemEnd (XqueryCtx* ctx, int kind) {
+    (void)kind;
+    struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
+
+    if ( geoenv->geobuff[0] ) {
+    	*geoenv->p++ = ')';
+	if ( geoenv->wkb_par2 )
+    	    *geoenv->p++ = ')';
+	*geoenv->p   = 0;
+	if ( 0 ) {
+	    FILE *f = fopen("/tmp/x","a");
+	    fprintf(f,"geostr.append(\"%s\");\n",&geoenv->geobuff[0]);
+	    fclose(f);
+	}
+        if ( !BUNappend(geoenv->bat, (str)&geoenv->geobuff[0], FALSE) )
+            stream_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
+    } else {
+    	str xxx = "POINT( 0 0 )";
+        if ( !BUNappend(geoenv->bat, xxx, FALSE) )
+            stream_printf(GDKout,"serialize_geometry: WRITE FAILS\n");
+        // stream_printf(GDKout,"serialize_geometry: missed geobuff!!\n");
+    }
+
+#ifdef DEBUG
+    stream_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemEnd() SUCCES.\n");
+#endif
+    return 1;
+}
+
+
+static struct serializeFunStruct serialize_geometrySerializeFun = {
+    "serialize_geometry",
+    serialize_geometry_init,
+    null_cleanup,
+
+    null_startSerialize,
+    null_endSerialize,
+
+    null_handle_startDocument,
+    null_handle_endDocument,
+    serialize_geometry_handle_startElement,
+    serialize_geometry_handle_endElement,
+    serialize_geometry_handle_characters,
+    null_handle_ignorableWhitespace,
+    null_handle_comment,
+    null_handle_processingInstruction,
+
+    null_complete_startElement,
+    null_complete_startElementEmpty,
+    serialize_geometry_handle_attribute,
+
+    null_seqEmitBool,
+    null_seqEmitInt,
+    null_seqEmitDbl,
+    null_seqEmitStr,
+    null_handle_attribute,
+    null_handle_characters,
+
+    null_seqStart,
+    null_complete_seqStart,
+    null_seqEnd,
+    serialize_geometry_seqItemStart,
+    serialize_geometry_seqItemEnd,
+    null_seqItemSeparator
+};
+
+int serialize_geometry_DRIVER(
+	BAT**			res,
+        BAT*			ws,
+        BUN			niters,
+        BAT*			loop,
+        BAT*			iter,
+        BAT*			item, 
+        BAT*			kind,
+        BAT*			intVAL,
+        BAT*			dblVAL,
+        BAT*			strVAL) {
+
+	(void)niters;
+	(void)loop;
+	(void)iter;
+	struct GEOENV ptos;
+	if ( GLOBAL_GEOENV ) {
+	    /* error locked ?? */
+	    return GDK_FAIL;
+	}
+	GLOBAL_GEOENV = &ptos;
+	ptos.cnt = 0;
+	ptos.bat = BATnew(TYPE_str, TYPE_str, 32);
+#ifdef FULLDEBUG
+	stream_printf(GDKout,"******** NITERS = %d\n",niters);
+	BATprintf(GDKout,loop);
+	BATprintf(GDKout,iter);
+	BATprintf(GDKout,item);
+	BATprintf(GDKout,kind);
+	BATprintf(GDKout,strVAL);
+#endif
+	int returnVal = xquery_print_result_DRIVER(
+            "",
+            &serialize_geometrySerializeFun,
+            "",
+        	ws,
+        	1,    /* niters, */
+        	item, /* loop, */
+        	item, /* iter, */
+        	item, 
+        	kind,
+        	intVAL,
+        	dblVAL,
+        	strVAL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+#ifdef FULLDEBUG
+	stream_printf(GDKout,"CALLED xquery_print_result_DRIVER: res=%d\n",returnVal);
+	BATprintf(GDKout,ptos.bat);
+#endif
+	*res = ptos.bat;
+	GLOBAL_GEOENV = NULL;
+	return returnVal;
+}
+
+/* vim:set shiftwidth=4 expandtab: */
