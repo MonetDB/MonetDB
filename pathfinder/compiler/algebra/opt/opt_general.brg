@@ -228,21 +228,28 @@ Rel:    guide_step_join (Frag, Rel)               =  68 (10);
 Rel:    doc_index_join (Frag, Rel)                =  69 (10);
 Rel:    doc_access (Frag, Rel)                    =  70 (10);
 
-Rel:    roots_ (doc_tbl (Rel))                    =  75 (10);
-Rel:    roots_ (twig (Twig))                      =  76 (10);
-Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
+Rel:    roots_ (doc_tbl (Rel))                    =  74 (10);
+Rel:    roots_ (twig (Twig))                      =  75 (10);
+Rel:    roots_ (merge_adjacent (Frag, Rel))       =  76 (10);
 
-Twig:   docnode (Rel, Fcns)                       =  78 (10);
+Twig:   docnode (Rel, Fcns)                       =  77 (10);
+Twig:   docnode (Rel,
+                 fcns (content (Frag, EmptyRel),
+                       nil))                      =  78 (10);
 Twig:   element (Rel, Fcns)                       =  79 (10);
-Twig:   attribute (Rel)                           =  80 (10);
-Twig:   textnode (Rel)                            =  81 (10);
-Twig:   comment (Rel)                             =  82 (10);
-Twig:   processi (Rel)                            =  83 (10);
-Twig:   content (Frag, Rel)                       =  84 (10);
-Twig:   nil                                       =  85 (10);
+Twig:   element (Rel,
+                 fcns (content (Frag, EmptyRel),
+                       nil))                      =  80 (10);
+Twig:   attribute (Rel)                           =  81 (10);
+Twig:   textnode (Rel)                            =  82 (10);
+Twig:   comment (Rel)                             =  83 (10);
+Twig:   processi (Rel)                            =  84 (10);
+Twig:   content (Frag, Rel)                       =  85 (10);
+Twig:   nil                                       =  86 (10);
 
-Fcns:   fcns (Twig, Fcns)                         =  86 (10);
-Fcns:   nil                                       =  87 (10);
+Fcns:   fcns (Twig, Fcns)                         =  87 (10);
+Fcns:   fcns (content (Frag, EmptyRel), Fcns)     =  88 (10);
+Fcns:   nil                                       =  89 (10);
 
 Side:   error (Side, Rel)                         =  90 (10);
 Side:   nil                                       =  91 (10);
@@ -1409,6 +1416,32 @@ reduce (PFla_op_t *p, int goalnt)
             R(p) = L(R(p));
             SEEN(p) = false;
             relabel (p, kids);
+            break;
+
+        /* Twig:   docnode (Rel,
+                            fcns (content (Frag, EmptyRel),
+                                  nil)) */
+        case 78:
+        /* Twig:   element (Rel,
+                            fcns (content (Frag, EmptyRel),
+                                  nil)) */
+        case 80:
+            RL(p) = PFla_nil();
+            SEEN(p) = false;
+            relabel (p, kids);
+            break;
+
+        /* Fcns:   fcns (content (Frag, EmptyRel), Fcns) */
+        case 88:
+            /* This rewrite splits up the R(p) operator... */
+            *p = *R(p);
+            /* ... and we at least have to create a new property to avoid
+               inconsistencies (see also definition for PFla_dummy()). */
+            p->prop = PFprop ();
+
+            SEEN(p) = false;
+            /* relabel won't work because we have a copy of R(p) now */
+            label (p);
             break;
 
         /* Rel:    EmptyRel */
