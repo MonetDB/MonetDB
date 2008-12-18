@@ -118,6 +118,7 @@ opt_const_attach (PFla_op_t *p)
 
 
         case la_serialize_rel:
+        {
             /* Introduce (superfluous) attach-ops for constant columns.
                This rewrite ensures, that constants are introduced at
                the latest possible point in the plan.
@@ -152,7 +153,7 @@ opt_const_attach (PFla_op_t *p)
                                            item));
                 }
             }
-            break;
+        }   break;
 
         case la_fun_1to1:
             /* introduce attach if necessary */
