@@ -1775,37 +1775,31 @@ shredder_create(char *location,
         shredCtx->nnode_pre = 1; 
         shredCtx->nnode_nid = 1; 
     } else {
-        /* incremental shred into existing collection */
-        shredCtx->nnode_attr = BATcount(shredCtx->dstBAT[ATTR_OWN].bat); /* attribute value property ID */
-        shredCtx->nnode_pre  = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);  /* next rid = first available pre */
-        shredCtx->nnode_base = shredCtx->nnode_pre; 
-
-        /* NOTE: in incremental shreds, we append after the highest rid - we no not use space in unused pages. 
-         * Problem with unused pages is that they may be on the free_page list, and can be given out to 
-         * update queries without getting the shred-lock, concurrently with a shred (so that not all updates will 
-         * be blocked by a shred). This policy also ensures initial physical adjancency in newly shredded documents.
-         */
-        oid pre_min = 1;
+        /* look inside the collection to see how big it is, and use
+           that value (incremented by one and swizzled) as the
+           starting point for the new document */
+        BUN sz0 = BUNfirst(shredCtx->dstBAT[PRE_SIZE].bat);
+        oid preval = (oid) * (int *) Tloc(shredCtx->dstBAT[PRE_SIZE].bat, sz0) + 1;
         if (shredCtx->updatable) {
-            /* go back over unused nodes inside the last strech of *used* pages */ 
-            BUN off = BUNfirst(map_pid);
-            BUN pos = BATcount(map_pid);
-            while(pos-- > 0) {
-                BUN p = off+pos; 
-                if (*(oid*) Tloc(map_pid, p) == oid_nil) { /* nil = unused */
-                    pre_min = (1+pos) << REMAP_PAGE_BITS;
-                    break;
+            /* antiswizzle (swizzle goes from RID to PRE, we want to go from PRE to RID */
+            oid off = preval & REMAP_PAGE_MASK;
+            oid pg = preval >> REMAP_PAGE_BITS;
+            if (pg < BATcount(map_pid)) {
+                /* if map_pid not large enough, the new document starts on a new page */
+                BAT *mm = BATmirror(map_pid);
+                BUN pos = BUNfnd(mm, &pg);
+                if (pos != BUN_NONE) {
+                    BATiter mmi = bat_iterator(mm);
+                    pg = * (oid *) BUNtail(mmi, pos);
                 }
             }
-        } 
-        if (shredCtx->nnode_pre <= pre_min) {
-            shredCtx->nnode_pre = pre_min;
-        } 
-        while(shredCtx->nnode_pre > pre_min && 
-              shredCtx->dstBAT[PRE_KIND].cast.chrCAST[shredCtx->nnode_pre-1] == chr_nil)
-        {
-            shredCtx->nnode_pre--; /* walk back over unused space */
+            preval = (pg << REMAP_PAGE_BITS) | off;
         }
+        /* incremental shred into existing collection */
+        shredCtx->nnode_attr = BATcount(shredCtx->dstBAT[ATTR_OWN].bat); /* attribute value property ID */
+        shredCtx->nnode_pre  = preval; /* next rid = first available pre */
+        shredCtx->nnode_base = shredCtx->nnode_pre; 
+
         shredCtx->nnode_nid = BATcount(shredCtx->dstBAT[NID_RID].bat);
     }
     shredCtx->pre_nid = shredCtx->nnode_pre - shredCtx->nnode_nid;
