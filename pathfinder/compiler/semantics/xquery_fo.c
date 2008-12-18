@@ -2196,8 +2196,6 @@ PFfun_xquery_fo (void)
                                     PFty_star (PFty_node ()) },
             .ret_ty = PFty_stmt () } },
         .alg = PFbui_upd_replace_node }
-
-
 #ifdef HAVE_PFTIJAH
 /* #4. PFTIJAH FUNCTIONS */
     , /* tijah:ft-index-info () as element* */
@@ -2351,6 +2349,50 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_integer () } },
         .alg = PFbui_tijah_resultsize }
 #endif
+
+#ifdef HAVE_GEOXML
+    , /* geoxml:wkb (string) as string[=wkb] */
+      { .ns = PFns_geoxml, .loc = "wkb",
+        .arity = 1, .sig_count = 1, .sigs = { {
+             .par_ty = (PFty_t[]) { PFty_xs_string () },
+             .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_geoxml_wkb }
+    , /* geoxml:point (dbl, dbl) as string[=wkb] */
+      { .ns = PFns_geoxml, .loc = "point",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_double (),
+                                PFty_xs_double () },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_geoxml_point }
+    , /* geoxml:distance (string[=wkb], string[=wkb]) as dbl */
+      { .ns = PFns_geoxml, .loc = "distance",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string (),
+                                PFty_xs_string () },
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_geoxml_distance }
+    , /* geoxml:geometry (node*) as string*[=wkb*] */
+      { .ns = PFns_geoxml, .loc = "geometry",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_star( PFty_xs_anyNode ()) },
+            .ret_ty = PFty_star( PFty_xs_string ()) } },
+        .alg = PFbui_geoxml_geometry }
+    , /* geoxml:relate (string?, string[=wkb], string[=wkb]) as boolean */
+      { .ns = PFns_geoxml, .loc = "relate",
+        .arity = 3, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_string ()),
+                                PFty_xs_string (),
+                                PFty_xs_string () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = PFbui_geoxml_relate }
+    , /* geoxml:intersection (string[=wkb], string[=wkb]) as string[=wkb] */
+      { .ns = PFns_geoxml, .loc = "intersection",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_string(), PFty_xs_string() },
+            .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_geoxml_intersection }
+#endif
+
 
 #ifdef HAVE_PROBXML
     , /* pxmlsup:val_except (str*, str*) as str* */

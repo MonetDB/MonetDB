@@ -3225,7 +3225,54 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         );
                     }
                 }
-
+#ifdef HAVE_GEOXML
+                if (ty & aat_wkb) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str), VAR (R(p)->env,
+                                                           pa_item,
+                                                           aat_wkb)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_str) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),VAR (R(p)->env, pa_item, aat_wkb)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),VAR (R(p)->env, pa_item, aat_wkb)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),VAR (R(p)->env, pa_item, aat_wkb)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),VAR (R(p)->env,
+                                                       pa_item,
+                                                       aat_wkb)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+#endif
                 /* consider untyped results */
                 if (ty & aat_uA) {
                     execute (
@@ -4824,6 +4871,105 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                               VAR (L(p)->env, col2, aat_str)),
                                           lit_int (-1)))));
                 }   break; /* fold) */
+#ifdef HAVE_GEOXML
+                case alg_fun_geo_wkb: /* fold( */
+                {
+                    PFalg_col_t col1;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_wkb;
+
+                    execute (
+                        assgn (var (res->name),
+                               mcreate_wkb (VAR (L(p)->env, col1, aat_str))));
+                }   break; /* fold) */
+
+                case alg_fun_geo_point: /* fold( */
+                {
+                    PFalg_col_t col1, col2;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    res_type = aat_wkb;
+
+                    PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_geo_point:
+                            op = PFmil_mgeo_point; break;
+                        default:
+                            break;
+                    }
+                    execute (
+                        assgn (var (res->name),
+                               op (VAR (L(p)->env, col1, aat_dec),
+                                   VAR (L(p)->env, col2, aat_dec))));
+                }   break; /* fold) */
+                case alg_fun_geo_distance: /* fold( */
+                case alg_fun_geo_intersection: /* fold( */
+                {
+                    PFalg_col_t col1, col2;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+
+                    PFmil_t * (*op) (const PFmil_t *, const PFmil_t *) = NULL;
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_geo_distance:
+                            op = PFmil_mgeo_distance;
+                            res_type = aat_dbl;
+			    break;
+                        case alg_fun_geo_intersection:
+                            op = PFmil_mgeo_intersection;
+                            res_type = aat_wkb;
+			    break;
+                        default:
+                            res_type = 0;
+			    fprintf(stderr,"Oooohps!!!");
+                            break;
+                    }
+                    execute (
+                        assgn (var (res->name),
+                               op (VAR (L(p)->env, col1, aat_wkb),
+                                   VAR (L(p)->env, col2, aat_wkb))));
+
+                }   break; /* fold) */
+                case alg_fun_geo_geometry: /* fold( */
+                {
+                    PFalg_col_t element   = clat (p->sem.fun_1to1.refs, 0);
+                    PFmil_t *pre          = VAR (p->env, element, aat_pre),
+                            *pre_cont     = VAR (p->env, element, aat_frag);
+
+                    assert (env_count (L(p)->env));
+
+                    res_type = aat_wkb;
+
+                    execute (
+                        assgn ( var (res->name),
+                                wkb_geometry (var (PF_MIL_VAR_WS),
+                                            hmark (pre, lit_oid(0)),
+                                            pre,
+                                            set_kind (pre_cont,
+                                                      var (PF_MIL_VAR_ELEM)))));
+
+                }   break; /* fold) */
+                case alg_fun_geo_relate: /* fold( */
+                {
+                    PFalg_col_t col1, col2, col3;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    col2 = clat (p->sem.fun_1to1.refs, 1);
+                    col3 = clat (p->sem.fun_1to1.refs, 2);
+                    res_type = aat_bln;
+
+                    execute (
+                        assgn (var (res->name),
+                               mrelate (
+                                   VAR (L(p)->env, col2, aat_wkb),
+                                   VAR (L(p)->env, col3, aat_wkb),
+                                   VAR (L(p)->env, col1, aat_str)
+				   )));
+                }   break; /* fold) */
+#endif
                 case alg_fun_fn_starts_with:
                 case alg_fun_fn_ends_with:
                 case alg_fun_fn_matches: /* fold( */

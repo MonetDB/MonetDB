@@ -2145,6 +2145,189 @@ PFbui_fn_contains (const PFla_op_t *loop,
         .frag = PFla_empty_set ()};
 }
 
+#ifdef HAVE_GEOXML
+/**
+ * Algebra implementation for <code>fn:contains (xs:string, xs:string)</code>.
+ */
+
+struct PFla_pair_t
+PFbui_geoxml_wkb (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
+                        struct PFla_pair_t *args)
+{
+    (void)loop; (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (
+                            cast (args[0].rel,
+                                  col_cast,
+                                  col_item,
+                                  aat_str),
+                            alg_fun_geo_wkb,
+                            col_res,
+                            collist (col_cast)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
+        .frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t
+PFbui_geoxml_point (const PFla_op_t *loop, bool ordering,
+                   PFla_op_t **side_effects,
+                   struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                       alg_fun_geo_point,
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
+        .frag = PFla_empty_set ()};
+}
+
+struct PFla_pair_t
+PFbui_geoxml_distance (const PFla_op_t *loop, bool ordering,
+                   PFla_op_t **side_effects,
+                   struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                       alg_fun_geo_distance,
+                       col_res,
+                       collist (col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ *  Stolen from function pf:docname(node*) as string*
+ */
+struct PFla_pair_t
+PFbui_geoxml_geometry (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
+                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (fun_1to1 (args[0].rel,
+                                  alg_fun_geo_geometry,
+                                  col_res,
+                                  collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
+        .frag = args[0].frag };
+}
+
+/**
+ * Algebra implementation for
+ * geoxml:relate(xs:string?, xs:string, xs:string)</code>
+ * stolen from fn:translate(xs:string?, xs:string, xs:string)</code>
+ */
+struct PFla_pair_t
+PFbui_geoxml_relate (const PFla_op_t *loop,
+                    bool ordering,
+                    PFla_op_t **side_effects,
+                    struct PFla_pair_t *args)
+{
+    (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (
+                           eqjoin (
+                               disjunion (
+                                   args[0].rel,
+                                   attach (
+                                       attach (
+                                           difference (
+                                               loop,
+                                               project (
+                                                   args[0].rel,
+                                                   proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                                       col_item, lit_str (""))),
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                           project (args[2].rel,
+                                    proj (col_iter2, col_iter),
+                                    proj (col_item2, col_item)),
+                           col_iter,
+                           col_iter2),
+                       alg_fun_geo_relate,
+                       col_res,
+                       collist (col_item, col_item1, col_item2)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
+
+
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * geoxml:intersection(xs:string, xs:string) : xs:string </code>
+ * stolen from fn:concat 
+ */
+struct PFla_pair_t
+PFbui_geoxml_intersection (const PFla_op_t *loop,
+                 bool ordering,
+                 PFla_op_t **side_effects,
+                 struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fun_1to1 (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                       alg_fun_geo_intersection,
+                       col_res,
+                       collist(col_item, col_item1)),
+                proj (col_iter, col_iter),
+                proj (col_pos, col_pos),
+                proj (col_item, col_res)),
+        .frag = args[0].frag };
+}
+
+#endif
+
 /**
  * Algebra implementation for <code>fn:contains (xs:string?, xs:string)</code>.
  */

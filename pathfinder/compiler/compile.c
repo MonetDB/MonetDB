@@ -704,6 +704,10 @@ AFTER_CORE2ALG:
 
     mroot = PFmil_seq (PFmil_module (PFmil_lit_str ("pathfinder")),
                        PFmil_module (PFmil_lit_str ("mkey")),
+#ifdef HAVE_GEOXML
+                       PFmil_module (PFmil_lit_str ("geoxml")),
+#endif
+
                        mroot);
     
     /* make runtime timing available */

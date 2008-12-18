@@ -1607,6 +1607,49 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
 
             res_type = aat_bln;
             break;
+#ifdef HAVE_GEOXML
+        case alg_fun_geo_wkb:
+            assert (clsize(refs) == 1);
+            assert (n->schema.items[ix[0]].type == aat_str );
+            res_type = aat_wkb;
+            break;
+        case alg_fun_geo_point:
+            assert (clsize (refs) == 2);
+            /* make sure both attributes are of type string */
+	    /*
+             * assert (n->schema.items[ix[0]].type == aat_str &&
+             *       n->schema.items[ix[1]].type == aat_str);
+	     */
+            res_type = aat_wkb;
+	    break;
+        case alg_fun_geo_distance:
+            assert (clsize (refs) == 2);
+            /* make sure both attributes are of type string */
+	    /*
+             * assert (n->schema.items[ix[0]].type == aat_str &&
+             *       n->schema.items[ix[1]].type == aat_str);
+	     */
+            res_type = aat_dbl;
+	    break;
+        case alg_fun_geo_geometry:
+            assert (clsize (refs) == 1);
+            assert (n->schema.items[ix[0]].type & aat_node );
+            res_type = aat_wkb;
+	    break;
+        case alg_fun_geo_relate:
+            assert (clsize(refs) == 3);
+            assert (n->schema.items[ix[0]].type == aat_str &&
+                    n->schema.items[ix[1]].type == aat_wkb &&
+		    n->schema.items[ix[2]].type == aat_wkb);
+            res_type = aat_bln;
+            break;
+        case alg_fun_geo_intersection:
+            assert (clsize(refs) == 2);
+            assert (n->schema.items[ix[0]].type == aat_wkb &&
+	            n->schema.items[ix[1]].type == aat_wkb );
+            res_type = aat_wkb;
+            break;
+#endif
 
         case alg_fun_fn_matches_flag:
             assert (clsize (refs) == 3);

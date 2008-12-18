@@ -403,6 +403,16 @@ enum PFmil_kind_t {
     , m_tj_add_fti_tape
     , m_tj_docmgmt_tape
 #endif
+#ifdef HAVE_GEOXML
+    , m_geo_point    /**< wkb create */
+    , m_mgeo_point   /**< multiplexed wkb create */
+    , m_geo_distance /**< wkb distance */
+    , m_mgeo_distance/**< multiplexed wkb distance */
+    , m_mgeo_intersection/**< multiplexed wkb intersection */
+    , m_mgeo_relate/**< multiplexed wkb relate */
+    , m_mgeo_create_wkb /**< multiplexed wkb create */
+    , m_wkb_geometry /**< xml geometry to wkb geometry trans */
+#endif
 };
 typedef enum PFmil_kind_t PFmil_kind_t;
 
@@ -735,6 +745,25 @@ PFmil_t * PFmil_add (const PFmil_t *, const PFmil_t *);
 /** MIL multiplexed add operator */
 PFmil_t * PFmil_madd (const PFmil_t *, const PFmil_t *);
 
+#ifdef HAVE_GEOXML
+
+/** MIL multiplexed geo_wkb operator */
+PFmil_t * PFmil_mgeo_point (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed geo_wkb operator */
+PFmil_t * PFmil_mgeo_distance (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed geo_wkb operator */
+PFmil_t * PFmil_mgeo_intersection (const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed geo_wkb operator */
+PFmil_t * PFmil_mgeo_relate (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+
+/** MIL multiplexed geo_wkb operator */
+PFmil_t * PFmil_mgeo_create_wkb (const PFmil_t *);
+
+#endif
+
 /** MIL subtract operator */
 PFmil_t * PFmil_sub (const PFmil_t *, const PFmil_t *);
 
@@ -1015,6 +1044,17 @@ PFmil_t * PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil
 PFmil_t * PFmil_tj_tokenize (const PFmil_t *a);
 
 PFmil_t * PFmil_tj_ft_index_info (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c);
+
+#endif
+
+#ifdef HAVE_GEOXML
+/** 
+ * mil document function:
+ * wkb_geometry(BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,int])
+ *                                                             : BAT[oid,str]
+ */
+PFmil_t * PFmil_wkb_geometry (const PFmil_t *, const PFmil_t *,
+                            const PFmil_t *, const PFmil_t *);
 
 #endif
 

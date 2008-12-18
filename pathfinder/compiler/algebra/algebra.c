@@ -741,6 +741,9 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_attr1:      return "target_attr";
         case aat_docmgmt:    return "docmgmt_type";
         case aat_error:      return "error";
+#ifdef HAVE_GEOXML
+	case aat_wkb:        return "wkb";
+#endif
         default:
             if (type & aat_update)
                 return "update";
@@ -1151,6 +1154,14 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_upd_replace_value:         return "upd:replaceValue";
         case alg_fun_upd_replace_element: return "upd:replaceElementContent";
         case alg_fun_upd_replace_node:    return "upd:replaceNode";
+#ifdef HAVE_GEOXML
+        case alg_fun_geo_wkb:          return "geoxml:wkb";
+        case alg_fun_geo_point:        return "geoxml:point";
+        case alg_fun_geo_distance:     return "geoxml:distance";
+        case alg_fun_geo_geometry:     return "geoxml:geometry";
+        case alg_fun_geo_relate:       return "geoxml:relate";
+        case alg_fun_geo_intersection: return "geoxml:intersection";
+#endif
     }
     PFoops (OOPS_FATAL, "unknown algebraic function name (%i)", fun);
     return NULL;

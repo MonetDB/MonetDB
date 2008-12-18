@@ -176,6 +176,9 @@ enum PFtytype_t {
   ty_double,                   /**< double                      */
   ty_string,                   /**< string                      */
   ty_boolean,                  /**< boolean                     */
+#ifdef XXX_HAVE_GEOXML
+  ty_geo_wkb,		       /**< geoxml wkb type             */
+#endif
   ty_qname,                    /**< QName                       */
   ty_node,                     /**< node                        */
   ty_elem,                     /**< elem                        */
@@ -186,6 +189,7 @@ enum PFtytype_t {
   ty_comm,                     /**< comm                        */
   ty_stmt,                     /**< update statement            */
   ty_docmgmt,                  /**< document management         */
+
 
   ty_types                     /**< # of types                  */
 };
@@ -234,6 +238,11 @@ PFty_t PFty_pi (char *);
 PFty_t PFty_comm (void);
 PFty_t PFty_stmt (void);
 PFty_t PFty_docmgmt (void);
+
+#ifdef XXX_HAVE_GEOXML
+PFty_t PFty_geo_wkb (void);
+#endif
+
 
 /** 
  * Type constructors (internal).

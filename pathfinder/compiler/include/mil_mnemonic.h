@@ -478,4 +478,12 @@
 
 #endif
 
+#ifdef HAVE_GEOXML
+
+#define wkb_geometry(a,b,c,d) PFmil_wkb_geometry ((a), (b), (c), (d))
+#define mrelate(a,b,c) PFmil_mgeo_relate ((a), (b), (c))
+#define mcreate_wkb(a) PFmil_mgeo_create_wkb ((a))
+
+#endif
+
 /* vim:set shiftwidth=4 expandtab: */

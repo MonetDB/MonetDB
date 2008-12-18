@@ -107,6 +107,13 @@ extern PFns_t PFns_tijah;
  */ 
 extern PFns_t PFns_xrpc;
 
+#ifdef HAVE_GEOXML
+/**
+ * Pathfinder's namespace for additional geoxml support functions (geoxml:...)
+ */
+extern PFns_t PFns_geoxml;
+#endif
+
 #ifdef HAVE_PROBXML
 /**
  * Pathfinder's namespace for additional pxml support functions (pxmlsup:...)

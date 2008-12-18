@@ -387,6 +387,23 @@ infer_ocol (PFla_op_t *n)
                     res_type = aat_bln;
                     break;
 
+#ifdef HAVE_GEOXML
+                case alg_fun_geo_wkb:
+                case alg_fun_geo_point:
+                    res_type = aat_wkb;
+                    break;
+                case alg_fun_geo_distance:
+                    res_type = aat_dbl;
+                    break;
+                case alg_fun_geo_relate:
+                    res_type = aat_bln;
+                    break;
+                case alg_fun_geo_geometry:
+                case alg_fun_geo_intersection:
+                    res_type = aat_wkb;
+                    break;
+#endif
+
                 case alg_fun_fn_matches_flag:
                     assert (clsize (n->sem.fun_1to1.refs) == 3);
                     /* make sure all columns are of type string */

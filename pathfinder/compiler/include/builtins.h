@@ -980,6 +980,33 @@ struct PFla_pair_t PFbui_upd_replace_node (const PFla_op_t *loop,
                                            PFla_op_t **side_effects,
                                            struct PFla_pair_t *args);
 
+#ifdef HAVE_GEOXML
+struct PFla_pair_t PFbui_geoxml_wkb   (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_geoxml_point (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_geoxml_distance (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_geoxml_geometry (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_geoxml_relate (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_geoxml_intersection (const PFla_op_t *loop,
+                                      bool ordering,
+				      PFla_op_t **side_effects,
+                                      struct PFla_pair_t *args);
+#endif
+
 #ifdef HAVE_PFTIJAH
 /* #3. PFTIJAH SPECIFIC FUNCTIONS */
 

@@ -78,7 +78,10 @@
 /* qname representation in the algebra */
 #define aat_qname       0x00000180 /**< algebra simple atomic type QName  */
 
-#define aat_unused1     0x00000200
+#ifdef HAVE_GEOXML
+#define aat_wkb         0x00000200 /**< algebra simple atomic type wkb  */
+#endif
+/* #define aat_unused1     0x00000200 */
 #define aat_unused2     0x00000400
 #define aat_unused3     0x00000800
 #define aat_unused4     0x00001000
@@ -403,6 +406,14 @@ enum PFalg_fun_t {
     , alg_fun_upd_replace_value           /**< upd:replaceValue */
     , alg_fun_upd_replace_element /**< upd:replaceElementContent */
     , alg_fun_upd_replace_node    /**< upd:replaceNode */
+#ifdef HAVE_GEOXML
+    , alg_fun_geo_wkb             /**< geoxml:wkb */
+    , alg_fun_geo_point           /**< geoxml:point */
+    , alg_fun_geo_distance        /**< geoxml:distance */
+    , alg_fun_geo_geometry        /**< geoxml:geometry */
+    , alg_fun_geo_relate          /**< geoxml:geometry */
+    , alg_fun_geo_intersection    /**< geoxml:geometry */
+#endif
 };
 typedef enum PFalg_fun_t PFalg_fun_t;
 

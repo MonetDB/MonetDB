@@ -97,6 +97,14 @@
                  | '[' Type '](' expression ')'             <m_mcast>
                  | '+(' expression ',' expression ')'       <m_add>
                  | '[+](' expression ',' expression ')'     <m_madd>
+#ifdef HAVE_GEOXML
+                 | '[create_wkb](' expression )'                   <m_mgeo_create_wkb>
+                 | '[wkb_point](' expression ',' expression ')'       <m_mgeo_wkb>
+                 | '[Distance](' expression ',' expression ')'    <m_mgeo_distance>
+                 | '[Intersection](' expression ',' expression ')'<m_mgeo_intersection>
+                 | '[Relate](' expression ',' expression ')'<m_mgeo_relate>
+                 | 'wkb_geometry('exp','exp','exp','exp')'            <m_wkb_geometry>
+#endif
                  | '-(' expression ',' expression ')'       <m_sub>
                  | '[-](' expression ',' expression ')'     <m_msub>
                  | '[*](' expression ',' expression ')'     <m_mmult>
@@ -292,6 +300,14 @@ static char *ID[] = {
 
     , [m_add]          = "+"
     , [m_madd]         = "[+]"
+#ifdef HAVE_GEOXML
+    , [m_mgeo_create_wkb]   = "[create_wkb]"
+    , [m_mgeo_point]        = "[wkb_point]"
+    , [m_mgeo_distance]     = "[Distance]"
+    , [m_mgeo_intersection] = "[Intersection]"
+    , [m_mgeo_relate]       = "[Relate]"
+    , [m_wkb_geometry]      = "wkb_geometry"
+#endif
     , [m_sub]          = "-"
     , [m_msub]         = "[-]"
     , [m_mmult]        = "[*]"
@@ -848,6 +864,12 @@ print_expression (PFmil_t * n)
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */
         case m_madd:
+#ifdef HAVE_GEOXML
+        /* expression : '[wkb_point] expression ',' expression ')' */
+	case m_mgeo_point: 
+	case m_mgeo_distance: 
+	case m_mgeo_intersection: 
+#endif
         /* expression : '-(' expression ',' expression ')' */
         case m_sub:
         /* expression : '[-](' expression ',' expression ')' */
@@ -902,7 +924,9 @@ print_expression (PFmil_t * n)
             print_expression (n->child[1]);
             milprintf (")");
             break;
-
+#ifdef HAVE_GEOXML
+        case m_mgeo_relate:
+#endif
         /* expression : '[pcre_match](' exp ',' exp ',' exp)' */
         case m_mpcre_match_flag:
         /* expression : '[string](' exp ',' exp ',' exp)' */
@@ -934,6 +958,20 @@ print_expression (PFmil_t * n)
             print_expression (n->child[3]);
             milprintf (")");
             break;
+#ifdef HAVE_GEOXML
+        /* expression: 'wkb_geometry(' expr ',' expr ',' expr ',' expr ')' */
+        case m_wkb_geometry:
+            milprintf ("%s(", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (")");
+            break;
+#endif
 
         /* expression: '{count}(' expression ')' */
         case m_gcount:
@@ -945,6 +983,10 @@ print_expression (PFmil_t * n)
         case m_gmin:
         /* expression: '{sum}(' expression ')' */
         case m_gsum:
+#ifdef HAVE_GEOXML
+        /* expression : '[create_wkb] '(' expression ')' */
+	case m_mgeo_create_wkb: 
+#endif
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");

@@ -3686,6 +3686,14 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_upd_replace_value:
                 case alg_fun_upd_replace_element:
                 case alg_fun_upd_replace_node:
+#ifdef HAVE_GEOXML
+                case alg_fun_geo_wkb:
+                case alg_fun_geo_point:
+                case alg_fun_geo_distance:
+                case alg_fun_geo_geometry:
+                case alg_fun_geo_relate:
+                case alg_fun_geo_intersection:
+#endif
                     /* FIXME: implementation is missing */
 
                     assert (!"missing");

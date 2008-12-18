@@ -1162,6 +1162,64 @@ PFmil_madd (const PFmil_t *a, const PFmil_t *b)
     return wire2 (m_madd, a, b);
 }
 
+#ifdef HAVE_GEOXML
+/**
+ * Multiplexed wkb creation operator
+ */
+PFmil_t *
+PFmil_mgeo_create_wkb (const PFmil_t *a)
+{
+    return wire1 (m_mgeo_create_wkb, a);
+}
+
+/**
+ * Multiplexed wkb point creation operator
+ */
+PFmil_t *
+PFmil_mgeo_point (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mgeo_point, a, b);
+}
+
+/**
+ * Multiplexed wkb creation operator
+ */
+PFmil_t *
+PFmil_mgeo_distance (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mgeo_distance, a, b);
+}
+
+/**
+ * Multiplexed wkb creation operator
+ */
+PFmil_t *
+PFmil_mgeo_intersection (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mgeo_intersection, a, b);
+}
+
+/**
+ * Multiplexed wkb creation operator
+ */
+PFmil_t *
+PFmil_mgeo_relate (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mgeo_relate, a, b, c);
+}
+
+/** 
+ * function wkb_geometry(a, b, c, d)
+ */
+PFmil_t *
+PFmil_wkb_geometry (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
+                                                      const PFmil_t *d)
+{
+    return wire4 (m_wkb_geometry, a, b, c, d);
+}
+
+#endif
+
 /**
  * Arithmetic subtract operator
  */
