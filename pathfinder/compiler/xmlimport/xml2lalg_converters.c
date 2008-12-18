@@ -281,7 +281,7 @@ PFxml2la_conv_2PFLA_comparisonType (char* s)
 PFalg_fun_t 
 PFxml2la_conv_2PFLA_functionType (char* s)
 {
-    if (false) return la_dummy; /* discard first case */
+    if (false) return alg_fun_num_add; /* discard first case */
 #define mapto_fun_kind(kind) else if (strcmp (s, PFalg_fun_str((kind))) == 0) \
                                  return (kind);
     /* the kind was copied from algebra.c:PFalg_fun_str()
@@ -359,7 +359,7 @@ PFxml2la_conv_2PFLA_orderingDirection (char* s)
 PFalg_axis_t 
 PFxml2la_conv_2PFLA_xpathaxis(char* s) 
 {
-    if (false) return la_dummy; /* discard first case */
+    if (false) return alg_anc; /* discard first case */
 #define mapto_axis_kind(kind)                         \
     else if (strcmp (s, PFalg_axis_str((kind))) == 0) \
         return (kind);
@@ -386,7 +386,7 @@ PFxml2la_conv_2PFLA_xpathaxis(char* s)
 PFalg_node_kind_t 
 PFxml2la_conv_2PFLA_nodekind(char* s) 
 {
-    if (false) return la_dummy; /* discard first case */
+    if (false) return node_kind_node; /* discard first case */
 #define mapto_kind_kind(kind)                              \
     else if (strcmp (s, PFalg_node_kind_str((kind))) == 0) \
         return (kind);
