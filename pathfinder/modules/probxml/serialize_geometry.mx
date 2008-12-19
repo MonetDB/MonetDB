@@ -54,6 +54,7 @@ extern int serialize_geometry_DRIVER(
 typedef struct GEOENV {
     int  cnt;			/* count the number of tags here */
     BAT* bat;			/* [str,str] result BAT */
+    int  stop_filling;
     int  fill_wkb;
     char* wkb_kind;
     int	  wkb_par2;
@@ -99,9 +100,9 @@ serialize_geometry_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
     (void)pre;
 
     if ( strcmp(name,"LinearRing")==0) {
-    	// geoenv->wkb_kind = "LINEARRING"; 
+    	geoenv->wkb_kind = "LINEARRING"; 
     } else if ( strcmp(name,"coordinates")==0) {
-    	geoenv->fill_wkb--;
+    	geoenv->fill_wkb++;
     }
 #ifdef DEBUG
     stream_printf(GDKout,"pft_opt_deb: serialize_geometry_handle_startElement(%s) SUCCES.\n",name);
@@ -116,6 +117,7 @@ serialize_geometry_handle_endElement (XqueryCtx* ctx, str prefix, str name) {
 
     if ( strcmp(name,"coordinates")==0) {
     	geoenv->fill_wkb--;
+	geoenv->stop_filling = 1; /* cannot handle multi yet*/
     }
     return 1;
 }
@@ -175,7 +177,7 @@ static bool
 serialize_geometry_handle_characters (XqueryCtx* ctx, str chars) {
     struct GEOENV* geoenv = (struct GEOENV*)ctx->driverWs;
 
-    if ( geoenv->fill_wkb ) {
+    if ( geoenv->fill_wkb && !geoenv->stop_filling ) {
 	if ( 0 ) {
 	    FILE *f = fopen("/tmp/x","a");
 	    fprintf(f,"HC[\"%s\"]\n",chars);
@@ -216,6 +218,7 @@ bool serialize_geometry_seqItemStart (XqueryCtx* ctx, int kind) {
     geoenv->wkb_kind   = NULL;
     geoenv->wkb_par2   = 0;
     geoenv->geobuff[0] = 0;
+    geoenv->stop_filling = 0;
     geoenv->p          = &geoenv->geobuff[0];
 #ifdef DEBUG
     stream_printf(GDKout,"pft_opt_deb: serialize_geometry_seqItemStart() SUCCES.\n");

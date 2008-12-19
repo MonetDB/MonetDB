@@ -63,7 +63,7 @@ PROC geoxml_ping() : void :=
 
 PROC wkb_point(dbl x, dbl y) : wkb :=
 {
-	var res := wkb("POINT("+str(x)+" "+str(y)+")");
+	var res := geo_wkb_from_text("POINT("+str(x)+" "+str(y)+")");
 	# res.print();
 	return res;
 }
@@ -87,7 +87,7 @@ PROC wkb_geometry(BAT[void,BAT] ws, BAT[void,oid] id_iter, BAT[void,oid] id_item
     var wkb_bat := serialize_geometry(ws,1,id_iter,id_iter,id_item,id_kind,par_int_values,par_dbl_values,par_str_values);
     # wkb_bat.print();
     if ( true )
-    	res := [wkb](wkb_bat);
+    	res := [geo_wkb_from_text](wkb_bat);
     #
     return res;
 }
