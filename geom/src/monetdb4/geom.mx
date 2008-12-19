@@ -51,6 +51,10 @@
    .COMMAND wkb_from_text(str wkt, int tpe) : wkb = wkbFromText;
    "Try to creates the a wkb of type, tpe, from the given wkt."
 
+   .COMMAND geo_wkb_from_text(str wkt) : wkb = geo_wkbFromText;
+   "Pathfinder:geoxml:JF:creates the a wkb of type, tpe, from the given wkt."
+
+
    .COMMAND mbr(flt,flt,flt,flt) : mbr = ordinatesMBR;
    "Creates the mbr for the given (xmin,ymin) and (xmax,ymax)."
    
@@ -485,6 +489,21 @@ wkbFromText(wkb **w, str wkt, int *tpe)
 	if (!(*w))
 		*w = (wkb*)GDKmalloc(sizeof(wkb));
 	**w = *wkbNULL();
+	return GDK_FAIL;
+}
+
+int
+geo_wkbFromText(wkb **w, str wkt) 
+{
+	int len = 0;
+
+	*w = NULL;
+	if ( wkbFROMSTR(wkt, &len, w) )
+		return GDK_SUCCEED;
+	if (!(*w))
+		*w = (wkb*)GDKmalloc(sizeof(wkb));
+	**w = *wkbNULL();
+	GDKerror("creating wkb: %s.\n",wkt);
 	return GDK_FAIL;
 }
 
