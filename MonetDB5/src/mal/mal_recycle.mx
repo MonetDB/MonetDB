@@ -157,7 +157,7 @@ mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(Client cntxt);
-mal_export int RECYCLEinterest(MalBlkPtr mb,InstrPtr p);
+mal_export int RECYCLEinterest(InstrPtr p);
 mal_export int RECYCLEnewQryStat(QryPatPtr qp, str nm, MalBlkPtr mb);
 mal_export void RECYCLEinitQPat(int sz);
 mal_export bte RECYCLEgetQryCat(int qidx);
@@ -814,8 +814,7 @@ intruction for which there is not function/command/pattern implementation.
 Likewise, we avoid all simple constant assigments.
 @c
 int
-RECYCLEinterest(MalBlkPtr mb, InstrPtr p){
-	(void) mb;
+RECYCLEinterest(InstrPtr p){
 	if (p->recycle == REC_NO_INTEREST || p->token== ASSIGNsymbol ) 
 		return 0;
 	return getFunctionId(p) != NULL;
@@ -1201,12 +1200,12 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i=0;
 
 	stk->clk= GDKusec();
-    if ( p->recycle == NO_RECYCLING )
-        return 0;       /* don't count subsumption instructions */
-    statements++;
+	if ( p->recycle == NO_RECYCLING )
+        	return 0;       /* don't count subsumption instructions */
+	statements++;
 	if ( recycleBlk == NULL )
 		return 0;
-    if ( !RECYCLEinterest(mb,p) )  /* don't scan RP for non-monitored instructions */
+	if ( !RECYCLEinterest(p) )  /* don't scan RP for non-monitored instructions */
         return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 #ifdef _DEBUG_RECYCLE_
@@ -1245,7 +1244,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	    		recycleSize >= cacheLimit )
 			RECYCLEcleanCache(wr);
 	}
-	if ( RECYCLEinterest(mb,p))
+	if ( RECYCLEinterest(p))
 	switch(retainPolicy) {
 	case RETAIN_NONE:
 		/* RETAIN_NONE: baseline, keeps stat, no retain, no reuse */

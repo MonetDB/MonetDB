@@ -415,7 +415,6 @@ typedef struct MALBLK {
 	int keephistory;	/* do we need the history at all */
 	str marker;			/* history points are marked for backtracking */
 	int maxarg;			/* keep track on the maximal arguments used */
-	int version;		/* recycling version, 0 means no recycling */
 	ptr replica;		/* for the replicator tests */
 } *MalBlkPtr, MalBlkRecord;
 
@@ -671,7 +670,6 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->profiler = NULL;
 	mb->ptop = mb->psize = 0;
 	mb->prps = NULL;
-	mb->version = 0;
 	mb->replica = NULL;
 	return mb;
 }

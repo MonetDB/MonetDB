@@ -90,9 +90,14 @@ You have to sure that the arguments are also the same.
 This rules out function arguments.
 
 The recycler is targeted towards a query only database.
-Any update statement invalidates the recycle cache at
-the end of the query. Moreover, it does not perform
-any cache lookup.
+The best effect is obtained for a single-user mode (sql_debug=32 )
+when the delta-bats are not processed which allows longer instruction
+chains to be recycled.
+Update statements are not recycled. They trigger cleaning of 
+the recycle cache at the end of the query. Only intermediates
+derived from the updated columns are invalidated.
+Separate update instructions in queries, such as bat.append implementing 'OR',
+are monitored and also trigger cleaning the cache.
 @c
 #include "mal_config.h"
 #include "opt_recycler.h"
@@ -101,7 +106,7 @@ any cache lookup.
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, cnt, actions=0, update=0;
+	int i, j, cnt, actions=0;
 	Lifespan span;
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
@@ -144,7 +149,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					recycled[getArg(p,1)]= 0;
 					q= newFcnCall(mb,"recycle","reset");
 					pushArgument(mb,q, getArg(p,1));
-					update++;
+					actions++;
 				}
 				if (getModuleId(p) == sqlRef){
 					if (getFunctionId(p) == appendRef){
@@ -157,7 +162,7 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						if (getFunctionId(p) == updateRef)
 							pushArgument(mb,q, getArg(p,3));
 					}
-					update++;
+					actions++;
 				}
 			}
 			continue;
@@ -180,8 +185,14 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb,p);
 			continue;
 		} 
+		
+		/* skip simple assignments */
+		if( p->token == ASSIGNsymbol){
+			pushInstruction(mb,p);
+			continue;
+		} 
 
-
+		/* general rule: all arguments are constants or recycled */
 		cnt = 0;
 		for (j=p->retc; j<p->argc; j++)
 			if(recycled[getArg(p,j)] || isVarConstant(mb, getArg(p,j)) )
@@ -208,6 +219,8 @@ are marked for re-use.
 
 @c
 		/* take care of semantic driven recyling */
+		/* for selections check the bat argument only
+		the range is often template parameter*/
 		if(( getFunctionId(p)== selectRef || 
 		     getFunctionId(p)== antiuselectRef ||
 		     getFunctionId(p)== putName("like",4) || 
@@ -216,6 +229,7 @@ are marked for re-use.
         	     getFunctionId(p)== putName("thetauselect",12) ) &&
 	      		recycled[getArg(p,1)] ){
 			p->recycle = REC_MAX_INTEREST;
+			actions ++;
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -231,7 +245,8 @@ are marked for re-use.
 				setFunctionId(p,markTRef);
 				p->argc = 2;
 			}
-			p->recycle = REC_MAX_INTEREST; 
+			p->recycle = REC_MAX_INTEREST;
+			actions ++; 
 			if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 		}
@@ -240,6 +255,7 @@ are marked for re-use.
 			if (( getFunctionId(p)== selectRef && recycled[getArg(p,2)]) ||  
 			    ( getFunctionId(p)== uselectRef && recycled[getArg(p,2)])){
 				p->recycle = REC_MAX_INTEREST;
+				actions ++;
 				if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
 			}
@@ -253,7 +269,7 @@ with the transaction commits.
 		if (getModuleId(p)== sqlRef && 
 			((	getFunctionId(p)==bindRef && 
 				getVarConstant(mb, getArg(p,4)).val.ival != 0) ||
-			getFunctionId(p)== binddbatRef) ) {
+				getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
 				p->recycle = REC_NO_INTEREST; /* this instruction is not monitored */
 			}
@@ -263,8 +279,6 @@ with the transaction commits.
 		}
 		pushInstruction(mb,p);
 	}
-	if (actions && update==0)
-		mb->version = -1;	/* will trigger the recycler runtime support */
 	GDKfree(span);
 	GDKfree(old);
 	GDKfree(recycled);

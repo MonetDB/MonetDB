@@ -326,7 +326,7 @@ RECYCLErunningStat(Client cntxt, MalBlkPtr mb)
 
 	for(i=0; i< mb->stop; i++){
 		p = mb->stmt[i];
-		if ( RECYCLEinterest(mb,p) ){
+		if ( RECYCLEinterest(p) ){
 			potrec++;
 			if (!isBindInstr(p)) instr++;
 		}
