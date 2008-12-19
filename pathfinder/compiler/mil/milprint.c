@@ -301,7 +301,7 @@ static char *ID[] = {
     , [m_add]          = "+"
     , [m_madd]         = "[+]"
 #ifdef HAVE_GEOXML
-    , [m_mgeo_create_wkb]   = "[create_wkb]"
+    , [m_mgeo_create_wkb]   = "[geo_wkb_from_text]"
     , [m_mgeo_point]        = "[wkb_point]"
     , [m_mgeo_distance]     = "[Distance]"
     , [m_mgeo_intersection] = "[Intersection]"
