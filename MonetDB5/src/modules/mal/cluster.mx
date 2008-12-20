@@ -108,7 +108,7 @@ comment "Reorder tail of bat b, using a cluster map";
 
 cluster_export str CLUSTER_key( bat *M, bat *B);
 cluster_export str CLUSTER_map(bat *RB, bat *B);
-cluster_export str CLUSTER_apply(BAT *nb, BAT *cmap);
+cluster_export str CLUSTER_apply(bat *bid, BAT *nb, BAT *cmap);
 cluster_export str CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 cluster_export str CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -132,8 +132,8 @@ CLUSTER_key_@1( BAT *map, BAT *b)
 
 	assert(BUNfirst(map) == 0);
 	assert(BUNfirst(b) == 0);
-	o = (oid*)Tloc(map, BUNfirst(map));
-	bt = (@1*)Tloc(b, BUNfirst(b));
+	o = (oid*)Tloc(map, 0);
+	bt = (@1*)Tloc(b, 0);
 	be = bt + BATcount(b);
 	for ( ; bt < be; bt++){
 		BUN h = hash_@1(b->T->hash,bt);
@@ -148,13 +148,14 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	oid *ct, *ce;
 	int cnt=0;
 	
-	r = (@1*)Tloc(nb, BUNfirst(nb));
-	qb = (@1*)Tloc(b, BUNfirst(b));
-	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
-	ce = ct + BATcount(cmap);
 	assert(BUNfirst(nb) == 0);
 	assert(BUNfirst(b) == 0);
 	assert(BUNfirst(cmap) == 0);
+	assert(cmap->ttype == TYPE_oid);
+	r = (@1*)Tloc(nb, 0);
+	qb = (@1*)Tloc(b, 0);
+	ct = (oid *)Tloc(cmap, 0);
+	ce = ct + BATcount(cmap);
 	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 	for ( ; ct < ce; ct++){
 		*r++ = qb[*ct];
@@ -163,11 +164,11 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 			nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 		}
 	}
-	b->tsorted= FALSE;
-	b->tdense= FALSE;
-    if (nb->H != nb->T) {
+	BATsetcount(nb, BATcount(b));
+	nb->tsorted= FALSE;
+	nb->tdense= FALSE;
+    if (nb->H != nb->T) 
         BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
-    }
     BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
@@ -189,8 +190,10 @@ CLUSTER_key_str( BAT *map, BAT *b)
 	var_t *bt, *be;
 	oid *o;
 
-	o = (oid*)Tloc(map, BUNfirst(map));
-	bt = (var_t *)Tloc(b, BUNfirst(b));
+	assert(BUNfirst(b) == 0);
+	assert(BUNfirst(map) == 0);
+	o = (oid*)Tloc(map, 0);
+	bt = (var_t *)Tloc(b, 0);
 	be = bt + BATcount(b);
 	for ( ; bt < be; bt++){
 	/* hash on the string reference */
@@ -203,27 +206,34 @@ CLUSTER_key_str( BAT *map, BAT *b)
 	}
 }
 str  
-CLUSTER_column_str(BAT *nb, BAT *b, BAT *cmap)
+CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 {
 	var_t *r,*qb;
-	oid *ct, *ce;
+	oid *ct, *ce, o = 0;
 	int cnt=0;
+	BATiter bi= bat_iterator(b);
 	
+	assert(BUNfirst(nb) == 0);
+	assert(BUNfirst(b) == 0);
+	assert(BUNfirst(cmap) == 0);
 	r = (var_t *)Tloc(nb, 0);
 	qb = (var_t *)Tloc(b, 0);
-	ct = (oid *)Tloc(cmap, BUNfirst(cmap));
+	ct = (oid *)Tloc(cmap, 0);
 	ce = ct + BATcount(cmap);
 	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 	for ( ; ct < ce; ct++){
-		*r++ = qb[*ct];
+		BUNfastins(nb, &o,BUNtail(bi, (BUN) *ct));
+		o++;
 		if ( ((++cnt) % 1000000) == 0){
 			BATsave(nb);
 			nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 		}
 	}
-    if (nb->H != nb->T) {
+    if (nb->H != nb->T)
         BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
-    }
+	BATsetcount(nb, BATcount(b));
+	if (!(nb->batDirty&2)) 
+		nb = BATsetaccess(nb, BAT_READ);
     BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
@@ -244,7 +254,7 @@ CLUSTER_key( bat *M, bat *B){
 	}
 	map->tsorted= FALSE;
 	map->tdense= FALSE;
-	BATseqbase(map, b->H->seq);
+	BATseqbase(map, 0);
 	BATsetcount(map, BATcount(b));
 	map->H->nonil = b->H->nonil;
 	map->T->nonil = b->T->nonil;
@@ -393,15 +403,16 @@ We change the BAT in place using a temporary copy
 to guide the move.
 @c
 str 
-CLUSTER_apply(BAT *nb, BAT *cmap)
+CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
-	BAT *b;
-	b= BATcopy(nb, nb->htype, nb->ttype, TRUE);
+	BAT *nb;
+	nb= BATnew(b->htype, b->ttype, BATcapacity(b));
 	nb->tsorted= FALSE;
 	nb->tdense= FALSE;
 
 	/* determine the work for all threads */
 	/* to be done, first assume that we can remap in one go */
+	assert(BATcount(b)==BATcount(cmap));
 
 	switch(ATOMstorage(b->ttype)) {
 	case TYPE_chr: CLUSTER_column_chr(nb, b, cmap);break;
@@ -413,18 +424,10 @@ CLUSTER_apply(BAT *nb, BAT *cmap)
 	case TYPE_lng: CLUSTER_column_lng(nb, b, cmap);break;
 	case TYPE_flt: CLUSTER_column_flt(nb, b, cmap);break;
 	case TYPE_dbl: CLUSTER_column_dbl(nb, b, cmap);break;
-	case TYPE_str: 
-#if SIZEOF_VAR_T == SIZEOF_INT
-		CLUSTER_column_int(nb, b, cmap);
-		break;
-#else
-		CLUSTER_column_oid(nb, b, cmap);
-		break;
-#endif
 	default:
-		throw(MAL,"cluster.column","Not supported");
+		CLUSTER_column_any(nb, b, cmap);
 	}
-	BBPunfix(b->batCacheid);
+	BBPkeepref(*bid= nb->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -446,9 +449,9 @@ CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "cluster.column", "Cannot access  descriptor");
 	}
 
-	msg = CLUSTER_apply(b,cmap);
+	msg = CLUSTER_apply(res, b,cmap);
 	BBPunfix(*CMAP);
-	BBPkeepref(*res= b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return msg;
 }
 
@@ -478,7 +481,7 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(*bid);
 		if ( b== NULL)
 			throw(MAL,"cluster.table","Can not access descriptor");
-		msg = CLUSTER_apply(b,map);
+		msg = CLUSTER_apply(res, b,map);
 		BBPunfix(b->batCacheid);
 	}
 	*res= mid;
