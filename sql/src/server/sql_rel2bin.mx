@@ -199,7 +199,6 @@ head_column(stmt *st)
 
 		/* stmts without head column which also are not expected */
 	case st_none:
-	case st_sql:
 
 	case st_dbat:
 
@@ -989,7 +988,6 @@ rel2bin(mvc *c, stmt *s)
 		 */
 	case st_none:
 	case st_connection:
-	case st_sql:
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:

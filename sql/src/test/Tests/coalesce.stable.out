@@ -47,7 +47,7 @@ Over..
 [ 1	]
 [ 1	]
 % sys. # table_name
-% L1 # name
+% L11 # name
 % double # type
 % 22 # length
 [ 30.5	]
@@ -68,7 +68,7 @@ Over..
 [ 3,	-1	]
 [ 4,	-1	]
 % . # table_name
-% single_value # name
+% ifthenelse_not_isnull_NULL # name
 % char # type
 % 0 # length
 [ "x"	]

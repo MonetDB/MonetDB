@@ -26,12 +26,12 @@ Over..
 # 11:55:35 >  
 
 % . # table_name
-% single_value # name
+% =_current_date # name
 % boolean # type
 % 5 # length
 [ false	]
 % . # table_name
-% single_value # name
+% =_current_date # name
 % boolean # type
 % 5 # length
 [ false	]

@@ -441,14 +441,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			else 
 				reconnect(mb, s->op1.lval);
 		}	break;
-		case st_sql:{
-			int o1 = _dumpstmt(sql, mb, s->op1.stval);
-
-			q = newStmt1(mb, sqlRef, "eval");
-			s->nr = getDestVar(q);
-			q = pushArgument(mb, q, o1);
-			q = pushBit(mb, q, FALSE);
-		} break;
 		case st_var:{
 			if (s->op1.sval) {
 				if (VAR_GLOBAL(s->flag)) { /* globals */

@@ -34,62 +34,62 @@ Over..
 # 11:50:11 >  
 
 % . # table_name
-% single_value # name
+% my_abs_single_value # name
 % int # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% my_abs_single_value # name
 % int # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% my_abs1_single_value # name
 % int # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% my_while_single_value # name
 % int # type
 % 2 # length
 [ -5	]
 % . # table_name
-% single_value # name
+% my_declare_single_value # name
 % int # type
 % 3 # length
 [ 105	]
 % . # table_name
-% single_value # name
+% my_complex_declare_single_value # name
 % int # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% my_case_single_value # name
 % int # type
 % 3 # length
 [ 100	]
 % . # table_name
-% single_value # name
+% my_case_single_value # name
 % int # type
 % 3 # length
 [ 200	]
 % . # table_name
-% single_value # name
+% my_case_single_value # name
 % int # type
 % 2 # length
 [ -1	]
 % . # table_name
-% single_value # name
+% my_searchcase_single_value # name
 % int # type
 % 3 # length
 [ 100	]
 % . # table_name
-% single_value # name
+% my_searchcase_single_value # name
 % int # type
 % 3 # length
 [ 200	]
 % . # table_name
-% single_value # name
+% my_searchcase_single_value # name
 % int # type
 % 2 # length
 [ -1	]

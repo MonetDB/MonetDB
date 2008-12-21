@@ -24,7 +24,6 @@ Over..
 # 17:22:53 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=33783 
 # 17:22:53 >  
 
-[ 1	]
 % .n,	.n # table_name
 % fieldid,	distance # name
 % bigint,	double # type

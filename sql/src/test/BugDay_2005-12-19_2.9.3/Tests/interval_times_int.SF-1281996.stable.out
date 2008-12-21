@@ -26,12 +26,12 @@ Over..
 # 11:51:15 >  
 
 % . # table_name
-% single_value # name
+% sql_mul_single_value # name
 % sec_interval # type
 % 0 # length
 [ 2	]
 % . # table_name
-% single_value # name
+% sql_mul_single_value # name
 % sec_interval # type
 % 0 # length
 [ 2	]

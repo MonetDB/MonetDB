@@ -66,7 +66,7 @@ typedef struct expression {
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
  
-#define MAXOPS 16
+#define MAXOPS 20
 
 typedef enum operator_type {
 	op_basetable = 0,
@@ -83,8 +83,10 @@ typedef enum operator_type {
 	op_inter,
 	op_except,
 	op_groupby,	/* currently includes the projection (aggr) */
-	op_topn
-	/* TODO op_modify (ie insert, update, delete) */
+	op_topn,
+	op_insert, 	/* insert(l=table, r insert expressions) */ 
+	op_update, 	/* update(l=table, r update expressions) */
+	op_delete 	/* delete(l=table, r delete expression) */
 } operator_type;
 
 #define is_column(et) \
@@ -115,6 +117,8 @@ typedef enum operator_type {
 	((rel->op == op_project && rel->r) || rel->op == op_topn)
 #define is_topn(op) \
 	(op == op_topn)
+#define is_modify(op) \
+	(op == op_insert || op == op_update || op == op_delete)
 
 /* NO NIL semantics of aggr operations */
 #define has_no_nil(e) \

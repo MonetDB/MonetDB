@@ -20,30 +20,13 @@ Over..
 # 19:05:32 >  
 
 [ 1	]
-[ 1	]
-[ 2	]
-[ 4	]
-[ 8	]
-[ 16	]
-[ 32	]
-[ 64	]
-[ 128	]
-[ 256	]
-[ 512	]
-[ 1024	]
-[ 2048	]
-[ 4096	]
-[ 8192	]
-[ 16384	]
-[ 32768	]
-[ 65536	]
 % . # table_name
-% single_value # name
+% gen_insert_single_value # name
 % int # type
 % 1 # length
 [ 0	]
 % sys.slow_count # table_name
-% L1 # name
+% L2 # name
 % wrd # type
 % 6 # length
 [ 131072	]

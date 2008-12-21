@@ -37,10 +37,6 @@ Over..
 % 1,	1,	1,	1,	1,	1,	9,	9,	1,	9,	9,	9,	1,	1,	9,	9,	9,	9,	1 # length
 [ 1,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	"first row",	"first row",	"first row",	1,	1,	"first row",	"first row",	"first row",	"first row",	1	]
 [ 2,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
 % sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1,	sys.proc_insert_into_t1 # table_name
 % timeid,	a,	b,	c,	d,	e,	f,	g,	h,	i,	j,	k,	l,	m,	n,	o,	p,	q,	r # name
 % int,	int,	int,	int,	int,	int,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	varchar,	varchar,	varchar,	varchar,	int # type
@@ -52,7 +48,7 @@ Over..
 [ 5,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ 6,	1,	1,	1,	1,	1,	"first row",	"first row",	1,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 % sys.proc_insert_into_t1 # table_name
-% L1 # name
+% L23 # name
 % wrd # type
 % 1 # length
 [ 6	]

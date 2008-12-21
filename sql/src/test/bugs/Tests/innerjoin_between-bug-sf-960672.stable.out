@@ -31,13 +31,13 @@ Over..
 [ 1	]
 [ 1	]
 % sys.h,	sys.h,	sys.h # table_name
-% a,	b,	L1 # name
+% a,	b,	L4 # name
 % int,	int,	wrd # type
 % 2,	2,	1 # length
 [ 0,	10,	2	]
 [ 10,	20,	1	]
 % sys.h,	sys.h,	sys.h # table_name
-% a,	b,	L2 # name
+% a,	b,	L5 # name
 % int,	int,	wrd # type
 % 2,	2,	1 # length
 [ 0,	10,	2	]

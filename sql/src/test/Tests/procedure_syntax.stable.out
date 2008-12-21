@@ -61,7 +61,6 @@ Over..
 % varchar # type
 % 2 # length
 [ "p1"	]
-[ 1	]
 % sys.t1 # table_name
 % id # name
 % int # type

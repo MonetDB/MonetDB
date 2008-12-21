@@ -211,6 +211,10 @@ op2string(operator_type op)
 		return "group by";
 	case op_topn: 
 		return "topn";
+	case op_insert: 
+	case op_update: 
+	case op_delete: 
+		return "modify op";
 	}
 	return "unknown";
 }
@@ -237,7 +241,7 @@ rel_print_(mvc *sql, sql_rel *rel, int depth, list *refs)
 		return;
 
 	if (rel_is_ref(rel)) {
-		int nr = find_ref(refs, rel);
+		int nr = list_length(refs) + 1;
 		printf("REF %d ", nr);
 	}
 
@@ -339,6 +343,33 @@ rel_print_(mvc *sql, sql_rel *rel, int depth, list *refs)
 		}
 		exps_print(sql, rel->exps, depth, 1, 0);
 		break;
+	case op_insert:
+	case op_update:
+	case op_delete: {
+		sql_table *t = rel->l;
+		print_indent(sql, depth);
+		if (rel->op == op_insert)
+			printf("insert(");
+		else if (rel->op == op_update)
+			printf("update(");
+		else if (rel->op == op_delete)
+			printf("delete(");
+		if (t->s)
+			printf("%s.%s, ", 
+				t->s->base.name, t->base.name);
+		else
+			printf("%s, ", t->base.name);
+
+		if (rel_is_ref(rel->r)) {
+			int nr = find_ref(refs, rel->r);
+			printf(" & REF %d ", nr);
+		} else
+			rel_print_(sql, rel->r, depth+1, refs);
+		print_indent(sql, depth);
+		printf(")");
+		if (rel->exps)
+			exps_print(sql, rel->exps, depth, 1, 0);
+	} 	break;
 	default:
 		assert(0);
 	}
@@ -368,11 +399,11 @@ rel_print_refs(mvc *sql, sql_rel *rel, int depth, list *refs)
 		rel_print_refs(sql, rel->r, depth, refs);
 		if (rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, rel->l, depth, refs);
-			list_append(refs, rel);
+			list_append(refs, rel->l);
 		}
 		if (rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
 			rel_print_(sql, rel->r, depth, refs);
-			list_append(refs, rel);
+			list_append(refs, rel->r);
 		}
 		break;
 	case op_project:
@@ -382,11 +413,18 @@ rel_print_refs(mvc *sql, sql_rel *rel, int depth, list *refs)
 		rel_print_refs(sql, rel->l, depth, refs);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, rel->l, depth, refs);
-			list_append(refs, rel);
+			list_append(refs, rel->l);
 		}
 		break;
-	default:
-		assert(0);
+	case op_insert: 
+	case op_update: 
+	case op_delete: 
+		rel_print_refs(sql, rel->r, depth, refs);
+		if (rel->r && rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
+			rel_print_(sql, rel->r, depth, refs);
+			list_append(refs, rel->r);
+		}
+		break;
 	}
 }
 

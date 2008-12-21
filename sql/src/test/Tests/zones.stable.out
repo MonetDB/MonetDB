@@ -41,7 +41,7 @@ Over..
 [ 5	]
 [ 0	]
 % .s # table_name
-% L3 # name
+% L12 # name
 % wrd # type
 % 1 # length
 [ 3	]
@@ -55,7 +55,7 @@ Over..
 % bigint,	double,	double # type
 % 1,	22,	22 # length
 % . # table_name
-% single_value # name
+% fgetnearestobjidalleq_single_value # name
 % bigint # type
 % 1 # length
 [ 0	]

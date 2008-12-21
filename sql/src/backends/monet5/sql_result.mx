@@ -478,8 +478,6 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			showException(SQL, "sql", as.error);
 		TABLETdestroy_format(&as);
 	}
-
-	m->type = Q_UPDATE;
 	return bats;
 }
 
@@ -941,7 +939,6 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 	 */
 	if (!s) return 0;
 	
-	assert(m->type == Q_UPDATE);
 	if (stream_write(s, "&2 ", 3, 1) != 1 || 
 	   !mvc_send_lng(s, val) ||
 	    stream_write(s, " ", 1, 1) != 1 ||

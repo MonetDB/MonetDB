@@ -26,7 +26,7 @@ Over..
 # 11:55:37 >  
 
 % . # table_name
-% single_value # name
+% floor_single_value # name
 % real # type
 % 13 # length
 [ 3	]

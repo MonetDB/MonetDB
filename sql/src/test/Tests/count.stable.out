@@ -31,12 +31,12 @@ Over..
 [ 1	]
 [ 1	]
 % sys.test # table_name
-% L1 # name
+% L2 # name
 % wrd # type
 % 1 # length
 [ 6	]
 % sys.test # table_name
-% L2 # name
+% L3 # name
 % wrd # type
 % 1 # length
 [ 5	]

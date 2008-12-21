@@ -44,6 +44,9 @@ extern stmt * sequential_block (mvc *sql, sql_subtype *res, dlist *blk, char *op
 
 #include "rel_subquery.h"
 #include "rel_select.h"
+#include "rel_updates.h"
+#include "rel_optimizer.h"
+#include "rel_bin.h"
 
 static stmt*
 psm_call(mvc * sql, symbol *se)
@@ -439,11 +442,17 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			res = select_into(sql, s, ek);
 		}	break;
 		case SQL_COPYFROM:
-		case SQL_INSERT:
-		case SQL_UPDATE:
-		case SQL_DELETE:
 			res = updates(sql, s);
 			break;
+		case SQL_INSERT:
+		case SQL_UPDATE:
+		case SQL_DELETE: {
+			sql_rel *r = rel_updates(sql, s);
+			if (!r)
+				return NULL;
+			r = rel_optimizer(sql, r);
+			res = rel_bin(sql, r);
+		}	break;
 		default:
 			res = sql_error(sql, 01, 
 			 "Statement '%s' is not a valid flow control statement",

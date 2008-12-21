@@ -128,6 +128,10 @@ extern char * toUpperCopy(char *dest, const char *src);
 #include <string.h>
 #include <ctype.h>
 
+#include <rel_semantic.h>
+#include <rel_optimizer.h>
+#include <rel_bin.h>
+
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
  * a string representation.
@@ -350,7 +354,14 @@ sql_parse(mvc *m, char *query, char mode)
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
 				"internal query: %s", query);
 	} else {
-		sq = semantic(m, m->sym);
+		sql_rel *r = rel_semantic(m, m->sym);
+
+		if (r) {
+			r = rel_optimizer(m, r);
+			sq = rel_bin(m, r);
+		} else {
+			sq = semantic(m, m->sym);
+		}
 	}
 
 	GDKfree(query);
@@ -365,6 +376,8 @@ sql_parse(mvc *m, char *query, char mode)
 		int status = m->session->status;
 		int sizevars = m->sizevars, topvars = m->topvars;
 		sql_var *vars = m->vars;
+		/* cascade list maybe removed */
+		list *cascade_action = m->cascade_action;
 
 		if (m->session->status || m->errstr[0]) {
 			e = _strdup(m->errstr);
@@ -378,6 +391,7 @@ sql_parse(mvc *m, char *query, char mode)
 		m->topvars = topvars;
 		m->vars = vars;
 		m->session->status = status;
+		m->cascade_action = cascade_action;
 		if (e) {
 			strcpy(m->errstr, e);
 			_DELETE(e);

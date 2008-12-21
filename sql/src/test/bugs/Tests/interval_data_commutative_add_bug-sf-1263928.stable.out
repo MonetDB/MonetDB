@@ -26,12 +26,12 @@ Over..
 # 11:55:47 >  
 
 % . # table_name
-% single_value # name
+% sql_add_single_value # name
 % date # type
 % 10 # length
 [ 2005-08-20	]
 % . # table_name
-% single_value # name
+% sql_add_single_value # name
 % date # type
 % 10 # length
 [ 2005-08-20	]

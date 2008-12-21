@@ -34,6 +34,7 @@ extern sql_exp *exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
+extern str number2name(str s, int len, int i);
 extern sql_exp *exp_op( list *l, sql_subfunc *f );
 
 #define append(l,v) list_append(l,v) 
@@ -58,6 +59,7 @@ extern sql_exp * exp_param(char *name, sql_subtype *tpe, int frame);
 extern sql_exp * exp_column( char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias( char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern void exp_setname( sql_exp *e, char *rname, char *name );
+extern sql_exp* exp_label( sql_exp *e, int nr);
 
 extern void exp_swap( sql_exp *e );
 
@@ -349,6 +351,29 @@ exp_setname( sql_exp *e, char *rname, char *name )
 	e->rname = (rname)?_strdup(rname):NULL;
 }
 
+str
+number2name(str s, int len, int i)
+{
+	s[--len] = 0;
+	while(i>0) {
+		s[--len] = '0' + (i & 7);
+		i >>= 3;
+	}
+	s[--len] = 'L';
+	return s + len;
+}
+
+sql_exp*
+exp_label( sql_exp *e, int nr)
+{
+	char name[16], *nme;
+
+	nme = number2name(name, 16, nr);
+	assert(e->name == NULL);
+	e->name = _strdup(nme);
+	return e;
+}
+
 void
 exp_swap( sql_exp *e ) 
 {
@@ -617,5 +642,3 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 	}
 	return NULL;
 }
-
-

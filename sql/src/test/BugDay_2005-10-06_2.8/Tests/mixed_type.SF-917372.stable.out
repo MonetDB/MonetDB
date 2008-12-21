@@ -26,7 +26,7 @@ Over..
 # 11:50:16 >  
 
 % . # table_name
-% single_value # name
+% sql_add_single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]

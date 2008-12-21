@@ -26,34 +26,34 @@ Over..
 # 11:50:59 >  
 
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % tinyint # type
-% 1 # length
+% 4 # length
 [ NULL	]
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % tinyint # type
 % 1 # length
 [ 2	]
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % tinyint # type
-% 1 # length
+% 4 # length
 [ NULL	]
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % int # type
 % 1 # length
 [ 3	]
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % int # type
-% 1 # length
+% 11 # length
 [ NULL	]
 
 # 11:35:46 >  

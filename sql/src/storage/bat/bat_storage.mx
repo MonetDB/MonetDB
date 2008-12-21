@@ -616,12 +616,28 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	} else if (bat->ibid) { /* create bats for a new persistent idx */
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
 	} else if (!bat->ibid) {
-		BAT *b = bat_new(TYPE_void, type, ni->t->sz);
+		sql_column *c = ni->t->columns.set->h->data;
+		/* Here we also handle indices created through alter stmts */
+		/* These need to be created aligned to the existing data */
+		//BAT *b = bat_new(TYPE_void, type, ni->t->sz);
+		BAT *b, *cb = bind_col(tr, c, RDONLY);
+		if (type == TYPE_wrd) {
+			wrd val = 0;
+			b = BATconst(cb, type, &val);
+		} else {
+			oid val = 0;
+			b = BATconst(cb, type, &val);
+		}
+		bat_destroy(cb);
 		if (!b) 
 			return LOG_ERR;
-		bat_set_access(b, BAT_READ);
-		bat->ibid = temp_create(b);
+		/* a copy because BATconst may return a view */
+		cb = BATcopy(b, TYPE_void, b->ttype, TRUE);
 		bat_destroy(b);
+		bat_set_access(cb, BAT_READ);
+		bat->cnt = BATcount(cb);
+		bat->ibid = temp_create(cb);
+		bat_destroy(cb);
 	}
 	return ok;
 }

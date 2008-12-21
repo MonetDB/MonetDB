@@ -26,12 +26,12 @@ Over..
 # 11:50:50 >  
 
 % . # table_name
-% single_value # name
+% sql_sub_current_date # name
 % int # type
 % 1 # length
 [ 0	]
 % . # table_name
-% single_value # name
+% sql_sub_current_date # name
 % int # type
 % 1 # length
 [ 0	]

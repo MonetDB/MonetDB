@@ -28,7 +28,7 @@ Over..
 # 11:50:53 >  
 
 % . # table_name
-% single_value # name
+% like_single_value # name
 % boolean # type
 % 5 # length
 [ true	]

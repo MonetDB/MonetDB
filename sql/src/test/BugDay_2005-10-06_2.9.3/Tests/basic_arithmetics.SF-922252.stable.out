@@ -39,12 +39,12 @@ Over..
 [ 2	]
 [ 3	]
 % . # table_name
-% single_value # name
+% <_single_value # name
 % boolean # type
 % 5 # length
 [ true	]
 % . # table_name
-% single_value # name
+% =_single_value # name
 % boolean # type
 % 5 # length
 [ false	]

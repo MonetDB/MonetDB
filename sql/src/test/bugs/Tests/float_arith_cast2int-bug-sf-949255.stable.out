@@ -35,7 +35,7 @@ Over..
 % 22 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% sql_div_single_value # name
 % int # type
 % 1 # length
 [ 1	]

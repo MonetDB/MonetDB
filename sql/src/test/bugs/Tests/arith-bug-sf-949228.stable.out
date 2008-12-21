@@ -26,27 +26,27 @@ Over..
 # 11:55:32 >  
 
 % . # table_name
-% single_value # name
+% sql_div_single_value # name
 % decimal # type
 % 11 # length
 [ 1.0000	]
 % . # table_name
-% single_value # name
+% sql_div_single_value # name
 % decimal # type
 % 11 # length
 [ 0.9999	]
 % . # table_name
-% single_value # name
+% sql_div_single_value # name
 % decimal # type
 % 13 # length
 [ 1.00000	]
 % . # table_name
-% single_value # name
+% sql_div_single_value # name
 % decimal # type
 % 3 # length
 [ 10	]
 % . # table_name
-% single_value # name
+% sql_mul_single_value # name
 % int # type
 % 7 # length
 [ 1000000	]

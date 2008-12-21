@@ -63,7 +63,7 @@ Over..
 [ "int",	32,	0	]
 [ 1	]
 % sys.mytable # table_name
-% L1 # name
+% L47 # name
 % wrd # type
 % 1 # length
 [ 1	]

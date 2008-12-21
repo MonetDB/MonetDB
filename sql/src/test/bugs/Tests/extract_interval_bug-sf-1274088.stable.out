@@ -26,22 +26,22 @@ Over..
 # 11:55:48 >  
 
 % . # table_name
-% single_value # name
+% year_single_value # name
 % int # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% day_single_value # name
 % bigint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% day_single_value # name
 % bigint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% single_value # name
+% hour_single_value # name
 % int # type
 % 1 # length
 [ 1	]

@@ -62,6 +62,7 @@ lib_sqlserver = {
 		sql_psm.mx \  
 		rel_semantic.mx \
 		rel_select.mx \
+		rel_updates.mx \
 		rel_subquery.mx \
 		rel_prop.mx \
 		rel_exp.mx \

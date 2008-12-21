@@ -29,7 +29,7 @@ Over..
 [ 1	]
 [ 1	]
 % sys.div_zero_bug,	sys.div_zero_bug # table_name
-% grp,	L1 # name
+% grp,	L3 # name
 % int,	double # type
 % 1,	22 # length
 [ NULL,	1	]

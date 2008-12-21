@@ -28,7 +28,7 @@ Over..
 # 13:30:03 >  
 
 % . # table_name
-% single_value # name
+% check_video # name
 % varchar # type
 % 7 # length
 [ "schemas"	]

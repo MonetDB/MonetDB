@@ -68,7 +68,7 @@ Over..
 [ 1,	"Tim"	]
 [ 2,	"Jochem"	]
 % . # table_name
-% single_value # name
+% sql_sub_single_value # name
 % smallint # type
 % 2 # length
 [ 15	]

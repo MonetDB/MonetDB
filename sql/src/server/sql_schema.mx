@@ -39,12 +39,16 @@ extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, 
 #include "sql_config.h"
 #include "sql_schema.h"
 #include "sql_parser.h"
-#include "sql_updates.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "sql_psm.h"
 
+#include "rel_exp.h"
+#include "rel_select.h"
+#include "rel_updates.h"
 #include "rel_subquery.h"
+#include "rel_optimizer.h"
+#include "rel_bin.h"
 
 static void
 list_append_stmt(list *l, stmt *s)
@@ -126,37 +130,22 @@ revoke_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int ad
 	return stmt_none();
 }
 
-static stmt *
+static void
 sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
 	sql_table *pt = mvc_bind_table(sql, ss, "privileges");
-	node *n = pt->columns.set->h;
-	stmt *res, **inserts = NEW_ARRAY(stmt *, 5);
-	stmt *pts = stmt_basetable(pt, pt->base.name);
 
-	inserts[0] = stmt_append_col(n->data, stmt_atom_int(obj_id));
-	n = n->next;
-	inserts[1] = stmt_append_col(n->data, stmt_atom_int(auth_id));
-	n = n->next;
-	inserts[2] = stmt_append_col(n->data, stmt_atom_int(privilege));
-	n = n->next;
-	inserts[3] = stmt_append_col(n->data, stmt_atom_int(grantor));
-	n = n->next;
-	inserts[4] = stmt_append_col(n->data, stmt_atom_int(grantable));
-	stmt_destroy(pts);
-	res = sql_insert(sql, pt, inserts, 5, 0);
-	cleanup_stmts(inserts, 5);
-	return res;
+	table_funcs.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
 }
 
-void
-sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantable, list *l)
+static void
+sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantable)
 {
-	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable));
-	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable));
-	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable));
-	list_append(l, sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable));
+	sql_insert_priv(sql, auth_id, obj_id, PRIV_SELECT, grantor, grantable);
+	sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable);
+	sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable);
+	sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable);
 }
 
 const char *
@@ -182,13 +171,10 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 {
 	dnode *gn;
 	sql_table *t = mvc_bind_table(sql, cur, tname);
-	list *l;
 
-	if (!t) {
+	if (!t) 
 		return sql_error(sql, 02, "GRANT no such table '%s'", tname);
-	}
 
-	l = create_stmt_list();
 	if (privs == NULL) {	/* ALL [ PRIVILEGES ] */
 		int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
 		int allowed = schema_privs(grantor, t->s);
@@ -196,10 +182,8 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 		if (!allowed)
 			allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
 
-		if (!allowed) {
-			list_destroy(l);
+		if (!allowed) 
 			return sql_error(sql, 02, "GRANTOR '%s' is not allowed to grant ALL privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
-		}
 
 		for (gn = grantees->h; gn; gn = gn->next) {
 			char *grantee = gn->data.sval;
@@ -210,13 +194,11 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 			else
 				grantee_id = sql_find_auth(sql, "public");
 
-			if (grantee_id <= 0) {
-				list_destroy(l);
+			if (grantee_id <= 0) 
 				return sql_error(sql, 02, "user/role '%s' unknown", grantee);
-			}
-			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant, l);
+			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
 		}
-		return stmt_list(l);
+		return stmt_none();
 	}
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
@@ -228,10 +210,8 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 		else
 			grantee_id = sql_find_auth(sql, "public");
 
-		if (grantee_id < 0) {
-			list_destroy(l);
+		if (grantee_id < 0) 
 			return sql_error(sql, 02, "user/role '%s' unknown", grantee);
-		}
 
 		for (opn = privs->h; opn; opn = opn->next) {
 			symbol *op = opn->data.sym;
@@ -254,7 +234,6 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 			case SQL_EXECUTE:
 			default:
-				list_destroy(l);
 				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
@@ -275,17 +254,13 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 					if (!allowed)
 						allowed = sql_grantable(sql, grantor, c->base.id, priv, 0);
 
-					if (!allowed) {
-						list_destroy(l);
+					if (!allowed) 
 						return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(priv), tname);
-					}
 
 					c = mvc_bind_column(sql, t, cname);
-					if (!c) {
-						list_destroy(l);
+					if (!c) 
 						return sql_error(sql, 02, "Grant: table %s has no column %s", tname, cname);
-					}
-					list_append(l, sql_insert_priv(sql, grantee_id, c->base.id, priv, grantor, grant));
+					sql_insert_priv(sql, grantee_id, c->base.id, priv, grantor, grant);
 				}
 			} else {
 				int allowed = sql_grantable(sql, grantor,
@@ -294,16 +269,13 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 				if (!allowed)
 					allowed = sql_grantable(sql, grantor, t->base.id, priv, 0);
 
-				if (!allowed) {
-					list_destroy(l);
+				if (!allowed) 
 					return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(priv), tname);
-				}
-
-				list_append(l, sql_insert_priv(sql, grantee_id, t->base.id, priv, grantor, grant));
+				sql_insert_priv(sql, grantee_id, t->base.id, priv, grantor, grant);
 			}
 		}
 	}
-	return stmt_list(l);
+	return stmt_none();
 }
 
 static stmt *
@@ -342,28 +314,28 @@ grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant,
 	}
 }
 
-static stmt *
+static void
 sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = mvc_bind_table(sql, ss, "privileges");
-	node *n = pt->columns.set->h;
-
-	stmt *pts = stmt_basetable(pt, pt->base.name);
-	stmt *s = stmt_relselect_init();
+	sql_table *privs = mvc_bind_table(sql, ss, "privileges");
+	sql_column *priv_obj = find_sql_column(privs, "obj_id");
+	sql_column *priv_auth = find_sql_column(privs, "auth_id");
+	sql_column *priv_priv = find_sql_column(privs, "privileges");
+	sql_trans *tr = sql->session->tr;
+	rids *A;
+	ssize_t r = -1;
 
 	(void) grantor;
 	(void) grantable;
 
-	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(auth_id), cmp_equal));
-	n = n->next;
-	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(privilege), cmp_equal));
-	n = n->next;
-	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
+	/* select privileges of this auth_id, privilege, obj_id */
+	A = table_funcs.rids_select(tr, priv_auth, &auth_id, &auth_id, priv_priv, &privilege, &privilege, priv_obj, &obj_id, &obj_id, NULL );
 
-	s = stmt_mark(stmt_reverse(s), 0);
-	s = sql_delete(sql, ss, pt, s, 0, 0);
-	return s;
+	/* remove them */
+	for(r = table_funcs.rids_next(A); r>=0; r = table_funcs.rids_next(A)) 
+		table_funcs.table_delete(tr, privs, r); 
+	table_funcs.rids_destroy(A);
 }
 
 static stmt *
@@ -371,19 +343,11 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 {
 	dnode *gn;
 	sql_table *t = mvc_bind_table(sql, cur, tname);
-	list *l;
 
 	if (!t) {
 		return sql_error(sql, 02, "REVOKE Table name %s doesn't exist", tname);
 	}
 
-	/* TODO 
-	   if (grant)
-	   do update !
-	   if (grant)
-	   return
-	 */
-	l = create_stmt_list();
 	if (privs == NULL) {	/* ALL [ PRIVILEGES ] */
 		for (gn = grantees->h; gn; gn = gn->next) {
 			char *grantee = gn->data.sval;
@@ -394,17 +358,15 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 			else
 				grantee_id = sql_find_auth(sql, "public");
 
-			if (grantee_id < 0) {
-				list_destroy(l);
+			if (grantee_id < 0) 
 				return sql_error(sql, 02, "User/Role %s unknown", grantee);
-			}
 
-			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant));
-			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant));
-			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant));
-			list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant));
+			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant);
+			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant);
+			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant);
+			sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant);
 		}
-		return stmt_list(l);
+		return stmt_none();
 	}
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
@@ -416,10 +378,8 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 		else
 			grantee_id = sql_find_auth(sql, "public");
 
-		if (grantee_id < 0) {
-			list_destroy(l);
+		if (grantee_id < 0) 
 			return sql_error(sql, 02, "User/Role %s unknown", grantee);
-		}
 
 		for (opn = privs->h; opn; opn = opn->next) {
 			symbol *op = opn->data.sym;
@@ -442,7 +402,6 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 
 			case SQL_EXECUTE:
 			default:
-				list_destroy(l);
 				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
@@ -454,18 +413,16 @@ revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grante
 					sql_column *c;
 
 					c = mvc_bind_column(sql, t, cname);
-					if (!c) {
-						list_destroy(l);
+					if (!c) 
 						return sql_error(sql, 02, "Grant: table %s has no column %s", tname, cname);
-					}
-					list_append(l, sql_delete_priv(sql, grantee_id, c->base.id, priv, grantor, grant));
+					sql_delete_priv(sql, grantee_id, c->base.id, priv, grantor, grant);
 				}
 			} else {
-				list_append(l, sql_delete_priv(sql, grantee_id, t->base.id, priv, grantor, grant));
+				sql_delete_priv(sql, grantee_id, t->base.id, priv, grantor, grant);
 			}
 		}
 	}
-	return stmt_list(l);
+	return stmt_none();
 }
 
 static stmt *
@@ -517,12 +474,20 @@ create_type(mvc *sql, dlist *qname, char *impl)
 	return stmt_none();
 }
 
+static void
+stack_push_table(mvc *sql, char *tname, sql_table *t)
+{
+	sql_rel *r = rel_basetable(t, tname );
+		
+	stack_push_rel_view(sql, tname, r);
+}
+
 static stmt *
 create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
 	stmt *sq = NULL;
-	sql_trigger *trigger;
+	sql_trigger *trigger = NULL;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
@@ -952,7 +917,6 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 {
 	char *err; 
 	int schema_id = 0;
-	list *l;
 
 	if (backend_find_user(sql, user) >= 0) {
 		return sql_error(sql, 02, "CREATE USER: user '%s' already exists", user);
@@ -960,16 +924,14 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
-	l = create_stmt_list();
-	if ((err = backend_create_user(l, user, passwd, fullname,
+	if ((err = backend_create_user(sql, user, passwd, fullname,
 					schema_id, sql->user_id)) != NULL)
 	{
 		(void) sql_error(sql, 02, "CREATE USER: %s", err);
 		GDKfree(err);
 		return FALSE;
 	}
-
-	return stmt_list(l);
+	return stmt_none();
 }
 
 static stmt *
@@ -1027,6 +989,28 @@ drop_role(mvc *sql, dlist *qname)
 	return stmt_none();
 }
 
+stmt *
+sql_update_add_idx(mvc *sql, sql_table *t, sql_idx * idx)
+{
+	list *exps;
+	sql_kc *ic = idx->columns->h->data;
+	sql_rel *updates, *update;
+
+ 	exps = new_exp_list();
+	exps = append(exps, 
+		exp_column(t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	exps = append(exps, 
+		exp_column(t->base.name, ic->c->base.name, &ic->c->type, CARD_MULTI, 0, 1 ));
+	updates = rel_project(rel_basetable(t, t->base.name), exps);
+ 	exps = new_exp_list();
+	exps = append(exps, 
+		exp_column(t->base.name, ic->c->base.name, &ic->c->type, CARD_MULTI, 0, 1 ));
+	update = rel_update(t, updates, exps);
+	update = rel_optimizer(sql, update);
+	return rel_bin(sql, update);
+}
+
+
 static int
 column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int alter, list **sl)
 {
@@ -1057,10 +1041,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				mvc_create_kc(sql, k, cs);
 				res = SQL_OK;
 				if (alter) {
-					stmt *s;
-					list *l = create_stmt_list();
-
-					s = sql_insert_add_idx(sql, t, k->idx, l);
+					stmt *s = sql_update_add_idx(sql, t, k->idx);
 					if (!(*sl))
 						*sl = create_stmt_list();
 					list_append(*sl, s);
@@ -1110,10 +1091,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				mvc_create_fkc(sql, fk, cs);
 				res = SQL_OK;
 				if (alter) {
-					stmt *s;
-					list *l = create_stmt_list();
-
-					s = sql_insert_add_idx(sql, t, ((sql_key *) fk)->idx, l);
+					stmt *s = sql_update_add_idx(sql, t, ((sql_key *) fk)->idx);
 					if (!(*sl))
 						*sl = create_stmt_list();
 					list_append(*sl, s);
@@ -1432,9 +1410,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 		}
 		if (alter) {
-			list *l = create_stmt_list();
-
-			res = sql_insert_add_idx(sql, t, ((sql_key *) fk)->idx, l);
+			res = sql_update_add_idx(sql, t, ((sql_key *) fk)->idx);
 		} else {
 			res = stmt_none();
 		}
@@ -1487,7 +1463,9 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 				(void) mvc_create_kc(sql, k, c);
 			}
 			if (alter) {
-				res = sql_insert_add_idx(sql, t, k->idx, l);
+				res = sql_update_add_idx(sql, t, k->idx);
+				list_append(l, res);
+				res = stmt_list(l);
 			} else {
 				res = stmt_none();
 			}

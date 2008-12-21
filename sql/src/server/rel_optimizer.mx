@@ -113,6 +113,10 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		*/
 		alias = exps_bind_column(rel->exps, name);
 		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		break;
 	}
 	if (alias) { /* we found an expression with the correct name, but
 			we need sql_columns */
@@ -193,6 +197,12 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		if (rel->r)
+			rel_properties(sql, gp, rel->r);
+		break;
 	}
 
 	switch (rel->op) {
@@ -219,6 +229,11 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_groupby: 
 	case op_topn: 
 	case op_select: 
+		break;
+
+	case op_insert:
+	case op_update:
+	case op_delete:
 		break;
 	}
 }
@@ -1697,6 +1712,11 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	case op_groupby: 
 	case op_topn: 
 		rel->l = rewrite(sql, rel->l, rewriter);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		rel->r = rewrite(sql, rel->r, rewriter);
 		break;
 	}
 	if (rel_is_ref(rel))

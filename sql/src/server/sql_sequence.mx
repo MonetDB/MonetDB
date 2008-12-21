@@ -187,7 +187,6 @@ sequences(mvc *sql, symbol *s)
 {
 	stmt *res = NULL;
 
-	sql->type = Q_SCHEMA; 
 	switch (s->token) {
 		case SQL_CREATE_SEQ:
 		{
@@ -245,5 +244,6 @@ sequences(mvc *sql, symbol *s)
 		default:
 			return sql_error(sql, 01, "sql_stmt Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
+	sql->type = Q_SCHEMA; 
 	return res;
 }

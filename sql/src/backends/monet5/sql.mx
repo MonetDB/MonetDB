@@ -1026,7 +1026,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			return NULL;
 		} else {
 			c->session->status = status;
-			printf("# falling back to direct mode \n");
+			//printf("# falling back to direct mode \n");
 			s = output_semantic(c, sym);
 		}
 	} else {
@@ -1940,7 +1940,6 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
-	c->type = Q_UPDATE;
 	assert (mtype == TYPE_wrd);
 	nr = *(wrd *) getArgReference(stk, pci, 1);
 	if (mvc_export_affrows(c, b->out, nr, *w)) {

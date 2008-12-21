@@ -2,9 +2,11 @@
 --the semantic should also be tested after the syntax test
 create table t1 (id int, name varchar(1024));
 
+-- alter early as its, executed as update (one of the key columns).
+ALTER TABLE t1 add CONSTRAINT t1_constraint PRIMARY KEY(id);
+
 insert into t1 values(10, 'monetdb');
 insert into t1 values(20, 'monet');
-
 
 create trigger test1
 	after update on t1
@@ -21,8 +23,6 @@ create trigger test3
 create trigger test4
 	after update on t1
 	insert into t1 values(30, 'update_from_test4');
-
-ALTER TABLE t1 add CONSTRAINT t1_constraint PRIMARY KEY(id);
 
 update t1 set name = 'mo' where id = 11;
 

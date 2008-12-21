@@ -27,7 +27,7 @@ Over..
 # 10:16:15 >  
 
 % . # table_name
-% single_value # name
+% ifthenelse_=_single_value # name
 % char # type
 % 0 # length
 [ NULL	]

@@ -25,7 +25,6 @@ Over..
 # 20:24:58 >  
 
 [ 1	]
-[ 1	]
 % sys.t1,	sys.t1 # table_name
 % id,	name # name
 % int,	varchar # type

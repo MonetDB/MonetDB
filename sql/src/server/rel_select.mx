@@ -26,6 +26,9 @@
 #include "rel_semantic.h"
 #include "sql_semantic.h"
 
+extern sql_rel* rel_create();
+extern sql_rel* rel_setop(sql_rel *l, sql_rel *r, operator_type setop);
+
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 extern sql_rel *rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek);
@@ -82,18 +85,6 @@ extern char * rel_name( sql_rel *r );
 
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
 
-static str
-number2name(str s, int len, int i)
-{
-	s[--len] = 0;
-	while(i>0) {
-		s[--len] = '0' + (i & 7);
-		i >>= 3;
-	}
-	s[--len] = 'L';
-	return s + len;
-}
-
 sql_rel *
 rel_dup(sql_rel *r) 
 {
@@ -139,7 +130,7 @@ rel_destroy(sql_rel *rel)
 	_DELETE(rel);
 }
 
-static sql_rel*
+sql_rel*
 rel_create()
 {
 	sql_rel *r = NEW(sql_rel);
@@ -164,17 +155,6 @@ rel_setsubquery(sql_rel*r)
 	if (r->r && is_join(r->op)) 
 		rel_setsubquery(r->r);
 	set_subquery(r);
-}
-
-static sql_exp*
-exp_label( sql_exp *e, int nr)
-{
-	char name[16], *nme;
-
-	nme = number2name(name, 16, nr);
-	assert(e->name == NULL);
-	e->name = _strdup(nme);
-	return e;
 }
 
 /* we don't name relations directly, but sometimes we need the relation 
@@ -339,6 +319,10 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 			found = 1;
 		if (!found && !e->l && exps_bind_column(rel->exps, e->r)) 
 			found = 1;
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
 		break;
 	}
 	if (found)
@@ -507,7 +491,7 @@ rel_table_func(sql_exp *f, list *exps)
 	return rel;
 }
 
-static sql_rel *
+sql_rel *
 rel_setop(sql_rel *l, sql_rel *r, operator_type setop)
 {
 	sql_rel *rel = rel_create();
@@ -1463,14 +1447,67 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
 	return -1;
 }
 
+/* try to do an inplace convertion 
+ * 
+ * inplace conversion is only possible if the exp is a variable.
+ * This is only done to be able to map more cached queries onto the same 
+ * interface.
+ */
+
+static void
+convert_arg(mvc *sql, int nr, sql_subtype *rt)
+{
+	atom *a = sql_bind_arg(sql, nr);
+
+	if (atom_null(a)) {
+		if (a->data.vtype != rt->type->localtype) {
+			ptr p;
+
+			a->destroy = 0; /* we cannot destroy a nilptr */
+			a->data.vtype = rt->type->localtype;
+			p = ATOMnilptr(a->data.vtype);
+			VALset(&a->data, a->data.vtype, p);
+		}
+	}
+	a->tpe = *rt;
+}
+
+sql_exp *
+exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
+{
+	atom *a;
+
+	/* exclude named variables */
+	if (exp->type != e_atom || exp->l /* atoms */ || exp->r /* named */ || 
+		exp->ref.refcnt > 1 ||
+		(t->scale && t->type->eclass != EC_FLT))
+		return NULL;
+
+	a = sql_bind_arg(sql, exp->flag);
+	if (atom_cast(a, t)) {
+		sql_subtype *x = ZNEW(sql_subtype);
+		convert_arg(sql, exp->flag, t);
+		/* set new type */
+		*x = *t;
+		exp->f = x;
+		return exp;
+	}
+	return NULL;
+}
+
 sql_exp * 
 rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 {
 	int err = 0;
+	sql_exp* nexp = NULL; 
 	sql_subtype *fromtype = exp_subtype(exp);
 	
 	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, exp) == 0)
 		return exp;
+
+	/* first try cheap internal (inplace) convertions ! */
+	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL) 
+		return nexp;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
 		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
@@ -4437,8 +4474,8 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	for (; n && m; n = n->next, m = m->next) {
 		char *cname = n->data.sval;
 		sql_exp *e = m->data;
+		sql_exp *n = exp_is_atom(e)?exp_dup(e):exp_column(e->rname, e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 
-		sql_exp *n = exp_column(e->rname, e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
 		exp_setname(n, NULL, cname);
 		list_append(l, n);
 	}

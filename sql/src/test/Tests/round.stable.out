@@ -26,27 +26,27 @@ Over..
 # 15:17:09 >  
 
 % .,	.,	.,	. # table_name
-% single_value,	single_value,	single_value,	single_value # name
+% round_single_value,	round_single_value,	round_single_value,	round_single_value # name
 % decimal,	decimal,	decimal,	decimal # type
 % 11,	11,	11,	11 # length
 [ 750.00,	700.00,	1000.00,	0.00	]
 % .,	. # table_name
-% single_value,	single_value # name
+% round_single_value,	round_single_value # name
 % decimal,	decimal # type
 % 11,	11 # length
 [ 123.9990,	124.0000	]
 % . # table_name
-% single_value # name
+% round_single_value # name
 % decimal # type
 % 11 # length
 [ 123.4500	]
 % . # table_name
-% single_value # name
+% round_single_value # name
 % decimal # type
 % 11 # length
 [ 100.00	]
 % . # table_name
-% single_value # name
+% round_single_value # name
 % decimal # type
 % 11 # length
 [ 151.00	]

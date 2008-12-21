@@ -37,7 +37,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.L3 # table_name
+% sys.L6 # table_name
 % col1 # name
 % int # type
 % 1 # length
