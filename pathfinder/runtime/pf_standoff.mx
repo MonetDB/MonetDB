@@ -38,7 +38,7 @@ The default is \texttt{standoff=disabled}.
 note: runtime support for the StandOff axis steps was added in the
 0.12 release.
 
-@- Select Narrow / Select Wide / Reject Narrow / Reject Wide
+@- Select Narrow / Select Wide
 @T
 The SN, SW, RN, RW joins are region joins based on the work by Forbes J.
 Burkowski (1992) ``Retrieval Activities in a Database Consisting of
@@ -74,6 +74,34 @@ and the \texttt{ reject\_narrow\_join(<chapter>,\{"Feynman","virtual
 particle"\}) } would return all the instances of "Feynman" and "virtual
 particle" which are not inside a chapter-region.
 
+\emph{Note:} The "reject-narrow" and "reject-wide" axes steps have been 
+removed. They can be easily expressed in terms of the other two axes steps 
+("select-narrow" and "select-wide").
+The 'reject-narrow' and 'reject-wide' axes can be rewritten as follows.
+
+\begin{verbatim}
+ "{context}/reject-narrow::{name}"
+
+can be expressed as 
+ 
+\begin{verbatim}
+ "((for $i in {context} return $i/root()//{name}/select-narrow::{name})
+    except {context}/select-narrow::{name})
+\end{verbatim}
+
+similarly:
+
+\begin{verbatim}
+ "{context}/reject-wide::{name}"
+\end{verbatim}
+
+can be expressed as 
+
+\begin{verbatim}
+ "((for $i in {context} return $i/root()//{name}/select-narrow::{name})
+    except {context}/select-wide::{name})
+\end{verbatim}
+
 @
 @* Module Definition
 @m
@@ -105,14 +133,10 @@ without much effort.
 # declaration StandOff joins (int)
 @:standoff_join_sigs(select,narrow,int)@
 @:standoff_join_sigs(select,wide,int)@
-@:standoff_join_sigs(reject,narrow,int)@
-@:standoff_join_sigs(reject,wide,int)@
 
 # declaration StandOff joins (lng)
 @:standoff_join_sigs(select,narrow,lng)@
 @:standoff_join_sigs(select,wide,lng)@
-@:standoff_join_sigs(reject,narrow,lng)@
-@:standoff_join_sigs(reject,wide,lng)@
 
 # interaction with the underlying data
 .COMMAND blob(BAT[void,lng], BAT[void,lng], str) :
@@ -151,22 +175,14 @@ head (iter). (any additional testcases are welcome)
 @T
 \emph{KNOWN ISSUE}: currently the iter needs to be of type OID (and may NOT be VOID)
 
-\emph{KNOWN ISSUE}: the loop-lifted REJECT standoff joins do NOT work
-workaround: use the non-loop-lifted StandOff join or take the
-loop-lifted-"select"-join and calculate per iter the inverse of the result.
-
 @m
 # declaration StandOff joins (loop lifted, int)
 @:ll_standoff_join_sigs(select,narrow,int)@
 @:ll_standoff_join_sigs(select,wide,int)@
-@:ll_standoff_join_sigs(reject,narrow,int)@
-@:ll_standoff_join_sigs(reject,wide,int)@
 
 # declaration StandOff joins (loop lifted, lng)
 @:ll_standoff_join_sigs(select,narrow,lng)@
 @:ll_standoff_join_sigs(select,wide,lng)@
-@:ll_standoff_join_sigs(reject,narrow,lng)@
-@:ll_standoff_join_sigs(reject,wide,lng)@
 
 @= ll_standoff_join_sigs
    .COMMAND ll_@1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[oid,@3], BAT[oid,@3]) :
@@ -192,13 +208,8 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
 # Wouter:
 @:ll_standoff_mil(select,narrow)@
 @:ll_standoff_mil(select,wide)@
-## the loop-lifted reject steps don't work, and probably never will...
-#:ll_standoff_mil(reject,narrow)##
-#:ll_standoff_mil(reject,wide)##
 @:standoff_mil(select,narrow)@
 @:standoff_mil(select,wide)@
-@:standoff_mil(reject,narrow)@
-@:standoff_mil(reject,wide)@
 @
 
 @m
@@ -233,18 +244,10 @@ var region_end_attr_tag := monet_environment.find("standoff_end");
 @= select_outside
             /* skip nodes which are not contained */
 @
-@= reject_outside
-            /* insert nodes which are not contained */
-            index = iter_start - iter_s;
-            BUNappend(bn, (ptr)(&index), FALSE);
-@
 @= select_inside
             /* insert nodes which are contained */
             index = iter_start - iter_s;
             BUNappend(bn, (ptr)(&index), FALSE);
-@
-@= reject_inside
-            /* skip nodes which are contained */
 @
 @= narrow
         if (outer_iter_start_next < outer_last_start)
@@ -355,19 +358,10 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
 @= ll_select_outside
             /* skip nodes which are not contained */
 @
-@= ll_reject_outside
-            /* insert nodes which are not contained */
-            // FIXME: we need to include the iters not on the heap...
-            index = iter_start - iter_s;
-            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
-@
 @= ll_select_inside
             /* insert nodes which are contained */
             index = iter_start - iter_s;
             BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
-@
-@= ll_reject_inside
-            /* skip nodes which are contained */
 @
 @= ll_narrow
         /* loop through the not strictly contained region */
@@ -467,9 +461,6 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
     BAT * bn = NULL;
 
     *result=NULL;
-
-    // KNOWN ISSUE: the reject-part does not work (it needs to know which iters there are beforehand)
-    // it also has to add the regions to all the iters that are currently not on the heap
 
     if (BATcount(source_start) != BATcount(source_end)) {
         GDKerror("ll_@1_@2_join_sort_@3: source BATs not related size(start) = %d != size(end) = %d.\n",
@@ -597,15 +588,11 @@ endofskipping:
 @= ll_standoff
 @:ll_standoff_join_impl(select,narrow,@1,@2)@
 @:ll_standoff_join_impl(select,wide,@1,@2)@
-@:ll_standoff_join_impl(reject,narrow,@1,@2)@
-@:ll_standoff_join_impl(reject,wide,@1,@2)@
 @
 
 @= standoff
 @:standoff_join_impl(select,narrow,@1,@2)@
 @:standoff_join_impl(select,wide,@1,@2)@
-@:standoff_join_impl(reject,narrow,@1,@2)@
-@:standoff_join_impl(reject,wide,@1,@2)@
 @
 
 @= heap_procs
@@ -757,9 +744,6 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 
 ######### START OF NEW CODE #######################
 ### line 809 of pf_support.mx
-
-# lets leave the reject-steps out for now
-# those can be implemented as not(select-narrow) and not(select-wide)
 
 
 #############################################

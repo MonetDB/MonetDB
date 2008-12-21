@@ -1919,6 +1919,10 @@ CONST AXIS_preceding          :=  8;
 CONST AXIS_preceding_sibling  :=  9;
 CONST AXIS_self               := 10;
 CONST AXIS_attribute          := 11;
+# StandOff axes
+CONST AXIS_select_narrow      := 12;
+CONST AXIS_select_wide        := 13;
+
 CONST TEST_none   := 0;
 CONST TEST_kind   := 1;
 CONST TEST_ns     := 2;
@@ -2194,7 +2198,7 @@ PROC step (int axis,
         # else iter, cont, and pre are only represent pre values
     }
     
-    if ((axis < AXIS_ancestor) or (axis > AXIS_attribute)) {
+    if ((axis < AXIS_ancestor) or (axis > AXIS_select_wide)) {
         ERROR ("PROC step(): Unknown axis '%d' !", axis);
 @= PROC_step
     } else if (axis = AXIS_@1) {
@@ -2267,6 +2271,9 @@ PROC step (int axis,
     @:PROC_step(parent)@             @:PROC_step_merge(attr,#)@ @:PROC_step_result()@
     @:PROC_step(preceding)@                                     @:PROC_step_result()@
     @:PROC_step(preceding_sibling)@                             @:PROC_step_result()@
+# StandOff axes
+    @:PROC_step(select_narrow)@                                 @:PROC_step_result()@
+    @:PROC_step(select_wide)@                                   @:PROC_step_result()@
     } else if (axis = AXIS_self) {
         var map;
 @= PROC_step_self_nametest
