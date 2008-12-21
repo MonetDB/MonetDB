@@ -183,6 +183,9 @@ add_map_ (PFla_op_t *n, PFalg_col_t col,
 #define add_axis_self_map(n,col) \
         add_map_ ((n),(col), false, false, false, \
                   false, false, false, false, true , false)
+#define add_axis_standoff_map(n,col) \
+        add_map_ ((n),(col), false, false, false, \
+                  false, false, false, false, false, false)
 #define add_constr_map(n,col) \
         add_map_ ((n),(col), false, false, false, \
                   false, false, false, false, false, true)
@@ -554,6 +557,11 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                     add_axis_side_map (n, n->sem.step.item);
                     break;
 
+                case alg_so_select_narrow:
+                case alg_so_select_wide:
+                    add_axis_standoff_map (n, n->sem.step.item);
+                    break;
+
                 case alg_self:
                     add_axis_self_map (n, n->sem.step.item);
                     break;
@@ -598,6 +606,11 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
                 case alg_prec:
                 case alg_prec_s:
                     add_axis_side_map (n, n->sem.step.item);
+                    break;
+
+                case alg_so_select_narrow:
+                case alg_so_select_wide:
+                    add_axis_standoff_map (n, n->sem.step.item);
                     break;
 
                 case alg_self:

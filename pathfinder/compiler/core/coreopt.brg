@@ -184,10 +184,8 @@ static PFarray_t *used_var_env;
 %term preceding_sibling  = 51 /**< all preceding nodes with same parent */
 %term self               = 52 /**< the context node itself */
 /* [STANDOFF] */
-%term select_narrow      = 100 /**< regions contained in a context-node */
-%term select_wide        = 101 /**< regions overlapping a context-node */
-%term reject_narrow      = 102 /**< all regions except the contained regions */
-%term reject_wide        = 103 /**< all regions except the overlapping regions */
+%term select_narrow      = 53 /**< regions contained in a context-node */
+%term select_wide        = 54 /**< regions overlapping a context-node */
 /* [/STANDOFF] */
 
   /* Constructor Nodes */
@@ -311,8 +309,6 @@ LocationStep:       self (SequenceType)                         =   68(10);
 /* [STANDOFF] */
 LocationStep:       select_narrow (SequenceType)                =   69(10);
 LocationStep:       select_wide (SequenceType)                  =   70(10);
-LocationStep:       reject_narrow (SequenceType)                =   71(10);
-LocationStep:       reject_wide (SequenceType)                  =   72(10);
 /* [/STANDOFF] */
                                                                      
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =   75(10);

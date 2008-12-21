@@ -110,8 +110,6 @@ char *c_id[]  = {
 /* [STANDOFF] */
   , [c_select_narrow]      = "select-narrow"
   , [c_select_wide]        = "select-wide"
-  , [c_reject_narrow]      = "reject-narrow"
-  , [c_reject_wide]        = "reject-wide"
 /* [/STANDOFF] */
 
   , [c_elem]               = "elem"
@@ -408,8 +406,6 @@ core_pretty (FILE *f, PFcnode_t *n, int i, bool nl, bool print_types)
     case c_self:
     case c_select_narrow:
     case c_select_wide:
-    case c_reject_narrow:
-    case c_reject_wide:
         core_pretty (f, L(n), i, false, print_types);
         topdown = true;
         break;

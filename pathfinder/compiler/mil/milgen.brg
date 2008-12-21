@@ -1774,6 +1774,13 @@ llscj (const PFpa_op_t *p)
         case alg_prec_s: axis = var (PF_MIL_VAR_AXIS_PREC_S); break;
         case alg_self:   axis = var (PF_MIL_VAR_AXIS_SELF);   break;
         case alg_attr:   axis = var (PF_MIL_VAR_AXIS_ATTR);   break;
+        /* StandOff axes */
+        case alg_so_select_narrow:         
+                        axis = var (PF_MIL_VAR_AXIS_SELECT_NARROW);   
+                                                              break;
+        case alg_so_select_wide:   
+                        axis = var (PF_MIL_VAR_AXIS_SELECT_WIDE);
+                                                              break;
     }
 
     /*

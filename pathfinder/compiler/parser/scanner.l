@@ -561,8 +561,6 @@ _                                {S}
 "ancestor-or-self::"               { pf_yield (ancestor_or_self_colon_colon); }
 "select-narrow::"                  { pf_yield (select_narrow_colon_colon); }
 "select-wide::"                    { pf_yield (select_wide_colon_colon); }
-"reject-narrow::"                  { pf_yield (reject_narrow_colon_colon); }
-"reject-wide::"                    { pf_yield (reject_wide_colon_colon); }
 ".."                               { gotoState (OPERATOR); pf_yield (dot_dot); }
 "."                                { gotoState (OPERATOR); pf_yield (dot); }
 "*"                                { gotoState (OPERATOR); pf_yield (star); }

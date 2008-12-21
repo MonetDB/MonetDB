@@ -134,6 +134,9 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term preceding          = 50 /**< nodes before context node (document order) */
 %term preceding_sibling  = 51 /**< all preceding nodes with same parent */
 %term self               = 52 /**< the context node itself */
+/* StandOff axes */
+%term so_select_narrow      = 53 /**< the context node itself */
+%term so_select_wide        = 54 /**< the context node itself */
 
   /* Constructor Nodes */
 %term elem               = 55 /**< the element constructor */
@@ -230,6 +233,8 @@ CoreExpr:     locsteps (parent (seqtype), CoreExpr)             =  38 (10);
 CoreExpr:     locsteps (preceding (seqtype), CoreExpr)          =  39 (10);
 CoreExpr:     locsteps (preceding_sibling (seqtype), CoreExpr)  =  40 (10);
 CoreExpr:     locsteps (self (seqtype), CoreExpr)               =  41 (10);
+CoreExpr:     locsteps (so_select_narrow (seqtype), CoreExpr)   =  42 (10);
+CoreExpr:     locsteps (so_select_wide (seqtype), CoreExpr)     =  43 (10);
 
 CoreExpr:           TwigExpr                                    =  45 (20);
 
@@ -1941,6 +1946,16 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* CoreExpr:     locsteps (self (seqtype), CoreExpr) */
         case 41:
             A(p) = locstep (ctx, alg_self, LL(p)->sem.type, A(R(p)));
+            break;
+
+        /* StandOff axes */
+        /* CoreExpr:     locsteps (select_narrow (seqtype), CoreExpr) */
+        case 42:
+            A(p) = locstep (ctx, alg_so_select_narrow, LL(p)->sem.type, A(R(p)));
+            break;
+        /* CoreExpr:     locsteps (select_wide (seqtype), CoreExpr) */
+        case 43:
+            A(p) = locstep (ctx, alg_so_select_wide, LL(p)->sem.type, A(R(p)));
             break;
 
         /* CoreExpr:           TwigExpr */

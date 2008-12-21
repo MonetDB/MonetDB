@@ -1202,6 +1202,15 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                             gt (PRE(ctx), add (PRE(step), SIZE(step))));
             break;
 
+        /* StandOff axis: select-narrow */
+        case alg_so_select_narrow:
+	    /* FIXME (Wouter): implement */
+            break;
+        /* StandOff axis: select-wide */
+        case alg_so_select_wide:
+	    /* FIXME (Wouter): implement */
+            break;
+
         /* self axis */
         case alg_self:
             where_list_add (WHERELIST(p),

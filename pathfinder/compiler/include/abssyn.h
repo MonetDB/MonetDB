@@ -211,8 +211,6 @@ enum PFpaxis_t {
 ,
     p_select_narrow,      /**< regions contained in a context-node */
     p_select_wide,        /**< regions overlapping a context-node */
-    p_reject_narrow,      /**< all regions except the contained regions */
-    p_reject_wide         /**< all regions except the overlapping regions */
 /* [/STANDOFF] */
 };
 

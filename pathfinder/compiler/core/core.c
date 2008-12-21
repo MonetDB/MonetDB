@@ -848,12 +848,6 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
     case p_select_wide:
         kind = c_select_wide;
         break;
-    case p_reject_narrow:
-        kind = c_reject_narrow;
-        break;
-    case p_reject_wide:
-        kind = c_reject_wide;
-        break;
 /* [/STANDOFF] */
     default: 
         PFoops (OOPS_FATAL, "illegal XPath axis (%d)", paxis);

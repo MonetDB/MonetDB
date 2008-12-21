@@ -1054,6 +1054,8 @@ PFalg_axis_str (PFalg_axis_t axis)
         case alg_prec:   return "preceding";
         case alg_prec_s: return "preceding-sibling";
         case alg_self:   return "self";
+        case alg_so_select_narrow:   return "select-narrow";
+        case alg_so_select_wide:   return "select-wide";
     }
     return NULL;
 }

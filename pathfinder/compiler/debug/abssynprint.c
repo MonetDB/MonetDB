@@ -205,8 +205,6 @@ static char *axis[] = {
 /* [STANDOFF] */
         , [p_select_narrow]      = "select-narrow"
         , [p_select_wide]        = "select-wide"
-        , [p_reject_narrow]      = "reject-narrow"
-        , [p_reject_wide]        = "reject-wide"
 /* [/STANDOFF] */
 };
 

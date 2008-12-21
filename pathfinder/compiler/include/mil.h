@@ -118,12 +118,16 @@ typedef unsigned int PFmil_ident_t;
 #define PF_MIL_VAR_AXIS_SELF   70
 #define PF_MIL_VAR_AXIS_ATTR   71
 
-#define PF_MIL_VAR_CODE_NONE   73
-#define PF_MIL_VAR_CODE_KIND   74
-#define PF_MIL_VAR_CODE_NS     75
-#define PF_MIL_VAR_CODE_LOC    76
-#define PF_MIL_VAR_CODE_NSLOC  77
-#define PF_MIL_VAR_CODE_TARGET 78
+/* StandOff axes */
+#define PF_MIL_VAR_AXIS_SELECT_NARROW   72
+#define PF_MIL_VAR_AXIS_SELECT_WIDE   73
+
+#define PF_MIL_VAR_CODE_NONE   74
+#define PF_MIL_VAR_CODE_KIND   75
+#define PF_MIL_VAR_CODE_NS     76
+#define PF_MIL_VAR_CODE_LOC    77
+#define PF_MIL_VAR_CODE_NSLOC  78
+#define PF_MIL_VAR_CODE_TARGET 79
 
 #define PF_MIL_VAR_TIME_LOAD   80
 #define PF_MIL_VAR_TIME_QUERY  81

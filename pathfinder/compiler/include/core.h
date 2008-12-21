@@ -129,10 +129,8 @@ enum PFctype_t {
   , c_preceding_sibling  = 51 /**< all preceding nodes with same parent */
   , c_self               = 52 /**< the context node itself */
 /* [STANDOFF] */
-  , c_select_narrow      = 100 /**< regions contained in a context-node */
-  , c_select_wide        = 101 /**< regions overlapping a context-node */
-  , c_reject_narrow      = 102 /**< all regions except the contained regions */
-  , c_reject_wide        = 103 /**< all regions except the overlapping regions */
+  , c_select_narrow      = 53 /**< regions contained in a context-node */
+  , c_select_wide        = 54 /**< regions overlapping a context-node */
 /* [/STANDOFF] */
 
   /* Constructor Nodes */

@@ -419,10 +419,6 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbracket                        "]"
 /* Pathfinder extension: recursion */
 %token recurse                         "recurse"
-/* [BURKOWSKI] */
-%token reject_narrow_colon_colon       "reject-narrow::"
-%token reject_wide_colon_colon         "reject-wide::"
-/* [/BURKOWKSI] */
 %token return_                         "return"
 %token rparen                          ")"
 /* %token rparen_as                       ") as" */
@@ -431,10 +427,10 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token schema_element_lparen           "schema-element ("
 /* Pathfinder extension: recursion */
 %token seeded_by                       "seeded by"
-/* [BURKOWKSI] */
+/* StandOff */
 %token select_narrow_colon_colon       "select-narrow::"
 %token select_wide_colon_colon         "select-wide::"
-/* [/BURKOWKSI] */
+/* StandOff */
 %token self_colon_colon                "self::"
 %token semicolon                       ";"
 %token slash                           "/"
@@ -1940,26 +1936,6 @@ BurkAxis_                 : "select-narrow::"
                                       "(StandOff was not enabled)");
                               } else {
                                 $$ = p_select_wide; 
-                              }
-                            }
-                          | "reject-narrow::"
-                            { 
-                              if (!standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_reject_narrow; 
-                              }
-                            }
-                          | "reject-wide::"
-                            { 
-                              if (!standoff_axis_steps) {
-                                PFoops (OOPS_PARSE,
-                                      "invalid character "
-                                      "(StandOff was not enabled)");
-                              } else {
-                                $$ = p_reject_wide; 
                               }
                             }
                           ;

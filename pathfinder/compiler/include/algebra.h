@@ -309,6 +309,8 @@ enum PFalg_axis_t {
     , alg_prec         /**< preceding axis */
     , alg_prec_s       /**< preceding-sibling axis */
     , alg_self         /**< self axis */
+    , alg_so_select_narrow /**< StandOff select-narrow axis (non-standard) */
+    , alg_so_select_wide   /**< StandOff select-wide axis (non-standard) */
 };
 /** location steps */
 typedef enum PFalg_axis_t PFalg_axis_t;

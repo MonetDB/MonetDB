@@ -392,6 +392,11 @@ char * PFmil_var_str (PFmil_ident_t name) {
         case PF_MIL_VAR_AXIS_PREC_S: return "AXIS_preceding_sibling";
         case PF_MIL_VAR_AXIS_SELF:   return "AXIS_self";
         case PF_MIL_VAR_AXIS_ATTR:   return "AXIS_attribute";
+        /* StandOff axes */
+        case PF_MIL_VAR_AXIS_SELECT_NARROW:   
+                                     return "AXIS_select_narrow";
+        case PF_MIL_VAR_AXIS_SELECT_WIDE:
+                                     return "AXIS_select_wide";
 
         case PF_MIL_VAR_CODE_NONE:   return "TEST_none";
         case PF_MIL_VAR_CODE_KIND:   return "TEST_kind";

@@ -138,10 +138,8 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term preceding_sibling  = 51 /**< all preceding nodes with same parent */
 %term self               = 52 /**< the context node itself */
 /* [STANDOFF] */
-%term select_narrow      = 100 /**< regions contained in a context-node */
-%term select_wide        = 101 /**< regions overlapping a context-node */
-%term reject_narrow      = 102 /**< all regions except the contained regions */
-%term reject_wide        = 103 /**< all regions except the overlapping regions */
+%term select_narrow      = 53 /**< regions contained in a context-node */
+%term select_wide        = 54 /**< regions overlapping a context-node */
 /* [/STANDOFF] */
 
   /* Constructor Nodes */
@@ -228,10 +226,8 @@ LocationStep:       preceding (SequenceType)                    =  35 (10);
 LocationStep:       preceding_sibling (SequenceType)            =  36 (10);
 LocationStep:       self (SequenceType)                         =  37 (10);
 /* [STANDOFF] */
-LocationStep:       select_narrow (SequenceType)                =  100 (10);
-LocationStep:       select_wide (SequenceType)                  =  101 (10);
-LocationStep:       reject_narrow (SequenceType)                =  102 (10);
-LocationStep:       reject_wide (SequenceType)                  =  103 (10);
+LocationStep:       select_narrow (SequenceType)                =  38 (10);
+LocationStep:       select_wide (SequenceType)                  =  39 (10);
 /* [/STANDOFF] */
 
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =  40 (10);
@@ -884,23 +880,13 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             TY(p) = TY(L(p));
             break;
 /* [STANDOFF] */
-        case 100:
+        case 38:
         /* LocationStep:       select_narrow (SequenceType) */
             TY(p) = PFty_star (TY(L(p)));
             break;
 
         /* LocationStep:       select_wide (SequenceType) */
-        case 101:
-            TY(p) = PFty_star (TY(L(p)));
-            break;
-
-        /* LocationStep:       reject_narrow (SequenceType) */
-        case 102:
-            TY(p) = PFty_star (TY(L(p)));
-            break;
-
-        /* LocationStep:       reject_wide (SequenceType) */
-        case 103:
+        case 39:
             TY(p) = PFty_star (TY(L(p)));
             break;
 /* [/STANDOFF] */
