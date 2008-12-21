@@ -3695,7 +3695,7 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	int first=1;
-	bat mid, hid;
+	bat mid, hid, bid;
 	BAT *map= NULL, *b;
 	node *o;
 
@@ -3704,10 +3704,13 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
    	s = mvc_bind_schema(m, *sch);
 	t = mvc_bind_table(m, s, *tbl);
 	tr = m->session->tr;
+	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 
 	/* actually build the hash on the multi-column primary key */
 
 	for (o = t->columns.set->h; o; o = o->next) {
+		sql_delta *d;
 		c = o->data;
 		if (first) {
 			first = 0;
@@ -3726,15 +3729,23 @@ str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		}
 
 		b = store_funcs.bind_col(tr, c, 0);
-        	if (b == NULL)
+		if (b == NULL)
 			throw(MAL,"sql.cluster","Can not access descriptor");
-		msg = CLUSTER_apply(b,map);
+		msg = CLUSTER_apply(&bid, b, map);
 		BBPreleaseref(b->batCacheid);
 		if (msg){
 			BBPreleaseref(map->batCacheid);
 			return msg;
 		}
+		BBPdecref(b->batCacheid, TRUE);
+		d = c->data;
+		d->bid = 0;
+		d->ibase = 0;
+		d->ibid = bid; /* use the insert bat */
+		c->base.wtime = c->base.rtime = tr->stime;
 	}
+	/* bat was cleared */
+	t->cleared = 1;
 	if (map) {
 		BBPreleaseref(map->batCacheid);
 		BBPdecref(mid, TRUE);
@@ -3786,7 +3797,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		b = store_funcs.bind_col(tr, c, 0);
-        	if (b == NULL)
+		if (b == NULL)
 			throw(MAL,"sql.cluster","Can not access descriptor");
 		msg = CLS_map(&bid,&mid,&b->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -3803,7 +3814,7 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */
 
-        	c->base.wtime = c->base.rtime = tr->stime;
+		c->base.wtime = c->base.rtime = tr->stime;
 	}
 	/* bat was cleared */
 	t->cleared = 1;
