@@ -208,30 +208,23 @@ CLUSTER_key_str( BAT *map, BAT *b)
 str  
 CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 {
-	var_t *r,*qb;
 	oid *ct, *ce, o = 0;
-	int cnt=0;
 	BATiter bi= bat_iterator(b);
 	
-	assert(BUNfirst(nb) == 0);
-	assert(BUNfirst(b) == 0);
-	assert(BUNfirst(cmap) == 0);
-	r = (var_t *)Tloc(nb, 0);
-	qb = (var_t *)Tloc(b, 0);
 	ct = (oid *)Tloc(cmap, 0);
 	ce = ct + BATcount(cmap);
 	nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 	for ( ; ct < ce; ct++){
-		BUNfastins(nb, &o,BUNtail(bi, (BUN) *ct));
+		BUNfastins(nb, &o, BUNtail(bi, (BUN) *ct));
 		o++;
-		if ( ((++cnt) % 1000000) == 0){
+		if ( (o % 1000000) == 0){
 			BATsave(nb);
 			nb->H->heap.dirty = nb->T->heap.dirty= TRUE;
 		}
 	}
+	BATsetcount(nb, BATcount(b));
     if (nb->H != nb->T)
         BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
-	BATsetcount(nb, BATcount(b));
 	if (!(nb->batDirty&2)) 
 		nb = BATsetaccess(nb, BAT_READ);
     BATpropcheck(nb, BATPROPS_QUICK);
@@ -415,6 +408,7 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	assert(BATcount(b)==BATcount(cmap));
 
 	switch(ATOMstorage(b->ttype)) {
+/*
 	case TYPE_chr: CLUSTER_column_chr(nb, b, cmap);break;
 	case TYPE_bte: CLUSTER_column_bte(nb, b, cmap);break;
 	case TYPE_sht: CLUSTER_column_sht(nb, b, cmap);break;
@@ -424,6 +418,7 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	case TYPE_lng: CLUSTER_column_lng(nb, b, cmap);break;
 	case TYPE_flt: CLUSTER_column_flt(nb, b, cmap);break;
 	case TYPE_dbl: CLUSTER_column_dbl(nb, b, cmap);break;
+*/
 	default:
 		CLUSTER_column_any(nb, b, cmap);
 	}
