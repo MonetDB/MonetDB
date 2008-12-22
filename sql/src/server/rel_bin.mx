@@ -2953,7 +2953,7 @@ sql_delete_keys(mvc *sql, sql_table *t, stmt *deletes, list *l)
 static stmt * 
 sql_delete(mvc *sql, sql_table *t, stmt *delete)
 {
-	stmt *v, *s;
+	stmt *v, *s = NULL;
 	list *l = create_stmt_list();
 
 	if (delete) { 
