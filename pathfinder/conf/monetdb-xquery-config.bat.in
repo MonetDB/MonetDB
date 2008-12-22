@@ -6,6 +6,7 @@ REM	set prefix=%~dp0
 REM	set prefix=%prefix:~0,-4%
 
 set pkg=@PACKAGE@
+set version=@VERSION@
 set source=@PATHFINDER_SOURCE@
 set build=@PATHFINDER_BUILD@
 set prefix=@prefix@
@@ -26,6 +27,7 @@ shift
 :case
 if "%1" == ""			goto :EOF
 if "%1" == "--help"		goto usage
+if "%1" == "--version"		echo %version%&		goto shift
 if "%1" == "--source"		echo %source%&		goto shift
 if "%1" == "--build"		echo %build%&		goto shift
 if "%1" == "--prefix"		echo %prefix%&		goto shift
@@ -78,6 +80,7 @@ goto shift
 	echo   --modpath5	print default %pkg% module directory (for M5)
 	echo   --conds		conditionals as set by configure
 	echo   --help		display this help and exit
+	echo   --version	output version information
 	echo.
 	echo Install directories %pkg% was configured to
 	echo   --prefix

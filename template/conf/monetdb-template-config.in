@@ -42,6 +42,7 @@ Known values for OPTION are:
   --modpath5		print default ${pkg} module path (for M5)
   --conds		conditionals as set by configure
   --help		display this help and exit
+  --version		output version information
 
 Install directories ${pkg} was configured to
   --prefix
@@ -82,6 +83,11 @@ while test $# -gt 0; do
     --modpath5)
         echo 	$M5libdir:$M5libdir/lib:$M5libdir/bin
         ;;
+
+    --version)
+	echo @VERSION@
+	exit 0
+	;;
 
     --help)
 	usage 0
