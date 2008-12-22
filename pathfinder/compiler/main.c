@@ -888,10 +888,6 @@ main (int argc, char *argv[])
 
             case 'b':
                 status->standoff_axis_steps = true;
-#if ALGEBRA_IS_DEFAULT
-                if (status->output_format == PFoutput_format_not_specified)
-                    status->output_format = PFoutput_format_milprint_summer;
-#endif
                 break;
 
             case 'c':

@@ -6432,12 +6432,7 @@ xquery_prelude(void)
 #if MILPRINT_SUMMER_IS_DEFAULT
         GDKsetenv("xquery_backend","milprint_summer");
 #else /* ALGEBRA_IS_DEFAULT */
-        if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0)) {
-            /* Algebra back-end does not support StandOff extensions, yet */
-            GDKsetenv("xquery_backend","milprint_summer");
-        } else {
-            GDKsetenv("xquery_backend","algebra");
-        }
+        GDKsetenv("xquery_backend","algebra");
 #endif
     }
 

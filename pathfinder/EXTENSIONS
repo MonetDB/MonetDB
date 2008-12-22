@@ -88,9 +88,6 @@ This functionality is compiled in by default, but must be enabled
 explicitly on the XQuery compiler Pathfinder's command line via
 the option `--enable-standoff' (short: `-b').
 
-Stand-Off functionality is currently only available in Pathfinder's
-"milprint_summer" back-end.
-
 4. Full Text Retrieval, PF/Tijah
 --------------------------------
 
