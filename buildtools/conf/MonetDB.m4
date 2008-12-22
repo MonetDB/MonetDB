@@ -504,7 +504,7 @@ LINUX_DIST=''
 case "$host_os" in
     linux*)
 	AC_MSG_CHECKING(which Linux distribution we're using) 
-	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & MonetDB/src/testing/Mtest.py.in !
+	dnl  Please keep this aligned / in sync with TestTools/.Mconfig.rc & TestTools/MdoServer & testing/src/Mtest.py.in !
 	if test -s /etc/fedora-release ; then
 		LINUX_DIST="`cat /etc/fedora-release | head -n1 \
 			| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
@@ -959,7 +959,7 @@ yes-*-*)
 	dnl  GNU (gcc/g++)
 	case "$gcc_ver-$host_os" in
 	*-cygwin*|*-mingw*)
-		dnl  MonetDB/src/testing/Mtimeout.c fails to compile with
+		dnl  testing/src/Mtimeout.c fails to compile with
 		dnl  "--std=c99" as the compiler then refuses to recognize
 		dnl  the "sa_handler" member of the "sigaction" struct,
 		dnl  which is defined in an unnamed union in
