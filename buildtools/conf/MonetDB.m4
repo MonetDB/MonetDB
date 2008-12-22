@@ -529,6 +529,8 @@ case "$host_os" in
 	elif test -s /etc/gentoo-release ; then
 		LINUX_DIST="`cat /etc/gentoo-release | head -n1 \
 			| sed 's|^.*\(Gentoo\) Base System.* [[versionrelease]]* \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`" 
+	elif test -s /etc/lsb-release ; then
+		LINUX_DIST="`grep '^DISTRIB_ID=' /etc/lsb-release | cut -d'=' -f2`:`grep '^DISTRIB_RELEASE=' /etc/lsb-release | cut -d'=' -f2`"
 	elif test -s /etc/debian_version ; then
 		LINUX_DIST="Debian:`cat /etc/debian_version | head -n1`"
 	else

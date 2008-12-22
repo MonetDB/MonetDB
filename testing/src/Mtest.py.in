@@ -2754,6 +2754,15 @@ if SYST == "Linux":
         x = re.compile('^.*(Gentoo) Base System.* [versionrelease]* ([0-9][^ \n]*)( .*)*$').match(l)
         if x:
             LINUX_DIST = '%s:%s' % (x.group(1),x.group(2))
+    elif os.path.isfile('/etc/lsb-release'):
+        x0 = x1 = None
+        for l in open('/etc/lsb-release'):
+            if not x0:
+                x0 = re.compile('^DISTRIB_ID=([^ \n]*)( .*)*$').match(l)
+            if not x1
+                x1 = re.compile('^DISTRIB_RELEASE=([^ \n]*)( .*)*$').match(l)
+        if x0 and x1:
+            LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
     elif os.path.isfile('/etc/debian_version'):
         LINUX_DIST = "Debian:"+open('/etc/debian_version').readline().strip()
     if not LINUX_DIST:
