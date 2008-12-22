@@ -20,6 +20,7 @@ Name: %{name}
 Version: %{version}
 Release: %{release}
 Summary: MonetDB - Monet Database Management System
+Vendor: MonetDB BV <monet@cwi.nl>
 
 Group: Applications/Databases
 License: MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
