@@ -26,7 +26,7 @@
 #include "rel_semantic.h"
 #include "sql_semantic.h"
 
-extern sql_rel* rel_create();
+extern sql_rel* rel_create(void);
 extern sql_rel* rel_setop(sql_rel *l, sql_rel *r, operator_type setop);
 
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
@@ -131,7 +131,7 @@ rel_destroy(sql_rel *rel)
 }
 
 sql_rel*
-rel_create()
+rel_create(void)
 {
 	sql_rel *r = NEW(sql_rel);
 
