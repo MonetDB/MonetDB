@@ -78,7 +78,6 @@ check_op (PFla_op_t *n, bool op_used)
         case la_proxy_base:
         case la_internal_op:
         case la_dummy:
-            fprintf(stderr,"%i\n", n->kind);
             PFoops (OOPS_FATAL,
                     "This property checking phase should be run "
                     "before optimization and inside recursion "
