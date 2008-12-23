@@ -26,9 +26,9 @@
 INCLUDES = ../../runtime ../../compiler/include $(MONETDB4_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-lib__geoxml = {
+lib__probxml = {
 	DIR = libdir/MonetDB4
-	SOURCES = geoxml.mx serialize_geometry.mx
+	SOURCES = probxml.mx
 
 	LIBS = \
 		../../runtime/lib_pf_support $(PF_LIBS) \
@@ -39,6 +39,6 @@ lib__geoxml = {
 headers_mil = {
 	HEADERS = mil
 	DIR = libdir/MonetDB4
-	SOURCES = geoxml.mx
+	SOURCES = probxml.mx
 }
 
