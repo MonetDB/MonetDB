@@ -2759,7 +2759,7 @@ if SYST == "Linux":
         for l in open('/etc/lsb-release'):
             if not x0:
                 x0 = re.compile('^DISTRIB_ID=([^ \n]*)( .*)*$').match(l)
-            if not x1
+            if not x1:
                 x1 = re.compile('^DISTRIB_RELEASE=([^ \n]*)( .*)*$').match(l)
         if x0 and x1:
             LINUX_DIST = '%s:%s' % (x0.group(1),x1.group(1))
