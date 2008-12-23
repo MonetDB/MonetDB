@@ -628,6 +628,8 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 			return CLS_map_sht(rb, cmap, b);
 #if SIZEOF_WRD == SIZEOF_INT
 	case TYPE_wrd:
+#endif
+#if SIZEOF_OID == SIZEOF_INT
 	case TYPE_oid:
 #endif
 	case TYPE_flt:
@@ -635,6 +637,8 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 			return CLS_map_int(rb, cmap, b);
 #if SIZEOF_WRD == SIZEOF_LNG
 	case TYPE_wrd:
+#endif
+#if SIZEOF_OID == SIZEOF_LNG
 	case TYPE_oid:
 #endif
 	case TYPE_dbl:
