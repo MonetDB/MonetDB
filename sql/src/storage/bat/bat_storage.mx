@@ -619,7 +619,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		sql_column *c = ni->t->columns.set->h->data;
 		/* Here we also handle indices created through alter stmts */
 		/* These need to be created aligned to the existing data */
-		/*BAT *b = bat_new(TYPE_void, type, ni->t->sz);*/
 		BAT *b, *cb = bind_col(tr, c, RDONLY);
 		if (type == TYPE_wrd) {
 			wrd val = 0;
