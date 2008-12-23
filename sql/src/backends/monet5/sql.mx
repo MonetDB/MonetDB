@@ -1026,7 +1026,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			return NULL;
 		} else {
 			c->session->status = status;
-			//printf("# falling back to direct mode \n");
+			/*printf("# falling back to direct mode \n");*/
 			s = output_semantic(c, sym);
 		}
 	} else {
@@ -3807,8 +3807,8 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPdecref(b->batCacheid, TRUE);
 
 		d = c->data;
-		// its probably an empty bat which we shouldn't free 
-		//BBPdecref(d->ibid, TRUE);
+		/* its probably an empty bat which we shouldn't free 
+		BBPdecref(d->ibid, TRUE);*/
 		d->bid = 0;	
 		d->ibase = 0;
 		d->ibid = bid; /* use the insert bat */

@@ -213,14 +213,14 @@ inc_parts(sql_table *t)
 	if (isTempTable(t) || isView(t))
 		return ;
 	for (n=t->columns.set->h; n; n = n->next) {
-		//sql_column *c = n->data;
-		//if (c->data && !bpm_add_partition(c->data))
-		//	return;
+		/*sql_column *c = n->data;
+		if (c->data && !bpm_add_partition(c->data))
+			return;*/
 	}
 	if (t->idxs.set) for (n=t->idxs.set->h; n; n = n->next) {
-		//sql_idx *i = n->data;
-		//if (i->data && !bpm_add_partition(i->data))
-		//	return;
+		/*sql_idx *i = n->data;
+		if (i->data && !bpm_add_partition(i->data))
+			return;*/
 	}
 }
 
@@ -256,9 +256,9 @@ inc_parts_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 send_part(sql_column *col, int part, BAT *b, str *conn)
 {
-//	str tmp = NULL, ident = "romulo";
-//	connection c;
-//	sql_bpm *bpm = col->data;
+/*	str tmp = NULL, ident = "romulo";
+	connection c;
+	sql_bpm *bpm = col->data;*/
 	
 	(void)col;
 	(void)part;
@@ -277,8 +277,8 @@ send_part(sql_column *col, int part, BAT *b, str *conn)
 	
 */
 	/*store the information about the fragment location*/
-	//if (!bpm_set_part_location(bpm, part, *conn, ident))
-		//throw(SQL, "mat.send_part", "The storage of the remote location information failed!!");
+	/*if (!bpm_set_part_location(bpm, part, *conn, ident))
+		throw(SQL, "mat.send_part", "The storage of the remote location information failed!!");*/
 	return MAL_SUCCEED;
 }
 
@@ -327,12 +327,12 @@ send_part_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 get_part(sql_column *col, int part, ptr b)
 {
-//	str tmp, host = NULL, remote = NULL;
-//	connection c;
-//	sql_bpm *bpm = col->data;
+/*	str tmp, host = NULL, remote = NULL;
+	connection c;
+	sql_bpm *bpm = col->data;*/
 	
 	(void)col;
-	//bpm_get_part_location(bpm, part, &host, &remote);
+	/*bpm_get_part_location(bpm, part, &host, &remote);*/
 
 	/* lookup conn */
 /*

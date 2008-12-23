@@ -2246,8 +2246,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			return NULL;
 		return rel_or(sql, lr, rr, f);
 
-		//char *name;
-//		sql_rel *lr, *rr;
+		/*char *name;
+		sql_rel *lr, *rr;*/
 
 /* don't name them, else rel_bin cannot find the correct stmts 
 		rel = rel_label(sql, rel);
@@ -4526,10 +4526,10 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 		}
 
-		//if (!instantiate)
-		//	sql->emode = m_instantiate;
-		//if (instantiate) /* we also need the other views instantiated */
-		//	sql->emode = 0;
+		/*if (!instantiate)
+			sql->emode = m_instantiate;*/
+		/*if (instantiate) we also need the other views instantiated 
+			sql->emode = 0;*/
 		if (create) /* for subtable we only need direct dependencies */
 			sql->emode = m_deps;
 		sq = rel_subquery(sql, NULL, query, ek);

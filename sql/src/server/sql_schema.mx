@@ -1915,7 +1915,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 
 				assert(l->h->next->next->next->type == type_int);
 				assert(l->h->next->next->next->next->type == type_int);
-				//res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
+				/*res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);*/
 			}
 			if (!res) {
 				list_destroy(table_elements);

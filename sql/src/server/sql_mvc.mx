@@ -1496,7 +1496,7 @@ stack_pop_frame(mvc *sql)
 	while(sql->vars[--sql->topvars].s) {
 		sql_var *v = &sql->vars[sql->topvars];
 
-		//stmt_destroy(v->s);
+		/*stmt_destroy(v->s);*/
 		_DELETE(v->name);
 		VALclear(&v->value);
 		v->value.vtype = 0;
