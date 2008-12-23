@@ -279,7 +279,10 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
         return;
     }
 
-    if (n->prop->set && n->prop->set_col &&
+    /* in case we MAYBE have the set property set
+       and the column does not appear anymore than
+       we remove any set information */
+    if (n->prop->set_col &&
         !PFprop_ocol (n, n->prop->set_col)) {
         n->prop->set = false;
         n->prop->set_col = col_NULL;
