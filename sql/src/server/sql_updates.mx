@@ -1110,7 +1110,7 @@ scope_add_updated( scope *scp, stmt **updates, sql_table *t, char *on, char *nn)
 		if (updates[c->colnr]) {
 			char *cn = _strdup(c->base.name);
 			stmt *h = stmt_dup(updates[c->colnr]->op2.stval);
-			//stmt *updated = stmt_dup(updates[c->colnr]->op1.stval);
+			/*stmt *updated = stmt_dup(updates[c->colnr]->op1.stval);*/
 			stmt *updated = stmt_bat(c, stmt_dup(tv->s), RDONLY);
 
 			updated = stmt_semijoin(updated, h);

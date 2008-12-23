@@ -104,10 +104,10 @@ extend_part( sql_bpm *p, BAT *b, BAT *i, bat u)
 	sht nr = p->nr;
 
 	use_part(p); 
-//	if (!b) {
-		/* for now we have fixed block sizes */
-//		BATseqbase(i, nr * BPM_SPLIT);
-//	}
+/*	if (!b) {
+		 for now we have fixed block sizes 
+		BATseqbase(i, nr * BPM_SPLIT);
+	}*/
 	bat = p->parts+nr;
 	if (!bat->uname) 
 		bat->uname = sql_message("U_%s_%d", p->name);
@@ -125,10 +125,10 @@ extend_dpart( sql_dbpm *p, BAT *i)
 	sht nr = p->nr;
 
 	use_dpart(p); 
-//	if (!i) {
-		/* for now we have fixed block sizes */
-//		BATseqbase(i, nr * BPM_SPLIT);
-//	}
+/*	if (!i) {
+		 for now we have fixed block sizes 
+		BATseqbase(i, nr * BPM_SPLIT);
+	}*/
 	bat = p->parts+nr;
 	if (!bat->dname) 
 		bat->dname = sql_message("%s_%d", p->name, nr);

@@ -30,7 +30,7 @@ extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
 #endif /*_REL_OPTIMIZER_H_*/
 @c
 
-//#define DEBUG
+/*#define DEBUG*/
 
 #include "sql_config.h"
 #include "rel_optimizer.h"
@@ -1157,7 +1157,7 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 			}
 			if (is_join(rel->op)) {
 				/* push join's left side (as semijoin) down group by */
-				//l = rel_copy(rel->l);
+				/*l = rel_copy(rel->l);*/
 				l = rel_dup(rel_dup(rel->l));
 				/* now we need to translate the names using the join expressions */
 				gb->l = rel_crossproduct(gb->l, l, op_semi);
@@ -1333,7 +1333,7 @@ exp_merge(list *exps)
 	node *n, *m;
 	for (n=exps->h; n && n->next; n = n->next) {
 		sql_exp *e = n->data;
-		//sql_exp *le = e->l;
+		/*sql_exp *le = e->l;*/
 		sql_exp *re = e->r;
 
 		assert(e->type == e_cmp);
@@ -1341,12 +1341,12 @@ exp_merge(list *exps)
 		if (re->card == CARD_ATOM && e->flag < cmp_equal) {
 			for (m=n->next; m; m = m->next) {
 				sql_exp *f = m->data;
-				//sql_exp *lf = f->l;
+				/*sql_exp *lf = f->l;*/
 				sql_exp *rf = f->r;
 
 				assert(f->type == e_cmp);
 				if (rf->card == CARD_ATOM && e->flag < cmp_equal) {
-					//printf("possible candidate\n");
+					/*printf("possible candidate\n");*/
 				}
 			}
 		}

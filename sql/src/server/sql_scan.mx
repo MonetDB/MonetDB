@@ -427,7 +427,7 @@ scanner_query_processed(struct scanner *s)
 		s->rs->pos++;
 		cur = s->rs->buf[s->rs->pos];
 	}
-//	assert(s->rs->pos <= s->rs->len);
+	/*assert(s->rs->pos <= s->rs->len);*/
 	s->yycur = 0;
 	s->key = 0;		/* keep a hash key of the query */
 	s->started = 0;
