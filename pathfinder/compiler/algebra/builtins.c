@@ -5215,49 +5215,17 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop,
                             PFla_op_t **side_effects,
                             struct PFla_pair_t *args)
 {
-    PFla_op_t *node_scj, *nodes;
-    PFalg_step_spec_t desc_text_spec;
-    desc_text_spec.axis = alg_desc_s;
-    desc_text_spec.kind = node_kind_text;
-    /* missing QName */
-    desc_text_spec.qname = PFqname (PFns_wild, NULL);
+    (void) loop; (void) ordering; (void) side_effects;
 
-    (void) ordering; (void) side_effects;
-
-    /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
-    node_scj = rank (
-                   PFla_step_join_simple (
-                       PFla_set_to_la (args[0].frag),
-                       project (args[0].rel,
-                                proj (col_iter, col_iter),
-                                proj (col_item, col_item)),
-                       desc_text_spec,
-                       col_item, col_item1),
-                   col_pos, sortby (col_item1));
-
-    /* concatenate all texts within an iteration using
-       the empty string as delimiter */
-    nodes = fn_string_join (
-                project (
+    return (struct PFla_pair_t) {
+        .rel  = project (
                     doc_access (
                         PFla_set_to_la (args[0].frag),
-                        node_scj,
-                        col_res, col_item1, doc_text),
+                        args[0].rel,
+                        col_res, col_item, doc_atomize),
                     proj (col_iter, col_iter),
                     proj (col_pos,  col_pos),
                     proj (col_item, col_res)),
-                project (
-                    attach (
-                        attach (loop, col_pos, lit_nat (1)),
-                        col_item, lit_str ("")),
-                    proj (col_iter, col_iter),
-                    proj (col_item, col_item)),
-                col_iter, col_pos, col_item,
-                col_iter, col_item,
-                col_iter, col_item);
-
-    return (struct PFla_pair_t) {
-        .rel  = attach (nodes, col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
 
@@ -5270,13 +5238,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
                                  PFla_op_t **side_effects,
                                  struct PFla_pair_t *args)
 {
-    PFla_op_t *sel_attr, *sel_node, *attributes,
-              *node_scj, *nodes;
-    PFalg_step_spec_t desc_text_spec;
-    desc_text_spec.axis = alg_desc_s;
-    desc_text_spec.kind = node_kind_text;
-    /* missing QName */
-    desc_text_spec.qname = PFqname (PFns_wild, NULL);
+    PFla_op_t *sel_attr, *sel_node, *attributes, *nodes;
 
     /* we know that we have no empty sequences and
        thus can skip the treating for empty sequences */
@@ -5297,6 +5259,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
     attributes = project (doc_access (PFla_set_to_la (args[0].frag),
                           sel_attr, col_res, col_item, doc_atext),
                           proj (col_iter, col_iter),
+                          proj (col_pos, col_pos),
                           proj (col_item, col_res));
 
     /* select all other nodes and retrieve string values
@@ -5313,44 +5276,17 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
                    proj (col_pos, col_pos),
                    proj (col_item, col_item));
 
-    /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
-    node_scj = rank (
-                   PFla_step_join_simple (
-                       PFla_set_to_la (args[0].frag),
-                       project (sel_node,
-                                proj (col_iter, col_iter),
-                                proj (col_item, col_item)),
-                       desc_text_spec,
-                       col_item, col_item1),
-                   col_pos, sortby (col_item1));
-
-    /* concatenate all texts within an iteration using
-       the empty string as delimiter */
-    nodes = fn_string_join (
-                project (
-                    doc_access (
-                        PFla_set_to_la (args[0].frag),
-                        node_scj,
-                        col_res, col_item1, doc_text),
-                    proj (col_iter, col_iter),
-                    proj (col_pos,  col_pos),
-                    proj (col_item, col_res)),
-                project (
-                    attach (
-                            project (
-                                     sel_node,
-                                     proj(col_iter, col_iter),
-                                     proj(col_pos, col_pos)),
-                        col_item, lit_str ("")),
-                    proj (col_iter, col_iter),
-                    proj (col_item, col_item)),
-                col_iter, col_pos, col_item,
-                col_iter, col_item,
-                col_iter, col_item);
+    nodes = project (
+                doc_access (
+                    PFla_set_to_la (args[0].frag),
+                    sel_node,
+                    col_res, col_item, doc_atomize),
+                proj (col_iter, col_iter),
+                proj (col_pos,  col_pos),
+                proj (col_item, col_res));
 
     return (struct PFla_pair_t) {
-        .rel  = attach (disjunion (attributes, nodes),
-                        col_pos, lit_nat (1)),
+        .rel  = disjunion (attributes, nodes),
         .frag = PFla_empty_set () };
 }
 

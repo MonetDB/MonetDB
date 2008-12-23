@@ -902,9 +902,12 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                 case doc_pi_text:
                     PFarray_printf (DOT, "processing instruction");
                     break;
-				case doc_qname:
-					PFarray_printf (DOT, "qname");
-					break;
+                case doc_qname:
+                    PFarray_printf (DOT, "qname");
+                    break;
+                case doc_atomize:
+                    PFarray_printf (DOT, "atomize");
+                    break;
                 default: PFoops (OOPS_FATAL,
                         "unknown document access in DOT output");
             }
@@ -2169,6 +2172,12 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                     break;
                 case doc_pi_text:
                     PFarray_printf (xml, "doc.pi");
+                    break;
+                case doc_qname:
+                    PFarray_printf (xml, "qname");
+                    break;
+                case doc_atomize:
+                    PFarray_printf (xml, "atomize");
                     break;
                 default: PFoops (OOPS_FATAL,
                         "unknown document access in dot output");

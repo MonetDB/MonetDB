@@ -6671,6 +6671,102 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    fetch (var (PF_MIL_VAR_WS),
                                           var (PF_MIL_VAR_PROP_INS)))));
                     break;
+                case (doc_atomize):
+                {
+                    assert (ty == aat_pnode);
+                    /* Implement atomize (or string-value) semantic
+                       by applying a descendant-or-self::text()
+                       step_join, followed by a text-value lookup
+                       (doc_access(doc_text)) and string_join aggregate
+                       to get a single string for each input node. */
+
+                    mvar_t  *iter     = new_var (1),
+                            *scj_res  = new_var (1),
+                            *iter_res = new_var (1),
+                            *item_res = new_var (1),
+                            *cont_res = new_var (1),
+                            *item_str = new_var (1);
+
+                    /* evaluate descendant-or-self::text() step:
+                       iter := pre.mark(1@0);
+                       scj_res := step (AXIS_descendant_or_self,
+                                        TEST_kind,
+                                        iter, pre, frag, nil, ws, 0,
+                                        TEXT, str(nil), str(nil), str(nil));
+                       iter_res := scj_res.fetch(0);
+                       item_res := scj_res.fetch(2);
+                       # cont is probably a fake project
+                       cont_res := scj_res.fetch(1);
+                       # avoid iter being a fake project
+                       iter_res := materialize(iter_res, item_res); */
+                    execute (
+                        assgn (var (iter->name), mirror (pre)),
+                        assgn (
+                            var (scj_res->name),
+                            step (var (PF_MIL_VAR_AXIS_DESC_S),
+                                  var (PF_MIL_VAR_CODE_KIND),
+                                  var (iter->name),
+                                  frag,
+                                  pre,
+                                  nil (),
+                                  var (PF_MIL_VAR_WS),
+                                  lit_int (0),
+                                  var (PF_MIL_VAR_KIND_TEXT),
+                                  cast (type (mty_str), nil ()),
+                                  cast (type (mty_str), nil ()),
+                                  cast (type (mty_str), nil ()))),
+                        assgn (
+                            var (iter_res->name),
+                            fetch(var (scj_res->name), lit_int (0))),
+                        assgn (
+                            var (item_res->name),
+                            fetch(var (scj_res->name), lit_int (2))),
+                        assgn (
+                            var (cont_res->name),
+                            fetch(var (scj_res->name), lit_int (1))),
+                        assgn (
+                            var (iter_res->name),
+                            materialize (
+                                var (iter_res->name),
+                                var (item_res->name))));
+
+                    /* lookup the text-value of the resulting text nodes */
+                    execute (
+                        assgn (var (item_str->name),
+                               mposjoin (
+                                   mposjoin (
+                                       var (item_res->name),
+                                       var (cont_res->name),
+                                       fetch (var (PF_MIL_VAR_WS),
+                                              var (PF_MIL_VAR_PRE_PROP))),
+                                   mposjoin (
+                                       var (item_res->name),
+                                       var (cont_res->name),
+                                       fetch (var (PF_MIL_VAR_WS),
+                                              var (PF_MIL_VAR_PRE_CONT))),
+                                   fetch (var (PF_MIL_VAR_WS),
+                                          var (PF_MIL_VAR_PROP_TEXT)))));
+
+                    /* apply string-join aggregate */
+                    execute (
+                        assgn (var (str->name),
+                               string_join (
+                                   leftjoin (
+                                       reverse (var (iter_res->name)),
+                                       var (item_str->name)),
+                                   project (var (iter->name), lit_str ("")))));
+                    /* (In the beginning of this rule we used the head values
+                        as iter values. This allows to ignore the back-mapping
+                        after the string-join operator (see rule
+                        string_join (Rel, Rel)). */
+
+                    unpin (iter, 1);
+                    unpin (scj_res, 1);
+                    unpin (iter_res, 1);
+                    unpin (item_res, 1);
+                    unpin (cont_res, 1);
+                    unpin (item_str, 1);
+                }   break;
                 default:
                     PFoops (OOPS_FATAL,
                             "unexpected document column in doc_access (%i)",

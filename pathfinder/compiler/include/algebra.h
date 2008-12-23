@@ -434,7 +434,8 @@ enum PFalg_doc_t {
     , doc_text         /**< content of a text node > */
     , doc_comm         /**< content of a comment node > */
     , doc_pi_text      /**< content of a pi node > */
-	, doc_qname        /**< QName of a node > */
+    , doc_qname        /**< QName of a node > */
+    , doc_atomize      /**< string-value of an element or document node */
 };
 typedef enum PFalg_doc_t PFalg_doc_t;
 

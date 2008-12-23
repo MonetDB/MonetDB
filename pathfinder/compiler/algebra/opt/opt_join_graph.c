@@ -49,6 +49,9 @@
 #include "alg_dag.h"
 #include "mem.h"          /* PFmalloc() */
 
+/** mnemonic algebra constructors */
+#include "logical_mnemonic.h"
+
 /* mnemonic column list accessors */
 #include "alg_cl_mnemonic.h"
 
@@ -170,6 +173,77 @@ opt_join_graph (PFla_op_t *p)
                 }
             }
         }   break;
+
+        case la_doc_access:
+            /* replace the atomize (string-value) operator by
+               a more explicit variant (descendant-or-self::text() step_join +
+               doc_access(text) + string_join) the SQL Code generator can cope
+               with */
+            if (p->sem.doc_access.doc_col == doc_atomize) {
+                PFalg_col_t       join_col1 = PFcol_new (col_iter),
+                                  join_col2 = PFcol_new (col_iter),
+                                  step_col  = PFcol_new (col_item),
+                                  order_col = PFcol_new (col_pos),
+                                  in_col    = p->sem.doc_access.col,
+                                  res_col   = p->sem.doc_access.res;
+                PFla_op_t        *rowid,
+                                 *node_scj,
+                                 *nodes;
+                PFalg_step_spec_t desc_text_spec;
+                PFalg_proj_t     *proj = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                rowid = rowid (R(p), join_col1);
+
+                /* retrieve all descendant textnodes (`/descendant-or-self::text()') */
+                desc_text_spec.axis = alg_desc_s;
+                desc_text_spec.kind = node_kind_text;
+                /* missing QName */
+                desc_text_spec.qname = PFqname (PFns_wild, NULL);
+                node_scj = rank (
+                               PFla_step_join_simple (
+                                   L(p),
+                                   project (rowid,
+                                            proj (join_col2, join_col1),
+                                            proj (in_col, in_col)),
+                                   desc_text_spec,
+                                   in_col, step_col),
+                               order_col, sortby (step_col));
+
+                /* concatenate all texts within an iteration using
+                   the empty string as delimiter */
+                nodes = fn_string_join (
+                            project (
+                                doc_access (
+                                    L(p),
+                                    node_scj,
+                                    res_col, step_col, doc_text),
+                                proj (join_col2, join_col2),
+                                proj (order_col, order_col),
+                                proj (res_col, res_col)),
+                            project (
+                                attach (rowid, res_col, lit_str ("")),
+                                proj (join_col2, join_col1),
+                                proj (res_col, res_col)),
+                            join_col2, order_col, res_col,
+                            join_col2, res_col,
+                            join_col2, res_col);
+
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    proj[i] = PFalg_proj (p->schema.items[i].name,
+                                          p->schema.items[i].name);
+
+                /* align result with the other columns
+                   (and prune additional columns) */
+                *p = *PFla_project_ (eqjoin (
+                                         rowid,
+                                         nodes,
+                                         join_col1,
+                                         join_col2),
+                                     p->schema.count,
+                                     proj);
+            }
+            break;
 
 #if 0
         /* Replace all step operators by step_join operators

@@ -549,6 +549,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                 case doc_pi_text:
                     PFarray_printf (dot, "processing instruction");
                     break;
+                case doc_qname:
+                    PFarray_printf (dot, "qname");
+                    break;
+                case doc_atomize:
+                    PFarray_printf (dot, "atomize");
+                    break;
                 default: PFoops (OOPS_FATAL,
                         "unknown document access in dot output");
             }

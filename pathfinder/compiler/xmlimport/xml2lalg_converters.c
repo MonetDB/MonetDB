@@ -412,6 +412,8 @@ PFxml2la_conv_2PFLA_docType(char* s)
     else if (strcmp(s, "doc.textnode") == 0)  return doc_text;
     else if (strcmp(s, "doc.comment") == 0)   return doc_comm;
     else if (strcmp(s, "doc.pi") == 0)        return doc_pi_text;
+    else if (strcmp(s, "qname") == 0)         return doc_qname;
+    else if (strcmp(s, "atomize") == 0)       return doc_atomize;
 
     PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
     /* pacify picky compilers */
