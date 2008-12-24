@@ -592,7 +592,8 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 {
 	BATiter bi;
 	BAT *rb, *cmap = NULL, *b = NULL;
-	wrd i = 0, bf, mf, *m;
+	BUN i = 0, bf, mf;
+	wrd *m;
 
 	if ((cmap = BATdescriptor(*CMAP)) == NULL ||
 	    (b = BATdescriptor(*B)) == NULL) {
@@ -652,11 +653,11 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	mf = BUNfirst(cmap);
 	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
 	if (b->T->varsized) {
-		for (i = 0; i < (wrd)BATcount(b); i++) {
+		for (i = 0; i < BATcount(b); i++) {
 			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtvar(bi, bf+i), 0);
 		}
 	} else {
-		for (i = 0; i < (wrd)BATcount(b); i++) {
+		for (i = 0; i < BATcount(b); i++) {
 			BUNinplace(rb, (BUN)m[mf+i], NULL, BUNtloc(bi, bf+i), 0);
 		}
 	}
