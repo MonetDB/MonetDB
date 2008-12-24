@@ -15,7 +15,7 @@ stdout of test 'scenes` in directory 'tests/StandOff/video` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><beatleScenes><scene id="1" start="0" end="800"/><scene id="2" start="801" end="10400"/></beatleScenes></XQueryResult>
+<XQueryResult><beatleScenes><scene end="800" start="0" id="1"/><scene end="10400" start="801" id="2"/></beatleScenes></XQueryResult>
 
 # 10:25:11 >  pf -bA "/homes/wouter/projects/monetdb/pathfinder/tests/StandOff/video/Tests/scenes.xq" | Mtimeout -timeout 60  Mserver "--config=/homes/wouter/opt/MonetDB-devel//etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/homes/wouter/opt/MonetDB-devel//lib/MonetDB4:/homes/wouter/opt/MonetDB-devel//lib/MonetDB4/lib:/homes/wouter/opt/MonetDB-devel//lib/MonetDB4/bin" --set "gdk_dbfarm=/homes/wouter/opt/MonetDB-devel//var/MonetDB4/dbfarm" --set "sql_logdir=/homes/wouter/opt/MonetDB-devel//var/MonetDB4/sql_logs" --set "xquery_logdir=/homes/wouter/opt/MonetDB-devel//var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=37738 --set xrpc_port=48030 --set monet_prompt=   --set standoff=enabled --dbname=mTests_tests_StandOff_video "--dbinit=module(pathfinder);"
 

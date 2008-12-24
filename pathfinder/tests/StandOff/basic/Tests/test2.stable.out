@@ -15,4 +15,4 @@ stdout of test 'test2` in directory 'tests/StandOff/basic` itself:
 # MonetDB/XQuery module v0.27.0 loaded (default back-end is 'milprint_summer')
 # XRPC administrative console at http://127.0.0.1:41114/admin
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><result1><a end="4" start="1"><b end="3" start="2"/></a><b end="3" start="2"/></result1><result2><b end="3" start="2"/></result2><result3><b end="3" start="2"/></result3><result4/></XQueryResult>
+<XQueryResult><result1><a start="1" end="4"><b start="2" end="3"/></a><b start="2" end="3"/></result1><result2><b start="2" end="3"/></result2><result3><b start="2" end="3"/></result3><result4/></XQueryResult>
