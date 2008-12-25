@@ -407,6 +407,7 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	/* to be done, first assume that we can remap in one go */
 	assert(BATcount(b)==BATcount(cmap));
 
+	BATseqbase(nb,0);
 	switch(ATOMstorage(b->ttype)) {
 /*
 	case TYPE_chr: CLUSTER_column_chr(nb, b, cmap);break;
