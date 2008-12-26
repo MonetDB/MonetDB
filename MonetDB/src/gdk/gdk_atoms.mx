@@ -1514,12 +1514,18 @@ batWrite(bat *a, stream *s, size_t cnt)
 	return stream_writeIntArray(s, (int *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+@-
+The numfromstr parses the head of the string for a number,
+accepting optional signs. The code has been prepared to
+continue parsing by returning the number of characters read.
+Two errors are possible. It does not represent a number (return 0)
+or there is an overflow (silently ignored).
 
 @= numfromstr
 int
 @1FromStr(char *src, int *len, @1 **dst)
 {
-	int sign = 1, error = 0;
+	int sign = 1;
 	@1 base = 0;
 	str q, p = src;
 
@@ -1527,29 +1533,34 @@ int
 	while (GDKisspace(*p))
 		p++; 
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		base = @1_nil; p += 3;
+		**dst = @1_nil;
+		p += 3;
 	} else {
-		if (*p == '-' || *p == '+') {
-			if (*p++ == '-')
+		if (!num10(*p) ) {
+			if ( *p == '-') {
 				sign = -1;
-		}
-		if (!num10(*p) && *p != '.') {
-			error = 1;
-			p = src;
+				p++;
+			} else
+			if ( *p == '+') {
+				p++;
+			} else {
+				/* all else is an error */
+				**dst = @1_nil;
+				return 0;
+			}
 		}
 		while (*p == '0')
 			p++;
 		for (q = p; num10(*p); p++) {
 			base = mult10(base) + base10(*p);
 		}
-		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0)) {
-			error = 1; /* overflow */
-		}
-		if (sizeof(@1) == 8 && p[0] == 'L' && p[1] == 'L') {
+		**dst = sign * base;
+		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0))
+			**dst = @1_nil;
+		if (p[0] == 'L' && p[1] == 'L' && sizeof(@1) == 8) {
 			p += 2;
 		}
 	}
-	**dst = error ? @1_nil : sign * base;
 	return (int) (p - src);
 }
 @c
