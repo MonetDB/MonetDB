@@ -27,7 +27,7 @@ Over..
 # 18:01:11 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38731  -G
 # 18:01:11 >  
 
-% sys.way_tags,	sys.way_tags # table_name
+% sys.way_tags_2183292,	sys.way_tags_2183292 # table_name
 % way,	k # name
 % int,	clob # type
 % 1,	0 # length
