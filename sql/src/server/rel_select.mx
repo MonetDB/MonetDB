@@ -2220,6 +2220,25 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 }
 
+static sql_rel *
+rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp) 
+{
+	list *exps = rel_projections(sql, rel, NULL, 1, 1);
+	sql_exp *e; 
+
+	if (list_length(exps) == 0) {
+		list_destroy(exps);
+		*exp = NULL;
+		return rel;
+	}
+	rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 1));
+ 	e = rel_unop_(sql, exp_dup(rel->exps->h->data), NULL, "identity");
+	set_intern(e);
+	rel_project_add_exp(sql, rel, e);
+	*exp = e = exp_label(e, ++sql->label);
+	return rel;
+}
+
 sql_rel *
 rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 {
@@ -2237,8 +2256,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 
-		sql_rel *lr = rel;
-		sql_rel *rr = rel_copy(rel);
+		sql_rel *lr, *rr;
+		sql_exp *e = NULL;
+
+		lr = rel_add_identity(sql, rel, &e);
+		rr = rel_copy(lr);
+		(void)e;
 
 		lr = rel_logical_exp(sql, lr, lo, f);
 		rr = rel_logical_exp(sql, rr, ro, f);
@@ -2246,28 +2269,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!lr || !rr)
 			return NULL;
 		return rel_or(sql, lr, rr, f);
-
-		/*char *name;
-		sql_rel *lr, *rr;*/
-
-/* don't name them, else rel_bin cannot find the correct stmts 
-		rel = rel_label(sql, rel);
-		name = rel->name;
-		stack_push_rel_view(sql, name, rel);
-		lr = stack_find_rel_view(sql, name);
-		rr = stack_find_rel_view(sql, name);
-*/
-/*
-		lr = rel_dup(rel);
-		rr = rel_dup(rel);
-		
-		lr = rel_logical_exp(sql, lr, lo, f);
-		rr = rel_logical_exp(sql, rr, ro, f);
-
-		if (!lr || !rr)
-			return NULL;
-		return rel_or(sql, lr, rr, f);
-*/
 	}
 	case SQL_AND:
 	{
@@ -2427,11 +2428,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			   generate row id's which we use in the anti/semi
 			   join expression.
 			 */
-			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 1));
 			exps = rel_projections(sql, rel, NULL, 1, 1);
- 			e = rel_unop_(sql, exp_dup(rel->exps->h->data), NULL, "identity");
-			rel_project_add_exp(sql, rel, e);
-			e = exp_label(e, ++sql->label);
+			rel = rel_add_identity(sql, rel, &e);
 
 			/* TODO double dup to make sure we reference the rel */
 			r = rel_subquery(sql, rel_dup(rel_dup(rel)), lo, ek);
