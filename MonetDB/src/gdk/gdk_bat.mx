@@ -1029,10 +1029,10 @@ BUNins(BAT *b, ptr h, ptr t, bit force)
 		return b;
 	}
 	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h)) != BUN_NONE) {
-		if (BUNinplace(b, p, h, t, 0) == NULL)
+		if (BUNinplace(b, p, h, t, force) == NULL)
 			return NULL;
 	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(bm, t)) != BUN_NONE) {
-		if (BUNinplace(bm, p, t, h, 0) == NULL)
+		if (BUNinplace(bm, p, t, h, force) == NULL)
 			return NULL;
 	} else {
 		BUN i;
