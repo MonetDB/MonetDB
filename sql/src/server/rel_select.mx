@@ -1864,6 +1864,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
 	rel = rel_setop(l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	rel = rel_distinct(rel);
 	return rel;
 }
 
