@@ -672,22 +672,20 @@ join_hash_key( mvc *sql, list *l )
 	it = sql_bind_localtype("int");
 	wrd = sql_bind_localtype("wrd");
 	for (m = l->h; m; m = m->next) {
-		stmt *tmp, *s = stmt_dup(m->data);
+		stmt *s = stmt_dup(m->data);
 
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
-			tmp = stmt_join(stmt_dup(o), s, cmp_equal);
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_dup(bits)), 
-				tmp)), 
+				stmt_join(stmt_dup(o), s, cmp_equal))), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, wrd);
 			o = stmt_mark(stmt_reverse(stmt_dup(s)), 40); 
-			tmp = stmt_mark(s, 40); 
-			h = stmt_unop(tmp, hf);
+			h = stmt_unop(stmt_mark(s, 40), hf);
 		}
 	}
 	stmt_destroy(bits);
