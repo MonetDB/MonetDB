@@ -13,6 +13,7 @@ mul_div_bug.SF-2075135
 string_length_not_checked.SF-2075078
 update_set_negative.SF-2075197
 varchar_char_semantics.SF-2075085
+varchar.SF-2471371
 view_reply_incorrect.SF-2075097
 year_overflow_bug.SF-2075133
 select_not_wrong_result.SF-2080151
