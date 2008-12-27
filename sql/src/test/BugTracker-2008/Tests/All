@@ -32,3 +32,5 @@ sql_command_kills_db.SF-2233677
 between_no_columns.SF2102101
 col_from_another_inside_function_body.SF-2420768
 is_distinct_broken.SF-2430201
+blob_insert_crash.SF-2388542
+subselect_with_or.SF-2466725
