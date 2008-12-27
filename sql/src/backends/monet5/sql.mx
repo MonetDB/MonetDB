@@ -837,22 +837,22 @@ sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 @:round_export(wrd)@
 @:round_export(lng)@
 @= cast_export
-sql5_export str str_2_@1( @1 *res, str *val );
+sql5_export str str_2_@1( @3 *res, str *val );
 sql5_export str batstr_2_@1( int *res, int *val );
 sql5_export str SQL@1_2_str( str *res, @1 *val );
 @h
-@:cast_export(bit,bitToStr)@
-@:cast_export(oid,OIDtoStr)@
-@:cast_export(bte,bteToStr)@
-@:cast_export(sht,shtToStr)@
-@:cast_export(int,intToStr)@
-@:cast_export(lng,lngToStr)@
-@:cast_export(flt,fltToStr)@
-@:cast_export(dbl,dblToStr)@
-@:cast_export(timestamp,timestamp_tostr)@
-@:cast_export(daytime,daytime_tostr)@
-@:cast_export(date,date_tostr)@
-@:cast_export(sqlblob,sqlblob_tostr)@
+@:cast_export(bit,bitToStr,bit)@
+@:cast_export(oid,OIDtoStr,oid)@
+@:cast_export(bte,bteToStr,bte)@
+@:cast_export(sht,shtToStr,sht)@
+@:cast_export(int,intToStr,int)@
+@:cast_export(lng,lngToStr,lng)@
+@:cast_export(flt,fltToStr,flt)@
+@:cast_export(dbl,dblToStr,dbl)@
+@:cast_export(timestamp,timestamp_tostr,timestamp)@
+@:cast_export(daytime,daytime_tostr,daytime)@
+@:cast_export(date,date_tostr,date)@
+@:cast_export(sqlblob,sqlblob_tostr,sqlblob*)@
 sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @= fround_export
@@ -2587,7 +2587,7 @@ str
 
 @= cast
 str
-str_2_@1( @1 *res, str *val )
+str_2_@1( @3 *res, str *val )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -2604,9 +2604,11 @@ str_2_@1( @1 *res, str *val )
                 snprintf(buf, BUFSIZ,"conversion of string '%s' failed",*val);
 		throw(SQL, "@1", buf);
 	}
-	*res = *(@1*)p;
-	if (p)
-		GDKfree(p);
+	@4;
+	if (!ATOMextern(TYPE_@1)) {
+		if (p)
+			GDKfree(p);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -2636,7 +2638,7 @@ batstr_2_@1( int *res, int *bid )
 	BATseqbase(dst, b->hseqbase);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
-		@1 r;
+		@3 r;
 		msg = str_2_@1( &r, &v );
 		if (msg)
 			break;
@@ -2647,18 +2649,18 @@ batstr_2_@1( int *res, int *bid )
 	return msg;
 }
 @c
-@:cast(bit,bitToStr)@
-@:cast(oid,OIDtoStr)@
-@:cast(bte,bteToStr)@
-@:cast(sht,shtToStr)@
-@:cast(int,intToStr)@
-@:cast(lng,lngToStr)@
-@:cast(flt,fltToStr)@
-@:cast(dbl,dblToStr)@
-@:cast(timestamp,timestamp_tostr)@
-@:cast(daytime,daytime_tostr)@
-@:cast(date,date_tostr)@
-@:cast(sqlblob,sqlblob_tostr)@
+@:cast(bit,bitToStr,bit, *res = *(bit*)p)@
+@:cast(oid,OIDtoStr,oid, *res = *(oid*)p)@
+@:cast(bte,bteToStr,bte, *res = *(bte*)p)@
+@:cast(sht,shtToStr,sht, *res = *(sht*)p)@
+@:cast(int,intToStr,int, *res = *(int*)p)@
+@:cast(lng,lngToStr,lng, *res = *(lng*)p)@
+@:cast(flt,fltToStr,flt, *res = *(flt*)p)@
+@:cast(dbl,dblToStr,dbl, *res = *(dbl*)p)@
+@:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p)@
+@:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p)@
+@:cast(date,date_tostr,date, *res = *(date*)p)@
+@:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p)@
 
 str
 SQLstr_2_str( str *res, str *val )
