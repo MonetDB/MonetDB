@@ -1685,6 +1685,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		assert(l->h->next->type == type_int);
 		if ((key = mvc_bind_key(sql, ss, kname )) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
+		if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
+			return sql_error(sql, 02, "unable to drop constraint %s (there are database objects which depend on it)\n", key->base.name);
 		mvc_drop_key(sql, ss, key, drop_action);
 		res = stmt_none();
 	} break;
