@@ -996,6 +996,8 @@ sql_update_add_idx(mvc *sql, sql_table *t, sql_idx * idx)
 	sql_kc *ic = idx->columns->h->data;
 	sql_rel *updates, *update;
 
+	if (isNew(ic->c)) /* column is just created, ie gets update by it self */
+		return stmt_none();
  	exps = new_exp_list();
 	exps = append(exps, 
 		exp_column(t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
@@ -1317,8 +1319,12 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 			if (!cs->def) {
 				a = atom_general(&cs->type, NULL, 0);
-				if (a)
-					res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
+				if (a) {
+					if (isNew(t))
+						res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
+					else
+						res = stmt_update_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
+				}
 			} else {
 				stmt *sq;
 				char *msg = NULL;
@@ -1338,7 +1344,10 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				   foreach new value. This is handled by
 				   stmt_const and push_project.
 				*/
-				res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), sq));
+				if (isNew(t))
+					res = stmt_append_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), sq));
+				else
+					res = stmt_update_col(cs, stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), sq));
 			}
 			if (!res) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");

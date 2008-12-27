@@ -1652,13 +1652,13 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt_relselect_fill(s, stmt_uselect(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts), cmp_equal));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+
 				col = stmt_bat(c->c, stmt_dup(ts), RDONLY);
 				if ((k->type == ukey) && stmt_has_null(stmt_dup(col))) {
 					sql_subtype *t = tail_type(col);
 					stmt *n = stmt_atom(atom_general(t, NULL, 0));
 					col = stmt_select2(col, n, stmt_dup(n), 0);
 				}
-
 				stmt_relselect_fill(s, stmt_uselect( col, stmt_dup(nth(inserts, c->c->colnr)->op2.stval), cmp_equal));
 			}
 		} else {
@@ -1666,13 +1666,13 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			stmt_releqjoin_fill(s, stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
+
 				col = stmt_bat(c->c, stmt_dup(ts), RDONLY);
 				if ((k->type == ukey) && stmt_has_null(stmt_dup(col))) {
 					sql_subtype *t = tail_type(col);
 					stmt *n = stmt_atom(atom_general(t, NULL, 0));
 					col = stmt_select2(col, n, stmt_dup(n), 0);
 				}
-
 				stmt_releqjoin_fill(s, col, stmt_dup(nth(inserts, c->c->colnr)->op2.stval));
 			}
 		}
@@ -1837,7 +1837,7 @@ hash_insert(mvc *sql, sql_idx * i, list *inserts)
 	node *m;
 	sql_subtype *it, *wrd;
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
-	stmt *h = NULL;
+	stmt *h = NULL, *o = NULL;
 
 	if (list_length(i->columns) <= 1)
 		return NULL;
@@ -1846,6 +1846,7 @@ hash_insert(mvc *sql, sql_idx * i, list *inserts)
 	wrd = sql_bind_localtype("wrd");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
+		stmt *i = stmt_dup(nth(inserts, c->c->colnr)->op2.stval);
 
 		if (h) {
 			sql_subfunc *xor = sql_bind_func_result3(sql->session->schema, "rotate_xor_hash", wrd, it, &c->c->type, wrd);
@@ -1853,13 +1854,20 @@ hash_insert(mvc *sql, sql_idx * i, list *inserts)
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_atom_int(bits)), 
-				stmt_dup(nth(inserts, c->c->colnr)->op2.stval))), 
+				(o)?stmt_join(stmt_dup(o), i, cmp_equal):i)), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, wrd);
-			h = stmt_unop(stmt_dup(nth(inserts, c->c->colnr)->op2.stval), hf);
+			if (i->nrcols == 0 && i->key) {
+				h = stmt_unop(i, hf);
+			} else {
+				o = stmt_mark(stmt_reverse(i), 40); 
+				h = stmt_unop(stmt_mark(stmt_dup(i), 40), hf);
+			}
 		}
 	}
+	if (o)
+		return stmt_join(stmt_reverse(o), h, cmp_equal);
 	return h;
 }
 
@@ -2189,29 +2197,38 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	if (list_length(k->columns) > 1) {
 		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		node *m;
-		stmt *s;
+		stmt *s = NULL;
 
 		/* 1st stage: find out if original (without the updated) 
 			do not contain the same values as the updated values. 
 			This is done using a relation join and a count (which 
 			should be zero)
 	 	*/
-		s = stmt_releqjoin_init();
-		stmt_releqjoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
-		for (m = k->columns->h; m; m = m->next) {
-			sql_kc *c = m->data;
-			stmt *upd, *l;
+		/* TODO split null removal and join/group (to make mkey save) */
+		if (!isNew(k)) {
+			s = stmt_releqjoin_init();
+			stmt_releqjoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
+			for (m = k->columns->h; m; m = m->next) {
+				sql_kc *c = m->data;
+				stmt *upd, *l;
 
-			if (updates[c->c->colnr]) {
-				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-			} else {
-				upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
+				if (updates[c->c->colnr]) {
+					upd = stmt_dup(updates[c->c->colnr]->op2.stval);
+				} else {
+					upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
+				}
+				if ((k->type == ukey) && stmt_has_null(stmt_dup(upd))) {
+					sql_subtype *t = tail_type(upd);
+					stmt *n = stmt_atom(atom_general(t, NULL, 0));
+					upd = stmt_select2(upd, n, stmt_dup(n), 0);
+				}
+
+				l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
+				stmt_releqjoin_fill(s, l, upd);
+
 			}
-			l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
-			stmt_releqjoin_fill(s, l, upd);
-
+			s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
 		}
-		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
 
 		/* 2e stage: find out if the updated are unique */
 		if (idx_updates->nrcols) {	/* update columns not atoms */
@@ -2234,6 +2251,13 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 					upd = stmt_dup(updates[updcol]->op2.stval);
 					upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 				}
+				/* remove nulls */
+				if ((k->type == ukey) && stmt_has_null(stmt_dup(upd))) {
+					sql_subtype *t = tail_type(upd);
+					stmt *n = stmt_atom(atom_general(t, NULL, 0));
+					upd = stmt_select2(upd, n, stmt_dup(n), 0);
+				}
+
 				g = grp_create(upd, g, NULL);
 			}
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt), 1);
@@ -2245,7 +2269,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), check_types(sql, wrd, ssum, type_equal), sql_dup_func(ne));
 
 			/* combine results */
-			s = stmt_binop(s, count_sum, or);
+			if (s) 
+				s = stmt_binop(s, count_sum, or);
+			else
+				s = count_sum;
 		}
 
 		if (k->type == pkey) {
@@ -2259,21 +2286,33 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup(updates[c->c->colnr]->op2.stval);
 		stmt *o = stmt_diff(stmt_bat(c->c, ts, RDONLY), stmt_dup(h));
-		stmt *s = stmt_join(o, stmt_reverse(h), cmp_equal);
+		stmt *s = NULL;
 
+	
 		/* s should be empty */
-		s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
+		if (!isNew(k)) {
+			s = stmt_join(o, stmt_reverse(h), cmp_equal);
+			s = stmt_binop(stmt_aggr(s, NULL, cnt, 1), stmt_atom_wrd(0), ne);
+		}
 
 		/* 2e stage: find out if updated are unique */
 		if (h->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->session->schema, "or", bt, bt, bt);
-			stmt *ssum;
-
+			stmt *ssum, *ss;
 			stmt *upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-			group *g = grp_create(upd, NULL, NULL);
-			stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
+			group *g;
+
+			/* remove nulls */
+			if ((k->type == ukey) && stmt_has_null(stmt_dup(upd))) {
+				sql_subtype *t = tail_type(upd);
+				stmt *n = stmt_atom(atom_general(t, NULL, 0));
+				upd = stmt_select2(upd, n, stmt_dup(n), 0);
+			}
+
+			g = grp_create(upd, NULL, NULL);
+			ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt), 1);
 
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->session->schema, "sum", tail_type(ss));
@@ -2282,7 +2321,10 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			count_sum = stmt_binop(check_types(sql, tail_type(ssum), stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt), 1), type_equal), ssum, sql_dup_func(ne));
 
 			/* combine results */
-			s = stmt_binop(s, count_sum, or);
+			if (s)
+				s = stmt_binop(s, count_sum, or);
+			else
+				s = count_sum;
 		}
 
 		if (k->type == pkey) {
@@ -2549,7 +2591,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 	node *m;
 	sql_subtype *it, *wrd;
 	int bits = 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns));
-	stmt *h = NULL, *ts;
+	stmt *h = NULL, *ts, *o = NULL;
 
 	if (list_length(i->columns) <= 1)
 		return NULL;
@@ -2574,31 +2616,58 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_atom_int(bits)), 
-				upd)), 
+				stmt_join(stmt_dup(o), upd, cmp_equal))), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", &c->c->type, NULL, wrd);
-			h = stmt_unop(upd, hf);
+			o = stmt_mark(stmt_reverse(stmt_dup(upd)), 40); 
+			h = stmt_unop(stmt_mark(upd, 40), hf);
 		}
 	}
 	stmt_destroy(ts);
-	return h;
+	return stmt_join(stmt_reverse(o), h, cmp_equal);
 }
+
+/*
+         A referential constraint is satisfied if one of the following con-
+         ditions is true, depending on the <match option> specified in the
+         <referential constraint definition>:
+
+         -  If no <match type> was specified then, for each row R1 of the
+            referencing table, either at least one of the values of the
+            referencing columns in R1 shall be a null value, or the value of
+            each referencing column in R1 shall be equal to the value of the
+            corresponding referenced column in some row of the referenced
+            table.
+
+         -  If MATCH FULL was specified then, for each row R1 of the refer-
+            encing table, either the value of every referencing column in R1
+            shall be a null value, or the value of every referencing column
+            in R1 shall not be null and there shall be some row R2 of the
+            referenced table such that the value of each referencing col-
+            umn in R1 is equal to the value of the corresponding referenced
+            column in R2.
+
+         -  If MATCH PARTIAL was specified then, for each row R1 of the
+            referencing table, there shall be some row R2 of the refer-
+            enced table such that the value of each referencing column in
+            R1 is either null or is equal to the value of the corresponding
+            referenced column in R2.
+*/
 
 static stmt *
 join_idx_update(sql_idx * i, stmt **updates, int updcol)
 {
-	int nulls = 0;
+	int nulls = 0, len;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey *) i->key)->rkey->k.idx;
 	stmt *s = NULL, *rts = stmt_basetable(ri->t, ri->t->base.name), *ts;
-	stmt *null = NULL;
+	stmt *null = NULL, *nnull = NULL;
+	stmt **new_updates = table_update_array(i->t, &len);
 
 	ts = stmt_basetable(i->t, i->t->base.name);
-	s = stmt_releqjoin_init();
 	for (m = i->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
-		sql_kc *rc = o->data;
 		stmt *upd;
 
 		if (updates[c->c->colnr]) {
@@ -2607,18 +2676,38 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 			upd = stmt_dup(updates[updcol]->op2.stval);
 			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
-		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
+		new_updates[c->c->colnr] = upd;
+
+		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
+		/* Currently only the default MATCH SIMPLE is supported */
+		if (c->c->null) {
 			stmt *nn = stmt_dup(upd);
 
 			nn = stmt_uselect(nn, stmt_atom(atom_general(&c->c->type, NULL, 0)), cmp_equal);
 			if (null)
-				null = stmt_semijoin(null, nn);
+				null = stmt_union(null, nn);
 			else
 				null = nn;
 			nulls = 1;
 		}
-		stmt_releqjoin_fill(s, upd, stmt_dup(stmt_bat(rc->c, stmt_dup(rts), RDONLY)));
 
+	}
+
+	/* we only need to check non null values */
+	if (nulls) 
+		/* convert nulls to table ids */
+		nnull = stmt_diff(stmt_dup(updates[updcol]->op2.stval), stmt_dup(null));
+
+
+	s = stmt_releqjoin_init();
+	for (m = i->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
+		sql_kc *c = m->data;
+		sql_kc *rc = o->data;
+		stmt *upd = new_updates[c->c->colnr];
+
+		if (nulls) /* remove nulls */
+			upd = stmt_semijoin(upd, stmt_dup(nnull)); 
+		stmt_releqjoin_fill(s, upd, stmt_dup(stmt_bat(rc->c, stmt_dup(rts), RDONLY)));
 	}
 	/* add missing nulls */
 	if (nulls)

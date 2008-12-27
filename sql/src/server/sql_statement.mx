@@ -1117,7 +1117,8 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 {
 	stmt *s = stmt_bat(c, basetable, access );
 
-	if (c->base.flag != TR_NEW && isTable(c->t) &&
+	if (isTable(c->t) &&
+	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
 		stmt *i = stmt_bat(c, stmt_dup(basetable), RD_INS );
 		stmt *u = stmt_bat(c, stmt_dup(basetable), RD_UPD );
@@ -1150,7 +1151,8 @@ stmt_delta_table_idxbat(sql_idx * idx, int access)
 {
 	stmt *s = stmt_idxbat(idx, access);
 
-	if (idx->base.flag != TR_NEW && isTable(idx->t) &&
+	if (isTable(idx->t) &&
+	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
 		stmt *i = stmt_idxbat(idx, RD_INS);
 		stmt *u = stmt_idxbat(idx, RD_UPD);

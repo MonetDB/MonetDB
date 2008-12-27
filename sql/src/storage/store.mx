@@ -3796,7 +3796,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	if (isTable(ni->t) && idx_is_column(ni->type))
 		store_funcs.create_idx(tr, ni);
 	table_funcs.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
-	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	ni->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return ni;

@@ -262,7 +262,7 @@ update_bat( sql_bpm *p, BAT *upd)
 	for (i = 0; i<p->nr; i++) { 
 		BAT *b = BATselect_( BATmirror(upd), (ptr)&lv, (ptr)&hv, TRUE, FALSE);
 
-		delta_update_bat( &p->parts[i], BATmirror(b));
+		delta_update_bat( &p->parts[i], BATmirror(b), 0);
 		bat_destroy(b);
 
 		lv = hv;

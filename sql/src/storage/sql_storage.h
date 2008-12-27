@@ -25,7 +25,7 @@
 #define COLSIZE	1024
 
 #define isNew(x)  (x->base.flag == TR_NEW)
-#define isTemp(x) (isNew(x)||x->t->persistence!=SQL_PERSIST)
+#define isTemp(x) (isNew(x->t)||x->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   (x->persistence!=SQL_PERSIST)
 #define isGlobalTable(x) (x->persistence!=SQL_LOCAL_TEMP && \
 			  x->persistence!=SQL_DECLARED_TABLE)
