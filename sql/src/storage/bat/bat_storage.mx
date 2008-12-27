@@ -185,20 +185,13 @@ delta_update_bat( sql_delta *bat, BAT *upd)
 	if (bat->ubid) {
 		b = temp_descriptor(bat->ubid);
 		assert(b);
-/*
-		if (BATcount(b) == 0 && !isVIEW(upd) && upd->htype != TYPE_void && upd->ttype != TYPE_void){
-			temp_destroy(bat->ubid);
-			bat->ubid = temp_create(upd);
-			upd->batDirty |= 2;
-		} else {
-*/
 		if (isEUbat(b)){
 			temp_destroy(bat->ubid);
 			bat->ubid = temp_copy(b->batCacheid, FALSE);
 			bat_destroy(b);
 			b = temp_descriptor(bat->ubid);
 		}
-		/* TODO: multiple updates of the same row ? */ 
+		BATkey(b, BOUND2BTRUE);
 		BATins(b, upd, TRUE);
 	} else {
 		b = temp_descriptor(bat->ibid);
@@ -226,6 +219,7 @@ delta_update_val( sql_delta *bat, ssize_t rid, void *upd)
 			bat_destroy(b);
 			b = temp_descriptor(bat->ubid);
 		}
+		BATkey(b, BOUND2BTRUE);
 		BUNins(b, (ptr) &rid, upd, TRUE);
 	} else {
 		b = temp_descriptor(bat->ibid);
@@ -1115,7 +1109,8 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 				bat_destroy(cu);
 				cu = temp_descriptor(obat->ubid);
 			}
-			copy_inserted(cu, ups);
+			BATkey(cu, BOUND2BTRUE);
+			BATins(cu, ups, TRUE);
 			bat_destroy(cu);
 		}
 		if (store_nr_active == 1 && !cluster) { /* flush all */

@@ -1041,7 +1041,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				/* can we move it down */
 				if (ne && ne != e) {
 					/* we need to keep the alias */
-					exp_setname(ne, e->rname, e->name);
+					exp_setname(ne, e->rname?e->rname:ne->rname, e->name);
 					list_append(rel->exps, ne);
 				} else {
 					all = 0;
