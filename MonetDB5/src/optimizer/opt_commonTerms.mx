@@ -102,7 +102,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *lastassigned;
 	Lifespan span= newLifespan(mb);
 
-#if 1
+#if 0
 	int *alias= (int*) alloca(sizeof(int)* mb->vtop);
 
 	for(i=0; i<mb->vtop; i++) 
@@ -156,7 +156,7 @@ Like all optimizer decisions, it is safe to stop.
 First recognize simple assignments for alias removal
 and apply alias propagation, before considering a match.
 @c
-#if 1
+#if 0
 		if( p->token == ASSIGNsymbol &&
 			barrier== 0 &&
 			p->argc == 2 &&
@@ -237,7 +237,7 @@ handled by the alias removal part
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
-#if 1
+#if 0
 					if( p->argc== 2 &&
 						getLastUpdate(span,getArg(p,0)) == i &&
 						getBeginLifespan(span,getArg(p,0)) == i &&
