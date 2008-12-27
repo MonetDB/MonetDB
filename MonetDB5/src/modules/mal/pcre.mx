@@ -798,6 +798,7 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 		throw(MAL, "pcre_match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 	}
 	*ret = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
+	my_pcre_free(re);
 	return MAL_SUCCEED;
 }
 
@@ -1237,6 +1238,7 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		BATkey(BATmirror(r),FALSE);
+		BATseqbase(r, strs->hseqbase);
 
 		if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ); 
 
