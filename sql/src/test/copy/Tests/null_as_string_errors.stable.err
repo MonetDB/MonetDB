@@ -80,28 +80,28 @@ stderr of test 'null_as_string_errors` in directory 'src/test/copy` itself:
 # 21:02:57 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38808 
 # 21:02:57 >  
 
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 ERROR = !SQLException:sql:value 'NULL' while parsing 'NULL,NULL,NULL' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
 ERROR = !SQLException:sql:value 'NULL' while parsing 'NULL,zero,0' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:decimal wrong format (NULL)
+ERROR = !SQLException:sql:decimal wrong format (NULL) digit expected
         !SQLException:sql:value 'NULL' while parsing 'NULL' from line 0 field 2 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
 ERROR = !SQLException:sql:value '' while parsing ',,' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
 ERROR = !SQLException:sql:value '' while parsing ',zero,0' from line 0 field 0 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:38808
+MAPI  = monetdb@eir:39137
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n';
 ERROR = !SQLException:sql:value '' while parsing '' from line 0 field 2 not inserted, expecting type int
         !SQLException:importTable:failed to import table
