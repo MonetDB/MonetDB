@@ -4,16 +4,16 @@ CREATE TABLE myvar_test (
 ) ;
 
 COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-|a|1b
+a|1b
 
 COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-|a|b2b
+a|b2b
 
 COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-|aa|bb
+aa|bb
 
 COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-|a|b
+a|b
 
 select * from myvar_test;
 
