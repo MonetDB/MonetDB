@@ -1519,7 +1519,7 @@ The numfromstr parses the head of the string for a number,
 accepting optional signs. The code has been prepared to
 continue parsing by returning the number of characters read.
 Two errors are possible. It does not represent a number (return 0)
-or there is an overflow (silently ignored).
+or there is an overflow (silently ignored using <1 character count).
 
 @= numfromstr
 int
@@ -1555,13 +1555,15 @@ int
 			base = mult10(base) + base10(*p);
 		}
 		**dst = sign * base;
-		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0))
+		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0)){
 			**dst = @1_nil;
+			sign = -1;
+		} else sign = 1;
 		if (p[0] == 'L' && p[1] == 'L' && sizeof(@1) == 8) {
 			p += 2;
 		}
 	}
-	return (int) (p - src);
+	return sign * (int) (p - src);
 }
 @c
 
@@ -1665,15 +1667,21 @@ dblFromStr(char *src, int *len, dbl **dst)
 	/* alloc memory */
 	@:atommem(dbl,sizeof(dbl))@
 
-	/* on overflow, strtod returns HUGE_VAL and sets errno to
-	   ERANGE; on underflow, it returns 0 and also sets errno to
-	   ERANGE.  We accept 0, but not HUGE_VAL. */
-	errno = 0;
-	d = strtod(src, &p);
-	if (p == src || (errno == ERANGE && d != 0)) {
-		**dst = dbl_nil;	/* default return value is nil */
-		p = src;
+	while (GDKisspace(*p))
+		p++;
+	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+		**dst = dbl_nil;
+		p += 3;
 	} else {
+		/* on overflow, strtod returns HUGE_VAL and sets errno to
+		   ERANGE; on underflow, it returns 0 and also sets errno to
+		   ERANGE.  We accept 0, but not HUGE_VAL. */
+		errno = 0;
+		d = strtod(src, &p);
+		if (p == src || (errno == ERANGE && d != 0)) {
+			**dst = dbl_nil;	/* default return value is nil */
+			p = src;
+		} else 
 		**dst = (dbl) d;
 	}
 	return (int) (p - src);
@@ -1698,40 +1706,46 @@ fltFromStr(char *src, int *len, flt **dst)
 	/* alloc memory */
 	@:atommem(flt,sizeof(flt))@
 
-#ifdef HAVE_STRTOF
-	/* on overflow, strtof returns HUGE_VALF and sets errno to
-	   ERANGE; on underflow, it returns 0 and also sets errno to
-	   ERANGE.  We accept 0, but not HUGE_VALF. */
-	errno = 0;
-	f = strtof(src, &p);
-	n = (int) (p - src);
-	if (n == 0 || (errno == ERANGE && f != 0)
-#ifdef INFINITY
-	    || f == INFINITY
-#endif
-#ifdef NAN
-#ifndef __PGI
-	    || f == NAN
-#endif
-#endif
-	    )
-#else /* no strtof, try sscanf */
-	if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
-#ifdef INFINITY
-	    || f == INFINITY
-#endif
-#ifdef NAN
-#ifndef __PGI
-	    || f == NAN
-#endif
-#endif
-	    )
-#endif
-	{
-		**dst = flt_nil;	/* default return value is nil */
-		n = 0;
+	while (GDKisspace(*p))
+		p++;
+	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
+		**dst = flt_nil;
+		p += 3;
 	} else {
-		**dst = (flt) f;
+#ifdef HAVE_STRTOF
+		/* on overflow, strtof returns HUGE_VALF and sets errno to
+		   ERANGE; on underflow, it returns 0 and also sets errno to
+		   ERANGE.  We accept 0, but not HUGE_VALF. */
+		errno = 0;
+		f = strtof(src, &p);
+		n = (int) (p - src);
+		if (n == 0 || (errno == ERANGE && f != 0)
+#ifdef INFINITY
+			|| f == INFINITY
+#endif
+#ifdef NAN
+#ifndef __PGI
+			|| f == NAN
+#endif
+#endif
+			)
+#else /* no strtof, try sscanf */
+		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
+#ifdef INFINITY
+			|| f == INFINITY
+#endif
+#ifdef NAN
+#ifndef __PGI
+			|| f == NAN
+#endif
+#endif
+			)
+#endif
+		{
+			**dst = flt_nil;	/* default return value is nil */
+			n = 0;
+		} else 
+			**dst = (flt) f;
 	}
 	return n;
 }
