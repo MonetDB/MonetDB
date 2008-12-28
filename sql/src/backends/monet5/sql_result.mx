@@ -365,7 +365,7 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
-	if ( len != e-s)
+	if (len == 0 || len != e-s)
 		return NULL;
 	return c->data;
 }
