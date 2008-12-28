@@ -1250,9 +1250,9 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 
-		/* Wait up to 0.5 seconds. */
-		tv.tv_sec = 0;
-		tv.tv_usec = 500;
+		/* Wait up to 1 second. */
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
 
 		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
