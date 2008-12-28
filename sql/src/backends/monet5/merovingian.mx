@@ -99,7 +99,9 @@ static str _merovingian_conffile = NULL;
 
 typedef struct _dpair {
 	FILE* fout;       /* where to read stdout messages from */
+	int out;          /* fd of fout */
 	FILE* ferr;       /* where to read stderr messages from */
+	int err;          /* fd of ferr */
 	pid_t pid;        /* this process' id */
 	char* dbname;     /* the database that this server serves */
 	pthread_t tid;    /* thread id used when terminating this server */
@@ -125,11 +127,13 @@ logListener(void *p)
 	dpair w;
 	FILE *fout, *ferr;
 	char buf[8096];
-	int hadData;
 	char mytime[20];
 	time_t now, lastout, lasterr;
 	struct tm *tmp;
-	int equalouterr;
+	char equalouterr;
+	struct timeval tv;
+	fd_set readfds;
+	int nfds;
 
 	(void)p;
 
@@ -158,47 +162,57 @@ logListener(void *p)
 	lastout = 0;
 	lasterr = 0;
 	do {
+		/* wait 1 second for events before breaking out of block */
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		FD_ZERO(&readfds);
+		nfds = 0;
 		w = d;
-		hadData = 0;
 		while (w != NULL) {
-			if (fgets(buf, 8096, w->fout) != NULL) {
+			FD_SET(w->out, &readfds);
+			if (nfds < w->out)
+				nfds = w->out;
+			FD_SET(w->err, &readfds);
+			if (nfds < w->err)
+				nfds = w->err;
+			w = w->next;
+		}
+		select(nfds + 1, &readfds, NULL, NULL, &tv);
+		w = d;
+		while (w != NULL) {
+			if (FD_ISSET(w->out, &readfds) != 0) {
 				PRINT_TIME(fout, lastout);
-				fprintf(fout, "MSG %s[" LLFMT "]: %s",
-						w->dbname, (long long int)w->pid, buf);
-				hadData = 1;
+				if (fgets(buf, 8096, w->fout) != NULL) {
+					fprintf(fout, "MSG %s[" LLFMT "]: %s",
+							w->dbname, (long long int)w->pid, buf);
+				}
 			}
-			if (fgets(buf, 8096, w->ferr) != NULL) {
+			if (FD_ISSET(w->err, &readfds) != 0) {
 				if (equalouterr == 1) {
 					PRINT_TIME(ferr, lastout);
 				} else {
 					PRINT_TIME(ferr, lasterr);
 				}
-				fprintf(ferr, "ERR %s[" LLFMT "]: %s",
-						w->dbname, (long long int)w->pid, buf);
-				hadData = 1;
+				if (fgets(buf, 8096, w->ferr) != NULL) {
+					fprintf(ferr, "ERR %s[" LLFMT "]: %s",
+							w->dbname, (long long int)w->pid, buf);
+				}
 			}
 			w = w->next;
 		}
+
 		fflush(fout);
 		if (equalouterr == 0)
 			fflush(ferr);
-		/* see if we need to break the loop */
-		if (_keepLogging == 0) {
-			if (hadData == 0) {
-				break;
-			} else {
-				continue;	/* don't wait if someone's waiting for us */
-			}
-		}
-		/* wait a tenth of a second */
-		MT_sleep_ms(10);
-	} while (1);
+	} while (_keepLogging != 0);
 	/* make sure we emit the current timestamp before we quit */
 	lastout = 0;
 	PRINT_TIME(fout, lastout);
+	fflush(fout);
 	if (equalouterr == 0) {
 		lasterr =  0;
 		PRINT_TIME(ferr, lasterr);
+		fflush(ferr);
 	}
 }
 
@@ -537,11 +551,11 @@ forkMserver(str database, sabdb** stats, int force)
 			dp = dp->next;
 		pdp = dp;
 		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
+		dp->out = pfdo[0];
 		dp->fout = fdopen(pfdo[0], "r");
-		fcntl(pfdo[0], F_SETFL, O_NONBLOCK);
 		close(pfdo[1]);
+		dp->err = pfde[0];
 		dp->ferr = fdopen(pfde[0], "r");
-		fcntl(pfde[0], F_SETFL, O_NONBLOCK);
 		close(pfde[1]);
 		dp->next = NULL;
 		dp->pid = pid;
@@ -1165,9 +1179,9 @@ acceptConnections(int sock)
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 
-		/* Wait up to 0.5 seconds. */
-		tv.tv_sec = 0;
-		tv.tv_usec = 500;
+		/* Wait up to 1 second. */
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
 
 		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
@@ -1523,7 +1537,7 @@ discoveryRunner(void *d)
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
 		if (nread == -1) {
 			buf[0] = '\0';
-			MT_sleep_ms(1000); /* don't spin */
+			MT_sleep_ms(1000); /* don't spin: this is the clock-tick granularity */
 			continue; /* ignore failed request */
 		}
 
@@ -2011,6 +2025,7 @@ main(int argc, char *argv[])
 	if (msglog == NULL) {
 		/* stdout, save it */
 		argp = dup(1);
+		topdp->out = argp;
 		topdp->fout = fdopen(argp, "w");
 	} else {
 		/* write to the given file */
@@ -2021,6 +2036,7 @@ main(int argc, char *argv[])
 			MERO_EXIT(1);
 			return(1);
 		}
+		topdp->out = fileno(topdp->fout);
 		topdp->dbname = "file";
 	}
 
@@ -2028,10 +2044,12 @@ main(int argc, char *argv[])
 	if (errlog == NULL) {
 		/* stderr, save it */
 		argp = dup(2);
+		topdp->err = argp;
 		topdp->ferr = fdopen(argp, "w");
 	} else {
 		/* write to the given file */
 		if (strcmp(msglog, errlog) == 0) {
+			topdp->err = topdp->out;
 			topdp->ferr = topdp->fout;
 		} else {
 			topdp->ferr = fopen(errlog, "a");
@@ -2041,6 +2059,7 @@ main(int argc, char *argv[])
 				MERO_EXIT(1);
 				return(1);
 			}
+			topdp->err = fileno(topdp->ferr);
 		}
 		topdp->dbname = "file";
 	}
@@ -2049,7 +2068,7 @@ main(int argc, char *argv[])
 
 	d = topdp->next = alloca(sizeof(struct _dpair));
 
-	/* make sure we will be able to write the our pid */
+	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		fprintf(stderr, "unable to open '%s' for writing: %s\n",
 				pidfilename, strerror(errno));
@@ -2065,8 +2084,8 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
+	d->out = pfd[0];
 	d->fout = fdopen(pfd[0], "r");
-	fcntl(pfd[0], F_SETFL, O_NONBLOCK);
 	dup2(pfd[1], 1);
 	close(pfd[1]);
 
@@ -2079,8 +2098,8 @@ main(int argc, char *argv[])
 	}
 	/* before it is too late, save original stderr */
 	oerr = fdopen(dup(2), "w");
+	d->err = pfd[0];
 	d->ferr = fdopen(pfd[0], "r");
-	fcntl(pfd[0], F_SETFL, O_NONBLOCK);
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
@@ -2244,7 +2263,7 @@ main(int argc, char *argv[])
 
 	_keepLogging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
-		fprintf(stderr, "failed to wait for logging thread: %s\n", strerror(argp));
+		fprintf(oerr, "failed to wait for logging thread: %s\n", strerror(argp));
 	}
 
 	fclose(topdp->fout);
