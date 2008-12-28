@@ -285,7 +285,7 @@ bat_max_@1length(BAT *b)
 	}
 	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) {
 		if (!*s || *s < '0' || *s > '9') {
-			showException(SQL,"sql", "decimal wrong format (%s)", p);
+			showException(SQL,"sql", "decimal wrong format (%s) digit expected", p);
 			return NULL;
 		}
 		res *= 10;
@@ -298,7 +298,7 @@ bat_max_@1length(BAT *b)
 	}
 	if (*s) {
 		if (*s != '.') {
-			showException(SQL,"sql", "decimal wrong format (%s)", p);
+			showException(SQL,"sql", "decimal wrong format (%s) '.' expected", p);
 			return NULL;
 		}
 		s++;
@@ -315,7 +315,7 @@ bat_max_@1length(BAT *b)
 		}
 	}
 	if (*s) {
-		showException(SQL,"sql", "decimal wrong format (%s)", p);
+		showException(SQL,"sql", "decimal wrong format (%s) too many characters", p);
 		return NULL;
 	}
 	r = c->data;
