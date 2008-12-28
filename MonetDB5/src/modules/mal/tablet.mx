@@ -1400,7 +1400,6 @@ rfind_quote(char *s, char *e, char quote)
 static INLINE int
 insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
-	char *end = e;
 	char bak;
 	ptr *adt;
 	char buf[BUFSIZ];
@@ -1439,14 +1438,15 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 
 	if (!adt) {
 		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
+		bak = *e;
+		*e = 0;
 
 		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		*err= GDKstrdup(buf);
 		GDKfree(val);
+		*e= bak;
 		return -1;
 	}
-	*end = bak;
-
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
 		stream_write(fmt->raw,adt,ATOMsize(fmt->adt),1);
