@@ -117,9 +117,6 @@ COPY 113 RECORDS into test from STDIN using delimiters ',','\n';
 
 
 select rhs,
-from test where lhs like '%!_' escape '!';
-
-select rhs,
 (lhs like 'A%' OR lhs like 'B%' OR lhs like 'C%' OR lhs like 'D%' OR lhs
 like 'E%' OR lhs like 'F%' OR lhs like 'G%' OR lhs like 'H%' OR lhs like
 'I%' OR lhs like 'J%' OR lhs like 'K%' OR lhs like 'L%' OR lhs like 'M%' OR
