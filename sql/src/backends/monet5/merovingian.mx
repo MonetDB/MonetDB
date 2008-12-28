@@ -1417,6 +1417,8 @@ discoveryRunner(void *d)
 	socklen_t addrlen;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
+	fd_set fds;
+	struct timeval tv;
 	int bcs;
 	struct sockaddr_in brdcst;
 	int c;
@@ -1535,11 +1537,21 @@ discoveryRunner(void *d)
 		}
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
+		/* Wait up to 1 second. */
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		nread = select(sock + 1, &fds, NULL, NULL, &tv);
+		if (nread == 0) {
+			/* nothing interesting has happened */
+			buf[0] = '\0';
+			continue;
+		}
 		nread = recvfrom(sock, buf, 512, MSG_DONTWAIT,
 				(struct sockaddr *)&peer_addr, &peer_addr_len);
 		if (nread == -1) {
 			buf[0] = '\0';
-			MT_sleep_ms(1000); /* don't spin: this is the clock-tick granularity */
 			continue; /* ignore failed request */
 		}
 
