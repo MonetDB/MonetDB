@@ -1421,6 +1421,7 @@ discoveryRunner(void *d)
 	struct sockaddr_in brdcst;
 	int c;
 	time_t deadline = 0;
+	time_t now = 0;
 	int forceannc = 0;
 	sabdb *orig;
 	sabdb *stats;
@@ -1472,11 +1473,12 @@ discoveryRunner(void *d)
 
 	/* main loop */
 	while (_keepListening == 1) {
+		now = time(NULL);
 		/* do a round of announcements, we're ahead of the ttl because
 		 * when we announce, we add 60 seconds to avoid a "gap" */
-		if (forceannc == 1 || deadline <= time(NULL)) {
+		if (forceannc == 1 || deadline <= now) {
 			/* set new deadline */
-			deadline = time(NULL) + discoveryttl;
+			deadline = now + discoveryttl;
 			forceannc = 0;
 
 			/* list all known databases */
@@ -1514,7 +1516,7 @@ discoveryRunner(void *d)
 		prv = NULL;
 		rdb = _merovingian_remotedbs;
 		while (rdb != NULL) {
-			if (rdb->ttl <= time(NULL)) {
+			if (rdb->ttl <= now) {
 				/* expired, let's remove */
 				if (prv == NULL) {
 					_merovingian_remotedbs = rdb->next;
