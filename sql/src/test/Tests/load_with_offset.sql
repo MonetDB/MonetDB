@@ -7,28 +7,28 @@ CREATE TABLE my_test (
 ) ;
 
 COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-123|1.01||aaa|bbb
-553|.02||aaa|bbb
-223|2.03||aaa|bbb
-123|.04||aaa|bbb
-823|3.05||aaa|bbb
-123|0.06||aaa|bbb
-590|0.07||aaa|bbb
-239|.08||aaa|bbb
-445|28.09||aaa|bbb
+123|1||a|b
+553|0||a|b
+223|2||a|b
+123|0||a|b
+823|3||a|b
+123|0||a|b
+590|0||a|b
+239|0||a|b
+445|28||a|b
 
 select * from my_test;
 
 COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
-123|1.01||aaa|bbb
-553|.02||aaa|bbb
-223|2.03||aaa|bbb
-123|.04||aaa|bbb
-823|3.05||aaa|bbb
-123|0.06||aaa|bbb
-590|0.07||aaa|bbb
-239|.08||aaa|bbb
-445|28.09||aaa|bbb
+123|1||a|b
+553|0||a|b
+223|2||a|b
+123|0||a|b
+823|3||a|b
+123|0||a|b
+590|0||a|b
+239|0||a|b
+445|28||a|b
 
 select * from my_test;
 

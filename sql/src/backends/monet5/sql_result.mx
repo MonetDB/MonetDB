@@ -355,15 +355,14 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 ptr *
 _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 {
+	int len;
 	(void)quote;
-	if (type == TYPE_str) {
+	if (type == TYPE_str) 
 		return TABLETstrFrStr(c, s, e);
-	} else {
-		(void)(*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
-		/* handle errors */
-		if (c->data && ATOMcmp(type, ATOMnilptr(type), c->data) == 0) 
-			c->data = NULL;
-	}
+	 
+	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
+	if ( len != e-s)
+		return NULL;
 	return c->data;
 }
 

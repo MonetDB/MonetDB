@@ -36,3 +36,4 @@ is_distinct_broken.SF-2430201
 blob_insert_crash.SF-2388542
 subselect_with_or.SF-2466725
 OOM_query.SF-2457195
+copy-format.SF-2468513

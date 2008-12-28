@@ -9,7 +9,7 @@ create table squidD(
 	Eid int, Fval int);
 
 -- let's fill the tables
-create procedure fill(lim int) returns int
+create procedure fill(lim int) 
 begin
 	declare i int;
 	set i = 0;
@@ -18,7 +18,6 @@ begin
 		insert into squidD values(i,rand());
 		set i = i+1;
 	end while;
-	returns lim;
 end;
 
 declare size int;
