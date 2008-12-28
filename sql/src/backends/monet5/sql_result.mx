@@ -357,8 +357,12 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 {
 	int len;
 	(void)quote;
-	if (type == TYPE_str) 
+	if (type == TYPE_str) {
+		sql_column *col = (sql_column*)c->extra;
+		if (col->type.digits > 0 && e-s > col->type.digits)
+			return NULL;
 		return TABLETstrFrStr(c, s, e);
+	}
 	 
 	len = (*BATatoms[type].atomFromStr)(s, &c->len, (ptr) &c->data);
 	if ( len != e-s)
@@ -449,7 +453,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = NULL;
+			fmt[i].extra = col;
 			fmt[i].len = fmt[i].nillen = 
 				ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKmalloc(fmt[i].len);
@@ -462,7 +466,6 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-				fmt[i].extra = col;
 			}
 			fmt[i].raw = NULL;
 			fmt[i].rawfile = NULL;

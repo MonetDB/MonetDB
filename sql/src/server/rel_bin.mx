@@ -1234,10 +1234,6 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
 			s = stmt_const(bin_first_column(sub), s);
-		/* For now we prefer single values 
-		else if (!sub)
-			s = column(s);
-		*/
 			
 		s = stmt_rename(rel, exp, s);
 		list_append(l, s);
