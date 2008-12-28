@@ -79,12 +79,8 @@ stderr of test 'OOM_query.SF-2457195` in directory 'src/test/BugTracker-2008` it
 # 23:48:26 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39772 
 # 23:48:26 >  
 
-MAPI  = monetdb@alf:39772
-QUERY = select rhs,
 
-        !from"
-
-# 23:48:26 >  
-# 23:48:26 >  Done.
-# 23:48:26 >  
+# 14:24:57 >  
+# 14:24:57 >  Done.
+# 14:24:57 >  
 
