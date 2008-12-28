@@ -1401,7 +1401,7 @@ static INLINE int
 insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 {
 	char *end = e;
-	char bak = *e;
+	char bak;
 	ptr *adt;
 	char buf[BUFSIZ];
 
@@ -1415,23 +1415,31 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		}
 		s++;
 		e = rfind_quote(s, e, quote);
+		bak = *e;
 		*e = 0;
-	} else 
-		e = rstrip(s,e);
-	
-	if ((s == e && fmt->nullstr[0] == 0) ||
-	    (s != e && ( (!quote && strcasecmp(s, fmt->nullstr) == 0) ||
-	    (quote && strncasecmp(s+1, fmt->nullstr, e-s) == 0)) ) ) {
-		adt = fmt->nildata;
-		fmt->c->T->nonil = 0;
+		if ((s == e && fmt->nullstr[0] == 0) ||
+			(e > s && strncasecmp(s, fmt->nullstr, e-s) == 0 ) ) {
+			adt = fmt->nildata;
+			fmt->c->T->nonil = 0;
+		} else
+			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		*e = bak;
 	} else {
-		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		bak = *e;
+		*e = 0;
+	
+		if ((s == e && fmt->nullstr[0] == 0) ||
+			(e > s && strcasecmp(s, fmt->nullstr) == 0 ) ) {
+			adt = fmt->nildata;
+			fmt->c->T->nonil = 0;
+		} else
+			adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		*e = bak;
 	}
 
 	if (!adt) {
 		char *val = (s!=e)?GDKstrdup(s):GDKstrdup("");
 
-		*end = bak;
 		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
 		*err= GDKstrdup(buf);
 		GDKfree(val);
