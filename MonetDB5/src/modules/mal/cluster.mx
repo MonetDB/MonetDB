@@ -402,6 +402,7 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	nb= BATnew(b->htype, b->ttype, BATcapacity(b));
 	nb->tsorted= FALSE;
 	nb->tdense= FALSE;
+	BATseqbase(nb,0); 
 
 	/* determine the work for all threads */
 	/* to be done, first assume that we can remap in one go */

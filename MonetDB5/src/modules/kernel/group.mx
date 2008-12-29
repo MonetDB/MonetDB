@@ -568,7 +568,6 @@ bits(BUN i)
 {
 	int sh;
 
-	assert(i>0);
         for (sh = 0; i != 0; sh++) {
                 i >>= 1;
         }
