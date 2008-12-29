@@ -915,6 +915,12 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return res;
