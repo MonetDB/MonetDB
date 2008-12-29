@@ -451,7 +451,7 @@ CREATE TABLE StripeDefs(
 	eta float NOT NULL,
 	lambdaMin float NOT NULL,
 	lambdaMax float NOT NULL,
-	htmArea varchar(1024) NOT NULL,
+	htmArea varchar(1024), --NOT NULL,
  CONSTRAINT pk_StripeDefs_stripe PRIMARY KEY  
 (
 	stripe
@@ -1155,11 +1155,11 @@ CREATE TABLE Inventory(
 );
 CREATE TABLE DBColumns(
 	tablename varchar(128) NOT NULL,
-	name varchar(64) NOT NULL,
-	unit varchar(64) NOT NULL,
-	ucd varchar(128) NOT NULL,
-	enum varchar(64) NOT NULL,
-	description varchar(2000) NOT NULL,
+	name varchar(64), -- NOT NULL,
+	unit varchar(64), -- NOT NULL,
+	ucd varchar(128), --NOT NULL,
+	enum varchar(64), -- NOT NULL,
+	description varchar(2000),-- NOT NULL,
 	rank int NOT NULL DEFAULT (0),
  CONSTRAINT pk_DBColumns_tableName_name PRIMARY KEY  
 (
