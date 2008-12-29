@@ -88,6 +88,24 @@ bin_find_column( stmt *sub, char *rname, char *name )
 	return stmt_dup(res);
 }
 
+static list *
+bin_find_columns( stmt *sub, char *name ) 
+{
+	node *n;
+	list *l = create_stmt_list();
+
+	for (n = sub->op1.lval->h; n; n = n->next) {
+		char *nme = column_name(n->data);
+
+		if (strcmp(nme, name) == 0) 
+			append(l, stmt_dup(n->data));
+	}
+	if (list_length(l)) 
+		return l;
+	list_destroy(l);
+	return NULL;
+}
+
 static stmt *column( stmt *val )
 {
 	val = stmt_dup(val);
@@ -839,16 +857,25 @@ rel2bin_distinct(stmt *s)
 {
 	node *n;
 	group *grp = NULL;
-	list *rl = create_stmt_list();
+	list *rl = create_stmt_list(), *tids;
 
 	/* single values are unique */
 	if (s->key && s->nrcols == 0)
 		return s;
 
-	for (n = s->op1.lval->h; n; n = n->next) {
-		stmt *t = n->data;
+	/* TODO Change to use 'all' %TID% columns */
+	if ((tids = bin_find_columns(s, "%TID%")) != NULL) {
+		for (n = tids->h; n; n = n->next) {
+			stmt *t = n->data;
 
-		grp = grp_create(column(t), grp, NULL);
+			grp = grp_create(column(t), grp, NULL);
+		}
+	} else {
+		for (n = s->op1.lval->h; n; n = n->next) {
+			stmt *t = n->data;
+
+			grp = grp_create(column(t), grp, NULL);
+		}
 	}
 
 	for (n = s->op1.lval->h; n; n = n->next) {
@@ -1485,6 +1512,26 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
+find_projection_join( stmt *s )
+{
+	while(s && (s->type == st_alias || s->type == st_order || s->type == st_limit)) 
+		s = s->op1.stval;	
+	if (s && s->type == st_join)
+		return s;
+	return NULL;
+}
+
+static stmt *
+find_pivot( stmt *s)
+{
+	stmt *j = find_projection_join(s);
+
+	if (j)
+		return j->op1.stval;
+	return NULL;
+}
+
+static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *newl;
@@ -1524,7 +1571,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	newl = create_stmt_list();
 
 	if (n) {
-		stmt *limit = NULL;
+		stmt *limit = NULL, *p, *j;
 		int lmt = l;
 
 		if (l < 0) {
@@ -1542,14 +1589,34 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			}
 		}
 
-		for ( ; n; n = n->next) {
-			stmt *s;
-	
+		/* reduce pivot */
+		j = find_projection_join(limit);
+		if (j) {
+			p = find_pivot(j);
 			if (lmt < 0)
-				s = stmt_diff(stmt_dup(n->data), stmt_dup(limit));
+				p = stmt_diff(stmt_dup(p), stmt_dup(limit));
 			else
-				s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
-			list_append(newl, s);
+				p = stmt_semijoin(stmt_dup(p), stmt_dup(limit));
+			for ( ; n; n = n->next) {
+				stmt *s = stmt_dup(n->data);
+				stmt *prj = find_projection_join(s);
+		
+				/* for all but the order column we can reduce */
+				if (prj && prj != j) 
+					prj->op1.stval = stmt_semijoin(prj->op1.stval, stmt_dup(p));
+				list_append(newl, s);
+			}
+			stmt_destroy(p);
+		} else {
+			for ( ; n; n = n->next) {
+				stmt *s;
+		
+				if (lmt < 0)
+					s = stmt_diff(stmt_dup(n->data), stmt_dup(limit));
+				else
+					s = stmt_semijoin(stmt_dup(n->data), stmt_dup(limit));
+				list_append(newl, s);
+			}
 		}
 		if (order) {
 			if (lmt < 0) {

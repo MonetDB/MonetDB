@@ -2257,11 +2257,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *ro = sc->data.lval->h->next->data.sym;
 
 		sql_rel *lr, *rr;
-		sql_exp *e = NULL;
 
-		lr = rel_add_identity(sql, rel, &e);
+		lr = rel;
 		rr = rel_copy(lr);
-		(void)e;
+		//rr = rel_dup(rel_dup(lr));
 
 		lr = rel_logical_exp(sql, lr, lo, f);
 		rr = rel_logical_exp(sql, rr, ro, f);

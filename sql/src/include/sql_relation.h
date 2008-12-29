@@ -82,7 +82,7 @@ typedef enum operator_type {
 	op_union,
 	op_inter,
 	op_except,
-	op_groupby,	/* currently includes the projection (aggr) */
+	op_groupby,	
 	op_topn,
 	op_insert, 	/* insert(l=table, r insert expressions) */ 
 	op_update, 	/* update(l=table, r update expressions) */

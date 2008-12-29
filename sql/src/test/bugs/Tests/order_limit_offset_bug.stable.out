@@ -65,7 +65,7 @@ Over..
 % sys.developers,	sys.developers,	sys.developers,	sys.developers,	sys.developers # table_name
 % id,	name,	salary,	created_at,	updated_at # name
 % int,	varchar,	int,	timestamp,	timestamp # type
-% 1,	9,	6,	26,	26 # length
+% 2,	9,	6,	26,	26 # length
 [ 3,	"fixture_3",	100000,	2008-06-10 19:13:40.000000,	2008-06-10 19:13:40.000000	]
 
 # 17:38:03 >  

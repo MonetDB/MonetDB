@@ -359,7 +359,8 @@ _ASCIIadt_frStr(Column *c, int type, char *s, char *e, char quote)
 	(void)quote;
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column*)c->extra;
-		if (col->type.digits > 0 && e-s > col->type.digits)
+
+		if (col->type.digits > 0 && (unsigned)(e-s) > col->type.digits)
 			return NULL;
 		return TABLETstrFrStr(c, s, e);
 	}

@@ -1727,6 +1727,24 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 	return rel;
 }
 
+
+/*
+	Rewrite if the expressions c and z are equal
+		REF
+			R()
+		union(
+			select(REF, [x, y, z]),
+			select(REF, [a, b, c])
+		)
+	into
+		REF
+			select(R(), c)
+		union(
+			select(REF, [x, y]),
+			select(REF, [a, b])
+		)
+ */
+
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel) 
 {
@@ -1753,6 +1771,8 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */
+
+	/* TODO remove distinct if its not needed */
 
 	/* TODO common sub relation/expression optimizer */
 
