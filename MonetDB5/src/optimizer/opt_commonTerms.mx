@@ -93,7 +93,7 @@ The last instruction signifies the end.
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier=0, last, n=1;
+	int i, j, k, barrier= FALSE, last, n=1;
 	InstrPtr p, q;
 	int actions = 0;
 	MALfcn *mask;
@@ -102,7 +102,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *lastassigned;
 	Lifespan span= newLifespan(mb);
 
-#if 0
+#define NIELS 1
+#if NIELS
 	int *alias= (int*) alloca(sizeof(int)* mb->vtop);
 
 	for(i=0; i<mb->vtop; i++) 
@@ -134,7 +135,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		mask[n]= p->fcn;
 		pushInstruction(mb,p);
 		if(p->barrier)
-			barrier= getArg(p,0); /* at least one barrier block */
+			barrier = TRUE; /* at least one barrier block */
 @-
 Also block further optimization when you have seen an assert().
 This works particularly for SQL, because it is not easy to track
@@ -143,7 +144,7 @@ at least tells us that an update is planned.
 Like all optimizer decisions, it is safe to stop.
 @c
 		if ( getFunctionId(p) == assertRef)
-			barrier= getArg(p,0); 
+			barrier = TRUE;
 		n++;
 		if (p->token == ENDsymbol){
 			/* wrap up the remainder */
@@ -156,12 +157,10 @@ Like all optimizer decisions, it is safe to stop.
 First recognize simple assignments for alias removal
 and apply alias propagation, before considering a match.
 @c
-#if 0
+#if NIELS
 		if( p->token == ASSIGNsymbol &&
-			barrier== 0 &&
+			barrier == FALSE &&
 			p->argc == 2 &&
-			/* type compatible to be added */
-			getArgType(mb,p,0)== getArgType(mb,p,1) &&
 			getLastUpdate(span,getArg(p,0)) == i &&
 			getBeginLifespan(span,getArg(p,0)) == i &&
 			getLastUpdate(span,getArg(p,1)) <= i ){
@@ -237,12 +236,13 @@ handled by the alias removal part
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
-#if 0
+#if NIELS
 					if( p->argc== 2 &&
 						getLastUpdate(span,getArg(p,0)) == i &&
 						getBeginLifespan(span,getArg(p,0)) == i &&
 						getLastUpdate(span,getArg(p,1)) < i){
 							alias[getArg(p,0)]= alias[getArg(p,1)];
+							lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
 							freeInstruction(p);
 							mb->stop--;
 							mb->stmt[mb->stop]=0;
