@@ -1697,9 +1697,7 @@ extern float strtof(const char *, char **);
 int
 fltFromStr(char *src, int *len, flt **dst)
 {
-#ifdef HAVE_STRTOF
 	char *p = src;
-#endif
 	int n = 0;
 	float f;
 
@@ -2213,12 +2211,11 @@ GDKstrFromStr(unsigned char *dst, unsigned char *src, ssize_t len)
 				break;
 			}
 			escaped = FALSE;
-		} else if (*cur == '\\') {
+		} else if ( (c = *cur) == '\\') {
 			escaped = TRUE;
 			continue;
-		} else {
-			c = *cur;
-		}
+		} 
+
 		if (n > 0) {
 			/* we're still expecting follow-up bytes in a
 			   UTF-8 sequence */
