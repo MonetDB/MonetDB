@@ -1598,7 +1598,7 @@ shtFromlngImpl(sht *res, lng *val)
 {
 	/* perform a range check !! */
 	if (*val < 0 || *val > 255)
-		throw(MAL, "calc.coercion", "error lng->sht");
+		throw(MAL, "calc.sht", "coercion error");
 	*res = (sht) *val;
 	return MAL_SUCCEED;
 }
@@ -1609,7 +1609,7 @@ shtFromintImpl(sht *res, int *val)
 {
 	/* perform a range check !! */
 	if (*val < 0 || *val > 255)
-		throw(MAL, "calc.coercion", "error int->sht");
+		throw(MAL, "calc.sht", "coercion error");
 	*res = *val;
 	return MAL_SUCCEED;
 }

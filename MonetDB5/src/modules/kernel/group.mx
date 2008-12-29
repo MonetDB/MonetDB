@@ -1239,12 +1239,12 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	BAT *result, *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.group", "Cannot access descriptor");
+		throw(MAL, "group.new", "Cannot access descriptor");
 	}
 
 	result = BATgroup(b, *start, *incr, *grpsize);
 	if (result == 0)
-		throw(MAL, "GRPgroup0", "Failed to group");
+		throw(MAL, "group.new", "Failed to group");
 	*ret = result->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1329,7 +1329,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.group", "Cannot access descriptor");
+		throw(MAL, "group.new", "Cannot access descriptor");
 	}
 	if (!b->tkey && BATcount(b) > 1 &&
 	    BATtordered(b)&1 && 
@@ -1349,10 +1349,10 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 			histo = CTgroup_lng_ordered(b, &bn);
 			break;
 		default:
-			throw(MAL, "group.group", "Impossible type");
+			throw(MAL, "group.new", "Impossible type");
 		}
 		if (!histo)
-			throw(MAL, "group.group", "ordered group failed");
+			throw(MAL, "group.new", "ordered group failed");
 		BBPkeepref(*rethisto = histo->batCacheid);
 		BBPkeepref(*retbid = bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -1398,7 +1398,7 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.group", "Cannot access descriptor");
+		throw(MAL, "group.new", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
