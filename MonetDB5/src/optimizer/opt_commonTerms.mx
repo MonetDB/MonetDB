@@ -102,13 +102,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int *lastassigned;
 	Lifespan span= newLifespan(mb);
 
-#define NIELS 1
-#if NIELS
 	int *alias= (int*) alloca(sizeof(int)* mb->vtop);
 
 	for(i=0; i<mb->vtop; i++) 
 		alias[i]=i;
-#endif
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
@@ -157,7 +154,6 @@ Like all optimizer decisions, it is safe to stop.
 First recognize simple assignments for alias removal
 and apply alias propagation, before considering a match.
 @c
-#if NIELS
 		if( p->token == ASSIGNsymbol &&
 			barrier == FALSE &&
 			p->argc == 2 &&
@@ -174,7 +170,6 @@ and apply alias propagation, before considering a match.
 		} 
 		for(j=0; j<p->argc; j++)
 			getArg(p,j) = alias[getArg(p,j)];
-#endif
 		if (p->token == NOOPsymbol || barrier) 
 			continue;
 @-
@@ -236,7 +231,6 @@ handled by the alias removal part
 					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
 					actions++;
-#if NIELS
 					if( p->argc== 2 &&
 						getLastUpdate(span,getArg(p,0)) == i &&
 						getBeginLifespan(span,getArg(p,0)) == i &&
@@ -248,7 +242,6 @@ handled by the alias removal part
 							mb->stmt[mb->stop]=0;
 							n--;
 					}
-#endif
 					j= 0; /* end of search */
 				}
 			}
