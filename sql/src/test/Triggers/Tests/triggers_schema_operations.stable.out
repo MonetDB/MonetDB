@@ -27,17 +27,17 @@ Over..
 
 [ 1	]
 [ 1	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length
 [ 1	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "t2"	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length

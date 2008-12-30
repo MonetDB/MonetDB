@@ -152,7 +152,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 29	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -161,7 +161,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 30	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -170,7 +170,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 31	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -179,7 +179,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 32	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -188,7 +188,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 33	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -197,7 +197,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 34	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -206,7 +206,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 35	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -215,7 +215,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 36	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -224,7 +224,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 37	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -251,7 +251,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 41	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -260,7 +260,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 42	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -269,7 +269,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 44	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -278,7 +278,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 45	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -287,7 +287,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 47	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length
@@ -296,7 +296,7 @@ Over..
 % tinyint # type
 % 2 # length
 [ 48	]
-% sys.s # table_name
+% .s # table_name
 % sname # name
 % varchar # type
 % 0 # length

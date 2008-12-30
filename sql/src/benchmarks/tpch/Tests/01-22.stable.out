@@ -142,7 +142,7 @@ Over..
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:05 >  
 
-% sys.shipping,	sys.shipping,	sys.shipping,	sys.shipping # table_name
+% .shipping,	.shipping,	.shipping,	.shipping # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % varchar,	varchar,	int,	decimal # type
 % 7,	7,	4,	21 # length
@@ -787,7 +787,7 @@ Over..
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:06 >  
 
-% sys.c_orders,	sys.c_orders # table_name
+% .c_orders,	.c_orders # table_name
 % c_count,	custdist # name
 % wrd,	wrd # type
 % 2,	3 # length
@@ -863,7 +863,7 @@ Over..
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:06 >  
 
-% sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
+% .part,	.part,	.part,	.partsupp # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
 % varchar,	varchar,	int,	wrd # type
 % 8,	25,	2,	1 # length
@@ -1204,7 +1204,7 @@ Over..
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:06 >  
 
-% sys. # table_name
+% . # table_name
 % revenue # name
 % decimal # type
 % 21 # length

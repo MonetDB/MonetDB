@@ -24,7 +24,7 @@ Over..
 # 11:50:16 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < union-SF.918078.sql
 # 11:50:16 >  
 
-% sys.tmp # table_name
+% .tmp # table_name
 % i # name
 % int # type
 % 1 # length

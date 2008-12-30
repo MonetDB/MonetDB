@@ -27,7 +27,7 @@ Over..
 
 [ 2	]
 [ 1	]
-% sys.t1,	sys.t1 # table_name
+% .t1,	.t1 # table_name
 % a,	b # name
 % int,	int # type
 % 1,	1 # length

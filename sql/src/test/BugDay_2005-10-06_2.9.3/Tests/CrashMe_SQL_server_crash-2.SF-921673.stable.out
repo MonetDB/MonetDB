@@ -1,19 +1,23 @@
 stdout of test 'CrashMe_SQL_server_crash-2.SF-921673` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 17:09:20 >  
-# 17:09:20 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_port=32522 --set xrpc_port=48909 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit=" module(sql_server);" ; echo ; echo Over..
-# 17:09:20 >  
+# 19:38:16 >  
+# 19:38:16 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:38:16 >  
 
-# Monet Database Server V4.17.1
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.9.3', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -21,7 +25,7 @@ Over..
 # 11:50:20 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < CrashMe_SQL_server_crash-2.SF-921673.sql
 # 11:50:20 >  
 
-% .,	sys.schemas,	sys.tables,	sys.columns,	sys.columns,	sys.columns,	sys.columns,	.,	.,	.,	.,	sys.columns,	.,	.,	.,	sys.,	.,	.,	. # table_name
+% .,	sys.schemas,	.tables,	.columns,	.columns,	.columns,	.columns,	.,	.,	.,	.,	.columns,	.,	.,	.,	.,	.,	.,	. # table_name
 % table_cat,	table_schem,	table_name,	column_name,	type_name,	column_size,	decimal_digits,	buffer_length,	num_prec_radix,	nullable,	remarks,	column_def,	sql_data_type,	sql_datetime_sub,	char_octet_length,	ordinal_position,	scope_catalog,	scope_schema,	scope_table # name
 % char,	varchar,	varchar,	varchar,	varchar,	int,	int,	tinyint,	tinyint,	char,	char,	varchar,	tinyint,	tinyint,	tinyint,	int,	char,	char,	char # type
 % 0,	3,	10,	11,	7,	4,	1,	1,	2,	0,	0,	1,	1,	1,	1,	1,	0,	0,	0 # length

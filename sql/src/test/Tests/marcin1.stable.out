@@ -80,7 +80,7 @@ Over..
 [ 5,	1	]
 [ 5,	2	]
 [ 5,	3	]
-% sys.t1,	sys.L7 # table_name
+% .t1,	.L7 # table_name
 % id,	L7 # name
 % int,	int # type
 % 1,	1 # length

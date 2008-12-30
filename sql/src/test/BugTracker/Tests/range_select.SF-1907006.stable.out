@@ -24,7 +24,7 @@ Over..
 # 12:43:18 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=30892 
 # 12:43:18 >  
 
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length

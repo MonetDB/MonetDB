@@ -190,7 +190,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.s,	sys.v,	sys.e,	sys.e # table_name
+% .s,	.v,	.e,	.e # table_name
 % victim,	location,	time,	text # name
 % varchar,	varchar,	varchar,	clob # type
 % 42,	134,	15,	1040 # length
@@ -217,7 +217,7 @@ Over..
 [ "Pinchin Street Murder, possibly Lydia Hart",	"under a railway arch in Pinchin Street",	NULL,	NULL	]
 [ "Rose Mylett",	"the yard between 184 and 186 Poplar High Street, in Clarke's Yard",	NULL,	NULL	]
 [ "Whitehall Mystery",	"a vault soon to become a section of the cellar of New Scotland Yard",	NULL,	NULL	]
-% sys.v,	sys.sp,	sys.sp # table_name
+% .v,	.sp,	.sp # table_name
 % name,	name,	picture # name
 % varchar,	varchar,	varchar # type
 % 42,	34,	47 # length
@@ -239,7 +239,7 @@ Over..
 [ "Pinchin Street Murder, possibly Lydia Hart",	NULL,	NULL	]
 [ "Rose Mylett",	NULL,	NULL	]
 [ "Whitehall Mystery",	NULL,	NULL	]
-% sys.i,	sys.si # table_name
+% .i,	.si # table_name
 % name,	times # name
 % varchar,	wrd # type
 % 45,	1 # length
@@ -296,7 +296,7 @@ Over..
 [ "hazel",	1	]
 [ "light gray",	1	]
 [ "unknown",	1	]
-% sys.s,	sys.w,	sys.i,	sys.d,	sys.sp # table_name
+% .s,	.w,	.i,	.d,	.sp # table_name
 % victim,	witnesses,	inspectors,	doctors,	suspects # name
 % varchar,	wrd,	wrd,	wrd,	wrd # type
 % 42,	1,	1,	1,	1 # length

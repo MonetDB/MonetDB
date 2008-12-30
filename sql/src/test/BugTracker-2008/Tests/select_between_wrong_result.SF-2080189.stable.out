@@ -28,7 +28,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.a # table_name
+% .a # table_name
 % L2 # name
 % wrd # type
 % 1 # length

@@ -31,14 +31,14 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.L7,	sys.t1,	sys.t2 # table_name
+% .L7,	.t1,	.t2 # table_name
 % name,	n,	n # name
 % clob,	int,	int # type
 % 2,	2,	2 # length
 [ "aa",	11,	12	]
 [ "bb",	NULL,	22	]
 [ "dd",	NULL,	42	]
-% sys.L11,	sys.t1,	sys.t2,	sys.t3 # table_name
+% .L11,	.t1,	.t2,	.t3 # table_name
 % name,	n,	n,	n # name
 % clob,	int,	int,	int # type
 % 2,	2,	2,	2 # length
@@ -46,7 +46,7 @@ Over..
 [ "bb",	NULL,	22,	23	]
 [ "dd",	NULL,	42,	NULL	]
 [ "cc",	NULL,	NULL,	33	]
-% sys.L12,	sys.L12 # table_name
+% .L12,	.L12 # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length
@@ -54,7 +54,7 @@ Over..
 [ "aa",	12	]
 [ "bb",	22	]
 [ "dd",	42	]
-% sys.L14,	sys.L14 # table_name
+% .L14,	.L14 # table_name
 % name,	n # name
 % clob,	int # type
 % 2,	2 # length

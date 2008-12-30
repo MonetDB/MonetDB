@@ -31,7 +31,7 @@ stdout of test 'set_sql_debug_64__breaking_the_DB.SF-1906287` in directory 'src/
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37754/
 # MonetDB/SQL module v2.27.0 loaded
-% .users,	sys.users,	sys.users # table_name
+% .users,	.users,	.users # table_name
 % name,	fullname,	default_schema # name
 % varchar,	varchar,	int # type
 % 9,	10,	4 # length

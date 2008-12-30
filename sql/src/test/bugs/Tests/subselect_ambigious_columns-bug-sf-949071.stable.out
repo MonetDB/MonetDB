@@ -1,19 +1,23 @@
 stdout of test 'subselect_ambigious_columns-bug-sf-949071` in directory 'src/test/bugs` itself:
 
 
-# 18:18:03 >  
-# 18:18:03 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=32098 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 18:18:03 >  
+# 19:40:33 >  
+# 19:40:33 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:40:33 >  
 
-# Monet Database Server V4.13.1
-# Copyright (c) 1993-2006, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -21,7 +25,7 @@ Over..
 # 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < subselect_ambigious_columns-bug-sf-949071.sql
 # 11:55:31 >  
 
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 10 # length
@@ -34,7 +38,7 @@ Over..
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 10 # length

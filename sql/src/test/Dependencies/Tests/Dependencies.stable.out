@@ -96,18 +96,18 @@ Dependencies between database objects
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
-% sys.t,	sys.v,	. # table_name
+% .t,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	2,	8 # length
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
-% sys.t,	sys.i,	. # table_name
+% .t,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
-% sys.t,	sys.tri,	. # table_name
+% .t,	.tri,	. # table_name
 % name,	trigname,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
@@ -115,40 +115,40 @@ Dependencies between database objects
 [ "t1",	"trigger_test_4",	"DEP_TRIGGER"	]
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t3",	"trigger_test_4",	"DEP_TRIGGER"	]
-% sys.t,	sys.fk,	. # table_name
+% .t,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	13,	8 # length
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
-% sys.t,	sys.f,	. # table_name
+% .t,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	2,	8 # length
 [ "t1",	"f2",	"DEP_FUNC"	]
-% sys.c,	sys.v,	. # table_name
+% .c,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 4,	2,	8 # length
 [ "id",	"v1",	"DEP_VIEW"	]
 [ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
-% sys.c,	sys.k,	. # table_name
+% .c,	sys.k,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	10,	7 # length
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
-% sys.c,	sys.i,	. # table_name
+% .c,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "id",	"id_index",	"DEP_INDEX"	]
-% sys.c,	sys.f,	. # table_name
+% .c,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 4,	2,	8 # length
 [ "name",	"f2",	"DEP_FUNC"	]
 [ "id",	"f2",	"DEP_FUNC"	]
-% sys.c,	sys.tri,	. # table_name
+% .c,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 6,	14,	11 # length
@@ -156,16 +156,16 @@ Dependencies between database objects
 [ "id_t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "age_v1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
-% sys.v,	sys.f,	. # table_name
+% .v,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 2,	2,	8 # length
 [ "v1",	"f2",	"DEP_FUNC"	]
-% sys.v,	sys.i,	. # table_name
+% .v,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% sys.v,	sys.tri,	. # table_name
+% .v,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
@@ -219,55 +219,55 @@ Cleanup
 % 7,	3,	10 # length
 [ "monetdb",	"sys",	"DEP_SCHEMA"	]
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
-% sys.t,	sys.v,	. # table_name
+% .t,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.t,	sys.i,	. # table_name
+% .t,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% sys.t,	sys.t,	. # table_name
+% .t,	.t,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
-% sys.t,	sys.fk,	. # table_name
+% .t,	sys.fk,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.t,	sys.f,	. # table_name
+% .t,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.c,	sys.v,	. # table_name
+% .c,	.v,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.c,	sys.k,	. # table_name
+% .c,	sys.k,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	7 # length
-% sys.c,	sys.i,	. # table_name
+% .c,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% sys.c,	sys.f,	. # table_name
+% .c,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.c,	sys.tri,	. # table_name
+% .c,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
-% sys.v,	sys.f,	. # table_name
+% .v,	sys.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	8 # length
-% sys.v,	sys.i,	. # table_name
+% .v,	.i,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% sys.v,	sys.tri,	. # table_name
+% .v,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length

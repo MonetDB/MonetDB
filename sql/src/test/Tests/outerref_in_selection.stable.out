@@ -24,7 +24,7 @@ Over..
 # 11:50:11 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < outerref_in_selection.sql
 # 11:50:11 >  
 
-% sys.b,	sys.a # table_name
+% .b,	.a # table_name
 % cape_date,	numppl # name
 % date,	wrd # type
 % 10,	1 # length

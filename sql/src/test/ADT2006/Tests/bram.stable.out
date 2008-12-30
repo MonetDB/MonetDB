@@ -157,7 +157,7 @@ Over..
 [ 10,	1	]
 [ 11,	2	]
 [ 12,	2	]
-% .,	sys.v # table_name
+% .,	.v # table_name
 % mon,	victim # name
 % tinyint,	varchar # type
 % 2,	42 # length
@@ -211,7 +211,7 @@ Over..
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]
-% sys.victim # table_name
+% .victim # table_name
 % victim # name
 % varchar # type
 % 42 # length

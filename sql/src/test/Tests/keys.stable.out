@@ -29,7 +29,7 @@ Over..
 # 11:50:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < keys.sql
 # 11:50:05 >  
 
-% sys.idxs,	sys.idxs,	sys.keys,	sys.keys # table_name
+% .idxs,	.idxs,	.keys,	.keys # table_name
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 27,	1,	10,	1 # length

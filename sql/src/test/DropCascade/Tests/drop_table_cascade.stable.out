@@ -20,16 +20,16 @@ Over..
 # 18:02:48 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=37174 
 # 18:02:48 >  
 
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "t2"	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length

@@ -114,6 +114,14 @@ static stmt *column( stmt *val )
 	return val;
 }
 
+static stmt *Column( stmt *val )
+{
+	val = stmt_dup(val);
+	if (val->nrcols == 0)
+		val = const_column(val);
+	return stmt_append(stmt_temp(tail_type(val)), val);
+}
+
 static stmt *
 bin_first_column( stmt *sub ) 
 {
@@ -722,6 +730,9 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(jl), column(c), cmp_equal);
 
+		/* as append isn't save, we append to a new copy */
+		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+			s = Column(s);
 		if (rel->op == op_left || rel->op == op_full)
 			s = stmt_append(s, stmt_join(stmt_dup(ld), stmt_dup(c), cmp_equal));
 		if (rel->op == op_right || rel->op == op_full) 
@@ -739,6 +750,9 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(jr), column(c), cmp_equal);
 
+		/* as append isn't save, we append to a new copy */
+		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+			s = Column(s);
 		if (rel->op == op_left || rel->op == op_full) 
 			s = stmt_append(s, stmt_const(stmt_dup(ld), stmt_atom(atom_general(tail_type(c), NULL, 0))));
 		if (rel->op == op_right || rel->op == op_full) 
@@ -915,7 +929,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		n = n->next, m = m->next ) {
 		stmt *c1 = n->data;
 		stmt *c2 = stmt_dup(m->data);
-		char *rnme = NULL;
+		char *rnme = table_name(c1);
 		char *nme = column_name(c1);
 		stmt *s;
 
@@ -924,8 +938,7 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 
 		   so we create append on copies.
 		*/
-		s = stmt_append(column(c1), c2);
-		rnme = table_name(c1);
+		s = stmt_append(Column(c1), c2);
 		nme = _strdup(nme);
 		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, nme);

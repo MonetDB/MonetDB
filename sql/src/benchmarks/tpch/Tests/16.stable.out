@@ -24,7 +24,7 @@ Over..
 # 12:34:53 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 16.sql
 # 12:34:53 >  
 
-% sys.part,	sys.part,	sys.part,	sys.partsupp # table_name
+% .part,	.part,	.part,	.partsupp # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
 % varchar,	varchar,	int,	wrd # type
 % 8,	25,	2,	1 # length

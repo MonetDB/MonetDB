@@ -34,7 +34,7 @@ Over..
 [ 19251231	]
 [ 19260102	]
 [ 19260104	]
-% sys.t1,	sys.test_subquery # table_name
+% .t1,	.test_subquery # table_name
 % date,	dtnext # name
 % int,	int # type
 % 8,	8 # length

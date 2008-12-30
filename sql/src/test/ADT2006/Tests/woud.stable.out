@@ -65,7 +65,7 @@ Over..
 % substring_murderdate # name
 % int # type
 % 1 # length
-% sys.numbers # table_name
+% .numbers # table_name
 % L5 # name
 % double # type
 % 22 # length
@@ -83,7 +83,7 @@ Over..
 % doctor # name
 % varchar # type
 % 0 # length
-% sys.allnames # table_name
+% .allnames # table_name
 % name # name
 % varchar # type
 % 0 # length

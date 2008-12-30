@@ -1,14 +1,23 @@
 stdout of test 'union_all-bug-sf-941788` in directory 'src/test/bugs` itself:
 
 
-# 21:19:25 >  
-# 21:19:25 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/five/program-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/sql/log" --set mapi_port=32424 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="include sql;" ; echo ; echo Over..
-# 21:19:25 >  
+# 19:40:32 >  
+# 19:40:32 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=31946 --set xrpc_port=44499 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 19:40:32 >  
 
-printf("\nReady.\n");
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
+# MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -16,7 +25,7 @@ Over..
 # 11:55:29 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < union_all-bug-sf-941788.sql
 # 11:55:29 >  
 
-% .ttables,	sys.ttables,	sys.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
+% .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 0,	3,	10,	12,	0,	0,	0,	0,	2,	6 # length
@@ -29,7 +38,7 @@ Over..
 [ NULL,	"tmp",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"tmp",	"keys",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
-% .ttables,	sys.ttables,	sys.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
+% .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 0,	3,	10,	23,	0,	0,	0,	0,	2,	6 # length

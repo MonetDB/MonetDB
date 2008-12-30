@@ -19,7 +19,7 @@ Over..
 # 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < groupby_having-bug-sf-947600.sql
 # 11:55:31 >  
 
-% sys.a,	sys.b,	sys.b # table_name
+% .a,	.b,	.b # table_name
 % name,	name,	L24 # name
 % varchar,	varchar,	wrd # type
 % 10,	10,	2 # length
@@ -50,7 +50,7 @@ Over..
 [ "sequences",	"idxs",	4	]
 [ "sequences",	"keycolumns",	2	]
 [ "sequences",	"keys",	4	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 10 # length
@@ -60,7 +60,7 @@ Over..
 [ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-% sys.tables # table_name
+% .tables # table_name
 % name # name
 % varchar # type
 % 0 # length

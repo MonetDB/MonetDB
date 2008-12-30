@@ -25,7 +25,7 @@ Over..
 # 11:50:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < reserved_words.SF-939112.sql
 # 11:50:36 >  
 
-% sys. # table_name
+% . # table_name
 % >_L1 # name
 % boolean # type
 % 5 # length

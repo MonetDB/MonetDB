@@ -21,37 +21,37 @@ Over..
 # 00:12:35 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35378 
 # 00:12:35 >  
 
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	2,	5 # length
 [ "id",	"50",	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	2,	5 # length
 [ "id",	"30",	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	1,	5 # length
 [ "id",	NULL,	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	1,	5 # length
 [ "id",	NULL,	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	1,	5 # length
 [ "id",	NULL,	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	1,	5 # length
 [ "id",	NULL,	true	]
-% sys.columns,	sys.columns,	sys.columns # table_name
+% .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
 % 2,	1,	5 # length

@@ -25,7 +25,7 @@ Over..
 # 20:30:44 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:44 >  
 
-% sys. # table_name
+% . # table_name
 % foo # name
 % int # type
 % 2 # length
@@ -62,7 +62,7 @@ Over..
 [ 31	]
 [ 32	]
 [ 33	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 2,	4 # length
@@ -99,7 +99,7 @@ Over..
 [ 25,	1061	]
 [ 26,	1061	]
 [ 27,	1061	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 2,	4 # length
@@ -136,7 +136,7 @@ Over..
 [ 25,	1061	]
 [ 26,	1061	]
 [ 27,	1061	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 2,	4 # length
@@ -173,7 +173,7 @@ Over..
 [ 31,	1162	]
 [ 32,	1162	]
 [ 33,	1162	]
-% sys. # table_name
+% . # table_name
 % foo # name
 % int # type
 % 2 # length
@@ -210,7 +210,7 @@ Over..
 [ 31	]
 [ 32	]
 [ 33	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 1,	4 # length
@@ -247,7 +247,7 @@ Over..
 [ 1,	1162	]
 [ 1,	1162	]
 [ 1,	1162	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 1,	4 # length
@@ -284,7 +284,7 @@ Over..
 [ 1,	1162	]
 [ 1,	1162	]
 [ 1,	1162	]
-% .,	sys.tables # table_name
+% .,	.tables # table_name
 % foo,	schema_id # name
 % int,	int # type
 % 2,	4 # length
@@ -321,7 +321,7 @@ Over..
 [ 28,	1162	]
 [ 28,	1162	]
 [ 28,	1162	]
-% sys.,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 3,	14,	11 # length
@@ -547,7 +547,7 @@ Over..
 [ 220,	"distance",	"double"	]
 [ 221,	"objid",	"bigint"	]
 [ 222,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 1,	14,	11 # length
@@ -773,7 +773,7 @@ Over..
 [ 1,	"mode",	"tinyint"	]
 [ 1,	"distance",	"double"	]
 [ 1,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 1,	14,	11 # length
@@ -999,7 +999,7 @@ Over..
 [ 1,	"mode",	"tinyint"	]
 [ 1,	"distance",	"double"	]
 [ 1,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 3,	14,	11 # length
@@ -1225,7 +1225,7 @@ Over..
 [ 220,	"x",	"double"	]
 [ 221,	"y",	"double"	]
 [ 222,	"z",	"double"	]
-% sys.,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 3,	14,	11 # length
@@ -1451,7 +1451,7 @@ Over..
 [ 220,	"distance",	"double"	]
 [ 221,	"objid",	"bigint"	]
 [ 222,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 1,	14,	11 # length
@@ -1677,7 +1677,7 @@ Over..
 [ 1,	"mode",	"tinyint"	]
 [ 1,	"distance",	"double"	]
 [ 1,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 1,	14,	11 # length
@@ -1903,7 +1903,7 @@ Over..
 [ 1,	"mode",	"tinyint"	]
 [ 1,	"distance",	"double"	]
 [ 1,	"distance",	"double"	]
-% .,	sys.columns,	sys.columns # table_name
+% .,	.columns,	.columns # table_name
 % foo,	name,	type # name
 % int,	varchar,	varchar # type
 % 2,	14,	11 # length

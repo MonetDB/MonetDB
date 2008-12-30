@@ -25,7 +25,7 @@ Over..
 # 20:29:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33640 
 # 20:29:05 >  
 
-% sys.tt,	.tv,	.tv # table_name
+% .tt,	.tv,	.tv # table_name
 % name,	s,	i # name
 % varchar,	char,	tinyint # type
 % 12,	3,	1 # length

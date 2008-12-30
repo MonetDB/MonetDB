@@ -25,14 +25,14 @@ Over..
 # 12:51:49 >  
 
 [ 3	]
-% sys.t978045 # table_name
+% .t978045 # table_name
 % name # name
 % varchar # type
 % 6 # length
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-% sys.t978045 # table_name
+% .t978045 # table_name
 % name # name
 % varchar # type
 % 6 # length

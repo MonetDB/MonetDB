@@ -37,7 +37,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.x,	sys.L7 # table_name
+% .x,	.L7 # table_name
 % id,	L7 # name
 % int,	int # type
 % 2,	1 # length
