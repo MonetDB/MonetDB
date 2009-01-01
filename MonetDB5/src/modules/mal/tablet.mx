@@ -2198,6 +2198,7 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
 	BUN maxnr = BATcount(order);
+	int ret = 0;
 
 	/* only set nr if it is zero or lower (bogus) to the maximum value
 	 * possible (BATcount), if already set within BATcount range,
@@ -2207,14 +2208,17 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
+	mal_set_lock(mal_contextLock,"tablet output");
 	if ((base = check_BATs(as)) != oid_nil) {
 		if (BAThdense(order) && order->hseqbase == base)
-			return output_file_dense(as, s);
+			ret= output_file_dense(as, s);
 		else
-			return output_file_ordered(as, order, s, base);
+			ret= output_file_ordered(as, order, s, base);
 	} else {
-		return output_file_default(as, order, s);
+		ret= output_file_default(as, order, s);
 	}
+	mal_unset_lock(mal_contextLock,"tablet output");
+	return ret;
 }
 
 BUN
@@ -2225,9 +2229,11 @@ TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s)
 
 	as.nr_attrs = 0;
 	as.nr = BUN_NONE;
+	mal_set_lock(mal_contextLock,"tablet output");
 	if (create_dumpformat(&as, NULL, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		res = TABLEToutput_file(&as, order, s);
 	}
+	mal_unset_lock(mal_contextLock,"tablet output");
 	TABLETdestroy_format(&as);
 	if (res >= 0)
 		return as.nr;
