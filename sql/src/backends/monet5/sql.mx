@@ -201,9 +201,21 @@ pattern dropDeclaredTables{unsafe}( nr:int ) :void
 address mvc_drop_declared_tables_wrap
 comment "drop top n declared tables"; 
 
-pattern exportResult{unsafe}(s:streams, res_id:int, w:str) :void
+pattern exportHead{unsafe}(s:streams, res_id:int) :void
+address mvc_export_head_wrap
+comment "Export a result (in order) to stream s"; 
+
+pattern exportResult{unsafe}(s:streams, res_id:int) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
+
+pattern exportChunk{unsafe}(s:streams, res_id:int) :void
+address mvc_export_chunk_wrap
+comment "Export a chunk of the result set (in order) to stream s"; 
+
+pattern exportChunk{unsafe}(s:streams, res_id:int, offset:int, nr:int) :void
+address mvc_export_chunk_wrap
+comment "Export a chunk of the result set (in order) to stream s"; 
 
 pattern exportOperation{unsafe}(w:str) :void
 address mvc_export_operation_wrap
@@ -796,6 +808,8 @@ sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStk
 
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1949,7 +1963,27 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return NULL;
 }
 
-/* str mvc_export_result_wrap(int *ret, stream **s, int *res_id, str *w); */
+/* str mvc_export_head_wrap(int *ret, stream **s, int *res_id); */
+str
+mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *b = NULL;
+	mvc *c = NULL;
+	str msg = getContext(cntxt,mb, &c, &b);
+	int *ret  = (int *) getArgReference(stk, pci, 0);
+	stream **s  = (stream **) getArgReference(stk, pci, 1);
+	int *res_id = (int *) getArgReference(stk, pci, 2);
+
+	(void) cntxt;
+	if (msg)
+		return msg;
+	if (mvc_export_head(c, *s, *res_id)) {
+		throw(SQL, "sql.exportHead", "failed");
+	}
+	(void)ret;
+	return NULL;
+}
+/* str mvc_export_result_wrap(int *ret, stream **s, int *res_id); */
 str
 mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1959,13 +1993,39 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret  = (int *) getArgReference(stk, pci, 0);
 	stream **s  = (stream **) getArgReference(stk, pci, 1);
 	int *res_id = (int *) getArgReference(stk, pci, 2);
-	str *w = (str *) getArgReference(stk, pci, 3);
 
 	(void) cntxt;
 	if (msg)
 		return msg;
-	if (mvc_export_result(c, *s, *res_id, *w)) {
+	if (mvc_export_result(c, *s, *res_id)) {
 		throw(SQL, "sql.exportResult", "failed");
+	}
+	(void)ret;
+	return NULL;
+}
+/* str mvc_export_chunk_wrap(int *ret, stream **s, int *res_id, str *w); */
+str
+mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *b = NULL;
+	mvc *c = NULL;
+	str msg = getContext(cntxt,mb, &c, &b);
+	int *ret  = (int *) getArgReference(stk, pci, 0);
+	stream **s  = (stream **) getArgReference(stk, pci, 1);
+	int *res_id = (int *) getArgReference(stk, pci, 2);
+	BUN	offset = 0;
+	BUN	nr = 0;
+
+	if ( pci->argc == 5){
+		offset = *(BUN *) getArgReference(stk,pci,3);
+		nr = *(BUN *) getArgReference(stk,pci,4);
+	} 
+
+	(void) cntxt;
+	if (msg)
+		return msg;
+	if (mvc_export_chunk(c, *s, *res_id, offset, nr)) {
+		throw(SQL, "sql.exportChunk", "failed");
 	}
 	(void)ret;
 	return NULL;

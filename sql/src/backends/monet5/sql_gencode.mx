@@ -1692,7 +1692,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt2(mb, sqlRef, exportResultRef);
 				q = pushArgument(mb, q, file);
 				q = pushArgument(mb, q, s->nr);
-				q = pushStr(mb, q, ""); /* warning */
 				if (s->type == st_export && s->op4.stval) {
 					q = newStmt(mb, "streams", "close");
 					q = pushArgument(mb, q, file);

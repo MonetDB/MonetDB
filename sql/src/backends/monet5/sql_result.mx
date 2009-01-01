@@ -31,7 +31,8 @@
 extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
 extern int mvc_export_operation(mvc *m, stream *s, str w);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns);
-extern int mvc_export_result(mvc *c, stream *s, int res_id, str w);
+extern int mvc_export_result(mvc *c, stream *s, int res_id);
+extern int mvc_export_head(mvc *c, stream *s, int res_id);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
@@ -980,21 +981,16 @@ mvc_export_file(mvc *m, stream *s, res_table *t)
 	return res;
 }
 
-int
-mvc_export_result(mvc *m, stream *s, int res_id, str w)
+static int
+mvc_export_head_intern(mvc *m, stream *s, int res_id, int flag)
 {
-	int i, clean = 0, res = 0;
+	int i, res = 0;
 	BUN count;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
 
 	if (!s || !t)
 		return 0;
-
-	/* we shouldn't have anything else but Q_TABLE here */
-	assert(t->query_type == Q_TABLE);
-	if (t->tsep)
-		return mvc_export_file(m, s, t);
 
 	/* query type: Q_TABLE */
 	if (!(stream_write(s, "&1 ", 3, 1) == 1))
@@ -1006,12 +1002,14 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 		return -1;
 
 	/* tuple count */
-	if (t->order) {
-		order = BATdescriptor(t->order);
+	if (flag) {
+		if (t->order) {
+			order = BATdescriptor(t->order);
 
-		count = BATcount(order);
-	} else
-		count = 1;
+			count = BATcount(order);
+		} else
+			count = 1;
+	}
 	if (!mvc_send_lng(s, (lng) count) ||
 			stream_write(s, " ", 1, 1) != 1)
 		return export_error(order);
@@ -1074,8 +1072,37 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 	if (stream_write(s, " # length\n", 10, 1) != 1)
 		return export_error(order);
 
+	if ( order)
+		BBPunfix(order->batCacheid);
+	return res;
+}
+
+int
+mvc_export_head(mvc *m, stream *s, int res_id){
+	return mvc_export_head_intern(m,s,res_id,FALSE);
+}
+
+int
+mvc_export_result(mvc *m, stream *s, int res_id)
+{
+	int clean = 0, res = 0;
+	BUN count;
+	res_table *t = res_tables_find(m->results, res_id);
+	BAT *order = NULL;
+
+	if (!s || !t)
+		return 0;
+
+	/* we shouldn't have anything else but Q_TABLE here */
+	assert(t->query_type == Q_TABLE);
+	if (t->tsep)
+		return mvc_export_file(m, s, t);
+
+	mvc_export_head_intern(m,s,res_id,TRUE);
+
 	if (!t->order)
 		return mvc_export_row(m, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");
+	order = BATdescriptor(t->order);
 
 	count = m->reply_size;
 	if (count == 0 || count >= BATcount(order)) {
@@ -1088,7 +1115,7 @@ mvc_export_result(mvc *m, stream *s, int res_id, str w)
 		m->results = res_tables_remove(m->results, t);
 
 	if (res > 0)
-		res = mvc_export_warning(s, w);
+		res = mvc_export_warning(s, "");
 	return res;
 }
 
@@ -1103,14 +1130,6 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 	if (!s || !t)
 		return 0;
 
-	order = BATdescriptor(t->order);
-	cnt = nr;
-	if (cnt == 0) 
-		cnt = BATcount(order);
-	if (offset >= BATcount(order))
-		cnt = 0;
-	if (offset + cnt > BATcount(order)) 
-		cnt = BATcount(order) - offset;
 
 	/* query type: Q_BLOCK */
 	if (!(stream_write(s, "&6 ", 3, 1) == 1))
@@ -1125,6 +1144,15 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr)
 	if (!mvc_send_int(s, t->nr_cols) ||
 			stream_write(s, " ", 1, 1) != 1)
 		return export_error(order);
+
+	order = BATdescriptor(t->order);
+	cnt = nr;
+	if (cnt == 0) 
+		cnt = BATcount(order);
+	if (offset >= BATcount(order))
+		cnt = 0;
+	if (offset + cnt > BATcount(order)) 
+		cnt = BATcount(order) - offset;
 
 	/* row count */
 	if (!mvc_send_lng(s, (lng) cnt) || 
