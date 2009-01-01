@@ -72,9 +72,9 @@ loaded();
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
 test.print();
-!ERROR: DESCload: atom 'lock' unknown, in BAT '34'.
+!ERROR: DESCload: atom 'lock' unknown, in BAT '32'.
 test.count().print();
-!ERROR: DESCload: atom 'lock' unknown, in BAT '34'.
+!ERROR: DESCload: atom 'lock' unknown, in BAT '32'.
 !ERROR: interpret_params: print(param 1): evaluation error.
 
 quit();

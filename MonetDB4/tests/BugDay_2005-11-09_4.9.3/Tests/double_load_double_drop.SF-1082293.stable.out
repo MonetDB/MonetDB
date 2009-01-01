@@ -60,7 +60,7 @@ stdout of test 'double_load_double_drop.SF-1082293` in directory 'tests/BugDay_2
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
-!ERROR: DESCload: atom 'lock' unknown, in BAT '34'.
+!ERROR: DESCload: atom 'lock' unknown, in BAT '32'.
 quit();
 
 # 13:07:29 >  
