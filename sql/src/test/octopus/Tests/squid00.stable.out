@@ -1,0 +1,172 @@
+stdout of test 'squid00` in directory 'src/test/octopus` itself:
+
+
+# 23:29:58 >  
+# 23:29:58 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33938 --set xrpc_port=40910 --set monet_prompt= --trace  "--dbname=mTests_src_test_octopus" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:29:58 >  
+
+# MonetDB server v5.9.0, based on kernel v1.27.0
+# Serving database 'mTests_src_test_octopus', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33938/
+# MonetDB/SQL module v2.27.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 23:29:58 >  
+# 23:29:58 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=33938 
+# 23:29:58 >  
+
+function user.s1_1():void;
+    _46 := sql.bind("sys","squida","bid",0);
+    (_48,_50,_52,_54) := bat.partition(_46);
+    _6:bat[:oid,:int]  := sql.bind("sys","squida","bid",1);
+    _56 := sql.bind("sys","squida","bid",2);
+    (_58,_59,_60,_61) := bat.partition(_56);
+    mat.new(_58,_59,_60,_61);
+    _64 := algebra.kdifference(_48,_58);
+    _65 := algebra.kdifference(_50,_59);
+    _66 := algebra.kdifference(_52,_60);
+    _67 := algebra.kdifference(_54,_61);
+    mat.new(_64,_65,_66,_67,_6);
+    _69 := algebra.kunion(_64,_58);
+    _70 := algebra.kunion(_65,_59);
+    _71 := algebra.kunion(_66,_60);
+    _72 := algebra.kunion(_67,_61);
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
+    _14 := bat.reverse(_13);
+    _73 := algebra.kdifference(_69,_14);
+    _74 := algebra.kdifference(_70,_14);
+    _75 := algebra.kdifference(_71,_14);
+    _76 := algebra.kdifference(_72,_14);
+    _78 := algebra.kdifference(_6,_14);
+    scheduler.octopus();
+    scheduler.octopus();
+    _73 := octopus.s1_1_tentacle_73();
+    _74 := octopus.s1_1_tentacle_74();
+    _75 := octopus.s1_1_tentacle_75();
+    _76 := octopus.s1_1_tentacle_76();
+    _78 := octopus.s1_1_tentacle_78();
+    _15 := mat.pack(_73,_74,_75,_76,_78);
+    _16 := sql.resultSet(1,1,_15);
+    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
+    _21 := io.stdout();
+    sql.exportResult(_21,_16);
+end s1_1;
+% sys.squida # table_name
+% bid # name
+% int # type
+% 2 # length
+[ 0	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 19	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 24	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 31	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+[ 41	]
+[ 42	]
+[ 43	]
+[ 44	]
+[ 45	]
+[ 46	]
+[ 47	]
+[ 48	]
+[ 49	]
+[ 50	]
+[ 51	]
+[ 52	]
+[ 53	]
+[ 54	]
+[ 55	]
+[ 56	]
+[ 57	]
+[ 58	]
+[ 59	]
+[ 60	]
+[ 61	]
+[ 62	]
+[ 63	]
+[ 64	]
+[ 65	]
+[ 66	]
+[ 67	]
+[ 68	]
+[ 69	]
+[ 70	]
+[ 71	]
+[ 72	]
+[ 73	]
+[ 74	]
+[ 75	]
+[ 76	]
+[ 77	]
+[ 78	]
+[ 79	]
+[ 80	]
+[ 81	]
+[ 82	]
+[ 83	]
+[ 84	]
+[ 85	]
+[ 86	]
+[ 87	]
+[ 88	]
+[ 89	]
+[ 90	]
+[ 91	]
+[ 92	]
+[ 93	]
+[ 94	]
+[ 95	]
+[ 96	]
+[ 97	]
+[ 98	]
+[ 99	]
+
+# 23:29:59 >  
+# 23:29:59 >  Done.
+# 23:29:59 >  
+
