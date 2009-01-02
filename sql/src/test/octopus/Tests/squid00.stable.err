@@ -79,15 +79,6 @@ stderr of test 'squid00` in directory 'src/test/octopus` itself:
 # 23:29:58 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=33938 
 # 23:29:58 >  
 
-MAPI  = monetdb@eir:33938
-QUERY = explain select Bid from squidA;
-ERROR = !TypeException:user.s1_1[23]:'scheduler.octopus' undefined in: _80:any := scheduler.octopus()
-        !TypeException:user.s1_1[23]:'scheduler.octopus' undefined in: _80:any := scheduler.octopus()
-        !TypeException:user.main[2]:'user.s1_1' undefined in: _2:void := user.s1_1()
-MAPI  = monetdb@eir:33938
-QUERY = select Bid from squidA;
-ERROR = !TypeException:user.s2_1[23]:'scheduler.octopus' undefined in: _80:any := scheduler.octopus()
-        !TypeException:user.s2_1[23]:'scheduler.octopus' undefined in: _80:any := scheduler.octopus()
 
 # 23:29:59 >  
 # 23:29:59 >  Done.

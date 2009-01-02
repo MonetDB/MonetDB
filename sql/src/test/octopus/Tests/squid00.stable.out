@@ -26,40 +26,23 @@ Over..
 # 23:29:58 >  
 
 function user.s1_1():void;
-    _46 := sql.bind("sys","squida","bid",0);
-    (_48,_50,_52,_54) := bat.partition(_46);
-    _6:bat[:oid,:int]  := sql.bind("sys","squida","bid",1);
-    _56 := sql.bind("sys","squida","bid",2);
-    (_58,_59,_60,_61) := bat.partition(_56);
-    mat.new(_58,_59,_60,_61);
-    _64 := algebra.kdifference(_48,_58);
-    _65 := algebra.kdifference(_50,_59);
-    _66 := algebra.kdifference(_52,_60);
-    _67 := algebra.kdifference(_54,_61);
-    mat.new(_64,_65,_66,_67,_6);
-    _69 := algebra.kunion(_64,_58);
-    _70 := algebra.kunion(_65,_59);
-    _71 := algebra.kunion(_66,_60);
-    _72 := algebra.kunion(_67,_61);
-    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
-    _14 := bat.reverse(_13);
-    _73 := algebra.kdifference(_69,_14);
-    _74 := algebra.kdifference(_70,_14);
-    _75 := algebra.kdifference(_71,_14);
-    _76 := algebra.kdifference(_72,_14);
-    _78 := algebra.kdifference(_6,_14);
     scheduler.octopus();
-    scheduler.octopus();
-    _73 := octopus.s1_1_tentacle_73();
-    _74 := octopus.s1_1_tentacle_74();
-    _75 := octopus.s1_1_tentacle_75();
-    _76 := octopus.s1_1_tentacle_76();
-    _78 := octopus.s1_1_tentacle_78();
-    _15 := mat.pack(_73,_74,_75,_76,_78);
-    _16 := sql.resultSet(1,1,_15);
-    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
-    _21 := io.stdout();
-    sql.exportResult(_21,_16);
+    _24 := octopus.tentacle_s1_1_73();
+    _25 := octopus.tentacle_s1_1_74();
+    _26 := octopus.tentacle_s1_1_75();
+    _27 := octopus.tentacle_s1_1_76();
+    _28 := octopus.tentacle_s1_1_78();
+    _4 := scheduler.pack(_24,_25,_26,_27,_28);
+    _24 := nil;
+    _25 := nil;
+    _26 := nil;
+    _27 := nil;
+    _28 := nil;
+    _5 := sql.resultSet(1,1,_4);
+    sql.rsColumn(_5,"sys.squida","bid","int",32,0,_4);
+    _4 := nil;
+    _10 := io.stdout();
+    sql.exportResult(_10,_5);
 end s1_1;
 % sys.squida # table_name
 % bid # name
@@ -166,7 +149,7 @@ end s1_1;
 [ 98	]
 [ 99	]
 
-# 23:29:59 >  
-# 23:29:59 >  Done.
-# 23:29:59 >  
+# 00:13:07 >  
+# 00:13:07 >  Done.
+# 00:13:07 >  
 
