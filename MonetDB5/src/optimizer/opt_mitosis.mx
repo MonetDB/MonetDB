@@ -169,8 +169,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		q->retc= q->argc;
 		q= pushArgument(mb,q, getArg(p,0));
 
-		p= newStmt(mb,matRef,"new");
+		p= newStmt(mb,matRef,newRef);
 		getArg(p,0)=k;
+		setVarUDFtype(mb,k);
 		for(j=0; j<GDKnr_threads; j++)
 			p= pushArgument(mb,p,parts[j]);
 	}

@@ -1,0 +1,133 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008- MonetDB B.V.
+@' All Rights Reserved.
+
+@f octopus
+@a M. Kersten
+@+ Octopus scheduling
+The octopus modules enable compute cloud based processing of SQL queries.
+The optimizer splits a plan managed by the mitosis and mergetable into
+independent functions by backtracking the instruction flow.
+This leads to a series of MAL functions with possibly quite some
+instruction overlap (which will not be a problem when the recycler is active).
+
+The octopus scheduler takes over control of a MAL execution by
+re-directing requests to multiple sites. If there are no sites around,
+then the code is executed linearly as is.
+
+To make this work the scheduler needs a list of applicable sites that
+hold a replica of the database. For the time being, this is an
+explicitly named list administered here.
+
+When the octopus scheduling is called, we check the connection with
+the remote site. If it is down, it is re-activated using Merovingian.
+
+@{
+@mal
+pattern scheduler.octopus():void
+address OCTOPUSrun
+comment "Run the program over a service cloud";
+
+pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address OCTOPUSpack
+comment "Materialize the MAT into the first BAT";
+
+pattern scheduler.addSite(dbnme:str, usr:str, pw:str)
+address OCTOPUSaddSite
+comment "Add a new site to the known list ";
+@h
+#ifndef _RUN_OCTOPUS
+#define _RUN_OCTOPUS
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_client.h"
+
+#define DEBUG_RUN_OCTOPUS
+
+#ifdef WIN32
+#ifndef LIBMAL_OCTOPUS
+#define octopus_export extern __declspec(dllimport)
+#else
+#define octopus_export extern __declspec(dllexport)
+#endif
+#else
+#define octopus_export extern
+#endif
+
+octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSaddSite(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif /* MAL_RUN_OCTOPUS */
+
+@+ Octopus scheduling implementation
+The discovery phase consists of establishing connections with
+the (remote) database servers.
+@c
+#include "mal_config.h"
+#include "mal_interpreter.h"
+#include "mat.h"
+#include "octopus.h"
+
+static int
+RUNdiscover(){
+	return 0;
+}
+
+str
+OCTOPUSaddSite(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str *dbnme = (str*) getArgReference(stk,pci,1);
+	str *usr = (str*) getArgReference(stk,pci,2);
+	str *pw = (str*) getArgReference(stk,pci,3);
+
+	(void) mb;
+#ifdef DEBUG_RUN_OCTOPUS
+	stream_printf(cntxt->fdout,"addSite %s %s %s\n", *dbnme, *usr, *pw);
+#endif
+	return MAL_SUCCEED;
+}
+@-
+The scheduler runs all tentacles asynchronously and collect
+timing information to perform a better scheduling next time.
+@c
+str
+RUNoctopus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	if ( RUNdiscover() == 0 )
+		return MAL_SUCCEED; /* silently continue */
+	/* do the actual work */
+	return MAL_SUCCEED; 
+}
+@-
+The critical part is to wait for all the tentacles to
+return their status.
+str
+RUNpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	if ( RUNdiscover() == 0 )
+		return MATpack(cntxt,mb,stk,p); /* silently continue */
+	/* do the actual work */
+	return MAL_SUCCEED; 
+}
+@}

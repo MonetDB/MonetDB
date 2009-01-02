@@ -15,7 +15,7 @@
 # Copyright August 2008- MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = -I../modules/atoms -I../optimizer \
+INCLUDES = -I../modules/atoms -I../modules/mal -I../optimizer \
 	-I../mal $(MONETDB_INCS) \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCL_FLAGS) $(PCRE_CFLAGS)
 
@@ -27,7 +27,7 @@ LIBS = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = \
-	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
+	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx octopus.mx
 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
@@ -38,14 +38,14 @@ LIBS = {
 headers_h = {
 	DIR = includedir/MonetDB5/scheduler
 	SOURCES = \
-	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
+	mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx octopus.mx
 	HEADERS = h 
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx
+	SOURCES = mal_isolation.mx mal_scheduler.mx mal_mes.mx mal_memorun.mx octopus.mx
 }
 
 EXTRA_DIST_DIR = Tests

@@ -22,41 +22,69 @@ Query execution can be improved significantly using distributed processing.
 Traditionally, this encompasses fragmentation and allocation of the base
 tables over multiple sites and query plans that include on the fly transport
 of intermediate results.
-We aim for a different approach, where an arbitrary MAL plan is split into three
-versions: map-, exec-, and reduce-plan.
-The map-plan breaks the database into portions and allocates the pieces
-to sites. It ensures that a complete set is available to allow the
-exec-plan to produce the result over a trimmed down version of the database. 
-The reduce-plan gathers the partial results and glue them together.
 
 Breaking the database into pieces itself is a well-studied area.
 Most approaches consider the workload and search for a good split
 of the base tables, such that the workload performance improves.
 
-In the Octopus we look at a lower level of granularity.
-Individual BATs are broken into pieces and shuffled around.
-Furthermore, we assume that a query plan is often re-used,
-making it a target of a single octopus structure.
-
+In the Octopus we focus on SQL for map-reduce processing.
 The first approach is to capitalize upon the metosis and
 mergetable optimizers. They break the table into pieces
 based on the head and propagate the effect through the plan.
-The octopus modifies the plan into remote calls, i.e. a single
-sites controls the actions in the octopus tentacles.
-The octopus needs a collection of sites to play with,
+Breaking the table depends on the number of sites to play with,
 which can be obtained dynamically from the merovingian.
-Alternatively, we built a list of possible sites explicitly. [todo]
 
-Currently the octopus delegates non-scalar objects to the remote site
-and calls them back if needed. This can/should be avoided.
+The octopus untangles the resulting plan into a controlling head function,
+which controls the actions, and specific plans for each tentacle.
+The octopus is called just after the mergetable optimizer.
 
-The octopus is called just after the dataflow optimizer, such
-that dataflow dependencies have already been handled.
-The threads walking the dataflow are serialized when hitting
-the same connection. [todo]
+For this experiment we assume that all sites have a replica
+or can access a shared version of the database.
+
+To make the structure work, we need asynchronous execution of
+the individual legs.
+
+A snippet of an octopus with two legs is shown below 
+
+@verbatim
+function user.s1_0():void;
+    _87 := octopus.exec("siteA","user","leg1");
+    _88 := octopus.exec("siteB","user","leg2");
+    _15 := octopus.pack(_87,_88);
+    _16 := sql.resultSet(1,1,_15);
+    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
+    _21 := io.stdout();
+    sql.exportResult(_21,_16);
+end s1_0;
+function user.leg1():void;
+    _52 := sql.bind("sys","squida","bid",0);
+    (_54,_56) := bat.partition(_52);
+    _62 := sql.bind("sys","squida","bid",2);
+    (_64,_65) := bat.partition(_62);
+    _72 := algebra.kdifference(_54,_64);
+    _78 := algebra.kunion(_72,_64);
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
+    _14 := bat.reverse(_13);
+    _85 := algebra.kdifference(_78,_14);
+    return leg1:= _85;
+end leg1;
+function user.leg2():void;
+    _52 := sql.bind("sys","squida","bid",0);
+    (_54,_56) := bat.partition(_52);
+    _62 := sql.bind("sys","squida","bid",2);
+    (_64,_65) := bat.partition(_62);
+    _72 := algebra.kdifference(_56,_65);
+    _78 := algebra.kunion(_72,_65);
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
+    _14 := bat.reverse(_13);
+    _85 := algebra.kdifference(_78,_14);
+    return leg2:= _85;
+end leg1;
+
+@end verbatim
 
 The octopus interferes with the recycler as follows.
-Let the query command center be C and two tentacles A and B.
+Let the octopus head be C and two tentacles A and B.
 Then at C we can built a list of recycled instructions, which
 need not be executed twice. Inclusing remote requests.
 However, in that case we should be
@@ -66,7 +94,6 @@ solely and the protocols for eviction are serialzed.
 An option is to explicitly evict remote instructions, but 
 an implicit is more elegant. [Work todo]
 @{
-CAVEAT, check that two flows do not interfere on the rmtobj.
 @mal
 pattern optimizer.octopus():str
 address OPToctopus;
@@ -79,7 +106,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS      show partial result */
+/* #define DEBUG_OPT_OCTOPUS       show partial result */
 
 @c
 #include "mal_config.h"
@@ -87,252 +114,161 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 @-
-The algorithm follows the common scheme used so far.
-Instructions are taken out one-by-one and copied
-to the new block.
+The algorithm consists of several steps. The first one
+replaces the original query and creates the tentacle
+functions. In the second phase the should be registered
+at the different sites.
 
+The key observation is that whenever we encouter a mat.pack,
+there is a need to bring information together for inspection.
+Therefore, we recursively break a plan by looking for the
+pack instructions and collect all dependent instructions.
+The original block is trimmed as far as needed.
 @c
-typedef struct{
-	str dbname;
-	int dbhdl;
-} DBalias;
+static MalBlkPtr 
+OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
+	MalBlkPtr tm= NULL;
+	InstrPtr p, q, anchor= NULL;
+	int i,j,top=0, fnd;
+	char buf[BUFSIZ];
+	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
+	char *needed= (char*) GDKzalloc(mb->vtop);
+	str name= NULL;
+	Symbol s;
+
+#ifdef DEBUG_OPT_OCTOPUS
+	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
+#endif
+
+	/* locate the last assignment for varid */
+	for (i = start; i > 0; i--){
+		p= getInstrPtr(mb,i);
+		if ( getArg(p,0) == varid){
+			snprintf(buf,BUFSIZ,"%s_tentacle_%d", 
+				getFunctionId(getInstrPtr(mb,0)),varid);
+			name =  putName(buf,strlen(buf));
+			q= newFcnCall(mb,octopusRef, name);
+			getArg(q,0)= varid;
+			needed[varid]= 1;
+			anchor= p;
+			break;
+		}
+	}
+	assert( i );
+
+	for (; i > 0; i--){
+		p= getInstrPtr(mb,i);
+		fnd = 0;
+		for (j = 0; j < p->retc; j++)
+			fnd += needed[getArg(p,j)];
+		if ( fnd) {
+			for (j = p->retc; j < p->argc; j++)
+				needed[getArg(p,j)]= 1;
+			list[top++] = p;
+		}
+	}
+	/* create the tentacle procedure */
+	s= (Symbol) GDKzalloc(sizeof(SymRecord));
+	s->name= name;
+	s->kind=FUNCTIONsymbol;
+	s->def= tm= copyMalBlk(mb);	/* get the symbol table for free */
+	q= getInstrPtr(tm,0);		/* and re-use the signature */
+	tm->var[0]->name= GDKstrdup(name);	
+	setArgType(tm, q, 0, getVarType(mb,varid));
+	tm->stop =1;
+	setModuleId(q,octopusRef);
+	setFunctionId(q, name);
+
+	for (top--; top >= 0; top--)
+		pushInstruction(tm, copyInstruction(list[top]));
+	q= newAssignment(tm);
+	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
+	pushArgument(tm,q,varid);
+	q->barrier= RETURNsymbol;
+	pushEndInstruction(tm);
+	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
+	anchor->token= NOOPsymbol;
+#ifdef DEBUG_OPT_OCTOPUS
+	printFunction(cntxt->fdout,tm,0,LIST_MAL_STMT);
+#endif
+	GDKfree(list);
+	GDKfree(needed);
+	return tm;
+}
 @-
-The potential sites involved should be made known to the Octupus.
-For now, assume just two remote ones, called A and B, both
-living at the local host to ease first phase debugging.
-A real implementation my negotiate the sites available with Sabaoth.
 @c
-static void
-OCTOPUSaddSite(Client cntxt, MalBlkPtr mb, int host, int port, str nme){
-	InstrPtr p;
-
-	(void) cntxt;
-	p= newStmt(mb, remoteRef, createRef);
-	p= pushStr(mb,p,nme);
-	p= pushArgument(mb,p,host);
-	p= pushArgument(mb,p,port);
-	p= pushNil(mb,p, TYPE_str);
-	p= pushStr(mb, p, "monetdb");
-	(void) pushStr(mb, p, "monetdb");
-}
-
-static str *
-OCTOPUSsiteInit(Client cntxt, MalBlkPtr mb, int *sitecnt){
-	InstrPtr p;
-	int host, port;
-	str *sites;
-
-	(void) cntxt;
-	p= newStmt(mb,putName("sabaoth", 7), putName("getLocalConnectionHost",22));
-	host= getArg(p,0);
-	p= newStmt(mb,putName("sabaoth", 7), putName("getLocalConnectionPort",22));
-	port= getArg(p,0);
-
-	sites = (str*) GDKmalloc(sizeof(str) * 2);
-	*sitecnt= 2;
-	sites[0]= GDKstrdup("A");
-	sites[1]= GDKstrdup("B");
-
-	OCTOPUSaddSite(cntxt, mb, host,port, "A");
-	OCTOPUSaddSite(cntxt, mb, host,port, "B");
-	return sites;
-}
-
-static void
-OCTOPUSexec(Client cntxt, MalBlkPtr mb, InstrPtr q, str nme, DBalias *dbalias){
-	int i;
-	ValRecord cst;
-	InstrPtr p = copyInstruction(q);
-
-	for( i=0; i< q->retc; i++){
-		dbalias[getArg(q,i)].dbname = nme;
-		getArg(p,i)= dbalias[getArg(q,i)].dbhdl = newTmpVariable(mb,TYPE_any);
-	}
-	p->argc= i;
-	cst.vtype= TYPE_str;
-	cst.val.sval= GDKstrdup(nme);
-	cst.len = (int) strlen(cst.val.sval);
-	i= defConstant(mb, TYPE_str, &cst);
-	p =pushArgument(mb,p,i);
-
-	if( getModuleId(q)){
-		cst.vtype= TYPE_str;
-		cst.val.sval= GDKstrdup(getModuleId(q));
-		cst.len = (int) strlen(cst.val.sval);
-		i= defConstant(mb, TYPE_str, &cst);
-		p =pushArgument(mb,p,i);
-
-		cst.vtype= TYPE_str;
-		cst.val.sval= GDKstrdup(getFunctionId(q));
-		cst.len = (int) strlen(cst.val.sval);
-		i= defConstant(mb, TYPE_str, &cst);
-		p= pushArgument(mb,p,i);
-	} else {
-		/* handle remote assignments, TODO */
-	}
-
-	for(i=q->retc; i<q->argc; i++)
-		p= pushArgument(mb,p,dbalias[getArg(q,i)].dbhdl);
-	getModuleId(p)= remoteRef;
-	getFunctionId(p)= execRef;
-	pushInstruction(mb,p);
-	(void) cntxt;
-}
-
-static void
-OCTOPUSput(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, DBalias *dbalias){
-	InstrPtr q;
-
-	q= newStmt(mb,remoteRef,putRef);
-	q= pushStr(mb,q, dbalias[getArg(p,i)].dbname);
-	q= pushArgument(mb,q, getArg(p,i));
-	dbalias[getArg(p,i)].dbhdl = getArg(q,0);
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "#Octopus put  %d %s %d \n",
-		getArg(p,i), dbalias[getArg(p,i)].dbname, dbalias[getArg(p,i)].dbhdl);
-	printInstruction(cntxt->fdout, mb,0,q,LIST_MAL_CALL);
-#else
-	(void) cntxt;
-#endif
-}
-
-static void
-OCTOPUSget(Client cntxt, MalBlkPtr mb, InstrPtr p, int i, DBalias *dbalias){
-	InstrPtr q;
-
-	if (dbalias[getArg(p,i)].dbname == 0)
-		return;
-	q= newStmt(mb,remoteRef,getRef);
-	getArg(q,0)= getArg(p,i);
-	q= pushStr(mb,q, dbalias[getArg(p,i)].dbname);
-	q= pushArgument(mb,q, dbalias[getArg(p,i)].dbhdl);
-	dbalias[getArg(p,i)].dbname = 0;
-	dbalias[getArg(p,i)].dbhdl = 0;
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "#Octopus get  %d %s %d\n",
-		getArg(p,i), dbalias[getArg(p,i)].dbname, dbalias[getArg(p,i)].dbhdl);
-	printInstruction(cntxt->fdout, mb,0,q,LIST_MAL_CALL);
-#else
-	(void) cntxt;
-#endif
-}
-
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, *old;
-	int i, j, k, l, limit, doit=0;
-	DBalias *dbalias;
-	str *sites;
-	int sitecnt;
+	InstrPtr p, q, *old;
+	int last=0, i, j, limit, actions=0;
+	int tn=0, maxtn=32;
+	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
 
 
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "#Octopus optimizer started\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #else
 	(void) cntxt;
 #endif
 	(void) stk;
 	(void) pci;
+@-
+All octopus tentacle code is collected in a separate module
+to ease future distribution and scheduling.
+@c
+	(void) fixModule(cntxt->nspace,octopusRef);
 
 	limit = mb->stop;
 	old = mb->stmt;
 
-	dbalias= alloca(mb->vsize * sizeof(DBalias));
-	memset((char*) dbalias, 0, mb->vsize * sizeof(DBalias));
-
-	/* initialize the remote sites to be involved */
 	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb, old[0]);
-	sites= OCTOPUSsiteInit(cntxt,mb, &sitecnt);
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 
-		if( (getModuleId(p)== batRef && getFunctionId(p)== partitionRef)){
-			/* alloc partitions to variables and move them around */
+		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
+			/* create the tentacle, modifying the current plan */
+			q= newFcnCall(mb,schedulerRef,octopusRef);
+			pushInstruction(mb,q);
+			for ( j= p->retc; j<p->argc; j++)
+				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
 			pushInstruction(mb,p);
-			for (j=0; j<p->retc; j++){
-				dbalias[getArg(p,j)].dbname= sites[j % sitecnt];
-				OCTOPUSput(cntxt, mb, p, j, dbalias);
-			}
+			actions++;
 			continue;
 		} 
-		/* detect remote instructions */
-		k= -1;
-		for(j=0; j<p->argc; j++)
-			if (dbalias[getArg(p,j)].dbname && !isVarConstant(mb,getArg(p,j))) {
-				/* location of the constant does not determine execution site */
-				k = getArg(p,j);
-			}
-		if (k <0){
-			pushInstruction(mb,p);
-			continue;
-		}
-@-
-The hard part is to decide what to do with instructions that
-contain a reference to one or more remote variables.
-In the first implementation we use the last site referenced,
-which receives copies of all arguments.
-We rely on the recycler to catch superflous remote operations.
-Moreover, we rely that the cache behavior remotely aligns
-with the local policy and resources.
-@c
-#ifdef DEBUG_OPT_OCTOPUS
-		stream_printf(cntxt->fdout,"remote operation for %d %s \n",k,  dbalias[k].dbname);
-		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_CALL);
-#endif
-@-
-Operations with side effects, e.g. io.print and updates,
-should be handled at the controlling site.
-@c
-		if (hasSideEffects(p,TRUE) || isAllScalar(mb,p)){
-			for (j=p->retc; j<p->argc; j++)
-				OCTOPUSget(cntxt, mb, p, j, dbalias);
-			pushInstruction(mb,p);
-			doit++;
-			continue;
-		}
-
-		/* move all objects to the site k */
-		l=0;
-		for (j=p->retc; j<p->argc; j++)
-		if (dbalias[getArg(p,j)].dbname == 0){
-			l++;
-			dbalias[getArg(p,j)].dbname= dbalias[k].dbname;
-			OCTOPUSput(cntxt, mb, p, j, dbalias);
-		} else 
-		if( strcmp(dbalias[getArg(p,j)].dbname,dbalias[k].dbname) ){
-			l++;
-			OCTOPUSget(cntxt, mb, p, j, dbalias);
-			dbalias[getArg(p,j)].dbname= dbalias[k].dbname;
-			OCTOPUSput(cntxt, mb, p, j, dbalias);
-		} 
-
-		/* administer where the results can be found */
-		if (dbalias[k].dbname){
-#ifdef DEBUG_OPT_OCTOPUS
-			stream_printf(cntxt->fdout,"#exec at %s\n",dbalias[k].dbname);
-#endif
-			for (j=0; j<p->retc; j++)
-				dbalias[getArg(p,j)].dbname= dbalias[k].dbname;
-			/* create remove action */
-			OCTOPUSexec(cntxt,mb,p, dbalias[k].dbname,dbalias);
-		} else
-			pushInstruction(mb,p);
-		doit++;
+		pushInstruction(mb,p);
+		if (p->token == ENDsymbol)
+			last= mb->stop;
 	}
 	GDKfree(old);
-	for(sitecnt--; sitecnt >=0; sitecnt--)
-		GDKfree(sites[sitecnt]);
-	GDKfree(sites);
 #ifdef DEBUG_OPT_OCTOPUS
-	if (doit) {
-		stream_printf(cntxt->fdout, "octopus %d\n", doit);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	if (actions) {
+		stream_printf(cntxt->fdout, "#octopus\n");
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	}
 #endif
-	return doit;
+@-
+The tentacle code should be optimized by the remaining optimizers.
+@c
+	for (j=last; j< limit; j++)
+	for (i=0; i<tn; i++)
+		pushInstruction(tentacle[i], copyInstruction(getInstrPtr(mb,j)));
+	for (i=0; i<tn; i++){
+		chkProgram(cntxt->nspace, tentacle[i]);
+#ifdef DEBUG_OPT_OCTOPUS
+		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
+#endif
+		optimizeMALBlock(cntxt,tentacle[i]);
+		if ( tentacle[i]->errors ) {
+			showException(MAL,"optimizer.octopus","failed to compile");
+			mb->errors++;
+		}
+	}
+	
+	return actions;
 }
 @include optimizerWrapper.mx
 @h
