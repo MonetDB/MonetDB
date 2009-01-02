@@ -144,7 +144,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	for (i = start; i > 0; i--){
 		p= getInstrPtr(mb,i);
 		if ( getArg(p,0) == varid){
-			snprintf(buf,BUFSIZ,"%s_tentacle_%d", 
+			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 				getFunctionId(getInstrPtr(mb,0)),varid);
 			name =  putName(buf,strlen(buf));
 			q= newFcnCall(mb,octopusRef, name);
@@ -187,7 +187,8 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
-	anchor->token= NOOPsymbol;
+	/* redirect output to a sink */
+	getArg(anchor, 0) = newTmpVariable(mb,TYPE_any);
 #ifdef DEBUG_OPT_OCTOPUS
 	printFunction(cntxt->fdout,tm,0,LIST_MAL_STMT);
 #endif
@@ -232,9 +233,9 @@ to ease future distribution and scheduling.
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
 			/* create the tentacle, modifying the current plan */
 			q= newFcnCall(mb,schedulerRef,octopusRef);
-			pushInstruction(mb,q);
 			for ( j= p->retc; j<p->argc; j++)
 				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
+			setModuleId(p,octopusRef);
 			pushInstruction(mb,p);
 			actions++;
 			continue;
