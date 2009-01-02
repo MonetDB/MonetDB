@@ -60,9 +60,8 @@ comment "retrieve the definition from the partition catalogue";
 @+ Implementation
 @include prelude.mx
 @h
-#ifdef _INSPECT_H
-#endif /* _INSPECT_H */
-@c
+#ifndef _INSPECT_H
+#define _INSPECT_H 
 #include "mal_config.h"
 #include <stdarg.h>
 #include "mal_resolve.h"
@@ -86,10 +85,11 @@ mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
 mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
+#endif /* _INSPECT_H */
 @- 
 Mal symbol table and environment analysis.
 @c
+#include "mat.h"
 
 str
 MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
