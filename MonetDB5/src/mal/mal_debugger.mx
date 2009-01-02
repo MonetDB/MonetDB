@@ -1301,7 +1301,7 @@ signatures satisfying the pattern.
 			Symbol fs;
 			int i, lstng;
 
-			lstng= LIST_MAL_INSTR | LIST_MAL_UDF;
+			lstng= LIST_MAL_STMT | LIST_MAL_UDF;
 			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
 			if (*b != 0) {

@@ -53,6 +53,7 @@ mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, flt val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
 mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, bit val);
 mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
+mal_export InstrPtr pushType(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 mal_export InstrPtr pushZero(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushValue(MalBlkPtr mb, InstrPtr q, ValPtr cst);
@@ -320,7 +321,6 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 		_t = defConstant(mb,TYPE_bat,&cst);
 		mb->var[_t]->type = tpe;
 	}
-	setVarUDFtype(mb,_t);
 	return pushArgument(mb, q, _t);
 }
 
@@ -335,6 +335,20 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	cst.val.oval= oid_nil;
 	convertConstant(idx, &cst);
 	_t = defConstant(mb,idx,&cst);
+	setVarUDFtype(mb,_t);
+
+	return pushArgument(mb, q, _t);
+}
+InstrPtr
+pushType(MalBlkPtr mb, InstrPtr q, int tpe)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype=TYPE_void;
+	cst.val.oval= oid_nil;
+	convertConstant(tpe, &cst);
+	_t = defConstant(mb,tpe,&cst);
 	setVarUDFtype(mb,_t);
 
 	return pushArgument(mb, q, _t);

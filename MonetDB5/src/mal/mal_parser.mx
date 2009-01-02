@@ -1000,7 +1000,7 @@ the function definition in a particular module instead of the current one.
 	if( cntxt->backup && curBlk && curBlk->errors==0) 
 		GDKfatal("mal_parser: unexpected recursion\n");
 	cntxt->backup = cntxt->curprg;
-	cntxt->curprg = newFunction(fnme, kind);
+	cntxt->curprg = newFunction(putName("user",4), fnme, kind);
 	curPrg = cntxt->curprg;	
 	curBlk = curPrg->def;
 	curBlk->flowfixed= 0;

@@ -594,7 +594,7 @@ newSymbol(str nme, int kind)
 	if (cur == NULL) {
 		GDKfatal("@1: cannot initialize scope\n");
 	}
-	cur->name = nme;
+	cur->name = putName(nme,strlen(nme));
 	cur->kind = kind;
 	cur->peer = NULL;
 	cur->def = newMalBlk(MAXVARS, STMT_INCREMENT);
@@ -2343,7 +2343,7 @@ G = subject to garbage control
 R = subject to recycler control
 J = jump towards other statement
 @c
-	if (flg & LIST_MAL_INSTR){
+	if (flg & LIST_MAL_STMT){
 		*s++ =' ';
 		*s++ ='{';
 		switch( p->typechk){

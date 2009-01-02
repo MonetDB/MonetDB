@@ -71,7 +71,7 @@ typedef struct lifespan {
 /* #define DEBUG_MAL_FCN */
 /* #define DEBUG_CLONE */
 
-mal_export Symbol   newFunction(str nme,int kind);
+mal_export Symbol   newFunction(str mod, str nme,int kind);
 mal_export void     renameFunction(str oldmod, str oldfcn,str modnme, str new);
 mal_export void	    clearFcn(MalBlkPtr m);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
@@ -110,13 +110,14 @@ FUNCTION, FACTORY, COMMAND, and PATTERN.
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_namespace.h"
 
-Symbol newFunction(str nme,int kind){
+Symbol newFunction(str mod, str nme,int kind){
 	Symbol s;
 	InstrPtr p;
 
 	s = newSymbol(nme,kind);
 	p = newInstruction(NULL,kind);
-	setFunctionId(p, nme);  /* name already in namespace */
+	setModuleId(p, mod);  
+	setFunctionId(p, nme);  
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
 	pushInstruction(s->def,p);
 	return s;
@@ -567,8 +568,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			proc->name,scope->name);
 	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 #endif
-	new= newFunction(putName(proc->name,strlen(proc->name)), 
-	            getSignature(proc)->token );
+	new= newFunction(scope->name, proc->name, getSignature(proc)->token );
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE

@@ -152,7 +152,7 @@ void setModuleJump(str nme, Module cur){
 }
 Module newModule(Module scope, str nme){
 	Module cur;
-	nme = getName(nme,strlen(nme));
+	nme = putName(nme,strlen(nme));
 	@:newscope(newModule)@
 	newSubScope(cur);
 	if( scope != NULL){
