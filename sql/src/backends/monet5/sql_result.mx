@@ -985,7 +985,7 @@ static int
 mvc_export_head_intern(mvc *m, stream *s, int res_id, int flag)
 {
 	int i, res = 0;
-	BUN count;
+	BUN count = 0;
 	res_table *t = res_tables_find(m->results, res_id);
 	BAT *order = NULL;
 
