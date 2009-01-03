@@ -32,18 +32,36 @@ To make this work the scheduler needs a list of applicable sites that
 hold a replica of the database. For the time being, this is an
 explicitly named list administered here.
 
+The scheduler runs all tentacles asynchronously.
+To make our live easier, we assume that all tentacles are
+grouped together in a guarded block as follows:
+
+@verbatim
+barrier parallel:= scheduler.octopus();
+a:= octopus.tentacle_1();
+...
+b:= octopus.tentacle_n();
+exit parallel;
+scheduler.pack(parallel, timeout, a,...,b);
+@end verbatim
+
+This way the MAL flow of control simplifies skipping to the end.
+
+Allowing MAL instructions inbetween complicates our work,
+because it would mean that we have to do a flow analysis.
+
 When the octopus scheduling is called, we check the connection with
 the remote site. If it is down, it is re-activated using Merovingian.
 
 @{
 @mal
-pattern scheduler.octopus():void
+pattern scheduler.octopus():bit
 address OCTOPUSrun
 comment "Run the program over a service cloud";
 
-pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+pattern scheduler.pack(par:bit, t:int, b:bat[:any_1,:any_2]...):void
 address OCTOPUSpack
-comment "Materialize the MAT into the first BAT";
+comment "Materialize the MAT into a BAT, but don't wait longer then t seconds";
 
 pattern scheduler.addSite(dbnme:str, usr:str, pw:str)
 address OCTOPUSaddSite
@@ -80,10 +98,12 @@ the (remote) database servers.
 #include "mal_interpreter.h"
 #include "mat.h"
 #include "octopus.h"
+#include "optimizer.h"
+#include "alarm.h"
 
 static int
 RUNdiscover(){
-	return 0;
+	return 1;
 }
 
 str
@@ -100,34 +120,65 @@ OCTOPUSaddSite(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 @-
-The scheduler runs all tentacles asynchronously and collect
-timing information to perform a better scheduling next time.
+The scheduler runs all tentacles asynchronously.
+The rigid structure makes it possible to wait for the
+threads to end their work. We simple set them to nil
+and wait for the assignments to have been completed.
+The the sole remainder is the timeout, which could be
+part of the scheduler arguments.
 @c
 str
-RUNoctopus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
+	int *res = (int*) getArgReference(stk,p,0);
+	int i = getPC(mb,p);
+	*res = 0;	/* skip the block */
+
 	if ( RUNdiscover() == 0 )
-		return MAL_SUCCEED; /* silently continue */
-	/* do the actual work */
+		return MAL_SUCCEED; 
+	/* do the actual parallel work */
+	for (i++; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( p->barrier == EXITsymbol )
+			break;
+		if ( getModuleId(p) != octopusRef)
+			throw(MAL,"scheduler.octopus","octopus tentacle expected");
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(cntxt->fdout,"#Start a new thread\n");
+#else
+	(void) cntxt;
+#endif
+		runMALprocess(cntxt,mb,stk,p);
+	}
 	return MAL_SUCCEED; 
 }
 @-
 The critical part is to wait for all the tentacles to
 return their status.
+@c
 str
-RUNpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) cntxt;
+	int serial = *(int*) getArgReference(stk,p,1);
+	int timeout = *(int*) getArgReference(stk,p,2);
+	int i,fnd;
 	(void) mb;
-	(void) stk;
-	(void) p;
-	if ( RUNdiscover() == 0 )
-		return MATpack(cntxt,mb,stk,p); /* silently continue */
-	/* do the actual work */
-	return MAL_SUCCEED; 
+
+#ifdef DEBUG_RUN_OCTOPUS
+	stream_printf(cntxt->fdout,"schedule.pack %d %d\n", serial, timeout);
+#else
+	(void) cntxt;
+#endif
+	if ( serial == 0)
+	do{
+		fnd = 0;
+		for( i=3; i<p->argc; i++)
+			fnd += stk->stk[getArg(p,i)].val.bval > 0;
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(cntxt->fdout,"await answer, seen %d\n",fnd);
+#endif
+		MT_sleep_ms(1000);
+	} while ( fnd < p->argc-3 && timeout > 0 );
+	return MATpackInternal(stk,p,3);  /* ignore results and timeout */
 }
 @}
