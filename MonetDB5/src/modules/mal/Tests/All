@@ -38,6 +38,7 @@ remote01
 remote02
 remote03
 remote04
+#remote10
 
 printf
 #some remote related tests

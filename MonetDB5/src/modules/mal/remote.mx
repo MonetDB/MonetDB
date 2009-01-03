@@ -23,8 +23,8 @@ However, it is indispensable for any distributed functionality.  This
 module provides an abstract way to store and retrieve objects on a
 remote site.  Additionally, functions on a remote site can be executed
 using objects available in the remote session context.  This yields in
-three primitive functions that form the basis for distribution methods:
-get, put and exec.
+four primitive functions that form the basis for distribution methods:
+get, put, register and exec.
 
 The get method simply retrieves a copy of a remote object.  Objects can
 be simple values, strings or BATs.  The same holds for the put method,
@@ -39,40 +39,33 @@ identifier that was returned by put, results in an object with the same
 value as the one that was put.  The result of such an operation is
 equivalent to making an (expensive) copy of the original object.
 
+The register function takes a local MAL function and makes it known
+at a remote site. It ensures that it does not overload an already
+known operation remotely, which could create a semantic conflict.
+Deregister a function is forbidden, because it would allow for taking
+over the remote site completely.
+C-implemented functions, such as io.print() cannot be remotely 
+stored. It would require even more complicated (byte?) code 
+shipping and remote compilation to make it work.  
+Currently, the remote procedure may only returns a single value.
+
 The choice to let exec only execute functions was made to avoid problems
 to decide what should be returned to the caller.  With a function it is
 clear and simple to return that what the function signature prescribes.
-Any extra output (e.g.  io.print calls) may cause havoc in the system,
-but are currently known to be ignored.
+Any side effect (e.g.  io.print calls) may cause havoc in the system,
+but are currently ignored.
 
 This leads to the final contract of this module.  The methods should be
 used correctly, by obeying their contract.  Failing to do so will result
 in errors and possibly undefined behaviour.
 
-It is impossible to get and put MAL functions directly, as the
-semantical meaning of such operation is unclear.  A function cannot be
-assigned to a variable (such as get would do).  Storing a function on
-a remote site with put could lead to conflicts if a function with the
-same name already exists there, let alone if the module the function
-comes from is accessible.  Finally, C-implemented functions, such as
-io.print() cannot be remotely stored for obvious reasons and would
-require even more complicated (byte?) code shipping and remote
-compilation to make it work.  
-
-A straw-man's solution is to serialize local MAL function to a string
-and use those in an exec call to remotely parse it into a function
-again.  Of course this also works the other way around using an exec of
-the serialised function on the remote host for the remote function to
-acquire the string representation of the function locally.  All possible
-name space conflicts that may arise should be handled explicitly.
-
-The first argument to all three functions is the name of the connection
+The first argument to the primary functions is the name of the connection
 the operation has to be performed on.  A connection has to be created
 before it can be used, otherwise a MALexception is being raised.
 During creation of such connection, details like credentials, hostname
 and database can be given.  Currently, connections are stored in memory
 and not made persistent.  This could be changed in the future to allow
-created connections to be remembered over server restarts.
+connections created to be remembered over server restarts.
 
 @mal
 module remote;
@@ -102,6 +95,10 @@ pattern put(conn:str, object:any):rmtobj
 address RMTput
 comment "Copy an object to a remote site and returns its identifier.";
 
+pattern register(conn:str, mod:str, fcn:str):void
+address RMTregister
+comment "Register a <mod>.<fcn> at a remote site.";
+
 pattern exec(conn:str, mod:str, func:str):rmtobj
 address RMTexec
 comment "Remotely executes function mod.func using the argument list
@@ -116,7 +113,7 @@ of remote objects and returns the handle to its result";
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
 
-/* #define _DEBUG_REMOTE_	  trace the interaction */
+/* #define _DEBUG_REMOTE_	   trace the interaction */
 
 #ifdef WIN32
 #ifndef LIBREMOTE
@@ -524,6 +521,57 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 @h
+remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+/**
+ * stores the given <mod>.<fcn> on the remote host.  
+ * An error is returned if the function is already known at the remote site.
+ * The implementation is based on serialisation of the block into a string
+ * followed by remote parsing.
+ */
+str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str conn, mod, fcn, tmp, qry, msg;
+	connection c;
+	char buf[BUFSIZ];
+	MapiHdl mhdl = NULL;
+	Symbol sym;
+
+	(void) mb;
+	conn = (str)getArgValue(stk, pci, 1);
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.register", "Connection name is NULL or nil");
+
+	/* find local definition */
+	mod = (str) getArgValue(stk,pci,2);
+	fcn = (str) getArgValue(stk,pci,3);
+	sym= findSymbol(getName(mod,strlen(mod)),getName(fcn,strlen(fcn)));
+	if ( sym == NULL)
+		throw(MAL,"remote.register","Function not found");
+
+	/* lookup conn */
+	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
+
+	/* check remote definition */
+	snprintf(buf,BUFSIZ,"inspect.getSignature(\"%s\",\"%s\");",mod,fcn);
+	msg = RMTquery(&mhdl,"remote.register",c->mconn,buf);
+	if ( msg == MAL_SUCCEED)
+		throw(MAL,"remote.register","Function already defined remotely");
+	if ( mhdl)
+		mapi_close_handle(mhdl);
+
+	qry= function2str(sym->def, LIST_MAL_STMT);
+#ifdef _DEBUG_REMOTE
+	stream_printf(cntxt->fdout,"remote.register:%s\n",qry);
+#else
+	(void) cntxt;
+#endif
+	msg = RMTquery(&mhdl,"remote.register",c->mconn,qry);
+	mapi_close_handle(mhdl);
+
+	return msg;
+}
+
+@h
 remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 /**
@@ -533,7 +581,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  * values.  It calls the function with the given arguments at the remote
  * site, and returns the handle which stores the return value of the
  * remotely executed function.  This return value can be retrieved using
- * a get call.
+ * a get call. It does not (yet) handle multiple return arguments.
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, tmp;
@@ -558,7 +606,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* lookup conn */
 	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
 
-	/* get a free identifier on the remote host */
+	/* get a free identifier on the remote host for each return argument expected */
 	RMTgetNextId(&tmp, c);
 	i = (int)strlen(tmp) + 1;
 	ident = alloca(sizeof(char) * i);
