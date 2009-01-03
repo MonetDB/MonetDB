@@ -40,7 +40,14 @@ remote03
 remote04
 
 printf
-#some mapi related tests
+#some remote related tests
+mapi04
+mapi05
+mapi06
+mapi07
+mapi01
+mapi00
+
 
 xml00
 xml01
