@@ -538,7 +538,8 @@ workslow:
 }
 @- Out of order execution
 The alternative is to execute the instructions out of order
-using dataflow dependencies. It only works on a code
+using dataflow dependencies and as an independent process.
+Dataflow processing only works on a code
 sequence that does not include additional (implicit) flow of control
 statements and, ideally, consist of expensive BAT operations.
 The dataflow interpreter selects cheap instructions
@@ -1166,7 +1167,59 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	GDKfree(flow.reassign);
 	return ret; 
 }
-@-
+@+ Independent threads
+Distributed execution calls for asynchronous execution of MAL
+instructions. To simplify the interpreter, we assume that all
+the code to be executed is already grouped in a MAL function,
+which is called independently. The result variable is initialized
+to NIL before the code is started. When the process crashes,
+an exception is raised.
+
+@h
+mal_export str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+typedef struct {
+	MT_Id tid;
+	Client cntxt;
+	MalBlkPtr mb;
+	MalStkPtr stk;
+	InstrPtr pci;
+}Ptask;
+
+static void
+runMALdetached(void *t){
+	Ptask *p = (Ptask *) t;
+	Client cntxt= p->cntxt;
+	MalBlkPtr mb = p->mb;
+	MalStkPtr stk = p->stk;
+	InstrPtr pci = p->pci;
+	int startpc= getPC(mb,pci);
+	int sve;
+
+#ifdef DEBUG_DETACHED
+	stream_printf(cntxt->fdout,"start thread in background\n");
+#endif
+	sve= stk->keepAlive;
+	stk->keepAlive= TRUE;
+	(void) reenterMAL(cntxt, mb, startpc, startpc+1, stk, 0, 0);
+	stk->keepAlive= sve;
+#ifdef DEBUG_DETACHED
+	stream_printf(cntxt->fdout,"finished thread in background\n");
+#endif
+}
+str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Ptask p;
+
+	p.cntxt= cntxt;
+	p.mb = mb;
+	p.stk = stk;
+	p.pci = pci;
+
+	MT_create_thread(&p.tid, runMALdetached, &p);
+	return MAL_SUCCEED;
+}
+
 @= MALwrapup
 	if( exceptionVar >= 0) {
 		if (ret) {
@@ -1194,11 +1247,12 @@ This situation can be detected by calling upon the GDK functionality
 of by limiting the depth of a function calls.
 Expensive? 70 msec for 1M calls. Use with care.
 @h
-mal_export str safeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str
-safeguardStack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int depth = *(int*) getArgReference(stk,pci,1);
+	(void) cntxt;
 	if (stk->stkdepth > depth * mb->vtop && THRhighwater()) {
 		throw(MAL, "mal.interpreter", 
 			"Interpret: running out of physical stack space!\n");
