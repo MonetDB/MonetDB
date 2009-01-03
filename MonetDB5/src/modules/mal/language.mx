@@ -86,7 +86,7 @@ address MALassertTriple
 comment "Assertion test.";
 
 pattern assertSpace(depth:int)
-address MALsafeguardStack
+address safeguardStack
 comment "Ensures that the current call does not consume
 more then depth*vtop elements on the stack.";
 
@@ -164,7 +164,6 @@ language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 language_export str CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 language_export str CMDdebug(int *ret, int *flg);
 language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-language_export str MALsafeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _LANGUAGE_H */
 @c
 
@@ -229,14 +228,6 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) p;
 	throw(MAL, "mal.assert","Command not yet available");
 }
-
-str 
-MALsafeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	return safeguardStack(mb, stk, p);
-}
-
 
 @+ Printing
 The print commands are implemented as single instruction rules,

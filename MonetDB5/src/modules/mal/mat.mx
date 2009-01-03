@@ -80,6 +80,7 @@ comment "retrieve the definition from the partition catalogue";
 
 mat_export str MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATpackInternal(MalStkPtr stk, InstrPtr p,int first);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
@@ -136,21 +137,20 @@ For the experiments we materialize the BAT in the first
 component. 
 @c
 str
-MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 {
 	int i,*ret;
 	BAT *b, *bn;
 
-	(void) cntxt;
-	bn= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
+	bn= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
 	if( bn == NULL)
 		throw(MAL, "mat.pack","Could access BAT");
 	if (BAThrestricted(bn) || BATtrestricted(bn)) {
-		b = BATcopy(bn, bn->htype, bn->ttype, 1);
+		b = BATcopy(bn, bn->htype, bn->ttype, TRUE);
 		BBPunfix(bn->batCacheid);
 		bn = b;
 	}
-	for(i=2; i<p->argc; i++){
+	for(i=first+1; i<p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack","Could not access component");
@@ -163,10 +163,16 @@ MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPunfix(bn->batCacheid);
 		bn = b;
 	}
-	(void) mb;
 	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) cntxt;
+	(void) mb;
+	return MATpackInternal(stk,p,1);
 }
 
 str

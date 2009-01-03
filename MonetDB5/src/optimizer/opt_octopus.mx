@@ -201,7 +201,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, q, *old;
+	InstrPtr p, *old;
 	int last=0, i, j, limit, actions=0;
 	int tn=0, maxtn=32;
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
@@ -232,10 +232,10 @@ to ease future distribution and scheduling.
 
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
 			/* create the tentacle, modifying the current plan */
-			q= newFcnCall(mb,schedulerRef,octopusRef);
+			(void) newFcnCall(mb,schedulerRef,octopusRef);
 			for ( j= p->retc; j<p->argc; j++)
 				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
-			setModuleId(p,octopusRef);
+			setModuleId(p,schedulerRef);
 			pushInstruction(mb,p);
 			actions++;
 			continue;
