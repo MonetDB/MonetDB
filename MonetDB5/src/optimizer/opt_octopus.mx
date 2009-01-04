@@ -180,8 +180,24 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	setModuleId(q,octopusRef);
 	setFunctionId(q, name);
 
-	for (top--; top >= 0; top--)
-		pushInstruction(tm, copyInstruction(list[top]));
+	for (top--; top >= 0; top--) {
+		if ( getModuleId(list[top]) == sqlRef &&
+			 getFunctionId(list[top]) == bindRef){
+			int x,y,k;
+			q = copyInstruction(list[top]);
+			pushInstruction(tm,q);
+			/* insert master information */
+			q= pushStr(tm,q, GDKstrdup(GDKgetenv("gdk_dbname")));
+			x= getArg(q,q->argc-1);
+			q= pushLng(tm,q, 0);
+			y= getArg(q,q->argc-1);
+			for( k= q->argc-1; k > q->retc+1; k--)
+				getArg(q,k)= getArg(q,k-2);
+			getArg(q,k--)= y;
+			getArg(q,k)= x;
+		} else
+			pushInstruction(tm, copyInstruction(list[top]));
+	}
 	q= newAssignment(tm);
 	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
 	pushArgument(tm,q,varid);

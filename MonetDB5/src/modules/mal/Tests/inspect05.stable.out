@@ -1011,6 +1011,7 @@ end main;
 [ "new",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATnew;"						  ]
 [ "print",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):void ",													  "MATprint;"						  ]
 [ "pack",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATpack;"						  ]
+[ "bind",			  "pattern",	  "replicator",	  "(master:str,version:lng,schema:str,table:str,col:str,access:int):void ",					  "REPbind;"					  ]
 [ "create",			  "command",	  "remote",	  "(conn:str,host:str,port:int,dbname:str,user:str,passwd:str):void ",									  "RMTcreate;"						  ]
 [ "destroy",			  "command",	  "remote",	  "(conn:str):void ",															  "RMTdestroy;"						  ]
 [ "exec",			  "pattern",	  "remote",	  "(conn:str,mod:str,func:str,_4:rmtobj...):rmtobj ",											  "RMTexec;"						  ]

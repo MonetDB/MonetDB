@@ -124,6 +124,7 @@ end main;
 [ "profiler",	  nil	  ]
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
+[ "replicator",	  nil	  ]
 [ "rmtobj",	  nil	  ]
 [ "sabaoth",	  nil	  ]
 [ "scheduler",	  nil	  ]

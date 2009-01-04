@@ -82,6 +82,7 @@ library language;
 library constraints;
 library mal_mapi;
 library remote;
+library replicator;
 
 library profiler;
 library statistics;
@@ -163,6 +164,7 @@ include factory;
 include recycle;
 include rmtobj;
 include remote;
+include replicator;
 
 include mat; 	# experimental
 include bpm;	# experimental

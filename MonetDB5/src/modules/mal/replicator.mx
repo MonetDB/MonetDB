@@ -1,0 +1,100 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008- MonetDB B.V.
+@' All Rights Reserved.
+
+@f replicator
+@a Martin Kersten
+@v 1.0
+@+ Database replication
+The replicator module supports distribution of the an SQL database
+over multiple sites using a master slave protocol.
+
+The replicator assumes that both database have
+the same catalog information. There is no automatic propagation
+of CREATE, DROP, nor ALTER statements. 
+Moreover, the master database should be accessible through Merovingian.
+
+The lean and mean implementation works as follows.
+Each plan produced by the octopus changes the bind calls
+into a replicator.bind call, including the master database name.
+This overloaded bind synchronises the local copy using a
+straightforward
+
+@mal
+module replicator;
+
+pattern bind(master:str, version:lng, schema:str, table:str, col:str, access:int)
+address REPbind
+comment "Synchronize a colum with a master copy. The latest known version is
+hardwired into the plan for ease of checking it.";
+@-
+@{
+@+ Implementation code 
+@h
+#ifndef _REPLICATOR_H
+#define _REPLICATOR_H
+
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+#include "mal_namespace.h"
+
+#define _DEBUG_REPLICATOR_
+
+#ifdef WIN32
+#ifndef LIBREPLICATOR
+#define replicator_export extern __declspec(dllimport)
+#else
+#define replicator_export extern __declspec(dllexport)
+#endif
+#else
+#define replicator_export extern
+#endif
+
+replicator_export str
+REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* _REPLICATOR_H */
+@c
+#include "mal_config.h"
+#include "replicator.h"
+#include <mapilib/Mapi.h>
+#include "remote.h"
+
+str
+REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *master = (str*) getArgReference(stk,pci,1);
+	lng *version = (lng*) getArgReference(stk,pci,2);
+	str *schema = (str*) getArgReference(stk,pci,3);
+	str *table = (str*) getArgReference(stk,pci,4);
+	str *col = (str*) getArgReference(stk,pci,5);
+	int *access = (int*) getArgReference(stk,pci,2);
+
+#ifdef _DEBUG_REPLICATOR_
+	stream_printf(cntxt->fdout,"#replication control for %s.%s.%s/%d\n",
+		*schema, *table, *col, *access);
+	stream_printf(cntxt->fdout,"#master %s version %d\n",*master, *version);
+#else
+	(void) cntxt;
+#endif
+	(void) mb;
+
+	/* check validity of the version */
+
+	/* get the latest version using a remote table copy */
+	/* assuring all BATs are synced at once */
+	return MAL_SUCCEED;
+}
+@}
