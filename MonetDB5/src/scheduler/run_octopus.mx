@@ -218,7 +218,8 @@ redo:
 	msg = RMTregisterInternal(cntxt, sites[i].db, getModuleId(pci), getFunctionId(pci));
 	if (msg != MAL_SUCCEED){
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"octopus.exec failed to register plan\n");
+		stream_printf(cntxt->fdout,"octopus.exec failed to register plan %s.%s at site %s\n",getModuleId(pci),getFunctionId(pci),sites[i].db);
+		stream_printf(cntxt->fdout,"reply: %s\n",msg);
 #endif
 		if (--tries <= 0)
 			return msg;
@@ -271,7 +272,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if ( p->barrier == EXITsymbol )
 			break;
 		if ( getModuleId(p) != octopusRef)
-			throw(MAL,"scheduler.octopus","octopus tentacle expected");
+			throw(MAL,"scheduler.octopus","tentacle expected");
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"#Start a new thread\n");
 #else

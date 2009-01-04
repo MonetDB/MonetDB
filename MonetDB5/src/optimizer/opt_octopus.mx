@@ -95,6 +95,7 @@ An option is to explicitly evict remote instructions, but
 an implicit is more elegant. [Work todo]
 @{
 @mal
+module octopus; 
 pattern optimizer.octopus():str
 address OPToctopus;
 pattern optimizer.octopus(mod:str, fcn:str):str

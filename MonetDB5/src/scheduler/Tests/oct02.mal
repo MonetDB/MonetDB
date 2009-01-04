@@ -1,6 +1,9 @@
 #Testing the ingredients for the octopus
 #The third step is run it over a pool of replicas
-
+#This test can be ran manually as follows:
+#1) start merovingian and create/start demo1, demo2
+#2) run this script
+#
 module octopus;
 function octopus.tentacle_1():bat[:oid,:int];
 	alarm.sleep(5);
