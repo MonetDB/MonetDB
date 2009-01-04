@@ -96,9 +96,9 @@ library logger;
 @mal
 library transaction;
 
-library mal_isolation;	# experimental code
-library mal_memorun;	# experimental code
-library mal_octopus;
+library run_isolate;	# experimental scheduler code
+library run_memo;	
+library run_octopus;
 @-
 The remainder interprets the signatures and resolves the
 address bindings.
@@ -221,9 +221,9 @@ include transaction;
 @-
 scheduler components
 @mal
-include mal_isolation;
-include mal_memorun;
-include octopus;
+include run_isolation;
+include run_memo;
+include run_octopus;
 
 @-
  Cracker schemes
