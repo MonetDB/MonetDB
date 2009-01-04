@@ -114,7 +114,7 @@ of remote objects and returns the handle to its result";
 #define _REMOTE_DEF
 
 
-#define _DEBUG_REMOTE_	   /* trace the interaction */
+/* #define _DEBUG_REMOTE_	   trace the interaction */
 /* #define _DEBUG_MAPI_		   trace mapi interaction */
 
 #ifdef WIN32
@@ -167,29 +167,26 @@ static connection connections = NULL;
  */
 str
 RMTfindconn(connection *ret, str conn) {
-	connection c;
+	connection c = connections;
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
-	mal_set_lock(mal_contextLock,"remote.find"); 
-	c = connections;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
 			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-				throw(IO, "remote.<findconn>", "An error occurred during "
+				throw(IO, "remote.<findconn>", "an error occurred during "
 						"(re)connect of connection '%s': %s",
 						conn, mapi_error_str(c->mconn));
 				/* TODO: throw away connection? */
 			}
 			*ret = c;
-			mal_unset_lock(mal_contextLock,"remote.find"); 
 			return(MAL_SUCCEED);
-		} 
+		}
 		c= c->next;
 	}
-	mal_unset_lock(mal_contextLock,"remote.find"); 
-	throw(MAL, "remote.<findconn>", "No such connection with name '%s'", conn);
+
+	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", conn);
 }
 
 /**
