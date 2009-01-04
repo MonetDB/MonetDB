@@ -15,7 +15,7 @@
 @' Copyright August 2008- MonetDB B.V.
 @' All Rights Reserved.
 
-@f mal_isolation
+@f run_isolate
 @a M. Kersten
 @+ Run isolation
 Run isolation involves making available a private copy of the MAL
@@ -64,21 +64,21 @@ comment "Run a private copy of the MAL program";
 
 #ifdef WIN32
 #ifndef LIBMAL_ISOLATION
-#define isolation_export extern __declspec(dllimport)
+#define run_isolate_export extern __declspec(dllimport)
 #else
-#define isolation_export extern __declspec(dllexport)
+#define run_isolate_export extern __declspec(dllexport)
 #endif
 #else
-#define isolation_export extern
+#define run_isolate_export extern
 #endif
 
-isolation_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+run_isolate_export str RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_ISOLATION */
 
 @+ Isolation implementation
 @c
 #include "mal_config.h"
-#include "mal_isolation.h"
+#include "run_isolate.h"
 
 str
 RUNisolation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

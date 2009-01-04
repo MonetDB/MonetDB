@@ -15,7 +15,7 @@
 @' Copyright August 2008- MonetDB B.V.
 @' All Rights Reserved.
 
-@f mal_scheduler
+@f run_pipeline
 @a M. Kersten
 @* Scheduler framework
 A key design decision for this MonetDB  version is to create a clean
@@ -161,16 +161,16 @@ struct {
 
 #ifdef WIN32
 #ifndef LIBMAL_SCHEDULER
-#define sched_export extern __declspec(dllimport)
+#define pipeline_export extern __declspec(dllimport)
 #else
-#define sched_export extern __declspec(dllexport)
+#define pipeline_export extern __declspec(dllexport)
 #endif
 #else
-#define sched_export extern
+#define pipeline_export extern
 #endif
 
-sched_export str MALscheduler(Client c);
-sched_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+pipeline_export str MALpipeline(Client c);
+pipeline_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* MAL_SCEDULER */
 
@@ -182,7 +182,7 @@ sched_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	}
 @c
 #include "mal_config.h"
-#include "mal_scheduler.h"
+#include "run_pipeline.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
 #include "opt_macro.h"
@@ -241,12 +241,12 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 	}
 #endif
 	if (cnt >= 64)
-		throw(MAL, "scheduler.MALscheduler", "too many optimization cycles\n");
+		throw(MAL, "scheduler.MALpipeline", "too many optimization cycles\n");
 	return MAL_SUCCEED;
 }
 
 str
-MALscheduler(Client c)
+MALpipeline(Client c)
 {
 	return schedulerMALBlock(c, c->curprg->def);
 }

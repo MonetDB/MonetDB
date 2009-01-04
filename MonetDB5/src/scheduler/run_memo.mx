@@ -15,7 +15,7 @@
 @' Copyright August 2008- MonetDB B.V.
 @' All Rights Reserved.
 
-@f mal_memorun
+@f run_memo
 @a M. Kersten
 @+ Memo-based Query Execution
 Modern cost-based query optimizers use a memo structure
@@ -97,6 +97,7 @@ include a hardwired cost function.
 The current implementation assumes a regular plan
 and unique use of variables.
 @mal
+module scheduler;
 pattern scheduler.choice():void
 address RUNchoice
 comment "Select the next step in a query memo plan";
@@ -127,18 +128,18 @@ comment "A sample cost prediction function";
 
 #ifdef WIN32
 #ifndef LIBMAL_MEMORUN
-#define memorun_export extern __declspec(dllimport)
+#define run_memo_export extern __declspec(dllimport)
 #else
-#define memorun_export extern __declspec(dllexport)
+#define run_memo_export extern __declspec(dllexport)
 #endif
 #else
-#define memorun_export extern
+#define run_memo_export extern
 #endif
 
-memorun_export str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-memorun_export str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+run_memo_export str RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+run_memo_export str RUNvolumeCost(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+run_memo_export str RUNcostPrediction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+run_memo_export str RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_MEMORUN */
 
 @+ Memorun implementation
@@ -146,7 +147,7 @@ The code below is a mixture of generic routines and
 sample implementations to run the tests.
 @c
 #include "mal_config.h"
-#include "mal_memorun.h"
+#include "run_memo.h"
 
 static void
 propagateNonTarget(MalBlkPtr mb, int pc){
