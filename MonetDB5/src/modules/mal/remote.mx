@@ -113,10 +113,13 @@ of remote objects and returns the handle to its result";
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
 
-/* #define _DEBUG_REMOTE_	   trace the interaction */
+
+#define _DEBUG_REMOTE_	   /* trace the interaction */
+/* #define _DEBUG_MAPI_		   trace mapi interaction */
 
 #ifdef WIN32
 #ifndef LIBREMOTE
+
 #define remote_export extern __declspec(dllimport)
 #else
 #define remote_export extern __declspec(dllexport)
@@ -141,18 +144,16 @@ the same site is desired, a user could create a second connection.
 @- Implementation
 @h
 typedef struct _connection {
-	char               name[16];  /* name of the connection,
-	                                 15 chars should be enough for everyone */
+	char               *name;  /* name of the connection */
 	Mapi               mconn;     /* the Mapi handle for the connection */
 	size_t             nextid;    /* id counter */
 	struct _connection *next;     /* the next connection in the list */
 } *connection;
 
+@h
 remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
-
-@-
-
+remote_export str RMTfindconn(connection *ret, str conn);
 @c
 static connection connections = NULL;
 
@@ -164,7 +165,7 @@ static connection connections = NULL;
  * doesn't check the argument conn, as it should have been checked
  * already.
  */
-static INLINE str
+str
 RMTfindconn(connection *ret, str conn) {
 	connection c = connections;
 
@@ -174,17 +175,17 @@ RMTfindconn(connection *ret, str conn) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
 			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-				throw(IO, "remote.<findconn>", "an error occurred during "
+				throw(IO, "remote.<findconn>", "An error occurred during "
 						"(re)connect of connection '%s': %s",
 						conn, mapi_error_str(c->mconn));
 				/* TODO: throw away connection? */
 			}
 			*ret = c;
 			return(MAL_SUCCEED);
-		}
+		} 
+		c= c->next;
 	}
-
-	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", conn);
+	throw(MAL, "remote.<findconn>", "No such connection with name '%s'", conn);
 }
 
 /**
@@ -521,7 +522,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 @h
-remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+remote_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
 @c
 /**
  * stores the given <mod>.<fcn> on the remote host.  
@@ -529,21 +530,18 @@ remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
  * The implementation is based on serialisation of the block into a string
  * followed by remote parsing.
  */
-str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, mod, fcn, tmp, qry, msg;
+str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
+{
+	str tmp, qry, msg;
 	connection c;
 	char buf[BUFSIZ];
 	MapiHdl mhdl = NULL;
 	Symbol sym;
 
-	(void) mb;
-	conn = (str)getArgValue(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.register", "Connection name is NULL or nil");
 
 	/* find local definition */
-	mod = (str) getArgValue(stk,pci,2);
-	fcn = (str) getArgValue(stk,pci,3);
 	sym= findSymbol(getName(mod,strlen(mod)),getName(fcn,strlen(fcn)));
 	if ( sym == NULL)
 		throw(MAL,"remote.register","Function not found");
@@ -553,7 +551,7 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	/* check remote definition */
 	snprintf(buf,BUFSIZ,"inspect.getSignature(\"%s\",\"%s\");",mod,fcn);
-	msg = RMTquery(&mhdl,"remote.register",c->mconn,buf);
+	msg = RMTquery(&mhdl,"remote.register",c->mconn, buf);
 	if ( msg == MAL_SUCCEED)
 		throw(MAL,"remote.register","Function already defined remotely");
 	if ( mhdl)
@@ -566,9 +564,20 @@ str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void) cntxt;
 #endif
 	msg = RMTquery(&mhdl,"remote.register",c->mconn,qry);
-	mapi_close_handle(mhdl);
+	if (mhdl)
+		mapi_close_handle(mhdl);
 
 	return msg;
+}
+@h
+remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	str conn = (str) getArgValue(stk,pci,1);
+	str mod = (str) getArgValue(stk,pci,2);
+	str fcn = (str) getArgValue(stk,pci,3);
+	(void) mb;
+	return RMTregisterInternal(cntxt, conn, mod, fcn);
 }
 
 @h
@@ -695,14 +704,11 @@ str RMTcreate(
 		str *passwd)
 {
 	connection c;
-	int s;
 	MapiHdl mhdl;
 	str tmp;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "connection name is NULL or nil");
-	if ((s = (int) strlen(*conn)) > 15)
-		throw(ILLARG, "remote.create", "connection name may not exceed 15 characters");
 	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "hostname is NULL or nil");
 	if (port == NULL || *port <= 0)
@@ -718,7 +724,7 @@ str RMTcreate(
 	/* find a free slot, start with special case of connections not
 	 * being set */
 	if (connections == NULL) {
-		connections = GDKmalloc(sizeof(struct _connection));
+		connections = GDKzalloc(sizeof(struct _connection));
 		c = connections;
 	} else {
 		/* ok, it's set, so find the last element in the list */
@@ -732,9 +738,9 @@ str RMTcreate(
 			t = c;
 			c = c->next;
 		} while (c != NULL);
-		c = t->next = GDKmalloc(sizeof(struct _connection));
+		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
-	memcpy(c->name, *conn, s + 1 /* \0 */);
+	c->name = GDKstrdup(*conn);
 	c->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 	c->nextid = 0;
@@ -746,7 +752,7 @@ str RMTcreate(
 				conn, mapi_error_str(c->mconn));
 	/* TODO: throw away connection? */
 
-#ifdef _DEBUG_REMOTE_
+#ifdef _DEBUG_MAPI_
 	mapi_trace(c->mconn,TRUE);
 #endif
 	/* initialise remote helper function */
@@ -781,6 +787,7 @@ str RMTdestroy(int *ret, str *conn) {
 			if (t == NULL) { /* the top */
 				t = c->next;
 				mapi_destroy(c->mconn);
+				GDKfree(c->name);
 				GDKfree(c);
 				connections = t;
 			} else {
@@ -788,6 +795,7 @@ str RMTdestroy(int *ret, str *conn) {
 				t->next = c->next;
 				/* and kill the parent in the middle */
 				mapi_destroy(c->mconn);
+				GDKfree(c->name);
 				GDKfree(c);
 			}
 
@@ -797,6 +805,6 @@ str RMTdestroy(int *ret, str *conn) {
 
 	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
 }
-@h
+@h /* _REMOTE_DEF */
 #endif
 @}

@@ -1,0 +1,34 @@
+#Testing the ingredients for the octopus
+#The third step is run it over a pool of replicas
+
+module octopus;
+function octopus.tentacle_1():bat[:oid,:int];
+	alarm.sleep(5);
+	b:= bat.new(:oid,:int);
+	bat.append(b,5);
+	return tentactle_1:= b;
+end tentacle_1;
+
+function octopus.tentacle_2():bat[:oid,:int];
+	alarm.sleep(2);
+	b:= bat.new(:oid,:int);
+	bat.append(b,2);
+	return tentactle_2:= b;
+end tentacle_2;
+
+# declare the database servers to use
+scheduler.replica("demo1","monetdb","monetdb","localhost",50001);
+scheduler.replica("demo2","monetdb","monetdb","localhost",50002);
+
+# run all octopus tentacles in parallel
+barrier parallel:= scheduler.octopus();
+	a:= octopus.tentacle_1();
+	b:= octopus.tentacle_2();
+exit parallel;
+io.print(parallel);
+scheduler.pack(parallel,10,a,b);
+
+io.print("done");
+io.print(parallel);
+io.print(a);
+io.print(b);
