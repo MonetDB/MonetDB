@@ -52,7 +52,6 @@ because it would mean that we have to do a flow analysis.
 
 To make this work the scheduler needs a list of database replicas.
 For the time being, this is an explicitly administered list here. 
-
 When the octopus scheduling is called, we check the connection with
 the remote site. If it is down, it is re-activated using Merovingian.
 
@@ -152,6 +151,12 @@ OCTOPUSdiscover(Client cntxt){
 	return fnd;
 }
 
+@-
+The replica is identified by database name. The host and port
+should address a merovingian to ensure the database instance is
+started. The default is to contact the local merovingian at 
+default port 50000.
+@c
 str
 OCTOPUSreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -170,6 +175,9 @@ OCTOPUSreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc > 4){
 		sites[idx].host = GDKstrdup(*(str*) getArgReference(stk,pci,4));
 		sites[idx].port = *(int*) getArgReference(stk,pci,5);
+	} else {
+		sites[idx].host = GDKstrdup("localhost");
+		sites[idx].port = 50000;
 	}
 	mal_unset_lock(mal_contextLock,"scheduler.replica");
 #ifdef DEBUG_RUN_OCTOPUS
@@ -215,8 +223,11 @@ redo:
 #endif
 
 	/* register the plan remotely */
-	msg = RMTregisterInternal(cntxt, sites[i].db, getModuleId(pci), getFunctionId(pci));
-	if (msg != MAL_SUCCEED){
+	msg = RMTregisterInternal(cntxt, sites[i].db, 
+		getModuleId(pci), getFunctionId(pci));
+
+	/* ignore a duplicate definition */
+	if (msg != MAL_SUCCEED && !strstr(msg,"Function already defined")){
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"octopus.exec failed to register plan %s.%s at site %s\n",getModuleId(pci),getFunctionId(pci),sites[i].db);
 		stream_printf(cntxt->fdout,"reply: %s\n",msg);

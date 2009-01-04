@@ -20,8 +20,8 @@ function octopus.tentacle_2():bat[:oid,:int];
 end tentacle_2;
 
 # declare the database servers to use
-scheduler.replica("demo1","monetdb","monetdb","localhost",50001);
-scheduler.replica("demo2","monetdb","monetdb","localhost",50002);
+scheduler.replica("demo1","monetdb","monetdb");
+scheduler.replica("demo2","monetdb","monetdb");
 
 # run all octopus tentacles in parallel
 barrier parallel:= scheduler.octopus();
