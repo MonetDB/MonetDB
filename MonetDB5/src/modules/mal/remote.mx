@@ -167,10 +167,12 @@ static connection connections = NULL;
  */
 str
 RMTfindconn(connection *ret, str conn) {
-	connection c = connections;
+	connection c;
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
+	mal_set_lock(mal_contextLock,"remote.find"); 
+	c = connections;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
@@ -181,10 +183,12 @@ RMTfindconn(connection *ret, str conn) {
 				/* TODO: throw away connection? */
 			}
 			*ret = c;
+			mal_unset_lock(mal_contextLock,"remote.find"); 
 			return(MAL_SUCCEED);
 		} 
 		c= c->next;
 	}
+	mal_unset_lock(mal_contextLock,"remote.find"); 
 	throw(MAL, "remote.<findconn>", "No such connection with name '%s'", conn);
 }
 
@@ -244,11 +248,13 @@ str RMTprelude(int *ret) {
 }
 
 str RMTepilogue(int *ret) {
-	connection c = connections, t;
+	connection c, t;
 
 	(void)ret;
 
+	mal_set_lock(mal_contextLock,"remote.epilogue"); /* nobody allowed here */
 	/* free connections list */
+	c = connections;
 	while (c != NULL) {
 		t = c;
 		c = c->next;
@@ -257,6 +263,7 @@ str RMTepilogue(int *ret) {
 	}
 	/* not sure, but better be safe than sorry */
 	connections = NULL;
+	mal_unset_lock(mal_contextLock,"remote.epilogue"); 
 
 	return(MAL_SUCCEED);
 }
@@ -723,6 +730,7 @@ str RMTcreate(
 
 	/* find a free slot, start with special case of connections not
 	 * being set */
+	mal_set_lock(mal_contextLock,"remote.connect"); /* nobody allowed here */
 	if (connections == NULL) {
 		connections = GDKzalloc(sizeof(struct _connection));
 		c = connections;
@@ -732,19 +740,22 @@ str RMTcreate(
 		do {
 			/* at the same time also check if this connection name
 			 * already exists */
-			if (strcmp(c->name, *conn) == 0)
+			if (strcmp(c->name, *conn) == 0){
+				mal_unset_lock(mal_contextLock,"remote.connect"); 
 				throw(MAL, "remote.create", "a connection with name "
 						"'%s' already exists", *conn);
+			}
 			t = c;
 			c = c->next;
 		} while (c != NULL);
 		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
 	c->name = GDKstrdup(*conn);
-	c->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
-			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 	c->nextid = 0;
 	c->next = NULL;
+	mal_unset_lock(mal_contextLock,"remote.connect"); 
+	c->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
+			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 
 	if (mapi_reconnect(c->mconn) != MOK)
 		throw(IO, "remote.create", "an error occurred during "
@@ -770,7 +781,7 @@ str RMTcreate(
 remote_export str RMTdestroy(int *ret, str *conn);
 @c
 str RMTdestroy(int *ret, str *conn) {
-	connection c = connections, t;
+	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.destroy", "connection name is NULL or nil");
@@ -779,6 +790,8 @@ str RMTdestroy(int *ret, str *conn) {
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 
+	mal_set_lock(mal_contextLock,"remote.destroy"); /* nobody allowed here */
+	c = connections;
 	/* walk through the list */
 	t = NULL;
 	while (c != NULL) {
@@ -799,10 +812,12 @@ str RMTdestroy(int *ret, str *conn) {
 				GDKfree(c);
 			}
 
+			mal_unset_lock(mal_contextLock,"remote.destroy"); /* nobody allowed here */
 			return(MAL_SUCCEED);
 		}
 	}
 
+	mal_unset_lock(mal_contextLock,"remote.destroy"); /* nobody allowed here */
 	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
 }
 @h /* _REMOTE_DEF */

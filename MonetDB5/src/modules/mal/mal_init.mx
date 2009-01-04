@@ -81,6 +81,7 @@ library manual;
 library language;
 library constraints;
 library mal_mapi;
+library remote;
 
 library profiler;
 library statistics;
