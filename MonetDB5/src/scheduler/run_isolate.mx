@@ -63,7 +63,7 @@ comment "Run a private copy of the MAL program";
 #define DEBUG_RUN_ISOLATION
 
 #ifdef WIN32
-#ifndef LIBMAL_ISOLATION
+#ifndef LIBRUN_ISOLATE
 #define run_isolate_export extern __declspec(dllimport)
 #else
 #define run_isolate_export extern __declspec(dllexport)

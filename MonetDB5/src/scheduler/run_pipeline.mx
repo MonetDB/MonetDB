@@ -160,7 +160,7 @@ struct {
 } runtime;
 
 #ifdef WIN32
-#ifndef LIBMAL_SCHEDULER
+#ifndef LIBRUN_PIPELINE
 #define pipeline_export extern __declspec(dllimport)
 #else
 #define pipeline_export extern __declspec(dllexport)

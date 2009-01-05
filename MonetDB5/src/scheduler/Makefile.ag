@@ -26,10 +26,20 @@ LIBS = {
 	NAME = sched
 	DIR = libdir/MonetDB5
 	SEP = _
-	SOURCES = run_isolate.mx run_pipeline.mx run_memo.mx run_octopus.mx
+	SOURCES = run_isolate.mx run_pipeline.mx run_memo.mx
 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_run_octopus = {
+	DIR = libdir/MonetDB5
+	SEP = _
+	SOURCES = run_octopus.mx
+
+	LIBS = ../modules/mal/lib_remote ../modules/mal/lib_mat ../mal/libmonetdb5 ../optimizer/lib_optimizer $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
