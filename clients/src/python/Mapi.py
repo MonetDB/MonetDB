@@ -70,15 +70,17 @@ class server:
         last_block = 0
         while not last_block:
             flag = self.socket.recv(2)  # read block info
-            unpacked = struct.unpack( '<H', flag ) # unpack (little endian short)
+            if len(flag) == 1:
+                flag = flag + self.socket.recv(1) # get rest
+            unpacked = struct.unpack('<H', flag) # unpack (little endian short)
             unpacked = unpacked[0]      # get first result from tuple
-            len = ( unpacked >> 1 )     # get length
+            length = unpacked >> 1      # get length
             last_block = unpacked & 1   # get last-block-flag
 
             if self.trace:
-                print("getblock: %d %d\n" % (last_block, len))
-            if len > 0:
-                data = self.socket.recv(len) # read
+                print("getblock: %d %d\n" % (last_block, length))
+            if length > 0:
+                data = self.socket.recv(length) # read
                 result += data
         if self.trace:
             print("getblock: %s\n" % result)
