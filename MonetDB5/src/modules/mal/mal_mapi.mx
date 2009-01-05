@@ -514,7 +514,7 @@ SERVERlistenThread(SOCKET *Sock)
 #endif
 		/* Wait up to 0.5 seconds. */
 		tv.tv_sec = 0;
-		tv.tv_usec = 500;
+		tv.tv_usec = 500000;
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;

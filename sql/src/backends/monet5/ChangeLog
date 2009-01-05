@@ -1,6 +1,13 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  28 Dec 2008; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
+  Switched internally to select() calls instead of non-blocking IO loops. This
+  reduces the CPU usage in idlestate considerably.
+
+  28 Dec 2008; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
+  Properly handle SIGHUP, such that merovingian does not silently terminate
+
   08 Dec 2008; Fabian Groffen <fabian@cwi.nl> merovingian.1:
   Fix manpage header
 
