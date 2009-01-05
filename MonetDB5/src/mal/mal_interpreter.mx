@@ -1283,7 +1283,7 @@ switch(pci->barrier){
 				else stkpc++;
 				break;
 			case TYPE_str:
-				if( v->len > 0 && v->val.pval!= str_nil )
+				if( v->len > 0 && v->val.sval!= str_nil )
 					stkpc= pci->jump; 
 				else stkpc++;
 				break;
@@ -1759,7 +1759,7 @@ labeled statemtent. This might be optimized later.
 				stkpc= pci->jump; 
 			break;
 		case TYPE_str:
-			if( v->len == 0 || v->val.pval == str_nil)
+			if( v->len == 0 || v->val.sval == str_nil)
 				stkpc= pci->jump; 
 			break;
 		default:
@@ -1903,8 +1903,8 @@ if( ret != MAL_SUCCEED ) {
 	if (getVarType(mb,exceptionVar) == TYPE_str){
 		v=  &stk->stk[exceptionVar];
 		v->vtype = TYPE_str;
-		v->val.pval= ret;
-		v->len= (int)strlen(v->val.pval);
+		v->val.sval= ret;
+		v->len= (int)strlen(v->val.sval);
 		ret = 0;
 	} else {
 		stream_printf(cntxt->fdout,"%s",ret);
@@ -1950,9 +1950,9 @@ before a function call is made.
 void garbageElement(Client cntxt, ValPtr v)
 {   
 	if( v->vtype == TYPE_str) {
-		if(v->val.pval) {
-			GDKfree(v->val.pval);
-			v->val.pval = NULL;
+		if(v->val.sval) {
+			GDKfree(v->val.sval);
+			v->val.sval = NULL;
 		}
 		v->len = 0;
 		return;

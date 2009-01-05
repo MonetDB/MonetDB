@@ -552,7 +552,7 @@ nextBoxElement(Box box, lng *cursor, ValPtr v)
 		return 0;
 	}
 	v->vtype = TYPE_str;
-	v->val.pval = getBoxName(box, *cursor);
+	v->val.sval = getBoxName(box, *cursor);
 	*cursor = *cursor + 1;
 	return 0;
 }

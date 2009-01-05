@@ -422,9 +422,9 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 			}
 		}
 		if( v->vtype == TYPE_str && used[getArg(q,j)]<=1) {
-			if(v->val.pval) {
-				GDKfree(v->val.pval);
-				v->val.pval = NULL;
+			if(v->val.sval) {
+				GDKfree(v->val.sval);
+				v->val.sval = NULL;
 			}
 			v->len = 0;
 		}
