@@ -219,6 +219,8 @@ sequence of factory calls.
 			if( !isVarDisabled(mb,i)){
 				rhs = &getVarConstant(mb,i);
 				*lhs = *rhs;
+				if (rhs->vtype == TYPE_str && rhs->val.sval != 0)
+					lhs->val.sval = GDKstrdup(rhs->val.sval);
 			}
 		} else{
 			lhs->vtype = getVarGDKType(mb,i);
