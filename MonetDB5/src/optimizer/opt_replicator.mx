@@ -49,8 +49,8 @@ comment "Replication optimizer";
 static int 
 OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, version, limit, slimit;
-	InstrPtr p=0, *old= mb->stmt;
+	int i, j, version, limit, slimit;
+	InstrPtr w, q, p=0, *old= mb->stmt;
 	str dbname= GDKgetenv("gdk_dbname");
 
 	(void) pci;
@@ -82,13 +82,13 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pushLng(mb,p,0);
 
 	/* start sql() */
-	p= newStmt(mb,remoteRef,putName("exec",4));
+	p= newStmt(mb,remoteRef,execRef);
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,sqlRef);
 	p= pushStr(mb,p,"start");
 
 	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
-	p= newStmt(mb,remoteRef,putName("exec",4));
+	p= newStmt(mb,remoteRef,execRef);
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,sqlRef);
 	p= pushStr(mb,p,"getVersion");
@@ -102,14 +102,43 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	version = getArg(p,0);
 
 	for (i = 1; i < limit; i++){
-		pushInstruction(mb, old[i]);
-		if (getModuleId(old[i])==sqlRef &&
-			(getFunctionId(old[i]) == bindRef ||
-			 getFunctionId(old[i]) == binddbatRef) ){
-			setModuleId(old[i], replicatorRef);
-			old[i] = pushArgument(mb,old[i],version);
-			old[i] = pushLng(mb,old[i], 0);
-		}
+		p= old[i];
+		if (getModuleId(p)==sqlRef &&
+			(getFunctionId(p) == bindRef ||
+			 getFunctionId(p) == binddbatRef) ){
+			w= newInstruction(mb,ASSIGNsymbol);
+			getArg(w,0)= newTmpVariable(mb,TYPE_any);
+			setModuleId(w, remoteRef);
+			setFunctionId(w, execRef);
+			w= pushStr(mb,w,dbname);
+			w= pushStr(mb,w,getModuleId(p));
+			w= pushStr(mb,w,getFunctionId(p));
+
+			for ( j=p->retc; j<p->argc; j++){
+				q= newStmt(mb,remoteRef,putRef);
+				q= pushStr(mb,q,dbname);
+				q= pushArgument(mb,q,getArg(p,j));
+				w= pushArgument(mb,w,getArg(q,0));
+			}
+
+			q= newStmt(mb,remoteRef,putRef);
+			q= pushStr(mb,q,dbname);
+			q= pushArgument(mb,q,version);
+			w= pushArgument(mb,w,getArg(q,0));
+
+			q= newStmt(mb,remoteRef,putRef);
+			q= pushStr(mb,q,dbname);
+			q= pushLng(mb,q,0);
+			w= pushArgument(mb,w,getArg(q,0));
+
+			pushInstruction(mb, w);
+
+			q = newStmt(mb,remoteRef,getRef);
+			q = pushStr(mb,q,dbname);
+			pushArgument(mb,q,getArg(w,0));
+			freeInstruction(p);
+		} else
+			pushInstruction(mb, p);
 	}
 
 	for(; i<slimit; i++)
