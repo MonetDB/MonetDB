@@ -38,8 +38,10 @@ straightforward algorithm. It contacts the master to obtain
 the last known version id for the BAT. If it is out of sink,
 the complete BAT is transmitted. 
 
-Consider the plan derived from "select count(*) from tables;"
-and that this one should be executed on a remote host.
+Consider the plan derived from "select count(*) from tables;".
+The snippet below illustrates the code to be produced by the
+replicator optimizer.
+
 @verbatim
 function octopussy.tentacle_1();
 	replicator.setMaster("master");	# marker
@@ -47,23 +49,32 @@ function octopussy.tentacle_1();
 	remote.create("master", "localhost",50000,"master","monetdb","monetdb"
 	id:rmtobj:= remote.exec("mastername","sql","getVersion");
 	version:lng := remote.get("master",id);
-	replicator.synchronise("master",oldversion,newversion);
 
-	_1:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0);
-    _6:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",1);
+#	_1:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0);
+	sch:rmtobj:= remote.put("master","tmp");
+	tab:rmtobj:= remote.put("master","_tables");
+	col:rmtobj:= remote.put("master","type");
+	acc:rmtobj:= remote.put("master",0);
+	ov:rmtobj := remote.put("master",oldversion);
+	nv:rmtobj := remote.put("master",version);
+	copy:rmtobj := remote.exec("master","sql","getBATversion",sch,tab,col,acc,ov,nv);
+	_1:bat[:oid,:sht]  := remote.get("master",copy);
+	...
 @end verbatim
-synchronise should walk through the plan and localise all bind operations.
-For each we simply perform an upcall to get the complete BAT  (first attempt)
-In the end we overwrite the oldversion in the symbol table (!)
-
 The next level of improvement is to keep the accumulated delta
-lists at sql. Then we could perform an upcall to fetch those
-and merge them with the local ones. For this, the master need
-to know the version range covered.
-
-A negative version id can be used to indicate a complete
-resync, a positive (range) the deltas needed.
-
+lists at sql. This would require something like :
+@verbatim
+	ins:rmtobj := remote.exec("master","sql","getBATinsert",sch,tab,col,acc,ov,nv);
+	insert1:bat[:oid,:sht]  := remote.get("master",ins);
+	del:rmtobj := remote.exec("master","sql","getBATdelete",sch,tab,col,acc,ov,nv);
+	delete1:bat[:oid,:sht]  := remote.get("master",del);
+	# now we have a problem, because _1 is not been initalized 
+	_1:bat[:oid,:sht] := replicator.base(:oid,:sht);
+	bat.append(_1,insert1);
+	bat.delete(_1,insert1);
+@end verbatim
+ the base is needed to initialize _1 only the firt time as
+a persistent bat.
 
 @mal
 module replicator;
