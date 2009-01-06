@@ -170,6 +170,10 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
+pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
+address mvc_result_file_wrap
+comment "Prepare a file result set"; 
+
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:bat[:oid,:any_1] ) :int 
 address mvc_result_file_wrap
 comment "Prepare a file result set"; 
@@ -1744,7 +1748,7 @@ str
 mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str res = MAL_SUCCEED;
-	BAT *order;
+	BAT *order = NULL;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	res_table *t = NULL;
@@ -1756,16 +1760,18 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char **R = (unsigned char **)getArgReference(stk, pci, 3);
 	unsigned char **S = (unsigned char **)getArgReference(stk, pci, 4);
 	unsigned char **N = (unsigned char **)getArgReference(stk, pci, 5);
-	bat *order_bid = (bat *)getArgReference(stk, pci, 6);
+	int mtype = getArgType(mb, pci, 6);
 
 	(void) cntxt;
 	if (msg)
 		return msg;
-        if ((order = BATdescriptor(*order_bid)) == NULL ) {
-                throw(SQL, "sql.resultSet", "Cannot access descriptor");
-        }
-	t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
-	m->results = t;
+	if (mtype == TYPE_bat) {
+		bat *order_bid = (bat *)getArgReference(stk, pci, 6);
+        	if ((order = BATdescriptor(*order_bid)) == NULL ) {
+               		throw(SQL, "sql.resultSet", "Cannot access descriptor");
+        	}
+	}
+	m->results = t = res_table_create(m->session->tr, m->result_id++, *nr_cols, Q_TABLE, m->results, order);
 	len = strlen((char*)(*T));
 	GDKstrFromStr(tsep=GDKmalloc(len+1), *T, len); len = 0;
 	len = strlen((char*)(*R));
@@ -1781,7 +1787,8 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res_id = t->id;
 	if (*res_id < 0)
 		res = createException(SQL, "sql.resultSet", "failed");
-	BBPunfix(order->batCacheid);
+	if (order)
+		BBPunfix(order->batCacheid);
 	return res;
 }
 

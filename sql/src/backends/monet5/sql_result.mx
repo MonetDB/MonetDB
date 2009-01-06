@@ -978,6 +978,9 @@ mvc_export_file(mvc *m, stream *s, res_table *t)
 		BBPunfix(order->batCacheid);
 		m->results = res_tables_remove(m->results, t);
 	} 
+	if (res == 0 && m->scanner.ws == s) 
+		/* need to flush */
+		stream_flush(s);
 	return res;
 }
 
