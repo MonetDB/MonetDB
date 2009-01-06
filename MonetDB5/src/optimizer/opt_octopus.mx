@@ -155,7 +155,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 			break;
 		}
 	}
-	assert( i );
+	assert( i>=0 );
 
 	for (; i > 0; i--){
 		p= getInstrPtr(mb,i);
@@ -180,29 +180,14 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	setModuleId(q,octopusRef);
 	setFunctionId(q, name);
 
-	for (top--; top >= 0; top--) {
-		if ( getModuleId(list[top]) == sqlRef &&
-			 getFunctionId(list[top]) == bindRef){
-			int x,y,k;
-			q = copyInstruction(list[top]);
-			pushInstruction(tm,q);
-			/* insert master information */
-			q= pushStr(tm,q, GDKstrdup(GDKgetenv("gdk_dbname")));
-			x= getArg(q,q->argc-1);
-			q= pushLng(tm,q, 0);
-			y= getArg(q,q->argc-1);
-			for( k= q->argc-1; k > q->retc+1; k--)
-				getArg(q,k)= getArg(q,k-2);
-			getArg(q,k--)= y;
-			getArg(q,k)= x;
-		} else
-			pushInstruction(tm, copyInstruction(list[top]));
-	}
+	for (top--; top >= 0; top--)
+		pushInstruction(tm, copyInstruction(list[top]));
 	q= newAssignment(tm);
 	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
 	pushArgument(tm,q,varid);
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
+	q= newFcnCall(tm,optimizerRef,replicatorRef);
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	/* redirect output to a sink */
 	getArg(anchor, 0) = newTmpVariable(mb,TYPE_any);
@@ -219,7 +204,7 @@ static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, *old;
-	int last=0, i, j, limit, actions=0;
+	int last=0, i, j, limit, slimit, actions=0;
 	int tn=0, maxtn=32;
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
 
@@ -239,6 +224,7 @@ to ease future distribution and scheduling.
 	(void) fixModule(cntxt->nspace,octopusRef);
 
 	limit = mb->stop;
+	slimit = mb->ssize;
 	old = mb->stmt;
 
 	newMalBlkStmt(mb, mb->ssize);
@@ -250,6 +236,8 @@ to ease future distribution and scheduling.
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
 			/* create the tentacle, modifying the current plan */
 			(void) newFcnCall(mb,schedulerRef,octopusRef);
+			p= pushInt(mb,p,0);
+			p= pushInt(mb,p,10);
 			for ( j= p->retc; j<p->argc; j++)
 				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
 			setModuleId(p,schedulerRef);

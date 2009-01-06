@@ -44,9 +44,9 @@ replicator optimizer.
 
 @verbatim
 function octopussy.tentacle_1();
+	remote.create("master", "localhost",50000,"master","monetdb","monetdb");
 	replicator.setMaster("master");	# marker
 	oldversion: =replicator.setVersion(20090106);	# version at compile time 
-	remote.create("master", "localhost",50000,"master","monetdb","monetdb"
 	id:rmtobj:= remote.exec("mastername","sql","getVersion");
 	version:lng := remote.get("master",id);
 
@@ -69,7 +69,7 @@ lists at sql. This would require something like :
 	del:rmtobj := remote.exec("master","sql","getBATdelete",sch,tab,col,acc,ov,nv);
 	delete1:bat[:oid,:sht]  := remote.get("master",del);
 	# now we have a problem, because _1 is not been initalized 
-	_1:bat[:oid,:sht] := replicator.base(:oid,:sht);
+	_1:bat[:oid,:sht] := replicator.bind("tmp","_tables","type",0);
 	bat.append(_1,insert1);
 	bat.delete(_1,insert1);
 @end verbatim
@@ -87,9 +87,9 @@ command setVersion(version:lng):lng
 address REPsetVersion
 comment "Keep the latest version in the symbol table as a constant";
 
-pattern synchronise(master:str, version:lng):lng
-address REPsynchronise
-comment "Synchronize the local tables with the master";
+pattern bind(nme:str,tab:str,col:str,acc:int,ov:lng,nv:lng):bat[:any_1,:any_2]
+address REPbind
+comment "Create a named persistent BAT if it was not known";
 @-
 @{
 @+ Implementation code 
@@ -125,33 +125,30 @@ replicator_export str REPsynchronise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 #include "remote.h"
 
 str
-REPsynchronise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	str *master = (str*) getArgReference(stk,pci,1);
-	lng *version = (lng*) getArgReference(stk,pci,2);
-	connection c;
-	str msg = MAL_SUCCEED;
-	str sqlRef = getName("sql",3);
-	str bindRef = getName("bind",4);
-	InstrPtr p;
-	int i;
+REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	str *col = (str*) getArgReference(stk,pci,3);
+	int *acc = (int*) getArgReference(stk,pci,4);
+	str msg= MAL_SUCCEED;
+	BAT *b;
+	char buf[BUFSIZ];
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(cntxt->fdout,"#sync master %s version %d\n",*master, *version);
+	stream_printf(cntxt->fdout,"#sync master %s.%s.%s\n",*schema, *table, *col);
 #else
 	(void) cntxt;
 #endif
 	(void) mb;
-
-	/* lookup conn */
-    rethrow("replicator.bind", msg, RMTfindconn(&c, *master));
-
-	/* localise all bind calls */
-	for (i =0; i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if ( getModuleId(p) == sqlRef &&
-			 getFunctionId(p) == bindRef){
-			/* synchronise this BAT */
-		}
+	snprintf(buf,BUFSIZ,"%s_%s_%s_%d", *schema, *table, *col, *acc);
+	*ret= BBPindex(buf);
+	if (*ret == 0){
+		int tpe= getArgType(mb,pci,0);
+		b= BATnew(getHeadType(tpe),getTailType(tpe),0);
+		if ( b== NULL)
+			throw(MAL,"replicator.bind","Could not create BAT");
+		BBPkeepref(*ret = b->batCacheid);
 	}
 	return msg;
 }

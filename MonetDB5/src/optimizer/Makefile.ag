@@ -35,7 +35,7 @@ lib_optimizer = {
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_mitosis.mx opt_octopus.mx opt_history.mx
+		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx
 
 	#SCRIPTS = mal
 	LIBS = ../mal/libmonetdb5 ../modules/mal/lib_bpm ../modules/kernel/lib_algebra $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -56,7 +56,7 @@ headers_optimizer = {
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_mitosis.mx opt_octopus.mx opt_history.mx
+		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx
 
 	HEADERS = h 
 }
@@ -75,7 +75,7 @@ headers_mal = {
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_mitosis.mx opt_octopus.mx opt_history.mx
+		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx
 }
 
 EXTRA_DIST_DIR = Tests
