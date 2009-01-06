@@ -142,6 +142,10 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern getVersion():lng
+address mvc_getVersion
+comment "Return the database version identifier";
+
 pattern append{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname";
@@ -822,6 +826,7 @@ sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_getVersion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
@@ -1377,6 +1382,17 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.get_value", "error");
+}
+
+/* str mvc_getVersion(lng *res); */
+str
+mvc_getVersion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	lng *version = (lng*) getArgReference(stk,pci,0);
+	*version = -1; /* TO BECOME PRECISE */
+	return msg;
 }
 
 /* str mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start); */
