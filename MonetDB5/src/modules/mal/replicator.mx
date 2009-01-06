@@ -19,27 +19,66 @@
 @a Martin Kersten
 @v 1.0
 @+ Database replication
-The replicator module supports distribution of the an SQL database
+The replicator module supports distribution of the SQL database
 over multiple sites using a master slave protocol.
 
-The replicator assumes that both database have
-the same catalog information. There is no automatic propagation
-of CREATE, DROP, nor ALTER statements. 
+The replicator assumes that both database have the same catalog information.
+There is no automatic propagation of CREATE, DROP, nor ALTER statements. 
 Moreover, the master database should be accessible through Merovingian.
 
-The lean and mean implementation works as follows.
-Each plan produced by the octopus changes the bind calls
-into a replicator.bind call, including the master database name.
+The lean and mean replication scheme implementation works as follows.
+The plan is extended by the optimizer to retrieve
+the latest database version identifier using a back call to the master
+issueing a sql.getVersion(), which should mark the current transaction
+time. (is is db wide or per table/group?)
+
+If the version is newer then what we know (stored as an argumen
 This overloaded bind synchronises the local copy using a
-straightforward
+straightforward algorithm. It contacts the master to obtain
+the last known version id for the BAT. If it is out of sink,
+the complete BAT is transmitted. 
+
+Consider the plan derived from "select count(*) from tables;"
+and that this one should be executed on a remote host.
+@verbatim
+function octopussy.tentacle_1();
+	replicator.setMaster("master");	# marker
+	oldversion: =replicator.setVersion(20090106);	# version at compile time 
+	remote.create("master", "localhost",50000,"master","monetdb","monetdb"
+	id:rmtobj:= remote.exec("mastername","sql","getVersion");
+	version:lng := remote.get("master",id);
+	replicator.synchronise("master",oldversion,newversion);
+
+	_1:bat[:oid,:sht]  := sql.bind("tmp","_tables","type",0);
+    _6:bat[:oid,:oid]  := sql.bind_dbat("tmp","_tables",1);
+@end verbatim
+synchronise should walk through the plan and localise all bind operations.
+For each we simply perform an upcall to get the complete BAT  (first attempt)
+In the end we overwrite the oldversion in the symbol table (!)
+
+The next level of improvement is to keep the accumulated delta
+lists at sql. Then we could perform an upcall to fetch those
+and merge them with the local ones. For this, the master need
+to know the version range covered.
+
+A negative version id can be used to indicate a complete
+resync, a positive (range) the deltas needed.
+
 
 @mal
 module replicator;
 
-pattern bind(master:str, version:lng, schema:str, table:str, col:str, access:int)
-address REPbind
-comment "Synchronize a colum with a master copy. The latest known version is
-hardwired into the plan for ease of checking it.";
+command setMaster(master:str):void
+address REPsetMaster
+comment "Mark the source of this database";
+
+command setVersion(version:lng):lng
+address REPsetVersion
+comment "Keep the latest version in the symbol table as a constant";
+
+pattern synchronise(master:str, version:lng):lng
+address REPsynchronise
+comment "Synchronize the local tables with the master";
 @-
 @{
 @+ Implementation code 
@@ -64,8 +103,9 @@ hardwired into the plan for ease of checking it.";
 #define replicator_export extern
 #endif
 
-replicator_export str
-REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str REPsetMaster(int *ret, str *nme);
+replicator_export str REPsetVersion(int *ret, lng *version);
+replicator_export str REPsynchronise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -74,27 +114,44 @@ REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "remote.h"
 
 str
-REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+REPsynchronise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *master = (str*) getArgReference(stk,pci,1);
 	lng *version = (lng*) getArgReference(stk,pci,2);
-	str *schema = (str*) getArgReference(stk,pci,3);
-	str *table = (str*) getArgReference(stk,pci,4);
-	str *col = (str*) getArgReference(stk,pci,5);
-	int *access = (int*) getArgReference(stk,pci,2);
+	connection c;
+	str msg = MAL_SUCCEED;
+	str sqlRef = getName("sql",3);
+	str bindRef = getName("bind",4);
+	InstrPtr p;
+	int i;
 
 #ifdef _DEBUG_REPLICATOR_
-	stream_printf(cntxt->fdout,"#replication control for %s.%s.%s/%d\n",
-		*schema, *table, *col, *access);
-	stream_printf(cntxt->fdout,"#master %s version %d\n",*master, *version);
+	stream_printf(cntxt->fdout,"#sync master %s version %d\n",*master, *version);
 #else
 	(void) cntxt;
 #endif
 	(void) mb;
 
-	/* check validity of the version */
+	/* lookup conn */
+    rethrow("replicator.bind", msg, RMTfindconn(&c, *master));
 
-	/* get the latest version using a remote table copy */
-	/* assuring all BATs are synced at once */
-	return MAL_SUCCEED;
+	/* localise all bind calls */
+	for (i =0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( getModuleId(p) == sqlRef &&
+			 getFunctionId(p) == bindRef){
+			/* synchronise this BAT */
+		}
+	}
+	return msg;
+}
+str REPsetMaster(int *ret, str *nme){
+	(void) ret;
+	(void) nme;
+	throw(MAL,"replicator.setMaster","nyi");
+}
+str REPsetVersion(int *ret, lng *version){
+	(void) ret;
+	(void) version;
+	throw(MAL,"replicator.setVersion","nyi");
 }
 @}
