@@ -90,6 +90,10 @@ comment "Keep the latest version in the symbol table as a constant";
 pattern bind(nme:str,tab:str,col:str,acc:int,ov:lng,nv:lng):bat[:any_1,:any_2]
 address REPbind
 comment "Create a named persistent BAT if it was not known";
+
+pattern bind_dbat(nme:str,tab:str,acc:int,ov:lng,nv:lng):bat[:any_1,:any_2]
+address REPbind
+comment "Create a named persistent BAT if it was not known";
 @-
 @{
 @+ Implementation code 
@@ -116,7 +120,8 @@ comment "Create a named persistent BAT if it was not known";
 
 replicator_export str REPsetMaster(int *ret, str *nme);
 replicator_export str REPsetVersion(int *ret, lng *version);
-replicator_export str REPsynchronise(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+replicator_export str REPbind_dbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _REPLICATOR_H */
 @c
 #include "mal_config.h"
@@ -152,14 +157,42 @@ REPbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 	return msg;
 }
+
+str
+REPbind_dbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *schema = (str*) getArgReference(stk,pci,1);
+	str *table = (str*) getArgReference(stk,pci,2);
+	int *acc = (int*) getArgReference(stk,pci,4);
+	str msg= MAL_SUCCEED;
+	BAT *b;
+	char buf[BUFSIZ];
+
+#ifdef _DEBUG_REPLICATOR_
+	stream_printf(cntxt->fdout,"#sync master %s.%s.%s\n",*schema, *table);
+#else
+	(void) cntxt;
+#endif
+	(void) mb;
+	snprintf(buf,BUFSIZ,"%s_%s_%d", *schema, *table, *acc);
+	*ret= BBPindex(buf);
+	if (*ret == 0){
+		int tpe= getArgType(mb,pci,0);
+		b= BATnew(getHeadType(tpe),getTailType(tpe),0);
+		if ( b== NULL)
+			throw(MAL,"replicator.bind","Could not create BAT");
+		BBPkeepref(*ret = b->batCacheid);
+	}
+	return msg;
+}
 str REPsetMaster(int *ret, str *nme){
 	(void) ret;
 	(void) nme;
-	throw(MAL,"replicator.setMaster","nyi");
+	return MAL_SUCCEED;
 }
 str REPsetVersion(int *ret, lng *version){
 	(void) ret;
 	(void) version;
-	throw(MAL,"replicator.setVersion","nyi");
+	return MAL_SUCCEED;
 }
 @}

@@ -155,7 +155,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 			break;
 		}
 	}
-	assert( i>=0 );
+	assert( name);
 
 	for (; i > 0; i--){
 		p= getInstrPtr(mb,i);
@@ -203,8 +203,8 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, *old;
-	int last=0, i, j, limit, slimit, actions=0;
+	InstrPtr q, p, *old;
+	int last=0, x, y, i, j, limit, slimit, actions=0;
 	int tn=0, maxtn=32;
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
 
@@ -235,11 +235,30 @@ to ease future distribution and scheduling.
 
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
 			/* create the tentacle, modifying the current plan */
-			(void) newFcnCall(mb,schedulerRef,octopusRef);
-			p= pushInt(mb,p,0);
-			p= pushInt(mb,p,10);
+			/* barrier go:= scheduler.octopus(); */
+			q= newStmt(mb,schedulerRef,octopusRef);
+			setArgType(mb,q,0, TYPE_bit);
+			x= getArg(q,0);
+			q->barrier = BARRIERsymbol;
+
 			for ( j= p->retc; j<p->argc; j++)
 				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
+
+			/* exit c; */
+			q= newAssignment(mb);
+			q->retc=1;
+			q->barrier= EXITsymbol;
+			getArg(q,0)= x;
+
+			/* modified pack instruction */
+			setArgType(mb,p,0,TYPE_any);
+			p= pushInt(mb,p,10);
+			y= getArg(p,p->argc-1);
+			p= pushInt(mb,p,10);
+			for (j=p->argc-1;j>p->retc-1; j--)
+				getArg(p,j)= getArg(p,j-2);
+			getArg(p,p->retc)= x;
+			getArg(p,p->retc+1)= y;
 			setModuleId(p,schedulerRef);
 			pushInstruction(mb,p);
 			actions++;

@@ -81,10 +81,16 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);
 
-	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
-	p= newStmt(mb,remoteRef,putName("exec",6));
+	/* start sql() */
+	p= newStmt(mb,remoteRef,putName("exec",4));
 	p= pushStr(mb,p,dbname);
-	p= pushStr(mb,p,"sql");
+	p= pushStr(mb,p,sqlRef);
+	p= pushStr(mb,p,"start");
+
+	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
+	p= newStmt(mb,remoteRef,putName("exec",4));
+	p= pushStr(mb,p,dbname);
+	p= pushStr(mb,p,sqlRef);
 	p= pushStr(mb,p,"getVersion");
 	i= getArg(p,0);
 
@@ -98,7 +104,8 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 1; i < limit; i++){
 		pushInstruction(mb, old[i]);
 		if (getModuleId(old[i])==sqlRef &&
-			getFunctionId(old[i]) == bindRef ){
+			(getFunctionId(old[i]) == bindRef ||
+			 getFunctionId(old[i]) == binddbatRef) ){
 			setModuleId(old[i], replicatorRef);
 			old[i] = pushArgument(mb,old[i],version);
 			old[i] = pushLng(mb,old[i], 0);
