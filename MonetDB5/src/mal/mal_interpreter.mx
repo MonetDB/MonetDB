@@ -77,6 +77,7 @@ static str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void showVolume(Client cntxt, MalStkPtr stk, InstrPtr pci, int rd);
 static void displayVolume(Client cntxt, lng vol);
+
 @-
 We can speed up the copying, provided we ignore copying ptr-based
 objects.
@@ -261,7 +262,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (cntxt->itrace == 0) /* permit debugger analysis */
 			return createScriptException(mb, 0, MAL, NULL, "Syntax error in script");
 	}
-	@:beginProfile@
+	@:beginProfile(stk)@
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
 the minimum amount of stack space needed, some slack resources
@@ -352,7 +353,7 @@ we should first remove garbage.
 	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk, env != stk);
-	@:endProfile@
+	@:endProfile(stk)@
 	return ret;
 }
 @-
@@ -403,7 +404,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	stream_printf(cntxt->fdout,"callMAL\n");
 	printInstruction(cntxt->fdout,mb,pci,LIST_MAL_ALL);
 #endif
-	@:beginProfile@
+	@:beginProfile(stk)@
 	switch( pci->token){
 	case FUNCTIONsymbol:
 	case FCNcall:
@@ -443,7 +444,7 @@ all arguments and return values.
 		throw(MAL, "mal.interpreter",
 				"Non-supported call the MAL interpreter");
 	}
-	@:endProfile@
+	@:endProfile(stk)@
 	return ret;
 }
 @-
@@ -495,9 +496,11 @@ We rely on optimizing compilers to remove the redundant code.
 			pci = getInstrPtr(mb,stkpc);
 			if (malProfileMode + cntxt->itrace)
 				goto workslow;
-			@:MALrecycleStart@ {
+            
+     		@:MALrecycleStart(stk)@ {
+				lng tcs;
 				@:MALinterpret(FAST)@
-				@:MALrecycleExit@
+				@:MALrecycleExit(stk)@
 			}
 			@:MALflowofcontrol(FAST,continue)@
 		}
@@ -527,13 +530,14 @@ workslow:
 			}
 		}
 
-		@:beginProfile@
-		@:MALrecycleStart@ {
-			@:MALinterpret(SLOW)@
-			@:MALrecycleExit@
+		@:beginProfile(stk)@
+		@:MALrecycleStart(stk)@ {
+      	    lng tcs;
+            @:MALinterpret(SLOW)@
+			@:MALrecycleExit(stk)@
 		}
 		@:MALflowofcontrol(SLOW,continue)@
-		@:endProfile@
+		@:endProfile(stk)@
 	}
 	@:MALwrapup@
 	return ret;
@@ -647,6 +651,7 @@ int nway = 2;
 typedef struct {
 	MT_Id tid;
 	int id;
+    lng clk;
 } FlowTask;
 
 static queue*
@@ -742,7 +747,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	struct Mallinfo oldMemory = MT_mallinfo();
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id;
-
+    
 #ifdef HAVE_SYS_RESOURCE_H
 	int oldinblock=0;
 	int oldoublock=0;
@@ -753,9 +758,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	pci = getInstrPtr(flow->mb, stkpc);
 	if (stk->cmd) {
-		lng t=0;
+		lng tm = 0;
 		if( oldtimer)
-			t= GDKusec();
+			tm = GDKusec();
 		mdbStep(cntxt,mb,stk,getPC(mb,pci));
 		if (stk->cmd == 'x') {
 			/* need a way to skip */
@@ -766,8 +771,8 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 		if (oldtimer ) {
 			/* ignore debugger waiting time*/
-			t= GDKusec()-t;
-			oldtimer += t;
+			tm = GDKusec()-tm;
+			oldtimer += tm;
 #ifdef HAVE_SYS_RESOURCE_H
 			getrusage(RUSAGE_SELF, &oldResource);
 #endif
@@ -775,20 +780,21 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		}
 	}
 
-	@:beginProfile@
+	@:beginProfile(t)@
 	ret = MAL_SUCCEED;
 @-
 The number of instructions allowed is severely
 limited.
 We don't allow sequential flow control here.
 @c
-	@:MALrecycleStart@ {
-		switch (pci->token){
-		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret)@ break;
-		case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret)@ break;
-		case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret)@ break;
-		case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret)@ break;
-		case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret)@ break;
+	@:MALrecycleStart(t)@ {
+        lng tcs;
+        switch (pci->token){
+		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret,t)@ break;
+		case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret,t)@ break;
+		case CMDcall: @:commandcall(SLOW,fs->pc = -1; return ret,t)@ break;
+		case FACcall: @:factorycall(SLOW,fs->pc = -1; return ret,t)@ break;
+		case FCNcall: @:functioncall(SLOW,fs->pc = -1; return ret,t)@ break;
 		case NOOPsymbol:
 		case REMsymbol:
 			break;
@@ -800,10 +806,10 @@ We don't allow sequential flow control here.
 			ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
 		}
-		@:MALrecycleExit@
+		@:MALrecycleExit(t)@
 	}
 	/* update the list of eligable instructions */
-	@:endProfile@
+	@:endProfile(t)@
 	if (ret)
 		fs->pc = -1;
 	return ret;
@@ -1280,11 +1286,11 @@ elements in the value stack.
 @= MALinterpret
 	ret = 0;
 	switch( pci->token){
-	case ASSIGNsymbol: @:assignStmt(@1,continue)@ break;
-	case PATcall: @:patterncall(@1,continue)@ break;
-	case CMDcall: @:commandcall(@1,continue)@ break;
-	case FACcall: @:factorycall(@1,continue)@ break;
-	case FCNcall: @:functioncall(@1,continue)@ break;
+	case ASSIGNsymbol: @:assignStmt(@1,continue,stk)@ break;
+	case PATcall: @:patterncall(@1,continue,stk)@ break;
+	case CMDcall: @:commandcall(@1,continue,stk)@ break;
+	case FACcall: @:factorycall(@1,continue,stk)@ break;
+	case FCNcall: @:functioncall(@1,continue,stk)@ break;
 	case NOOPsymbol:
 	case REMsymbol:
 		break;
@@ -1298,7 +1304,7 @@ elements in the value stack.
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
-		@:endProfile@
+		@:endProfile(stk)@
 #endif
 		stkpc= mb->stop;
 		continue;
@@ -1310,7 +1316,7 @@ elements in the value stack.
 		ret = createScriptException(mb, stkpc,MAL,
 				NULL, "unkown operation");
 #if @1
-		@:endProfile@
+		@:endProfile(stk)@
 #endif
 		stkpc= mb->stop;
 		continue;
@@ -1399,7 +1405,7 @@ switch(pci->barrier){
 		} else
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 					"Exception raised");
-		@:skipToCatch(exceptionVar,@2)@
+		@:skipToCatch(exceptionVar,@2,stk)@
 		break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)
@@ -1415,7 +1421,7 @@ switch(pci->barrier){
 			/* a fake multi-assignment */
 			if( env != NULL && pcicaller != NULL){
 				InstrPtr pp=pci;
-				@:endProfile@
+				@:endProfile(stk)@
 				pci= pcicaller;
 				for(i=0;i < pci->retc; i++){
 					rhs = &stk->stk[pp->argv[i]];
@@ -1430,7 +1436,7 @@ switch(pci->barrier){
 				if( oldtimer)
 					cntxt->timer= oldtimer;
 			} else { 
-				@:endProfile@
+				@:endProfile(stk)@
 			}
 		stkpc= mb->stop;
 		continue;
@@ -1463,7 +1469,7 @@ cause errors in multi-assignment statements.
 	}
 	@:restoreTarget(@1)@
 	ret = 0;
-	@:exceptionHndlr(@1,@2)@
+	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
 }
 @}
@@ -1726,7 +1732,7 @@ to the operators.
 				"too many arguments for command call");
 	}
 	@:restoreTarget(@1)@
-	@:exceptionHndlr(@1,@2)@
+	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1,@2)@
 }
 @-
@@ -1738,7 +1744,7 @@ to the operators.
 		@:safeTarget@
 		ret = (str) (*pci->fcn)(cntxt,mb,stk,pci);
 		@:restoreTarget(@1,@2)@
-		@:exceptionHndlr(@1,@2)@
+		@:exceptionHndlr(@1,@2,@3)@
 		@:timingHndlr(@1,@2)@
 	}
 @-
@@ -1753,7 +1759,7 @@ non-returned values.
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
 	@:restoreTarget(@1)@
-	@:exceptionHndlr(@1,@2)@
+	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(@1)@
 }
 @-
@@ -1766,7 +1772,7 @@ Factory calls should deal with the reference counting.
 				"reference to MAL function missing");
 	else
 		ret= runFactory(cntxt,pci->blk,mb,stk,pci);
-	@:exceptionHndlr(@1,@2)@
+	@:exceptionHndlr(@1,@2,@3)@
 	@:timingHndlr(SLOW)@
 @-
 The type dispatching table in getArgValue can be removed if we 
@@ -1851,7 +1857,7 @@ reaching end of function block.
 		}
 	}
 	if( stkpc== mb->stop) {
-		@:endProfile@ 
+		@:endProfile(@3)@ 
 			@2;
 	}
 @-
@@ -1951,7 +1957,7 @@ if( ret != MAL_SUCCEED ) {
 		exceptionVar = getDestVar(pci);
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){
-		@:endProfile@
+		@:endProfile(@3)@
 		stkpc= mb->stop;
 		@2;
 	}
@@ -1967,7 +1973,7 @@ if( ret != MAL_SUCCEED ) {
 		GDKfree(ret);
 	}
 	/* position yourself at the catch instruction for further decisions */
-	@:skipToCatch(exceptionVar,@2)@
+	@:skipToCatch(exceptionVar,@2,@3)@
 	pci= getInstrPtr(mb,stkpc);
 }
 @-
@@ -1977,10 +1983,12 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
+	@1->clk = GDKusec();
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
+	tcs = GDKusec() - @1->clk;
 	if( pci->recycle > 0 )
-		RECYCLEexit(cntxt, mb,stk,pci);
+		RECYCLEexit(cntxt, mb,stk,pci,tcs);
 @}
 @-
 @node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
@@ -2126,11 +2134,11 @@ It simply skips the barrier block upon return.
 @= beginProfile
 #ifdef MALprofiler
 	if( mb->profiler != NULL && stk ){
-		stk->clk= GDKusec();
+		@1->clk= GDKusec();
 		if( mb->profiler[stkpc].trace)
 		{
 			ppc= stkpc;
-			mb->profiler[ppc].clk= stk->clk;
+			mb->profiler[ppc].clk= @1->clk;
 			time(&stk->clock);
 			mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
@@ -2149,7 +2157,7 @@ It simply skips the barrier block upon return.
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
-		mb->profiler[ppc].ticks = newclk - stk->clk;
+		mb->profiler[ppc].ticks = newclk - @1->clk;
 		mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 		if( pci){
 			mb->profiler[ppc].ibytes= getVolume(stk,pci,0);

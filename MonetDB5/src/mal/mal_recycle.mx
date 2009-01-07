@@ -154,7 +154,7 @@ mal_export int recycleCurQ;
 
 mal_export void RECYCLEinit(void);
 mal_export int RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks);
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int RECYCLEinterest(InstrPtr p);
@@ -175,7 +175,7 @@ mal_export bit isBindInstr(InstrPtr p);
 static MT_Lock recycleLock ;
 MalBlkPtr recycleBlk = NULL;
 
-static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+static void RECYCLEexitImpl(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks);
 @-
 The retention policies currently implemented are:
 RETAIN_ALL, where all results are in retained until
@@ -865,7 +865,7 @@ RECYCLEsync(InstrPtr p)
 #endif
 
 static void 
-RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr)
+RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, lng ticks)
 {
 	int i, j, c;
 	ValRecord *v;
@@ -926,7 +926,8 @@ compare by value.
 	i = recycleBlk->stop-1;
 	recycleBlk->profiler[i].clk = GDKusec();
 	recycleBlk->profiler[i].counter =1;
-	recycleBlk->profiler[i].ticks = GDKusec()-s->clk;
+/*	recycleBlk->profiler[i].ticks = GDKusec()-s->clk; */
+	recycleBlk->profiler[i].ticks = ticks;
 	recycleBlk->profiler[i].ibytes = rd;
 	recycleBlk->profiler[i].obytes = wr;
 	recyclerUsedMemory += wr;
@@ -1153,6 +1154,7 @@ We execute it in place and safe the result upon need.
 @c
 	if (bid >=0) {
 		int k;
+		lng ticks = GDKusec();
 		i= getPC(mb,p);
 #ifdef _DEBUG_RECYCLE_REUSE
 	stream_printf(cntxt->fdout,"RECYCLEreuse subselect ");
@@ -1170,19 +1172,20 @@ We execute it in place and safe the result upon need.
 		k = p->recycle;
 		p->recycle = NO_RECYCLING; /* No recycling for instructions with subsumption */
 		(void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
-		p->recycle= k;
 		/* restore the situation */
+		ticks = GDKusec() - ticks;
+		p->recycle= k;
 		s->keepAlive= j;
 		s->stk[getArg(p,1)].val.bval = nbid;
 		BBPdecref(bid, TRUE);
-	    recycled++;
-	    recycleBlk->profiler[pc].counter++;
-       	if ( recycleBlk->profiler[pc].clk < time0 )
-	        gluse = recycleBlk->profiler[pc].trace = TRUE;
+		recycled++;
+		recycleBlk->profiler[pc].counter++;
+	       	if ( recycleBlk->profiler[pc].clk < time0 )
+		        gluse = recycleBlk->profiler[pc].trace = TRUE;
 		updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse);
 	        recycleBlk->profiler[pc].clk = GDKusec();
-        mal_unset_lock(recycleLock,"recycle");
-        RECYCLEexit(cntxt, mb, s, p);
+	        mal_unset_lock(recycleLock,"recycle");
+        	RECYCLEexit(cntxt, mb, s, p, ticks);
 		return pc;
 	}
 #ifdef _DEBUG_CACHE_
@@ -1199,7 +1202,7 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i=0;
 
-	stk->clk= GDKusec();
+/*	stk->clk= GDKusec(); timing moved to interpreter */
 	if ( p->recycle == NO_RECYCLING )
         	return 0;       /* don't count subsumption instructions */
 	statements++;
@@ -1223,7 +1226,7 @@ It can use the timing information gathered from the previous call,
 which is stored in the stack frame to avoid concurrency problems.
 @c
 void
-RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks){
 	lng memLimit;
 	lng cacheLimit;
 	lng rd = getVolume(stk,p, 1)/ RU +1;
@@ -1252,18 +1255,18 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	case RETAIN_ALL:
 		/* RETAIN_ALL: infinite case, retain all new instructions */
 		if (RECYCLEfind(cntxt,mb,stk,p)<0 )
-			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		break;
 	case RETAIN_CAT:
 		/* RETAIN_CAT: query-category-based semantics, retain if evidences for reuse inside the same query*/
 		if (RECYCLEgetQryCat(recycleCurQ)<3 && RECYCLEfind(cntxt,mb,stk,p)< 0)
-			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+			(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		break;
 	case RETAIN_INTEREST:
 		/* RETAIN_INTEREST: refinement per instruction, retain if evidences for previous reuse */
 		if (RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (p->recycle > REC_MIN_INTEREST)
-				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+				(void) RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 			else crdInstr++;
 		}
 		break;
@@ -1272,15 +1275,15 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
 				RECYCLEcleanCache(wr);
-			RECYCLEnew(cntxt,mb, stk, p, rd, wr);
+			RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		}
 	}
 }
 
 void
-RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks){
 	mal_set_lock(recycleLock,"recycle");
-	RECYCLEexitImpl(cntxt,mb,stk,p);
+	RECYCLEexitImpl(cntxt,mb,stk,p, ticks);
 	mal_unset_lock(recycleLock,"recycle");
 }
 
