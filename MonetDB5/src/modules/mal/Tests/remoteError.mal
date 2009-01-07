@@ -1,0 +1,6 @@
+#If the include is not here it works.
+include sql;
+    remote.create("demo","localhost",50000,"demo","monetdb","monetdb");
+    remote.exec("demo","sql","start");
+    remote.exec("demo","sql","start");
+
