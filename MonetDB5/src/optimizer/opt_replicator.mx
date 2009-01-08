@@ -75,8 +75,8 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= pushStr(mb,p,"monetdb");
 	p= pushStr(mb,p,"monetdb");
 	/* ignore duplicate connection error */
-	p= newCatchStmt(mb,"MALexception");
-	p= newExitStmt(mb,"MALexception");
+	p= newCatchStmt(mb,"MALException");
+	p= newExitStmt(mb,"MALException");
 	
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);
