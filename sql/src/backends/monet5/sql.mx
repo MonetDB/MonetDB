@@ -142,7 +142,29 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern getVersion(clt:int):lng
+command bind_dbat(clientid:int, schema:str, table:str, access:int, oldversion:lng, version:lng):bat[:oid,:oid]
+address mvc_diff_dbat_wrap
+comment "Bind to 'schema.table' BAT with deleted objecs
+and with specific access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
+command bind_idxbat(clientid:int, schema:str, table:str, index:str, access:int, oldversion:lng, version:lng):bat[:oid,:any_1]
+address mvc_diff_idxbat_wrap
+comment "Bind the 'schema.table.index' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
+command bind(clientid:int, schema:str, table:str, column:str, access:int, oldversion:lng, version:lng ):bat[:oid,:any_1]
+address mvc_diff_wrap
+comment "Bind the 'schema.table.column' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
+command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client";
 
@@ -797,8 +819,8 @@ sql5_export str SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_single_wrap(int *ret, int *bid, str *name);
+sql5_export str mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -830,7 +852,10 @@ sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_getVersion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_diff_wrap(bat *b, int *clientid, str *s, str *t, str *c, int *access, lng *oldversion, lng *version);
+sql5_export str mvc_diff_idxbat_wrap(bat *b, int *clientid, str *s, str *t, str *i, int *access, lng *oldversion, lng *version );
+sql5_export str mvc_diff_dbat_wrap(bat *b, int *clientid, str *s, str *t, int *access, lng *oldversion, lng *version);
+sql5_export str mvc_getVersion(lng *r, int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
@@ -1388,21 +1413,18 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.get_value", "error");
 }
 
-/* str mvc_getVersion(lng *res); */
 str
-mvc_getVersion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+mvc_getVersion(lng *version, int *clientid)
 {
-/*
-	The SQL database version should be retrievalble without
-	a client specific sql context. It is called by the MAL
-	workers.
 	mvc *m = NULL;
-	str msg = getContext(cntxt,mb, &m, NULL);
-*/
-	lng *version = (lng*) getArgReference(stk,pci,0);
-	(void) cntxt;
-	(void) mb;
-	*version = -1; /* TO BECOME PRECISE */
+	Client cntxt = mal_clients+*clientid;
+	str msg = getContext(cntxt, NULL, &m, NULL);
+
+	if (msg)
+		return msg;
+	*version = -1;
+	if (m->session->tr)
+		*version = m->session->tr->stime;
 	return MAL_SUCCEED;
 }
 
@@ -1497,6 +1519,27 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "mvc_bind", "limitation in transaction scope");
 }
 
+str 
+mvc_diff_wrap(bat *bid, int *clientid, str *s, str *t, str *c, int *access, lng *oldversion, lng *version)
+{
+	mvc *m = NULL;
+	Client cntxt = mal_clients+*clientid;
+	str msg = getContext(cntxt, NULL, &m, NULL);
+	BAT *b;
+
+	if (msg)
+		return msg;
+	(void)oldversion;
+	(void)version;
+	b = mvc_bind(m, *s, *t, *c, *access);
+	if (b) {
+		BBPkeepref( *bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "mvc_diff", "limitation in transaction scope");
+}
+
+
 /* str mvc_bind_idxbat_wrap(int *bid, str *sname, str *tname, str *iname, int *access); */
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1521,6 +1564,25 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "mvc_bind_idxbat", "limitation in transaction scope");
 }
 
+str 
+mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *access, lng *oldversion, lng *version)
+{
+	mvc *m = NULL;
+	Client cntxt = mal_clients+*clientid;
+	str msg = getContext(cntxt, NULL, &m, NULL);
+	BAT *b;
+
+	if (msg)
+		return msg;
+	(void)oldversion;
+	(void)version;
+	b = mvc_bind(m, *s, *t, *i, *access);
+	if (b) {
+		BBPkeepref( *bid = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "mvc_bind_idxbat", "limitation in transaction scope");
+}
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
@@ -1663,6 +1725,26 @@ mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
 	if (b) {
 		BBPkeepref( *ret = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(SQL, "mvc_bind_dbat_wrap", "error");
+}
+
+str 
+mvc_diff_dbat_wrap(bat *bid, int *clientid, str *s, str *t, int *access, lng *oldversion, lng *version )
+{
+	mvc *m = NULL;
+	Client cntxt = mal_clients+*clientid;
+	str msg = getContext(cntxt, NULL, &m, NULL);
+	BAT *b;
+
+	if (msg)
+		return msg;
+	(void)oldversion;
+	(void)version;
+	b = mvc_bind_dbat(m, *s, *t, *access);
+	if (b) {
+		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "mvc_bind_dbat_wrap", "error");
