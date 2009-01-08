@@ -21,11 +21,14 @@
  *
  * The Original Code has initially been developed by the Database &
  * Information Systems Group at the University of Konstanz, Germany and
- * is now maintained by the Database Systems Group at the Technische
- * Universitaet Muenchen, Germany.  Portions created by the University of
- * Konstanz and the Technische Universitaet Muenchen are Copyright (C)
- * 2000-2005 University of Konstanz and (C) 2005-2008 Technische
- * Universitaet Muenchen, respectively.  All Rights Reserved.
+ * the Database Group at the Technische Universitaet Muenchen, Germany.
+ * It is now maintained by the Database Systems Group at the Eberhard
+ * Karls Universitaet Tuebingen, Germany.  Portions created by the
+ * University of Konstanz, the Technische Universitaet Muenchen, and the
+ * Universitaet Tuebingen are Copyright (C) 2000-2005 University of
+ * Konstanz, (C) 2005-2008 Technische Universitaet Muenchen, and (C)
+ * 2008-2009 Eberhard Karls Universitaet Tuebingen, respectively.  All
+ * Rights Reserved.
  *
  * $Id$
  */
@@ -242,7 +245,8 @@ main (int argc, char *argv[])
                 printf ("\n         Pathfinder SQL Code Generator\n\n"
                         "Compiles Logical Algebra Dag in XML Format to SQL.\n\n"
                         "($Revision$, $Date$)\n");
-                printf ("(c) Database Group, Technische Universitaet Muenchen\n\n");
+                printf ("(c) Database Systems Group, ");
+                printf (    "Eberhard Karls Universitaet Tuebingen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
                 printf ("  -h%s: print this help message\n",
