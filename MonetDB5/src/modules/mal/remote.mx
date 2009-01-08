@@ -599,7 +599,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, mod, func, ident, tmp;
 	int i, len;
-	connection c;
+	connection c= NULL;
 	char qbuf[BUFSIZ+1];	/* FIXME: make this dynamic */
 	MapiHdl mhdl;
 
