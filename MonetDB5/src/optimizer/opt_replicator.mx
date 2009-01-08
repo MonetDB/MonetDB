@@ -49,7 +49,7 @@ comment "Replication optimizer";
 static int 
 OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int x, i, j, version, limit, slimit;
+	int clt, x, i, j, version, limit, slimit;
 	InstrPtr w, q, p=0, *old= mb->stmt;
 	str dbname= GDKgetenv("gdk_dbname");
 	char nme[IDLENGTH] = {"rmtobj"};
@@ -74,20 +74,26 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"monetdb");
 	p= pushStr(mb,p,"monetdb");
-
-	/* replicator.setMaster("master"); */
-	p= newStmt(mb,replicatorRef,putName("setMaster",9));
-	pushStr(mb,p,dbname);
-
-	/* oldversion: =replicator.setVersion(20090106); */
+	/* ignore duplicate connection error */
+	p= newCatchStmt(mb,"MALexception");
+	p= newExitStmt(mb,"MALexception");
+	
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);
+
+	/* x:= remote.put(clientindex) a connection error now becomes fatal */
+	p= newStmt(mb,remoteRef,putRef);
+	setArgType(mb,p,0,rmtobj);
+	clt= getArg(p,0);
+	p= pushStr(mb,p,dbname);
+	pushInt(mb,p,cntxt->idx);
 
 	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
 	p= newStmt(mb,remoteRef,execRef);
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,sqlRef);
 	p= pushStr(mb,p,"getVersion");
+	pushArgument(mb,p,clt);
 	i= getArg(p,0);
 
 	/* version:lng := remote.get("master",id);*/
@@ -111,6 +117,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			w= pushStr(mb,w,getModuleId(p));
 			w= pushStr(mb,w,getFunctionId(p));
 
+			pushArgument(mb,w,clt);
 			for ( j=p->retc; j<p->argc; j++){
 				q= newStmt(mb,remoteRef,putRef);
 				q= pushStr(mb,q,dbname);
