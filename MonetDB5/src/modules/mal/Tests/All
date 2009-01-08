@@ -39,7 +39,6 @@ remote02
 remote03
 remote04
 #remote10
-remoteError
 
 printf
 #some remote related tests
