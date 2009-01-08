@@ -238,7 +238,7 @@ function drop_xmldoc {
 
 function print_help () {
     out    "Pathfinder XQuery"
-    out    "(c) Database Group, Technische Universitaet Muenchen"
+    out    "(c) Database Systems Group, Eberhard Karls Universitaet Tuebingen"
     out    "" 
     out    "Usage: $THISFILE (create|drop) <db> <schema>" 
     out    ""

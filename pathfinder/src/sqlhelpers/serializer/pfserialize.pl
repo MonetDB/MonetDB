@@ -427,7 +427,8 @@ sub print_xml {
 
 sub print_help {
     print "Pathfinder XML Serializer\n";
-    print "(c) Database Group, Technische Universitaet Muenchen\n\n";
+    print "(c) Database Systems Group, ";
+    print     "Eberhard Karls Universitaet Tuebingen\n\n";
 
     print "pfserialize.pl -- A simple tool to transform an encoded XML-Document\n";
     print "                  from DB2 to an XML-Document.\n\n";

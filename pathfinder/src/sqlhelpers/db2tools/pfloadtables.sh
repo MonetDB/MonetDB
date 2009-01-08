@@ -95,7 +95,7 @@ EOT
 
 function print_help () {
     out    "Pathfinder XQuery"
-    out    "(c) Database Group, Technische Universitaet Muenchen"
+    out    "(c) Database Systems Group, Eberhard Karls Universitaet Tuebingen"
     out    "" 
     out    "Usage: ${THISFILE} <db> <schema> <enc_file> <name_file>"
     out    ""
