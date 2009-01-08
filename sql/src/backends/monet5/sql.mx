@@ -142,9 +142,9 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern getVersion():lng
+pattern getVersion(clt:int):lng
 address mvc_getVersion
-comment "Return the database version identifier";
+comment "Return the database version identifier for a client";
 
 pattern append{unsafe}(sname:str, tname:str, cname:str, ins:any ):void
 address mvc_append_wrap
