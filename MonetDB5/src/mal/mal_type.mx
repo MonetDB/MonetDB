@@ -105,6 +105,7 @@ mal_export int isTmpName(str n);
 mal_export int isTypeName(str n);
 mal_export int isIdentifier(str s);
 mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
+mal_export int isAmbiguousType(int type);
 
 #endif /* MAL_TYPE_H */
 @-
@@ -249,7 +250,20 @@ getTypeIndex(str nme, int len, int deftype)
 		i = deftype;
 	return i;
 }
-
+@-
+Literal constants are not necessary type specific, e.g.
+the value '0' could represent sht,wrd,int,lng.
+If the value is potential ambiguous then it should
+be made type specific in listings
+@c
+int
+isAmbiguousType(int type){
+	switch(type){
+	case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
+		return type != TYPE_int;
+	}
+	return 0;
+}
 INLINE int
 findGDKtype(int type)
 {

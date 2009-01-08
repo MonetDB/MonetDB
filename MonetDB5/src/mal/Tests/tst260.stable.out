@@ -48,7 +48,7 @@ function user.main():void;
     err := bat.insert(b,n0,n0);
     err := bat.insert(b,n0,81);
     io.print(b);
-    algebra.topN(b,9);
+    algebra.topN(b,9:lng);
     io.print(b);
 end main;
 #-----------------#
