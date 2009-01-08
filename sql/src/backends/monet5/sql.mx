@@ -1392,11 +1392,18 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_getVersion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+/*
+	The SQL database version should be retrievalble without
+	a client specific sql context. It is called by the MAL
+	workers.
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
+*/
 	lng *version = (lng*) getArgReference(stk,pci,0);
+	(void) cntxt;
+	(void) mb;
 	*version = -1; /* TO BECOME PRECISE */
-	return msg;
+	return MAL_SUCCEED;
 }
 
 /* str mvc_restart_seq(lng *res, str *sname, str *seqname, lng *start); */
