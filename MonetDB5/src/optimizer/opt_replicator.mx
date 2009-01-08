@@ -52,6 +52,8 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int i, j, version, limit, slimit;
 	InstrPtr w, q, p=0, *old= mb->stmt;
 	str dbname= GDKgetenv("gdk_dbname");
+	char nme[IDLENGTH] = {"rmtobj"};
+	int rmtobj= getTypeIndex(nme,6,TYPE_str);
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -80,12 +82,6 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* oldversion: =replicator.setVersion(20090106); */
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);
-
-	/* start sql() */
-	p= newStmt(mb,remoteRef,execRef);
-	p= pushStr(mb,p,dbname);
-	p= pushStr(mb,p,sqlRef);
-	p= pushStr(mb,p,"start");
 
 	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
 	p= newStmt(mb,remoteRef,execRef);
@@ -119,6 +115,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				q= pushStr(mb,q,dbname);
 				q= pushArgument(mb,q,getArg(p,j));
 				w= pushArgument(mb,w,getArg(q,0));
+				setArgType(mb,q,0,rmtobj);
 			}
 
 			q= newStmt(mb,remoteRef,putRef);
