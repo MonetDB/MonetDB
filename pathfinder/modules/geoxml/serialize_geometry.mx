@@ -103,6 +103,8 @@ serialize_geometry_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
     	/* geoenv->wkb_kind = "LINEARRING";  */
     	geoenv->wkb_kind = "POLYGON"; 
     	geoenv->wkb_par2 = 1; 
+    } else if ( strcmp(name,"Point")==0) {
+    	geoenv->wkb_kind = "POINT"; 
     } else if ( strcmp(name,"coordinates")==0) {
     	geoenv->fill_wkb++;
     }
