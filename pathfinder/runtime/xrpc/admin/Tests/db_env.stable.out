@@ -54,6 +54,9 @@ Over..
   <bun head="gdk_mem_pagebits">
 #    14
   </bun>
+  <bun head="gdk_nr_threads">
+#    1
+  </bun>
   <bun head="gdk_version">
 #    1.24.0
   </bun>
