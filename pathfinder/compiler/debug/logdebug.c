@@ -830,7 +830,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             if (n->kind == la_guide_step ||
                 n->kind == la_guide_step_join) {
                 bool first = true;
-                PFarray_printf (DOT, "- (");
+                PFarray_printf (DOT, " - (");
 
                 for (unsigned int i = 0; i < n->sem.step.guide_count; i++) {
                     PFarray_printf (DOT, "%s%i", first ? "" : ", ",
