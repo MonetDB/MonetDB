@@ -893,6 +893,11 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		char *schema = mapi_fetch_field(hdl, 0);
 		char *tname = mapi_fetch_field(hdl, 1);
 
+		if (mapi_error(mid)) {
+			mapi_explain(mid, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
 		rc += dump_table(mid, schema, tname, toConsole, describe, describe);
