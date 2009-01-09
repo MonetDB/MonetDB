@@ -136,15 +136,6 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	str name= NULL;
 	Symbol s;
-	int fd,port;
-
-	/* check for running merovingian */
-	snprintf(buf, BUFSIZ, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
-	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)> 0)){
-		close(fd);
-		port = atoi(GDKgetenv("mero_port"));
-	} else
-		port = atoi(GDKgetenv("mapi_port")?GDKgetenv("mapi_port"):"localhost");
 
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
@@ -160,7 +151,9 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 				getFunctionId(getInstrPtr(mb,0)),varid);
 			name =  putName(buf,strlen(buf));
-			q= newFcnCall(mb,octopusRef, name);
+			q= copyInstruction(getInstrPtr(mb,0));
+			setModuleId(q,octopusRef);
+			setFunctionId(q,name);
 			getArg(q,0)= varid;
 			needed[varid]= 1;
 			anchor= p;
@@ -186,7 +179,6 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	s->kind=FUNCTIONsymbol;
 	s->def= tm= copyMalBlk(mb);	/* get the symbol table for free */
 	q= getInstrPtr(tm,0);		/* and re-use the signature */
-	q->argc= 1;
 	tm->var[0]->name= GDKstrdup(name);	
 	setArgType(tm, q, 0, getVarType(mb,varid));
 	tm->stop =1;
@@ -231,6 +223,13 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @-
 All octopus tentacle code is collected in a separate module
 to ease future distribution and scheduling.
+
+The limitation for the time being is that we only deal
+with octopus code that does not require arguments to
+be passed from the query context. This is handled in the scheduler.
+It interferes with the replication and scheduler code.
+Or we have to generalize remote.exec to accept
+non rmtobj arguments.
 @c
 	(void) fixModule(cntxt->nspace,octopusRef);
 

@@ -54,6 +54,16 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	str dbname= GDKgetenv("gdk_dbname");
 	char nme[IDLENGTH] = {"rmtobj"};
 	int rmtobj= getTypeIndex(nme,6,TYPE_str);
+	char buf[BUFSIZ];
+	int fd,port;
+
+	/* check for running merovingian */
+	snprintf(buf, BUFSIZ, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
+	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)> 0)){
+		close(fd);
+		port = atoi(GDKgetenv("mero_port"));
+	} else
+		port = atoi(GDKgetenv("mapi_port")?GDKgetenv("mapi_port"):"localhost");
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -70,7 +80,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= newStmt(mb,remoteRef,putName("create",6));
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"localhost");
-	p= pushInt(mb,p, atoi(GDKgetenv("mapi_port")));
+	p= pushInt(mb,p,port);
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"monetdb");
 	p= pushStr(mb,p,"monetdb");
