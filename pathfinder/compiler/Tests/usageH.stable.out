@@ -11,7 +11,7 @@ stdout of test 'usageH` in directory 'compiler` itself:
 # 15:43:45 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
-(c) Database Group, Technische Universitaet Muenchen
+(c) Database Systems Group, Eberhard Karls Universitaet Tuebingen
 
 Usage: pf [OPTION] [FILE]
 
@@ -38,6 +38,9 @@ Usage: pf [OPTION] [FILE]
 = -p, --physical-algebra-plan: enable generation of physical algebra plan
 = -f<format>, --format=<format>: enable generation of algebra properties
          +  print all available properties (logical/physical algebra)
+         <optoptions> selectively choose optimization options that are based
+                      on a single property (e.g., 'O') to print the respective
+                      property
          c  print cost value (physical algebra)
          o  print orderings (physical algebra)
 
@@ -65,23 +68,30 @@ Usage: pf [OPTION] [FILE]
         21  after compiling the physical algebra into MIL code
         22  after the MIL program has been serialized
 
-= -o<options>, --optimize-algebra=<options>: optimize algebra according to options:
+= -o<optoptions>, --optimize-algebra=<optoptions>: optimize algebra according to optimization options:
+         E  merge common subexpressions (CSE)
+         G  apply general optimization (without properties)
          O  apply optimization based on constant property
          I  apply optimization based on icols property
          K  apply optimization based on key property
+         N  apply optimization based on required node values property
+         V  apply optimization based on required values property
+         S  apply optimization based on set property
+         U  apply optimization based on XML Guide information
+            (only works for the SQL code generation)
          C  apply optimization using multiple properties (complex)
             (and icols based optimization will be applied afterwards)
-         G  apply general optimization (without properties)
-         V  apply optimization based on required values property
-         [  map column names to unique column names
-         J  push down equi-joins (requires unique column names)
-         ]  map column names back (from unique names to original names)
-         M  apply optimization based on multi-value dependencies
-         S  apply optimization based on set property
+         J  push down equi-joins
+         M  push up cross products (based on multi-value dependencies
+         T  push up theta-joins (based on multi-value dependencies
+         R  push up rank operators
          }  introduce proxy operators that representoperator groups
          {  remove proxy operators
+         Q  apply optimizations tailored for the SQL code generation
+         [  assign a new set of unique column names
+         ]  assign bit-encoded column names (deprecated optimization option)
          P  infer all properties
-         _  does nothing (used for structuring the options)
+         _  does nothing (used for structuring the optimization options)
             (default for option -A is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_}MT{JISI_OK_GECSVR_GP')
             (default for option -S is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_Q_}MT{JISI_OK_GECSVR_QGP')
 

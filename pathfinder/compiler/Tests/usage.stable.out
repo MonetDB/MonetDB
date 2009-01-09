@@ -11,7 +11,7 @@ stdout of test 'usage` in directory 'compiler` itself:
 # 13:16:47 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
-(c) Database Group, Technische Universitaet Muenchen
+(c) Database Systems Group, Eberhard Karls Universitaet Tuebingen
 
 Usage: pf [OPTION] [FILE]
 

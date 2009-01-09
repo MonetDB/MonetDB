@@ -267,47 +267,56 @@ main (int argc, char *argv[])
                 printf (    "Eberhard Karls Universitaet Tuebingen\n\n");
                 printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);
                 printf ("  Reads from standard input if FILE is omitted.\n\n");
-                printf ("  -o<options>%s: optimize algebra according to "
-                                            "options:\n",
-                        long_option (opt_buf, ", --%s=<options>", 'o'));
+                printf ("  -o<optoptions>%s: optimize algebra according to "
+                                            "optimization options:\n",
+                        long_option (opt_buf, ", --%s=<optoptions>", 'o'));
 
+                printf ("         E  merge common subexpressions (CSE)\n");
+                printf ("         G  apply general optimization (without "
+                                            "properties)\n");
                 printf ("         O  apply optimization based on constant "
                                             "property\n");
                 printf ("         I  apply optimization based on icols "
                                             "property\n");
                 printf ("         K  apply optimization based on key "
                                             "property\n");
-                printf ("         D  apply optimization based on domain "
+                printf ("         N  apply optimization based on required "
+                                            "node values property\n");
+                printf ("         V  apply optimization based on required "
+                                            "values property\n");
+                printf ("         S  apply optimization based on set "
                                             "property\n");
+                printf ("         U  apply optimization based on XML Guide "
+                                            "information\n");
+                printf ("            (only works for the SQL code "
+                                            "generation)\n");
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
                 printf ("            (and icols based optimization will be "
                                             "applied afterwards)\n");
-                printf ("         G  apply general optimization (without "
-                                            "properties)\n");
-                printf ("         V  apply optimization based on required "
-                                            "values property\n");
-                printf ("         [  map column names to unique column "
-                                            "names\n");
-                printf ("         J  push down equi-joins (requires unique "
-                                            "column names)\n");
-                printf ("         ]  map column names back (from unique "
-                                            "names to original names)\n");
-                printf ("         M  apply optimization based on multi-value "
-                                            "dependencies\n");
-                printf ("         S  apply optimization based on set "
-                                            "property\n");
+                printf ("         J  push down equi-joins\n");
+                printf ("         M  push up cross products (based on multi-"
+                                            "value dependencies\n");
+                printf ("         T  push up theta-joins (based on multi-"
+                                            "value dependencies\n");
+                printf ("         R  push up rank operators\n");
                 printf ("         }  introduce proxy operators that represent"
                                             "operator groups\n");
                 printf ("         {  remove proxy operators\n");
+                printf ("         Q  apply optimizations tailored "
+                                            "for the SQL code generation\n");
+                printf ("         [  assign a new set of unique column "
+                                            "names\n");
+                printf ("         ]  assign bit-encoded column names (dep"
+                                            "recated optimization option)\n");
                 printf ("         P  infer all properties\n");
                 printf ("         _  does nothing (used for structuring "
-                                            "the options)\n");
+                                            "the optimization options)\n");
                 printf ("            (default is: '-o %s')\n",
                         opt_args);
-                printf ("  -f<options>%s: enable generation of algebra "
-                        "properties (choose same options as -o)\n",
-                        long_option (opt_buf, ", --%s=<options>", 'f'));
+                printf ("  -f<optoptions>%s: enable generation of algebra "
+                        "properties (choose same optimization options as -o)\n",
+                        long_option (opt_buf, ", --%s=<optoptions>", 'f'));
                 printf ("         +  print all available properties\n");
                 printf ("\n");
                 printf ("  -h%s: print this help message\n",
