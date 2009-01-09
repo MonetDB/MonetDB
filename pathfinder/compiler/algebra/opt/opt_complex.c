@@ -467,7 +467,7 @@ find_last_base (PFla_op_t *op,
  *         |          is issued.
  *        (..)
  */
-static void
+static bool
 replace_pos_predicate (PFla_op_t *p)
 {
     PFalg_col_t sel, eq1, eq2, eq = col_NULL, cast,
@@ -481,7 +481,7 @@ replace_pos_predicate (PFla_op_t *p)
     if (p->kind != la_project ||
         L(p)->kind != la_select ||
         PFprop_icol (L(p)->prop, L(p)->sem.select.col))
-        return;
+        return false;
 
     for (unsigned int i = 0; i < count; i++)
         map[i] = p->sem.proj.items[i];
@@ -493,9 +493,9 @@ replace_pos_predicate (PFla_op_t *p)
     while (op->kind == la_project) {
         for (unsigned int i = 0; i < count; i++) {
             map[i].old = find_old_name (op, map[i].old);
-            if (!map[i].old) return;
+            if (!map[i].old) return false;
         }
-        sel  = find_old_name (op, sel); if (!sel) return;
+        sel  = find_old_name (op, sel); if (!sel) return false;
         op = L(op);
     }
 
@@ -504,7 +504,7 @@ replace_pos_predicate (PFla_op_t *p)
         op->sem.binary.res != sel ||
         PFprop_icol (op->prop, op->sem.binary.col1) ||
         PFprop_icol (op->prop, op->sem.binary.col2))
-        return;
+        return false;
 
     eq1 = op->sem.binary.col1;
     eq2 = op->sem.binary.col2;
@@ -514,7 +514,7 @@ replace_pos_predicate (PFla_op_t *p)
     /* pi*_3 && @? && pi*_4 */
     while (op->kind == la_project || op->kind == la_attach) {
         if (op->kind == la_attach) {
-            if (pos) return;
+            if (pos) return false;
 
             if (op->sem.attach.res == eq1 &&
                 op->sem.attach.value.type == aat_int) {
@@ -527,23 +527,23 @@ replace_pos_predicate (PFla_op_t *p)
                 eq  = eq1;
             }
 
-            if (pos <= 0) return;
+            if (pos <= 0) return false;
 
             op = L(op);
 
         } else {
             for (unsigned int i = 0; i < count; i++) {
                 map[i].old = find_old_name (op, map[i].old);
-                if (!map[i].old) return;
+                if (!map[i].old) return false;
             }
 
             if (pos) {
                 eq = find_old_name (op, eq);
-                if (!eq) return;
+                if (!eq) return false;
             } else {
                 eq1 = find_old_name (op, eq1);
                 eq2 = find_old_name (op, eq2);
-                if (!eq1 || !eq2) return;
+                if (!eq1 || !eq2) return false;
             }
 
             op = L(op);
@@ -555,7 +555,7 @@ replace_pos_predicate (PFla_op_t *p)
         op->sem.type.ty != aat_int ||
         (op->sem.type.res != eq1 && op->sem.type.res != eq2) ||
         PFprop_icol (op->prop, op->sem.type.col))
-        return;
+        return false;
 
     if (!pos) last = op->sem.type.res == eq1 ? eq2 : eq1;
     cast = op->sem.type.col;
@@ -566,14 +566,14 @@ replace_pos_predicate (PFla_op_t *p)
     while (op->kind == la_project) {
         for (unsigned int i = 0; i < count; i++) {
             map[i].old = find_old_name (op, map[i].old);
-            if (!map[i].old) return;
+            if (!map[i].old) return false;
         }
 
-        cast = find_old_name (op, cast); if (!cast) return;
+        cast = find_old_name (op, cast); if (!cast) return false;
 
         if (!pos) {
             last = find_old_name (op, last);
-            if (!last) return;
+            if (!last) return false;
         }
 
         op = L(op);
@@ -584,12 +584,12 @@ replace_pos_predicate (PFla_op_t *p)
         op->sem.sort.res != cast ||
         PFord_count (op->sem.sort.sortby) != 1 ||
         PFord_order_dir_at (op->sem.sort.sortby, 0) != DIR_ASC)
-        return;
+        return false;
 
     /* check that the result of the rownum operator is not used above */
     for (unsigned int i = 0; i < count; i++)
         if (map[i].old == op->sem.sort.res)
-            return;
+            return false;
 
     base = L(op);
     part = op->sem.sort.part;
@@ -597,7 +597,7 @@ replace_pos_predicate (PFla_op_t *p)
 
     if (!pos) {
         if (!part ||
-            !find_last_base (base, item, part, last)) return;
+            !find_last_base (base, item, part, last)) return false;
         pos = -1;
     }
 
@@ -620,23 +620,26 @@ replace_pos_predicate (PFla_op_t *p)
                 PFcol_str(map[i].old),
                 i == count - 1 ?"\n":";");
     */
+    return true;
 }
 
 /* worker for PFalgopt_complex */
-static void
+static bool
 opt_complex (PFla_op_t *p)
 {
+    bool modified = false;
+
     assert (p);
 
     /* rewrite each node only once */
     if (SEEN(p))
-        return;
+        return false;
     else
         SEEN(p) = true;
 
     /* apply complex optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        opt_complex (p->child[i]);
+        modified = opt_complex (p->child[i]) || modified;
 
     /* action code */
     switch (p->kind) {
@@ -649,6 +652,9 @@ opt_complex (PFla_op_t *p)
                                            p->sem.ser_seq.item)),
                            p->sem.ser_seq.pos,
                            PFalg_lit_nat (1));
+
+                /* do not mark modified as this will apply
+                   the rewrite over and over again */
             }
             break;
 
@@ -691,6 +697,7 @@ opt_complex (PFla_op_t *p)
                                           p->sem.attach.res);
 
                 *p = *PFla_project_ (res, p->schema.count, proj);
+                modified = true;
             }
 /* ineffective without step operators */
             /* prune unnecessary attach-project operators */
@@ -707,6 +714,7 @@ opt_complex (PFla_op_t *p)
                     PFprop_const_val (LL(p)->prop, LL(p)->sem.step.iter)) &&
                 L(p)->sem.proj.items[0].new == LL(p)->sem.step.item_res) {
                 *p = *PFla_dummy (LL(p));
+                modified = true;
                 break;
             }
             /* prune unnecessary attach-project operators */
@@ -725,6 +733,7 @@ opt_complex (PFla_op_t *p)
                                     PFalg_proj (p->sem.attach.res,
                                                 LL(p)->sem.step.iter),
                                     L(p)->sem.proj.items[0]);
+                modified = true;
                 break;
 /* end of: ineffective without step operators */
             }
@@ -732,7 +741,8 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_project:
-            replace_pos_predicate (p);
+            if (replace_pos_predicate (p))
+                modified = true;
             break;
 
         case la_eqjoin:
@@ -792,6 +802,7 @@ opt_complex (PFla_op_t *p)
                                         R(p)->schema.items[i].name);
 
                 *p = *PFla_project_ (R(p), count, proj);
+                modified = true;
                 break;
             }
 
@@ -838,6 +849,7 @@ opt_complex (PFla_op_t *p)
                                         p->sem.eqjoin.col1);
 
                 *p = *PFla_project_ (L(p), count, proj);
+                modified = true;
                 break;
             }
 
@@ -868,6 +880,7 @@ opt_complex (PFla_op_t *p)
                                          PFprop_dom_right (RL(p)->prop, col2),
                                          PFprop_dom_left (p->prop, col1)))
                     R(p) = PFla_project_ (RLL(p), count, proj);
+                modified = true;
             }
             if (PFprop_subdom (p->prop,
                                PFprop_dom_right (p->prop,
@@ -894,6 +907,7 @@ opt_complex (PFla_op_t *p)
                                          PFprop_dom_right (LL(p)->prop, col1),
                                          PFprop_dom_right (p->prop, col2)))
                     L(p) = PFla_project_ (LLL(p), count, proj);
+                modified = true;
             }
 
 #if 0 /* disable join -> semijoin rewrites */
@@ -1034,6 +1048,7 @@ opt_complex (PFla_op_t *p)
                     PFprop_dom_left (p->prop,
                                      p->sem.eqjoin.col1))) {
                 *p = *dummy (L(p));
+                modified = true;
                 break;
             }
             if (L(p)->kind == la_difference &&
@@ -1046,6 +1061,7 @@ opt_complex (PFla_op_t *p)
                     PFprop_dom_right (L(p)->prop,
                                       p->sem.eqjoin.col1))) {
                 *p = *PFla_empty_tbl_ (p->schema);
+                modified = true;
                 break;
             }
 
@@ -1095,26 +1111,33 @@ opt_complex (PFla_op_t *p)
             if (PFprop_card (L(p)->prop) == 1 &&
                 PFprop_icols_count (L(p)->prop) == 0) {
                 *p = *PFla_dummy (R(p));
+                modified = true;
                 break;
             }
             if (PFprop_card (R(p)->prop) == 1 &&
                 PFprop_icols_count (R(p)->prop) == 0) {
                 *p = *PFla_dummy (L(p));
+                modified = true;
                 break;
             }
             break;
 
         /* Remove unnecessary distinct operators */
         case la_distinct:
-            if (PFprop_ckey (L(p)->prop, p->schema))
+            if (PFprop_ckey (L(p)->prop, p->schema)) {
                 *p = *PFla_dummy (L(p));
+                modified = true;
+                break;
+            }
             break;
 
         case la_select:
             /* check for the alignment of columns produced
                by the zip operator in the ferryc compiler */
-            if (zip_alignment (p))
+            if (zip_alignment (p)) {
+                modified = true;
                 break;
+            }
         /**
          * Rewrite the pattern (1) into expression (2):
          *
@@ -1232,6 +1255,7 @@ opt_complex (PFla_op_t *p)
                                   PFla_select (right, col_sel_in2),
                                   1, rproj))),
                       2, top_proj);
+            modified = true;
         }   break;
 
         case la_difference:
@@ -1260,6 +1284,7 @@ opt_complex (PFla_op_t *p)
                    does not contain duplicates */
                 PFprop_ckey (p->prop, p->schema)) {
                 *p = *PFla_empty_tbl_ (p->schema);
+                modified = true;
                 SEEN(p) = true;
                 break;
             }
@@ -1281,6 +1306,7 @@ opt_complex (PFla_op_t *p)
                               p->sem.binary.col2),
                           p->sem.binary.res,
                           PFalg_lit_bln (true));
+                modified = true;
             }
             break;
 
@@ -1318,6 +1344,7 @@ opt_complex (PFla_op_t *p)
                                                         p->sem.sort.sortby, 0));
 
                 *p = *PFla_project_ (L(p), L(p)->schema.count + 1, proj_list);
+                modified = true;
             }
             break;
 
@@ -1360,6 +1387,7 @@ opt_complex (PFla_op_t *p)
                                                  p->schema.items[i].name);
 
                 *p = *PFla_project_ (L(p), count, proj_list);
+                modified = true;
                 SEEN(p) = false;
                 break;
             }
@@ -1474,6 +1502,7 @@ opt_complex (PFla_op_t *p)
                 else
                     *p = *PFla_rank (rank, p->sem.sort.res, sortby);
 
+                modified = true;
                 break;
             }
 
@@ -1482,6 +1511,7 @@ opt_complex (PFla_op_t *p)
         case la_rowid:
             if (PFprop_card (p->prop) == 1) {
                 *p = *PFla_attach (L(p), p->sem.rowid.res, PFalg_lit_nat (1));
+                modified = true;
             }
             /* Get rid of a rowid operator that is only used to maintain
                the correct cardinality or the correct order (in an unordered
@@ -1510,6 +1540,7 @@ opt_complex (PFla_op_t *p)
                                                    clat (collist, j),
                                                    DIR_ASC);
                         *p = *PFla_rank (L(p), p->sem.rowid.res, sortby);
+                        modified = true;
                         break;
                     }
                 }
@@ -1528,6 +1559,7 @@ opt_complex (PFla_op_t *p)
                 proj[L(p)->schema.count] = PFalg_proj (p->sem.type.res,
                                                        p->sem.type.col);
                 *p = *PFla_project_ (L(p), p->schema.count, proj);
+                modified = true;
             }
             break;
 
@@ -1561,7 +1593,7 @@ opt_complex (PFla_op_t *p)
                      p->sem.step.iter ==
                      R(p)->sem.proj.items[0].new &&
                      RL(p)->sem.step.iter ==
-                     R(p)->sem.proj.items[0].old))
+                     R(p)->sem.proj.items[0].old)) {
                     *p = *PFla_project (PFla_step (
                                             L(p),
                                             RL(p),
@@ -1572,6 +1604,8 @@ opt_complex (PFla_op_t *p)
                                             RL(p)->sem.step.item_res),
                                         R(p)->sem.proj.items[0],
                                         R(p)->sem.proj.items[1]);
+                    modified = true;
+                }
                 break;
             }
             else if (R(p)->kind == la_rowid &&
@@ -1582,6 +1616,7 @@ opt_complex (PFla_op_t *p)
                 R(p) = PFla_attach (RL(p),
                                     R(p)->sem.rowid.res,
                                     PFalg_lit_nat (1));
+                modified = true;
                 break;
             }
             break;
@@ -1595,14 +1630,17 @@ opt_complex (PFla_op_t *p)
                     if (level != p->sem.step.guides[i]->level)
                         break;
                 p->sem.step.level = level;
+                modified = true;
             }
 
             if ((p->sem.step.spec.axis == alg_desc ||
                  p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
-                                                       p->sem.step.item))
+                                                       p->sem.step.item)) {
                 p->sem.step.spec.axis = alg_chld;
+                modified = true;
+            }
             break;
 
         case la_step_join:
@@ -1614,8 +1652,10 @@ opt_complex (PFla_op_t *p)
                  p->sem.step.spec.axis == alg_desc_s) &&
                 p->sem.step.level >= 1 &&
                 p->sem.step.level - 1 == PFprop_level (R(p)->prop,
-                                                       p->sem.step.item))
+                                                       p->sem.step.item)) {
                 p->sem.step.spec.axis = alg_chld;
+                modified = true;
+            }
 
             /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
@@ -1684,6 +1724,7 @@ opt_complex (PFla_op_t *p)
                               L(p),
                               PFla_project_ (RLR(p), R(p)->schema.count, proj),
                               spec, item_in, item_res);
+                    modified = true;
                     break;
                 }
             }
@@ -1750,6 +1791,7 @@ opt_complex (PFla_op_t *p)
                     PFprop_refctr (LR(fcns)) == 1 &&
                     PFprop_refctr (LRL(fcns)) == 1) {
                     L(fcns) = L(LRLL(fcns));
+                    modified = true;
                 }
                 fcns = R(fcns);
             }
@@ -1767,6 +1809,7 @@ opt_complex (PFla_op_t *p)
                                                 p->sem.string_join.iter),
                                     PFalg_proj (p->sem.string_join.item_res,
                                                 p->sem.string_join.item));
+                modified = true;
                 break;
             }
             break;
@@ -1783,6 +1826,7 @@ opt_complex (PFla_op_t *p)
                                       L(p)->sem.merge_adjacent.pos_in),
                           PFalg_proj (L(p)->sem.merge_adjacent.item_res,
                                       L(p)->sem.merge_adjacent.item_in));
+                modified = true;
                 break;
             }
             break;
@@ -1791,27 +1835,36 @@ opt_complex (PFla_op_t *p)
             if (L(p)->kind == la_fragment &&
                 LL(p)->kind == la_merge_adjacent &&
                 PFprop_key_right (LL(p)->prop,
-                                  LL(p)->sem.merge_adjacent.iter_in))
+                                  LL(p)->sem.merge_adjacent.iter_in)) {
                 *p = *PFla_dummy (R(p));
+                modified = true;
+            }
             else if (R(p)->kind == la_fragment &&
                 RL(p)->kind == la_merge_adjacent &&
                 PFprop_key_right (RL(p)->prop,
-                                  RL(p)->sem.merge_adjacent.iter_in))
+                                  RL(p)->sem.merge_adjacent.iter_in)) {
                 *p = *PFla_dummy (L(p));
+                modified = true;
+            }
             /* remove unreferenced twig constructors */
             else if (L(p)->kind == la_fragment &&
                      LL(p)->kind == la_twig &&
-                     PFprop_refctr (LL(p)) == 1)
+                     PFprop_refctr (LL(p)) == 1) {
                 *p = *PFla_dummy (R(p));
+                modified = true;
+            }
             else if (R(p)->kind == la_fragment &&
                      RL(p)->kind == la_twig &&
-                     PFprop_refctr (RL(p)) == 1)
+                     PFprop_refctr (RL(p)) == 1) {
                 *p = *PFla_dummy (L(p));
+                modified = true;
+            }
             break;
 
         default:
             break;
     }
+    return modified;
 }
 
 /**
@@ -1820,26 +1873,30 @@ opt_complex (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_complex (PFla_op_t *root)
 {
-    /* Infer key, icols, domain, reqval,
-       and refctr properties first */
-    PFprop_infer_key (root);
-    PFprop_infer_level (root);
-    PFprop_infer_composite_key (root);
-    PFprop_infer_icol (root);
-    PFprop_infer_set (root);
-    PFprop_infer_reqval (root);
-    PFprop_infer_dom (root);
-    PFprop_infer_refctr (root);
+    bool modified = true;
 
-    /* Optimize algebra tree */
-    opt_complex (root);
-    PFla_dag_reset (root);
+    while (modified) {
+        /* Infer key, icols, domain, reqval,
+           and refctr properties first */
+        PFprop_infer_key (root);
+        PFprop_infer_level (root);
+        PFprop_infer_composite_key (root);
+        PFprop_infer_icol (root);
+        PFprop_infer_set (root);
+        PFprop_infer_reqval (root);
+        PFprop_infer_dom (root);
+        PFprop_infer_refctr (root);
 
-    /* In addition optimize the resulting DAG using the icols property
-       to remove inconsistencies introduced by changing the types
-       of unreferenced columns (rule eqjoin). The icols optimization
-       will ensure that these columns are 'really' never used. */
-    root = PFalgopt_icol (root);
+        /* Optimize algebra tree */
+        modified = opt_complex (root);
+        PFla_dag_reset (root);
+
+        /* In addition optimize the resulting DAG using the icols property
+           to remove inconsistencies introduced by changing the types
+           of unreferenced columns (rule eqjoin). The icols optimization
+           will ensure that these columns are 'really' never used. */
+        root = PFalgopt_icol (root);
+    }
 
     return root;
 }
