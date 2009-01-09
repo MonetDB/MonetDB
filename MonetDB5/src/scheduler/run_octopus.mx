@@ -50,7 +50,7 @@ simply requires opening the guarded block.
 Allowing MAL instructions inbetween complicates our work,
 because it would mean that we have to do a flow analysis.
 
-To make this work the scheduler needs a list of database replicas.
+To make this work the scheduler needs a list of database worker.
 For the time being, this is an explicitly administered list here. 
 When the octopus scheduling is called, we check the connection with
 the remote site. If it is down, it is re-activated using Merovingian.
@@ -65,12 +65,16 @@ pattern scheduler.pack(par:bit, t:int, b:bat[:any_1,:any_2]...):void
 address OCTOPUSpack
 comment "Materialize the MAT into a BAT, but don't wait longer then t seconds";
 
-pattern scheduler.replica(dbnme:str, usr:str, pw:str)
-address OCTOPUSreplica
-comment "Add a new replica to the known list ";
-pattern scheduler.replica(dbnme:str, usr:str, pw:str, host:str, port:int)
-address OCTOPUSreplica
-comment "Add a replica site to the known list ";
+pattern scheduler.worker(dbnme:str, usr:str, pw:str)
+address OCTOPUSworker
+comment "Add a new worker to the known list ";
+pattern scheduler.worker(dbnme:str, usr:str, pw:str, host:str, port:int)
+address OCTOPUSworker
+comment "Add a worker site to the known list ";
+
+pattern drop(dbnme:str)
+address OCTOPUSdrop
+comment "Remove a worker from the list";
 @h
 #ifndef _RUN_OCTOPUS
 #define _RUN_OCTOPUS
@@ -91,7 +95,8 @@ comment "Add a replica site to the known list ";
 #endif
 
 octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-octopus_export str OCTOPUSreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+octopus_export str OCTOPUSdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_OCTOPUS */
 
@@ -158,14 +163,14 @@ started. The default is to contact the local merovingian at
 default port 50000.
 @c
 str
-OCTOPUSreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx;
 
 	(void) mb;
 	if (nrsites == MAXSITES)
-		throw(MAL,"scheduler.replica","Too many replicas");
-	mal_set_lock(mal_contextLock,"scheduler.replica");
+		throw(MAL,"scheduler.worker","Too many worker");
+	mal_set_lock(mal_contextLock,"scheduler.worker");
 	if (nrsites == 0)
 		sites = (Site *) GDKzalloc(sizeof(Site) * MAXSITES);
 	idx = nrsites++;
@@ -179,17 +184,42 @@ OCTOPUSreplica(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sites[idx].host = GDKstrdup("localhost");
 		sites[idx].port = 50000;
 	}
-	mal_unset_lock(mal_contextLock,"scheduler.replica");
+	mal_unset_lock(mal_contextLock,"scheduler.worker");
 #ifdef DEBUG_RUN_OCTOPUS
-	stream_printf(cntxt->fdout,"# added replica %s %s %s\n", 
+	stream_printf(cntxt->fdout,"# added worker %s %s %s\n", 
 		sites[idx].db, sites[idx].usr, sites[idx].pw);
 #endif
+	return MAL_SUCCEED;
+}
+str
+OCTOPUSdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i,j;
+	str db= *(str*) getArgReference(stk,pci,1);
+
+	(void) cntxt;
+	(void) mb;
+	mal_set_lock(mal_contextLock,"scheduler.drop");
+	for (i=j=0; i<nrsites; i++){
+		if( strcmp(sites[i].db,db) ==0) {
+			GDKfree(sites[i].db);
+			GDKfree(sites[i].usr);
+			GDKfree(sites[i].pw);
+			GDKfree(sites[i].host);
+			continue;
+		}
+		sites[j++] = sites[i];
+	}
+	nrsites = j;
+	mal_unset_lock(mal_contextLock,"scheduler.drop");
+	if ( i == j )
+		throw(MAL,"scheduler.drop","Site not found");
 	return MAL_SUCCEED;
 }
 @-
 The policy to check for sites is a multiphase phase process. First, we
 try to re-use a site where the operation was ran before.
-If not available, we select a non-used replica.
+If not available, we select a non-used worker.
 If all this fails, we pick a random site to execute the plan.
 @c
 static str
