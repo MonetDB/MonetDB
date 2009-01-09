@@ -186,6 +186,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	s->kind=FUNCTIONsymbol;
 	s->def= tm= copyMalBlk(mb);	/* get the symbol table for free */
 	q= getInstrPtr(tm,0);		/* and re-use the signature */
+	q->argc= 1;
 	tm->var[0]->name= GDKstrdup(name);	
 	setArgType(tm, q, 0, getVarType(mb,varid));
 	tm->stop =1;
