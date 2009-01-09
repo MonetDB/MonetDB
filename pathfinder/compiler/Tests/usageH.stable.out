@@ -93,7 +93,7 @@ Usage: pf [OPTION] [FILE]
          P  infer all properties
          _  does nothing (used for structuring the optimization options)
             (default for option -A is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_}MT{JISI_OK_GECSVR_GP')
-            (default for option -S is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_Q_}MT{JISI_OK_GECSVR_QGP')
+            (default for option -S is: '-o OIKCG_VG_JISI_GECSVR_OK_NQU_}MT{JISI_GECSVR_QU_}MT{JISI_OK_GECSVR_QU_GP')
 
 = -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
          0  disable dead code elimination
