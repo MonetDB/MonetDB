@@ -77,10 +77,10 @@ comment "Return the storage size for a function (in bytes).";
 
 pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
 address INSPECTtypeName
-comment "Return the internal type of a variable (expression).";
+comment "Return the concrete type of a variable (expression).";
 pattern getType(v:any_1) :str 
 address INSPECTtypeName
-comment "Return the type of a variable (expression).";
+comment "Return the concrete type of a variable (expression).";
 
 command getTypeName(v:int):str 
 address INSPECTtypename
@@ -781,6 +781,14 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tn = (str *) getArgReference(stk, pci, 1);
 		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
 		*tn = getTypeName(getTailType(getArgType(mb, pci, 2)));
+	} else if (isaBatType(getArgType(mb,pci,1) ) ){
+		int *bid= (int*) getArgReference(stk,pci,1);
+		BAT *b;
+		if ((b = BATdescriptor(*bid)) ) {
+			*hn = getTypeName(newBatType((b->htype==TYPE_void?TYPE_oid:b->htype),b->ttype));
+			BBPunfix(b->batCacheid);
+		} else
+			*hn = getTypeName(getArgType(mb, pci, 1));
 	} else
 		*hn = getTypeName(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;

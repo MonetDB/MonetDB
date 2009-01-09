@@ -26,7 +26,8 @@ end main;
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # h				symbol		symbol		 symbol																	 symbol							  # name
 # str				str		str		str																	str							  # type
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "drop",				  "pattern",	  "user",	  "(dbnme:str):void ",															  "OCTOPUSdrop;"				  ]
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
 [ "DeleteMap",			  "command",	  "crackers",	  "(b:bat[:oid,:dbl],bp:bat[:oid,:dbl]):void ",												  "DeleteCrackerMap;"					  ]
 [ "DeleteMap",			  "command",	  "crackers",	  "(b:bat[:oid,:dbl],bp:bat[:oid,:int]):void ",												  "DeleteCrackerMap;"					  ]
@@ -661,9 +662,9 @@ end main;
 [ "octopus",				  "pattern",	  "scheduler",	  "():bit ",													  "OCTOPUSrun;"					  ]
 [ "pack",				  "pattern",	  "scheduler",	  "(par:bit,t:int,b:bat[:any_1,:any_2]...):void ",								  "OCTOPUSpack;"				  ]
 [ "pick",			  "pattern",	  "scheduler",	  "(arg:any_1...):any_1 ",														  "RUNpickResult;"					  ]
-[ "replica",			  "pattern",	  "scheduler",	  "(dbnme:str,usr:str,pw:str,host:str,port:int):void ",												  "OCTOPUSreplica;"				  ]
-[ "replica",			  "pattern",	  "scheduler",	  "(dbnme:str,usr:str,pw:str):void ",														  "OCTOPUSreplica;"				  ]
 [ "volumeCost",			  "pattern",	  "scheduler",	  "(a:any):lng ",															  "RUNvolumeCost;"					  ]
+[ "worker",				  "pattern",	  "scheduler",	  "(dbnme:str,usr:str,pw:str,host:str,port:int):void ",											  "OCTOPUSworker;"				  ]
+[ "worker",				  "pattern",	  "scheduler",	  "(dbnme:str,usr:str,pw:str):void ",													  "OCTOPUSworker;"				  ]
 [ "alpha",			  "command",	  "transaction",  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "TRNtrans_alpha;"					  ]
 [ "abort",			  "pattern",	  "transaction",  "(c:any...):void ",															  "TRNtrans_abort;"					  ]
 [ "abort",			  "command",	  "transaction",  "():bit ",																  "TRNglobal_abort;"					  ]
