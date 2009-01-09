@@ -1,18 +1,19 @@
-stdout of test 'db_env` in directory 'runtime/xrpc/admin` itself:
+stdout of test 'db_env_noxrpc` in directory 'runtime/xrpc/admin` itself:
 
 
-# 12:02:34 >  
-# 12:02:34 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=32688 --set xrpc_port=47901 --set monet_prompt= --trace  "--dbname=mTests_runtime_xrpc_admin" "--dbinit= module(pathfinder);" db_env.prologue ; echo ; echo Over..
-# 12:02:34 >  
+# 16:55:56 >  
+# 16:55:56 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39254 --set xrpc_port=44344 --set monet_prompt= --trace  "--dbname=mTests_runtime_xrpc_admin"                       --set xquery_backend=milprint_summer "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 16:55:56 >  
 
-# MonetDB Server v4.24.0
-# based on GDK   v1.24.1
-# Copyright (c) 1993-2008, CWI. All rights reserved.
+# MonetDB Server v4.26.0
+# based on GDK   v1.26.1
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
-# MonetDB/XQuery module v0.24.1 loaded (default back-end is 'milprint_summer')
-# XRPC administrative console at http://127.0.0.1:47901/admin
+# PF/Tijah module v0.9.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.26.1 loaded (default back-end is 'milprint_summer')
+# XRPC administrative console at http://127.0.0.1:44344/admin
 
 printf("\nReady.\n");
 
@@ -21,9 +22,9 @@ quit();
 
 Over..
 
-# 12:02:34 >  
-# 12:02:34 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=32688 db_env.xq
-# 12:02:34 >  
+# 16:55:56 >  
+# 16:55:56 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=39254 -g db_env_noxrpc.xq
+# 16:55:56 >  
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
@@ -54,8 +55,11 @@ Over..
   <bun head="gdk_mem_pagebits">
 #    14
   </bun>
+  <bun head="gdk_nr_threads">
+#    1
+  </bun>
   <bun head="gdk_version">
-#    1.24.0
+#    1.26.0
   </bun>
   <bun head="gdk_vmtrim">
 #    yes
@@ -70,16 +74,16 @@ Over..
 #    true
   </bun>
   <bun head="mapi_port">
-#    32688
+#    39254
   </bun>
   <bun head="monet_admin">
 #    adm
   </bun>
   <bun head="monet_cwd">
-#    /ufs/zhang/homepage/ROOT/mTests/runtime/xrpc/admin
+#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/mTests/runtime/xrpc/admin
   </bun>
   <bun head="monet_version">
-#    4.24.0
+#    4.26.0
   </bun>
   <bun head="standoff_end">
 #    end
@@ -109,7 +113,7 @@ Over..
 #    128
   </bun>
   <bun head="xrpc_admin">
-#    127.0.0.1;http://127.0.0.1;localhost;http://localhost
+#    http://127.0.0.1;127.0.0.1;http://localhost;localhost
   </bun>
   <bun head="xrpc_open">
 #    true
@@ -118,7 +122,7 @@ Over..
 #    
   </bun>
   <bun head="xrpc_port">
-#    47901
+#    44344
   </bun>
   <bun head="xrpc_trusted">
 #    http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/net/jarl/export/scratch0/zhang/monet-install/stable/debug/share/MonetDB/xrpc/export
@@ -128,7 +132,7 @@ Over..
   </bun>
 </XQueryResult>
 
-# 12:02:35 >  
-# 12:02:35 >  Done.
-# 12:02:35 >  
+# 16:55:56 >  
+# 16:55:56 >  Done.
+# 16:55:56 >  
 

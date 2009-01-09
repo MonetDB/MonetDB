@@ -1,0 +1,54 @@
+stdout of test 'db_stats_noxrpc` in directory 'runtime/xrpc/admin` itself:
+
+
+# 16:55:54 >  
+# 16:55:54 >   Mserver "--config=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/lib:/net/jarl/export/scratch0/zhang/monet-install/stable/debug/lib/MonetDB4/bin" --set "gdk_dbfarm=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/dbfarm" --set "sql_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/sql_logs" --set "xquery_logdir=/net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=39254 --set xrpc_port=44344 --set monet_prompt= --trace  "--dbname=mTests_runtime_xrpc_admin"                       --set xquery_backend=milprint_summer "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 16:55:54 >  
+
+# MonetDB Server v4.26.0
+# based on GDK   v1.26.1
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.9.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.26.1 loaded (default back-end is 'milprint_summer')
+# XRPC administrative console at http://127.0.0.1:44344/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:55:54 >  
+# 16:55:54 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=jarl --port=39254 -g db_stats_noxrpc.xq
+# 16:55:54 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+  <bun head="xquery_index_curMB">
+#    0
+  </bun>
+  <bun head="xquery_cache_curdocs">
+#    2
+  </bun>
+  <bun head="xquery_cache_curMB">
+#    0
+  </bun>
+  <bun head="xquery_log_curMB">
+#    0
+  </bun>
+  <bun head="gdk_vm_cursize">
+#    185466880
+  </bun>
+  <bun head="gdk_mem_cursize">
+#    70681728
+  </bun>
+</XQueryResult>
+
+# 16:55:55 >  
+# 16:55:55 >  Done.
+# 16:55:55 >  
+
