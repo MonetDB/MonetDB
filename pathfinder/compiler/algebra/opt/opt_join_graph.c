@@ -186,7 +186,6 @@ opt_join_graph (PFla_op_t *p)
                 PFalg_col_t       join_col1 = PFcol_new (col_iter),
                                   join_col2 = PFcol_new (col_iter),
                                   step_col  = PFcol_new (col_item),
-                                  order_col = PFcol_new (col_pos),
                                   in_col    = p->sem.doc_access.col,
                                   res_col   = p->sem.doc_access.res;
                 PFla_op_t        *rowid,
@@ -203,15 +202,13 @@ opt_join_graph (PFla_op_t *p)
                 desc_text_spec.kind = node_kind_text;
                 /* missing QName */
                 desc_text_spec.qname = PFqname (PFns_wild, NULL);
-                node_scj = rank (
-                               PFla_step_join_simple (
-                                   L(p),
-                                   project (rowid,
-                                            proj (join_col2, join_col1),
-                                            proj (in_col, in_col)),
-                                   desc_text_spec,
-                                   in_col, step_col),
-                               order_col, sortby (step_col));
+                node_scj = PFla_step_join_simple (
+                               L(p),
+                               project (rowid,
+                                        proj (join_col2, join_col1),
+                                        proj (in_col, in_col)),
+                               desc_text_spec,
+                               in_col, step_col);
 
                 /* concatenate all texts within an iteration using
                    the empty string as delimiter */
@@ -222,13 +219,13 @@ opt_join_graph (PFla_op_t *p)
                                     node_scj,
                                     res_col, step_col, doc_text),
                                 proj (join_col2, join_col2),
-                                proj (order_col, order_col),
+                                proj (step_col, step_col),
                                 proj (res_col, res_col)),
                             project (
                                 attach (rowid, res_col, lit_str ("")),
                                 proj (join_col2, join_col1),
                                 proj (res_col, res_col)),
-                            join_col2, order_col, res_col,
+                            join_col2, step_col, res_col,
                             join_col2, res_col,
                             join_col2, res_col);
 
