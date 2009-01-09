@@ -11562,6 +11562,15 @@ const char* PFstartMIL(int statement_type) {
 #ifdef HAVE_PFTIJAH
 #define PF_STOP_PFTIJAH " if (not(isnil(tijah_lock))) lock_unset(tijah_lock);\n"
 #define PF_PLAY_TIJAH_TAPE " tj_play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
+/*
+#define PF_PLAY_TIJAH_TAPE\
+    "ws.print();\n"\
+    "item.materialize(ipik).print();\n"\
+    "kind.materialize(ipik).print();\n"\
+    "int_values.print();\n"\
+    "str_values.print();\n"\
+    " tj_play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
+*/
 #else
 #define PF_STOP_PFTIJAH    " \n"
 #define PF_PLAY_TIJAH_TAPE " \n"
@@ -11591,7 +11600,14 @@ const char* PFstartMIL(int statement_type) {
         "    ws.seqbase(saved_seqbase); \n"\
         "  }\n"
 #define PF_STOPMIL_DOCMGT_BODY\
-        "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
+        "  play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"\
+        "  if (xrpc_method != \"\") { \n"\
+        "    var saved_seqbase := ws.seqbase(); \n"\
+        "    if(isnil(ws.seqbase())) ws.seqbase(0@0); \n"\
+        "    print_result(genType,ws,empty_bat,empty_bat,empty_bat,bat(void,int),int_values,dbl_values,str_values,\n"\
+        "                  xrpc_module,xrpc_method,xrpc_qid,xrpc_caller,xrpc_mode,xrpc_hostport,true,xrpc_seqnr,xrpc_timeout,time_start);\n" \
+        "    ws.seqbase(saved_seqbase); \n"\
+        "  }\n"
 #define PF_STOPMIL_RDONLY PF_STOPMIL_START\
         PF_STOPMIL_RDONLY_BODY\
         PF_STOPMIL_END("Print ")
