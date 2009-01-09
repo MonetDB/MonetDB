@@ -136,6 +136,15 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	str name= NULL;
 	Symbol s;
+	int fd,port;
+
+	/* check for running merovingian */
+	snprintf(buf, BUFSIZ, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
+	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)> 0)){
+		close(fd);
+		port = atoi(GDKgetenv("mero_port"));
+	} else
+		port = atoi(GDKgetenv("mapi_port")?GDKgetenv("mapi_port"):"localhost");
 
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
@@ -144,7 +153,10 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	/* locate the last assignment for varid */
 	for (i = start; i > 0; i--){
 		p= getInstrPtr(mb,i);
-		if ( getArg(p,0) == varid){
+		fnd =0;
+		for (j=0; j<p->retc; j++)
+			fnd+= getArg(p,j) == varid;
+		if ( fnd){
 			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 				getFunctionId(getInstrPtr(mb,0)),varid);
 			name =  putName(buf,strlen(buf));
@@ -189,8 +201,6 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 	pushEndInstruction(tm);
 	q= newFcnCall(tm,optimizerRef,replicatorRef);
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
-	/* redirect output to a sink */
-	getArg(anchor, 0) = newTmpVariable(mb,TYPE_any);
 #ifdef DEBUG_OPT_OCTOPUS
 	printFunction(cntxt->fdout,tm,0,LIST_MAL_STMT);
 #endif
