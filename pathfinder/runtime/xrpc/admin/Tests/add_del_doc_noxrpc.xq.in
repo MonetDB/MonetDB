@@ -12,12 +12,8 @@
 :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-(execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
-                         "xmark1.xml", "xmark", 10)},
- execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
-                         "xmark2.xml", "xmark", 10)}
+(adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml", "xmark1.xml", "xmark", 10),
+ adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml", "xmark2.xml", "xmark", 10)
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
@@ -25,7 +21,7 @@ import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
 (
 text { "&#10;  "},
 <collections-after-add>{
-    for $c in execute at {"$HOST:$XRPCPORT"} {adm:collections()} return
+    for $c in adm:collections() return
         ( text { "&#10;    " },
           element { name($c/self::node()) } {
               element numDocs {string($c/@numDocs)},
@@ -37,7 +33,7 @@ text { "&#10;  "},
 }</collections-after-add>,
 text { "&#10;  "},
 <documents-after-add>{
-    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()} return
+    let $docs := adm:documents() return
         for $d in $docs return
             ( text { "&#10;    " },
               element document {
@@ -48,7 +44,7 @@ text { "&#10;  "},
 }</documents-after-add>,
 text { "&#10;  "},
 <documents-of-collection-after-add>{
-    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents("xmark")} return
+    let $docs := adm:documents("xmark") return
         for $d in $docs return
             ( text { "&#10;    " },
               element document {
@@ -62,22 +58,22 @@ text { "&#10;"}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
+adm:del-col("xmark")
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
 (
 text { "&#10;  "},
 <collections-after-del>{
-    execute at {"$HOST:$XRPCPORT"} {adm:collections()}
+    adm:collections()
 }</collections-after-del>,
 text { "&#10;  "},
 <documents-after-del>{
-    execute at {"$HOST:$XRPCPORT"} {adm:documents()}
+    adm:documents()
 }</documents-after-del>,
 text { "&#10;  "},
 <documents-of-collection-after-del>{
-    execute at {"$HOST:$XRPCPORT"} {adm:documents("xmark")}
+    adm:documents("xmark")
 }</documents-of-collection-after-del>,
 text { "&#10;"}
 )

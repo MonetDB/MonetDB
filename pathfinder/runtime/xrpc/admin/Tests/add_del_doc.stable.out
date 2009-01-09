@@ -28,11 +28,25 @@ Over..
 # 16:44:49 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collections-before-add/><documents-before-add/></XQueryResult>
+<XQueryResult>
+  <collections-after-add>
+    <collection><numDocs>2</numDocs><size>500 KiB</size><updatable>true</updatable>xmark</collection>
+  </collections-after-add>
+  <documents-after-add>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark1.xml</document>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark2.xml</document>
+  </documents-after-add>
+  <documents-of-collection-after-add>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark1.xml</document>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark2.xml</document>
+  </documents-of-collection-after-add>
+</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collections-after-add><collection updatable="true" size="511 KiB" numDocs="2">xmark</collection></collections-after-add><documents-after-add><document updatable="true" collection="xmark">xmark1.xml</document><document updatable="true" collection="xmark">xmark2.xml</document></documents-after-add><documents-of-collection-after-add><document updatable="true" collection="xmark">xmark1.xml</document><document updatable="true" collection="xmark">xmark2.xml</document></documents-of-collection-after-add></XQueryResult>
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><collections-after-del/><documents-after-del/><documents-of-collection-after-del/></XQueryResult>
+<XQueryResult>
+  <collections-after-del/>
+  <documents-after-del/>
+  <documents-of-collection-after-del/>
+</XQueryResult>
 
 # 16:44:50 >  
 # 16:44:50 >  Done.

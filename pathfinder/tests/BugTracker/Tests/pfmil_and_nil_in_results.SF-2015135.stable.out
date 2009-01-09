@@ -28,7 +28,7 @@ Over..
 # 18:19:36 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><bun tail="abc" head=""/><bun/></XQueryResult>
+<XQueryResult><bun tail="abc" /><bun/><bun head="abc"/><bun/></XQueryResult>
 
 # 18:19:36 >  
 # 18:19:36 >  Done.

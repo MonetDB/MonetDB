@@ -16,12 +16,8 @@
 :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-(execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
-                         "xmark1.xml", "xmark", 10)},
- execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
-                         "xmark2.xml", "xmark", 10)}
+(adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml", "xmark1.xml", "xmark", 10),
+ adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml", "xmark2.xml", "xmark", 10)
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
@@ -29,42 +25,40 @@ import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
 (
 text {"&#10;  "},
 <db-before-backup>{
-    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()} return
+    let $docs := adm:documents() return
         for $d in $docs return
             ( text { "&#10;    " },
               element document {
                 element updatable {string($d/@updatable)},
                 element collection {string($d/@collection)},
-                $d/text() }
+                $d/text() } ),
     text { "&#10;  "}
 }</db-before-backup>,
-text {"&#10;"},
+text {"&#10;"}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-execute at {"$HOST:$XRPCPORT"} {adm:backup("test")}
+adm:backup("test")
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
+adm:del-col("xmark")
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-<db-after-del>{
-    execute at {"$HOST:$XRPCPORT"} {adm:collections()}
-}</db-after-del>
+<db-after-del>{ adm:collections() }</db-after-del>
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-execute at {"$HOST:$XRPCPORT"} {adm:restore("test", 0)}
+adm:restore("test", 10)
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
 (
 text {"&#10;  "},
 <db-after-restore>{
-    let $docs := execute at {"$HOST:$XRPCPORT"} {adm:documents()} return
+    let $docs := adm:documents() return
         for $d in $docs return
             ( text { "&#10;    " },
               element document {
@@ -74,6 +68,5 @@ text {"&#10;  "},
                 $d/text() } ),
     text { "&#10;  "}
 }</db-after-restore>,
-text {"&#10;"},
+text {"&#10;"}
 )
-
