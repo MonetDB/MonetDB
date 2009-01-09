@@ -63,9 +63,7 @@ merge_guide_steps (PFla_op_t *n)
     PFalg_axis_t new_axis;
 
     assert(n);
-    assert (n->kind == la_step ||
-            n->kind == la_step_join ||
-            n->kind == la_guide_step ||
+    assert (n->kind == la_step_join ||
             n->kind == la_guide_step_join);
 
     step1 = n;
@@ -83,9 +81,7 @@ merge_guide_steps (PFla_op_t *n)
     }
 
     /* do not merge if we have no adjacent steps */
-    if (step2->kind != la_step &&
-        step2->kind != la_step_join &&
-        step2->kind != la_guide_step &&
+    if (step2->kind != la_step_join &&
         step2->kind != la_guide_step_join)
         return;
 
@@ -231,7 +227,6 @@ opt_guide(PFla_op_t *n)
 
     /* apply chances for step operators */
     switch (n->kind) {
-        case la_step:
         case la_step_join:
         {
             assert(PROP(n));
@@ -268,33 +263,26 @@ opt_guide(PFla_op_t *n)
                     break;
             
                 /* create new step operator */
-                if (n->kind == la_step) {
-                    ret = PFla_guide_step (
-                              L(n), R(n), n->sem.step.spec,
-                              count, guides,
-                              n->sem.step.level,
-                              n->sem.step.iter, n->sem.step.item,
-                              n->sem.step.item_res);
-                } else {
-                    ret = PFla_guide_step_join (
-                              L(n), R(n), n->sem.step.spec,
-                              count, guides,
-                              n->sem.step.level,
-                              n->sem.step.item,
-                              n->sem.step.item_res);
-                }
+                ret = PFla_guide_step_join (
+                          L(n), R(n), n->sem.step.spec,
+                          count, guides,
+                          n->sem.step.level,
+                          n->sem.step.item,
+                          n->sem.step.item_res);
             }
 
             *n = *ret;
             SEEN(n) = true;
         }   break;
 
-        case la_guide_step:
-            merge_guide_steps (n);
-            break;
-
         case la_guide_step_join:
+            /* The rewrites only merge path steps and thus 
+               cannot produce more duplicates. A rewrite
+               based on the set property thus cannot break
+               the key property: We are allowed to look at
+               both set and key property in the same run. */
             if ((PFprop_set (n->prop) ||
+                 PFprop_key (n->prop, n->sem.step.item_res) ||
                 ((n->sem.step.spec.axis == alg_chld ||
                   n->sem.step.spec.axis == alg_attr ||
                   n->sem.step.spec.axis == alg_self) &&
@@ -319,6 +307,7 @@ PFalgopt_guide (PFla_op_t *root, PFguide_list_t *guides)
     assert(guides);
 
     PFprop_infer_set (root);
+    PFprop_infer_key (root);
     PFprop_infer_icol (root);
     PFprop_infer_guide (root, guides);
 
