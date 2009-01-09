@@ -82,7 +82,7 @@ comment "Remove a worker from the list";
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#define DEBUG_RUN_OCTOPUS
+/*#define DEBUG_RUN_OCTOPUS 		to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -142,6 +142,8 @@ OCTOPUSdiscover(Client cntxt){
 #ifdef DEBUG_RUN_OCTOPUS
 			stream_printf(cntxt->fdout,"#Site connection %d %s\n", 
 				i, msg == MAL_SUCCEED? "OK":"failed to connect");
+#else
+	(void) cntxt;
 #endif
 		}
 		if ( msg == MAL_SUCCEED && 
@@ -188,6 +190,8 @@ OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_RUN_OCTOPUS
 	stream_printf(cntxt->fdout,"# added worker %s %s %s\n", 
 		sites[idx].db, sites[idx].usr, sites[idx].pw);
+#else
+	(void) cntxt;
 #endif
 	return MAL_SUCCEED;
 }
