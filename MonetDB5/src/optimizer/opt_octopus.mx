@@ -251,7 +251,6 @@ to ease future distribution and scheduling.
 			getArg(q,0)= x;
 
 			/* modified pack instruction */
-			setArgType(mb,p,0,TYPE_any);
 			p= pushInt(mb,p,10);
 			y= getArg(p,p->argc-1);
 			p= pushInt(mb,p,10);

@@ -40,7 +40,7 @@ a:= octopus.tentacle_1();
 ...
 b:= octopus.tentacle_n();
 exit parallel;
-scheduler.pack(parallel, timeout, a,...,b);
+a:= scheduler.pack(parallel, timeout, a,...,b);
 @end verbatim
 
 This way the MAL flow of control simplifies skipping to the end
@@ -61,7 +61,7 @@ pattern scheduler.octopus():bit
 address OCTOPUSrun
 comment "Run the program over a service cloud";
 
-pattern scheduler.pack(par:bit, t:int, b:bat[:any_1,:any_2]...):void
+pattern scheduler.pack(par:bit, t:int, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address OCTOPUSpack
 comment "Materialize the MAT into a BAT, but don't wait longer then t seconds";
 
@@ -351,6 +351,8 @@ OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		MT_sleep_ms(1000);
 		timeout--;
 	} while ( fnd < p->argc-3 && timeout > 0 );
+	if (timeout <= 0)
+		throw(MAL,"scheduler.pack","Execution time out");
 	return MATpackInternal(stk,p,3);
 }
 @}
