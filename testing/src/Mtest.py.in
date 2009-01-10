@@ -2677,7 +2677,10 @@ elif os.environ.has_key('COMPUTERNAME'):
     HOST = os.environ['COMPUTERNAME']
 ##else:
 ##    HOST = "WIN2000"
-HOST = HOST.split('.', 1)[0]
+if os.environ.has_key('DOMAIN'):
+    HOST = HOST.replace('.'+os.environ('DOMAIN'),'')
+else:
+    HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
