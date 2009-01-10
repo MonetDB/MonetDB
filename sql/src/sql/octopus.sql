@@ -14,22 +14,22 @@
 -- Copyright August 2008-2009 MonetDB B.V.
 -- All Rights Reserved.
 
--- The Octopus code base aims at Cloud based distribution of work
--- A SQL catalog table contains names and access attributes of workers
--- that can be used toe execute queries
+-- The Octopus code base aims at Cloud based distribution of work.
+-- A SQL catalog table contains names and access properties of workers
+-- that can be used to execute queries
 -- The default 'merovingian' allows the optimizer to use merovigian
--- to discover and use every site in view.
+-- to discover and use every site in view using local credentials.
 
 create table aquarium(
-	connection string,
-	host string,
-	prt int,
+	connection string not null primary key,
+	host string not null,
+	prt int not null,
 	usr string,
 	pwd string
 );
 -- insert into octopusWorkers values('merovingian','localhost',50000,'monetdb','monetdb');
 
--- inter the details of a new octopus acquarium
+-- enter the details of a new octopus acquarium
 -- each call will update the list of platforms for execution.
 create procedure newAquarium(nme string, 
 	host string, 
@@ -37,3 +37,11 @@ create procedure newAquarium(nme string,
 	usr string, 
 	pw string) external name sql.newAquarium;
 create procedure dropAquarium(nme string) external name sql.dropAquarium;
+
+-- updates on these tables are propagated to the octopus scheduler.
+create trigger acquariumInsert
+	after insert on aquarium referencing new row as r
+	for each row call newAquarium(r.connection,r.host,r.prt,r.usr,r.pwd);
+create trigger octopusDelete
+	after insert on aquarium referencing old row as r
+	for each row call dropAquarium(r.connection);
