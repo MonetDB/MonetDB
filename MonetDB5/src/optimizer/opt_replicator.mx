@@ -60,7 +60,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* check for running merovingian */
 	snprintf(buf, BUFSIZ, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
 	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)> 0)){
-		close(fd);
+		(void) close(fd);
 		port = atoi(GDKgetenv("mero_port"));
 	} else
 		port = atoi(GDKgetenv("mapi_port")?GDKgetenv("mapi_port"):"localhost");
@@ -77,16 +77,13 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pushInstruction(mb, old[0]);
 	
 	/* open connection with master*/
-	p= newStmt(mb,remoteRef,putName("create",6));
+	p= newStmt(mb,remoteRef,putName("reconnect",9));
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"localhost");
 	p= pushInt(mb,p,port);
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"monetdb");
 	p= pushStr(mb,p,"monetdb");
-	/* ignore duplicate connection error */
-	p= newCatchStmt(mb,"MALException");
-	p= newExitStmt(mb,"MALException");
 	
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);

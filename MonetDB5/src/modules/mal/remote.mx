@@ -83,6 +83,11 @@ address RMTcreate
 comment "Creates a new connection using host name, port, database name,
 user name and password given details.";
 
+command reconnect(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):void
+address RMTreconnect
+comment "Reconnect or create a new connection using host name, port, database name,
+user name and password given details.";
+
 command destroy(conn:str):void
 address RMTdestroy
 comment "Destroys a previously created connection.";
@@ -774,6 +779,36 @@ str RMTcreate(
 	return(MAL_SUCCEED);
 }
 
+@h
+remote_export str RMTreconnect(
+		int *ret,
+		str *conn,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd);
+@c
+remote_export str RMTreconnect(
+		int *ret,
+		str *conn,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd)
+{
+	connection c;
+	str msg;
+
+	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.reconnect", "connection name is NULL or nil");
+	msg =RMTfindconn(&c, *conn);
+	if (msg == MAL_SUCCEED )
+		return MAL_SUCCEED;
+	GDKfree(msg);
+	return RMTcreate(ret,conn,host,port,dbname,user,passwd);
+}
 @h
 remote_export str RMTdestroy(int *ret, str *conn);
 @c
