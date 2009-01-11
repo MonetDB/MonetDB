@@ -35,12 +35,12 @@ To make our live easier, we assume that all tentacles are
 grouped together in a guarded block as follows:
 
 @verbatim
-barrier parallel:= scheduler.octopus();
+barrier (parallel,a):= scheduler.octopus(timeout);
 a:= octopus.tentacle_1();
 ...
 b:= octopus.tentacle_n();
-exit parallel;
-a:= scheduler.pack(parallel, timeout, a,...,b);
+a:= mat.pack(a,...,b);
+exit (parallel,a);
 @end verbatim
 
 This way the MAL flow of control simplifies skipping to the end
@@ -57,13 +57,9 @@ the remote site. If it is down, it is re-activated using Merovingian.
 
 @{
 @mal
-pattern scheduler.octopus():bit
+pattern scheduler.octopus(timeout:int)(:bit, :bat[:any_1,:any_2])
 address OCTOPUSrun
-comment "Run the program over a service cloud";
-
-pattern scheduler.pack(par:bit, t:int, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address OCTOPUSpack
-comment "Materialize the MAT into a BAT, but don't wait longer then t seconds";
+comment "Run the program block in parallel, but don't wait longer then t seconds";
 
 pattern scheduler.worker(dbnme:str, usr:str, pw:str)
 address OCTOPUSworker
@@ -97,7 +93,6 @@ comment "Remove a worker from the list";
 octopus_export str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 octopus_export str OCTOPUSdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-octopus_export str OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* MAL_RUN_OCTOPUS */
 
 @+ Octopus scheduling implementation
@@ -113,17 +108,22 @@ the (remote) database servers.
 #include "remote.h"
 #include "alarm.h"
 
+#define SITEasleep	0
+#define SITElocal	1
+#define SITEremote	2
+
 typedef struct {
 	str db;	/* connection parameters */
 	str usr;
 	str pw;
 	str host;	/* used when merovigian is not running */
 	int port;
-	int status;
+	int status;	/* asleep, local, remote */
 	str mod; /* cache of last executed function */
-	str fcn;
+	str fcn; /* should be extended to better allocate work */
 } Site;
-#define MAXSITES 2048
+
+#define MAXSITES 2048	/* should become dynamic at some point */
 static Site *sites;
 static int nrsites = 0;
 
@@ -221,8 +221,8 @@ OCTOPUSdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 @-
-The policy to check for sites is a multiphase phase process. First, we
-try to re-use a site where the operation was ran before.
+The policy to check for sites is a multiphase phase process.
+First, we try to re-use a site where the operation was ran before.
 If not available, we select a non-used worker.
 If all this fails, we pick a random site to execute the plan.
 @c
@@ -274,8 +274,9 @@ redo:
 	sites[i].fcn = getFunctionId(pci);
 	sites[i].mod = getModuleId(pci);
 
-	/* execute the plan remotely */
-	msg =runMALprocess(cntxt,mb,stk,pci);
+	/* execute the plan as an independent process thread if it is local*/
+	/* otherwise activate it on the remote site passing parameters as well */
+	msg =runMALprocess(cntxt,mb,stk, getPC(mb,pci), getPC(mb,pci)+1);
 	if ( msg != MAL_SUCCEED){
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"octopus.exec failed to run remote plan\n");
@@ -300,7 +301,8 @@ str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int *res = (int*) getArgReference(stk,p,0);
-	int i = getPC(mb,p);
+	int timeout = *(int*) getArgReference(stk,p,2);
+	int j,fnd, i = getPC(mb,p);
 	str msg = MAL_SUCCEED;
 	*res = 0;	/* skip the block */
 
@@ -324,6 +326,22 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		if ( p->barrier == EXITsymbol )
 			break;
+		if ( getModuleId(p) == matRef && getFunctionId(p) == packRef){
+			/* collect the results */
+			do{
+				fnd = 0;
+				for( j=3; j<p->argc; j++)
+					fnd += stk->stk[getArg(p,j)].val.bval > 0;
+#ifdef DEBUG_RUN_OCTOPUS
+				stream_printf(cntxt->fdout,"await answer, seen %d\n",fnd);
+#endif
+				MT_sleep_ms(1000);
+				timeout--;
+			} while ( fnd < p->argc-3 && timeout > 0 );
+			if (timeout <= 0)
+				throw(MAL,"scheduler.pack","Execution time out");
+			return MATpackInternal(stk,p,1);
+		}
 		if ( getModuleId(p) != octopusRef)
 			throw(MAL,"scheduler.octopus","tentacle expected");
 #ifdef DEBUG_RUN_OCTOPUS
@@ -334,37 +352,5 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		msg = OCTOPUSexec(cntxt,mb,stk,p);
 	}
 	return msg; 
-}
-@-
-The critical part is to wait for all the tentacles to
-return their status.
-@c
-str
-OCTOPUSpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int serial = *(int*) getArgReference(stk,p,1);
-	int timeout = *(int*) getArgReference(stk,p,2);
-	int i,fnd;
-	(void) mb;
-
-#ifdef DEBUG_RUN_OCTOPUS
-	stream_printf(cntxt->fdout,"scheduler.pack %d %d\n", serial, timeout);
-#else
-	(void) cntxt;
-#endif
-	if ( serial == 0)
-	do{
-		fnd = 0;
-		for( i=3; i<p->argc; i++)
-			fnd += stk->stk[getArg(p,i)].val.bval > 0;
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"await answer, seen %d\n",fnd);
-#endif
-		MT_sleep_ms(1000);
-		timeout--;
-	} while ( fnd < p->argc-3 && timeout > 0 );
-	if (timeout <= 0)
-		throw(MAL,"scheduler.pack","Execution time out");
-	return MATpackInternal(stk,p,3);
 }
 @}
