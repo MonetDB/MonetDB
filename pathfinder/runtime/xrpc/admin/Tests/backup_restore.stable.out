@@ -28,13 +28,23 @@ Over..
 # 11:19:36 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><db-before-backup><document updatable="true" collection="xmark">xmark1.xml</document><document updatable="true" collection="xmark">xmark2.xml</document></db-before-backup></XQueryResult>
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult></XQueryResult>
+<XQueryResult>
+  <db-before-backup>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark1.xml</document>
+    <document><updatable>true</updatable><collection>xmark</collection>xmark2.xml</document>
+  </db-before-backup>
+</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><db-after-del/></XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><db-after-restore><document updatable="false" collection="xmark" uri="">xmark1.xml</document><document updatable="false" collection="xmark" uri="">xmark2.xml</document></db-after-restore></XQueryResult>
+<XQueryResult>
+  <db-after-restore>
+    <document><updatable>true</updatable><collection>xmark</collection><uri></uri>xmark1.xml</document>
+    <document><updatable>true</updatable><collection>xmark</collection><uri></uri>xmark2.xml</document>
+  </db-after-restore>
+</XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><db-after-cleanup/></XQueryResult>
 
 # 11:19:37 >  
 # 11:19:37 >  Done.

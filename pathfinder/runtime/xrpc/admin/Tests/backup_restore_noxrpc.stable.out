@@ -42,6 +42,8 @@ Over..
     <document><updatable>true</updatable><collection>xmark</collection><uri></uri>xmark2.xml</document>
   </db-after-restore>
 </XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><db-after-cleanup/></XQueryResult>
 
 # 17:09:51 >  
 # 17:09:51 >  Done.

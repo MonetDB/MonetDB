@@ -35,10 +35,10 @@ text {"&#10;  "},
               element document {
                 element updatable {string($d/@updatable)},
                 element collection {string($d/@collection)},
-                $d/text() }
+                $d/text() } ),
     text { "&#10;  "}
 }</db-before-backup>,
-text {"&#10;"},
+text {"&#10;"}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
@@ -57,7 +57,7 @@ import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
-execute at {"$HOST:$XRPCPORT"} {adm:restore("test", 0)}
+execute at {"$HOST:$XRPCPORT"} {adm:restore("test", 10)}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
                         at "http://$HOST:$XRPCPORT/admin/admin.xq";
@@ -74,6 +74,18 @@ text {"&#10;  "},
                 $d/text() } ),
     text { "&#10;  "}
 }</db-after-restore>,
-text {"&#10;"},
+text {"&#10;"}
 )
+<>
+(: clean DB at the end of the test :)
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+<db-after-cleanup>
+{ execute at {"$HOST:$XRPCPORT"} {adm:documents()} }
+</db-after-cleanup>
+
 

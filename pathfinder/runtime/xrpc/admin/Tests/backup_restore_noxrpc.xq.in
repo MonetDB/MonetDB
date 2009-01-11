@@ -70,3 +70,15 @@ text {"&#10;  "},
 }</db-after-restore>,
 text {"&#10;"}
 )
+<>
+(: clean DB at the end of the test :)
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+adm:del-col("xmark")
+<>
+import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
+                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+<db-after-cleanup>
+{ adm:documents() }
+</db-after-cleanup>
+
