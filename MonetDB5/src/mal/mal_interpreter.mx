@@ -1179,19 +1179,19 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 Distributed execution calls for asynchronous execution of MAL
 instructions. To simplify the interpreter, we assume that all
 the code to be executed is already grouped in a MAL function,
-which is called independently. The result variable is initialized
+which is called independently. The result variables are initialized
 to NIL before the code is started. When the process crashes,
 an exception is raised.
 
 @h
-mal_export str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop);
 @c
 typedef struct {
 	MT_Id tid;
 	Client cntxt;
 	MalBlkPtr mb;
 	MalStkPtr stk;
-	InstrPtr pci;
+	int start,stop;
 }Ptask;
 
 static void
@@ -1200,8 +1200,6 @@ runMALdetached(void *t){
 	Client cntxt= p->cntxt;
 	MalBlkPtr mb = p->mb;
 	MalStkPtr stk = p->stk;
-	InstrPtr pci = p->pci;
-	int startpc= getPC(mb,pci);
 	int sve;
 
 #ifdef DEBUG_DETACHED
@@ -1209,20 +1207,21 @@ runMALdetached(void *t){
 #endif
 	sve= stk->keepAlive;
 	stk->keepAlive= TRUE;
-	(void) reenterMAL(cntxt, mb, startpc, startpc+1, stk, 0, 0);
+	(void) reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
 	stk->keepAlive= sve;
 #ifdef DEBUG_DETACHED
 	stream_printf(cntxt->fdout,"finished thread in background\n");
 #endif
 }
-str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop)
 {
 	Ptask p;
 
 	p.cntxt= cntxt;
 	p.mb = mb;
 	p.stk = stk;
-	p.pci = pci;
+	p.start = start;
+	p.stop = stop;
 
 	MT_create_thread(&p.tid, runMALdetached, &p);
 	return MAL_SUCCEED;
