@@ -188,6 +188,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 
 	/* recast the signature */
 	p= getInstrPtr(tm,0);
+	setModuleId(p,octopusRef);
 	setFunctionId(p,name);
 	tm->var[0]->name= name;
 	setArgType(tm,p,0,getVarType(tm,varid));
@@ -204,7 +205,9 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	pushArgument(tm,q,varid);
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
-	q= newFcnCall(tm,optimizerRef,replicatorRef);
+	(void) newStmt(tm,optimizerRef,replicatorRef);
+	(void) newStmt(tm,optimizerRef,putName("commonTerms",11));
+
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 #ifdef DEBUG_OPT_OCTOPUS
 	printFunction(cntxt->fdout,tm,0,LIST_MAL_STMT);

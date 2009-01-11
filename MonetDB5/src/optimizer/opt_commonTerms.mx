@@ -53,7 +53,7 @@ The common subexpression optimizer locates backwards the identical
 instructions. 
 It stops as soon as it has found an identical one. Before we can replace the 
 expression with the variable(s) of the previous one, we should assure that
-we haven;t passed a safety barrier.
+we haven;t passed a non-empty barrier block.
 
 @verbatim
     b:= bat.new(:int,:int);
@@ -93,7 +93,7 @@ The last instruction signifies the end.
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier= FALSE, last, n=1;
+	int i, j, k, barrier= 0, last, n=1;
 	InstrPtr p, q;
 	int actions = 0;
 	MALfcn *mask;
@@ -116,6 +116,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 #ifdef DEBUG_OPT_COMMONTERMS
 	stream_printf(cntxt->fdout,"START COMMONTERMS\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	setLifespan(mb,span);
 	old = mb->stmt;
@@ -127,12 +128,20 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if ( hasSideEffects(p, TRUE) )
 		for ( k = p->retc; k < p->argc; k++)
 			lastassigned[getArg(p,k)]=i;
+@-
+We have to also look for first 'assignments' of constant arguments.
+@c
+		for ( k = p->retc; k < p->argc; k++)
+		if ( isVarConstant(mb,getArg(p,k)) && lastassigned[getArg(p,k)] == 0 )
+			lastassigned[getArg(p,k)]=i;
+
 		for ( k = 0; k < p->retc; k++)
 			lastassigned[getArg(p,k)]=i;
 		mask[n]= p->fcn;
 		pushInstruction(mb,p);
-		if(p->barrier)
-			barrier = TRUE; /* at least one barrier block */
+		if( (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) &&
+			old[i+1]->barrier!=EXITsymbol)
+			barrier = TRUE; /* at least one non-empty barrier block */
 @-
 Also block further optimization when you have seen an assert().
 This works particularly for SQL, because it is not easy to track
@@ -185,15 +194,15 @@ multiple occurrences of the same constant in the symbol table.
 					last= lastassigned[getArg(p,j)];
 
 			for (j = (n-1) - 1; j >= last-(i-(n-1)) && j>0; j--) 
-			if (mask[j] == p->fcn ){
-				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
+			if ( getFunctionId(q = getInstrPtr(mb,j)) == getFunctionId(p) ){
+				if (safetyBarrier(p, q) )
 					break;
 #ifdef DEBUG_OPT_COMMONTERMS_1
-				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-				stream_printf(cntxt->fdout,"%d, %d  %d %d ", i, j, 
+				stream_printf(cntxt->fdout,"CANDIDATE %d, %d  %d %d ", i, j, 
 					hasSameSignature(mb, p, q), 
 					hasSameArguments(mb, p, q));
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 				stream_printf(cntxt->fdout," :%d %d %d %d %d\n", 
 					!hasCommonResults(p, q), 
 					!hasSideEffects(p, TRUE),
@@ -247,6 +256,11 @@ handled by the alias removal part
 			}
 		}
 	}
+#ifdef DEBUG_OPT_COMMONTERMS
+	chkProgram(cntxt->nspace,mb);
+	stream_printf(cntxt->fdout, "MODIFIED PLAN %d\n",mb->errors);
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 	for(; i<slimit; i++)
 	if( old[i])
 		freeInstruction(old[i]);
