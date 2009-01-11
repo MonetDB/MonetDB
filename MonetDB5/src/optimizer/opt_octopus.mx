@@ -48,9 +48,11 @@ A snippet of an octopus with two legs is shown below
 
 @verbatim
 function user.s1_0():void;
+barrier (_100,_15):= scheduler.octopus(10);
     _87 := octopus.exec("siteA","user","leg1");
     _88 := octopus.exec("siteB","user","leg2");
-    _15 := octopus.pack(_87,_88);
+    _15 := mat.pack(_87,_88);
+exit (_100,_15);
     _16 := sql.resultSet(1,1,_15);
     sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
     _21 := io.stdout();
@@ -112,6 +114,7 @@ comment "Map-execute-reduce parallelism optimizer";
 @c
 #include "mal_config.h"
 #include "opt_octopus.h"
+#include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
 @-
@@ -127,10 +130,10 @@ pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
 static MalBlkPtr 
-OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
+OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	MalBlkPtr tm= NULL;
-	InstrPtr p, q, anchor= NULL;
-	int i,j,top=0, fnd;
+	InstrPtr p, q,anchor=NULL;
+	int varid= pci->argv[idx],i,j,top=0, fnd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
@@ -151,12 +154,11 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 				getFunctionId(getInstrPtr(mb,0)),varid);
 			name =  putName(buf,strlen(buf));
-			q= copyInstruction(getInstrPtr(mb,0));
-			setModuleId(q,octopusRef);
-			setFunctionId(q,name);
-			getArg(q,0)= varid;
+			q= newFcnCall(mb,octopusRef, name);
+			getArg(q,0)= newTmpVariable(mb,getArgType(mb,pci,idx));
 			needed[varid]= 1;
-			anchor= p;
+			anchor = q;
+			getArg(pci,idx) = getArg(q,0);
 			break;
 		}
 	}
@@ -173,20 +175,30 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, int start, int varid){
 			list[top++] = p;
 		}
 	}
+	/* we need the arguments as well */
+	p= getInstrPtr(mb,0);
+	for(i=p->retc; i<p->argc; i++)
+	if (needed[getArg(p,i)])
+		anchor= pushArgument(mb,anchor,getArg(p,i));
 	/* create the tentacle procedure */
 	s= (Symbol) GDKzalloc(sizeof(SymRecord));
 	s->name= name;
 	s->kind=FUNCTIONsymbol;
 	s->def= tm= copyMalBlk(mb);	/* get the symbol table for free */
-	q= getInstrPtr(tm,0);		/* and re-use the signature */
-	tm->var[0]->name= GDKstrdup(name);	
-	setArgType(tm, q, 0, getVarType(mb,varid));
-	tm->stop =1;
-	setModuleId(q,octopusRef);
-	setFunctionId(q, name);
 
+	/* recast the signature */
+	p= getInstrPtr(tm,0);
+	setFunctionId(p,name);
+	tm->var[0]->name= name;
+	setArgType(tm,p,0,getVarType(tm,varid));
+	p->argc=p->retc=1;
+	for(j=anchor->retc; j<anchor->argc; j++)
+		p= pushArgument(tm,p,getArg(anchor,j));
+
+	tm->stop =1;
 	for (top--; top >= 0; top--)
 		pushInstruction(tm, copyInstruction(list[top]));
+
 	q= newAssignment(tm);
 	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
 	pushArgument(tm,q,varid);
@@ -207,7 +219,7 @@ static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr q, p, *old;
-	int last=0, x, y, i, j, limit, slimit, actions=0;
+	int last=0, i, j, limit, slimit, actions=0;
 	int tn=0, maxtn=32;
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
 
@@ -223,13 +235,6 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @-
 All octopus tentacle code is collected in a separate module
 to ease future distribution and scheduling.
-
-The limitation for the time being is that we only deal
-with octopus code that does not require arguments to
-be passed from the query context. This is handled in the scheduler.
-It interferes with the replication and scheduler code.
-Or we have to generalize remote.exec to accept
-non rmtobj arguments.
 @c
 	(void) fixModule(cntxt->nspace,octopusRef);
 
@@ -248,28 +253,23 @@ non rmtobj arguments.
 			/* barrier go:= scheduler.octopus(); */
 			q= newStmt(mb,schedulerRef,octopusRef);
 			setArgType(mb,q,0, TYPE_bit);
-			x= getArg(q,0);
+			pushArgument(mb,q,getArg(p,0));
+			q->retc = 2;
+			q= pushInt(mb,q,10);
 			q->barrier = BARRIERsymbol;
 
 			for ( j= p->retc; j<p->argc; j++)
-				tentacle[tn++] =  OPTtentacle(cntxt,mb,mb->stop-1,getArg(p,j));
+				tentacle[tn++] =  OPTtentacle(cntxt,mb,p,mb->stop-1,j);
+
+			pushInstruction(mb,p);
 
 			/* exit c; */
-			q= newAssignment(mb);
-			q->retc=1;
-			q->barrier= EXITsymbol;
-			getArg(q,0)= x;
+			p= newAssignment(mb);
+			p->barrier= EXITsymbol;
+			getArg(p,0)= getArg(q,0);
+			getArg(p,1)= getArg(q,1);
+			p->retc=2;
 
-			/* modified pack instruction */
-			p= pushInt(mb,p,10);
-			y= getArg(p,p->argc-1);
-			p= pushInt(mb,p,10);
-			for (j=p->argc-1;j>p->retc-1; j--)
-				getArg(p,j)= getArg(p,j-2);
-			getArg(p,p->retc)= x;
-			getArg(p,p->retc+1)= y;
-			setModuleId(p,schedulerRef);
-			pushInstruction(mb,p);
 			actions++;
 			continue;
 		} 
@@ -278,6 +278,7 @@ non rmtobj arguments.
 			last= mb->stop;
 	}
 	GDKfree(old);
+	
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
 		stream_printf(cntxt->fdout, "#octopus\n");
