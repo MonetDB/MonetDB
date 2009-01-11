@@ -768,7 +768,7 @@ The prompt string sent to the user indicates the debugger mode.
 	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
 static MalBlkPtr
-mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
+mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 	MalBlkPtr m=mb;
 	char *h=0;
 	int idx=0;
@@ -793,7 +793,7 @@ mdbLocateMalBlk(MalBlkPtr mb, str b, stream *out){
 		if( (h= strchr(fcnname,'[')) ){
 			*h=0; idx= atoi(h+1);
 		} 
-		fsym= findSymbol( b, fcnname);
+		fsym= findSymbolInModule( findModule(cntxt->nspace,putName(b,strlen(b))), fcnname);
 		if (fsym == 0) {
 			stream_printf(out, "'%s.%s' not found\n", b,fcnname);
 			return NULL;
@@ -1169,7 +1169,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
-				mdot= mdbLocateMalBlk(mb,b,out);
+				mdot= mdbLocateMalBlk(cntxt,mb,b,out);
 				if( mdot == NULL)
 					mdot= mb;
 				/* optional file */
@@ -1307,7 +1307,7 @@ signatures satisfying the pattern.
 			if ( *b=='L') lstng |= LIST_MAL_PROPS | LIST_MAL_DETAIL;
 			skipWord(cntxt, b);
 			if (*b != 0) {
-				MalBlkPtr m= mdbLocateMalBlk(mb,b,out);
+				MalBlkPtr m= mdbLocateMalBlk(cntxt,mb,b,out);
 				if( m == NULL && !strchr(b,'.') && 
 					!strchr(b,'[') && !isdigit((int)*b)){
 					/* optionally dump the complete module */
@@ -1347,7 +1347,7 @@ signatures satisfying the pattern.
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b) {
-				mdot=mdbLocateMalBlk(mb,b,out);
+				mdot=mdbLocateMalBlk(cntxt,mb,b,out);
 				if(mdot != NULL)
 					showMalBlkHistory(mdot);
 			} else
