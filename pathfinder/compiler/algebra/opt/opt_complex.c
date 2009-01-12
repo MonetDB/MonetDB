@@ -1723,7 +1723,7 @@ opt_complex (PFla_op_t *p)
                 }
                 if (item_link_correct) {
                     PFalg_step_spec_t spec = p->sem.step.spec;
-                    spec.axis = alg_desc,
+                    spec.axis = alg_desc;
                     /* rewrite child into descendant
                        and discard descendant-or-self step */
                     *p = *PFla_step_join_simple (
@@ -1733,6 +1733,67 @@ opt_complex (PFla_op_t *p)
                     modified = true;
                     break;
                 }
+            }
+
+            /* combine steps if they are of the form:
+               ``/descandent-or-self::node()/child::element()'' */
+            if (R(p)->kind == la_step_join &&
+                p->sem.step.item == R(p)->sem.step.item_res &&
+                /* check for the different step combinations */
+                ((/* descendant-or-self::node()/child:: */
+                  p->sem.step.spec.axis == alg_chld &&
+                  R(p)->sem.step.spec.axis == alg_desc_s) ||
+                 (/* child::node()/descendant-or-self:: */
+                  p->sem.step.spec.axis == alg_desc_s &&
+                  R(p)->sem.step.spec.axis == alg_chld) ||
+                 (/* coll_node/descendant::node()/child:: */
+                  /* Works correctly as the collection node is not
+                     reachable in the query and thus descendant behaves
+                     like a descendant-or-self step starting from a
+                     document node. */
+                  p->sem.step.spec.axis == alg_chld &&
+                  PFprop_level (R(p)->prop, R(p)->sem.step.item) == -1 &&
+                  R(p)->sem.step.spec.axis == alg_desc &&
+                  /* check for node kind to avoid that this pattern
+                     is triggered multiple times */
+                  p->sem.step.spec.kind != node_kind_node) ||
+                 (/* coll_node/child::node()/descendant:: */
+                  /* Works correctly as the descendant step filter
+                     discards the document nodes. */
+                  p->sem.step.spec.axis == alg_desc &&
+                  PFprop_level (R(p)->prop, R(p)->sem.step.item) == -1 &&
+                  R(p)->sem.step.spec.axis == alg_chld &&
+                  p->sem.step.spec.kind != node_kind_node &&
+                  p->sem.step.spec.kind != node_kind_doc)) &&
+                R(p)->sem.step.spec.kind == node_kind_node &&
+                !PFprop_icol (p->prop, p->sem.step.item) &&
+                (PFprop_set (p->prop) ||
+                 PFprop_ckey (p->prop, p->schema) ||
+                 PFprop_key (p->prop, p->sem.step.item_res))) {
+
+                PFalg_proj_t *proj = PFmalloc (R(p)->schema.count *
+                                               sizeof (PFalg_proj_t));
+
+                for (unsigned int i = 0; i < R(p)->schema.count; i++) {
+                    proj[i] = PFalg_proj (R(p)->schema.items[i].name,
+                                          R(p)->schema.items[i].name);
+
+                    if (proj[i].new == R(p)->sem.step.item_res)
+                        proj[i].old = R(p)->sem.step.item;
+                }
+
+                PFalg_step_spec_t spec = p->sem.step.spec;
+                spec.axis = alg_desc;
+                /* rewrite child into descendant
+                   and discard descendant-or-self step */
+                *p = *PFla_step_join_simple (
+                          L(p),
+                          PFla_project_ (RR(p), R(p)->schema.count, proj),
+                          spec, 
+                          R(p)->sem.step.item,
+                          p->sem.step.item_res);
+                modified = true;
+                break;
             }
             break;
 
