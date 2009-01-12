@@ -861,9 +861,12 @@ opt_rank (PFla_op_t *p)
                             if (lmatches > 1)
                                 break; /* do not rewrite */
                         }
-                        if (matches > 1)
+                        if (matches > 1 || lmatches > 1)
                             break; /* do not rewrite */
                     }
+
+                    if (matches > 1 || lmatches > 1)
+                        break;
 
                     *p = *(rank_opt (
                               rank_opt (
