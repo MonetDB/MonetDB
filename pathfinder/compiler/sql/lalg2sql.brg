@@ -212,8 +212,8 @@ Query:  serialize_seq (
             roots_ (twig (Twig)))                    =   5 (10); /* FIXME: side effect changes */
 Query:  serialize_seq (side_effects (Side, Frag),
                        empty_tbl)                    =   6 (10); /* FIXME: side effect changes */
-Query:  serialize_rel (Side, Rel)                    =   7 (10); /* FIXME: side effect changes */
-Query:  serialize_rel (Side, empty_tbl)              =   8 (10); /* FIXME: side effect changes */
+Query:  serialize_rel (nil, Rel)                     =   7 (10); /* FIXME: side effect changes */
+Query:  serialize_rel (nil, empty_tbl)               =   8 (10); /* FIXME: side effect changes */
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
 Rel:    attach (Rel)                                 =  11 (10);
@@ -2481,10 +2481,10 @@ reduce (PFla_op_t * p, int goalnt)
             assert (!"missing");
             break;
 
-        /* Query:  serialize_rel (Side, Rel) */
+        /* Query:  serialize_rel (nil, Rel) */
         case 7:
         {
-            PFla_op_t          *query      = L(p);
+            PFla_op_t          *query      = R(p);
 
             PFalg_col_t         iter       = p->sem.ser_rel.iter;
             PFalg_simple_type_t iter_ty    = type_of (p, p->sem.ser_rel.iter);
@@ -2513,9 +2513,9 @@ reduce (PFla_op_t * p, int goalnt)
     
             /* call a helper function that does the 'real' job */
             PFsql_t* final_query = PFsql_select (false,
-                                       transform_selectlist (COLMAP(L(p))),
-                                       transform_frommap (L(p)),
-                                       transform_wheremap (L(p)),
+                                       transform_selectlist (COLMAP(query)),
+                                       transform_frommap (query),
+                                       transform_wheremap (query),
                                        orderby,
                                        NULL);
                 
@@ -2528,7 +2528,7 @@ reduce (PFla_op_t * p, int goalnt)
         }
         break;
 
-        /* Query:  serialize_rel (Side, empty_tbl) */
+        /* Query:  serialize_rel (nil, empty_tbl) */
         case 8:
         {
             /*
