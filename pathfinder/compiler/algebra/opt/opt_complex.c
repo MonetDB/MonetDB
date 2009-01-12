@@ -874,13 +874,16 @@ opt_complex (PFla_op_t *p)
 
                 if (PFprop_disjdom (p->prop, 
                                     PFprop_dom_left (RL(p)->prop, col2),
-                                    PFprop_dom_left (p->prop, col1)))
+                                    PFprop_dom_left (p->prop, col1))) {
                     R(p) = PFla_project_ (RLR(p), count, proj);
+                    modified = true;
+                }
                 else if (PFprop_disjdom (p->prop, 
                                          PFprop_dom_right (RL(p)->prop, col2),
-                                         PFprop_dom_left (p->prop, col1)))
+                                         PFprop_dom_left (p->prop, col1))) {
                     R(p) = PFla_project_ (RLL(p), count, proj);
-                modified = true;
+                    modified = true;
+                }
             }
             if (PFprop_subdom (p->prop,
                                PFprop_dom_right (p->prop,
@@ -901,13 +904,16 @@ opt_complex (PFla_op_t *p)
 
                 if (PFprop_disjdom (p->prop, 
                                     PFprop_dom_left (LL(p)->prop, col1),
-                                    PFprop_dom_right (p->prop, col2)))
+                                    PFprop_dom_right (p->prop, col2))) {
                     L(p) = PFla_project_ (LLR(p), count, proj);
+                    modified = true;
+                }
                 else if (PFprop_disjdom (p->prop, 
                                          PFprop_dom_right (LL(p)->prop, col1),
-                                         PFprop_dom_right (p->prop, col2)))
+                                         PFprop_dom_right (p->prop, col2))) {
                     L(p) = PFla_project_ (LLL(p), count, proj);
-                modified = true;
+                    modified = true;
+                }
             }
 
 #if 0 /* disable join -> semijoin rewrites */
