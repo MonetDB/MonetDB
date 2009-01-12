@@ -11562,15 +11562,6 @@ const char* PFstartMIL(int statement_type) {
 #ifdef HAVE_PFTIJAH
 #define PF_STOP_PFTIJAH " if (not(isnil(tijah_lock))) lock_unset(tijah_lock);\n"
 #define PF_PLAY_TIJAH_TAPE " tj_play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
-/*
-#define PF_PLAY_TIJAH_TAPE\
-    "ws.print();\n"\
-    "item.materialize(ipik).print();\n"\
-    "kind.materialize(ipik).print();\n"\
-    "int_values.print();\n"\
-    "str_values.print();\n"\
-    " tj_play_doc_tape(ws, item.materialize(ipik), kind.materialize(ipik), int_values, str_values);\n"
-*/
 #else
 #define PF_STOP_PFTIJAH    " \n"
 #define PF_PLAY_TIJAH_TAPE " \n"
