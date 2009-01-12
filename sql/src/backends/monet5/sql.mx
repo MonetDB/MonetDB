@@ -728,11 +728,11 @@ pattern cluster2(sch:str, tbl:str)
 address SQLcluster2
 comment "Cluster the columns of a table on the (first) primary key";
 
-pattern newAquarium(nme:str, host:str, port:int, usr:string, pw:string):void
+pattern newAquarium(nme:str, host:str, port:int, usr:str, pw:str):void
 address SQLnewAquarium
 comment "Add a new site to the list of servers to consider in 
 distributed processing";
-pattern dropAquarium(nme:stra):void
+pattern dropAquarium(nme:str):void
 address SQLdropAquarium
 comment "Remove a site from the list of servers";
 
