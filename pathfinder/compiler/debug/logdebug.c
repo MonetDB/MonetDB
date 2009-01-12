@@ -629,6 +629,15 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             /* interpret this operator as internal cross product */
             else if (n->sem.eqjoin_opt.kind == la_cross)
                 PFarray_printf (DOT, "%s", a_id[n->kind]);
+            /* interpret this operator as internal rank operator */
+            else if (n->sem.eqjoin_opt.kind == la_rank) {
+                PFarray_printf (
+                    DOT,
+                    "%s (%s<length %i>)",
+                    a_id[n->kind],
+                    PFcol_str (n->sem.rank_opt.res),
+                    PFarray_last (n->sem.rank_opt.sortby));
+            }
             break;
 
         case la_project:
