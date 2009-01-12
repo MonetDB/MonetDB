@@ -4,7 +4,7 @@
   Filter out uninteresting differences in the results
 :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 for $env in adm:db-env()
 return
    (text { "&#10;  " },

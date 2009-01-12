@@ -15,17 +15,17 @@
   - adm:restore-col()
 :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
+            {adm:add-doc("$TSTSRCBASE/runtime/xrpc/admin/xmark1.xml",
                          "xmark1.xml", "xmark", 10)},
  execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
+            {adm:add-doc("$TSTSRCBASE/runtime/xrpc/admin/xmark2.xml",
                          "xmark2.xml", "xmark", 10)}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (
 text {"&#10;  "},
 <db-before-backup>{
@@ -42,25 +42,25 @@ text {"&#10;"}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 execute at {"$HOST:$XRPCPORT"} {adm:backup("test")}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 <db-after-del>{
     execute at {"$HOST:$XRPCPORT"} {adm:collections()}
 }</db-after-del>
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 execute at {"$HOST:$XRPCPORT"} {adm:restore("test", 10)}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (
 text {"&#10;  "},
 <db-after-restore>{
@@ -79,11 +79,11 @@ text {"&#10;"}
 <>
 (: clean DB at the end of the test :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 <db-after-cleanup>
 { execute at {"$HOST:$XRPCPORT"} {adm:documents()} }
 </db-after-cleanup>

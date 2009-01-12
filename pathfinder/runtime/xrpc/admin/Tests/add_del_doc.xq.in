@@ -11,17 +11,17 @@
   - adm:del-doc()
 :)
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark1.xml",
+            {adm:add-doc("$TSTSRCBASE/runtime/xrpc/admin/xmark1.xml",
                          "xmark1.xml", "xmark", 10)},
  execute at {"$HOST:$XRPCPORT"}
-            {adm:add-doc("http://$HOST:$XRPCPORT/admin/xmark2.xml",
+            {adm:add-doc("$TSTSRCBASE/runtime/xrpc/admin/xmark2.xml",
                          "xmark2.xml", "xmark", 10)}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (
 text { "&#10;  "},
 <collections-after-add>{
@@ -61,11 +61,11 @@ text { "&#10;"}
 )
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 execute at {"$HOST:$XRPCPORT"} {adm:del-col("xmark")}
 <>
 import module namespace adm = "http://monetdb.cwi.nl/XQuery/admin/"
-                        at "http://$HOST:$XRPCPORT/admin/admin.xq";
+                        at "$TSTSRCBASE/runtime/xrpc/admin/admin.xq";
 (
 text { "&#10;  "},
 <collections-after-del>{
