@@ -30,7 +30,7 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_COMMONTERMS        show partial result */
+/* #define DEBUG_OPT_COMMONTERMS         show partial result */
 
 @c
 #include "mal_config.h"
@@ -93,7 +93,7 @@ The last instruction signifies the end.
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, barrier= 0, last, n=1;
+	int i, j, k, barrier= 0, last;
 	InstrPtr p, q;
 	int actions = 0;
 	MALfcn *mask;
@@ -123,11 +123,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	limit = mb->stop;
 	slimit = mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
-	for ( n= i = 0; i < limit; i++) {
+	for ( i = 0; i < limit; i++) {
 		p = old[i];
 		if ( hasSideEffects(p, TRUE) )
 		for ( k = p->retc; k < p->argc; k++)
-			lastassigned[getArg(p,k)]=i;
+			lastassigned[getArg(p,k)] = i;
 @-
 We have to also look for first 'assignments' of constant arguments.
 @c
@@ -137,11 +137,14 @@ We have to also look for first 'assignments' of constant arguments.
 
 		for ( k = 0; k < p->retc; k++)
 			lastassigned[getArg(p,k)]=i;
-		mask[n]= p->fcn;
+		mask[i]= p->fcn;
 		pushInstruction(mb,p);
-		if( (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) &&
-			old[i+1]->barrier!=EXITsymbol)
-			barrier = TRUE; /* at least one non-empty barrier block */
+@-
+A non-empty barrier block signals the end of this optimizer,
+the impact of the block can affect the common code.
+@c
+		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) &&
+				old[i+1]->barrier!=EXITsymbol;
 @-
 Also block further optimization when you have seen an assert().
 This works particularly for SQL, because it is not easy to track
@@ -149,10 +152,10 @@ the BAT identifier aliases to look for updates. The sql.assert
 at least tells us that an update is planned.
 Like all optimizer decisions, it is safe to stop.
 @c
-		if ( getFunctionId(p) == assertRef)
-			barrier = TRUE;
-		n++;
+		barrier |= getFunctionId(p) == assertRef;
 		if (p->token == ENDsymbol){
+			if (actions)
+				(void) newStmt(mb,optimizerRef, putName("aliases",7));
 			/* wrap up the remainder */
 			for(i++; i<limit; i++)
 			if( old[i])
@@ -171,88 +174,80 @@ and apply alias propagation, before considering a match.
 			getLastUpdate(span,getArg(p,1)) <= i ){
 				alias[getArg(p,0)] = alias[getArg(p,1)];
 				lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
-				freeInstruction(p);
-				mb->stop--;
-				mb->stmt[mb->stop]=0;
-				n--;
 				continue;
 		} 
-		for(j=0; j<p->argc; j++)
-			getArg(p,j) = alias[getArg(p,j)];
-		if (p->token == NOOPsymbol || barrier) 
+		if (p->token == NOOPsymbol || p->token == ASSIGNsymbol || 
+			barrier || p->retc == p->argc) {
+			for(j=0; j<p->argc; j++)
+				getArg(p,j) = alias[getArg(p,j)];
 			continue;
+		}
 @-
 We look back in the code base to determine a candidate for
 replacement. We don't have to look further back then the last
-relevant assignment. Beware, we may miss opportunities due to
-multiple occurrences of the same constant in the symbol table.
+relevant assignment. 
 @c
-		if (p->retc != p->argc) {
-			last= lastassigned[getArg(p,p->retc)];
-			for (j = p->retc+1; j<p->argc; j++)
-				if (lastassigned[getArg(p,j)]> last)
-					last= lastassigned[getArg(p,j)];
+		last= lastassigned[getArg(p,p->retc)];
+		for (j = p->retc+1; j<p->argc; j++)
+			if (lastassigned[getArg(p,j)]> last)
+				last= lastassigned[getArg(p,j)];
 
-			for (j = (n-1) - 1; j >= last-(i-(n-1)) && j>0; j--) 
-			if ( getFunctionId(q = getInstrPtr(mb,j)) == getFunctionId(p) ){
-				if (safetyBarrier(p, q) )
-					break;
-#ifdef DEBUG_OPT_COMMONTERMS_1
-				stream_printf(cntxt->fdout,"CANDIDATE %d, %d  %d %d ", i, j, 
-					hasSameSignature(mb, p, q), 
-					hasSameArguments(mb, p, q));
-				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
-				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
-				stream_printf(cntxt->fdout," :%d %d %d %d %d\n", 
-					!hasCommonResults(p, q), 
-					!hasSideEffects(p, TRUE),
-					!hasSideEffects(q, TRUE),
-					isLinearFlow(q),
-					isLinearFlow(p));
+		/* prepare for inclusion in the new block */
+		for(j=0; j<p->argc; j++)
+			getArg(p,j) = alias[getArg(p,j)];
+
+		for (j = i - 1; j >= last && j>0; j--) 
+		if ( mask[j]== p->fcn){
+			 q = getInstrPtr(mb,j);
+#ifdef DEBUG_OPT_COMMONTERMS
+			printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+#endif
+			if (safetyBarrier(p, q) )
+				break;
+#ifdef DEBUG_OPT_COMMONTERMS
+			stream_printf(cntxt->fdout,"CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
+				hasSameSignature(mb, p, q), 
+				hasSameArguments(mb, p, q), last);
+			stream_printf(cntxt->fdout," :%d %d=%d %d %d %d %d %d\n", 
+				q->token != ASSIGNsymbol ,
+				getLastUpdate(span, getArg(p,0)),i,
+				!hasCommonResults(p, q), 
+				!hasSideEffects(q, TRUE),
+				isLinearFlow(q),
+				isLinearFlow(p),
+				allTargetsVisible(mb,span,j,i-1));
 
 #endif
 @-
 Simple assignments are not replaced either. They should be
 handled by the alias removal part
 @c
-				if (q->token != ASSIGNsymbol && 
-					hasSameSignature(mb, p, q) && 
-					hasSameArguments(mb, p, q) && 
-					getLastUpdate(span, getArg(p,0)) <= i &&
-					!hasCommonResults(p, q) && 
-					!hasSideEffects(p, TRUE) &&
-					isLinearFlow(p) &&
-					isLinearFlow(q) &&
-					allTargetsVisible(mb,span,j,n-1) 
-					) {
+			if (hasSameSignature(mb, p, q) && 
+				hasSameArguments(mb, p, q) && 
+				getLastUpdate(span, getArg(p,0)) <= i &&
+				!hasCommonResults(p, q) && 
+				!hasSideEffects(p, TRUE) &&
+				isLinearFlow(p) &&
+				isLinearFlow(q) &&
+				allTargetsVisible(mb,span,j,i-1) 
+				) {
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(cntxt->fdout, "Found a common expression " 
-						"%d <-> %d\n", j, i);
-					printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout, "Found a common expression " 
+					"%d <-> %d\n", j, i);
+				printInstruction(cntxt->fdout, mb, 0, q, LIST_MAL_ALL);
 #endif
-					clrFunction(p);
-					p->token = ASSIGNsymbol;
-					p->argc = p->retc + q->retc;
-					for (k = 0; k < q->retc; k++)
-						p->argv[p->retc + k] =  q->argv[k];
+				clrFunction(p);
+				p->token = ASSIGNsymbol;
+				p->argc = p->retc + q->retc;
+				for (k = 0; k < q->retc; k++)
+					p->argv[p->retc + k] =  q->argv[k];
 #ifdef DEBUG_OPT_COMMONTERMS
-					stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
-					printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
+				stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
+				printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 #endif
-					actions++;
-					if( p->argc== 2 &&
-						getLastUpdate(span,getArg(p,0)) == i &&
-						getBeginLifespan(span,getArg(p,0)) == i &&
-						getLastUpdate(span,getArg(p,1)) < i){
-							alias[getArg(p,0)]= alias[getArg(p,1)];
-							lastassigned[getArg(p,0)] = lastassigned[getArg(p,1)];
-							freeInstruction(p);
-							mb->stop--;
-							mb->stmt[mb->stop]=0;
-							n--;
-					}
-					j= 0; /* end of search */
-				}
+				actions++;
+				break; /* end of search */
 			}
 		}
 	}

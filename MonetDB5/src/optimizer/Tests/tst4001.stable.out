@@ -36,11 +36,12 @@ end main;
 [ "execute" ]
 [ 0.8414709848078965 ]
 [ "done" ]
-function user.qry(i:dbl):dbl;           #  0 qry:dbl := user.qry(i:dbl) 
+function user.qry(i:dbl):dbl;           #  0 qry:dbl := user.qry(i:dbl) {G}
     z := mmath.sin(1:dbl);              #  1 z:dbl := MATHunary_SINdbl(_2:dbl) 
     l := calc.+(z,1:dbl);               #  2 l:dbl := CALCbinaryADDdbldbl(z:dbl, _2:dbl) 
     return qry := z;                    #  3 qry:dbl := z:dbl 
 end qry;                                #  4  
+    optimizer.aliases();                #  5 _7:str := OPTaliases() {G}
 function user.main():void;              #  0 main:void := user.main() {G}
 #tesing the optimizers 
 #setDebug(); 

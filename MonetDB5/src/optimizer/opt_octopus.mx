@@ -206,7 +206,6 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
 	(void) newStmt(tm,optimizerRef,replicatorRef);
-	(void) newStmt(tm,optimizerRef,putName("commonTerms",11));
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 #ifdef DEBUG_OPT_OCTOPUS
@@ -277,8 +276,12 @@ to ease future distribution and scheduling.
 			continue;
 		} 
 		pushInstruction(mb,p);
-		if (p->token == ENDsymbol)
+		if (p->token == ENDsymbol){
+			/* the octopus leaves a lot of deadcode, which we don't
+			   want to optimize */
+			(void) newStmt(mb,optimizerRef,putName("deadcode",8));
 			last= mb->stop;
+		}
 	}
 	GDKfree(old);
 	

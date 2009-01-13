@@ -1146,8 +1146,6 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	if ( getModuleId(p) == octopusRef)
 		return TRUE;
-	if ( getModuleId(p) == remoteRef && getFunctionId(p)== execRef)
-		return TRUE;
 	return FALSE;
 }
 @-
