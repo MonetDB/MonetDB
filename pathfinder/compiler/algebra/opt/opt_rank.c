@@ -840,7 +840,9 @@ opt_rank (PFla_op_t *p)
                     /* we have to maintain the visibility information for
                        columns that are used in both operators */
                     PFarray_t   *sortby, *lsortby;
-                    unsigned int count, lcount, matches, lmatches;
+                    unsigned int count, lcount,
+                                 matches = 0,
+                                 lmatches = 0;
 
                     sortby  = PFarray_copy (p->sem.rank_opt.sortby);
                     lsortby = PFarray_copy (L(p)->sem.rank_opt.sortby);
