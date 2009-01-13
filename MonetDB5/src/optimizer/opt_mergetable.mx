@@ -1265,7 +1265,7 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 			
 			/* bc = aggr.count */
 			bc = newStmt(mb,aggrRef,countRef);
-			setArgType(mb,bc,0,TYPE_int);
+			setArgType(mb,bc,0,TYPE_wrd);
 			bc = pushArgument(mb, bc, getArg(mat[m].mi,k));
 
 			/* convert int to oid */
