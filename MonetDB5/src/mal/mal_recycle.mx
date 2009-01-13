@@ -324,7 +324,7 @@ int RECYCLEnewQryStat(QryPatPtr qp, str nm, MalBlkPtr mb)
 	int idx;
 	QryStatPtr qstat;
 	
-	if ((idx = findQryStat(qp,nm)) >= 0)
+    if ((idx = findQryStat(qp,nm)) >= 0)
 		qp->ptrn[idx]->calls++;
 	else {
 		qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
@@ -1293,7 +1293,7 @@ knowledge from the recycle cache.
 @c
 void
 RECYCLEshutdown(Client cntxt){
-	MalBlkPtr mb= recycleBlk;
+	MalBlkPtr mb = recycleBlk;
 	int i;
 	bte *used;
 	
@@ -1310,7 +1310,7 @@ RECYCLEshutdown(Client cntxt){
 
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
 	mal_set_lock(recycleLock,"recycle");
-	recycleBlk= NULL;
+	recycleBlk = NULL;
 	recycled = statements = 0;
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
@@ -1318,6 +1318,9 @@ RECYCLEshutdown(Client cntxt){
 	ccTime = 0;
 	ccInstr = 0;
 	crdInstr = 0;
+    GDKfree(recycleQPat->ptrn);
+    GDKfree(recycleQPat);
+    recycleQPat = NULL;
 #ifdef _DEBUG_CACHE_
 	recycleMiss = 0;
 	recycleRem = 0;
@@ -1462,7 +1465,7 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef _DEBUG_CACHE_
                         if ( q->token == NOOPsymbol ) continue;
 #endif
-			if (getName("bind",4)== getFunctionId(q) && getModuleId(q)==getName("sql",3)){
+			if (isBindInstr(q)){
 				for (j=p->retc; j<p->argc; j++)
 					if( VALcmp( &stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 					break;

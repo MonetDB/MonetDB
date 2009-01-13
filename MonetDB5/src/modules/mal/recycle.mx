@@ -458,6 +458,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
+    if (recycleQPat == NULL)
+        RECYCLEinitQPat(20);
 	recycleCurQ = RECYCLEnewQryStat(recycleQPat,getFunctionId(mb->stmt[0]),mb);
 	return MAL_SUCCEED;
 }

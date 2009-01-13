@@ -295,6 +295,7 @@ actions to obtain client records.
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
+#include "mal_recycle.h"
 
 /* This should be in src/mal/mal.h, as the function is implemented in 
  * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
@@ -629,6 +630,7 @@ void freeClient(Client c)
 	Thread t= c->mythread;
 	c->mode = FINISHING;
 
+    RECYCLEshutdown(c);
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, 

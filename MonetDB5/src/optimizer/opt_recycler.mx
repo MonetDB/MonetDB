@@ -121,7 +121,8 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i<limit; i++) {
 		p = old[i];
-		if( getFunctionId(p) == affectedRowsRef && getModuleId(p)==sqlRef)
+		if(( getFunctionId(p) == affectedRowsRef || getFunctionId(p) == exportOperationRef) 
+			&& getModuleId(p)==sqlRef)
 			updstmt = 1;
 	}
 
@@ -267,7 +268,7 @@ because they may lead to view dependencies that later interfere
 with the transaction commits.
 @c
 		if (getModuleId(p)== sqlRef && 
-			((	getFunctionId(p)==bindRef && 
+			(((getFunctionId(p)==bindRef || getFunctionId(p) == getName("bind_idxbat",11)) && 
 				getVarConstant(mb, getArg(p,4)).val.ival != 0) ||
 				getFunctionId(p)== binddbatRef) ) {
 				recycled[getArg(p,0)]=0;
