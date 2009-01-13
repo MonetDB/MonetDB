@@ -42,6 +42,7 @@ function user.qry(i:dbl):dbl;           #  0 qry:dbl := user.qry(i:dbl) {G}
     return qry := z;                    #  3 qry:dbl := z:dbl 
 end qry;                                #  4  
     optimizer.aliases();                #  5 _7:str := OPTaliases() {G}
+    optimizer.commonTerms();            #  6 _8:str := OPTcommonTerms() {G}
 function user.main():void;              #  0 main:void := user.main() {G}
 #tesing the optimizers 
 #setDebug(); 

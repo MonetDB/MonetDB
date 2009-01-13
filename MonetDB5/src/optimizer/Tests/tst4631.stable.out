@@ -229,9 +229,10 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V132 := aggr.count(V32,V32,V34);    #100 V132:bat[:oid,:wrd] := AX3aggrX3_count3Nils(V32:bat[:oid,:oid], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
 end qry1;                               #101  
     optimizer.aliases();                #102 _123:str := OPTaliases() {G}
-#optimizer.aliases    actions= 0 time=18 usec 
-#optimizer.reduce     actions=11 time=43 usec 
-#optimizer.commonTerms actions=16 time=58 usec 
+    optimizer.commonTerms();            #103 _124:str := OPTcommonTerms() {G}
+#optimizer.aliases    actions= 0 time=19 usec 
+#optimizer.reduce     actions=11 time=42 usec 
+#optimizer.commonTerms actions=16 time=60 usec 
 
 # 19:36:05 >  
 # 19:36:05 >  Done.
