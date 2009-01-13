@@ -45,37 +45,37 @@ Over..
 % 22 # length
 [ 1	]
 % . # table_name
-% L5 # name
+% L7 # name
 % double # type
 % 22 # length
 [ NULL	]
 % . # table_name
-% L6 # name
+% L12 # name
 % smallint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L7 # name
+% L13 # name
 % wrd # type
 % 20 # length
 [ NULL	]
 % . # table_name
-% L10 # name
+% L14 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L11 # name
+% L15 # name
 % int # type
 % 11 # length
 [ NULL	]
 % . # table_name
-% L12 # name
+% L16 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L13 # name
+% L17 # name
 % int # type
 % 11 # length
 [ NULL	]

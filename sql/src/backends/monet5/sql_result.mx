@@ -32,7 +32,7 @@ extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
 extern int mvc_export_operation(mvc *m, stream *s, str w);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
-extern int mvc_export_head(mvc *c, stream *s, int res_id);
+extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
@@ -687,9 +687,9 @@ mvc_export_row(mvc *m, stream *s, res_table *t, str btag, str sep, str rsep, str
 	}
 	if (len)
 		_DELETE(buf);
-	m->results = res_tables_remove(m->results, t);
 	if (ok)
 		ok = (stream_write(s, rsep, rseplen, 1) == 1);
+	m->results = res_tables_remove(m->results, t);
 	return (ok) ? 0 : -1;
 }
 
@@ -962,30 +962,8 @@ export_error(BAT *order)
 	return -1;
 }
 
-static int
-mvc_export_file(mvc *m, stream *s, res_table *t) 
-{
-	int res = 0;
-	BUN count;
-	BAT *order = NULL;
-
-	if (!t->order) {
-		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
-	} else {
-		order = BATdescriptor(t->order);
-		count = BATcount(order);
-		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
-		BBPunfix(order->batCacheid);
-		m->results = res_tables_remove(m->results, t);
-	} 
-	if (res == 0 && m->scanner.ws == s) 
-		/* need to flush */
-		stream_flush(s);
-	return res;
-}
-
-static int
-mvc_export_head_intern(mvc *m, stream *s, int res_id, int flag)
+int
+mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 {
 	int i, res = 0;
 	BUN count = 0;
@@ -1005,7 +983,7 @@ mvc_export_head_intern(mvc *m, stream *s, int res_id, int flag)
 		return -1;
 
 	/* tuple count */
-	if (flag) {
+	if (only_header) {
 		if (t->order) {
 			order = BATdescriptor(t->order);
 
@@ -1080,9 +1058,28 @@ mvc_export_head_intern(mvc *m, stream *s, int res_id, int flag)
 	return res;
 }
 
-int
-mvc_export_head(mvc *m, stream *s, int res_id){
-	return mvc_export_head_intern(m,s,res_id,FALSE);
+static int
+mvc_export_file(mvc *m, stream *s, res_table *t) 
+{
+	int res = 0;
+	BUN count;
+	BAT *order = NULL;
+
+	if (m->scanner.ws == s) 
+		/* need header */
+		mvc_export_head(m, s, t->id, TRUE);
+
+	if (!t->order) {
+		res = mvc_export_row(m, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
+	} else {
+		order = BATdescriptor(t->order);
+		count = BATcount(order);
+
+		res = mvc_export_table(m, s, t, order, 0, count, "", t->tsep, t->rsep, t->ssep, t->ns);
+		BBPunfix(order->batCacheid);
+		m->results = res_tables_remove(m->results, t);
+	} 
+	return res;
 }
 
 int
@@ -1101,7 +1098,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (t->tsep)
 		return mvc_export_file(m, s, t);
 
-	mvc_export_head_intern(m,s,res_id,TRUE);
+	mvc_export_head(m, s, res_id, TRUE);
 
 	if (!t->order)
 		return mvc_export_row(m, s, t, "[ ", ",\t", "\t]\n", "\"", "NULL");

@@ -116,7 +116,7 @@ Over..
 % char,	char,	double # type
 % 3,	3,	22 # length
 [ "ATL",	"BOS",	154.36842105263159	]
-% sys.ground_service,	sys.ground_service # table_name
+% sys.ground_service,	sys. # table_name
 % city_code,	L22 # name
 % char,	double # type
 % 4,	22 # length
@@ -132,7 +132,7 @@ Over..
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 % sys.ground_service,	sys.ground_service # table_name
-% L23,	city_code # name
+% L25,	city_code # name
 % wrd,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -155,7 +155,7 @@ Over..
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 % sys.aircraft,	sys.aircraft # table_name
-% category,	L26 # name
+% category,	L30 # name
 % char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]

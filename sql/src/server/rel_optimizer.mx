@@ -107,10 +107,6 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_groupby: 
 		if (!rel->exps)
 			break;
-		/* ??
-		} else if (rname) {
-			alias = exps_bind_column2(rel->exps, rname, name);
-		*/
 		alias = exps_bind_column(rel->exps, name);
 		break;
 	case op_insert:
@@ -1270,6 +1266,172 @@ rel_push_join_down(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+rel_find_aggr_exp( sql_rel *rel, list *exps, sql_exp *e, char *name)
+{
+ 	list *ea = e->l;
+	sql_exp *a = NULL, *eae;
+	node *n;
+
+	if (list_length(ea) != 1)
+		return NULL;
+	eae = ea->h->data;
+	if (eae->type != e_column)
+		return NULL;
+	for( n = exps->h; n; n = n->next) {
+		a = n->data;
+		
+		if (a->type == e_aggr) {
+			sql_subaggr *af = a->f;
+			list *aa = a->l;
+			
+			/* TODO handle distinct and no-nil etc ! */
+			if (strcmp(af->aggr->base.name, name) == 0 &&
+				/* TODO handle count (has no args!!) */
+			    aa && list_length(aa) == 1) {
+				sql_exp *aae = aa->h->data;
+
+				if (eae->type == e_column &&
+				    ((!aae->l && !eae->l) ||
+				    (aae->l && eae->l &&
+				    strcmp(aae->l, eae->l) == 0)) &&
+				    (aae->r && eae->r &&
+				    strcmp(aae->r, eae->r) == 0)) 
+					return exp_column(rel_name(rel), exp_name(a), exp_subtype(a), a->card, has_nil(a), is_intern(a));
+			}
+		}
+	}
+	return NULL;
+}
+
+static sql_subfunc *
+find_func( mvc *sql, char *name, list *exps )
+{
+	list * l = list_create(NULL); 
+	node *n;
+
+	for(n = exps->h; n; n = n->next)
+		append(l, exp_subtype(n->data)); 
+	return sql_bind_func_(sql->session->schema, name, l);
+}
+
+/* rewrite avg into sum/count */
+static sql_rel *
+rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel) 
+{
+	*changes = 0;
+	if (is_groupby(rel->op)) {
+		list *pexps, *nexps = new_exp_list(), *avgs = new_exp_list();
+		node *m, *n;
+
+		/* Find all avg's */
+		for (m = rel->exps->h; m; m = m->next) {
+			sql_exp *e = exp_dup(m->data);
+
+			if (e->type == e_aggr) {
+				sql_subaggr *a = e->f;
+				
+				if (strcmp(a->aggr->base.name, "avg") == 0) {
+					list *exps = e->l;
+					sql_exp *ae = exps->h->data;
+
+					/* FOR NOW ESCAPE ON AVG ON DECIMALS,
+					   we need a rewrite or DEC's in 
+					   the optimizer to solve this problem*/
+					if (exp_subtype(ae)->type->eclass == EC_DEC)
+						return rel;
+					append(avgs, e);
+					continue; 
+				}
+			}
+			append(nexps, e);
+		}
+		if (!list_length(avgs))  
+			return rel;
+
+		/* For each avg, find count and sum */
+		for (m = avgs->h; m; m = m->next) {
+			list *args;
+			sql_exp *avg = m->data, *navg, *cond, *cnt_d;
+			sql_exp *cnt = rel_find_aggr_exp(rel, nexps, avg, "count");
+			sql_exp *sum = rel_find_aggr_exp(rel, nexps, avg, "sum");
+			sql_subfunc *div, *ifthen, *cmp;
+			sql_subtype *dbl_t;
+
+			if (!cnt) {
+				list *l = avg->l;
+				sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", exp_subtype(l->h->data));
+				sql_exp *e = exp_aggr(avg->l, cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+
+				exp_label(e, ++sql->label);
+				append(nexps, e);
+				cnt = exp_column(NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			}
+			if (!sum) {
+				list *l = avg->l;
+				sql_subaggr *sf = sql_bind_aggr(sql->session->schema, "sum", exp_subtype(l->h->data));
+				sql_exp *e = exp_aggr(avg->l, sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+
+				exp_label(e, ++sql->label);
+				append(nexps, e);
+				sum = exp_column(NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			}
+			/* create new sum/cnt exp */
+
+			/* For now we always convert to dbl */
+			dbl_t = sql_bind_localtype("dbl");
+			cnt_d = exp_convert(cnt, exp_subtype(cnt), dbl_t);
+			sum = exp_convert(sum, exp_subtype(sum), dbl_t);
+
+			args = new_exp_list();
+			append(args, cnt);
+			append(args, exp_atom_wrd(0));
+			cmp = find_func(sql, "=", args);
+			assert(cmp);
+			cond = exp_op(args, cmp);
+
+			args = new_exp_list();
+			append(args, cond);
+			append(args, exp_atom(atom_general(dbl_t, NULL, 0)));
+			append(args, cnt_d);
+			ifthen = find_func(sql, "ifthenelse", args);
+			assert(ifthen);
+			cnt_d = exp_op(args, ifthen);
+
+			args = new_exp_list();
+			append(args, sum);
+			append(args, cnt_d);
+			div = find_func(sql, "sql_div", args);
+			assert(div);
+			navg = exp_op(args, div);
+
+			exp_setname(navg, avg->rname, avg->name );
+			m->data = navg; 
+		}
+		pexps = new_exp_list();
+		for (m = rel->exps->h, n = avgs->h; m; m = m->next) {
+			sql_exp *e = exp_dup(m->data);
+
+			if (e->type == e_aggr) {
+				sql_subaggr *a = e->f;
+				
+				if (strcmp(a->aggr->base.name, "avg") == 0) {
+					sql_exp *avg = exp_dup(n->data);
+
+					append(pexps, avg);
+					n = n->next;
+					continue; 
+				}
+			}
+			append(pexps, exp_column(e->rname, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
+		}
+		rel->exps = nexps;
+		rel = rel_project(rel, pexps);
+		*changes = 1;
+	}
+	return rel;
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier. 
  */
@@ -1793,6 +1955,9 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_join] && gp.cnt[op_groupby])
 		rel = rewrite(sql, rel, &rel_push_join_down); 
+
+	if (gp.cnt[op_groupby])
+		rel = rewrite(sql, rel, &rel_avg2sum_count); 
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
 		rel = rewrite(sql, rel, &rel_join_order); 

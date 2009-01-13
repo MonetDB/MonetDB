@@ -2100,7 +2100,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
-	if (mvc_export_head(c, *s, *res_id)) {
+	if (mvc_export_head(c, *s, *res_id, FALSE)) {
 		throw(SQL, "sql.exportHead", "failed");
 	}
 	(void)ret;
