@@ -1865,7 +1865,7 @@ mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (msg)
 		return msg;
-	if (mtype == TYPE_bat) {
+	if (isaBatType(mtype)) {
 		bat *order_bid = (bat *)getArgReference(stk, pci, 6);
         	if ((order = BATdescriptor(*order_bid)) == NULL ) {
                		throw(SQL, "sql.resultSet", "Cannot access descriptor");
