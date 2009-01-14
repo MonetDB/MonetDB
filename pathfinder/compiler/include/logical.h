@@ -223,7 +223,7 @@ union PFla_op_sem_t {
         char* name;
         PFarray_t*      tcols;    /**< array holding the original column
                                        names */
-        PFarray_t*      keys;     /**< array holding the *positions*
+        PFarray_t*      keys;     /**< array holding arrays with the *positions*
                                       (w.r.t. the schema) of key columns */
     } ref_tbl;                    /**< semantic content for tableref operator */
 

@@ -826,16 +826,31 @@ match (PFla_op_t *a, PFla_op_t *b)
                      return false;
             }
 
+
+            /* checking keys */
             if (PFarray_last (a->sem.ref_tbl.keys) !=
                 PFarray_last (b->sem.ref_tbl.keys))
                 return false;
 
-            /* checking keys */
-            for (unsigned int i = 0;
-                 i < PFarray_last (a->sem.ref_tbl.keys); i++) {
-                 if (*(int *) PFarray_at (a->sem.ref_tbl.keys, i) !=
-                     *(int *) PFarray_at (b->sem.ref_tbl.keys, i))
-                     return false;
+            for (unsigned int key = 0;
+                 key < PFarray_last (a->sem.ref_tbl.keys); key++) {
+
+                PFarray_t * keyPositionsA = *((PFarray_t**) PFarray_at (a->sem.ref_tbl.keys, key));
+                PFarray_t * keyPositionsB = *((PFarray_t**) PFarray_at (b->sem.ref_tbl.keys, key));
+
+                if (PFarray_last (keyPositionsA) !=
+                    PFarray_last (keyPositionsB))
+                    return false;
+
+                for (unsigned int i = 0;
+                    i < PFarray_last (keyPositionsA);
+                    i++)
+                {
+
+                    if (*(int *) PFarray_at (keyPositionsA, i) !=
+                        *(int *) PFarray_at (keyPositionsB, i))
+                        return false;
+                }
             }
 
             return true;
@@ -2733,3 +2748,4 @@ PFalgopt_cse (PFla_op_t *root)
 }
 
 /* vim:set shiftwidth=4 expandtab: */
+

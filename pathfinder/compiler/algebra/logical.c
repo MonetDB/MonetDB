@@ -483,8 +483,15 @@ PFla_ref_tbl_ (const char* name, PFalg_schema_t schema, PFarray_t* tcols,
             *(char**) PFarray_add (ret->sem.ref_tbl.tcols) = copiedValue;
     }
 
-    /* (it's save to) shallow copy the list of key-column-names */
-    ret->sem.ref_tbl.keys  = PFarray_copy(keys);
+    /* deep copy the list of lists of key-column-positions */
+    ret->sem.ref_tbl.keys = PFarray(sizeof (PFarray_t*), PFarray_last (keys));
+    for (unsigned int i = 0; i < PFarray_last (keys); i++)
+    {
+            PFarray_t * keyPositions = *((PFarray_t**) PFarray_at (keys, i));
+            /* (it's save to) shallow copy the list of key-column-names */
+            PFarray_t * copiedKeyPositions = PFarray_copy(keyPositions);
+            *(PFarray_t**) PFarray_add (ret->sem.ref_tbl.keys) = copiedKeyPositions;
+    }
 
     /* return the new algebra operator node */
     return ret;

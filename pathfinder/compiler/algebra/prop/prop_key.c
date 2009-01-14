@@ -281,18 +281,25 @@ infer_key (PFla_op_t *n, bool with_guide_info)
             break;
 
         case la_ref_tbl:
-            /* Make sure we don't process a component key here. */
-            if (PFarray_last (n->sem.ref_tbl.keys) == 1)
+            for (unsigned int key = 0;
+                     key < PFarray_last (n->sem.ref_tbl.keys);
+                     key++)
             {
-                int keyPos =  *(int*) PFarray_at (n->sem.ref_tbl.keys, 0);
+                PFarray_t* keyPositions = *((PFarray_t**) PFarray_at (n->sem.ref_tbl.keys, key));
+                unsigned int keyCount = PFarray_last (keyPositions);
 
-                assert(keyPos >= 0);
-
-                PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
-                PFalg_col_t key = schemaItem.name;
-
-                cladd (n->prop->keys) = key;
-            }
+                /* Make sure we don't process a component key here. */
+                if(keyCount == 1 ) {
+                    int keyPos =  *(int*) PFarray_at (keyPositions, 0);
+    
+                    assert(keyPos >= 0);
+    
+                    PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
+                    PFalg_col_t key = schemaItem.name;
+    
+                    cladd (n->prop->keys) = key;
+                }
+            }    
             break;
 
         case la_disjunion:

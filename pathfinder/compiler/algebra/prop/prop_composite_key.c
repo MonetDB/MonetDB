@@ -225,7 +225,6 @@ infer_ckey (PFla_op_t *n)
 
         case la_side_effects:
         case la_empty_tbl:
-        case la_ref_tbl:
         case la_disjunion: /* disjoint domains could help here */
         case la_fcns:
         case la_docnode:
@@ -275,6 +274,35 @@ infer_ckey (PFla_op_t *n)
                     if (j == n->sem.lit_tbl.count)
                         union_ (CKEYS, collist (n->schema.items[i].name));
                 }
+            break;
+
+        case la_ref_tbl:
+            for (unsigned int key = 0;
+                     key < PFarray_last (n->sem.ref_tbl.keys);
+                     key++)
+                {
+                    PFarray_t* keyPositions = *((PFarray_t**) PFarray_at (n->sem.ref_tbl.keys, key));
+                    unsigned int keyCount = PFarray_last (keyPositions);
+                    /* Make sure we really have a component key here. */
+                    if(keyCount > 1 ) {
+
+                        PFalg_collist_t *collist = PFalg_collist (keyCount);
+    
+                        for (unsigned int i = 0;
+                            i < PFarray_last (keyPositions);
+                            i++)
+                        {
+                            int keyPos = *((int*) PFarray_at (keyPositions, i));
+                            assert(keyPos >= 0);
+                            PFalg_schm_item_t schemaItem = n->schema.items[keyPos];
+                            PFalg_col_t keyName = schemaItem.name;
+                            PFalg_collist_add (collist) = keyName;
+        
+                        }
+    
+                        union_ (CKEYS, collist);
+                    }
+                }    
             break;
 
         case la_attach:
@@ -880,3 +908,4 @@ PFprop_infer_composite_key (PFla_op_t *root) {
 }
 
 /* vim:set shiftwidth=4 expandtab: */
+

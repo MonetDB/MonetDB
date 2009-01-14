@@ -2516,8 +2516,7 @@ getPFLA_KeyInfos(
     </key>)+
     */
 
-    PFarray_t * keyPositions = PFarray (sizeof (int), 5);
-
+    PFarray_t * keys = PFarray (sizeof (PFarray_t*), 5);
 
     xmlXPathObjectPtr keys_xml =  XPATH(xpathExpression);
     int keysCount = PFxml2la_xpath_getNodeCount(keys_xml);
@@ -2528,24 +2527,22 @@ getPFLA_KeyInfos(
         xmlNodePtr key_xml = PFxml2la_xpath_getNthNode(keys_xml, i);
 
         xmlXPathObjectPtr keyColumns_xml =  XPATH2(key_xml, "/column");
-        /*int keyColumnsCount = PFxml2la_xpath_getNodeCount(keyColumns_xml);*/
+        int keyColumnsCount = PFxml2la_xpath_getNodeCount(keyColumns_xml);
+        PFarray_t * keyPositions = PFarray (sizeof (int), keyColumnsCount);
 
-        /*for (int j = 0; j < keyColumnsCount; j++)*/
-        for (int j = 0; j < 1; j++)
+        for (int j = 0; j < keyColumnsCount; j++)
         {
             xmlNodePtr  keyColumn_xml;
             char       *columnName;
             PFalg_col_t keyAttribute;
-            
+
             keyColumn_xml = PFxml2la_xpath_getNthNode(keyColumns_xml, j);
             columnName = (char*) xmlXPathCastToString(
                                      XPATH2(keyColumn_xml, "/@name"));
             keyAttribute = ctx->convert2PFLA_attributeName(columnName);
 
             int keyPos = -1;
-
             for (unsigned int k = 0; k < schema.count; k++) {
-
 
                 PFalg_schm_item_t schemaItem = schema.items[k];
                 if(schemaItem.name == keyAttribute) 
@@ -2555,21 +2552,17 @@ getPFLA_KeyInfos(
                 }
             }
 
-
             assert(keyPos >= 0);
-
 
             *(int*) PFarray_add (keyPositions) = keyPos;
 
-
         }
-
         
+        *(PFarray_t**) PFarray_add (keys) = keyPositions;
+
     }             
-
    
-    return keyPositions;
-
+    return keys;
 }
 
 
