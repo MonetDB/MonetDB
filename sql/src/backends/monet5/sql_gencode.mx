@@ -116,15 +116,13 @@ This safes table lookups.
 @c
 static str exportValueRef;
 static str exportResultRef;
-static str exportOperationRef;
 
 void initSQLreferences(void){
 	optimizerInit();
 	exportValueRef = putName("exportValue",11);
 	exportResultRef= putName("exportResult",12);
-	exportOperationRef= putName("exportOperation",15);
 	if( algebraRef==NULL || exportValueRef==NULL ||
-		exportResultRef==NULL || exportOperationRef==NULL )
+		exportResultRef==NULL )
 			GDKfatal("error initSQLreferences");
 }
 
