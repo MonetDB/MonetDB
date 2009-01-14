@@ -325,6 +325,7 @@ static InstrPtr
 mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 {
 	int l,k;
+
 	assert(mat[m].type != mat_grp);
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"MAT optimizer, mat_pack_mat\n");
@@ -352,7 +353,7 @@ mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 			k= isMATalias( getArg(mat[m].mi,l), mat, *mtop);
 			if( k< 0)
 				r= pushArgument(mb,r, getArg(mat[m].mi,l));
-			else
+			else 
 				r= mat_pack_mat(mb, r, mat, k, mtop);
 		}
 	}
@@ -1237,7 +1238,10 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 #endif
 	getArg(r,0) = o;
 	/* get the mark base id */
-	r = pushArgument(mb, r, getArg(p, 2));
+	if (p->argc == 3)
+		r = pushArgument(mb, r, getArg(p, 2));
+	else
+		r = pushOid(mb, r, 0);
 	pushInstruction(mb, r);
 	
 	r = newInstruction(mb, ASSIGNsymbol);
