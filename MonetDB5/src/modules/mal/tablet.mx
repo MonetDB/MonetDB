@@ -1776,7 +1776,7 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 	stream_printf(GDKout,"load_bulk %d\n",start);
 #endif
 	while ((b->pos < b->len || !b->eof) && res == 0 && limit >= 0 && (nr == BUN_NONE || i < nr)) {
-		char *s, *end;
+		char *s, *e, *end;
 
 
 		if (b->pos >= b->len && read_more(b, out, b->size - (b->len - b->pos)) == EOF) {
@@ -1793,8 +1793,13 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 		s = b->buf + b->pos;
 		*end = '\0';
 		done = 0;
+		/* We use `e' to indicate from where we search for the next
+		   separator.  When records are large, we don't want to scan
+		   data twice, so `e' points to where we left off the last
+		   time (minus the separator length). */
+		e = s;
 		while (s < end && limit >= 0) {
-			char *e = strstr(s, sep);
+			e = strstr(e, sep);
 
 			if (e) {
 				limit -= (lng) (e - s) + seplen;
@@ -1806,12 +1811,14 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 					break;
 				}
 				s = e + seplen;
+				e = s;
 				done = 1;
 			} else {
 				if (!done) {	/* nothing found in current buf
 						 * ie. need to enlarge
 						 */
 					size_t size = b->size;
+					size_t len = b->len - b->pos;
 
 					if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
 						size <<= 4;
@@ -1834,6 +1841,11 @@ TABLETload_bulk(Tablet * as, bstream *b, stream *out, BUN col1, BUN col2, int st
 					end = b->buf + b->len;
 					s = b->buf + b->pos;
 					*end = '\0';
+					/* from where to search for separator */
+					if (len < (size_t) seplen)
+						e = s;
+					else
+						e = s + len - seplen;
 					continue;
 				}
 				break;

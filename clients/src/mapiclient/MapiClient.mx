@@ -1159,7 +1159,7 @@ doFile(Mapi mid, const char *file)
 	}
 
 	bufsize = BLOCK - 1;
-	buf = malloc(bufsize);
+	buf = malloc(bufsize + 1);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
 		if (file != NULL)
@@ -1195,7 +1195,8 @@ doFile(Mapi mid, const char *file)
 			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
-		}
+		} else
+			buf[length] = 0;
 		timerResume();
 
 		if (hdl == NULL) {
@@ -1208,8 +1209,9 @@ doFile(Mapi mid, const char *file)
 			mapi_query_part(hdl, buf, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 
-			/* in case of XQuery; do the whole file in one go */
-			if (mode == XQUERY)
+			/* in case of XQuery, do the whole file in one go;
+			   otherwise, make sure there is a newline in the buffer */
+			if (mode == XQUERY || strchr(buf, '\n') == NULL)
 				continue;
 		}
 
