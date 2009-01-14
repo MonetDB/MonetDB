@@ -93,11 +93,12 @@ enum PFctype_t {
   , c_forbind            = 18 /**< binding part of a for expression */
   , c_forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-  , c_orderby            = 20 /**< orderby clause */
-  , c_orderspecs         = 21 /**< list of order specs */
+  , c_where              = 20 /**< where clause */
+  , c_orderby            = 21 /**< orderby clause */
+  , c_orderspecs         = 22 /**< list of order specs */
 
-  , c_apply              = 22 /**< function application */
-  , c_arg                = 23 /**< function argument (list) */
+  , c_apply              = 23 /**< function application */
+  , c_arg                = 24 /**< function argument (list) */
 
   , c_typesw             = 25 /**< typeswitch clause */
   , c_cases              = 26 /**< case concatenation for typeswitch */
@@ -272,6 +273,7 @@ PFcnode_t *PFcore_forvars (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_let (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_letbind (const PFcnode_t *, const PFcnode_t *);
 
+PFcnode_t *PFcore_where (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_orderby (bool, const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_orderspecs (PFsort_t, const PFcnode_t *, const PFcnode_t *);
 

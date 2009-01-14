@@ -148,11 +148,12 @@ static PFarray_t *used_var_env;
 %term forbind            = 18 /**< binding part of a for expression */
 %term forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 20 /**< orderby clause */
-%term orderspecs         = 21 /**< list of order specs */
+%term where              = 20 /**< where clause */
+%term orderby            = 21 /**< orderby clause */
+%term orderspecs         = 22 /**< list of order specs */
 
-%term apply              = 22 /**< function application */
-%term arg                = 23 /**< function argument (list) */
+%term apply              = 23 /**< function application */
+%term arg                = 24 /**< function argument (list) */
 
 %term typesw             = 25 /**< typeswitch clause */
 %term cases              = 26 /**< case concatenation for typeswitch */
@@ -230,7 +231,7 @@ Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
 CoreExpr:           Atom                                        =   40(10);
 CoreExpr:           SequenceTypeCast                            =   41(10);
                                                                      
-CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   2 (10);
+CoreExpr:           flwr (OptBindExpr, WhereExpr)               =   2 (10);
 
 CoreExpr:           flwr (for_ (forbind (forvars (var, nil),
                                          CoreExpr),
@@ -251,16 +252,25 @@ OptBindExpr:        let (letbind (var,
                                   flwr (let (letbind (var,           
                                                       CoreExpr),     
                                              nil),                   
-                                        CoreExpr)),                  
+                                        WhereExpr)),                 
                          OptBindExpr)                           =  11 (10);
 OptBindExpr:        let (letbind (var,                               
                                   flwr (let (letbind (var,           
                                                       CoreExpr),     
                                              OptBindExpr),           
-                                        CoreExpr)),                  
+                                        WhereExpr)),                 
                          OptBindExpr)                           =  12 (10);
 OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   44(10);
 OptBindExpr:        nil                                         =   45(10);
+                                                                     
+                                                                     
+WhereExpr:          where (true_, WhereExpr)                    =  33 (10);
+WhereExpr:          where (CoreExpr, WhereExpr)                 =  34 (10);
+WhereExpr:          orderby (OrderSpecs, CoreExpr)              =   92(10);
+WhereExpr:          CoreExpr                                    =   93(10);
+
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =   94(10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =   95(10);
                                                                      
 CoreExpr:           typesw (CoreExpr,                                
                             cases (case_ (SequenceType,              
@@ -341,16 +351,11 @@ FunctionArgs:       nil                                         =   89(10);
 CoreExpr:           ordered (CoreExpr)                          =   90(10);
 CoreExpr:           unordered (CoreExpr)                        =   91(10);
                                                                      
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =   92(10);
-                                                                     
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =   93(10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =   94(10);
-                                                                     
 CoreExpr:           cast (SequenceType, CoreExpr)               =  27 (10);
                                                                      
 Atom:               var                                         =  28 (10);
-Atom:               empty                                       =   95(10);
-Atom:               LiteralValue                                =   96(10);
+Atom:               empty                                       =   96(10);
+Atom:               LiteralValue                                =   97(10);
                                                                      
 LiteralValue:       lit_str                                     =  100(10);
 LiteralValue:       lit_int                                     =  101(10);
@@ -388,6 +393,25 @@ CoreExpr:           xrpc (CoreExpr, FunExpr)                    =  116(10);
 static void relabel (PFcnode_t *p,  PFcnode_t **kids);
 
 #include "core_mnemonic.h"
+
+/* helper function that transforms where list into nested if-then-else(empty) */
+static PFcnode_t *
+transform_where (PFcnode_t *p)
+{
+    assert (p);
+    switch (p->kind) {
+        case c_where:
+            /* replace where nodes by if-then-else constructs */
+            return if_ (L(p), then_else (transform_where (R(p)), empty ()));
+        case c_orderby:
+            /* also remove orderby node if present
+               (static typing ensures that we don't
+                prune erroneous order arguments) */
+            return R(p);
+        default:
+            return p;
+    }
+}
 
 /**
  * Reducer function. This is the heart of this source file. It
@@ -443,8 +467,7 @@ reduce (PFcnode_t * p, int goalnt)
 
                 break;
 
-            /* CoreExpr:           flwr (OptBindExpr,
-                                         CoreExpr) */
+            /* CoreExpr:           flwr (OptBindExpr, WhereExpr) */
             case 2:
                 /* Make sure to collect all variables first ... */
                 rewritten |= reduce (kids[0], nts[0]);
@@ -454,14 +477,8 @@ reduce (PFcnode_t * p, int goalnt)
                 /* remove uncessary flwr expressions */
                 if (L(p)->kind == c_nil)
                 {
-                    /* also remove orderby node if present
-                       (static typing ensures that we don't
-                        prune erroneous order arguments) */
-                    if (R(p)->kind == c_orderby)
-                        *p = *(RR(p));
-                    else
-                        *p = *(R(p));
-
+                    /* transform where list into nested if-then-else(empty) */
+                    *p = *transform_where (R(p));
                     rewritten = true;
                 }
                 break;
@@ -620,7 +637,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                                              flwr (let (letbind (var, 
                                                                  CoreExpr),
                                                         nil),
-                                                   CoreExpr)),
+                                                   WhereExpr)),
                                     OptBindExpr) */
         case 11:
             /*
@@ -632,15 +649,13 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
              *       let $v1 := e' return
              *         e''
              */
+            /* transform where list into nested if-then-else(empty) */
+            LRR(p) = transform_where (LRR(p));
+
             *p = *let (letbind (LL(LRL(p)), LR(LRL(p))), /* let $v2 := e ret */
                        let (letbind (LL(p), LRR(p)),     /*   let $v1 := e'  */
                             R(p)));                      /*     ret e''      */
 
-            /* remove unncessary order by expression 
-               bound to flwr expression (here e') */
-            if (RLR(p)->kind == c_orderby)
-                RLR(p) = R(RLR(p));
-    
             /* type-check what we just created */
             PFty_check (flwr (p, num(1)));
 
@@ -658,7 +673,7 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
                                              flwr (let (letbind (var, 
                                                                  CoreExpr),
                                                         OptBindExpr)),
-                                                   CoreExpr),
+                                                   WhereExpr),
                                     OptBindExpr) */
         case 12:
             /*
@@ -687,6 +702,40 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
              * we have to restore them.
              */
             PFcoreopt_label (p);
+            break;
+
+        /* WhereExpr:          where (true_, WhereExpr) */
+        case 33:
+            *p = *(R(p));
+            /* don't need to re-label here,
+             * RL(p) should already be labeled */
+            rewritten = true;
+            break;
+
+        /* WhereExpr:          where (CoreExpr, WhereExpr) */
+        case 34:
+            /* rewrite conjunctive selections into nested selections */
+            if (L(p)->kind == c_apply &&
+                !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "and"))) {
+                PFcnode_t *fst_and_arg = LLL(p),
+                          *snd_and_arg = LLRL(p);
+                /* provide the new pattern leafs */
+                kids[0] = fst_and_arg;
+                kids[1] = snd_and_arg;
+                kids[2] = RL(p);
+                
+                assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
+                assert (PFty_subtype (TY(snd_and_arg), PFty_xs_boolean()));
+                
+                L(p)  = fst_and_arg;
+                /* move the second condition into a separate where block
+                   checking for the second argument of op:and */
+                R(p) = where (snd_and_arg, R(p));
+                TY(R(p)) = TY(p);
+                    
+                relabel (p, kids);
+                rewritten = true;
+            }
             break;
 
         /* CoreExpr:           typesw (CoreExpr,
@@ -757,15 +806,15 @@ do_reduce (PFcnode_t * p, int rule, PFcnode_t *kids[])
             if (L(p)->kind == c_apply &&
                 !PFqname_eq (L(p)->sem.fun->qname, PFqname (PFns_op, "and"))) {
                 PFcnode_t *fst_and_arg = LLL(p),
-                          *sec_and_arg = LLRL(p);
+                          *snd_and_arg = LLRL(p);
                 
                 assert (PFty_subtype (TY(fst_and_arg), PFty_xs_boolean()));
-                assert (PFty_subtype (TY(sec_and_arg), PFty_xs_boolean()));
+                assert (PFty_subtype (TY(snd_and_arg), PFty_xs_boolean()));
                 
                 L(p)  = fst_and_arg;
                 /* replace then branch input by a nested if-then-else
                    checking for the second argument of op:and */
-                RL(p) = if_ (sec_and_arg, then_else (RL(p), empty ()));
+                RL(p) = if_ (snd_and_arg, then_else (RL(p), empty ()));
                     
                 /* type-check what we just created */
                 PFty_check (p);

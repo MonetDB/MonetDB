@@ -11684,6 +11684,14 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
                 expand_flwr (R(c), ret);
             break;
 
+        case c_where:
+            /* this will probably break any usage of order by -- everything
+               else however should still work */
+            *c = *PFcore_if (L(c), PFcore_then_else (R(c), PFcore_empty ()));
+            TY(RR(c)) = PFty_empty ();
+            TY(c) = *PFty_simplify (PFty_choice (TY(RL(c)), TY(RR(c))));
+            break;
+
         default:
             for (unsigned int i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
                 expand_flwr (c->child[i], ret);

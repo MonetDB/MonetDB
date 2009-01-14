@@ -78,6 +78,7 @@ char *c_id[]  = {
   , [c_forbind]            = "forbind"
   , [c_forvars]            = "forvars"
 
+  , [c_where]              = "where"
   , [c_orderby]            = "orderby"
   , [c_orderspecs]         = "orderspecs"
 

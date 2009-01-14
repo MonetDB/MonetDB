@@ -1396,7 +1396,7 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                                                 ord_ret (nil, OptExpr))) */
         case 60:
             C(p) = flwr (C(L(p)),
-                         if_ (C(RL(p)), then_else (C(RRR(p)), empty ())));
+                         where (C(RL(p)), C(RRR(p))));
             break;
 
         /* FLWORExpr:              flwr (OptBindExpr,
@@ -1406,11 +1406,10 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
                                                     OptExpr))) */
         case 61:
             C(p) = flwr (C(L(p)),
-                         orderby (RRL(p)->sem.tru,    /* stable or not? */
-                                  C(RRLL(p)),
-                                  if_ (C(RL(p)),
-                                       then_else (C(RRR(p)), 
-                                                  empty ()))));
+                         where (C(RL(p)),
+                             orderby (RRL(p)->sem.tru,    /* stable or not? */
+                                      C(RRLL(p)),
+                                      C(RRR(p)))));
             break;
 
         /* OptBindExpr:            nil */

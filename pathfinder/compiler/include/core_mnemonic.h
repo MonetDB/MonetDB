@@ -112,6 +112,7 @@
 #define forvars(var,pos)      PFcore_forvars ((var), (pos))
 #define let(e1,e2)            PFcore_let ((e1), (e2))
 #define letbind(e1,e2)        PFcore_letbind ((e1), (e2))
+#define where(e1,e2)          PFcore_where ((e1), (e2))
 #define orderby(s,e1,e2)      PFcore_orderby ((s), (e1), (e2))
 #define orderspecs(m,e1,e2)   PFcore_orderspecs ((m), (e1), (e2))
 #define seq(e1,e2)            PFcore_seq ((e1), (e2))

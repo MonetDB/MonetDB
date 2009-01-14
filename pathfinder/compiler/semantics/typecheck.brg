@@ -102,11 +102,12 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term forbind            = 18 /**< binding part of a for expression */
 %term forvars            = 19 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 20 /**< orderby clause */
-%term orderspecs         = 21 /**< list of order specs */
+%term where              = 20 /**< where clause */
+%term orderby            = 21 /**< orderby clause */
+%term orderspecs         = 22 /**< list of order specs */
 
-%term apply              = 22 /**< function application */
-%term arg                = 23 /**< function argument (list) */
+%term apply              = 23 /**< function application */
+%term arg                = 24 /**< function argument (list) */
 
 %term typesw             = 25 /**< typeswitch clause */
 %term cases              = 26 /**< case concatenation for typeswitch */
@@ -182,7 +183,7 @@ Query:              CoreExpr                                    =   2 (10);
 CoreExpr:           Atom                                        =   3 (10);
 CoreExpr:           SequenceTypeCast                            =   4 (10);
 
-CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   5 (10);
+CoreExpr:           flwr (OptBindExpr, WhereExpr)               =   5 (10);
                                                                      
 OptBindExpr:        for_ (forbind (forvars (var, nil),
                                    CoreExpr),
@@ -195,8 +196,15 @@ OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   8 (10);
 
 OptBindExpr:        nil                                         =   9 (10);
                                                                      
+WhereExpr:          where (CoreExpr, WhereExpr)                 =  10 (10);
+WhereExpr:          orderby (OrderSpecs, CoreExpr)              =  11 (10);
+WhereExpr:          CoreExpr                                    =  12 (10);
+
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  63 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  64 (10);
+
 CoreExpr:           if_ (CoreExpr,
-                         then_else (CoreExpr, CoreExpr))        =  10 (10);
+                         then_else (CoreExpr, CoreExpr))        =  14 (10);
 
 CoreExpr:           seq (CoreExpr, CoreExpr)                    =  15 (10);
 CoreExpr:           twig_seq (CoreExpr, CoreExpr)               =  16 (10);
@@ -261,11 +269,6 @@ CoreExpr:           pi (lit_str, CoreExpr)                      =  54 (10);
 
 CoreExpr:           ordered (CoreExpr)                          =  60 (10);
 CoreExpr:           unordered (CoreExpr)                        =  61 (10);
-
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  62 (10);
-
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  63 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  64 (10);
 
 CoreExpr:           cast (SequenceType, CoreExpr)               =  65 (10);
 
@@ -441,7 +444,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
         case 4:
             break;
 
-        /* CoreExpr:           flwr (OptBindExpr, CoreExpr) */
+        /* CoreExpr:           flwr (OptBindExpr, WhereExpr) */
         case 5:
             TY(p) = *PFty_simplify (L(p)->sem.flwr.quantifier (TY(R(p))));
             break;
@@ -618,8 +621,49 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             p->sem.flwr.quantifier = PFty_one;
             break;
 
-        /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
+        /* WhereExpr:          where (CoreExpr, WhereExpr) */
         case 10:
+        /* WhereExpr:          orderby (OrderSpecs, CoreExpr) */
+        case 11:
+            TY(p) = TY(R(p));
+            break;
+
+        /* WhereExpr:          CoreExpr */
+        case 12:
+            break;
+
+        /* OrderSpecs:         orderspecs (CoreExpr, nil) */
+        case 63:
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
+        case 64:
+            /*
+             * XQuery Update Facility disallows updates in `order by'
+             * clauses.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (TY(L(p))))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: `order by' may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (TY(L(p))));
+
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
+                PFoops (OOPS_TYPECHECK,
+                        "[err:XPTY0004]"
+                        " Orderspec requires at most one atomic item "
+                        "(given: %s).", PFty_str (TY(L(p))));
+
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_string ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_decimal ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_double ())))
+                PFoops (OOPS_TYPECHECK,
+                        "[err:XPTY0004]"
+                        " Orderspec requires an type whose order can be "
+                        "decided using 'gt' (given: %s).", PFty_str (TY(L(p))));
+            break;
+
+        /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
+        case 14:
             /* W3C XQuery, 5.10
              *
              * E |- CoreExpr1:boolean  E |- CoreExpr2:t1  E |- CoreExpr3:t2
@@ -1025,41 +1069,6 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             TY(p) = TY(L(p));
             break;
 
-        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
-        case 62:
-            TY(p) = TY(R(p));
-            break;
-
-        /* OrderSpecs:         orderspecs (CoreExpr, nil) */
-        case 63:
-        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
-        case 64:
-            /*
-             * XQuery Update Facility disallows updates in `order by'
-             * clauses.
-             */
-            if (!PFty_disjoint (PFty_stmt (),
-                                PFty_prime (PFty_defn (TY(L(p))))))
-                PFoops (OOPS_TYPECHECK,
-                        "err:XUST0101: `order by' may not contain "
-                        "an updating expression (has type `%s')",
-                        PFty_str (TY(L(p))));
-
-            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
-                PFoops (OOPS_TYPECHECK,
-                        "[err:XPTY0004]"
-                        " Orderspec requires at most one atomic item "
-                        "(given: %s).", PFty_str (TY(L(p))));
-
-            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_string ())) &&
-                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_decimal ())) &&
-                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_double ())))
-                PFoops (OOPS_TYPECHECK,
-                        "[err:XPTY0004]"
-                        " Orderspec requires an type whose order can be "
-                        "decided using 'gt' (given: %s).", PFty_str (TY(L(p))));
-            break;
-
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
         case 65:
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
@@ -1268,7 +1277,8 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             break;
 
         default:
-            PFoops (OOPS_FATAL, "untranslated expression");
+            PFoops (OOPS_FATAL, "untranslated expression '%s'",
+                    PFtypecheck_string[rule]);
             break;
     }
 }

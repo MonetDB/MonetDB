@@ -658,6 +658,21 @@ PFcore_letbind (const PFcnode_t *var, const PFcnode_t *expr)
 }
 
 /**
+ * Create a core tree node representing a where expression
+ *
+ * @param filter the filter expression
+ * @param ret    order by - return clause of the bindings
+ * @return core representation of flwor result
+ */
+PFcnode_t *
+PFcore_where (const PFcnode_t *filter, const PFcnode_t *ret)
+{
+    assert (filter); assert (ret);
+
+    return PFcore_wire2 (c_where, filter, ret);
+}
+
+/**
  * Create a core `orderby' node
  *
  * @param stable true if we want `stable order by'.
@@ -1653,24 +1668,20 @@ PFcore_fn_data (const PFcnode_t *n)
 PFcnode_t *
 PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
 {
-    PFfun_t *fn_not   = PFcore_function (PFqname (PFns_fn, "not"));
-    PFfun_t *fn_empty = PFcore_function (PFqname (PFns_fn, "empty"));
+    PFfun_t *fn_exists = PFcore_function (PFqname (PFns_fn, "exists"));
                                                                                                                                                           
-    return APPLY (fn_not, 
-                  APPLY (fn_empty,
-                         PFcore_flwr (
-                             PFcore_for (
-                                 PFcore_forbind (
-                                     PFcore_forvars (
-                                         v,
-                                         PFcore_nil ()),
-                                     expr),
-                                 PFcore_nil ()),
-                                 PFcore_if 
-                                    (PFcore_ebv (qExpr),
-                                     PFcore_then_else (
-                                         PFcore_num (1),
-                                         PFcore_empty ())))));
+    return APPLY (fn_exists,
+                  PFcore_flwr (
+                      PFcore_for (
+                          PFcore_forbind (
+                              PFcore_forvars (
+                                  v,
+                                  PFcore_nil ()),
+                              expr),
+                          PFcore_nil ()),
+                      PFcore_where (
+                          PFcore_ebv (qExpr),
+                          PFcore_num (1))));
 }
 
 /**
