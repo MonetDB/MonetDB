@@ -60,7 +60,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	/* check for running merovingian */
 	snprintf(buf, BUFSIZ, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
-	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)> 0)){
+	if ( GDKgetenv("mero_port") && (fd = MT_lockf(buf, F_TLOCK, 4, 1)>= 0)){
 		(void) close(fd);
 		port = atoi(GDKgetenv("mero_port"));
 	} else
