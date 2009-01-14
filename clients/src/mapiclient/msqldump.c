@@ -47,6 +47,7 @@ usage(const char *prog)
 	fprintf(stderr, " -P passwd   | --passwd=passwd  /* password */\n");
 	fprintf(stderr, " -p portnr   | --port=portnr    /* port to connect to */\n");
 	fprintf(stderr, " -d database | --database=database /* database to connect to */\n");
+	fprintf(stderr, " -f          | --functions      /* dump functions */\n");
 	fprintf(stderr, " -D          | --describe       /* describe database */\n");
 	fprintf(stderr, " -q          | --quiet          /* don't print welcome message */\n");
 	fprintf(stderr, " -t          | --trace          /* trace mapi network interaction */\n");
@@ -69,6 +70,7 @@ main(int argc, char **argv)
 	int trace = 0;
 	int guest = 1;
 	int describe = 0;
+	int functions = 0;
 	int c;
 	Mapi mid;
 	int quiet = 0;
@@ -79,6 +81,7 @@ main(int argc, char **argv)
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
 		{"describe", 0, 0, 'D'},
+		{"functions", 0, 0, 'f'},
 		{"trace", 2, 0, 't'},
 		{"user", 2, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
@@ -86,7 +89,7 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
-	while ((c = getopt_long(argc, argv, "u::p:P::d:Dqh:t::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "u::p:P::d:Dfqh:t::?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			guest = 0;
@@ -107,6 +110,9 @@ main(int argc, char **argv)
 			break;
 		case 'D':
 			describe = 1;
+			break;
+		case 'f':
+			functions = 1;
 			break;
 		case 'q':
 			quiet = 1;
@@ -151,7 +157,10 @@ main(int argc, char **argv)
 	mapi_trace(mid, trace);
 
 	out = file_wastream(stdout, "stdout");
-	c = dump_tables(mid, out, describe);
+	if (functions)
+		c = dump_functions(mid, out, NULL);
+	else
+		c = dump_tables(mid, out, describe);
 	stream_flush(out);
 
 	mapi_disconnect(mid);

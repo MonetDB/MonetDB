@@ -758,6 +758,52 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 }
 
 int
+dump_functions(Mapi mid, stream *toConsole, const char *sname)
+{
+	const char functions[] = "SELECT \"f\".\"func\" "
+		"FROM \"sys\".\"schemas\" \"s\","
+		     "\"sys\".\"functions\" \"f\" "
+		"WHERE \"f\".\"sql\" = TRUE AND "
+		      "\"s\".\"id\" = \"f\".\"schema_id\""
+		      "%s%s%s "
+		"ORDER BY \"f\".\"func\"";
+	MapiHdl hdl;
+	char *q;
+
+	if (sname != NULL) {
+		size_t l = sizeof(functions) + strlen(sname) + 20;
+
+		q = malloc(l);
+		snprintf(q, l, functions, " AND \"s\".\"name\" = '", sname, "'");
+	} else {
+		q = malloc(sizeof(functions));
+		snprintf(q, sizeof(functions), functions, "", "", "");
+	}
+	hdl = mapi_query(mid, q);
+	free(q);
+	if (hdl == NULL || mapi_error(mid)) {
+		if (hdl) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+		} else
+			mapi_explain(mid, stderr);
+		return 1;
+	}
+	while (mapi_fetch_row(hdl) != 0) {
+		char *query = mapi_fetch_field(hdl, 0);
+
+		stream_printf(toConsole, "%s\n", query);
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+		return 1;
+	}
+	mapi_close_handle(hdl);
+	return 0;
+}
+
+int
 dump_tables(Mapi mid, stream *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
@@ -795,12 +841,6 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		      "\"t\".\"system\" = FALSE AND "
 		      "\"s\".\"id\" = \"t\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
-	const char *functions = "SELECT \"s\".\"name\",\"f\".\"func\" "
-		"FROM \"sys\".\"schemas\" \"s\","
-		     "\"sys\".\"functions\" \"f\" "
-		"WHERE \"f\".\"sql\" = TRUE AND "
-		      "\"s\".\"id\" = \"f\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"f\".\"func\"";
 	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
@@ -975,29 +1015,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	}
 	mapi_close_handle(hdl);
 
-	/* dump functions */
-	if ((hdl = mapi_query(mid, functions)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
-	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *query = mapi_fetch_field(hdl, 1);
-
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
-		stream_printf(toConsole, "%s\n", query);
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
-	mapi_close_handle(hdl);
+	rc += dump_functions(mid, toConsole, sname);
 
 	if ((hdl = mapi_query(mid, end)) == NULL || mapi_error(mid)) {
 		if (hdl) {
