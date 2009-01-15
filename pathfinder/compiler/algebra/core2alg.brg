@@ -190,34 +190,37 @@ LiteralValue:       false_                                      = 107 (10);
 LiteralValue:       empty                                       = 108 (10);
 
 CoreExpr:           flwr (OptBindExpr, WhereExpr)               =   4 (10);
+CoreExpr:           flwr (OptBindExpr, OrdWhereExpr)            =   5 (10);
 
 OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                    CoreExpr),
-                          OptBindExpr)                          =   5 (10);
+                          OptBindExpr)                          =   6 (10);
 
 OptVar:             var                                         = 200 (10);
 OptVar:             nil                                         = 201 (10);
 
-OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   6 (10);
-OptBindExpr:        nil                                         =   7 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   7 (10);
+OptBindExpr:        nil                                         =   8 (10);
 
-WhereExpr:          where (CoreExpr, WhereExpr)                 =   8 (10);
-WhereExpr:          orderby (OrderSpecs, CoreExpr)              =   9 (10);
-WhereExpr:          CoreExpr                                    =  10 (10);
+OrdWhereExpr:       where (CoreExpr, OrdWhereExpr)              =   9 (10);
+OrdWhereExpr:       orderby (OrderSpecs, CoreExpr)              =  10 (10);
+
+WhereExpr:          where (CoreExpr, WhereExpr)                 =  11 (10);
+WhereExpr:          CoreExpr                                    =  12 (10);
 
 OrderSpecs:         orderspecs (CoreExpr, nil)                  = 300 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           = 301 (10);
 
 CoreExpr:           if_ (CoreExpr,
-                         then_else (CoreExpr, CoreExpr))        =  11 (10);
+                         then_else (CoreExpr, CoreExpr))        =  13 (10);
 
-CoreExpr:           seq (CoreExpr, SeqCoreExpr)                 =  12 (10);
-CoreExpr:           seq (CoreExpr, CoreExpr)                    =  13 (10);
-SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr)                 =  14 (10);
-SeqCoreExpr:        seq (CoreExpr, CoreExpr)                    =  15 (10);
+CoreExpr:           seq (CoreExpr, SeqCoreExpr)                 =  14 (10);
+CoreExpr:           seq (CoreExpr, CoreExpr)                    =  15 (10);
+SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr)                 =  16 (10);
+SeqCoreExpr:        seq (CoreExpr, CoreExpr)                    =  17 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  16 (10);
-CoreExpr:           unordered (CoreExpr)                        =  17 (10);
+CoreExpr:           ordered (CoreExpr)                          =  18 (10);
+CoreExpr:           unordered (CoreExpr)                        =  19 (10);
 
 CoreExpr:           typesw (CoreExpr,
                             cases (case_ (seqtype,
@@ -501,19 +504,25 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* CoreExpr:           flwr (OptBindExpr, WhereExpr) */
         case 4:
 
+        /* CoreExpr:           flwr (OptBindExpr, OrdWhereExpr) */
+        case 5:
+
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               CoreExpr),
                                      CoreExpr) */
-        case 5:
-
-        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
 
-        /* WhereExpr:          where (CoreExpr, WhereExpr) */
-        case 8:
+        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
+        case 7:
 
-        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        /* OrdWhereExpr:       where (CoreExpr, OrdWhereExpr) */
         case 9:
+
+        /* OrdCoreExpr:        orderby (OrderSpecs, CoreExpr) */
+        case 10:
+
+        /* WhereExpr:          where (CoreExpr, WhereExpr) */
+        case 11:
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
         case 300:
@@ -522,22 +531,22 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         case 301:
 
         /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
-        case 11:
+        case 13:
 
         /* CoreExpr:           seq (CoreExpr, SeqCoreExpr) */
-        case 12:
-
-        /* SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr) */
         case 14:
 
-        /* SeqCoreExpr:        seq (CoreExpr, CoreExpr) */
-        case 15:
-
-        /* CoreExpr:           ordered (CoreExpr) */
+        /* SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr) */
         case 16:
 
-        /* CoreExpr:           unordered (CoreExpr) */
+        /* SeqCoreExpr:        seq (CoreExpr, CoreExpr) */
         case 17:
+
+        /* CoreExpr:           ordered (CoreExpr) */
+        case 18:
+
+        /* CoreExpr:           unordered (CoreExpr) */
+        case 19:
 
         /* CoreExpr:           typesw (CoreExpr,
                                        cases (case_ (seqtype,
@@ -806,6 +815,10 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           flwr (OptBindExpr, WhereExpr) */
         case 4:
+        /* CoreExpr:           flwr (OptBindExpr, OrdWhereExpr) */
+        case 5:
+        /* Note: Rule 4 and Rule 5 differ with respect to the ordering.
+                 Adjust the code if the rule number changes!!! */
         {   /* TOPDOWN */
             /**
              * The flwr expression maps back the result of
@@ -867,7 +880,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 /* Note that ordering mode has no effect on a FLWOR
                    expression if an order by clause is present,
                    since order by takes precedence over ordering mode. */
-                if (!ORDERING && R(p)->kind != c_orderby)
+                if (!ORDERING && rule == 4 /* without ordering */)
                     /* in unordered context the new numbering only
                        needs to respect the sequence order
                        (in- and outside the flwor block). */
@@ -896,7 +909,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                      */
                     /* create sortby column list: */
                     PFord_ordering_t sortby = PFordering ();
-                    if (R(p)->kind == c_orderby)
+                    if (rule == 5 /* with ordering */)
                     {
                         PFalg_col_t cur;
 
@@ -955,7 +968,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               CoreExpr),
                                      OptBindExpr) */
-        case 5:
+        case 6:
         {   /* TOPDOWN */
 
             /*
@@ -1157,16 +1170,16 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
 
         /* OptVar:             var */
         case 200:
-            /* (will never be called anyway, Rule 5 is top-down) */
+            /* (will never be called anyway, Rule 6 is top-down) */
             break;
 
         /* OptVar:             nil */
         case 201:
-            /* (will never be called anyway, Rule 5 is top-down) */
+            /* (will never be called anyway, Rule 6 is top-down) */
             break;
 
         /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
-        case 6:
+        case 7:
         {   /* TOPDOWN */
 
             /*
@@ -1209,12 +1222,14 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* OptBindExpr:        nil */
-        case 7:
+        case 8:
             /* we don't need a translation -- it would be ignored anyway */
             break;
 
+        /* OrdWhereExpr:       where (CoreExpr, OrdWhereExpr) */
+        case 9:
         /* WhereExpr:          where (CoreExpr, WhereExpr) */
-        case 8:
+        case 11:
         {   /* TOPDOWN */
 
             /*
@@ -1331,8 +1346,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             A(p) = A(R(p));
         } break;
 
-        /* WhereExpr:          orderby (OrderSpecs, CoreExpr) */
-        case 9:
+        /* OrdWhereExpr:       orderby (OrderSpecs, CoreExpr) */
+        case 10:
         {   /* TOPDOWN */
 
             /* Having no map relation indicates that we have no
@@ -1357,7 +1372,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* WhereExpr:          CoreExpr */
-        case 10:
+        case 12:
             break;
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
@@ -1492,7 +1507,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           if_ (CoreExpr, then_else (CoreExpr, CoreExpr)) */
-        case 11:
+        case 13:
         {   /* TOPDOWN */
 
             /*
@@ -1666,7 +1681,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           seq (CoreExpr, SeqCoreExpr) */
-        case 12:
+        case 14:
         {   /* TOPDOWN */
 
             /*
@@ -1712,7 +1727,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           seq (CoreExpr, CoreExpr) */
-        case 13:
+        case 15:
         {
             /*
              *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
@@ -1744,7 +1759,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* SeqCoreExpr:        seq (CoreExpr, SeqCoreExpr) */
-        case 14:
+        case 16:
         {   /* TOPDOWN */
 
             unsigned int cur_seq_count = SEQ_COUNT++;
@@ -1763,7 +1778,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* SeqCoreExpr:        seq (CoreExpr, CoreExpr) */
-        case 15:
+        case 17:
             /* TOPDOWN */
 
             /* initiate translation of e1 and e2 */
@@ -1782,7 +1797,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           ordered (CoreExpr) */
-        case 16:
+        case 18:
         {   /* TOPDOWN */
 
             /* use `ordered' information */
@@ -1798,7 +1813,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           unordered (CoreExpr) */
-        case 17:
+        case 19:
         {   /* TOPDOWN */
 
             /* use `ordered' information */
@@ -2971,11 +2986,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         /* flwr intermediates */
         /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               CoreExpr), CoreExpr) */
-        case 5:
-        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
-        /* OptBindExpr:        nil */
+        /* OptBindExpr:        let (letbind (var, CoreExpr), CoreExpr) */
         case 7:
+        /* OptBindExpr:        nil */
+        case 8:
 
         /* order by */
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
