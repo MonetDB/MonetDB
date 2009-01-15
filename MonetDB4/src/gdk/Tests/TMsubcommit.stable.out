@@ -18,63 +18,62 @@ debugmask(19);
 
 bat(int,int).insert(1,2).rename("b").persists(true);
 commit();
-#01 #HEAPsave(32.head,storage=0,free=4,size=1024)
-#01 #GDKsave: name=32, ext=head, mode 0
-#01 #write(fd 5, buf 0x7b39cc, size 0) = 4
-#01 #HEAPsave(32.tail,storage=0,free=4,size=1024)
-#01 #GDKsave: name=32, ext=tail, mode 0
-#01 #write(fd 5, buf 0x7b3ddc, size 0) = 4
-#01 #BBPdir: writing BBP.dir (28 bats).
-#01 #BBPdir start oid=1011842@0 #01 
-26 64 b . 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
-#01 #BBPdir end
-#01 #BBPsync: rename bat/BACKUP bat/DELETE_ME = 0
-#01 #GDKremovedir(bat/DELETE_ME)
-#01 #unlink bat/DELETE_ME/BBP.dir = 0
-#01 #rmdir bat/DELETE_ME = 0
-#01 #mkdir bat/BACKUP = 0
-#01 #move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
+#01 HEAPsave(32.head,storage=0,free=4,size=1024)
+#01 GDKsave: name=32, ext=head, mode 0
+#01 write(fd 5, buf 0x72a38c, size 0) = 4
+#01 HEAPsave(32.tail,storage=0,free=4,size=1024)
+#01 GDKsave: name=32, ext=tail, mode 0
+#01 write(fd 5, buf 0x72a7ac, size 0) = 4
+#01 BBPdir: writing BBP.dir (28 bats).
+#01 BBPdir start oid=1011842@0 #01 
+26 64 b tmpr_32 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
+#01 BBPdir end
+#01 BBPsync: rename bat/BACKUP bat/DELETE_ME = 0
+#01 GDKremovedir(bat/DELETE_ME)
+#01 unlink bat/DELETE_ME/BBP.dir = 0
+#01 rmdir bat/DELETE_ME = 0
+#01 mkdir bat/BACKUP = 0
+#01 move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
 
 bat(int,int).insert(3,4).rename("a").persists(true);
 subcommit(bat(int,str).insert(0,"a"));
-#01 #mkdir bat/BACKUP/SUBCOMMIT = 0
-#01 #move bat/BACKUP/BBP.dir bat/BACKUP/SUBCOMMIT/BBP.dir = 0 (0ms)
-#01 #HEAPsave(34.head,storage=0,free=4,size=1024)
-#01 #GDKsave: name=34, ext=head, mode 0
-#01 #write(fd 5, buf 0x77c74c, size 0) = 4
-#01 #HEAPsave(34.tail,storage=0,free=4,size=1024)
-#01 #GDKsave: name=34, ext=tail, mode 0
-#01 #write(fd 5, buf 0x77cb5c, size 0) = 4
-#01 #BBPdir: writing BBP.dir (30 bats).
-#01 #BBPdir start oid=1011848@0 #01 
-26 64 b . 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
-28 64 a . 34 3442 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011846 4 1024 0 int 4 0 1345 0 0 0 0 1011847 4 1024 0
-#01 #BBPdir end
-#01 #BBPsync: rename bat/BACKUP/SUBCOMMIT/ bat/DELETE_ME/ = 0
-#01 #GDKremovedir(bat/DELETE_ME/)
-#01 #unlink bat/DELETE_ME/BBP.dir = 0
-#01 #rmdir bat/DELETE_ME/ = 0
-#01 #move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (2ms)
+#01 mkdir bat/BACKUP/SUBCOMMIT = 0
+#01 move bat/BACKUP/BBP.dir bat/BACKUP/SUBCOMMIT/BBP.dir = 0 (0ms)
+#01 HEAPsave(34.head,storage=0,free=4,size=1024)
+#01 GDKsave: name=34, ext=head, mode 0
+#01 write(fd 5, buf 0x66159c, size 0) = 4
+#01 HEAPsave(34.tail,storage=0,free=4,size=1024)
+#01 GDKsave: name=34, ext=tail, mode 0
+#01 write(fd 5, buf 0x6619bc, size 0) = 4
+#01 BBPdir: writing BBP.dir (30 bats).
+#01 BBPdir start oid=1011848@0 #01 
+26 64 b tmpr_32 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
+28 64 a tmpr_34 34 3442 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011846 4 1024 0 int 4 0 1345 0 0 0 0 1011847 4 1024 0
+#01 BBPdir end
+#01 BBPsync: rename bat/BACKUP/SUBCOMMIT bat/DELETE_ME = 0
+#01 GDKremovedir(bat/DELETE_ME)
+#01 unlink bat/DELETE_ME/BBP.dir = 0
+#01 rmdir bat/DELETE_ME = 0
+#01 move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
 
 {
 var tmp := bat(int,str).insert(0,"a");
 bat("a").persists(false);
 subcommit(tmp);
 }
-#01 #mkdir bat/BACKUP/SUBCOMMIT = 0
-#01 #move bat/BACKUP/BBP.dir bat/BACKUP/SUBCOMMIT/BBP.dir = 0 (0ms)
-#01 #BBPdir: writing BBP.dir (30 bats).
-#01 #BBPdir start oid=1011848@0 #01 
-26 64 b . 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
-#01 #BBPdir end
-#01 #BBPsync: rename bat/BACKUP/SUBCOMMIT bat/DELETE_ME = 0
-#01 #GDKremovedir(bat/DELETE_ME)
-#01 #unlink bat/DELETE_ME/BBP.dir = 0
-#01 #rmdir bat/DELETE_ME = 0
-#01 #move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
-#01 #BATdelete 67
-#01 #unlink bat/67.desc = 0
-#01 #unlink bat/67.buns = 0
+#01 mkdir bat/BACKUP/SUBCOMMIT = 0
+#01 move bat/BACKUP/BBP.dir bat/BACKUP/SUBCOMMIT/BBP.dir = 0 (0ms)
+#01 BBPdir: writing BBP.dir (30 bats).
+#01 BBPdir start oid=1011848@0 #01 
+26 64 b tmpr_32 32 3414 0 1 0 0 1 256 0 0 0 0 int 4 0 1345 0 0 0 0 1011840 4 1024 0 int 4 0 1345 0 0 0 0 1011841 4 1024 0
+#01 BBPdir end
+#01 BBPsync: rename bat/BACKUP/SUBCOMMIT bat/DELETE_ME = 0
+#01 GDKremovedir(bat/DELETE_ME)
+#01 unlink bat/DELETE_ME/BBP.dir = 0
+#01 rmdir bat/DELETE_ME = 0
+#01 move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
+#01 unlink bat/34.head = 0
+#01 unlink bat/34.tail = 0
 
 bat("b").persists(false);
 commit();

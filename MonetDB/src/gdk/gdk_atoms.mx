@@ -1454,7 +1454,7 @@ int
 batFromStr(char *src, int *len, bat **dst)
 {
 	char *s, *t, *r = src;
-	int c, sign = 1;
+	int c;
 	bat bid = 0;
 
 	@:atommem(bat,sizeof(bat))@
@@ -1463,10 +1463,6 @@ batFromStr(char *src, int *len, bat **dst)
 		r++;
 	if (*r == '<')
 		r++;
-	if (*r == '~') {
-		r++;
-		sign = -1;
-	}
 	t = r;
 	while ((c = *t) && (c == '_' || GDKisalnum(c)))
 		t++;
@@ -1476,7 +1472,7 @@ batFromStr(char *src, int *len, bat **dst)
 		s[t - r] = 0;
 		bid = BBPindex(s);
 	}
-	**dst = bid == 0 ? bat_nil : sign * bid;
+	**dst = bid == 0 ? bat_nil : bid;
 	return (int) (t + (c == '>') - src);
 }
 
@@ -1496,7 +1492,7 @@ batToStr(char **dst, int *len, bat *src)
 	i = (int) (strlen(s) + 4);
 	@:atommem(char,i)@
 
-	snprintf(*dst, *len, "<%s%s>", b < 0 ? "~" : "", s);
+	snprintf(*dst, *len, "<%s>", s);
 	return (int) strlen(*dst);
 }
 

@@ -546,7 +546,7 @@ view_bbp_name(BAT **retval	/* put pointer to BAT[int,str] record here. */
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
 			BUNins(b, &i, BBPname(i), FALSE);
-			if (BBPvalid(-i)) {
+			if (BBPvalid(-i) && !BBPtmpcheck(BBP_logical(-i))) {
 				int j = -i;
 
 				BUNins(b, &j, BBPname(j), FALSE);

@@ -170,8 +170,8 @@ tuned for perfect hashing (1 lookup). The bucket chain uses the 'next'
 field in the BBPrec records.
 @{
 @h
-#define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && (s)[3] == '_')  /* (strncmp((s), "tmp_", 4) == 0) */
-#define BBPnamecheck(s) (BBPtmpcheck(s) ? strtol((s) + 4, NULL, 8) : 0)
+#define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && ((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))  /* (strncmp((s), "tmp_", 4) == 0) */
+#define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
 @c
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
@@ -438,12 +438,18 @@ BBPparse(str *cur)
 static INLINE str
 BBPtmpname(str s, int len, bat i)
 {
+	int reverse = i < 0;
+
+	if (reverse)
+		i = -i;
 	s[--len] = 0;
 	while (i > 0) {
 		s[--len] = '0' + (i & 7);
 		i >>= 3;
 	}
 	s[--len] = '_';
+	if (reverse)
+		s[--len] = 'r';
 	s[--len] = 'p';
 	s[--len] = 'm';
 	s[--len] = 't';
@@ -1074,11 +1080,11 @@ BBP_find(str nme, int lock)
 {
 	bat i = BBPnamecheck(nme);
 
-	if (i > 0) {
-		/* for tmp_X BATs, we already know X */
+	if (i != 0) {
+		/* for tmp_X and tmpr_X BATs, we already know X */
 		str s;
 
-		if (i >= BBPsize || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
+		if (ABS(i) >= BBPsize || (s = BBP_logical(i)) == NULL || strcmp(s, nme)) {
 			i = 0;
 		}
 	} else if (*nme != '.') {
@@ -1226,6 +1232,7 @@ BBPinsert(BATstore *bs)
 					gdk_unset_lock(GDKcacheLock(i), "BBPinsert");
 	}
 	i = BBP_free(idx);
+	assert(i > 0);
 	BBP_free(idx) = BBP_next(BBP_free(idx));
 
 	if (lock) {
@@ -1249,13 +1256,14 @@ BBPinsert(BATstore *bs)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	if (BBP[ABS(i)].bak[(i) < 0] == NULL) {
+	if (BBP[i].bak[0] == NULL) {
 		s = BBPtmpname(dirname, 64, i);
 		BBP_logical(i) = GDKstrdup(s);
-		BBP[ABS(i)].bak[(i) < 0] = BBP_logical(i);
+		BBP[i].bak[0] = BBP_logical(i);
 	} else
-		BBP_logical(i) = BBP[ABS(i)].bak[(i) < 0];
-	BBP_logical(-i) = NULL;
+		BBP_logical(i) = BBP[i].bak[0];
+	s = BBPtmpname(dirname, 64, -i);
+	BBP_logical(-i) = GDKstrdup(s);
 
 	/* Keep the physical location around forever */
 	if (BBP_physical(i) == NULL) {
