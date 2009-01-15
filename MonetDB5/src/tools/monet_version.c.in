@@ -27,6 +27,9 @@
 #ifdef HAVE_OPENSSL
 #include <openssl/opensslv.h>
 #endif
+#ifdef HAVE_LIBXML2
+#include <libxml/xmlversion.h>
+#endif
 
 void
 monet_version(void)
@@ -44,6 +47,9 @@ monet_version(void)
 #endif
 #ifdef HAVE_OPENSSL
 	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
+#endif
+#ifdef HAVE_LIBXML2
+	printf("  libxml2: %s (%s)\n", LIBXML_DOTTED_VERSION, "@libxml2version@");
 #endif
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
