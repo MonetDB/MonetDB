@@ -386,6 +386,20 @@ static void relabel (PFcnode_t *p,  PFcnode_t **kids);
 
 #include "core_mnemonic.h"
 
+/* helper function that transforms where list into nested if-then-else(empty) */
+static PFcnode_t *
+transform_where (PFcnode_t *p)
+{
+    assert (p);
+    switch (p->kind) {
+        case c_where:
+            /* replace where nodes by if-then-else constructs */
+            return if_ (L(p), then_else (transform_where (R(p)), empty ()));
+        default:
+            return p;
+    }
+}
+
 /**
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
@@ -519,7 +533,7 @@ reduce (PFcnode_t *p, int goalnt)
                                                        WhereExpr)),
                                         OptBindExpr) */
             case 5:
-                /*
+            {   /*
                  * Remove a nested let block:
                  * 
                  *     let $v1 := let $v2 := e return e' return e''
@@ -528,6 +542,22 @@ reduce (PFcnode_t *p, int goalnt)
                  *       let $v1 := e' return
                  *         e''
                  */
+                bool label = false;
+                /* make sure to transform (necessary) where lists into
+                   if-then-else(empty) constructs */
+                if (LRR(p)->kind == c_where) {
+                    /* throw away unnecessary where list */
+                    if (L(LRR(p))->kind == c_true) {
+                        assert (kids[1] == LRR(p));
+                        LRR(p) = R(LRR(p));
+                        kids[1] = LRR(p);
+                    }
+                    else {
+                        LRR(p) = transform_where (LRR(p));
+                        label = true;
+                    }
+                }
+
                 /* Don't remove flwr if there is an order by -- we could prune
                    an type error. After typechecking we know that the order by
                    has correct type and can rewrite the same pattern */
@@ -536,9 +566,16 @@ reduce (PFcnode_t *p, int goalnt)
                            let (letbind (LL(p),
                                          LRR(p)),  /*   let $v1 := e' ret */
                                 R(p)));            /*     e''             */
-                relabel (p, kids);
+
+                /* in case we rewrote the WhereExpr as well
+                   we need to label the complete Core tree */
+                if (!label)
+                    relabel (p, kids);
+                else
+                    PFsimplify_label (p);
+
                 rewrite_again = true;
-                break;
+            }   break;
 
             /* OptBindExpr:        let (letbind (var,
                                                  flwr (let (letbind (var, 
