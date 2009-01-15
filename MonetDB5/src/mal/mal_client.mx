@@ -442,11 +442,10 @@ Client MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 		c->flags= MCdefault;
 		c->fdout = fout ? fout : GDKstdout;
 		c->mdb = 0;
-
+		RECYCLEshutdown(c);
 		/* (re)activate thread */
 		MT_up_sema(c->s, "MCfindClient");
-        RECYCLEshutdown(c);
-		return c;
+      return c;
 	}
 	return NULL;
 }
