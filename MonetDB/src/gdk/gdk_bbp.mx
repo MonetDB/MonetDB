@@ -740,6 +740,8 @@ BBPinit(void)
 		BBP[bid].nme[0] = GDKstrdup(s);
 		if (strcmp(tailname, BBPNONAME) != 0)
 			BBP[bid].nme[1] = GDKstrdup(tailname);
+		else
+			BBP[bid].nme[1] = GDKstrdup(BBPtmpname(tailname, sizeof(tailname), -bid));
 		BBP[bid].path = GDKstrdup(filename);
 		BBP[bid].lastused = lastused;
 		if (lastused > max_stamp)
