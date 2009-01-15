@@ -1252,6 +1252,8 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	assert(mat[m].mi1 == NULL);
 	for(k=1; k<mat[m].mi->argc; k++) {
 		q = copyInstruction(p);
+		/* alway switch to non-default mark */
+		q->argc = 3;
 		getArg(q,0) = newTmpVariable(mb, tpe);
 		getArg(q,1) = getArg(mat[m].mi,k);
 		getArg(q,2) = o;
