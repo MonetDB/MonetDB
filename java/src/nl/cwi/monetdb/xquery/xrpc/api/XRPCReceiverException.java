@@ -20,6 +20,9 @@
 package nl.cwi.monetdb.xquery.xrpc.api;
 
 /**
+ * An XRPCReceiverException should be used to indicate that an error has been
+ * caused by the XRPC request handler.
+ *
  * @author Ying Zhang <Y.Zhang@cwi.nl>
  * @version 0.1
  */

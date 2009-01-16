@@ -198,20 +198,29 @@ public class XRPCHTTPConnection {
      * @param request The (XRPC) request to send
      * @return Server's response message, which can be an XRPC response
      * message or a SOAP Fault message.
-     * @throws IOException If an I/O error occurs
+     * @throws IOException If an IOException is thrown by the underlying HTTP
+     * connection, pass it to caller.
+     * @throws XRPCException For all other errors, if we could identify that
+     * the error is caused by the remote (or local) site, throw an
+     * XRPCReceiverException (or XRPCSenderException); otherwise throw an
+     * XRPCException.
      */
     public static StringBuffer sendReceive(String server,
                                            String request)
-        throws IOException
+        throws IOException, XRPCException
     {
+        StringBuffer respBuf = new StringBuffer(16384);
+        HttpURLConnection httpConn = null;
+        int c = -1; 
+
         URL url = new URL(server);
-        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+        httpConn = (HttpURLConnection) url.openConnection();
         httpConn.setDoInput(true);
         httpConn.setDoOutput(true);
         httpConn.setUseCaches(false);
         httpConn.setRequestMethod("POST");
         httpConn.setRequestProperty("Content-Type",
-                                    "application/x-www-form-urlencoded");
+                "application/x-www-form-urlencoded");
         httpConn.setRequestProperty("Content-Length", request.length()+"");
         httpConn.connect();
 
@@ -221,21 +230,50 @@ public class XRPCHTTPConnection {
         printout.writeBytes(request);
         printout.flush ();
 
-        /* Get response data. */
-        InputStreamReader isReader;
-        StringBuffer response = new StringBuffer(16384);
-        if(httpConn.getResponseCode() != HttpURLConnection.HTTP_OK){
-            /* Read the SOAP Fault message. */
-            isReader = new InputStreamReader(httpConn.getErrorStream());
-        } else {
-            /* Read the response message, which can also be a SOAP Fault
-             * message. */
-            isReader = new InputStreamReader(httpConn.getInputStream());
+        /* Receive HTTP response */
+        int resCode = httpConn.getResponseCode();
+        if(resCode == -1 || resCode != HttpURLConnection.HTTP_OK) {
+            /* attempt to read some error information */
+            String resMsg = httpConn.getResponseMessage();
+
+            InputStream isErr = httpConn.getErrorStream();
+            if(isErr != null) {
+                InputStreamReader isReader = new InputStreamReader(isErr);
+                while( (c = isReader.read()) >= 0) respBuf.append((char)c);
+            }
+            httpConn.disconnect();
+
+            if(isErr == null) {
+                throw new XRPCException( "Could not get error stream. " +
+                        "Response received: " + resCode + "" + resMsg);
+            } else if (resCode == -1) {
+                String s1 = (resMsg == null) ? "" :
+                    ("\nResponse message: " + resMsg);
+                String s2 = respBuf.length() == 0 ? "":
+                    ("\nReceived data: " + respBuf.toString());
+
+                throw new XRPCReceiverException(
+                        "Invalid HTTP response has been received. " + s1 + s2);
+            } else {
+                throw new XRPCReceiverException(
+                        "Remote execution failed with: " + resCode + " " +
+                        resMsg + "\nSOAP Fault message:\n" + respBuf);
+            }
         }
-        int c;
-        while( (c = isReader.read()) >= 0) response.append((char)c);
-        isReader.close();
-        printout.close();
-        return response;
+
+        /* Read the response message */
+        InputStream isIn = httpConn.getInputStream();
+        if(isIn == null) {
+            httpConn.disconnect();
+            throw new XRPCSenderException("Remote execution has returned " +
+                    "\"200 OK\". However, unable to get input stream to " +
+                    "read SOAP response message.");
+        }
+
+        InputStreamReader isReader = new InputStreamReader(isIn);
+        while( (c = isReader.read()) >= 0) respBuf.append((char)c);
+        httpConn.disconnect();
+        return respBuf;
     }
 }
+
