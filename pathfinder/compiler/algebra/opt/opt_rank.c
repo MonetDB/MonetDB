@@ -910,7 +910,7 @@ opt_rank (PFla_op_t *p)
                             (sort_struct) {
                                 .col = COL_AT (lsortby, j),
                                 .dir = DIR_AT (lsortby, j),
-                                .vis = vis && VIS_AT (lsortby, j)
+                                .vis = PFprop_ocol (p, COL_AT(lsortby, j))
                             };
                         VIS_AT (lsortby, j) = true;
                     }
