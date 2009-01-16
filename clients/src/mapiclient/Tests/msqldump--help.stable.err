@@ -10,12 +10,13 @@ stderr of test 'msqldump--help` in directory 'src/mapiclient` itself:
 # 09:44:09 >  Mtimeout -timeout 60 msqldump --help
 # 09:44:09 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/virgin/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-msqldump [ options ]
+Usage: msqldump [ options ]
 Options are:
  -h hostname | --host=hostname  /* host to connect to */
  -P passwd   | --passwd=passwd  /* password */
  -p portnr   | --port=portnr    /* port to connect to */
  -d database | --database=database /* database to connect to */
+ -f          | --functions      /* dump functions */
  -D          | --describe       /* describe database */
  -q          | --quiet          /* don't print welcome message */
  -t          | --trace          /* trace mapi network interaction */
