@@ -446,7 +446,7 @@ str defaultPlan=
 	"emptySet,"
 	/* "joinselect," */
 	/* "accessmode," not needed after patches to BKCappend */
-/*	"mitosis," */
+//	"mitosis," 
 	"aliases,"
 	/* "crack," */
 	/*"joinPath,"*/ 

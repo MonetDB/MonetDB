@@ -183,8 +183,20 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 	BAT *b;
 
 	if (!is_new && bat->ubid) {
-		b = temp_descriptor(bat->ubid);
+		BAT *ib = temp_descriptor(bat->ibid), *u = upd;
 
+		if (BATcount(ib)) { 
+			BAT *b = temp_descriptor(bat->bid);
+			BAT *updins, *updcur;
+
+ 			updins = BATsemijoin(upd, ib);
+			void_replace_bat(ib, updins, TRUE);
+			bat_destroy(updins);
+ 			updcur = BATsemijoin(upd, b);
+			u = updcur;
+		}
+
+		b = temp_descriptor(bat->ubid);
 		assert(b);
 		if (isEUbat(b)){
 			temp_destroy(bat->ubid);
@@ -193,16 +205,18 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 			b = temp_descriptor(bat->ubid);
 		}
 		BATkey(b, BOUND2BTRUE);
-		BATins(b, upd, TRUE);
+		BATins(b, u, TRUE);
+		if (upd != u)
+			bat_destroy(u);
 	} else if (is_new && bat->bid) { 
 		BAT *ib = temp_descriptor(bat->ibid);
 		b = temp_descriptor(bat->bid);
 		if (BATcount(ib)) { 
 			BAT *updins, *updcur;
- 			updins = BATkdiff(upd, ib);
+ 			updins = BATsemijoin(upd, ib);
 			void_replace_bat(ib, updins, TRUE);
 			bat_destroy(updins);
- 			updcur = BATkdiff(upd, b);
+ 			updcur = BATsemijoin(upd, b);
 			void_replace_bat(b, updcur, TRUE);
 			bat_destroy(updins);
 		} else {
@@ -824,6 +838,12 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 				/* new cols are moved to gtrans and bat.bid */
 				temp_dup(bat->ibid);
 				obat->bid = bat->ibid;
+			} else if (!c_isnew) {  
+				bat->bid = bat->ibid;
+
+				b = bat_new(TYPE_void, type, sz);
+				bat_set_access(b, BAT_READ);
+				bat->ibid = temp_create(b);
 			}
 			if (obat->bid) {
 				BAT *cb = temp_descriptor(obat->bid);

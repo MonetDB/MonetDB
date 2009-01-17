@@ -770,12 +770,12 @@ sqlstmt:
 			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- | SCOLON			{ mvc *m = (mvc*)parm;
+ | SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
  | error SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = NULL; YYACCEPT; }
+			  m->sym = $$ = NULL; YYABORT; }
  ;
 
 

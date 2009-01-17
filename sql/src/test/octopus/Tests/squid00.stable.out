@@ -27,11 +27,11 @@ Over..
 
 function user.s1_1():void;
 barrier (_24,_4) := scheduler.octopus(10);
-    _26 := octopus.tentacle_s1_1_73();
-    _27 := octopus.tentacle_s1_1_74();
-    _28 := octopus.tentacle_s1_1_75();
-    _29 := octopus.tentacle_s1_1_76();
-    _30 := octopus.tentacle_s1_1_78();
+    _26 := octopus.tentacle_s1_1_71();
+    _27 := octopus.tentacle_s1_1_72();
+    _28 := octopus.tentacle_s1_1_73();
+    _29 := octopus.tentacle_s1_1_74();
+    _30 := octopus.tentacle_s1_1_76();
     _4 := mat.pack(_26,_27,_28,_29,_30);
 exit (_24,_15);
     _5 := sql.resultSet(1,1,_4);
