@@ -206,6 +206,8 @@ address CALCstrConcatInt
 comment "Concatenate two strings";
 
 @= mal_calc_ops
+		command sqladd(left:@1, right:@2) :@3 
+		address CALCbinarySQLADD@1@2; 
 		command +(left:@1, right:@2) :@3 
 		address CALCbinaryADD@1@2; 
 		command -(left:@1, right:@2) :@3 
@@ -1124,6 +1126,7 @@ result type.
 #define CMD_DIV 0
 
 @= c_calc_ops
+@:sqlnull_binop(SQLADD,+,@1,@2,@3)@
 @:calc_binop(ADD,+,@1,@2,@3)@
 @:calc_binop(SUB,-,@1,@2,@3)@
 @:calc_binop(MUL,*,@1,@2,@3)@
@@ -1172,6 +1175,24 @@ str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
 #endif
    if (*a == @3_nil || *b == @4_nil) {
 	*res = @5_nil;
+   } else {
+   	*res = ((@5)(*a)) @2 ((@5)(*b));
+   }
+   return(MAL_SUCCEED);
+}
+
+@= sqlnull_binop
+calc_export str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b );
+str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
+#ifdef DEBUG
+	printf( "CALCbinary@1@3@4\n");
+#endif
+   if (*a == @3_nil && *b == @4_nil) {
+	*res = @5_nil;
+   } else if (*a == @3_nil && *b != @4_nil) {
+	*res = (@5)*b;
+   } else if (*a != @3_nil && *b == @4_nil) {
+	*res = (@5)*a;
    } else {
    	*res = ((@5)(*a)) @2 ((@5)(*b));
    }

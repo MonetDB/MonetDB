@@ -19,7 +19,6 @@ INCLUDES = -I../modules/atoms -I../modules/mal -I../optimizer \
 	-I../modules/kernel -I../mal $(CLIENTS_INCS) $(MONETDB_INCS) \
 	$(Z_CFLAGS) $(BZ_CFLAGS) $(PCL_FLAGS) $(PCRE_CFLAGS)
 
-
 MTSAFE
 
 LIBS = {

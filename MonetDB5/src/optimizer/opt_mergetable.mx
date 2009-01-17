@@ -1023,7 +1023,6 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k;
-	int isSum = (getFunctionId(p) == sumRef); 
 	InstrPtr r = NULL;
 
 #ifdef DEBUG_OPT_MERGETABLE
@@ -1039,9 +1038,6 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		getArg(q,0) = v;
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
 		pushInstruction(mb,q);
-		/* for now we fallback to the old sum(empty) == 0 semantics */
-		if (isSum)
-			pushBit(mb, q, FALSE);
 		if (r) {
 			int v = newTmpVariable(mb, tp);
 			InstrPtr s = newInstruction(mb,ASSIGNsymbol);
@@ -1051,7 +1047,10 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 				setFunctionId(s, min_no_nilRef);
 			else if (getFunctionId(p) == maxRef)
 				setFunctionId(s, max_no_nilRef);
-			else
+			else if (getFunctionId(p) == sumRef)	
+				/* sum(empty) == 0 semantics */
+				setFunctionId(s, sqlplusRef);
+			else 	
 				setFunctionId(s, plusRef);
 			getArg(s,0) = v;
 			s = pushArgument(mb, s, getArg(q,0));
