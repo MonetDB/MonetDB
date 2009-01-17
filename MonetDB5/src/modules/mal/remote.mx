@@ -199,11 +199,17 @@ RMTfindconn(connection *ret, str conn) {
  * valid identifier that is supposed to be unique in the connection's
  * remote context.  Since this function is internal, it doesn't check
  * the argument conn, as it should have been checked already.
+ * Make sure that the identifier is of the proper syntax.
  */
 static INLINE str /*synchronized*/
 RMTgetNextId(str *ret, connection conn) {
-	char buf[128];
-	snprintf(buf, 128, "remote_%s_id_" SZFMT, conn->name, conn->nextid++);
+	char buf[BUFSIZ];
+	char *s;
+	snprintf(buf, BUFSIZ, "remote_%s_id_" SZFMT, conn->name, conn->nextid++);
+	for(s= buf; *s; s++)
+		if( !isalpha((int) *s) && !isdigit((int) *s))
+			*s= '_';
+
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
 }
