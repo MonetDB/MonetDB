@@ -325,7 +325,7 @@ typedef struct VARRECORD {
 	int tmpindex;		/* temporary variable */
 	ValRecord value;
 	int propc, maxprop;	/* proc count and max number of properties */
-	int prps[];			/* property array */
+	int prps[];		/* property array */
 } *VarPtr, VarRecord;
 
 /* Variable properties */
@@ -529,6 +529,7 @@ mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, ValPtr cst,int depth);
 mal_export int convertConstant(malType type, ValPtr vr);
 
+mal_export int newProperty(MalBlkPtr mb);
 #define varSetProperty(mb, var, name, opname, cst) \
 	varSetProp(mb, var, PropertyIndex(name), PropertyOperator(opname), cst)
 mal_export void varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst);
@@ -2828,6 +2829,20 @@ void showMalBlkHistory(MalBlkPtr mb)
 		} 
 }
 
+int
+newProperty(MalBlkPtr mb) 
+{
+	if (mb->ptop >= mb->psize){
+		mb->psize += MAXVARS;
+		mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
+		if (mb->prps == NULL) {
+			mb->errors++;
+			return -1;
+		}
+	}
+	return mb->ptop++;
+}
+
 void
 varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 {
@@ -2843,17 +2858,9 @@ varSetProp(MalBlkPtr mb, int var, int prop, int op, ValPtr cst)
 			break;
 		}
 	}
-	if (propid < 0) {
-		if (mb->ptop >= mb->psize){
-			mb->psize += MAXVARS;
-			mb->prps = (MalProp*) GDKrealloc(mb->prps, mb->psize * sizeof(MalProp));
-			if (mb->prps == NULL) {
-				mb->errors++;
-				assert(0);
-				showScriptException(mb, 0, MAL, "varSetProp: no storage left\n");
-			}
-		}
-		propid = mb->ptop++;
+	if (propid < 0 && (propid = newProperty(mb)) < 0) { 
+		assert(0);
+		showScriptException(mb, 0, MAL, "varSetProp: no storage left\n");
 	}
 
 	mb->prps[propid].var = 0;
