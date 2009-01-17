@@ -122,19 +122,19 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=0;i<limit;i++){
 		p= old[i];
 		if (getModuleId(p)!= sqlRef || 
-				!(getFunctionId(p)==bindRef ||
-				  getFunctionId(p)==bindidxRef )){
+		  !(getFunctionId(p)==bindRef || getFunctionId(p)==bindidxRef)){
 			pushInstruction(mb,p);
 			continue;
 		}
-		/* don't split inserts */
-		if (getVarConstant(mb, getArg(p,4)).val.ival == 1){
+		/* don't split inserts or updates */
+		if (getVarConstant(mb, getArg(p,4)).val.ival == 1 ||
+		    getVarConstant(mb, getArg(p,4)).val.ival == 2) {
 			pushInstruction(mb,p);
 			continue;
 		}
 		
 		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
-			strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval) ){
+		    strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval) ){
 			pushInstruction(mb,p);
 			continue;
 		}

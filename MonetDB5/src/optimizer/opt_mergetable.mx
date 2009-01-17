@@ -440,6 +440,32 @@ mat_add(mat_t *mat, int mtop, InstrPtr q, InstrPtr r, mat_type type)
 	return mtop+1;
 }
 
+/* mat_semijoin handles special case for update delta's which need 
+to be spread of the partion (second arg) */
+static InstrPtr
+mat_semijoin(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
+{
+	int tpe, k;
+	InstrPtr r = NULL, mi = mat[m].mi;
+
+	r = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(r,matRef);
+	setFunctionId(r,newRef);
+	getArg(r,0) = getArg(p,0);
+	tpe = getArgType(mb,p,0);
+
+	for(k=1; k<mi->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+
+		getArg(q,2) = getArg(mi,k);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		propagateProp(mb, q, getArg(mi, k));
+		pushInstruction(mb,q);
+		r = pushArgument(mb,r,getArg(q,0));
+	}
+	return r;
+}
+
 /* mat_apply1 handles both apply and reduce cases */
 static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var, int reuse)
@@ -1429,6 +1455,9 @@ UNION(mirror().join()).
 	3) kdiff cases
 		1) both mats and aligned (pair wise)
 		2) kdiff(mat,bat) (pair wise)
+			In case 2 we expect a union(mat, b) to,
+			so we want to rewrite into
+			m1.diff(b).union( b.semijoin(m1));
 		3) kdiff(bat,mat) (kdiff(bat,m1).kdiff(m2).kdiff(m3) etc
 			returns bat !
 */
@@ -1436,6 +1465,36 @@ UNION(mirror().join()).
 
 			m = isMATalias(getArg(p,1), mat, mtop);
 		 	n = isMATalias(getArg(p,2), mat, mtop);
+
+		        if (getFunctionId(p) == kdifferenceRef) { 
+				InstrPtr q = old[i+1];
+
+				if (getModuleId(q) == algebraRef &&
+		      		    getFunctionId(q) == kunionRef &&
+				    p->argv[0] == q->argv[1] &&
+				    p->argv[2] == q->argv[2]) { 
+					InstrRecord instr;
+					/* Kdiff(mat, b) */
+					if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
+						mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+					/* push in between a b.semijoin(mat) */ 
+					instr = *p;
+					instr.argv[0] = p->argv[2];
+					instr.argv[1] = p->argv[2];
+					instr.argv[2] = p->argv[1];
+					getFunctionId(&instr) = semijoinRef;
+		 			m = isMATalias(getArg(&instr,2), mat, mtop);
+					if ((bc = mat_semijoin(mb, &instr, mat, m)) != NULL)
+						mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+					/* Kunion(mat, b) */
+					m = isMATalias(getArg(q,1), mat, mtop);
+		 			n = isMATalias(getArg(q,2), mat, mtop);
+					mtop = mat_union(mb, q, mat, mtop, m, n);
+					i++;
+					actions++;
+					continue;
+				}
+			} 
 			if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
 				mtop = mat_add(mat, mtop, bc, NULL, mat_none );
 			actions++;
