@@ -144,13 +144,20 @@ of remote objects and returns the handle to its result";
 #include "remote.h"	/* for the implementation of the functions */
 
 @-
-TODO: thread safe or not?  Technically, these methods need to be
-serialised per connection, hence a scheduler that interleaves e.g.
-multiple get calls, simply violates this constraint.  If parallelism to
-the same site is desired, a user could create a second connection.
+Technically, these methods need to be serialised per connection, 
+hence a scheduler that interleaves e.g.  multiple get calls, 
+simply violates this constraint.  If parallelism to the same site 
+is desired, a user could create a second connection.
+This is not always easy to generate at the proper place, e.g.
+overloading the dataflow optimizer to patch connections structures
+is not acceptable.
+
+Instead, we maintain a simple lock with each connection, which
+can be used to issue a safe, but blocking get/put/exec/register request.
 @- Implementation
 @h
 typedef struct _connection {
+	MT_Lock			  lock;		/* lock to avoid interference */
 	char               *name;  /* name of the connection */
 	Mapi               mconn;     /* the Mapi handle for the connection */
 	size_t             nextid;    /* id counter */
@@ -182,7 +189,9 @@ RMTfindconn(connection *ret, str conn) {
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
+			mal_set_lock(c->lock,"remote.find"); /* nobody allowed here */
 			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
+				mal_unset_lock(c->lock,"remote.find");
 				mal_unset_lock(mal_remoteLock,"remote.find"); 
 				throw(IO, "remote.<findconn>", "an error occurred during "
 						"(re)connect of connection '%s': %s",
@@ -190,6 +199,7 @@ RMTfindconn(connection *ret, str conn) {
 				/* TODO: throw away connection? */
 			}
 			*ret = c;
+			mal_unset_lock(c->lock,"remote.find");
 			mal_unset_lock(mal_remoteLock,"remote.find"); 
 			return(MAL_SUCCEED);
 		}
@@ -271,7 +281,9 @@ str RMTepilogue(int *ret) {
 	while (c != NULL) {
 		t = c;
 		c = c->next;
+		mal_set_lock(c->lock,"remote.epilogue");
 		mapi_destroy(t->mconn);
+		mal_unset_lock(c->lock,"remote.epilogue");
 		GDKfree(t);
 	}
 	/* not sure, but better be safe than sorry */
@@ -328,20 +340,28 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.get:%s\n",qbuf);
 #endif
-		rethrow("remote.get", tmp,
-				RMTquery(&mhdl, "remote.get", c->mconn, qbuf));
+		/* this call should be a single transaction over the channel*/
+		mal_set_lock(c->lock,"remote.get"); 
+
+		if( (tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))!= MAL_SUCCEED ){
+			mal_unset_lock(c->lock,"remote.get"); 
+			throw(MAL,"remote.get",tmp);
+		}
 		mapi_fetch_row(mhdl); /* should succeed */
 		val = mapi_fetch_field(mhdl, 0);
 		if (val == NULL) {
 			mapi_close_handle(mhdl);
+			mal_unset_lock(c->lock,"remote.get"); 
 			throw(MAL, "remote.get", "missing first column in tuple");
 		}
 		len = atol(val);
 
 #if SIZEOF_SIZE_T == 4
-		if ((lng)(len & 0x80000000FFFFFFFF) != len)
+		if ((lng)(len & 0x80000000FFFFFFFF) != len){
+			mal_unset_lock(c->lock,"remote.get"); 
 			throw(MAL, "remote.get", "remote BAT is too big for this "
 					"32-bits (configured) system");
+		}
 #endif
 		/* FIXME: len < 0 ???? */
 
@@ -353,8 +373,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		while (len-- > 0) {
 			if (mapi_fetch_row(mhdl) == 0) {
 				mapi_close_handle(mhdl);
-				throw(MAL, "remote.get",
-						"expected %d more rows in result", len + 1);
+				mal_unset_lock(c->lock,"remote.get"); 
+				throw(MAL, "remote.get", "expected %d more rows in result", len + 1);
 			}
 			val = mapi_fetch_field(mhdl, 0); /* should both be there */
 			var = mapi_fetch_field(mhdl, 1);
@@ -391,8 +411,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "user.remote_internal_serveget(\"%s\", %s);",
 				getTypeName(rtype), ident);
-		rethrow("remote.get", tmp,
-				RMTquery(&mhdl, "remote.get", c->mconn, qbuf));
+		if ( (tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED ){
+				mal_unset_lock(c->lock,"remote.get"); 
+				return tmp;
+		}
 		mapi_fetch_row(mhdl); /* should succeed */
 		val = mapi_fetch_field(mhdl, 0);
 
@@ -409,12 +431,14 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				snprintf(tval, BUFSIZ, "%s", val);
 				tval[BUFSIZ] = '\0';
 				mapi_close_handle(mhdl);
+				mal_unset_lock(c->lock,"remote.get"); 
 				throw(MAL, "remote.get", "unable to parse value '%s'", tval);
 			}
 		}
 	}
 
 	mapi_close_handle(mhdl);
+	mal_unset_lock(c->lock,"remote.get"); 
 
 	return(MAL_SUCCEED);
 }
@@ -448,6 +472,9 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	type = getArgType(mb, pci, 2);
 	value = getArgReference(stk, pci, 2);
 
+	/* this call should be a single transaction over the channel*/
+	mal_set_lock(c->lock,"remote.put"); 
+
 	/* get a free identifier for the remote host */
 	RMTgetNextId(&tmp, c);
 	/* allocate on the stack as not to leak when we error lateron */
@@ -458,6 +485,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
 	if (type == TYPE_any || isAnyExpression(type)) {
+		mal_unset_lock(c->lock,"remote.put"); 
 		throw(MAL, "remote.put", "cannot deal with '%s' type",
 				getTypeName(type));
 	} else if (isaBatType(type)) {
@@ -486,8 +514,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 
 		bid = *(int *)value;
-		if ((b = BATdescriptor(bid)) == NULL)
+		if ((b = BATdescriptor(bid)) == NULL){
+			mal_unset_lock(c->lock,"remote.put"); 
 			throw(MAL, "remote.put", "cannot access BAT descriptor");
+		}
 
 		qbuf[BUFSIZ] = '\0';
 		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
@@ -495,8 +525,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-
-		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
+		if ( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED ){
+			mal_unset_lock(c->lock,"remote.put"); 
+			return tmp;
+		}
 		mapi_close_handle(mhdl);
 
 		headv = tailv = NULL;
@@ -509,7 +541,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-			rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
+			if( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED){
+				mal_unset_lock(c->lock,"remote.put"); 
+				return tmp;
+			}
 			/* we leak headv and tailv here if an exception is thrown */
 			mapi_close_handle(mhdl);
 		}
@@ -530,9 +565,13 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-		rethrow("remote.put", tmp, RMTquery(&mhdl, "remote.put", c->mconn, qbuf));
+		if( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED){
+			mal_unset_lock(c->lock,"remote.put"); 
+			return tmp;
+		}
 		mapi_close_handle(mhdl);
 	}
+	mal_unset_lock(c->lock,"remote.put"); 
 
 	/* return the identifier */
 	v = getArgReference(stk,pci,0);
@@ -569,11 +608,16 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	/* lookup conn */
 	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
 
+	/* this call should be a single transaction over the channel*/
+	mal_set_lock(c->lock,"remote.register"); 
+
 	/* check remote definition */
 	snprintf(buf,BUFSIZ,"inspect.getSignature(\"%s\",\"%s\");",mod,fcn);
 	msg = RMTquery(&mhdl,"remote.register",c->mconn, buf);
-	if ( msg == MAL_SUCCEED)
+	if ( msg == MAL_SUCCEED){
+		mal_unset_lock(c->lock,"remote.register"); 
 		throw(MAL,"remote.register","Function already defined remotely");
+	}
 	if ( mhdl)
 		mapi_close_handle(mhdl);
 
@@ -587,6 +631,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
+	mal_unset_lock(c->lock,"remote.register"); 
 	return msg;
 }
 @h
@@ -635,6 +680,9 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* lookup conn */
 	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
 
+	/* this call should be a single transaction over the channel*/
+	mal_set_lock(c->lock,"remote.exec"); 
+
 	/* get a free identifier on the remote host for each return argument expected */
 	RMTgetNextId(&tmp, c);
 	i = (int)strlen(tmp) + 1;
@@ -665,12 +713,16 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.exec:%s\n",qbuf);
 #endif
-	rethrow("remote.exec", tmp, RMTquery(&mhdl, "remote.exec", c->mconn, qbuf));
+	if( (tmp = RMTquery(&mhdl, "remote.exec", c->mconn, qbuf)) != MAL_SUCCEED ){
+		mal_unset_lock(c->lock,"remote.exec"); 
+		return tmp;
+	}
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
 	/* return the rident */
 	VALset(getArgReference(stk,pci,0),
 			stk->stk[getArg(pci, 0)].vtype, GDKstrdup(ident));
+	mal_unset_lock(c->lock,"remote.exec"); 
 	return(MAL_SUCCEED);
 }
 
@@ -764,6 +816,8 @@ str RMTcreate(
 		} while (c != NULL);
 		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
+	MT_lock_init( &c->lock, "remote.create");
+
 	c->name = GDKstrdup(*conn);
 	c->nextid = 0;
 	c->next = NULL;
@@ -771,7 +825,9 @@ str RMTcreate(
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 	mal_unset_lock(mal_remoteLock,"remote.connect"); 
 
+	mal_set_lock(c->lock,"remote.create"); 
 	if (mapi_reconnect(c->mconn) != MOK)
+		mal_unset_lock(c->lock,"remote.create"); 
 		throw(IO, "remote.create", "an error occurred during "
 				"connect of connection '%s': %s",
 				conn, mapi_error_str(c->mconn));
@@ -781,13 +837,16 @@ str RMTcreate(
 	mapi_trace(c->mconn,TRUE);
 #endif
 	/* initialise remote helper function */
-	rethrow("remote.create", tmp,
-			RMTquery(&mhdl, "remote.create", c->mconn, serveget));
+	if( (tmp = RMTquery(&mhdl, "remote.create", c->mconn, serveget)) != MAL_SUCCEED){
+		mal_unset_lock(c->lock,"remote.create"); 
+		return tmp;
+	}
 	mapi_close_handle(mhdl);
 
 	/* just make sure the return isn't garbage */
 	*ret = GDKstrdup(*conn);
 
+	mal_unset_lock(c->lock,"remote.create"); 
 	return(MAL_SUCCEED);
 }
 
