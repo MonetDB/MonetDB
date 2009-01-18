@@ -878,8 +878,10 @@ remote_export str RMTreconnect(
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.reconnect", "connection name is NULL or nil");
 	msg =RMTfindconn(&c, *conn);
-	if (msg == MAL_SUCCEED )
+	if (msg == MAL_SUCCEED ){
+		*ret = GDKstrdup(*conn);
 		return MAL_SUCCEED;
+	}
 	GDKfree(msg);
 	return RMTcreate(ret,conn,host,port,dbname,user,passwd);
 }
