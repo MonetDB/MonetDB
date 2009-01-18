@@ -4020,6 +4020,5 @@ str SQLdropAquarium(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove it from the SQL tables */
 	/* todo */
 	return OCTOPUSdrop(cntxt,mb,stk,pci);
-	return MAL_SUCCEED;
 }
 
