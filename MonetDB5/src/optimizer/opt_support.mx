@@ -1134,6 +1134,8 @@ hasSideEffects(InstrPtr p, int strict)
 	}
 	if (getModuleId(p) == constraintsRef)
 		return FALSE;
+	if( getModuleId(p) == remoteRef)
+		return TRUE;
 	if( getModuleId(p) == mapiRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;

@@ -50,7 +50,7 @@ comment "Replication optimizer";
 static int 
 OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int clt, x, i, j, version, limit, slimit, actions= 0;
+	int conn, clt, x, i, j, version, limit, slimit, actions= 0;
 	InstrPtr w, q, p=0, *old= mb->stmt;
 	str dbname= GDKgetenv("gdk_dbname");
 	char nme[IDLENGTH] = {"rmtobj"};
@@ -85,6 +85,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= pushStr(mb,p,dbname);
 	p= pushStr(mb,p,"monetdb");
 	p= pushStr(mb,p,"monetdb");
+	conn = getArg(p,0);
 	
 	p= newStmt(mb,replicatorRef,putName("setVersion",10));
 	pushLng(mb,p,0);
@@ -93,12 +94,12 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	p= newStmt(mb,remoteRef,putRef);
 	setArgType(mb,p,0,rmtobj);
 	clt= getArg(p,0);
-	p= pushStr(mb,p,dbname);
+	p = pushArgument(mb,p,conn);
 	pushInt(mb,p,cntxt->idx);
 
 	/* id:rmtobj:= remote.exec("mastername","sql","getVersion");*/
 	p= newStmt(mb,remoteRef,execRef);
-	p= pushStr(mb,p,dbname);
+	p = pushArgument(mb,p,conn);
 	p= pushStr(mb,p,sqlRef);
 	p= pushStr(mb,p,"getVersion");
 	pushArgument(mb,p,clt);
@@ -106,7 +107,7 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	/* version:lng := remote.get("master",id);*/
 	p= newStmt(mb,remoteRef,getRef);
-	p= pushStr(mb,p,dbname);
+	p= pushArgument(mb,p,conn);
 	p= pushArgument(mb,p,i);
 	setArgType(mb,p,0,TYPE_lng);
 	version = getArg(p,0);
@@ -128,26 +129,26 @@ OPTreplicatorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			pushArgument(mb,w,clt);
 			for ( j=p->retc; j<p->argc; j++){
 				q= newStmt(mb,remoteRef,putRef);
-				q= pushStr(mb,q,dbname);
+				q= pushArgument(mb,q,conn);
 				q= pushArgument(mb,q,getArg(p,j));
 				w= pushArgument(mb,w,getArg(q,0));
 				setArgType(mb,q,0,rmtobj);
 			}
 
 			q= newStmt(mb,remoteRef,putRef);
-			q= pushStr(mb,q,dbname);
+			q= pushArgument(mb,q,conn);
 			q= pushArgument(mb,q,version);
 			w= pushArgument(mb,w,getArg(q,0));
 
 			q= newStmt(mb,remoteRef,putRef);
-			q= pushStr(mb,q,dbname);
+			q= pushArgument(mb,q,conn);
 			q= pushLng(mb,q,0);
 			w= pushArgument(mb,w,getArg(q,0));
 
 			pushInstruction(mb, w);
 
-			q = newStmt(mb,remoteRef,getRef);
-			q = pushStr(mb,q,dbname);
+			q= newStmt(mb,remoteRef,getRef);
+			q= pushArgument(mb,q,conn);
 			pushArgument(mb,q,getArg(w,0));
 			getArg(q,0)= x;
 			freeInstruction(p);
