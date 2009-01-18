@@ -826,11 +826,12 @@ str RMTcreate(
 	mal_unset_lock(mal_remoteLock,"remote.connect"); 
 
 	mal_set_lock(c->lock,"remote.create"); 
-	if (mapi_reconnect(c->mconn) != MOK)
+	if (mapi_reconnect(c->mconn) != MOK){
 		mal_unset_lock(c->lock,"remote.create"); 
 		throw(IO, "remote.create", "an error occurred during "
 				"connect of connection '%s': %s",
 				conn, mapi_error_str(c->mconn));
+	}
 	/* TODO: throw away connection? */
 
 #ifdef _DEBUG_MAPI_
