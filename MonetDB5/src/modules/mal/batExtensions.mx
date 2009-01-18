@@ -436,12 +436,16 @@ CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@-
+If the optimizer has not determined the partition bounds we derive one here.
+@c
 str
 CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b,*bn;
-	int i,bid;
+	int *ret,i,bid;
 	VarPtr low, hgh;
+	oid lval,hval=0, step;
 
 	(void) mb;
 	(void) cntxt;
@@ -450,26 +454,31 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL) {
 		throw(MAL, "bbp.partition", "Cannot access descriptor");
 	}
+	step = BATcount(b) / pci->retc;
+
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	for(i=0; i<pci->retc; i++){
-		oid hval = 0;
 		low= varGetProp(mb, getArg(pci,i),PropertyIndex("hlb") );
 		if (low== NULL )
-			throw(MAL,"bbp.partition","property hlb:oid missing");
+			lval = i*step;
+		else
+			lval = low->value.val.oval;
 		hgh= varGetProp(mb, getArg(pci,i),PropertyIndex("hub") );
-		if (hgh== NULL )
-			throw(MAL,"bbp.partition","property hub:oid missing");
-		hval = hgh->value.val.oval;
+		if (hgh== NULL ) 
+			hval = lval + step;
+		else
+			hval = hgh->value.val.oval;
 		if (i == pci->retc-1)
 			hval = BATcount(b);
-		bn =  BATslice(b, low->value.val.oval, hval);
-		BATseqbase(bn, low->value.val.oval);
+		bn =  BATslice(b, lval,hval);
+		BATseqbase(bn, lval);
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bbp.partition", "Partition slice not created");
 		}
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
-		BBPkeepref(bn->batCacheid);
+		ret= (int *) getArgValue(stk,pci,i);
+		BBPkeepref(*ret = bn->batCacheid);
 		low= hgh;
 	}
 	BBPunfix(b->batCacheid);
