@@ -109,7 +109,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS       show partial result */
+/* #define DEBUG_OPT_OCTOPUS        show partial result */
 
 @c
 #include "mal_config.h"
@@ -142,15 +142,20 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
+	printInstruction(cntxt->fdout,mb,0,pci,0);
+#else
+	(void) cntxt;
 #endif
 
 	/* locate the last assignment for varid */
 	for (i = start; i > 0; i--){
 		p= getInstrPtr(mb,i);
-		fnd =0;
+		fnd = -1;
 		for (j=0; j<p->retc; j++)
-			fnd+= getArg(p,j) == varid;
-		if ( fnd){
+			if ( getArg(p,j) == varid)
+				fnd= j;
+
+		if ( fnd > -1){
 			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 				getFunctionId(getInstrPtr(mb,0)),varid);
 			name =  putName(buf,strlen(buf));
@@ -162,11 +167,22 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 			break;
 		}
 	}
+#ifdef DEBUG_OPT_OCTOPUS
+	if (name == 0){
+		stream_printf(cntxt->fdout,"OCTOPUS ASSERT var %s\n", getVarName(mb,varid));
+		printFunction(cntxt->fdout,mb,0,0);
+	}
+#endif
 	assert( name);
 
 	for (; i > 0; i--){
 		p= getInstrPtr(mb,i);
 		fnd = 0;
+		if ( p->barrier){
+			for (j = 0; j < p->retc; j++)
+				needed[getArg(p,j)]= 1;
+			fnd = 1;
+		}
 		for (j = 0; j < p->retc; j++)
 			fnd += needed[getArg(p,j)];
 		if ( fnd) {
@@ -206,6 +222,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
 	(void) newStmt(tm,optimizerRef,replicatorRef);
+	(void) newStmt(tm,optimizerRef,putName("constants",9));
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 #ifdef DEBUG_OPT_OCTOPUS
@@ -215,14 +232,13 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	GDKfree(needed);
 	return tm;
 }
-@-
-@c
+
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr q, p, *old;
-	int last=0, i, j, limit, slimit, actions=0;
-	int tn=0, maxtn=32;
+	int last=0, i, j, limit, actions=0;
+	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
 
 
@@ -237,11 +253,13 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 @-
 All octopus tentacle code is collected in a separate module
 to ease future distribution and scheduling.
+The optimizer works by looking only to the mat.pack statement.
+A recursive call can be used to create more tentacles, which,
+when scheduled correctly, would not lead to duplicate work.
 @c
 	(void) fixModule(cntxt->nspace,octopusRef);
 
 	limit = mb->stop;
-	slimit = mb->ssize;
 	old = mb->stmt;
 
 	newMalBlkStmt(mb, mb->ssize);
@@ -249,8 +267,33 @@ to ease future distribution and scheduling.
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
+@-
+The mitosis mat result may not be of interest to the mergetable
+optimizer. Then we end up with sequences like:
+@verbatim
+	(_122,_123,_125,_127) := bat.partition(_120);
+    _27:bat[:oid,:dbl]  := mat.pack(_122,_123,_125,_127);
+@end verbatim
+Construction of a n-way process group to assemble the result
+is an overkill. A simple assignment is sufficient.
+@c
+		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
+			(getModuleId(old[i-1])== batRef && getFunctionId(old[i-1])== partitionRef) ) {
+			for(j=0; j<old[i-1]->retc; j++)
+				if ( getArg(old[i-1],j) != getArg(p,p->retc+j))
+					break;
+			if ( j==old[i-1]->retc && j== p->argc-p->retc){
+				/* assignment intended */
+				p->token= ASSIGNsymbol;
+				p->argc=2;
+				getArg(p,1)= getArg(old[i-1],old[i-1]->argc-1);
+				pushInstruction(mb,p);
+				continue;
+			}
+		}
 
-		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef)){
+		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
+			tn + p->argc - p->retc < maxtn){
 			/* create the tentacle, modifying the current plan */
 			/* barrier go:= scheduler.octopus(); */
 			q= newStmt(mb,schedulerRef,octopusRef);
@@ -271,6 +314,7 @@ to ease future distribution and scheduling.
 			getArg(p,0)= getArg(q,0);
 			getArg(p,1)= getArg(q,1);
 			p->retc=2;
+			p->argc=2;
 
 			actions++;
 			continue;
@@ -280,10 +324,9 @@ to ease future distribution and scheduling.
 			/* the octopus leaves a lot of deadcode, which we don't
 			   want to optimize */
 			(void) newStmt(mb,optimizerRef,putName("deadcode",8));
-			last= mb->stop;
+			last= i;
 		}
 	}
-	GDKfree(old);
 	
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
@@ -294,12 +337,13 @@ to ease future distribution and scheduling.
 @-
 The tentacle code should be optimized by the remaining optimizers.
 @c
-	for (j=last; j< limit; j++)
+	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
-		pushInstruction(tentacle[i], copyInstruction(getInstrPtr(mb,j)));
+		pushInstruction(tentacle[i], copyInstruction(old[j]));
 	for (i=0; i<tn; i++){
 		chkProgram(cntxt->nspace, tentacle[i]);
 #ifdef DEBUG_OPT_OCTOPUS
+		stream_printf(cntxt->fdout, "NEXT LEVEL octopus\n");
 		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
 #endif
 		optimizeMALBlock(cntxt,tentacle[i]);
@@ -309,6 +353,10 @@ The tentacle code should be optimized by the remaining optimizers.
 		}
 	}
 	
+#ifdef DEBUG_OPT_OCTOPUS
+	stream_printf(cntxt->fdout, "OCTOPUS done\n");
+#endif
+	GDKfree(old);
 	return actions;
 }
 @include optimizerWrapper.mx
