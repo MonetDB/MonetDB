@@ -30,7 +30,8 @@ comment "Common sub-expression optimizer"
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_COMMONTERMS          show partial result */
+/* #define DEBUG_OPT_COMMONTERMS            show partial result */
+/* #define DEBUG_OPT_COMMONTERMS_MORE       show detailed result */
 
 @c
 #include "mal_config.h"
@@ -90,6 +91,14 @@ This is encoded as a call to the respective optimizers.
 
 Note, we skip the first instruction because it always signifies the signature.
 The last instruction signifies the end.
+
+Pathological case require alias removal also to find dependents.
+@verbatim
+a:= e();
+b:= e();
+c:= f(a);
+d:= f(b);
+@end verbatim
 @c
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -98,6 +107,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
+	int *alias;
 	InstrPtr *old;
 	int *lastassigned;
 
@@ -105,6 +115,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) stk;
 	(void) pci;
 	lastassigned = (int*) alloca(sizeof(int) * mb->vtop);
+	alias = (int*) alloca(sizeof(int) * mb->vtop);
+	for ( k=0;k<mb->vtop; k++)
+		alias[k]=k;
 	memset((void*) lastassigned, 0, mb->vtop * sizeof(int));
 
 
@@ -119,6 +132,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	for ( i = 0; i < limit; i++) {
 		p = old[i];
+
+		for ( k = 0; k < p->argc; k++)
+			getArg(p,k) = alias[getArg(p,k)];
+
 		if ( hasSideEffects(p, TRUE) )
 		for ( k = p->retc; k < p->argc; k++)
 			lastassigned[getArg(p,k)] = i;
@@ -131,6 +148,16 @@ We have to also look for first 'assignments' of constant arguments.
 
 		for ( k = 0; k < p->retc; k++)
 			lastassigned[getArg(p,k)]=i;
+@-
+We look back in the code base to determine a candidate for
+replacement. We don't have to look further back then the last
+relevant assignment.
+@c
+		last=  p->retc < p->argc? lastassigned[getArg(p,p->retc)]:0;
+		for (j = p->retc+1; j<p->argc; j++)
+			if (lastassigned[getArg(p,j)]> last)
+				last= lastassigned[getArg(p,j)];
+
 		pushInstruction(mb,p);
 @-
 A non-empty barrier block signals the end of this optimizer,
@@ -147,10 +174,6 @@ Like all optimizer decisions, it is safe to stop.
 @c
 		barrier |= getFunctionId(p) == assertRef;
 		if (p->token == ENDsymbol){
-			if (actions){
-				(void) newStmt(mb,optimizerRef, putName("aliases",7));
-				(void) newStmt(mb,optimizerRef, putName("commonTerms",11));
-			}
 			/* wrap up the remainder */
 			for(i++; i<limit; i++)
 			if( old[i])
@@ -161,20 +184,9 @@ Like all optimizer decisions, it is safe to stop.
 			barrier || p->retc == p->argc) {
 			continue;
 		}
-@-
-We look back in the code base to determine a candidate for
-replacement. We don't have to look further back then the last
-relevant assignment. 
-@c
-		last= lastassigned[getArg(p,p->retc)];
-		for (j = p->retc+1; j<p->argc; j++)
-			if (lastassigned[getArg(p,j)]> last)
-				last= lastassigned[getArg(p,j)];
 
 		for (j = i - 1; j >= last; j--) 
 		if ( (q=getInstrPtr(mb,j))->fcn == p->fcn && !hasSideEffects(q, TRUE)){
-			if (safetyBarrier(p, q) )
-				break;
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			stream_printf(cntxt->fdout,"CANDIDATE %d, %d  %d %d lookback %d ", i, j, 
 				hasSameSignature(mb, p, q), 
@@ -189,6 +201,8 @@ relevant assignment.
 				isLinearFlow(q),
 				isLinearFlow(p));
 #endif
+			if (safetyBarrier(p, q) )
+				break;
 @-
 Simple assignments are not replaced either. They should be
 handled by the alias removal part
@@ -210,7 +224,8 @@ handled by the alias removal part
 				p->argc = p->retc + q->retc;
 				for (k = 0; k < q->retc; k++){
 					lastassigned[getArg(p,k)] = lastassigned[getArg(q,k)];
-					p->argv[p->retc + k] =  q->argv[k];
+					alias[getArg(p,k)] = alias[getArg(q,k)];
+					getArg(p,p->retc +k) = getArg(q,k);
 				}
 #ifdef DEBUG_OPT_COMMONTERMS
 				stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");
@@ -222,7 +237,6 @@ handled by the alias removal part
 		}
 	}
 #ifdef DEBUG_OPT_COMMONTERMS
-	chkProgram(cntxt->nspace,mb);
 	stream_printf(cntxt->fdout, "MODIFIED PLAN %d\n",mb->errors);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
