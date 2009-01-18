@@ -380,7 +380,7 @@ void chkFlow(MalBlkPtr mb)
 	}
 	for(btop--; btop>=0;btop--){
 		showScriptException(mb,lastInstruction, SYNTAX,
-			"begin '%s' without exit in %s[%d]",
+			"barrier '%s' without exit in %s[%d]",
 				getVarName(mb,var[btop]),getFcnName(mb),i);
 		mb->errors++;
 	}

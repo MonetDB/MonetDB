@@ -801,11 +801,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 		m= fsym->def;
 		return getMalBlkHistory(m,idx);
 	} 
-	if( m->history== NULL){
-		stream_printf(out,"No history available\n");
-		return NULL;
-	} 
-	return m;
+	return getMalBlkHistory(mb,-1);
 }
 
 static void

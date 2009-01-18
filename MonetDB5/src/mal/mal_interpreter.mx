@@ -1201,14 +1201,17 @@ runMALdetached(void *t){
 	MalBlkPtr mb = p->mb;
 	MalStkPtr stk = p->stk;
 	int sve;
+	str msg= MAL_SUCCEED;
 
 #ifdef DEBUG_DETACHED
 	stream_printf(cntxt->fdout,"start thread in background\n");
 #endif
 	sve= stk->keepAlive;
 	stk->keepAlive= TRUE;
-	(void) reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
+	msg= reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
 	stk->keepAlive= sve;
+	if  ( msg != MAL_SUCCEED)
+		GDKerror(msg);		/* indirect way to pass an error */
 #ifdef DEBUG_DETACHED
 	stream_printf(cntxt->fdout,"finished thread in background\n");
 #endif

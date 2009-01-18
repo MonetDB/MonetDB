@@ -65,7 +65,7 @@ stdout of test 'tst010` in directory 'src/mal` itself:
 !SyntaxException:user.main[31]:exit-label 'F' without begin-label
 
 !SyntaxException:user.main[41]:exit-label 'A' without begin-label
-!SyntaxException:user.main[44]:begin 'unfinished' without exit in main[45]
+!SyntaxException:user.main[44]:barrier 'unfinished' without exit in main[45]
 function user.main():void;
 # syntax analysis test for guarded blocks, redo's and leave's 
 # forcefully end the block, because the parser counts barrier/exit pairs 
