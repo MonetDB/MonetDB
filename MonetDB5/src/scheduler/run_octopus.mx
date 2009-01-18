@@ -129,15 +129,15 @@ static int nrsites = 0;
 
 static int
 OCTOPUSdiscover(Client cntxt){
-	int ret, i, fnd = 0; /* set to force parallel work */
+	int i, fnd = 0; /* set to force parallel work */
 	connection conn;
-	str msg = MAL_SUCCEED;
+	str nme, msg = MAL_SUCCEED;
 
 	/* determine if sites are reachable */
 	for ( i=0; i<nrsites; i++){
 		if ( (msg = RMTfindconn(&conn, sites[i].db)) != MAL_SUCCEED){
 			/* try to create a connection */
-			msg = RMTcreate(&ret, &sites[i].db, &sites[i].host,
+			msg = RMTcreate(&nme, &sites[i].db, &sites[i].host,
 				&sites[i].port, &sites[i].db, &sites[i].usr, &sites[i].pw);
 #ifdef DEBUG_RUN_OCTOPUS
 			stream_printf(cntxt->fdout,"#Site connection %d %s\n", 
