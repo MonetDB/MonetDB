@@ -23,8 +23,6 @@ to hold the result of expressions. This leads to a polution of the
 runtime stack space, because space should be allocated and garbage
 collection tests should be performed.
 
-Likewise, constant duplicates are scattered around the stack.
-They are located and merged.
 
 The routine @sc{optimizer.reduce()} reduces the number of scratch
 variables to a minimum. All scratch variables of the same underlying
@@ -58,46 +56,6 @@ comment "Reduce the stack space claims";
 #include "opt_reduce.h"
 #include "mal_interpreter.h"
 
-static 
-void MRconstant(MalBlkPtr mb){
-	int i,j, equals=0;
-	int *cst,*alias,top=0;
-
-	cst= (int*) alloca(mb->vtop *sizeof(int));
-	alias= (int*) alloca(mb->vtop *sizeof(int));
-
-	for(i = 0; i< mb->vtop; i++)
-	if (isVarConstant(mb,i)) {
-		alias[i] = i;
-		for(j=0; j<top; j++) {
-			if (getVarType(mb,i) == getVarType(mb,cst[j]) &&
-			    ATOMcmp(getVarGDKType(mb,i),
-			     VALget(&getVar(mb,i)->value),
-			     VALget(&getVar(mb,cst[j])->value)) == 0) {
-				alias[i] = cst[j];
-				equals++;
-				break;
-			}
-		}
-		cst[top++] = i;
-	}
-
-	if (equals==0)
-		return;
-	for( i=0; i< mb->stop; i++){
-		InstrPtr p = getInstrPtr(mb,i);
-
-		for(j=p->retc; j < p->argc; j++)
-			if (isVarConstant(mb, getArg(p,j)))
-				getArg(p,j) = alias[getArg(p,j)];
-	}
-	for( i=0; i< mb->ptop; i++){
-		MalProp *p= mb->prps+i;
-
-		if (p->var)
-			p->var = alias[p->var];
-	}
-}
 
 static int
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -107,8 +65,6 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void)stk;
 	(void) p;
 
-	/* reduce constant list */
-	MRconstant(mb);
 	actions = mb->vtop;
 	trimMalVariables(mb);
 	actions = actions - mb->vtop;
