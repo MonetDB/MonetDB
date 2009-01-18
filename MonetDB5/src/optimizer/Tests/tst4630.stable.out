@@ -33,15 +33,13 @@ function user.qry(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]
     c1 := c;                            #  3 c1:bat[:any_3,:any_4] := c:bat[:any_3,:any_4] {G}
     z := algebra.join(a,b);             #  4 z:bat[:any,:any] := ALGjoin(a:bat[:any_1,:any_2], b:bat[:any_2,:any_3]) {G}
     _12 := z;                           #  5 _12:bat[:any,:any] := z:bat[:any,:any] {G}
-    zz := algebra.join(_12,c);          #  6 zz:bat[:any,:any] := ALGjoin(_12:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
+    zz := algebra.join(z,c);            #  6 zz:bat[:any,:any] := ALGjoin(z:bat[:any,:any], c:bat[:any_3,:any_4]) {G}
     _13 := z;                           #  7 _13:bat[:any,:any] := z:bat[:any,:any] {G}
-    ww := algebra.join(_13,a1);         #  8 ww:bat[:any,:any] := ALGjoin(_13:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
-    yy := algebra.joinPath(_13,a1,b1);  #  9 yy:bat[:any,:any] := ALGjoinPath(_13:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3]) {G}
-    xx := algebra.joinPath(_13,a1,b1,c1);# 10 xx:bat[:any,:any] := ALGjoinPath(_13:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
+    ww := algebra.join(z,a1);           #  8 ww:bat[:any,:any] := ALGjoin(z:bat[:any,:any], a1:bat[:any_1,:any_2]) {G}
+    yy := algebra.joinPath(z,a1,b1);    #  9 yy:bat[:any,:any] := ALGjoinPath(z:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3]) {G}
+    xx := algebra.joinPath(z,a1,b1,c1); # 10 xx:bat[:any,:any] := ALGjoinPath(z:bat[:any,:any], a1:bat[:any_1,:any_2], b1:bat[:any_2,:any_3], c1:bat[:any_3,:any_4]) {G}
     return qry := xx;                   # 11 qry:bat[:any_1,:any_4] := xx:bat[:any,:any] {G}
 end qry;                                # 12  
-    optimizer.aliases();                # 13 _14:str := OPTaliases() {G}
-    optimizer.commonTerms();            # 14 _15:str := OPTcommonTerms() {G}
 
 # 12:56:30 >  
 # 12:56:30 >  Done.

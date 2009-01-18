@@ -2,6 +2,7 @@
 # common subexpression evaluation
 optimizer.setDebug();
 optimizer.commonTerms();
+optimizer.aliases();
 b:= bat.new(:str,:str);
 c:= bat.new(:str,:str);       # identical until insert takes place
 d:= algebra.select(b,"hello","world");

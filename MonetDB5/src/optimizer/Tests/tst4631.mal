@@ -113,6 +113,7 @@ end qry1;
 
 optimizer.setDebug();
 optimizer.aliases("user","qry1");
-optimizer.reduce("user","qry1");
+optimizer.constants("user","qry1");
 optimizer.commonTerms("user","qry1");
+optimizer.aliases("user","qry1");
 mdb.List("user","qry1");
