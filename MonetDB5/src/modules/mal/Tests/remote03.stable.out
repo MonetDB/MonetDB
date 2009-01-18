@@ -59,7 +59,7 @@ exit MALException;
     remote.destroy("test");
 end main;
 [ "Received an error from the remote site" ]
-MALException:remote.exec:remote_test_id_0 := io.print.bla();
+MALException:remote.exec:rmt_test_0 := io.print.bla();
 !SyntaxException:parseError:                              ^'(' expected
 #-------------------------#
 # h	t		  # name

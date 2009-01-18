@@ -269,6 +269,7 @@ in a critical section, which is known to be a severe performance hindrance.
 
 
 mal_export MT_Lock  mal_contextLock;
+mal_export MT_Lock  mal_remoteLock;
 
 mal_export int mal_init(void);
 mal_export void mal_exit(void);
@@ -317,6 +318,7 @@ mal_export int moreClients(int reruns);
 #include "mal_recycle.h"
 
 MT_Lock     mal_contextLock;
+MT_Lock     mal_remoteLock;
 @-
 Initialization of the MAL context
 The compiler directive STRUCT_ALIGNED tells that the
@@ -350,6 +352,7 @@ void tstAligned(void)
 }
 int mal_init(){
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
+	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 
 	tstAligned();
 	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
