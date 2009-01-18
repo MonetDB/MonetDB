@@ -725,7 +725,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 					w= &getVarConstant(mb,getArg(p,k));
 					u= &getVarConstant(mb,getArg(q,k));
 
-					if( w->vtype==u->vtype && ATOMcmp(w->vtype, VALptr(w), VALptr(u)) == 0)
+					if( w->vtype==u->vtype && ATOMcmp(w->vtype, VALget(w), VALget(u)) == 0)
 						continue;
 			}
 			return FALSE;
