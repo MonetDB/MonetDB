@@ -68,7 +68,7 @@ pattern scheduler.worker(dbnme:str, usr:str, pw:str, host:str, port:int)
 address OCTOPUSworker
 comment "Add a worker site to the known list ";
 
-pattern drop(dbnme:str)
+pattern scheduler.drop(dbnme:str)
 address OCTOPUSdrop
 comment "Remove a worker from the list";
 @h
@@ -296,6 +296,10 @@ threads to end their work. We simple set them to nil
 and wait for the assignments to have been completed.
 The the sole remainder is the timeout, which could be
 part of the scheduler arguments.
+
+We should be careful in accessing a site that runs out
+of clients or any failure. It may cause the scheduler to
+wait forever.
 @c
 str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
