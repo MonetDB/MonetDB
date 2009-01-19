@@ -273,7 +273,7 @@ log_read_string(logger *l)
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;
-		printf("!ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
+		fprintf(stderr, "!ERROR: couldn't read name (%s) " SSZFMT "\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -740,7 +740,7 @@ tr_commit(logger *lg, trans *tr)
 	int i;
 
 	if (lg->debug & 1)
-		printf("tr_commit\n");
+		fprintf(stderr, "tr_commit\n");
 
 	for (i = 0; i < tr->nr; i++) {
 		la_apply(lg, &tr->changes[i]);
@@ -755,7 +755,7 @@ tr_abort(logger *lg, trans *tr)
 	int i;
 
 	if (lg->debug & 1)
-		printf("tr_abort\n");
+		fprintf(stderr, "tr_abort\n");
 
 	for (i = 0; i < tr->nr; i++)
 		la_destroy(&tr->changes[i]);
@@ -1050,7 +1050,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 
 		lg->catalog = logbat_new(TYPE_int, TYPE_str, BATSIZE);
 		if (debug)
-			printf("create %s catalog\n", fn);
+			fprintf(stderr, "create %s catalog\n", fn);
 
 		bid = lg->catalog->batCacheid;
 
@@ -1753,7 +1753,7 @@ logger_add_bat(logger *lg, BAT *b, char *name)
 	}
 	bid = b->batCacheid;
 	if (lg->debug)
-		printf("create %s\n", name);
+		fprintf(stderr, "create %s\n", name);
 	lg->changes += BATcount(b) + 1;
 	BUNins(lg->catalog, &bid, name, FALSE);
 	BBPincref(bid, TRUE);
