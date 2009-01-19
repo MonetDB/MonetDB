@@ -318,8 +318,6 @@ perms (ty_set_t s, void (*f) (ty_set_t))
     (void) _perm (s, p, card, 0, 0, f);
 }
 
-
-
 /*
  * Auxiliary routines to implement Antimirov's algorithm.
  *
@@ -464,9 +462,6 @@ PFty_regularity (PFty_t t)
      */
     return rec_tail (t, true, s) && non_null_head (false, s);
 }
-
-
-
 
 /**
  * Worker for #nullable ().
@@ -666,34 +661,34 @@ ty_eq (PFty_t *t1, PFty_t *t2)
     assert (t1 && t2);
 
     if (t1->type != t2->type)
-	return false;
+        return false;
 
     switch (t1->type) {
     case ty_named:
         /* both types need to be in the same symbol space and
          * have identical names
          */
-	return (t1->sym_space == t2->sym_space) &&
+        return (t1->sym_space == t2->sym_space) &&
                (PFqname_eq (t1->name, t2->name) == 0);
 
     case ty_opt:
     case ty_plus:
     case ty_star:
     case ty_doc:
-	return ty_eq (t1->child[0], t2->child[0]);
+        return ty_eq (t1->child[0], t2->child[0]);
 
     case ty_seq:
     case ty_choice:
     case ty_all:
-	return ty_eq (t1->child[0], t2->child[0])
+        return ty_eq (t1->child[0], t2->child[0])
                && ty_eq (t1->child[1], t2->child[1]);
 
     case ty_elem:
     case ty_attr:
-	if (PFty_wildcard (*t1) && PFty_wildcard (*t2))
-	    return ty_eq (t1->child[0], t2->child[0]);
-	else
-	    return (PFqname_eq (t1->name, t2->name) == 0)
+        if (PFty_wildcard (*t1) && PFty_wildcard (*t2))
+            return ty_eq (t1->child[0], t2->child[0]);
+        else
+            return (PFqname_eq (t1->name, t2->name) == 0)
                 && ty_eq (t1->child[0], t2->child[0]);
 
     case ty_pi:
@@ -703,7 +698,7 @@ ty_eq (PFty_t *t1, PFty_t *t2)
             return (PFqname_eq (t1->name, t2->name) == 0);
 
     default:
-	return true;
+        return true;
     }
 }
 

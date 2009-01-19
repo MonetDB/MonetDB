@@ -37,10 +37,10 @@
  *
  *
  * A diagram of Pathfinder's internal type system (`qn' denotes QName,
- * possibly using wildcards `ns:*', `*:loc').  
+ * possibly using wildcards `ns:*', `*:loc').
  *
  * @verbatim
-                                         +- untypedAtomic          
+                                         +- untypedAtomic
                                          |
                                          |           +- decimal -- integer
                                          |           |
@@ -48,13 +48,15 @@
                                          |           |
                                          |           +- double
                                          |
+                                         +- Date/Time Types (11)
+                                         |
                               +- atomic -+- boolean
                               |          |
                               |          +- string
                               |          |
                               |          +- QName
-                              |          
-                              |           
+                              |
+                              |
                               |            +- comm
                               |            |
        +- untypedAny          |            +- p-i
@@ -66,7 +68,7 @@
        +- t|t                              +- attr * { t }/attr qn { t }
        |                                   |
        +- t,t                              +- elem * { t }/elem qn { t }
-       | 
+       |
    t --+- t*
        |
        +- t+
@@ -82,8 +84,8 @@
        +- stmt
 @endverbatim
  *
- * 
- * Notes: 
+ *
+ * Notes:
  *
  *  - Below `atomic' we can attach the complete XML Schema
  *    (Part 2, Datatypes) builtin type hierarchy, if this is desired.
@@ -124,12 +126,12 @@
        [[ element qn of type qn' ]]   = elem qn { named qn' }
        [[ attribute qn of type qn' ]] = attr qn { named qn' }
 @endverbatim
- *    
+ *
  *  - unsupported (SchemaContext):
  *
- *      - element qn context qn'/qn''/...  
- *      - attribute qn context qn'/qn''/... 
- *     
+ *      - element qn context qn'/qn''/...
+ *      - attribute qn context qn'/qn''/...
+ *
  *  - The type `stmt' is a Pathfinder specific extension to accomodate
  *    for our update language.  Any (update) function with side effects
  *    has type `stmt'.  An input query is allowed to either have a
@@ -137,7 +139,7 @@
  *    from stmt (i.e., be a side effect free query).  With this
  *    restriction we can avoid semantical problems that might occur
  *    if an input contains a mix of query and update.
- *    
+ *
  *  - Similar things also hold for Pathfinder's `docmgmt' type.  This
  *    type is assigned to (built-in) functions that modify the document
  *    collection, i.e., add or remove documents from the collection.
@@ -154,7 +156,7 @@
 #include "env.h"
 
 /**
- * Encoding of internal types and type constructors.  
+ * Encoding of internal types and type constructors.
  */
 enum PFtytype_t {
   /* ty_none is not part of the XQuery type system per se, but
@@ -180,8 +182,19 @@ enum PFtytype_t {
   ty_string,                   /**< string                      */
   ty_boolean,                  /**< boolean                     */
 #ifdef XXX_HAVE_GEOXML
-  ty_geo_wkb,		       /**< geoxml wkb type             */
+  ty_geo_wkb,                  /**< geoxml wkb type             */
 #endif
+  ty_datetime,                 /**< dateTime                    */
+  ty_date,                     /**< date                        */
+  ty_time,                     /**< time                        */
+  ty_gyearmonth,               /**< gYearMonth                  */
+  ty_gyear,                    /**< gYear                       */
+  ty_gmonthday,                /**< gMonthDay                   */
+  ty_gmonth,                   /**< gMonth                      */
+  ty_gday,                     /**< gDay                        */
+  ty_duration,                 /**< duration                    */
+  ty_yearmonthduration,        /**< yearMonthDuration           */
+  ty_daytimeduration,          /**< dayTimeDuration             */
   ty_qname,                    /**< QName                       */
   ty_node,                     /**< node                        */
   ty_elem,                     /**< elem                        */
@@ -204,7 +217,7 @@ typedef enum PFtytype_t PFtytype_t;
  */
 #define PFTY_MAXCHILD 2
 
-/** 
+/**
  * Representation of internal types.
  */
 typedef struct PFty_t PFty_t;
@@ -247,7 +260,7 @@ PFty_t PFty_geo_wkb (void);
 #endif
 
 
-/** 
+/**
  * Type constructors (internal).
  */
 PFty_t PFty_one (PFty_t t);
@@ -269,7 +282,7 @@ PFty_t PFty_named_group (PFqname_t qn);
 PFty_t PFty_named_attrgroup (PFqname_t qn);
 
 /**
- * XML Schema (Part 2, Datatypes) types.  
+ * XML Schema (Part 2, Datatypes) types.
  */
 PFty_t PFty_xs_integer (void);
 PFty_t PFty_xs_string (void);
@@ -277,6 +290,18 @@ PFty_t PFty_xs_boolean (void);
 PFty_t PFty_xs_decimal (void);
 PFty_t PFty_xs_double (void);
 PFty_t PFty_xs_QName (void);
+
+PFty_t PFty_xs_datetime (void);
+PFty_t PFty_xs_date (void);
+PFty_t PFty_xs_time (void);
+PFty_t PFty_xs_gyearmonth (void);
+PFty_t PFty_xs_gyear (void);
+PFty_t PFty_xs_gmonthday(void);
+PFty_t PFty_xs_gmonth (void);
+PFty_t PFty_xs_gday (void);
+PFty_t PFty_xs_duration (void);
+PFty_t PFty_xs_yearmonthduration (void);
+PFty_t PFty_xs_daytimeduration (void);
 
 PFty_t PFty_xs_anyType (void);
 PFty_t PFty_xs_anyItem (void);

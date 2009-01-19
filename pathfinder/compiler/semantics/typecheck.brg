@@ -184,7 +184,7 @@ CoreExpr:           Atom                                        =   3 (10);
 CoreExpr:           SequenceTypeCast                            =   4 (10);
 
 CoreExpr:           flwr (OptBindExpr, WhereExpr)               =   5 (10);
-                                                                     
+
 OptBindExpr:        for_ (forbind (forvars (var, nil),
                                    CoreExpr),
                           OptBindExpr)                          =   6 (10);
@@ -195,7 +195,7 @@ OptBindExpr:        for_ (forbind (forvars (var, var),
 OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   8 (10);
 
 OptBindExpr:        nil                                         =   9 (10);
-                                                                     
+
 WhereExpr:          where (CoreExpr, WhereExpr)                 =  10 (10);
 WhereExpr:          orderby (OrderSpecs, CoreExpr)              =  11 (10);
 WhereExpr:          CoreExpr                                    =  12 (10);
@@ -522,7 +522,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 
             /* W3C XQuery, 5.8.2
              *
-             *                    E |- CoreExpr : t1   
+             *                    E |- CoreExpr : t1
              *  E[Var1:prime (t1), Var2:xs:integer] |- OptBindExpr : t2
              * --------------------------------------------------------------
              *  for_ (Var1, Var2, CoreExpr, CoreExpr) : t2 . quantifier (t1)
@@ -584,9 +584,9 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
         /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
         case 8:
         {   /* TOPDOWN */
-            
+
             /* W3C XQuery, 5.8.3
-             * 
+             *
              * E |- CoreExpr1 : t1   E[Var : t1] |- CoreExpr2 : t2
              * ----------------------------------------------------
              *      E |- let (Var, CoreExpr1, CoreExpr2) : t2
@@ -810,7 +810,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
              */
             *p = *R(p);
             break;
-            
+
         /* SequenceType:       seqtype */
         case 21:
             TY(p) = p->sem.type;
@@ -858,10 +858,10 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
                provide empty results */
             else if (!PFty_subtype (TY(L(p)), PFty_xs_anyAttribute()))
                 TY(p) = PFty_empty ();
-            
+
             /* the following cases handle only attribute kind tests */
 
-            /* 
+            /*
              * For attribute steps that do not contain any wildcards,
              * we know that there can be at most one match for each
              * context node.
@@ -1004,7 +1004,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             TY(p) = *PFty_simplify (PFty_attr (L(p)->sem.qname,
                                                PFty_untypedAtomic ()));
             break;
-            
+
         /* CoreExpr:           attr (CoreExpr, CoreExpr) */
         case 49:
         {
@@ -1114,7 +1114,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
              */
             TY(p) = PFty_xs_string ();
             break;
-     
+
         /* LiteralValue:       lit_int */
         case 69:
             /* W3C XQuery, 5.1.1
@@ -1147,7 +1147,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 
         /* LiteralValue:       true_ */
         case 72:
-            /* 
+            /*
              * -------------------------
              * Env |- true_ : xs:boolean
              */
@@ -1156,7 +1156,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 
         /* LiteralValue:       false_ */
         case 73:
-            /* 
+            /*
              * --------------------------
              * Env |- false_ : xs:boolean
              */
@@ -1171,7 +1171,7 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
              */
             TY(p) = PFty_empty ();
             break;
-     
+
         /* FunctionDecls:      nil */
         case 80:
             break;
@@ -1185,14 +1185,14 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
             /*
              * See if function body matches function return type.
              */
-	    assert (p->sem.fun->sig_count == 1);
+            assert (p->sem.fun->sig_count == 1);
             if (!PFty_subtype (TY(R(p)), p->sem.fun->sigs[0].ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
                         PFqname_str (p->sem.fun->qname),
-                        PFty_str (TY(R(p))), 
-			PFty_str (p->sem.fun->sigs[0].ret_ty));
+                        PFty_str (TY(R(p))),
+                        PFty_str (p->sem.fun->sigs[0].ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1312,26 +1312,24 @@ static void fun_not_found (PFqname_t qn, PFcnode_t *args)
     for (unsigned int i = 0; i < PFarray_last (fns); i++) {
 
         PFfun_t *fn       = *(PFfun_t **) PFarray_at (fns, i);
-	
-	for (unsigned j = 0; j < fn->sig_count; j++) {
-	     args_str = PFarray (sizeof (char), 512);
 
-	     PFfun_sig_t *sig = fn->sigs + j;
+        for (unsigned j = 0; j < fn->sig_count; j++) {
+            args_str = PFarray (sizeof (char), 512);
 
-	     PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
-		  
-	     for (unsigned int k = 0; k < fn->arity; k++) {
-		  PFarray_printf (args_str, "%s%s",
-				  k ? ", " : "", 
-				  PFty_str (sig->par_ty[k]));
-	     }
-	     
-	     PFarray_printf (args_str, ") as %s", 
-			     PFty_str (sig->ret_ty));
+            PFfun_sig_t *sig = fn->sigs + j;
 
-	     PFinfo (OOPS_TYPECHECK, "  %s", 
-		     (char *) PFarray_at (args_str, 0));
-	}
+            PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
+
+            for (unsigned int k = 0; k < fn->arity; k++) {
+                PFarray_printf (args_str, "%s%s",
+                    k ? ", " : "",
+                    PFty_str (sig->par_ty[k]));
+            }
+
+            PFarray_printf (args_str, ") as %s", PFty_str (sig->ret_ty));
+
+            PFinfo (OOPS_TYPECHECK, "  %s", (char *) PFarray_at (args_str, 0));
+        }
     }
 
     PFoops (OOPS_TYPECHECK,
@@ -1390,7 +1388,7 @@ overload (PFqname_t qn, PFcnode_t *args)
 
                 arg_match = PFty_promotable (arg->child[0]->type,
                                              (fn->sigs[0].par_ty)[a]);
-                
+
                 /* apply function zero-or-one on the type of the argument */
                 zoo_ty = *PFty_simplify (
                               PFty_opt (
@@ -1419,7 +1417,7 @@ overload (PFqname_t qn, PFcnode_t *args)
                                          PFcore_arg (
                                              L(arg),
                                              PFcore_nil ()));
-                    
+
                     /* Set state label correctly before we return. */
                     STATE_LABEL(LR(ret)) = PFtypecheck_state (
                                                OP_LABEL(LR(ret)), 0, 0);
@@ -1431,12 +1429,12 @@ overload (PFqname_t qn, PFcnode_t *args)
                                                OP_LABEL(ret),
                                                STATE_LABEL(L(ret)),
                                                0);
-                    
+
                     /* fix the types correctly */
                     TY(L(ret)) = TY(L(arg));
                     TY(ret)    = zoo_ty;
                     TY(arg)    = zoo_ty;
-                    
+
                     /* replace the argument by the function
                        zero-or-one applied to the argument */
                     L(arg) = ret;
@@ -1448,7 +1446,7 @@ overload (PFqname_t qn, PFcnode_t *args)
                     a++;
                     arg = arg->child[1];
                 }
-                
+
                 assert (arg);
             }
 
@@ -1472,15 +1470,15 @@ overload (PFqname_t qn, PFcnode_t *args)
 }
 
 static PFty_t next_choice (PFty_t t) {
-     if (t.type == ty_choice)
-	  return *(t.child[0]);
-     return PFty_none ();
+    if (t.type == ty_choice)
+        return *(t.child[0]);
+    return PFty_none ();
 }
 
 static PFty_t next_type (PFty_t t) {
-     if (t.type == ty_choice)
-	  return *(t.child[1]);
-     return t;
+    if (t.type == ty_choice)
+        return *(t.child[1]);
+    return t;
 }
 
 /**
@@ -1517,10 +1515,10 @@ specific (PFfun_t *fn, PFcnode_t *args)
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "insert-before"))) {
         assert (args->kind == c_arg && R(args)->kind == c_arg &&
                 R(R(args))->kind == c_arg && R(R(R(args)))->kind == c_nil);
-        
+
         PFty_t seq_type = PFty_seq (PFty_defn (TY(L(args))),
                                     PFty_defn (TY(L(R(R(args))))));
-        
+
         return *PFty_simplify (PFty_quantifier (seq_type)
                                    (PFty_prime (seq_type)));
     }
@@ -1570,7 +1568,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
                     (PFty_quantifier (PFty_defn (TY(L(args))))
                          (PFty_prime (PFty_defn (TY(L(args)))))));
     }
-    
+
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "zero-or-one"))) {
         return *PFty_simplify (PFty_opt (PFty_prime (PFty_defn (TY(L(args))))));
     }
@@ -1595,7 +1593,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
                         (PFty_quantifier (seq_type))
                             (PFty_prime (seq_type))));
     }
-    
+
     if (! PFqname_eq (fn->qname, PFqname (PFns_op, "except"))) {
         PFty_t left_type = PFty_defn (TY(L(args)));
         return *PFty_simplify (
@@ -1661,61 +1659,58 @@ specific (PFfun_t *fn, PFcnode_t *args)
 
 
     if (fn->sig_count > 1) {
-	 /* special handing for functions with multiple signatures,
-	  * but one implementation ("dynamic overloading")
-	  */
-	 /* currently, only functions with 2 parameters are supported.
-	  * So we can use simple for loops and we do not need complex
-	  * permutation stuff.
-	  */	     
-	 assert (fn->arity == 2);
-	 PFty_t ret_type = PFty_none ();
-	 PFty_t arg1_type = PFty_defn (TY(L(args)));
-	 PFty_t arg2_type = PFty_defn (TY(L(R(args))));
+        /* special handing for functions with multiple signatures,
+         * but one implementation ("dynamic overloading")
+         */
+        /* currently, only functions with 2 parameters are supported.
+         * So we can use simple for loops and we do not need complex
+         * permutation stuff.
+         */
+        assert (fn->arity == 2);
+        PFty_t ret_type = PFty_none ();
+        PFty_t arg1_type = PFty_defn (TY(L(args)));
+        PFty_t arg2_type = PFty_defn (TY(L(R(args))));
 
-	 /* iterate through the possible types of argument 1 */
-	 for (PFty_t c1 = PFty_normalize_choice (arg1_type); 
-	      c1.type != ty_none;
-	      c1 = next_choice (c1)) 
-	 {
-	      PFty_t t1 = next_type (c1);
+        /* iterate through the possible types of argument 1 */
+        for (PFty_t c1 = PFty_normalize_choice (arg1_type); 
+             c1.type != ty_none;
+             c1 = next_choice (c1)) 
+        {
+            PFty_t t1 = next_type (c1);
 
-              /* iterate through the possible types of argument 2 */
-	      for (PFty_t c2 = PFty_normalize_choice (arg2_type); 
-		   c2.type != ty_none;
-		   c2 = next_choice (c2))
-	      {
-		   PFty_t t2 = next_type (c2);
+            /* iterate through the possible types of argument 2 */
+            for (PFty_t c2 = PFty_normalize_choice (arg2_type); 
+                        c2.type != ty_none;
+                        c2 = next_choice (c2))
+            {
+                PFty_t t2 = next_type (c2);
 
-		   bool found = false;
-		   /* for every combination, check if we have a matching
-		    * signature.
-		    */
-		   for (unsigned int i = 0; 
-			i < fn->sig_count && !found; i++) {
-			PFfun_sig_t *sig = fn->sigs + i;
+                bool found = false;
+                /* for every combination, check if we have a matching
+                 * signature.
+                 */
+                for (unsigned int i = 0; i < fn->sig_count && !found; i++) {
+                    PFfun_sig_t *sig = fn->sigs + i;
 
-			if (PFty_promotable (t1, sig->par_ty[0])
-			    && PFty_promotable (t2, sig->par_ty[1]))
-			{
-			     found = true;
-			     /* the return type is the combination of
-			      * the return types of every matching signature
-			      */
-			     if (ret_type.type != ty_none)
-				  ret_type =
-				       PFty_choice (ret_type,
-						    sig->ret_ty);
-			     else
-				  ret_type = sig->ret_ty;
-			}
-		   }
-		   if (!found)
-		     fun_not_found (fn->qname, args);
-	      }
-	 }
+                    if (PFty_promotable (t1, sig->par_ty[0])
+                        && PFty_promotable (t2, sig->par_ty[1]))
+                    {
+                        found = true;
+                        /* the return type is the combination of
+                         * the return types of every matching signature
+                         */
+                        if (ret_type.type != ty_none)
+                            ret_type = PFty_choice (ret_type, sig->ret_ty);
+                        else
+                            ret_type = sig->ret_ty;
+                    }
+                }
+                if (!found)
+                    fun_not_found (fn->qname, args);
+            }
+        }
 
-	 return ret_type;
+        return ret_type;
     }
 
     return fn->sigs[0].ret_ty;

@@ -327,6 +327,141 @@ PFty_geo_wkb (void)
 }
 #endif
 
+/**
+ * 11 Date/Time types
+ */
+
+PFty_t
+PFty_datetime (void)
+{
+    PFty_t t = { .type  = ty_datetime,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_date (void)
+{
+    PFty_t t = { .type  = ty_date,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_time (void)
+{
+    PFty_t t = { .type  = ty_time,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_gyearmonth (void)
+{
+    PFty_t t = { .type  = ty_gyearmonth,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_gyear (void)
+{
+    PFty_t t = { .type  = ty_gyear,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_gmonthday (void)
+{
+    PFty_t t = { .type  = ty_gmonthday,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_gmonth (void)
+{
+    PFty_t t = { .type  = ty_gmonth,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_gday (void)
+{
+    PFty_t t = { .type  = ty_gday,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_duration (void)
+{
+    PFty_t t = { .type  = ty_duration,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_yearmonthduration (void)
+{
+    PFty_t t = { .type  = ty_yearmonthduration,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
+
+PFty_t
+PFty_daytimeduration (void)
+{
+    PFty_t t = { .type  = ty_daytimeduration,
+                 .name  = 0,
+                 .sym_space = 0,
+                 .child = { 0 }
+    };
+
+    return t;
+}
 
 /**
  * Named types (the defn of these types is found in the
@@ -638,6 +773,83 @@ PFty_xs_double (void)
     return PFty_double ();
 }
 
+/** type xs:dateTime = datetime */
+PFty_t
+PFty_xs_datetime (void)
+{
+    return PFty_datetime ();
+}
+
+/** type xs:date = date */
+PFty_t
+PFty_xs_date (void)
+{
+    return PFty_date ();
+}
+
+/** type xs:time = time */
+PFty_t
+PFty_xs_time (void)
+{
+    return PFty_time ();
+}
+
+/** type xs:gYearMonth = gyearmonth */
+PFty_t
+PFty_xs_gyearmonth (void)
+{
+    return PFty_gyearmonth ();
+}
+
+/** type xs:gYear = gyear */
+PFty_t
+PFty_xs_gyear (void)
+{
+    return PFty_gyear ();
+}
+
+/** type xs:gMonthDay = monthday */
+PFty_t
+PFty_xs_gmonthday (void)
+{
+    return PFty_gmonthday ();
+}
+
+/** type xs:gMonth = gmonth */
+PFty_t
+PFty_xs_gmonth (void)
+{
+    return PFty_gmonth ();
+}
+
+/** type xs:gDay = gday */
+PFty_t
+PFty_xs_gday (void)
+{
+    return PFty_gday ();
+}
+
+/** type xs:duration = duration */
+PFty_t
+PFty_xs_duration (void)
+{
+    return PFty_duration ();
+}
+
+/** type xs:yearMonthDuration = yearmonthduration  */
+PFty_t
+PFty_xs_yearmonthduration (void)
+{
+    return PFty_yearmonthduration ();
+}
+
+/** type xs:dayTimeDuration = daytimeduration */
+PFty_t
+PFty_xs_daytimeduration (void)
+{
+    return PFty_daytimeduration ();
+}
+
 /** type xs:QName = qname */
 PFty_t
 PFty_xs_QName (void)
@@ -895,6 +1107,17 @@ static char* ty_id[] = {
 #ifdef XXX_HAVE_GEOXML
     , [ty_geo_wkb      ]   = "wkb"
 #endif
+    , [ty_datetime            ]   = "dateTime"
+    , [ty_date                ]   = "date"
+    , [ty_time                ]   = "time"
+    , [ty_gyearmonth          ]   = "gYearMonth"
+    , [ty_gyear               ]   = "gYear"
+    , [ty_gmonthday           ]   = "gMonthDay"
+    , [ty_gmonth              ]   = "gMonth"
+    , [ty_gday                ]   = "gDay"
+    , [ty_duration            ]   = "duration"
+    , [ty_yearmonthduration   ]   = "yearMonthDuration"
+    , [ty_daytimeduration     ]   = "dayTimeDuration"
 };
 
 /**
@@ -1095,6 +1318,19 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = &PFns_xs,  .loc = "boolean",       .fn = PFty_xs_boolean        },
     { .ns = &PFns_xs,  .loc = "decimal",       .fn = PFty_xs_decimal        },
     { .ns = &PFns_xs,  .loc = "double",        .fn = PFty_xs_double         },
+    { .ns = &PFns_xs,  .loc = "dateTime",      .fn = PFty_xs_datetime       },
+    { .ns = &PFns_xs,  .loc = "date",          .fn = PFty_xs_date           },
+    { .ns = &PFns_xs,  .loc = "time",          .fn = PFty_xs_time           },
+    { .ns = &PFns_xs,  .loc = "gYearMonth",    .fn = PFty_xs_gyearmonth     },
+    { .ns = &PFns_xs,  .loc = "gYear",         .fn = PFty_xs_gyear          },
+    { .ns = &PFns_xs,  .loc = "gMonthDay",     .fn = PFty_xs_gmonthday      },
+    { .ns = &PFns_xs,  .loc = "gMonth",        .fn = PFty_xs_gmonth         },
+    { .ns = &PFns_xs,  .loc = "gDay",          .fn = PFty_xs_gday           },
+    { .ns = &PFns_xs,  .loc = "duration",      .fn = PFty_xs_duration       },
+    { .ns = &PFns_xs,  .loc = "yearMonthDuration",
+                                               .fn = PFty_xs_yearmonthduration},
+    { .ns = &PFns_xs,  .loc = "dayTimeDuration",
+                                               .fn = PFty_xs_daytimeduration},
     { .ns = &PFns_xs,  .loc = "QName",         .fn = PFty_xs_QName          },
     { .ns = &PFns_xs,  .loc = "anyType",       .fn = PFty_xs_anyType        },
     { .ns = &PFns_xs,  .loc = "anyItem",       .fn = PFty_xs_anyItem        },
