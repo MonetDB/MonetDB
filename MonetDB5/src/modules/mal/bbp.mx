@@ -780,7 +780,7 @@ CMDbbpNames(int *ret)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
 				BUNins(b, &i, BBP_logical(i), FALSE);
-				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i))) {
+				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i)) && !BBPtmpcheck(BBP_logical(-i))) {
 					int j = -i;
 
 					BUNins(b, &j, BBP_logical(j), FALSE);
