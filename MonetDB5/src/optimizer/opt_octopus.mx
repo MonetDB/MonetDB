@@ -240,6 +240,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int last=0, i, j, limit, actions=0;
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) alloca(sizeof(MalBlkPtr) * maxtn);
+	int target=0;
 
 
 #ifdef DEBUG_OPT_OCTOPUS
@@ -254,7 +255,11 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 All octopus tentacle code is collected in a separate module
 to ease future distribution and scheduling.
 The optimizer works by looking only to the mat.pack statement.
-A recursive call can be used to create more tentacles, which,
+
+The experiment is to only look at the last pack statement,
+as this creates the largest subplans and avoids an explosion
+in threads.
+A recursive call op the optimizer can be used to create more tentacles, which,
 when scheduled correctly, would not lead to duplicate work.
 @c
 	(void) fixModule(cntxt->nspace,octopusRef);
@@ -264,6 +269,12 @@ when scheduled correctly, would not lead to duplicate work.
 
 	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb, old[0]);
+
+	for (i = 1; i < limit; i++){
+		p = old[i];
+		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) )
+			target = i;
+	}
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
@@ -293,7 +304,7 @@ is an overkill. A simple assignment is sufficient.
 		}
 
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
-			tn + p->argc - p->retc < maxtn){
+			i == target && tn + p->argc - p->retc < maxtn){
 			/* create the tentacle, modifying the current plan */
 			/* barrier go:= scheduler.octopus(); */
 			q= newStmt(mb,schedulerRef,octopusRef);
