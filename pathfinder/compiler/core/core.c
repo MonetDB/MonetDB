@@ -3,7 +3,7 @@
 /**
  * @file
  *
- * Constructors for the XQuery Core language.  
+ * Constructors for the XQuery Core language.
  *
  * Users of these constructors may want to use abbreviations for the
  * real constructor names, e.g.,
@@ -62,20 +62,20 @@
 /* needed for function conversion */
 #include "subtyping.h"
 
-/** 
+/**
  * Allocates a new core tree leaf and initializes its kind.
  *
  * @param  kind type of new leaf
  * @return new core tree leaf
  */
-PFcnode_t * 
+PFcnode_t *
 PFcore_leaf (PFctype_t kind)
 {
     PFcnode_t *core;
     int c;
 
     core = (PFcnode_t *) PFmalloc (sizeof (PFcnode_t));
-  
+
     for (c = 0; c < PFCNODE_MAXCHILD; c++)
         core->child[c] = 0;
 
@@ -84,7 +84,7 @@ PFcore_leaf (PFctype_t kind)
     /* static type initialized to none */
     core->type = PFty_none ();
     core->alg = (struct PFla_pair_t) { .rel = NULL, .frag = NULL};
-  
+
     return core;
 }
 
@@ -97,7 +97,7 @@ PFcore_leaf (PFctype_t kind)
  * @return new parse tree node
  */
 PFcnode_t *
-PFcore_wire1 (PFctype_t kind, const PFcnode_t *n1) 
+PFcore_wire1 (PFctype_t kind, const PFcnode_t *n1)
 {
     PFcnode_t *core;
 
@@ -119,20 +119,20 @@ PFcore_wire1 (PFctype_t kind, const PFcnode_t *n1)
  * @return new parse tree node
  */
 PFcnode_t *
-PFcore_wire2 (PFctype_t kind, const PFcnode_t *n1, const PFcnode_t *n2) 
+PFcore_wire2 (PFctype_t kind, const PFcnode_t *n1, const PFcnode_t *n2)
 {
     PFcnode_t *core;
-    
+
     assert (n1 && n2);
 
     core = PFcore_wire1 (kind, n1);
     core->child[1] = (PFcnode_t *) n2;
 
     return core;
-} 
+}
 
 
-/** 
+/**
  * Create a core @c nil node to terminate lists or denote optional subtrees.
  */
 PFcnode_t *
@@ -182,7 +182,7 @@ PFcore_new_var (char *prefix)
         snprintf (vname, sizeof(vname), "v_%04u", core_vars);
 
     vname[sizeof(vname)-1] = 0;
-    
+
     /* ensure uniqueness */
     core_vars++;
 
@@ -200,7 +200,7 @@ PFcnode_t *
 PFcore_var (PFvar_t *v)
 {
     PFcnode_t *core;
-  
+
     assert (v);
 
     core = PFcore_leaf (c_var);
@@ -219,7 +219,7 @@ PFcnode_t *
 PFcore_num (long long int i)
 {
     PFcnode_t *core;
-  
+
     core = PFcore_leaf (c_lit_int);
     core->sem.num = i;
 
@@ -251,7 +251,7 @@ PFcnode_t *
 PFcore_dbl (double d)
 {
     PFcnode_t *core;
-  
+
     core = PFcore_leaf (c_lit_dbl);
     core->sem.dbl = d;
 
@@ -268,7 +268,7 @@ PFcnode_t *
 PFcore_str (char *s)
 {
     PFcnode_t *core;
-  
+
     assert (s);
 
     core = PFcore_leaf (c_lit_str);
@@ -460,14 +460,14 @@ PFcore_stattype (const PFcnode_t *e)
  * @param e1 the atom be type-"switched"
  * @param e2 the list of "cases"
  * @param e3 the expression for the default case
- * @return core representation of typeswitch 
+ * @return core representation of typeswitch
  */
 PFcnode_t *
 PFcore_typeswitch (const PFcnode_t *e1, const PFcnode_t *e2)
 {
     assert (e1); assert (e2);
 
-    /* second argument must be a cases list */    
+    /* second argument must be a cases list */
     assert (e2->kind == c_cases);
 
     return PFcore_wire2 (c_typesw, e1, e2);
@@ -487,7 +487,7 @@ PFcore_case (const PFcnode_t *t, const PFcnode_t *e)
     assert (e);
     /* first argument must be a type node */
     assert (t); assert (t->kind == c_seqtype);
-    
+
     return PFcore_wire2 (c_case, t, e);
 }
 
@@ -769,8 +769,8 @@ PFcore_empty (void)
     return PFcore_leaf (c_empty);
 }
 
-/** 
- * Create a new core tree node that represents 
+/**
+ * Create a new core tree node that represents
  * the builtin function `fn:true ()'.
  */
 PFcnode_t *
@@ -779,8 +779,8 @@ PFcore_true (void)
     return PFcore_leaf (c_true);
 }
 
-/** 
- * Create a new core tree node that represents 
+/**
+ * Create a new core tree node that represents
  * the builin function `fn:false ()'.
  */
 PFcnode_t *
@@ -806,7 +806,7 @@ PFcore_locsteps (const PFcnode_t *l, const PFcnode_t *ls)
 
 /**
  * Map an XPath step to its corresponding core tree node.
- * 
+ *
  * @param paxis    a value from the #PFpaxis_t enum in the abstract syntax tree
  * @param nodetest a node to wire as a child below the new core node.
  *                 XPath axes can either have a kind test or a name test
@@ -823,41 +823,41 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
     PFctype_t kind = (PFctype_t)0;
 
     switch (paxis) {
-    case p_ancestor:           
-        kind = c_ancestor; 
+    case p_ancestor:
+        kind = c_ancestor;
         break;
-    case p_ancestor_or_self:   
-        kind = c_ancestor_or_self; 
+    case p_ancestor_or_self:
+        kind = c_ancestor_or_self;
         break;
-    case p_attribute:          
-        kind = c_attribute; 
+    case p_attribute:
+        kind = c_attribute;
         break;
-    case p_child:              
-        kind = c_child; 
+    case p_child:
+        kind = c_child;
         break;
-    case p_descendant:         
-        kind = c_descendant; 
+    case p_descendant:
+        kind = c_descendant;
         break;
-    case p_descendant_or_self: 
-        kind = c_descendant_or_self; 
+    case p_descendant_or_self:
+        kind = c_descendant_or_self;
         break;
-    case p_following:          
-        kind = c_following; 
+    case p_following:
+        kind = c_following;
         break;
-    case p_following_sibling:  
-        kind = c_following_sibling; 
+    case p_following_sibling:
+        kind = c_following_sibling;
         break;
-    case p_parent:             
-        kind = c_parent; 
+    case p_parent:
+        kind = c_parent;
         break;
-    case p_preceding:          
-        kind = c_preceding; 
+    case p_preceding:
+        kind = c_preceding;
         break;
-    case p_preceding_sibling:  
-        kind = c_preceding_sibling; 
+    case p_preceding_sibling:
+        kind = c_preceding_sibling;
         break;
-    case p_self:               
-        kind = c_self; 
+    case p_self:
+        kind = c_self;
         break;
 /* [STANDOFF] */
     case p_select_narrow:
@@ -867,7 +867,7 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
         kind = c_select_wide;
         break;
 /* [/STANDOFF] */
-    default: 
+    default:
         PFoops (OOPS_FATAL, "illegal XPath axis (%d)", paxis);
     }
 
@@ -936,16 +936,16 @@ PFcore_constr (PFptype_t pkind, const PFcnode_t *e)
     assert (e);
 
     switch (pkind) {
-    case p_text:    
-        kind = c_text;    
+    case p_text:
+        kind = c_text;
         break;
-    case p_comment: 
-        kind = c_comment; 
+    case p_comment:
+        kind = c_comment;
         break;
-    case p_doc:      
-        kind = c_doc;      
+    case p_doc:
+        kind = c_doc;
         break;
-    default: 
+    default:
         PFoops (OOPS_FATAL, "illegal constructor node (%d)", pkind);
     }
 
@@ -953,9 +953,9 @@ PFcore_constr (PFptype_t pkind, const PFcnode_t *e)
 }
 
 /**
- * Create a new core tree node representing the tagname of an element 
+ * Create a new core tree node representing the tagname of an element
  * or attribute constructor.
- * 
+ *
  * @param qn the tagname of an element or attribute constructor
  * @return the core representation of an element or attribute tagname
  */
@@ -963,7 +963,7 @@ PFcnode_t *
 PFcore_tag (PFqname_t qn)
 {
     PFcnode_t *core;
-  
+
     core = PFcore_leaf (c_tag);
     core->sem.qname = qn;
 
@@ -1089,7 +1089,7 @@ PFcore_function (PFqname_t qn)
     /* perform lookup in function environment */
     fn = PFenv_lookup (PFfun_env, qn);
 
-    if (fn) 
+    if (fn)
         return *((PFfun_t **) PFarray_at (fn, 0));
 
     PFoops (OOPS_FATAL, "function `%s' not defined",
@@ -1115,16 +1115,16 @@ actual_args (const PFcnode_t *c)
     switch (c->kind) {
         case c_nil:
             return 0;
-                                                                                                                                                             
+
         case c_arg:
             return 1 + actual_args (c->child[1]);
-                                                                                                                                                             
+
         default:
             PFoops (OOPS_FATAL,
                     "illegal node kind in function"
                     " application (expecting nil/arg)");
     }
-                                                                                                                                                             
+
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
     return 0;
 }
@@ -1135,7 +1135,7 @@ actual_args (const PFcnode_t *c)
  * to the function conversion rules in W3C XQuery 3.1.5.
  *
  * -- If the expected type is an atomic type,
- * 
+ *
  *    (1) Apply atomization (i.e., fn:data)
  *    (2) Cast each xdt:untypedAtomic item to the expected
  *        atomic type. For built-in functions with expected
@@ -1246,7 +1246,7 @@ apply_function_conversion (const PFcnode_t *c)
             v1 = PFcore_new_var (0);
             result = PFcore_let (
                          PFcore_letbind (PFcore_var (v1),
-                                         PFcore_fs_convert_op_by_type 
+                                         PFcore_fs_convert_op_by_type
                                              (PFcore_fn_data (args->child[0]),
                                               expected)),
                          result);
@@ -1301,8 +1301,8 @@ already_converted (PFfun_t *fn)
  *
  *     fn (e)
  *
- * if at a later point an argument is added, then the number of 
- * function arguments will not fit anymore and probably 
+ * if at a later point an argument is added, then the number of
+ * function arguments will not fit anymore and probably
  * the function conversion will convert to the wrong types
  *
  * @param fn function descriptor
@@ -1372,7 +1372,7 @@ PFcnode_t *
 PFcore_arg (const PFcnode_t *e, const PFcnode_t *es)
 {
     assert (e && es);
- 
+
     return PFcore_wire2 (c_arg, e, es);
 }
 
@@ -1380,11 +1380,11 @@ PFcore_arg (const PFcnode_t *e, const PFcnode_t *es)
 /**
  * Generate a variadic function application node.  You may pass any
  * number of core trees (including 0) as arguments to the function.
- * The last argument needs to be followed by 0.  
+ * The last argument needs to be followed by 0.
  *
  * NB. Do not call this function directly, but call macro #APPLY which
  *     supplies the trailing 0 argument for you.
- * 
+ *
  * @param fn pointer to function descriptor
  * @param ... arguments to @a fn
  * @return core tree representing the function application
@@ -1493,10 +1493,10 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
  *     default default_
  */
 static PFcnode_t *
-add_conversion_case (const PFcnode_t *default_, PFvar_t *var1, PFvar_t *var2, 
-                     PFty_t type) 
+add_conversion_case (const PFcnode_t *default_, PFvar_t *var1, PFvar_t *var2,
+                     PFty_t type)
 {
-    return 
+    return
         PFcore_typeswitch (
             PFcore_var (var1),
             PFcore_cases (
@@ -1547,7 +1547,7 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
      *           default return $v1 // should not happen
      *       default return $v1
      */
-    PFcnode_t *type_conv = 
+    PFcnode_t *type_conv =
         add_conversion_case (
             add_conversion_case (
                 PFcore_typeswitch (
@@ -1659,7 +1659,7 @@ PFcore_fn_data (const PFcnode_t *n)
 
 /**
  * Helper function that expands the quantified `some' expression into
- * a core expression. 
+ * a core expression.
  * @param v The variable the existential qualifier is bound to
  * @param qExpr The quantified expression
  * @param expr The expression which is tested in the qualified expression
@@ -1669,7 +1669,7 @@ PFcnode_t *
 PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
 {
     PFfun_t *fn_exists = PFcore_function (PFqname (PFns_fn, "exists"));
-                                                                                                                                                          
+
     return APPLY (fn_exists,
                   PFcore_flwr (
                       PFcore_for (
@@ -1713,7 +1713,7 @@ PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
  *   clause binds a new variable and then re-applies @a ebv ().
  * @return A core expression representing the effective boolean value
  *   of @a n. This expression always evaluates to a boolean value
- *   or the error value. 
+ *   or the error value.
  */
 PFcnode_t *
 PFcore_ebv (const PFcnode_t *n)
