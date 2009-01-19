@@ -1195,8 +1195,14 @@ doFile(Mapi mid, const char *file)
 			}
 			if (hdl == NULL)
 				break;	/* nothing more to do */
-		} else
+		} else {
 			buf[length] = 0;
+			if (strchr(buf, '\0') < buf + length) {
+				fprintf(stderr, "NULL byte in input\n");
+				errseen = 1;
+				break;
+			}
+		}
 		timerResume();
 
 		if (hdl == NULL) {

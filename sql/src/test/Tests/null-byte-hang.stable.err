@@ -10,9 +10,7 @@ stderr of test 'null-byte-hang` in directory 'src/test` itself:
 # 12:54:19 >  Mtimeout -timeout 60 ./null-byte-hang.SQL null-byte-hang 
 # 12:54:19 >  
 
-MAPI  = monetdb@alf:37993
-QUERY = SELECT '??
-ERROR = !NULL byte in string
+NULL byte in input
 
 # 12:54:19 >  
 # 12:54:19 >  Done.
