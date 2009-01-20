@@ -2277,66 +2277,66 @@ PFfun_xquery_fo (void)
              .ret_ty = PFty_xs_integer () },
              } ,
         .alg = PFbui_tijah_query_i_xo }
-    , /* tijah:query-id(node*, string) as integer */
+    , /* tijah:query-id(element*, string) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
-             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
                                     PFty_xs_string ()},
              .ret_ty = PFty_xs_integer () },
              },
         .alg = PFbui_tijah_query_i_sx }
-    , /* tijah:query-id(node*, string, node) as integer */
+    , /* tijah:query-id(element*, string, node) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
-             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
                                     PFty_xs_string (),
                                          PFty_xs_anyNode ()},
              .ret_ty = PFty_xs_integer () },
              },
         .alg = PFbui_tijah_query_i_so }
-    , /* tijah:queryall(string) as node* */
+    , /* tijah:queryall(string) as element* */
       { .ns = PFns_tijah, .loc = "queryall",
         .arity = 1, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_xs_string () },
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+             .ret_ty = PFty_star (PFty_xs_anyElement ()) },
              },
         .alg = PFbui_tijah_query_n_xx }
-    , /* tijah:queryall(string, node) as node* */
+    , /* tijah:queryall(string, node) as element* */
       { .ns = PFns_tijah, .loc = "queryall",
         .arity = 2, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_xs_string (),
                                     PFty_xs_anyNode () },
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+             .ret_ty = PFty_star (PFty_xs_anyElement ()) },
              },
         .alg = PFbui_tijah_query_n_xo }
-    , /* tijah:query(node*, string) as node* */
+    , /* tijah:query(node*, string) as element* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 2, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string ()},
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+             .ret_ty = PFty_star (PFty_xs_anyElement ()) },
              } ,
         .alg = PFbui_tijah_query_n_sx }
-    , /* tijah:query(node*, string, node) as node* */
+    , /* tijah:query(node*, string, node) as element* */
       { .ns = PFns_tijah, .loc = "query",
         .arity = 3, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string (),
                                          PFty_xs_anyNode ()},
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+             .ret_ty = PFty_star (PFty_xs_anyElement ()) },
              },
         .alg = PFbui_tijah_query_n_so }
-    , /* tijah:nodes(integer) as node* */
+    , /* tijah:nodes(integer) as element* */
       { .ns = PFns_tijah, .loc = "nodes",
         .arity = 1, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_xs_integer () },
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) } },
+             .ret_ty = PFty_star (PFty_xs_anyElement ()) } },
         .alg = PFbui_tijah_nodes }
-    , /* tijah:score(integer, node) as double */
+    , /* tijah:score(integer, element) as double */
       { .ns = PFns_tijah, .loc = "score",
         .arity = 2, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_xs_integer (),
-                                    PFty_xs_anyNode () },
+                                    PFty_xs_anyElement () },
              .ret_ty = PFty_xs_double () } },
         .alg = PFbui_tijah_score }
     , /* tijah:tokenize(string?) as string */
