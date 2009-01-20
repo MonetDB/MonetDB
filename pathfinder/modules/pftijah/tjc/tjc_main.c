@@ -8,7 +8,7 @@
 #include "tjc_optimize.h"
 #include "tjc_milprint.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 void printTJpnode(tjc_config* tjc_c, TJpnode_t *node, short parID)
 {

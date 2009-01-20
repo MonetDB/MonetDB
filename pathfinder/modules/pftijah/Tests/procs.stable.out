@@ -585,8 +585,6 @@ procs();
 [ "space(int) : str"																	  ]
 [ "split2frag(BAT[oid,any], BAT[void,oid]) : BAT[oid,BAT]"																					  ]
 [ "sqrt(flt) : flt"																	  ]
-[ "standoff_reject_narrow(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
-[ "standoff_reject_wide(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
 [ "standoff_select_narrow(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
 [ "standoff_select_wide(BAT[void,oid], BAT[oid,void], BAT[oid,oid], BAT[oid,any], BAT[oid,any]) : BAT[void,oid]"											  ]
 [ "step(int, int, BAT[void,oid], BAT[void,oid], BAT[void,oid], any, BAT[void,BAT], int, chr, str, str, str) : BAT[void,BAT]"			  ]

@@ -50,7 +50,7 @@ void milprint_end (tjc_config *tjc_c) {
     }
     TJCPRINTF(MILOUT,"nexi_result := tj_nid2pre(nexi_result, qenv);\n");
     TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
-    TJCPRINTF(MILOUT,"nexi_result := nexi_result.persists(true).rename(\"nexi_result\");\n");
+    TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result;\n");
     if (0) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");

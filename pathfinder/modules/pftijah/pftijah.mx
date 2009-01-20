@@ -27,7 +27,7 @@
 @m
 .MODULE pftijah;
 
-.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes, BAT[void,oid] nodes) : void = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
@@ -1407,6 +1407,9 @@ PROC tj_query_handler(
      return res;
 }
 
+var nexi_score_xfer  := nil;
+var nexi_parser_lock := lock_create();
+
 PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] :=
 {
 	if ( verbose ) printf("#TJ:run_tijah_query(\"%s\",..) called.\n",ftiName);
@@ -1425,7 +1428,16 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
                 _tj_commit(collBat); 
 	    }
 	}
-	return _run_tijah_query(opt,rtagbat,use_startnodes,nodes);
+	var res := nil;
+        lock_set(nexi_parser_lock);
+        var err := CATCH({
+	    _run_tijah_query(opt,rtagbat,use_startnodes,nodes);
+	    res := nexi_score_xfer;
+        });
+	nexi_score_xfer := nil;
+        lock_unset(nexi_parser_lock);
+        if (not(isnil(err))) ERROR(err);
+	return res;
 }
 
 #####################################################################
@@ -3395,7 +3407,7 @@ extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNo
 
 static int nexiTmpCounter = 0;
 
-int CMDtijah_query(BAT** res, BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNodes) {
+int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNodes) {
 	char* err;
 	char* mil;
 	char  nameBUFF[32], *startNodes_name;
@@ -3468,26 +3480,6 @@ int CMDtijah_query(BAT** res, BAT* optbat, BAT *rtagbat, bit* use_startnodes, BA
 	    return GDK_FAIL;
 	}
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
-	BAT* scoreBAT = BATdescriptor( BBPindex("nexi_result") );
-
-	if (TDEBUG(3)) stream_printf(GDKout,"# CMDtijah_query: sizeof scoreBAT = %d.\n",BATcount(scoreBAT));
-	if (TDEBUG(9)) {
-	    stream_printf(GDKout,"# CMDtijah_query: scoreBAT:\n");
-	    BATprintf(GDKout,scoreBAT);
-	}
-
-	if ( ! scoreBAT ) {
-            GDKerror("CMDtijah_query: fail to load score bat: \"%s\".\n", "nexi_result");
-	    return GDK_FAIL;
-        }
-	sprintf(&nameBUFF[0],"%s_del%d","nexi_result",nexiTmpCounter++);
-	if ( BATrename(scoreBAT,(str)&nameBUFF[0]) == str_nil ) {
-            GDKerror("CMDtijah_query: fail to rename score bat: \"%s\".\n", &nameBUFF[0]);
-	    return GDK_FAIL;
-	}
-	BATmode(scoreBAT,TRANSIENT);
-
-	*res = scoreBAT;
 	lng time_end = GDKusec();
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: finish.\n");

@@ -874,7 +874,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int use_startNodes,
 #if 0
     MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);
 #endif
-    MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
+    MILPRINTF(MILOUT, "nexi_score_xfer := R%d;\n", com_num);
     
     MILPRINTF(MILOUT, "totaltime :+= time();\nif (timing) printf(\"# total exec time: %%d \\n\",totaltime);\n");
     MILPRINTF(MILOUT, "}\n");
