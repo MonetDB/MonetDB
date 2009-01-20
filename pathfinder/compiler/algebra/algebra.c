@@ -733,19 +733,35 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
         case aat_anode: return "attr";
         case aat_pnode: return "pnode";
 
+        /* the date time types */
+        case aat_dtime:      return "dateTime";
+        case aat_date:       return "date";
+        case aat_time:       return "time";
+        case aat_gymonth:    return "gYearMonth";
+        case aat_gyear:      return "gYear";
+        case aat_gmday:      return "gMonthDay";
+        case aat_gmonth:     return "gMonth";
+        case aat_gday:       return "gDay";
+        case aat_duration:   return "duration";
+        case aat_ymduration: return "yearMonthDuration";
+        case aat_dtduration: /* or aat_frag1 */
+            /* overloaded with update queries */
+            if (type & aat_update)
+                return "target_frag";
+            return "dayTimeDuration";
+
         /* the bit representation */
         case aat_qname_id:   return "qname_id";
         case aat_qname_cont: return "qname_cont";
         case aat_frag:       return "frag";
         case aat_pre:        return "pre";
         case aat_attr:       return "attr";
-        case aat_frag1:      return "target_frag";
         case aat_pre1:       return "target_pre";
         case aat_attr1:      return "target_attr";
         case aat_docmgmt:    return "docmgmt_type";
         case aat_error:      return "error";
 #ifdef HAVE_GEOXML
-	case aat_wkb:        return "wkb";
+        case aat_wkb:        return "wkb";
 #endif
         default:
             if (type & aat_update)

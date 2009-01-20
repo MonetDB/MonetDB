@@ -1428,6 +1428,50 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     algty = aat_bln;
                     atom = lit_bln (true);
                 }
+                else if (PFty_equality (t, PFty_xs_datetime ())) {
+                    algty = aat_dtime;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_date ())) {
+                    algty = aat_date;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_time ())) {
+                    algty = aat_time;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_gyearmonth ())) {
+                    algty = aat_gymonth;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_gyear ())) {
+                    algty = aat_gyear;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_gmonthday ())) {
+                    algty = aat_gmday;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_gmonth ())) {
+                    algty = aat_gmonth;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_gday ())) {
+                    algty = aat_gday;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_duration ())) {
+                    algty = aat_duration;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_yearmonthduration ())) {
+                    algty = aat_ymduration;
+                    atom = lit_str (""); /* FIXME */
+                }
+                else if (PFty_equality (t, PFty_xs_daytimeduration ())) {
+                    algty = aat_dtduration;
+                    atom = lit_str (""); /* FIXME */
+                }
                 else if (PFty_equality (t, PFty_untypedAtomic ())) {
                     algty = atom.type = aat_uA;
                     atom = lit_str ("");
@@ -1993,6 +2037,28 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                 algty = aat_dbl;
             else if (PFty_equality (t, PFty_xs_boolean ()))
                 algty = aat_bln;
+            else if (PFty_equality (t, PFty_xs_datetime ()))
+                algty = aat_dtime;
+            else if (PFty_equality (t, PFty_xs_date ()))
+                algty = aat_date;
+            else if (PFty_equality (t, PFty_xs_time ()))
+                algty = aat_time;
+            else if (PFty_equality (t, PFty_xs_gyearmonth ()))
+                algty = aat_gymonth;
+            else if (PFty_equality (t, PFty_xs_gyear ()))
+                algty = aat_gyear;
+            else if (PFty_equality (t, PFty_xs_gmonthday ()))
+                algty = aat_gmday;
+            else if (PFty_equality (t, PFty_xs_gmonth ()))
+                algty = aat_gmonth;
+            else if (PFty_equality (t, PFty_xs_gday ()))
+                algty = aat_gday;
+            else if (PFty_equality (t, PFty_xs_duration ()))
+                algty = aat_duration;
+            else if (PFty_equality (t, PFty_xs_yearmonthduration ()))
+                algty = aat_ymduration;
+            else if (PFty_equality (t, PFty_xs_daytimeduration ()))
+                algty = aat_dtduration;
             else
                 PFoops (OOPS_FATAL,
                         "don't know the algebra equivalent of type %s",
@@ -2014,7 +2080,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                              ORDERING,
                                              &SIDE_EFFECTS,
                                              &pair);
-                    
+
             A(p) = (struct PFla_pair_t) {
                 .rel  = project (cast (pair.rel, col_cast, col_item, algty),
                                  proj (col_iter, col_iter),
@@ -3443,11 +3509,37 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         itemty = type (e.rel, col_itemty, col_item, aat_bln);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
         itemty = type (e.rel, col_itemty, col_item, aat_str);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_datetime ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_dtime);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_date ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_date);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_time ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_time);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_gyearmonth ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_gymonth);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_gyear ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_gyear);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_gmonthday ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_gmday);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_gmonth ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_gmonth);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_gday ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_gday);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_duration ())))
+        /* FIXME:
+         * xs:yearMonthDuration and xs:dayTimeDuration is a subtype
+         * of xs:duration. Test for all types.
+         */
+        itemty = type (e.rel, col_itemty, col_item, aat_duration);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_yearmonthduration ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_ymduration);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_daytimeduration ())))
+        itemty = type (e.rel, col_itemty, col_item, aat_dtduration);
     else if (PFty_subtype (ty, PFty_star (PFty_untypedAtomic ())))
         itemty = type (e.rel, col_itemty, col_item, aat_uA);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_anyNode ()))) {
         PFla_op_t *filter, *number, *in_loop;
-        
+
         /* create a key for all rows */
         number  = rowid (e.rel, col_inner);
         /* use this key as inner loop relation */
@@ -3465,7 +3557,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                           locstep_spec (alg_self, PFty_prime (ty)), -1,
                           col_item, col_item2),
                       proj (col_iter1, col_inner));
-        
+
         /* Attach the Boolean value true for all rows that matched the
            self step filter and the value false for all other rows.
            Map back the old iter values to the new Boolean item column */
@@ -3487,7 +3579,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     itemty = project (itemty,
                       proj (col_iter, col_iter),
                       proj (col_itemty, col_itemty));
-        
+
     /*
      * Second part is the test for the occurence indicator.
      */
@@ -3641,6 +3733,28 @@ PFalg_type (PFty_t ty)
         alg_ty |= aat_docnm;
         alg_ty |= aat_colnm;
     }
+    if (!PFty_disjoint (ty, PFty_xs_datetime ()))
+        alg_ty |= aat_dtime;
+    if (!PFty_disjoint (ty, PFty_xs_date ()))
+        alg_ty |= aat_date;
+    if (!PFty_disjoint (ty, PFty_xs_time ()))
+        alg_ty |= aat_time;
+    if (!PFty_disjoint (ty, PFty_xs_gyearmonth ()))
+        alg_ty |= aat_gymonth;
+    if (!PFty_disjoint (ty, PFty_xs_gyear ()))
+        alg_ty |= aat_gyear;
+    if (!PFty_disjoint (ty, PFty_xs_gmonthday ()))
+        alg_ty |= aat_gmday;
+    if (!PFty_disjoint (ty, PFty_xs_gmonth ()))
+        alg_ty |= aat_gmonth;
+    if (!PFty_disjoint (ty, PFty_xs_gday ()))
+        alg_ty |= aat_gday;
+    if (!PFty_disjoint (ty, PFty_xs_duration ()))
+        alg_ty |= aat_duration;
+    if (!PFty_disjoint (ty, PFty_xs_yearmonthduration ()))
+        alg_ty |= aat_ymduration;
+    if (!PFty_disjoint (ty, PFty_xs_daytimeduration ()))
+        alg_ty |= aat_dtduration;
     return alg_ty;
 }
 

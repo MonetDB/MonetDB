@@ -84,7 +84,8 @@
 #ifdef HAVE_GEOXML
 #define aat_wkb         0x00000200 /**< algebra simple atomic type wkb  */
 #endif
-/* #define aat_unused1     0x00000200 */
+/*
+#define aat_unused1     0x00000200
 #define aat_unused2     0x00000400
 #define aat_unused3     0x00000800
 #define aat_unused4     0x00001000
@@ -95,10 +96,23 @@
 #define aat_unused9     0x00020000
 #define aat_unused10    0x00040000
 #define aat_unused11    0x00080000
-#define aat_unused12    0x01000000
+#define aat_unused12    0x01000000 */
 #define aat_unused13    0x02000000
 #define aat_unused14    0x04000000
 #define aat_unused15    0x08000000
+
+/* date time types */
+#define aat_dtime       0x00000400 /**< dateTime                    */
+#define aat_date        0x00000800 /**< date                        */
+#define aat_time        0x00001000 /**< time                        */
+#define aat_gymonth     0x00002000 /**< gYearMonth                  */
+#define aat_gyear       0x00004000 /**< gYear                       */
+#define aat_gmday       0x00008000 /**< gMonthDay                   */
+#define aat_gmonth      0x00010000 /**< gMonth                      */
+#define aat_gday        0x00020000 /**< gDay                        */
+#define aat_duration    0x00040000 /**< duration                    */
+#define aat_ymduration  0x00080000 /**< yearMonthDuration           */
+#define aat_dtduration  0x01000000 /**< dayTimeDuration             */
 
 /* node representation in MIL and SQL */
 #define aat_frag        0x00100000 /**< node fragment */
@@ -173,6 +187,12 @@ typedef unsigned int PFalg_simple_type_t;
                         || (a) == aat_dec || (a) == aat_dbl || (a) == aat_bln \
                         || (a) == aat_qname || (a) == aat_uA \
                         || (a) == aat_anode || (a) == aat_pnode \
+                        || (a) == aat_dtime || (a) == aat_date \
+                        || (a) == aat_time || (a) == aat_gymonth \
+                        || (a) == aat_gyear || (a) == aat_gmday \
+                        || (a) == aat_gmonth || (a) == aat_gday \
+                        || (a) == aat_duration || (a) == aat_ymduration \
+                        || (a) == aat_dtduration \
                         || ((a) == aat_pre || (a) == aat_frag) \
                         || ((a) == aat_attr || (a) == aat_nkind) \
                         || ((a) == 0))
