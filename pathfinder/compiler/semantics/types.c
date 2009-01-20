@@ -313,20 +313,6 @@ PFty_docmgmt (void)
     return t;
 }
 
-#ifdef XXX_HAVE_GEOXML
-PFty_t
-PFty_geo_wkb (void)
-{
-    PFty_t t = { .type  = ty_geo_wkb,
-                 .name  = 0,
-                 .sym_space = 0,
-                 .child = { 0 }
-    };
-
-    return t;
-}
-#endif
-
 /**
  * 11 Date/Time types
  */
@@ -1116,9 +1102,6 @@ static char* ty_id[] = {
     , [ty_comm         ]   = "comment"
     , [ty_stmt         ]   = "stmt"
     , [ty_docmgmt      ]   = "docmgmt"
-#ifdef XXX_HAVE_GEOXML
-    , [ty_geo_wkb      ]   = "wkb"
-#endif
     , [ty_datetime            ]   = "dateTime"
     , [ty_date                ]   = "date"
     , [ty_time                ]   = "time"
