@@ -580,7 +580,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[]: start loadTijahContext\n");
 #endif
-	if ( !(res = (tjCtx*)malloc( sizeof(tjCtx) )) )
+	if ( !(res = (tjCtx*)GDKmalloc( sizeof(tjCtx) )) )
 		return NULL;
 	/*
 	 * Set first settings
@@ -636,7 +636,7 @@ loadTijahContext(BAT* tjCtx_BAT) {
 	str str_stemmer = readCollParam(res,"stemmer");
 
 	if ( str_stemmer != str_nil ) 
-		res->stemmer = strdup((char*)str_stemmer);
+		res->stemmer = GDKstrdup((char*)str_stemmer);
 	else
 		res->stemmer = NULL;
 	if ( !(res->stemCtx = getStemmingContext(res->stemmer)) )
@@ -888,10 +888,12 @@ freeTijahContext(tjCtx* tjctx) {
 	BBPunfix(BBPcacheid(tjctx->b_dict_tid));
 	BBPunfix(BBPcacheid(tjctx->b_dict_elem));
 	BBPunfix(BBPcacheid(tjctx->b_dict_score));
+	if ( tjctx->stemmer )
+		GDKfree(tjctx->stemmer);
 	GDKfree(tjctx->tagswitch);
 	if ( tjctx->stemCtx->clear && !tjctx->stemCtx->clear(tjctx->stemCtx) )
 		return GDK_FAIL;
-	free(tjctx);
+	GDKfree(tjctx);
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[{}]:FINISH: add2collection_handler()\n");
 #endif

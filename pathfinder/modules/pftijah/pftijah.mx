@@ -3359,7 +3359,7 @@ int CMDtj_setlog(str filename) {
 	if ( (f = fopen(filename,"w")) ) {
 	    fprintf(f,"# Start TIJAH logger:\n");
 	    fclose(f);
-	    tj_log_fileName = (char*)strdup(filename);
+	    tj_log_fileName = (char*)GDKstrdup(filename);
 	}
 	return GDK_SUCCEED;
 }
