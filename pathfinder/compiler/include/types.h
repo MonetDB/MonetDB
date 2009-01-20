@@ -184,6 +184,16 @@ enum PFtytype_t {
 #ifdef XXX_HAVE_GEOXML
   ty_geo_wkb,                  /**< geoxml wkb type             */
 #endif
+  ty_qname,                    /**< QName                       */
+  ty_node,                     /**< node                        */
+  ty_elem,                     /**< elem                        */
+  ty_attr,                     /**< attr                        */
+  ty_doc,                      /**< doc                         */
+  ty_text,                     /**< text                        */
+  ty_pi,                       /**< pi                          */
+  ty_comm,                     /**< comm                        */
+  ty_stmt,                     /**< update statement            */
+  ty_docmgmt,                  /**< document management         */
   ty_datetime,                 /**< dateTime                    */
   ty_date,                     /**< date                        */
   ty_time,                     /**< time                        */
@@ -195,17 +205,6 @@ enum PFtytype_t {
   ty_duration,                 /**< duration                    */
   ty_yearmonthduration,        /**< yearMonthDuration           */
   ty_daytimeduration,          /**< dayTimeDuration             */
-  ty_qname,                    /**< QName                       */
-  ty_node,                     /**< node                        */
-  ty_elem,                     /**< elem                        */
-  ty_attr,                     /**< attr                        */
-  ty_doc,                      /**< doc                         */
-  ty_text,                     /**< text                        */
-  ty_pi,                       /**< pi                          */
-  ty_comm,                     /**< comm                        */
-  ty_stmt,                     /**< update statement            */
-  ty_docmgmt,                  /**< document management         */
-
 
   ty_types                     /**< # of types                  */
 };

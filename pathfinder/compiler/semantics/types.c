@@ -882,9 +882,21 @@ PFty_xs_anyNode (void)
 PFty_t
 PFty_xs_anySimpleType (void)
 {
+
     return PFty_star (PFty_choice (PFty_numeric (),
-                                   PFty_choice (PFty_boolean (),
-                                                PFty_string ())));
+                      PFty_choice (PFty_boolean (),
+                      PFty_choice (PFty_string (),
+                      PFty_choice (PFty_datetime (),
+                      PFty_choice (PFty_date (),
+                      PFty_choice (PFty_time (),
+                      PFty_choice (PFty_xs_gyearmonth (),
+                      PFty_choice (PFty_xs_gyear (),
+                      PFty_choice (PFty_xs_gmonthday (),
+                      PFty_choice (PFty_xs_gmonth (),
+                      PFty_choice (PFty_xs_gday (),
+                      PFty_choice (PFty_xs_duration (),
+                      PFty_choice (PFty_xs_yearmonthduration (),
+                                   PFty_xs_daytimeduration ()))))))))))))));
 }
 
 /** type xs:anyElement = elem * { xs:anyType } */

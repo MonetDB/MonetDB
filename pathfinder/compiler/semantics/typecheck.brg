@@ -655,7 +655,15 @@ do_reduce (PFcnode_t * p, int rule, short *nts, PFcnode_t *kids[])
 
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_string ())) &&
                 !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_decimal ())) &&
-                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_double ())))
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_double ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_datetime ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_date ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_xs_time ())) &&
+                !PFty_subtype (TY(L(p)),
+                            PFty_opt (PFty_xs_yearmonthduration ())) &&
+                !PFty_subtype (TY(L(p)),
+                            PFty_opt (PFty_xs_daytimeduration ()))
+               )
                 PFoops (OOPS_TYPECHECK,
                         "[err:XPTY0004]"
                         " Orderspec requires an type whose order can be "
