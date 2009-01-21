@@ -1381,7 +1381,8 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
         case 301: /* NOTE: some code specific to rule 301 stands
                      at the end of this block */
         {   /* TOPDOWN */
-            PFla_op_t          *sort_attr;
+            PFla_op_t          *sort_attr,
+                               *empty_case;
             PFalg_proj_t       *cols;
             PFty_t              t;
             PFalg_simple_type_t algty;
@@ -1403,6 +1404,11 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
              */
             if (!PFty_subtype (L(p)->type, PFty_xs_anyItem ())) {
                 t = PFty_prime (PFty_defn (L(p)->type));
+                empty_case = difference (
+                                 LOOP,
+                                 project (A(L(p)).rel,
+                                          proj (col_iter,
+                                                col_iter)));
                 /*
                  * Unfortunately, we only know how to cast atomic types
                  * into (exactly) one of our builtin atomic types. We
@@ -1410,71 +1416,137 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                  */
                 if (PFty_equality (t, PFty_xs_string ())) {
                     algty = aat_str;
-                    atom = lit_str ("");
+                    empty_case = attach (empty_case, col_item, lit_str (""));
                 }
                 else if (PFty_equality (t, PFty_xs_integer ())) {
                     algty = aat_int;
-                    atom = lit_int (0);
+                    empty_case = attach (empty_case, col_item, lit_int (0));
                 }
                 else if (PFty_subtype (t, PFty_xs_decimal ())) {
                     algty = aat_dec;
-                    atom = lit_dec (0);
+                    empty_case = attach (empty_case, col_item, lit_dec (0));
                 }
                 else if (PFty_equality (t, PFty_xs_double ())) {
                     algty = aat_dbl;
-                    atom = lit_dbl (0);
+                    empty_case = attach (empty_case, col_item, lit_dbl (0));
                 }
                 else if (PFty_equality (t, PFty_xs_boolean ())) {
                     algty = aat_bln;
-                    atom = lit_bln (true);
+                    empty_case = attach (empty_case, col_item, lit_bln (true));
                 }
                 else if (PFty_equality (t, PFty_xs_datetime ())) {
                     algty = aat_dtime;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_date ())) {
                     algty = aat_date;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_time ())) {
                     algty = aat_time;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_gyearmonth ())) {
                     algty = aat_gymonth;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_gyear ())) {
                     algty = aat_gyear;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_gmonthday ())) {
                     algty = aat_gmday;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_gmonth ())) {
                     algty = aat_gmonth;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_gday ())) {
                     algty = aat_gday;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_duration ())) {
                     algty = aat_duration;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_yearmonthduration ())) {
                     algty = aat_ymduration;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_xs_daytimeduration ())) {
                     algty = aat_dtduration;
-                    atom = lit_str (""); /* FIXME */
+                    empty_case = project (cast (attach (
+                                                    empty_case,
+                                                    col_item,
+                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                col_cast, col_item, algty),
+                                          proj (col_iter, col_iter),
+                                          proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_untypedAtomic ())) {
                     algty = atom.type = aat_uA;
-                    atom = lit_str ("");
+                    empty_case = attach (empty_case, col_item, lit_str (""));
                 }
                 else
                     PFoops (OOPS_FATAL,
@@ -1491,13 +1563,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                     lit_nat ((p->sem.mode.dir == p_desc) ^
                                              (p->sem.mode.empty == p_least))),
                                 attach (
-                                    attach (
-                                        difference (
-                                            LOOP,
-                                            project (A(L(p)).rel,
-                                                     proj (col_iter,
-                                                           col_iter))),
-                                        col_item, atom),
+                                    empty_case,
                                     col_pos,
                                     lit_nat ((p->sem.mode.dir == p_desc) ^
                                              (p->sem.mode.empty != p_least))));
