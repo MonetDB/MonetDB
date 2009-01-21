@@ -425,15 +425,18 @@ typedef enum PFmil_kind_t PFmil_kind_t;
 
 /* enum values must not be zero (zero is used for some error detection) */
 enum PFmil_type_t {
-      mty_oid   = 1
-    , mty_void  = 2
-    , mty_int   = 3
-    , mty_str   = 4
-    , mty_lng   = 5
-    , mty_dbl   = 6
-    , mty_bit   = 7
-    , mty_chr   = 8
-    , mty_bat   = 9
+      mty_oid       = 1
+    , mty_void      = 2
+    , mty_int       = 3
+    , mty_str       = 4
+    , mty_lng       = 5
+    , mty_dbl       = 6
+    , mty_bit       = 7
+    , mty_chr       = 8
+    , mty_bat       = 9
+    , mty_timestamp = 10
+    , mty_date      = 11
+    , mty_daytime   =12
 };
 typedef enum PFmil_type_t PFmil_type_t;
 

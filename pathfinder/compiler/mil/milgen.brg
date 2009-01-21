@@ -539,6 +539,21 @@ impl_types (PFalg_simple_type_t ty, PFalg_simple_type_t kind)
             case aat_bln:
                 return mty_bit;
 
+            case aat_dtime:
+            case aat_duration:
+            case aat_ymduration:
+            case aat_dtduration:
+                return mty_timestamp;
+            case aat_date:
+            case aat_gymonth:
+            case aat_gyear:
+            case aat_gmday:
+            case aat_gmonth:
+            case aat_gday:
+                return mty_date;
+            case aat_time:
+                return mty_daytime;
+
             default:
                 PFoops (OOPS_FATAL,
                         "illegal type in query column");
@@ -3283,6 +3298,65 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     }
                 }
 #endif
+                /* consider aat_dtime */
+                if (ty & aat_dtime) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str),
+                                                             VAR (R(p)->env,
+                                                             pa_item,
+                                                             aat_dtime)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_dtime) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),
+                                                 VAR (R(p)->env,
+                                                 pa_item,
+                                                 aat_dtime)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),
+                                                VAR (R(p)->env,
+                                                pa_item,
+                                                aat_dtime)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),
+                                             VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_dtime)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),
+                                                         VAR (R(p)->env,
+                                                         pa_item,
+                                                         aat_dtime)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+
                 /* consider untyped results */
                 if (ty & aat_uA) {
                     execute (
