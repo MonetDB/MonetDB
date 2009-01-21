@@ -1336,6 +1336,102 @@ group_broken( InstrPtr p, int mtpe, int pack_mirror)
 	return 0;
 }
 
+
+/* 
+	2) semijoin cases
+		1) both mats and aligned (pair wise)
+		2) else merge both !
+		3) semi(mat,bat) ?
+		4) semi(bat,mat) ?
+	3) kdiff cases
+		1) both mats and aligned (pair wise)
+		2) kdiff(mat,bat) (pair wise)
+			In case 2 we expect a union(mat, b) to,
+			so we want to rewrite into
+			m1.diff(b).union( b.semijoin(m1));
+		3) kdiff(bat,mat) (kdiff(bat,m1).kdiff(m2).kdiff(m3) etc
+			returns bat !
+*/
+static int
+mat_setop(MalBlkPtr mb, InstrPtr p, InstrPtr *old, int oldtop, int cur, mat_t *mat, int *Mtop )
+{
+	int m, n;
+	InstrPtr q = old[cur+1];
+	InstrPtr u = old[cur+2];
+	InstrPtr bc;
+	int mtop = *Mtop;
+
+	m = isMATalias(getArg(p,1), mat, mtop);
+	n = isMATalias(getArg(p,2), mat, mtop);
+
+	/* recognize kdiff(u).union(u) but also kdiff(u).union(select(u, ..)) */
+	if (getFunctionId(p) == kdifferenceRef &&
+	    cur + 2 < oldtop && 
+	    getModuleId(u) == algebraRef && getFunctionId(u) == kunionRef &&
+	    isSelect(q) &&
+	    p->argv[0] == u->argv[1] && 
+	    p->argv[2] == q->argv[1] &&
+	    u->argv[2] == q->argv[0]) { 
+		int i;
+		InstrPtr semi;
+
+		/* Kdiff(mat, b) */
+		if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
+			mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+		/* push select */
+		pushInstruction(mb, q = copyInstruction(q));
+
+		/* push in between a select(u ..).semijoin(mat) */ 
+		semi = copyInstruction(p);
+		semi->argv[0] = newTmpVariable(mb, getArgType(mb,q,0));
+		semi->argv[1] = q->argv[0];
+		semi->argv[2] = p->argv[1];
+		/* use values before select */
+		for (i=cur-1; i>0; i--)
+			if (isSelect(old[i]) && old[i]->argv[0] == p->argv[1])
+				break;
+		if (i > 0)
+			semi->argv[2] = old[i]->argv[1];
+		getFunctionId(semi) = semijoinRef;
+		m = isMATalias(getArg(semi,2), mat, mtop);
+		if ((bc = mat_semijoin(mb, semi, mat, m)) != NULL)
+			mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+			/* Kunion(mat, b) */
+		u = copyInstruction(u);
+		u->argv[2] = semi->argv[0];
+		m = isMATalias(getArg(u,1), mat, mtop);
+		n = isMATalias(getArg(u,2), mat, mtop);
+		*Mtop = mat_union(mb, u, mat, mtop, m, n);
+		return 2;
+	} else if (getFunctionId(p) == kdifferenceRef &&
+		cur + 1 < oldtop &&
+		getModuleId(q) == algebraRef && 
+		getFunctionId(q) == kunionRef &&
+	    	p->argv[0] == q->argv[1] && p->argv[2] == q->argv[2]) { 
+		InstrPtr semi;
+
+		/* Kdiff(mat, b) */
+		if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
+			mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+			/* push in between a b.semijoin(mat) */ 
+		semi = copyInstruction(p);
+		semi->argv[0] = p->argv[2];
+		semi->argv[1] = p->argv[2];
+		semi->argv[2] = p->argv[1];
+		getFunctionId(semi) = semijoinRef;
+		m = isMATalias(getArg(semi,2), mat, mtop);
+		if ((bc = mat_semijoin(mb, semi, mat, m)) != NULL)
+			mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+		/* Kunion(mat, b) */
+		m = isMATalias(getArg(q,1), mat, mtop);
+		n = isMATalias(getArg(q,2), mat, mtop);
+		*Mtop = mat_union(mb, q, mat, mtop, m, n);
+		return 1;
+	} else if ((bc = mat_apply(mb, p, mat, Mtop, m, n, 0)) != NULL) 
+		*Mtop = mat_add(mat, *Mtop, bc, NULL, mat_none );
+	return 0;
+}
+
 #ifndef NDEBUG
 static int
 check_instr(MalBlkPtr mb, InstrPtr p)
@@ -1445,57 +1541,7 @@ UNION(mirror().join()).
 		    (getModuleId(p) == algebraRef && 
 		     ((getFunctionId(p) == semijoinRef && match == 2) ||
 		      (getFunctionId(p) == kdifferenceRef)))) { 
-/* todo 
-	2) semijoin cases
-		1) both mats and aligned (pair wise)
-		2) else merge both !
-		3) semi(mat,bat) ?
-		4) semi(bat,mat) ?
-	3) kdiff cases
-		1) both mats and aligned (pair wise)
-		2) kdiff(mat,bat) (pair wise)
-			In case 2 we expect a union(mat, b) to,
-			so we want to rewrite into
-			m1.diff(b).union( b.semijoin(m1));
-		3) kdiff(bat,mat) (kdiff(bat,m1).kdiff(m2).kdiff(m3) etc
-			returns bat !
-*/
-			InstrPtr bc;
-
-			m = isMATalias(getArg(p,1), mat, mtop);
-		 	n = isMATalias(getArg(p,2), mat, mtop);
-
-		        if (getFunctionId(p) == kdifferenceRef) { 
-				InstrPtr q = old[i+1];
-
-				if (getModuleId(q) == algebraRef &&
-		      		    getFunctionId(q) == kunionRef &&
-				    p->argv[0] == q->argv[1] &&
-				    p->argv[2] == q->argv[2]) { 
-					InstrRecord instr;
-					/* Kdiff(mat, b) */
-					if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
-						mtop = mat_add(mat, mtop, bc, NULL, mat_none );
-					/* push in between a b.semijoin(mat) */ 
-					instr = *p;
-					instr.argv[0] = p->argv[2];
-					instr.argv[1] = p->argv[2];
-					instr.argv[2] = p->argv[1];
-					getFunctionId(&instr) = semijoinRef;
-		 			m = isMATalias(getArg(&instr,2), mat, mtop);
-					if ((bc = mat_semijoin(mb, &instr, mat, m)) != NULL)
-						mtop = mat_add(mat, mtop, bc, NULL, mat_none );
-					/* Kunion(mat, b) */
-					m = isMATalias(getArg(q,1), mat, mtop);
-		 			n = isMATalias(getArg(q,2), mat, mtop);
-					mtop = mat_union(mb, q, mat, mtop, m, n);
-					i++;
-					actions++;
-					continue;
-				}
-			} 
-			if ((bc = mat_apply(mb, p, mat, &mtop, m, n, 0)) != NULL)
-				mtop = mat_add(mat, mtop, bc, NULL, mat_none );
+			i += mat_setop(mb, p, old, oldtop, i, mat, &mtop); 
 			actions++;
 			continue;
 		}

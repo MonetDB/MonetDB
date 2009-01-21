@@ -533,6 +533,7 @@ opt_export int isSideEffectFree(MalBlkPtr mb);
 opt_export int isBlocking(InstrPtr p);
 opt_export int isAllScalar(MalBlkPtr mb, InstrPtr p);
 opt_export int isFragmentGroup(InstrPtr q);
+opt_export int isSelect(InstrPtr p);
 opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
 opt_export int isDiffOp(InstrPtr q);
@@ -1246,6 +1247,18 @@ int isFragmentGroup(InstrPtr p){
 //				getFunctionId(p)== setAccessRef ||
 //				getFunctionId(p)== setWriteModeRef 
 			) );
+}
+
+int isSelect(InstrPtr p) 
+{
+	return (getModuleId(p)== algebraRef && (
+		getFunctionId(p)== selectRef ||
+		getFunctionId(p)== selectNotNilRef ||
+		getFunctionId(p)== uselectRef ||
+		getFunctionId(p)== projectRef ||
+		getFunctionId(p)== antiuselectRef ||
+		getFunctionId(p)== likeselectRef ||
+		getFunctionId(p)== likeuselectRef ));
 }
 @h
 #endif /* _OPT_SUPPORT_H */
