@@ -2344,10 +2344,30 @@ PFbui_fn_contains_opt (const PFla_op_t *loop,
 
     return (struct PFla_pair_t) {
         .rel = project (
-                   fun_1to1 (
-                       eqjoin (
-                           disjunion (
-                               args[0].rel,
+                   disjunion (
+                       fun_1to1 (
+                           eqjoin (
+                               /* Give the empty sequence to correct type.
+                                  (General optimization will remove cast). */
+                               project (
+                                   cast (args[0].rel,
+                                         col_cast, col_item, aat_str),
+                                   proj (col_iter, col_iter),
+                                   proj (col_pos, col_pos),
+                                   proj (col_item, col_cast)),
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                           alg_fun_fn_contains,
+                           col_res,
+                           collist (col_item, col_item1)),
+                       /* Apply fn:contains for empty strings
+                          separately to simplify contains operator
+                          rewrite rules (constant optimization). */
+                       fun_1to1 (
+                           eqjoin (
                                attach (
                                    attach (
                                        difference (
@@ -2356,15 +2376,15 @@ PFbui_fn_contains_opt (const PFla_op_t *loop,
                                                args[0].rel,
                                                proj (col_iter, col_iter))),
                                        col_pos, lit_nat (1)),
-                                   col_item, lit_str (""))),
-                           project (args[1].rel,
-                                    proj (col_iter1, col_iter),
-                                    proj (col_item1, col_item)),
-                           col_iter,
-                           col_iter1),
-                       alg_fun_fn_contains,
-                       col_res,
-                       collist (col_item, col_item1)),
+                                   col_item, lit_str ("")),
+                               project (args[1].rel,
+                                        proj (col_iter1, col_iter),
+                                        proj (col_item1, col_item)),
+                               col_iter,
+                               col_iter1),
+                           alg_fun_fn_contains,
+                           col_res,
+                           collist (col_item, col_item1))),
                 proj (col_iter, col_iter),
                 proj (col_pos, col_pos),
                 proj (col_item, col_res)),

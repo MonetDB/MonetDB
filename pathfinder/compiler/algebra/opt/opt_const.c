@@ -40,6 +40,7 @@
 #include "pathfinder.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "algopt.h"
 #include "properties.h"
@@ -679,6 +680,36 @@ opt_const (PFla_op_t *p)
             }
 #endif
         } break;
+
+        case la_fun_1to1:
+            /* rewrites for fn:contains ($arg1, $arg2) */
+            /* If the value of $arg2 is the zero-length string,
+               then the function returns true. */
+            if (p->sem.fun_1to1.kind == alg_fun_fn_contains &&
+                PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, 1)) &&
+                !strcmp (PFprop_const_val (
+                             p->prop,
+                             clat (p->sem.fun_1to1.refs, 1)).val.str, "")) {
+                *p = *PFla_attach (L(p), p->sem.fun_1to1.res,
+                                   PFalg_lit_bln (true));
+                break;
+            }
+            /* If the value of $arg1 is the zero-length string,
+               then the function returns false. */
+            if (p->sem.fun_1to1.kind == alg_fun_fn_contains &&
+                PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, 0)) &&
+                !strcmp (PFprop_const_val (
+                             p->prop,
+                             clat (p->sem.fun_1to1.refs, 0)).val.str, "") &&
+                PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, 1)) &&
+                strcmp (PFprop_const_val (
+                            p->prop,
+                            clat (p->sem.fun_1to1.refs, 1)).val.str, "")) {
+                *p = *PFla_attach (L(p), p->sem.fun_1to1.res,
+                                   PFalg_lit_bln (false));
+                break;
+            }
+            break;
 
         case la_num_eq:
             if (PFprop_const (p->prop, p->sem.binary.col1) &&
