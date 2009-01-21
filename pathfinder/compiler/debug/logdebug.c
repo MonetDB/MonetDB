@@ -1161,6 +1161,18 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                     }
                 }
                 fst = true;
+                /* list rank columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_rank_col (n->prop, col)) {
+                        PFarray_printf (
+                            DOT,
+                            fst ? "\\nrank col: %s" : ", %s",
+                            PFcol_str (col));
+                        fst = false;
+                    }
+                }
+                fst = true;
                 /* list multi-col columns */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     PFalg_col_t col = n->schema.items[i].name;
@@ -1180,6 +1192,18 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                         PFarray_printf (
                             DOT,
                             fst ? "\\nfilter col: %s" : ", %s",
+                            PFcol_str (col));
+                        fst = false;
+                    }
+                }
+                fst = true;
+                /* list link columns */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_col_t col = n->schema.items[i].name;
+                    if (PFprop_req_link_col (n->prop, col)) {
+                        PFarray_printf (
+                            DOT,
+                            fst ? "\\nlink col: %s" : ", %s",
                             PFcol_str (col));
                         fst = false;
                     }

@@ -23,6 +23,9 @@
  * - filter:    The column is a value column where we know that it is
  *              only used inside an equality predicate.
  *
+ * - link:      The column is a value column where we know that it is
+ *              only used as a link in a serialize_rel operator.
+ *
  * - selection: The column is a value column where we inferred that it
  *              is a Boolean column where we are interested in the rows
  *              with either true or false values.
@@ -96,6 +99,7 @@ struct req_val_t {
     bool        distinct;  /* ... the column is used for duplicate
                                   elimination */
     bool        filter;    /* ... its value is used as filter only */
+    bool        link;      /* ... its value is used as link only */
     bool        sel_name;  /* ... only one boolean value is required */
     bool        sel_val;   /* ... together with the value of the boolean */
 };
@@ -112,6 +116,7 @@ typedef struct req_val_t req_val_t;
 #define ORD_AT(n,i)       (((req_val_t *) PFarray_at ((n), (i)))->order)
 #define DIST_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->distinct)
 #define FILTER_AT(n,i)    (((req_val_t *) PFarray_at ((n), (i)))->filter)
+#define LINK_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->link)
 #define SNAME_AT(n,i)     (((req_val_t *) PFarray_at ((n), (i)))->sel_name)
 #define SVAL_AT(n,i)      (((req_val_t *) PFarray_at ((n), (i)))->sel_val)
 
@@ -183,6 +188,23 @@ PFprop_req_filter_col (const PFprop_t *prop, PFalg_col_t col)
 }
 
 /**
+ * Test if @a col is in the list of link columns
+ * (columns only used in the iter column of operator serialize_rel)
+ * in container @a prop
+ */
+bool
+PFprop_req_link_col (const PFprop_t *prop, PFalg_col_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* only value columns can be link columns */
+        return reqval->value && reqval->link;
+}
+
+/**
  * Test if @a col is in the list of value columns
  * in container @a prop
  */
@@ -235,6 +257,24 @@ PFprop_req_bijective_col (const PFprop_t *prop, PFalg_col_t col)
 }
 
 /**
+ * Test if @a col is in the list of rank columns
+ * in container @a prop
+ */
+bool
+PFprop_req_rank_col (const PFprop_t *prop, PFalg_col_t col)
+{
+    req_val_t *reqval = find_map (prop->reqvals, col);
+
+    if (!reqval)
+        return false;
+    else
+        /* column col is only used inside partition, order,
+           or distinct columns */
+        return (reqval->part || reqval->distinct || reqval->order) &&
+               !reqval->join && !reqval->value;
+}
+
+/**
  * Test if @a col may be represented by multiple columns
  */
 bool
@@ -280,7 +320,7 @@ PFprop_req_unique_col (const PFprop_t *prop, PFalg_col_t col)
 static void
 adjust_map_ (PFarray_t *map_list, PFalg_col_t col,
              char value, char join, char part, char order, char distinct,
-             char filter, char sel_name, char sel_val)
+             char filter, char link, char sel_name, char sel_val)
 {
     req_val_t *map;
 
@@ -297,6 +337,7 @@ adjust_map_ (PFarray_t *map_list, PFalg_col_t col,
                             .order    = (order    == YES),
                             .distinct = (distinct == YES),
                             .filter   = (filter   != NO),
+                            .link     = (link     != NO),
                             /* we mark the selection mapping
                                with (name=false, val=true) in
                                case we don't know anything about it */
@@ -311,6 +352,7 @@ adjust_map_ (PFarray_t *map_list, PFalg_col_t col,
         if (order    != KEEP) map->order    |= (order    == YES);
         if (distinct != KEEP) map->distinct |= (distinct == YES);
         if (filter   != KEEP) map->filter   &= (filter   == YES);
+        if (link     != KEEP) map->link     &= (link     == YES);
         if (sel_name != KEEP) {
             assert (sel_val != KEEP);
             /* if we don't know anything about the selection
@@ -332,26 +374,28 @@ adjust_map_ (PFarray_t *map_list, PFalg_col_t col,
     }
 }
 #define adjust_value_(list,col)   \
-        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO)
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO)
 #define adjust_join_(list,col)    \
-        adjust_map_ ((list), (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP)
+        adjust_map_ ((list), (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_part_(list,col)    \
-        adjust_map_ ((list), (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP)
+        adjust_map_ ((list), (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_order_(list,col)   \
-        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP)
+        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_distinct_(list,col)\
-        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP)
+        adjust_map_ ((list), (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP, KEEP)
 #define adjust_filter_(list,col)  \
-        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   YES,  NO,   KEEP, KEEP)
+#define adjust_link_(list,col)    \
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
 #define adjust_sel_(list,col)     \
-        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  YES)
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, KEEP, YES,  YES)
 #define adjust_nosel_(list,col)   \
-        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  NO)
+        adjust_map_ ((list), (col), YES,  NO,   NO,   NO,   NO,   KEEP, KEEP, YES,  NO)
 
 static void
 adjust_map (PFla_op_t *n, PFalg_col_t col,
             char value, char join, char part, char order, char distinct,
-            char filter, char sel_name, char sel_val)
+            char filter, char link, char sel_name, char sel_val)
 {
     assert (n);
 
@@ -361,24 +405,27 @@ adjust_map (PFla_op_t *n, PFalg_col_t col,
                                n->schema.count);
 
     adjust_map_ (MAP_LIST(n), col,
-                 value, join, part, order, distinct, filter, sel_name, sel_val);
+                 value, join, part, order, distinct,
+                 filter, link, sel_name, sel_val);
 }
 #define adjust_value(col)   \
-        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO)
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO)
 #define adjust_join(col)    \
-        adjust_map (n, (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP)
+        adjust_map (n, (col), KEEP, YES,  KEEP, KEEP, NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_part(col)    \
-        adjust_map (n, (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP)
+        adjust_map (n, (col), KEEP, KEEP, YES,  KEEP, NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_order(col)   \
-        adjust_map (n, (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP)
+        adjust_map (n, (col), KEEP, KEEP, KEEP, YES,  NO,   KEEP, KEEP, KEEP, KEEP)
 #define adjust_distinct(col)\
-        adjust_map (n, (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP)
+        adjust_map (n, (col), KEEP, KEEP, KEEP, KEEP, YES,  KEEP, KEEP, KEEP, KEEP)
 #define adjust_filter(col)  \
-        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   YES,  NO,   KEEP, KEEP)
+#define adjust_link(col)    \
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   NO,   YES,  KEEP, KEEP)
 #define adjust_sel(col)     \
-        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  YES)
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, KEEP, YES,  YES)
 #define adjust_nosel(col)   \
-        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, YES,  NO)
+        adjust_map (n, (col), YES,  NO,   NO,   NO,   NO,   KEEP, KEEP, YES,  NO)
 
 
 /* short version to descend to fragment information */
@@ -420,6 +467,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 map->order    |= ORD_AT(reqvals, i);
                 map->distinct |= DIST_AT(reqvals, i);
                 map->filter   &= FILTER_AT(reqvals, i);
+                map->link     &= LINK_AT(reqvals, i);
                 /* if we don't know anything about the selection
                    mapping yet we replace it */
                 if (!map->sel_name && map->sel_val) {
@@ -477,8 +525,8 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
             return; /* only infer once */
 
         case la_serialize_rel:
+            adjust_link  (n->sem.ser_rel.iter);
             adjust_order (n->sem.ser_rel.pos);
-            adjust_value (n->sem.ser_rel.iter);
 
             for (unsigned int i = 0; i < clsize (n->sem.ser_rel.items); i++)
                 adjust_value (clat (n->sem.ser_rel.items, i));

@@ -470,6 +470,12 @@ bool PFprop_req_order_col (const PFprop_t *prop, PFalg_col_t col);
 bool PFprop_req_bijective_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
+ * Test if @a col is in the list of rank columns
+ * in container @a prop
+ */
+bool PFprop_req_rank_col (const PFprop_t *prop, PFalg_col_t col);
+
+/**
  * Test if @a col is in the list of multi-col columns
  * in container @a prop
  */
@@ -480,6 +486,13 @@ bool PFprop_req_multi_col_col (const PFprop_t *prop, PFalg_col_t col);
  * in container @a prop
  */
 bool PFprop_req_filter_col (const PFprop_t *prop, PFalg_col_t col);
+
+/**
+ * Test if @a col is in the list of link columns
+ * (columns only used in the iter column of operator serialize_rel)
+ * in container @a prop
+ */
+bool PFprop_req_link_col (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if @a col is in the list of value columns
