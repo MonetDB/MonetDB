@@ -902,7 +902,7 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
                 unsigned int count, PFalg_sel_t *pred)
 {
     PFla_op_t     *ret;
-    unsigned int   i, j;
+    unsigned int   i, j, pred_count;
 
     assert (n1); assert (n2);
 
@@ -923,10 +923,20 @@ PFla_thetajoin (const PFla_op_t *n1, const PFla_op_t *n2,
     ret = la_op_wire2 (la_thetajoin, n1, n2);
 
     /* insert semantic value (predicates) into the result */
-    ret->sem.thetajoin.count = count;
     ret->sem.thetajoin.pred  = PFmalloc (count * sizeof (PFalg_sel_t));
-    for (i = 0; i < count; i++)
-        ret->sem.thetajoin.pred[i] = pred[i];
+    pred_count = 0;
+    for (i = 0; i < count; i++) {
+        /* Throw away all identical predicates
+           (after the first appearance of the predicate). */
+        for (j = 0; j < i; j++)
+            if (pred[i].left  == pred[j].left  &&
+                pred[i].right == pred[j].right &&
+                pred[i].comp  == pred[j].comp)
+                break;
+        if (i == j)
+            ret->sem.thetajoin.pred[pred_count++] = pred[i];
+    }
+    ret->sem.thetajoin.count = pred_count;
 
     /* allocate memory for the result schema (schema(n1) + schema(n2)) */
     ret->schema.count = n1->schema.count + n2->schema.count;
@@ -1192,7 +1202,13 @@ PFla_pos_select (const PFla_op_t *n, int pos, PFord_ordering_t s, PFalg_col_t p)
                     n->schema.items[j].type,
                     PFcol_str (n->schema.items[j].name));
 
-        if (!p || PFord_order_col_at (s, i) != p)
+        /* Throw away all identical order criteria that appear after
+           the first appearance (as they cannot change the order). */
+        for (j = 0; j < i; j++)
+            if (PFord_order_col_at (s, i) == PFord_order_col_at (s, j))
+                break;
+
+        if ((!p || PFord_order_col_at (s, i) != p) && j == i)
             sortby = PFord_refine (sortby,
                                    PFord_order_col_at (s, i),
                                    PFord_order_dir_at (s, i));
@@ -2245,7 +2261,13 @@ sort_col (const PFla_op_t *n, PFla_op_kind_t kind, char *name,
                     "could not find sort column `%s'",
                     PFcol_str (PFord_order_col_at (s, i)));
 
-        if (!p || PFord_order_col_at (s, i) != p)
+        /* Throw away all identical order criteria that appear after
+           the first appearance (as they cannot change the order). */
+        for (j = 0; j < i; j++)
+            if (PFord_order_col_at (s, i) == PFord_order_col_at (s, j))
+                break;
+
+        if ((!p || PFord_order_col_at (s, i) != p) && j == i)
             sortby = PFord_refine (sortby,
                                    PFord_order_col_at (s, i),
                                    PFord_order_dir_at (s, i));
