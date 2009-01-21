@@ -674,12 +674,10 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 for (i = 0; i < count1; i++)
                     for (j = 0; j < count2; j++)
                         conflict |= (proj_list1[i].new == proj_list2[j].new);
-                if (conflict)
-                    break;
-
                 /* Ensure that both arguments add at least one column to
                    the result. */
-                assert (count1 && count2);
+                if (conflict || !count1 || !count2)
+                    break;
 
                 *p = *(thetajoin_opt (
                            PFla_project_ (LL(p), count1, proj_list1),
@@ -1215,6 +1213,14 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             break;
 
         case la_rowrank:
+            /* the following rewrite is incorrect as the thetajoin arguments
+               filter out some rows from the cross product -- Not every
+               iteration has the same number of rows anymore and thus row-
+               ranking needs to take the result of the thetajoin into account. */
+            break;
+#if 0
+            /* fall through */
+#endif
         case la_rank:
             /* An expression that does not contain any sorting column
                required by the rank operator is independent of the rank.
@@ -1969,9 +1975,15 @@ intro_internal_thetajoin (PFla_op_t *p)
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         intro_internal_thetajoin (p->child[i]);
 
+    /* replace original cross operators by the internal
+       variant */
+    if (p->kind == la_cross) {
+        PFarray_t *pred = PFarray (sizeof (pred_struct), 5);
+        *p = *thetajoin_opt (L(p), R(p), pred);
+    }
     /* replace original thetajoin operators by the internal
        variant */
-    if (p->kind == la_thetajoin) {
+    else if (p->kind == la_thetajoin) {
         PFarray_t *pred = PFarray (sizeof (pred_struct), 5);
 
         for (i = 0; i < p->sem.thetajoin.count; i++)
@@ -2024,20 +2036,6 @@ remove_thetajoin_opt (PFla_op_t *p)
         PFalg_proj_t *proj, *lproj;
         unsigned int  lcount = 0;
 
-        /* collect the number of persistent predicates */
-        for (i = 0; i < PFarray_last (pred); i++)
-            if (PERS_AT(pred, i)) count++;
-
-        /* copy the list of persistent predicates */
-        pred_new = PFmalloc (count * sizeof (PFalg_sel_t));
-        count = 0;
-        for (i = 0; i < PFarray_last (pred); i++)
-            if (PERS_AT(pred, i)) {
-                pred_new[count++] = PFalg_sel (COMP_AT (pred, i),
-                                               LEFT_AT (pred, i),
-                                               RIGHT_AT (pred, i));
-            }
-
         /* add a pruning projection underneath the thetajoin operator to
            get rid of duplicate columns. */
         lproj = PFmalloc (L(p)->schema.count * sizeof (PFalg_proj_t));
@@ -2055,10 +2053,30 @@ remove_thetajoin_opt (PFla_op_t *p)
         if (lcount < L(p)->schema.count)
             L(p) = PFla_project_ (L(p), lcount, lproj);
 
-        /* generate a new thetajoin operator
-           (with persistent predicates only) */
-        thetajoin = PFla_thetajoin (L(p), R(p), count, pred_new);
+        /* collect the number of persistent predicates */
+        for (i = 0; i < PFarray_last (pred); i++)
+            if (PERS_AT(pred, i)) count++;
+
+        if (count) {
+            /* copy the list of persistent predicates */
+            pred_new = PFmalloc (count * sizeof (PFalg_sel_t));
+            count = 0;
+            for (i = 0; i < PFarray_last (pred); i++)
+                if (PERS_AT(pred, i)) {
+                    pred_new[count++] = PFalg_sel (COMP_AT (pred, i),
+                                                   LEFT_AT (pred, i),
+                                                   RIGHT_AT (pred, i));
+                }
+
+            /* generate a new thetajoin operator
+               (with persistent predicates only) */
+            thetajoin = PFla_thetajoin (L(p), R(p), count, pred_new);
+        }
+        else
+            thetajoin = PFla_cross (L(p), R(p));
+
         SEEN(thetajoin) = true;
+
 
         /* add an operator for every result column that is generated */
         for (i = 0; i < PFarray_last (pred); i++)
