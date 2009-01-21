@@ -1317,6 +1317,27 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_rownum:
+            /* Replace the rownumber operator by a rowrank operator
+               if it is only used to provide the correct link to
+               the outer relation in a ferry setting. */
+            if (PFprop_req_link_col (p->prop, p->sem.sort.res)) {
+                PFalg_schema_t schema;
+                schema.count = PFord_count (p->sem.sort.sortby);
+                schema.items = PFmalloc (schema.count *
+                                         sizeof (PFalg_schema_t));
+                for (unsigned int i = 0; i < schema.count; i++)
+                    schema.items[i].name = 
+                        PFord_order_col_at (p->sem.sort.sortby, i);
+                 if (PFprop_ckey (p->prop, schema)) {
+                     *p = *PFla_rowrank (
+                               L(p),
+                               p->sem.sort.res,
+                               p->sem.sort.sortby);
+                    modified = true;
+                    break;
+                 }
+            }
+
             /* Replace the rownumber operator by a projection
                if only its value distribution (keys) are required
                instead of its real values. */
@@ -1549,6 +1570,19 @@ opt_complex (PFla_op_t *p)
                         modified = true;
                         break;
                     }
+                }
+                if (L(p)->kind == la_cross) {
+                    PFalg_col_t new_col1 = PFcol_new (p->sem.rowid.res),
+                                new_col2 = PFcol_new (p->sem.rowid.res);
+
+                    *p = *PFla_rank (
+                              cross (
+                                  rowid (LL(p), new_col1),
+                                  rowid (LR(p), new_col2)),
+                              p->sem.rowid.res,
+                              sortby (new_col1, new_col2));
+                    modified = true;
+                    break;
                 }
             }
             break;
@@ -1935,12 +1969,145 @@ opt_complex (PFla_op_t *p)
 }
 
 /**
+ * Disable usage conflicts for rowid operators
+ * that are also referenced by the side effects.
+ *
+ * In case the query body refers to rowid operator
+ * only to ensure the correct cardinality whereas
+ * the side effects use the rowid column as partition
+ * criterion we split up the rowid operator. This
+ * allows the subsequent rewrites to e.g. replace
+ * the rowid operator by a rank operator.
+ */
+static void
+split_rowid_for_side_effects (PFla_op_t *p)
+{
+    /* We have found a rowid operator
+       that is used at most once by a given
+       side effect (see the reference counter
+       in cases: la_error and la_trace). */
+    if (L(p) &&
+        L(p)->kind == la_rowid &&
+        PFprop_refctr (L(p)) == 1) {
+        L(p) = PFla_op_duplicate (L(p), LL(p), NULL);
+        return;
+    }
+    if (R(p) &&
+        R(p)->kind == la_rowid &&
+        PFprop_refctr (R(p)) == 1) {
+        R(p) = PFla_op_duplicate (R(p), RL(p), NULL);
+        return;
+    }
+
+    /* recursive traversal */
+    switch (p->kind) {
+        case la_serialize_seq:
+        case la_serialize_rel:
+        case la_lit_tbl:
+        case la_empty_tbl:
+        case la_ref_tbl:
+        case la_rownum:
+        case la_rowrank:
+        case la_rowid:
+        case la_twig:
+        case la_fcns:
+        case la_docnode:
+        case la_element:
+        case la_attribute:
+        case la_textnode:
+        case la_comment:
+        case la_processi:
+        case la_content:
+        case la_merge_adjacent:
+        case la_fragment:
+        case la_frag_extract:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_nil:
+        case la_rec_fix:
+        case la_rec_param:
+        case la_rec_arg:
+        case la_rec_base:
+        case la_fun_call:
+        case la_fun_param:
+        case la_fun_frag_param:
+        case la_proxy:
+        case la_proxy_base:
+        case la_internal_op:
+            break;
+
+        case la_side_effects:
+        case la_cross:
+        case la_eqjoin:
+        case la_semijoin:
+        case la_thetajoin:
+        case la_disjunion:
+        case la_intersect:
+        case la_difference:
+        case la_step:
+        case la_step_join:
+        case la_guide_step:
+        case la_guide_step_join:
+        case la_doc_index_join:
+        case la_doc_access:
+        case la_trace_items:
+        case la_trace_msg:
+        case la_trace_map:
+        case la_string_join:
+            split_rowid_for_side_effects (L(p));
+            split_rowid_for_side_effects (R(p));
+            break;
+
+        case la_attach:
+        case la_project:
+        case la_select:
+        case la_pos_select:
+        case la_distinct:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_to:
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_sum:
+        case la_count:
+        case la_rank:
+        case la_type:
+        case la_type_assert:
+        case la_cast:
+        case la_seqty1:
+        case la_all:
+        case la_doc_tbl:
+        case la_roots:
+        case la_dummy:
+            split_rowid_for_side_effects (L(p));
+            break;
+
+        case la_error:
+        case la_trace:
+            split_rowid_for_side_effects (L(p));
+            PFprop_infer_refctr (R(p));
+            split_rowid_for_side_effects (R(p));
+            break;
+    }
+}
+
+/**
  * Invoke algebra optimization.
  */
 PFla_op_t *
 PFalgopt_complex (PFla_op_t *root)
 {
     bool modified = true;
+
+    /* Tell the optimizer that the same rowid
+       operator is used in multiple settings
+       (by splitting it up). */
+    split_rowid_for_side_effects (L(root));
 
     while (modified) {
         /* Infer key, icols, domain, reqval,
