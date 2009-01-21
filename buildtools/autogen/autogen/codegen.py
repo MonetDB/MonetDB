@@ -138,12 +138,13 @@ lib_code_gen = { 'fgr': [ '_glue.c' ], }
 
 bin_code_gen = { }
 
-c_inc = '^[ \t]*#[ \t]*include[ \t]*[<"](?P<fnd>[-a-zA-Z0-9._]+)[>"]'
+c_inc = '^[ \t]*#[ \t]*include[ \t]*[<"](?P<fnd>[-a-zA-Z0-9._/]+)[>"]'
 m_use = "^[ \t]*\.[Uu][Ss][Ee][ \t]+(?P<fnd>[a-zA-Z0-9._, ]*);"
 m_sep = "[ \t]*,[ \t]*"
 xsl_inc = "^[ \t]*<xsl:(include|import)[ \t]+href=['\"](?P<fnd>[a-zA-Z0-9._]+)['\"]"
 tex_inc = r"\\epsf(file|box){(?P<fnd>[a-zA-Z0-9._]+)"
 t_inc = '^[ \t]*\%[ \t]*include[ \t]*{[ \t](?P<fnd>[-a-zA-Z0-9._/]+)[ \t]*}'
+mx_inc = '^[ \t]*@include[ \t]*(?P<fnd>[-a-zA-Z0-9._/]+)'
 
 c_inc = re.compile(c_inc, re.MULTILINE)
 m_use = re.compile(m_use, re.MULTILINE)
@@ -151,6 +152,7 @@ m_sep = re.compile(m_sep)
 xsl_inc = re.compile(xsl_inc, re.MULTILINE)
 tex_inc = re.compile(tex_inc)
 t_inc = re.compile(t_inc, re.MULTILINE)
+mx_inc = re.compile(mx_inc, re.MULTILINE)
 
 scan_map = { 'c': [ c_inc, None, '' ],
          'h': [ c_inc, None, '' ],
@@ -162,6 +164,7 @@ scan_map = { 'c': [ c_inc, None, '' ],
          'm': [ m_use, m_sep, '.m' ],
          'xsl': [ xsl_inc, None, '' ],
          'tex': [ tex_inc, None, '' ],
+         'mx': [ mx_inc, None, '' ],
 }
 
 dep_rules = { 'glue.c': [ 'm', '.proto.h' ] ,
