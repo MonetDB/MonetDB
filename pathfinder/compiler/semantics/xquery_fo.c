@@ -1215,7 +1215,319 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_xs_boolean () } },
         .alg = NULL }
 
+/* 10. FUNCTIONS AND OPERATORS ON DURATIONS, DATES AND TIMES */
+/* 10.4 Comparison Operators on Duration, Date and Time Values */
+    , /* op:yearMonthDuration-less-than (yearMonthDuration,
+                                         yearMonthDuration) as boolean */
+      { .ns = PFns_op, .loc = "lt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "le",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:yearMonthDuration-greater-than (yearMonthDuration,
+                                            yearMonthDuration) as boolean */
+      { .ns = PFns_op, .loc = "gt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ge",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:dayTimeDuration-less-than (dayTimeDuration,
+                                       dayTimeDuration) as boolean */
+      { .ns = PFns_op, .loc = "lt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "le",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:dayTimeDuration-greater-than (dayTimeDuration,
+                                          dayTimeDuration) as boolean */
+      { .ns = PFns_op, .loc = "gt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ge",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:duration-equal (duration, duration) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_duration (),
+                                   PFty_xs_duration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_duration (),
+                                   PFty_xs_duration () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:dateTime-equal (dateTime, dateTime) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:dateTime-less-than (dateTime, dateTime) as boolean */
+      { .ns = PFns_op, .loc = "lt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "le",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:dateTime-greater-than (dateTime, dateTime) as boolean */
+      { .ns = PFns_op, .loc = "gt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ge",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:date-equal (date, date) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:date-less-than (date, date) as boolean */
+      { .ns = PFns_op, .loc = "lt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "le",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:date-greater-than (date, date) as boolean */
+      { .ns = PFns_op, .loc = "gt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ge",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:time-equal (time, time) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:time-less-than (time, time) as boolean */
+      { .ns = PFns_op, .loc = "lt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "le",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:time-greater-than (time, time) as boolean */
+      { .ns = PFns_op, .loc = "gt",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ge",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:gYearMonth-equal (gYearMonth, gYearMonth) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gyearmonth (),
+                                   PFty_xs_gyearmonth () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gyearmonth (),
+                                   PFty_xs_gyearmonth () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:gYear-equal (gYear, gYear) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gyear (),
+                                   PFty_xs_gyear () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gyear (),
+                                   PFty_xs_gyear () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:gMonthDay-equal (gMonthDay, gMonthDay) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gmonthday (),
+                                   PFty_xs_gmonthday () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gmonthday (),
+                                   PFty_xs_gmonthday () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:gMonth-equal (gMonth, gMonth) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gmonth (),
+                                   PFty_xs_gmonth () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gmonth (),
+                                   PFty_xs_gmonth () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , /* op:gDay-equal (gDay, gDay) as boolean */
+      { .ns = PFns_op, .loc = "eq",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gday (),
+                                   PFty_xs_gday () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
+    , { .ns = PFns_op, .loc = "ne",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_gday (),
+                                   PFty_xs_gday () },
+            .ret_ty = PFty_xs_boolean () } },
+        .alg = NULL }
 
+/* 10.5 Component Extraction Functions on Durations, Dates and Times*/
+#if 0
+    , /* fn:years-from-duration */
+    , /* fn:months-from-duration */
+    , /* fn:days-from-duration */
+    , /* fn:hours-from-duration */
+    , /* fn:minutes-from-duration */
+    , /* fn:seconds-from-duration */
+    , /* fn:year-from-dateTime */
+    , /* fn:month-from-dateTime */
+    , /* fn:day-from-dateTime */
+    , /* fn:hours-from-dateTime */
+    , /* fn:minutes-from-dateTime */
+    , /* fn:seconds-from-dateTime */
+    , /* fn:timezone-from-dateTime */
+    , /* fn:year-from-date */
+    , /* fn:month-from-date */
+    , /* fn:day-from-date */
+    , /* fn:timezone-from-date */
+    , /* fn:hours-from-time */
+    , /* fn:minutes-from-time */
+    , /* fn:seconds-from-time */
+    , /* fn:timezone-from-time */
+
+/* 10.6 Arithmetic Operators on Durations */
+
+    , /* op:add-yearMonthDurations */
+    , /* op:subtract-yearMonthDurations */
+    , /* op:multiply-yearMonthDuration */
+    , /* op:divide-yearMonthDuration */
+    , /* op:divide-yearMonthDuration-by-yearMonthDuration */
+    , /* op:add-dayTimeDurations */
+    , /* op:subtract-dayTimeDurations */
+    , /* op:multiply-dayTimeDuration */
+    , /* op:divide-dayTimeDuration */
+    , /* op:divide-dayTimeDuration-by-dayTimeDuration */
+
+/* 10.7 Timezone Adjustment Functions on Dates and Time Values */
+
+    , /* fn:adjust-dateTime-to-timezone */
+    , /* fn:adjust-date-to-timezone */
+    , /* fn:adjust-time-to-timezone */
+
+/* 10.8 Arithmetic Operators on Durations, Dates and Times */
+
+    , /* op:subtract-dateTimes */
+    , /* op:subtract-dates */
+    , /* op:subtract-times */
+    , /* op:add-yearMonthDuration-to-dateTime */
+    , /* op:add-dayTimeDuration-to-dateTime */
+    , /* op:subtract-yearMonthDuration-from-dateTime */
+    , /* op:subtract-dayTimeDuration-from-dateTime */
+    , /* op:add-yearMonthDuration-to-date */
+    , /* op:add-dayTimeDuration-to-date */
+    , /* op:subtract-yearMonthDuration-from-date */
+    , /* op:subtract-dayTimeDuration-from-date */
+    , /* op:add-dayTimeDuration-to-time */
+    , /* op:subtract-dayTimeDuration-from-time */
+#endif
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */
     , /* fn:resolve-QName (xs:string) as xs:QName */
