@@ -1123,9 +1123,9 @@ stmt_delta_table_bat(sql_column *c, stmt *basetable, int access )
 		stmt *i = stmt_bat(c, stmt_dup(basetable), RD_INS );
 		stmt *u = stmt_bat(c, stmt_dup(basetable), RD_UPD );
 
-		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
 		s = stmt_union(s, stmt_dup(u));
+		s = stmt_union(s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(c->t)) {
@@ -1157,9 +1157,9 @@ stmt_delta_table_idxbat(sql_idx * idx, int access)
 		stmt *i = stmt_idxbat(idx, RD_INS);
 		stmt *u = stmt_idxbat(idx, RD_UPD);
 
-		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
 		s = stmt_union(s, stmt_dup(u));
+		s = stmt_union(s, i);
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(idx->t)) {
