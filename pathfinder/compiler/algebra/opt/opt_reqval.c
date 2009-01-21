@@ -116,7 +116,7 @@ opt_reqvals (PFla_op_t *p)
        constraint (PFprop_req_order_col()) as this rewrite
        does not harm it.  */
     if (p->kind == la_rowrank &&
-        !PFprop_req_value_col (p->prop, p->sem.sort.res))
+        PFprop_req_rank_col (p->prop, p->sem.sort.res))
         *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
     
     /* Replace rownumber operators without partitioning criterion
@@ -130,6 +130,15 @@ opt_reqvals (PFla_op_t *p)
             *p = *rowid (L(p), p->sem.sort.res);
     }
     
+    if (p->kind == la_bool_and &&
+        PFprop_req_bool_val (p->prop, p->sem.binary.res) &&
+        PFprop_req_bool_val_val (p->prop, p->sem.binary.res)) {
+        *p = *PFla_attach (
+                  PFla_select (PFla_select (L(p), p->sem.binary.col1),
+                               p->sem.binary.col2),
+                  p->sem.binary.res, PFalg_lit_bln (true));
+    }
+
     /* if the resulting value of fn:number is only used in a predicate
        we can use the lax variant that ignores NaN values */
     if (p->kind == la_fun_1to1 &&
