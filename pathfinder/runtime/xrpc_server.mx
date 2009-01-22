@@ -766,6 +766,7 @@ CMDrpcd_start(int *port, bit *open, str options)
 {
     shttpd_socket ctx;
     char *s = NULL;
+    char prefix[1024];
 
     assert(port);
     assert(open);
@@ -781,11 +782,22 @@ CMDrpcd_start(int *port, bit *open, str options)
     rpcd_running = 1;
 
     if( !(s = GDKgetenv("xrpc_docroot")) ){
-        stream_printf(GDKout, "\n'xrpc_docroot' not set!\n");
-        return GDK_FAIL;
+        /* find 'prefix', which should be already available, otherwise use
+         * "/ufs/local" (the default prefix), hence, httpd serves out
+         * <prefix>/share/MonetDB/xrpc, which is also the default value of
+         * "xrpc_docroot" */
+        if( !(s = GDKgetenv("prefix")) ){
+            /* normally, this won't happen! */
+            snprintf(prefix, 1024, "%cusr%clocal%cshare%cMonetDB%cxrpc",
+                    DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+        } else {
+            snprintf(prefix, 1024, "%s%cshare%cMonetDB%cxrpc",
+                    s, DIR_SEP, DIR_SEP, DIR_SEP);
+        }
+        shttpd_setopt("document_root", prefix);
+    } else {
+        shttpd_setopt("document_root", s);
     }
-
-    shttpd_setopt("document_root", s);
 
     shttpd_init(NULL); /* Initialize httpsd thread */
 
