@@ -1292,117 +1292,117 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = PFbui_op_datetime_equal }
+        .alg = PFbui_op_datetime_eq }
     , { .ns = PFns_op, .loc = "ne",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg =  PFbui_op_datetime_ne }
     , /* op:dateTime-less-than (dateTime, dateTime) as boolean */
       { .ns = PFns_op, .loc = "lt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_datetime_lt }
     , { .ns = PFns_op, .loc = "le",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_datetime_le }
     , /* op:dateTime-greater-than (dateTime, dateTime) as boolean */
       { .ns = PFns_op, .loc = "gt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_datetime_gt }
     , { .ns = PFns_op, .loc = "ge",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_datetime_ge }
     , /* op:date-equal (date, date) as boolean */
       { .ns = PFns_op, .loc = "eq",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_eq }
     , { .ns = PFns_op, .loc = "ne",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_ne }
     , /* op:date-less-than (date, date) as boolean */
       { .ns = PFns_op, .loc = "lt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_lt }
     , { .ns = PFns_op, .loc = "le",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_le }
     , /* op:date-greater-than (date, date) as boolean */
       { .ns = PFns_op, .loc = "gt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_gt }
     , { .ns = PFns_op, .loc = "ge",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_date (),
                                    PFty_xs_date () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_date_ge }
     , /* op:time-equal (time, time) as boolean */
       { .ns = PFns_op, .loc = "eq",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_eq }
     , { .ns = PFns_op, .loc = "ne",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_ne }
     , /* op:time-less-than (time, time) as boolean */
       { .ns = PFns_op, .loc = "lt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_lt }
     , { .ns = PFns_op, .loc = "le",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_le }
     , /* op:time-greater-than (time, time) as boolean */
       { .ns = PFns_op, .loc = "gt",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_gt }
     , { .ns = PFns_op, .loc = "ge",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_time (),
                                    PFty_xs_time () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_time_ge }
     , /* op:gYearMonth-equal (gYearMonth, gYearMonth) as boolean */
       { .ns = PFns_op, .loc = "eq",
         .arity = 2, .sig_count = 1, .sigs = { {

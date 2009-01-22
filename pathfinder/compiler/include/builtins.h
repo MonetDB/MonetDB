@@ -490,10 +490,80 @@ struct PFla_pair_t PFbui_fn_not_bln (const PFla_op_t *loop,
 /* 10. FUNCTIONS AND OPERATORS ON DURATIONS, DATES AND TIMES */
 /* 10.4 Comparison Operators on Duration, Date and Time Values */
 
-struct PFla_pair_t PFbui_op_datetime_equal (const PFla_op_t *loop,
-                                            bool ordering,
-                                            PFla_op_t **side_effects,
-                                            struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_eq (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_ne (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_le (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_lt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_ge (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_datetime_gt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_date_eq (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_date_ne (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_date_le (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_date_lt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_date_ge (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_date_gt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_time_eq (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_time_ne (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_time_le (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_time_lt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_time_ge (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_time_gt (const PFla_op_t *loop,
+                                         bool ordering,
+                                         PFla_op_t **side_effects,
+                                         struct PFla_pair_t *args);
 
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */

@@ -2941,21 +2941,293 @@ PFbui_fn_not_bln (const PFla_op_t *loop,
  * <code> op:dateTime-equal (dateTime, dateTime) as boolean </code>
  * @see bin_op()
  */
-
 struct PFla_pair_t
-PFbui_op_datetime_equal (const PFla_op_t *loop,
-                         bool ordering,
-                         PFla_op_t **side_effects,
-                         struct PFla_pair_t *args)
+PFbui_op_datetime_eq (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
 {
     (void) loop; (void) ordering; (void) side_effects;
 
-    PFla_op_t *res = bin_op (aat_dtime,
-                             PFla_eq,
-                             args[0].rel,
-                             args[1].rel);
+    return bin_comp (aat_dtime, PFla_eq, loop, ordering, side_effects, args);
 
-    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+struct PFla_pair_t
+PFbui_op_datetime_ne (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_dtime, PFla_eq,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:dateTime-lees-than (dateTime, dateTime) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_datetime_lt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_dtime, PFla_gt, loop, ordering, side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
+}
+
+struct PFla_pair_t
+PFbui_op_datetime_le (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_dtime, PFla_gt,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:dateTime-greater-than (dateTime, dateTime) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_datetime_gt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_dtime, PFla_gt, loop, ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_datetime_ge (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_dtime, PFla_gt,
+                            loop, ordering, side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:date-equal (date, date) as boolean </code>
+ * @see bin_op()
+ */
+struct PFla_pair_t
+PFbui_op_date_eq (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_date, PFla_eq, loop, ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_date_ne (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_date, PFla_eq,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:date-less-than (date, date) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_date_lt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_date, PFla_gt, loop, ordering, side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
+}
+
+struct PFla_pair_t
+PFbui_op_date_le (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_date, PFla_gt,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:date-greater-than (date, date) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_date_gt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_date, PFla_gt, loop, ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_date_ge (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_date, PFla_gt,
+                            loop, ordering, side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:time-equal (time, time) as boolean </code>
+ * @see bin_op()
+ */
+struct PFla_pair_t
+PFbui_op_time_eq (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_time, PFla_eq, loop, ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_time_ne (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_time, PFla_eq,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:time-lees-than (time, time) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_time_lt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_time, PFla_gt, loop, ordering, side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
+}
+
+struct PFla_pair_t
+PFbui_op_time_le (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_time, PFla_gt,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:time-greater-than (time, time) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_time_gt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_time, PFla_gt, loop, ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_time_ge (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_time, PFla_gt,
+                            loop, ordering, side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
+
 }
 
 /* ------------------------------- */
