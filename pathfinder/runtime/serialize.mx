@@ -2128,9 +2128,9 @@ draw_queryflow(
 char xrpc_logdir_buf[1024], *xrpc_logdir = NULL;
 static char*
 xrpc_log_dir(void) {
-    char *logdir;
-    if (xrpc_logdir == NULL && (logdir = GDKgetenv("datadir")) != NULL) {
-        snprintf(xrpc_logdir_buf, 1024, "%s%cMonetDB%cxrpc%clogs%c", logdir, DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
+    char *docroot = NULL;
+    if (xrpc_logdir == NULL && (docroot = GDKgetenv("xrpc_docroot")) != NULL) {
+        snprintf(xrpc_logdir_buf, 1024, "%s%clogs%c", docroot, DIR_SEP, DIR_SEP);
         if (GDKcreatedir(xrpc_logdir_buf)) {
             xrpc_logdir = xrpc_logdir_buf;
         } else {

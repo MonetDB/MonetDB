@@ -89,6 +89,10 @@ proc add_xrpc_trusted(str prefix) : void {
     xrpc_trusted.append(prefix);
 }
 
+proc set_xrpc_docroot(str new_docroot) : void {
+
+}
+
 proc get_xrpc_open() : bit {
     if (monet_environment.exist("xrpc_open")){
         return bit(monet_environment.find("xrpc_open"));
@@ -185,7 +189,6 @@ static int rpcd_running = 0;
 static int timing = 0;
 static int debug = 0;
 static int listen_socket = -1;
-static char datadir[1024];
 
 typedef struct {
     lng start;
@@ -766,7 +769,10 @@ int
 CMDrpcd_start(int *port, bit *open, str options)
 {
     shttpd_socket ctx;
-    char *s;
+    char *s = NULL;
+
+    assert(port);
+    assert(open);
     
     if (rpcd_running) {
         stream_printf(GDKout,
@@ -778,15 +784,12 @@ CMDrpcd_start(int *port, bit *open, str options)
     xrpc_port = *port;
     rpcd_running = 1;
 
-    /* find 'datadir' (often datadir = <prefix>/share), otherwise use
-     * "/usr/share", hence, httpd serves out <datadir>/MonetDB/xrpc */
-    if( !(s = GDKgetenv("datadir")) ){
-        snprintf(datadir, 1024, "%cusr%cshare%cMonetDB%cxrpc",
-                DIR_SEP, DIR_SEP, DIR_SEP, DIR_SEP);
-    } else {
-        snprintf(datadir, 1024, "%s%cMonetDB%cxrpc", s, DIR_SEP, DIR_SEP);
+    if( !(s = GDKgetenv("xrpc_docroot")) ){
+        stream_printf(GDKout, "\n'xrpc_docroot' not set!\n");
+        return GDK_FAIL;
     }
-    shttpd_setopt("document_root", datadir);
+
+    shttpd_setopt("document_root", s);
 
     shttpd_init(NULL); /* Initialize httpsd thread */
 
