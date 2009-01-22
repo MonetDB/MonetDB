@@ -3135,6 +3135,10 @@ PFintro_proxies (PFla_op_t *root)
             root->kind == la_serialize_rel);
     L(root) = plan_copy (L(root));
 
+    /* the proxy introduction cannot cope with empty branches
+       and we thus remove superfluous branches upfront */
+    root = PFalgopt_general (root);
+
 #if 0
     /* remove all semijoin operators as most of our
        proxies cannot cope with semijoins and thus

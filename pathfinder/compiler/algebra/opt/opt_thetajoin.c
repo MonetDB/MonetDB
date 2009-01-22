@@ -1771,10 +1771,15 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                     t1_left = false;
 
                     /* collect the number of additional columns
-                       that have to be mapped */
+                       that have to be mapped (either invisible
+                       thetajoin columns or thetajoin columns
+                       that are not visible anymore at the proxy
+                       top */
                     count = 0;
-                    for (j = 0; j < PFarray_last (pred); j++)
-                        if (!LEFT_VIS_AT (pred, i)) count++;
+                    for (i = 0; i < PFarray_last (pred); i++)
+                        if (!LEFT_VIS_AT (pred, i) ||
+                            !PFprop_ocol (p, LEFT_VIS_AT (pred, i)))
+                            count++;
                 }
                 else {
                     count = 0;
@@ -1794,10 +1799,15 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                         t1_left = true;
 
                         /* collect the number of additional columns
-                           that have to be mapped */
+                           that have to be mapped (either invisible
+                           thetajoin columns or thetajoin columns
+                           that are not visible anymore at the proxy
+                           top */
                         count = 0;
-                        for (j = 0; j < PFarray_last (pred); j++)
-                            if (!RIGHT_VIS_AT (pred, i)) count++;
+                        for (i = 0; i < PFarray_last (pred); i++)
+                            if (!RIGHT_VIS_AT (pred, i) ||
+                                !PFprop_ocol (p, RIGHT_VIS_AT (pred, i)))
+                                count++;
                     }
                 }
 
@@ -1841,24 +1851,44 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                     /* Fill in the invisible column names at the beginning
                        of the mapping projections. We do not have to cope
                        with column name conflicts as invisible columns are
-                       newly generated ones -- see case la_project. */
+                       newly generated ones -- see case la_project.
+
+                       And fill in the visible predicate columns that get
+                       pruned inside the proxy. Use new names to avoid
+                       any column name conflicts.  */
                     count = 0;
                     if (t1_left) {
-                        for (i = 0; i < PFarray_last (pred); i++)
+                        for (i = 0; i < PFarray_last (pred); i++) {
                             if (!RIGHT_VIS_AT (pred, i)) {
                                 PFalg_col_t cur_col = RIGHT_AT (pred, i);
                                 proj_proxy[count] = PFalg_proj (cur_col, cur_col);
                                 proj_left[count] = PFalg_proj (cur_col, cur_col);
                                 count++;
                             }
+                            else if (!PFprop_ocol (p, RIGHT_VIS_AT (pred, i))) {
+                                PFalg_col_t cur_col = RIGHT_AT (pred, i);
+                                PFalg_col_t new_col = PFcol_new (cur_col);
+                                proj_proxy[count] = PFalg_proj (cur_col, new_col);
+                                proj_left[count] = PFalg_proj (new_col, cur_col);
+                                count++;
+                            }
+                        }
                     } else {
-                        for (i = 0; i < PFarray_last (pred); i++)
+                        for (i = 0; i < PFarray_last (pred); i++) {
                             if (!LEFT_VIS_AT (pred, i)) {
                                 PFalg_col_t cur_col = LEFT_AT (pred, i);
                                 proj_proxy[count] = PFalg_proj (cur_col, cur_col);
                                 proj_left[count] = PFalg_proj (cur_col, cur_col);
                                 count++;
                             }
+                            else if (!PFprop_ocol (p, LEFT_VIS_AT (pred, i))) {
+                                PFalg_col_t cur_col = LEFT_AT (pred, i);
+                                PFalg_col_t new_col = PFcol_new (cur_col);
+                                proj_proxy[count] = PFalg_proj (cur_col, new_col);
+                                proj_left[count] = PFalg_proj (new_col, cur_col);
+                                count++;
+                            }
+                        }
                     }
 
                     /* get the children of the thetajoin (in a normalized way) */
