@@ -16,6 +16,8 @@ def main():
     clt1.close()
     clt1 = os.popen(clcmd1 + "<%s" % ('%s/../Skyserver_tables_v6.sql' % os.getenv('RELSRCDIR')), 'w')
     clt1.close()
+    clt1 = os.popen("cat %s/../Skyserver_import_v6.sql | sed -e   \"s|DATA_DIR|%s/../microsky_v6|g\" | %s " % (os.getenv('RELSRCDIR'), os.getenv('RELSRCDIR'), clcmd1), 'w')
+    clt1.close()
     clt1 = os.popen(clcmd1 + "<%s" % ('%s/../Skyserver_constraints_v6.sql' % os.getenv('RELSRCDIR')), 'w')
     clt1.close()
     sys.stdout.write('views\n')
