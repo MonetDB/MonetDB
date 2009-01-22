@@ -1292,7 +1292,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),
                                    PFty_xs_datetime () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_datetime_equal }
     , { .ns = PFns_op, .loc = "ne",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_datetime (),

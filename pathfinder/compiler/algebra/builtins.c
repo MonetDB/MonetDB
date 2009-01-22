@@ -2929,6 +2929,35 @@ PFbui_fn_not_bln (const PFla_op_t *loop,
     return un_op (aat_bln, PFla_not, args[0]);
 }
 
+/* --------------------------------------------------------- */
+/* 10. FUNCTIONS AND OPERATORS ON DURATIONS, DATES AND TIMES */
+/* --------------------------------------------------------- */
+/* ------------------------------------------------------------ */
+/* 10.4. Comparison Operators on Duration, Date and Time Values */
+/* ------------------------------------------------------------ */
+
+/**
+ * Algebra implementation for
+ * <code> op:dateTime-equal (dateTime, dateTime) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_datetime_equal (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
+                         struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = bin_op (aat_dtime,
+                             PFla_eq,
+                             args[0].rel,
+                             args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
 /* ------------------------------- */
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* ------------------------------- */

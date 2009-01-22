@@ -487,6 +487,14 @@ struct PFla_pair_t PFbui_fn_not_bln (const PFla_op_t *loop,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 
+/* 10. FUNCTIONS AND OPERATORS ON DURATIONS, DATES AND TIMES */
+/* 10.4 Comparison Operators on Duration, Date and Time Values */
+
+struct PFla_pair_t PFbui_op_datetime_equal (const PFla_op_t *loop,
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
+
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */
 struct PFla_pair_t PFbui_fn_resolve_qname (const PFla_op_t *loop,
