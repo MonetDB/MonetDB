@@ -63,6 +63,9 @@ persistence, and storage options can be found in this module.
 .COMMAND densebat(wrd size) : BAT[void,void] = CMDdensebat;
 "Creates a new [void,void] BAT of size 'size'."
 
+.COMMAND attach(int  tt, str heapfile): BAT[void,any] = CMDattach;
+"Creates a new void-headed BAT with heapfile as its tail column."
+
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
 "Returns the reverse view of a BAT (head is tail and tail is head).
  BEWARE:  no copying is involved; input and output refer to the same object!"
@@ -689,6 +692,13 @@ CMDnew_default(BAT **ret, int *ht, int *tt)
 	wrd default_size = 0;
 
 	return CMDnew(ret, ht, tt, &default_size);
+}
+
+int
+CMDattach(BAT **ret, int *tt, str heapfile)
+{
+	*ret = BATattach(*tt, heapfile);
+	return *ret ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int

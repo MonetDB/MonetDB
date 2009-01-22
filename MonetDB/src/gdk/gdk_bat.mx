@@ -57,6 +57,7 @@ called atomHeap.
 gdk_export void BATinit_idents(BAT *bn);
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
 gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
+gdk_export BAT *BATattach(int tt, const char *heapfile);
 
 extern int default_ident(char *s);
 extern oid MAXoid(BAT *i);
@@ -293,6 +294,53 @@ BATnew(int ht, int tt, BUN cap)
 	cap = MAX(BATTINY, cap);
 	bs = BATnewstorage(ht, tt, cap);
 	return bs == NULL ? NULL : &bs->B;
+}
+
+BAT *
+BATattach(int tt, const char *heapfile)
+{
+	BATstore *bs;
+	BAT *bn;
+	struct stat st;
+	int atomsize;
+	BUN cap;
+	char path[PATHLENGTH];
+
+	ERRORcheck(tt <= 0 || tt >= TYPE_str, "BATattach: bad tail type\n");
+	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
+	if (lstat(heapfile, &st) < 0) {
+		GDKerror("BATnew_heal: cannot stat heapfile\n");
+		return 0;
+	}
+	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n");
+	ERRORcheck(st.st_nlink != 1, "BATattach: heapfile must have only one link\n");
+	atomsize = ATOMsize(tt);
+	ERRORcheck(st.st_size % atomsize != 0, "BATattach: heapfile size not integral number of atoms\n");
+	ERRORcheck(st.st_size / atomsize > (off_t) BUN_MAX, "BATattach: heapfile too large\n");
+	cap = (BUN) (st.st_size / atomsize);
+	bs = BATcreatedesc(TYPE_void, tt, 1);
+	if (bs == NULL)
+		return NULL;
+	bn = &bs->B;
+	BATsetdims(bn);
+	GDKfilepath(path, BATDIR, bn->T->heap.filename, "new");
+	GDKcreatedir(path);
+	if (rename(heapfile, path) < 0) {
+		GDKsyserror("BATattach: cannot rename heapfile\n");
+		HEAPfree(&bn->T->heap);
+		GDKfree(bs);
+		return NULL;
+	}
+	bn->hseqbase = 0;
+	BATkey(bn, TRUE);
+	BATsetcapacity(bn, cap);
+	BATsetcount(bn, cap);
+	bn->batRestricted = BAT_READ;
+	bn->T->heap.size = (size_t) st.st_size;
+	bn->T->heap.storage = bn->T->heap.size <  GDK_vm_minsize ? STORE_MEM : STORE_MMAP;
+	HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE);
+	BBPcacheit(bs);
+	return bn;
 }
 
 @-

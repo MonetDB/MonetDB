@@ -54,6 +54,16 @@ The code speaks for itself
 #comment "Set the sequence base for the void column of a BAT.";
 @mal
 module bat;
+command attach(tt:int, heapfile:str) :bat[:void,:any_1]
+address BKCattach
+comment "Returns a new BAT with dense head and tail of the given type and uses
+        the given file to initialize the tail. The file will be owned by the
+        server."
+
+command densebat(size:wrd) :bat[:void,:void]
+address BKCdensebat
+comment "Creates a new [void,void] BAT of size 'size'."
+
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
 comment "Returns the reverse view of a BAT (head is tail and tail is head).
@@ -686,6 +696,13 @@ CMDnew(BAT **ret, int *ht, int *tt, BUN *cap)
 	if (*ret)
 		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDattach(BAT **ret, int *tt, str heapfile)
+{
+	*ret = BATattach(*tt, heapfile);
+	return *ret ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -2306,6 +2323,32 @@ BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "bat.new", "GDKerror in BAT construction");
+}
+
+str
+BKCattach(int *ret, int *tt, str *heapfile)
+{
+	BAT *b;
+
+	if (CMDattach(&b, tt, *heapfile) == GDK_SUCCEED) {
+		*ret = b->batCacheid;
+		BBPkeepref(*ret);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "bat.attach", "GDKerror");
+}
+
+str
+BKCdensebat(int *ret, wrd *size)
+{
+	BAT *b;
+
+	if (CMDdensebat(&b, size) == GDK_SUCCEED) {
+		*ret = b->batCacheid;
+		BBPkeepref(*ret);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "bat.densebat", "GDKerror");
 }
 
 str
