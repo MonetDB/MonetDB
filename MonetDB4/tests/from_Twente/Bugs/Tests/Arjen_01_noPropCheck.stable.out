@@ -145,7 +145,7 @@ print(indexA.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").
 [ "batDirty",			  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batDirtydesc",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batFirst",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "batId",		  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_40",	  "tmp_37",	  "tmp_42",	  "tmp_43",	  "tmp_45",	  "tmp_43",	  "tmp_46"	  ]
+[ "batId",		  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_40",	  "tmp_37",	  "tmpr_42",	  "tmp_43",	  "tmpr_45",	  "tmpr_43",	  "tmp_46"	  ]
 [ "batInserted",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "2",		  "1",		  "2",		  "1"		  ]
 [ "batPersistence",		  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient",	  "transient"	  ]
