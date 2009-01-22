@@ -30,7 +30,7 @@ reuse through inheritance can be made here
 #define _RMTCONN_DEF
 
 #ifdef WIN32
-#ifndef LIBCONNOBJ
+#ifndef LIBRMTCONN
 #define rmtconn_export extern __declspec(dllimport)
 #else
 #define rmtconn_export extern __declspec(dllexport)
