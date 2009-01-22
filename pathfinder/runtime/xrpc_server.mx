@@ -89,10 +89,6 @@ proc add_xrpc_trusted(str prefix) : void {
     xrpc_trusted.append(prefix);
 }
 
-proc set_xrpc_docroot(str new_docroot) : void {
-
-}
-
 proc get_xrpc_open() : bit {
     if (monet_environment.exist("xrpc_open")){
         return bit(monet_environment.find("xrpc_open"));
