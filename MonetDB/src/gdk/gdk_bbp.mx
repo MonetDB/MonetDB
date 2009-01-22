@@ -1197,7 +1197,7 @@ BBPinsert(BATstore *bs)
 	assert(bs->B.H == bs->BM.T);
 	assert(bs->B.T == bs->BM.H);
 
-	/* ciritical section: get a new BBP entry */
+	/* critical section: get a new BBP entry */
 	if (lock) {
 		gdk_set_lock(GDKtrimLock(idx), "BBPreplace");
 		gdk_set_lock(GDKcacheLock(idx), "BBPinsert");
