@@ -1166,6 +1166,54 @@ reduce (PFla_op_t *p, int goalnt)
             }
             break;
 
+        /* Rel:    rowrank (Rel) */
+        case 49:
+        /* Rel:    rank (Rel) */
+        case 50:
+            if (L(p)->kind == la_rank || L(p)->kind == la_rowrank) {
+                PFalg_proj_t    *proj;
+                PFord_ordering_t upper = p->sem.sort.sortby,
+                                 lower = L(p)->sem.sort.sortby;
+                unsigned int     i;
+
+                /* check for identical orderings */                
+                if (PFord_count (upper) != PFord_count (lower))
+                    break;
+
+                for (i = 0; i < PFord_count (upper); i++)
+                    if (PFord_order_col_at (upper, i) !=
+                        PFord_order_col_at (lower, i) ||
+                        PFord_order_dir_at (upper, i) !=
+                        PFord_order_dir_at (lower, i))
+                        break;
+                if (i < PFord_count (upper))
+                    break;
+
+                /* we found an identical ordering
+                   and can combine both operators */
+                proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+                for (i = 0; i < L(p)->schema.count; i++)
+                    proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                                          L(p)->schema.items[i].name);
+                proj[L(p)->schema.count] = PFalg_proj (p->sem.sort.res,
+                                                       L(p)->sem.sort.res);
+
+                *p = *PFla_project_ (
+                          PFla_rowrank (LL(p), L(p)->sem.sort.res, lower),
+                          p->schema.count, proj);
+                /* if both inputs are rank operators they will eventually
+                   become rank operators again */
+
+                SEEN(p) = false;
+                /* relabel does not know that the left and the right children
+                   are already labeled correctly and thus would relabel
+                   the *complete* subTREE! To avoid this make sure that kids
+                   contains the correct references */
+                kids[0] = LL(p);
+                relabel (p, kids);
+            }
+            break;
+
         /* Rel:    rowid (rowid (Rel)) */
         case 52:
         {
