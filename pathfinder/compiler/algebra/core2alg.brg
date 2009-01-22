@@ -3590,16 +3590,19 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         itemty = type (e.rel, col_itemty, col_item, aat_gmonth);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_gday ())))
         itemty = type (e.rel, col_itemty, col_item, aat_gday);
-    else if (PFty_subtype (ty, PFty_star (PFty_xs_duration ())))
-        /* FIXME:
-         * xs:yearMonthDuration and xs:dayTimeDuration is a subtype
-         * of xs:duration. Test for all types.
-         */
-        itemty = type (e.rel, col_itemty, col_item, aat_duration);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_yearmonthduration ())))
         itemty = type (e.rel, col_itemty, col_item, aat_ymduration);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_daytimeduration ())))
         itemty = type (e.rel, col_itemty, col_item, aat_dtduration);
+    else if (PFty_subtype (ty, PFty_star (PFty_xs_duration ())))
+       itemty = or (type (or (type (type (e.rel, col_iter2,
+                                          col_item, aat_ymduration),
+                                    col_iter3,
+                                    col_item,
+                                    aat_dtduration),
+                              col_iter4, col_iter2, col_iter3),
+                          col_iter5, col_item, aat_duration),
+                    col_itemty, col_iter4, col_iter5);
     else if (PFty_subtype (ty, PFty_star (PFty_untypedAtomic ())))
         itemty = type (e.rel, col_itemty, col_item, aat_uA);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_anyNode ()))) {
