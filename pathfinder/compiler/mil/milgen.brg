@@ -3357,6 +3357,124 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     }
                 }
 
+                /* consider aat_date */
+                if (ty & aat_date) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str),
+                                                             VAR (R(p)->env,
+                                                             pa_item,
+                                                             aat_date)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_date) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),
+                                                 VAR (R(p)->env,
+                                                 pa_item,
+                                                 aat_date)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),
+                                                VAR (R(p)->env,
+                                                pa_item,
+                                                aat_date)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),
+                                             VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_date)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),
+                                                         VAR (R(p)->env,
+                                                         pa_item,
+                                                         aat_date)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+
+                /* consider aat_time */
+                if (ty & aat_time) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str),
+                                                             VAR (R(p)->env,
+                                                             pa_item,
+                                                             aat_time)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_time) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),
+                                                 VAR (R(p)->env,
+                                                 pa_item,
+                                                 aat_time)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),
+                                                VAR (R(p)->env,
+                                                pa_item,
+                                                aat_time)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),
+                                             VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_time)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),
+                                                         VAR (R(p)->env,
+                                                         pa_item,
+                                                         aat_time)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+
                 /* consider untyped results */
                 if (ty & aat_uA) {
                     execute (
