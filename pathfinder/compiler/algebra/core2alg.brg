@@ -1386,7 +1386,6 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
             PFalg_proj_t       *cols;
             PFty_t              t;
             PFalg_simple_type_t algty;
-            PFalg_atom_t        atom;
             PFalg_col_t         sort_col;
             unsigned int        empty = 0;
 
@@ -1439,7 +1438,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("1-01-01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1449,7 +1448,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("1-01-01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1459,7 +1458,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("0:0:0")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1545,7 +1544,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                                           proj (col_item, col_cast));
                 }
                 else if (PFty_equality (t, PFty_untypedAtomic ())) {
-                    algty = atom.type = aat_uA;
+                    algty = aat_uA;
                     empty_case = attach (empty_case, col_item, lit_str (""));
                 }
                 else
