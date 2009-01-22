@@ -424,6 +424,8 @@ infer_ckey (PFla_op_t *n)
             unsigned int i, j;
             bool key_left = false,
                  key_right = false;
+            PFalg_collist_t *lcollist = PFalg_collist (L(n)->schema.count),
+                            *rcollist = PFalg_collist (R(n)->schema.count);
 
             for (i = 0; i < n->sem.thetajoin.count; i++)
                 if (n->sem.thetajoin.pred[i].comp == alg_comp_eq) {
@@ -431,9 +433,16 @@ infer_ckey (PFla_op_t *n)
                                PFprop_key (L(n)->prop,
                                            n->sem.thetajoin.pred[i].left);
                     key_right = key_right ||
-                                PFprop_key (L(n)->prop,
+                                PFprop_key (R(n)->prop,
                                             n->sem.thetajoin.pred[i].right);
+                    /* collect all eq predicates */
+                    cladd (lcollist) = n->sem.thetajoin.pred[i].left;
+                    cladd (rcollist) = n->sem.thetajoin.pred[i].right;
                 }
+
+            /* find composite keys in the input */
+            key_left  |= ckey_worker (LCKEYS, lcollist);
+            key_right |= ckey_worker (RCKEYS, rcollist);
 
             /* only a key-join retains all key properties */
             if (key_left && key_right) {
