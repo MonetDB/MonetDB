@@ -639,8 +639,14 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                             LEFT_AT (pred, i) = p->sem.proj.items[j].new;
                     }
                     else {
-                        proj_list1[count1++] = PFalg_proj (LEFT_AT (pred, i),
-                                                           LEFT_AT (pred, i));
+                        for (j = 0; j < count1; j++)
+                            if (LEFT_AT (pred, i) == proj_list1[j].new)
+                                break;
+                        /* only add column once */
+                        if (j == count1)
+                            proj_list1[count1++]
+                                = PFalg_proj (LEFT_AT (pred, i),
+                                              LEFT_AT (pred, i));
                     }
 
                     if (RIGHT_VIS_AT (pred, i)) {
@@ -665,8 +671,14 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                             RIGHT_AT (pred, i) = p->sem.proj.items[j].new;
                     }
                     else {
-                        proj_list2[count2++] = PFalg_proj (RIGHT_AT (pred, i),
-                                                           RIGHT_AT (pred, i));
+                        for (j = 0; j < count2; j++)
+                            if (RIGHT_AT (pred, i) == proj_list2[j].new)
+                                break;
+                        /* only add column once */
+                        if (j == count2)
+                            proj_list2[count2++]
+                                = PFalg_proj (RIGHT_AT (pred, i),
+                                              RIGHT_AT (pred, i));
                     }
                 }
 
