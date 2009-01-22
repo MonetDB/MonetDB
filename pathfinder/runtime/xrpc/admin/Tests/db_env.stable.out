@@ -112,7 +112,10 @@ Over..
 #    128
   </bun>
   <bun head="xrpc_admin">
-#    127.0.0.1;http://127.0.0.1;localhost;http://localhost
+#    http://127.0.0.1;127.0.0.1;http://localhost;localhost
+  </bun>
+  <bun head="xrpc_docroot">
+#    /net/jarl/export/scratch0/zhang/monet-install/dev/debug/share/MonetDB/xrpc/
   </bun>
   <bun head="xrpc_open">
 #    true
