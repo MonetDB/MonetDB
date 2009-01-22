@@ -90,4 +90,4 @@ cd "$srcdir"
 # arguments.
 # if the environment variable MTEST_AT is set (value does not matter), pass
 # the --at flag to Mtest.py so that it uses the at command as a watchdog.
-exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
+exec Mtest.py -$V --package=${pkg} --monet_mod_path="${MOD_PATH}" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/sql_logs" --xquery_logdir="${builddir}/xquery_logs" --xrpc_docroot="${srcdir}/runtime/xrpc" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--rq}"
