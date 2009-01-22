@@ -158,6 +158,9 @@ xrpc_open=true
 # "timing".
 xrpc_options=""
 
+# Root directory of files that could be served by the XRPC HTTP server
+xrpc_docroot="@Xdatadir@@DIRSEP@MonetDB@DIRSEP@xrpc@DIRSEP@"
+
 # IP addresses or hostname separated by ';' who can execute scripts in
 # <datadir>/MonetDB/xrpc/admin/
 xrpc_admin="http://127.0.0.1;127.0.0.1;http://localhost;localhost"
