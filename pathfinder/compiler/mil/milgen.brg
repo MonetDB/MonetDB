@@ -4174,6 +4174,26 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             comp = var (PF_MIL_VAR_LE); break;
                         case alg_comp_ne:
                             op   = PFmil_mne;
+                            if (!initialized) {
+                                /* As there was no equi-join condition and
+                                   this is the first ne inequality predicate
+                                   we evaluate a cross product and apply
+                                   a postfilter (by setting initialized to
+                                   true). */
+                                execute (
+                                    assgn (var (res->name),
+                                           cross (
+                                               ANY_VAR (L(p)->env),
+                                               reverse (ANY_VAR (R(p)->env)))),
+                                    assgn (var (lmap->name),
+                                           reverse (mark (var (res->name),
+                                                          lit_oid (0)))),
+                                    assgn (var (rmap->name),
+                                           reverse (
+                                               mark (reverse (var (res->name)),
+                                                     lit_oid (0)))));
+                                initialized = true;
+                            }
                             break;
                         default:
                             PFoops (OOPS_FATAL, "incorrect comparison");
