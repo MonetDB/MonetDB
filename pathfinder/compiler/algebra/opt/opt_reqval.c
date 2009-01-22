@@ -53,6 +53,9 @@
 /** mnemonic algebra constructors */
 #include "logical_mnemonic.h"
 
+/* indicator to monitor the schema changes */
+static bool schema_dirty;
+
 /**
  * Worker for map_fun creating copies for project, not, attach,
  * and union operators.
@@ -118,6 +121,31 @@ opt_reqvals (PFla_op_t *p)
     if (p->kind == la_rowrank &&
         PFprop_req_rank_col (p->prop, p->sem.sort.res))
         *p = *rank (L(p), p->sem.sort.res, p->sem.sort.sortby);
+    else if (p->kind == la_rowrank &&
+             PFprop_req_multi_col_col (p->prop, p->sem.sort.res) &&
+             /* single ascending order criterion */
+             PFord_count (p->sem.sort.sortby) == 1 &&
+             PFord_order_dir_at (p->sem.sort.sortby, 0) == DIR_ASC &&
+             /* sort criterion should not stem from a rank operator */
+             PFprop_type_of (p, PFord_order_col_at (p->sem.sort.sortby, 0))
+             != aat_nat) {
+        PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                       sizeof (PFalg_proj_t));
+
+        for (unsigned int i = 0; i < L(p)->schema.count; i++)
+            proj[i] = PFalg_proj (L(p)->schema.items[i].name,
+                                  L(p)->schema.items[i].name);
+
+        proj[L(p)->schema.count]
+            = PFalg_proj (p->sem.sort.res,
+                          PFord_order_col_at (p->sem.sort.sortby, 0));
+
+        *p = *PFla_project_ (L(p), p->schema.count, proj);
+        /* This rewrite changes the type of the schema column
+           which (without further care) triggers problems
+           for the following rewrite phases. */
+        schema_dirty = true;
+    }
     
     /* Replace rownumber operators without partitioning criterion
        that are used for sorting only by rank operators. */
@@ -170,9 +198,17 @@ PFalgopt_reqval (PFla_op_t *root)
     /* infer constants to simplify required value analysis */
     PFprop_infer_const (root);
 
+    schema_dirty = false;
+
     /* Optimize algebra tree */
     opt_reqvals (root);
     PFla_dag_reset (root);
+
+    /* A rewrite changed the type of a column without updating
+       the schema of the ancestor operators and we have to clean
+       it up. */
+    if (schema_dirty)
+        PFprop_infer_ocol (root);
 
     return root;
 }
