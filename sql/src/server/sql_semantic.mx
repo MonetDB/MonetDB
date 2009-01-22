@@ -1040,6 +1040,7 @@ semantic(mvc *sql, symbol *s)
 		break;
 	}
 	case SQL_COPYFROM:
+	case SQL_BINCOPYFROM:
 	case SQL_COPYTO:
 	case SQL_INSERT:
 	case SQL_UPDATE:

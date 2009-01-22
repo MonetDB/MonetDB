@@ -442,6 +442,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			res = select_into(sql, s, ek);
 		}	break;
 		case SQL_COPYFROM:
+		case SQL_BINCOPYFROM:
 			res = updates(sql, s);
 			break;
 		case SQL_INSERT:

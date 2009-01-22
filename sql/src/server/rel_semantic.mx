@@ -191,6 +191,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_SEQ:
 
 	case SQL_COPYFROM:
+	case SQL_BINCOPYFROM:
 	case SQL_COPYTO:
 
 	case SQL_CREATE_FUNC:

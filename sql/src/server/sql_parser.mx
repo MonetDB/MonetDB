@@ -157,6 +157,7 @@ typedef enum tokens {
 	SQL_WHEN,
 	SQL_ESCAPE,
 	SQL_COPYFROM,
+	SQL_BINCOPYFROM,
 	SQL_COPYTO,
 	SQL_EXPORT,
 	SQL_NEXT,
@@ -2400,6 +2401,12 @@ copyfrom_stmt:
 	  append_list(l, $2);
 	  append_string(l, $8);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+/* binary copy from */
+  | COPY INTO qname FROM '(' string_commalist ')'
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_list(l, $6);
+	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
   | COPY select_no_parens_orderby INTO string opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -5108,6 +5115,7 @@ char *token2string(int token)
 	SQL(WHEN);
 	SQL(ESCAPE);
 	SQL(COPYFROM);
+	SQL(BINCOPYFROM);
 	SQL(COPYTO);
 	SQL(EXPORT);
 	SQL(NEXT);

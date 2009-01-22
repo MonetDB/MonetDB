@@ -614,6 +614,51 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 }
 
 static stmt *
+bincopyfrom(mvc *sql, dlist *qname, dlist *files)
+{
+	list *ops;
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_subfunc *import = NULL;
+	list *slist;
+
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t) {
+			sql_subtype *tpe = stack_find_type(sql, tname);
+			if (tpe)
+				t = tpe->comp_type;
+		}
+	}
+	if (!t) {
+		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+	} 
+	ops = create_stmt_list();
+	list_append(ops, stmt_atom_string(_strdup(s->base.name)));
+	list_append(ops, stmt_atom_string(_strdup(t->base.name)));
+	if (files) {
+		dnode *n = files->h;
+		for (; n; n = n->next)
+			list_append(ops, stmt_atom_string(_strdup(n->data.sval)));
+	}
+	slist = create_stmt_list();
+	import = sql_find_func(sys, "import", 2); /* TODO later we need true varargs */
+	list_append(slist, stmt_Nop(stmt_list(ops), import));
+	return stmt_list(slist);
+}
+
+static stmt *
 copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 {
 	char *tsep = seps->h->data.sval;
@@ -649,6 +694,14 @@ updates(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.sval);
+		sql->type = Q_UPDATE;
+	}
+		break;
+	case SQL_BINCOPYFROM:
+	{
+		dlist *l = s->data.lval;
+
+		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;

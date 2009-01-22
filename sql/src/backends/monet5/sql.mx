@@ -265,6 +265,10 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
+pattern importTable{unsafe}( sname:str, tname:str, fname:str... ) :bat[:str,:bat]
+address mvc_bin_import_table_wrap
+comment "Import a table from the files (fname)";
+
 command zero_or_one( col:bat[:any_2,:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
@@ -851,6 +855,7 @@ sql5_export str mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str bathash_wrap(bat *res, bat *bid );
 sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -2247,6 +2252,51 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(*res);
 	return MAL_SUCCEED;
 }
+
+/* str mvc_bin_import_table_wrap(int *res, str *sname, str *tname, str *fname..); */
+str
+mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	mvc *m = NULL;
+	str msg = getContext(cntxt, mb, &m, NULL);
+	BUN cnt = 0;
+	int i, *res = (int *) getArgReference(stk, pci, 0);
+	str sname = *(str *) getArgReference(stk, pci, 1);
+	str tname = *(str *) getArgReference(stk, pci, 2);
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	node *n;
+
+	if (msg)
+		return msg;
+
+	if (!t) 
+		throw(SQL,"sql", "table %s not found", tname);
+	if (list_length(t->columns.set) != (pci->argc-3))
+		throw(SQL,"sql", "Not enough columns in found");
+	b = BATnew(TYPE_str, TYPE_bat, pci->argc-3);
+	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
+		sql_column *col = n->data;
+		BAT *c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
+
+		BATsetaccess(c, BAT_READ);
+		BATpropcheck(c, BATPROPS_ALL);
+		BATpropcheck(BATmirror(c), BATPROPS_ALL);
+		if (i!=3 && cnt != BATcount(c)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql", "table %s not found", tname);
+		}
+		cnt = BATcount(c);
+		BUNins(b, (ptr)col->base.name, (ptr)&c->batCacheid, FALSE);
+		BBPunfix( c->batCacheid );
+	}
+	*res = b->batCacheid;
+	BBPincref( *res, TRUE);
+	BBPunfix(*res);
+	return MAL_SUCCEED;
+}
+
 
 str
 zero_or_one(ptr ret, int *bid) 

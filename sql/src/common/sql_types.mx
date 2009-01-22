@@ -1242,14 +1242,14 @@ sqltypeinit(void)
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD;
-	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *TABLE, *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY;
 
 	ANY = sql_create_type("ANY", 0, 0, 0, EC_ANY, "any");
 
 	t = ts;
-	*t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
+	TABLE = *t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
 
 	BIT = *t++ = sql_create_type("BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(BIT->sqlname, "BOOL");
@@ -1579,6 +1579,8 @@ sqltypeinit(void)
 				 list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), &sres, FALSE, FALSE, SCALE_FIX);
 		}
 	}
+	/* TODO varargs */
+	sql_create_func("import", "sql", "importTable", STR, STR, TABLE, SCALE_NONE);
 }
 
 void
