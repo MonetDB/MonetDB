@@ -70,6 +70,8 @@ key_worker (PFalg_collist_t *keys, PFalg_col_t col)
 bool
 PFprop_key (const PFprop_t *prop, PFalg_col_t col)
 {
+    if (!prop) return false;
+
     return key_worker (prop->keys, col);
 }
 
@@ -80,6 +82,8 @@ PFprop_key (const PFprop_t *prop, PFalg_col_t col)
 bool
 PFprop_key_left (const PFprop_t *prop, PFalg_col_t col)
 {
+    if (!prop) return false;
+
     return key_worker (prop->l_keys, col);
 }
 
@@ -90,6 +94,8 @@ PFprop_key_left (const PFprop_t *prop, PFalg_col_t col)
 bool
 PFprop_key_right (const PFprop_t *prop, PFalg_col_t col)
 {
+    if (!prop) return false;
+
     return key_worker (prop->r_keys, col);
 }
 
