@@ -2402,10 +2402,14 @@ copyfrom_stmt:
 	  append_string(l, $8);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
 /* binary copy from */
-  | COPY INTO qname FROM '(' string_commalist ')'
+   | COPY opt_nr INTO qname FROM '(' string_commalist ')'
 	{ dlist *l = L();
-	  append_list(l, $3);
-	  append_list(l, $6);
+	  if ($2 != NULL) {
+	  	yyerror("Cannot pass number of records in Binary COPY INTO");
+		YYABORT;
+	  }
+	  append_list(l, $4);
+	  append_list(l, $7);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
   | COPY select_no_parens_orderby INTO string opt_seps opt_null_string
 	{ dlist *l = L();

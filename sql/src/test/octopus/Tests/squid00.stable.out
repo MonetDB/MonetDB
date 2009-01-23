@@ -26,14 +26,14 @@ Over..
 # 23:29:58 >  
 
 function user.s1_1():void;
-barrier (_24,_4) := scheduler.octopus(10);
-    _26 := octopus.tentacle_s1_1_71();
-    _27 := octopus.tentacle_s1_1_72();
-    _28 := octopus.tentacle_s1_1_73();
-    _29 := octopus.tentacle_s1_1_74();
-    _30 := octopus.tentacle_s1_1_76();
-    _4 := mat.pack(_26,_27,_28,_29,_30);
-exit (_24,_15);
+barrier (_25,_4) := scheduler.octopus(10);
+    _27 := octopus.tentacle_s1_1_69();
+    _28 := octopus.tentacle_s1_1_70();
+    _29 := octopus.tentacle_s1_1_71();
+    _30 := octopus.tentacle_s1_1_72();
+    _31 := octopus.tentacle_s1_1_73();
+    _4 := mat.pack(_27,_28,_29,_30,_31);
+exit (_25,_4);
     _5 := sql.resultSet(1,1,_4);
     sql.rsColumn(_5,"sys.squida","bid","int",32,0,_4);
     _4 := nil;
