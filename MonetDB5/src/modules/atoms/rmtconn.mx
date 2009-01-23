@@ -49,7 +49,7 @@ reuse through inheritance can be made here
 atom rmtconn:str;
 
 command fromstr() 
-address RMTOfromString
+address RMTCfromString
 comment "Convert a string to an rmtconn";
 @h
 rmtconn_export int RMTCfromString(str src, int *len, str *retval);

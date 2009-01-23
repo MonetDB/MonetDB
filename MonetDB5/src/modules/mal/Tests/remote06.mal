@@ -1,0 +1,34 @@
+# for testweb, we need to ask the server itself how it is available, use
+# sabaoth for that
+include sabaoth;
+
+h := sabaoth.getLocalConnectionHost();
+p := sabaoth.getLocalConnectionPort();
+
+# create a persistent connecton to ourself
+conn1:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+# do it again ...
+conn2:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+# ... and check they are the same
+io.print(conn1);
+io.print(conn2);
+
+# now try to get a new connection
+conn3:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb", false:bit);
+# are they equal?
+io.print(conn1);
+io.print(conn3);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.destroy(conn1);
+
+# this should fail now (or should persistent connections always be
+# retained?)
+remote.destroy(conn2);
+catch MALException:str;
+	# make it a comment, the connection name is always different
+	io.printf("#!%s\n",MALException);
+exit MALException;
+
+remote.destroy(conn3);

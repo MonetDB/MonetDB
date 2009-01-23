@@ -6,7 +6,7 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-remote.create("test", h, p, nil:str, "monetdb", "monetdb");
+conn:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
 
 b := bat.new(:str, :int);
 bat.insert(b, "bla", 1);
@@ -15,15 +15,15 @@ bat.insert(b, "foo", 3);
 bat.insert(b, "bar", 4);
 bat.insert(b, "baz", 5);
 
-k := remote.put("test", b);
-l := remote.put("test", 3);
-m := remote.put("test", 10);
+k := remote.put(conn, b);
+l := remote.put(conn, 3);
+m := remote.put(conn, 10);
 
 # perform a selection remote, and get the result back
-t := remote.exec("test", "algebra", "select", k, l, m);
-j:bat[:str,:int] := remote.get("test", t);
+t := remote.exec(conn, "algebra", "select", k, l, m);
+j:bat[:str,:int] := remote.get(conn, t);
 io.print(j);
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
-remote.destroy("test");
+remote.destroy(conn);

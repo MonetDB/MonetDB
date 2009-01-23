@@ -73,7 +73,8 @@ end main;
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
 [ 30,	  "rmtobj"	  ]
-[ 31,	  "mapentry"	  ]
+[ 31,	  "rmtconn"	  ]
+[ 32,	  "mapentry"	  ]
 #-------------------------#
 # t	h		  # name
 # oid	str		  # type
@@ -125,6 +126,7 @@ end main;
 [ "recycle",	  nil	  ]
 [ "remote",	  nil	  ]
 [ "replicator",	  nil	  ]
+[ "rmtconn",	  nil	  ]
 [ "rmtobj",	  nil	  ]
 [ "sabaoth",	  nil	  ]
 [ "scheduler",	  nil	  ]

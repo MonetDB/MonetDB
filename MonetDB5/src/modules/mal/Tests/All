@@ -34,10 +34,15 @@ ascii_io2
 #bpm12
 
 remoteInit
+
 remote01
 remote02
 remote03
 remote04
+# can't enable remote06 as long as I didn't find a way to compare
+# connections, otherwise we will always have a failing test (random id
+# being printed)
+
 #remote10
 
 printf

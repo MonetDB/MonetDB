@@ -22,33 +22,34 @@ function user.main():void;
     h := sabaoth.getLocalConnectionHost();
     p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    conn := remote.create(h,p,nil:str,"monetdb","monetdb");
 # this is invalid, as io.print is an invalid module, and bla will be 
 # taken as function 
-    f := remote.exec("test","io.print","bla");
+    f := remote.exec(conn,"io.print","bla");
 catch MALException;
     io.print("Received an error from the remote site");
-    io.printf(MALException);
+# exception contains a random id, so make it a warning 
+    io.printf("#!%s\n",MALException);
 exit MALException;
 # now do it with a function that returns something (a BAT in this case) 
-    b := remote.exec("test","inspect","getAtomNames");
+    b := remote.exec(conn,"inspect","getAtomNames");
 catch MALException;
     io.print("Received second error from the remote site");
     io.printf(MALException);
 exit MALException;
-    c := remote.get("test",b);
+    c := remote.get(conn,b);
     io.print(c);
 catch MALException;
     io.print("Received third error from the remote site");
     io.printf(MALException);
 exit MALException;
 # io.print only outputs things, but returns nothing 
-    a := remote.exec("test","io","print",b);
+    a := remote.exec(conn,"io","print",b);
 catch MALException;
     io.print("Received fourth error from the remote site");
     io.printf(MALException);
 exit MALException;
-    d := remote.get("test",a);
+    d := remote.get(conn,a);
     io.print(d);
 catch MALException;
     io.print("Received fifth error from the remote site");
@@ -56,10 +57,10 @@ catch MALException;
 exit MALException;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");
+    remote.destroy(conn);
 end main;
 [ "Received an error from the remote site" ]
-MALException:remote.exec:rmt_test_0 := io.print.bla();
+#!MALException:remote.exec:rmt_pegasus_38469_monetdb_1_0 := io.print.bla();
 !SyntaxException:parseError:                              ^'(' expected
 #-------------------------#
 # h	t		  # name
@@ -96,7 +97,8 @@ MALException:remote.exec:rmt_test_0 := io.print.bla();
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
 [ 30,	  "rmtobj"	  ]
-[ 31,	  "mapentry"	  ]
+[ 31,	  "rmtconn"	  ]
+[ 32,	  "mapentry"	  ]
 [ nil ]
 
 # 19:22:53 >  

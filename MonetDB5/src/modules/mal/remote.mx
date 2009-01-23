@@ -78,41 +78,36 @@ command epilogue():void
 address RMTepilogue
 comment "Release the resources held by the remote module.";
 
-command create(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):str
+command create(host:str, port:int, dbname:str, user:str, passwd:str):rmtconn
+address RMTcreateDef
+comment "Returns a persistent connection for host name, port, database name, user name and password, or creates a new connection if no previous connection exists.";
+
+command create(host:str, port:int, dbname:str, user:str, passwd:str, persistent:bit):rmtconn
 address RMTcreate
-comment "Creates a new connection using host name, port, database name,
-user name and password given details. The name returned is conn and aids in
-flow dependency maintenance.";
+comment "Returns a newly created connection for host name, port, database name, user name and password, if persistent is false or no previous connection exists.  Otherwise the previously existing connection is returned.";
 
-command reconnect(conn:str, host:str, port:int, dbname:str, user:str, passwd:str):str
-address RMTreconnect
-comment "Reconnect or create a new connection using host name, port, database name,
-user name and password given details.The name returned is conn and aids in
-flow dependency maintenance.";
-
-command destroy(conn:str):void
+command destroy(conn:rmtconn):void
 address RMTdestroy
-comment "Destroys a previously created connection.";
+comment "Destroys a previously created non-persistent connection.  Calling this function for a persistent  connection is a no-op.";
 
-pattern get(conn:str, ident:rmtobj):any
+pattern get(conn:rmtconn, ident:rmtobj):any
 address RMTget
-comment "Retrieves a copy of a remote object.";
+comment "Retrieves a copy of remote object ident.";
 
-pattern put(conn:str, object:any):rmtobj
+pattern put(conn:rmtconn, object:any):rmtobj
 address RMTput
-comment "Copy an object to a remote site and returns its identifier.";
+comment "Copies object to the remote site and returns its identifier.";
 
-pattern register(conn:str, mod:str, fcn:str):void
+pattern register(conn:rmtconn, mod:str, fcn:str):void
 address RMTregister
-comment "Register a <mod>.<fcn> at a remote site.";
+comment "Register <mod>.<fcn> at the remote site.";
 
-pattern exec(conn:str, mod:str, func:str):rmtobj
+pattern exec(conn:rmtconn, mod:str, func:str):rmtobj
 address RMTexec
-comment "Remotely executes function mod.func using the argument list
-and returns the handle to its result";
-pattern exec(conn:str, mod:str, func:str, :rmtobj...):rmtobj
+comment "Remotely executes <mod>.<func> and returns the handle to its result";
+pattern exec(conn:rmtconn, mod:str, func:str, :rmtobj...):rmtobj
 address RMTexec
-comment "Remotely executes function mod.func using the argument list
+comment "Remotely executes <mod>.<func> using the argument list
 of remote objects and returns the handle to its result";
 
 @h
@@ -157,8 +152,8 @@ can be used to issue a safe, but blocking get/put/exec/register request.
 @- Implementation
 @h
 typedef struct _connection {
-	MT_Lock			  lock;		/* lock to avoid interference */
-	char               *name;  /* name of the connection */
+	MT_Lock            lock;      /* lock to avoid interference */
+	char               *name;     /* name of the connection */
 	Mapi               mconn;     /* the Mapi handle for the connection */
 	size_t             nextid;    /* id counter */
 	struct _connection *next;     /* the next connection in the list */
@@ -167,7 +162,6 @@ typedef struct _connection {
 @h
 remote_export str RMTprelude(int *ret);
 remote_export str RMTepilogue(int *ret);
-remote_export str RMTfindconn(connection *ret, str conn);
 @c
 static connection connections = NULL;
 
@@ -179,34 +173,54 @@ static connection connections = NULL;
  * doesn't check the argument conn, as it should have been checked
  * already.
  */
-str
+static INLINE str
 RMTfindconn(connection *ret, str conn) {
-	connection c = connections;
+	connection c;
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
-	mal_set_lock(mal_remoteLock,"remote.find"); /* nobody allowed here */
+	mal_set_lock(mal_remoteLock, "remote.<findconn>"); /* global connections */
+	c = connections;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			/* ok found, ensure it is connected */
-			mal_set_lock(c->lock,"remote.find"); /* nobody allowed here */
+			mal_set_lock(c->lock, "remote.<findconn>"); /* shared connection */
 			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-				mal_unset_lock(c->lock,"remote.find");
-				mal_unset_lock(mal_remoteLock,"remote.find"); 
+				mal_unset_lock(c->lock, "remote.<findconn>");
+				mal_unset_lock(mal_remoteLock, "remote.<findconn>"); 
 				throw(IO, "remote.<findconn>", "an error occurred during "
-						"(re)connect of connection '%s': %s",
+						"connect of '%s': %s",
 						conn, mapi_error_str(c->mconn));
 				/* TODO: throw away connection? */
 			}
 			*ret = c;
-			mal_unset_lock(c->lock,"remote.find");
-			mal_unset_lock(mal_remoteLock,"remote.find"); 
+			mal_unset_lock(c->lock, "remote.<findconn>");
+			mal_unset_lock(mal_remoteLock, "remote.<findconn>"); 
 			return(MAL_SUCCEED);
 		}
-		c= c->next;
+		c = c->next;
 	}
-	mal_unset_lock(mal_remoteLock,"remote.find"); 
-	throw(MAL, "remote.<findconn>", "no such connection with name '%s'", conn);
+	mal_unset_lock(mal_remoteLock, "remote.<findconn>"); 
+	/* don't print conn, it contains the password */
+	throw(MAL, "remote.<findconn>", "no such connection '%s'", conn);
+}
+
+@h
+remote_export str RMTfindConnection(connection *ret, str conn);
+@c
+/**
+ * Small wrapper around RMTfindconn just for the Octopus optimiser.
+ * Martin likes to break open protection schemes just to get things to
+ * work.  I doubt whether it is a good approach, but at least this way I
+ * protect my own code.
+ */
+remote_export str RMTfindConnection(connection *ret, str conn)
+{
+	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
+		throw(ILLARG, "remote.<findconnection>",
+				"connection name is NULL or nil");
+
+	return(RMTfindconn(ret, conn));
 }
 
 /**
@@ -216,14 +230,11 @@ RMTfindconn(connection *ret, str conn) {
  * the argument conn, as it should have been checked already.
  * Make sure that the identifier is of the proper syntax.
  */
-static INLINE str /*synchronized*/
+static INLINE str
 RMTgetNextId(str *ret, connection conn) {
 	char buf[BUFSIZ];
-	char *s;
+
 	snprintf(buf, BUFSIZ, "rmt_%s_" SZFMT, conn->name, conn->nextid++);
-	for(s= buf; *s; s++)
-		if( !isalpha((int) *s) && !isdigit((int) *s))
-			*s= '_';
 
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
@@ -474,7 +485,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	value = getArgReference(stk, pci, 2);
 
 	/* this call should be a single transaction over the channel*/
-	mal_set_lock(c->lock,"remote.put"); 
+	mal_set_lock(c->lock, "remote.put"); 
 
 	/* get a free identifier for the remote host */
 	RMTgetNextId(&tmp, c);
@@ -486,7 +497,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
 	if (type == TYPE_any || isAnyExpression(type)) {
-		mal_unset_lock(c->lock,"remote.put"); 
+		mal_unset_lock(c->lock, "remote.put"); 
 		throw(MAL, "remote.put", "cannot deal with '%s' type",
 				getTypeName(type));
 	} else if (isaBatType(type)) {
@@ -516,7 +527,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		bid = *(int *)value;
 		if ((b = BATdescriptor(bid)) == NULL){
-			mal_unset_lock(c->lock,"remote.put"); 
+			mal_unset_lock(c->lock, "remote.put"); 
 			throw(MAL, "remote.put", "cannot access BAT descriptor");
 		}
 
@@ -526,8 +537,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-		if ( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED ){
-			mal_unset_lock(c->lock,"remote.put"); 
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
+			mal_unset_lock(c->lock, "remote.put");
 			return tmp;
 		}
 		mapi_close_handle(mhdl);
@@ -542,8 +553,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-			if( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED){
-				mal_unset_lock(c->lock,"remote.put"); 
+			if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
+				mal_unset_lock(c->lock, "remote.put"); 
 				return tmp;
 			}
 			/* we leak headv and tailv here if an exception is thrown */
@@ -566,13 +577,13 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		stream_printf(ctxt->fdout,"#remote.put:%s\n",qbuf);
 #endif
-		if( (tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED){
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
 			mal_unset_lock(c->lock,"remote.put"); 
 			return tmp;
 		}
 		mapi_close_handle(mhdl);
 	}
-	mal_unset_lock(c->lock,"remote.put"); 
+	mal_unset_lock(c->lock, "remote.put"); 
 
 	/* return the identifier */
 	v = getArgReference(stk,pci,0);
@@ -728,14 +739,35 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 @h
-remote_export str RMTcreate(
+remote_export str RMTcreateDef(
 		str *ret,
-		str *conn,
 		str *host,
 		int *port,
 		str *dbname,
 		str *user,
 		str *passwd);
+@c
+remote_export str RMTcreateDef(
+		str *ret,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd)
+{
+	bit f = TRUE;
+	return(RMTcreate(ret, host, port, dbname, user, passwd, &f));
+}
+
+@h
+remote_export str RMTcreate(
+		str *ret,
+		str *host,
+		int *port,
+		str *dbname,
+		str *user,
+		str *passwd,
+		bit *persistent);
 @c
 #define serveget "\
     function user.remote_internal_servegetbat(type:str, o:bat[:any_1,:any_2]):void;\n\
@@ -769,20 +801,21 @@ remote_export str RMTcreate(
 "
 str RMTcreate(
 		str *ret,
-		str *conn,
 		str *host,
 		int *port,
 		str *dbname,
 		str *user,
-		str *passwd)
+		str *passwd,
+		bit *persistent)
 {
 	connection c;
 	MapiHdl mhdl;
+	char conn[BUFSIZ];
+	char *s;
 	str tmp;
+	int id;
 
 	*ret = 0;
-	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.create", "connection name is NULL or nil");
 	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "hostname is NULL or nil");
 	if (port == NULL || *port <= 0)
@@ -793,11 +826,23 @@ str RMTcreate(
 		throw(ILLARG, "remote.create", "username is NULL or nil");
 	if (passwd == NULL || *passwd == NULL || strcmp(*passwd, (str)str_nil) == 0)
 		throw(ILLARG, "remote.create", "password is NULL or nil");
+	if (persistent == NULL)
+		throw(ILLARG, "remote.create", "persistent is NULL");
 
 
+	/* generate a connection name */
+	id = 0;
+	if (*persistent == FALSE)
+		id = 1;
+	if (strcmp(*dbname, (str)str_nil) == 0) {
+		snprintf(conn, BUFSIZ, "%s_%d_%s_%d", *host, *port, *user, id);
+	} else {
+		snprintf(conn, BUFSIZ, "%s_%d_%s_%s_%d", *host, *port, *dbname, *user, id);
+	}
+
+	mal_set_lock(mal_remoteLock, "remote.create"); /* global connections */
 	/* find a free slot, start with special case of connections not
 	 * being set */
-	mal_set_lock(mal_remoteLock,"remote.connect"); /* nobody allowed here */
 	if (connections == NULL) {
 		connections = GDKzalloc(sizeof(struct _connection));
 		c = connections;
@@ -807,28 +852,49 @@ str RMTcreate(
 		do {
 			/* at the same time also check if this connection name
 			 * already exists */
-			if (strcmp(c->name, *conn) == 0){
-				mal_unset_lock(mal_remoteLock,"remote.connect"); 
-				throw(MAL, "remote.create", "a connection with name "
-						"'%s' already exists", *conn);
+			if (strcmp(c->name, conn) == 0) {
+				if (*persistent == TRUE) {
+					*ret = strdup(conn);
+					mal_unset_lock(mal_remoteLock, "remote.create"); 
+					return(MAL_SUCCEED);
+				}
+
+				/* try the next id, duplicate non-persistent connects
+				 * must be allowed */
+				id++;
+				if (strcmp(*dbname, (str)str_nil) == 0) {
+					snprintf(conn, BUFSIZ, "%s_%d_%s_%d",
+							*host, *port, *user, id);
+				} else {
+					snprintf(conn, BUFSIZ, "%s_%d_%s_%s_%d",
+							*host, *port, *dbname, *user, id);
+				}
 			}
 			t = c;
 			c = c->next;
 		} while (c != NULL);
 		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
-	MT_lock_init( &c->lock, "remote.create");
 
-	c->name = GDKstrdup(*conn);
+	/* this can probably screw up the uniqueness, but we need it since
+	 * we will construct MAL identifiers using it */
+	for (s = conn; *s != '\0'; s++) {
+		if (!isalpha((int)*s) && !isdigit((int)*s)) {
+			*s = '_';
+		}
+	}
+
+	c->name = GDKstrdup(conn);
 	c->nextid = 0;
 	c->next = NULL;
 	c->mconn = mapi_mapi(*host, *port, *user, *passwd, "mal",
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
-	mal_unset_lock(mal_remoteLock,"remote.connect"); 
 
-	mal_set_lock(c->lock,"remote.create"); 
+	/* done global, switch to connection-local */
+	mal_set_lock(c->lock, "remote.create");
+	mal_unset_lock(mal_remoteLock, "remote.create"); 
+
 	if (mapi_reconnect(c->mconn) != MOK){
-		mal_unset_lock(c->lock,"remote.create"); 
 		throw(IO, "remote.create", "an error occurred during "
 				"connect of connection '%s': %s",
 				conn, mapi_error_str(c->mconn));
@@ -838,53 +904,23 @@ str RMTcreate(
 #ifdef _DEBUG_MAPI_
 	mapi_trace(c->mconn,TRUE);
 #endif
+
 	/* initialise remote helper function */
-	if( (tmp = RMTquery(&mhdl, "remote.create", c->mconn, serveget)) != MAL_SUCCEED){
-		mal_unset_lock(c->lock,"remote.create"); 
+	if ((tmp = RMTquery(&mhdl, "remote.create",
+					c->mconn, serveget)) != MAL_SUCCEED)
+	{
+		mal_unset_lock(c->lock, "remote.create"); 
 		return tmp;
 	}
 	mapi_close_handle(mhdl);
 
 	/* just make sure the return isn't garbage */
-	*ret = GDKstrdup(*conn);
+	*ret = GDKstrdup(conn);
 
-	mal_unset_lock(c->lock,"remote.create"); 
+	mal_unset_lock(c->lock, "remote.create"); 
 	return(MAL_SUCCEED);
 }
 
-@h
-remote_export str RMTreconnect(
-		str *ret,
-		str *conn,
-		str *host,
-		int *port,
-		str *dbname,
-		str *user,
-		str *passwd);
-@c
-remote_export str RMTreconnect(
-		str *ret,
-		str *conn,
-		str *host,
-		int *port,
-		str *dbname,
-		str *user,
-		str *passwd)
-{
-	connection c;
-	str msg;
-
-	*ret = 0;
-	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.reconnect", "connection name is NULL or nil");
-	msg =RMTfindconn(&c, *conn);
-	if (msg == MAL_SUCCEED ){
-		*ret = GDKstrdup(*conn);
-		return MAL_SUCCEED;
-	}
-	GDKfree(msg);
-	return RMTcreate(ret,conn,host,port,dbname,user,passwd);
-}
 @h
 remote_export str RMTdestroy(int *ret, str *conn);
 @c
@@ -898,16 +934,18 @@ str RMTdestroy(int *ret, str *conn) {
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 
-	mal_set_lock(mal_remoteLock,"remote.destroy"); /* nobody allowed here */
+	mal_set_lock(mal_remoteLock, "remote.destroy"); /* global connections */
 	c = connections;
-	/* walk through the list */
 	t = NULL;
+	/* walk through the list */
 	while (c != NULL) {
 		if (strcmp(c->name, *conn) == 0) {
 			/* ok, delete it... */
 			if (t == NULL) { /* the top */
 				t = c->next;
+				mal_set_lock(c->lock, "remote.destroy"); /* shared connection */
 				mapi_destroy(c->mconn);
+				mal_unset_lock(c->lock, "remote.destroy");
 				GDKfree(c->name);
 				GDKfree(c);
 				connections = t;
@@ -915,17 +953,20 @@ str RMTdestroy(int *ret, str *conn) {
 				/* connect the grand child to the grand parent */
 				t->next = c->next;
 				/* and kill the parent in the middle */
+				mal_set_lock(c->lock, "remote.destroy"); /* shared connection */
 				mapi_destroy(c->mconn);
+				mal_unset_lock(c->lock, "remote.destroy");
 				GDKfree(c->name);
 				GDKfree(c);
 			}
 
-			mal_unset_lock(mal_remoteLock,"remote.destroy"); /* nobody allowed here */
+			mal_unset_lock(mal_remoteLock, "remote.destroy");
 			return(MAL_SUCCEED);
 		}
+		c = c->next;
 	}
 
-	mal_unset_lock(mal_remoteLock,"remote.destroy"); /* nobody allowed here */
+	mal_unset_lock(mal_remoteLock, "remote.destroy");
 	throw(MAL, "remote.destroy", "no such connection with name '%s'", *conn);
 }
 @h /* _REMOTE_DEF */

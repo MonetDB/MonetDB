@@ -22,7 +22,7 @@ function user.main():void;
     h := sabaoth.getLocalConnectionHost();
     p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    conn := remote.create(h,p,nil:str,"monetdb","monetdb");
     a := "Fabian!";
     b := 4.30000019;
     c := 12;
@@ -31,15 +31,15 @@ function user.main():void;
     bat.insert(d,nil:str,2);
     bat.insert(d,"boe",nil:int);
 # store the values 
-    i := remote.put("test",a);
-    j := remote.put("test",b);
-    k := remote.put("test",c);
-    l := remote.put("test",d);
+    i := remote.put(conn,a);
+    j := remote.put(conn,b);
+    k := remote.put(conn,c);
+    l := remote.put(conn,d);
 # retrieve the value 
-    r := remote.get("test",i);
-    s := remote.get("test",j);
-    t := remote.get("test",k);
-    u := remote.get("test",l);
+    r := remote.get(conn,i);
+    s := remote.get(conn,j);
+    t := remote.get(conn,k);
+    u := remote.get(conn,l);
 # see if it really is here 
     io.print(r);
     io.print(s);
@@ -47,7 +47,7 @@ function user.main():void;
     io.print(u);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");
+    remote.destroy(conn);
 end main;
 [ "Fabian!" ]
 [ 4.30000019 ]

@@ -24,30 +24,32 @@ function user.main():void;
     h := sabaoth.getLocalConnectionHost();
     p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create("test",h,p,nil:str,"monetdb","monetdb");
+    conn := remote.create(h,p,nil:str,"monetdb","monetdb");
 # retrieve a value (that for sure won't exist) 
-    x := remote.get("test",b1:rmtobj);
+    x := remote.get(conn,b1:rmtobj);
 catch MALException;
     io.printf("!%s\n",MALException);
 exit MALException;
-# should raise an exception (the arguments don't matter here) 
-    remote.create("test","localhost",50000,nil:str,"test","test");
-catch MALException;
-    io.printf("!%s\n",MALException);
-exit MALException;
+# should raise an exception (the arguments should make it fail) 
+    i := remote.create("localhost",63000,nil:str,"test","test");
+catch IOException;
+# make it a comment, the connection name is always different 
+    io.printf("#!%s\n",IOException);
+exit IOException;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
-    remote.destroy("test");
+    remote.destroy(conn);
 # this should fail now 
-    remote.destroy("test");
+    remote.destroy(conn);
 catch MALException;
-    io.printf("!%s\n",MALException);
+# make it a comment, the connection name is always different 
+    io.printf("#!%s\n",MALException);
 exit MALException;
 end main;
 !MALException:remote.get:'b1' may not be used before being initialized
 
-!MALException:remote.create:a connection with name 'test' already exists
-!MALException:remote.destroy:no such connection with name 'test'
+#!IOException:remote.create:an error occurred during connect of connection 'localhost_63000_test_1': Setup connection failed
+#!MALException:remote.destroy:no such connection with name 'pegasus_33201_monetdb_1'
 
 # 10:57:19 >  
 # 10:57:19 >  Done.
