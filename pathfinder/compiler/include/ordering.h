@@ -85,6 +85,8 @@ PFord_ordering_t PFord_refine (const PFord_ordering_t,
                                const PFalg_col_t,
                                const bool);
 
+#define PFord_concat(a,b) PFarray_concat(PFarray_copy ((a)), (b))
+
 unsigned int PFord_count (const PFord_ordering_t ordering);
 
 PFalg_col_t PFord_order_col_at (const PFord_ordering_t ordering,
