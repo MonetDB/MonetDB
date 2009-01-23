@@ -183,6 +183,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term seqty1         =  66
 %term all            =  67
 %term llscjoin       = 100
+%term llscjoin_dup   = 101
 %term doc_tbl        = 120
 %term doc_access     = 121
 %term twig           = 122
@@ -269,6 +270,7 @@ Rel:      seqty1 (Rel)                                             =  79 (10);
 Rel:      all (Rel)                                                =  80 (10);
 
 Rel:      llscjoin (Rel)                                           =  90 (10);
+Rel:      llscjoin_dup (Rel)                                       =  91 (10);
 Rel:      doc_tbl (Rel)                                            = 100 (10);
 Rel:      doc_access (Rel)                                         = 101 (10);
 Rel:      twig (Twig)                                              = 102 (10);
@@ -1738,11 +1740,13 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
      }
 } /* fold) */
 
+#define llscj(p)     llscj_worker ((p), false)
+#define llscj_dup(p) llscj_worker ((p), true)
 /**
  * Translate loop-lifted staircase joins.
  */
 static void
-llscj (const PFpa_op_t *p)
+llscj_worker (PFpa_op_t *p, bool duplicates)
 { /* fold( */
     /* abbreviations for input expressions */
     PFord_ordering_t in  = p->sem.scjoin.in;
@@ -1766,15 +1770,18 @@ llscj (const PFpa_op_t *p)
             *ret_frag = new_var (p->refctr), /* the `frag' result variable */
             *ret_pre  = new_var (p->refctr); /* the `pre' result variable */
 
-    PFalg_col_t pa_iter = p->sem.scjoin.iter;
-    PFalg_col_t pa_item = p->sem.scjoin.item;
+    PFalg_col_t pa_iter     = p->sem.scjoin.iter,
+                pa_item     = p->sem.scjoin.item,
+                pa_item_res;
 
-    PFalg_simple_type_t iter_ty     = type_of (L(p), pa_iter),
-                        item_ty     = type_of (L(p), pa_item),
-                        item_res_ty = type_of (p, pa_item);
-
-    assert (iter_ty == aat_nat);
     assert (p); assert (L(p)); assert (L(p)->env);
+
+    if (duplicates)
+        pa_item_res = pa_iter;
+    else {
+        pa_item_res = pa_item;
+        assert (type_of (L(p), pa_iter) == aat_nat);
+    }
 
     /* collect all information to check *//* fold( */
     /* translate axis information */
@@ -1794,10 +1801,10 @@ llscj (const PFpa_op_t *p)
         case alg_attr:   axis = var (PF_MIL_VAR_AXIS_ATTR);   break;
         /* StandOff axes */
         case alg_so_select_narrow:         
-                        axis = var (PF_MIL_VAR_AXIS_SELECT_NARROW);   
+                         axis = var (PF_MIL_VAR_AXIS_SELECT_NARROW);   
                                                               break;
         case alg_so_select_wide:   
-                        axis = var (PF_MIL_VAR_AXIS_SELECT_WIDE);
+                         axis = var (PF_MIL_VAR_AXIS_SELECT_WIDE);
                                                               break;
     }
 
@@ -1806,19 +1813,32 @@ llscj (const PFpa_op_t *p)
      * MIL functions expect this information encoded in an integer
      * value that we build up here.
      */
-    if (PFord_implies (in, sortby (pa_iter, pa_item)))
-        o = 0;
-    else if (PFord_implies (in, sortby (pa_item, pa_iter)))
-        o = 1;
-    else
-        PFoops (OOPS_FATAL, "illegal argument for input ordering");
+    if (duplicates) {
+        if (in) /* if there is an order it's item order */
+            o = 1;
+        else
+            o = 0;
 
-    if (PFord_implies (out, sortby (pa_iter, pa_item)))
-        o |= 0;
-    else if (PFord_implies (out, sortby (pa_item, pa_iter)))
-        o |= 2;
-    else
-        PFoops (OOPS_FATAL, "illegal argument for output ordering");
+        if (out) /* if there is an order it's item order */
+            o |= 2;
+        else
+            o |= 0;
+    }
+    else {
+        if (PFord_implies (in, sortby (pa_iter, pa_item)))
+            o = 0;
+        else if (PFord_implies (in, sortby (pa_item, pa_iter)))
+            o = 1;
+        else
+            PFoops (OOPS_FATAL, "illegal argument for input ordering");
+
+        if (PFord_implies (out, sortby (pa_iter, pa_item)))
+            o |= 0;
+        else if (PFord_implies (out, sortby (pa_item, pa_iter)))
+            o |= 2;
+        else
+            PFoops (OOPS_FATAL, "illegal argument for output ordering");
+    }
 
     order = lit_int (o);
 
@@ -1878,10 +1898,12 @@ llscj (const PFpa_op_t *p)
     execute (
          assgn (var (step->name),
                 step (axis, code,
-                      VAR (L(p)->env, pa_iter, iter_ty),
+                      duplicates /* for step_join use head as iter */
+                      ? mirror (VAR (L(p)->env, pa_item, aat_pre))
+                      : VAR (L(p)->env, pa_iter, type_of (L(p), pa_iter)),
                       VAR (L(p)->env, pa_item, aat_frag),
                       VAR (L(p)->env, pa_item, aat_pre),
-                      item_ty & aat_attr
+                      type_of (L(p), pa_item) & aat_attr
                       ? VAR (L(p)->env, pa_item, aat_attr)
                       : nil (),
                       var (PF_MIL_VAR_WS),
@@ -1909,18 +1931,24 @@ llscj (const PFpa_op_t *p)
                              var (ret_pre->name))));
 
     /* add the result variables to the environment */
-    env_add (p->env, pa_iter, aat_nat, ret_iter);
-    env_add (p->env, pa_item, aat_pre, ret_pre);
-    env_add (p->env, pa_item, aat_frag, ret_frag);
+    if (duplicates) {
+        env_map (p, L(p)->env, ret_iter);
+        unpin (ret_iter, p->refctr);
+    }
+    else
+        env_add (p->env, pa_iter, aat_nat, ret_iter);
 
-    if (item_res_ty & aat_attr) {
+    env_add (p->env, pa_item_res, aat_pre, ret_pre);
+    env_add (p->env, pa_item_res, aat_frag, ret_frag);
+
+    if (type_of (p, pa_item_res) & aat_attr) {
         mvar_t *ret_attr = new_var (p->refctr);
 
         execute (
              assgn (var (ret_attr->name),
                     fetch (var (step->name), lit_int (3))));
 
-        env_add (p->env, pa_item, aat_attr, ret_attr);
+        env_add (p->env, pa_item_res, aat_attr, ret_attr);
     }
 
     unpin (step, 1);
@@ -6739,6 +6767,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         /* Rel:      llscjoin (Rel) */
         case 90: /* fold( */
             llscj (p);
+            break; /* fold) */
+
+        /* Rel:      llscjoin_dup (Rel) */
+        case 91: /* fold( */
+            llscj_dup (p);
             break; /* fold) */
 
         /* Rel:      doc_tbl (Rel) */

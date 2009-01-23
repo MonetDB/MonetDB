@@ -100,7 +100,8 @@ static char *a_id[]  = {
     , [pa_cast]            = "CAST"
     , [pa_seqty1]          = "SEQTY1"
     , [pa_all]             = "ALL"
-    , [pa_llscjoin]        = "//| "
+    , [pa_llscjoin]        = "//|"
+    , [pa_llscjoin_dup]    = "//|+"
     , [pa_doc_tbl]         = "DOC"
     , [pa_doc_access]      = "access"
     , [pa_twig]            = "TWIG"             /* lawn \"#00FF00\" */
@@ -247,6 +248,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_seqty1]          = "\"#A0A0A0\""
         , [pa_all]             = "\"#A0A0A0\""
         , [pa_llscjoin]        = "\"#1E90FF\""
+        , [pa_llscjoin_dup]    = "\"#1E9099\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
         , [pa_doc_access]      = "\"#CCCCFF\""
         , [pa_twig]            = "\"#00FC59\""
@@ -518,6 +520,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             break;
 
         case pa_llscjoin:
+        case pa_llscjoin_dup:
             PFarray_printf (dot, "%s %s::%s",
                             a_id[n->kind],
                             PFalg_axis_str (n->sem.scjoin.spec.axis),
@@ -533,6 +536,10 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                 PFqname_loc (n->sem.scjoin.spec.qname));
             else
                 PFarray_printf (dot, "()");
+
+                PFarray_printf (dot, " (%s, %s)",
+                                PFcol_str (n->sem.scjoin.iter),
+                                PFcol_str (n->sem.scjoin.item));
             break;
 
         case pa_doc_access:

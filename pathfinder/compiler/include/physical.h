@@ -99,6 +99,7 @@ enum PFpa_op_kind_t {
                                    iteration (Pathfinder extension) */
     , pa_all             = 67 /**< test if all items in an iteration are true */
     , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
+    , pa_llscjoin_dup   = 101 /**< Loop-Lifted StaircaseJoin with duplicates */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
     , pa_doc_access     = 121 /**< Access to string content of loaded docs */
     , pa_twig           = 122 /**< twig root operator */
@@ -681,6 +682,15 @@ PFpa_op_t *PFpa_llscjoin (const PFpa_op_t *ctx,
                           const PFord_ordering_t out,
                           PFalg_col_t iter,
                           PFalg_col_t item);
+
+/**
+ * Duplicate-Generating StaircaseJoin operator.
+ */
+PFpa_op_t *PFpa_llscjoin_dup (const PFpa_op_t *ctx,
+                              PFalg_step_spec_t spec,
+                              bool item_order,
+                              PFalg_col_t item_res,
+                              PFalg_col_t item);
 
 /**
  * Access to persistently stored document table.

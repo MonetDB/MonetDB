@@ -968,6 +968,25 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         if (PFord_count (prefix) > 0)
             PFord_set_add (ret->orderings, prefix);
+
+        /* in case an ordering starts with a key column we can do more */
+        if (PFprop_key (n->prop, PFord_order_col_at (ni, 0))) {
+            PFalg_col_t  order_col = PFord_order_col_at (ni, 0);
+            unsigned int k;
+            for (k = 0; k < count; k++)
+                if (proj[k].old == order_col)
+                    break;
+            /* we have found an ordered key column that stays visible */
+            if (k < count) {
+                prefix = sortby (proj[k].new);
+                /* ... so we attach the rest of the projection list
+                   to the order criterion */
+                for (k = 0; k < count; k++)
+                    if (proj[k].old != order_col)
+                        prefix = PFord_refine (prefix, proj[k].new, DIR_ASC);
+                PFord_set_add (ret->orderings, prefix);
+            }
+        }
     }
 
     /* prune away duplicate orderings */
@@ -2266,7 +2285,8 @@ PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
 PFpa_op_t *
 PFpa_mark (const PFpa_op_t *n, PFalg_col_t new_col)
 {
-    PFpa_op_t *ret = wire1 (pa_mark, n);
+    PFpa_op_t       *ret       = wire1 (pa_mark, n);
+    PFord_ordering_t res_order = sortby (new_col);
 
     ret->sem.mark.res  = new_col;
     ret->sem.mark.part = col_NULL;
@@ -2284,6 +2304,7 @@ PFpa_mark (const PFpa_op_t *n, PFalg_col_t new_col)
         = (PFalg_schm_item_t) { .name = new_col, .type = aat_nat };
 
     /* ---- orderings ---- */
+    PFord_set_add (ret->orderings, res_order);
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
@@ -2293,9 +2314,14 @@ PFpa_mark (const PFpa_op_t *n, PFalg_col_t new_col)
                        PFord_refine (
                            PFord_set_at (n->orderings, i),
                            new_col, DIR_ASC));
+        /* if we have already an ordering we can also add the new
+           generated column at the front. It won't break the ordering. */
+        PFord_set_add (ret->orderings,
+                       PFord_concat (
+                           res_order,
+                           PFord_set_at (n->orderings, i)));
     }
 
-    PFord_set_add (ret->orderings, sortby (new_col));
 
     /* ---- costs ---- */
     ret->cost = DEFAULT_COST + n->cost;
@@ -2629,6 +2655,162 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
     }
 
     ret->cost += ctx->cost;
+
+    return ret;
+}
+
+/**
+ * Duplicate-Generating StaircaseJoin operator.
+ */
+PFpa_op_t *
+PFpa_llscjoin_dup (const PFpa_op_t *ctx,
+                   PFalg_step_spec_t spec,
+                   bool res_item_order,
+                   PFalg_col_t item_res,
+                   PFalg_col_t item)
+{
+    PFpa_op_t       *ret        = wire1 (pa_llscjoin_dup, ctx);
+    PFord_ordering_t item_order = sortby (item);
+
+#ifndef NDEBUG
+    assert (check_col (ctx, item));
+#endif
+
+    /* store semantic content in node */
+    ret->sem.scjoin.spec = spec;
+    ret->sem.scjoin.iter = item_res;
+    ret->sem.scjoin.item = item;
+    ret->sem.scjoin.in   = NULL;
+    ret->sem.scjoin.out  = NULL;
+
+    /* The schema of the result part is iter|item */
+    ret->schema.count = ctx->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    for (unsigned int i = 0; i < ctx->schema.count; i++)
+        ret->schema.items[i] = ctx->schema.items[i];
+
+    /* the result of an attribute axis is also of type attribute */
+    if (spec.axis == alg_attr)
+        ret->schema.items[ctx->schema.count]
+            = (PFalg_schm_item_t) { .name = item_res, .type = aat_anode };
+    else if (spec.axis == alg_anc_s)
+        ret->schema.items[ctx->schema.count]
+            = (PFalg_schm_item_t) { .name = item_res,
+                                    .type = type_of (ctx, item) | aat_pnode };
+    else if (spec.axis == alg_desc_s || spec.axis == alg_self)
+        ret->schema.items[ctx->schema.count]
+            = (PFalg_schm_item_t) { .name = item_res,
+                                    .type = type_of (ctx, item) };
+    else
+        ret->schema.items[ctx->schema.count]
+            = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
+
+    /* check input ordering */
+    for (unsigned int i = 0; i < PFord_set_count (ctx->orderings); i++)
+        if (PFord_implies (PFord_set_at (ctx->orderings, i), item_order)) {
+            ret->sem.scjoin.in = item_order;
+            break;
+        }
+
+    /* ---- LLSCJoin: orderings ---- */
+
+    if (res_item_order) {
+        PFord_ordering_t item_res_order = sortby (item_res);
+        ret->sem.scjoin.out = item_res_order;
+        /* result is in item_res_order order and
+           item_res_order refined with all input orderings */
+        PFord_set_add (ret->orderings, item_res_order);
+        for (unsigned int i = 0; i < PFord_set_count (ctx->orderings); i++)
+            PFord_set_add (ret->orderings, PFord_concat (
+                                               item_res_order,
+                                               PFord_set_at (ctx->orderings, i)));
+        if (ret->sem.scjoin.in && 
+            LEVEL_KNOWN(PFprop_level (ctx->prop, item)) &&
+            (spec.axis == alg_chld || spec.axis == alg_attr))
+            for (unsigned int i = 0; i < PFord_set_count (ctx->orderings); i++) {
+                PFord_set_add (ret->orderings, PFord_set_at (ctx->orderings, i));
+                PFord_set_add (ret->orderings, PFord_refine (
+                                                   PFord_set_at (ctx->orderings, i),
+                                                   item_res, DIR_ASC));
+            }
+    }
+    else {
+        /* ordering stays the same and
+           all input orderings refined with the item columns  */
+        for (unsigned int i = 0; i < PFord_set_count (ctx->orderings); i++) {
+            PFord_set_add (ret->orderings, PFord_set_at (ctx->orderings, i));
+            PFord_set_add (ret->orderings, PFord_refine (
+                                               PFord_set_at (ctx->orderings, i),
+                                               item_res, DIR_ASC));
+        }
+    }
+
+    /* ---- LLSCJoin: costs ---- */
+
+    if (spec.axis == alg_attr) {
+        if (!ret->sem.scjoin.in) {
+            /* input has input|item ordering */
+
+            if (!ret->sem.scjoin.out) {
+                /* output has input|item ordering */
+                ret->cost = 0 * SORT_COST;
+            }
+            else {
+                /* output has item|input ordering */
+                ret->cost = 2 * SORT_COST;
+            }
+
+        }
+        else {
+            /* input has item|input ordering */
+
+            if (!ret->sem.scjoin.out) {
+                /* output has input|item ordering */
+                ret->cost = 1 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+
+                /* should be cheapest */
+                ret->cost = 3 * SORT_COST;
+            }
+        }
+    }
+    else {
+        if (!ret->sem.scjoin.in) {
+            /* input has input|item ordering */
+
+            if (!ret->sem.scjoin.out) {
+                /* output has input|item ordering */
+                ret->cost = 3 * SORT_COST;
+            }
+            else {
+                /* output has item|input ordering */
+                ret->cost = 1 * SORT_COST;
+            }
+
+        }
+        else {
+            /* input has item|input ordering */
+
+            if (!ret->sem.scjoin.out) {
+                /* output has input|item ordering */
+                ret->cost = 2 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+
+                /* should be cheapest */
+                ret->cost = 0 * SORT_COST;
+            }
+        }
+    }
+
+    /* staircase-join with duplicates should
+       be more expensive than normal staircase-join */
+    ret->cost += ctx->cost + 5 * JOIN_COST;
 
     return ret;
 }

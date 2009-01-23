@@ -1607,82 +1607,24 @@ plan_step (const PFla_op_t *n)
 }
 
 /**
- * Create physical plan for the path step join operator.
- *
- * This is only a fallback solution for rewrites that return step_joins
- * instead of path steps.
- *
- * step_join:   |
- *             pi_schema(n+item_res)
- *              |
- *             |X|_2=1
- *     ________/ \________
- *    /                   \
- *  step_2,item_res       |
- *   |                    |
- *  pi_2:1,item_res:item  |
- *    \________   ________/
- *             \ /
- *              #_1
- *              |
+ * Create physical plan for the path step join operator
+ * (XPath location steps with duplicates).
  */
 static PFplanlist_t *
 plan_step_join (const PFla_op_t *n)
 {
-    /* some assertions */
-    assert (n); assert (n->kind == la_step_join);
-    assert (R(n)); assert (R(n)->plans);
+    PFplanlist_t *ret  = new_planlist ();
 
-    PFalg_col_t   item_res  = n->sem.step.item_res,
-                  item      = n->sem.step.item,
-                  iter,
-                  iter2;
-    unsigned int  count     = n->schema.count,
-                  count_in  = 2;
-    PFalg_proj_t *proj      = PFmalloc (count * sizeof (PFalg_proj_t)),
-                 *proj_in   = PFmalloc (count_in * sizeof (PFalg_proj_t));
-    PFplanlist_t *ret       = new_planlist ();
-    PFpa_op_t    *plan,
-                 *mark;
-
-    /* create the above projection list */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        proj[i] = PFalg_proj (n->schema.items[i].name,
-                              n->schema.items[i].name);
-
-    /* get ourselves two new column name
-       (for creating keys using mark and joining back) */
-    iter  = PFcol_new (col_iter);
-    iter2 = PFcol_new (col_iter);
-
-    /* create the inner projection list */
-    proj_in[0] = PFalg_proj (iter2, iter);
-    proj_in[1] = PFalg_proj (item_res, item);
-
-    /* create the translation for every input plan */
-    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++) {
-        plan = *(plan_t **) PFarray_at (R(n)->plans, i);
-        mark = mark (plan, iter);
-
-        add_plan (ret,
-                  project (
-                      leftjoin (
-                          iter,
-                          iter2,
-                          mark,
-                          llscjoin (
-                              project (
-                                  mark,
-                                  count_in,
-                                  proj_in),
-                              n->sem.step.spec,
-                              sortby (iter2, item_res),
-                              sortby (iter2, item_res),
-                              iter2,
-                              item_res)),
-                      count,
-                      proj));
-    }
+    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
+        /* result in both original and item order */
+        for (unsigned short o = 0; o < 2; o++)
+            add_plan (ret,
+                      llscjoin_dup (
+                          *(plan_t **) PFarray_at (R(n)->plans, i),
+                          n->sem.step.spec,
+                          o ? true : false,
+                          n->sem.step.item_res,
+                          n->sem.step.item));
 
     return ret;
 }
