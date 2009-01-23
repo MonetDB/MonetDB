@@ -23,6 +23,9 @@
 
 #include <monetdb_winconfig.h>
 
+#define lstat stat
+#define S_ISREG(mode)	(((mode) & _S_IFMT) == _S_IFREG)
+
 /* architecture-dependent files */
 #define MONETDB_EXEC_PREFIX "${prefix}"
 
