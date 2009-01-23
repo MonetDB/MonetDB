@@ -273,6 +273,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "standoff_end",	  "end"																																																															  ]
 [ "config",		  "/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf"														  ]
 [ "gdk_nr_threads",	  "4"																				  ]
+[ "xrpc_docroot",     "/scratch/monet.GNU.64.64.d.0.4074/MonetDB4/.GNU.64.64.d.0-Fedora8/share/MonetDB/xrpc"   ]
 [ "mapi_open",		  "true"																										  ]
 [ "xrpc_open",		  "true"																			  ]
 [ "xrpc_port",		  "40862"																			  ]
