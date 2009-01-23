@@ -1302,8 +1302,7 @@ opt_complex (PFla_op_t *p)
            value is true. */
         case la_bool_and:
             if (PFprop_req_bool_val (p->prop, p->sem.binary.res) &&
-                PFprop_req_bool_val_val (p->prop, p->sem.binary.res) &&
-                PFprop_set (p->prop)) {
+                PFprop_req_bool_val_val (p->prop, p->sem.binary.res)) {
                 *p = *PFla_attach (
                           PFla_select (
                               PFla_select (

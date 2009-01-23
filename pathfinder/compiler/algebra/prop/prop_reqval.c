@@ -503,12 +503,30 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
 
        This check is necessary to make sure that the rewrites don't
        change the cardinality for unaffected branches (e.g. a difference
-       operator referencing the result of a Boolean expression). */
-    if (MULTIPLE_INPUT_EDGES(n) && MAP_LIST(n))
+       operator referencing the result of a Boolean expression) and 
+       also do not change the cardinality if a consuming operator works
+       on the complete input. */
+    if (MAP_LIST(n) &&
+        (MULTIPLE_INPUT_EDGES(n) ||
+         n->kind == la_pos_select ||
+         n->kind == la_avg ||
+         n->kind == la_max ||
+         n->kind == la_min ||
+         n->kind == la_sum ||
+         n->kind == la_count ||
+         n->kind == la_seqty1 ||
+         n->kind == la_all ||
+         n->kind == la_rownum ||
+         n->kind == la_rowrank ||
+         n->kind == la_twig ||
+         n->kind == la_rec_fix ||
+         n->kind == la_fun_call ||
+         n->kind == la_string_join))
         for (unsigned int i = 0; i < PFarray_last (MAP_LIST(n)); i++) {
             map = (req_val_t *) PFarray_at (MAP_LIST(n), i);
             map->sel_name = false;
             map->sel_val  = false;
+            map->filter   = false;
         }
 
     /* Adjust the properties of the algebra operators based
