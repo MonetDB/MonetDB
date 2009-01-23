@@ -839,12 +839,8 @@ yes-*-*)
 	case $icc_ver in
 	8.1*)	CFLAGS="$CFLAGS -wd1418" ;;
 	9.*)	CFLAGS="$CFLAGS -wd1418" ;;
-	10.*)	CFLAGS="$CFLAGS -wd1418" 
-		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
-		CC="$CC -fPIC"		 ;;
-	11.*)	CFLAGS="$CFLAGS -wd1418"
-		dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
-		CC="$CC -fPIC"		 ;;
+	10.*)	CFLAGS="$CFLAGS -wd1418" ;;
+	11.*)	CFLAGS="$CFLAGS -wd1418" ;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
@@ -945,6 +941,16 @@ fi
 AC_SUBST(CFLAGS)
 AC_SUBST(X_CFLAGS)
 AC_SUBST(NO_X_CFLAGS)
+
+dnl icc needs -fPIC (but the current autoconf still uses -KPIC)
+case "$GCC-$CC-$host_os" in
+-*icc*-linux*|-*ecc*-linux*)
+	case $icc_ver in
+	10.*) 	CC="$CC -fPIC"		 ;;
+	11.*) 	CC="$CC -fPIC"		 ;;
+	*)	;;
+	esac
+esac
 
 dnl find out, whether the C compiler is C99 compliant
 AC_MSG_CHECKING([if your compiler is C99 compliant])
