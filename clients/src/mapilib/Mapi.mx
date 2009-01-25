@@ -532,16 +532,16 @@ pointers is NULL it indicates a NULL/nil value.
 
 @subsection Getting Results
 @itemize
-@item int mapi_get_field_count(Mapi mid)
+@item int mapi_get_field_count(MapiHdl mid)
 
 Return the number of fields in the current row.
 
-@item int mapi_get_row_count(Mapi mid)
+@item int mapi_get_row_count(MapiHdl mid)
 
 If possible, return the number of rows in the last select call.  A -1
 is returned if this information is not available.
 
-@item int mapi_get_last_id(Mapi mid)
+@item int mapi_get_last_id(MapiHdl mid)
 
 If possible, return the last inserted id of auto_increment (or alike) column.  
 A -1 is returned if this information is not available. We restrict this to
@@ -784,14 +784,6 @@ output returned from the server.
 @item  char *mapi_get_lang(Mapi mid)
 @item  char *mapi_get_motd(Mapi mid)
 
-@item char **mapi_tables(Mapi mid)
-
-Return a list of accessible database tables.
-
-@item char **mapi_fields(Mapi mid)
-
-Return a list of accessible tables fields. This can also be obtained
-by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 @end itemize
 @{
 @- Implementation
