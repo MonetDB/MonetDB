@@ -3698,6 +3698,18 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_upd_replace_value:
                 case alg_fun_upd_replace_element:
                 case alg_fun_upd_replace_node:
+                case alg_fun_fn_year_from_datetime:
+                case alg_fun_fn_month_from_datetime:
+                case alg_fun_fn_day_from_datetime:
+                case alg_fun_fn_hours_from_datetime:
+                case alg_fun_fn_minutes_from_datetime:
+                case alg_fun_fn_seconds_from_datetime:
+                case alg_fun_fn_year_from_date:
+                case alg_fun_fn_month_from_date:
+                case alg_fun_fn_day_from_date:
+                case alg_fun_fn_hours_from_time:
+                case alg_fun_fn_minutes_from_time:
+                case alg_fun_fn_seconds_from_time:
 #ifdef HAVE_GEOXML
                 case alg_fun_geo_wkb:
                 case alg_fun_geo_point:

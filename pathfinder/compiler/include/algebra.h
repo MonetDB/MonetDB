@@ -431,6 +431,18 @@ enum PFalg_fun_t {
     , alg_fun_upd_replace_value           /**< upd:replaceValue */
     , alg_fun_upd_replace_element /**< upd:replaceElementContent */
     , alg_fun_upd_replace_node    /**< upd:replaceNode */
+    , alg_fun_fn_year_from_datetime
+    , alg_fun_fn_month_from_datetime
+    , alg_fun_fn_day_from_datetime
+    , alg_fun_fn_hours_from_datetime
+    , alg_fun_fn_minutes_from_datetime
+    , alg_fun_fn_seconds_from_datetime
+    , alg_fun_fn_year_from_date
+    , alg_fun_fn_month_from_date
+    , alg_fun_fn_day_from_date
+    , alg_fun_fn_hours_from_time
+    , alg_fun_fn_minutes_from_time
+    , alg_fun_fn_seconds_from_time
 #ifdef HAVE_GEOXML
     , alg_fun_geo_wkb             /**< geoxml:wkb */
     , alg_fun_geo_point           /**< geoxml:point */

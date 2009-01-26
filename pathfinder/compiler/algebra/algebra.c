@@ -1175,6 +1175,18 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_upd_replace_value:         return "upd:replaceValue";
         case alg_fun_upd_replace_element: return "upd:replaceElementContent";
         case alg_fun_upd_replace_node:    return "upd:replaceNode";
+        case alg_fun_fn_year_from_datetime:     return "fn:year-from-datetime";
+        case alg_fun_fn_month_from_datetime:    return "fn:month-from-datetime";
+        case alg_fun_fn_day_from_datetime:      return "fn:day-from-datetime";
+        case alg_fun_fn_hours_from_datetime:    return "fn:hours-from-datetime";
+        case alg_fun_fn_minutes_from_datetime:return "fn:minutes-from-datetime";
+        case alg_fun_fn_seconds_from_datetime:return "fn:seconds-from-datetime";
+        case alg_fun_fn_year_from_date:         return "fn:year-from-date";
+        case alg_fun_fn_month_from_date:        return "fn:month-from-date";
+        case alg_fun_fn_day_from_date:          return "fn:day-from-date";
+        case alg_fun_fn_hours_from_time:        return "fn:hours-from-time";
+        case alg_fun_fn_minutes_from_time:      return "fn:minutes-from-time";
+        case alg_fun_fn_seconds_from_time:      return "fn:seconds-from-time";
 #ifdef HAVE_GEOXML
         case alg_fun_geo_wkb:          return "geoxml:wkb";
         case alg_fun_geo_point:        return "geoxml:point";

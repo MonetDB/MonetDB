@@ -5678,6 +5678,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     /* FIXME: not implemented yet. */
                     assert (!"no implementation here");
                     break; /* fold) */
+
                 case alg_fun_pf_add_doc_str: /* fold( */
                 {
                     PFalg_col_t filepath   = clat (p->sem.fun_1to1.refs, 0),
@@ -5724,6 +5725,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                          lit_lng(0))));
 
                 }   break; /* fold) */
+
                 case alg_fun_pf_add_doc_str_int: /* fold( */
                 {
                     PFalg_col_t filepath   = clat (p->sem.fun_1to1.refs, 0),
@@ -5770,6 +5772,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 VAR (L(p)->env, percentage, aat_int)));
 
                 }   break; /* fold) */
+
                 case alg_fun_pf_del_doc: /* fold( */
                 {
                     PFalg_col_t docname   = clat (p->sem.fun_1to1.refs, 0);
@@ -5839,6 +5842,146 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 
                 }   break; /* fold) */
 
+                case alg_fun_fn_year_from_datetime:
+                case alg_fun_fn_month_from_datetime:
+                case alg_fun_fn_day_from_datetime:
+                case alg_fun_fn_hours_from_datetime:
+                case alg_fun_fn_minutes_from_datetime: /* fold( */
+                {
+                    PFmil_t * (*op1) (const PFmil_t *) = NULL;
+                    PFmil_t * (*op2) (const PFmil_t *) = NULL;
+                    PFalg_col_t col1;
+
+                    assert (env_count (L(p)->env));
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_int;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_year_from_datetime:
+                            op1 = PFmil_mdate;
+                            op2 = PFmil_myear;
+                            break;
+                        case alg_fun_fn_month_from_datetime:
+                            op1 = PFmil_mdate;
+                            op2 = PFmil_mmonth;
+                            break;
+                        case alg_fun_fn_day_from_datetime:
+                            op1 = PFmil_mdate;
+                            op2 = PFmil_mday;
+                            break;
+                        case alg_fun_fn_hours_from_datetime:
+                            op1 = PFmil_mdaytime;
+                            op2 = PFmil_mhour;
+                            break;
+                        case alg_fun_fn_minutes_from_datetime:
+                            op1 = PFmil_mdaytime;
+                            op2 = PFmil_mminutes;
+                            break;
+                        default: break;
+                    }
+
+                    assert ((op1 != NULL) && (op2 != NULL));
+
+                    execute (
+                        assgn (var (res->name),
+                               mcast (implty_ (res_type),
+                                      op2 (op1 (VAR (L(p)->env,
+                                                col1,
+                                                aat_dtime))))));
+
+                }   break; /* fold) */
+
+                case alg_fun_fn_seconds_from_datetime: /* fold( */
+                {
+                /*
+                    PFalg_col_t col1;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_dec;
+
+                    execute (
+                        assgn (var (res->name),
+                               OPERATOR (VAR (L(p)->env, col1, aat_dtime))));
+                */
+                }   break; /* fold) */
+
+                case alg_fun_fn_year_from_date:
+                case alg_fun_fn_month_from_date:
+                case alg_fun_fn_day_from_date: /* fold( */
+                {
+                    PFmil_t * (*op) (const PFmil_t *) = NULL;
+                    PFalg_col_t col1;
+
+                    assert (env_count (L(p)->env));
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_int;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_year_from_date:
+                            op = PFmil_myear; break;
+                        case alg_fun_fn_month_from_date:
+                            op = PFmil_mmonth; break;
+                        case alg_fun_fn_day_from_date:
+                            op = PFmil_mday; break;
+                        default: break;
+                    }
+
+                    assert (op != NULL);
+
+                    execute (
+                        assgn (var (res->name),
+                               mcast (implty_ (res_type),
+                                      op (VAR (L(p)->env,
+                                               col1,
+                                               aat_date)))));
+
+                }   break; /* fold) */
+
+                case alg_fun_fn_hours_from_time:
+                case alg_fun_fn_minutes_from_time: /* fold( */
+                {
+                    PFmil_t * (*op) (const PFmil_t *) = NULL;
+                    PFalg_col_t col1;
+
+                    assert (env_count (L(p)->env));
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_int;
+
+                    switch (p->sem.fun_1to1.kind) {
+                        case alg_fun_fn_hours_from_time:
+                            op = PFmil_mhour; break;
+                        case alg_fun_fn_minutes_from_time:
+                            op = PFmil_mminutes; break;
+                        default: break;
+                    }
+
+                    assert (op != NULL);
+
+                    execute (
+                        assgn (var (res->name),
+                               mcast (implty_ (res_type),
+                                      op (VAR (L(p)->env,
+                                          col1,
+                                          aat_time)))));
+                }   break; /* fold) */
+
+                case alg_fun_fn_seconds_from_time: /* fold( */
+                {
+                /*
+                    PFalg_col_t col1;
+
+                    col1 = clat (p->sem.fun_1to1.refs, 0);
+                    res_type = aat_dec;
+
+                    execute (
+                        assgn (var (res->name),
+                               OPERATOR (VAR (L(p)->env, col1, aat_time))));
+                */
+                }   break; /* fold) */
+
                 case alg_fun_upd_delete: /* fold( */
                 {
                     PFalg_col_t tgt = clat (p->sem.fun_1to1.refs, 0);
@@ -5879,7 +6022,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     PFalg_col_t tgt     = clat (p->sem.fun_1to1.refs, 0),
                                 changes = clat (p->sem.fun_1to1.refs, 1);
                     mvar_t *loop = NULL;
-                    
+
                     int update_str;
 
                     assert (env_count (L(p)->env));

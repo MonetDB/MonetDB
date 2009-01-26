@@ -188,7 +188,14 @@
                  | 'ws_docavailable('exp','exp')'          <m_ws_docavailable>
                  | 'ws_findnodes('e','e','e','e','e','e','e')' <m_ws_findnodes>
                  | 'vx_lookup('e','e','e','e','e','e','e','e','e','e')'
-                                                               <m_vx_lookup>
+                                                           <m_vx_lookup>
+                 | '[date]' (expr);                        <m_mdate>
+                 | '[daytime]' (expr);                     <m_mdaytme>
+                 | '[year]' (expr);                        <m_myear>
+                 | '[month]' (expr);                       <m_mmonth>
+                 | '[day]' (expr);                         <m_mday>
+                 | '[hour]' (expr);                        <m_mhour>
+                 | '[minutes]' (expr);                     <m_mminutes>
 
    args          : args ',' args                            <m_arg>
                  | expression                               <otherwise>
@@ -377,6 +384,14 @@ static char *ID[] = {
     , [m_ws_docavailable]    = "ws_docavailable"
     , [m_ws_findnodes]       = "ws_findnodes"
     , [m_vx_lookup]          = "vx_lookup"
+
+    , [m_mdate]              = "[date]"
+    , [m_mdaytime]           = "[daytme]"
+    , [m_myear]              = "[year]"
+    , [m_mmonth]             = "[month]"
+    , [m_mday]               = "[day]"
+    , [m_mhour]              = "[hours]"
+    , [m_mminutes]           = "[minutes]"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -988,8 +1003,23 @@ print_expression (PFmil_t * n)
         case m_gsum:
 #ifdef HAVE_GEOXML
         /* expression : '[create_wkb] '(' expression ')' */
-	case m_mgeo_create_wkb: 
+        case m_mgeo_create_wkb:
 #endif
+        /* expression : [date] (' expression ')' */
+        case m_mdate:
+        /* expression : [daytime] (' expression ')' */
+        case m_mdaytime:
+        /* expression : [year] (' expression ')' */
+        case m_myear:
+        /* expression : [month] (' expression ')' */
+        case m_mmonth:
+        /* expression : [day] (' expression ')' */
+        case m_mday:
+        /* expression : [hour] (' expression ')' */
+        case m_mhour:
+        /* expression : [minutes] (' expression ')' */
+        case m_mminutes:
+
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");

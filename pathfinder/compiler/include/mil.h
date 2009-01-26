@@ -400,6 +400,15 @@ enum PFmil_kind_t {
     , m_ws_docavailable    /**< mil document function for doc-available */
     , m_ws_findnodes       /**< mil function for fn:id/idref            */
     , m_vx_lookup          /**< mil function for pf:text/attribute      */
+
+    , m_mdate           /**< multiplex extract date from timestamp */
+    , m_mdaytime        /**< multiplex extract daytime from timestamp */
+    , m_myear           /**< multiplex extract year from date */
+    , m_mmonth          /**< multiplex extract month from date */
+    , m_mday            /**< multiplex extract day from date */
+    , m_mhour           /**< multiplex extract hour from time */
+    , m_mminutes        /**< multiplex extract minutes from time */
+
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
     , m_tj_tokenize
@@ -436,7 +445,7 @@ enum PFmil_type_t {
     , mty_bat       = 9
     , mty_timestamp = 10
     , mty_date      = 11
-    , mty_daytime   =12
+    , mty_daytime   = 12
 };
 typedef enum PFmil_type_t PFmil_type_t;
 
@@ -1031,6 +1040,15 @@ PFmil_t * PFmil_vx_lookup (const PFmil_t *, const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *, const PFmil_t *,
                            const PFmil_t *, const PFmil_t *, const PFmil_t *,
                            const PFmil_t *);
+
+/**< multiplex extract functions for timestamp, date, time types */
+PFmil_t * PFmil_mdate (const PFmil_t *);
+PFmil_t * PFmil_mdaytime (const PFmil_t *);
+PFmil_t * PFmil_myear (const PFmil_t *);
+PFmil_t * PFmil_mmonth (const PFmil_t *);
+PFmil_t * PFmil_mday (const PFmil_t *);
+PFmil_t * PFmil_mhour (const PFmil_t *);
+PFmil_t * PFmil_mminutes (const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

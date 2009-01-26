@@ -339,6 +339,18 @@ PFxml2la_conv_2PFLA_functionType (char* s)
     mapto_fun_kind (alg_fun_upd_replace_value)
     mapto_fun_kind (alg_fun_upd_replace_element)
     mapto_fun_kind (alg_fun_upd_replace_node)
+    mapto_fun_kind (alg_fun_fn_year_from_datetime)
+    mapto_fun_kind (alg_fun_fn_month_from_datetime)
+    mapto_fun_kind (alg_fun_fn_day_from_datetime)
+    mapto_fun_kind (alg_fun_fn_hours_from_datetime)
+    mapto_fun_kind (alg_fun_fn_minutes_from_datetime)
+    mapto_fun_kind (alg_fun_fn_seconds_from_datetime)
+    mapto_fun_kind (alg_fun_fn_year_from_date)
+    mapto_fun_kind (alg_fun_fn_month_from_date)
+    mapto_fun_kind (alg_fun_fn_day_from_date)
+    mapto_fun_kind (alg_fun_fn_hours_from_time)
+    mapto_fun_kind (alg_fun_fn_minutes_from_time)
+    mapto_fun_kind (alg_fun_fn_seconds_from_time)
 
     PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
     /* pacify picky compilers */

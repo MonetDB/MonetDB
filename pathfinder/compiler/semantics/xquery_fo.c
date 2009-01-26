@@ -1511,37 +1511,37 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_year_from_datetime }
     , /* fn:month-from-dateTime (dateTime?) as integer? */
       { .ns = PFns_fn, .loc = "month-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_month_from_datetime }
     , /* fn:day-from-dateTime (dateTime?) as integer? */
       { .ns = PFns_fn, .loc = "day-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_day_from_datetime }
     , /* fn:hours-from-dateTime (dateTime?) as integer? */
       { .ns = PFns_fn, .loc = "hours-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_hours_from_datetime }
     , /* fn:minutes-from-dateTime (dateTime?) as integer? */
       { .ns = PFns_fn, .loc = "minutes-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_minutes_from_datetime }
     , /* fn:seconds-from-dateTime (dateTime?) as decimal? */
       { .ns = PFns_fn, .loc = "days-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
             .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_seconds_from_datetime }
     , /* fn:timezone-from-dateTime (dateTime?) as dayTimeDuration? */
       { .ns = PFns_fn, .loc = "timezone-from-dateTime",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1553,19 +1553,19 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_date ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_year_from_date }
     , /* fn:month-from-date (date?) as integer? */
       { .ns = PFns_fn, .loc = "month-from-date",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_date ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_month_from_date }
     , /* fn:day-from-date (date?) as integer? */
       { .ns = PFns_fn, .loc = "day-from-date",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_date ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_day_from_date }
     , /* fn:timezone-from-date (date?) as dayTimeDuration?*/
       { .ns = PFns_fn, .loc = "timezone-from-date",
         .arity = 1, .sig_count = 1, .sigs = { {
@@ -1577,19 +1577,19 @@ PFfun_xquery_fo (void)
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_time ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_hours_from_time }
     , /* fn:minutes-from-time (time?) as integer? */
       { .ns = PFns_fn, .loc = "minutes-from-time",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_time ()) },
             .ret_ty = PFty_opt (PFty_xs_integer ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_minutes_from_time }
     , /* fn:seconds-from-time (time?) as decimal? */
       { .ns = PFns_fn, .loc = "days-from-time",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_time ()) },
             .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
-        .alg = NULL }
+        .alg = PFbui_fn_seconds_from_time }
     , /* fn:timezone-from-time (time?) as dayTimeDuration? */
       { .ns = PFns_fn, .loc = "timezone-from-time",
         .arity = 1, .sig_count = 1, .sigs = { {

@@ -1821,6 +1821,53 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             res_type = aat_update | (n->schema.items[ix[0]].type << 4);
             break;
 
+        case alg_fun_fn_year_from_datetime:
+        case alg_fun_fn_month_from_datetime:
+        case alg_fun_fn_day_from_datetime:
+        case alg_fun_fn_hours_from_datetime:
+        case alg_fun_fn_minutes_from_datetime:
+            assert (clsize (refs) == 1);
+            /* make sure column is of type datetime */
+            assert (n->schema.items[ix[0]].type == aat_dtime);
+
+            res_type = aat_int;
+            break;
+
+        case alg_fun_fn_seconds_from_datetime:
+            assert (clsize (refs) == 1);
+            /* make sure column is of type datetime */
+            assert (n->schema.items[ix[0]].type == aat_dtime);
+
+            res_type = aat_dec;
+            break;
+
+        case alg_fun_fn_year_from_date:
+        case alg_fun_fn_month_from_date:
+        case alg_fun_fn_day_from_date:
+            assert (clsize (refs) == 1);
+            /* make sure column is of type date */
+            assert (n->schema.items[ix[0]].type == aat_date);
+
+            res_type = aat_int;
+            break;
+
+        case alg_fun_fn_hours_from_time:
+        case alg_fun_fn_minutes_from_time:
+            assert (clsize (refs) == 1);
+            /* make sure column is of type time */
+            assert (n->schema.items[ix[0]].type == aat_time);
+
+            res_type = aat_int;
+            break;
+
+        case alg_fun_fn_seconds_from_time:
+            assert (clsize (refs) == 1);
+            /* make sure column is of type time */
+            assert (n->schema.items[ix[0]].type == aat_time);
+
+            res_type = aat_dec;
+            break;
+
         case alg_fun_upd_rename:
         case alg_fun_upd_insert_into_as_first:
         case alg_fun_upd_insert_into_as_last:

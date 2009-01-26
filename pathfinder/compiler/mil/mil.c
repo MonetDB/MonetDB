@@ -1927,6 +1927,49 @@ PFmil_vx_lookup (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c,
     return wire10 (m_vx_lookup, a, b, c, d, e, f, g, h, i, j);
 }
 
+/**< multiplex extract functions for timestamp, date, time types */
+PFmil_t *
+PFmil_mdate (const PFmil_t *a)
+{
+    return wire1 (m_mdate, a);
+}
+
+PFmil_t *
+PFmil_mdaytime (const PFmil_t *a)
+{
+    return wire1 (m_mdaytime, a);
+}
+
+PFmil_t *
+PFmil_myear (const PFmil_t *a)
+{
+    return wire1 (m_myear, a);
+}
+
+PFmil_t *
+PFmil_mmonth (const PFmil_t *a)
+{
+    return wire1 (m_mmonth, a);
+}
+
+PFmil_t *
+PFmil_mday (const PFmil_t *a)
+{
+    return wire1 (m_mday, a);
+}
+
+PFmil_t *
+PFmil_mhour (const PFmil_t *a)
+{
+    return wire1 (m_mhour, a);
+}
+
+PFmil_t *
+PFmil_mminutes (const PFmil_t *a)
+{
+    return wire1 (m_mminutes, a);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *

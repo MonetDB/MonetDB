@@ -453,6 +453,14 @@
 #define m_vx_lookup(a,b,c,d,e,f,g,h,i,k) \
   PFmil_vx_lookup ((a),(b),(c),(d),(e),(f),(g),(h),(i),(k))
 
+/**< multiplex extract functions for timestamp, date, time types */
+#define mdate(a)    PFmil_mdate (a);
+#define mdaytime(a) PFmil_mdaytime (a);
+#define myear(a)    PFmil_myear (a);
+#define mmonth(a)   PFmil_mmonth (a);
+#define mday(a)     PFmil_mday (a);
+#define mhour(a)    PFmil_mhour (a);
+#define mminutes(a) PFmil_mminutes (a);
 
 #ifdef HAVE_PFTIJAH
 

@@ -2970,7 +2970,7 @@ PFbui_op_datetime_ne (const PFla_op_t *loop,
 
 /**
  * Algebra implementation for
- * <code> op:dateTime-lees-than (dateTime, dateTime) as boolean </code>
+ * <code> op:dateTime-less-than (dateTime, dateTime) as boolean </code>
  * @see bin_op()
  */
 
@@ -3166,7 +3166,7 @@ PFbui_op_time_ne (const PFla_op_t *loop,
 
 /**
  * Algebra implementation for
- * <code> op:time-lees-than (time, time) as boolean </code>
+ * <code> op:time-less-than (time, time) as boolean </code>
  * @see bin_op()
  */
 
@@ -3228,6 +3228,211 @@ PFbui_op_time_ge (const PFla_op_t *loop,
                             loop, ordering, side_effects,
                             (struct PFla_pair_t []) { args[1], args[0] }));
 
+}
+
+/* ----------------------------------------------------------------- */
+/* 10.5 Component Extraction Functions on Durations, Dates and Times */
+/* ----------------------------------------------------------------- */
+
+/**
+ * Helper function for component extraction functions on date time
+ */
+
+struct PFla_pair_t
+comp_extract (PFalg_fun_t kind, struct PFla_pair_t *args)
+{
+    return (struct PFla_pair_t) {
+        .rel = project (
+                        fun_1to1 (
+                            args[0].rel,
+                            kind,
+                            col_res,
+                            collist (col_item)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:year-from-dateTime (dateTime?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_year_from_datetime (const PFla_op_t *loop,
+                             bool ordering,
+                             PFla_op_t **side_effects,
+                             struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_year_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:month-from-dateTime (dateTime?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_month_from_datetime (const PFla_op_t *loop,
+                              bool ordering,
+                              PFla_op_t **side_effects,
+                              struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_month_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:day-from-dateTime (dateTime?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_day_from_datetime (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
+                            struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_day_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:hours-from-dateTime (dateTime?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_hours_from_datetime (const PFla_op_t *loop,
+                              bool ordering,
+                              PFla_op_t **side_effects,
+                              struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_hours_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:minutes-from-dateTime (dateTime?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_minutes_from_datetime (const PFla_op_t *loop,
+                                bool ordering,
+                                PFla_op_t **side_effects,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_minutes_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:seconds-from-dateTime (dateTime?) as decimal? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_seconds_from_datetime (const PFla_op_t *loop,
+                                bool ordering,
+                                PFla_op_t **side_effects,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_seconds_from_datetime, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:year-from-date (date?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_year_from_date (const PFla_op_t *loop,
+                         bool ordering,
+                         PFla_op_t **side_effects,
+                         struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_year_from_date, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:month-from-date (date?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_month_from_date (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
+                          struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_month_from_date, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:day-from-date (date?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_day_from_date (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
+                        struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_day_from_date, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:hours-from-time (time?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_hours_from_time (const PFla_op_t *loop,
+                          bool ordering,
+                          PFla_op_t **side_effects,
+                          struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_hours_from_time, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:minutes-from-time (time?) as integer? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_minutes_from_time (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
+                            struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_minutes_from_time, args);
+}
+
+/**
+ * Algebra implementation for
+ * <code> fn:seconds-from-time (time?) as decimal? </code>
+ */
+struct PFla_pair_t
+PFbui_fn_seconds_from_time (const PFla_op_t *loop,
+                            bool ordering,
+                            PFla_op_t **side_effects,
+                            struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return comp_extract(alg_fun_fn_seconds_from_time, args);
 }
 
 /* ------------------------------- */

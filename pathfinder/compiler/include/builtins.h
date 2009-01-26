@@ -565,6 +565,58 @@ struct PFla_pair_t PFbui_op_time_gt (const PFla_op_t *loop,
                                          PFla_op_t **side_effects,
                                          struct PFla_pair_t *args);
 
+/* 10.5 Component Extraction Functions on Durations, Dates and Times */
+
+struct PFla_pair_t PFbui_fn_year_from_datetime (const PFla_op_t *loop,
+                                                bool ordering,
+                                                PFla_op_t **side_effects,
+                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_month_from_datetime (const PFla_op_t *loop,
+                                                 bool ordering,
+                                                 PFla_op_t **side_effects,
+                                                 struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_day_from_datetime (const PFla_op_t *loop,
+                                               bool ordering,
+                                               PFla_op_t **side_effects,
+                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_hours_from_datetime (const PFla_op_t *loop,
+                                                 bool ordering,
+                                                 PFla_op_t **side_effects,
+                                                 struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_minutes_from_datetime (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   PFla_op_t **side_effects,
+                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_seconds_from_datetime (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   PFla_op_t **side_effects,
+                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_year_from_date (const PFla_op_t *loop,
+                                            bool ordering,
+                                            PFla_op_t **side_effects,
+                                            struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_month_from_date (const PFla_op_t *loop,
+                                             bool ordering,
+                                             PFla_op_t **side_effects,
+                                             struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_day_from_date (const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_hours_from_time (const PFla_op_t *loop,
+                                             bool ordering,
+                                             PFla_op_t **side_effects,
+                                             struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_minutes_from_time (const PFla_op_t *loop,
+                                               bool ordering,
+                                               PFla_op_t **side_effects,
+                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_seconds_from_time (const PFla_op_t *loop,
+                                               bool ordering,
+                                               PFla_op_t **side_effects,
+                                               struct PFla_pair_t *args);
+
+
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */
 struct PFla_pair_t PFbui_fn_resolve_qname (const PFla_op_t *loop,
