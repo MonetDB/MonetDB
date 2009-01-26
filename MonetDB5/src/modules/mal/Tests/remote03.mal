@@ -6,11 +6,11 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-conn:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+conn:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
 
 # this is invalid, as io.print is an invalid module, and bla will be
 # taken as function
-f:rmtobj := remote.exec(conn, "io.print", "bla");
+f:str := remote.exec(conn, "io.print", "bla");
 catch MALException:str;
 	io.print("Received an error from the remote site");
 	# exception contains a random id, so make it a warning
@@ -18,7 +18,7 @@ catch MALException:str;
 exit MALException;
 
 # now do it with a function that returns something (a BAT in this case)
-b:rmtobj := remote.exec(conn, "inspect", "getAtomNames");
+b:str := remote.exec(conn, "inspect", "getAtomNames");
 catch MALException:str;
 	io.print("Received second error from the remote site");
 	io.printf(MALException);
@@ -31,7 +31,7 @@ catch MALException:str;
 exit MALException;
 
 # io.print only outputs things, but returns nothing
-a:rmtobj := remote.exec(conn, "io", "print", b);
+a:str := remote.exec(conn, "io", "print", b);
 catch MALException:str;
 	io.print("Received fourth error from the remote site");
 	io.printf(MALException);

@@ -6,15 +6,15 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a persistent connecton to ourself
-conn1:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+conn1:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
 # do it again ...
-conn2:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+conn2:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
 # ... and check they are the same
 io.print(conn1);
 io.print(conn2);
 
 # now try to get a new connection
-conn3:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb", false:bit);
+conn3:str := remote.create(h, p, nil:str, "monetdb", "monetdb", false:bit);
 # are they equal?
 io.print(conn1);
 io.print(conn3);

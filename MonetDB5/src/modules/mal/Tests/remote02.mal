@@ -6,7 +6,7 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-conn:rmtconn := remote.create(h, p, nil:str, "monetdb", "monetdb");
+conn:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
 
 a:str := "Fabian!";
 b:flt := 4.3;
@@ -17,10 +17,10 @@ bat.insert(d, nil:str, 2);
 bat.insert(d, "boe", nil:int);
 
 # store the values
-i:rmtobj := remote.put(conn, a);
-j:rmtobj := remote.put(conn, b);
-k:rmtobj := remote.put(conn, c);
-l:rmtobj := remote.put(conn, d);
+i:str := remote.put(conn, a);
+j:str := remote.put(conn, b);
+k:str := remote.put(conn, c);
+l:str := remote.put(conn, d);
 
 # retrieve the value
 r:str := remote.get(conn, i);

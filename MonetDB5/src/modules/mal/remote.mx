@@ -78,34 +78,34 @@ command epilogue():void
 address RMTepilogue
 comment "Release the resources held by the remote module.";
 
-command create(host:str, port:int, dbname:str, user:str, passwd:str):rmtconn
+command create(host:str, port:int, dbname:str, user:str, passwd:str):str
 address RMTcreateDef
 comment "Returns a persistent connection for host name, port, database name, user name and password, or creates a new connection if no previous connection exists.";
 
-command create(host:str, port:int, dbname:str, user:str, passwd:str, persistent:bit):rmtconn
+command create(host:str, port:int, dbname:str, user:str, passwd:str, persistent:bit):str
 address RMTcreate
 comment "Returns a newly created connection for host name, port, database name, user name and password, if persistent is false or no previous connection exists.  Otherwise the previously existing connection is returned.";
 
-command destroy(conn:rmtconn):void
+command destroy(conn:str):void
 address RMTdestroy
 comment "Destroys a previously created non-persistent connection.  Calling this function for a persistent  connection is a no-op.";
 
-pattern get(conn:rmtconn, ident:rmtobj):any
+pattern get(conn:str, ident:str):any
 address RMTget
 comment "Retrieves a copy of remote object ident.";
 
-pattern put(conn:rmtconn, object:any):rmtobj
+pattern put(conn:str, object:any):str
 address RMTput
 comment "Copies object to the remote site and returns its identifier.";
 
-pattern register(conn:rmtconn, mod:str, fcn:str):void
+pattern register(conn:str, mod:str, fcn:str):void
 address RMTregister
 comment "Register <mod>.<fcn> at the remote site.";
 
-pattern exec(conn:rmtconn, mod:str, func:str):rmtobj
+pattern exec(conn:str, mod:str, func:str):str
 address RMTexec
 comment "Remotely executes <mod>.<func> and returns the handle to its result";
-pattern exec(conn:rmtconn, mod:str, func:str, :rmtobj...):rmtobj
+pattern exec(conn:str, mod:str, func:str, :str...):str
 address RMTexec
 comment "Remotely executes <mod>.<func> using the argument list
 of remote objects and returns the handle to its result";

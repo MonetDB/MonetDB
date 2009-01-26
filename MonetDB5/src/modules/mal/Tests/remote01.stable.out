@@ -26,7 +26,7 @@ function user.main():void;
 # create a connecton to ourself 
     conn := remote.create(h,p,nil:str,"monetdb","monetdb");
 # retrieve a value (that for sure won't exist) 
-    x := remote.get(conn,b1:rmtobj);
+    x := remote.get(conn,"b1":str);
 catch MALException;
     io.printf("!%s\n",MALException);
 exit MALException;
