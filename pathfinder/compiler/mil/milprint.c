@@ -386,7 +386,7 @@ static char *ID[] = {
     , [m_vx_lookup]          = "vx_lookup"
 
     , [m_mdate]              = "[date]"
-    , [m_mdaytime]           = "[daytme]"
+    , [m_mdaytime]           = "[daytime]"
     , [m_myear]              = "[year]"
     , [m_mmonth]             = "[month]"
     , [m_mday]               = "[day]"
