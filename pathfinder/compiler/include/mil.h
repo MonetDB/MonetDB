@@ -408,6 +408,9 @@ enum PFmil_kind_t {
     , m_mday            /**< multiplex extract day from date */
     , m_mhour           /**< multiplex extract hour from time */
     , m_mminutes        /**< multiplex extract minutes from time */
+    , m_mseconds        /**< multiplex extract seconds from time */
+    , m_mmilliseconds   /**< multiplex extract milliseconds from time */
+    , m_msecmsec        /**< multiplex extract sec.msec from time */
 
 #ifdef HAVE_PFTIJAH
     , m_tj_pfop
@@ -1049,6 +1052,9 @@ PFmil_t * PFmil_mmonth (const PFmil_t *);
 PFmil_t * PFmil_mday (const PFmil_t *);
 PFmil_t * PFmil_mhour (const PFmil_t *);
 PFmil_t * PFmil_mminutes (const PFmil_t *);
+PFmil_t * PFmil_mseconds (const PFmil_t *);
+PFmil_t * PFmil_mmilliseconds (const PFmil_t *);
+PFmil_t * PFmil_msecmsec (const PFmil_t *);
 
 #define PFmil_seq(...) \
     PFmil_seq_ (sizeof ((PFmil_t *[]) { __VA_ARGS__} ) / sizeof (PFmil_t *), \

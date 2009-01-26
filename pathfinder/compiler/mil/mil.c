@@ -1970,6 +1970,24 @@ PFmil_mminutes (const PFmil_t *a)
     return wire1 (m_mminutes, a);
 }
 
+PFmil_t *
+PFmil_mseconds (const PFmil_t *a)
+{
+    return wire1 (m_mseconds, a);
+}
+
+PFmil_t *
+PFmil_mmilliseconds (const PFmil_t *a)
+{
+    return wire1 (m_mmilliseconds, a);
+}
+
+PFmil_t *
+PFmil_msecmsec (const PFmil_t *a)
+{
+    return wire1 (m_msecmsec, a);
+}
+
 #ifdef HAVE_PFTIJAH
 
 PFmil_t *

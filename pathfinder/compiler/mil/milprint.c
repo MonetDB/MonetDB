@@ -392,6 +392,9 @@ static char *ID[] = {
     , [m_mday]               = "[day]"
     , [m_mhour]              = "[hours]"
     , [m_mminutes]           = "[minutes]"
+    , [m_mseconds]           = "[seconds]"
+    , [m_mmilliseconds]      = "[milliseconds]"
+    , [m_msecmsec]           = "[sec_msec]"
 
     , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
@@ -1019,6 +1022,12 @@ print_expression (PFmil_t * n)
         case m_mhour:
         /* expression : [minutes] (' expression ')' */
         case m_mminutes:
+         /* expression : [seconds] (' expression ')' */
+        case m_mseconds:
+       /* expression : [milliseconds] (' expression ')' */
+        case m_mmilliseconds:
+       /* expression : [sec_msec] (' expression ')' */
+        case m_msecmsec:
 
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
