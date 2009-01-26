@@ -681,10 +681,14 @@ stmt_destroy(stmt *s)
 		case st_export:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
+			if (s->op4.stval) {
+				if (s->op2.lval == NULL || s->op2.lval->h->data)
+					stmt_destroy(s->op4.stval);
+				else
+					list_destroy(s->op4.lval);
+			}
 			if (s->op2.lval)
 				list_destroy(s->op2.lval);
-			if (s->op4.stval)
-				stmt_destroy(s->op4.stval);
 			break;
 
 		case st_aggr:

@@ -598,7 +598,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	}
 	if (!t) {
 		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
-	} else if (files) {
+	}
+	if (files) {
 		dnode *n = files->h;
 
 		for (slist = create_stmt_list(); n; n = n->next) {
@@ -619,11 +620,13 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	list *ops;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	sql_subfunc *import = NULL;
 	list *slist;
+	dnode *dn;
+	node *n;
+	stmt *rs, **inserts;
+	int i, len = 0;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
@@ -643,18 +646,25 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	}
 	if (!t) {
 		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
-	} 
-	ops = create_stmt_list();
-	list_append(ops, stmt_atom_string(_strdup(s->base.name)));
-	list_append(ops, stmt_atom_string(_strdup(t->base.name)));
-	if (files) {
-		dnode *n = files->h;
-		for (; n; n = n->next)
-			list_append(ops, stmt_atom_string(_strdup(n->data.sval)));
 	}
+	if (files == NULL)
+		return sql_error(sql, 02, "COPY INTO: must specify files");
+
+	ops = create_stmt_list();
+	for (dn = files->h; dn; dn = dn->next)
+		list_append(ops, stmt_atom_string(_strdup(dn->data.sval)));
+	rs = stmt_import(stmt_basetable(t, t->base.name), NULL, NULL, NULL, NULL, (stmt *) ops, 0, 0);
+	inserts = table_update_array(t, &len);
+	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+		sql_column *c = n->data;
+
+		inserts[i] = stmt_append_col(c, stmt_rs_column(stmt_dup(rs), stmt_atom_string(_strdup(c->base.name)), &c->type));
+	}
+	stmt_destroy(rs);
+	rs = sql_insert(sql, t, inserts, len, 1);
+	
 	slist = create_stmt_list();
-	import = sql_find_func(sys, "import", 2); /* TODO later we need true varargs */
-	list_append(slist, stmt_Nop(stmt_list(ops), import));
+	list_append(slist, rs);
 	return stmt_list(slist);
 }
 

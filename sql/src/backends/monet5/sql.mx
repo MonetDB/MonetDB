@@ -2278,7 +2278,14 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	b = BATnew(TYPE_str, TYPE_bat, pci->argc-3);
 	for (i = 3, n = t->columns.set->h; i<pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
-		BAT *c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
+		BAT *c;
+
+		c = BATattach(col->type.type->localtype, *(str*)getArgReference(stk, pci, i));
+		if (c == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql", "failed to attach file %s",
+			      *(str*)getArgReference(stk, pci, i));
+		}
 
 		BATsetaccess(c, BAT_READ);
 		BATpropcheck(c, BATPROPS_ALL);
