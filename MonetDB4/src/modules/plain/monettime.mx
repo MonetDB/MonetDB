@@ -372,6 +372,8 @@ generation for SQL and to improve speed.
 	"extracts seconds from daytime (value between 0 and 59)"
 .COMMAND milliseconds(daytime) : int = daytime_extract_milliseconds;
 	"extracts milliseconds from daytime (value between 0 and 999)"
+.COMMAND sec_msec(daytime) : dbl = daytime_extract_seconds_milliseconds;
+	"extracts seconds.milliseconds from daytime (value between 0.0 and 59.999)"
 .COMMAND add(daytime value, lng msecs) : daytime = daytime_add;
 	"returns the daytime that comes 'msecs' (possibly negative) after 'value'."
 
@@ -1940,6 +1942,21 @@ daytime_extract_milliseconds(int *ret, daytime *v)
 		*ret = int_nil;
 	} else {
 		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
+	}
+	return GDK_SUCCEED;
+}
+
+/* extracts secends.milliseconds from daytime (value between 0.000 and 59.999) */
+int
+daytime_extract_seconds_milliseconds(dbl *ret, daytime *v)
+{
+	if (*v == daytime_nil) {
+		*ret = int_nil;
+	} else {
+		int sec, msec;
+		fromtime((int) *v, &dummy, &dummy, &sec, &dummy);
+		fromtime((int) *v, &dummy, &dummy, &dummy, &msec);
+        *ret = (dbl)(sec + (msec/1000.0));
 	}
 	return GDK_SUCCEED;
 }
