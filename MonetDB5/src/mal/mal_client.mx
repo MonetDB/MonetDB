@@ -230,6 +230,7 @@ to keep track of critical elements.
 	Symbol      curprg;     /* focus of parser */
 	Symbol      backup;     /* save parsing context */
 	MalStkPtr   glb;        /* global variable stack */
+	ptr         conn;       /* private scope connections list (remote.mx) */
 @-
 Some statistics on client behavior becomes relevant
 for server maintenance. The scenario loop is used as

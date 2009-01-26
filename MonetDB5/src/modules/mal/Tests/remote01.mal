@@ -6,7 +6,8 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-conn:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
+remote.create("self", h, p);
+conn := remote.connect("self", "monetdb", "monetdb");
 
 # retrieve a value (that for sure won't exist)
 x:void := remote.get(conn, "b1":str);
@@ -15,19 +16,19 @@ catch MALException:str;
 exit MALException;
 
 # should raise an exception (the arguments should make it fail)
-i:str := remote.create("localhost", 63000, nil:str, "test", "test");
-catch IOException:str;
-	# make it a comment, the connection name is always different
-	io.printf("#!%s\n",IOException);
-exit IOException;
+#i:str := remote.create("localhost", 63000, nil:str, "test", "test");
+#catch IOException:str;
+#	# make it a comment, the connection name is always different
+#	io.printf("!%s\n",IOException);
+#exit IOException;
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
-remote.destroy(conn);
+remote.disconnect(conn);
 
 # this should fail now
-remote.destroy(conn);
+remote.disconnect(conn);
 catch MALException:str;
 	# make it a comment, the connection name is always different
-	io.printf("#!%s\n",MALException);
+	io.printf("!%s\n",MALException);
 exit MALException;
