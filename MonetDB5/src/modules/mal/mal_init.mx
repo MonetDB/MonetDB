@@ -162,8 +162,6 @@ include mal_io;
 include tablet;
 include factory;
 include recycle;
-include rmtobj;
-include rmtconn;
 include remote;
 include replicator;
 

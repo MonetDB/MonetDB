@@ -96,9 +96,7 @@ end main;
 [ 27,	  "inet"	  ]
 [ 28,	  "identifier"	  ]
 [ 29,	  "pcre"	  ]
-[ 30,	  "rmtobj"	  ]
-[ 31,	  "rmtconn"	  ]
-[ 32,	  "mapentry"	  ]
+[ 30,	  "mapentry"	  ]
 [ nil ]
 
 # 19:22:53 >  

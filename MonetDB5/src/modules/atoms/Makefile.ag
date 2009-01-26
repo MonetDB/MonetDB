@@ -24,7 +24,7 @@ LIBS = {
 	DIR = libdir/MonetDB5
 	SEP = _
 	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  rmtobj.mx rmtconn.mx identifier.mx
+			  identifier.mx
 
 	#SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream $(MATH_LIBS) \
@@ -60,7 +60,7 @@ lib__xml = {
 headers_h = {
 	DIR = includedir/MonetDB5/atoms
 	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  xml.mx str.mx rmtobj.mx rmtconn.mx identifier.mx
+			  xml.mx str.mx identifier.mx
 	HEADERS = h 
 }
 
@@ -69,7 +69,7 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx \
-			  xml.mx rmtobj.mx rmtconn.mx identifier.mx
+			  xml.mx identifier.mx
 }
 
 EXTRA_DIST_DIR = Tests
