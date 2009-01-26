@@ -2694,18 +2694,18 @@ PFfun_xquery_fo (void)
              .ret_ty = PFty_xs_integer () },
              } ,
         .alg = PFbui_tijah_query_i_xo }
-    , /* tijah:query-id(element*, string) as integer */
+    , /* tijah:query-id(node*, string) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 2, .sig_count = 1, .sigs = { {
-             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string ()},
              .ret_ty = PFty_xs_integer () },
              },
         .alg = PFbui_tijah_query_i_sx }
-    , /* tijah:query-id(element*, string, node) as integer */
+    , /* tijah:query-id(node*, string, node) as integer */
       { .ns = PFns_tijah, .loc = "query-id",
         .arity = 3, .sig_count = 1, .sigs = { {
-             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyElement ()),
+             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                     PFty_xs_string (),
                                          PFty_xs_anyNode ()},
              .ret_ty = PFty_xs_integer () },
