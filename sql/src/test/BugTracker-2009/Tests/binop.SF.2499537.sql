@@ -9,5 +9,4 @@ end;
 create table points(p int);
 create table lines(l int);
 
-explain select * from points x,lines y
-where in_p_l(x.p,y.l);
+select * from points x,lines y where in_p_l(x.p,y.l);
