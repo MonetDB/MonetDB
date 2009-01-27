@@ -62,15 +62,16 @@ in errors and possibly undefined behaviour.
 The remote module also contains functionality to create and maintain
 connections.  Here a close binding with Merovingian and Sabaoth is
 inevitable to make remote aware of possible connections in the vincinity
-of the server.  This translates into the list() function, that returns a
-list of databases, marked as either "local", "remote" or "user".  The
-first is used for databases known by Sabaoth, which are hence local.
+of the server.  This translates into the getList() function, that returns a
+list of databases. For each we can ask its type getKind(),
+which is either "local", "remote" or "user".  
+The "local" type is used for databases known by Sabaoth, which are hence local.
 The second translates into the discovered neighbours by Merovingian (as
 returned by `monetdb discover`), which are remote as such.  Lastly, a
 user can add her own connection using the create() function, which
 also appears in the output of list().  Connections added using create()
 are currently not persistent over server restarts, but can be removed
-using destroy().
+using destroy(). They are marked "user".
 
 Connections are activated using a call to connect().  Each client has
 its own stack of connection handles.  By default, a connection is
@@ -105,10 +106,9 @@ command epilogue():void
 address RMTepilogue
 comment "Release the resources held by the remote module.";
 
-
 # global connection management functions
 
-command create(dbname:str, host:str, port:int):void
+command create(dbname:str, host:str, port:int):str
 address RMTcreate
 comment "Create a user-defined connection to a server.";
 
@@ -116,10 +116,9 @@ command destroy(dbname:str):void
 address RMTdestroy
 comment "Destroy a previously user-defined connection to a server.";
 
-command list():bat[:str,:str]
-address RMTlist
-comment "List available databases for use with connect().";
-
+command getList()(list:bat[:void,:str], kind:bat[:void,:str])
+address RMTgetList
+comment "List available databases with their property for use with connect().";
 
 # session local connection instantiation functions
 
@@ -235,13 +234,13 @@ static userconn userconns = NULL;
 static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 
 @h
-remote_export str RMTcreate(int *ret, str *dbname, str *host, int *port);
+remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port);
 @c
 /**
  * Stores a new connection in the global state.  The connection is not
  * validated.
  */
-remote_export str RMTcreate(int *ret, str *dbname, str *host, int *port) {
+remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 	userconn c;
 
 	*ret = 0;
@@ -283,6 +282,7 @@ remote_export str RMTcreate(int *ret, str *dbname, str *host, int *port) {
 	c->next = NULL;
 
 	mal_unset_lock(mal_remoteLock, "remote.create"); /* global userconns */
+	*ret = GDKstrdup(*dbname);
 	return(MAL_SUCCEED);
 }
 
@@ -335,7 +335,7 @@ str RMTdestroy(int *ret, str *dbname) {
 }
 
 @h
-remote_export str RMTlist(BAT **ret);
+remote_export str RMTgetList(int *ret, int *ret2);
 @c
 #define SOCKPTR struct sockaddr *
 /**
@@ -343,8 +343,8 @@ remote_export str RMTlist(BAT **ret);
  * stored, in the tail "user", "local" or "remote".  The entries are
  * grouped in that order.
  */
-remote_export str RMTlist(BAT **ret) {
-	BAT *b;
+remote_export str RMTgetList(int *ret, int *ret2){
+	BAT *b, *b2;
 	str type;
 	userconn c;
 	sabdb *sab, *osab;
@@ -353,7 +353,14 @@ remote_export str RMTlist(BAT **ret) {
 	char mero_running;
 	int fd;
 
-	b = BATnew(getHeadType(TYPE_str), getTailType(TYPE_str), 20);
+	b = BATnew(TYPE_void,getHeadType(TYPE_str), 20);
+	if ( b == NULL)
+		throw(MAL,"remote.getList","could not create BAT");
+	b2 = BATnew(TYPE_void,getHeadType(TYPE_str), 20);
+	if ( b2 == NULL){
+		BBPunfix(b->batCacheid);
+		throw(MAL,"remote.getList","could not create BAT");
+	}
 
 	/* part 1: "user" -- this is trivial */
 	type = "user";
@@ -361,7 +368,8 @@ remote_export str RMTlist(BAT **ret) {
 	c = userconns;
 	/* walk through the list */
 	while (c != NULL) {
-		BUNins(b, (ptr)c->dbname, (ptr)type, FALSE);
+		BUNappend(b, (ptr)c->dbname,FALSE);
+		BUNappend(b, (ptr)type,FALSE);
 		c = c->next;
 	}
 	mal_unset_lock(mal_remoteLock, "remote.list");
@@ -371,7 +379,8 @@ remote_export str RMTlist(BAT **ret) {
 	rethrow("remote.list", tmp, SABAOTHgetStatus(&osab, NULL));
 	sab = osab;
 	while (sab != NULL) {
-		BUNins(b, (ptr)sab->dbname, (ptr)type, FALSE);
+		BUNappend(b, (ptr)sab->dbname,FALSE);
+		BUNappend(b, (ptr)type,FALSE);
 		sab = sab->next;
 	}
 	SABAOTHfreeStatus(&osab);
@@ -448,7 +457,8 @@ remote_export str RMTlist(BAT **ret) {
 			*q++ = '\0';
 
 			/* store what we found */
-			BUNins(b, (ptr)buf, (ptr)type, FALSE);
+			BUNappend(b, (ptr)buf,FALSE);
+			BUNappend(b, (ptr)type,FALSE);
 
 			/* move it away */
 			len -= p - buf;
@@ -459,8 +469,8 @@ remote_export str RMTlist(BAT **ret) {
 	} while (0);
 #endif
 
-	BBPkeepref(b->batCacheid);
-	*ret = b;
+	BBPkeepref(*ret = b->batCacheid);
+	BBPkeepref(*ret2 = b2->batCacheid);
 	return(MAL_SUCCEED);
 }
 
@@ -470,7 +480,7 @@ remote_export str RMTlist(BAT **ret) {
 /**
  * Helper function to return a userconn struct containing the needed
  * bits to open up a connection.  This function is very similar to
- * RMTlist, but differs on enough crucial points to warrant its own
+ * RMTgetList, but differs on enough crucial points to warrant its own
  * copy.
  */
 static INLINE userconn RMTgetConnDefinition(str dbname) {
