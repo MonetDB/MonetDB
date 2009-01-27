@@ -57,10 +57,6 @@ command getLocalConnectionPort():int
 address SABgetLocalConnectionPort
 comment "Returns the port this server can be connected to, or 0 if none";
 
-command getLocalConnectionDBName():str
-address SABgetLocalConnectionDBName
-comment "Returns the local database name that can be connected to, or nil if connecting is impossible";
-
 command wildRetreat()
 address SABwildRetreat
 comment "Unpublishes everything known for this server";
@@ -145,7 +141,7 @@ str SABgetLocalConnectionHost(str *ret) {
 		return(MAL_SUCCEED);
 	}
 
-	/* con looks like mapi:monetdb://hostname:port/database?bla */
+	/* con looks like mapi:monetdb://hostname:port */
 	/* do some poor man's parsing */
 	tmp = con;
 	p = strchr(con, ':') + 1;
@@ -170,7 +166,7 @@ str SABgetLocalConnectionPort(int *ret) {
 		return(MAL_SUCCEED);
 	}
 
-	/* con looks like mapi:monetdb://hostname:port/database?bla */
+	/* con looks like mapi:monetdb://hostname:port */
 	/* do some poor man's parsing */
 	tmp = con;
 	p = strchr(con, ':') + 1;
@@ -180,34 +176,6 @@ str SABgetLocalConnectionPort(int *ret) {
 	*p = '\0';
 
 	*ret = atoi(con);
-	GDKfree(tmp);
-	return(MAL_SUCCEED);
-}
-
-str SABgetLocalConnectionDBName(str *ret) {
-	str tmp, con, p;
-
-	rethrow("sabaoth.getLocalConnectionDBName", tmp,
-			SABAOTHgetLocalConnection(&con));
-
-	if (strcmp(con, (str)str_nil) == 0) {
-		*ret = 0;
-		GDKfree(con);
-		return(MAL_SUCCEED);
-	}
-
-	/* con looks like mapi:monetdb://hostname:port/database?bla */
-	/* do some poor man's parsing */
-	tmp = con;
-	p = strchr(con, ':') + 1;
-	p = strchr(p, ':') + 1;
-	p = strchr(p, ':') + 1;
-	con = strchr(p, '/') + 1;
-	p = strchr(con, '?');
-	if (p != NULL)
-		*p = '\0';
-
-	*ret = GDKstrdup(con);
 	GDKfree(tmp);
 	return(MAL_SUCCEED);
 }
