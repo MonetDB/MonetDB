@@ -344,10 +344,10 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	char mero_running;
 	int fd;
 
-	list = BATnew(TYPE_void, TYPE_str, 20);
+	list = BATnew(TYPE_oid, TYPE_str, 20);
 	if (list == NULL)
 		throw(MAL, "remote.getList", "could not create list BAT");
-	kind = BATnew(TYPE_void, TYPE_str, 20);
+	kind = BATnew(TYPE_oid, TYPE_str, 20);
 	if (kind == NULL){
 		BBPunfix(list->batCacheid);
 		throw(MAL, "remote.getList", "could not create kind BAT");
@@ -706,7 +706,7 @@ str RMTconnect(
 		str *passwd)
 {
 	connection c;
-	userconn cdef = NULL;
+	userconn cdef;
 	MapiHdl mhdl;
 	char conn[BUFSIZ];
 	char *s;
@@ -716,7 +716,7 @@ str RMTconnect(
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 
-	if (dbname == NULL || *dbname == NULL || strcmp(*user, (str)str_nil) == 0)
+	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", "database name is NULL or nil");
 	if (user == NULL || *user == NULL || strcmp(*user, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", "username is NULL or nil");
@@ -727,6 +727,12 @@ str RMTconnect(
 	/* generate a connection name */
 	id = 1;
 	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
+
+	/* check if we know the dbname */
+	cdef = RMTgetConnDefinition(*dbname);
+	if (cdef == NULL)
+		throw(MAL, "remote.connect", "no such connection with name: '%s'",
+				*dbname);
 
 	/* find a free slot, start with special case of connections not
 	 * being set */
@@ -747,10 +753,6 @@ str RMTconnect(
 			t = c;
 			c = c->next;
 		} while (c != NULL);
-		cdef = RMTgetConnDefinition(*dbname);
-		if (cdef == NULL)
-			throw(MAL, "remote.connect", "no such connection with name: '%s'",
-					dbname);
 		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
 	/* make sure we protect the just added connection (small race) */
