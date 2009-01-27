@@ -213,7 +213,6 @@ typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */
 	str                name;      /* the handle for this connection */
 	Mapi               mconn;     /* the Mapi handle for the connection */
-	bit                persist;   /* is it a persistent connection */
 	size_t             nextid;    /* id counter */
 	struct _connection *next;     /* the next connection in the list */
 } *connection;
@@ -670,23 +669,11 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 }
 
 @h
-remote_export str RMTconnectDef(str *ret, str *dbname, str *user, str *passwd);
-@c
-/**
- * Default wrapper, calling RMTconnect with persistent = FALSE.
- */
-remote_export str RMTconnectDef(str *ret, str *dbname, str *user, str *passwd) {
-	bit f = TRUE;
-	return(RMTconnect(ret, dbname, user, passwd, &f));
-}
-
-@h
 remote_export str RMTconnect(
 		str *ret,
 		str *dbname,
 		str *user,
-		str *passwd,
-		bit *persistent);
+		str *passwd);
 @c
 #define serveget "\
     function user.remote_internal_servegetbat(type:str, o:bat[:any_1,:any_2]):void;\n\
@@ -719,17 +706,14 @@ remote_export str RMTconnect(
     end user.remote_internal_serveget;\n\
 "
 /**
- * Returns a connection to the given dbname.  If persistent is FALSE, it
- * always returns a newly created connection.  Otherwise, it returns an
- * existing connection if available, or a newly connected one otherwise.
- * A returned existing connection is checked for its connectivity.
+ * Returns a connection to the given dbname.  It always returns a newly
+ * created connection.
  */
 str RMTconnect(
 		str *ret,
 		str *dbname,
 		str *user,
-		str *passwd,
-		bit *persistent)
+		str *passwd)
 {
 	connection c;
 	userconn cdef = NULL;
@@ -748,14 +732,10 @@ str RMTconnect(
 		throw(ILLARG, "remote.connect", "username is NULL or nil");
 	if (passwd == NULL || *passwd == NULL || strcmp(*passwd, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", "password is NULL or nil");
-	if (persistent == NULL)
-		throw(ILLARG, "remote.connect", "persistent is NULL");
 
 
 	/* generate a connection name */
-	id = 0;
-	if (*persistent == FALSE)
-		id = 1; /* reserve 0 for the persistent one */
+	id = 1;
 	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
 
 	/* find a free slot, start with special case of connections not
@@ -770,18 +750,7 @@ str RMTconnect(
 			/* at the same time also check if this connection name
 			 * already exists */
 			if (strcmp(c->name, conn) == 0) {
-				if (*persistent == TRUE) {
-					if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-						throw(IO, "remote.connect", "an error occurred during "
-								"reconnect of '%s': %s",
-								conn, mapi_error_str(c->mconn));
-						/* TODO: throw away connection? */
-					}
-					*ret = strdup(conn);
-					return(MAL_SUCCEED);
-				}
-
-				/* try the next id, duplicate non-persistent connects
+				/* try the next id, duplicate connections
 				 * must be allowed */
 				id++;
 				snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
@@ -807,7 +776,6 @@ str RMTconnect(
 	}
 
 	c->name = GDKstrdup(conn);
-	c->persist = *persistent;
 	c->nextid = 0;
 	c->next = NULL;
 	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, "mal",
@@ -844,31 +812,18 @@ str RMTconnect(
 }
 
 @h
-remote_export str RMTdisconnectDef(int *ret, str *conn);
-@c
-/**
- * Simple wrapper that calls RMTdisconnect with force = FALSE.
- */
-remote_export str RMTdisconnectDef(int *ret, str *conn) {
-	bit f = FALSE;
-	return(RMTdisconnect(ret, conn, &f));
-}
-
-@h
-remote_export str RMTdisconnect(int *ret, str *conn, bit *force);
+remote_export str RMTdisconnect(int *ret, str *conn);
 @c
 /**
  * Disconnects a connection.  The connection needs not to exist in the
  * system, it only needs to exist for the client (i.e. it was once
  * created).
  */
-str RMTdisconnect(int *ret, str *conn, bit *force) {
+str RMTdisconnect(int *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.disconnect", "connection name is NULL or nil");
-	if (force == NULL)
-		throw(ILLARG, "remote.disconnect", "force is NULL");
 
 
 	/* just make sure the return isn't garbage */
@@ -879,12 +834,6 @@ str RMTdisconnect(int *ret, str *conn, bit *force) {
 	/* walk through the list */
 	while (c != NULL) {
 		if (strcmp(c->name, *conn) == 0) {
-			/* don't close persistent connections, unless forced */
-			if (*force == FALSE && c->persist == FALSE) {
-				mal_unset_lock(mal_remoteLock, "remote.disconnect");
-				return(MAL_SUCCEED);
-			}
-
 			/* ok, delete it... */
 			if (t == NULL) { /* the top */
 				t = c->next;
