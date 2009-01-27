@@ -428,7 +428,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		m->type = -1;
 		return NULL;
 	}
-	if (offset < 0 || offset > BUN_MAX) {
+	if (offset < 0 || offset > (lng) BUN_MAX) {
 		showException(SQL,"sql","offset out of range");
 		m->type = -1;
 		return NULL;
