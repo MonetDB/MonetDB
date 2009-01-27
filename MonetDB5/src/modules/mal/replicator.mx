@@ -19,6 +19,7 @@
 @a Martin Kersten
 @v 1.0
 @+ Database replication
+[NOT COMPLETED]
 The replicator module supports distribution of the SQL database
 over multiple sites using a master slave protocol.
 

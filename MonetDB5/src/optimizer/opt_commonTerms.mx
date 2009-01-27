@@ -153,8 +153,8 @@ We look back in the code base to determine a candidate for
 replacement. We don't have to look further back then the last
 relevant assignment.
 @c
-		last=  p->retc < p->argc? lastassigned[getArg(p,p->retc)]:0;
-		for (j = p->retc+1; j<p->argc; j++)
+		last=  0;
+		for (j = p->retc; j<p->argc; j++)
 			if (lastassigned[getArg(p,j)]> last)
 				last= lastassigned[getArg(p,j)];
 

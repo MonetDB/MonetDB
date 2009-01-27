@@ -113,49 +113,36 @@ the (remote) database servers.
 #define SITEremote	2
 
 typedef struct {
+	str alias;
 	str db;	/* connection parameters */
 	str usr;
 	str pw;
 	str host;	/* used when merovigian is not running */
 	int port;
 	int status;	/* asleep, local, remote */
-	str mod; /* cache of last executed function */
-	str fcn; /* should be extended to better allocate work */
 } Site;
 
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Site *sites;
 static int nrsites = 0;
 
-static int
+static str
 OCTOPUSdiscover(Client cntxt){
-	int i, fnd = 0; /* set to force parallel work */
-	connection conn;
+	bat b1,b2;
+	BAT *b;
 	str msg = MAL_SUCCEED;
 
+	(void) cntxt;
+	(void) b2;
 	/* determine if sites are reachable */
-	for (i = 0; i < nrsites; i++) {
-		if ((msg = RMTfindConnection(&conn, sites[i].db)) != MAL_SUCCEED) {
-			/* try to create a connection */
-			msg = RMTconnect(&sites[i].db,
-				&sites[i].db, &sites[i].usr, &sites[i].pw);
-#ifdef DEBUG_RUN_OCTOPUS
-			stream_printf(cntxt->fdout, "#Site connection %d %s\n", 
-				i, msg == MAL_SUCCEED ? "OK" : "failed to connect");
-#else
-			(void) cntxt;
-#endif
-		}
-		if (msg == MAL_SUCCEED && 
-			RMTfindConnection(&conn, sites[i].db) == MAL_SUCCEED)
-			sites[i].status = 1;
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"#Site %d status %d\n", 
-			i, sites[i].status);
-#endif
-		fnd+= sites[i].status == 1;
-	}
-	return fnd;
+	msg = RMTgetList(&b1,&b2);
+	if ( msg != MAL_SUCCEED)
+		return msg;
+	b = BATdescriptor(b1);
+	if ( b == NULL)
+		throw(MAL,"octopus.discover","No database list available");
+	BBPunfix(b1);
+	return MAL_SUCCEED;
 }
 
 @-
@@ -176,6 +163,7 @@ OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (nrsites == 0)
 		sites = (Site *) GDKzalloc(sizeof(Site) * MAXSITES);
 	idx = nrsites++;
+	sites[idx].alias = NULL;
 	sites[idx].db = GDKstrdup(*(str*) getArgReference(stk,pci,1));
 	sites[idx].usr = GDKstrdup(*(str*) getArgReference(stk,pci,2));
 	sites[idx].pw = GDKstrdup(*(str*) getArgReference(stk,pci,3));
@@ -188,7 +176,8 @@ OCTOPUSworker(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	mal_unset_lock(mal_contextLock,"scheduler.worker");
 #ifdef DEBUG_RUN_OCTOPUS
-	stream_printf(cntxt->fdout,"# added worker %s %s %s\n", 
+	stream_printf(cntxt->fdout,"# added worker %s %s %s %s\n", 
+		sites[idx].alias, sites[idx].usr, sites[idx].pw);
 		sites[idx].db, sites[idx].usr, sites[idx].pw);
 #else
 	(void) cntxt;
@@ -199,13 +188,14 @@ str
 OCTOPUSdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,j;
-	str db= *(str*) getArgReference(stk,pci,1);
+	str alias = *(str*) getArgReference(stk,pci,1);
 
 	(void) cntxt;
 	(void) mb;
 	mal_set_lock(mal_contextLock,"scheduler.drop");
 	for (i=j=0; i<nrsites; i++){
-		if( strcmp(sites[i].db,db) ==0) {
+		if( strcmp(sites[i].alias, alias) ==0) {
+			GDKfree(sites[i].alias);
 			GDKfree(sites[i].db);
 			GDKfree(sites[i].usr);
 			GDKfree(sites[i].pw);
@@ -233,15 +223,6 @@ OCTOPUSexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 redo:
-	for (i=0; i<nrsites; i++)
-		if (sites[i].fcn == getFunctionId(pci) &&
-			sites[i].mod == getModuleId(pci) &&
-			sites[i].status )
-		break;
-	if (i == nrsites)
-	for (i=0; i<nrsites; i++)
-		if ( sites[i].fcn == 0 && sites[i].status )
-			break;
 	if (i == nrsites)
 		do {
 			i= rand() % nrsites;
@@ -257,22 +238,19 @@ redo:
 #endif
 
 	/* register the plan remotely */
-	msg = RMTregisterInternal(cntxt, sites[i].db, 
+	msg = RMTregisterInternal(cntxt, sites[i].alias, 
 		getModuleId(pci), getFunctionId(pci));
 
 	/* ignore a duplicate definition */
 	if (msg != MAL_SUCCEED && !strstr(msg,"Function already defined")){
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"octopus.exec failed to register plan %s.%s at site %s\n",getModuleId(pci),getFunctionId(pci),sites[i].db);
+		stream_printf(cntxt->fdout,"octopus.exec failed to register plan %s.%s at site %s\n",getModuleId(pci),getFunctionId(pci),sites[i].alias);
 		stream_printf(cntxt->fdout,"reply: %s\n",msg);
 #endif
 		if (--tries <= 0)
 			return msg;
 		goto redo;
 	}
-
-	sites[i].fcn = getFunctionId(pci);
-	sites[i].mod = getModuleId(pci);
 
 	/* execute the plan as an independent process thread if it is local*/
 	/* otherwise activate it on the remote site passing parameters as well */
