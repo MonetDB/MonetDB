@@ -40,7 +40,7 @@ BuildRequires: pcre-devel
 # Requires(preun): /sbin/service
 # Requires(postun): /sbin/service
 
-%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
+%{!?_with_netcdf: %{!?_without_netcdf: %define _with_netcdf --with-netcdf}}
 
 %define builddoc 0
 
@@ -57,6 +57,25 @@ BuildRequires: MonetDB-client-devel >= 1.26
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
+%endif
+
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%package netcdf
+Summary: MonetDB4 module for using NetCDF
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: netcdf
+BuildRequires: netcdf-devel
+
+%description netcdf
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains a module for use with the MonetDB4 server
+component to interface to the NetCDF (network Common Data Form)
+libraries.
 %endif
 
 %package devel
@@ -105,7 +124,8 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize=yes \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"}
+	%{?comp_cc:CC="%{comp_cc}"} \
+	%{?_with_netcdf} %{?_without_netcdf}
 
 make
 
@@ -162,6 +182,10 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/libembeddedmil.so.*
 %dir %{_libdir}/MonetDB4
 %dir %{_libdir}/MonetDB4/lib
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%exclude %{_libdir}/MonetDB4/lib/lib_mnetcdf.so*
+%exclude %{_libdir}/MonetDB4/mnetcdf.mil
+%endif
 %{_libdir}/MonetDB4/lib/*.so*
 %{_libdir}/MonetDB4/*.mil
 
@@ -170,6 +194,13 @@ rm -fr $RPM_BUILD_ROOT
 
 %config(noreplace) %{_sysconfdir}/MonetDB.conf
 
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%files netcdf
+%{_libdir}/MonetDB4/lib/lib_mnetcdf.so*
+%{_libdir}/MonetDB4/mnetcdf.mil
+%{_includedir}/MonetDB4/mnetcdf/*.[hcm]
+%endif
+
 %files devel
 %defattr(-,root,root)
 %{_bindir}/monetdb4-config
@@ -177,6 +208,9 @@ rm -fr $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/MonetDB.pc
 %dir %{_includedir}/MonetDB4
 %{_includedir}/MonetDB4/*/*.[hcm]
+%if %{?_with_netcdf:1}%{!?_with_netcdf:0}
+%exclude %{_includedir}/MonetDB4/mnetcdf/*.[hcm]
+%endif
 %{_libdir}/libmonet.so
 %{_libdir}/libembeddedmil.so
 
