@@ -116,7 +116,7 @@ command destroy(dbname:str):void
 address RMTdestroy
 comment "Destroy a previously user-defined connection to a server.";
 
-command getList()(list:bat[:void,:str], kind:bat[:void,:str])
+command getList()(list:bat[:oid,:str], kind:bat[:oid,:str])
 address RMTgetList
 comment "List available databases with their property for use with connect().";
 
