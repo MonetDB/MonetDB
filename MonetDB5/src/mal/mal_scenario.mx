@@ -611,6 +611,7 @@ runScenarioBody(Client c)
 			stream_printf(c->fdout,"!%s\n",msg);
 */
 			GDKfree(msg);
+			msg = MAL_SUCCEED;
 		}
 		if (!c->state[0] &&
 		    (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) != MAL_SUCCEED)
