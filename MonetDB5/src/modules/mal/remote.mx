@@ -732,7 +732,7 @@ str RMTconnect(
 		bit *persistent)
 {
 	connection c;
-	userconn cdef;
+	userconn cdef = NULL;
 	MapiHdl mhdl;
 	char conn[BUFSIZ];
 	char *s;
