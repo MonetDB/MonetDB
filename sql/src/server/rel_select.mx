@@ -1162,7 +1162,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e, 1);
 	}
-	if (is_project(rel->op)) {
+	if (is_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname);
 	} else if (is_join(rel->op)) {
@@ -2598,9 +2598,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: 
 		return rel_setquery(sql, rel, sc);
-	default:
-		return sql_error(sql, 02, "Predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
+	default: {
+		sql_exp *re, *le = rel_value_exp(sql, &rel, sc, f, ek);
+
+		if (!le)
+			return NULL;
+		re = exp_atom_bool(1);
+		le = exp_compare( le, re, cmp_equal);
+		return rel_select(rel, le);
 	}
+	}
+	return NULL;
 }
 
 static sql_exp *
