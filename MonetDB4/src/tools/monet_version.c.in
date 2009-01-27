@@ -44,10 +44,22 @@ monetdb4_version(void)
 	printf("Configured for prefix: " MONETDB4_PREFIX "\n");
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
-	printf("  libpcre: %s (%s)\n", pcre_version(), "@pcreversion@");
+	{
+		char pcreversion[] = "@pcreversion@";
+		printf("  libpcre: %s", pcre_version());
+		if (*pcreversion)
+			printf(" (%s)", pcreversion);
+		printf("\n");
+	}
 #endif
 #ifdef HAVE_OPENSSL
-	printf("  openssl: %s (%s)\n", OPENSSL_VERSION_TEXT, "@opensslversion@");
+	{
+		char opensslversion[] = "@opensslversion@";
+		printf("  openssl: %s", OPENSSL_VERSION_TEXT);
+		if (*opensslversion)
+			printf(" (%s)", opensslversion);
+		printf("\n");
+	}
 #endif
 	printf("Compiled by: %s\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
