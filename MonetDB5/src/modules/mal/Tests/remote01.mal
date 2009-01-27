@@ -2,12 +2,13 @@
 # sabaoth for that
 include sabaoth;
 
+d := const.take("dbname");
 h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-remote.create("self", h, p);
-conn := remote.connect("self", "monetdb", "monetdb");
+remote.create(d, h, p);
+conn := remote.connect(d, "monetdb", "monetdb");
 
 # retrieve a value (that for sure won't exist)
 x:void := remote.get(conn, "b1":str);
@@ -15,12 +16,11 @@ catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;
 
-# should raise an exception (the arguments should make it fail)
-#i:str := remote.create("localhost", 63000, nil:str, "test", "test");
-#catch IOException:str;
-#	# make it a comment, the connection name is always different
-#	io.printf("!%s\n",IOException);
-#exit IOException;
+# should raise an exception because making duplicates makes no sense
+i := remote.create(d, h, p);
+catch MALException:str;
+	io.printf("!%s\n",MALException);
+exit MALException;
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
