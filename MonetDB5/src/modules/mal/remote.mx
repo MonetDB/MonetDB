@@ -123,18 +123,10 @@ comment "List available databases with their property for use with connect().";
 # session local connection instantiation functions
 
 command connect(dbname:str, user:str, passwd:str):str
-address RMTconnectDef
-comment "Returns a persistent connection for dbname using user name and password, or creates a new connection if no previous connection exists.";
-
-command connect(dbname:str, user:str, passwd:str, persistent:bit):str
 address RMTconnect
-comment "Returns a newly created connection for dbname, user name and password, if persistent is false or no previous connection exists.  Otherwise the previously existing connection is returned.";
+comment "Returns a newly created connection for dbname, user name and password.";
 
 command disconnect(dbname:str):void
-address RMTdisconnectDef
-comment "Disconnects a non-persistent connection.  Calling this function for a persistent connection is a no-op.";
-
-command disconnect(dbname:str, force:bit):void
 address RMTdisconnect
 comment "Disconnects the connection for dbname.";
 
