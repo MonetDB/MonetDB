@@ -6,7 +6,7 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-conn:str := remote.create(h, p, nil:str, "monetdb", "monetdb");
+conn:str := remote.create("demo",h, p);
 
 # this is invalid, as io.print is an invalid module, and bla will be
 # taken as function
