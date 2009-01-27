@@ -81,9 +81,10 @@ lib_initmodules = {
 }
 
 bin_Mserver = {
-	SOURCES = Mserver.mx
+	SOURCES = Mserver.mx monet_version.c.in
 	LIBS = libinitmodules STATIC_MODS @SHARED_LIBS@ $(EXTRA_LIBS) \
-		../monet/libmonet $(MONETDB_LIBS) -lbat -lmutils -lstream
+		../monet/libmonet $(MONETDB_LIBS) -lbat -lmutils -lstream \
+                $(PCRE_LIBS) $(OPENSSL_LIBS)
 }
 
 lib_embeddedmil = {

@@ -38,6 +38,7 @@ Mserver { [ --dbname <db-name> ]
           [ -d<value>|--debug=value ]
           [ -s|--set [option=value] ] set option can be given multiple times
                                     to override verious options
+	  [ --version ]
         } [ <mil-script> ]
 \end{verbatim}
 
@@ -85,6 +86,7 @@ The options have the following meaning:
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
+#include "monet_version.h"
 
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
@@ -125,15 +127,16 @@ static int malloc_init = 1;
 static void
 usage(char *prog, int debug, opt *set, int setlen)
 {
-	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
-	fprintf(stderr, "Options are:                                        \n");
-	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
-	fprintf(stderr, "                       --dbname=<database_name>     \n");
+	fprintf(stderr, "Usage: %s [ options ] [ script+ ]\n", prog);
+	fprintf(stderr, "Options are:\n");
+	fprintf(stderr, " -c <config_file>    | --config=<config_file>\n");
+	fprintf(stderr, "                       --dbname=<database_name>\n");
 	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
-	fprintf(stderr, "                       --dbinit=<MIL_statement>     \n");
-	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
-	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
-	fprintf(stderr, " -?                  | --help                       \n");
+	fprintf(stderr, "                       --dbinit=<MIL_statement>\n");
+	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>\n");
+	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>\n");
+	fprintf(stderr, "                       --version\n");
+	fprintf(stderr, " -?                  | --help\n");
 	if (debug)
 		mo_print_options(set, setlen);
 	exit(-1);
@@ -187,6 +190,7 @@ main(int argc, char **av)
 		{"nostalgic", 0, 0, 0},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 0},
+		{"version", 0, 0, 0},
 		{0, 0, 0, 0}
 	};
 
@@ -266,6 +270,10 @@ capabilities depend on the malloc implementation used at run time.
 			if (strcmp(long_options[option_index].name, "nostalgic") == 0) {
 				monet_nostalgic = 1;
 				break;
+			}
+			if (strcmp(long_options[option_index].name, "version") == 0) {
+				monetdb4_version();
+				exit(0);
 			}
 			usage(prog, debug, set, setlen);
 			break;
