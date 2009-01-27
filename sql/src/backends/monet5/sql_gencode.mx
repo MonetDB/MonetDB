@@ -1504,9 +1504,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *rsep = n->next->data;
 			char *ssep = n->next->next->data;
 			char *ns = n->next->next->next->data;
-/* XXX shouldn't these be lng?  see stmt_import() in sql_statement.mx */
-			int nr_rec = *(int*)(n->next->next->next->next->data);
-			int offset = *(int*)(n->next->next->next->next->next->data);
+			lng nr_rec = *(lng*)(n->next->next->next->next->data);
+			lng offset = *(lng*)(n->next->next->next->next->next->data);
 
 			if (sep == NULL) {
 				/* COPY INTO from binary files */
@@ -1554,8 +1553,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
 				q = pushStr(mb, q, ns);
-				q = pushInt(mb, q, nr_rec);
-				q = pushInt(mb, q, offset);
+				q = pushLng(mb, q, nr_rec);
+				q = pushLng(mb, q, offset);
 				s->nr = getDestVar(q);
 
 				q = newStmt(mb, "bstream", "destroy");
@@ -1576,8 +1575,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, rsep);
 				q = pushStr(mb, q, ssep);
 				q = pushStr(mb, q, ns);
-				q = pushInt(mb, q, nr_rec);
-				q = pushInt(mb, q, offset);
+				q = pushLng(mb, q, nr_rec);
+				q = pushLng(mb, q, offset);
 				s->nr = getDestVar(q);
 			}
 		}
