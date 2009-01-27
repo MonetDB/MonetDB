@@ -340,9 +340,11 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	userconn c;
 	sabdb *sab, *osab;
 	str tmp;
+#ifndef WIN32
 	char path[8096];
 	char mero_running;
 	int fd;
+#endif
 
 	list = BATnew(TYPE_oid, TYPE_str, 20);
 	if (list == NULL)
@@ -479,7 +481,9 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 	char path[8096];
 	userconn ret = NULL;
 	char mero_running;
+#ifndef WIN32
 	int fd;
+#endif
 
 	/* part 1: "user" -- this is trivial */
 	mal_set_lock(mal_remoteLock, "remote.list");
