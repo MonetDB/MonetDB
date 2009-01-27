@@ -872,8 +872,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 120 ]
-[ 120 ]
+[ 121 ]
+[ 121 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function				type		signature														help													  # name
 # str				str		str															str													  # type
@@ -975,6 +975,7 @@ Module: "monettime"
 [ "rule",			  "PROC:      ",  "rule(int, int, int, int, int) : rule",										  "not available"											  ]
 [ "rule",			  "PROC:      ",  "rule(int, str, int, int) : rule",											  "not available"											  ]
 [ "rule",			  "PROC:      ",  "rule(int, str, int, int, int) : rule",										  "not available"											  ]
+[ "sec_msec",			  "COMMAND:   ",  "sec_msec(daytime) : dbl",												  "extracts seconds.milliseconds from daytime (value between 0.0 and 59.999)"				  ]
 [ "seconds",			  "COMMAND:   ",  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
 [ "seconds",			  "PROC:      ",  "seconds(lng) : int",													  "not available"											  ]
 [ "seconds",			  "PROC:      ",  "seconds(timestamp) : int",												  "not available"											  ]
