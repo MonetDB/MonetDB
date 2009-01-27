@@ -1,12 +1,6 @@
-# for testweb, we need to ask the server itself how it is available, use
-# sabaoth for that
-include sabaoth;
-
-h := sabaoth.getLocalConnectionHost();
-p := sabaoth.getLocalConnectionPort();
-
-# create a connecton to ourself
-conn:str := remote.create("demo",h, p);
+# let connect figure out itself how to connect to the running db
+db := const.take("dbname");
+conn:str := remote.connect(db, "monetdb", "monetdb");
 
 b := bat.new(:str, :int);
 bat.insert(b, "bla", 1);
@@ -26,4 +20,4 @@ io.print(j);
 
 # help testweb a bit, since currently no cleanup is done on server
 # shutdown
-remote.destroy(conn);
+remote.disconnect(conn);

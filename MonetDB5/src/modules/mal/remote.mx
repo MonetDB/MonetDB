@@ -148,10 +148,15 @@ comment "Register <mod>.<fcn> at the remote site.";
 pattern exec(conn:str, mod:str, func:str):str
 address RMTexec
 comment "Remotely executes <mod>.<func> and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str)(:str, :str)
+address RMTexec
+comment "Remotely executes <mod>.<func> and returns the handle to its result";
 pattern exec(conn:str, mod:str, func:str, :str...):str
 address RMTexec
-comment "Remotely executes <mod>.<func> using the argument list
-of remote objects and returns the handle to its result";
+comment "Remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, :str...)(:str, :str)
+address RMTexec
+comment "Remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
 
 @h
 
@@ -859,6 +864,20 @@ str RMTdisconnect(int *ret, str *conn) {
 	throw(MAL, "remote.disconnect", "no such connection with name '%s'", *conn);
 }
 
+#if 0
+code for reconnecting if necessary
+			/* ok found, ensure it is connected */
+			mal_set_lock(c->lock, "remote.<findconn>"); /* shared connection */
+			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
+				mal_unset_lock(c->lock, "remote.<findconn>");
+				throw(IO, "remote.<findconn>", "an error occurred during "
+						"connect of '%s': %s",
+						conn, mapi_error_str(c->mconn));
+				/* TODO: throw away connection? */
+			}
+			*ret = c;
+			mal_unset_lock(c->lock, "remote.<findconn>");
+#endif
 
 /**
  * Helper function to return a connection matching a given string, or an
@@ -877,23 +896,12 @@ RMTfindconn(connection *ret, str conn) {
 	c = MCgetClient()->conn;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
-			/* ok found, ensure it is connected */
-			mal_set_lock(c->lock, "remote.<findconn>"); /* shared connection */
-			if (mapi_ping(c->mconn) != MOK && mapi_reconnect(c->mconn) != MOK) {
-				mal_unset_lock(c->lock, "remote.<findconn>");
-				throw(IO, "remote.<findconn>", "an error occurred during "
-						"connect of '%s': %s",
-						conn, mapi_error_str(c->mconn));
-				/* TODO: throw away connection? */
-			}
 			*ret = c;
-			mal_unset_lock(c->lock, "remote.<findconn>");
 			return(MAL_SUCCEED);
 		}
 		c = c->next;
 	}
-	/* don't print conn, it contains the password */
-	throw(MAL, "remote.<findconn>", "no such connection '%s'", conn);
+	throw(MAL, "remote.<findconn>", "no such active connection '%s'", conn);
 }
 
 @h
@@ -1044,15 +1052,17 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/* this call should be a single transaction over the channel*/
 		mal_set_lock(c->lock,"remote.get"); 
 
-		if( (tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))!= MAL_SUCCEED ){
-			mal_unset_lock(c->lock,"remote.get"); 
-			throw(MAL,"remote.get",tmp);
+		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
+				!= MAL_SUCCEED)
+		{
+			mal_unset_lock(c->lock, "remote.get"); 
+			throw(MAL, "remote.get", tmp);
 		}
 		mapi_fetch_row(mhdl); /* should succeed */
 		val = mapi_fetch_field(mhdl, 0);
 		if (val == NULL) {
 			mapi_close_handle(mhdl);
-			mal_unset_lock(c->lock,"remote.get"); 
+			mal_unset_lock(c->lock, "remote.get"); 
 			throw(MAL, "remote.get", "missing first column in tuple");
 		}
 		len = atol(val);
@@ -1133,14 +1143,14 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				snprintf(tval, BUFSIZ, "%s", val);
 				tval[BUFSIZ] = '\0';
 				mapi_close_handle(mhdl);
-				mal_unset_lock(c->lock,"remote.get"); 
+				mal_unset_lock(c->lock, "remote.get"); 
 				throw(MAL, "remote.get", "unable to parse value '%s'", tval);
 			}
 		}
 	}
 
 	mapi_close_handle(mhdl);
-	mal_unset_lock(c->lock,"remote.get"); 
+	mal_unset_lock(c->lock, "remote.get"); 
 
 	return(MAL_SUCCEED);
 }
@@ -1361,7 +1371,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  * a get call. It does not (yet) handle multiple return arguments.
  */
 str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, mod, func, ident, tmp;
+	str conn, mod, func, tmp;
 	int i, len;
 	connection c= NULL;
 	char qbuf[BUFSIZ+1];	/* FIXME: make this dynamic */
@@ -1370,13 +1380,15 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)cntxt;
 	(void)mb;
 
-	conn = (str)getArgValue(stk, pci, 1);
+	i = pci->retc;
+
+	conn = (str)getArgValue(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "connection name is NULL or nil");
-	mod = (str)getArgValue(stk, pci, 2);
+	mod = (str)getArgValue(stk, pci, i++);
 	if (mod == NULL || strcmp(mod, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "module name is NULL or nil");
-	func = (str)getArgValue(stk, pci, 3);
+	func = (str)getArgValue(stk, pci, i++);
 	if (func == NULL || strcmp(func, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "function name is NULL or nil");
 
@@ -1386,29 +1398,46 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	mal_set_lock(c->lock,"remote.exec"); 
 
-	/* get a free identifier on the remote host for each return argument expected */
-	RMTgetNextId(&tmp, c);
-	i = (int)strlen(tmp) + 1;
-	ident = alloca(sizeof(char) * i);
-	memcpy(ident, tmp, i);
-	GDKfree(tmp);
+	len = 0;
+
+	/* get a free identifier on the remote host for each return argument
+	 * expected */
+	if (pci->retc > 1) {
+		qbuf[len++] = '(';
+		for (i = 0; i < pci->retc; i++) {
+			RMTgetNextId(&tmp, c);
+			len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
+					i > 0 ? ", " : "", tmp);
+			/* note to self: this is ugly, should keep values around in
+			 * a list, and only asign at the end */
+			VALset(getArgReference(stk, pci, i),
+					stk->stk[getArg(pci, i)].vtype, tmp);
+		}
+		if (len < BUFSIZ)
+			qbuf[len++] = ')';
+	} else {
+		RMTgetNextId(&tmp, c);
+		len += snprintf(&qbuf[len], BUFSIZ - len, "%s", tmp);
+		/* see note to self above */
+		VALset(getArgReference(stk, pci, 0),
+				stk->stk[getArg(pci, 0)].vtype, tmp);
+	}
 
 	/* build the function invocation string in qbuf */
-	len = 0;
-	len += snprintf(&qbuf[len], BUFSIZ - len, "%s := %s.%s(", ident, mod, func);
+	len += snprintf(&qbuf[len], BUFSIZ - len, " := %s.%s(", mod, func);
 
 	/* handle the arguments to the function */
-	assert(pci->argc >= 3); /* ret, conn, func, ... */
+	assert(pci->argc >= 3); /* conn, mod, func, ... */
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
-	for (i = 4; i < pci->argc; i++) {
+	for (i = 3; i < pci->argc; i++) {
 		/* all arguments are of type rmtobj, at least we blindly trust
 		 * the parser that it makes sure, we can cast to a string
 		 * pointer as long as rmtobj is nothing more than that */
 		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
 				(i > 4 ? ", " : ""),
-				*((str *)getArgReference(stk, pci, i)));
+				*((str *)getArgReference(stk, pci, pci->retc + i)));
 	}
 
 	/* finish end execute the invocation string */
@@ -1422,9 +1451,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	mapi_close_handle(mhdl);  /* we don't care at all about what it outputs */
 
-	/* return the rident */
-	VALset(getArgReference(stk,pci,0),
-			stk->stk[getArg(pci, 0)].vtype, GDKstrdup(ident));
 	mal_unset_lock(c->lock,"remote.exec"); 
 	return(MAL_SUCCEED);
 }
