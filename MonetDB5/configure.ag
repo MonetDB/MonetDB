@@ -294,7 +294,7 @@ AC_DEFINE_UNQUOTED(MONETDB5_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine
 AC_DEFINE_UNQUOTED(MONETDB5_CONFFILE,"$QXsysconfdir${QDIRSEP}monetdb5.conf",[MonetDB5 config file])
 
 
-dnl allow to keep track of how we are going to build this thing
+dnl allow us to keep track of how we are going to build this thing
 compilercall="$CC $CFLAGS $X_CFLAGS"
 AC_SUBST(compilercall)
 linkercall="$LD $LDFLAGS"
