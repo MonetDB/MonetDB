@@ -344,7 +344,7 @@ remote_export str RMTgetList(int *ret, int *ret2);
  * grouped in that order.
  */
 remote_export str RMTgetList(int *ret, int *ret2){
-	BAT *b, *b2;
+	BAT *list, *kind;
 	str type;
 	userconn c;
 	sabdb *sab, *osab;
@@ -353,13 +353,13 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	char mero_running;
 	int fd;
 
-	b = BATnew(TYPE_void,getHeadType(TYPE_str), 20);
-	if ( b == NULL)
-		throw(MAL,"remote.getList","could not create BAT");
-	b2 = BATnew(TYPE_void,getHeadType(TYPE_str), 20);
-	if ( b2 == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL,"remote.getList","could not create BAT");
+	list = BATnew(TYPE_void, TYPE_str, 20);
+	if (list == NULL)
+		throw(MAL, "remote.getList", "could not create list BAT");
+	kind = BATnew(TYPE_void, TYPE_str, 20);
+	if (kind == NULL){
+		BBPunfix(list->batCacheid);
+		throw(MAL, "remote.getList", "could not create kind BAT");
 	}
 
 	/* part 1: "user" -- this is trivial */
@@ -368,8 +368,8 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	c = userconns;
 	/* walk through the list */
 	while (c != NULL) {
-		BUNappend(b, (ptr)c->dbname,FALSE);
-		BUNappend(b, (ptr)type,FALSE);
+		BUNappend(list, (ptr)c->dbname, FALSE);
+		BUNappend(kind, (ptr)type, FALSE);
 		c = c->next;
 	}
 	mal_unset_lock(mal_remoteLock, "remote.list");
@@ -379,8 +379,8 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	rethrow("remote.list", tmp, SABAOTHgetStatus(&osab, NULL));
 	sab = osab;
 	while (sab != NULL) {
-		BUNappend(b, (ptr)sab->dbname,FALSE);
-		BUNappend(b, (ptr)type,FALSE);
+		BUNappend(list, (ptr)sab->dbname, FALSE);
+		BUNappend(kind, (ptr)type, FALSE);
 		sab = sab->next;
 	}
 	SABAOTHfreeStatus(&osab);
@@ -457,8 +457,8 @@ remote_export str RMTgetList(int *ret, int *ret2){
 			*q++ = '\0';
 
 			/* store what we found */
-			BUNappend(b, (ptr)buf,FALSE);
-			BUNappend(b, (ptr)type,FALSE);
+			BUNappend(list, (ptr)buf, FALSE);
+			BUNappend(kind, (ptr)type, FALSE);
 
 			/* move it away */
 			len -= p - buf;
@@ -469,8 +469,8 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	} while (0);
 #endif
 
-	BBPkeepref(*ret = b->batCacheid);
-	BBPkeepref(*ret2 = b2->batCacheid);
+	BBPkeepref(*ret = list->batCacheid);
+	BBPkeepref(*ret2 = kind->batCacheid);
 	return(MAL_SUCCEED);
 }
 
