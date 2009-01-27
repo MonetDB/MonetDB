@@ -428,6 +428,11 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		m->type = -1;
 		return NULL;
 	}
+	if (offset < 0 || offset > BUN_MAX) {
+		showException(SQL,"sql","offset out of range");
+		m->type = -1;
+		return NULL;
+	}
 
 	if (offset > 0)
 		offset--;
@@ -437,7 +442,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 		memset((char*) &as, 0, sizeof(as));
 		as.nr_attrs = list_length(t->columns.set);
 		as.nr = (sz<1)?BUN_NONE:(BUN)sz;
-		as.offset = offset;
+		as.offset = (BUN) offset;
 		as.error = NULL;
 		as.tryall = 0;
 		as.complaints= NULL;
@@ -474,7 +479,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].batfile = NULL;
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
-		if (TABLETcreate_bats(&as, (sz<0)?1000:sz) >= 0) {
+		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
 			if (TABLETload_file(&as, bs, out) != BUN_NONE)
 				bats = TABLETcollect_bats(&as);
 		}
