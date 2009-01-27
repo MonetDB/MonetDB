@@ -1427,16 +1427,16 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	len += snprintf(&qbuf[len], BUFSIZ - len, " := %s.%s(", mod, func);
 
 	/* handle the arguments to the function */
-	assert(pci->argc >= 3); /* conn, mod, func, ... */
+	assert(pci->argc - pci->retc >= 3); /* conn, mod, func, ... */
 
 	/* put the arguments one by one, and dynamically build the
 	 * invocation string */
-	for (i = 3; i < pci->argc; i++) {
+	for (i = 3; i < pci->argc - pci->retc; i++) {
 		/* all arguments are of type rmtobj, at least we blindly trust
 		 * the parser that it makes sure, we can cast to a string
 		 * pointer as long as rmtobj is nothing more than that */
 		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
-				(i > 4 ? ", " : ""),
+				(i > 3 ? ", " : ""),
 				*((str *)getArgReference(stk, pci, pci->retc + i)));
 	}
 
