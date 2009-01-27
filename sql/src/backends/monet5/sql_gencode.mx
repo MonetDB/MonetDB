@@ -1888,7 +1888,8 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 		q = pushStr(mb, q, ""); /* warning */
 	}
 	/* generate a dummy return assignment for functions */
-	if (getArgType(mb,getInstrPtr(mb,0),0) != TYPE_void) {
+	if (getArgType(mb,getInstrPtr(mb,0),0) != TYPE_void &&
+	    getInstrPtr(mb,mb->stop-1)->barrier != RETURNsymbol) {
 		q = newAssignment(mb);
 		getArg(q,0) = getArg(getInstrPtr(mb,0),0);
 		q->barrier = RETURNsymbol;
