@@ -1,11 +1,42 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
+/**
+* Copyright Notice:
+* -----------------
+*
+* The contents of this file are subject to the PfTijah Public License
+* Version 1.1 (the "License"); you may not use this file except in
+* compliance with the License. You may obtain a copy of the License at
+* http://dbappl.cs.utwente.nl/Legal/PfTijah-1.1.html
+*
+* Software distributed under the License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+* License for the specific language governing rights and limitations
+* under the License.
+*
+* The Original Code is the PfTijah system.
+*
+* The Initial Developer of the Original Code is the "University of Twente".
+* Portions created by the "University of Twente" are
+* Copyright (C) 2006-2009 "University of Twente".
+*
+* Portions created by the "CWI" are
+* Copyright (C) 2008-2009 "CWI".
+*
+* All Rights Reserved.
+* 
+* Author(s): Henning Rode 
+*            Jan Flokstra
+*/
+
+
 #include <pf_config.h>
-
 #include <gdk.h>
-
 #include <stdio.h>
 #include "tjc_abssyn.h"
 #include "tjc_normalize.h"
 #include "tjc_optimize.h"
+#include "tjc_phys_optimize.h"
 #include "tjc_milprint.h"
 
 #define DEBUG 0
@@ -248,9 +279,6 @@ int save2file(char* name, char *content) {
 
 char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_name, char** errBUFF)
 {
-    (void) startNodes_name;
-    (void) rtagbat;
-
     tjc_config *tjc_c = (tjc_config*)TJCmalloc(sizeof(struct tjc_config));
 
     tjc_c_GLOBAL = tjc_c;
@@ -259,7 +287,13 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
 
     TJptree_t *ptree;
     TJpnode_t *root;
-        
+    TJatree_t *atree;
+  
+    if (startNodes_name)
+    	tjc_c->startNodes = startNodes_name;
+    else
+	tjc_c->startNodes = NULL;
+
     if (DEBUG) stream_printf(GDKout,"#!tjc interpreting options\n");
     if ( !interpret_options(tjc_c,optbat) ) {
     	*errBUFF = GDKstrdup("option handling error");
@@ -274,22 +308,31 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
 	normalize(ptree, root);
         if (DEBUG) stream_printf(GDKout,"#!tjc start optimize\n");
 	optimize(ptree, root);
+	atree = phys_optimize (ptree, root, rtagbat);
 
-	// dot or mil output
-	if (tjc_c->dotFile) {
-	    assign_numbers (root, 1); // BUG, HENNING THIS SCREWS UP THE TREE
-    	    printTJptree (tjc_c, root);
+	// optional dot output
+	if (tjc_c->dotFile) { 
+	    printTJatree (tjc_c, atree); 
     	    save2file(tjc_c->dotFile, tjc_c->dotBUFF);
 	}
-	else 
-            if (DEBUG) stream_printf(GDKout,"#!tjc start mil generation\n");
-	    milres = milprint (tjc_c,root);
-	    milres = GDKstrdup(milres); // INCOMPLETE, check free
-            if ( tjc_c->milFile ) {
-    	        save2file(tjc_c->milFile, milres);
-            }
-	    if (DEBUG) stream_printf(GDKout,"#!tjc start of mil:\n%s",milres);
-	    if (DEBUG) stream_printf(GDKout,"#!tjc end of mil\n");
+        if (DEBUG) stream_printf(GDKout,"#!tjc start mil generation\n");
+	// start henning
+	milres = milprint2 (tjc_c, atree);
+	milres = GDKstrdup(milres); // INCOMPLETE, check free
+	tjc_c->milBUFF[0] = '\0';
+	// optional mil output
+        if ( tjc_c->milFile ) {
+    	    save2file(tjc_c->milFile, milres);
+        }
+	// end henning
+	milres = milprint (tjc_c, root);
+	milres = GDKstrdup(milres); // INCOMPLETE, check free
+	/* optional mil output
+        if ( tjc_c->milFile ) {
+    	    save2file(tjc_c->milFile, milres);
+        } */
+	if (DEBUG) stream_printf(GDKout,"#!tjc start of mil:\n%s",milres);
+	if (DEBUG) stream_printf(GDKout,"#!tjc end of mil\n");
 	
 	free_tree(ptree);
     }
@@ -308,12 +351,5 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
     return milres;
 }
 
-
-
-#if 0
-int main() 
-{
-	tjc_main();
-}
-#endif
-
+/* vim:set shiftwidth=4 expandtab: */
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */

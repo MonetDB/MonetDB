@@ -15,7 +15,11 @@
 @' 
 @' The Initial Developer of the Original Code is the "University of Twente".
 @' Portions created by the "University of Twente" are 
-@' Copyright (C) 2006-2007 "University of Twente".
+@' Copyright (C) 2006-2009 "University of Twente".
+@' 
+@' Portions created by the "CWI" are 
+@' Copyright (C) 2008-2009 "CWI".
+@' 
 @' All Rights Reserved.
 @'
 
@@ -154,6 +158,18 @@ the join algorithm comes down to a repeated slice and insert operation.
 "Stack tree merge join descendant"
 
 .COMMAND treemergejoin_sort_unnested(BAT[oid,oid],BAT[void,int],BAT[oid,oid]) : BAT[oid,oid] = CMDtreemergejoin_sort_unnested; 
+"Stack tree merge join descendant"
+
+.COMMAND treemergejoin_nest_pre(BAT[oid,any],BAT[void,int],BAT[oid,any]) : BAT[oid,oid] = CMDtreemergejoin_pre; 
+"Stack tree merge join descendant"
+
+.COMMAND treemergejoin_nest_nid(BAT[oid,oid],BAT[void,int],BAT[oid,oid]) : BAT[oid,oid] = CMDtreemergejoin_nid; 
+"Stack tree merge join descendant"
+
+.COMMAND treemergejoin_unnest_pre(BAT[oid,any],BAT[void,int],BAT[oid,any]) : BAT[oid,oid] = CMDtreemergejoin_unnested_pre; 
+"Stack tree merge join descendant"
+
+.COMMAND treemergejoin_unnest_nid(BAT[oid,oid],BAT[void,int],BAT[oid,oid]) : BAT[oid,oid] = CMDtreemergejoin_unnested_nid; 
 "Stack tree merge join descendant"
 
 .PRELUDE = pftijah_prelude;
@@ -1880,34 +1896,6 @@ PROC ALG_tj_docmgmt_tape(BAT[str,bat] tape,
 	return true;
 }
 
-# INCOMPLETE: henning, what should I do about this (no locking impl).
-PROC tj_setBackgroundCollName(str name, BAT[oid,str] qenv) : BAT[void,str] := 
-{
-	if (not(isnil(CATCH(bat("tj_collName").count())))) {
-		tj_global_init();
-	}
-	if (not(bat("tj_collName").reverse().exist(name))) {
-		ERROR("background collection \"%s\"does not exist",name);
-	}
-	return create_qenv(qenv.find(QENV_FTINAME),name,qenv.find(QENV_SCOREBASE));
-}
-
-# INCOMPLETE: henning, what should I do about this.
-var equivalences := new(str,str);
-PROC tj_initEquivalences() : void := 
-{
-    equivalences := new(str,str).rename("tj_equivalences");
-}
-
-# INCOMPLETE: henning, what should I do about this.
-PROC tj_addEquivalenceClass( bat elements ) : void := 
-{
-    # Create cross product of class elements
-    var class := eqclass.reverse().cross( eqclass );
-    # Append to equivalences table
-    equivalences := equivalences.insert( class );
-}
-
 var tracefile_handle := nil;
 PROC tj_trace( str s ) : void := 
 {
@@ -1983,6 +1971,408 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
       }
     }
 }
+
+#####################################################################
+#								    #
+#								    #
+#            IMPLEMENTATION OF PHYSICAL SRA OPERATORS		    #
+#								    #
+#								    #
+#####################################################################
+
+
+#####################################################################
+# SELECTION
+#####################################################################
+
+##
+# Select all element nodes in the collection
+# Returns a bat [pre, any].
+##
+PROC tj_select_star() : bat[oid,any] := 
+{
+    return bat("tj_" + ftindex + "_pfpre");
+}
+
+##
+# Select all startNodes (node context set coming from pathfinder)
+# Returns a bat [pre, any].
+##
+PROC tj_select_startnodes(str name) : bat[oid,any] :=
+{
+    return bat(name);
+}
+
+##
+# Select all element nodes in the collection with the given name
+# Returns a bat [nid, any].
+##
+PROC tj_select_tag(str name) : bat[oid,any] :=
+{
+    var tids := bat("tj_" + ftindex + "_tagdict").select(name);
+    if (tids.count() = 0) return new(oid,dbl);
+    var tid := int(tids.reverse().fetch(0));
+    var index := bat("tj_" + ftindex + "_TagIndex");
+    var offset1 := int(index.fetch(tid));
+    var offset2 := int(index.fetch(tid + 1)) - 1;
+    return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2);
+}
+
+#####################################################################
+# ADD PRE IDs 
+#####################################################################
+
+##
+# associate pre identifiers to the nid identifiers
+# Returns a bat [nid, pre].
+##
+PROC tj_add_pre(bat[oid,any] nid_score) : bat[oid,oid] :=
+{
+    return bat("tj_" + ftindex + "_Tags").semijoin(nid_score).chk_order();
+}
+
+#####################################################################
+# ID TRANSLATION
+#####################################################################
+
+##
+# Translate all nid identifiers to pre identifiers
+# Returns a bat [pre, any].
+##
+PROC tj_nid2pre(bat[oid,any] nid_score) : bat[oid,any] :=
+{
+    return nid_score.reverse().leftfetchjoin(bat("tj_" + ftindex + "_Tags")).reverse().chk_order();
+}
+
+##
+# Translate all pre identifiers to nid identifiers
+# Returns a bat [nid, any].
+##
+PROC tj_pre2nid(bat[oid,any] pre_score) : bat[oid,any] :=
+{
+    # todo: if join turns out to be expensive, we can slice out the part belonging to
+    # the respective tagname. pre2nid is only used, if result region has a single tag-name.
+
+    return pre_score.reverse().join(bat("tj_" + ftindex + "_Tags").reverse()).reverse();
+}
+
+#####################################################################
+# Contained_by
+#####################################################################
+
+@mil
+
+@:contained_by_noprop_nid(nest)@
+@:contained_by_noprop_nid(unnest)@
+@= contained_by_noprop_nid
+PROC tj_contained_by_noprop_@1_nid (bat[oid,oid] left, bat[oid,oid] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_TagSize");
+    var right_left := treemergejoin_@1_nid(right, size, left);
+    var result := left.semijoin(right_left.reverse()).chk_order();
+    return result;
+}
+@mil
+
+@:contained_by_noprop_pre(nest)@
+@:contained_by_noprop_pre(unnest)@
+@= contained_by_noprop_pre
+PROC tj_contained_by_noprop_@1_pre (bat[oid,oid] left, bat[oid,oid] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_size1");
+    var right_left := treemergejoin_@1_pre(right, size, left);
+    var result := right_left.reverse().chk_order();
+    return result;
+}
+@mil
+
+PROC tj_contained_by_prop_nest_nid (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_TagSize");
+    var left_pre := bat("tj_" + ftindex + "_Tags").semijoin(left).chk_order().tsort();
+    var right_pre := bat("tj_" + ftindex + "_Tags").semijoin(right).chk_order().tsort();
+    var right_left := treemergejoin_nest_nid(right_pre, size, left_pre);
+    var left_score;
+    if (downprop = "sum") {
+        left_score := {sum}(right, right_left, right_left.reverse().kunique()).sort();
+    }
+    if (downprop = "max") {
+        left_score := {max}(right, right_left, right_left.reverse().kunique()).sort(); 
+    }
+    return left_score;
+}
+PROC tj_contained_by_prop_unnest_nid (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_TagSize");
+    var left_pre := bat("tj_" + ftindex + "_Tags").semijoin(left).chk_order().tsort();
+    var right_pre := bat("tj_" + ftindex + "_Tags").semijoin(right).chk_order().tsort();
+    var right_left := treemergejoin_unnest_nid(right_pre, size, left_pre);
+    var left_score := right_left.reverse().join(right).sort(); 
+    return left_score;
+}
+PROC tj_contained_by_prop_nest_pre (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_size1");
+    var right_left := treemergejoin_nest_pre(right, size, left);
+    var left_score;
+    if (downprop = "sum") {
+        left_score := {sum}(right, right_left, right_left.reverse().kunique()).sort();
+    }
+    if (downprop = "max") {
+        left_score := {max}(right, right_left, right_left.reverse().kunique()).sort(); 
+    }
+    return left_score;
+}
+PROC tj_contained_by_prop_unnest_pre (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_size1");
+    var right_left := treemergejoin_unnest_pre(right, size, left);
+    var left_score := right_left.reverse().join(right).sort(); 
+    return left_score;
+}
+
+#####################################################################
+# Containing
+#####################################################################
+
+@mil
+
+@:containing_noprop_nid(nest)@
+@:containing_noprop_nid(unnest)@
+@= containing_noprop_nid
+PROC tj_containing_noprop_@1_nid (bat[oid,oid] left, bat[oid,oid] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_TagSize");
+    var left_right := treemergejoin_@1_nid(left, size, right);
+    var result := left.semijoin(left_right).chk_order();
+    return result;
+}
+@mil
+
+@:containing_noprop_pre(nest)@
+@:containing_noprop_pre(unnest)@
+@= containing_noprop_pre
+PROC tj_containing_noprop_@1_pre (bat[oid,oid] left, bat[oid,oid] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_size1");
+    var left_right := treemergejoin_@1_pre(left, size, right);
+    var result := left_right.chk_order();
+    return result;
+}
+@mil
+
+@:containing_prop_nid(nest)@
+@:containing_prop_nid(unnest)@
+@= containing_prop_nid
+PROC tj_containing_prop_@1_nid (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_TagSize");
+    var left_pre := bat("tj_" + ftindex + "_Tags").semijoin(left).chk_order().tsort();
+    var right_pre := bat("tj_" + ftindex + "_Tags").semijoin(right).chk_order().tsort();
+    var left_right := treemergejoin_@1_nid(left_pre, size, right_pre);
+    var left_score;
+    if (upprop = "sum") {
+        left_score := {sum}(right, left_right.reverse(), left_right.kunique()).sort();
+    }
+    if (upprop = "max") {
+        left_score := {max}(right, left_right.reverse(), left_right.kunique()).sort(); 
+    }
+    return left_score;
+}
+@mil
+
+@:containing_prop_pre(nest)@
+@:containing_prop_pre(unnest)@
+@= containing_prop_pre
+PROC tj_containing_prop_@1_pre (bat[oid,any] left, bat[oid,dbl] right) : bat[oid,any] :=
+{
+    var size := bat("tj_" + ftindex + "_size1");
+    var left_right := treemergejoin_@1_pre(left, size, right);
+    var left_score;
+    if (upprop = "sum") {
+        left_score := {sum}(right, left_right.reverse(), left_right.kunique()).sort();
+    }
+    if (upprop = "max") {
+        left_score := {max}(right, left_right.reverse(), left_right.kunique()).sort(); 
+    }
+    return left_score;
+}
+@mil
+
+#####################################################################
+# Containing_query
+#####################################################################
+
+PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl] :=
+{
+    var param    := bat("tj_" + ftindex + "_param");
+    var stemmer  := param.find("stemmer");
+    var firstterm:= oid(param.find("lastStopWord"));
+    
+    var mark_term := term_score.hmark(0@0);
+    var mark_score := term_score.tmark(0@0);
+    var stemmed  := [tj_normalizeTerm]( [toLower](mark_term), stemmer );
+    
+    var mark_tid := stemmed.join(bat("tj_" + ftindex + "_termdict").reverse());
+    mark_tid := mark_tid.select(firstterm,oid(nil),TRUE,FALSE);
+    return mark_tid.reverse().leftfetchjoin(mark_score);
+}
+
+# returns the pre-order positions of the term t 
+# in the collection of the documents
+PROC _getTermPositions (oid tid) : bat[void,oid] := {
+     var index := bat("tj_" + ftindex + "_TermIndex");
+     var offset1 := int(index.fetch(int(tid)));
+     var offset2 := int(index.fetch(int(tid) + 1));
+     var res := bat("tj_" + ftindex + "_Terms").slice(offset1, offset2 - 1);
+     res := res.seqbase(0@0).chk_order();
+     return res;
+}
+
+@mil
+# returns the collection count cCnt(t) of term t
+# in the background collection
+# (the background collection can be different from collection
+# the documents are coming from) 
+@:getTermDocCnt_nid(nest)@
+@:getTermDocCnt_nid(unnest)@
+@= getTermDocCnt_nid
+PROC _getTermDocCnt_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
+     
+	# get doc - term relation
+        var e_tPre := treemergejoin_@1_nid(e_pre, e_size, t_pre);
+        return e_tPre.reverse().histogram().sort();
+}
+@mil
+@:getTermDocCnt_pre(nest)@
+@:getTermDocCnt_pre(unnest)@
+@= getTermDocCnt_pre
+PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
+     
+	# get doc - term relation
+        var e_tPre := treemergejoin_@1_pre(e_pre, e_size, t_pre.reverse());
+        return e_tPre.reverse().histogram().sort();
+}
+@mil
+
+
+#               __     qCnt(t)       /  (1 - lambda) * dLH(t)       \  
+# NLLR(d|q) =   >_     ------- * log |  ----------------------  + 1 |  
+#              t in q   qSize        \      lambda * cLH(t)         /  
+#
+# where qCnt(t) = count of term t in query q
+# where qSize = number of terms in query q
+# where dLH(t) = likelihood of term t in doc d
+# where cLH(t) = likelihood of term t in (background) collection c
+#
+
+PROC _score_NLLR(int q_tCnt, int qSize, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
+    var collFac := ((dbl(1) - c_lambda) / c_lambda) * cSize / dbl(c_tCnt);
+    var q_tLH := dbl(q_tCnt) / dbl(qSize);
+    var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
+    e_tScores.left_div(e_size);
+    e_tScores := e_tScores.[*](collFac);
+    e_tScores := e_tScores.[+](dbl(1));
+    e_tScores := [log](e_tScores);
+    e_tScores := e_tScores.[*](q_tLH);
+    return e_tScores;
+}
+
+
+@:containing_query_NLLR(nest,nid,TagSize)@
+@:containing_query_NLLR(unnest,nid,TagSize)@
+@:containing_query_NLLR(nest,pre,size1)@
+@:containing_query_NLLR(unnest,pre,size1)@
+@= containing_query_NLLR
+PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    var qSize := query.count();
+    var t_qCnt := query.reverse().histogram();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( qSize = 0 ) return new(oid,dbl);
+    
+    var e_pre := left.chk_order();
+    var cSize := bat("tj_" + ftindex + "_Terms").count();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var eScores := new(oid,dbl);
+    
+    # loop over query terms
+    t_qCnt@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getTermPositions($h);
+        var c_tCnt := count(t_pre); 
+        # get element count of term
+	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
+	# score elements by this term
+        var e_tScores := _score_NLLR($t, qSize, c_tCnt, cSize, e_tCnt, e_size);
+        e_tCnt := nil;
+        
+	# aggregate term scores
+        eScores := eScores.union_add(e_tScores);
+	e_tScores := nil;
+    }
+    eScores.access(BAT_READ);
+    
+    t_total :+= time();
+    if (timing) printf("# NLLR timing: total: %d\n", t_total);
+    return eScores;
+}
+@mil
+
+#####################################################################
+# and/or combination
+#####################################################################
+
+PROC tj_and_nocomb(bat left, bat right) : bat :=
+{
+    return left.semijoin(right).sort();
+}
+
+PROC tj_and_comb(bat left, bat right) : bat :=
+{
+    if (andcomb = "sum") return [+](left,right).sort();
+    if (andcomb = "prod") return [*](left,right).sort();
+    if (andcomb = "max") return [max](left,right).sort();
+    if (andcomb = "min") return [min](left,right).sort();
+    if (andcomb = "prob") return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right))).sort();
+}
+
+PROC tj_or_nocomb(bat left, bat right) : bat :=
+{
+    return left.kunion(right).sort();
+}
+
+PROC tj_or_comb(bat left, bat right) : bat :=
+{
+    if (orcomb = "sum") return left.union_add(right).sort();
+    if (orcomb = "prod") return left.union_mul(right).sort();
+    if (orcomb = "max") {
+        var intersect := [max](left,right);
+        var onlyleft  := left.kdiff(right);
+        var onlyright := right.kdiff(left);
+	var outer := onlyleft.kunion(onlyright);
+        return intersect.kunion(outer).sort();
+    }
+    if (orcomb = "prob") {
+	var intersect := [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+        var onlyleft  := left.kdiff(right);
+        var onlyright := right.kdiff(left);
+	var outer := onlyleft.kunion(onlyright);
+        return intersect.kunion(outer).sort();
+    }
+}
+
+
+#####################################################################
+#
+#   OLD VERSION START
+#
+#####################################################################
 
 const virtRoot := 0@0;
 
@@ -4434,6 +4824,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
       }
       D_cur++;
     }
+     /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
     
     /* ----------------------------- tidy up -------------------------------------- */
      GDKfree(stack); 
@@ -4445,7 +4836,282 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
      BATset(res, TRUE);
      
      *result = res;    
+     return(GDK_SUCCEED);
+}
+
+int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_nid";
+    BAT *res = *result;
+    BUN D_cur, D_last, 
+        A_cur, A_last;
+    BATiter Ai, Di;
+    oid D_cur_pre;
+
+    si *stack; 
+    BUN stack_top = 0, i;
+	
+    int *size;
+    BUN free;	
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BATtordered(Astart)&1)) { 
+        GDKerror("%s: Ancestor BAT not sorted on pre.\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BAThordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted on nid.\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BATtordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted on pre.\n",name); 
+        return(GDK_FAIL);
+    }
+    if (nid_size->ttype != TYPE_int) {
+        GDKerror("%s: tail of size BAT must be type INT.\n", name);
+        return(GDK_FAIL);
+    }
+    if (nid_size->htype != TYPE_void) {
+        GDKerror("%s: head (oid) of size BAT must NOT be materialized.\n", name);
+        return(GDK_FAIL);
+    }
+    if (BATcount(Astart) == 0 || BATcount(nid_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // The maximum depth of the stack is the depth of the XML tree
+    if ((stack = (si*)GDKmalloc(sizeof(si) * max_stack_size)) == NULL) {
+        GDKerror("treemergejoin_sort: could not allocate memory for stack.\n"); 
+        return(GDK_FAIL);
+    }
+
+    // the size of the bat may not be correct (could be more, could be less)
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
+    
+    size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
+    D_cur = BUNfirst(Dstart);
+    D_last = BUNlast(Dstart);  
+    A_cur = BUNfirst(Astart);
+    A_last = BUNlast(Astart);
+    Ai = bat_iterator(Astart);
+    Di = bat_iterator(Dstart);
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
+
+    /* -------------------------------- main ---------------------------------------- */
+    
+    while(D_cur < D_last) {
+      
+      D_cur_pre = *(oid*)BUNtail(Di, D_cur);
+      /* printf("0. eocs: %d, desc: %d\n", stack[stack_top-1].eocs, *(oid*)BUNtail(Di, D_cur)); */
+      
+      /* remove ancestor candidates that ended before D_cur */
+      while (stack_top && D_cur_pre > stack[stack_top-1].eocs) {
+        /* pop */
+	stack_top--;
+      }	
+      
+      /* printf("1.stacksize: %d\n", stack_top); */
+      
+      /* Put ancestors on stack until we reach the current descendent */ 
+      while (A_cur < A_last && *(oid*)BUNtail(Ai, A_cur) < D_cur_pre){		
+	if (D_cur_pre <= (*(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
+           /* push */
+	   si new_stack_item;
+           new_stack_item.ctx = *(oid*)BUNhead(Ai, A_cur);
+           new_stack_item.eocs = *(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)];
+           stack[stack_top++] = new_stack_item;
+	}
+	A_cur++;
+      }
+      
+      /* output everything that is on the stack (the ancestors) */
+      /* It has started before Dstart and since it's a tree, */
+      /* it has to end after Dend. */
+      if (free < stack_top)
+      {
+     	BATsetcount(res, hdst - sdst);
+        BUN sz = BATgrows(res);
+        if (BATextend(res, sz) == NULL)
+    	{ 
+       	  GDKerror("%s: could not extend result BAT.\n", name);
+          return(GDK_FAIL);
+    	}
+        sdst = (oid*)Hloc(res, BUNfirst(res));
+        hdst = (oid*)Hloc(res, BUNlast(res));
+        tdst = (oid*)Tloc(res, BUNlast(res));
+        free = sz - BATcount(res) - stack_top;
+      } else {
+          free -= stack_top;
+      }
+     
+      for (i=0;i<stack_top;i++) {
+        /* printf("3. anc/desc: (%d/%d)\n", stack[i].ctx, *(oid*)BUNtail(Di, D_cur)); */
+        *hdst++ = stack[i].ctx;
+        *tdst++ = *(oid*)BUNhead(Di, D_cur);
+      }
+      D_cur++;
+    }
      /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+     GDKfree(stack); 
+	
+     BATsetcount(res, hdst - sdst);
+     res->batDirty = TRUE;
+     if (!(BAThordered(Dstart)&1)) res->tsorted = GDK_SORTED;
+     else res->tsorted = FALSE;
+     res->hsorted = FALSE;
+     BATset(res, TRUE);
+     
+     *result = res;    
+     return(GDK_SUCCEED);
+}
+
+int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_pre";
+    BAT *res = *result;
+    BUN D_cur, D_last, 
+        A_cur, A_last;
+    BATiter Ai, Di;
+    oid D_cur_pre, A_cur_pre;
+
+    si *stack; 
+    BUN stack_top = 0, i;
+	
+    int *size;
+    BUN free;	
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BAThordered(Astart)&1)) { 
+        GDKerror("%s: Ancestor pre BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BAThordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+    if (pre_size->ttype != TYPE_int) {
+        GDKerror("%s: tail of size BAT must be type INT.\n", name);
+        return(GDK_FAIL);
+    }
+    if (pre_size->htype != TYPE_void) {
+        GDKerror("%s: head (oid) of size BAT must NOT be materialized.\n", name);
+        return(GDK_FAIL);
+    }
+    if (BATcount(Astart) == 0 || BATcount(pre_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // The maximum depth of the stack is the depth of the XML tree
+    if ((stack = (si*)GDKmalloc(sizeof(si) * max_stack_size)) == NULL) {
+        GDKerror("treemergejoin_sort: could not allocate memory for stack.\n"); 
+        return(GDK_FAIL);
+    }
+
+    // the size of the bat may not be correct (could be more, could be less)
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
+    
+    size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur = BUNfirst(Dstart);
+    D_last = BUNlast(Dstart);  
+    A_cur = BUNfirst(Astart);
+    A_last = BUNlast(Astart);
+    Ai = bat_iterator(Astart);
+    Di = bat_iterator(Dstart);
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
+
+    /* -------------------------------- main ---------------------------------------- */
+    
+    while(D_cur < D_last) {
+      
+      D_cur_pre = *(oid*)BUNhead(Di, D_cur);
+      /* printf("0. eocs: %d, desc: %d\n", stack[stack_top-1].eocs, *(oid*)BUNtail(Di, D_cur)); */
+      
+      /* remove ancestor candidates that ended before D_cur */
+      while (stack_top && D_cur_pre > stack[stack_top-1].eocs) {
+        /* pop */
+	stack_top--;
+      }	
+      
+      /* printf("1.stacksize: %d\n", stack_top); */
+      
+      /* Put ancestors on stack until we reach the current descendent */ 
+      while (A_cur < A_last && D_cur_pre > (A_cur_pre = *(oid*)BUNhead(Ai, A_cur))){		
+	if (D_cur_pre <= (A_cur_pre + size[A_cur_pre])) {
+           /* push */
+	   si new_stack_item;
+           new_stack_item.ctx = A_cur_pre;
+           new_stack_item.eocs = A_cur_pre + size[A_cur_pre];
+           stack[stack_top++] = new_stack_item;
+	}
+	A_cur++;
+      }
+      
+      /* output everything that is on the stack (the ancestors) */
+      /* It has started before Dstart and since it's a tree, */
+      /* it has to end after Dend. */
+      if (free < stack_top)
+      {
+     	BATsetcount(res, hdst - sdst);
+        BUN sz = BATgrows(res);
+        if (BATextend(res, sz) == NULL)
+    	{ 
+       	  GDKerror("%s: could not extend result BAT.\n", name);
+          return(GDK_FAIL);
+    	}
+        sdst = (oid*)Hloc(res, BUNfirst(res));
+        hdst = (oid*)Hloc(res, BUNlast(res));
+        tdst = (oid*)Tloc(res, BUNlast(res));
+        free = sz - BATcount(res) - stack_top;
+      } else {
+          free -= stack_top;
+      }
+     
+      for (i=0;i<stack_top;i++) {
+        *hdst++ = stack[i].ctx;
+        *tdst++ = D_cur_pre;
+      }
+      D_cur++;
+    }
+     /* it is possible there are still ancestor candidates left on the stack, but we are out of descendants, so they starve... */
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+     GDKfree(stack); 
+	
+     BATsetcount(res, hdst - sdst);
+     res->batDirty = TRUE;
+     res->tsorted = GDK_SORTED;
+     res->hsorted = FALSE;
+     BATset(res, TRUE);
+     
+     *result = res;    
      return(GDK_SUCCEED);
 }
 
@@ -4546,6 +5212,214 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *nid_size, BAT
     res->batDirty = TRUE;
     if (BAThordered(Astart)&1) res->hsorted = GDK_SORTED;
     if (BAThordered(Dstart)&1) res->tsorted = GDK_SORTED;
+    BATset(res, TRUE);
+    
+    *result = res;    
+    return(GDK_SUCCEED);
+}
+
+int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_unnested_nid";
+    BAT *res = *result;
+    BUN D_cur, D_last, 
+        A_cur, A_last;
+    BATiter Ai, Di;
+    oid D_cur_pre;
+    int *size;
+    int free;	
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BATtordered(Astart)&1)) { 
+        GDKerror("%s: Ancestor BAT not sorted on pre.\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BATtordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted on pre.\n",name); 
+        return(GDK_FAIL);
+    }
+    if (nid_size->ttype != TYPE_int) {
+        GDKerror("%s: tail of size BAT must be type INT.\n", name);
+        return(GDK_FAIL);
+    }
+    if (nid_size->htype != TYPE_void) {
+        GDKerror("%s: head (oid) of size BAT must NOT be materialized.\n", name);
+        return(GDK_FAIL);
+    }
+    if (BATcount(Astart) == 0 || BATcount(nid_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // the size of the bat may not be correct (could be more, could be less)
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
+    
+    size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
+    D_cur = BUNfirst(Dstart);
+    D_last = BUNlast(Dstart);  
+    A_cur = BUNfirst(Astart);
+    A_last = BUNlast(Astart);
+    Ai = bat_iterator(Astart);
+    Di = bat_iterator(Dstart);
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
+
+    /* -------------------------------- main ---------------------------------------- */
+    
+    /* skip descendant candidates before the next ancestor candidate */
+    while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)Tloc(Astart,A_cur))
+      D_cur++; 
+      
+    while(D_cur < D_last && A_cur < A_last) {
+      
+      /* skip ancestor candidates before the next descendant candidate */
+      D_cur_pre = *(oid*)Tloc(Dstart, D_cur);
+      /* poor man's binary search / exploiting forward scan */ 
+      while (A_cur+1048576 < A_last && *(oid*)Tloc(Astart, A_cur+1048576) < D_cur_pre)
+          A_cur += 1048576; 
+      while (A_cur+32768 < A_last && *(oid*)Tloc(Astart, A_cur+32768) < D_cur_pre)
+          A_cur += 32768; 
+      while (A_cur+1024 < A_last && *(oid*)Tloc(Astart, A_cur+1024) < D_cur_pre)
+          A_cur += 1024;  
+      while (A_cur+1 < A_last && *(oid*)Tloc(Astart, A_cur+1) < D_cur_pre)
+          A_cur++;
+
+      /* write to result */ 
+      while (D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= (*(oid*)Tloc(Astart, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)])) {
+          *hdst++ = *(oid*)BUNhead(Ai, A_cur);
+          *tdst++ = *(oid*)BUNhead(Di, D_cur);
+          D_cur++;
+      }
+      /* this ancestor cannot have further results (tree properties) */
+      A_cur++;
+    
+      /* skip descendant candidates before the next ancestor candidate */
+      if (A_cur < A_last)
+          while(D_cur < D_last && *(oid*)Tloc(Dstart, D_cur) <= *(oid*)Tloc(Astart,A_cur))
+              D_cur++; 
+    }
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+    BATsetcount(res, hdst - sdst);
+    res->batDirty = TRUE;
+    if (!(BAThordered(Astart)&1)) res->hsorted = GDK_SORTED;
+    else res->hsorted = FALSE;
+    if (!(BAThordered(Dstart)&1)) res->tsorted = GDK_SORTED;
+    else res->tsorted = FALSE;
+    BATset(res, TRUE);
+    
+    *result = res;    
+    return(GDK_SUCCEED);
+}
+
+int CMDtreemergejoin_unnested_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) {
+
+    /* ---------------------------- declarations ------------------------------------ */
+    char *name = "TJ_treemergejoin_unnested_pre";
+    BAT *res = *result;
+    BUN D_cur, D_last, 
+        A_cur, A_last;
+    BATiter Ai, Di;
+    oid D_cur_pre;
+    int *size;
+    int free;	
+    oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
+    
+    /* ------------------------------- checks ---------------------------------------- */
+    if (!(BAThordered(Astart)&1)) { 
+        GDKerror("%s: Ancestor pre BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+    if (!(BAThordered(Dstart)&1)) { 
+        GDKerror("%s: Descendant BAT not sorted (on start).\n",name); 
+        return(GDK_FAIL);
+    }
+    if (pre_size->ttype != TYPE_int) {
+        GDKerror("%s: tail of size BAT must be type INT.\n", name);
+        return(GDK_FAIL);
+    }
+    if (pre_size->htype != TYPE_void) {
+        GDKerror("%s: head (oid) of size BAT must NOT be materialized.\n", name);
+        return(GDK_FAIL);
+    }
+    if (BATcount(Astart) == 0 || BATcount(pre_size) == 0 || BATcount(Dstart) == 0)
+    {
+        res = BATnew(TYPE_oid, TYPE_oid, 0);
+        *result = res;    
+        return(GDK_SUCCEED);
+    }
+
+    /* ----------------------------- initialize -------------------------------------- */
+    // the size of the bat may not be correct (could be more, could be less)
+    free = BATcount(Dstart);
+    res = BATnew(TYPE_oid, TYPE_oid, free); 
+    if (res == NULL) 
+    { 
+       GDKerror("%s: could not allocate result BAT.\n", name);
+       return(GDK_FAIL);
+    }
+    
+    size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
+    D_cur = BUNfirst(Dstart);
+    D_last = BUNlast(Dstart);  
+    A_cur = BUNfirst(Astart);
+    A_last = BUNlast(Astart);
+    Ai = bat_iterator(Astart);
+    Di = bat_iterator(Dstart);
+    sdst = hdst = (oid*)Hloc(res, BUNlast(res));
+           tdst = (oid*)Tloc(res, BUNlast(res));
+
+    /* -------------------------------- main ---------------------------------------- */
+    
+    /* skip descendant candidates before the next ancestor candidate */
+    while(D_cur < D_last && *(oid*)Hloc(Dstart, D_cur) <= *(oid*)Hloc(Astart,A_cur))
+      D_cur++; 
+      
+    while(D_cur < D_last && A_cur < A_last) {
+      
+      /* skip ancestor candidates before the next descendant candidate */
+      D_cur_pre = *(oid*)Hloc(Dstart, D_cur);
+      /* poor man's binary search / exploiting forward scan */ 
+      while (A_cur+1048576 < A_last && *(oid*)Hloc(Astart, A_cur+1048576) < D_cur_pre)
+          A_cur += 1048576; 
+      while (A_cur+32768 < A_last && *(oid*)Hloc(Astart, A_cur+32768) < D_cur_pre)
+          A_cur += 32768; 
+      while (A_cur+1024 < A_last && *(oid*)Hloc(Astart, A_cur+1024) < D_cur_pre)
+          A_cur += 1024;  
+      while (A_cur+1 < A_last && *(oid*)Hloc(Astart, A_cur+1) < D_cur_pre)
+          A_cur++;
+
+      /* write to result */ 
+      while (D_cur < D_last && *(oid*)Hloc(Dstart, D_cur) <= (*(oid*)Hloc(Astart, A_cur) + size[*(oid*)Hloc(Astart, A_cur)])) {
+          *hdst++ = *(oid*)Hloc(Astart, A_cur);
+          *tdst++ = *(oid*)Hloc(Dstart, D_cur);
+          D_cur++;
+      }
+      /* this ancestor cannot have further results (tree properties) */
+      A_cur++;
+    
+      /* skip descendant candidates before the next ancestor candidate */
+      if (A_cur < A_last)
+          while(D_cur < D_last && *(oid*)Hloc(Dstart, D_cur) <= *(oid*)Hloc(Astart,A_cur))
+              D_cur++; 
+    }
+    
+    /* ----------------------------- tidy up -------------------------------------- */
+    BATsetcount(res, hdst - sdst);
+    res->batDirty = TRUE;
+    res->hsorted = GDK_SORTED;
+    res->tsorted = GDK_SORTED;
     BATset(res, TRUE);
     
     *result = res;    
