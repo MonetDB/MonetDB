@@ -3246,6 +3246,15 @@ plan_subexpression (PFla_op_t *n)
                    can never be of type nat */
                 add_plans (plans, plan_step_join_to_llstep (L(n)));
             }
+            if (n->schema.count == 1 &&
+                L(n)->kind == la_project &&
+                LL(n)->kind == la_step_join &&
+                L(n)->sem.proj.items[0].old == LL(n)->sem.step.item_res &&
+                (PFprop_key (LL(n)->prop, LL(n)->sem.step.item_res) ||
+                 PFprop_set (LL(n)->prop))) {
+                add_plans (plans, plan_step_join_to_step (L(n)));
+            }
+
             break;
 
         case la_fun_1to1:       plans = plan_fun_1to1 (n);     break;
