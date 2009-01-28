@@ -4519,7 +4519,6 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		char emode = sql->emode;
-		exp_kind ek = {type_value, card_relation, TRUE};
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
 
@@ -4538,7 +4537,7 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 			sql->emode = 0;*/
 		if (create) /* for subtable we only need direct dependencies */
 			sql->emode = m_deps;
-		sq = rel_subquery(sql, NULL, query, ek);
+		sq = rel_selects(sql, query);
 		sql->emode = emode;
 		if (!sq)
 			return NULL;
