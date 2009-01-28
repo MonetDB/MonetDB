@@ -122,26 +122,32 @@ struct const_t {
 };
 typedef struct const_t const_t;
 
-typedef unsigned int dom_t;
+/* domain information */
+struct dom_t {
+    unsigned int  id;
+    struct dom_t *super_dom;
+    PFarray_t    *union_doms;
+};
+typedef struct dom_t dom_t;
 
 /* domain item */
 struct dom_pair_t {
     PFalg_col_t  col;
-    dom_t dom;
+    dom_t       *dom;
 };
 typedef struct dom_pair_t dom_pair_t;
 
 /* domain-subdomain relationship item */
 struct subdom_t {
-    dom_t dom;
-    dom_t subdom;
+    dom_t *dom;
+    dom_t *subdom;
 };
 typedef struct subdom_t subdom_t;
 
 /** pair of disjoint domains */
 struct disjdom_t {
-    dom_t  dom1;
-    dom_t  dom2;
+    dom_t *dom1;
+    dom_t *dom2;
 };
 typedef struct disjdom_t disjdom_t;
 
@@ -313,36 +319,36 @@ bool PFprop_set (const PFprop_t *prop);
 /**
  * Return domain of column @a col stored in property container @a prop.
  */
-dom_t PFprop_dom (const PFprop_t *prop, PFalg_col_t col);
+dom_t * PFprop_dom (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Return domain of column @a col in the domains of the
  * left child node (stored in property container @a prop)
  */
-dom_t PFprop_dom_left (const PFprop_t *prop, PFalg_col_t col);
+dom_t * PFprop_dom_left (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Return domain of column @a col in the domains of the
  * right child nod (stored in property container @a prop)
  */
-dom_t PFprop_dom_right (const PFprop_t *prop, PFalg_col_t col);
+dom_t * PFprop_dom_right (const PFprop_t *prop, PFalg_col_t col);
 
 /**
  * Test if domain @a subdom is a subdomain of the domain @a dom
  * (using the domain relationship list in property container @a prop).
  */
-bool PFprop_subdom (const PFprop_t *prop, dom_t subdom, dom_t dom); 
+bool PFprop_subdom (const PFprop_t *prop, dom_t *subdom, dom_t *dom); 
 
 /**
  * Test if domains @a a and @a b are disjoint
  * (using the disjdoms field in PFprop_t)
  */
-bool PFprop_disjdom (const PFprop_t *prop, dom_t a, dom_t b);
+bool PFprop_disjdom (const PFprop_t *prop, dom_t *a, dom_t *b);
 
 /**
  * Writes domain represented by @a domain to character array @a f.
  */
-void PFprop_write_domain (PFarray_t *f, dom_t domain);
+void PFprop_write_domain (PFarray_t *f, dom_t *domain);
 
 /**
  * Write domain-subdomain relationships of property container @a prop

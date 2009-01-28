@@ -1146,7 +1146,7 @@ static bool
 proxy_nest_exit (PFla_op_t *p, PFla_op_t *entry)
 {
     PFla_op_t *cur;
-    dom_t col1_dom, col2_dom, super_dom;
+    dom_t *col1_dom, *col2_dom, *super_dom;
 
     if (p->kind != la_rowid)
         return false;
@@ -1848,7 +1848,7 @@ join_entry (PFla_op_t *p)
 static bool
 join_exit (PFla_op_t *p, PFla_op_t *entry)
 {
-    dom_t entry_dom, dom;
+    dom_t *entry_dom, *dom;
 
     if (p->kind != la_rowid)
         return false;
