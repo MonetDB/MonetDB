@@ -69,6 +69,7 @@ struct PFprop_t {
                                       parent operators. */
     PFalg_collist_t *keys;       /**< List of columns that have
                                       unique values. */
+    PFarray_t       *fds;        /**< List of functional dependencies. */
     PFarray_t       *reqvals;    /**< List of columns their associated
                                       usage information. */
     PFarray_t       *req_node_vals;   /**< List of columns and their associated
@@ -161,6 +162,13 @@ struct lineage_t {
 };
 typedef struct lineage_t lineage_t;
 
+/* functional dependencies */
+struct fd_t {
+    PFalg_col_t col1; /**< key/describing column */
+    PFalg_col_t col2; /**< dependent column */ 
+};
+typedef struct fd_t fd_t;
+
 /* unique name item */
 struct name_pair_t {
     PFalg_col_t ori;
@@ -186,7 +194,7 @@ PFprop_t *PFprop (void);
  */
 void PFprop_infer (bool card, bool const_, bool set, 
                    bool dom, bool lineage, bool icols, bool ckey,
-                   bool key, bool ocols, bool req_node,
+                   bool key, bool fd, bool ocols, bool req_node,
                    bool reqval, bool level, bool refctr,
                    bool guides, bool ori_names, bool unq_names,
                    PFla_op_t *root, PFguide_list_t *guide_list);
@@ -220,6 +228,7 @@ void PFprop_infer_nat_dom (PFla_op_t *root);
 void PFprop_infer_lineage (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
+void PFprop_infer_functional_dependencies (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_req_node (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
@@ -454,6 +463,15 @@ PFalg_collist_t * PFprop_keys_to_collist (const PFprop_t *prop);
  * Infer the key properties assuming that guides have been already inferred.
  */
 void PFprop_infer_key_with_guide (PFla_op_t *root);
+
+/* ---------------- functional dependency property accessor ---------------- */
+
+/**
+ * Test if a column @a dependent functionally depends on column @a describing.
+ * in the list of functional dependencies in container @a prop
+ */
+bool PFprop_fd (const PFprop_t *prop,
+                PFalg_col_t describing, PFalg_col_t dependent);
 
 /* ------------------------ ocol property accessors ------------------------ */
 

@@ -100,6 +100,9 @@ PFprop (void)
     /* initialize lineage information */
     ret->lineage = NULL;
 
+    /* initialize FD information */
+    ret->fds = NULL;
+
     /* initialize unique name information */
     ret->name_pairs = NULL;
     ret->l_name_pairs = NULL;
@@ -126,7 +129,7 @@ PFprop (void)
 void
 PFprop_infer (bool card, bool const_, bool set,
               bool dom, bool lineage, bool icol, bool ckey,
-              bool key, bool ocols, bool req_node,
+              bool key, bool fds, bool ocols, bool req_node,
               bool reqval, bool level, bool refctr,
               bool guides, bool ori_names, bool unq_names,
               PFla_op_t *root, PFguide_list_t *guide_list)
@@ -139,6 +142,8 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_lineage (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
+    if (fds)
+        PFprop_infer_functional_dependencies (root);
     if (ckey)
         PFprop_infer_composite_key (root);
     if (key)
