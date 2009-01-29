@@ -5330,7 +5330,6 @@ int CMDtreemergejoin_unnested_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT 
     BAT *res = *result;
     BUN D_cur, D_last, 
         A_cur, A_last;
-    BATiter Ai, Di;
     oid D_cur_pre;
     int *size;
     int free;	
@@ -5375,8 +5374,6 @@ int CMDtreemergejoin_unnested_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT 
     D_last = BUNlast(Dstart);  
     A_cur = BUNfirst(Astart);
     A_last = BUNlast(Astart);
-    Ai = bat_iterator(Astart);
-    Di = bat_iterator(Dstart);
     sdst = hdst = (oid*)Hloc(res, BUNlast(res));
            tdst = (oid*)Tloc(res, BUNlast(res));
 

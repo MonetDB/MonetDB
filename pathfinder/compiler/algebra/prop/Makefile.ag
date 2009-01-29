@@ -40,6 +40,7 @@ lib_prop = {
                 prop_composite_key.c \
                 prop_const.c \
                 prop_dom.c \
+                prop_fd.c \
                 prop_guide.c \
                 prop_icol.c \
                 prop_key.c \

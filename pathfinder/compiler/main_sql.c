@@ -346,6 +346,7 @@ main (int argc, char *argv[])
                   true  /* icol */,
                   true  /* composite key */,
                   true  /* key */,
+                  true  /* fd */,
                   true  /* ocols */,
                   true  /* req_node */,
                   true  /* reqval */,

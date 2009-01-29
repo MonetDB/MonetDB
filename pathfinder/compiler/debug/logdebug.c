@@ -1287,6 +1287,31 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                                             n->prop,
                                             n->schema.items[i].name)));
             }
+            if (*fmt == '+' || *fmt == 'F') {
+                unsigned int fd_count = 0;
+                /* list all functional depencies */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    for (unsigned int j = 0; j < n->schema.count; j++)
+                        if (i != j &&
+                            PFprop_fd (n->prop,
+                                       n->schema.items[i].name,
+                                       n->schema.items[j].name)) {
+                            if (fd_count == 0)
+                                PFarray_printf (
+                                    dot,
+                                    "\\nfunctional dependencies:");
+                            else
+                                PFarray_printf (dot, ", ");
+                            if (fd_count % 3 == 0)
+                                PFarray_printf (dot, "\\n");
+                            fd_count++;
+                            PFarray_printf (
+                                dot,
+                                "%s => %s",
+                                PFcol_str (n->schema.items[i].name),
+                                PFcol_str (n->schema.items[j].name));
+                        }
+            }
             if (*fmt == '+' || *fmt == '[') {
                 /* list columns and their unique names */
                 for (unsigned int i = 0; i < n->schema.count; i++) {

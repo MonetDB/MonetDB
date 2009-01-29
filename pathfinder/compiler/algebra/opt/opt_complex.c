@@ -775,6 +775,7 @@ opt_complex (PFla_op_t *p)
                                    L(p)->schema.items[i].name));
             }
             if ((PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
+                 /* set ok as rewrite can only result in equal or less rows */
                  PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop,
                                PFprop_dom_right (p->prop,
@@ -822,6 +823,7 @@ opt_complex (PFla_op_t *p)
                                      R(p)->schema.items[i].name));
             }
             if ((PFprop_key_right (p->prop, p->sem.eqjoin.col2) ||
+                 /* set ok as rewrite can only result in equal or less rows */
                  PFprop_set (p->prop)) &&
                 PFprop_subdom (p->prop,
                                PFprop_dom_left (p->prop,
@@ -915,11 +917,66 @@ opt_complex (PFla_op_t *p)
                     modified = true;
                 }
             }
+            /* An equi-join on equal columns referencing the same input
+               twice can be avoided in case all columns in one join
+               argument depend fully on the join column. In this situation
+               no new row combinations may be generated and the equi-join
+               thus only introduces (superfluous) duplicate rows. */
+             /* set ok as rewrite can only result in equal or less rows */
+            if (PFprop_set (p->prop) &&
+                PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.col1),
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.col2)) &&
+                PFprop_subdom (
+                    p->prop,
+                    PFprop_dom_right (p->prop,
+                                      p->sem.eqjoin.col2),
+                    PFprop_dom_left (p->prop,
+                                     p->sem.eqjoin.col1)) &&
+                L(p)->kind == la_project &&
+                R(p)->kind == la_project &&
+                LL(p) == RL(p)) {
+                left_arg_req  = false;
+                right_arg_req = false;
+                for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                    if (p->sem.eqjoin.col1 != L(p)->schema.items[i].name)
+                        left_arg_req |= !PFprop_fd (
+                                             p->prop,
+                                             p->sem.eqjoin.col1,
+                                             L(p)->schema.items[i].name);
+                for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                    if (p->sem.eqjoin.col2 != R(p)->schema.items[i].name)
+                        right_arg_req |= !PFprop_fd (
+                                              p->prop,
+                                              p->sem.eqjoin.col2,
+                                              R(p)->schema.items[i].name);
+                /* All columns in one join argument depend on the join
+                   column and thus can also be placed in the other argument. */
+                if (!left_arg_req || !right_arg_req) {
+                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    unsigned int count = 0;
+                    /* concatenate the two projection lists */
+                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                        proj[count++] = L(p)->sem.proj.items[i];
+
+                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                        proj[count++] = R(p)->sem.proj.items[i];
+
+                    *p = *PFla_project_ (LL(p), count, proj);
+                    modified = true;
+                    break;
+                }
+            }
 
 #if 0 /* disable join -> semijoin rewrites */
             /* introduce semi-join operator if possible */
             if (!left_arg_req &&
                 (PFprop_key_left (p->prop, p->sem.eqjoin.col1) ||
+                 /* set ok as rewrite can only result in equal or less rows */
                  PFprop_set (p->prop))) {
                 /* Every column of the left argument will point
                    to the join argument of the right argument to
@@ -978,6 +1035,7 @@ opt_complex (PFla_op_t *p)
             /* introduce semi-join operator if possible */
             if (!right_arg_req &&
                 (PFprop_key_right (p->prop, p->sem.eqjoin.col2) ||
+                 /* set ok as rewrite can only result in equal or less rows */
                  PFprop_set (p->prop))) {
                 /* Every column of the right argument will point
                    to the join argument of the left argument to
@@ -1133,6 +1191,40 @@ opt_complex (PFla_op_t *p)
             if (PFprop_ckey (L(p)->prop, p->schema)) {
                 *p = *PFla_dummy (L(p));
                 modified = true;
+                break;
+            }
+            /* optimization based on functional dependencies */
+            if (PFprop_icols_count (p->prop) != p->schema.count) {
+                PFalg_proj_t *proj  = PFmalloc (p->schema.count *
+                                                sizeof (PFalg_proj_t));
+                unsigned int  count = 0,
+                              i,
+                              j;
+                for (i = 0; i < p->schema.count; i++) {
+                    if (!PFprop_icol (p->prop, p->schema.items[i].name)) {
+                        for (j = 0; j < p->schema.count; j++)
+                            if (i != j &&
+                                PFprop_icol (p->prop, p->schema.items[j].name) &&
+                                PFprop_fd (p->prop,
+                                           p->schema.items[j].name,
+                                           p->schema.items[i].name))
+                                /* throw away column */ break;
+                        if (j == p->schema.count)
+                            /* keep column */
+                            proj[count++] = PFalg_proj (p->schema.items[i].name,
+                                                        p->schema.items[i].name);
+                    }
+                    else
+                        /* keep column */
+                        proj[count++] = PFalg_proj (p->schema.items[i].name,
+                                                    p->schema.items[i].name);
+                }
+                /* if a column was thrown away we prune the schema */
+                if (count < p->schema.count) {
+                    L(p) = PFla_project_ (L(p), count, proj);
+                    PFprop_update_ocol (p);
+                    modified = true;
+                }
                 break;
             }
             break;
@@ -1728,6 +1820,7 @@ opt_complex (PFla_op_t *p)
                   p->sem.step.spec.kind != node_kind_doc)) &&
                 RL(p)->sem.step.spec.kind == node_kind_node &&
                 !PFprop_icol (p->prop, p->sem.step.item) &&
+                 /* set ok as rewrite can only result in equal or less rows */
                 (PFprop_set (p->prop) ||
                  PFprop_ckey (p->prop, p->schema) ||
                  PFprop_key (p->prop, p->sem.step.item_res))) {
@@ -1800,6 +1893,7 @@ opt_complex (PFla_op_t *p)
                   p->sem.step.spec.kind != node_kind_doc)) &&
                 R(p)->sem.step.spec.kind == node_kind_node &&
                 !PFprop_icol (p->prop, p->sem.step.item) &&
+                 /* set ok as rewrite can only result in equal or less rows */
                 (PFprop_set (p->prop) ||
                  PFprop_ckey (p->prop, p->schema) ||
                  PFprop_key (p->prop, p->sem.step.item_res))) {
@@ -2111,10 +2205,16 @@ PFalgopt_complex (PFla_op_t *root)
     while (modified) {
         /* Infer key, icols, domain, reqval,
            and refctr properties first */
+        PFprop_infer_functional_dependencies (root);
         PFprop_infer_key (root);
         PFprop_infer_level (root);
         PFprop_infer_composite_key (root);
         PFprop_infer_icol (root);
+        /* Exploiting set information together with key information
+           is only correct if we assure that the rewrite does not
+           produce more duplicates afterward. (If more duplicates
+           due to a set-based rewrite were introduced the key
+           information might get inconsistent.) */
         PFprop_infer_set (root);
         PFprop_infer_reqval (root);
         PFprop_infer_dom (root);
