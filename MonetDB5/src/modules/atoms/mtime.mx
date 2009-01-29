@@ -564,25 +564,25 @@ address MTIMEdate_extract_day_bulk;
 command hours(h:daytime) :int 
 address MTIMEdaytime_extract_hours 
 comment "extracts hour from daytime";
-command batmtime.hours(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.hours(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_hours_bulk;
 
 command minutes(d:daytime) :int 
 address MTIMEdaytime_extract_minutes 
 comment "extracts minutes from daytime";
-command minutes(d:bat[:any_1,:date]):bat[:any_1,:int]
+command minutes(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
 command seconds(d:daytime) :int 
 address MTIMEdaytime_extract_seconds 
 comment "extracts seconds from daytime";
-command batmtime.seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
 command milliseconds(d:daytime) :int 
 address MTIMEdaytime_extract_milliseconds 
 comment "extracts milliseconds from daytime";
-command batmtime.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.milliseconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
 command daytime(t:timestamp) :daytime 
