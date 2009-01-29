@@ -133,6 +133,9 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
     if (nt[nid] != -1)
 	return &(atree->nodes[nt[nid]]);
 
+    //ensure that anode is initialized (only to satisfy the compiler)
+    anode = atree->root;
+
     switch (pnode->kind) {
 	case p_tag :
 	    anode = add_node (atree, a_select_element);
