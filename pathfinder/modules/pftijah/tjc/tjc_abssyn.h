@@ -160,6 +160,9 @@ tjcq_addterm (TJqnode_t *n, char *term, char *entity, double weight);
 extern struct TJptree_t *
 tjcp_inittree (void);
 
+extern void 
+tjcp_freetree (TJptree_t *ptree);
+
 extern char *
 TJstrndup (const char *str);
 
