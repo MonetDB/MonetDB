@@ -996,11 +996,31 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return NULL;
 }
 
+/* some projections results are order dependend (row_number etc) */
+static int 
+project_unsafe(sql_rel *rel)
+{
+	node *n;
+
+	if (need_distinct(rel))
+		return 1;
+	if (!rel->exps)
+		return 0;
+	for(n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		/* aggr func in project ! */
+		if (e->type == e_func && e->card == 1)
+			return 1;
+	}
+	return 0;
+}
+
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
-sql_rel *
+static sql_rel *
 rel_push_select_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = NULL;
@@ -1154,6 +1174,11 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel;
 	/* push select through project */
 	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
+		/* we cannot push through rank (row_number etc) functions or
+		   projects with distinct */
+		if (project_unsafe(r))
+			return rel;
+
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(); 
 		/* for each exp check if we can rename it */
@@ -1335,9 +1360,11 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 					list *exps = e->l;
 					sql_exp *ae = exps->h->data;
 
-					/* FOR NOW ESCAPE ON AVG ON DECIMALS,
+					/* 
+					   FOR NOW ESCAPE ON AVG ON DECIMALS,
 					   we need a rewrite or DEC's in 
-					   the optimizer to solve this problem*/
+					   the optimizer to solve this problem
+					*/
 					if (exp_subtype(ae)->type->eclass == EC_DEC)
 						return rel;
 					append(avgs, e);
@@ -1452,9 +1479,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && l->op != op_project && r->op != op_project) ||
-		  ((l->op == op_project && (!l->l || l->r)) ||
+		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l))) ||
 		   (is_join(rel->op) && 
-		    r->op == op_project && (!r->l || r->r)))) 
+		    r->op == op_project && (!r->l || r->r || project_unsafe(r))))) 
 			return rel;
 
 		if (l->op == op_project && l->l) {
