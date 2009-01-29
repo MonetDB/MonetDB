@@ -341,6 +341,10 @@ common_super_dom (const PFprop_t *prop, dom_t *dom1, dom_t *dom2)
     assert (prop);
     assert (prop->subdoms);
 
+    /* check for problems first */
+    if (!dom1 || !dom2)
+        return NULL;
+
     /* check trivial cases of identity */
     if (dom1 == dom2)
         return dom1;
@@ -944,7 +948,7 @@ infer_dom (PFla_op_t *n)
 
         case la_max:
         case la_min:
-            filter_dom (L(n), n->sem.aggr.res);
+            filter_dom_ (L(n), n->sem.aggr.col, n->sem.aggr.res);
             if (n->sem.aggr.part)
                 add_dom (n->sem.aggr.part,
                          PFprop_dom (L(n)->prop, n->sem.aggr.part));
@@ -1056,7 +1060,7 @@ infer_dom (PFla_op_t *n)
                     add_subdom (PFprop_dom (L(n)->prop,
                                             L(n)->sem.iter_item.iter),
                                 dom);
-                    add_dom (L(n)->sem.iter_item.iter, dom);
+                    add_dom (n->sem.iter_item.iter, dom);
                 }   break;
                     
                 case la_attribute:
