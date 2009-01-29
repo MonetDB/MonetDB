@@ -134,8 +134,8 @@ void milprint_end (tjc_config *tjc_c) {
 
 void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
     TJCPRINTF(MILOUT,"\n");
-    TJCPRINTF(MILOUT,"var nexi_result := R%d;\n", tree->root - tree->nodes);
-    TJCPRINTF(MILOUT,"R%d := nil;\n", tree->root - tree->nodes);
+    TJCPRINTF(MILOUT,"var nexi_result := R" PDFMT ";\n", tree->root - tree->nodes);
+    TJCPRINTF(MILOUT,"R" PDFMT " := nil;\n", tree->root - tree->nodes);
     if (tree->root->preIDs == 0) TJCPRINTF(MILOUT,"nexi_result := tj_nid2pre(nexi_result);\n");
     if (tjc_c->rmoverlap && tree->root->nested) {
 	TJCPRINTF(MILOUT,"nexi_result := rm_overlap(nexi_result, qenv);\n");
