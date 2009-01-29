@@ -1272,6 +1272,20 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                             DOT,
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
+                /* list columns and their corresponding lineage */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    PFarray_printf (DOT, 
+                                    i
+                                    ? ", %s (%i.%s)"
+                                    : "\\nlineage: %s (%i.%s)",
+                                    PFcol_str (n->schema.items[i].name),
+                                    PFprop_lineage (
+                                        n->prop,
+                                        n->schema.items[i].name)->node_id,
+                                    PFcol_str (
+                                        PFprop_lineage_col (
+                                            n->prop,
+                                            n->schema.items[i].name)));
             }
             if (*fmt == '+' || *fmt == '[') {
                 /* list columns and their unique names */

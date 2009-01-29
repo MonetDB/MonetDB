@@ -209,7 +209,7 @@ void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_
 {
     char *type = "unknown";
     TJatype_t num_type;
-    int nID, parID;
+    int nID, parID = 0;
     int c;
 
     nID = node - tree->nodes;
