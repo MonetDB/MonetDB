@@ -342,6 +342,7 @@ main (int argc, char *argv[])
                   true  /* const */,
                   true  /* set */,
                   true  /* dom */,
+                  true  /* lineage */,
                   true  /* icol */,
                   true  /* composite key */,
                   true  /* key */,

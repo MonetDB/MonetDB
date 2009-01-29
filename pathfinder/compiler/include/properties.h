@@ -58,6 +58,8 @@ struct PFprop_t {
                                       relationships between domains) */
     PFarray_t       *disjdoms;   /**< Disjoint domains (list with pairs of
                                       disjoint domains) */
+    PFarray_t       *lineage;    /**< List of columns along with the operator
+                                      they were created at. */
     bool             set;        /**< boolean flag that indicates whether the
                                       cardinality of an operator is important */
     PFalg_col_t      set_col;    /**< extended set information to overcome
@@ -151,6 +153,14 @@ struct disjdom_t {
 };
 typedef struct disjdom_t disjdom_t;
 
+/** lineage mapping */
+struct lineage_t {
+    PFalg_col_t col;
+    PFla_op_t  *op;
+    PFalg_col_t ori_col;
+};
+typedef struct lineage_t lineage_t;
+
 /* unique name item */
 struct name_pair_t {
     PFalg_col_t ori;
@@ -175,7 +185,7 @@ PFprop_t *PFprop (void);
  * rooted in root whose flag is set.
  */
 void PFprop_infer (bool card, bool const_, bool set, 
-                   bool dom, bool icols, bool ckey,
+                   bool dom, bool lineage, bool icols, bool ckey,
                    bool key, bool ocols, bool req_node,
                    bool reqval, bool level, bool refctr,
                    bool guides, bool ori_names, bool unq_names,
@@ -207,6 +217,7 @@ void PFprop_infer_set (PFla_op_t *root);
 void PFprop_infer_set_extended (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
 void PFprop_infer_nat_dom (PFla_op_t *root);
+void PFprop_infer_lineage (PFla_op_t *root);
 void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
@@ -361,6 +372,19 @@ void PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop);
  * to in XML notation to character array @a f.
  */
 void PFprop_write_dom_rel_xml (PFarray_t *f, const PFprop_t *prop);
+
+/* ---------------------- lineage property accessors ----------------------- */
+
+/**
+ * Look up the lineage of column @a col in the property container @a prop.
+ */
+PFla_op_t * PFprop_lineage (const PFprop_t *prop, PFalg_col_t col);
+
+/**
+ * Look up the original column name of column @a col
+ * in the property container @a prop.
+ */
+PFalg_col_t PFprop_lineage_col (const PFprop_t *prop, PFalg_col_t col);
 
 /* ------------------------ icol property accessors ------------------------ */
 

@@ -97,6 +97,9 @@ PFprop (void)
     ret->l_domains = NULL;
     ret->r_domains = NULL;
 
+    /* initialize lineage information */
+    ret->lineage = NULL;
+
     /* initialize unique name information */
     ret->name_pairs = NULL;
     ret->l_name_pairs = NULL;
@@ -122,7 +125,7 @@ PFprop (void)
  */
 void
 PFprop_infer (bool card, bool const_, bool set,
-              bool dom, bool icol, bool ckey,
+              bool dom, bool lineage, bool icol, bool ckey,
               bool key, bool ocols, bool req_node,
               bool reqval, bool level, bool refctr,
               bool guides, bool ori_names, bool unq_names,
@@ -132,6 +135,8 @@ PFprop_infer (bool card, bool const_, bool set,
 
     /* for each property required infer
        the properties of the complete DAG */
+    if (lineage)
+        PFprop_infer_lineage (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
     if (ckey)
