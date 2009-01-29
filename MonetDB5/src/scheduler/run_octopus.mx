@@ -128,7 +128,7 @@ static int nrsites = 0;
 
 static str
 OCTOPUSdiscover(Client cntxt){
-	bat b1,b2;
+	bat b1 = 0, b2 = 0;
 	BAT *b;
 	str msg = MAL_SUCCEED;
 
@@ -219,18 +219,10 @@ If all this fails, we pick a random site to execute the plan.
 static str
 OCTOPUSexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, tries= nrsites * 2;
+	int i=0, tries= nrsites * 2;
 	str msg = MAL_SUCCEED;
 
 redo:
-	if (i == nrsites)
-		do {
-			i= rand() % nrsites;
-		} while (sites[i].status == 0 && --tries > 0);
-
-	if ( sites[i].status == 0)
-		throw(MAL,"scheduler.octopus","No site available");
-
 #ifdef DEBUG_RUN_OCTOPUS
 	stream_printf(cntxt->fdout,"octopus.exec site selected %d\n",i);
 #else
