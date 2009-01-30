@@ -145,7 +145,7 @@ Path			: PathNoPred PredicateList
        			  { $$ = $1; $$->root = tjcp_wire2 (tjc_tree, p_pred, $1->root, $2); }
 	      		| Path PathNoPred PredicateList
        			  { $$ = $1; *($2->fixme) = $1->root;
-			    $$->root = tjcp_wire2 (tjc_tree, p_pred, $2->root, $3); }
+			    $$->root = tjcp_wire2 (tjc_tree, p_pred, $2->root, $3); TJCfree($2); }
 			;
 OptPathNoPred		: /* empty */ 
 	       		  { $$ = NULL; }

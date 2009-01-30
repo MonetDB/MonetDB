@@ -86,6 +86,9 @@ extern struct TJatree_t*
 phys_optimize(TJptree_t *ptree, TJpnode_t *proot, BAT* rtagbat);
 
 extern void
+free_atree(TJatree_t *atree);
+
+extern void
 printTJatree(tjc_config *tjc_c, TJatree_t *atree);
 
 #endif  /* PYHS_OPTIMIZE_H */

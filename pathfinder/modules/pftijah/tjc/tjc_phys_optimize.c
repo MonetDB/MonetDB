@@ -123,6 +123,11 @@ TJatree_t* init_atree (TJptree_t *ptree)
     return atree;
 } 
 
+void free_atree (TJatree_t *atree) {
+    TJCfree (atree->nodes);
+    TJCfree (atree);
+}
+
 TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt)
 {
     TJanode_t *anode;

@@ -48,7 +48,6 @@ tjcp_leaf (TJptree_t *t, TJptype_t kind)
     TJpnode_t *n = NULL;
     int c;
 
-    //n = (TJpnode_t *) TJCmalloc (sizeof (TJpnode_t));
     if (t->length < t->capacity) 
 	n = &(t->node[t->length++]);
     else
@@ -168,6 +167,20 @@ tjcp_inittree ()
     ptree->length = 0;
 
     return ptree;
+}
+
+void tjcp_freetree(TJptree_t *ptree)
+{
+    int c;
+    TJpnode_t *n;
+    for (c = 0; c < ptree->length; c++) {
+	n = &ptree->node[c];
+	if (n->kind == p_query)
+	    TJCfree (n->sem.qnode);
+	if (n->kind == p_tag && strcmp (n->sem.str, "*"))
+	    TJCfree (n->sem.str);
+    }
+    TJCfree (ptree);
 }
 
 /**

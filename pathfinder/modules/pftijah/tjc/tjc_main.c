@@ -121,20 +121,6 @@ void printTJptree_flat(tjc_config* tjc_c, TJptree_t *ptree)
     }
 }
 
-void free_tree(TJptree_t *ptree)
-{
-    int c;
-    TJpnode_t *n;
-    for (c = 0; c < ptree->length; c++) {
-	n = &ptree->node[c];
-	if (n->kind == p_query)
-	    TJCfree (n->sem.qnode);
-	if (n->kind == p_tag && strcmp (n->sem.str, "*"))
-	    TJCfree (n->sem.str);
-    }
-    TJCfree (ptree);
-}
-
 /* THE NEW STUFF  */
 
 tjc_config* tjc_c_GLOBAL;
@@ -334,7 +320,8 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
 	if (DEBUG) stream_printf(GDKout,"#!tjc start of mil:\n%s",milres);
 	if (DEBUG) stream_printf(GDKout,"#!tjc end of mil\n");
 	
-	free_tree(ptree);
+	free_atree (atree);
+	tjcp_freetree (ptree);
     }
     else {
 	*errBUFF = GDKstrdup(tjc_c->errBUFF);
