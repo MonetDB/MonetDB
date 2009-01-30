@@ -1240,8 +1240,22 @@ PROC htordered_unique_thetajoin( int mode,
             # a large intermediate result is better handled with nested loop (no reordering necessary)
             return nlthetajoin(l, reverse(r), mode, ((cnt+cnt) / int(samp).count())*int(r).count());
         }
+        else {
+            # We can skip ordering for nlthetajoin variant and internally inequality
+            # predicates are alway evaluated using the nested-loop variant.
+            var cnt := int(res).count(); res := nil;
+            var join_order := nlthetajoin(l, reverse(r), mode, ((cnt+cnt) / int(samp).count())*int(r).count());
+            # avoid error (lng(max(bat(oid,oid))) = nil)
+            if (join_order.count() = 0) { return join_order; }
+            # joins with lx/rx 
+            if (type(lx) = bat) join_order := reverse(leftfetchjoin(reverse(join_order),lx));
+            if (type(rx) = bat) join_order := leftfetchjoin(join_order,rx);
+            return join_order;
+        }
     }
-    var join_order := leftthetajoin(l, reverse(r), mode);
+    # else (mode = EQ)
+
+    var join_order := leftjoin(l, reverse(r));
 
     # avoid error (lng(max(bat(oid,oid))) = nil)
     if (join_order.count() = 0) { return join_order; }
