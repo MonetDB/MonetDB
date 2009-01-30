@@ -3825,8 +3825,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                          error (var (err->name)),
                          nop ()));
             }
-
             unpin (err, 1);
+#ifdef HAVE_PFTIJAH
+	    execute(
+                assgn (var (PF_MIL_TIJAH_SCORE_DB), unused() )
+	    );
+#endif
         }   break; /* fold) */
 
         /* Query:   serialize (Side, empty_tbl) */
@@ -3932,6 +3936,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                      nop ()));
 
             unpin (err, 1);
+#ifdef HAVE_PFTIJAH
+	    execute(
+                assgn (var (PF_MIL_TIJAH_SCORE_DB), unused() )
+	    );
+#endif
         } break; /* fold) */
 
         /* Rel:      lit_tbl */
