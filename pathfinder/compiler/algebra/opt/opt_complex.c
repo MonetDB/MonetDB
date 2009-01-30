@@ -1195,34 +1195,44 @@ opt_complex (PFla_op_t *p)
             }
             /* optimization based on functional dependencies */
             if (PFprop_icols_count (p->prop) != p->schema.count) {
-                PFalg_proj_t *proj  = PFmalloc (p->schema.count *
+                PFalg_proj_t *proj1 = PFmalloc (p->schema.count *
+                                                sizeof (PFalg_proj_t));
+                PFalg_proj_t *proj2 = PFmalloc (p->schema.count *
                                                 sizeof (PFalg_proj_t));
                 unsigned int  count = 0,
                               i,
                               j;
                 for (i = 0; i < p->schema.count; i++) {
+                    proj2[i] = PFalg_proj (p->schema.items[i].name,
+                                           p->schema.items[i].name);
                     if (!PFprop_icol (p->prop, p->schema.items[i].name)) {
                         for (j = 0; j < p->schema.count; j++)
                             if (i != j &&
                                 PFprop_icol (p->prop, p->schema.items[j].name) &&
                                 PFprop_fd (p->prop,
                                            p->schema.items[j].name,
-                                           p->schema.items[i].name))
-                                /* throw away column */ break;
+                                           p->schema.items[i].name)) {
+                                /* replace dependent column by icols column */
+                                proj2[i].old = p->schema.items[j].name;
+                                /* throw away column */
+                                break; 
+                            }
                         if (j == p->schema.count)
                             /* keep column */
-                            proj[count++] = PFalg_proj (p->schema.items[i].name,
-                                                        p->schema.items[i].name);
+                            proj1[count++] = proj2[i];
                     }
                     else
                         /* keep column */
-                        proj[count++] = PFalg_proj (p->schema.items[i].name,
-                                                    p->schema.items[i].name);
+                        proj1[count++] = proj2[i];
                 }
-                /* if a column was thrown away we prune the schema */
+                /* If a column was thrown away we prune the schema
+                   but re-align it above the distinct operator again.
+                   (Dependent columns are replaced by their describing part.) */
                 if (count < p->schema.count) {
-                    L(p) = PFla_project_ (L(p), count, proj);
-                    PFprop_update_ocol (p);
+                    *p = *PFla_project_ (
+                              distinct (PFla_project_ (L(p), count, proj1)),
+                              p->schema.count,
+                              proj2);
                     modified = true;
                 }
                 break;

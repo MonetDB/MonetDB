@@ -267,7 +267,7 @@ infer_lineage (PFla_op_t *n)
 
         case la_step:
         case la_guide_step:
-            map_lineage (n->sem.step.iter, L(n), n->sem.step.iter);
+            map_lineage (n->sem.step.iter, R(n), n->sem.step.iter);
             add_new_lineage (n->sem.step.item_res);
             break;
 
@@ -322,7 +322,7 @@ infer_lineage (PFla_op_t *n)
 
         case la_merge_adjacent:
             map_lineage (n->sem.merge_adjacent.iter_res,
-                         L(n),
+                         R(n),
                          n->sem.merge_adjacent.iter_in);
             add_new_lineage (n->sem.merge_adjacent.pos_res);
             add_new_lineage (n->sem.merge_adjacent.item_res);
