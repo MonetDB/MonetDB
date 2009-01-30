@@ -708,7 +708,7 @@ CMDattach(BAT **ret, int *tt, str heapfile)
 int
 CMDdensebat(BAT **ret, wrd *size)
 {
-	BAT *b, *bm;
+	BAT *b;
 
 	if (*size < 0)
 		*size = 0;
@@ -717,12 +717,11 @@ CMDdensebat(BAT **ret, wrd *size)
 	*ret = b = BATnew(TYPE_void, TYPE_void, (BUN) *size);
 	if (b == NULL)
 		return GDK_FAIL;
-	bm = BBP_cache(-b->batCacheid);
 	b->batDirty = 1;
-	b->tseqbase = bm->hseqbase = 0;
-	b->hseqbase = bm->tseqbase = 0;
+	b->hseqbase = 0;
+	b->tseqbase = 0;
 	BATkey(b, TRUE);
-	BATkey(bm, TRUE);
+	BATkey(BBP_cache(-b->batCacheid), TRUE);
 	BATsetcount(b, (BUN) *size);
 	return GDK_SUCCEED;
 }
@@ -1910,8 +1909,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		oid id = *(oid*) BUNtail(mapi, p);
 		size_t idx = id >> 3;  
 		char mask = (char) (1 << (id & 7));  
- 		if (id > max) {
-			GDKerror("remap: map index " OIDFMT "@0 out of range [0@0," OIDFMT "@0]\n", id, max);
+		if (id > max) {
+			GDKerror("remap: map index " OIDFMT "@0 out of range [0@0," BUNFMT "@0]\n", id, max);
 			GDKfree(chk);
 			return GDK_FAIL;
 		} else if (chk[idx] & mask) {
