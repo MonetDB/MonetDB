@@ -4292,7 +4292,122 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         }   break; /* fold) */
 
         /* Rel:      unq2_thetajoin (Rel, Rel) */
-        case 18:
+        case 18: /* fold( */
+        {
+            PFalg_col_t lcol, rcol, ldist_col, rdist_col;
+            PFalg_simple_type_t lty, rty, ldist_ty, rdist_ty;
+            PFmil_t *comp;
+            mvar_t *l     = NULL,
+                   *r     = NULL,
+                   *ldist = NULL,
+                   *rdist = NULL,
+                   *v1    = new_var (p->refctr),
+                   *v2    = new_var (p->refctr);
+            bool    ldist_node_ty = false,
+                    rdist_node_ty = false;
+
+            v = new_var (1);
+
+            lcol      = p->sem.unq_thetajoin.left;
+            rcol      = p->sem.unq_thetajoin.right;
+            ldist_col = p->sem.unq_thetajoin.ldist;
+            rdist_col = p->sem.unq_thetajoin.rdist;
+
+            lty      = type_of (L(p), lcol);
+            rty      = type_of (R(p), rcol);
+            ldist_ty = type_of (L(p), ldist_col);
+            rdist_ty = type_of (R(p), rdist_col);
+
+            if (lty != rty)
+                PFoops (OOPS_FATAL, "incompatible types in Theta-Join");
+            if (!type_bit_check (lty)) 
+                /* If this case is ever triggered this means we have
+                   either an erroneous predicate or a join on nodes.
+                   In the latter case this join should be replaced
+                   by a thetajoin. */
+                PFoops (OOPS_FATAL,
+                        "multi-predicate theta-joins are not supported yet");
+
+            /* We know that unq2_thetajoin operators with pre nodes are
+               guaranteed to come with constant fragment information. We thus
+               ignore the fragment information until after the thetajoin. */
+            if (ldist_ty == aat_pnode) {
+                ldist_node_ty = true;
+                ldist_ty = aat_pre;
+            }
+            else if (ldist_ty != aat_nat)
+                PFoops (OOPS_FATAL, "incompatible type in Theta-Join");
+
+            if (rdist_ty == aat_pnode) {
+                rdist_node_ty = true;
+                rdist_ty = aat_pre;
+            }
+            else if (rdist_ty != aat_nat)
+                PFoops (OOPS_FATAL, "incompatible type in Theta-Join");
+
+            l     = env_mvar (L(p)->env, lcol, lty);
+            r     = env_mvar (R(p)->env, rcol, rty);
+            ldist = env_mvar (L(p)->env, ldist_col, ldist_ty);
+            rdist = env_mvar (R(p)->env, rdist_col, rdist_ty);
+
+            /* find the correct comparison */
+            switch (p->sem.unq_thetajoin.comp) {
+                case alg_comp_eq: comp = var (PF_MIL_VAR_EQ); break;
+                case alg_comp_gt: comp = var (PF_MIL_VAR_GT); break;
+                case alg_comp_ge: comp = var (PF_MIL_VAR_GE); break;
+                case alg_comp_lt: comp = var (PF_MIL_VAR_LT); break;
+                case alg_comp_le: comp = var (PF_MIL_VAR_LE); break;
+                default:
+                    PFoops (OOPS_FATAL,
+                            "cannot cope with inequality comparison");
+            }
+
+            /* apply the duplicate removing thetajoin */
+            execute (
+                assgn (var (v->name),
+                       unq2_tjoin (leftjoin (reverse (var (ldist->name)),
+                                             var (l->name)),
+                                   leftjoin (reverse (var (rdist->name)),
+                                             var (r->name)),
+                                   comp)),
+                assgn (var (v1->name),
+                       reverse (mark (var (v->name), lit_oid (0)))),
+                assgn (var (v1->name),
+                       assert_order (var (v1->name))),
+                assgn (var (v2->name),
+                       reverse (mark (reverse (var (v->name)),
+                                      lit_oid (0)))));
+
+            /* add the two result columns to the environment */
+            env_add (p->env, ldist_col, ldist_ty, v1);
+            env_add (p->env, rdist_col, rdist_ty, v2);
+
+            /* adjust the fragment information to the result cardinality */
+            if (ldist_node_ty) {
+                mvar_t *frag = new_var (p->refctr);
+
+                execute (
+                    assgn (var (frag->name),
+                           project (hmark (var (v->name), lit_oid (0)),
+                                    fetch (VAR (L(p)->env, ldist_col, aat_frag),
+                                           lit_int (0)))));
+
+                env_add (p->env, ldist_col, aat_frag, frag);
+            }
+            if (rdist_node_ty) {
+                mvar_t *frag = new_var (p->refctr);
+
+                execute (
+                    assgn (var (frag->name),
+                           project (hmark (var (v->name), lit_oid (0)),
+                                    fetch (VAR (R(p)->env, rdist_col, aat_frag),
+                                           lit_int (0)))));
+
+                env_add (p->env, rdist_col, aat_frag, frag);
+            }
+            unpin (v, 1);
+        }   break; /* fold) */
+
         /* Rel:      unq1_thetajoin (Rel, Rel) */
         case 19: /* fold( */
         {
@@ -4303,8 +4418,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                    *r     = NULL,
                    *ldist = NULL,
                    *rdist = NULL,
-                   *v1,
-                   *v2;
+                   *v1    = new_var (p->refctr);
 
             v = new_var (1);
 
@@ -4348,54 +4462,22 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             "cannot cope with inequality comparison");
             }
 
-            if (p->kind == pa_unq2_thetajoin) {
-                v1 = new_var (p->refctr);
-                v2 = new_var (p->refctr);
+            /* apply the duplicate removing thetajoin */
+            execute (
+                assgn (var (v->name),
+                       unq1_tjoin (
+                           leftjoin (reverse (var (ldist->name)),
+                                     var (l->name)),
+                           leftjoin (reverse (var (rdist->name)),
+                                     var (r->name)),
+                           var (ldist->name),
+                           var (rdist->name),
+                           comp)),
+                assgn (var (v1->name),
+                       reverse( mark (var (v->name), lit_oid (0)))));
 
-                /* apply the duplicate removing thetajoin */
-                execute (
-                    assgn (var (v->name),
-                           unq2_tjoin (leftjoin (reverse (var (ldist->name)),
-                                                 var (l->name)),
-                                       leftjoin (reverse (var (rdist->name)),
-                                                 var (r->name)),
-                                       comp)),
-                    assgn (var (v1->name),
-                           reverse (mark (var (v->name), lit_oid (0)))),
-                    assgn (var (v1->name),
-                           assert_order (var (v1->name))),
-                    assgn (var (v2->name),
-                           reverse (mark (reverse (var (v->name)),
-                                          lit_oid (0)))));
-
-                /* add the two result columns to the environment */
-                env_add (p->env, ldist_col, ldist_ty, v1);
-                env_add (p->env, rdist_col, rdist_ty, v2);
-            }
-            else if (p->kind == pa_unq1_thetajoin) {
-                v1 = new_var (p->refctr);
-
-                /* apply the duplicate removing thetajoin */
-                execute (
-                    assgn (var (v->name),
-                           unq1_tjoin (
-                               leftjoin (reverse (var (ldist->name)),
-                                         var (l->name)),
-                               leftjoin (reverse (var (rdist->name)),
-                                         var (r->name)),
-                               var (ldist->name),
-                               var (rdist->name),
-                               comp)),
-                    assgn (var (v1->name),
-                           reverse( mark (var (v->name), lit_oid (0)))));
-
-                /* add the result column to the environment */
-                env_add (p->env, ldist_col, ldist_ty, v1);
-            }
-            else
-                PFoops (OOPS_FATAL,
-                        "incompatible operator in theta-join translation");
-
+            /* add the result column to the environment */
+            env_add (p->env, ldist_col, ldist_ty, v1);
             unpin (v, 1);
         }   break; /* fold) */
 

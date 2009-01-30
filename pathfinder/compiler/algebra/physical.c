@@ -802,9 +802,9 @@ PFpa_unq2_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
     ret->schema.count = 2;
     ret->schema.items = PFmalloc (2 * sizeof (*(ret->schema.items)));
     ret->schema.items[0].name = ldist;
-    ret->schema.items[0].type = aat_nat;
+    ret->schema.items[0].type = PFprop_type_of_ (n1->schema, ldist);
     ret->schema.items[1].name = rdist;
-    ret->schema.items[1].type = aat_nat;
+    ret->schema.items[1].type = PFprop_type_of_ (n2->schema, rdist);
 
     /* ---- ThetaJoin: orderings ---- */
 
