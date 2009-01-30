@@ -1411,7 +1411,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			q = pushBit(mb, q, TRUE);
-			s->nr = l;
+			s->nr = getDestVar(q);
 		} break;
 		case st_update_col:
 		case st_append_col:{
