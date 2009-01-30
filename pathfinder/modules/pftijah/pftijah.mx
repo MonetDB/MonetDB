@@ -748,6 +748,9 @@ PROC tj_extend_collection(str ftiName, BAT[void,str] v_pfc) : void :=
         if ( verbose ) doclist.print();
 	tj_add2collection(ftiName,doclist,false);
         if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",ftiName);
+    } else {
+        # be shure to commit extend bat changes when no docs are added
+        subcommit(_tj_collection_str(ftiName));
     }
     if ( verbose ) printf("#TJ:tj_extend_collection(\"%s\") finished.\n",ftiName);
 }
