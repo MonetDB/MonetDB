@@ -96,6 +96,78 @@ col_present (PFla_op_t *p, PFalg_col_t col)
     return false;
 }
 
+static PFla_op_t *
+internal_op_to_cross (PFla_op_t *p)
+{
+    assert (p->kind == la_internal_op);
+
+    PFalg_proj_t *proj_list;
+    unsigned int i,
+                 j,
+                 count = 0,
+                 dup_count = 0;
+
+    /* create projection list */
+    proj_list = PFmalloc ((L(p)->schema.count)
+                          * sizeof (*(proj_list)));
+
+    /* create projection list */
+    for (i = 0; i < L(p)->schema.count; i++) {
+        for (j = 0; j < R(p)->schema.count; j++)
+            if (L(p)->schema.items[i].name == R(p)->schema.items[j].name) {
+                dup_count++;
+                break;
+            }
+
+        if (j == R(p)->schema.count)
+            proj_list[count++] = proj (L(p)->schema.items[i].name,
+                                       L(p)->schema.items[i].name);
+    }
+
+    /* ensure that we do not generate empty projection lists */
+    if (!count) {
+        /* we can throw away the cross product if no column
+           is required and the cross product does not change
+           the cardinality */
+        if (PFprop_card (L(p)->prop) == 1 ||
+            /* check current op in case L(p) is a newly
+               generated cross product */
+            PFprop_card (p->prop) == 1)
+            return dummy (R(p));
+        else {
+            PFalg_proj_t *proj_list2;
+            proj_list2 = PFmalloc ((R(p)->schema.count - 1)
+                                   * sizeof (*(proj_list)));
+            count = 0;
+            /* split up the columns such that they do not conflict
+               anymore */
+            assert (R(p)->schema.count > 1);
+            /* throw out the first column of the left child
+               from the right child */
+            for (j = 0; j < R(p)->schema.count; j++)
+                if (L(p)->schema.items[0].name !=
+                    R(p)->schema.items[j].name) {
+                    proj_list2[count++] =
+                        proj (R(p)->schema.items[j].name,
+                              R(p)->schema.items[j].name);
+                }
+            /* keep only the first column of the left child */
+            proj_list[0] = proj (L(p)->schema.items[0].name,
+                                 L(p)->schema.items[0].name);
+
+            /* apply project operator on both childs */
+            return cross (PFla_project_ (L(p), 1, proj_list),
+                          PFla_project_ (R(p), count, proj_list2));
+        }
+    }
+    else {
+        if (dup_count)
+            return cross (PFla_project_ (L(p), count, proj_list), R(p));
+        else
+            return cross (L(p), R(p));
+    }
+}
+
 /* worker for binary operators */
 static bool
 modify_binary_op (PFla_op_t *p,
@@ -450,9 +522,36 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 *p = *(cross_can (LL(p), thetajoin (LR(p), R(p),
                                                     p->sem.thetajoin.count,
                                                     p->sem.thetajoin.pred)));
-            else
-                /* do not rewrite */
-                break;
+            else {
+                PFalg_sel_t *pred1,
+                            *pred2;
+                unsigned int pred1_count = 0,
+                             pred2_count = 0;
+                PFla_op_t   *lp = L(p);
+                if (lp->kind != la_cross) {
+                    lp = internal_op_to_cross (lp);
+                    if (lp->kind != la_cross)
+                        break;
+                }
+                /* We have to split up the thetajoin predicates according
+                   to the cross product arguments and apply two thetajoins. */
+                pred1 = PFmalloc ((p->sem.thetajoin.count - 1) *
+                                  sizeof (PFalg_sel_t)),
+                pred2 = PFmalloc ((p->sem.thetajoin.count - 1) *
+                                  sizeof (PFalg_sel_t));
+                for (i = 0; i < p->sem.thetajoin.count; i++) {
+                    if (col_present (L(lp), p->sem.thetajoin.pred[i].left))
+                        pred1[pred1_count++] = p->sem.thetajoin.pred[i];
+                    if (col_present (R(lp), p->sem.thetajoin.pred[i].left))
+                        pred2[pred2_count++] = p->sem.thetajoin.pred[i];
+                }
+                assert (pred1_count + pred2_count == p->sem.thetajoin.count);
+
+                *p = *(thetajoin (R(lp),
+                                  thetajoin (L(lp), R(p), pred1_count, pred1),
+                                  pred2_count,
+                                  pred2));
+            }
 
             modified = true;
             break;
@@ -476,9 +575,36 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 *p = *(cross_can (RL(p), thetajoin (L(p), RR(p),
                                                     p->sem.thetajoin.count,
                                                     p->sem.thetajoin.pred)));
-            else
-                /* do not rewrite */
-                break;
+            else {
+                PFalg_sel_t *pred1,
+                            *pred2;
+                unsigned int pred1_count = 0,
+                             pred2_count = 0;
+                PFla_op_t   *rp = R(p);
+                if (rp->kind != la_cross) {
+                    rp = internal_op_to_cross (rp);
+                    if (rp->kind != la_cross)
+                        break;
+                }
+                /* We have to split up the thetajoin predicates according
+                   to the cross product arguments and apply two thetajoins. */
+                pred1 = PFmalloc ((p->sem.thetajoin.count - 1) *
+                                  sizeof (PFalg_sel_t)),
+                pred2 = PFmalloc ((p->sem.thetajoin.count - 1) *
+                                  sizeof (PFalg_sel_t));
+                for (i = 0; i < p->sem.thetajoin.count; i++) {
+                    if (col_present (L(rp), p->sem.thetajoin.pred[i].right))
+                        pred1[pred1_count++] = p->sem.thetajoin.pred[i];
+                    if (col_present (R(rp), p->sem.thetajoin.pred[i].right))
+                        pred2[pred2_count++] = p->sem.thetajoin.pred[i];
+                }
+                assert (pred1_count + pred2_count == p->sem.thetajoin.count);
+
+                *p = *(thetajoin (thetajoin (L(p), L(rp), pred1_count, pred1),
+                                  R(rp),
+                                  pred2_count,
+                                  pred2));
+            }
 
             modified = true;
             break;
@@ -1805,72 +1931,8 @@ clean_up_cross (PFla_op_t *p)
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         clean_up_cross (p->child[i]);
 
-    if (p->kind == la_internal_op) {
-        PFalg_proj_t *proj_list;
-        unsigned int j;
-        unsigned int count = 0;
-        unsigned int dup_count = 0;
-
-        /* create projection list */
-        proj_list = PFmalloc ((L(p)->schema.count)
-                              * sizeof (*(proj_list)));
-
-        /* create projection list */
-        for (i = 0; i < L(p)->schema.count; i++) {
-            for (j = 0; j < R(p)->schema.count; j++)
-                if (L(p)->schema.items[i].name == R(p)->schema.items[j].name) {
-                    dup_count++;
-                    break;
-                }
-
-            if (j == R(p)->schema.count)
-                proj_list[count++] = proj (L(p)->schema.items[i].name,
-                                           L(p)->schema.items[i].name);
-        }
-
-        /* ensure that we do not generate empty projection lists */
-        if (!count) {
-            /* we can throw away the cross product if no column
-               is required and the cross product does not change
-               the cardinality */
-            if (PFprop_card (L(p)->prop) == 1 ||
-                /* check current op in case L(p) is a newly
-                   generated cross product */
-                PFprop_card (p->prop) == 1)
-                *p = *dummy (R(p));
-            else {
-                PFalg_proj_t *proj_list2;
-                proj_list2 = PFmalloc ((R(p)->schema.count - 1)
-                                       * sizeof (*(proj_list)));
-                count = 0;
-                /* split up the columns such that they do not conflict
-                   anymore */
-                assert (R(p)->schema.count > 1);
-                /* throw out the first column of the left child
-                   from the right child */
-                for (j = 0; j < R(p)->schema.count; j++)
-                    if (L(p)->schema.items[0].name !=
-                        R(p)->schema.items[j].name) {
-                        proj_list2[count++] =
-                            proj (R(p)->schema.items[j].name,
-                                  R(p)->schema.items[j].name);
-                    }
-                /* keep only the first column of the left child */
-                proj_list[0] = proj (L(p)->schema.items[0].name,
-                                     L(p)->schema.items[0].name);
-
-                /* apply project operator on both childs */
-                *p = *(cross (PFla_project_ (L(p), 1, proj_list),
-                              PFla_project_ (R(p), count, proj_list2)));
-            }
-        }
-        else {
-            if (dup_count)
-                *p = *(cross (PFla_project_ (L(p), count, proj_list), R(p)));
-            else
-                *p = *(cross (L(p), R(p)));
-        }
-    }
+    if (p->kind == la_internal_op)
+        *p = *internal_op_to_cross (p);
 }
 
 /**
