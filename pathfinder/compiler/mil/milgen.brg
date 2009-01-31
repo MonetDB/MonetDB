@@ -4387,10 +4387,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 mvar_t *frag = new_var (p->refctr);
 
                 execute (
-                    assgn (var (frag->name),
-                           project (hmark (var (v->name), lit_oid (0)),
-                                    fetch (VAR (L(p)->env, ldist_col, aat_frag),
-                                           lit_int (0)))));
+                    /* make sure to apply the fetch
+                       only if there are some result tuples */
+                    if_ (gt (count (var (v1->name)), lit_int (0)),
+                         assgn (var (frag->name),
+                                project (hmark (var (v->name), lit_oid (0)),
+                                         fetch (VAR (L(p)->env,
+                                                     ldist_col,
+                                                     aat_frag),
+                                                lit_int (0)))),
+                         assgn (var (frag->name), var (v1->name))));
 
                 env_add (p->env, ldist_col, aat_frag, frag);
             }
@@ -4398,10 +4404,16 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 mvar_t *frag = new_var (p->refctr);
 
                 execute (
-                    assgn (var (frag->name),
-                           project (hmark (var (v->name), lit_oid (0)),
-                                    fetch (VAR (R(p)->env, rdist_col, aat_frag),
-                                           lit_int (0)))));
+                    /* make sure to apply the fetch
+                       only if there are some result tuples */
+                    if_ (gt (count (var (v2->name)), lit_int (0)),
+                         assgn (var (frag->name),
+                                project (hmark (var (v->name), lit_oid (0)),
+                                         fetch (VAR (R(p)->env,
+                                                     rdist_col,
+                                                     aat_frag),
+                                                lit_int (0)))),
+                         assgn (var (frag->name), var (v2->name))));
 
                 env_add (p->env, rdist_col, aat_frag, frag);
             }
