@@ -18,6 +18,7 @@ Options are:
                        --dbinit=<MIL_statement>              
  -d<debug_level>     | --debug=<debug_level>        
  -s <option>=<value> | --set <option>=<value>       
+                       --version
  -?                  | --help                       
 
 # 15:14:07 >  
