@@ -2608,7 +2608,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel_select(rel, le);
 	}
 	}
-	return NULL;
+	/* never reached, as all switch cases have a `return` */
 }
 
 static sql_exp *
