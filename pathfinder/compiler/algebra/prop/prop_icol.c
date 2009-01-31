@@ -593,12 +593,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
             if (twig_needed) {
                 union_ (n->prop->icols, n->sem.docnode.iter);
                 twig_needed = false;
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 twig_needed = true;
                 prop_infer_icols (R(n), NULL);
             } else if (first_twig_child) {
                 first_twig_child = false;
                 union_ (n->prop->icols, n->sem.docnode.iter);
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 prop_infer_icols (R(n), NULL);
             } else {
@@ -616,12 +618,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
                 union_ (n->prop->icols, n->sem.iter_item.iter);
                 union_ (n->prop->icols, n->sem.iter_item.item);
                 twig_needed = false;
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 twig_needed = true;
                 prop_infer_icols (R(n), NULL);
             } else if (first_twig_child) {
                 first_twig_child = false;
                 union_ (n->prop->icols, n->sem.iter_item.iter);
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 prop_infer_icols (R(n), NULL);
             } else {
@@ -640,6 +644,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
                 union_ (n->prop->icols, n->sem.iter_item.iter);
                 union_ (n->prop->icols, n->sem.iter_item.item);
                 twig_needed = false;
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 twig_needed = true;
             } else if (first_twig_child) {
@@ -651,6 +656,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
                 if (n->kind == la_textnode)
                     union_ (n->prop->icols, n->sem.iter_item.item);
 
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
             } else {
                 prop_infer_icols (L(n), NULL);
@@ -668,11 +674,13 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
                 union_ (n->prop->icols, n->sem.iter_item1_item2.item1);
                 union_ (n->prop->icols, n->sem.iter_item1_item2.item2);
                 twig_needed = false;
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
                 twig_needed = true;
             } else if (first_twig_child) {
                 first_twig_child = false;
                 union_ (n->prop->icols, n->sem.iter_item1_item2.iter);
+                copy (n->prop->l_icols, n->prop->icols);
                 prop_infer_icols (L(n), n->prop->icols);
             } else {
                 prop_infer_icols (L(n), NULL);
@@ -690,12 +698,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
                 union_ (n->prop->icols, n->sem.iter_pos_item.item);
                 twig_needed = false;
                 prop_infer_icols (L(n), NULL);
+                copy (n->prop->r_icols, n->prop->icols);
                 prop_infer_icols (R(n), n->prop->icols);
                 twig_needed = true;
             } else if (first_twig_child) {
                 union_ (n->prop->icols, n->sem.iter_pos_item.iter);
                 first_twig_child = false;
                 prop_infer_icols (L(n), NULL);
+                copy (n->prop->r_icols, n->prop->icols);
                 prop_infer_icols (R(n), n->prop->icols);
             } else {
                 prop_infer_icols (L(n), NULL);
