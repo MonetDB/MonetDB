@@ -698,35 +698,34 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                the values should be comparable. (Including domain
                information might improve this inference.) */
             for (unsigned int i = 0; i < n->schema.count; i++) {
+                PFla_op_t  *origin;
                 PFalg_col_t cur = n->schema.items[i].name;
                 req_val_t  *map = find_map (MAP_LIST(n), cur);
 
                 if (map && map->value)
                     continue;
 
-                if (!map &&
-                    (PFprop_subdom (n->prop,
-                                    PFprop_dom_right (n->prop, cur),
-                                    PFprop_dom_left (n->prop, cur)) ||
-                     PFprop_subdom (n->prop,
-                                    PFprop_dom_left (n->prop, cur),
-                                    PFprop_dom_right (n->prop, cur)))) {
-                    adjust_join (cur);
-                    continue;
-                }
-
                 /* Keep order, join, and part columns if they stem from
                    the same operator.  For all other columns we require
                    the real values. */
-                if (!map ||
-                    !((PFprop_subdom (n->prop,
-                                      PFprop_dom_right (n->prop, cur),
-                                      PFprop_dom_left (n->prop, cur)) ||
-                       PFprop_subdom (n->prop,
-                                      PFprop_dom_left (n->prop, cur),
-                                      PFprop_dom_right (n->prop, cur))) &&
-                      (map->order || map->join || map->part)))
-                    adjust_value (cur);
+                origin  = PFprop_lineage (n->prop, cur);
+                if (origin && origin != n) {
+                    PFalg_col_t ori_col = PFprop_lineage_col (n->prop, cur);
+                    if (PFprop_subdom (n->prop,
+                                       PFprop_dom_left (n->prop, cur),
+                                       PFprop_dom (origin->prop, ori_col)) &&
+                        PFprop_subdom (n->prop,
+                                       PFprop_dom_right (n->prop, cur),
+                                       PFprop_dom (origin->prop, ori_col))) {
+                        if (!map) {
+                            adjust_join (cur);
+                            continue;
+                        }
+                        else if (map->order || map->join || map->part)
+                            continue;
+                    }
+                }
+                adjust_value (cur);
             }
             break;
 
@@ -1213,9 +1212,11 @@ prop_infer (PFla_op_t *n)
 void
 PFprop_infer_reqval (PFla_op_t *root)
 {
-    /* We need the domain property to detect more bijective
-       columns (in operators with two children). */
+    /* We need the domain property and the lineage
+       to detect more bijective columns (in operators
+       with two children). */
     PFprop_infer_nat_dom (root);
+    PFprop_infer_lineage (root);
 
     /* collect number of incoming edges (parents) */
     prop_infer (root);
