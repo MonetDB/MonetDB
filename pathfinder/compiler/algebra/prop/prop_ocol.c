@@ -74,21 +74,30 @@ PFprop_ocol (const PFla_op_t *n, PFalg_col_t col)
 }
 
 /**
- * Return the type of @a col in the list of ocol columns
+ * Determine type of column @a col in schema @a schema. 
  */
 PFalg_simple_type_t
-PFprop_type_of (const PFla_op_t *n, PFalg_col_t col)
+PFprop_type_of_ (PFalg_schema_t schema, PFalg_col_t col)
 {
-    assert (n);
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        if (col == n->schema.items[i].name)
-            return n->schema.items[i].type;
+    for (unsigned int i = 0; i < schema.count; i++)
+        if (col == schema.items[i].name)
+            return schema.items[i].type;
 
     /* you should never get there */
     PFoops (OOPS_FATAL,
                  "Type of %s not found in schema", PFcol_str (col));
 
     return aat_int; /* satisfy picky compilers */
+}
+
+/**
+ * Return the type of @a col in the list of ocol columns
+ */
+PFalg_simple_type_t
+PFprop_type_of (const PFla_op_t *n, PFalg_col_t col)
+{
+    assert (n);
+    return PFprop_type_of_ (n->schema, col);
 }
 
 /**

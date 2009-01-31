@@ -481,6 +481,11 @@ bool PFprop_fd (const PFprop_t *prop,
 bool PFprop_ocol (const PFla_op_t *n, PFalg_col_t col);
 
 /**
+ * Determine type of column @a col in schema @a schema. 
+ */
+PFalg_simple_type_t PFprop_type_of_ (PFalg_schema_t schema, PFalg_col_t col);
+
+/**
  * Return the type of @a col in the list of ocol columns
  */
 PFalg_simple_type_t PFprop_type_of (const PFla_op_t *n, PFalg_col_t col);

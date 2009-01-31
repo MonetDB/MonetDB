@@ -330,6 +330,64 @@ nil-timezone.
 .COMMAND tzone_local() : tzone = tzone_get_local;
 	"get the local tzone; which is used for printing timestamps (!DS2.2)"
 
+@- YearMonthDuration atom
+A duration of years and months, needed by XQuery. The value space is an
+integer representing the total months of the YearMonthDuration, computed
+by multiplying the years with 12 and adding it to the months.
+{\small
+\begin{verbatim}
+print format: ['-']P[nY][nM]
+parse format: ['-']P[nY][nM]
+
+with: nY = the number of years
+      nM = the number of months
+Zero yearMonthDuration is P0M.
+\end{verbatim}
+}
+@m
+.ATOM ymduration = int;
+	.FROMSTR = ymduration_fromstr;
+	.TOSTR = ymduration_tostr;
+.END;
+
+.COMMAND isnil(ymduration) : bit = ymduration_isnil;    "ymduration nil test"
+.OPERATOR0 (ymduration) "="  (ymduration) : bit = ymduration_comp_EQ;  "ymduration equality test"
+.OPERATOR0 (ymduration) "!=" (ymduration) : bit = ymduration_comp_NE;  "ymduration non-equality test"
+.OPERATOR0 (ymduration) "<"  (ymduration) : bit = ymduration_comp_LT;  "ymduration smaller-than test"
+.OPERATOR0 (ymduration) ">"  (ymduration) : bit = ymduration_comp_GT;  "ymduration greater-than test"
+.OPERATOR0 (ymduration) "<=" (ymduration) : bit = ymduration_comp_LE;  "ymduration smaller-or-equal test"
+.OPERATOR0 (ymduration) ">=" (ymduration) : bit = ymduration_comp_GE;  "ymduration greater-or-equal test"
+
+@- DateTimeDuration atom
+A duration of days and time, needed by XQuery. The value space is a lng representing the total
+milliseconds of the DateTimeDuration and is obtained by converting the days, hours, minutes and
+seconds value to fractional seconds using the conversion rules: 24 hours = 1 day, 60 minutes = 1 hour,
+60 seconds = 1 minute and 1000 milliseconds = 1 second.
+{\small
+\begin{verbatim}
+print format: ['-']P[nD][T[nH][nM][n.nnnS]]
+parse format: ['-']P[nD][T[nH][nM][n.nnnS]]
+
+with: nD     = the number of days
+      nH     = the number of hours
+      nM     = the number of minutes
+      n.nnnS = the number of seconds.milliseconds
+\end{verbatim}
+}
+@m
+.ATOM dtduration = lng;
+	.FROMSTR = dtduration_fromstr;
+	.TOSTR = dtduration_tostr;
+.END;
+
+.COMMAND isnil(dtduration) : bit = dtduration_isnil;    "dtduration nil test"
+.OPERATOR0 (dtduration) "="  (dtduration) : bit = dtduration_comp_EQ;  "dtduration equality test"
+.OPERATOR0 (dtduration) "!=" (dtduration) : bit = dtduration_comp_NE;  "dtduration non-equality test"
+.OPERATOR0 (dtduration) "<"  (dtduration) : bit = dtduration_comp_LT;  "dtduration smaller-than test"
+.OPERATOR0 (dtduration) ">"  (dtduration) : bit = dtduration_comp_GT;  "dtduration greater-than test"
+.OPERATOR0 (dtduration) "<=" (dtduration) : bit = dtduration_comp_LE;  "dtduration smaller-or-equal test"
+.OPERATOR0 (dtduration) ">=" (dtduration) : bit = dtduration_comp_GE;  "dtduration greater-or-equal test"
+
 @- construction
 Construct temporal values from simple(r) parameters.
 Out-of range result values are represented by the nil.
@@ -728,6 +786,14 @@ typedef union {
 	} s;
 	int asint;		/* the same, seen as single value */
 } rule;
+
+@- ymduration and dtduration
+@h
+typedef int ymduration;
+typedef long long dtduration;
+#define ymduration_nil ((ymduration) int_nil)
+#define dtduration_nil ((dtduration) int_nil)
+
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i) { (r).s.weekday = (i)&15;\
@@ -1613,6 +1679,247 @@ tzone_tostr(str *buf, int *len, tzone *z)
 	return (int) (s - *buf);
 }
 
+@- ymduration and dtduration
+@c
+int
+ymduration_fromstr(str buf, int *len, ymduration **ymd)
+{
+	int months = 0, years = 0, durneg = (buf[0] == '-'),  pos = 0;
+
+	if (*len < (int) sizeof(ymduration)) {
+		if (*ymd)
+			GDKfree(*ymd);
+		*ymd = (ymduration *) GDKmalloc(*len = sizeof(ymduration));
+	}
+	**ymd = ymduration_nil;
+
+	if (buf[durneg] != 'P') {
+		return 0; /* syntax error */
+	}
+
+	for (pos = durneg+1; GDKisdigit(buf[pos]); pos++) {
+		years = (buf[pos] - '0') + years * 10;
+	}
+	if (pos == durneg+1)
+		return 0; /* syntax error */
+
+	if (buf[pos] == 'Y') {
+		if (buf[pos+1] == 'M')
+			return 0; /* syntax error */
+		for (pos += 1; GDKisdigit(buf[pos]); pos++) {
+			months = (buf[pos] - '0') + months * 10;
+		}
+		if ((buf[pos] == 'M') || (months == 0)) {
+			months = months + years*12;
+		} else {
+			return 0; /*syntax error */
+		}
+	} else if (buf[pos] == 'M') {
+		months = years;
+	} else {
+		return 0; /* syntax error */
+	}
+
+	**ymd = durneg ? -months : months;
+	return pos;
+}
+
+int
+ymduration_tostr(str *buf, int *len, ymduration *val)
+{
+	int months = 0, years = 0;
+	str sign = "";
+
+	/* longest string is -P178956970Y08M */
+	if (*len < 15) {
+		if (*buf)
+			GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = 15);
+	}
+	if (*val == ymduration_nil ) {
+		strcpy(*buf, "nil");
+		return 3;
+	}
+
+	if (*val == 0 ) {
+		sprintf(*buf, "P0M");
+	} else {
+		if (*val < 0 ) {
+			*val = -(*val);
+			sign = "-";
+		}
+		years = (int)*val / 12;
+		months = (int)*val - (12*years);
+		if (years == 0) {
+			sprintf(*buf, "%sP%dM",sign, months);
+		} else if (months == 0) {
+			sprintf(*buf, "%sP%dY",sign, years);
+		} else {
+			sprintf(*buf, "%sP%dY%dM",sign, years, months);
+		}
+	}
+	return (int) strlen(*buf);
+}
+
+int
+dtduration_fromstr(str buf, int *len, dtduration **dtd)
+{
+
+	long long days = 0, hours = 0, minutes = 0, seconds = 0, millisecs = 0;
+	int durneg = (buf[0] == '-'),  pos = 0;
+
+	if (*len < (int) sizeof(dtduration)) {
+		if (*dtd)
+			GDKfree(*dtd);
+		*dtd = (dtduration *) GDKmalloc(*len = sizeof(dtduration));
+	}
+	**dtd = dtduration_nil;
+	if (buf[durneg] != 'P') {
+		return 0; /* syntax error */
+	}
+
+	pos = durneg+1;
+	if (buf[pos] != 'T') { /* no T, hence only days are allowed here */
+		for (; GDKisdigit(buf[pos]); pos++) {
+			days = (buf[pos] - '0') + days * 10;
+		}
+		if (pos == durneg+1)
+			return 0; /* syntax error, no digits */
+
+		if (buf[pos] == 'D') {
+			/* make days in milliseconds */
+			days = days*24*60*60*1000;
+			if (buf[++pos] == 'T') { /* has also time, goto ti, otherwise end */
+				goto ti;
+			}
+		} else {
+			return 0; /* syntax error, no D */
+		}
+	} else { /* starting with T */
+ti:
+		for (pos += 1; GDKisdigit(buf[pos]); pos++) {
+			hours = (buf[pos] - '0') + hours * 10;
+		}
+		if (buf[pos] == 'H') {
+			/* make hours in milliseconds */
+			hours = hours*60*60*1000;
+			goto min;
+		} else if (buf[pos] == 'M') {
+			minutes = hours*60*1000;
+			hours = 0;
+			goto sec;
+		} else if (buf[pos] == 'S' || buf[pos] == '.') {
+			seconds = hours*1000;
+			hours = 0;
+			if (buf[pos] == '.') {
+				goto dot;
+			}
+		} else {
+			return 0; /* syntax error */
+		}
+min:
+		for (pos += 1; GDKisdigit(buf[pos]); pos++) {
+			minutes = (buf[pos] - '0') + minutes * 10;
+		}
+		if (buf[pos] == 'M') {
+			/* make minutes in millisec */
+			minutes = minutes*60*1000;
+			goto sec;
+		} else if (buf[pos] == 'S' || buf[pos] == '.') {
+			seconds = minutes*1000;
+			minutes = 0;
+			if (buf[pos] == '.') {
+				goto dot;
+			}
+		}
+sec:
+		for (pos += 1; GDKisdigit(buf[pos]); pos++) {
+			seconds = (buf[pos] - '0') + seconds * 10;
+		}
+		if (buf[pos] == 'S') {
+			/* make seconds in millisec */
+			seconds = seconds*1000;
+		} else if (buf[pos] == '.') {
+dot:
+			for (pos += 1; GDKisdigit(buf[pos]); pos++) {
+				if (millisecs*10 < 1000) { /* dont go more than 1000 millisecs */
+					millisecs = (buf[pos] - '0') + millisecs * 10;
+				}
+			}
+			if (buf[pos] != 'S') {
+				return 0; /* syntax error */
+			}
+		}
+	}
+
+	millisecs = millisecs + seconds + minutes + hours + days;
+
+	**dtd = durneg ? -millisecs : millisecs;
+	return pos;
+
+}
+
+int
+dtduration_tostr(str *buf, int *len, dtduration *val)
+{
+	long long days = 0, hours = 0, minutes = 0, seconds = 0, milliseconds = 0;
+	int pos=0;
+	str sign = "";
+
+	/* longest string is -PT9223372036854775.808S */
+	if (*len < 25) {
+		if (*buf)
+			GDKfree(*buf);
+		*buf = (str) GDKmalloc(*len = 25);
+	}
+	if (*val == dtduration_nil ) {
+		strcpy(*buf, "nil");
+		return 3;
+	}
+
+	if (*val == 0 ) {
+		sprintf(*buf, "P0S");
+	} else {
+		if (*val < 0 ) {
+			*val = -(*val);
+			sign = "-";
+		}
+
+		days = *val / (1000*3600*24);
+		*val = *val - (days*1000*3600*24);
+		hours = *val / (1000*3600);
+		*val = *val - (hours*1000*3600);
+		minutes = *val / (1000*60);
+		*val = *val - (minutes*1000*60);
+		seconds = *val / 1000;
+		milliseconds = *val - (seconds*1000);
+
+		pos = sprintf(*buf, "%sP", sign);
+
+		if (days != 0) {
+			pos += sprintf((*buf)+pos, "%lldD", days);
+		}
+		if (hours+minutes+seconds+milliseconds != 0) {
+			pos += sprintf((*buf)+pos, "T");
+		}
+		if (hours != 0) {
+			pos += sprintf((*buf)+pos, "%lldH", hours);
+		}
+		if (minutes != 0) {
+			pos += sprintf((*buf)+pos, "%lldM", minutes);
+		}
+		if (seconds !=  0 || milliseconds != 0) {
+			pos += sprintf((*buf)+pos, "%lld", seconds);
+			if (milliseconds != 0) {
+				pos += sprintf((*buf)+pos, ".%dS", (int)milliseconds);
+			} else {
+				pos += sprintf((*buf)+pos, "S");
+			}
+		}
+	}
+	return (int) strlen(*buf);
+}
+
 @+ operator implementations
 @c
 static void
@@ -2356,6 +2663,8 @@ int @1_isnil(bit *retval, @1 *val)
 @c
 @:isnil(date)@
 @:isnil(daytime)@
+@:isnil(ymduration)@
+@:isnil(dtduration)@
 
 @= compare
 int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
@@ -2379,6 +2688,19 @@ int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 @:compare(daytime,GT,>)@
 @:compare(daytime,LE,<=)@
 @:compare(daytime,GE,>=)@
+@:compare(ymduration,EQ,==)@
+@:compare(ymduration,NE,!=)@
+@:compare(ymduration,LT,<)@
+@:compare(ymduration,GT,>)@
+@:compare(ymduration,LE,<=)@
+@:compare(ymduration,GE,>=)@
+@:compare(dtduration,EQ,==)@
+@:compare(dtduration,NE,!=)@
+@:compare(dtduration,LT,<)@
+@:compare(dtduration,GT,>)@
+@:compare(dtduration,LE,<=)@
+@:compare(dtduration,GE,>=)@
+
 
 int
 timestamp_isnil(bit *retval, timestamp *val)

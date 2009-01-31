@@ -179,23 +179,6 @@ add_plans (PFplanlist_t *list, PFplanlist_t *plans)
     PFarray_concat (list, plans);
 }
 
-/**
- * Helper function: Determine type of column @a col in schema
- * @a schema. Used by plan_disjunion() and plan_thetajoin().
- */
-static PFalg_simple_type_t
-type_of (PFalg_schema_t schema, PFalg_col_t col)
-{
-    for (unsigned int i = 0; i < schema.count; i++)
-        if (schema.items[i].name == col)
-            return schema.items[i].type;
-
-    PFoops (OOPS_FATAL, "unable to find column %s in schema",
-            PFcol_str (col));
-
-    return 0;  /* pacify compilers */
-}
-
 
 /**
  * Create physical equivalent of our `serialize' operator.
@@ -525,7 +508,7 @@ plan_thetajoin (const PFla_op_t *n)
                                  n->sem.thetajoin.pred));
         }
 
-    cur_type = type_of (n->schema, n->sem.thetajoin.pred[0].left);
+    cur_type = PFprop_type_of (n, n->sem.thetajoin.pred[0].left);
     /* If we have only a single equi-join predicate we can also plan
        an equi-join in addition. */
     if (n->sem.thetajoin.count == 1 &&
@@ -575,16 +558,16 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
             LL(n)->sem.thetajoin.pred[0].right);
 
     /* check for nat type in the first predicate */
-    if (type_of (LL(n)->schema,
-                 LL(n)->sem.thetajoin.pred[0].left) != aat_nat ||
-        type_of (LL(n)->schema,
-                 LL(n)->sem.thetajoin.pred[0].right) != aat_nat)
+    if (PFprop_type_of (LL(n),
+                        LL(n)->sem.thetajoin.pred[0].left) != aat_nat ||
+        PFprop_type_of (LL(n),
+                        LL(n)->sem.thetajoin.pred[0].right) != aat_nat)
         return ret;
 
-    if ((cur_type = type_of (LL(n)->schema,
-                             LL(n)->sem.thetajoin.pred[1].left)) !=
-        type_of (LL(n)->schema,
-                 LL(n)->sem.thetajoin.pred[1].right) ||
+    if ((cur_type = PFprop_type_of (LL(n),
+                                    LL(n)->sem.thetajoin.pred[1].left)) !=
+        PFprop_type_of (LL(n),
+                        LL(n)->sem.thetajoin.pred[1].right) ||
         !monomorphic (cur_type) ||
         cur_type & aat_node)
         return ret;
@@ -632,18 +615,68 @@ plan_dep_unique_thetajoin (const PFla_op_t *n)
 }
 
 /**
+ * Worker that checks if a column provides nodes of a single 
+ * fragment only.
+ */
+static bool
+constant_fragment_info (PFla_op_t *n, PFalg_col_t col)
+{
+    /* find the origin of the column */
+    PFla_op_t *op = PFprop_lineage (n->prop, col);
+
+    if (!op)
+        return false;
+
+    /* step along the fragment information
+       to check for a constant input to
+       the doc_tbl operator */
+
+    if ((op->kind == la_step ||
+         op->kind == la_guide_step ||
+         op->kind == la_step_join ||
+         op->kind == la_guide_step_join) &&
+        op->sem.step.item_res ==
+        PFprop_lineage_col (n->prop, col) &&
+        L(op)->kind == la_frag_union &&
+        LL(op)->kind == la_empty_frag &&
+        LR(op)->kind == la_fragment &&
+        LRL(op)->kind == la_doc_tbl &&
+        PFprop_const (LRL(op)->prop,
+                      LRL(op)->sem.doc_tbl.col))
+        return true;
+
+    if (op->kind == la_doc_index_join &&
+        op->sem.doc_join.item_res ==
+        PFprop_lineage_col (n->prop, col) &&
+        L(op)->kind == la_frag_union &&
+        LL(op)->kind == la_empty_frag &&
+        LR(op)->kind == la_fragment &&
+        LRL(op)->kind == la_doc_tbl &&
+        PFprop_const (LRL(op)->prop,
+                      LRL(op)->sem.doc_tbl.col))
+        return true;
+
+    if (op->kind == la_doc_tbl &&
+        PFprop_const (op->prop,
+                      op->sem.doc_tbl.col))
+        return true;
+
+    return false;
+}
+
+/**
  * Generate physical plans for theta-join
  * that additionally removes duplicates.
  */
 static PFplanlist_t *
 plan_unique_thetajoin (const PFla_op_t *n)
 {
-    PFplanlist_t *ret     = new_planlist (),
-                 *lsorted = new_planlist (),
-                 *rsorted = new_planlist ();
-    PFalg_col_t   ldist, rdist;
-
-    PFalg_simple_type_t cur_type;
+    PFplanlist_t       *ret     = new_planlist (),
+                       *lsorted = new_planlist (),
+                       *rsorted = new_planlist ();
+    PFalg_col_t         ldist, rdist;
+    PFalg_simple_type_t ldist_ty, rdist_ty,
+                        cur_type;
 
     /* check all conditions again */
     assert (n);     assert (n->kind     == la_distinct);
@@ -665,15 +698,31 @@ plan_unique_thetajoin (const PFla_op_t *n)
         ldist = L(n)->sem.proj.items[1].old;
         rdist = L(n)->sem.proj.items[0].old;
     }
-    /* check for nat type in the distinct check */
-    if (type_of (LL(n)->schema, ldist) != aat_nat ||
-        type_of (LL(n)->schema, rdist) != aat_nat)
+    ldist_ty = PFprop_type_of (LL(n), ldist);
+    rdist_ty = PFprop_type_of (LL(n), rdist);
+
+    /* Check for either nat type or a pre node in the distinct check */
+    if (ldist_ty != aat_nat &&
+        (ldist_ty != aat_pnode ||
+         /* We have to cope with a pre(oid) and frag(oid) column.
+            This only works if we can be sure that frag(oid) is
+            constant which means that the nodes have to come
+            from a single document or a single collection. */
+         !constant_fragment_info (LL(n), ldist)))
+        return ret;
+    if (rdist_ty != aat_nat &&
+        (rdist_ty != aat_pnode ||
+         /* We have to cope with a pre(oid) and frag(oid) column.
+            This only works if we can be sure that frag(oid) is
+            constant which means that the nodes have to come
+            from a single document or a single collection. */
+         !constant_fragment_info (LL(n), rdist)))
         return ret;
 
-    if ((cur_type = type_of (LL(n)->schema,
-                             LL(n)->sem.thetajoin.pred[0].left)) !=
-        type_of (LL(n)->schema,
-                 LL(n)->sem.thetajoin.pred[0].right) ||
+    if ((cur_type = PFprop_type_of (LL(n),
+                                    LL(n)->sem.thetajoin.pred[0].left)) !=
+        PFprop_type_of (LL(n),
+                        LL(n)->sem.thetajoin.pred[0].right) ||
         !monomorphic (cur_type) ||
         cur_type & aat_node)
         return ret;
@@ -995,9 +1044,10 @@ plan_disjunion (const PFla_op_t *n)
                            ascending orders */
                         PFord_order_dir_at (ri, 0) == DIR_ASC &&
                         PFord_order_dir_at (sj, 0) == DIR_ASC) {
+                        PFalg_simple_type_t tyR, tyS;
 
-                        PFalg_simple_type_t tyR = type_of (R->schema, col);
-                        PFalg_simple_type_t tyS = type_of (S->schema, col);
+                        tyR = PFprop_type_of_ (R->schema, col);
+                        tyS = PFprop_type_of_ (S->schema, col);
 
                         if (tyR == tyS &&
                             (tyR == aat_nat ||
@@ -1292,7 +1342,7 @@ plan_count_ext (const PFla_op_t *n)
         R(n)->sem.attach.value.type != aat_int ||
         R(n)->sem.attach.value.val.int_ != 0 ||
         L(RL(n))->schema.count != 1 ||
-        type_of (n->schema, L(n)->sem.aggr.part) != aat_nat)
+        PFprop_type_of (n, L(n)->sem.aggr.part) != aat_nat)
         return ret;
 
     assert (LL(n)->plans && L(RL(n))->plans);

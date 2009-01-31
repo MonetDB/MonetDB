@@ -359,7 +359,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                             comp_str (n->sem.unq_thetajoin.comp),
                             PFcol_str (n->sem.unq_thetajoin.right),
                             PFcol_str (n->sem.unq_thetajoin.ldist),
-                            PFcol_str (n->sem.unq_thetajoin.ldist));
+                            PFcol_str (n->sem.unq_thetajoin.rdist));
             break;
 
         case pa_unq1_thetajoin:
