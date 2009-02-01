@@ -790,9 +790,9 @@ typedef union {
 @- ymduration and dtduration
 @h
 typedef int ymduration;
-typedef long long dtduration;
+typedef lng dtduration;
 #define ymduration_nil ((ymduration) int_nil)
-#define dtduration_nil ((dtduration) int_nil)
+#define dtduration_nil ((dtduration) lng_nil)
 
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
@@ -1729,6 +1729,7 @@ ymduration_tostr(str *buf, int *len, ymduration *val)
 {
 	int months = 0, years = 0;
 	str sign = "";
+	ymduration temp;
 
 	/* longest string is -P178956970Y08M */
 	if (*len < 15) {
@@ -1745,11 +1746,13 @@ ymduration_tostr(str *buf, int *len, ymduration *val)
 		sprintf(*buf, "P0M");
 	} else {
 		if (*val < 0 ) {
-			*val = -(*val);
+			temp = -(*val);
 			sign = "-";
+		} else {
+			temp = *val;
 		}
-		years = (int)*val / 12;
-		months = (int)*val - (12*years);
+		years = (int)temp / 12;
+		months = (int)temp - (12*years);
 		if (years == 0) {
 			sprintf(*buf, "%sP%dM",sign, months);
 		} else if (months == 0) {
@@ -1765,7 +1768,7 @@ int
 dtduration_fromstr(str buf, int *len, dtduration **dtd)
 {
 
-	long long days = 0, hours = 0, minutes = 0, seconds = 0, millisecs = 0;
+	lng days = 0, hours = 0, minutes = 0, seconds = 0, millisecs = 0;
 	int durneg = (buf[0] == '-'),  pos = 0;
 
 	if (*len < (int) sizeof(dtduration)) {
@@ -1862,9 +1865,10 @@ dot:
 int
 dtduration_tostr(str *buf, int *len, dtduration *val)
 {
-	long long days = 0, hours = 0, minutes = 0, seconds = 0, milliseconds = 0;
+	lng days = 0, hours = 0, minutes = 0, seconds = 0, milliseconds = 0;
 	int pos=0;
 	str sign = "";
+	dtduration temp;
 
 	/* longest string is -PT9223372036854775.808S */
 	if (*len < 25) {
@@ -1878,21 +1882,23 @@ dtduration_tostr(str *buf, int *len, dtduration *val)
 	}
 
 	if (*val == 0 ) {
-		sprintf(*buf, "P0S");
+		sprintf(*buf, "PT0S");
 	} else {
 		if (*val < 0 ) {
-			*val = -(*val);
+			temp = -(*val);
 			sign = "-";
+		} else {
+			temp = *val;
 		}
 
-		days = *val / (1000*3600*24);
-		*val = *val - (days*1000*3600*24);
-		hours = *val / (1000*3600);
-		*val = *val - (hours*1000*3600);
-		minutes = *val / (1000*60);
-		*val = *val - (minutes*1000*60);
-		seconds = *val / 1000;
-		milliseconds = *val - (seconds*1000);
+		days = temp / (1000*3600*24);
+		temp = temp - (days*1000*3600*24);
+		hours = temp / (1000*3600);
+		temp = temp - (hours*1000*3600);
+		minutes = temp / (1000*60);
+		temp = temp - (minutes*1000*60);
+		seconds = temp / 1000;
+		milliseconds = temp - (seconds*1000);
 
 		pos = sprintf(*buf, "%sP", sign);
 
