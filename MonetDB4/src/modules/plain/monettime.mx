@@ -1878,7 +1878,7 @@ dtduration_tostr(str *buf, int *len, dtduration *val)
 	}
 
 	if (*val == 0 ) {
-		sprintf(*buf, "P0S");
+		sprintf(*buf, "PT0S");
 	} else {
 		if (*val < 0 ) {
 			*val = -(*val);
