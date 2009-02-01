@@ -1,0 +1,6 @@
+v1:=status.memUsage(1000000:lng);
+v2:=bat.reverse(v1);
+v3:=algebra.like(v2,"_tot/");
+v4:=bat.reverse(v3);
+v5:=algebra.kdifference(v1,v4);
+io.print(v5);
