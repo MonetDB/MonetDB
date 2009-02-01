@@ -1298,15 +1298,15 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                                        n->schema.items[j].name)) {
                             if (fd_count == 0)
                                 PFarray_printf (
-                                    dot,
+                                    DOT,
                                     "\\nfunctional dependencies:");
                             else
-                                PFarray_printf (dot, ", ");
+                                PFarray_printf (DOT, ", ");
                             if (fd_count % 3 == 0)
-                                PFarray_printf (dot, "\\n");
+                                PFarray_printf (DOT, "\\n");
                             fd_count++;
                             PFarray_printf (
-                                dot,
+                                DOT,
                                 "%s => %s",
                                 PFcol_str (n->schema.items[i].name),
                                 PFcol_str (n->schema.items[j].name));

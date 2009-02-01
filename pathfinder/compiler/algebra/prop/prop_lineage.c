@@ -122,6 +122,7 @@ infer_lineage (PFla_op_t *n)
         case la_serialize_seq:
         case la_serialize_rel:
         case la_content:
+        case la_error:
             add_all (R(n));
             break;
 
@@ -131,7 +132,6 @@ infer_lineage (PFla_op_t *n)
         case la_frag_extract:
         case la_frag_union:
         case la_empty_frag:
-        case la_error:
         case la_nil:
         case la_trace:
         case la_rec_param:

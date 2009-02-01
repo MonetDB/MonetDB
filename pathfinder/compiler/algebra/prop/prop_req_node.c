@@ -658,6 +658,8 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
         case la_doc_access:
             assert ((type_of (n, n->sem.doc_access.res) & aat_node) == 0);
             add_access_map (n, n->sem.doc_access.col);
+            if (n->sem.doc_access.doc_col == doc_atomize)
+                add_axis_down_map (n, n->sem.doc_access.col);
 
             prop_infer_req_node_vals (L(n), NULL); /* fragments */
             prop_infer_req_node_vals (R(n), MAP_LIST(n));
