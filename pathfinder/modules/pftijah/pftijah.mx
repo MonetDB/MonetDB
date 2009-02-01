@@ -2258,6 +2258,47 @@ PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oi
 }
 @mil
 
+#             ___          qCnt(t) 
+# LM(d|q) =   | |    dLH(t) 
+#            t in q           
+#
+# where qCnt(t) = count of term t in query q
+# where dLH(t) = likelihood of term t in doc d
+#
+
+PROC _score_LM(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
+    var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
+    e_tScores.left_div(e_size);
+    e_tScores := [log](e_tScores);
+    e_tScores := e_tScores.[*](q_tCnt);
+    e_tScores := [exp](e_tScores);
+    return e_tScores;
+}
+
+
+#              ___                                         qCnt(t)      
+# LMs(d|q) =   | |    ( (1-lambda) dLH(t) + lambda cLH(t) ) 
+#             t in q           
+#
+# where qCnt(t) = count of term t in query q
+# where dLH(t) = likelihood of term t in doc d
+# where cLH(t) = likelihood of term t in (background) collection c
+#
+
+PROC _score_LMs(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
+    var tmp1 := c_lambda * c_tCnt / cSize;
+    var tmp2 := dbl(1) - c_lambda;
+    
+    var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
+    e_tScores.left_div(e_size);
+    e_tScores := e_tScores.[*](tmp2);
+    e_tScores := e_tScores.[+](tmp1);
+    e_tScores := [log](e_tScores);
+    e_tScores := e_tScores.[*](q_tCnt);
+    e_tScores := [exp](e_tScores);
+    return e_tScores;
+}
+
 
 #               __     qCnt(t)       /  (1 - lambda) * dLH(t)       \  
 # NLLR(d|q) =   >_     ------- * log |  ----------------------  + 1 |  
@@ -2269,9 +2310,9 @@ PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oi
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 
-PROC _score_NLLR(int q_tCnt, int qSize, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
+PROC _score_NLLR(dbl q_tCnt, dbl qSize, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
     var collFac := ((dbl(1) - c_lambda) / c_lambda) * cSize / dbl(c_tCnt);
-    var q_tLH := dbl(q_tCnt) / dbl(qSize);
+    var q_tLH := q_tCnt / qSize;
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
     e_tScores.left_div(e_size);
     e_tScores := e_tScores.[*](collFac);
@@ -2280,6 +2321,141 @@ PROC _score_NLLR(int q_tCnt, int qSize, int c_tCnt, int cSize, BAT[oid,int] e_tC
     e_tScores := e_tScores.[*](q_tLH);
     return e_tScores;
 }
+
+#             __                /  cNdoc  \            (cK1 + 1) tf(t)
+# OKAPI(q) =  >_  qCnt(t) * log | ------- | * -------------------------------------
+#            t in q             \  DF(t)  /   cK1*((1-cB) + cB*(DL / cAvgDL)) + tf(t)
+#
+# where cNdoc    = number of elements that is scored
+# where cAvgDL   = average element length
+# where DL       = element length
+# where cIDF(t)  = idf instead of the Robertson/Sparck-Jones weight (variation on idf)
+# where tf(t)    = term frequency (number of occurences of term t in element)
+# where cK1      = tuning parameter k1
+# where cB       = tuning parameter b
+#
+
+PROC _score_OKAPI(dbl q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, int cNdoc, dbl cAvgDL) : bat[oid,dbl] := {
+    
+    # cIDF contains Robertson/Sparck-Jones relevance weight
+    var cIDF := e_tCnt.count(); # df
+    cIDF  := log((cNdoc + 0.5) / (cIDF + 0.5));
+
+    # cK contains length normalization 
+    var cK := e_size.semijoin(e_tCnt); # document lengths
+    cK := [/](cK, cAvgDL / okapi_b);
+    cK := [+](cK, 1 - okapi_b);
+    cK := [*](cK, okapi_k1);
+    cK := [+](cK, e_tCnt);
+    var tmp := [*](e_tCnt, okapi_k1 + 1);
+    tmp := [/](tmp, cK);
+    var e_tScores := [*](tmp, cIDF * q_tCnt);
+    return e_tScores;
+}
+
+
+@:containing_query_LM(nest,nid,TagSize)@
+@:containing_query_LM(unnest,nid,TagSize)@
+@:containing_query_LM(nest,pre,size1)@
+@:containing_query_LM(unnest,pre,size1)@
+@= containing_query_LM
+PROC tj_containing_query_@1_@2_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var t_qCnt := {sum}(query);
+    
+    var e_pre := left.chk_order();
+    var cSize := bat("tj_" + ftindex + "_Terms").count();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var eScores := new(oid,dbl);
+    
+    # loop over query terms
+    t_qCnt@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getTermPositions($h);
+        var c_tCnt := count(t_pre); 
+        # get element count of term
+	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
+	# score elements by this term
+        var e_tScores := _score_LM($t, c_tCnt, cSize, e_tCnt, e_size);
+        e_tCnt := nil;
+        
+	# aggregate term scores
+        eScores := eScores.union_mul(e_tScores);
+	e_tScores := nil;
+    }
+    eScores.access(BAT_READ);
+    
+    var res;
+    res := eScores;
+    
+    t_total :+= time();
+    if (timing) printf("# LM timing: total: %d\n", t_total);
+    return res;
+}
+@mil
+
+
+@:containing_query_LMs(nest,nid,TagSize)@
+@:containing_query_LMs(unnest,nid,TagSize)@
+@:containing_query_LMs(nest,pre,size1)@
+@:containing_query_LMs(unnest,pre,size1)@
+@= containing_query_LMs
+PROC tj_containing_query_@1_@2_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var t_qCnt := {sum}(query);
+    
+    var e_pre := left.chk_order();
+    var cSize := bat("tj_" + ftindex + "_Terms").count();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var eScores := new(oid,dbl);
+    var score_base := dbl(1);
+    
+    # loop over query terms
+    t_qCnt@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getTermPositions($h);
+        var c_tCnt := count(t_pre); 
+        # get element count of term
+	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
+	# score elements by this term
+        var e_tScores := _score_LMs($t, c_tCnt, cSize, e_tCnt, e_size);
+        e_tCnt := nil;
+        var base := c_lambda * c_tCnt / dbl(cSize);
+        score_base :*= base;
+        e_tScores := e_tScores.kunion(eScores.kdiff(e_tScores).project(base));
+
+	# aggregate term scores
+        eScores := e_tScores.left_mul(eScores);
+	e_tScores := nil;
+    }
+    eScores.access(BAT_READ);
+    var res;
+    if (returnall) {
+        res := eScores;
+    } else {
+        var unchanged := eScores.uselect(score_base);
+        res := eScores.kdiff(unchanged);
+    }
+    
+    t_total :+= time();
+    if (timing) printf("# LMs timing: total: %d\n", t_total);
+    return res;
+}
+@mil
 
 
 @:containing_query_NLLR(nest,nid,TagSize)@
@@ -2292,11 +2468,11 @@ PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : ba
     var t_total := 0;
     t_total :-= time();
     
-    var qSize := query.count();
-    var t_qCnt := query.reverse().histogram();
-    
     if ( count(left) = 0 ) return new(oid,dbl);
-    if ( qSize = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var qSize := query.sum();
+    var t_qCnt := {sum}(query);
     
     var e_pre := left.chk_order();
     var cSize := bat("tj_" + ftindex + "_Terms").count();
@@ -2321,11 +2497,73 @@ PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : ba
     }
     eScores.access(BAT_READ);
     
+    var res;
+    if (returnall) {
+        res := union(eScores,left.kdiff(eScores).project(dbl(0)));
+    } else {
+        res := eScores;
+    }
+    
     t_total :+= time();
     if (timing) printf("# NLLR timing: total: %d\n", t_total);
-    return eScores;
+    return res;
 }
 @mil
+
+
+@:containing_query_OKAPI(nest,nid,TagSize)@
+@:containing_query_OKAPI(unnest,nid,TagSize)@
+@:containing_query_OKAPI(nest,pre,size1)@
+@:containing_query_OKAPI(unnest,pre,size1)@
+@= containing_query_OKAPI
+PROC tj_containing_query_@1_@2_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var t_qCnt := {sum}(query);
+    
+    var e_pre := left.chk_order();
+    var cSize := bat("tj_" + ftindex + "_Terms").count();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var eScores := new(oid,dbl);
+    var cNdoc := e_pre.count();
+    var cAvgDL := e_size.semijoin(e_pre).[dbl]().avg();
+    
+    # loop over query terms
+    t_qCnt@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getTermPositions($h);
+        # get element count of term
+	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
+	# score elements by this term
+        var e_tScores := _score_OKAPI($t, e_tCnt, e_size, cNdoc, cAvgDL);
+        e_tCnt := nil;
+        
+	# aggregate term scores
+        eScores := eScores.union_add(e_tScores);
+	e_tScores := nil;
+    }
+    eScores.access(BAT_READ);
+    
+    var res;
+    if (returnall) {
+        res := union(eScores,left.kdiff(eScores).project(dbl(0)));
+    } else {
+        res := eScores;
+    }
+    
+    t_total :+= time();
+    if (timing) printf("# OKAPI timing: total: %d\n", t_total);
+    return res;
+}
+@mil
+
+
 
 #####################################################################
 # and/or combination
@@ -2369,6 +2607,52 @@ PROC tj_or_comb(bat left, bat right) : bat :=
         return intersect.kunion(outer).sort();
     }
 }
+
+################################################################################
+# PRIOR
+################################################################################
+
+PROC tj_prior_ls(BAT[oid,dbl] region) : bat := 
+{
+    var cName := qenv.find(QENV_FTINAME);
+    var tag_size := bat("tj_" + ftindex + "_TagSize");
+    return [*](region, tag_size);
+}
+#ADDHELP("prior_ls", "vojkan", "March 16, 2005",
+#"Adds element prior based on element length to the region score.",
+#"TIJAH");
+
+################################################################################
+# OVERLAP REMOVAL
+################################################################################
+
+PROC tj_rm_overlap(BAT[oid,dbl] ctx) : bat := 
+{
+   if ( count( ctx ) = 0 ) {
+       return ctx;
+   } else {
+       var size := bat("tj_" + ftindex + "_size1");
+       var a_d := treemergejoin_nest_pre(ctx, size, ctx);
+       var x_a := a_d.hmark(0@0);
+       var x_d := a_d.tmark(0@0);
+       var x_ascore := x_a.join(ctx);
+       var x_dscore := x_d.join(ctx);
+
+       # deselect all ancestors having a higher scored descendant
+       var tmp := [<](x_ascore, x_dscore).uselect(true).mirror().join(x_a);
+       var res1 := ctx.kdiff(tmp.reverse());
+       # deselect all descendants having a higher scored ancestor
+       # select descendants having a higher scored ancestor in res1
+       tmp := x_a.kdiff(tmp).join(res1).mirror().join(x_d); 
+       var res := res1.kdiff(tmp.reverse());
+
+       return res;
+   }
+}
+#ADDHELP("rm_overlap","henning", "Oktober, 2008",
+#"Removes overlapping elements from result list.",
+#"TIJAH");
+
 
 
 #####################################################################
@@ -3872,6 +4156,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNod
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
 	}
+	GDKfree(mil);
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
 	lng time_end = GDKusec();
 

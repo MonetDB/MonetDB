@@ -311,8 +311,8 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
     	    save2file(tjc_c->milFile, milres);
         }
 	// end henning
-	milres = milprint (tjc_c, root);
-	milres = GDKstrdup(milres); // INCOMPLETE, check free
+	//milres = milprint (tjc_c, root);
+	//milres = GDKstrdup(milres); // INCOMPLETE, check free
 	/* optional mil output
         if ( tjc_c->milFile ) {
     	    save2file(tjc_c->milFile, milres);
