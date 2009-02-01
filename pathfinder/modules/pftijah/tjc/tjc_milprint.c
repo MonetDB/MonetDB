@@ -102,9 +102,6 @@ void milprint_init2 (tjc_config *tjc_c) {
     if (tjc_c->timing) {
 	TJCPRINTF(MILOUT,"timing := TRUE;\n");
     }
-    if (tjc_c->returnall) {
-        TJCPRINTF(MILOUT,"returnAllElements := TRUE;\n");
-    }
 
     TJCPRINTF(MILOUT,"\n");
 }
@@ -138,14 +135,14 @@ void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
     TJCPRINTF(MILOUT,"R" PDFMT " := nil;\n", tree->root - tree->nodes);
     if (tree->root->preIDs == 0) TJCPRINTF(MILOUT,"nexi_result := tj_nid2pre(nexi_result);\n");
     if (tjc_c->rmoverlap && tree->root->nested) {
-	TJCPRINTF(MILOUT,"nexi_result := rm_overlap(nexi_result, qenv);\n");
+	TJCPRINTF(MILOUT,"nexi_result := tj_rm_overlap(nexi_result);\n");
     }
     if (tjc_c->prior) {
-	TJCPRINTF(MILOUT,"nexi_result := prior_%s(nexi_result, qenv);\n", tjc_c->prior);
+	TJCPRINTF(MILOUT,"nexi_result := tj_prior_%s(nexi_result);\n", tjc_c->prior);
     }
     TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
     TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result;\n");
-    if (1) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
+    if (0) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
     }
@@ -167,6 +164,11 @@ void milprint_qenv2 (tjc_config *tjc_c) {
     TJCPRINTF(MILOUT,"var upprop := \"%s\";\n", tjc_c->upprop);    
     TJCPRINTF(MILOUT,"var andcomb := \"%s\";\n", tjc_c->andcomb);    
     TJCPRINTF(MILOUT,"var orcomb := \"%s\";\n", tjc_c->orcomb);    
+    if (tjc_c->returnall) {
+        TJCPRINTF(MILOUT,"var returnall := TRUE;\n");
+    } else {
+        TJCPRINTF(MILOUT,"var returnall := FALSE;\n");
+    }
     TJCPRINTF(MILOUT,"\n");
 }
 
