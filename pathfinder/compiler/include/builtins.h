@@ -489,7 +489,39 @@ struct PFla_pair_t PFbui_fn_not_bln (const PFla_op_t *loop,
 
 /* 10. FUNCTIONS AND OPERATORS ON DURATIONS, DATES AND TIMES */
 /* 10.4 Comparison Operators on Duration, Date and Time Values */
-
+///
+struct PFla_pair_t PFbui_op_yearmonthduration_lt (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  PFla_op_t **side_effects,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_le (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  PFla_op_t **side_effects,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_gt (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  PFla_op_t **side_effects,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_ge (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  PFla_op_t **side_effects,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_lt (const PFla_op_t *loop,
+                                                bool ordering,
+                                                PFla_op_t **side_effects,
+                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_le (const PFla_op_t *loop,
+                                                bool ordering,
+                                                PFla_op_t **side_effects,
+                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_gt (const PFla_op_t *loop,
+                                                bool ordering,
+                                                PFla_op_t **side_effects,
+                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_ge (const PFla_op_t *loop,
+                                                bool ordering,
+                                                PFla_op_t **side_effects,
+                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_datetime_eq (const PFla_op_t *loop,
                                          bool ordering,
                                          PFla_op_t **side_effects,

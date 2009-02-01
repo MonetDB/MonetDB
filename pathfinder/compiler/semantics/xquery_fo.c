@@ -1224,13 +1224,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_yearmonthduration_lt }
     , { .ns = PFns_op, .loc = "le",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_yearmonthduration_le }
     , /* op:yearMonthDuration-greater-than (yearMonthDuration,
                                             yearMonthDuration) as boolean */
       { .ns = PFns_op, .loc = "gt",
@@ -1238,13 +1238,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_yearmonthduration_gt }
     , { .ns = PFns_op, .loc = "ge",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_yearmonthduration_ge }
     , /* op:dayTimeDuration-less-than (dayTimeDuration,
                                        dayTimeDuration) as boolean */
       { .ns = PFns_op, .loc = "lt",
@@ -1252,13 +1252,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_daytimeduration_lt }
     , { .ns = PFns_op, .loc = "le",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_daytimeduration_le }
     , /* op:dayTimeDuration-greater-than (dayTimeDuration,
                                           dayTimeDuration) as boolean */
       { .ns = PFns_op, .loc = "gt",
@@ -1266,13 +1266,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_daytimeduration_gt }
     , { .ns = PFns_op, .loc = "ge",
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_boolean () } },
-        .alg = NULL }
+        .alg = PFbui_op_daytimeduration_ge }
     , /* op:duration-equal (duration, duration) as boolean */
       { .ns = PFns_op, .loc = "eq",
         .arity = 2, .sig_count = 1, .sigs = { {

@@ -1468,7 +1468,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("1-01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1478,7 +1478,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("1")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1488,7 +1488,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("01-01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1498,7 +1498,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1508,7 +1508,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("01")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1518,7 +1518,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("PT0S")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1528,7 +1528,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("P0M")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
@@ -1538,7 +1538,7 @@ reduce (core2alg_ctx_t *ctx, PFcnode_t * p, int goalnt)
                     empty_case = project (cast (attach (
                                                     empty_case,
                                                     col_item,
-                                                    lit_str("FIXME: fill in correct dummy date")),
+                                                    lit_str("PT0S")),
                                                 col_cast, col_item, algty),
                                           proj (col_iter, col_iter),
                                           proj (col_item, col_cast));
