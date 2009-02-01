@@ -1475,18 +1475,20 @@ static void
 print_type (PFmil_t *n)
 {
     char *types[] = {
-          [mty_oid]       = "oid"
-        , [mty_void]      = "void"
-        , [mty_int]       = "int"
-        , [mty_str]       = "str"
-        , [mty_lng]       = "lng"
-        , [mty_dbl]       = "dbl"
-        , [mty_bit]       = "bit"
-        , [mty_chr]       = "chr"
-        , [mty_bat]       = "bat"
-        , [mty_timestamp] = "timestamp"
-        , [mty_date]      = "date"
-        , [mty_daytime]   = "daytime"
+          [mty_oid]          = "oid"
+        , [mty_void]         = "void"
+        , [mty_int]          = "int"
+        , [mty_str]          = "str"
+        , [mty_lng]          = "lng"
+        , [mty_dbl]          = "dbl"
+        , [mty_bit]          = "bit"
+        , [mty_chr]          = "chr"
+        , [mty_bat]          = "bat"
+        , [mty_timestamp]    = "timestamp"
+        , [mty_date]         = "date"
+        , [mty_daytime]      = "daytime"
+        , [mty_ymduration]   = "ymduration"
+        , [mty_dtduration]   = "dtduration"
     };
 
     if (n->kind != m_type) {

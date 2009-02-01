@@ -2938,6 +2938,144 @@ PFbui_fn_not_bln (const PFla_op_t *loop,
 
 /**
  * Algebra implementation for
+ * <code> op:yearMonthDuration-less-than (yearMonthDuration, yearMonthDuration)
+ *        as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_yearmonthduration_lt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_ymduration, PFla_gt, loop, ordering, side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
+}
+
+struct PFla_pair_t
+PFbui_op_yearmonthduration_le (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_ymduration, PFla_gt,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:yearMonthDuration-greater-than (yearMonthDuration,
+ *        yearMonthDuration) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_yearmonthduration_gt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_ymduration, PFla_gt, loop,
+                     ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_yearmonthduration_ge (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_ymduration, PFla_gt,
+                            loop, ordering, side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:dayTimeDuration-less-than (dayTimeDuration, dayTimeDuration)
+ *        as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_daytimeduration_lt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_dtduration, PFla_gt, loop, ordering, side_effects,
+                     (struct PFla_pair_t []) { args[1], args[0] });
+}
+
+struct PFla_pair_t
+PFbui_op_daytimeduration_le (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_dtduration, PFla_gt,
+                            loop, ordering, side_effects, args));
+
+}
+
+/**
+ * Algebra implementation for
+ * <code> op:dayTimeDuration-greater-than (dayTimeDuration,
+ *        dayTimeDuration) as boolean </code>
+ * @see bin_op()
+ */
+
+struct PFla_pair_t
+PFbui_op_daytimeduration_gt (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    return bin_comp (aat_dtduration, PFla_gt, loop,
+                     ordering, side_effects, args);
+
+}
+
+struct PFla_pair_t
+PFbui_op_daytimeduration_ge (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+
+    return un_op (aat_bln, PFla_not,
+                  bin_comp (aat_dtduration, PFla_gt,
+                            loop, ordering, side_effects,
+                            (struct PFla_pair_t []) { args[1], args[0] }));
+
+}
+
+/**
+ * Algebra implementation for
  * <code> op:dateTime-equal (dateTime, dateTime) as boolean </code>
  * @see bin_op()
  */

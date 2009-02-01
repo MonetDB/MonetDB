@@ -542,19 +542,22 @@ impl_types (PFalg_simple_type_t ty, PFalg_simple_type_t kind)
                 return mty_bit;
 
             case aat_dtime:
-            case aat_duration:
-            case aat_ymduration:
-            case aat_dtduration:
                 return mty_timestamp;
             case aat_date:
+                return mty_date;
+            case aat_duration:
             case aat_gymonth:
             case aat_gyear:
             case aat_gmday:
             case aat_gmonth:
             case aat_gday:
-                return mty_date;
+                return mty_lng;
             case aat_time:
                 return mty_daytime;
+            case aat_ymduration:
+                return mty_ymduration;
+            case aat_dtduration:
+                return mty_dtduration;
 
             default:
                 PFoops (OOPS_FATAL,
@@ -3494,6 +3497,124 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                                          VAR (R(p)->env,
                                                          pa_item,
                                                          aat_time)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+
+                /* consider aat_ymduration */
+                if (ty & aat_ymduration) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str),
+                                                             VAR (R(p)->env,
+                                                             pa_item,
+                                                             aat_ymduration)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_ymduration) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),
+                                                 VAR (R(p)->env,
+                                                 pa_item,
+                                                 aat_ymduration)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),
+                                                VAR (R(p)->env,
+                                                pa_item,
+                                                aat_ymduration)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),
+                                             VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_ymduration)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),
+                                                         VAR (R(p)->env,
+                                                         pa_item,
+                                                         aat_ymduration)),
+                                                  cast (type (mty_str),
+                                                        nil ()),
+                                                  cast (type (mty_str),
+                                                        nil ())),
+                                         var (PF_MIL_VAR_STR)))
+                        );
+                    }
+                }
+
+                /* consider aat_dtduration */
+                if (ty & aat_dtduration) {
+                    execute (
+                        bappend (var (strVAL->name),
+                                 reverse (
+                                     kunique (
+                                         reverse (
+                                             select2 (mcast (type (mty_str),
+                                                             VAR (R(p)->env,
+                                                             pa_item,
+                                                             aat_dtduration)),
+                                                      cast (type (mty_str),
+                                                            nil ()),
+                                                      cast (type (mty_str),
+                                                            nil ()))
+                                             )))));
+                    if (ty == aat_dtduration) {
+                        execute (
+                            assgn (
+                                var (item->name),
+                                leftjoin (mcast (type (mty_str),
+                                                 VAR (R(p)->env,
+                                                 pa_item,
+                                                 aat_dtduration)),
+                                          reverse (var (strVAL->name)))),
+                            assgn (
+                                var (kind->name),
+                                project (mcast (type (mty_str),
+                                                VAR (R(p)->env,
+                                                pa_item,
+                                                aat_dtduration)),
+                                         var (PF_MIL_VAR_STR)))
+                            );
+                        sorted = true;
+                    }
+                    else {
+                        execute (
+                            binsert (
+                                var (item->name),
+                                join (mcast (type (mty_str),
+                                             VAR (R(p)->env,
+                                                  pa_item,
+                                                  aat_dtduration)),
+                                      reverse (var (strVAL->name)))),
+                            binsert (
+                                var (kind->name),
+                                project (select2 (mcast (type (mty_str),
+                                                         VAR (R(p)->env,
+                                                         pa_item,
+                                                         aat_dtduration)),
                                                   cast (type (mty_str),
                                                         nil ()),
                                                   cast (type (mty_str),
