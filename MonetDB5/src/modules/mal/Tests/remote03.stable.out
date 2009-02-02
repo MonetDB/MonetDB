@@ -23,40 +23,39 @@ function user.main():void;
 # taken as function 
     f := remote.exec(conn,"io.print","bla");
 catch MALException;
-    io.print("Received an error from the remote site");
-# exception contains a random id, so make it a warning 
-    io.printf("#!%s\n",MALException);
+    io.print("Received first error from the remote site");
+    io.printf("!%s\n",MALException);
 exit MALException;
 # now do it with a function that returns something (a BAT in this case) 
     b := remote.exec(conn,"inspect","getAtomNames");
 catch MALException;
     io.print("Received second error from the remote site");
-    io.printf(MALException);
+    io.printf("!%s\n",MALException);
 exit MALException;
     c := remote.get(conn,b);
     io.print(c);
 catch MALException;
     io.print("Received third error from the remote site");
-    io.printf(MALException);
+    io.printf("!%s\n",MALException);
 exit MALException;
 # io.print only outputs things, but returns nothing 
     a := remote.exec(conn,"io","print",b);
 catch MALException;
     io.print("Received fourth error from the remote site");
-    io.printf(MALException);
+    io.printf("!%s\n",MALException);
 exit MALException;
     d := remote.get(conn,a);
     io.print(d);
 catch MALException;
     io.print("Received fifth error from the remote site");
-    io.printf(MALException);
+    io.printf("!%s\n",MALException);
 exit MALException;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
 end main;
-[ "Received an error from the remote site" ]
-#!MALException:remote.exec:rmt_pegasus_38469_monetdb_1_0 := io.print.bla();
+[ "Received first error from the remote site" ]
+!MALException:remote.exec:rmt_user_main_f := io.print.bla();
 !SyntaxException:parseError:                              ^'(' expected
 #-------------------------#
 # h	t		  # name
