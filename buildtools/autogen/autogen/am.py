@@ -748,6 +748,8 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key("LDFLAGS"):
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)
+    ldflags.append('-version-number')
+    ldflags.append('$(subst .,:,$(VERSION))')
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
@@ -848,7 +850,8 @@ def am_libs(fd, var, libsmap, am):
         if libsmap.has_key("LIBS"):
             _libs += libsmap["LIBS"];
         if libsmap.has_key("LDFLAGS"):
-            _libs += libsmap["LDFLAGS"];
+            _libs += libsmap["LDFLAGS"]
+        fd.write(am_additional_flags(libname, sep, "LIB", ['-version-number','$(subst .,:,$(VERSION))'], am))
         if len(_libs) > 0:
             fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
 ##        if sep == '_':
