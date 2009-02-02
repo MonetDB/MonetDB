@@ -80,6 +80,9 @@ stderr of test 'select_from_history.SF-2556566` in directory 'src/test/BugTracke
 # 15:05:16 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=36241 
 # 15:05:16 >  
 
+MAPI  = monetdb@alf:38170
+QUERY = select * from history;
+ERROR = !SELECT: no such table 'history'
 
 # 15:05:17 >  
 # 15:05:17 >  Done.
