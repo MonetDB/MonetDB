@@ -1,7 +1,7 @@
 let $opt := <TijahOptions 
                 ft-index="thesis" 
                 ir-model="NLLR" 
-                txtmodel_returnall="false"
+                return-all="false"
                 debug="0"/>
 
 let $query := "//chapter[about(.//title,information) and about(.//title,retrieval)]//section[about(.,XML) or about(.,SGML)]"

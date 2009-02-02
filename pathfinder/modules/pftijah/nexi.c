@@ -410,7 +410,7 @@ int old_main(BAT* optbat, char* startNodes_name)
         } else if ( strcmp(optName,"okapi-b") == 0 ) {
             txt_retr_model->param2 = atof( optVal );
             qenv_okapi_b = optVal;
-        } else if ( strcmp(optName,"txtmodel_returnall") == 0 ) {
+        } else if ( strcmp(optName,"txtmodel_returnall") == 0 || strcmp(optName,"return-all") == 0 ) {
             if ( strcasecmp(optVal,"TRUE") == 0 ) {
                 return_all = TRUE;
             } else {

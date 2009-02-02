@@ -4115,12 +4115,15 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNod
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
 
         int newversion = 0;
+
         BUN bun;
         if ( (bun = BUNfnd(optbat,"newversion")) != BUN_NONE ) {
             BATiter bi = bat_iterator(optbat);
             str val = (str)BUNtail(bi,bun);
 	    if (strcmp(val,"true")==0)
 	        newversion = 1;
+	    else if (strcmp(val,"false")==0)
+	        newversion = 0;
         }
 	str query_text = NULL;
 
