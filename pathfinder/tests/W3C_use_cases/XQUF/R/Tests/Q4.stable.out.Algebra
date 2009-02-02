@@ -20,7 +20,7 @@ return
 ").printf();
 
 xquery("xml","doc(\"users.xml\")").printf();
-!ERROR: err:FORG0005, fn:exactly-one called with a sequence containing zero or more than one item.
+!ERROR: err:FORG0005, fn:exactly-one called with an empty sequence.
 !ERROR: interpret: no matching MIL operator to 'printf(void)'.
 !MAYBE YOU MEAN:
 !	printf(str, ..any..) : void
