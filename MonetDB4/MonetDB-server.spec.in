@@ -40,7 +40,8 @@ BuildRequires: pcre-devel
 # Requires(preun): /sbin/service
 # Requires(postun): /sbin/service
 
-%{!?_with_netcdf: %{!?_without_netcdf: %define _with_netcdf --with-netcdf}}
+# by default we do not build the netcdf package
+%{!?_with_netcdf: %{!?_without_netcdf: %define _without_netcdf --without-netcdf}}
 
 %define builddoc 0
 
