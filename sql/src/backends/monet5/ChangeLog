@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  02 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
+  Create logfiles when they do not exist.
+
+*Feb2009
+
   28 Dec 2008; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
   Switched internally to select() calls instead of non-blocking IO loops. This
   reduces the CPU usage in idlestate considerably.

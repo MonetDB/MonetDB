@@ -2079,7 +2079,8 @@ main(int argc, char *argv[])
 		topdp->out = argp;
 	} else {
 		/* write to the given file */
-		topdp->out = open(msglog, O_WRONLY | O_APPEND);
+		topdp->out = open(msglog, O_WRONLY | O_APPEND | O_CREAT,
+				S_IRUSR | S_IWUSR);
 		if (topdp->out == -1) {
 			fprintf(stderr, "unable to open '%s': %s\n",
 					msglog, strerror(errno));
@@ -2099,7 +2100,8 @@ main(int argc, char *argv[])
 		if (strcmp(msglog, errlog) == 0) {
 			topdp->err = topdp->out;
 		} else {
-			topdp->err = open(errlog, O_WRONLY | O_APPEND);
+			topdp->err = open(errlog, O_WRONLY | O_APPEND | O_CREAT,
+					S_IRUSR | S_IWUSR);
 			if (topdp->err == -1) {
 				fprintf(stderr, "unable to open '%s': %s\n",
 						errlog, strerror(errno));
