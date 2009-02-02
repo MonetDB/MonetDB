@@ -20,9 +20,6 @@ MTSAFE
 SWIGFLAGS = -I../..
 INCLUDES = ../.. $(MONETDB_INCS) $(PHP_INCS)
 
-# we need this flag to allow for a name that does not start with "lib"
-monetdb_la_LDFLAGS = -module
-
 #  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
 #  with our strict X_CFLAGS.
 #  Instead of diabling the strict X_CFLAGS completely,
@@ -45,4 +42,7 @@ lib_monetdb = {
 	SOURCES = php_monetdb.h php_monetdb.c
 	LIBS = ../../mapilib/libMapi $(MONETDB_LIBS) -lmutils -lstream $(PHP_LIBS) $(OPENSSL_LIBS) $(SOCKET_LIBS)
 	DIR = $(prefix)/$(PHP_EXTENSIONDIR)
+	# we need this flag to allow for a name that does not start with "lib"
+	LDFLAGS = -module
+
 }
