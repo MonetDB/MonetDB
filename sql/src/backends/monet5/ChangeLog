@@ -2,7 +2,7 @@
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
   02 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
-  Create logfiles when they do not exist.
+  Create logfiles when they do not exist.  Bug #2556973
 
 *Feb2009
 
