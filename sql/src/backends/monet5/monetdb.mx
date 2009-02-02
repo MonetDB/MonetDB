@@ -133,14 +133,12 @@ command_help(int argc, char *argv[])
 		printf("  is running.\n");
 		printf("Options:\n");
 		printf("  -a  start all known databases\n");
-		printf("  -w  wait for a database to be started instead of returning immediately\n");
 	} else if (strcmp(argv[1], "stop") == 0) {
 		printf("Usage: monetdb stop [-a] database [database ...]\n");
 		printf("  Stops the given database, if the MonetDB Database Server\n");
 		printf("  is running.\n");
 		printf("Options:\n");
 		printf("  -a  stop all known databases\n");
-		printf("  -w  wait for a database to be stopped instead of returning immediately\n");
 	} else if (strcmp(argv[1], "kill") == 0) {
 		printf("Usage: monetdb kill [-a] database [database ...]\n");
 		printf("  Kills the given database, if the MonetDB Database Server\n");
@@ -149,7 +147,6 @@ command_help(int argc, char *argv[])
 		printf("  killed may end up with data loss.\n");
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
-		printf("  -w  wait for a database to be killed instead of returning immediately\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
 		printf("Usage: monetdb discover\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
