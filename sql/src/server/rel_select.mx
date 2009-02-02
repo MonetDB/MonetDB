@@ -1237,7 +1237,8 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		}
 		if (!t && !sname) {
 			sql_subtype *tpe;
-			if ((tpe = stack_find_type(sql, tname)) != NULL) {
+			if ((tpe = stack_find_type(sql, tname)) != NULL &&
+				tpe->comp_type) {
 				temp_table = stack_find_rel_var(sql, tname);
 				t = tpe->comp_type;
 			} else {
