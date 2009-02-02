@@ -4156,7 +4156,8 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNod
             GDKerror("CMDtijah_query: execute MIL failed.\n");
 	    return GDK_FAIL;
 	}
-	GDKfree(mil);
+	if ( newversion )
+		GDKfree(mil);
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: finish MIL script.\n");
 	lng time_end = GDKusec();
 
