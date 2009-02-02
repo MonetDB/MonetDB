@@ -3035,32 +3035,46 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
 static PFplanlist_t *
 prune_plans (PFplanlist_t *planlist)
 {
-    PFplanlist_t *ret = new_planlist ();
+    PFplanlist_t *ret = new_planlist (),
+                  /* make sure to change a copy and not the input */
+                 *in  = PFarray_copy (planlist);
 
     /* Iterate over all plans. Add it to the return value if there's
      * not yet a better plan.
      */
-    for (unsigned int i = 0; i < PFarray_last (planlist); i++) {
+    for (unsigned int i = 0; i < PFarray_last (in); i++) {
+        plan_t *cur = *(plan_t **) PFarray_at (in, i);
 
         /* assume there is no better plan */
         bool found_better = false;
 
         /* but maybe there is one already in our return list */
         for (unsigned int j = 0; j < PFarray_last (ret); j++)
-            if (better_or_equal (*(plan_t **) PFarray_at (ret, j),
-                                 *(plan_t **) PFarray_at (planlist, i))) {
+            if (better_or_equal (*(plan_t **) PFarray_at (ret, j), cur)) {
                 found_better = true;
                 break;
             }
 
-        /* if not, is there a better plan to follow in `planlist'? */
+        /* if not, is there a better plan to follow in `in'? */
         if (!found_better)
-            for (unsigned int j = i + 1; j < PFarray_last (planlist); j++)
-                if (better_or_equal (*(plan_t **) PFarray_at (planlist, j),
-                                     *(plan_t **) PFarray_at (planlist, i))) {
-                    found_better = true;
-                    break;
+            for (unsigned int j = i + 1; j < PFarray_last (in); j++) {
+                plan_t *cur_j    = *(plan_t **) PFarray_at (in, j);
+                bool    modified = false;
+                /* In case we find a better plan we need a replacement
+                   for slot j. The while loop tries to fill in the last
+                   entry (and also checks if the last entry is better as
+                   the best entry found so far). */
+                while (j < PFarray_last (in) &&
+                       better_or_equal (cur_j, cur)) {
+                    cur = cur_j;
+                    cur_j = *(plan_t **) PFarray_top (in);
+                    PFarray_del (in);
+                    modified = true;
                 }
+                /* fill in the replacement plan for slot j */
+                if (modified && j < PFarray_last (in))
+                    *(plan_t **) PFarray_at (in, j) = cur_j;
+            }
 
         /*
          * If we know there is a better plan (either in the result
@@ -3068,9 +3082,9 @@ prune_plans (PFplanlist_t *planlist)
          * Otherwise, add it to the result set.
          */
         if (!found_better)
-            *(plan_t *) PFarray_add (ret)
-                = *(plan_t *) PFarray_at (planlist, i);
+            *(plan_t **) PFarray_add (ret) = cur;
     }
+
 
     return ret;
 }
