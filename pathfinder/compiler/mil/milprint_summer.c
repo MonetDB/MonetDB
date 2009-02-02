@@ -11690,7 +11690,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
             *c = *PFcore_if (L(c), PFcore_then_else (R(c), PFcore_empty ()));
             TY(RR(c)) = PFty_empty ();
             TY(c) = *PFty_simplify (PFty_choice (TY(RL(c)), TY(RR(c))));
-            break;
+            /* fall through */
 
         default:
             for (unsigned int i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
