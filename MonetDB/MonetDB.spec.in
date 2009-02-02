@@ -58,7 +58,7 @@ accelerators, SQL- and XML- frontends.
 This package contains the files needed to develop with MonetDB.
 
 %package python
-Summary: MonetDB development package
+Summary: Python support files for MonetDB
 Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: python
