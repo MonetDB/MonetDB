@@ -3,3 +3,4 @@ incomplete.SF.2536893
 subquery_returns_table_crash.SF-2513620
 distinct.SF-2546483
 union_leak.SF-2540169
+select_from_history.SF-2556566
