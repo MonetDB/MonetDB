@@ -1358,7 +1358,7 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorCstImpl(GE,>=,LT)@
 @:operatorCstImpl(LT,<,GE)@
 @:operatorCstImpl(GT,>,LE)@
-@:operatorCstImpl(LE,>=,GT)@
+@:operatorCstImpl(LE,<=,GT)@
 @:operatorCstImpl(EQ,==,NEQ)@
 @:operatorCstImpl(NEQ,!=,EQ)@
 @:operatorCstImpl(AND,&&,AND)@
