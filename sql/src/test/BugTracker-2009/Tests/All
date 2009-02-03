@@ -5,3 +5,4 @@ distinct.SF-2546483
 union_leak.SF-2540169
 select_from_history.SF-2556566
 COPY_INTO_char_NULL.SF-2560780
+LE_vs_GE_in_CASE.SF-2562264
