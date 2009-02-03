@@ -4292,7 +4292,7 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
 	for (; lp < lq; lp++ ) {
 		*lp = log(*lp);
 	}
-	BBPfix(BBPcacheid(*res));
+	/* BBPfix(BBPcacheid(*res)); ERROR, MEMORY LEAK */
 	(*res)->tsorted = FALSE;
 	return GDK_SUCCEED;
 }
@@ -4336,7 +4336,7 @@ int CMDleft_log_dbl(BAT** res, BAT*l) {
                     UNION_FIND_OID(lv,ri,rp,rl,*res); \
                 } \
         } \
-        BBPfix(BBPcacheid(*res)); \
+        /* BBPfix(BBPcacheid(*res)); ERROR MEMORY LEAK */ \
         (*res)->batDirty = TRUE; \
         (*res)->tsorted = FALSE; \
         return GDK_SUCCEED;
