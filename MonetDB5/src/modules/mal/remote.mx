@@ -939,7 +939,6 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	char *mod;
 	char *func;
 	char *var;
-	int pos;
 
 	if (p->retc == 0)
 		throw(MAL, "remote.<getid>", "Cannot operate without an "
@@ -952,7 +951,7 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 		mod = "user";
 	func = getFunctionId(f);
 
-	pos = snprintf(buf, BUFSIZ, "rmt_%s_%s_%s", mod, func, var);
+	snprintf(buf, BUFSIZ, "rmt_%s_%s_%s", mod, func, var);
 
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
