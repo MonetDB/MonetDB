@@ -42,6 +42,7 @@ headers_common = {
 }
 
 headers_py = {
+	COND = HAVE_PYTHON
 	HEADERS = py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDB
 	SOURCES = monet_options.py.in __init__.py

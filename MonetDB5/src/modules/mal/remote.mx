@@ -183,6 +183,7 @@ comment "Remotely executes <mod>.<func> using the argument list of remote object
 #include <mal_exception.h>
 #include <mal_interpreter.h>
 #include <mal_function.h> /* for printFunction */
+#include <mal_instruction.h> /* for getmodule/func macros */
 #include <mal_sabaoth.h> /* for local "connections" */
 #include <mapilib/Mapi.h>
 #include "remote.h"	/* for the implementation of the functions */
@@ -925,14 +926,33 @@ remote_export str RMTfindConnection(connection *ret, str conn)
 /**
  * Little helper function that returns a GDKmalloced string containing a
  * valid identifier that is supposed to be unique in the connection's
- * remote context.  Since this function is internal, it doesn't check
- * the argument conn, as it should have been checked already.
+ * remote context.  The generated string depends on the module and
+ * function the caller is in.  It is off-hand predictable what id it
+ * will generate, in the form of rmt_<mod>_<func>_<retvar>.  This
+ * alligns the remote variable stack with the local one, and allows for
+ * reassigning with a different value.
  */
 static INLINE str
-RMTgetNextId(str *ret, connection conn) {
+RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	char buf[BUFSIZ];
+	InstrPtr f;
+	char *mod;
+	char *func;
+	char *var;
+	int pos;
 
-	snprintf(buf, BUFSIZ, "rmt_%s_" SZFMT, conn->name, conn->nextid++);
+	if (p->retc == 0)
+		throw(MAL, "remote.<getid>", "Cannot operate without an "
+				"assignment to a variable");
+
+	var = getArgName(mb, p, arg);
+	f = getInstrPtr(mb, 0); /* top level function */
+	mod = getModuleId(f);
+	if (mod == NULL)
+		mod = "user";
+	func = getFunctionId(f);
+
+	pos = snprintf(buf, BUFSIZ, "rmt_%s_%s_%s", mod, func, var);
 
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
@@ -1188,7 +1208,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mal_set_lock(c->lock, "remote.put"); 
 
 	/* get a free identifier for the remote host */
-	RMTgetNextId(&tmp, c);
+	RMTgetId(&tmp, mb, pci, 0);
 	/* allocate on the stack as not to leak when we error lateron */
 	ident = alloca(sizeof(char) * (strlen(tmp) + 1));
 	memcpy(ident, tmp, strlen(tmp) + 1);
@@ -1378,7 +1398,6 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	MapiHdl mhdl;
 
 	(void)cntxt;
-	(void)mb;
 
 	i = pci->retc;
 
@@ -1405,7 +1424,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (pci->retc > 1) {
 		qbuf[len++] = '(';
 		for (i = 0; i < pci->retc; i++) {
-			RMTgetNextId(&tmp, c);
+			RMTgetId(&tmp, mb, pci, i);
 			len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
 					i > 0 ? ", " : "", tmp);
 			/* note to self: this is ugly, should keep values around in
@@ -1416,7 +1435,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (len < BUFSIZ)
 			qbuf[len++] = ')';
 	} else {
-		RMTgetNextId(&tmp, c);
+		RMTgetId(&tmp, mb, pci, 0);
 		len += snprintf(&qbuf[len], BUFSIZ - len, "%s", tmp);
 		/* see note to self above */
 		VALset(getArgReference(stk, pci, 0),

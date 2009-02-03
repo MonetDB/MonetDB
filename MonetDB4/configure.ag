@@ -108,7 +108,7 @@ if test "x$have_netcdf" != xno; then
 	CPPFLAGS="$CPPFLAGS $NETCDF_CFLAGS"
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $NETCDF_LIBS -lnetcdf"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <netcdf-3/netcdf.h>], [(void) nc_open("",0,(int*)0);]),
+	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <netcdf/netcdf.h>], [(void) nc_open("",0,(int*)0);]),
 		NETCDF_LIBS="$NETCDF_LIBS -lnetcdf",
 		[ if test "x$have_netcdf" != xauto; then AC_MSG_ERROR([netcdf library not found]); fi; have_netcdf=no ])
 	LIBS="$save_LIBS"

@@ -460,6 +460,29 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             break;
 
         case la_fun_call:
+            /* if we have no additional name pair list then create one */
+            if (!n->prop->l_name_pairs)
+               n->prop->l_name_pairs = PFarray (sizeof (name_pair_t),
+                                                PFarray_last (np_list));
+
+            /* rename the iter column name mapping */
+            add_name_pair (n->prop->l_name_pairs,
+                           ORI_AT(np_list, 0),
+                           n->sem.fun_call.iter);
+            for (unsigned int i = 0; i < PFarray_last (np_list); i++) {
+                /* ensure that we don't forget anything about
+                   modified columns (thus add them into both branches) */
+                if (CUR_AT(np_list, i) == col_NULL) {
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ORI_AT(np_list, i),
+                                   CUR_AT(np_list, i));
+                }
+            }
+            map_names (L(n), goal, n->prop->l_name_pairs, col_NULL);
+            PFarray_last (n->prop->l_name_pairs) = 0;
+            map_names (R(n), goal, n->prop->l_name_pairs, col_NULL);
+            return;
+
         case la_fun_param:
         case la_fun_frag_param:
             /* empty the name pair list */

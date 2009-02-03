@@ -18,9 +18,6 @@
 SWIGFLAGS = -I../.. $(PERL_INCS)
 INCLUDES = -I../.. $(MONETDB_INCS) $(PERL_INCS)
 
-# we need this flag to allow for a name that does not start with "lib"
-MapiLib_la_LDFLAGS = -module
-
 #  Both GNU's gcc and Intel's icc do not like to compile swig-generated code
 #  with our strict X_CFLAGS.
 #  Instead of diabling the strict X_CFLAGS completely,
@@ -41,6 +38,8 @@ lib_MapiLib = {
 	SOURCES = MapiLib.pm.i
 	LIBS = ../../mapilib/libMapi $(PERL_LIBS) $(MATH_LIBS)
 	DIR = $(prefix)/$(PERL_LIBDIR)
+	# we need this flag to allow for a name that does not start with "lib"
+	LDFLAGS = -module
 }
 
 headers_pm = {
