@@ -229,6 +229,17 @@ struct PFty_t {
   PFty_t      *child[PFTY_MAXCHILD]; /**< type constructor arguments */
 };
 
+/**
+ * list of builtin types
+ */
+typedef struct { 
+  PFns_t *ns;
+  char *loc;
+  PFty_t (*fn) (void); 
+} PFty_predef_t;
+
+PFty_predef_t *PFpredefined();
+
 #define PFty_wildcard(ty) (((ty).type == ty_elem            \
                             || (ty).type == ty_attr         \
                             || (ty).type == ty_pi) &&       \
@@ -320,6 +331,11 @@ extern PFenv_t *PFattrgroup_defns;
 void PFty_import (PFty_t, PFty_t);
 PFty_t *PFty_schema (PFty_t);
 void PFty_predefined (void);
+
+/**
+ *  look up a predefined PFty_t by (ns,loc). Return boolean whether found.
+ */
+int PFty_lookup(const char* uri, const char* loc, PFty_t *dst);
 
 /**
  * Unfold all named type references in a (recursive) type.

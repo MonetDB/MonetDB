@@ -324,7 +324,6 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_star (PFty_item ()) } },
         .alg = NULL }
 
-
 /* 6. FUNCTIONS AND OPERATORS ON NUMERICS */
 /* 6.2. Operators on Numeric Values */
     , /* op:plus (integer, integer) as integer */
@@ -2850,8 +2849,28 @@ PFfun_xquery_fo (void)
 
     PFqname_t    qn;
     unsigned int n;
+    PFty_predef_t *predefined = PFpredefined();
 
     PFfun_env = PFenv_ (350);
+
+    /* add cast functions */
+    for (n = 0; predefined[n].loc; n++) {
+        PFfun_sig_t sig =   
+            { .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
+              .ret_ty = (*predefined[n].fn)() };
+
+        qn = PFqname (*predefined[n].ns, predefined[n].loc);
+        PFenv_bind (PFfun_env,
+                    qn,
+                    (void *) PFfun_new (qn,
+                                        1,
+                                        true,
+                                        1,
+                                        &sig,
+                                        NULL,
+                                        NULL,
+                                        NULL));
+    }
 
     for (n = 0; xquery_fo[n].loc; n++) {
         assert (xquery_fo[n].sig_count <= XQUERY_FO_MAX_SIGS);

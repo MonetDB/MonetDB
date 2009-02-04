@@ -48,6 +48,7 @@
 #include "pathfinder.h"
 
 #include <assert.h>
+#include <string.h>
 
 #include "types.h"
 
@@ -1306,7 +1307,7 @@ PFty_schema (PFty_t t)
  * Pre-defined XML Schema/XQuery types
  * (see W3C XQuery, 2.4 Types).
  */
-static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
+PFty_predef_t predefined[] =
 {
     { .ns = &PFns_xs,  .loc = "integer",       .fn = PFty_xs_integer        },
     { .ns = &PFns_xs,  .loc = "string",        .fn = PFty_xs_string         },
@@ -1339,6 +1340,21 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = 0,         .loc = 0,               .fn = 0                      }
 };
 
+PFty_predef_t *PFpredefined() { return predefined; }
+
+/*
+ * look up a predefined PFty_t by (uri,loc). Return boolean whether found.
+ */
+int PFty_lookup(const char* uri, const char* loc, PFty_t *dst) {
+    int n;
+    for (n = 0; predefined[n].loc; n++) {
+        if (strcmp(loc, predefined[n].loc) == 0 && strcmp(uri, predefined[n].ns->uri) == 0) {
+                *dst = (*predefined[n].fn)();
+                return 1;
+        }
+    }
+    return 0;
+}
 
 /**
  * Register the XML Schema/XQuery predefined types `xs:...' and `xdt:...'
