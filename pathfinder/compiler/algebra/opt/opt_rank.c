@@ -86,6 +86,7 @@ rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
 #endif
 {
     PFla_op_t *ret = PFla_rank_opt_internal (n, res, sortby);
+    PFarray_t *new_sortby;
     unsigned int i, j, count;
 
     /* allocate memory for the result schema (schema(n) + 1) */
@@ -106,6 +107,22 @@ rank_opt (PFla_op_t *n, PFalg_col_t res, PFarray_t *sortby)
 
         if (j == PFarray_last (sortby))
             ret->schema.items[count++] = n->schema.items[i];
+    }
+
+    /* remove duplicate rank entries */
+    new_sortby = ret->sem.rank_opt.sortby;
+    PFarray_last (new_sortby) = 0;
+    for (i = 0; i < PFarray_last (sortby); i++) {
+        /* Throw away all identical order criteria
+           (after the first appearance of the sort criterion). */
+        for (j = 0; j < i; j++)
+            if (COL_AT(sortby, i) == COL_AT(sortby, j) &&
+                DIR_AT(sortby, i) == DIR_AT(sortby, j) &&
+                VIS_AT(sortby, i) == VIS_AT(sortby, j))
+                break;
+        if (i == j)
+            *(sort_struct *) PFarray_add (new_sortby) =
+                *(sort_struct *) PFarray_at (sortby, (i));
     }
 
 #ifndef NDEBUG
