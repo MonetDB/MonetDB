@@ -84,6 +84,14 @@ add_fd (PFarray_t *fds, PFalg_col_t describing, PFalg_col_t dependent)
     if (!find_fd (fds, describing, dependent))
         *(fd_t *) PFarray_add (fds)
             = (fd_t) { .col1 = describing, .col2 = dependent };
+
+    /* and build transitive closure */
+    for (unsigned int i = 0; i < PFarray_last (fds); i++)
+        if (dependent == ((fd_t *) PFarray_at (fds, i))->col1 &&
+            !find_fd (fds, describing, ((fd_t *) PFarray_at (fds, i))->col2))
+            *(fd_t *) PFarray_add (fds)
+                = (fd_t) { .col1 = describing,
+                           .col2 = ((fd_t *) PFarray_at (fds, i))->col2 };
 }
 
 /**
