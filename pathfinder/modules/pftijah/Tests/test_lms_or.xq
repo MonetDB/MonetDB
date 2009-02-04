@@ -1,7 +1,7 @@
 let $opt := <TijahOptions 
                 ft-index="thesis" 
                 ir-model="LMS" 
-                txtmodel_returnall="false"
+                return-all="false"
                 debug="0"/>
 
 let $query := "//title[about(.,pathfinder) or about(.,tijah)]"

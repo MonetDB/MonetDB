@@ -244,6 +244,10 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
         }  else if (strcmp(optName, "rmoverlap") == 0) {
            if (strcasecmp(optVal, "TRUE") == 0) 
                 tjc_c->rmoverlap = 1;
+        }  else if (strcmp(optName, "returnNumber") == 0) {
+           /* will be handled in after query execution in pftijah.mx */
+        }  else if (strcmp(optName, "returnNumber") == 0) {
+           /* will be handled in after query execution in pftijah.mx */
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }

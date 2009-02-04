@@ -1,7 +1,7 @@
 let $opt := <TijahOptions 
                 ft-index="thesis" 
                 ir-model="OKAPI" 
-                txtmodel_returnall="false"
+                return-all="false"
                 okapi-k1="2"
                 okapi-b="0.9"
                 debug="0"/>

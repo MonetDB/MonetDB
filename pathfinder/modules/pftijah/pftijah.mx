@@ -1994,7 +1994,8 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
 ##
 PROC tj_select_star() : bat[oid,any] := 
 {
-    return bat("tj_" + ftindex + "_pfpre");
+    # deselect document root
+    return bat("tj_" + ftindex + "_pfpre").slice(1, bat("tj_" + ftindex + "_pfpre").count() - 1);
 }
 
 ##
@@ -2286,7 +2287,7 @@ PROC _score_LM(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,
 #
 
 PROC _score_LMs(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] := {
-    var tmp1 := c_lambda * c_tCnt / cSize;
+    var tmp1 := c_lambda * c_tCnt / dbl(cSize);
     var tmp2 := dbl(1) - c_lambda;
     
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
@@ -2436,7 +2437,7 @@ PROC tj_containing_query_@1_@2_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat
         e_tCnt := nil;
         var base := c_lambda * c_tCnt / dbl(cSize);
         score_base :*= base;
-        e_tScores := e_tScores.kunion(eScores.kdiff(e_tScores).project(base));
+        e_tScores := e_tScores.kunion(left.kdiff(e_tScores).project(base)).sort();
 
 	# aggregate term scores
         eScores := e_tScores.left_mul(eScores);
@@ -2487,7 +2488,7 @@ PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : ba
         var c_tCnt := count(t_pre); 
         # get element count of term
 	var e_tCnt := _getTermDocCnt_@1_@2(e_pre, e_size, t_pre);
-	# score elements by this term
+        # score elements by this term
         var e_tScores := _score_NLLR($t, qSize, c_tCnt, cSize, e_tCnt, e_size);
         e_tCnt := nil;
         
@@ -4114,7 +4115,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNod
 	}
 	if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: call tijahParse.\n");
 
-        int newversion = 0;
+        int newversion = 1;
         BUN bun;
         if ( (bun = BUNfnd(optbat,"newversion")) != BUN_NONE ) {
             BATiter bi = bat_iterator(optbat);
@@ -5260,7 +5261,7 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
 	
      BATsetcount(res, hdst - sdst);
      res->batDirty = TRUE;
-     if (!(BAThordered(Dstart)&1)) res->tsorted = GDK_SORTED;
+     if (BAThordered(Dstart)&1) res->tsorted = GDK_SORTED;
      else res->tsorted = FALSE;
      res->hsorted = FALSE;
      BATset(res, TRUE);
@@ -5602,9 +5603,9 @@ int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT 
     /* ----------------------------- tidy up -------------------------------------- */
     BATsetcount(res, hdst - sdst);
     res->batDirty = TRUE;
-    if (!(BAThordered(Astart)&1)) res->hsorted = GDK_SORTED;
+    if (BAThordered(Astart)&1) res->hsorted = GDK_SORTED;
     else res->hsorted = FALSE;
-    if (!(BAThordered(Dstart)&1)) res->tsorted = GDK_SORTED;
+    if (BAThordered(Dstart)&1) res->tsorted = GDK_SORTED;
     else res->tsorted = FALSE;
     BATset(res, TRUE);
     
