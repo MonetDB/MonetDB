@@ -163,7 +163,7 @@ PFprop_infer (bool card, bool const_, bool set,
     if (dom)
         PFprop_infer_dom (root);
     if (set)
-        PFprop_infer_set (root);
+        PFprop_infer_set_extended (root);
     if (icol)
         PFprop_infer_icol (root);
     if (ocols)
