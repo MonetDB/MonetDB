@@ -1956,7 +1956,9 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	k = newTmpVariable(mb, type);
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
-	clrVarCleanup(mb, k);
+	if ( type == TYPE_str)
+		setVarCleanup(mb, k);
+	else clrVarCleanup(mb, k);
 	vr = &getVarConstant(mb, k);
 	*vr = *cst;
 	return k;
@@ -2413,7 +2415,6 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 	int i;
 	str t, tpe, pstring;
 
-	pstring = varGetPropStr(mb, getArg(p,0));
 	t = s;
 	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
@@ -2423,13 +2424,17 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 	else
 		snprintf(t,(len-(t-base)),"user.");
 	advance(t,base,len);
-	if( pstring )
+
+	pstring = varGetPropStr(mb, getArg(p,0));
+	if( pstring ) {
 		snprintf(t,(len-(t-base)),"%s%s(", getFunctionId(p),pstring);
-	else 
+		GDKfree(pstring);
+	} else 
 		snprintf(t,(len-(t-base)),"%s(", getFunctionId(p));
 	for (i = p->retc; i < p->argc; i++) {
 		@:showParam(argc)@
 	}
+
 	advance(t,base,len);
 	if (p->varargs & VARARGS)
 		sprintf(t, "...");

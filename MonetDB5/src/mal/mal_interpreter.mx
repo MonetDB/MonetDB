@@ -216,12 +216,9 @@ sequence of factory calls.
 	for(i= @1; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
 		if( isVarConstant(mb,i) > 0 ){
-			assert(!isVarCleanup(mb,i));
 			if( !isVarDisabled(mb,i)){
 				rhs = &getVarConstant(mb,i);
-				*lhs = *rhs;
-				if (rhs->vtype == TYPE_str && rhs->val.sval != 0)
-					lhs->val.sval = GDKstrdup(rhs->val.sval);
+				VALcopy(lhs,rhs);
 			}
 		} else{
 			lhs->vtype = getVarGDKType(mb,i);
