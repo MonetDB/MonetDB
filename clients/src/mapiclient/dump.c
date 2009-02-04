@@ -833,7 +833,6 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		      "\"s\".\"id\" = \"t\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
 	const char *views = "SELECT \"s\".\"name\","
-		    "\"t\".\"name\","
 		    "\"t\".\"query\" "
 		"FROM \"sys\".\"schemas\" \"s\", "
 		     "\"sys\".\"_tables\" \"t\" "
@@ -881,7 +880,9 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 
 			if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0)
 				continue;
-			stream_printf(toConsole, "CREATE SCHEMA \"%s\";\n", name);
+			stream_printf(toConsole, "CREATE SCHEMA ");
+			quoted_print(toConsole, name);
+			stream_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
@@ -910,7 +911,11 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		stream_printf(toConsole, "CREATE SEQUENCE \"%s\".\"%s\" AS INTEGER;\n", schema, name);
+		stream_printf(toConsole, "CREATE SEQUENCE ");
+		quoted_print(toConsole, schema);
+		stream_printf(toConsole, ".");
+		quoted_print(toConsole, name);
+		stream_printf(toConsole, " AS INTEGER;\n");
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -974,7 +979,11 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			if (sname != NULL && strcmp(schema, sname) != 0)
 				continue;
 
-			stream_printf(toConsole, "ALTER SEQUENCE \"%s\".\"%s\" RESTART WITH %s", schema, name, restart);
+			stream_printf(toConsole, "ALTER SEQUENCE ");
+			quoted_print(toConsole, schema);
+			stream_printf(toConsole, ".");
+			quoted_print(toConsole, name);
+			stream_printf(toConsole, " RESTART WITH %s", restart);
 			if (strcmp(increment, "1") != 0)
 				stream_printf(toConsole, " INCREMENT BY %s", increment);
 			if (strcmp(minvalue, "0") != 0)
@@ -1001,12 +1010,13 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		return 1;
 	}
 	while (mapi_fetch_row(hdl) != 0) {
-		char *vname = mapi_fetch_field(hdl, 0);
+		char *schema = mapi_fetch_field(hdl, 0);
 		char *query = mapi_fetch_field(hdl, 1);
 
-		stream_printf(toConsole, "CREATE VIEW ");
-		quoted_print(toConsole, vname);
-		stream_printf(toConsole, " AS %s\n", query);
+		if (sname != NULL && strcmp(schema, sname) != 0)
+			continue;
+
+		stream_printf(toConsole, "%s\n", query);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
