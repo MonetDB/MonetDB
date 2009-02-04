@@ -766,6 +766,7 @@ str RMTconnect(
 		c = t->next = GDKzalloc(sizeof(struct _connection));
 	}
 	/* make sure we protect the just added connection (small race) */
+	MT_lock_init(&c->lock, "remote connection lock");
 	mal_set_lock(c->lock, "remote.connect");
 
 	/* this can probably screw up the uniqueness, but we need it since
@@ -841,6 +842,7 @@ str RMTdisconnect(int *ret, str *conn) {
 				mal_set_lock(c->lock, "remote.disconnect"); /* shared connection */
 				mapi_destroy(c->mconn);
 				mal_unset_lock(c->lock, "remote.disconnect");
+				MT_destroy_lock(c->lock);
 				GDKfree(c->name);
 				GDKfree(c);
 				MCgetClient()->conn = t;
@@ -939,7 +941,6 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	char *mod;
 	char *func;
 	char *var;
-	int pos;
 
 	if (p->retc == 0)
 		throw(MAL, "remote.<getid>", "Cannot operate without an "
@@ -952,7 +953,7 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 		mod = "user";
 	func = getFunctionId(f);
 
-	pos = snprintf(buf, BUFSIZ, "rmt_%s_%s_%s", mod, func, var);
+	snprintf(buf, BUFSIZ, "rmt_%s_%s_%s", mod, func, var);
 
 	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);

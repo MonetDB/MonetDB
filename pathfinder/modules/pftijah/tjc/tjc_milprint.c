@@ -117,6 +117,7 @@ void milprint_end (tjc_config *tjc_c) {
     TJCPRINTF(MILOUT,"nexi_result := tj_nid2pre(nexi_result, qenv);\n");
     TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
     TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result;\n");
+    TJCPRINTF(MILOUT,"nexi_result := nil;\n"); /* IMPORTANT, MEMORY LEAK */
     if (0) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
@@ -142,6 +143,7 @@ void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
     }
     TJCPRINTF(MILOUT,"nexi_result := tsort_rev(nexi_result);\n");
     TJCPRINTF(MILOUT,"nexi_score_xfer := nexi_result;\n");
+    TJCPRINTF(MILOUT,"nexi_result := nil;\n"); /* IMPORTANT, MEMORY LEAK */
     if (0) TJCPRINTF(MILOUT,"nexi_result := nexi_result.print();\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := FALSE;\n");
