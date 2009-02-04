@@ -417,11 +417,11 @@ Before continuing we should make sure that all clients
 }
 #endif
 @c
+	unloadLibraries(); 
 #if 0
 	/* skip this to solve random crashes, needs work */
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
-	unloadLibraries(); 
 
 	finishNamespace();
 	if( cntxt->prompt)
@@ -451,7 +451,6 @@ Before continuing we should make sure that all clients
 		fprintf(stderr, "!%s", err);
 		GDKfree(err);
 	}
-/*	GDKexit(0);  */
-	MT_global_exit(0);
+	GDKexit(0); 	/* properly end GDK */
 }
 @}
