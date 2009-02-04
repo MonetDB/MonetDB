@@ -623,6 +623,134 @@ replace_pos_predicate (PFla_op_t *p)
     return true;
 }
 
+/**
+ * Starting from an operator @a p we check if a column @a desc_col
+ * provides values in the same order as a column @a origin_col.
+ *
+ * We can ensure the correct order by following the lineage information
+ * of column @a desc_col and checking whether the generated values are
+ * in the same order as the values in the input column. If we reach
+ * the origin of column @a origin_col and see that column @a desc_col
+ * was created by downward path steps starting fom column @a origin_col
+ * we can be sure that column @a desc_col describes also the order of
+ * column @a origin_col.
+ */
+static bool
+check_order (PFla_op_t *p, PFalg_col_t desc_col, PFalg_col_t origin_col)
+{
+    PFla_op_t *origin, *desc, *new_desc;
+
+    /* check for node types */
+    if (PFprop_type_of (p, desc_col) & ~aat_node ||
+        PFprop_type_of (p, origin_col) & ~aat_node)
+        return false;
+
+    desc   = PFprop_lineage (p->prop, desc_col);
+    origin = PFprop_lineage (p->prop, origin_col);
+
+    /* ensure that we have lineage information */
+    if (!origin || !desc)
+        return false;
+
+    desc_col   = PFprop_lineage_col (p->prop, desc_col);
+    origin_col = PFprop_lineage_col (p->prop, origin_col);
+
+    /* follow the 'assumed' descendant link
+       until we reach the origin operator */
+    while (desc != origin) {
+        /* for downward steps (without overlap) we
+           know that the resulting node references
+           are in the same order as the mapped context
+           nodes */
+        if ((desc->kind != la_step_join &&
+             desc->kind != la_guide_step_join) ||
+            desc_col != desc->sem.step.item_res ||
+            !(desc->sem.step.spec.axis == alg_attr ||
+              desc->sem.step.spec.axis == alg_chld ||
+              desc->sem.step.spec.axis == alg_self ||
+              ((desc->sem.step.spec.axis == alg_desc_s ||
+                desc->sem.step.spec.axis == alg_desc) &&
+               LEVEL_KNOWN(PFprop_level (desc->prop, desc->sem.step.item)))))
+            return false;
+
+        /* jump to the operator that provided the step input column */
+        desc_col = desc->sem.step.item;
+        new_desc = PFprop_lineage (desc->prop, desc_col);
+        /* ensure that we still have lineage information */
+        if (!new_desc)
+            return false;
+        /* adjust the column name to the next operator */
+        desc_col = PFprop_lineage_col (desc->prop, desc_col);
+        desc     = new_desc;
+    } 
+
+    /* we ensured that (desc == origin) and now
+       check that they stem from the same column */
+    return desc_col == origin_col;
+}
+
+/**
+ * For operators with order criteria we try to
+ * remove columns from the order list if they are
+ * functionally dependent and the correct order is
+ * ensured by the next order criterion in the order list. 
+ */
+static bool
+shrink_order_list (PFla_op_t *p)
+{
+    PFord_ordering_t  sortby,
+                      res      = PFordering ();
+    bool              modified = false;
+    PFalg_col_t       cur,
+                      next_cur;
+
+    /* allow only operators with order criteria */
+    if (p->kind == la_rank ||
+        p->kind == la_rowrank ||
+        p->kind == la_rownum)
+        sortby = p->sem.sort.sortby;
+    else if (p->kind == la_pos_select)
+        sortby = p->sem.pos_sel.sortby;
+    else
+        return false;
+
+    /* we have to find a column to prune */
+    if (PFord_count (sortby) < 2)
+        return false;
+
+    /* compare adjacent order criteria */
+    for (unsigned int i = 1; i < PFord_count (sortby); i++) {
+        cur      = PFord_order_col_at (sortby, i-1);
+        next_cur = PFord_order_col_at (sortby, i); 
+
+        /* and skip the former criterion if it is
+           functionally dependent from the current
+           and the order is the same */
+        if (PFord_order_dir_at (sortby, i-1) == DIR_ASC &&
+            PFord_order_dir_at (sortby, i) == DIR_ASC &&
+            PFprop_fd (p->prop, next_cur, cur) &&
+            check_order (p, next_cur, cur)) {
+            modified = true;
+            continue;
+        }
+        /* otherwise keep former criterion */
+        res = PFord_refine (res, cur, PFord_order_dir_at (sortby, i-1));
+    }
+    /* add last criterion */
+    res = PFord_refine (res,
+                        PFord_order_col_at (sortby, PFord_count (sortby) - 1),
+                        PFord_order_dir_at (sortby, PFord_count (sortby) - 1));
+
+    /* modify operator in case we have removed one or more order criteria */
+    if (modified) {
+        if (p->kind == la_pos_select)
+            p->sem.pos_sel.sortby = res;
+        else
+            p->sem.sort.sortby = res;
+    }
+    return modified;
+}
+
 /* worker for PFalgopt_complex */
 static bool
 opt_complex (PFla_op_t *p)
@@ -743,6 +871,12 @@ opt_complex (PFla_op_t *p)
         case la_project:
             if (replace_pos_predicate (p))
                 modified = true;
+            break;
+
+        case la_pos_select:
+            /* try to remove order criteria based on functional
+               dependencies and lineage information */
+            modified |= shrink_order_list (p);
             break;
 
         case la_eqjoin:
@@ -1418,6 +1552,10 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_rownum:
+            /* try to remove order criteria based on functional
+               dependencies and lineage information */
+            modified |= shrink_order_list (p);
+
             /* Replace the rownumber operator by a rowrank operator
                if it is only used to provide the correct link to
                the outer relation in a ferry setting. */
@@ -1476,7 +1614,17 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_rowrank:
+            /* try to remove order criteria based on functional
+               dependencies and lineage information */
+            modified |= shrink_order_list (p);
+            break;
+
         case la_rank:
+            /* try to remove order criteria based on functional
+               dependencies and lineage information */
+            modified |= shrink_order_list (p);
+
             /* first of all try to replace a rank with a single
                ascending order criterion by a projection match
                match the pattern rank - (project -) rank and
@@ -1685,6 +1833,21 @@ opt_complex (PFla_op_t *p)
                     modified = true;
                     break;
                 }
+            }
+            /* Push a rowid operator underneath the adjacent
+               projection thus hoping to find a composite key
+               that allows to replace the rowid operator by
+               a rank operator. */
+            else if (L(p)->kind == la_project) {
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+                PFalg_col_t   col  = PFcol_new (p->sem.rowid.res);
+                for (unsigned int i = 0; i < L(p)->sem.proj.count; i++)
+                    proj[i] = L(p)->sem.proj.items[i];
+                proj[L(p)->schema.count] = PFalg_proj (p->sem.rowid.res,
+                                                       col);
+                *p = *PFla_project_ (rowid (LL(p), col), p->schema.count, proj);
+                modified = true;
             }
             break;
 
@@ -1932,6 +2095,30 @@ opt_complex (PFla_op_t *p)
                 modified = true;
                 break;
             }
+            {   /* Try to link the first step directly to the document lookup */
+                PFla_op_t *doc_tbl = PFprop_lineage (p->prop, p->sem.step.item);
+                if (R(p)->kind != la_roots &&
+                    doc_tbl &&
+                    doc_tbl->kind == la_doc_tbl &&
+                    PFprop_lineage_col (p->prop, p->sem.step.item) ==
+                    doc_tbl->sem.doc_tbl.res &&
+                    PFprop_card (doc_tbl->prop) == 1) {
+                    /* we have to adjust the result of the step to the input
+                       cardinality */
+                    PFalg_col_t new_col = PFcol_new (p->sem.step.item_res);
+                    *p = *cross (R(p),
+                                 project (
+                                     step_join (L(p),
+                                                roots (doc_tbl),
+                                                p->sem.step.spec,
+                                                p->sem.step.level,
+                                                doc_tbl->sem.doc_tbl.res,
+                                                new_col),
+                                     proj (p->sem.step.item_res, new_col)));
+                    modified = true;
+                    break;
+                }
+            }
             break;
 
         case la_element:
@@ -2072,31 +2259,32 @@ opt_complex (PFla_op_t *p)
 }
 
 /**
- * Disable usage conflicts for rowid operators
- * that are also referenced by the side effects.
- *
- * In case the query body refers to rowid operator
- * only to ensure the correct cardinality whereas
- * the side effects use the rowid column as partition
- * criterion we split up the rowid operator. This
- * allows the subsequent rewrites to e.g. replace
- * the rowid operator by a rank operator.
+ * Worker for split_rowid_for_side_effects that
+ * searches and splits rowid operators lying on
+ * the border between side effects and query body.
  */
 static void
-split_rowid_for_side_effects (PFla_op_t *p)
+split_rowid_for_side_effects_worker (PFla_op_t *p)
 {
+    if (SEEN(p))
+        return;
+
     /* We have found a rowid operator
        that is used at most once by a given
        side effect (see the reference counter
        in cases: la_error and la_trace). */
     if (L(p) &&
+        SEEN(L(p)) &&
         L(p)->kind == la_rowid &&
+        /* ensure that `p' is the only reference */
         PFprop_refctr (L(p)) == 1) {
         L(p) = PFla_op_duplicate (L(p), LL(p), NULL);
         return;
     }
     if (R(p) &&
+        SEEN(R(p)) &&
         R(p)->kind == la_rowid &&
+        /* ensure that `p' is the only reference */
         PFprop_refctr (R(p)) == 1) {
         R(p) = PFla_op_duplicate (R(p), RL(p), NULL);
         return;
@@ -2157,8 +2345,8 @@ split_rowid_for_side_effects (PFla_op_t *p)
         case la_trace_msg:
         case la_trace_map:
         case la_string_join:
-            split_rowid_for_side_effects (L(p));
-            split_rowid_for_side_effects (R(p));
+            split_rowid_for_side_effects_worker (L(p));
+            split_rowid_for_side_effects_worker (R(p));
             break;
 
         case la_attach:
@@ -2187,16 +2375,60 @@ split_rowid_for_side_effects (PFla_op_t *p)
         case la_doc_tbl:
         case la_roots:
         case la_dummy:
-            split_rowid_for_side_effects (L(p));
+            split_rowid_for_side_effects_worker (L(p));
             break;
 
         case la_error:
         case la_trace:
-            split_rowid_for_side_effects (L(p));
+            split_rowid_for_side_effects_worker (L(p));
             PFprop_infer_refctr (R(p));
-            split_rowid_for_side_effects (R(p));
+            split_rowid_for_side_effects_worker (R(p));
             break;
     }
+}
+
+/* worker for split_rowid_for_side_effects */
+static void
+mark_body (PFla_op_t *p)
+{
+    assert (p);
+
+    /* nothing to do if we already visited that node */
+    if (SEEN(p))
+        return;
+    /* otherwise mark the node */
+    else
+        SEEN(p) = true;
+    /* and traverse the children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        mark_body (p->child[i]);
+}
+
+/**
+ * Disable usage conflicts for rowid operators
+ * that are also referenced by the side effects.
+ *
+ * In case the query body refers to rowid operator
+ * only to ensure the correct cardinality whereas
+ * the side effects use the rowid column as partition
+ * criterion we split up the rowid operator. This
+ * allows the subsequent rewrites to e.g. replace
+ * the rowid operator by a rank operator.
+ */
+static void
+split_rowid_for_side_effects (PFla_op_t *root)
+{
+    /* collect the number of direct
+       references for the side effects */
+    PFprop_infer_refctr (L(root));
+    /* mark the nodes of the query body */
+    mark_body (R(root));
+    /* split up a rowid operator that lies
+       on the edge of the side effects and the
+       query body */
+    split_rowid_for_side_effects_worker (L(root));
+    /* clean up the marks */
+    PFla_dag_reset (R(root));
 }
 
 /**
@@ -2210,11 +2442,12 @@ PFalgopt_complex (PFla_op_t *root)
     /* Tell the optimizer that the same rowid
        operator is used in multiple settings
        (by splitting it up). */
-    split_rowid_for_side_effects (L(root));
+    split_rowid_for_side_effects (root);
 
     while (modified) {
         /* Infer key, icols, domain, reqval,
            and refctr properties first */
+        PFprop_infer_lineage (root);
         PFprop_infer_functional_dependencies (root);
         PFprop_infer_key (root);
         PFprop_infer_level (root);
