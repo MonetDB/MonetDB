@@ -12,7 +12,7 @@
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008-2009 MonetDB B.V.
+@' Copyright August 2008- MonetDB B.V.
 @' All Rights Reserved.
 
 @f gdk_heap
@@ -115,7 +115,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		fp = GDKfilelocate(nme, "wb", ext);
 		if (fp != NULL) {
 			fclose(fp);
-			h->storage = STORE_MMAP;
+			h->newstorage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
 		}
 		GDKfree(of);
@@ -262,7 +262,7 @@ HEAPfree(Heap *h)
 @}
 @- HEAPload
 
-If we find file X.new, we move it over X (if present) and open it.
+If we don find file X.new, we move it over X (if present) and open it.
 
 This routine initializes the h->filename without deallocating
 its previous contents.
@@ -284,7 +284,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	if (h->filename == NULL)
 		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
 	if (h->filename == NULL) 
-		return -1;	
+ 	    return -1;	
 	sprintf(h->filename, "%s.%s", nme, ext);
 
 	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually 512KB) segments */
@@ -323,19 +323,21 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	strcpy(p, ".new");
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
-		int t0;
-		if (ret == 0) {
-			t0 = GDKms();
+		if (ret) {
+			int t0 = GDKms();
 			ret = unlink(dstpath);
         		IODEBUG THRprintf(GDKout, "#unlink %s = %d (%dms)\n", dstpath, ret, GDKms() - t0);
 		}
-		t0 = GDKms();
-		ret = rename(srcpath, dstpath);
-		if (ret < 0) {
-			GDKsyserror("HEAPload: rename of %s failed\n", srcpath);
-			return -1;
+		if (ret == 0) { /* move X.new to X */
+			int t0 = GDKms();
+			ret = rename(srcpath, dstpath);
+        		IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
 		}
-       		IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
+	} else if (ret) { /* legacy: accept .priv files as well */
+		int t0 = GDKms(); 
+		strcpy(p, ".priv");
+		ret = rename(srcpath, dstpath); /* move X.priv to X */
+        	IODEBUG THRprintf(GDKout, "#rename %s %s = %d (%dms)\n", srcpath, dstpath, ret, GDKms() - t0);
 	}
 
 	h->base = (char *) GDKload(nme, ext, h->free, h->size, h->newstorage);
@@ -885,13 +887,15 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	/*
 	   // Create bitmasks that will hold all valid block positions
 	 */
-	hr->validmask = (int *) GDKzalloc(sizeof(int) * ++nwords);
-	freemask = (int *) GDKzalloc(sizeof(int) * nwords);
+	hr->validmask = (int *) GDKmalloc(sizeof(int) * ++nwords);
+	freemask = (int *) GDKmalloc(sizeof(int) * nwords);
 	if (hr->validmask == NULL || freemask == NULL) {
 		GDKfree(hr->validmask);
 		GDKfree(freemask);
 		return FALSE;
 	}
+	for (block = 0; block < nwords; block++)
+		freemask[block] = hr->validmask[block] = 0;
 
 	/*
 	   // Walk the freelist; register them in freemask
