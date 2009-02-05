@@ -637,7 +637,7 @@ exps_find_match_exp(list *l, sql_exp *e)
 
 static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	sql_exp *m = NULL;
+	sql_exp *m = NULL, *ne;
 	char name[16], *nme = NULL;
 	char *tname = NULL;
 
@@ -651,7 +651,9 @@ static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 	if (e->type == e_column)
 		tname = e->l;
-	return exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
+	ne = exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
+	exp_setname(ne, NULL, e->name);
+	return ne;
 }
 
 void 
@@ -1989,7 +1991,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		ek.card = card_set;
 
-		/* we assume the selection case */
+		/* only selection phase ! */
+		if (f < sql_sel)
+			assert(0);
+
+		if (!left) 
+			left = *rel;
 		if (f >= sql_sel) { 
 			if (left && is_project(left->op)) {
 				p = left;
@@ -2004,12 +2011,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			left = rel_project_exp(l);
 		else 
 			left = rel_dup(left);
-		if (!p)
-			p = *rel;
-		l = exp_alias_or_copy(sql, NULL, NULL, left, l, 0);
-		/* list of values or subqueries */
 
-		/* single element could be a 'select' */
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);
 
@@ -2052,14 +2054,18 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 			r = rel_lastexp(sql, right);
 			rel_setsubquery(right);
-			if (p)
-				rel_destroy(p->l);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
 				exp_destroy(r);
 				return NULL;
 			}
-			left = p->l = rel_crossproduct(left, right, op_join);
+			left = rel_crossproduct(left, right, op_join);
+			if (p) {
+				rel_destroy(p->l);
+				p->l = left;
+			}
+			if (!p)
+				*rel = left;
 			left->op = op_left;
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(left, e);
