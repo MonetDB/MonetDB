@@ -194,26 +194,26 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 Query:  serialize_seq (
             side_effects (Side, Frag),
-            Rel)                                     =   1 (10); /* FIXME: side effect changes */
+            Rel)                                     =   1 (10);
 Query:  serialize_seq (
             side_effects (Side, Frag),
-            distinct (Rel))                          =   2 (10); /* FIXME: side effect changes */
+            distinct (Rel))                          =   2 (10);
 Query:  serialize_seq (side_effects (Side, Frag),
-                       project (rank (Rel)))         =   3 (10); /* FIXME: side effect changes */
+                       project (rank (Rel)))         =   3 (10);
 Query:  serialize_seq (side_effects (Side, Frag),
                        project (
-                           rank (distinct (Rel))))   =   4 (10); /* FIXME: side effect changes */
+                           rank (distinct (Rel))))   =   4 (10);
 Query:  serialize_seq (
             side_effects (
                 Side,
                 frag_union (
                     empty_frag,
                     fragment (twig (Twig)))),
-            roots_ (twig (Twig)))                    =   5 (10); /* FIXME: side effect changes */
+            roots_ (twig (Twig)))                    =   5 (10);
 Query:  serialize_seq (side_effects (Side, Frag),
-                       empty_tbl)                    =   6 (10); /* FIXME: side effect changes */
-Query:  serialize_rel (nil, Rel)                     =   7 (10); /* FIXME: side effect changes */
-Query:  serialize_rel (nil, empty_tbl)               =   8 (10); /* FIXME: side effect changes */
+                       empty_tbl)                    =   6 (10);
+Query:  serialize_rel (nil, Rel)                     =   7 (10);
+Query:  serialize_rel (nil, empty_tbl)               =   8 (10);
 Rel:    lit_tbl                                      =   9 (10);
 Rel:    ref_tbl                                      =  10 (10);
 Rel:    attach (Rel)                                 =  11 (10);
@@ -301,13 +301,13 @@ Twig:   content (Frag, Rel)                          =  88 (10);
 
 Constr: merge_adjacent (Frag, Rel)                   =  89 (10);
 
-Side:   error (Side, Rel)                            =  98 (10); /* FIXME: side effect changes */
-Side:   nil                                          =  99 (10); /* FIXME: side effect changes */
-Side:   trace (Side, Trc)                            = 100 (10); /* FIXME: side effect changes */
-Trc:    trace_items (Rel, Msg)                       = 101 (10); /* FIXME: side effect changes */
-Msg:    trace_msg (Rel, Map)                         = 102 (10); /* FIXME: side effect changes */
-Map:    trace_map (Rel, Map)                         = 103 (10); /* FIXME: side effect changes */
-Map:    nil                                          = 104 (10); /* FIXME: side effect changes */
+Side:   error (Side, Rel)                            =  98 (10);
+Side:   nil                                          =  99 (10);
+Side:   trace (Side, Trc)                            = 100 (10);
+Trc:    trace_items (Rel, Msg)                       = 101 (10);
+Msg:    trace_msg (Rel, Map)                         = 102 (10);
+Map:    trace_map (Rel, Map)                         = 103 (10);
+Map:    nil                                          = 104 (10);
 
 Rel:    rec_base                                     = 105 (10);
 Rec:    nil                                          = 106 (10);
@@ -316,15 +316,15 @@ Arg:    rec_arg (Rel, distinct (Rel))                = 108 (10);
 
 Rel:    rec_fix (
             side_effects (
-                Side,
+                nil,
                 rec_param (
                    rec_arg (Rel, Rel), 
                    rec_param(Arg, nil))),
-            Rel)                                     = 109 (10); /* FIXME: side effect changes */
+            Rel)                                     = 109 (10);
 Rel:    rec_fix (
-            side_effects (Side,
+            side_effects (nil,
                           rec_param (Arg, nil)),
-            Rel)                                     = 110 (10); /* FIXME: side effect changes */
+            Rel)                                     = 110 (10);
 
 Rel:    dummy (Rel)                                  = 115 (10);
 Rel:    proxy (Rel)                                  = 116 (10);
@@ -1950,14 +1950,14 @@ reduce (PFla_op_t * p, int goalnt)
         case 108:
         /* Rel:    rec_fix (
                        side_effects (
-                           Side,
+                           nil,
                            rec_param (
                               rec_arg (Rel, Rel), 
                               rec_param(Arg, nil))),
                        Rel) */
         case 109:
         /* Rel:    rec_fix (
-                       side_effects (Side
+                       side_effects (nil,
                                      rec_param (Arg, nil)),
                        Rel) */
         case 110:
@@ -2028,7 +2028,7 @@ reduce (PFla_op_t * p, int goalnt)
             /* lookup whether we need a SELECT or a SELECT DISTINCT */
             bool                distinct   = rule == 2 || rule == 4;
             /* use the second non-terminal as the query part */
-            PFla_op_t          *query      = kids[1];
+            PFla_op_t          *query      = kids[2];
             PFalg_col_t         item       = p->sem.ser_seq.item;
             PFalg_col_t         pos        = p->sem.ser_seq.pos;
             PFalg_simple_type_t item_ty    = type_of (p, p->sem.ser_seq.item);
@@ -2042,6 +2042,9 @@ reduce (PFla_op_t * p, int goalnt)
                                *ser_info,
                                *finalquery = NULL;
             
+            /* merge error checks into the query */
+            from_list_copy (FROMLIST(query), FROMLIST(kids[0]));
+
             /* Make sure that we bind the input if we have
                to perform outer-joins (for mixed results)
                and our input has more than one input relation
@@ -2187,7 +2190,7 @@ reduce (PFla_op_t * p, int goalnt)
                                          lit_str("NODES_ONLY")),
                                ser_info);
 
-                /* we we do not need a join to serialize,
+                /* we do not need a join to serialize,
                    so we return just the values we get */
                 if (SER_REPORT(p) == ser_yes) {
                     PFsql_aident_t twig = col_env_lookup_step (
@@ -2219,6 +2222,9 @@ reduce (PFla_op_t * p, int goalnt)
                             orderby = sortkey_list (sort_item, orderby);
                         }
                     }
+                    /* add minor ordering to ensure that subtrees
+                       of the twig nodes are ordered correctly */
+                    orderby = sortkey_list (PRE(twig), orderby);
 
                     finalquery = PFsql_select (
                                      distinct,
@@ -2235,7 +2241,7 @@ reduce (PFla_op_t * p, int goalnt)
                                      orderby,
                                      NULL);
                 } else {
-                    PFsql_t *frags = FRAG(L(p));
+                    PFsql_t *frags = FRAG(LR(p));
                     PFsql_aident_t doc1, doc2;
 
                     /* if fragments does not consists of
@@ -2298,7 +2304,7 @@ reduce (PFla_op_t * p, int goalnt)
             }
             /* the result contains nodes and atomic values */
             else {
-                PFsql_t        *frags = FRAG(L(p)), *item_expr, *from_bind;
+                PFsql_t        *frags = FRAG(LR(p)), *item_expr, *from_bind;
                 PFsql_aident_t  doc1, doc2;
                 sql_from_list_t from;
 
@@ -2394,7 +2400,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_t            *ser_info;
             PFsql_t            *final_query;
 
-            assert (L(LR(p)) == RL(p));
+            assert (L(LRR(p)) == RL(p));
 
             assert (p->sem.ser_seq.item == RL(p)->sem.iter_item.item);
             assert (p->sem.ser_seq.pos == RL(p)->sem.iter_item.iter);
@@ -2438,6 +2444,10 @@ reduce (PFla_op_t * p, int goalnt)
                                     sortkey_item (TWIG_PRE(content), true),
                                     sortkey_list);
 
+            from_list_add (FROMLIST(p), FRAG(L(RL(p))), alias (content));
+            /* merge errors into the from list */
+            from_list_copy (FROMLIST(p), FROMLIST(kids[0]));
+
             /* call a helper function that does the 'real' job */
             final_query = PFsql_select (
                               false,
@@ -2452,8 +2462,7 @@ reduce (PFla_op_t * p, int goalnt)
                                   VALUE(content),
                                   NAME(content),
                                   NS_URI(content)),
-                              from_list (
-                                  alias_bind (FRAG(L(RL(p))), alias (content))),
+                              transform_frommap (p),
                               NULL,
                               sortkey_list,
                               NULL);
@@ -5333,43 +5342,32 @@ reduce (PFla_op_t * p, int goalnt)
             assert (kids[0] && nts[0]);
             assert (kids[1] && nts[1]);
 
-            PFsql_t *expr = NULL,
-                    *n = NULL;
-            PFalg_simple_type_t ty;
-            char *msg = "error info now resides in p->sem.err.col";
+            PFsql_t *err = NULL;
+            char    *msg;
 
             reduce (kids[0], nts[0]);
 
-            /* copy all existing column, from, and where lists */
-            copy_cols_from_where (p, L(p));
+            /* copy all existing side effect information */
+            from_list_copy (FROMLIST(p), FROMLIST(L(p)));
 
             reduce (kids[1], nts[1]);
 
-            ty = type_of (R(p), p->sem.err.col);
-            assert (monomorphic (ty) && ty == aat_bln);
-            expr = col_env_lookup (COLMAP(R(p)),
-                                   p->sem.err.col,
-                                   ty);
+            if (PFprop_const (p->prop, p->sem.err.col)) {
+                msg = (PFprop_const_val (p->prop, p->sem.err.col)).val.str;
+            }
+            else
+                msg = "error in query evaluation";
 
-            n = expr;
-
-            /* if the underlying relation containing is bound,
-             * we can directly using the column */
-            n = (n->kind == sql_column_name ||
-                 n->kind == sql_lit_int)
-                 ? n
-                 : case_ (when (n, TRUE_INT), else_ (FALSE_INT));
-
-            n = case_ (when (gt (TRUE_INT, min_ (n)),
-                             raise_error (lit_str (ERR_SQLSTATE),
-                                          lit_str (msg))),
-                       else_ (TRUE_INT));
+            err = case_ (when (gt (count (star ()), lit_int (0)),
+                               raise_error (lit_str (ERR_SQLSTATE),
+                                            lit_str (msg))),
+                         else_ (lit_int(42)));
                                                            
             PFsql_aident_t nalias = new_alias ();
 
             from_list_add (FROMLIST (p),
                            select (
-                               column_assign (n, ERR_),
+                               column_assign (err, ERR_),
                                transform_frommap (R(p)),
                                transform_wheremap (R(p))
                            ), alias (nalias));
@@ -5377,6 +5375,8 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Side:   nil */
         case 99:
+            break;
+
         /* Side:   trace (Side, Trc) */
         case 100:
         /* Trc:    trace_items (Rel, Msg) */
@@ -5518,7 +5518,7 @@ reduce (PFla_op_t * p, int goalnt)
 
         /* Rel:    rec_fix (
                        side_effects (
-                           Side,
+                           nil,
                            rec_param (
                               rec_arg (Rel, Rel), 
                               rec_param(Arg, nil))),
@@ -5526,11 +5526,11 @@ reduce (PFla_op_t * p, int goalnt)
         case 109:
         {
             /*** TOPDOWN ***/
-            PFla_op_t *loop_param = LL(p),
-                      *base  = LL(p)->sem.rec_arg.base;
+            PFla_op_t *loop_param = LRL(p),
+                      *base  = LRL(p)->sem.rec_arg.base;
 
             PFla_op_t *overall_result = R(p);
-            PFla_op_t *recarg = LRL(p);
+            PFla_op_t *recarg = RL(LR(p));
 
             /* if we are sure, that the loop returns
              * results in any case, and the base is
@@ -5553,15 +5553,16 @@ reduce (PFla_op_t * p, int goalnt)
             bind = true; distinct = true;
             execute (comment ("Binding due to recursion"));
         } break;
+
         /* Rel:    rec_fix (
-                       side_effects (Side,
+                       side_effects (nil,
                                      rec_param (Arg, nil)),
                        Rel) */
         case 110:
         {
             /*** TOPDOWN ***/
             PFla_op_t *overall_result = R(p);
-            PFla_op_t *recarg = LL(p);
+            PFla_op_t *recarg = LRL(p);
 
             reduce (kids[0], nts[0]);
 
@@ -6030,7 +6031,7 @@ infer_ser_info (PFla_op_t * p)
     assert (p->kind == la_serialize_seq);
 
     /* collect the twigs referenced in this query */
-    twig_only = collect_twigs (L(p), twigs);
+    twig_only = collect_twigs (LR(p), twigs);
 
     if (!twig_only)
         return;
