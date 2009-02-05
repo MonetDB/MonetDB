@@ -2856,7 +2856,9 @@ reduce_rest (PFpnode_t * p, int rule, short * nts, PFpnode_t *kids[MAX_KIDS])
              */
             if (p->sem.fun->arity == 1) {
                 PFty_t tpe;
-                if (PFty_lookup(PFqname_uri(p->sem.fun->qname), PFqname_loc(p->sem.fun->qname), &tpe)) {
+                if (PFty_atomic_lookup (PFqname_uri(p->sem.fun->qname),
+                                        PFqname_loc(p->sem.fun->qname),
+                                        &tpe)) {
                     C(p) = cast ( seqtype (tpe), fn_data( L(L(C(L(p))))));
                     break;
                 }

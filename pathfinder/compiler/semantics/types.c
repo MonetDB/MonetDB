@@ -52,7 +52,7 @@
 
 #include "types.h"
 
-/* PFty_eq */
+/* PFty_eq && PFty_subtype */
 #include "subtyping.h"
 /* PFqname () */
 #include "qname.h"
@@ -64,6 +64,8 @@
 #include "env.h"
 #include "mem.h"
 #include "oops.h"
+/* PFfun_env */
+#include "functions.h"
 
 
 /**
@@ -1303,11 +1305,12 @@ PFty_schema (PFty_t t)
     return 0;
 }
 
+
 /**
  * Pre-defined XML Schema/XQuery types
  * (see W3C XQuery, 2.4 Types).
  */
-PFty_predef_t predefined[] =
+static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
 {
     { .ns = &PFns_xs,  .loc = "integer",       .fn = PFty_xs_integer        },
     { .ns = &PFns_xs,  .loc = "string",        .fn = PFty_xs_string         },
@@ -1340,20 +1343,21 @@ PFty_predef_t predefined[] =
     { .ns = 0,         .loc = 0,               .fn = 0                      }
 };
 
-PFty_predef_t *PFpredefined() { return predefined; }
-
 /*
- * look up a predefined PFty_t by (uri,loc). Return boolean whether found.
+ * look up a predefined atomic PFty_t by (uri,loc). Return boolean whether found.
  */
-int PFty_lookup(const char* uri, const char* loc, PFty_t *dst) {
+bool
+PFty_atomic_lookup (const char* uri, const char* loc, PFty_t *dst)
+{
     int n;
     for (n = 0; predefined[n].loc; n++) {
-        if (strcmp(loc, predefined[n].loc) == 0 && strcmp(uri, predefined[n].ns->uri) == 0) {
+        if (strcmp(loc, predefined[n].loc) == 0 &&
+            strcmp(uri, predefined[n].ns->uri) == 0) {
                 *dst = (*predefined[n].fn)();
-                return 1;
+                return true;
         }
     }
-    return 0;
+    return false;
 }
 
 /**
@@ -1364,6 +1368,7 @@ void
 PFty_predefined (void)
 {
     PFty_t t;
+    PFqname_t qn;
     unsigned int n;
 
     /* initialize the XML Schema symbol spaces */
@@ -1373,14 +1378,37 @@ PFty_predefined (void)
     PFgroup_defns     = PFenv ();
     PFattrgroup_defns = PFenv ();
 
+    assert (PFfun_env);
+
     for (n = 0; predefined[n].loc; n++) {
+        qn = PFqname (*(predefined[n].ns), predefined[n].loc);
+
         /* construct the type definition with name ns:loc */
-        t = PFty_named (PFqname (*(predefined[n].ns), predefined[n].loc));
+        t = PFty_named (qn);
 
         /* enter the type and its definition into its XML Schema
          * symbol space
          */
         PFty_import (t, predefined[n].fn ());
+
+        /* add cast functions for the atomic types */
+        t = (*predefined[n].fn)();
+        if (PFty_subtype (t, PFty_atomic())) {
+            PFfun_sig_t sig =   
+                { .par_ty = (PFty_t[]) { PFty_star (PFty_item ()) },
+                  .ret_ty = t };
+
+            PFenv_bind (PFfun_env,
+                        qn,
+                        (void *) PFfun_new (qn,
+                                            1,
+                                            true,
+                                            1,
+                                            &sig,
+                                            NULL,
+                                            NULL,
+                                            NULL));
+        }
     }
 }
 
