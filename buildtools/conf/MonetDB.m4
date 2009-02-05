@@ -1480,6 +1480,10 @@ if test "x$have_python" != xno; then
 		esac
 		;;
 	no)	;;
+	$Qprefix/*)
+		PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
+		have_python_libdir=yes
+		;;
 	*)	PYTHON_LIBDIR="$have_python_libdir"
 		have_python_libdir=yes
 		;;
