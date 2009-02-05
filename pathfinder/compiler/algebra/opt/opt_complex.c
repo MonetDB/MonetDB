@@ -665,12 +665,12 @@ check_order (PFla_op_t *p, PFalg_col_t desc_col, PFalg_col_t origin_col)
         if ((desc->kind != la_step_join &&
              desc->kind != la_guide_step_join) ||
             desc_col != desc->sem.step.item_res ||
-            !(desc->sem.step.spec.axis == alg_attr ||
-              desc->sem.step.spec.axis == alg_chld ||
-              desc->sem.step.spec.axis == alg_self ||
-              ((desc->sem.step.spec.axis == alg_desc_s ||
-                desc->sem.step.spec.axis == alg_desc) &&
-               LEVEL_KNOWN(PFprop_level (desc->prop, desc->sem.step.item)))))
+            !((desc->sem.step.spec.axis == alg_attr ||
+               desc->sem.step.spec.axis == alg_chld ||
+               desc->sem.step.spec.axis == alg_self ||
+               desc->sem.step.spec.axis == alg_desc_s ||
+               desc->sem.step.spec.axis == alg_desc) &&
+              LEVEL_KNOWN(PFprop_level (desc->prop, desc->sem.step.item))))
             return false;
 
         /* jump to the operator that provided the step input column */
