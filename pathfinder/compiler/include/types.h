@@ -322,6 +322,11 @@ PFty_t *PFty_schema (PFty_t);
 void PFty_predefined (void);
 
 /**
+ *  look up a predefined atomic PFty_t by (ns,loc). Return boolean whether found.
+ */
+bool PFty_atomic_lookup(const char* uri, const char* loc, PFty_t *dst);
+
+/**
  * Unfold all named type references in a (recursive) type.
  */
 PFty_t PFty_defn (PFty_t);
