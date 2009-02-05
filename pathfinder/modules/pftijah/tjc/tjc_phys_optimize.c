@@ -131,8 +131,10 @@ void free_atree (TJatree_t *atree) {
 TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt)
 {
     TJanode_t *anode;
+    TJqnode_t *qnode;
     char qid;
     short nid = pnode - s;
+    short i;
 
     //check whether node was created before
     if (nt[nid] != -1)
@@ -158,8 +160,14 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
 	    break;
 	case p_about :
 	    anode = add_node1 (atree, a_containing_query, pnode2anode (atree, s, pnode->child[0], nt));
-	    qid = atree->qlength++;
-	    atree->qnodes[(short)qid] = pnode->child[1]->sem.qnode;
+	    qnode = pnode->child[1]->sem.qnode;
+            qid = -1;
+            for (i = 0; i < atree->qlength; i++)
+                if (atree->qnodes[i] == qnode) qid = (char)i;
+            if (qid == -1) {
+                qid = atree->qlength++;
+	        atree->qnodes[(short)qid] = qnode;
+            }
 	    anode->qid = qid;
 	    break;
 	case p_and :

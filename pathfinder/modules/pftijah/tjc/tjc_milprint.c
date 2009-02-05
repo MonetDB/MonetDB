@@ -136,6 +136,10 @@ void milprint_end (tjc_config *tjc_c) {
 }
 
 void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
+    int qid;
+    for (qid = 0; qid < tree->qlength; qid++) {
+         TJCPRINTF(MILOUT,"Q%d := nil;\n", qid);
+    }   
     TJCPRINTF(MILOUT,"\n");
     TJCPRINTF(MILOUT,"var nexi_result := R" PDFMT ";\n", tree->root - tree->nodes);
     TJCPRINTF(MILOUT,"R" PDFMT " := nil;\n", tree->root - tree->nodes);

@@ -246,12 +246,6 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
                 tjc_c->rmoverlap = 1;
         }  else if (strcmp(optName, "returnNumber") == 0) {
            /* will be handled in after query execution in pftijah.mx */
-        }  else if (strcmp(optName, "returnNumber") == 0) {
-           /* will be handled in after query execution in pftijah.mx */
-        }  else if (strcmp(optName, "returnNumber") == 0) {
-           /* will be handled in after query execution in pftijah.mx */
-        }  else if (strcmp(optName, "returnNumber") == 0) {
-           /* will be handled in after query execution in pftijah.mx */
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
