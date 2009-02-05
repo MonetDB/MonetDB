@@ -57,13 +57,16 @@ void assign_scopes (TJpnode_t *node, short node_scope[]) {
     }
 }
 
-void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short node_scope[]) {
+void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short *node_scope, char *node_printed) {
     int c;
     short nid, nid_c;
     nid = node - tree->nodes;
+
+    if (node_printed[nid]) return;
+
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
         if (node->child[c]) {
-	    assign_scopes2 (tree, node->child[c], node_scope);
+	    assign_scopes2 (tree, node->child[c], node_scope, node_printed);
 	}
     }
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
@@ -72,6 +75,8 @@ void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short node_scope[]) {
 	    node_scope[nid_c] = nid;
 	}
     }
+
+    node_printed[nid] = 1;
 }
 
 /**TODO: prepare text queries upfront. all terms should be
@@ -292,7 +297,7 @@ void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short
 	    TJCPRINTF(MILOUT,"R%d := nil;\n", child[c]);
 }
 
-void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short *node_scope, short *node_printed) {
+void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short *node_scope, char *node_printed) {
     int c;
     short child[TJPNODE_MAXCHILD];
     short nid;
@@ -384,15 +389,18 @@ char* milprint2 (tjc_config *tjc_c, TJatree_t *tree)
     int num;
     int c;
     short node_scope[TJPTREE_MAXSIZE];
-    short node_printed[TJPTREE_MAXSIZE];
+    char node_printed[TJPTREE_MAXSIZE];
    
     num = tree->length;
     for (c = 0; c < num; c++) {
 	node_scope[c] = -1;
 	node_printed[c] = 0;
     }
-    assign_scopes2 (tree, tree->root, node_scope);
+    assign_scopes2 (tree, tree->root, node_scope, node_printed);
     //for (c = 0; c < num; c++) TJCPRINTF(MILOUT,"node: %d, scope: %d\n", c, node_scope[c]);
+    for (c = 0; c < num; c++) {
+	node_printed[c] = 0;
+    }
     
     milprint_init2 (tjc_c);
     milprint_qenv2 (tjc_c);

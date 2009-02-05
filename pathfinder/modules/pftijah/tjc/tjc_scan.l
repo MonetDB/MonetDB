@@ -225,10 +225,11 @@ _                                {S}
 }
 
 <PREDICATE>{
-"("			{ gotoState(PATH); tj_yield (lparen); }
+"("			{ tj_yield (lparen); }
+")"			{ tj_yield (rparen); }
 "or"			{ tj_yield (or); }
 "and"			{ tj_yield (and); }
-"about"			{ tj_yield (about); }
+"about"			{ gotoState(PATH); tj_yield (about); }
 "]"			{ gotoState(PATH); tj_yield (rbracket); }
 }
 

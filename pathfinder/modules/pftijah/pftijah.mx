@@ -2019,7 +2019,7 @@ PROC tj_select_tag(str name) : bat[oid,any] :=
     var index := bat("tj_" + ftindex + "_TagIndex");
     var offset1 := int(index.fetch(tid));
     var offset2 := int(index.fetch(tid + 1)) - 1;
-    return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2);
+    return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2).chk_order();
 }
 
 #####################################################################
@@ -2057,7 +2057,7 @@ PROC tj_pre2nid(bat[oid,any] pre_score) : bat[oid,any] :=
     # todo: if join turns out to be expensive, we can slice out the part belonging to
     # the respective tagname. pre2nid is only used, if result region has a single tag-name.
 
-    return pre_score.reverse().join(bat("tj_" + ftindex + "_Tags").reverse()).reverse();
+    return pre_score.reverse().join(bat("tj_" + ftindex + "_Tags").reverse()).reverse().sort();
 }
 
 #####################################################################

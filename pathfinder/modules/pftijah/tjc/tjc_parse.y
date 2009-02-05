@@ -110,7 +110,7 @@ void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 	TagnameSeq
 	PredicateList
 	Predicate
-	ScoreClause 
+	OrClause 
 	AndClause
 	AboutClause
 
@@ -179,12 +179,12 @@ PredicateList		: Predicate
 	       		| PredicateList Predicate
 	     		  { $$ = tjcp_wire2 (tjc_tree, p_and, $1, $2); }
 			;
-Predicate		: "[" ScoreClause "]"
+Predicate		: "[" OrClause "]"
 	     		  { $$ = $2; }
 	   		;
-ScoreClause		: AndClause
+OrClause		: AndClause
 	     		  { $$ = $1; }
-	     		| ScoreClause "or" AndClause
+	     		| OrClause "or" AndClause
 	     		  { $$ = tjcp_wire2 (tjc_tree, p_or, $1, $3); }
 			;
 AndClause		: AboutClause
@@ -195,6 +195,8 @@ AndClause		: AboutClause
 AboutClause		: "about" "(" RelativePathNoPred "," QueryClause ")"
 	     		  { c = tjcp_leaf (tjc_tree, p_query); c->sem.qnode = $5;
 			  $$ = tjcp_wire2 (tjc_tree, p_about, $3, c); }
+	   		| "(" OrClause ")" 
+	     		  { $$ = $2; }
 	     		;
 QueryClause		: TERM
        			  { $$ = tjcq_firstterm ($1, "!t", 1.0); } 
