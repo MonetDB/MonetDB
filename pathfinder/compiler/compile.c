@@ -113,8 +113,8 @@ static char *phases[] = {
     [ 6]  = "after guide tree has been build",
     [ 7]  = "after variable scoping has been checked",
     [ 8]  = "after XQuery built-in functions have been loaded",
-    [ 9]  = "after valid function usage has been checked",
-    [10]  = "after XML Schema predefined types have been loaded",
+    [ 9]  = "after XML Schema predefined types have been loaded",
+    [10]  = "after valid function usage has been checked",
     [11]  = "after XML Schema document has been imported (if any)",
     [12]  = "after the abstract syntax tree has been mapped to Core",
     [13]  = "after the Core tree has been simplified/normalized",
@@ -495,6 +495,13 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(8);
 
+    tm = PFtimer_start ();
+
+    /* Load XML Schema/XQuery predefined types into the type environment */
+    PFty_predefined ();
+
+    STOP_POINT(9);
+
     /* Resolve function usage
      */
     PFfun_check (proot);
@@ -502,13 +509,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
     if (status->timing)
         PFlog ("semantical analysis:\t\t\t %s", PFtimer_str (tm));
-
-    STOP_POINT(9);
-
-    tm = PFtimer_start ();
-
-    /* Load XML Schema/XQuery predefined types into the type environment */
-    PFty_predefined ();
 
     STOP_POINT(10);
 
@@ -941,8 +941,8 @@ PFcompile_MonetDB (char *xquery, char* url,
         PFextract_options (proot);
         PFvarscope (proot);
         PFfun_xquery_fo ();
-        PFfun_check (proot);
         PFty_predefined ();
+        PFfun_check (proot);
         PFschema_import (proot);
         croot = PFfs (proot, &PFquery);
         croot = PFsimplify (croot);
