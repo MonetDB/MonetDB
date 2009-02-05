@@ -61,7 +61,7 @@
 PFla_op_t *
 PFprop_lineage (const PFprop_t *prop, PFalg_col_t col)
 {
-    if (!prop)
+    if (!prop || !prop->lineage)
         return NULL;
 
     for (unsigned int i = 0; i < PFarray_last (prop->lineage); i++)
@@ -79,7 +79,7 @@ PFalg_col_t
 PFprop_lineage_col (const PFprop_t *prop, PFalg_col_t col)
 {
     /* this function should be only called after PFprop_lineage was checked */
-    assert (prop);
+    assert (prop && prop->lineage);
 
     for (unsigned int i = 0; i < PFarray_last (prop->lineage); i++)
         if (col == ((lineage_t *) PFarray_at (prop->lineage, i))->col)
