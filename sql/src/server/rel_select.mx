@@ -2069,7 +2069,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			left->op = op_left;
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(left, e);
-			l = rel_unop_(sql, l, NULL, "isnull");
+			e = rel_binop_(sql, l, r, NULL, "=");
+			l = rel_unop_(sql, e, NULL, "isnull");
 			if (sc->token == SQL_NOT_IN) 
 				r = exp_atom_bool(1);
 			else
