@@ -72,6 +72,7 @@
 /** projection operator */
 #define project(a,b,c)       PFpa_project ((a), (b), (c))
 
+#define slice(a,b,c)         PFpa_slice ((a), (b), (c))
 #define select_(a,b)         PFpa_select ((a), (b))
 #define val_select(a,b,c)    PFpa_value_select ((a), (b), (c))
 

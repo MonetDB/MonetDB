@@ -92,6 +92,7 @@
                  | expression '.access (' restriction ')'   <m_access>
                  | expression '.key (' bool ')'             <m_key>
                  | expr '.insert (' expr ',' expr ')'       <m_insert>
+                 | expr '.slice (' expr ',' expr ')'        <m_slice>
                  | expr '.select (' expr ',' expr ')'       <m_select2>
                  | Type '(' expression ')'                  <m_cast>
                  | '[' Type '](' expression ')'             <m_mcast>
@@ -260,6 +261,7 @@ static char *ID[] = {
     , [m_seqbase]      = "seqbase"
     , [m_key]          = "key"
     , [m_order]        = "order"
+    , [m_slice]        = "slice"
     , [m_select]       = "select"
     , [m_uselect]      = "ord_uselect"
     , [m_select2]      = "select"
@@ -1034,6 +1036,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expr '.slice (' expr ',' expr ')' */
+        case m_slice:
         /* expr '.select (' expr ',' expr ')' */
         case m_select2:
             print_expression (n->child[0]);

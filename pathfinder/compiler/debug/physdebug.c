@@ -70,6 +70,7 @@ static char *a_id[]  = {
     , [pa_unq2_thetajoin]  = "unique_thetajoin"
     , [pa_unq1_thetajoin]  = "dep_unique_thetajoin"
     , [pa_project]         = "PROJECT"
+    , [pa_slice]           = "SLICE"
     , [pa_select]          = "SEL"
     , [pa_val_select]      = "VAL SEL"
     , [pa_append_union]    = "APPEND_UNION"
@@ -217,6 +218,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_unq2_thetajoin]  = "\"#00FF00\""
         , [pa_unq1_thetajoin]  = "\"#00FF00\""
         , [pa_project]         = "\"#EEEEEE\""
+        , [pa_slice]           = "\"#00BBFF\""
         , [pa_select]          = "\"#00DDDD\""
         , [pa_val_select]      = "\"#00BBBB\""
         , [pa_append_union]    = "\"#909090\""
@@ -393,6 +395,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                     PFcol_str (n->sem.proj.items[c].old));
 
             PFarray_printf (dot, ")");
+            break;
+
+        case pa_slice:
+            PFarray_printf (dot, "%s (%i, %i)", a_id[n->kind],
+                            n->sem.slice.low,
+                            n->sem.slice.high);
             break;
 
         case pa_select:

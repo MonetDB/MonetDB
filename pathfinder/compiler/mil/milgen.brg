@@ -152,8 +152,9 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term unq2_thetajoin =  17
 %term unq1_thetajoin =  18
 %term project        =  19
-%term select         =  20
-%term val_select     =  21
+%term slice          =  20
+%term select         =  21
+%term val_select     =  22
 %term append_union   =  23
 %term merge_union    =  24
 %term intersect      =  25
@@ -234,9 +235,10 @@ Rel:      thetajoin (Rel, Rel)                                     =  17 (10);
 Rel:      unq2_thetajoin (Rel, Rel)                                =  18 (10);
 Rel:      unq1_thetajoin (Rel, Rel)                                =  19 (10);
 Rel:      project (Rel)                                            =  20 (10);
-Rel:      select (Rel)                                             =  21 (10);
-Rel:      val_select (Rel)                                         =  22 (10);
-Rel:      append_union (Rel, Rel)                                  =  23 (10);
+Rel:      slice (Rel)                                              =  21 (10);
+Rel:      select (Rel)                                             =  22 (10);
+Rel:      val_select (Rel)                                         =  23 (10);
+Rel:      append_union (Rel, Rel)                                  =  24 (10);
 Rel:      merge_union (Rel, Rel)                                   =  25 (10);
 Rel:      intersect (Rel, Rel)                                     =  26 (10);
 Rel:      difference (Rel, Rel)                                    =  27 (10);
@@ -4632,8 +4634,27 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     }
             break; /* fold) */
 
+        /* Rel:      slice (Rel) */
+        case 21:
+            /* apply a slice for all visible BATs */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                mvar_t *tmp  = new_var (p->refctr);
+                /* expand variables */
+                execute (
+                    assgn (var (tmp->name),
+                           slice (var (env_at (L(p)->env, i).mvar->name),
+                                  lit_int (p->sem.slice.low),
+                                  lit_int (p->sem.slice.high))));
+
+                env_add (p->env,
+                         env_at (L(p)->env, i).col,
+                         env_at (L(p)->env, i).ty,
+                         tmp);
+            }
+            break;
+
         /* Rel:      select (Rel) */
-        case 21: /* fold( */
+        case 22: /* fold( */
         {
             v = new_var (1);
 
@@ -4659,7 +4680,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         }   break; /* fold) */
 
         /* Rel:      val_select (Rel) */
-        case 22: /* fold( */
+        case 23: /* fold( */
         {
             v = new_var (1);
 
@@ -4697,7 +4718,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         }   break; /* fold) */
 
         /* Rel:      append_union (Rel, Rel) */
-        case 23: /* fold( */
+        case 24: /* fold( */
         {
             PFalg_col_t         col;
             PFalg_simple_type_t ty, lty, rty;
