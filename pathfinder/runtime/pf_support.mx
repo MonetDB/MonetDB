@@ -762,7 +762,7 @@ PROC get_attr_own(BAT[oid,bat] ws, oid nid, any cont) : BAT[oid,oid]
 
 PROC get_attr_own(BAT[oid,bat] ws, BAT[oid,oid] nids, any cont) : BAT[oid,oid]
 {
-    return nids.mark(0@0).leftjoin(impl_attr_own(ws, nids.tmark(0@0), cont));
+    return nids.mark(0@0).leftjoin(impl_attr_own(ws, nids.tmark(0@0), cont.tmark(0@0)));
 }
 
 PROC fn_put(BAT[oid,bat] ws, BAT[void,str] uri, BAT[void,oid] item, any kind,
