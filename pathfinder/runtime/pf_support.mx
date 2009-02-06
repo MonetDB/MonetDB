@@ -473,6 +473,8 @@ but does this in a single scan."
 .COMMAND pflock_end(lng wsid) : void = CMDpflock_end;
  "a query (rdonly,docmgmt,update) leaves the system.
   NOTE: you *must* have the short lock when executing this!!"
+.COMMAND pflock_trycommit() : bit = CMDpflock_trycommit;
+ "get exclusive database access only if no queries active (for logger checkpoint)"
 .COMMAND pflock_meta(lng wsid) : void = CMDpflock_meta;
  "alert that query (rdonly,docmgmt,update) reads meta information"
 .COMMAND pflock_free(bit persistent) : bit = CMDpflock_free;
@@ -5934,6 +5936,7 @@ extern MT_Lock pf_runtime_lock[7];
 #define PF_META_BARRIER      pf_runtime_sema[0]
 #define PF_UPDATE_BARRIER    pf_runtime_sema[1]
 #define PF_EXTEND_BARRIER    pf_runtime_sema[2]
+#define PF_COMMIT_BARRIER    pf_runtime_sema[3]
 
 #define PF_MODE_RDONLY 0 /* read-only query */
 #define PF_MODE_DOCMGT 1 /* document management query */ 
@@ -8358,14 +8361,15 @@ included in ws_overlaps_ws. Instead, a single variable 'pf_special' records the 
 #define PF_CONVOY 5
 BAT* ws_overlaps_ws = NULL;
 MT_Lock pf_runtime_lock[7];
-MT_Sema pf_runtime_sema[3];
-int pf_nreaders, pf_convoy, pf_ndocmgt;
+MT_Sema pf_runtime_sema[4];
+int pf_nreaders, pf_convoy, pf_ndocmgt, nqueries=0;
 lng pf_writer, pf_special;
 
 /* get handle to the shared locks */
 int CMDpflock_get(ptr *ret, int* nr) {
     *ret = (ptr) &pf_runtime_lock[(*nr)&7];
-    if (*nr > 6) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
+    if (*nr == 7) *ret = (ptr) &PF_EXTEND_BARRIER; /* hack: do not feel like creating a CMDsema_get */
+    if (*nr == 8) *ret = (ptr) &PF_COMMIT_BARRIER; /* hack: do not feel like creating a CMDsema_get */
     return GDK_SUCCEED;
 }
 
@@ -8373,22 +8377,25 @@ int CMDpflock_get(ptr *ret, int* nr) {
 int CMDpflock_begin(lng *wsid) 
 {
     int mode = ((*wsid) & (3LL << 30)) >> 30;
-    if (mode == PF_MODE_RDONLY) 
-        return GDK_SUCCEED;
 
+    MT_set_lock(PF_META_LOCK, "pflock_begin: metaLock for querycount");
+    if (nqueries++ == 0) {
+        MT_down_sema(PF_COMMIT_BARRIER, "pflock_begin: commitBarrier");
+    }
     if (mode == PF_MODE_DOCMGT) {
         /* multiple docmgts may be active in parallel. the first takes the meta-barrier */
         int take_barrier;
-        MT_set_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
         MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         take_barrier = (pf_ndocmgt++ == 0);
         MT_unset_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for mgmt");
         if (take_barrier) {
             MT_down_sema(PF_META_BARRIER, "pflock_begin: metaBarrier");
         }
-        MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for mgmt");
-        return GDK_SUCCEED;
     }
+    MT_unset_lock(PF_META_LOCK, "pflock_begin: metaLock for querycount");
+
+    if (mode == PF_MODE_RDONLY || mode == PF_MODE_DOCMGT)
+        return GDK_SUCCEED;
 
     /* we only have update queries below this point; first check if we are in exclusive retry mode */
     MT_set_lock(PF_SHORT_LOCK, "pflock_begin: shortLock for convoy"); /* protects pf_convoy */
@@ -8456,8 +8463,25 @@ int CMDpflock_end(lng *wsid)
                 MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
+
+    MT_set_lock(PF_META_LOCK, "pflock_end: metaLock for querycount");
+    if (--nqueries == 0) {
+        MT_up_sema(PF_COMMIT_BARRIER, "pflock_end: commitBarrier");
+    }
+    MT_unset_lock(PF_META_LOCK, "pflock_end: metaLock for querycount");
     return GDK_SUCCEED;
 }
+
+int CMDpflock_trycommit(bit *res) {
+    *res = FALSE;
+    MT_set_lock(PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
+    if (nqueries == 0) {
+        MT_down_sema(PF_COMMIT_BARRIER, "pflock_trycommit: commitBarrier");
+        *res = TRUE;
+    }
+    MT_unset_lock(PF_META_LOCK, "pflock_trycommit: metaLock for querycount");
+    return GDK_SUCCEED;
+} 
 
 /* we are going to use a meta-information function that returns all collections/documents
  * thus we must block all new docmgt queries and wait for all active ones to finish 
@@ -8807,6 +8831,7 @@ bat* pf_support_prelude() {
     MT_init_sema(pf_runtime_sema[0],1, "PF_META_BARRIER");
     MT_init_sema(pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
     MT_init_sema(pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
+    MT_init_sema(pf_runtime_sema[3],1, "PF_QUERY_BARRIER");
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
@@ -8828,6 +8853,7 @@ void pf_support_epilogue() {
     MT_destroy_sema(pf_runtime_sema[0]);
     MT_destroy_sema(pf_runtime_sema[1]);
     MT_destroy_sema(pf_runtime_sema[2]);
+    MT_destroy_sema(pf_runtime_sema[3]);
 }
 
 int
