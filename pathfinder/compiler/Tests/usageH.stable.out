@@ -87,12 +87,13 @@ Usage: pf [OPTION] [FILE]
          R  push up rank operators
          }  introduce proxy operators that representoperator groups
          {  remove proxy operators
+         D  apply optimizations tailored for MonetDB/XQuery
          Q  apply optimizations tailored for the SQL code generation
          [  assign a new set of unique column names
          ]  assign bit-encoded column names (deprecated optimization option)
          P  infer all properties
          _  does nothing (used for structuring the optimization options)
-            (default for option -A is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_}MT{JISI_OK_GECSVR_GP')
+            (default for option -A is: '-o OIKCG_VG_JISI_GECSVR_OK_N}MT{JISI_GECSVR_}MT{JISI_OK_GECSVR_DC_GP')
             (default for option -S is: '-o OIKCG_VG_JISI_GECSVR_OK_NQU_}MT{JISI_GECSVR_QU_}MT{JISI_OK_GECSVR_QU_CGP')
 
 = -e[0|1], --mil-dead-code-elimination=[0|1]: dead code elimination (on the MIL level):
