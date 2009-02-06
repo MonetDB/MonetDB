@@ -66,6 +66,8 @@ struct TJanode_t {
     char              nested;            /**< indicates whether output is (possibly) nested */
     char              preIDs;            /**< indicates whether the output yields NIDs or preIDs */
     char	     *op;		 /**< chosen physical operator */
+    char	      visited;		 /**< number the node is visited so far 
+                                              (used to check that a node is visited only once within a graph traversal) */
 };
 
 typedef struct TJatree_t TJatree_t;
@@ -78,9 +80,6 @@ struct TJatree_t {
     TJqnode_t  *qnodes[TJPNODELIST_MAXSIZE];
     int		qlength;
 };
-
-void
-printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_t *par);
 
 extern struct TJatree_t*
 phys_optimize(TJptree_t *ptree, TJpnode_t *proot, BAT* rtagbat);
