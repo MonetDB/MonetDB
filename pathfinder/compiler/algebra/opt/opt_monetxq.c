@@ -1,11 +1,12 @@
 /**
  * @file
  *
- * Optimize relational algebra expression DAG
- * based on the required node properties.
- * (This requires no burg pattern matching as we
- *  apply optimizations in a peep-hole style on
- *  single nodes only.)
+ * Modifications to the relational algebra expression DAG
+ * that produce a better code generation for MonetDB/XQuery.
+ *
+ * These modifications include adding distinct operators to
+ * minimize intermediate result sizes as well as path step
+ * rewrites that are benefitial for MonetDB/XQuery.
  *
  * Copyright Notice:
  * -----------------
@@ -56,255 +57,169 @@
 /* mnemonic column list accessors */
 #include "alg_cl_mnemonic.h"
 
-/* worker for */
+#define SEEN(p) ((p)->bit_dag)
+
+/* worker for PFopt_monetxq */
 static void
-opt_monetxq (PFla_op_t *p) {
- 
+opt_monetxq (PFla_op_t *p)
+{
     assert(p);
-    
-    /* node not seen then optimize */
-    if (!p->bit_dag) {
 
-        p->bit_dag = true;
-    
-        switch (p->kind) {
-             
-            /** 
-            * replace
-            *
-            *             
-            *       |                         |
-            *     select      with         project     
-            *       |                         |
-            *                              distinct
-            *                                 |
-            *                              project
-            *                                 |
-            *                               select
-            *                                 |
-            */
-            case la_doc_index_join:
-            case la_thetajoin:     
-            case la_pos_select: 
-            case la_select: 
-                if(PFprop_set (p->prop)) 
-                {
-                    /* getting needed colums (icols) and filling the 
-                       list for later project */
-                    PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
-                    PFalg_proj_t *cols = PFmalloc (clsize (icols) *
-                                                    sizeof (PFalg_proj_t));
-                    for (unsigned int i = 0; i < clsize (icols); i++)
-                            cols[i] = PFalg_proj (
-                                            clat (icols, i), clat (icols, i));
-                                                
-                    /* duplicate current select */                                                                                                                                                                                    
-                    PFla_op_t *dup = PFla_op_duplicate(p, L(p), R(p));
-                        
-                    /* adding the inner project */                                                               
-                    PFla_op_t *project = PFla_project_ (
-                                                dup , clsize (icols), cols);
-                
-                    /* setting select and project as visited */
-                    project->bit_dag = true;
-                    dup->bit_dag = true;
-                
-                    /* denerate dummy colums needed for later operations */
-                    PFalg_proj_t *dummy_cols = PFmalloc (p->schema.count *
-                                                    sizeof (PFalg_proj_t));
-                
-                    bool found;
-                    for (unsigned int i = 0; i < p->schema.count; i++) {
-                        found = false;
-                        for (unsigned int j = 0; j < clsize (icols); j++)
-                            if (p->schema.items[i].name == clat (icols, j)) {
-                                dummy_cols[i] = PFalg_proj (
-                                            clat (icols, i), clat (icols, i));
-                                found = true;
-                                break;
-                            }
-                        if (!found) 
-                            dummy_cols[i] = PFalg_proj (
-                                    p->schema.items[i].name, clat (icols, 0));
-                    }
+    /* nothing to do if we already visited that node */
+    if (SEEN(p))
+        return;
+    /* otherwise mark the node */
+    else
+        SEEN(p) = true;
 
-                    /* adding outer project with dummy colums and the distinct 
-                       operator around project<-select */
-                    PFla_op_t *outer_project = PFla_project_ (
-                                                        PFla_distinct(project), 
-                                                        p->schema.count, 
-                                                        dummy_cols);
-            
-                    /* replace current node with 
-                       outer_project <- distinct <- inner_project <- select */
-                    *p = *outer_project;
-                    p->bit_dag = true;
-                }
-                break;
-            
-            case la_step_join: 
-            {
-                bool used = false;
-                PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
-                
-                for (unsigned int i = 0; i < clsize (icols); i++) 
-                    if (PFprop_icol (p->prop, p->sem.step.item_res)) {
-                        used = true;
-                        break;
-                    }
-            
-                if(PFprop_set (p->prop) &&
-                    used) 
-                {
-                    /* getting needed colums (icols) and filling the 
-                       list for later project */
-                    PFalg_proj_t *cols = PFmalloc (clsize (icols) *
-                                                    sizeof (PFalg_proj_t));
-                    for (unsigned int i = 0; i < clsize (icols); i++)
-                            cols[i] = PFalg_proj (
-                                            clat (icols, i), clat (icols, i));
-                                                
-                    /* duplicate current select */                                                                                                                                                                                    
-                    PFla_op_t *dup = PFla_op_duplicate(p, L(p), R(p));
-                        
-                    /* adding the inner project */                                                               
-                    PFla_op_t *project = PFla_project_ (
-                                                dup , clsize (icols), cols);
-                
-                    /* setting select and project as visited */
-                    project->bit_dag = true;
-                    dup->bit_dag = true;
-                
-                    /* denerate dummy colums needed for later operations */
-                    PFalg_proj_t *dummy_cols = PFmalloc (p->schema.count *
-                                                    sizeof (PFalg_proj_t));
-                
-                    bool found;
-                    unsigned int i;
-                    for ( i = 0; i < p->schema.count-1; i++) {
-                        found = false;
-                        for (unsigned int j = 0; j < clsize (icols); j++)
-                            if (p->schema.items[i].name == clat (icols, j)) {
-                                dummy_cols[i] = PFalg_proj (
-                                            clat (icols, i), clat (icols, i));
-                                found = true;
-                                break;
-                            }
-                        if (!found) 
-                            dummy_cols[i] = PFalg_proj (
-                                    p->schema.items[i].name, clat (icols, 0));
-                    }
-                    dummy_cols[i] = PFalg_proj (
-                                    p->sem.step.item_res, clat (icols, 0));
-
-                    /* adding outer project with dummy colums and the distinct 
-                       operator around project<-select */
-                    PFla_op_t *outer_project = PFla_project_ (
-                                                        PFla_distinct(project), 
-                                                        p->schema.count, 
-                                                        dummy_cols);
-            
-                    /* replace current node with 
-                       outer_project <- distinct <- inner_project <- select */
-                    *p = *outer_project;
-                    p->bit_dag = true;
-                }
-                break;
-            }
-            
-            case la_distinct:
-            case la_project:
-            case la_serialize_seq:
-            case la_serialize_rel:
-            case la_lit_tbl:
-            case la_empty_tbl:
-            case la_ref_tbl:
-            case la_attach:
-            case la_cross:
-            case la_eqjoin:
-            case la_semijoin:
-            case la_disjunion:
-            case la_intersect:
-            case la_difference:
-            case la_fun_1to1:
-            case la_num_eq:
-            case la_num_gt:
-            case la_bool_and:
-            case la_bool_or:
-            case la_bool_not:
-            case la_to:
-            case la_avg:
-            case la_max:
-            case la_min:
-            case la_sum:
-            case la_count:
-            case la_rownum:
-            case la_rowrank:
-            case la_rank:
-            case la_rowid:
-            case la_type:
-            case la_type_assert:
-            case la_cast:
-            case la_seqty1:
-            case la_all:
-            case la_step:
-            case la_guide_step:
-            case la_guide_step_join:
-            case la_doc_tbl:
-            case la_doc_access:
-            case la_twig:
-            case la_fcns:
-            case la_docnode:
-            case la_element:
-            case la_attribute:
-            case la_textnode:
-            case la_comment:
-            case la_processi:
-            case la_content:
-            case la_merge_adjacent:
-            case la_roots:
-            case la_fragment:
-            case la_frag_extract:
-            case la_frag_union:
-            case la_empty_frag:
-            case la_error:
-            case la_nil:
-            case la_trace:
-            case la_trace_msg:
-            case la_trace_map:
-            case la_rec_fix:
-            case la_rec_param:
-            case la_rec_arg:
-            case la_rec_base:
-            case la_fun_call:
-            case la_fun_param:
-            case la_fun_frag_param:
-            case la_proxy:
-            case la_proxy_base:
-            case la_internal_op:
-            case la_string_join:
-            case la_dummy:
-            case la_side_effects:
-            case la_trace_items:
-                break;
-        }
-    }
-    
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_monetxq (p->child[i]);
+
+    /* action code */
+    switch (p->kind) {
+        case la_step_join:
+            /* switch the order of steps as MonetDB/XQuery
+               (as Peter says:) always benefits from it
+            
+               This rewrite would not be benficial if the
+               document lookup appears inside a for loop.
+               The witdth of the projection column enforces
+               that the result of the first step is the only
+               visible column and thus that the pattern is
+               not nested in a for loop. */
+            if (PFprop_set (p->prop) &&
+                !PFprop_icol (p->prop, p->sem.step.item_res) &&
+                p->sem.step.spec.axis == alg_chld &&
+                p->sem.step.spec.kind != node_kind_node &&
+                p->sem.step.spec.kind != node_kind_doc &&
+                R(p)->schema.count == 1 &&
+                R(p)->kind == la_project &&
+                R(p)->sem.proj.items[0].new == p->sem.step.item &&
+                R(p)->sem.proj.items[0].old == RL(p)->sem.step.item_res &&
+                RL(p)->kind == la_step_join &&
+                (RL(p)->sem.step.spec.axis == alg_desc ||
+                 RL(p)->sem.step.spec.axis == alg_desc_s) &&
+                RLR(p)->kind == la_roots &&
+                RLRL(p)->kind == la_doc_tbl &&
+                RL(p)->sem.step.item == RLRL(p)->sem.doc_tbl.res) {
+                /* new name for the lower path step to avoid name conflicts */
+                PFalg_col_t col = PFcol_new (p->sem.step.item_res);
+                /* copy the step specification and change the axes */
+                PFalg_step_spec_t spec_desc = p->sem.step.spec,
+                                  spec_par  = RL(p)->sem.step.spec;
+                spec_desc.axis = alg_desc;
+                spec_par.axis  = alg_par;
+
+                *p = *step_join (L(p),
+                                 project (
+                                     step_join (L(p),
+                                                RLR(p),
+                                                spec_desc,
+                                                p->sem.step.level,
+                                                RLRL(p)->sem.doc_tbl.res,
+                                                col),
+                                     proj (p->sem.step.item_res, col)),
+                                 spec_par,
+                                 RL(p)->sem.step.level,
+                                 p->sem.step.item_res,
+                                 p->sem.step.item);
+                break;
+            }
+
+            /* only introduce a distinct on top of the path step
+               if the result is not used anymore */
+            if (PFprop_icol (p->prop, p->sem.step.item_res))
+                break;
+            /* fall through */
+        case la_thetajoin:
+        case la_select:
+        case la_pos_select:
+        case la_doc_index_join:
+            /**
+             * For all operators that prune rows we try to add a
+             * distinct operator on top that removes duplicates.
+             * This rewrite hopefully keeps intermediate result
+             * sizes small.
+             *
+             * An operator p gets copied and two projections
+             * and a distinct operator are placed on top:
+             *
+             *         |
+             *      project_(full schema with dummy entries)
+             *         |
+             *      distinct
+             *         |
+             *      project_(icols)
+             *         |
+             *         p
+             *         |
+             */
+            if (PFprop_set (p->prop) && PFprop_icols_count(p->prop)) {
+                /* look up required columns (icols) */
+                PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
+                PFalg_proj_t    *proj1 = PFmalloc (clsize (icols) *
+                                                   sizeof (PFalg_proj_t)),
+                                *proj2 = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+
+                /* fill the projection list of the lower projection (proj1) */
+                for (unsigned int i = 0; i < clsize (icols); i++)
+                    proj1[i] = PFalg_proj (clat (icols, i), clat (icols, i));
+
+                /* fill the projection list of the upper projection (proj2) */
+                for (unsigned int i = 0; i < p->schema.count; i++) {
+                    PFalg_col_t cur = p->schema.items[i].name;
+                    if (PFprop_icol (p->prop, cur))
+                        proj2[i] = PFalg_proj (cur, cur);
+                    else
+                        /* replace missing column by dummy reference */
+                        proj2[i] = PFalg_proj (cur, clat (icols, 0));
+                }
+
+                /* Place a distinct operator on top of the operator.
+                   The projection below the distinct operator removes
+                   unreferenced columns and the distinct on top fills
+                   the missing column references with a dummy column. */
+                *p = *PFla_project_ (
+                          distinct (
+                              PFla_project_ (
+                                  PFla_op_duplicate (p, L(p), R(p)),
+                                  clsize (icols),
+                                  proj1)),
+                          p->schema.count,
+                          proj2);
+            }
+            break;
+
+        default:
+            break;
+    }
 }
 
+/**
+ * MonetDB/XQuery specific optimizations:
+ *  - Introduce additional distinct operators.
+ *  - Rewrite //_[child::a] steps into //a/parent::_ steps
+ */
 PFla_op_t *
 PFalgopt_monetxq (PFla_op_t *root)
 {
+    /* infer set and icols properties */
     PFprop_infer_set (root);
     PFprop_infer_icol (root);
 
     opt_monetxq (root);
-        
-                
+
     PFla_dag_reset (root);
+
+    /* In addition optimize the resulting DAG using the icols property
+       to remove inconsistencies introduced by changing the types
+       of unreferenced columns (rule eqjoin). The icols optimization
+       will ensure that these columns are 'really' never used. */
+    root = PFalgopt_icol (root);
 
     return root;
 }
+
+/* vim:set shiftwidth=4 expandtab filetype=c: */
