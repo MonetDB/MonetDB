@@ -1,6 +1,0 @@
-module(unix);module(pathfinder);
-
-var TSTSRCDIR := getenv("TSTSRCDIR");
-
-shred_doc(TSTSRCDIR+"/not_constant_2.SF-1378750.xml","not_constant_2.SF-1378750.xml");
-xquery("xml","doc(\"not_constant_2.SF-1378750.xml\")//volume union doc(\"not_constant_2.SF-1378750.xml\")//data[not(.//volume)]").printf();

@@ -1,8 +1,0 @@
-for $e1 in doc("$TSTTRGDIR/sf0.1.xml")//eOccasional return
-for $e2 in doc("$TSTTRGDIR/sf0.1.xml")//eNest[@aFour=3] return
-  if ($e2/@aUnique1=$e1/@aRef) then 
-  <eOccasional aRef="{$e1/@aRef}">
-  <eNest aUnique1="{$e2/@aUnique1}" aSixtyFour="{$e2/@aSixtyFour}">
-  </eNest>
-  </eOccasional>
-  else()

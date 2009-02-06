@@ -1,6 +1,0 @@
-let $doc :=
-for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-return doc($d)
-for $a in $doc/order[@id="6"]
-return
-    $a
