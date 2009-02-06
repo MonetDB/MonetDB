@@ -8831,7 +8831,7 @@ bat* pf_support_prelude() {
     MT_init_sema(pf_runtime_sema[0],1, "PF_META_BARRIER");
     MT_init_sema(pf_runtime_sema[1],1, "PF_UPDATE_BARRIER");
     MT_init_sema(pf_runtime_sema[2],1, "PF_EXTEND_BARRIER");
-    MT_init_sema(pf_runtime_sema[3],1, "PF_QUERY_BARRIER");
+    MT_init_sema(pf_runtime_sema[3],1, "PF_COMMIT_BARRIER");
     ws_overlaps_ws = BATnew(TYPE_lng, TYPE_lng, 1024);
     BBPrename(ws_overlaps_ws->batCacheid, "ws_overlaps_ws");
     (void) BATprepareHash(ws_overlaps_ws);
