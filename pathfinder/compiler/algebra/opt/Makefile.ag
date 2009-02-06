@@ -36,6 +36,7 @@ lib_opt = {
         NOINST
         DIR = libdir
         SOURCES = \
+                opt_algebra_cse.c \
                 opt_complex.c \
                 opt_const.c \
                 opt_general.brg \
@@ -44,12 +45,11 @@ lib_opt = {
                 opt_join_graph.c \
                 opt_join_pd.c \
                 opt_key.c \
+                opt_monetxq.c \
                 opt_mvd.c \
                 opt_req_node.c \
                 opt_reqval.c \
                 opt_rank.c \
                 opt_set.c \
-                opt_thetajoin.c \
-                opt_algebra_cse.c \
-				opt_monetxq.c
+                opt_thetajoin.c
 }
