@@ -784,7 +784,7 @@ PROC pf_logmanager() : void {
     logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
-        #var changes := logger_changes(pf_logger);
+        var changes := logger_changes(pf_logger);
         if (((cnt :+= 1) % 30) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
