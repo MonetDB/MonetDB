@@ -784,11 +784,12 @@ PROC pf_logmanager() : void {
     logger_base := logger_changes(pf_logger);
     var cnt := 0;
     while(true) {
-        var changes := logger_changes(pf_logger);
+        #var changes := logger_changes(pf_logger);
         if (((cnt :+= 1) % 30) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
-        if ((changes > 100000) and (cnt > 30)) { 
+        #if ((changes > 100000) and (cnt > 30)) { 
+        if (cnt > 30) { 
             if (pf_logflush(0LL)) { # only flush if no queries active
                 logger_base := changes;
                 cnt := 0;
@@ -1727,10 +1728,10 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
 
         # only index element qnames that occur <M times, such that M.log(M) < N
         var cnt   := ws.fetch(QN_HISTOGRAM).fetch(cont);
-        var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
-        var MlogM := [*](cnt,[log]([dbl](cnt)));
-
-        unq := reverse(ord_uselect(MlogM, dbl_nil, dbl(N)));
+        # DISABLE for PFROX var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
+        # DISABLE for PFROX var MlogM := [*](cnt,[log]([dbl](cnt)));
+        # DISABLE for PFROX  unq := reverse(ord_uselect(MlogM, dbl_nil, dbl(N)));
+        unq := cnt.hmark(0@0);
 
         # create the QN_NID and HSH_NID indices
         idx := __runtime_index(coll_oid, ws.fetch(PRE_SIZE).fetch(cont),
@@ -2369,7 +2370,8 @@ PROC __runtime_addchunk(lng wsid,
     } else if (pre = 0@0) {
         # first shred (readonly) automatically creates persistent sorted index
         var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
-        unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
+        #unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
+        unq := cnt.hmark(0@0);
     } else {
         # but we do not maintain read-only indices after additional shreds (too costly to re-sort each time)
         var qn_nid     := commitbat + "_qn_nid";

@@ -8428,6 +8428,9 @@ int CMDpflock_end(lng *wsid)
     int mode = ((*wsid) & (3LL << 30)) >> 30;
     lng nil = lng_nil;
 
+    if ((*wsid & (1LL<<62)))
+        return GDK_SUCCEED; /* MIL command bypasses all of this */
+
     if (mode == PF_MODE_DOCMGT) {
         /* last docmgt function yields the meta barrier 
          */
@@ -8463,7 +8466,6 @@ int CMDpflock_end(lng *wsid)
                 MT_up_sema(PF_UPDATE_BARRIER, "pflock_end: updateBarrier");
         }
     }
-
     MT_set_lock(PF_META_LOCK, "pflock_end: metaLock for querycount");
     if (--nqueries == 0) {
         MT_up_sema(PF_COMMIT_BARRIER, "pflock_end: commitBarrier");
