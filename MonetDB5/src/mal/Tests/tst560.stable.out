@@ -1,0 +1,31 @@
+stdout of test 'tst560` in directory 'src/mal` itself:
+
+
+# 07:49:21 >  
+# 07:49:21 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=38059 --set xrpc_port=47408 --set xrpc_docroot=/ufs/mk/monet5/package/MonetDB5 --set monet_prompt= --trace  --dbname=mTests_src_mal  tst560.mal
+# 07:49:21 >  
+
+# MonetDB server v5.10.0, based on kernel v1.28.0
+# Serving database 'mTests_src_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38059/
+function user.f():void;
+    a := "hello";
+    b := "the quick brown fox";
+end f;
+function user.main():void;
+#possible leak in constant string handling 
+#confirmed feb 2009 
+barrier (go,i) := language.newRange(0:lng);
+    user.f();
+    redo (go,i) := language.nextElement(1:lng,1000:lng);
+exit (go,i);
+end main;
+
+# 07:49:22 >  
+# 07:49:22 >  Done.
+# 07:49:22 >  
+

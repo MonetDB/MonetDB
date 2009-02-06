@@ -200,7 +200,7 @@ void delName(str nme, size_t len){
 	if( nme[0]==0 || n == 0) return ;
 	
 	mal_set_lock(mal_contextLock,"putName");
-	//Namespace garbage collection not available yet
+	/*Namespace garbage collection not available yet */
 	mal_unset_lock(mal_contextLock,"putName");
 }
 str putName(str nme, size_t len)

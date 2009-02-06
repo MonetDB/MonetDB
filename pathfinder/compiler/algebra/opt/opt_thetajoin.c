@@ -199,6 +199,25 @@ is_tj (PFla_op_t *p)
 }
 
 /**
+ * check for a name conflict
+ *
+ * For operators with two inputs (join & cross) it may happen
+ * that a thetajoin (with an invisible column) was already pushed
+ * through. As only the invisible columns may conflict we
+ * check here (and in most cases discard the rewrite).
+ */
+static bool
+name_conflict (PFla_op_t *n1, PFla_op_t *n2)
+{
+    for (unsigned int i = 0; i < n1->schema.count; i++)
+        for (unsigned int j = 0; j < n2->schema.count; j++)
+            if (n1->schema.items[i].name ==
+                n2->schema.items[j].name)
+                return true;
+    return false;
+}
+
+/**
  * thetajoin_identical checks if the semantical
  * information of two thetajoin operators is the same.
  */
@@ -457,12 +476,14 @@ do_opt_mvd (PFla_op_t *p, bool modified)
 
         case la_cross:
             if (is_tj (L(p))) {
+                if (name_conflict (LR(p), R(p))) break;
                 *p = *(thetajoin_opt (LL(p),
                                   cross (LR(p), R(p)),
                                   L(p)->sem.thetajoin_opt.pred));
                 modified = true;
             }
             else if (is_tj (R(p))) {
+                if (name_conflict (RR(p), L(p))) break;
                 *p = *(thetajoin_opt (RL(p),
                                   cross (RR(p), L(p)),
                                   R(p)->sem.thetajoin_opt.pred));
@@ -474,40 +495,46 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             /* Move the independent expression (the one without
                join column) up the DAG. */
             if (is_tj (L(p))) {
-                if (PFprop_ocol (LL(p), p->sem.eqjoin.col1))
+                if (PFprop_ocol (LL(p), p->sem.eqjoin.col1)) {
+                    if (name_conflict (LL(p), R(p))) break;
                     *p = *(thetajoin_opt (eqjoin (LL(p),
                                                   R(p),
                                                   p->sem.eqjoin.col1,
                                                   p->sem.eqjoin.col2),
                                           LR(p),
                                           L(p)->sem.thetajoin_opt.pred));
-                else
+                } else {
+                    if (name_conflict (LR(p), R(p))) break;
                     *p = *(thetajoin_opt (LL(p),
                                           eqjoin (LR(p),
                                                   R(p),
                                                   p->sem.eqjoin.col1,
                                                   p->sem.eqjoin.col2),
                                           L(p)->sem.thetajoin_opt.pred));
+                }
 
                 modified = true;
                 break;
 
             }
             if (is_tj (R(p))) {
-                if (PFprop_ocol (RL(p), p->sem.eqjoin.col2))
+                if (PFprop_ocol (RL(p), p->sem.eqjoin.col2)) {
+                    if (name_conflict (L(p), RL(p))) break;
                     *p = *(thetajoin_opt (eqjoin (L(p),
                                                   RL(p),
                                                   p->sem.eqjoin.col1,
                                                   p->sem.eqjoin.col2),
                                           RR(p),
                                           R(p)->sem.thetajoin_opt.pred));
-                else
+                } else {
+                    if (name_conflict (L(p), RR(p))) break;
                     *p = *(thetajoin_opt (RL(p),
                                           eqjoin (L(p),
                                                   RR(p),
                                                   p->sem.eqjoin.col1,
                                                   p->sem.eqjoin.col2),
                                           R(p)->sem.thetajoin_opt.pred));
+                }
 
                 modified = true;
                 break;

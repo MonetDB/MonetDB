@@ -391,16 +391,15 @@ Let's call it as a synchronous action, without concern on parallelism.
 		for(i= psig->argc; i< mb->vtop; i++) {
 			lhs = &pl->stk->stk[i];
 			if( isVarConstant(mb,i) > 0 ){
-				assert(!isVarCleanup(mb,i));
 				if( !isVarDisabled(mb,i)){
 					rhs = &getVarConstant(mb,i);
-					*lhs = *rhs;
+					VALcopy(lhs,rhs);
 				}
-				} else{
-					lhs->vtype = getVarGDKType(mb,i);
-					lhs->val.pval = 0;
-					lhs->len = 0;
-				}
+			} else{
+				lhs->vtype = getVarGDKType(mb,i);
+				lhs->val.pval = 0;
+				lhs->len = 0;
+			}
 		}
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);

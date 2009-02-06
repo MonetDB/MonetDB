@@ -366,6 +366,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
         case la_difference:
             /* adopt set information for left argument
                and allow duplicates in the right argument */
+            r_col = col_NULL;
             r_set = true;
             break;
 
@@ -404,6 +405,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
         case la_seqty1:
         case la_all:
             /* allow duplicates for the argument */
+            l_col = col_NULL;
             l_set = true;
             break;
 
@@ -445,6 +447,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
         case la_guide_step:
             /* ignore fragment information */
             l_set = false;
+            r_col = col_NULL;
             r_set = true;
             break;
 
@@ -466,6 +469,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
             /* ignore side_effect information */
             l_set = false;
             /* allow duplicates for runtime errors */
+            r_col = col_NULL;
             r_set = true;
             break;
 

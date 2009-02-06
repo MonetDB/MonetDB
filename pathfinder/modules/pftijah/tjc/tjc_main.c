@@ -244,6 +244,8 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
         }  else if (strcmp(optName, "rmoverlap") == 0) {
            if (strcasecmp(optVal, "TRUE") == 0) 
                 tjc_c->rmoverlap = 1;
+        }  else if (strcmp(optName, "returnNumber") == 0) {
+           /* will be handled in after query execution in pftijah.mx */
         } else {
             stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
         }
@@ -288,7 +290,7 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
     if (DEBUG) stream_printf(GDKout,"#!tjc parsing[%s]\n!",query);
     int status = tjc_parser(query,&ptree);
     if (DEBUG) stream_printf(GDKout,"#!tjc status = %d\n",status);
-    if (ptree) {
+    if (!status && ptree) {
 	root = &ptree->node[ptree->length - 1];
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");
 	normalize(ptree, root);
