@@ -383,6 +383,18 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                            PFtimer_str (tm));
                 break;
 
+            case 'D':
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_monetxq (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   destinct optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
             case '[':
                 REMOVE_PROXIES("variable name mapping")
 

@@ -50,5 +50,6 @@ lib_opt = {
                 opt_rank.c \
                 opt_set.c \
                 opt_thetajoin.c \
-                opt_algebra_cse.c
+                opt_algebra_cse.c \
+				opt_monetxq.c
 }
