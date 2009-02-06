@@ -167,6 +167,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                            PFtimer_str (tm));
                 break;
 
+            case 'D':
+                REMOVE_PROXIES("MonetDB specific optimization")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_monetxq (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   MonetDB specific optimizations:  %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'E':
                 MAP_UNQ_NAMES("common subexpression elimination")
                 REMOVE_PROXIES("common subexpression elimination")
@@ -380,18 +393,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   complete property inference:\t    %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'D':
-
-                tm = PFtimer_start ();
-
-                root = PFalgopt_monetxq (root);
-
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("   destinct optimization:\t    %s",
                            PFtimer_str (tm));
                 break;
 
