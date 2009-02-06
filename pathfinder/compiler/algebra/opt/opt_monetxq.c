@@ -78,6 +78,18 @@ opt_monetxq (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+        case la_project:
+            /* merge adjacent projection operators */
+            if (L(p)->kind == la_project)
+                *p = *PFla_project_ (LL(p),
+                                     p->schema.count,
+                                     PFalg_proj_merge (
+                                         p->sem.proj.items,
+                                         p->sem.proj.count,
+                                         L(p)->sem.proj.items,
+                                         L(p)->sem.proj.count));
+            break;
+
         case la_step_join:
             /* switch the order of steps as MonetDB/XQuery
                (as Peter says:) always benefits from it
@@ -134,7 +146,7 @@ opt_monetxq (PFla_op_t *p)
             /* fall through */
         case la_thetajoin:
         case la_select:
-        case la_pos_select:
+        /* case la_pos_select: */
         case la_doc_index_join:
             /**
              * For all operators that prune rows we try to add a
@@ -190,6 +202,16 @@ opt_monetxq (PFla_op_t *p)
                           p->schema.count,
                           proj2);
             }
+            break;
+
+        case la_difference:
+            /* remove distinct operators again whose output
+               is only consumed by the right side of a difference
+               operator */
+            if (p->schema.count == 1 &&
+                R(p)->kind == la_project &&
+                RL(p)->kind == la_distinct)
+                RL(p) = RLL(p);
             break;
 
         default:
