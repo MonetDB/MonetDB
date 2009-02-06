@@ -79,6 +79,7 @@ TJanode_t* add_node (TJatree_t *tree, TJatype_t type) {
     node->scored = 0;
     node->nested = 0;
     node->preIDs = 0;
+    node->visited = 0;
     
     return node;
 }
@@ -128,7 +129,7 @@ void free_atree (TJatree_t *atree) {
     TJCfree (atree);
 }
 
-TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt)
+TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt, BAT* rtagbat)
 {
     TJanode_t *anode;
     TJqnode_t *qnode;
@@ -146,20 +147,37 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
     switch (pnode->kind) {
 	case p_tag :
 	    anode = add_node (atree, a_select_element);
-	    anode->tag = pnode->sem.str;
+	    annotate_node (anode, pnode->sem.str, 0, 0, 0); 
+	    if (BUNfnd (BATmirror (rtagbat), anode->tag) != BUN_NONE)
+		anode->nested = 1;
+	    if (strcmp (anode->tag, "*") == 0) {
+		anode->nested = 1;
+		anode->preIDs = 1;
+	    }
 	    break;
 	case p_ctx :
 	    anode = add_node (atree, a_select_element);
-	    anode->tag = "!ctx";
+	    annotate_node (anode, "!ctx", 0, 1, 1); 
 	    break;
 	case p_desc :
-	    anode = add_node2 (atree, a_contained_by, pnode2anode (atree, s, pnode->child[1], nt), pnode2anode (atree, s, pnode->child[0], nt));
+	    anode = add_node2 (atree, a_contained_by, 
+                               pnode2anode (atree, s, pnode->child[1], nt, rtagbat), 
+                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat));
+	    annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
+	    if (anode->child[1]->scored)
+		anode->scored = 1;
 	    break;
 	case p_anc :
-	    anode = add_node2 (atree, a_containing, pnode2anode (atree, s, pnode->child[1], nt), pnode2anode (atree, s, pnode->child[0], nt));
+	    anode = add_node2 (atree, a_containing, 
+                               pnode2anode (atree, s, pnode->child[1], nt, rtagbat), 
+                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat));
+	    annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
+	    if (anode->child[1]->scored)
+		anode->scored = 1;
 	    break;
 	case p_about :
-	    anode = add_node1 (atree, a_containing_query, pnode2anode (atree, s, pnode->child[0], nt));
+	    anode = add_node1 (atree, a_containing_query, 
+                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat));
 	    qnode = pnode->child[1]->sem.qnode;
             qid = -1;
             for (i = 0; i < atree->qlength; i++)
@@ -169,16 +187,27 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
 	        atree->qnodes[(short)qid] = qnode;
             }
 	    anode->qid = qid;
+	    annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
 	    break;
 	case p_and :
-	    anode = add_node2 (atree, a_and, pnode2anode (atree, s, pnode->child[0], nt), pnode2anode (atree, s, pnode->child[1], nt));
+	    anode = add_node2 (atree, a_and, 
+                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat), 
+                               pnode2anode (atree, s, pnode->child[1], nt, rtagbat));
+	    annotate_node (anode, anode->child[0]->tag, anode->child[0]->scored, anode->child[0]->nested, anode->child[0]->preIDs);
+            if (strcmp (anode->child[0]->tag, anode->child[1]->tag) != 0) 
+		annotate_node (anode, "*", anode->scored, 1, 1);
 	    break;
 	case p_or :
 	case p_union :
-	    anode = add_node2 (atree, a_or, pnode2anode (atree, s, pnode->child[0], nt), pnode2anode (atree, s, pnode->child[1], nt));
+	    anode = add_node2 (atree, a_or, 
+                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat), 
+                               pnode2anode (atree, s, pnode->child[1], nt, rtagbat));
+	    annotate_node (anode, anode->child[0]->tag, anode->child[0]->scored, anode->child[0]->nested, anode->child[0]->preIDs);
+            if (strcmp (anode->child[0]->tag, anode->child[1]->tag) != 0) 
+		annotate_node (anode, "*", anode->scored, 1, 1);
 	    break;
 	case p_nexi :
-	    anode = pnode2anode (atree, s, pnode->child[0], nt);
+	    anode = pnode2anode (atree, s, pnode->child[0], nt, rtagbat);
 	    break;
 	case p_query :
 	    GDKerror("type p_query should not be found");
@@ -199,7 +228,7 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
     return anode;
 }
 
-TJatree_t* ptree2atree(TJptree_t *ptree, TJpnode_t *proot)
+TJatree_t* ptree2atree(TJptree_t *ptree, TJpnode_t *proot, BAT* rtagbat)
 {
     TJatree_t *atree;
     short node_translated[TJPTREE_MAXSIZE];
@@ -207,25 +236,21 @@ TJatree_t* ptree2atree(TJptree_t *ptree, TJpnode_t *proot)
 
     for (i = 0; i < TJPTREE_MAXSIZE; i++) node_translated[i] = -1;
     atree = init_atree (ptree);
-    pnode2anode(atree, ptree->node, proot, node_translated);
+    pnode2anode(atree, ptree->node, proot, node_translated, rtagbat);
     return atree;
 }
 
-void printTJatree(tjc_config* tjc_c, TJatree_t *atree)
-{
-    TJCPRINTF(DOTOUT,"digraph G {\n");
-    printTJanode (tjc_c, atree, atree->root, NULL); 
-    TJCPRINTF(DOTOUT,"}\n");
-}
-
-void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_t *par)
+void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_t *par, char visited)
 {
     char *type = "unknown";
     TJatype_t num_type;
     int nID, parID = 0;
     int c;
 
+    if (node->visited > visited) return;
+    node->visited++;
     nID = node - tree->nodes;
+
     if (par) parID = par - tree->nodes;
     num_type = node->kind;
 
@@ -244,70 +269,42 @@ void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_
     TJCPRINTF (DOTOUT, "%d [label=\"%s\\n%s:n%ds%dpre%d\\n%s\"]\n", nID, type, node->tag, node->nested, node->scored, node->preIDs, node->op);
     if (par) 
 	TJCPRINTF (DOTOUT, "%d -> %d\n", parID, nID);
-
+    
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
-	if (node->child[c]) printTJanode (tjc_c, tree, node->child[c], node);
+	if (node->child[c]) printTJanode (tjc_c, tree, node->child[c], node, visited);
     } 
 }
 
-void annotate_anode (TJanode_t *anode, BAT* rtagbat)
+void printTJatree(tjc_config* tjc_c, TJatree_t *atree)
 {
-    int c;
-    TJatype_t num_type;
-   
-    for (c = 0; c < TJPNODE_MAXCHILD; c++) {
-	if (anode->child[c]) annotate_anode (anode->child[c], rtagbat);
-    }
-    
-    num_type = anode->kind;
-    switch (num_type) {
-	case a_select_element :
-	    annotate_node (anode, anode->tag, 0, 0, 0); 
-	    if (BUNfnd (BATmirror (rtagbat), anode->tag) != BUN_NONE)
-		anode->nested = 1;
-	    if (strcmp (anode->tag, "!ctx") == 0 || strcmp (anode->tag, "*") == 0) {
-		anode->nested = 1;
-		anode->preIDs = 1;
-	    }
-	    break;
-	case a_containing :  		
-	case a_contained_by : 		
-	    annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
-	    if (anode->child[1]->scored)
-		anode->scored = 1;
-	    break;
-	case a_containing_query :
-	    annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
-	    break;
-	case a_and : 				
-	case a_or :
-	    annotate_node (anode, anode->child[0]->tag, anode->child[0]->scored, anode->child[0]->nested, anode->child[0]->preIDs);
-            if (strcmp (anode->child[0]->tag, anode->child[1]->tag) != 0) 
-		annotate_node (anode, "*", anode->scored, 1, 1);
-	    break;
-	default :
-	    break;
-    }
+    char visited = atree->root->visited;
+    TJCPRINTF(DOTOUT,"digraph G {\n");
+    printTJanode (tjc_c, atree, atree->root, NULL, visited); 
+    TJCPRINTF(DOTOUT,"}\n");
 }
 
-/*TODO add support nodes when a nid operator has scored children */
-void add_support_nodes(TJatree_t *tree, TJanode_t *node, TJanode_t *par)
+void add_support_node(TJatree_t *tree, TJanode_t *node, TJanode_t *par, char visited)
 {
     int c;
     TJanode_t *nn;
 
+    if (node->visited > visited) return;
+    node->visited++;
+
     //recursive function call and adding pre2nid or nid2pre translation if necessary
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
 	if (node->child[c]) {
-	    add_support_nodes (tree, node->child[c], node);
+	    add_support_node (tree, node->child[c], node, visited);
 	    if (node->preIDs == 0 && node->child[c]->preIDs == 1) {
 		nn = add_node1 (tree, a_pre2nid, node->child[c]);
+                nn->visited = visited + 1;
 	        annotate_node (nn, node->child[c]->tag, node->child[c]->scored, node->child[c]->nested, 0);
 		node->child[c] = nn;
 	    }
 	    else if (node->preIDs == 1 && node->child[c]->preIDs == 0) {
 		nn = add_node1 (tree, a_nid2pre, node->child[c]);
-	        annotate_node (nn, node->child[c]->tag, node->child[c]->scored, node->child[c]->nested, 0); 
+                nn->visited = visited + 1;
+	        annotate_node (nn, node->child[c]->tag, node->child[c]->scored, node->child[c]->nested, 1); 
 		node->child[c] = nn;
 	    }
 	}
@@ -318,6 +315,7 @@ void add_support_nodes(TJatree_t *tree, TJanode_t *node, TJanode_t *par)
     if (node->child[0] && node->child[0]->scored &&
 	    (node->kind == a_contained_by || node->kind == a_containing || node->kind == a_containing_query)) {
 	nn = add_node2 (tree, a_and, node, node->child[0]);
+        nn->visited = visited + 1;
 	annotate_node (nn, node->tag, 1, node->nested, node->preIDs);
 	if (par) {
 	    c = 0; if (par->child[0] != node) c = 1;
@@ -328,11 +326,18 @@ void add_support_nodes(TJatree_t *tree, TJanode_t *node, TJanode_t *par)
 	// in case the node works with nids, we also need to associate pres
 	if (node->preIDs == 0) {
 	    nn = add_node1 (tree, a_add_pre, node->child[0]);
+            nn->visited = visited + 1;
 	    annotate_node (nn, node->child[0]->tag, 0, node->child[0]->nested, 0);
 	    node->child[0] = nn;
 	}
     }
 }	    
+
+void add_support_nodes(TJatree_t *atree)
+{
+    char visited = atree->root->visited;
+    add_support_node (atree, atree->root, NULL, visited); 
+}
 
 void set_physical_operators(TJatree_t *tree)
 {
@@ -429,9 +434,8 @@ TJatree_t* phys_optimize(TJptree_t *ptree, TJpnode_t *proot, BAT* rtagbat)
 {
     TJatree_t *atree;
     
-    atree = ptree2atree (ptree, proot);
-    annotate_anode (atree->root, rtagbat);
-    add_support_nodes (atree, atree->root, NULL);
+    atree = ptree2atree (ptree, proot, rtagbat);
+    add_support_nodes (atree);
     set_physical_operators (atree);
     return atree;
 }

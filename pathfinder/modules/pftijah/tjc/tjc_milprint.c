@@ -57,16 +57,16 @@ void assign_scopes (TJpnode_t *node, short node_scope[]) {
     }
 }
 
-void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short *node_scope, char *node_printed) {
+void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short *node_scope, char visited) {
     int c;
     short nid, nid_c;
     nid = node - tree->nodes;
 
-    if (node_printed[nid]) return;
+    if (node->visited > visited) return;
 
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
         if (node->child[c]) {
-	    assign_scopes2 (tree, node->child[c], node_scope, node_printed);
+	    assign_scopes2 (tree, node->child[c], node_scope, visited);
 	}
     }
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
@@ -76,13 +76,9 @@ void assign_scopes2 (TJatree_t *tree, TJanode_t *node, short *node_scope, char *
 	}
     }
 
-    node_printed[nid] = 1;
+    node->visited++;
 }
 
-/**TODO: prepare text queries upfront. all terms should be
- * stemmed and translated to TIDs before executing the SRA operators
- * to 'cluster' access to TID tables and stemming
- */
 void milprint_init (tjc_config *tjc_c) {
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := TRUE;\n");
@@ -301,19 +297,19 @@ void milprint_node (tjc_config *tjc_c, TJpnode_t *node, short *node_scope, short
 	    TJCPRINTF(MILOUT,"R%d := nil;\n", child[c]);
 }
 
-void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short *node_scope, char *node_printed) {
+void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short *node_scope, char visited) {
     int c;
     short child[TJPNODE_MAXCHILD];
     short nid;
 
     nid = node - tree->nodes;
     // check if node was printed before
-    if (node_printed[nid]) return;
+    if (node->visited > visited) return;
 
     // print children
     for (c = 0; c < TJPNODE_MAXCHILD; c++) 
         if (node->child[c]) {
-	    milprint_node2 (tjc_c, tree, node->child[c], node_scope, node_printed);
+	    milprint_node2 (tjc_c, tree, node->child[c], node_scope, visited);
 	    child[c] = node->child[c] - tree->nodes;
 	}
         else
@@ -337,7 +333,6 @@ void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short 
 	    break;
 	case a_containing_query :
 	    TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->irmodel, child[0], node->qid);
-	    TJCPRINTF(MILOUT,"Q%d := nil;\n", node->qid);
 	    break;
 	case a_nid2pre :
 	case a_pre2nid :
@@ -345,7 +340,7 @@ void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short 
 	    TJCPRINTF(MILOUT,"var R%d := tj_%s(R%d);\n", nid, node->op, child[0]);
 	    break;
     }
-    node_printed[nid] = 1;
+    node->visited++;
 
     // free children if their scope ends
     for (c = 0; c < TJPNODE_MAXCHILD; c++) 
@@ -393,23 +388,20 @@ char* milprint2 (tjc_config *tjc_c, TJatree_t *tree)
     int num;
     int c;
     short node_scope[TJPTREE_MAXSIZE];
-    char node_printed[TJPTREE_MAXSIZE];
+    char visited;
    
     num = tree->length;
     for (c = 0; c < num; c++) {
 	node_scope[c] = -1;
-	node_printed[c] = 0;
     }
-    assign_scopes2 (tree, tree->root, node_scope, node_printed);
-    //for (c = 0; c < num; c++) TJCPRINTF(MILOUT,"node: %d, scope: %d\n", c, node_scope[c]);
-    for (c = 0; c < num; c++) {
-	node_printed[c] = 0;
-    }
+    visited = tree->root->visited;
+    assign_scopes2 (tree, tree->root, node_scope, visited);
     
     milprint_init2 (tjc_c);
     milprint_qenv2 (tjc_c);
     milprint_qnode2 (tjc_c, tree);
-    milprint_node2 (tjc_c, tree, tree->root, node_scope, node_printed);
+    visited = tree->root->visited;
+    milprint_node2 (tjc_c, tree, tree->root, node_scope, visited);
     milprint_end2 (tjc_c, tree);
 
     return &tjc_c->milBUFF[0];
