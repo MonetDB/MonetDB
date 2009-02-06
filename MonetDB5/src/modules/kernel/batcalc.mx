@@ -292,8 +292,8 @@ fixed-sized types.
 	if (b->T->nonil && right->T->nonil)
 		for (; p<q; o++, p++, r++)
 			*o = (@1) (*p @2 *r);
-	else
-	if (b->T->nonil)
+	else if (b->T->nonil) {
+		bn->T->nonil = 0;
 		for (; p<q; o++, p++, r++){
 			/* this code is better as x?nil:y  */
 			if(*r == @4_nil)
@@ -301,8 +301,7 @@ fixed-sized types.
 			else 
 				*o = (@1) (*p @2 *r);
 		}
-	else
-	if (right->T->nonil)
+	} else if (right->T->nonil)
 		for (; p<q; o++, p++, r++){
 			/* this code is better as x?nil:y  */
 			if(*p == @3_nil )
@@ -416,21 +415,20 @@ The similar code base is produced for dealing with a constant argument.
 				break;
 			} else 
 				*o = (@3)(*p / *r);
-		else
-		if (b->T->nonil )
-		for(; p<q; o++, p++, r++) {
-			/* this code is better as x?nil:y  */
-			if (*r == @5_nil)
-				*o = @3_nil;
-			else 
-			if (*r == 0) {
-				res = createException(ARITH, "batcalc.@1", "Division by zero");
-				break;
-			} else 
-				*o = (@3)(*p / *r);
-		}
-		else
-		if (right->T->nonil )
+		else if (b->T->nonil ) {
+			bn->T->nonil = 0;
+			for(; p<q; o++, p++, r++) {
+				/* this code is better as x?nil:y  */
+				if (*r == @5_nil)
+					*o = @3_nil;
+				else 
+				if (*r == 0) {
+					res = createException(ARITH, "batcalc.@1", "Division by zero");
+					break;
+				} else 
+					*o = (@3)(*p / *r);
+			}
+		} else if (right->T->nonil )
 			for(; p<q; o++, p++, r++) {
 				/* this code is better as x?nil:y  */
 				if (*p == @4_nil )
@@ -441,8 +439,7 @@ The similar code base is produced for dealing with a constant argument.
 					break;
 				} else 
 					*o = (@3)(*p / *r);
-		}
-		else
+		} else
 			for(; p<q; o++, p++, r++) {
 				/* this code is better as x?nil:y  */
 				if (*p == @4_nil || *r == @5_nil)
@@ -459,8 +456,8 @@ The similar code base is produced for dealing with a constant argument.
 		if (b->T->nonil && right->T->nonil)
 			for(; p<q; o++, p++, r++)
 				*o = (@3) (*p @1 *r);
-		else
-		if (b->T->nonil )
+		else if (b->T->nonil ) {
+			bn->T->nonil = 0;
 			for(; p<q; o++, p++, r++) {
 				/* this code is better as x?nil:y  */
 				if (*r == @5_nil)
@@ -468,8 +465,7 @@ The similar code base is produced for dealing with a constant argument.
 				else 
 					*o = (@3) (*p @1 *r);
 			}
-		else
-		if (right->T->nonil )
+		} else if (right->T->nonil )
 			for(; p<q; o++, p++, r++) {
 				/* this code is better as x?nil:y  */
 				if (*p == @4_nil )
@@ -1133,16 +1129,15 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-	} else
-	if (b->T->nonil)
+	} else if (b->T->nonil) {
+		bn->T->nonil = 0;
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil)
 				*o = bit_nil;
 			else 
 				*o = (*p @2 *t);
 		}
-	else
-	if (right->T->nonil)
+	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil)
 				*o = bit_nil;
@@ -1196,16 +1191,15 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	if (b->T->nonil && right->T->nonil) {
 		for (;p<q; p++, t++, o++)
 			*o = (*p @2 *t);
-	} else
-	if (b->T->nonil)
+	} else if (b->T->nonil) {
+		bn->T->nonil = 0;
 		for (;p<q; p++, t++, o++) {
 			if (*t == @3_nil)
 				*o = bit_nil;
 			else 
 				*o = (*p @2 *t);
 		}
-	else
-	if (right->T->nonil)
+	} else if (right->T->nonil)
 		for (;p<q; p++, t++, o++) {
 			if (*p == @3_nil )
 				*o = bit_nil;
@@ -1244,11 +1238,11 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
-	if (*cst == @3_nil)
+	if (*cst == @3_nil) {
+		bn->T->nonil = 0;
 		for (;p<q; p++, o++) 
-				*o = bit_nil;
-	else
-	if (b->T->nonil )
+			*o = bit_nil;
+	} else if (b->T->nonil )
 		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
 	else
@@ -1296,11 +1290,11 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	p = (@3*)Tloc(b,BUNfirst(b));
 	q = (@3*)Tloc(b,BUNlast(b));
 		
-	if (*cst == @3_nil)
+	if (*cst == @3_nil) {
+		bn->T->nonil = 0;
 		for (;p<q; p++, o++)
 			*o = bit_nil;
-	else
-	if (b->T->nonil)
+	} else if (b->T->nonil)
 		for (;p<q; p++, o++)
 			*o = (*p @2 *cst);
 	else

@@ -158,7 +158,7 @@ void rule6(TJptree_t *ptree)
  *
  *          par                                
  *           |                         
- *          and                    par         
+ *        and/or                    par         
  *         /   \         -->        |         
  *      about  about              about  
  *      /   \ /    \              /   \ 
@@ -172,6 +172,63 @@ void rule7(TJptree_t *ptree)
     TJqnode_t *qn0, *qn1;
     TJpnode_t *n_and_par, *n_and, *n_anc0, *n_anc1, *n_about0, *n_about1 /*, *n_lastlist */; 
 
+    num_del = 0;
+    num_and = find_all_par_tree (ptree, p_or, nl_and);
+    for (c = 0; c < num_and; c++) {
+	n_and_par = nl_and[c].node;
+	childno = nl_and[c].childno;
+	n_and = n_and_par->child[childno];
+
+	n_anc0 = NULL;
+	n_anc1 = NULL;
+	n_about0 = NULL;
+	n_about1 = NULL;
+	
+	// case1: with p_anc node between p_or and p_about
+	if (n_and->child[0]->kind == p_anc && n_and->child[1]->kind == p_anc)
+	{
+	    n_anc0 = n_and->child[0];
+	    n_anc1 = n_and->child[1];
+	    if (n_anc0->child[0]->kind == p_about && n_anc1->child[0]->kind == p_about
+		    && n_anc0->child[1] == n_anc1->child[1]) {
+		n_about0 = n_anc0->child[0];
+		n_about1 = n_anc1->child[0];
+	    }
+	}
+	// case2: p_about directly under p_or
+	if (n_and->child[0]->kind == p_about && n_and->child[1]->kind == p_about)
+	{
+	    n_about0 = n_and->child[0];
+	    n_about1 = n_and->child[1];
+	}
+	// if one of the upper cases matched and both score the same context
+	if (n_about0 && n_about1 && n_about0->child[0] == n_about1->child[0]) {
+	    qn0 = n_about0->child[1]->sem.qnode;
+	    qn1 = n_about1->child[1]->sem.qnode;
+	    // both have either term or entity list
+	    if ((qn0->kind == q_term && qn1->kind == q_term)
+		    || (qn0->kind == q_entity && qn1->kind == q_entity))
+	    {
+		for (d = 0; d < qn1->length; d++) {
+		    tjcq_addterm (qn0, qn1->tlist[d], qn1->elist[d], qn1->wlist[d]);
+		}
+		nl_del[num_del++] = n_about1->child[1];
+		nl_del[num_del++] = n_about1;
+		nl_del[num_del++] = n_and;
+		// case1 
+		if (n_anc0) { 
+		    nl_del[num_del++] = n_anc1;
+		    n_and_par->child[childno] = n_anc0;
+		}
+		// case2 
+		else
+		    n_and_par->child[childno] = n_about0;
+	    }
+	}
+    }
+    mark_deleted_nodes(nl_del, num_del);
+
+    // now do the same for "AND" nodes
     num_del = 0;
     num_and = find_all_par_tree (ptree, p_and, nl_and);
     for (c = 0; c < num_and; c++) {

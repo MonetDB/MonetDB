@@ -60,8 +60,10 @@ enum PFpa_op_kind_t {
     , pa_unq2_thetajoin =  17 /**< Thetajoin implementation */
     , pa_unq1_thetajoin =  18 /**< Thetajoin implementation */
     , pa_project        =  19 /**< Project */
-    , pa_select         =  20 /**< Select: filter true rows in given col */
-    , pa_val_select     =  21 /**< Select: filter rows by value in given col */
+    , pa_slice          =  20 /**< Pick a slice between lower and higher
+                                   offset border */
+    , pa_select         =  21 /**< Select: filter true rows in given col */
+    , pa_val_select     =  22 /**< Select: filter rows by value in given col */
     , pa_append_union   =  23 /**< AppendUnion */
     , pa_merge_union    =  24 /**< MergeUnion */
     , pa_intersect      =  25 /**< Intersect */
@@ -184,6 +186,12 @@ union PFpa_op_sem_t {
         unsigned int    count;    /**< length of projection list */
         PFalg_proj_t   *items;    /**< projection list */
     } proj;
+
+    /** semantic content for slice operator */
+    struct {
+        unsigned int    low;     /**< the lower slice offset */
+        unsigned int    high;    /**< the upper slice offset */
+    } slice;
 
     /** semantic content for selection operator */
     struct {
@@ -511,6 +519,12 @@ PFpa_unq1_thetajoin (PFalg_comp_t comp, PFalg_col_t left, PFalg_col_t right,
  */
 PFpa_op_t *PFpa_project (const PFpa_op_t *n, unsigned int count,
                          PFalg_proj_t *proj);
+
+/**
+ * Pick a slice between lower and higher offset border
+ */
+PFpa_op_t *PFpa_slice (const PFpa_op_t *n,
+                       unsigned int low, unsigned int high);
 
 /**
  * Select: Filter rows by Boolean value in column @a col

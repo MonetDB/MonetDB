@@ -102,6 +102,9 @@
 /** order() operator (destructively re-orders a BAT by its head) */
 #define order(a) PFmil_order((a))
 
+/** slice() operator */
+#define slice(a,b,c) PFmil_slice((a), (b), (c))
+
 /** select() operator */
 #define select_(a,b) PFmil_select((a), (b))
 

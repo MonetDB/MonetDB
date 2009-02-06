@@ -1005,6 +1005,34 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 }
 
 PFpa_op_t *
+PFpa_slice (const PFpa_op_t *n, unsigned int low, unsigned int high)
+{
+    PFpa_op_t *ret = wire1 (pa_slice, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* keep the ordering we got in the `ord' argument */
+    ret->sem.slice.low  = low;
+    ret->sem.slice.high = high;
+
+    /* ---- Slice: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* ---- Slice: costs ---- */
+    ret->cost = DEFAULT_COST + n->cost;
+
+    return ret;
+}
+
+PFpa_op_t *
 PFpa_select (const PFpa_op_t *n, PFalg_col_t col)
 {
     PFpa_op_t *ret = wire1 (pa_select, n);

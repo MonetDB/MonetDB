@@ -549,7 +549,7 @@ rel_project(sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = CARD_MULTI; 
+	rel->card = l?CARD_MULTI:CARD_ATOM; 
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -637,7 +637,7 @@ exps_find_match_exp(list *l, sql_exp *e)
 
 static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	sql_exp *m = NULL;
+	sql_exp *m = NULL, *ne;
 	char name[16], *nme = NULL;
 	char *tname = NULL;
 
@@ -651,7 +651,9 @@ static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 	if (e->type == e_column)
 		tname = e->l;
-	return exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
+	ne = exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
+	exp_setname(ne, NULL, e->name);
+	return ne;
 }
 
 void 
@@ -1981,15 +1983,22 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		dlist *dl = sc->data.lval;
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
-		sql_exp *l = rel_value_exp(sql, rel, lo, f, ek);
+		sql_exp *l = rel_value_exp(sql, rel, lo, f, ek), *r = NULL;
 		sql_rel *left = NULL, *right = NULL, *p = NULL;
+		int needproj = 0;
 
 		if (!l)
 			return NULL;
 
 		ek.card = card_set;
 
-		/* we assume the selection case */
+		/* only selection phase ! */
+		if (f < sql_sel)
+			assert(0);
+
+		if (!left) 
+			left = *rel;
+/*
 		if (f >= sql_sel) { 
 			if (left && is_project(left->op)) {
 				p = left;
@@ -2000,16 +2009,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				left = left->l;
 			}
 		} 
-		if (!left) 
+*/
+		if (!left || !left->l) {
+			needproj = (left != NULL);
 			left = rel_project_exp(l);
-		else 
+		} else 
 			left = rel_dup(left);
-		if (!p)
-			p = *rel;
-		l = exp_alias_or_copy(sql, NULL, NULL, left, l, 0);
-		/* list of values or subqueries */
 
-		/* single element could be a 'select' */
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);
 
@@ -2017,10 +2023,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			for (; n; n = n->next) {
 				symbol *sval = n->data.sym;
 				/* without correlation first */
-				sql_rel *z = NULL;
-				sql_exp *r = rel_value_exp(sql, &z, sval, f, ek);
-				sql_rel *rl;
+				sql_rel *z = NULL, *rl;
 
+				r = rel_value_exp(sql, &z, sval, f, ek);
 				if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
 					if (r)
 						exp_destroy(r);
@@ -2048,22 +2053,38 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return sql_error(sql, 02, "IN: missing inner query");
 		}
 		if (right) {
-			sql_exp *r = NULL, *e;
+			sql_exp *e;
 
+			if (right->card == CARD_ATOM) {
+				if (sc->token == SQL_NOT_IN) 
+					e = rel_binop_(sql, l, r, NULL, "!=");
+				else
+					e = rel_binop_(sql, l, r, NULL, "=");
+				return e;
+			}
 			r = rel_lastexp(sql, right);
 			rel_setsubquery(right);
-			if (p)
-				rel_destroy(p->l);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
 				exp_destroy(r);
 				return NULL;
 			}
-			left = p->l = rel_crossproduct(left, right, op_join);
+			left = rel_crossproduct(left, right, op_join);
+			if (p) {
+				rel_destroy(p->l);
+				p->l = left;
+			}
 			left->op = op_left;
 			e = exp_compare( l, r, cmp_equal );
 			rel_join_add_exp(left, e);
-			l = rel_unop_(sql, l, NULL, "isnull");
+			if (!p) {
+				if (*rel && needproj) 
+					left = *rel = rel_project(left, NULL);
+				else 
+					*rel = left;
+			}
+			e = rel_binop_(sql, l, r, NULL, "=");
+			l = rel_unop_(sql, e, NULL, "isnull");
 			if (sc->token == SQL_NOT_IN) 
 				r = exp_atom_bool(1);
 			else

@@ -596,6 +596,15 @@ PFmil_order (const PFmil_t *bat)
 }
 
 /**
+ * Monet slice() function.
+ */
+PFmil_t *
+PFmil_slice (const PFmil_t *bat, const PFmil_t *low, const PFmil_t *high)
+{
+    return wire3 (m_slice, bat, low, high);
+}
+
+/**
  * Monet select() function.
  */
 PFmil_t *

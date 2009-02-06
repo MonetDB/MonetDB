@@ -181,6 +181,7 @@ enum PFmil_kind_t {
     , m_bappend      /**< MIL append(): Append one BAT[void,any] to another */
     , m_order        /**< MIL order() function (destructively orders a BAT) */
 
+    , m_slice        /**< MIL slice(a,b,c) function */
     , m_select       /**< MIL select(a,b) function */
     , m_select2      /**< MIL select(a,b,c) function */
     , m_uselect      /**< MIL uselect(a,b) function */
@@ -576,6 +577,9 @@ PFmil_t * PFmil_key (const PFmil_t *, bool);
 
 /** MIL order() function (destructively re-orders a BAT by its head) */
 PFmil_t * PFmil_order (const PFmil_t *);
+
+/** MIL slice() function */
+PFmil_t * PFmil_slice (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 /** MIL select() function */
 PFmil_t * PFmil_select (const PFmil_t *, const PFmil_t *);

@@ -827,10 +827,10 @@ plan_select (const PFla_op_t *n)
     assert (n); assert (n->kind == la_select);
     assert (L(n)); assert (L(n)->plans);
 
-    /* consider each plan in R */
-    for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
+    /* consider each plan in L */
+    for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
         add_plan (ret,
-                  select_ (*(plan_t **) PFarray_at (L(n)->plans, r),
+                  select_ (*(plan_t **) PFarray_at (L(n)->plans, l),
                            n->sem.select.col));
 
     if (op->kind == la_project &&
@@ -862,12 +862,12 @@ plan_select (const PFla_op_t *n)
             LL(op)->sem.attach.value.type == aat_qname)
             return ret;
 
-        for (unsigned int r = 0; r < PFarray_last (L(LL(op))->plans); r++)
+        for (unsigned int l = 0; l < PFarray_last (L(LL(op))->plans); l++)
             add_plan (ret,
                       project (
                           attach (
                               val_select (
-                                  *(plan_t **) PFarray_at (L(LL(op))->plans, r),
+                                  *(plan_t **) PFarray_at (L(LL(op))->plans, l),
                                   col1,
                                   LL(op)->sem.attach.value),
                               L(op)->sem.binary.res,
@@ -876,6 +876,125 @@ plan_select (const PFla_op_t *n)
                           op->sem.proj.items));
     }
 
+    return ret;
+}
+
+/**
+ * Generate physical plan for a single range selection
+ * (function fn:subsequence in XQuery).
+ */
+static PFplanlist_t *
+plan_subsequence (const PFla_op_t *n)
+{
+    PFalg_col_t   order_col;
+    long long int low,
+                  high;
+    unsigned int  count   = n->schema.count;
+    PFplanlist_t *ret     = new_planlist ();
+    PFla_op_t    *op      = L(n),
+                 *proj_op = NULL;
+    PFalg_proj_t *proj;
+
+    assert (n); assert (n->kind == la_select);
+    assert (L(n));
+
+    /* check first three operators: select-gt-attach */
+    if (op->kind != la_num_gt ||
+        n->sem.select.col != op->sem.binary.res ||
+        L(op)->kind != la_attach ||
+        L(op)->sem.attach.res != op->sem.binary.col1 ||
+        PFprop_icol (n->prop, op->sem.binary.res) ||
+        PFprop_icol (n->prop, op->sem.binary.col1) ||
+        PFprop_icol (n->prop, op->sem.binary.col2) ||
+        L(op)->sem.attach.value.type != aat_int)
+        return ret;
+
+    order_col = op->sem.binary.col2;
+    high      = L(op)->sem.attach.value.val.int_;
+    op        = LL(op);
+
+    /* record the information for a possible projection */
+    if (op->kind == la_project) {
+        /* adjust the order column (in case it gets renamed) */
+        for (unsigned int i = 0; i < op->sem.proj.count; i++)
+            if (op->sem.proj.items[i].new == order_col) {
+                order_col = op->sem.proj.items[i].old;
+                break;
+            }
+        proj_op = op;
+        op = L(op);
+    }
+
+    /* check for the next operators: select-not-gt-attach-cast */
+    if (op->kind != la_select ||
+        L(op)->kind != la_bool_not ||
+        op->sem.select.col != L(op)->sem.unary.res ||
+        LL(op)->kind != la_num_gt ||
+        L(op)->sem.unary.col != LL(op)->sem.binary.res ||
+        LLL(op)->kind != la_attach ||
+        LLL(op)->sem.attach.res != LL(op)->sem.binary.col1 ||
+        order_col != LL(op)->sem.binary.col2 ||
+        PFprop_icol (op->prop, L(op)->sem.unary.res) ||
+        PFprop_icol (op->prop, LL(op)->sem.binary.res) ||
+        PFprop_icol (op->prop, LL(op)->sem.binary.col1) ||
+        LLLL(op)->kind != la_cast ||
+        LLLL(op)->sem.type.res != order_col ||
+        PFprop_type_of (LLLL(op), LLLL(op)->sem.type.col) != aat_nat)
+        return ret;
+
+    order_col = LLLL(op)->sem.type.col;
+    low       = LLL(op)->sem.attach.value.val.int_;
+    op        = LLLLL(op);
+
+    /* and finally check for the row numbering operator
+       that provides the position information */
+    if (op->kind != la_rownum ||
+        op->sem.sort.part ||
+        op->sem.sort.res != order_col)
+        return ret;
+
+    /* Align the result schema to the expected schema.
+       (Unused columns are linked to the result of the
+       rownumber operator.) */
+    proj = PFmalloc (count * sizeof (PFalg_proj_t));
+    for (unsigned int i = 0; i < count; i++) {
+        PFalg_col_t cur = n->schema.items[i].name;
+        /* column used: keep the column */
+        if (PFprop_icol (n->prop, cur)) {
+            /* In case a projection appeared in between
+               we have to look up the correct mapping. */
+            if (proj_op) {
+                unsigned int j;
+                for (j = 0; j < proj_op->sem.proj.count; j++)
+                    if (proj_op->sem.proj.items[j].new == cur) {
+                        proj[i] = proj_op->sem.proj.items[j];
+                        break;
+                    }
+                /* Because we have checked for the negative usage
+                   of all columns affected above the projection
+                   we are sure that we find a mapping. */
+                assert (j < proj_op->sem.proj.count);
+            }
+            else
+                proj[i] = PFalg_proj (cur, cur);
+        }
+        /* column unused: introduce a dummy column */
+        else
+            proj[i] = PFalg_proj (cur, op->sem.sort.res);
+    }
+
+    /* Adjust the offsets according to the slice behavior. slice() starts
+       from 0 (not from 1 as rownum) and no negative offsets are allowed.
+       slice() furthermore includes the upper boundary (=> high -= 2). */
+    low  = (low < 1) ? 0 : low - 1;
+    high = ((high < 1) ? 0 : high - 1) - 1;
+
+    for (unsigned int l = 0; l < PFarray_last (op->plans); l++)
+        add_plan (ret,
+                  project (
+                      slice (*(plan_t **) PFarray_at (op->plans, l), low, high),
+                      count,
+                      proj));
     return ret;
 }
 
@@ -3258,7 +3377,10 @@ plan_subexpression (PFla_op_t *n)
             }
             break;
 
-        case la_select:         plans = plan_select (n);       break;
+        case la_select:
+            plans = plan_select (n);
+            add_plans (plans, plan_subsequence (n));
+            break;
         case la_pos_select:     plans = plan_pos_select (n);   break;
         case la_disjunion:
             plans = plan_disjunion (n);

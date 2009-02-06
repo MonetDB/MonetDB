@@ -26,7 +26,7 @@ Over..
 # 11:50:20 >  
 
 % . # table_name
-% =_isnull_L1 # name
+% isnull_=_single_value # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -26,17 +26,17 @@ Over..
 # 11:51:00 >  
 
 % . # table_name
-% =_isnull_L1 # name
+% isnull_=_single_value # name
 % boolean # type
 % 5 # length
 [ true	]
 % . # table_name
-% =_isnull_L3 # name
+% isnull_=_single_value # name
 % boolean # type
 % 5 # length
 [ true	]
 % . # table_name
-% =_isnull_L5 # name
+% isnull_=_single_value # name
 % boolean # type
 % 5 # length
 [ true	]
