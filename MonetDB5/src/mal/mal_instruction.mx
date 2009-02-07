@@ -1595,6 +1595,8 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
 		if (used[i] == 0){
+			if ( glb && isVarConstant(mb,i) )
+				VALclear(&glb->stk[i]);
 			clearVariable(mb, i);
 			continue;
 		}
@@ -1616,7 +1618,6 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 			glb->stk[cnt]= glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}
-		
 		cnt++;
 	}
 	actions = mb->vtop - cnt;
@@ -2396,12 +2397,12 @@ beginning of each line.
 		pstring = varGetPropStr(mb, getArg(p,i));
 	else
 		pstring = GDKstrdup("");
-        advance(t,base,len);
-        snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
-        advance(t,base,len);
-        if( i<p->@1-1) sprintf(t,",");
-        if(pstring) { GDKfree(pstring); pstring=0;}
-        GDKfree(tpe);
+	advance(t,base,len);
+	snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
+	advance(t,base,len);
+	if( i<p->@1-1) sprintf(t,",");
+	if(pstring) { GDKfree(pstring); pstring=0;}
+	GDKfree(tpe);
 @c
 str
 fcnClass(InstrPtr p)
@@ -2675,7 +2676,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else
 				VALformat(&cv, &getVar(mb, getArg(p, i))->value);
-			if (strlen(cv) > len - (t - s)) {
+			if ( cv && strlen(cv) > len - (t - s)) {
 				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
 
 				*t = 0;
@@ -2684,16 +2685,18 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			strcat(t, cv);
+			if ( cv )
+				strcat(t, cv);
 			advance(t,base,len);
-			if (strlen(cv)==0 || isVarUDFtype(mb, getArg(p, i)) ||
+			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
 				isAmbiguousType(getArgType(mb,p,i)) ){
 				str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 				snprintf(t,(len-(t-base)), ":%s", tpe);
 				GDKfree(tpe);
 				advance(t,base,len);
 			}
-			GDKfree(cv);
+			if (cv)
+				GDKfree(cv);
 			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){

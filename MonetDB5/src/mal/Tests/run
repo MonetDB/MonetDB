@@ -16,7 +16,7 @@ do
 	b=`basename $f .mal`
 	s=$b.stable
 	t=test_out_err/$b.test
-	echo "---->" $f $b $s $t
+	echo "----" $f $b $s $t
 	echo "stdout of test '$b\` in directory 'src/mal\` itself:" > $t.out
 	echo "stderr of test '$b\` in directory 'src/mal\` itself:" > $t.err
 	echo $MSERVER $f
