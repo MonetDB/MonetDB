@@ -602,10 +602,10 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
           bat("tj_" + ftiName + "_fragments").delete();
           bat("tj_" + ftiName + "_fragments").append(1@0);
           bat("tj_" + ftiName + "_pfpre").delete();
-          bat("tj_" + ftiName + "_dict").delete();
-          bat("tj_" + ftiName + "_dict_tid").delete();
-          bat("tj_" + ftiName + "_dict_elem").delete();
-          bat("tj_" + ftiName + "_dict_score").delete();
+          bat("tj_" + ftiName + "_conceptdict").delete();
+          bat("tj_" + ftiName + "_concept_tid").delete();
+          bat("tj_" + ftiName + "_concept_elem").delete();
+          bat("tj_" + ftiName + "_concept_score").delete();
       } else {
           new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
           new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
@@ -618,10 +618,10 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
           new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
           bat("tj_" + ftiName + "_fragments").append(1@0);
           new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
-          new(str,oid).persists(true).bbpname("tj_" + ftiName + "_dict");
-          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_dict_tid");
-          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_dict_elem");
-          new(void,dbl).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_dict_score");
+          new(str,oid).persists(true).bbpname("tj_" + ftiName + "_conceptdict");
+          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_tid");
+          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_elem");
+          new(void,dbl).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_score");
       }
          
       var parambat := bat("tj_" + ftiName + "_param");
@@ -871,10 +871,10 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
 	bat("tj_" + ftiName + "_doc_firstpre").persists(false);
 	bat("tj_" + ftiName + "_param").persists(false);
 	bat("tj_" + ftiName + "_pfpre").persists(false);
-	bat("tj_" + ftiName + "_dict").persists(false);
-	bat("tj_" + ftiName + "_dict_tid").persists(false);
-	bat("tj_" + ftiName + "_dict_elem").persists(false);
-	bat("tj_" + ftiName + "_dict_score").persists(false);
+	bat("tj_" + ftiName + "_conceptdict").persists(false);
+	bat("tj_" + ftiName + "_concept_tid").persists(false);
+	bat("tj_" + ftiName + "_concept_elem").persists(false);
+	bat("tj_" + ftiName + "_concept_score").persists(false);
 	bat("tj_" + ftiName + "_fragments")@batloop() {
 	    var fpfx := str(int($h));
 	    bat("tj_" + ftiName + "_tid"+fpfx).persists(false);
@@ -911,10 +911,10 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
         tjCollBat.append("tj_" + ftiName + "_doc_name");
         tjCollBat.append("tj_" + ftiName + "_doc_firstpre");
         tjCollBat.append("tj_" + ftiName + "_pfpre");
-        tjCollBat.append("tj_" + ftiName + "_dict");
-        tjCollBat.append("tj_" + ftiName + "_dict_tid");
-        tjCollBat.append("tj_" + ftiName + "_dict_elem");
-        tjCollBat.append("tj_" + ftiName + "_dict_score");
+        tjCollBat.append("tj_" + ftiName + "_conceptdict");
+        tjCollBat.append("tj_" + ftiName + "_concept_tid");
+        tjCollBat.append("tj_" + ftiName + "_concept_elem");
+        tjCollBat.append("tj_" + ftiName + "_concept_score");
         tjCollBat.append("tj_" + ftiName + "_fragments");
 	bat("tj_" + ftiName + "_fragments")@batloop()
         {       
@@ -961,10 +961,10 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	tjCollBat.insert("_tid",       bat("tj_" + ftiName + "_tid"+fpfx));
 	tjCollBat.insert("_size",      bat("tj_" + ftiName + "_size"+fpfx));
 	tjCollBat.insert("_pfpre",     bat("tj_" + ftiName + "_pfpre"));
-	tjCollBat.insert("_dict",      bat("tj_" + ftiName + "_dict"));
-	tjCollBat.insert("_dict_tid",  bat("tj_" + ftiName + "_dict_tid"));
-	tjCollBat.insert("_dict_elem", bat("tj_" + ftiName + "_dict_elem"));
-	tjCollBat.insert("_dict_score",bat("tj_" + ftiName + "_dict_score"));
+	tjCollBat.insert("_conceptdict",      bat("tj_" + ftiName + "_conceptdict"));
+	tjCollBat.insert("_concept_tid",  bat("tj_" + ftiName + "_concept_tid"));
+	tjCollBat.insert("_concept_elem", bat("tj_" + ftiName + "_concept_elem"));
+	tjCollBat.insert("_concept_score",bat("tj_" + ftiName + "_concept_score"));
 	tjCollBat.insert("_fragments", bat("tj_" + ftiName + "_fragments"));
 	
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
@@ -1146,10 +1146,10 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     collBat.find("submitBats").append("tj_" + ftiName + "_size" + fpfx);
     collBat.find("submitBats").append("tj_" + ftiName + "_tid" + fpfx);
     collBat.find("submitBats").append("tj_" + ftiName + "_pfpre");
-    collBat.find("submitBats").append("tj_" + ftiName + "_dict");
-    collBat.find("submitBats").append("tj_" + ftiName + "_dict_tid");
-    collBat.find("submitBats").append("tj_" + ftiName + "_dict_elem");
-    collBat.find("submitBats").append("tj_" + ftiName + "_dict_score");
+    collBat.find("submitBats").append("tj_" + ftiName + "_conceptdict");
+    collBat.find("submitBats").append("tj_" + ftiName + "_concept_tid");
+    collBat.find("submitBats").append("tj_" + ftiName + "_concept_elem");
+    collBat.find("submitBats").append("tj_" + ftiName + "_concept_score");
     collBat.find("submitBats").append("tj_" + ftiName + "_fragments");
     collBat.find("submitBats").append("tj_" + ftiName + "_doc_name");
     collBat.find("submitBats").append("tj_" + ftiName + "_doc_firstpre");
@@ -1246,10 +1246,10 @@ PROC tj_dump_collection(str ftiName) : void
 	print(bat("tj_" + ftiName + "_tid1"));
 	print(bat("tj_" + ftiName + "_size1"));
 	print(bat("tj_" + ftiName + "_pfpre"));
-	print(bat("tj_" + ftiName + "_dict"));
-	print(bat("tj_" + ftiName + "_dict_tid"));
-	print(bat("tj_" + ftiName + "_dict_elem"));
-	print(bat("tj_" + ftiName + "_dict_score"));
+	print(bat("tj_" + ftiName + "_conceptdict"));
+	print(bat("tj_" + ftiName + "_concept_tid"));
+	print(bat("tj_" + ftiName + "_concept_elem"));
+	print(bat("tj_" + ftiName + "_concept_score"));
 	print(bat("tj_" + ftiName + "_fragments"));
 	# print(bat("tj_" + ftiName + "_height"));
     });
@@ -3969,6 +3969,32 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void :=
 		collBat.find("submitBats").append("tj_" + ftiName + "_Tags");
 		collBat.find("submitBats").append("tj_" + ftiName + "_TagSize");
         }
+
+	var c_cid := bat("tj_" + ftiName + "_concept_tid");
+	var c_pre := bat("tj_" + ftiName + "_concept_elem");
+	var c_scr := bat("tj_" + ftiName + "_concept_score");
+        var tmp := c_pre.tsort().mirror().leftfetchjoin(c_cid).reverse().ssort();
+        c_cid := tmp.leftfetchjoin(c_cid).tmark(0@0).chk_order();
+        var concepts := tmp.leftfetchjoin(c_pre).tmark(0@0);
+        var conceptscore := tmp.leftfetchjoin(c_scr).tmark(0@0);
+        tmp := nil;
+	var conceptindex := offsetindex(c_cid, bat("tj_" + ftiName + "_conceptdict").count() + 1);
+	# create _ConceptIndex and _Concepts here
+	conceptindex.persists(true).bbpname("tj_" + ftiName + "_ConceptIndex");
+	concepts.persists(true).bbpname("tj_" + ftiName + "_Concepts");
+	conceptscore.persists(true).bbpname("tj_" + ftiName + "_ConceptScore");
+	conceptindex.access(BAT_READ);
+	conceptindex.mmap(1);
+	concepts.access(BAT_READ);
+	concepts.mmap(1);
+	conceptscore.access(BAT_READ);
+	conceptscore.mmap(1);
+	conceptindex := nil;
+        concepts := nil;
+	conceptscore := nil;
+	collBat.find("submitBats").append("tj_" + ftiName + "_ConceptIndex");
+	collBat.find("submitBats").append("tj_" + ftiName + "_Concepts");
+	collBat.find("submitBats").append("tj_" + ftiName + "_ConceptScore");
 }
 
 ######################################

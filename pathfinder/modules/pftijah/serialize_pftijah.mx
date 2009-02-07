@@ -256,10 +256,10 @@ typedef struct tijahContextStruct {
 	/* */
 	BAT* b_collPfPre;	/* Tijah PRE-PF BAT for Pathinder link */
 	/* */
-	BAT* b_dict;
-	BAT* b_dict_tid;
-	BAT* b_dict_elem;
-	BAT* b_dict_score;
+	BAT* b_conceptdict;
+	BAT* b_concept_tid;
+	BAT* b_concept_elem;
+	BAT* b_concept_score;
 
 	str  dict_handler;
 	str  dict_id;
@@ -748,10 +748,10 @@ loadTijahContext(BAT* tjCtx_BAT) {
 		return NULL;
 	if ( !(res->b_collPfPre  = getBAT(tjCtx_BAT,"_pfpre")) ) return NULL;
 	/* */
-	if ( !(res->b_dict       = getBAT(tjCtx_BAT,"_dict")) )      return NULL;
-	if ( !(res->b_dict_tid   = getBAT(tjCtx_BAT,"_dict_tid")) )  return NULL;
-	if ( !(res->b_dict_elem  = getBAT(tjCtx_BAT,"_dict_elem")) ) return NULL;
-	if ( !(res->b_dict_score = getBAT(tjCtx_BAT,"_dict_score")) )return NULL;
+	if ( !(res->b_conceptdict       = getBAT(tjCtx_BAT,"_conceptdict")) )      return NULL;
+	if ( !(res->b_concept_tid   = getBAT(tjCtx_BAT,"_concept_tid")) )  return NULL;
+	if ( !(res->b_concept_elem  = getBAT(tjCtx_BAT,"_concept_elem")) ) return NULL;
+	if ( !(res->b_concept_score = getBAT(tjCtx_BAT,"_concept_score")) )return NULL;
 	/* */
 	res->tagStackPtr = 0;
 
@@ -870,10 +870,10 @@ freeTijahContext(tjCtx* tjctx) {
 		BATpropcheck(tjctx->b_collPre,BATPROPS_ALL);
 		BATpropcheck(tjctx->b_collSize,BATPROPS_ALL);
 		BATpropcheck(tjctx->b_collPfPre,BATPROPS_ALL);
-		BATpropcheck(tjctx->b_dict,BATPROPS_ALL);
-		BATpropcheck(tjctx->b_dict_tid,BATPROPS_ALL);
-		BATpropcheck(tjctx->b_dict_elem,BATPROPS_ALL);
-		BATpropcheck(tjctx->b_dict_score,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_conceptdict,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_concept_tid,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_concept_elem,BATPROPS_ALL);
+		BATpropcheck(tjctx->b_concept_score,BATPROPS_ALL);
 	}
 	BBPunfix(BBPcacheid(tjctx->b_globalTerm));
 	BBPunfix(BBPcacheid(tjctx->b_globalTag));
@@ -884,10 +884,10 @@ freeTijahContext(tjCtx* tjctx) {
 	BBPunfix(BBPcacheid(tjctx->b_collPre));
 	BBPunfix(BBPcacheid(tjctx->b_collSize));
 	BBPunfix(BBPcacheid(tjctx->b_collPfPre));
-	BBPunfix(BBPcacheid(tjctx->b_dict));
-	BBPunfix(BBPcacheid(tjctx->b_dict_tid));
-	BBPunfix(BBPcacheid(tjctx->b_dict_elem));
-	BBPunfix(BBPcacheid(tjctx->b_dict_score));
+	BBPunfix(BBPcacheid(tjctx->b_conceptdict));
+	BBPunfix(BBPcacheid(tjctx->b_concept_tid));
+	BBPunfix(BBPcacheid(tjctx->b_concept_elem));
+	BBPunfix(BBPcacheid(tjctx->b_concept_score));
 	if ( tjctx->stemmer )
 		GDKfree(tjctx->stemmer);
 	GDKfree(tjctx->tagswitch);
@@ -1004,7 +1004,7 @@ pftijah_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
 
     (void)prefix;
     if ( tjctx->dict_handler ) {
-    	if ( strcmp(loc,"id")==0 ) 
+    	if ( strcmp(loc,"name")==0 ) 
 	    tjctx->dict_id = value;
 	else if ( strcmp(loc,"score")==0 )
 	    tjctx->dict_score = value;
@@ -1098,22 +1098,22 @@ handle_dictionary(tjCtx* tjctx, oid elem) {
         BUN bun;
 	oid dict_oid;
 	
-        if ( (bun = BUNfnd(tjctx->b_dict,key)) != BUN_NONE ) {
-            BATiter ti = bat_iterator(tjctx->b_dict);
+        if ( (bun = BUNfnd(tjctx->b_conceptdict,key)) != BUN_NONE ) {
+            BATiter ti = bat_iterator(tjctx->b_conceptdict);
             dict_oid = *(oid*)BUNtail(ti,bun);
         } else {
-	    dict_oid = (oid)BATcount(tjctx->b_dict);
+	    dict_oid = (oid)BATcount(tjctx->b_conceptdict);
 
-    	    if ( !BUNins(tjctx->b_dict, (str)key, &dict_oid, FALSE)){
+    	    if ( !BUNins(tjctx->b_conceptdict, (str)key, &dict_oid, FALSE)){
     	        GDKerror("dictbat: insert \"%s\" in tagbat fails.\n",key);
     	        return false;
 	    }
         } 
     	/* use dict_oid */
 	if ( 
-	      !BUNappend(tjctx->b_dict_tid,  &dict_oid, 0) || 
-	      !BUNappend(tjctx->b_dict_elem, &elem, 0)  ||
-	      !BUNappend(tjctx->b_dict_score, &score, 0) 
+	      !BUNappend(tjctx->b_concept_tid,  &dict_oid, 0) || 
+	      !BUNappend(tjctx->b_concept_elem, &elem, 0)  ||
+	      !BUNappend(tjctx->b_concept_score, &score, 0) 
 	   ) {
 		GDKerror("dictbat: writing dict record fails.");
 		return false;
@@ -1369,10 +1369,10 @@ add2collection_handler(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName) {
         tjctx->b_collSize->batDirty  = TRUE;
         tjctx->b_collPfPre->batDirty = TRUE;
 	if ( 1 /* INCOMPLETE */ ) {
-            tjctx->b_dict->batDirty       = TRUE;
-            tjctx->b_dict_tid->batDirty   = TRUE;
-            tjctx->b_dict_elem->batDirty  = TRUE;
-            tjctx->b_dict_score->batDirty = TRUE;
+            tjctx->b_conceptdict->batDirty       = TRUE;
+            tjctx->b_concept_tid->batDirty   = TRUE;
+            tjctx->b_concept_elem->batDirty  = TRUE;
+            tjctx->b_concept_score->batDirty = TRUE;
 	}
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
@@ -1436,10 +1436,10 @@ add2collection_bathandler(BAT* tjCtx_BAT, BAT* ws, BAT* docs) {
         tjctx->b_collSize->batDirty  = TRUE;
         tjctx->b_collPfPre->batDirty = TRUE;
         if ( 1 /* INCOMPLETE */ ) {
-           tjctx->b_dict->batDirty       = TRUE;
-           tjctx->b_dict_tid->batDirty   = TRUE;
-           tjctx->b_dict_elem->batDirty  = TRUE;
-           tjctx->b_dict_score->batDirty = TRUE;
+           tjctx->b_conceptdict->batDirty       = TRUE;
+           tjctx->b_concept_tid->batDirty   = TRUE;
+           tjctx->b_concept_elem->batDirty  = TRUE;
+           tjctx->b_concept_score->batDirty = TRUE;
         }
 	if (0) stream_printf(GDKout,"#! a2c_bat: finish.\n");
         return freeTijahContext(tjctx);
