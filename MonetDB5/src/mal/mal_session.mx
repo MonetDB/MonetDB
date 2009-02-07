@@ -418,8 +418,6 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			glb->stk[i].vtype = TYPE_int;
 			glb->stk[i].len = 0;
 			glb->stk[i].val.pval = 0;
-			/* drop the variable */
-			clearVariable(mb,i);
 		}
 	}
 	trimMalVariables_(mb,used,glb);

@@ -1597,7 +1597,7 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 		if (used[i] == 0){
 			if ( glb && isVarConstant(mb,i) )
 				VALclear(&glb->stk[i]);
-			clearVariable(mb, i);
+			freeVariable(mb, i);
 			continue;
 		}
 
@@ -1610,7 +1610,6 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
 			mb->var[i] = t;
-			t = NULL;
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
@@ -2395,10 +2394,9 @@ beginning of each line.
         tpe= getTypeName(getArgType(mb,p,i));
 	if (flg & LIST_MAL_PROPS)
 		pstring = varGetPropStr(mb, getArg(p,i));
-	else
-		pstring = GDKstrdup("");
+	else pstring = 0;
 	advance(t,base,len);
-	snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
+	snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe, (pstring?pstring:""));
 	advance(t,base,len);
 	if( i<p->@1-1) sprintf(t,",");
 	if(pstring) { GDKfree(pstring); pstring=0;}
@@ -2414,7 +2412,7 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
-	str t, tpe, pstring;
+	str t, tpe, pstring= NULL;
 
 	t = s;
 	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), fcnClass(p));
@@ -2537,7 +2535,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
 	int low, high;
 	char nmebuf[PATHLENGTH];
-	str pstring = 0;
+	str pstring = NULL;
 
 	base = s = GDKmalloc(len);
 	if (flg) {
@@ -2905,7 +2903,7 @@ varGetPropStr( MalBlkPtr mb, int var )
 	int i, first = 1;
 
 	if (v->propc == 0)
-		return GDKstrdup("");
+		return NULL;
 
 	*s++ = '{';
 	for(i=0; i<v->propc; i++){

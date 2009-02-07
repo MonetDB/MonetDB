@@ -568,6 +568,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		while (c && *c && isspace((int) *c))
 			c++;
 		log(" \"%s\"", c);
+		GDKfree(stmt);
 	}
 	log0(" ]\n");
 	eventcounter++;
