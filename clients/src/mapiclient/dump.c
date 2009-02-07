@@ -808,7 +808,58 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "COMMIT";
-	const char *schemas = "SELECT \"name\" FROM \"sys\".\"schemas\" ORDER BY \"name\"";
+	const char *users1 = "SELECT \"name\", "
+		     "\"fullname\" "
+		"FROM \"sys\".\"db_user_info\" "
+		"WHERE \"name\" <> 'monetdb' "
+		"ORDER BY \"name\"";
+	const char *users2 = "SELECT \"ui\".\"name\", "
+		     "\"s\".\"name\" "
+		"FROM \"sys\".\"db_user_info\" \"ui\", "
+		     "\"sys\".\"schemas\" \"s\" "
+		"WHERE \"ui\".\"default_schema\" = \"s\".\"id\" AND "
+		      "\"ui\".\"name\" <> 'monetdb' AND "
+		      "\"s\".\"name\" <> 'sys' "
+		"ORDER BY \"ui\".\"name\"";
+	const char *roles = "SELECT \"name\" "
+		"FROM \"sys\".\"auths\" "
+		"WHERE \"name\" NOT IN (SELECT \"name\" "
+				       "FROM \"sys\".\"db_user_info\") AND "
+		      "\"grantor\" <> 0 "
+		"ORDER BY \"name\"";
+	const char *grants = "SELECT \"a1\".\"name\", "
+		     "\"a2\".\"name\" "
+		"FROM \"sys\".\"auths\" \"a1\", "
+		     "\"sys\".\"auths\" \"a2\", "
+		     "\"sys\".\"user_role\" \"ur\" "
+		"WHERE \"a1\".\"id\" = \"ur\".\"login_id\" AND "
+		      "\"a2\".\"id\" = \"ur\".\"role_id\" "
+		"ORDER BY \"a1\".\"name\", \"a2\".\"name\"";
+	const char *schemas = "SELECT \"s\".\"name\", \"a\".\"name\" "
+		"FROM \"sys\".\"schemas\" \"s\", "
+		     "\"sys\".\"auths\" \"a\" "
+		"WHERE \"s\".\"authorization\" = \"a\".\"id\" AND "
+		      "\"s\".\"name\" NOT IN ('sys', 'tmp') "
+		"ORDER BY \"s\".\"name\"";
+	/* alternative, but then need to handle NULL in second column:
+	   SELECT "s"."name", "a"."name"
+	   FROM "sys"."schemas" "s"
+		LEFT OUTER JOIN "sys"."auths" "a"
+		     ON "s"."authorization" = "a"."id" AND
+		"s"."name" NOT IN ('sys', 'tmp')
+	   ORDER BY "s"."name"
+
+	   This may be needed after a sequence:
+
+	   CREATE USER "voc" WITH PASSWORD 'voc' NAME 'xxx' SCHEMA "sys";
+	   CREATE SCHEMA "voc" AUTHORIZATION "voc";
+	   ALTER USER "voc" SET SCHEMA "voc";
+	   DROP USER "voc";
+
+	   In this case, the authorization value for voc in the
+	   schemas table has no corresponding value in the auths table
+	   anymore.
+	 */
 	const char *sequences1 = "SELECT \"sch\".\"name\",\"seq\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"sch\", "
 		     "\"sys\".\"sequences\" \"seq\" "
@@ -865,8 +916,8 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		free(sname);
 		sname = NULL;
 
-		/* dump schemas */
-		if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
+		/* dump roles */
+		if ((hdl = mapi_query(mid, roles)) == NULL || mapi_error(mid)) {
 			if (hdl) {
 				mapi_explain_query(hdl, stderr);
 				mapi_close_handle(hdl);
@@ -878,10 +929,117 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		while (mapi_fetch_row(hdl) != 0) {
 			char *name = mapi_fetch_field(hdl, 0);
 
-			if (strcmp(name, "sys") == 0 || strcmp(name, "tmp") == 0)
-				continue;
-			stream_printf(toConsole, "CREATE SCHEMA ");
+			stream_printf(toConsole, "CREATE ROLE ");
 			quoted_print(toConsole, name);
+			stream_printf(toConsole, ";\n");
+		}
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		mapi_close_handle(hdl);
+
+
+		/* dump users, part 1 */
+		if ((hdl = mapi_query(mid, users1)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+
+		while (mapi_fetch_row(hdl) != 0) {
+			char *uname = mapi_fetch_field(hdl, 0);
+			char *fullname = mapi_fetch_field(hdl, 1);
+
+			stream_printf(toConsole, "CREATE USER ");
+			quoted_print(toConsole, uname);
+			stream_printf(toConsole, " WITH PASSWORD '<cannot be dumped>' NAME '%s' SCHEMA \"sys\";\n", fullname);
+		}
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		mapi_close_handle(hdl);
+
+		/* dump schemas */
+		if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+
+		while (mapi_fetch_row(hdl) != 0) {
+			char *sname = mapi_fetch_field(hdl, 0);
+			char *aname = mapi_fetch_field(hdl, 1);
+
+			stream_printf(toConsole, "CREATE SCHEMA ");
+			quoted_print(toConsole, sname);
+			if (strcmp(aname, "sysadmin") != 0) {
+				stream_printf(toConsole, " AUTHORIZATION ");
+				quoted_print(toConsole, aname);
+			}
+			stream_printf(toConsole, ";\n");
+		}
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		mapi_close_handle(hdl);
+
+		/* dump users, part 2 */
+		if ((hdl = mapi_query(mid, users2)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+
+		while (mapi_fetch_row(hdl) != 0) {
+			char *uname = mapi_fetch_field(hdl, 0);
+			char *sname = mapi_fetch_field(hdl, 1);
+
+			stream_printf(toConsole, "ALTER USER ");
+			quoted_print(toConsole, uname);
+			stream_printf(toConsole, " SET SCHEMA ");
+			quoted_print(toConsole, sname);
+			stream_printf(toConsole, ";\n");
+		}
+		if (mapi_error(mid)) {
+			mapi_explain_query(hdl, stderr);
+			mapi_close_handle(hdl);
+			return 1;
+		}
+		mapi_close_handle(hdl);
+
+		/* grant user privileges */
+		if ((hdl = mapi_query(mid, grants)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+
+		while (mapi_fetch_row(hdl) != 0) {
+			char *uname = mapi_fetch_field(hdl, 0);
+			char *rname = mapi_fetch_field(hdl, 1);
+
+			stream_printf(toConsole, "GRANT ");
+			quoted_print(toConsole, rname);
+			stream_printf(toConsole, " TO ");
+			quoted_print(toConsole, uname);
 			stream_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid)) {
