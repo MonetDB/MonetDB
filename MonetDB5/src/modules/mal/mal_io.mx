@@ -605,8 +605,10 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case 10: msg= IOprintf_(&fmt2,*fmt G(2) G(3) G(4) G(5) G(6) G(7) G(8) G(9));
 	}
-	if (msg== MAL_SUCCEED)
+	if (msg== MAL_SUCCEED) {
 		stream_printf(cntxt->fdout,"%s",fmt2);
+		GDKfree(fmt2);
+	}
 	return msg;
 }
 str
@@ -637,8 +639,10 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		break;
 	case 11: msg= IOprintf_(&fmt2,*fmt G(3) G(4) G(5) G(6) G(7) G(8) G(9) G(10));
 	}
-	if (msg== MAL_SUCCEED)
+	if (msg== MAL_SUCCEED){
 		stream_printf(f,"%s",fmt2);
+		GDKfree(fmt2);
+	}
 	return msg;
 }
 
