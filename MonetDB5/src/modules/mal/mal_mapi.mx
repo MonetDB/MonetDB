@@ -728,8 +728,9 @@ errno == WSAEADDRINUSE &&
 	*Sock = sock;
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
+		if (Sock) GDKfree(Sock);
 		throw(MAL, "mal_mapi.listen", "Starting thread failed");
-	}
+	} 
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
