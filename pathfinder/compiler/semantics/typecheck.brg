@@ -1368,6 +1368,7 @@ overload (PFqname_t qn, PFcnode_t *args)
     PFfun_t *fn;
     unsigned int i, a;
     bool ari_match, zoo_match, arg_match;
+    PFfun_t *candidate_fn = NULL;
 
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
@@ -1403,7 +1404,7 @@ overload (PFqname_t qn, PFcnode_t *args)
                                   PFty_prime (
                                       PFty_defn (
                                           arg->child[0]->type))));
-                
+
                 /* and check if this type would be ok */
                 zoo_match = PFty_promotable (zoo_ty, (fn->sigs[0].par_ty)[a]);
 
@@ -1467,10 +1468,18 @@ overload (PFqname_t qn, PFcnode_t *args)
             /* function with multiple signatures (dynamic overloading).
              * Type checking is a little bit tricky and is done in
              * specific. We assume that this is always the right function.
+             * However, there might be a function later on the list that
+             * matches exactly. Keep this candidate function and return
+             * it if nothing better is found. We thus assume that there
+             * is only one function with multiple signatures and several
+             * functions with one signature.
              */
-            return fn;
+            candidate_fn = fn;
     }
- 
+
+    if (candidate_fn != NULL)
+        return candidate_fn;
+
     fun_not_found (qn, args);
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
