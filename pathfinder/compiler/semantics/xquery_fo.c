@@ -1597,88 +1597,20 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_opt (PFty_xs_daytimeduration ()) } },
         .alg = NULL }
 
-/* 10.6 Arithmetic Operators on Durations */
-    , /* op:add-yearMonthDurations (yearMonthDuration, yearMonthDuration)
-         as yearMonthDuration */
-      { .ns = PFns_op, .loc = "plus",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
-                                   PFty_xs_yearmonthduration () },
-            .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_plus }
-    , /* op:subtract-yearMonthDurations (yearMonthDuration, yearMonthDuration)
-         as yearMonthDuration */
-      { .ns = PFns_op, .loc = "minus",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
-                                   PFty_xs_yearmonthduration () },
-            .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_minus }
-    , /* op:multiply-yearMonthDuration (yearMonthDuration, double)
-         as yearMonthDuration */
-      { .ns = PFns_op, .loc = "times",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
-                                   PFty_xs_double () },
-            .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_times }
-    , /* op:divide-yearMonthDuration  (yearMonthDuration, double)
-         as yearMonthDuration */
-              { .ns = PFns_op, .loc = "div",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
-                                   PFty_xs_double () },
-            .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_div_dbl }
-    , /* op:divide-yearMonthDuration-by-yearMonthDuration (yearMonthDuration,
-         yearMonthDuration) as decimal */
-              { .ns = PFns_op, .loc = "div",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
-                                   PFty_xs_yearmonthduration () },
-            .ret_ty = PFty_xs_decimal () } },
-        .alg = PFbui_op_yearmonthduration_div }
-    , /* op:add-dayTimeDurations (dayTimeDuration, dayTimeDuration)
-         as dayTimeDuration */
-      { .ns = PFns_op, .loc = "plus",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
-                                   PFty_xs_daytimeduration () },
-            .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_plus }
-    , /* op:subtract-dayTimeDurations (dayTimeDuration, dayTimeDuration)
-         as dayTimeDuration */
-      { .ns = PFns_op, .loc = "minus",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
-                                   PFty_xs_daytimeduration () },
-            .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_minus }
-    , /* op:multiply-dayTimeDuration (dayTimeDuration, double)
-         as dayTimeDuration */
-      { .ns = PFns_op, .loc = "times",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
-                                   PFty_xs_double () },
-            .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_times }
-    , /* op:divide-dayTimeDuration  (dayTimeDuration, double)
-         as dayTimeDuration */
-              { .ns = PFns_op, .loc = "div",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
-                                   PFty_xs_double () },
-            .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_div_dbl }
-    , /* op:divide-dayTimeDuration-by-dayTimeDuration (dayTimeDuration,
-         dayTimeDuration) as decimal */
-              { .ns = PFns_op, .loc = "div",
-        .arity = 2, .sig_count = 1, .sigs = { {
-            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
-                                   PFty_xs_daytimeduration () },
-            .ret_ty = PFty_xs_decimal () } },
-        .alg = PFbui_op_daytimeduration_div }
 #if 0
+/* 10.6 Arithmetic Operators on Durations */
+
+    , /* op:add-yearMonthDurations */
+    , /* op:subtract-yearMonthDurations */
+    , /* op:multiply-yearMonthDuration */
+    , /* op:divide-yearMonthDuration */
+    , /* op:divide-yearMonthDuration-by-yearMonthDuration */
+    , /* op:add-dayTimeDurations */
+    , /* op:subtract-dayTimeDurations */
+    , /* op:multiply-dayTimeDuration */
+    , /* op:divide-dayTimeDuration */
+    , /* op:divide-dayTimeDuration-by-dayTimeDuration */
+
 /* 10.7 Timezone Adjustment Functions on Dates and Time Values */
 
     , /* fn:adjust-dateTime-to-timezone */
