@@ -41,7 +41,7 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 7,	  nil	  ]
+[ 2,	  nil	  ]
 
 # 09:12:08 >  
 # 09:12:08 >  Done.
