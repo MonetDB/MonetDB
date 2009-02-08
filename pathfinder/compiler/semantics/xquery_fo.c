@@ -1597,42 +1597,233 @@ PFfun_xquery_fo (void)
             .ret_ty = PFty_opt (PFty_xs_daytimeduration ()) } },
         .alg = NULL }
 
-#if 0
 /* 10.6 Arithmetic Operators on Durations */
-
-    , /* op:add-yearMonthDurations */
-    , /* op:subtract-yearMonthDurations */
-    , /* op:multiply-yearMonthDuration */
-    , /* op:divide-yearMonthDuration */
-    , /* op:divide-yearMonthDuration-by-yearMonthDuration */
-    , /* op:add-dayTimeDurations */
-    , /* op:subtract-dayTimeDurations */
-    , /* op:multiply-dayTimeDuration */
-    , /* op:divide-dayTimeDuration */
-    , /* op:divide-dayTimeDuration-by-dayTimeDuration */
+    , /* op:add-yearMonthDurations (yearMonthDuration, yearMonthDuration)
+         as yearMonthDuration */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_yearmonthduration () } },
+        .alg = PFbui_op_yearmonthduration_plus }
+    , /* op:subtract-yearMonthDurations (yearMonthDuration, yearMonthDuration)
+         as yearMonthDuration */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_yearmonthduration () } },
+        .alg = PFbui_op_yearmonthduration_minus }
+    , /* op:multiply-yearMonthDuration (yearMonthDuration, double)
+         as yearMonthDuration */
+      { .ns = PFns_op, .loc = "times",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_double () },
+            .ret_ty = PFty_xs_yearmonthduration () } },
+        .alg = PFbui_op_yearmonthduration_times }
+    , /* op:divide-yearMonthDuration  (yearMonthDuration, double)
+         as yearMonthDuration */
+      { .ns = PFns_op, .loc = "div",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_double () },
+            .ret_ty = PFty_xs_yearmonthduration () } },
+        .alg = PFbui_op_yearmonthduration_div_dbl }
+    , /* op:divide-yearMonthDuration-by-yearMonthDuration (yearMonthDuration,
+         yearMonthDuration) as decimal */
+      { .ns = PFns_op, .loc = "div",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_op_yearmonthduration_div }
+    , /* op:add-dayTimeDurations (dayTimeDuration, dayTimeDuration)
+         as dayTimeDuration */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = PFbui_op_daytimeduration_plus }
+    , /* op:subtract-dayTimeDurations (dayTimeDuration, dayTimeDuration)
+         as dayTimeDuration */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = PFbui_op_daytimeduration_minus }
+    , /* op:multiply-dayTimeDuration (dayTimeDuration, double)
+         as dayTimeDuration */
+      { .ns = PFns_op, .loc = "times",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_double () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = PFbui_op_daytimeduration_times }
+    , /* op:divide-dayTimeDuration  (dayTimeDuration, double)
+         as dayTimeDuration */
+      { .ns = PFns_op, .loc = "div",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_double () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = PFbui_op_daytimeduration_div_dbl }
+    , /* op:divide-dayTimeDuration-by-dayTimeDuration (dayTimeDuration,
+         dayTimeDuration) as decimal */
+      { .ns = PFns_op, .loc = "div",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_op_daytimeduration_div }
 
 /* 10.7 Timezone Adjustment Functions on Dates and Time Values */
-
-    , /* fn:adjust-dateTime-to-timezone */
-    , /* fn:adjust-date-to-timezone */
-    , /* fn:adjust-time-to-timezone */
+    , /* fn:adjust-dateTime-to-timezone (dateTime?) as dateTime? */
+      { .ns = PFns_fn, .loc = "adjust-dateTime-to-timezone",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()) },
+            .ret_ty = PFty_opt (PFty_xs_datetime ()) } },
+        .alg = NULL }
+    , /* fn:adjust-dateTime-to-timezone (dateTime?, dayTimeDuration?)
+         as dateTime? */
+      { .ns = PFns_fn, .loc = "adjust-dateTime-to-timezone",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_datetime ()),
+                                   PFty_opt (PFty_xs_daytimeduration ()) },
+            .ret_ty = PFty_opt (PFty_xs_datetime ()) } },
+        .alg = NULL }
+    , /* fn:adjust-date-to-timezone (date?) as date? */
+      { .ns = PFns_fn, .loc = "adjust-date-to-timezone",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_date ()) },
+            .ret_ty = PFty_opt (PFty_xs_date ()) } },
+        .alg = NULL }
+    , /* fn:adjust-date-to-timezone (date?, dayTimeDuration?) as date? */
+      { .ns = PFns_fn, .loc = "adjust-date-to-timezone",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_date ()),
+                                   PFty_opt (PFty_xs_daytimeduration ()) },
+            .ret_ty = PFty_opt (PFty_xs_date ()) } },
+        .alg = NULL }
+    , /* fn:adjust-time-to-timezone (time?) as time?*/
+      { .ns = PFns_fn, .loc = "adjust-time-to-timezone",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_time ()) },
+            .ret_ty = PFty_opt (PFty_xs_time ()) } },
+        .alg = NULL }
+    , /* fn:adjust-time-to-timezone (time?, dayTimeDuration?) as time?*/
+      { .ns = PFns_fn, .loc = "adjust-time-to-timezone",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_time ()),
+                                   PFty_opt (PFty_xs_daytimeduration ()) },
+            .ret_ty = PFty_opt (PFty_xs_time ()) } },
+        .alg = NULL }
 
 /* 10.8 Arithmetic Operators on Durations, Dates and Times */
+    , /* op:subtract-dateTimes (dateTime, dateTime) as dayTimeDuration */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_datetime () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = NULL }
+    , /* op:subtract-dates (date, date) as dayTimeDuration */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_date () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = NULL }
+    , /* op:subtract-times (time, time) as dayTimeDuration */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_time () },
+            .ret_ty = PFty_xs_daytimeduration () } },
+        .alg = NULL }
+    , /* op:add-yearMonthDuration-to-dateTime (dateTime, yearMonthDuration)
+         as dateTime */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_datetime () } },
+        .alg = NULL }
+    , /* op:add-dayTimeDuration-to-dateTime (dateTime, dayTimeDuration)
+         as dateTime */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_datetime () } },
+        .alg = NULL }
+    , /* op:subtract-yearMonthDuration-to-dateTime (dateTime, yearMonthDuration)
+         as dateTime */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_datetime () } },
+        .alg = NULL }
+    , /* op:subtract-dayTimeDuration-to-dateTime (dateTime, dayTimeDuration)
+         as dateTime */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_datetime (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_datetime () } },
+        .alg = NULL }
+    , /* op:add-yearMonthDuration-to-date (date, yearMonthDuration)
+         as date */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_date () } },
+        .alg = NULL }
+    , /* op:add-dayTimeDuration-to-date (date, dayTimeDuration)
+         as date */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_date () } },
+        .alg = NULL }
+    , /* op:subtract-yearMonthDuration-to-date (date, yearMonthDuration)
+         as date */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_yearmonthduration () },
+            .ret_ty = PFty_xs_date () } },
+        .alg = NULL }
+    , /* op:subtract-dayTimeDuration-to-date (date, dayTimeDuration)
+         as date */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_date (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_date () } },
+        .alg = NULL }
+    , /* op:add-dayTimeDuration-to-time (time, dayTimeDuration)
+         as time */
+      { .ns = PFns_op, .loc = "plus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_time () } },
+        .alg = NULL }
+    , /* op:subtract-dayTimeDuration-from-time (time, dayTimeDuration)
+         as time */
+      { .ns = PFns_op, .loc = "minus",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_time (),
+                                   PFty_xs_daytimeduration () },
+            .ret_ty = PFty_xs_time () } },
+        .alg = NULL }
 
-    , /* op:subtract-dateTimes */
-    , /* op:subtract-dates */
-    , /* op:subtract-times */
-    , /* op:add-yearMonthDuration-to-dateTime */
-    , /* op:add-dayTimeDuration-to-dateTime */
-    , /* op:subtract-yearMonthDuration-from-dateTime */
-    , /* op:subtract-dayTimeDuration-from-dateTime */
-    , /* op:add-yearMonthDuration-to-date */
-    , /* op:add-dayTimeDuration-to-date */
-    , /* op:subtract-yearMonthDuration-from-date */
-    , /* op:subtract-dayTimeDuration-from-date */
-    , /* op:add-dayTimeDuration-to-time */
-    , /* op:subtract-dayTimeDuration-from-time */
-#endif
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */
     , /* fn:resolve-QName (xs:string) as xs:QName */
