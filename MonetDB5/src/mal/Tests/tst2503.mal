@@ -23,3 +23,4 @@ r2:= user.random(2);
 io.print(r2);
 r2:= user.random(2);
 io.print(r2);
+factories.shutdown("user","random");

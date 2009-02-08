@@ -71,6 +71,7 @@ function user.main():void;
     j := user.step2();
     k := user.step1();
     m := user.step2();
+    factories.shutdown("user","step1");
 end main;
 start step 1
 step1 1

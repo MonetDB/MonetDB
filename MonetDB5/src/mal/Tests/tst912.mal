@@ -47,3 +47,4 @@ user.choptest(b,100000:lng,base);
 user.choptest(b,10000:lng,base);
 user.choptest(b,1000:lng,base);
 user.choptest(b,100:lng,base);
+factories.shutdown("user","getChunk");

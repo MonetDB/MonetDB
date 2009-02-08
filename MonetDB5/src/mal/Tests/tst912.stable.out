@@ -119,6 +119,7 @@ exit doit;
     user.choptest(b,10000:lng,base);
     user.choptest(b,1000:lng,base);
     user.choptest(b,100:lng,base);
+    factories.shutdown("user","getChunk");
 end main;
 #select direct 9152 usec
 [ "#factory done\n" ]
