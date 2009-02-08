@@ -1604,8 +1604,10 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	GDKfree(nme);
 	if (n->propc){
 		nme = varGetPropStr(mb, index);
-		stream_printf(f,"%s",nme);
-		GDKfree(nme);
+		if (nme) {
+			stream_printf(f,"%s",nme);
+			GDKfree(nme);
+		}
 	}
 	stream_printf(f, "\n");
 	GDKfree(nmeOnStk);

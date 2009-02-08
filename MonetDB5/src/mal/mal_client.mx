@@ -602,6 +602,8 @@ Client MCforkClient(Client father){
 		son->yycur=0;
 		son->father = father;
 		son->scenario = father->scenario;
+		if( son->prompt)
+			GDKfree(son->prompt);
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength= strlen(father->prompt);
 		/* reuse the scopes wherever possible */

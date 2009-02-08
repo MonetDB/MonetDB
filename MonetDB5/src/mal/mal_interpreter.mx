@@ -348,7 +348,7 @@ we should first remove garbage.
 
 	/* pass the new debug mode to the caller */
 	if (stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
-	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if ( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk, env != stk);
 	@:endProfile(stk)@
 	return ret;
