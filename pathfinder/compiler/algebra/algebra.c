@@ -1187,6 +1187,10 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_hours_from_time:        return "fn:hours-from-time";
         case alg_fun_fn_minutes_from_time:      return "fn:minutes-from-time";
         case alg_fun_fn_seconds_from_time:      return "fn:seconds-from-time";
+        case alg_fun_add_dur:                   return "add-duration";
+        case alg_fun_subtract_dur:              return "subtract-duration";
+        case alg_fun_multiply_dur:              return "multiply-duration";
+        case alg_fun_divide_dur:                return "divide-duration";
 #ifdef HAVE_GEOXML
         case alg_fun_geo_wkb:          return "geoxml:wkb";
         case alg_fun_geo_point:        return "geoxml:point";

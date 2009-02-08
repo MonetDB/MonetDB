@@ -3719,6 +3719,10 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_fn_hours_from_time:
                 case alg_fun_fn_minutes_from_time:
                 case alg_fun_fn_seconds_from_time:
+                case alg_fun_add_dur:
+                case alg_fun_subtract_dur:
+                case alg_fun_multiply_dur:
+                case alg_fun_divide_dur:
 #ifdef HAVE_GEOXML
                 case alg_fun_geo_wkb:
                 case alg_fun_geo_point:

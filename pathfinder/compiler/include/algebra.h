@@ -443,6 +443,10 @@ enum PFalg_fun_t {
     , alg_fun_fn_hours_from_time
     , alg_fun_fn_minutes_from_time
     , alg_fun_fn_seconds_from_time
+    , alg_fun_add_dur          /**< arithmetic plus operator for duration */
+    , alg_fun_subtract_dur     /**< arithmetic minus operator for duration */
+    , alg_fun_multiply_dur     /**< arithmetic times operator for duration */
+    , alg_fun_divide_dur       /**< arithmetic div operator for duration */
 #ifdef HAVE_GEOXML
     , alg_fun_geo_wkb             /**< geoxml:wkb */
     , alg_fun_geo_point           /**< geoxml:point */
