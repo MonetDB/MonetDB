@@ -473,7 +473,7 @@ Since we now know the storage type of the receiving variable, we can
 set the garbagge collection flag.
 @= prepostProcess
 	if (findGDKtype(@1) == TYPE_bat ||
-		findGDKtype(@1) >= TYPE_str ||
+		findGDKtype(@1) == TYPE_str ||
 	    (!isPolyType(@1) && @1< TYPE_any && 
              @1>=0 && ATOMstorage(@1) == TYPE_str)){
 		getInstrPtr(@3,0)->gc |= GARBAGECONTROL;

@@ -1523,7 +1523,7 @@ the bind(namespace, batname, mode) operation. [todo]
 			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat) {
 				backup[i]= stk->stk[getArg(pci,i)].val.bval;
 				stamp= BBPcurstamp();
-			} else if( stk->stk[getArg(pci,i)].vtype >= TYPE_str) {
+			} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str) {
 				backup[i]= stk->stk[getArg(pci,i)].len;
 				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
 				backup[i] += (sbackup[i]!=NULL);
@@ -1571,7 +1571,7 @@ to the operators.
 				BBPunfix(bid);
 			}
 */
-		} else if( stk->stk[getArg(pci,i)].vtype >= TYPE_str){
+		} else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
 			if( sbackup[i] && sbackup[i]!= stk->stk[a].val.sval){
 				if( backup[i] > 0) 
