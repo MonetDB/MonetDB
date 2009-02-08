@@ -176,7 +176,7 @@ FCTshutdown(int *ret, str *mod, str *fcn)
 	s = findSymbol(getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == NULL)
 		throw(MAL, "factories.shutdown", "Factory not found");
-	shutdownFactory(s->def);
+	shutdownFactory(s->def, TRUE);
 	return MAL_SUCCEED;
 }
 @}
