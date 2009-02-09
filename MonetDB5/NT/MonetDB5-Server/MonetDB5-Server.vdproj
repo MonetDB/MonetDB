@@ -2753,8 +2753,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_77FB1FB553BE42B4AA58B7E372821B00"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\lib_factory.dll"
-            "TargetName" = "8:lib_factory.dll"
+            "SourcePath" = "8:Lib\\MonetDB5\\lib_factories.dll"
+            "TargetName" = "8:lib_factories.dll"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
             "Condition" = "8:"
@@ -3833,8 +3833,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B87DEFA2B87A413DB5FF61F363B925E9"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\factory.mal"
-            "TargetName" = "8:factory.mal"
+            "SourcePath" = "8:Lib\\MonetDB5\\factories.mal"
+            "TargetName" = "8:factories.mal"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
             "Condition" = "8:"
