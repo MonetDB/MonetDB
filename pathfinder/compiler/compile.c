@@ -155,7 +155,7 @@ PFstate_init (PFstate_t *status)
     status->opt_alg             = "OIKCG_VG_JISI_GECSVR_OK_N"
                                        "}MT{JISI_GECSVR_"
                                        "}MT{JISI_OK_GECSVR_"
-                                       "GP";
+                                       "DC_GP";
     status->opt_sql             = "OIKCG_VG_JISI_GECSVR_OK_N"
                                     "QU_}MT{JISI_GECSVR_"
                                     "QU_}MT{JISI_OK_GECSVR_"
@@ -454,8 +454,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* Initialize data structures in the QName department */
     PFqname_init ();
 
-    tm = PFtimer_start ();
-
     /* Resolve NS usage */
     PFns_resolve (proot);
 
@@ -495,12 +493,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(8);
 
-    tm = PFtimer_start ();
-
     /* Load XML Schema/XQuery predefined types into the type environment */
     PFty_predefined ();
 
     STOP_POINT(9);
+
+    tm = PFtimer_start ();
 
     /* Resolve function usage
      */
@@ -511,6 +509,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFlog ("semantical analysis:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(10);
+
+    tm = PFtimer_start ();
 
     /* XML Schema import */
     PFschema_import (proot);

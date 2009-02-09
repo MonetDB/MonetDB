@@ -649,6 +649,7 @@ var pf_collbarrier_lock := lock_create(); # proptector for shortlock_barrier bat
 var pf_extend := pflock_get(3); # protects the counter
 var pf_extend_cnt := 0; # counter is used by nonexclusive acces (first gets barrier, last releases)
 var pf_extend_barrier := sema(ptr(pflock_get(7))); # the barrier
+var pf_commit_barrier := sema(ptr(pflock_get(8))); # the barrier
 
 # master bat *UPDATES* must be protected against checkpoints (global BBP subcommits + log restart)
 # master updates take a non-exclusive pf_chkpt lock; pf_checkpoint() takes an exclusive access
@@ -747,7 +748,9 @@ PROC pf_assert(str err, str msg) : void
     }
 }
 
-PROC pf_logflush(lng wsid) : void {
+PROC pf_logflush(lng wsid) : bit {
+    if (not(pflock_trycommit()))
+        return false;
     var ws_logtime := usec(); 
     lock_set(pf_wal);
     sema_down(pf_chkpt_barrier);
@@ -759,10 +762,18 @@ PROC pf_logflush(lng wsid) : void {
     sema_up(pf_chkpt_barrier);
     lock_unset(pf_wal);
     logger_cleanup(pf_logger);
+    sema_up(pf_commit_barrier);
+    return true;
+}
+
+PROC commit() : void { # redefine commit to alert illegal usage
+    ERROR("global commits are not allowed (using WAL-based commit instead)");
 }
 
 PROC exit() : void { # redefine exit to do a checkpoint first
-    pf_logflush(1LL); # exit with clean log makes server restart significantly faster 
+    # exit with clean log makes server restart significantly faster 
+    var i := 0;
+    while(not(pf_logflush(1LL)) and ((i :+= 1) <= 10)) sleep(1); 
     quit(); 
 }
 
@@ -777,10 +788,12 @@ PROC pf_logmanager() : void {
         if (((cnt :+= 1) % 30) = 0) { 
             cleantmpdir((msec() / 1000LL) - 3600LL);
         }
-        if ((changes > 100000) and (cnt > 30)) { 
-            pf_logflush(0LL);
-            logger_base := changes;
-            cnt := 0;
+        #if ((changes > 100000) and (cnt > 30)) { 
+        if (cnt > 30) { 
+            if (pf_logflush(0LL)) { # only flush if no queries active
+                logger_base := changes;
+                cnt := 0;
+            }
         } 
         sleep(10);  
 
@@ -1715,10 +1728,10 @@ PROC __ws_indexcoll(BAT[void,bat] ws,
 
         # only index element qnames that occur <M times, such that M.log(M) < N
         var cnt   := ws.fetch(QN_HISTOGRAM).fetch(cont);
-        var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
-        var MlogM := [*](cnt,[log]([dbl](cnt)));
-
-        unq := reverse(ord_uselect(MlogM, dbl_nil, dbl(N)));
+        # DISABLE for PFROX var N     := count(ws.fetch(PRE_SIZE).fetch(cont));
+        # DISABLE for PFROX var MlogM := [*](cnt,[log]([dbl](cnt)));
+        # DISABLE for PFROX  unq := reverse(ord_uselect(MlogM, dbl_nil, dbl(N)));
+        unq := cnt.hmark(0@0);
 
         # create the QN_NID and HSH_NID indices
         idx := __runtime_index(coll_oid, ws.fetch(PRE_SIZE).fetch(cont),
@@ -2357,7 +2370,8 @@ PROC __runtime_addchunk(lng wsid,
     } else if (pre = 0@0) {
         # first shred (readonly) automatically creates persistent sorted index
         var cnt := bat(str(lng(coll_oid)) + "_qn_histogram");
-        unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
+        #unq := reverse(ord_uselect([*](cnt,[log]([dbl](cnt))), dbl_nil, dbl(count(knd))));
+        unq := cnt.hmark(0@0);
     } else {
         # but we do not maintain read-only indices after additional shreds (too costly to re-sort each time)
         var qn_nid     := commitbat + "_qn_nid";

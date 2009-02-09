@@ -1327,7 +1327,7 @@ shred_external_subset(void *xmlCtx,
 
         char locbuff[FILENAME_MAX+1];
 
-        if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !((*SystemID=='/') || (*SystemID=='\\'))) {
+        if (SystemID && shredCtx->base_dir && !isURL((char*)SystemID) && !MT_path_absolute((char*) SystemID)) {
            /* is is a relative name which should be prefixed with the
             * base location of the shredded xml document.
             */
@@ -1337,21 +1337,33 @@ shred_external_subset(void *xmlCtx,
         } else
             abs_SystemID = SystemID;
         if ((dtd=xmlParseDTD(ExternalID, abs_SystemID))) {
-                if ( !ctx->myDoc ) {
+            if ( !ctx->myDoc ) {
                 /* Mysteriously no myDoc is created by libxml2. For internal
                  * subsets this is done automatically. For external subsets
                  * it has to be done by hand. The parsed dtd is the external
                  * subset for this doc
                  */
-                    ctx->myDoc = xmlNewDoc(ctx->version);
+                ctx->myDoc = xmlNewDoc(ctx->version);
             }
+                
+            if (!dtd)
+                GDKerror("shred_external_subset: problem with reading external DTD (\"%s\")\n", SystemID);
+
+            if (ctx->myDoc->extSubset) {
+                stream_printf(GDKout, "!WARNING: double external subset (\"%s\") may cause problems.\n", SystemID);
+                /* we have two different DTDs -- free one and replace it by the other */
+                xmlFreeDtd (dtd);
+                dtd = ctx->myDoc->extSubset;
+            }
+
+            /* We have to fill in an external subset to ensure that
+               handle_externalSubset does not produce errors.
+               In addition the DTD gets freed at the end. */
+            ctx->myDoc->extSubset = dtd;
+
             if (!handle_externalSubset(shredCtx, dtd))
                 stream_printf(GDKout, "!WARNING: xmlParseDTD(\"%s\") failed, skipping ID/IDREF information.\n", SystemID);
 
-            if (ctx->myDoc && ctx->myDoc->extSubset == NULL)
-                ctx->myDoc->extSubset = dtd;
-            else 
-                xmlFreeDtd(dtd);
         } else {
             GDKerror("shred_external_subset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n", SystemID);
             GDKerror("shred_external_subset: NOTE   : maybe using absolute filenames works, sorry!\n");
@@ -1523,6 +1535,10 @@ shredder_parse(shredCtxStruct *shredCtx,
     wellFormed = xmlCtx->wellFormed;
     xmlCtx->sax = NULL; /* avoid double free() */
     xmlCtx->userData = NULL; /* avoid double free() */
+    /* xmlFreeParserCtxt does not free myDoc -- we have to do it ourselves */
+    if (xmlCtx->myDoc)
+        /* this call automatically calls xmlFreeDTD() for the external subset */
+        xmlFreeDoc (xmlCtx->myDoc);
     xmlFreeParserCtxt(xmlCtx);
 
     /* Check if something has gone wrong during shred */
@@ -1604,7 +1620,7 @@ shredder_create(char *location,
     if (shredCtx == NULL) return NULL;
 
     /* fill it */
-    int i = 9;
+    int i = 7;
     memset(shredCtx, 0, sizeof(shredCtxStruct)); 
     shredCtx->location  = location;
     shredCtx->fileSize  = fileSize;
@@ -1954,11 +1970,12 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
 static char*
 baseLOCATION(char* location) {
     char *lc = GDKstrdup(location);
-    char *p = &lc[strlen(lc)-1];
-
-    while ( (p > lc) && (*p != '/') && (*p != '\\') && (*p != ':') )
-        --p;
-    *++p = '\0';
+    char *p = lc + strlen(lc);
+    while (--p >= lc) {
+        if ((*p == '/') || (*p == '\\') || (*p == ':'))
+            break;
+    }
+    p[1] = 0; 
     return lc;
 }
 

@@ -822,6 +822,8 @@ main (int argc, char *argv[])
                 printf ("         }  introduce proxy operators that represent"
                                             "operator groups\n");
                 printf ("         {  remove proxy operators\n");
+                printf ("         D  apply optimizations tailored "
+                                            "for MonetDB/XQuery\n");
                 printf ("         Q  apply optimizations tailored "
                                             "for the SQL code generation\n");
                 printf ("         [  assign a new set of unique column "

@@ -29,6 +29,9 @@
 /* Define to 1 if you have the <odbcinst.h> header file. */
 #define HAVE_ODBCINST_H 1
 
+/* Define to 1 if you have the `QueryPerformanceCounter' function. */
+#define HAVE_QUERYPERFORMANCECOUNTER 1
+
 /* Define to 1 if you have the `SQLGetPrivateProfileString' function. */
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 

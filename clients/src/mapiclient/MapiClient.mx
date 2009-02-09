@@ -264,7 +264,21 @@ gettime(void)
 {
 	/* Return the time in milliseconds since an epoch.  The epoch
 	  is roughly the time this program started. */
+#ifdef HAVE_QUERYPERFORMANCECOUNTER
+	static LARGE_INTEGER freq, start; /* automatically initialized to 0 */
+	LARGE_INTEGER ctr;
+
+	if (start.QuadPart == 0 &&
+	    (!QueryPerformanceFrequency(&freq) ||
+	     !QueryPerformanceCounter(&start)))
+		start.QuadPart = -1;
+	if (start.QuadPart > 0) {
+		QueryPerformanceCounter(&ctr);
+		return (timertype) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
+	}
+#endif
 #ifdef HAVE_GETTIMEOFDAY
+	{
 	static struct timeval tpbase;  /* automatically initialized to 0 */
 	struct timeval tp;
 
@@ -273,8 +287,10 @@ gettime(void)
 	gettimeofday(&tp, NULL);
 	tp.tv_sec -= tpbase.tv_sec;
 	return (timertype) tp.tv_sec * 1000000 + (timertype) tp.tv_usec;
+	}
 #else
 #ifdef HAVE_FTIME
+	{
 	static struct timeb tbbase;  /* automatically initialized to 0 */
 	struct timeb tb;
 
@@ -283,6 +299,7 @@ gettime(void)
 	ftime(&tb);
 	tb.time -= tbbase.time;
 	return (timertype) tb.time * 1000000 + (timertype) tb.millitm * 1000;
+	}
 #endif
 #endif
 }

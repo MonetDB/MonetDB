@@ -221,7 +221,7 @@ gdk_export void MT_mmap_unpin(void *p, size_t len);
 gdk_export void *MT_vmalloc(size_t size, size_t * maxsize);
 gdk_export void MT_vmfree(void *p, size_t size);
 gdk_export void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t * newmaxsize);
-gdk_export int MT_path_absolute(char *path);
+gdk_export int MT_path_absolute(const char *path);
 
 @}
 
@@ -1150,7 +1150,7 @@ MT_mallinfo(void)
 }
 
 int
-MT_path_absolute(char *pathname)
+MT_path_absolute(const char *pathname)
 {
 	return (*pathname == DIR_SEP);
 }
@@ -1479,7 +1479,7 @@ MT_mallinfo(void)
 }
 
 int
-MT_path_absolute(char *pathname)
+MT_path_absolute(const char *pathname)
 {
 	char *drive_end = strchr(pathname, ':');
 	char *path_start = strchr(pathname, '\\');
