@@ -39,10 +39,12 @@ qs33
 qs34
 qs35
 qa01
-qa02
+# recursive function
+NOT_ALGEBRA?qa02
 qa04
 qa05
-qa06
+# recursive function
+NOT_ALGEBRA?qa06
 qj01
 #_requires_8GB_&_runs_>5min_
 WITH_ALGEBRA?qj02
