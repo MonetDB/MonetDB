@@ -24,7 +24,6 @@ shred_doc(TSTSRCDIR + "/" + "video.xml", "video.xml");
 # Elapsed time = 651us [032us/node]
 # Shredded 1 XML documents, total time after commit=0.007s
 
-commit();
 quit();
 
 # 16:39:41 >  

@@ -17,7 +17,6 @@ var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/Tests";
 shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.65s
 
-commit();
 quit();
 
 # 14:25:18 >  

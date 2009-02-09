@@ -22,7 +22,6 @@ shred_doc(TSTSRCDIR + "/" + "book.xml", "book.xml");
 shred_doc(TSTSRCBASE+"/benchmarks/XMark/Tests/auctionG.xml", "auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.64s
 
-commit();
 quit();
 
 # 23:29:14 >  

@@ -10,5 +10,4 @@ add_xrpc_trusted(TSTSRCDIR);
 add_xrpc_trusted(TSTTRGDIR);
 add_xrpc_trusted("http://"+HOST+":"+XRPCPORT);
 
-commit();
 

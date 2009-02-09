@@ -5,12 +5,10 @@ module("pathfinder");
 
 #delete_all_docs(false);
 #delete_all_docs(true);
-#commit();
 
 #module("unix");
 #var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/Tests";
 #shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
-#commit();
 
 var a0061;
 var a0060;

@@ -5,4 +5,3 @@ var TSTSRCDIR := getenv("TSTSRCBASE") + "/benchmarks/XMark/opt/XQ/Tests/xmark.xq
 
 add_xrpc_trusted(TSTSRCDIR);
 
-commit();

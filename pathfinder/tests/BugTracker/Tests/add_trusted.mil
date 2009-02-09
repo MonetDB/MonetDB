@@ -5,4 +5,3 @@ var TSTSRCDIR := getenv("TSTSRCDIR");
 
 add_xrpc_trusted(TSTSRCDIR);
 
-commit();
