@@ -17,7 +17,6 @@ var TSTSRCDIR := getenv("TSTSRCDIR");
 shred_doc(TSTSRCDIR + "/" + "voc.xml", "voc.xml");
 # Shredded XML doc("voc.xml"), total time after commit=0.823s
 
-commit();
 quit();
 
 # 16:53:23 >  

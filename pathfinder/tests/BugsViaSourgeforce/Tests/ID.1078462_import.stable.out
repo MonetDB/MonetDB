@@ -17,7 +17,6 @@ var TSTSRCDIR := getenv("TSTSRCDIR");
 shred_doc(TSTSRCDIR + "/" + "ID.1078462_doc.xml", "ID.1078462_doc.xml");
 # Shredded XML doc("ID.1078462_doc.xml"), total time after commit=0.016s
 
-commit();
 quit();
 
 # 14:25:18 >  

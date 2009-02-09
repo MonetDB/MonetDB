@@ -19,7 +19,6 @@ shred_doc(TSTSRCDIR + "/" + "hello.xml", "hello.xml", "xrpc-docs", 25LL);
 # Elapsed time = 001ms 029us [068us/node]
 # Shredded 1 XML document (hello.xml), total time after commit=0.060s
 
-commit();
 quit();
 
 # 14:25:18 >  

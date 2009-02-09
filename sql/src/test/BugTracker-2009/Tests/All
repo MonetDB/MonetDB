@@ -7,3 +7,5 @@ select_from_history.SF-2556566
 COPY_INTO_char_NULL.SF-2560780
 LE_vs_GE_in_CASE.SF-2562264
 IS_NULL_in_CASE
+cardinality_of_expression_is_wrong.SF-2581617
+subtraction_between_two_columns.SF-2582389

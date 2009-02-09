@@ -17,7 +17,6 @@ var TSTTRGDIR := getenv("TSTTRGDIR");
 shred_doc(TSTTRGDIR + "/" + "import_doc.auctions116KB.xml", "auctions116KB.xml");
 # Shredded XML doc("auctions116KB.xml"), total time after commit=0.18s
 
-commit();
 quit();
 
 # 14:25:18 >  

@@ -11,4 +11,3 @@ region_end_attr_tag := "end";
 
 shred_doc(TSTSRCDIR + "/" + "video.xml", "video.xml");
 
-commit();
