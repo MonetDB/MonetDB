@@ -3573,6 +3573,210 @@ PFbui_fn_seconds_from_time (const PFla_op_t *loop,
     return comp_extract(alg_fun_fn_seconds_from_time, args);
 }
 
+/* -------------------------------------- */
+/* 10.6 Arithmetic Operators on Durations */
+/* -------------------------------------- */
+
+/*
+ * Helper function for arithmetic operators on durations
+ */
+static PFla_op_t *
+dur_arith (PFalg_fun_t kind,
+           const PFla_op_t *n1,
+           const PFla_op_t *n2)
+{
+    return project (fun_1to1 (
+                           eqjoin (
+                               eqjoin (
+                                   n1,
+                                   project (n2,
+                                            proj (col_iter1, col_iter),
+                                            proj (col_item1, col_item)),
+                                   col_iter,
+                                   col_iter1),
+                               project (n2,
+                                        proj (col_iter2, col_iter),
+                                        proj (col_item2, col_item)),
+                               col_iter,
+                               col_iter2),
+                            kind,
+                            col_res,
+                            collist (col_item, col_item1, col_item2)),
+                        proj (col_iter, col_iter),
+                        proj (col_pos, col_pos),
+                        proj (col_item, col_res));
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_yearmonthduration_plus (const PFla_op_t *loop,
+                                 bool ordering,
+                                 PFla_op_t **side_effects,
+                                 struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_add_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_yearmonthduration_minus (const PFla_op_t *loop,
+                                  bool ordering,
+                                  PFla_op_t **side_effects,
+                                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_subtract_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_yearmonthduration_times (const PFla_op_t *loop,
+                                  bool ordering,
+                                  PFla_op_t **side_effects,
+                                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_multiply_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_yearmonthduration_div_dbl (const PFla_op_t *loop,
+                                    bool ordering,
+                                    PFla_op_t **side_effects,
+                                    struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_divide_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_yearmonthduration_div (const PFla_op_t *loop,
+                                bool ordering,
+                                PFla_op_t **side_effects,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_divide_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_daytimeduration_plus (const PFla_op_t *loop,
+                               bool ordering,
+                               PFla_op_t **side_effects,
+                               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_add_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_daytimeduration_minus (const PFla_op_t *loop,
+                                bool ordering,
+                                PFla_op_t **side_effects,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_subtract_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_daytimeduration_times (const PFla_op_t *loop,
+                                bool ordering,
+                                PFla_op_t **side_effects,
+                                struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_multiply_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_daytimeduration_div_dbl (const PFla_op_t *loop,
+                                  bool ordering,
+                                  PFla_op_t **side_effects,
+                                  struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_divide_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for
+ * <code>  </code>
+ */
+struct PFla_pair_t
+PFbui_op_daytimeduration_div (const PFla_op_t *loop,
+                              bool ordering,
+                              PFla_op_t **side_effects,
+                               struct PFla_pair_t *args)
+{
+    (void) loop; (void) ordering; (void) side_effects;
+
+    PFla_op_t *res = dur_arith (alg_fun_divide_dur, args[0].rel, args[1].rel);
+
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
 /* ------------------------------- */
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* ------------------------------- */

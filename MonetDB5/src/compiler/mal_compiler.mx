@@ -185,7 +185,7 @@ static char *mccPrelude[] = {
 	"#include \"mal/clients.h\"\n",
 	"#include \"mal/const.h\"\n",
 	"#include \"mal/constraints.h\"\n",
-	"#include \"mal/factory.h\"\n",
+	"#include \"mal/factories.h\"\n",
 	"#include \"mal/inspect.h\"\n",
 	"#include \"mal/language.h\"\n",
 	"#include \"mal/mal_io.h\"\n",

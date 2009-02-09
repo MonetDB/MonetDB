@@ -19,3 +19,4 @@ v:= user.random(0,0);
 io.print(v);
 v:= user.random(0,0);
 io.print(v);
+factories.shutdown("user","random");

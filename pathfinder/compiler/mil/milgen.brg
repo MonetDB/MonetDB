@@ -6229,6 +6229,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                                 aat_time)))));
                 }   break; /* fold) */
 
+                case alg_fun_add_dur:
+                case alg_fun_subtract_dur:
+                case alg_fun_multiply_dur:
+                case alg_fun_divide_dur:
+                {
+                }   break;
+
                 case alg_fun_upd_delete: /* fold( */
                 {
                     PFalg_col_t tgt = clat (p->sem.fun_1to1.refs, 0);

@@ -265,7 +265,7 @@ mal_export str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStk
 mal_export int yieldResult(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
-mal_export str shutdownFactory(MalBlkPtr mb);
+mal_export str shutdownFactory(MalBlkPtr mb, bit force);
 mal_export str shutdownFactoryByName(Client cntxt, Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
 mal_export int factoryHasFreeSpace(void);
@@ -574,7 +574,7 @@ that are still running threads in parallel.
 @c
 
 str
-shutdownFactory(MalBlkPtr mb)
+shutdownFactory(MalBlkPtr mb, bit force)
 {
 	Plant pl, plim;
 
@@ -586,6 +586,8 @@ shutdownFactory(MalBlkPtr mb)
 			/* we are inside the body of the factory and about to return */
 			pl->factory = 0;
 			pl->stk->keepAlive = FALSE;
+			if ( force && pl->stk)
+				GDKfree(pl->stk);
 			pl->stk=0;
 			pl->pc = 0;
 			pl->inuse = 0;
@@ -622,7 +624,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			}
 			stk = pl->stk;
 			MSresetVariables(cntxt, pl->factory, stk, 0);
-			shutdownFactory(pl->factory);
+			shutdownFactory(pl->factory, 0);
 			freeStack(stk);
 			deleteSymbol(m,s);
 			return MAL_SUCCEED;
@@ -634,7 +636,7 @@ finishFactory(MalBlkPtr mb, InstrPtr pp, int pc)
 {
 	(void) pp;
 	(void) pc;
-	return shutdownFactory(mb);
+	return shutdownFactory(mb,TRUE);
 }
 
 @- Enquiry operations.

@@ -46,6 +46,7 @@ function user.main():void;
     io.print(r1);
     r2 := user.random(1);
     io.print(r2);
+    factories.shutdown("user","random");
 end main;
 [ 125 ]
 [ 15625 ]

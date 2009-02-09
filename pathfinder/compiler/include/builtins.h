@@ -648,6 +648,47 @@ struct PFla_pair_t PFbui_fn_seconds_from_time (const PFla_op_t *loop,
                                                PFla_op_t **side_effects,
                                                struct PFla_pair_t *args);
 
+/* 10.6 Arithmetic Operators on Durations */
+struct PFla_pair_t PFbui_op_yearmonthduration_plus (const PFla_op_t *loop,
+                                                    bool ordering,
+                                                    PFla_op_t **side_effects,
+                                                    struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_minus (const PFla_op_t *loop,
+                                                     bool ordering,
+                                                     PFla_op_t **side_effects,
+                                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_times (const PFla_op_t *loop,
+                                                     bool ordering,
+                                                     PFla_op_t **side_effects,
+                                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_div_dbl (const PFla_op_t *loop,
+                                                     bool ordering,
+                                                     PFla_op_t **side_effects,
+                                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_yearmonthduration_div (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   PFla_op_t **side_effects,
+                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_plus (const PFla_op_t *loop,
+                                                  bool ordering,
+                                                  PFla_op_t **side_effects,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_minus (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   PFla_op_t **side_effects,
+                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_times (const PFla_op_t *loop,
+                                                   bool ordering,
+                                                   PFla_op_t **side_effects,
+                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_div_dbl (const PFla_op_t *loop,
+                                                     bool ordering,
+                                                     PFla_op_t **side_effects,
+                                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_op_daytimeduration_div (const PFla_op_t *loop,
+                                                 bool ordering,
+                                                 PFla_op_t **side_effects,
+                                                 struct PFla_pair_t *args);
 
 /* 11. FUNCTIONS RELATED TO QNAMES */
 /* 11.1. Additional Constructor Functions for QNames */

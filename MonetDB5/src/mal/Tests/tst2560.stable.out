@@ -96,6 +96,7 @@ function user.main():void;
     io.print(e);
     e := user.view1(0,4);
     io.print(e);
+    factories.shutdown("user","view1");
 end main;
 #-----------------#
 # emp	age	  # name

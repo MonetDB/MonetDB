@@ -1039,7 +1039,8 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 				stream_printf(f, "\\\"");
 			else
 				stream_printf(f, "%c", *s);
-		GDKfree(ps);
+		if (ps )
+			GDKfree(ps);
 	}
 	/* later: add BAT runtime properties */
 	stream_printf(f, "\"];\n");

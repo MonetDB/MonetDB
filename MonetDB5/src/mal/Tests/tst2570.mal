@@ -30,3 +30,4 @@ i:= user.step1();
 j:= user.step2();
 k:= user.step1();
 m:= user.step2();
+factories.shutdown("user","step1");

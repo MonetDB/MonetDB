@@ -1896,6 +1896,12 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
             res_type = aat_dec;
             break;
 
+        case alg_fun_add_dur:
+        case alg_fun_subtract_dur:
+        case alg_fun_multiply_dur:
+        case alg_fun_divide_dur:
+            break;
+
         case alg_fun_upd_rename:
         case alg_fun_upd_insert_into_as_first:
         case alg_fun_upd_insert_into_as_last:
