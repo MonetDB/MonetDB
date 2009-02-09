@@ -173,7 +173,7 @@ CHPhasMoreElements(lng *res, int *vid, int *bid, lng *granule)
 	VIEWbounds(view, i, i + (BUN) * granule - 1);
 	BATseqbase(view, i - 1);
 	BBPunfix(b->batCacheid);
-	BBPkeepref(view->batCacheid);
+	BBPkeepref(*vid = view->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
 }

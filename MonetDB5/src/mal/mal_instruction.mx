@@ -1595,7 +1595,9 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
 		if (used[i] == 0){
-			clearVariable(mb, i);
+			if ( glb && isVarConstant(mb,i) )
+				VALclear(&glb->stk[i]);
+			freeVariable(mb, i);
 			continue;
 		}
 
@@ -1608,7 +1610,6 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
 			mb->var[i] = t;
-			t = NULL;
 			resetVarName(mb,cnt);
 		}
 		vars[i] = cnt;
@@ -1616,7 +1617,6 @@ trimMalVariables_(MalBlkPtr mb, bit *used, MalStkPtr glb)
 			glb->stk[cnt]= glb->stk[i];
 			VALempty(&glb->stk[i]);
 		}
-		
 		cnt++;
 	}
 	actions = mb->vtop - cnt;
@@ -2394,14 +2394,13 @@ beginning of each line.
         tpe= getTypeName(getArgType(mb,p,i));
 	if (flg & LIST_MAL_PROPS)
 		pstring = varGetPropStr(mb, getArg(p,i));
-	else
-		pstring = GDKstrdup("");
-        advance(t,base,len);
-        snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe,pstring);
-        advance(t,base,len);
-        if( i<p->@1-1) sprintf(t,",");
-        if(pstring) { GDKfree(pstring); pstring=0;}
-        GDKfree(tpe);
+	else pstring = 0;
+	advance(t,base,len);
+	snprintf(t,(len-(t-base)),"%s:%s%s",getArgName(mb,p,i),tpe, (pstring?pstring:""));
+	advance(t,base,len);
+	if( i<p->@1-1) sprintf(t,",");
+	if(pstring) { GDKfree(pstring); pstring=0;}
+	GDKfree(tpe);
 @c
 str
 fcnClass(InstrPtr p)
@@ -2413,7 +2412,7 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
 {
 	int i;
-	str t, tpe, pstring;
+	str t, tpe, pstring= NULL;
 
 	t = s;
 	snprintf(t,(len-(t-base)), "%s%s ", (flg ? "" : "#"), fcnClass(p));
@@ -2536,7 +2535,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
 	int low, high;
 	char nmebuf[PATHLENGTH];
-	str pstring = 0;
+	str pstring = NULL;
 
 	base = s = GDKmalloc(len);
 	if (flg) {
@@ -2675,7 +2674,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				VALformat(&cv, &stk->stk[getArg(p, i)]);
 			} else
 				VALformat(&cv, &getVar(mb, getArg(p, i))->value);
-			if (strlen(cv) > len - (t - s)) {
+			if ( cv && strlen(cv) > len - (t - s)) {
 				char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
 
 				*t = 0;
@@ -2684,16 +2683,18 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 				GDKfree(s);
 				s = ns;
 			}
-			strcat(t, cv);
+			if ( cv )
+				strcat(t, cv);
 			advance(t,base,len);
-			if (strlen(cv)==0 || isVarUDFtype(mb, getArg(p, i)) ||
+			if ( (cv && strlen(cv)==0) || isVarUDFtype(mb, getArg(p, i)) ||
 				isAmbiguousType(getArgType(mb,p,i)) ){
 				str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 				snprintf(t,(len-(t-base)), ":%s", tpe);
 				GDKfree(tpe);
 				advance(t,base,len);
 			}
-			GDKfree(cv);
+			if (cv)
+				GDKfree(cv);
 			if( flg & LIST_MAL_VALUE && isaBatType(getVarType(mb,getArg(p,i)) ) ){
 				BAT *d = 0;
 				if (stk && stk->stk[getArg(p,i)].vtype== TYPE_bat){
@@ -2902,7 +2903,7 @@ varGetPropStr( MalBlkPtr mb, int var )
 	int i, first = 1;
 
 	if (v->propc == 0)
-		return GDKstrdup("");
+		return NULL;
 
 	*s++ = '{';
 	for(i=0; i<v->propc; i++){

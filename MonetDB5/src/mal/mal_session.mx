@@ -412,14 +412,12 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			used[i]= 1;
 		}
 		if (glb && !used[i]) {
-			if (!isVarConstant(mb,i))
+			if (isVarConstant(mb,i))
 				garbageElement(cntxt, &glb->stk[i]);
 			/* clean stack entry */
 			glb->stk[i].vtype = TYPE_int;
 			glb->stk[i].len = 0;
 			glb->stk[i].val.pval = 0;
-			/* drop the variable */
-			clearVariable(mb,i);
 		}
 	}
 	trimMalVariables_(mb,used,glb);
@@ -498,8 +496,8 @@ table may have grown in size.
 @= restoreState
 	if( c->listing) 
 		printFunction(c->fdout,c->curprg->def, 0, c->listing);
+	MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
 	resetMalBlk(c->curprg->def,oldstate.stop);
-	MSresetVariables(c,c->curprg->def, 0, oldstate.vtop);
 @c
 str
 MALinitClient(Client c)
@@ -653,8 +651,8 @@ and marking all non-temporary variables as being (potentially) used.
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		showErrors(c);
 	}
+	MSresetVariables(c,prg->def, c->glb, 0);
 	resetMalBlk(prg->def,1);
-	MSresetVariables(c,prg->def, 0, 0);
 	if (c->glb){
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
