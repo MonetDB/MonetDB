@@ -52,15 +52,15 @@ comment "Close a factory.";
 @include prelude.mx
 @+ Implementation code 
 @h
-#ifndef _FACTORY_H
-#define _FACTORY_H
+#ifndef _FACTORIES_H
+#define _FACTORIES_H
 
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
 #ifdef WIN32
-#ifndef LIBFACTORY
+#ifndef LIBFACTORIES
 #define factories_export extern __declspec(dllimport)
 #else
 #define factories_export extern __declspec(dllexport)
@@ -77,7 +77,7 @@ factories_export str FCTgetDeparture(int *ret);
 factories_export str FCTsetLocation(int *ret, str *loc);
 factories_export str FCTgetLocations(int *ret);
 factories_export str FCTshutdown(int *ret, str *mod, str *fcn);
-#endif /* _FACTORY_H */
+#endif /* _FACTORIES_H */
 @c
 #include "mal_config.h"
 #include "factories.h"
