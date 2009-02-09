@@ -219,7 +219,7 @@ void milprint_qnode2 (tjc_config *tjc_c, TJatree_t *tree) {
 	}
         if (qn->kind == q_entity) {
             for (c = 0; c < qn->length; c++)
-	        TJCPRINTF(MILOUT,"Q%d.insert(\"%s:%s\",%f);\n", qid, qn->elist[c], qn->tlist[c], qn->wlist[c]); 
+	        TJCPRINTF(MILOUT,"Q%d.insert(\"%s:%s\", dbl(%f));\n", qid, qn->elist[c], qn->tlist[c], qn->wlist[c]); 
 	    TJCPRINTF(MILOUT,"Q%d := tj_ent2tid(Q%d);\n", qid, qid);
 	}
     }
@@ -332,7 +332,10 @@ void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short 
 	    TJCPRINTF(MILOUT,"var R%d := tj_%s(R%d, R%d);\n", nid, node->op, child[0], child[1]);
 	    break;
 	case a_containing_query :
-	    TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->irmodel, child[0], node->qid);
+	    if ((tree->qnodes[(short)node->qid])->kind == q_entity)
+	        TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->conceptirmodel, child[0], node->qid);
+	    else
+	        TJCPRINTF(MILOUT,"var R%d := tj_%s_%s(R%d, Q%d);\n", nid, node->op, tjc_c->irmodel, child[0], node->qid);
 	    break;
 	case a_nid2pre :
 	case a_pre2nid :

@@ -140,6 +140,7 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->timing	= 0;
     tjc_c->ftindex	= "DFLT_FT_INDEX";
     tjc_c->irmodel	= "NLLR";
+    tjc_c->conceptirmodel = "LogSum";
     tjc_c->orcomb	= "sum";
     tjc_c->andcomb	= "prod";
     tjc_c->upprop	= "max";
@@ -185,8 +186,16 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
                 tjc_c->irmodel = "OKAPI";
             } else if ( strcasecmp(optVal,"NLLR") == 0 ) {
                 tjc_c->irmodel = "NLLR";
+            }
+        } else if ( strcmp(optName,"concept-ir-model") == 0 ) {
+            if ( strcasecmp(optVal,"LogSum") == 0 ) {
+                tjc_c->conceptirmodel = "LogSum";
+            } else if ( strcasecmp(optVal,"NLLR") == 0 ) {
+                tjc_c->conceptirmodel = "NLLR";
+            } else if ( strcasecmp(optVal,"LMs") == 0 ) {
+                tjc_c->conceptirmodel = "LMs";
             } else if ( strcasecmp(optVal,"PRFube") == 0 ) {
-                tjc_c->irmodel = "PRFube";
+                tjc_c->conceptirmodel = "PRFube";
             }
         } else if ( strcmp(optName,"orcomb") == 0 ) {
             if ( strcasecmp(optVal,"SUM") == 0 ) {

@@ -44,6 +44,7 @@ typedef struct tjc_config {
 	char timing;
 	char* ftindex;
 	char* irmodel;
+	char* conceptirmodel;
 	char* orcomb;
 	char* andcomb;
 	char* upprop;

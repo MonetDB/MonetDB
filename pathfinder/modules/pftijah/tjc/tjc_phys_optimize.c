@@ -399,7 +399,11 @@ void set_physical_operators(TJatree_t *tree)
 		    param2 = "pre";
 		else
 		    param2 = "nid";
-		sprintf(operator, "containing_query_%s_%s", param1, param2);
+		if ((tree->qnodes[(short)node->qid])->kind == q_entity)
+		    param3 = "concept";
+		else
+		    param3 = "";
+		sprintf(operator, "containing_%squery_%s_%s", param3, param1, param2);
 		break;
 	    case a_and :
 		if (node->scored)

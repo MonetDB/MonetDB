@@ -2234,10 +2234,7 @@ PROC _getTermPositions (oid tid) : bat[void,oid] := {
 }
 
 @mil
-# returns the collection count cCnt(t) of term t
-# in the background collection
-# (the background collection can be different from collection
-# the documents are coming from) 
+
 @:getTermDocCnt_nid(nest)@
 @:getTermDocCnt_nid(unnest)@
 @= getTermDocCnt_nid
@@ -2564,6 +2561,120 @@ PROC tj_containing_query_@1_@2_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : b
 }
 @mil
 
+#####################################################################
+# Containing_conceptquery
+#####################################################################
+
+PROC tj_ent2tid (bat[str,dbl] concept_score) : bat[oid,dbl] :=
+{
+    return concept_score.reverse().join(bat("tj_" + ftindex + "_conceptdict")).reverse();
+}
+
+# returns the pre-order positions of the concept c
+# in the collection of the documents
+PROC _getConceptPositions (oid tid) : bat[void,oid] := {
+     var index := bat("tj_" + ftindex + "_ConceptIndex");
+     var offset1 := int(index.fetch(int(tid)));
+     var offset2 := int(index.fetch(int(tid) + 1));
+     var res := bat("tj_" + ftindex + "_Concepts").slice(offset1, offset2 - 1);
+     res := res.seqbase(0@0).chk_order();
+     return res;
+}
+
+@mil
+
+@:getConceptDocScr_nid(nest)@
+@:getConceptDocScr_nid(unnest)@
+@= getConceptDocScr_nid
+PROC _getConceptDocScr_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oid] c_pre) : BAT[oid,int] := {
+     
+	# get doc - Concept relation
+	var c_Scr := bat("tj_" + ftindex + "_ConceptScore");
+        var e_c := treemergejoin_@1_nid(e_pre, e_size, c_pre);
+	var eself_c := e_pre.join(c_pre.reverse());
+	var e_cScr := {sum}(c_Scr, e_c.reverse(), e_c.kunique()).sort();
+	var eself_cScr := {sum}(c_Scr, eself_c.reverse(), eself_c.kunique()).sort();
+        return union_add(e_cScr, eself_cScr);
+}
+@mil
+@:getConceptDocScr_pre(nest)@
+@:getConceptDocScr_pre(unnest)@
+@= getConceptDocScr_pre
+PROC _getConceptDocScr_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oid] c_pre) : BAT[oid,int] := {
+     
+	# get doc - Concept relation
+	var c_Scr := bat("tj_" + ftindex + "_ConceptScore");
+        var e_c := treemergejoin_@1_nid(e_pre.mirror(), e_size, c_pre);
+	var eself_c := e_pre.mirror().join(c_pre.reverse());
+	var e_cScr := {sum}(c_Scr, e_c.reverse(), e_c.kunique()).sort();
+	var eself_cScr := {sum}(c_Scr, eself_c.reverse(), eself_c.kunique()).sort();
+        return union_add(e_cScr, eself_cScr);
+}
+@mil
+
+#                 __              
+# LogSum(d|q) =   >_   qCnt(c) * log dScr(c) 
+#              c in q             
+#
+# where qCnt(c) = count of concept c in query q
+# where dScr(c) = detector score for concept c in doc d
+#
+
+PROC _score_LogSum(dbl q_cCnt, BAT[oid,dbl] e_cScr) : bat[oid,dbl] := {
+    var e_cScores := [log](e_cScr);
+    e_cScores := e_cScores.[*](q_cCnt);
+    return e_cScores;
+}
+
+@:containing_conceptquery_LogSum(nest,nid,TagSize)@
+@:containing_conceptquery_LogSum(unnest,nid,TagSize)@
+@:containing_conceptquery_LogSum(nest,pre,size1)@
+@:containing_conceptquery_LogSum(unnest,pre,size1)@
+@= containing_conceptquery_LogSum
+PROC tj_containing_conceptquery_@1_@2_LogSum (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var c_qCnt := {sum}(query);
+
+    var e_pre := left.chk_order();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var eScores := new(oid,dbl);
+    
+    # loop over query terms
+    c_qCnt@batloop()
+    {
+        # get collection count of term
+        var c_pre := _getConceptPositions($h);
+        # get element count of term
+	var e_cScr := _getConceptDocScr_@1_@2(e_pre, e_size, c_pre);
+	# score elements by this term
+        var e_cScores := _score_LogSum($t, e_cScr);
+        e_cScr := nil;
+        
+	# aggregate term scores
+        eScores := eScores.union_add(e_cScores);
+	e_cScores := nil;
+    }
+    eScores.access(BAT_READ);
+    eScores := [exp](eScores);
+    
+    var res;
+    if (returnall) {
+        res := union(eScores,left.kdiff(eScores).project(dbl(0)));
+    } else {
+        res := eScores;
+    }
+    
+    t_total :+= time();
+    if (timing) printf("# LogSum timing: total: %d\n", t_total);
+    return res;
+}
+@mil
 
 
 #####################################################################
