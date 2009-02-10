@@ -115,7 +115,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		fp = GDKfilelocate(nme, "wb", ext);
 		if (fp != NULL) {
 			fclose(fp);
-			h->storage = STORE_MMAP;
+			h->newstorage = STORE_MMAP;
 			HEAPload(h, nme, ext, FALSE);
 		}
 		GDKfree(of);
