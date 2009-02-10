@@ -446,11 +446,14 @@ str defaultPlan=
 	"emptySet,"
 	/* "joinselect," */
 	/* "accessmode," not needed after patches to BKCappend */
-//	"mitosis," 
+	"mitosis," 
 	"aliases,"
 	/* "crack," */
 	/*"joinPath,"*/ 
 	"mergetable," 
+#ifndef WIN32
+/*	"octopus,"*/
+#endif
 	"commonTerms,"
 /*	"replicator," */
 	"accumulators,"
@@ -459,7 +462,6 @@ str defaultPlan=
 	"reduce,"
 	"garbageCollector,"
 	"dataflow,"
-/*	"octopus,"*/
 	"history,"
 	"multiplex";
 static str minimalPlan=

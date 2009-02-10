@@ -2007,15 +2007,18 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	m->Tparse = Toptimize - m->Tparse;
 
 	if (m->history) {
-		char *t = sql_escape_str(QUERY(m->scanner) + m->scanner.as);
+		char *t;
 		oid queryid = OIDnew(1);
 		InstrPtr q;
 
-		
-		while( t && isspace((int) *t) ) 
-			t++;
+		if ( be->q && be->q->codestring) {
+			t = GDKstrdup(  be->q->codestring);
+			while( t && isspace((int) *t) ) 
+				t++;
+		} else 
+			t = GDKstrdup("-- no query");
 
-        	q = newStmt(mb, userRef, "keepquery");
+		q = newStmt(mb, userRef, "keepquery");
 		q->token = REMsymbol;
 		q = pushWrd(mb, q, queryid);
 		q = pushStr(mb, q, t);
