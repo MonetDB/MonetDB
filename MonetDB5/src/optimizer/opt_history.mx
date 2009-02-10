@@ -187,7 +187,6 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			@:update(xtime,alarm,usec,-)@
 			@:initCounter(rtime,alarm,usec,lng)@
 			pushInstruction(mb,p);
-			@:update(rtime,alarm,usec,-)@
 			continue;
 		}	
 		if (getModuleId(p)==sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
@@ -196,6 +195,11 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			q= pushArgument(mb,q, getArg(p,3));
 		}
 		if ( p->token== ENDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol){
+			if (rtime ){
+				@:update(rtime,alarm,usec,-)@
+			} else {
+				@:zeroCounter(rtime,Lng,lng)@
+			}
 			if (returnseen && p->token == ENDsymbol) {
 				pushInstruction(mb,p);
 				continue;
