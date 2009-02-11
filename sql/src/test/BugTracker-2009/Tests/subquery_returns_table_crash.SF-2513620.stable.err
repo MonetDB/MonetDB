@@ -80,6 +80,9 @@ stderr of test 'subquery_returns_table_crash.SF-2513620` in directory 'src/test/
 # 15:06:01 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=34641 
 # 15:06:01 >  
 
+MAPI  = monetdb@alf:38709
+QUERY = select f1();
+ERROR = !SELECT: no such operator 'f1'
 
 # 15:06:01 >  
 # 15:06:01 >  Done.

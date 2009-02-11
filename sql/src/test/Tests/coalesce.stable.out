@@ -52,7 +52,7 @@ Over..
 % 22 # length
 [ 30.5	]
 % sys.test,	sys. # table_name
-% id,	ifthenelse_not_isnull_name # name
+% id,	isnull_not_isnull_name # name
 % int,	varchar # type
 % 1,	12 # length
 [ 1,	"a"	]
@@ -60,7 +60,7 @@ Over..
 [ 3,	"c"	]
 [ 4,	"user unknown"	]
 % sys.test,	sys. # table_name
-% id,	ifthenelse_not_isnull_age # name
+% id,	isnull_not_isnull_age # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	20	]
@@ -68,7 +68,7 @@ Over..
 [ 3,	-1	]
 [ 4,	-1	]
 % . # table_name
-% ifthenelse_not_isnull_NULL # name
+% isnull_not_isnull_NULL # name
 % char # type
 % 0 # length
 [ "x"	]

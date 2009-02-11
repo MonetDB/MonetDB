@@ -1245,6 +1245,47 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
+find_order(stmt *s)
+{
+	if (s->type == st_limit) 
+		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
+	else
+		assert(s->type == st_order || s->type == st_reorder);
+		
+	while(s->type == st_reorder)
+		s = s->op1.stval;
+	return s;
+}
+
+static stmt *
+sql_reorder(stmt *order, stmt *s) 
+{
+	list *l = create_stmt_list();
+	node *n;
+	/* we need to keep the order by column, to propagate the sort property*/
+	stmt *o = find_order(order);
+	stmt *x = o->op1.stval;
+
+	order = stmt_mark(stmt_reverse(order), 0);
+	for (n = s->op1.lval->h; n; n = n->next) {
+		stmt *sc = n->data;
+		char *cname = column_name(sc);
+		char *tname = table_name(sc);
+
+		if (sc != x)
+			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
+		else	/* first order by column */
+			sc = stmt_mark(stmt_dup(o), 0);
+		sc = stmt_alias(sc, tname, cname );
+		list_append(l, sc);
+		
+	}
+	stmt_destroy(s);
+	stmt_destroy(order);
+	return stmt_list(l);
+}
+
+static stmt *
 rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
@@ -1260,7 +1301,13 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs)
 			assert(0);
 			return NULL;	
 		}
+		if (sub->type == st_ordered) {
+			stmt *n = sql_reorder(stmt_dup(sub->op1.stval), stmt_dup(sub->op2.stval));
+			stmt_destroy(sub);
+			sub = n;
+		}
 	}
+
 	l = create_stmt_list();
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
@@ -1604,7 +1651,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 
 		/* reduce pivot */
 		j = find_projection_join(limit);
-		if (j) {
+		if (j && 0) {
 			p = find_pivot(j);
 			if (lmt < 0)
 				p = stmt_diff(stmt_dup(p), stmt_dup(limit));
@@ -1645,47 +1692,6 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	if (order) 
 		return stmt_ordered(order, sub);
 	return sub;
-}
-
-static stmt *
-find_order(stmt *s)
-{
-	if (s->type == st_limit) 
-		assert(s->op1.stval->type == st_order || s->op1.stval->type == st_reorder);
-	else
-		assert(s->type == st_order || s->type == st_reorder);
-		
-	while(s->type == st_reorder)
-		s = s->op1.stval;
-	return s;
-}
-
-static stmt *
-sql_reorder(stmt *order, stmt *s) 
-{
-	list *l = create_stmt_list();
-	node *n;
-	/* we need to keep the order by column, to propagate the sort property*/
-	stmt *o = find_order(order);
-	stmt *x = o->op1.stval;
-
-	order = stmt_mark(stmt_reverse(order), 0);
-	for (n = s->op1.lval->h; n; n = n->next) {
-		stmt *sc = n->data;
-		char *cname = column_name(sc);
-		char *tname = table_name(sc);
-
-		if (sc != x)
-			sc = stmt_reverse(stmt_order(stmt_reverse(stmt_join(stmt_dup(order), stmt_dup(sc), cmp_equal)), 1));
-		else	/* first order by column */
-			sc = stmt_mark(stmt_dup(o), 0);
-		sc = stmt_alias(sc, tname, cname );
-		list_append(l, sc);
-		
-	}
-	stmt_destroy(s);
-	stmt_destroy(order);
-	return stmt_list(l);
 }
 
 static stmt *

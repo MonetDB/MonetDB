@@ -633,7 +633,7 @@ func_cmp(sql_func *f, char *name, int nrargs)
 	if (strcmp(f->base.name, name) == 0) {
 		if (list_length(f->ops) == nrargs) {
 			int scale = 0;
-			sql_subfunc *fres = NEW(sql_subfunc);
+			sql_subfunc *fres = ZNEW(sql_subfunc);
 
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
@@ -702,7 +702,7 @@ sql_bind_member(sql_schema *s, char *sqlfname, sql_subtype *tp, int nrargs)
 				/* member functions should not match binary operators */
 				if (nrargs == 2 && subtype_cmp( &((sql_arg *) f->ops->h->data)->type, &((sql_arg *) f->ops->h->next->data)->type) == 0)
 					continue;
-				fres = NEW(sql_subfunc);
+				fres = ZNEW(sql_subfunc);
 
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
@@ -773,7 +773,7 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 		if (strcmp(f->base.name, sqlfname) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 				unsigned int scale = 0;
-				sql_subfunc *fres = NEW(sql_subfunc);
+				sql_subfunc *fres = ZNEW(sql_subfunc);
 
 				sql_ref_init(&(fres->ref));
 				fres->func = f;
@@ -817,7 +817,7 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 			if (strcmp(f->base.name, sqlfname) == 0) {
 				if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 					unsigned int scale = 0;
-					sql_subfunc *fres = NEW(sql_subfunc);
+					sql_subfunc *fres = ZNEW(sql_subfunc);
 
 					sql_ref_init(&(fres->ref));
 					fres->func = f;
@@ -889,7 +889,7 @@ sql_bind_func_result_(sql_schema *s, char *sqlfname, list *ops, sql_subtype *res
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&f->res, res) || f->res.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			unsigned int scale = 0;
-			sql_subfunc *fres = NEW(sql_subfunc);
+			sql_subfunc *fres = ZNEW(sql_subfunc);
 
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
@@ -935,7 +935,7 @@ sql_bind_proc(sql_schema *s, char *sqlfname, list *ops)
 		if (f->res.type)
 			continue;
 		if (strcmp(f->base.name, sqlfname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
-			sql_subfunc *fres = NEW(sql_subfunc);
+			sql_subfunc *fres = ZNEW(sql_subfunc);
 
 			sql_ref_init(&(fres->ref));
 			fres->func = f;

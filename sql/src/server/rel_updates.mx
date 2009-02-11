@@ -192,7 +192,9 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (!r) 
 		return NULL;
 
-	if (r->op != op_project || need_distinct(r))
+	/* In case of missing project, order by or distinct, we need to add	
+	   and projection */
+	if (r->op != op_project || r->r || need_distinct(r))
 		r = rel_project(r, rel_projections(sql, r, NULL, 0, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
 	   (!r->exps && collist)) 

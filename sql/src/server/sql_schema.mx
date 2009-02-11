@@ -989,15 +989,13 @@ drop_role(mvc *sql, dlist *qname)
 	return stmt_none();
 }
 
-stmt *
+static stmt *
 sql_update_add_idx(mvc *sql, sql_table *t, sql_idx * idx)
 {
 	list *exps;
 	sql_kc *ic = idx->columns->h->data;
 	sql_rel *updates, *update;
 
-	if (isNew(ic->c)) /* column is just created, ie gets update by it self */
-		return stmt_none();
  	exps = new_exp_list();
 	exps = append(exps, 
 		exp_column(t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));

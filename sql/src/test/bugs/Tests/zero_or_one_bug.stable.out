@@ -34,7 +34,7 @@ Over..
 [ 1	]
 [ 1	]
 % .,	.L5 # table_name
-% ifthenelse_not_isnull_id1,	L5 # name
+% isnull_not_isnull_id1,	L5 # name
 % int,	varchar # type
 % 1,	1 # length
 [ 1,	NULL	]
@@ -47,7 +47,7 @@ Over..
 [ 8,	NULL	]
 [ 9,	NULL	]
 % .,	.L7 # table_name
-% ifthenelse_not_isnull_id1,	my_col1 # name
+% isnull_not_isnull_id1,	my_col1 # name
 % int,	varchar # type
 % 1,	1 # length
 [ 1,	NULL	]

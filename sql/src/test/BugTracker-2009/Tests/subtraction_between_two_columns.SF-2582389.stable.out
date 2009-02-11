@@ -27,7 +27,7 @@ Over..
 
 [ 1	]
 [ 1	]
-% sys.,	sys.r,	sys.l,	sys. # table_name
+% sys.l,	sys.r,	sys.l,	sys. # table_name
 % id,	inst,	inst,	diff # name
 % int,	double,	double,	double # type
 % 1,	22,	22,	22 # length

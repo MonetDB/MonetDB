@@ -147,6 +147,8 @@ typedef enum operator_type {
 	((e->flag&EXP_DISTINCT))
 #define set_distinct(e) \
 	e->flag |= EXP_DISTINCT
+#define set_nodistinct(e) \
+	e->flag &= (~EXP_DISTINCT)
 
 /* used for expressions and relations */
 #define is_intern(e) \
