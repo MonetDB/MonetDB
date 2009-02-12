@@ -400,7 +400,7 @@ void chkFlow(MalBlkPtr mb)
 			mb->errors++;
 		}
 	}
-	if ( yieldseen){
+	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void){
 			showScriptException(mb,0,SYNTAX,"RETURN missing");
 		mb->errors++;
 	}
