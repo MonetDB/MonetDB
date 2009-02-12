@@ -1130,6 +1130,24 @@ project_unsafe(sql_rel *rel)
 	return 0;
 }
 
+static int
+exps_save(list *exps)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *l = e->l, *r = e->r;
+
+		if (e->type != e_cmp) 
+			return 0;
+		if (l->type != e_column && l->type != e_atom)
+			return 0;
+		if (r->type != e_column && r->type != e_atom)
+			return 0;
+	}
+	return 1;
+}
+
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
@@ -1167,7 +1185,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	} 
 	/* merge 2 selects */
 	r = rel->l;
-	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
+	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except) && exps_save(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -1318,7 +1336,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		}
 		return rel;
 	/* push select through project */
-	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
+	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
 		if (project_unsafe(r))

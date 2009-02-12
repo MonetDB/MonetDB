@@ -13,3 +13,4 @@ cardinality_of_expression_is_wrong.SF-2581617
 subtraction_between_two_columns.SF-2582389
 serial_with_order_by_not_working.SF-2585592
 avg-bug.SF-2132666
+push-select-div-down.SF-2593341
