@@ -165,6 +165,102 @@ join_properties(sql_rel *rel)
 }
 
 static void
+exp_properties(sql_rel *rel, sql_exp *e)
+{
+	sql_exp *ne = NULL;
+
+	switch(e->type) {
+	case e_column:
+		ne = rel_find_exp(rel, e);
+		break;
+	case e_convert:
+		exp_properties(rel, e->l);
+		break;
+	case e_aggr:
+	case e_func: 
+		if (e->l) {
+			list *l = e->l;
+			node *n = l->h;
+	
+			for (;n != NULL; n = n->next) 
+				exp_properties(rel, n->data);
+		}
+		/* rank operators have a second list of arguments */
+		if (e->r) {
+			list *l = e->r;
+			node *n = l->h;
+	
+			for (;n != NULL; n = n->next) 
+				exp_properties(rel, n->data);
+		}
+		break;
+	case e_cmp:	
+		exp_properties(rel, e->l);
+		exp_properties(rel, e->r);
+		if (e->f)
+			exp_properties(rel, e->f);
+		break;
+	case e_atom:
+		/* atoms are used in e_cmp */
+		e->p = prop_create(PROP_USED, e->p);
+		break;
+	}
+	if (ne)
+		ne->p = prop_create(PROP_USED, ne->p);
+}
+
+static void
+exps_properties(sql_rel *rel, sql_rel *subrel)
+{
+	if (rel->exps) {
+		node *n;
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			exp_properties(subrel, e);
+		}
+	}
+	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
+		list *l = rel->r;
+		node *n;
+
+		for (n=l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			exp_properties(rel, e);
+			/* possibly project/groupby uses columns from the inner */ 
+			exp_properties(subrel, e);
+		}
+	}
+}
+
+static void
+exps_used(list *l)
+{
+	node *n;
+
+	if (l) {
+		for (n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+	
+			e->p = prop_create(PROP_USED, e->p);
+		}
+	}
+}
+
+static void
+rel_used(sql_rel *rel)
+{
+	if (is_topn(rel->op))
+		rel = rel->l;
+	if (rel->exps) {
+		exps_used(rel->exps);
+		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
+			exps_used(rel->r);
+	}
+}
+
+static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
 	gp->cnt[(int)rel->op]++;
@@ -185,19 +281,37 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_except: 
 		rel_properties(sql, gp, rel->l);
 		rel_properties(sql, gp, rel->r);
+		exps_properties(rel, rel->l);
+		exps_properties(rel, rel->r);
+
+		/* right hand expressions of set ops are used */
+		if (is_set(rel->op) && rel->r) {
+			sql_rel *r = rel->r;
+			/* setops have no clear dependency relation */
+			if (r->exps)
+				exps_used(r->exps);
+		}
 		break;
 	case op_project:
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
-		if (rel->l)
+		if (rel->l) {
 			rel_properties(sql, gp, rel->l);
+			exps_properties(rel, rel->l);
+		}
 		break;
 	case op_insert:
 	case op_update:
 	case op_delete:
-		if (rel->r)
-			rel_properties(sql, gp, rel->r);
+		if (rel->r) {
+			sql_rel *r = rel->r;
+
+			rel_properties(sql, gp, r);
+			/* updates have no clear dependency relation */
+			if (r->exps)
+				exps_used(r->exps);
+		}
 		break;
 	}
 
@@ -1070,6 +1184,37 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	}
 	exps = rel->exps;
 
+	/* push select through join */
+	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+		rel->exps = new_exp_list(); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = exp_dup(n->data);
+			if (e->type == e_cmp) {
+				sql_exp *re = e->r;
+
+				if (re->card >= CARD_AGGR) {
+					list_append(rel->exps, e);
+				} else {
+					rel->l = rel_push_select(r, e->l, e);
+					/* only pushed down selects are counted */
+					if (r == rel->l) 
+						(*changes)++;
+					r = rel->l;
+				}
+			} else {
+				list_append(rel->exps, e);
+			} 
+		}
+		list_destroy(exps);
+		if (!list_length(rel->exps)) {
+			r = rel->l;
+			rel->l = NULL;
+			rel_destroy(rel);
+			return r;
+		}
+		return rel;
+	}
+
 	/* push select through set */
 	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
 		rel->exps = new_exp_list(); 
@@ -1459,6 +1604,24 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/* when pushing projections up we may introduce new projects around
+ * operators with lower cardinality then before. So we need to fix
+ * the cardinality of these expressions (to atleast match that of the
+ * inner relation).
+ */
+static void
+exps_fix_card( list *exps, int card)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->card > card)
+			e->card = card;
+	}
+}
+
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier. 
  */
@@ -1590,8 +1753,40 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 			rel_destroy(r);
 		} 
 		/* Done, ie introduce new project */
+		exps_fix_card(exps, rel->card);
 		rel = rel_project(rel, exps);
 		*changes = 1;
+		return rel;
+	}
+	return rel;
+}
+
+sql_rel *
+rel_dce(int *changes, mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	if (is_project(rel->op) || rel->op == op_basetable) {
+		if (rel->exps) {
+			node *n;
+			list *exps = new_exp_list();
+
+			for(n=rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (find_prop(e->p, PROP_USED) ||
+					is_intern(e))
+					append(exps, exp_dup(e));
+			}
+			list_destroy(rel->exps);
+			rel->exps = exps;
+			if (list_length(exps) == 0) {
+				sql_rel *r = rel->l;
+
+				rel->l = NULL;
+				rel_destroy(rel);
+				*changes = 1;
+				return r;
+			}
+		}
 		return rel;
 	}
 	return rel;
@@ -1870,6 +2065,113 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/*
+	Rewrite if the expressions c and z are equal
+		REF
+			R()
+		union(
+			select(REF, [x, y, z]),
+			select(REF, [a, b, c])
+		)
+	into
+		REF
+			select(R(), c)
+		union(
+			select(REF, [x, y]),
+			select(REF, [a, b])
+		)
+ */
+
+
+static int
+exps_intern(list *exps)
+{
+	node *n;
+			
+	for (n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;		
+
+		if (is_intern(e))
+			return 1;
+	}
+	return 0;
+}
+
+static int
+exps_distinct( sql_rel *l, list *l_exps, sql_rel *r, list *r_exps)
+{
+	(void)l;
+	(void)l_exps;
+	(void)r;
+	(void)r_exps;
+	return 1;
+}
+
+static int
+rels_are_distinct(sql_rel *l, sql_rel *r)
+{
+	if (l->op != r->op) /* different operators, not sure */
+		return 0;
+	switch(l->op) {
+	case op_basetable:
+		return 0;
+	case op_table:
+		return exps_distinct(l, l->exps, r, r->exps);
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+		return (rels_are_distinct(l->l, r->l) ||
+		    rels_are_distinct(l->r, r->r));
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		return need_distinct(((sql_rel*)l->l)) &&
+		       need_distinct(((sql_rel*)r->l));
+	case op_topn: 
+	case op_project:
+	case op_groupby: 
+		return (rels_are_distinct(l->l, r->l)); 
+	case op_select: 
+		return (rels_are_distinct(l->l, r->l) ||
+			exps_distinct(l, l->exps, r, r->exps));
+	case op_insert:
+	case op_update:
+	case op_delete:
+		return 0;
+	}
+	return 0;
+}
+
+static sql_rel *
+rel_remove_distinct(int *changes, mvc *sql, sql_rel *rel)
+{
+	(void)sql;
+	(void)changes;
+	if (is_union(rel->op)) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+
+		if (l == r) 
+			set_nodistinct(rel);
+
+		if (rel->exps && exps_intern(rel->exps)) {
+			/* the union is a result of an or expression */
+
+			/* lets walk the trees and find the non matching
+			   select/join expressions
+			 */
+			if (rels_are_distinct(rel->l, rel->r)) 
+				set_nodistinct(rel);
+			return rel;
+		}
+		return rel;
+	}
+	return rel;
+}
+
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter) 
 {
@@ -1941,6 +2243,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	memset(&gp, 0, sizeof(global_props));
 	rel_properties(sql, &gp, rel);
+	rel_used(rel);
 
 #ifdef DEBUG
 {
@@ -1955,13 +2258,14 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 #ifdef DEBUG
 	rel_print(sql, rel, 0);
 #endif
-
 	/* TODO cleanup rel_optimzer.mx (reorder code, remove unused etc) */
+
+	/* Remove unused expressions */
+	if (gp.cnt[op_project])
+		rel = rewrite(sql, rel, &rel_dce); 
 
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */
-
-	/* TODO remove distinct if its not needed */
 
 	/* TODO common sub relation/expression optimizer */
 
@@ -1979,6 +2283,11 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	/* TODO push select up. Sounds bad, but isn't. In case of an join-idx we want the selection on
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
 	   part done after. */
+
+	/* TODO remove distinct if its not needed */
+
+	if (gp.cnt[op_union])
+		rel = rewrite(sql, rel, &rel_remove_distinct); 
 
 	if (gp.cnt[op_join] && gp.cnt[op_groupby])
 		rel = rewrite(sql, rel, &rel_push_join_down); 

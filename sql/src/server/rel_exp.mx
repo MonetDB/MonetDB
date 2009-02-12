@@ -509,16 +509,17 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 	case e_convert:
 		return rel_find_exp_(rel, e->l);
 	case e_aggr:
-	case e_func: {
-		list *l = e->l;
-		node *n = l->h;
-
-		while (ne == NULL && n != NULL) {
-			ne = rel_find_exp_(rel, n->data);
-			n = n->next;
+	case e_func: 
+		if (e->l) {
+			list *l = e->l;
+			node *n = l->h;
+	
+			while (ne == NULL && n != NULL) {
+				ne = rel_find_exp_(rel, n->data);
+				n = n->next;
+			}
+			return ne;
 		}
-		return ne;
-	}
 	case e_cmp:	
 		return NULL;
 	case e_atom:

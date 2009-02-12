@@ -35,7 +35,7 @@ Over..
 % 11 # length
 [ NULL	]
 % sys. # table_name
-% ifthenelse_not_isnull_L3 # name
+% isnull_not_isnull_L3 # name
 % int # type
 % 1 # length
 [ 0	]

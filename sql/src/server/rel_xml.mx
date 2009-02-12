@@ -79,7 +79,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 				
 				/* lets glue the xml content together */
 				if (res) {
-					res = rel_binop_(sql, res, c_st, NULL, "concat"); 
+					res = rel_binop_(sql, res, c_st, NULL, "concat", 0); 
 				} else {
 					res = c_st;
 				}
@@ -110,7 +110,7 @@ rel_xmlelement(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		exp_destroy(res);
 		return NULL;
 	}
-	return rel_nop_(sql, exp_atom_clob(tag), ns_st, attr_st, res, NULL, "element");
+	return rel_nop_(sql, exp_atom_clob(tag), ns_st, attr_st, res, NULL, "element", 0);
 }
 
 static sql_exp *
@@ -165,10 +165,10 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			} else {
 				tag = _strdup(tag);
 			}
-			c_st = rel_nop_(sql, exp_atom_clob(tag), exp_dup(ns_st), exp_dup(attr_st), c_st, NULL, "element");
+			c_st = rel_nop_(sql, exp_atom_clob(tag), exp_dup(ns_st), exp_dup(attr_st), c_st, NULL, "element", 0);
 			/* lets glue the xml content together */
 			if (res) {
-				res = rel_binop_(sql, res, c_st, NULL, "concat"); 
+				res = rel_binop_(sql, res, c_st, NULL, "concat", 0); 
 			} else {
 				res = c_st;
 			}
@@ -189,7 +189,7 @@ rel_xmlcomment(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	comment_st = rel_value_exp(sql, rel, comment, f, knd); 
 	if (!comment_st)
 		return NULL;
-	return rel_unop_(sql, comment_st, NULL, "comment"); 
+	return rel_unop_(sql, comment_st, NULL, "comment", 0); 
 }
 
 static sql_exp *
@@ -208,7 +208,7 @@ rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		attr_name = exp_name(attr_st);
 	}
 	attr_name_st = exp_atom_str(attr_name, &str_type);
-	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute"); 
+	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute", 0); 
 }
 
 
@@ -227,7 +227,7 @@ rel_xmlconcat(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			return NULL;
 		}
 		if (res) 
-			res = rel_binop_(sql, res, concat_st, NULL, "concat"); 
+			res = rel_binop_(sql, res, concat_st, NULL, "concat", 0); 
 		else
 			res = concat_st;
 	}	
@@ -244,7 +244,7 @@ rel_xmldocument(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 	val_st = rel_value_exp(sql, rel, val, f, knd); 
 	if (!val_st)
 		return NULL;
-	return rel_unop_(sql, val_st, NULL, "document"); 
+	return rel_unop_(sql, val_st, NULL, "document", 0); 
 }
 
 static sql_exp *
@@ -264,7 +264,7 @@ rel_xmlpi(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		exp_destroy(target_st);
 		return NULL;
 	}
-	return rel_binop_(sql, target_st, val_st, NULL, "pi"); 
+	return rel_binop_(sql, target_st, val_st, NULL, "pi", 0); 
 }
 
 /* cast string too xml */
