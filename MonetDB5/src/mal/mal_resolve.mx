@@ -88,7 +88,7 @@ resolved, it is marked TYPE_DYNAMIC otherwise.
 
 mal_export void chkProgram(Module s, MalBlkPtr mb);
 mal_export void chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
-mal_export void chkTypes(Module s, MalBlkPtr mb);
+mal_export void chkTypes(Module s, MalBlkPtr mb, int silent);
 mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 mal_export InstrPtr dynamicTypeChecker(Module scope,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p);
@@ -457,7 +457,8 @@ This piece of code may be shared by the separate binder
 				p->fcn = getSignature(s)->fcn;
 			break;
 		default: {
-			showScriptException(mb, getPC(mb, p), MAL, 
+			if (!silent)
+				showScriptException(mb, getPC(mb, p), MAL, 
 					"MALresolve: unexpected token type");
 			mb->errors++;
 			return -3;
@@ -586,8 +587,8 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 				"type mismatch %s := %s", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
-		mb->errors++;
 	}
+	mb->errors++;
 	p->typechk= TYPE_UNKNOWN;
 }
 @-
@@ -668,8 +669,9 @@ variables.
 @c
 	if( getFunctionId(p) ) return;
 	if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
-		showScriptException( mb, getPC(mb,p), TYPE,
-			"Multiple assignment mismatch");
+		if ( !silent)
+			showScriptException( mb, getPC(mb,p), TYPE,
+				"Multiple assignment mismatch");
 		mb->errors++;
 	} else
 		p->typechk= TYPE_RESOLVED;
@@ -758,6 +760,7 @@ to be seen.
 int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 	Module m=0;
 	Symbol s;
+	int silent=FALSE;
 
 	if( p->token != ASSIGNsymbol) return 0;
 	if( getModuleId(p)== NULL || getFunctionId(p)== NULL) return 0;
@@ -789,14 +792,14 @@ should be ignored. This should be separately administered for the flow
 as well, because a dynamically typed instruction should later on not
 lead to a re-check when it was already fully analysed.
 @c
-void chkTypes(Module s, MalBlkPtr mb){
+void chkTypes(Module s, MalBlkPtr mb, int silent){
 	InstrPtr p=0;
 	int i, chk=0;
 
 	for(i=0;i<mb->stop;i++) {
 		p= getInstrPtr(mb,i);
 		if(p== NULL) continue;
-		typeChecker(s,mb,p,FALSE);
+		typeChecker(s,mb,p,silent);
 
 		if( getFunctionId(p) ){
 			if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
@@ -818,7 +821,7 @@ void chkProgram(Module s, MalBlkPtr mb)
 		mb->typefixed = mb->stop == chk; ignored END */
 /*	if( mb->flowfixed == 0)*/
 
-	chkTypes(s,mb);
+	chkTypes(s,mb, FALSE);
 	chkFlow(mb);
 	chkDeclarations(mb);
 }
