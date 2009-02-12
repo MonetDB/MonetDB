@@ -117,9 +117,6 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 
 	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
 		mb = cntxt->curprg->def;
-		for (i=1; i < mb->vtop; i++)
-			freeVariable(mb,i);
-		mb->vtop= 1;
 		for (i = 1; i < mb->stop; i++)
 			if (mb->stmt[i]->token == REMsymbol)
 				cnt++;
