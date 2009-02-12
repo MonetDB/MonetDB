@@ -368,6 +368,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	str ret;
+	int keepAlive = stk->keepAlive;
 
 	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
@@ -375,7 +376,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 
 	/* pass the new debug mode to the caller */
 	if (env && stk->cmd!='f') env->cmd = stk->cmd;
-	if (!stk->keepAlive && garbageControl(getInstrPtr(mb,0)) )
+	if ( keepAlive == 0 && garbageControl(getInstrPtr(mb,0)) )
 		garbageCollector(cntxt, mb,stk,env!=stk);
 	return ret;
 }
@@ -1415,7 +1416,7 @@ switch(pci->barrier){
 
 		if( getInstrPtr(mb,0)->token == FACTORYsymbol){
 			yieldResult(mb,pci,stkpc);
-			shutdownFactory(mb, 0);
+			shutdownFactory(mb, TRUE);
 		} else
 			/* a fake multi-assignment */
 			if( env != NULL && pcicaller != NULL){

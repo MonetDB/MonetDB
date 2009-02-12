@@ -784,10 +784,8 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 	if (*b != 0) {
 		char *fcnname = strchr(b, '.');
 		Symbol fsym;
-		if (fcnname == NULL ) {
-			stream_printf(out, "<mod>.<fcn>[<nr>] expected\n", b);
+		if (fcnname == NULL ) 
 			return NULL;
-		}
 		*fcnname = 0;
 		fcnname++;
 		if( (h= strchr(fcnname,'[')) ){
