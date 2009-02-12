@@ -1080,7 +1080,7 @@ query block.
 	if (err == 0) {
 		pushEndInstruction(c->curprg->def);
 
-		chkTypes(c->nspace, c->curprg->def); /* resolve types */
+		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
@@ -1329,7 +1329,7 @@ SQLrecompile(Client c, backend *be)
 
 	pushEndInstruction(c->curprg->def);
 
-	chkTypes(c->nspace, c->curprg->def); /* resolve types */
+	chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		/* restore the state */
