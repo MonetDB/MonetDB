@@ -166,7 +166,8 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	s= findSymbol( 	VALget(&getVar(mb, getArg(p, 1))->value),
 			VALget(&getVar(mb, getArg(p, 2))->value));
 
-	if( s== NULL || !isSideEffectFree(s->def)){
+	if( s== NULL || !isSideEffectFree(s->def) || 
+		getInstrPtr(s->def,0)->retc != p->retc ) {
 #ifdef DEBUG_OPT_REMAP
 		if( s== NULL)
 			stream_printf(cntxt->fdout,"#not found \n");
@@ -175,6 +176,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 #endif
 		return 0;
 	}
+	for (i=0; i<p->retc; i++)
+	if( getArgType(s->def,getInstrPtr(s->def,0),i) != getArgType(mb,p,i))
+		return 0;
 @-
 Determine the variables to be upgraded and adjust their type
 @c
@@ -481,8 +485,7 @@ geared at handling the PSM code.
 			avg = pushArgument(mb, avg, getDestVar(cnt));
 			freeInstruction(p);
 			pushInstruction(mb, avg);
-		} else 
-		{
+		} else {
 			pushInstruction(mb, p);
 		}
 	}
@@ -496,7 +499,14 @@ geared at handling the PSM code.
 		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_ALL);
 	}
 #endif
-	return doit;
+	if (doit) {
+		chkTypes(cntxt->nspace,mb,TRUE);
+		/* clean out on errors by resetting the block */
+		if ( mb->errors)
+		for( i=1;i<slimit; i++){
+		}
+	}
+	return mb->errors? 0: doit;
 }
 
 str

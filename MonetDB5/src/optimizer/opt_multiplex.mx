@@ -252,9 +252,11 @@ OPTmultiplexSimple(Client cntxt)
 	}
 	if( doit) {
 		OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		chkTypes(cntxt->nspace, mb);
-		chkFlow(mb);
-		chkDeclarations(mb);
+		chkTypes(cntxt->nspace, mb,TRUE);
+		if ( mb->errors == 0) {
+			chkFlow(mb);
+			chkDeclarations(mb);
+		}
 	}
 	return 0;
 }
