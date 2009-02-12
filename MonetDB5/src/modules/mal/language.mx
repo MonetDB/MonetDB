@@ -285,7 +285,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
-		stream_printf(cntxt->fdout,"REGISTER FUNCTIOn %s.%s\n",
+		stream_printf(cntxt->fdout,"#REGISTER FUNCTION %s.%s\n",
 			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)
