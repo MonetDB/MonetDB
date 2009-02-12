@@ -230,7 +230,7 @@ void chkFlow(MalBlkPtr mb)
 	int  var[DEPTH];
 	InstrPtr stmt[DEPTH];
 	int btop=0;
-	int retseen=0;
+	int retseen=0, yieldseen=0;
 	int fixed=1;    
 	InstrPtr p;
 
@@ -331,10 +331,14 @@ void chkFlow(MalBlkPtr mb)
 			if( ps->token != FACTORYsymbol){
 			    showScriptException(mb,i,SYNTAX,"yield misplaced!");
 			    mb->errors++;
-			} }
+			}
+			yieldseen= TRUE;
+			 }
 		case RETURNsymbol:
 			{   InstrPtr ps= getInstrPtr(mb,0);
 			    int e;
+				if (p->barrier == RETURNsymbol)
+					yieldseen = FALSE; /* always end with a return */
 			    if( ps->retc != p->retc){
 			        showScriptException(mb,i,SYNTAX,
 						"invalid return target!");
@@ -395,6 +399,10 @@ void chkFlow(MalBlkPtr mb)
 			showScriptException(mb,0,SYNTAX,"RETURN missing");
 			mb->errors++;
 		}
+	}
+	if ( yieldseen){
+			showScriptException(mb,0,SYNTAX,"RETURN missing");
+		mb->errors++;
 	}
 	if( mb->errors == 0 )
 		mb->flowfixed = fixed; /* we might not have to come back here */
