@@ -58,6 +58,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_support.h"
 
 /*#define _DEBUG_OPT_MITOSIS*/
+#define PARTITION_THRESHOLD (BUN) GDKnr_threads
 
 @c
 #include "mal_config.h"
@@ -96,7 +97,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 		   )
 			r= (BUN) v->value.val.lval;
-		if (r >= rowcnt){
+			if (r >= rowcnt && r > PARTITION_THRESHOLD){
 			schema = getVarConstant(mb, getArg(q,1)).val.sval;
 			table = getVarConstant(mb, getArg(q,2)).val.sval;
 			rowcnt = r;
