@@ -1098,8 +1098,9 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 		if (c->emode == m_plan) {
 			c->emode = m_inplace;
 			rel_print(c, r, 0);
+		} else {
+			s = output_rel_bin(c, r);
 		}
-		s = output_rel_bin(c, r);
 		if (s) {
 			stmt *opt;
 
