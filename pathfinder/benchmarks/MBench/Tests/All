@@ -41,13 +41,13 @@ qs35
 qa01
 # recursive function
 NOT_ALGEBRA?qa02
-qa04
+# join recognition in MPS
+WITH_ALGEBRA?qa04
 qa05
 # recursive function
 NOT_ALGEBRA?qa06
-qj01
-#_requires_8GB_&_runs_>5min_
+# join recognition in MPS
+WITH_ALGEBRA?qj01
 WITH_ALGEBRA?qj02
-qj03
-#_requires_7GB_&_runs_>3.4min_
+WITH_ALGEBRA?qj03
 WITH_ALGEBRA?qj04
