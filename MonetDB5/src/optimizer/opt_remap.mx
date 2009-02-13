@@ -176,9 +176,6 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 #endif
 		return 0;
 	}
-	for (i=0; i<p->retc; i++)
-	if( getArgType(s->def,getInstrPtr(s->def,0),i) != getArgType(mb,p,i))
-		return 0;
 @-
 Determine the variables to be upgraded and adjust their type
 @c
