@@ -169,7 +169,8 @@ rel_name( sql_rel *r )
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)
 			return e->rname;
-		return e->l;
+		if (e->type == e_column)
+			return e->l;
 	}
 	return NULL;
 }

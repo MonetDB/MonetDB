@@ -1548,11 +1548,14 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *sum = rel_find_aggr_exp(rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
 			sql_subtype *dbl_t;
+			char *rname = NULL, *name = NULL;
 
+			rname = (avg->rname)?_strdup(avg->rname):NULL;
+			name = (avg->name)?_strdup(avg->name):NULL;
 			if (!cnt) {
 				list *l = avg->l;
 				sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(avg->l, cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);
@@ -1561,7 +1564,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (!sum) {
 				list *l = avg->l;
 				sql_subaggr *sf = sql_bind_aggr(sql->session->schema, "sum", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(avg->l, sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);
@@ -1575,7 +1578,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			sum = exp_convert(sum, exp_subtype(sum), dbl_t);
 
 			args = new_exp_list();
-			append(args, cnt);
+			append(args, exp_dup(cnt));
 			append(args, exp_atom_wrd(0));
 			cmp = find_func(sql, "=", args);
 			assert(cmp);
@@ -1596,7 +1599,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			assert(div);
 			navg = exp_op(args, div);
 
-			exp_setname(navg, avg->rname, avg->name );
+			exp_setname(navg, rname, name );
 			m->data = navg; 
 		}
 		pexps = new_exp_list();
