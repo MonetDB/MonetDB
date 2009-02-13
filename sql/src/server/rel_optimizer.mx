@@ -919,6 +919,7 @@ push_up_join_exps( sql_rel *rel)
 		if (l && r) {
 			l = list_merge(l, r, (fdup)&exp_dup);
 			list_destroy(r);
+			r = NULL;
 		}
 		if (rel->exps) {
 			if (l && !r)
