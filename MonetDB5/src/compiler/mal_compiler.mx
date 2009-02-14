@@ -167,7 +167,7 @@ static char *mccPrelude[] = {
 	"#include \"kernel/batcalc.h\"\n",
 	"#include \"kernel/batcast.h\"\n",
 	"#include \"kernel/batifthen.h\"\n",
-	"#include \"kernel/batmath.h\"\n",
+	"#include \"kernel/batmmath.h\"\n",
 	"#include \"kernel/batmtime.h\"\n",
 	"#include \"kernel/calc.h\"\n",
 	"#include \"kernel/counters.h\"\n",
