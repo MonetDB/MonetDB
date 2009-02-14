@@ -1216,9 +1216,18 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				} else {
 					rel->l = rel_push_select(r, e->l, e);
 					/* only pushed down selects are counted */
-					if (r == rel->l) 
+					if (r == rel->l) {
 						(*changes)++;
-					r = rel->l;
+					} else { /* Not usefull to introduce an extra select */
+						sql_rel *r = rel->l;
+
+						rel->l = r->l;
+						r->l = NULL;
+						list_append(rel->exps, exp_dup(e));
+						rel_destroy(r);
+						
+					}
+					assert(r == rel->l);
 				}
 			} else {
 				list_append(rel->exps, e);
