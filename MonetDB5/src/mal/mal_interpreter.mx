@@ -1559,11 +1559,13 @@ the bind(namespace, batname, mode) operation. [todo]
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
 
 			/* update the bigfoot information only if we need to gc */
-			updateBigFoot(cntxt, bid, TRUE);
+			if (cntxt->flags &  bigfootFlag)
+				updateBigFoot(cntxt, bid, TRUE);
 			if (backup[i]){
 				if (backup[i] != bid) {
 					/* possible garbage collect the variable */
-					updateBigFoot(cntxt, backup[i], FALSE);
+					if (cntxt->flags &  bigfootFlag)
+							updateBigFoot(cntxt, backup[i], FALSE);
 				}
 				BBPdecref(backup[i], TRUE);
 				backup[i]=0;
@@ -1991,10 +1993,12 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	@1->clk = GDKusec();
+	if ( pci->recycle >= 0)
+		@1->clk = GDKusec();
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
-	tcs = GDKusec() - @1->clk;
+	if ( pci->recycle >= 0)
+		tcs = GDKusec() - @1->clk;
 	if( pci->recycle > 0 )
 		RECYCLEexit(cntxt, mb,stk,pci,tcs);
 @}
@@ -2049,7 +2053,8 @@ All references should be logical.
 			return;
 		if (!BBP_lrefs(bid)) 
 			return;
-		updateBigFoot(cntxt, bid, FALSE);
+		if (cntxt->flags &  bigfootFlag)
+			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid,TRUE);
 	}
 }
