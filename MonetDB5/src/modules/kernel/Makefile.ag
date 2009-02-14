@@ -28,7 +28,7 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
-		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
+		batcast.mx batcalc.mx batmmath.mx aggr.mx counters.mx \
 		microbenchmark.mx 
 
 	#SCRIPTS = mal mil ""
@@ -103,7 +103,7 @@ headers_h = {
 	SOURCES = \
 		calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx  batifthen.mx \
-		batcast.mx batcalc.mx batmath.mx aggr.mx counters.mx \
+		batcast.mx batcalc.mx batmmath.mx aggr.mx counters.mx \
 		microbenchmark.mx \
 		batstr.mx batmtime.mx batcolor.mx group.mx array.mx logger.mx
 	HEADERS = h 
@@ -114,7 +114,7 @@ headers_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = calc.mx bat5.mx algebra.mx status.mx unix.mx \
 		mmath.mx lock.mx sema.mx alarm.mx batstr.mx batmtime.mx \
-		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmath.mx \
+		batcolor.mx batifthen.mx batcast.mx batcalc.mx batmmath.mx \
 		group.mx aggr.mx array.mx \
 		counters.mx logger.mx microbenchmark.mx
 }

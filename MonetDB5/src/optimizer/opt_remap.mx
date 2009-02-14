@@ -112,6 +112,10 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	/* now see if we can resolve the instruction */
 	typeChecker(scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
+#ifdef DEBUG_OPT_REMAP
+	stream_printf(cntxt->fdout,"type error\n");
+	printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
+#endif
 		freeInstruction(p);
 		return 0;
 	}

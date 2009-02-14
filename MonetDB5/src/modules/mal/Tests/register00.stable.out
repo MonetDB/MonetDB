@@ -17,8 +17,8 @@ function user.main():void;
     language.register("user","mytest","io.print(\"hello world\");","first test");
     mdb.list("user","mytest");
 end main;
-REGISTER FUNCTIOn user.main
-#function user.main():int;
+#REGISTER FUNCTION user.main
+#function user.main():void;
 #    io.print("hello world");
 #end main;
 function user.mytest():void;

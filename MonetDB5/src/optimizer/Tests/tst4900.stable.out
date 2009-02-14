@@ -11,7 +11,11 @@ stdout of test 'tst4900` in directory 'src/optimizer` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008- MonetDB B.V., all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31365/
+
+
+
+
 function user.f1(s:str):void;
     t1 := bbp.bind("TREC2003_test_priors_8x32318");
     t2 := array.grid(132000,8,1,0);
@@ -79,7 +83,7 @@ function user.f1(s:str):void;
     t81 := array.grid(1,1056000,1,0);
     t82 := aggr.sum(t72,t80,t81);
     t83 := batcalc.*(t41,t82);
-    t84 := batmath.exp(t83);
+    t84 := batmmath.exp(t83);
     t85 := batcalc.*(t40,t84);
     t86 := batcalc.*(t7,t85);
 #t87 := array.grid(100,1320,8,0); will save 30% by reuse 
@@ -89,7 +93,7 @@ function user.f1(s:str):void;
     t91 := batcalc.oid(t90);
     t92 := array.grid(1,132000,1,0);
     t93 := aggr.sum(t86,t91,t92);
-    t94 := batmath.log(t93);
+    t94 := batmmath.log(t93);
     t95 := array.grid(1,100,1320,0);
     t96 := batcalc.oid(t95);
     t97 := array.grid(1,100,1,0);
@@ -256,10 +260,10 @@ barrier always := true;                 #147 always:bit := _131:bit {J164}
     t82 := aggr.sum(t59,t80,t81);       #152 t82:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t59:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
     _126 := algebra.reuse(t82);         #153 _126:bat[:oid,:dbl] := ALGreuse(t82:bat[:oid,:dbl]) {G}
     t83 := batcalc.*(_126,t41,t82);     #154 t83:bat[:oid,:dbl] := CMDbataccumMULcst2_dbl_dbl_dbl(_126:bat[:oid,:dbl], t41:dbl, t82:bat[:oid,:dbl]) {G}
-    t84 := batmath.exp(t83);            #155 t84:bat[:oid,:dbl] := CMDscience_bat_exp(t83:bat[:oid,:dbl]) {G}
+    t84 := batmmath.exp(t83);           #155 t84:bat[:oid,:dbl] := CMDscience_bat_dbl_exp(t83:bat[:oid,:dbl]) {G}
     t85 := batcalc.*(_127,t40,t84);     #156 t85:bat[:oid,:dbl] := CMDbataccumMUL_dbl_dbl_dbl(_127:bat[:oid,:dbl], t40:bat[:oid,:dbl], t84:bat[:oid,:dbl]) {G}
     t93 := aggr.sum(t85,t91,t92);       #157 t93:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t85:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
-    t94 := batmath.log(t93);            #158 t94:bat[:oid,:dbl] := CMDscience_bat_log(t93:bat[:oid,:dbl]) {G}
+    t94 := batmmath.log(t93);           #158 t94:bat[:oid,:dbl] := CMDscience_bat_dbl_log(t93:bat[:oid,:dbl]) {G}
     t98 := aggr.sum(t94,t96,t97);       #159 t98:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
     top := t98;                         #160 top:bat[:oid,:dbl] := t98:bat[:oid,:dbl] {G}
     io.table(t97,top);                  #161 _117:void := IOttable(t97:bat[:oid,:int], top:bat[:oid,:dbl]) 

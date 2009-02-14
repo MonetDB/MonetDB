@@ -15,10 +15,11 @@
 @' Copyright August 2008-2009 MonetDB B.V.
 @' All Rights Reserved.
 
-@f batmath
+@f batmmath
 @a M.L. Kersten
 @+ BAT math calculator
-
+This module contains the multiplex versions of the linked
+in mathematical functions.
 @{
 @= tstBat
 if( bn== NULL) {*ret= 0;
@@ -30,13 +31,17 @@ the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
 	command @1(x:bat[:oid,:dbl])  :bat[:oid,:dbl] 
-	address CMDscience_bat_@1;
+	address CMDscience_bat_dbl_@1;
+	command @1(x:bat[:oid,:flt])  :bat[:oid,:flt] 
+	address CMDscience_bat_flt_@1;
 @= scienceFcnBinary
-	command @1(x:bat[:oid,:dbl],y:@2):bat[:oid,:dbl] 
-	address CMDscience_bat_cst_@1;
+	command @1(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	address CMDscience_bat_cst_@1_dbl;
+	command @1(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	address CMDscience_bat_cst_@1_flt;
 @-
 @mal
-module batmath;
+module batmmath;
 	@:scienceFcn(asin)@
 	@:scienceFcn(acos)@
 	@:scienceFcn(atan)@
@@ -57,10 +62,9 @@ module batmath;
 	round is not binary...
 	@:scienceFcnBinary(round,int)@
 @mal
-	@:scienceFcnBinary(fmod,dbl)@
-	@:scienceFcnBinary(atan2,dbl)@
-	@:scienceFcnBinary(pow,dbl)@
-
+	@:scienceFcnBinary(fmod)@
+	@:scienceFcnBinary(atan2)@
+	@:scienceFcnBinary(pow)@
 @- Implementation
 @include kprelude.mx
 
@@ -75,22 +79,22 @@ module batmath;
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"
-#include "batmath.h"
+#include "batmmath.h"
 
 #ifdef WIN32
 #ifndef LIBBATMATH
-#define batmath_export extern __declspec(dllimport)
+#define batmmath_export extern __declspec(dllimport)
 #else
-#define batmath_export extern __declspec(dllexport)
+#define batmmath_export extern __declspec(dllexport)
 #endif
 #else
-#define batmath_export extern
+#define batmmath_export extern
 #endif
 
 @-
 @= scienceFcnImpl
-batmath_export str CMDscience_bat_@1(int *ret, int *bid);
-str CMDscience_bat_@1(int *ret, int *bid)
+batmmath_export str CMDscience_bat_@2_@1(int *ret, int *bid);
+str CMDscience_bat_@2_@1(int *ret, int *bid)
 {
 	BAT *b,*bn;
 	@2 *o, *p, *q;
@@ -126,8 +130,8 @@ str CMDscience_bat_@1(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
-batmath_export str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d);
-str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d)
+batmmath_export str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d);
+str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 {
 	BAT *b,*bn;
 	@2 *o, *p, *q;
@@ -163,29 +167,35 @@ str CMDscience_bat_cst_@1(int *ret, int *bid, @2 *d)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+@= scienceImpl
+@:scienceFcnImpl(@1,dbl)@
+@:scienceFcnImpl(@1,flt)@
 @c
-@:scienceFcnImpl(asin,dbl)@
-@:scienceFcnImpl(acos,dbl)@
-@:scienceFcnImpl(atan,dbl)@
-@:scienceFcnImpl(cos,dbl)@
-@:scienceFcnImpl(sin,dbl)@
-@:scienceFcnImpl(tan,dbl)@
-@:scienceFcnImpl(cosh,dbl)@
-@:scienceFcnImpl(sinh,dbl)@
-@:scienceFcnImpl(tanh,dbl)@
-@:scienceFcnImpl(exp,dbl)@
-@:scienceFcnImpl(log,dbl)@
-@:scienceFcnImpl(log10,dbl)@
-@:scienceFcnImpl(sqrt,dbl)@
-@:scienceFcnImpl(ceil,dbl)@
-@:scienceFcnImpl(fabs,dbl)@
-@:scienceFcnImpl(floor,dbl)@
+@:scienceImpl(asin)@
+@:scienceImpl(acos)@
+@:scienceImpl(atan)@
+@:scienceImpl(cos)@
+@:scienceImpl(sin)@
+@:scienceImpl(tan)@
+@:scienceImpl(cosh)@
+@:scienceImpl(sinh)@
+@:scienceImpl(tanh)@
+@:scienceImpl(exp)@
+@:scienceImpl(log)@
+@:scienceImpl(log10)@
+@:scienceImpl(sqrt)@
+@:scienceImpl(ceil)@
+@:scienceImpl(fabs)@
+@:scienceImpl(floor)@
 @-
 	round is not binary...
 	@:scienceBinaryImpl(round,int)@
 @c
 @:scienceBinaryImpl(fmod,dbl)@
+@:scienceBinaryImpl(fmod,flt)@
 @:scienceBinaryImpl(atan2,dbl)@
+@:scienceBinaryImpl(atan2,flt)@
 @:scienceBinaryImpl(pow,dbl)@
+@:scienceBinaryImpl(pow,flt)@
 
 @}
