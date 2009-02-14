@@ -15,3 +15,4 @@ serial_with_order_by_not_working.SF-2585592
 avg-bug.SF-2132666
 push-select-div-down.SF-2593341
 AVG_ReturnsNoLines.SF-2596084
+push_select_down_crash
