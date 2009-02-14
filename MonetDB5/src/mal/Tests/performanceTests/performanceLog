@@ -1120,3 +1120,16 @@ tst400e		 0.223/0.211/0.011	1M incr fcn
 
 tst901a		 0.271/0.224/0.047	[+] call
 tst901b		 0.737/0.695/0.042	[+] call
+======================== 14 Feb 2009 ===================
+The new machines arrived, eir.ins.cwi.nl
+The compilation mode for V5 is --enable-optimize --disable-debug
+command: time mserver5 -c perf.conf TST </dev/null >/dev/null
+base		 0.060/0.043/0.014					
+tst400a		 0.217/0.198/0.016	1M loop			
+tst400bHuge	 0.162/0.129/0.030	100k count (io)	
+tst400cHuge	 0.239/0.205/0.029	100k insert(io) 
+tst400d		 0.679/0.649/0.027	1M insert tuple 
+tst400e		 0.894/0.874/0.018	1M incr fcn	
+
+tst901a		 0.866/0.815/0.047	[+] call
+tst901b		 2.601/2.531/0.066	[+] call
