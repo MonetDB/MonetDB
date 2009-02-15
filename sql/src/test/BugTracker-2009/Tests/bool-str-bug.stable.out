@@ -29,13 +29,11 @@ Over..
 [ 1	]
 [ 1	]
 % sys.t # table_name
-% i # name
-% int # type
+% b # name
+% char # type
 % 1 # length
-[ 1	]
-[ 2	]
-[ 1	]
-[ 0	]
+[ "1"	]
+[ "0"	]
 [ NULL	]
 
 # 19:54:05 >  

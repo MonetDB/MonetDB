@@ -17,3 +17,4 @@ push-select-div-down.SF-2593341
 AVG_ReturnsNoLines.SF-2596084
 push_select_down_crash
 bool-str-bug
+rollback_bug
