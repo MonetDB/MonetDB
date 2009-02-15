@@ -100,7 +100,7 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 	@2 *o, *p, *q;
 
 	@:getBATdescriptor(bid,b,"batcalc.@1")@
-	@:voidresultBAT(TYPE_dbl,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@2,"batcalc.@1")@
 
 	o = (@2*) Tloc(bn, BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -111,7 +111,7 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 			*o = @1(*p);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == dbl_nil? dbl_nil: @1(*p);
+			*o = *p == @2_nil? @2_nil: @1(*p);
 		}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
@@ -137,7 +137,7 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 	@2 *o, *p, *q;
 
 	@:getBATdescriptor(bid,b,"batcalc.@1")@
-	@:voidresultBAT(TYPE_dbl,"batcalc.@1")@
+	@:voidresultBAT(TYPE_@2,"batcalc.@1")@
 
 	o = (@2*) Tloc(bn, BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -148,7 +148,7 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 			*o = (@2) @1(*p,*d);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == dbl_nil? dbl_nil: (@2) @1(*p,*d);
+			*o = *p == @2_nil? @2_nil: (@2) @1(*p,*d);
 		}
 
 	BATsetcount(bn, BATcount(b));
