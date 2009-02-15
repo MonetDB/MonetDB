@@ -108,10 +108,10 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 
 	if (b->T->nonil){
 		for(;p<q; o++, p++)
-			*o = @1(*p);
+			*o = (@2) @1(*p);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == @2_nil? @2_nil: @1(*p);
+			*o = *p == @2_nil? @2_nil: (@2) @1(*p);
 		}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
