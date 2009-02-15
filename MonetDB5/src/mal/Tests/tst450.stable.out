@@ -84,7 +84,7 @@ end main;
 [ "bat",	  nil	  ]
 [ "batcalc",	  nil	  ]
 [ "batcolor",	  nil	  ]
-[ "batmath",	  nil	  ]
+[ "batmmath",	  nil	  ]
 [ "batmtime",	  nil	  ]
 [ "batstr",	  nil	  ]
 [ "bbp",	  nil	  ]

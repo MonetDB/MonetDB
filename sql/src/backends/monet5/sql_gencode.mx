@@ -1813,19 +1813,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}	break;
 		case st_return: {
 			int c = _dumpstmt(sql,mb, s->op1.stval);
-			int tt = tail_type(s->op1.stval)->type->localtype;
 
 			if (s->flag) { /* drop declared tables */
 				InstrPtr k = newStmt1(mb, sqlRef, "dropDeclaredTables");
 				k = pushInt(mb, k, s->flag);
 			} 
 			q = newInstruction(mb,RETURNsymbol);
-			if (tt == TYPE_bat) {
-				tt = newBatType(TYPE_str,TYPE_bat);
-				getArg(q,0)= newTmpVariable(mb, tt);
-			} else {
-				getArg(q,0)= newTmpVariable(mb, tt);
-			}
+			getArg(q,0) = getArg(getInstrPtr(mb,0),0);
 			pushArgument(mb,q,c);
 			pushInstruction(mb, q);
 		}	break;

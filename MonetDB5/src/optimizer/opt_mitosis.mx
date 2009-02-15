@@ -90,6 +90,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				!(getFunctionId(q)==bindRef ||
 				  getFunctionId(q)==bindidxRef ))
 			continue;
+@-
+The SQL optimizer already collects the counts of the
+base table and passes them on as a row property.
+@c
 		v= varGetProp(mb, getArg(q,0), rowsProp);
 		if (v && v->value.val.lval >= 0
 #if SIZEOF_BUN <= SIZEOF_INT

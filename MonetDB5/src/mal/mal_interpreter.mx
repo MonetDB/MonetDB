@@ -489,17 +489,28 @@ The code currently does not statically checks the mode change.
 Preferrably we should introduce a itrace flag PROFILE
 We rely on optimizing compilers to remove the redundant code.
 @c
+	if (mb->recycle ==  TRUE && malProfileMode == 0 && 
+		cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
+		while(stkpc < mb->stop && stkpc != stoppc ){
+			pci = getInstrPtr(mb,stkpc);
+			if (malProfileMode + cntxt->itrace)
+				goto workslow;
+            
+				@:MALrecycleStart(stk)@ {
+				lng tcs;
+				@:MALinterpret(FAST)@
+				@:MALrecycleExit(stk)@
+			}
+			@:MALflowofcontrol(FAST,continue)@
+		}
+	} else
 	if (malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
 		while(stkpc < mb->stop && stkpc != stoppc ){
 			pci = getInstrPtr(mb,stkpc);
 			if (malProfileMode + cntxt->itrace)
 				goto workslow;
             
-     		@:MALrecycleStart(stk)@ {
-				lng tcs;
 				@:MALinterpret(FAST)@
-				@:MALrecycleExit(stk)@
-			}
 			@:MALflowofcontrol(FAST,continue)@
 		}
 	} else
@@ -530,7 +541,7 @@ workslow:
 
 		@:beginProfile(stk)@
 		@:MALrecycleStart(stk)@ {
-      	    lng tcs;
+      	    lng tcs = 0;
             @:MALinterpret(SLOW)@
 			@:MALrecycleExit(stk)@
 		}
@@ -1542,20 +1553,19 @@ the bind(namespace, batname, mode) operation. [todo]
 #ifdef STACKTRACE
 	printf("restoreTarget %d\n", needsCleanup(pci));
 #endif
-	/* update the bigfoot information */
-	for(i=0; i<pci->retc; i++)
-	if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
-		bat bid = stk->stk[getArg(pci,i)].val.bval;
-		updateBigFoot(cntxt, bid, TRUE);
-	}
 	if(ret==MAL_SUCCEED && needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			bat bid = stk->stk[getArg(pci,i)].val.bval;
+
+			/* update the bigfoot information only if we need to gc */
+			if (cntxt->flags &  bigfootFlag)
+				updateBigFoot(cntxt, bid, TRUE);
 			if (backup[i]){
 				if (backup[i] != bid) {
 					/* possible garbage collect the variable */
-					updateBigFoot(cntxt, backup[i], FALSE);
+					if (cntxt->flags &  bigfootFlag)
+							updateBigFoot(cntxt, backup[i], FALSE);
 				}
 				BBPdecref(backup[i], TRUE);
 				backup[i]=0;
@@ -1983,10 +1993,12 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	@1->clk = GDKusec();
+	if ( pci->recycle >= 0)
+		@1->clk = GDKusec();
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
-	tcs = GDKusec() - @1->clk;
+	if ( pci->recycle >= 0)
+		tcs = GDKusec() - @1->clk;
 	if( pci->recycle > 0 )
 		RECYCLEexit(cntxt, mb,stk,pci,tcs);
 @}
@@ -2041,7 +2053,8 @@ All references should be logical.
 			return;
 		if (!BBP_lrefs(bid)) 
 			return;
-		updateBigFoot(cntxt, bid, FALSE);
+		if (cntxt->flags &  bigfootFlag)
+			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid,TRUE);
 	}
 }

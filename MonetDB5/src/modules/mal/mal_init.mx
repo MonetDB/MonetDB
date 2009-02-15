@@ -58,7 +58,7 @@ library url;
 library mtime;
 library inet;
 
-library batmath;
+library batmmath;
 library batcalc;
 library batcast;
 library batifthen;
@@ -141,7 +141,7 @@ include identifier;
 @-
 The hardwired multiplex extensions
 @mal
-include batmath;
+include batmmath;
 include batcalc;
 include batcast;
 include batifthen;

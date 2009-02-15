@@ -120,8 +120,8 @@ end random;
 @end example
 
 The operators to built client aware factories are,
-@sc{factory.getCaller()}, which returns a client 
-index, @sc{factory.getModule()} and @sc{factory.getFunction()}, 
+@sc{factories.getCaller()}, which returns a client 
+index, @sc{factories.getModule()} and @sc{factories.getFunction()}, 
 which returns the identity of scope enclosed.
 
 To illustrate, the client specific random generator
@@ -129,7 +129,7 @@ can be shielded using the factory:
 @example
 factory random(seed:int):int;
 barrier always:=true;
-    clientid:= factory.getCaller();
+    clientid:= factories.getCaller();
     yield user.random(seed, clientid);
     redo always;
 exit always;
