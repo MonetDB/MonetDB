@@ -169,7 +169,8 @@ rel_name( sql_rel *r )
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)
 			return e->rname;
-		return e->l;
+		if (e->type == e_column)
+			return e->l;
 	}
 	return NULL;
 }
@@ -2269,6 +2270,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		sql_rel *lr, *rr;
 
+		if (!rel)
+			return NULL;
 		lr = rel;
 		rr = rel_copy(lr);
 		//rr = rel_dup(rel_dup(lr));
