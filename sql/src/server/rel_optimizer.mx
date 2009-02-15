@@ -919,6 +919,7 @@ push_up_join_exps( sql_rel *rel)
 		if (l && r) {
 			l = list_merge(l, r, (fdup)&exp_dup);
 			list_destroy(r);
+			r = NULL;
 		}
 		if (rel->exps) {
 			if (l && !r)
@@ -1130,6 +1131,24 @@ project_unsafe(sql_rel *rel)
 	return 0;
 }
 
+static int
+exps_save(list *exps)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data, *l = e->l, *r = e->r;
+
+		if (e->type != e_cmp) 
+			return 0;
+		if (l->type != e_column && l->type != e_atom)
+			return 0;
+		if (r->type != e_column && r->type != e_atom)
+			return 0;
+	}
+	return 1;
+}
+
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
@@ -1167,7 +1186,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	} 
 	/* merge 2 selects */
 	r = rel->l;
-	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
+	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except) && exps_save(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -1197,9 +1216,18 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				} else {
 					rel->l = rel_push_select(r, e->l, e);
 					/* only pushed down selects are counted */
-					if (r == rel->l) 
+					if (r == rel->l) {
 						(*changes)++;
-					r = rel->l;
+					} else { /* Not usefull to introduce an extra select */
+						sql_rel *r = rel->l;
+
+						rel->l = r->l;
+						r->l = NULL;
+						list_append(rel->exps, exp_dup(e));
+						rel_destroy(r);
+						
+					}
+					assert(r == rel->l);
 				}
 			} else {
 				list_append(rel->exps, e);
@@ -1318,7 +1346,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		}
 		return rel;
 	/* push select through project */
-	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
+	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
 		if (project_unsafe(r))
@@ -1529,11 +1557,14 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *sum = rel_find_aggr_exp(rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
 			sql_subtype *dbl_t;
+			char *rname = NULL, *name = NULL;
 
+			rname = (avg->rname)?_strdup(avg->rname):NULL;
+			name = (avg->name)?_strdup(avg->name):NULL;
 			if (!cnt) {
 				list *l = avg->l;
 				sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(avg->l, cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), cf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);
@@ -1542,7 +1573,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (!sum) {
 				list *l = avg->l;
 				sql_subaggr *sf = sql_bind_aggr(sql->session->schema, "sum", exp_subtype(l->h->data));
-				sql_exp *e = exp_aggr(avg->l, sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
+				sql_exp *e = exp_aggr(list_dup(avg->l, (fdup)&exp_dup), sf, need_distinct(avg), has_no_nil(avg), avg->card, has_nil(avg));
 
 				exp_label(e, ++sql->label);
 				append(nexps, e);
@@ -1556,7 +1587,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			sum = exp_convert(sum, exp_subtype(sum), dbl_t);
 
 			args = new_exp_list();
-			append(args, cnt);
+			append(args, exp_dup(cnt));
 			append(args, exp_atom_wrd(0));
 			cmp = find_func(sql, "=", args);
 			assert(cmp);
@@ -1577,7 +1608,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			assert(div);
 			navg = exp_op(args, div);
 
-			exp_setname(navg, avg->rname, avg->name );
+			exp_setname(navg, rname, name );
 			m->data = navg; 
 		}
 		pexps = new_exp_list();
