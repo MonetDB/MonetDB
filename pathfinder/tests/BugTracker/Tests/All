@@ -157,8 +157,7 @@ immune_for_updates.SF-1981852
 join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
-#takes >30 minutes & >6 GB to run (compile)
->30min_>6GB?compilation_or_runtime_choice.SF-1991738_0_ALG
+compilation_or_runtime_choice.SF-1991738_0_ALG
 #type error: can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
