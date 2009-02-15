@@ -1,0 +1,36 @@
+stdout of test 'non-existing_collection.SF-1991726` in directory 'tests/BugTracker` itself:
+
+
+# 19:26:49 >  
+# 19:26:49 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36543 --set xrpc_port=44923 --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 19:26:49 >  
+
+# MonetDB Server v4.24.0
+# based on GDK   v1.24.0
+# Copyright (c) 1993-2008, CWI. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.5.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.24.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:44923/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 22:13:28 >  
+# 22:13:28 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=39395 non-existing_collection.SF-1991726.xq
+# 22:13:28 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult></XQueryResult>
+
+# 22:13:28 >  
+# 22:13:28 >  Done.
+# 22:13:28 >  
+
