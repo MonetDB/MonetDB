@@ -42,7 +42,7 @@ to be passed by a handle.
 @h
 
 /*#define DEBUG_MAL_INTERPRETER*/
-/*#define DEBUG_FLOW */
+/* #define DEBUG_FLOW */
 /*#define STACKTRACE*/
 
 mal_export void showErrors(Client cntxt);
@@ -851,7 +851,7 @@ runDFLOWworker(void *t)
 	FlowTask *task = (FlowTask*) t;
 	str err;
 	int oldpc;
-//	int hour=0;
+/*	int hour=0; */
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKstdout, "start parallel interpreter thread\n");
@@ -1056,7 +1056,7 @@ if (blocked) {
 		oa = getArg(p,1);
 		printf("cannot enqueue in [ %1d %2d %3d ]\n", flow->blocked[getArg(p,0)], flow->inuse[oa], flow->reassign[oa]);
 	}
-	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
 }
 #endif
 				if (!blocked) { 
@@ -1065,7 +1065,7 @@ if (blocked) {
 
 #ifdef DEBUG_FLOW
 	printf("enqueue %d\n", fs[i].pc);
-	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
 #endif
 					q_enqueue(work, fs+i);
 				}
@@ -1089,7 +1089,7 @@ if (blocked) {
 
 #ifdef DEBUG_FLOW
 	printf("done %d\n", f->pc);
-	printInstruction(GDKstdout, flow->mb, p, LIST_MAL_ALL);
+	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
 #endif
 				/* deblock the output args */
 				for(j=0; j<p->retc; j++) {

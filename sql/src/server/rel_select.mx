@@ -1835,9 +1835,9 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, in
 			r = rel_subquery(sql, rel, ro, ek);
 
 			/* get inner queries result value, ie
-			   get last expression of r->r */
+			   get last expression of r */
 			if (r) {
-				rs = rel_lastexp(sql, r->r);
+				rs = rel_lastexp(sql, r);
 				rel = r;
 			}
 		} else if (r) {
@@ -1938,9 +1938,9 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				r = rel_subquery(sql, *rel, ro, ek);
 
 				/* get inner queries result value, ie
-				   get last expression of r->r */
+				   get last expression of r */
 				if (r) {
-					rs = rel_lastexp(sql, r->r);
+					rs = rel_lastexp(sql, r);
 					*rel = r;
 					e = exp_compare( ls, rs, compare_str2type(compare_op));
 					if (f != sql_sel) 
@@ -1948,7 +1948,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			
 					/* For selection we need to convert back into booleans */
 					ls = exp_dup(ls);
-					rel_join_add_exp(r, e);
 					ls = rel_unop_(sql, ls, NULL, "isnull", 0);
 					rs = exp_atom_bool(0);
 					return rel_binop_(sql, ls, rs, NULL, "=", 0);
@@ -4099,6 +4098,11 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			rel = rel_project(rel, exps);
 			rel_project_add_exp(sql, rel, e);
 			set_processed(rel);
+		} else {
+			if (!is_project(rel->op)) {
+				rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 1));
+				set_processed(rel);
+			}
 		}
 	}
 

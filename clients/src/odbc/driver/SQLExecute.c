@@ -64,6 +64,7 @@ static struct msql_types {
 /* 	{"tinyint", SQL_TINYINT}, */
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
+	{"wrd", SQL_BIGINT},
 	{0, 0},			/* sentinel */
 };
 
