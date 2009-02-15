@@ -150,8 +150,7 @@ immune_for_updates.SF-1981852
 join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
-#takes >30 minutes & >6 GB to run (compile)
->30min_>6GB?compilation_or_runtime_choice.SF-1991738_0_ALG
+compilation_or_runtime_choice.SF-1991738_0_ALG
 #type error: can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
@@ -173,6 +172,7 @@ empty_step_result.SF-2277120
 intersect_duplicates.SF-2142522
 string_substring.SF-2153484
 multi_merged_union.SF-2276427
+non-existing_collection.SF-1991726
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
