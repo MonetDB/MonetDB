@@ -1,13 +1,13 @@
-stderr of test 'rollback_bug` in directory 'src/test/BugTracker-2009` itself:
+stderr of test 'update-crash` in directory 'src/test/BugTracker-2009` itself:
 
 
-# 11:34:04 >  
-# 11:34:04 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=32901 --set xrpc_port=40725 --set xrpc_docroot=/net/alf.ins.cwi.nl/export/scratch1/niels/rc/sql --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 11:34:04 >  
+# 11:41:17 >  
+# 11:41:17 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=34628 --set xrpc_port=49806 --set xrpc_docroot=/net/alf.ins.cwi.nl/export/scratch1/niels/rc/sql --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:41:17 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
 # builtin opt 	gdk_version = 1.28.0
-# builtin opt 	monet_pid = 17763
+# builtin opt 	monet_pid = 19363
 # builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -66,8 +66,8 @@ stderr of test 'rollback_bug` in directory 'src/test/BugTracker-2009` itself:
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 32901
-# cmdline opt 	xrpc_port = 40725
+# cmdline opt 	mapi_port = 34628
+# cmdline opt 	xrpc_port = 49806
 # cmdline opt 	xrpc_docroot = /net/alf.ins.cwi.nl/export/scratch1/niels/rc/sql
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2009
@@ -76,38 +76,12 @@ stderr of test 'rollback_bug` in directory 'src/test/BugTracker-2009` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
 
-# 11:34:05 >  
-# 11:34:05 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32901 
-# 11:34:05 >  
+# 11:41:18 >  
+# 11:41:18 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34628 
+# 11:41:18 >  
 
-MAPI  = monetdb@alf:34628
-QUERY = CREATE TABLE phpbb_attachments (
-ERROR = !type (long) unknown in: "create table phpbb_attachments (
-        !	attach_id integer default next value for "sys"."phpbb_attachments_seq",
-        !	post_msg_id integer default '0' not null ,
-        !	topic_id integer default '0' not null ,
-        !	in_message smallint default '0' not null ,
-        !	poster_id integer default '0' not null ,
-        !	is_orphan long default"
-MAPI  = monetdb@alf:34628
-QUERY = CREATE TABLE phpbb_attachments (
-ERROR = !type (long) unknown in: "create table phpbb_attachments (
-        !	attach_id integer default next value for "sys"."phpbb_attachments_seq",
-        !	post_msg_id integer default '0' not null ,
-        !	topic_id integer default '0' not null ,
-        !	in_message smallint default '0' not null ,
-        !	poster_id integer default '0' not null ,
-        !	is_orphan long default"
-        !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:34628
-QUERY = CREATE TABLE phpbb_acl_groups (
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@alf:34628
-QUERY = COMMIT;
-ERROR = !COMMIT: failed
-        !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
 
-# 11:34:05 >  
-# 11:34:05 >  Done.
-# 11:34:05 >  
+# 11:41:18 >  
+# 11:41:18 >  Done.
+# 11:41:18 >  
 

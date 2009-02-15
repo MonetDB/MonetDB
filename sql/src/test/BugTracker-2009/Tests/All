@@ -18,3 +18,4 @@ AVG_ReturnsNoLines.SF-2596084
 push_select_down_crash
 bool-str-bug
 rollback_bug
+update-crash
