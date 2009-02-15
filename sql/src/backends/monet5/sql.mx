@@ -1146,7 +1146,9 @@ sqlcleanup(mvc *c, int err)
 	c->sym = NULL;
 	if (c->sa) 
 		c->sa = sa_reset(c->sa);
-	if (err)
+	if (err > 0)
+		c->session->status = -err;
+	if (err < 0)
 		c->session->status = err;
 	scanner_query_processed(&(c->scanner));
 	return err;
