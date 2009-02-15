@@ -145,10 +145,10 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 
 	if (b->T->nonil){
 		for(;p<q; o++, p++)
-			*o = @1(*p,*d);
+			*o = (@2) @1(*p,*d);
 	} else
 		for(;p<q; o++, p++){
-			*o = *p == dbl_nil? dbl_nil: @1(*p,*d);
+			*o = *p == dbl_nil? dbl_nil: (@2) @1(*p,*d);
 		}
 
 	BATsetcount(bn, BATcount(b));
