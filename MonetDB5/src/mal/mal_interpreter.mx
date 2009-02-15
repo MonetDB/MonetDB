@@ -541,7 +541,7 @@ workslow:
 
 		@:beginProfile(stk)@
 		@:MALrecycleStart(stk)@ {
-      	    lng tcs;
+      	    lng tcs = 0;
             @:MALinterpret(SLOW)@
 			@:MALrecycleExit(stk)@
 		}
