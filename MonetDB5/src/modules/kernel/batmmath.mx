@@ -82,7 +82,7 @@ module batmmath;
 #include "batmmath.h"
 
 #ifdef WIN32
-#ifndef LIBBATMATH
+#ifndef LIBBATMMATH
 #define batmmath_export extern __declspec(dllimport)
 #else
 #define batmmath_export extern __declspec(dllexport)
