@@ -2759,8 +2759,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6F7E9C22938E4CB794DBCDBAE1043F7E"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\batmath.mal"
-            "TargetName" = "8:batmath.mal"
+            "SourcePath" = "8:Lib\\MonetDB5\\batmmath.mal"
+            "TargetName" = "8:batmmath.mal"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
             "Condition" = "8:"
@@ -4379,8 +4379,8 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E0DFFCD93BB4490782297CCD3E6E5DE9"
             {
-            "SourcePath" = "8:Lib\\MonetDB5\\lib_batmath.dll"
-            "TargetName" = "8:lib_batmath.dll"
+            "SourcePath" = "8:Lib\\MonetDB5\\lib_batmmath.dll"
+            "TargetName" = "8:lib_batmmath.dll"
             "Tag" = "8:"
             "Folder" = "8:_E7F9CF4E0220468FB71F65052227D019"
             "Condition" = "8:"
