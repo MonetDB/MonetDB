@@ -28,7 +28,7 @@ Over..
 % sys.get_results,	sys.get_results,	sys.get_results # table_name
 % schem,	clust,	real_time # name
 % clob,	clob,	bigint # type
-% 7,	7,	4 # length
+% 7,	3,	4 # length
 [ "triples",	"pso",	1063	]
 
 # 00:34:20 >  
