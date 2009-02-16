@@ -91,7 +91,8 @@ predicate_selects_too_few_nodes.SF-1636588_ws
 seqcast_opt_int_to_numeric.SF-1637867
 entities_dtd.SF-1642663
 entities_dtd.SF-1642665
-call2builtin_function_crashes_XRPC_client.SF-1655857
+# XRPC
+NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
 conflict_normal_xrpc_queries_nx.SF-1644610
 conflict_normal_xrpc_queries_xn.SF-1644610
 interleave_PUT_GET_crashes_Mserver.SF-1676443
