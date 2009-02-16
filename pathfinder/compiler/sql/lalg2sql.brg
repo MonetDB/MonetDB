@@ -2604,7 +2604,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFalg_atom_t atom;
 
             /* literal table has more than one row */
-            PFsql_tident_t      newtable = new_table_name ();
+            /* PFsql_tident_t      newtable = new_table_name (); */
             PFsql_aident_t      newalias = new_alias ();
 
             PFsql_t *valuesquery = NULL;
