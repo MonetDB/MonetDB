@@ -1,0 +1,34 @@
+stdout of test 'segfault_when_quitting_debugger.SF-2538837` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 12:13:20 >  
+# 12:13:20 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=36460 --set xrpc_port=43926 --set xrpc_docroot=/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/source/sql --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 12:13:20 >  
+
+# MonetDB server v5.10.0, based on kernel v1.28.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:36460/
+# MonetDB/SQL module v2.28.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 12:13:20 >  
+# 12:13:20 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=36460 
+# 12:13:20 >  
+
+mdb>#    mdb.start();
+mdb>#    user.s0_1();
+
+# 12:13:21 >  
+# 12:13:21 >  Done.
+# 12:13:21 >  
+

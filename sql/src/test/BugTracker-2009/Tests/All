@@ -20,3 +20,4 @@ bool-str-bug
 rollback_bug
 update-crash
 correlated-selection-bug
+segfault_when_quitting_debugger.SF-2538837
