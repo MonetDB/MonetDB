@@ -2611,12 +2611,15 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel_select(rel, e);
 	} 
 	case SQL_COLUMN: {
-		sql_subtype bt; 
 		sql_rel *or = rel;
 		sql_exp *e = rel_column_ref(sql, &rel, sc);
 
-		sql_find_subtype(&bt, "boolean", 0, 0);
-		e = rel_check_type(sql, &bt, e, type_equal);
+		if (e) {
+			sql_subtype bt; 
+
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			e = rel_check_type(sql, &bt, e, type_equal);
+		}
 		if (!e || or != rel)
 			return NULL;
 		return rel_select(rel, e);

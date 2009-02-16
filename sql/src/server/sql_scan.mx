@@ -598,6 +598,7 @@ scanner_string(mvc *c, int quote)
 		}
 		lc->yycur = pos - (int)rs->pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
+		/* TODO also handle double "" */
 		if (cur == quote && rs->buf[pos] == quote) {
 			rs->buf[pos - 1] = '\\';
 			lc->yycur++;
