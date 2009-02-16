@@ -787,10 +787,12 @@ print_tablereference (FILE *f, PFsql_t* n, int i)
             assert (R(n)->kind == sql_alias ||
                     R(n)->kind == sql_alias_def);
             
-            if (L(n)->kind == sql_select || L(n)->kind == sql_union)
+            if (L(n)->kind == sql_select || L(n)->kind == sql_union) {
+                fputc ('(', f);
                 /* print nested selection */
                 print_fullselect (f, L(n), i);
-            else
+                fputc (')', f);
+            } else
                 print_tablereference (f, L(n), i);
 
             fprintf (f, " AS %s", PFsql_alias_name_str (R(n)->sem.alias.name));
@@ -903,7 +905,6 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
 {
     assert (n);
     
-    fputc ('(', f);
     i += 1;
 
     switch (n->kind) {
@@ -965,11 +966,16 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
         case sql_union:
         case sql_diff:
         case sql_intersect:
+            fputc ('(', f);
             print_fullselect (f, L(n), i);
+            fputc (')', f);
+
             indent (f, i);
             fprintf (f, "%s", ID[n->kind]);
             indent (f, i);
+            fputc ('(', f);
             print_fullselect (f, R(n), i);
+            fputc (')', f);
             break;
             
         case sql_alias_bind:
@@ -978,15 +984,11 @@ print_fullselect (FILE *f, PFsql_t *n, int i)
             print_tablereference (f, n, i);
             break;
 
-
-
         default:
             PFoops (OOPS_FATAL,
                     "SQL grammar conflict. (Expected: fullselect; "
                     "Got: %s)", ID[n->kind]);
     }
-
-    fputc (')', f);
 }
 
 /**
@@ -1012,7 +1014,10 @@ print_binding_ (FILE* f, PFsql_t *n, char *comma)
             
             fprintf (f, " AS");
             indent (f, 2);
+            
+            fputc ('(', f);
             print_fullselect (f, R(n), 2);
+            fputc (')', f);
 
             fprintf (f, "%s\n", comma);
             break;
