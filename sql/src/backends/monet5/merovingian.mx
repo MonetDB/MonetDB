@@ -107,6 +107,7 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
+static pthread_mutex_t topdplock = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct _remotedb {
 	char* dbname;
@@ -177,6 +178,10 @@ logListener(void *x)
 		tv.tv_usec = 0;
 		FD_ZERO(&readfds);
 		nfds = 0;
+
+		/* make sure noone is killing or adding entries here */
+		pthread_mutex_lock(&topdplock);
+
 		w = d;
 		while (w != NULL) {
 			FD_SET(w->out, &readfds);
@@ -187,8 +192,14 @@ logListener(void *x)
 				nfds = w->err;
 			w = w->next;
 		}
+
+		pthread_mutex_unlock(&topdplock);
+		
 		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0)
 			continue;
+
+		pthread_mutex_lock(&topdplock);
+
 		w = d;
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0) {
@@ -249,6 +260,8 @@ logListener(void *x)
 			}
 			w = w->next;
 		}
+
+		pthread_mutex_unlock(&topdplock);
 
 		fflush(fout);
 		if (equalouterr == 0)
@@ -426,7 +439,7 @@ forkMserver(str database, sabdb** stats, int force)
 	char tstr[20];
 	int pfdo[2];
 	int pfde[2];
-	dpair dp = topdp;
+	dpair dp;
 	str vaultkey = NULL;
 	struct stat statbuf;
 
@@ -593,12 +606,15 @@ forkMserver(str database, sabdb** stats, int force)
 		exit(1);
 	} else if (pid > 0) {
 		int i;
-		dpair pdp;
+
+		/* make sure no entries are shot while adding and that we
+		 * deliver a consistent state */
+		pthread_mutex_lock(&topdplock);
 
 		/* parent: fine, let's add the pipes for this child */
+		dp = topdp;
 		while (dp->next != NULL)
 			dp = dp->next;
-		pdp = dp;
 		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
 		dp->out = pfdo[0];
 		close(pfdo[1]);
@@ -608,6 +624,8 @@ forkMserver(str database, sabdb** stats, int force)
 		dp->pid = pid;
 		dp->dbname = GDKstrdup(database);
 		dp->started = 0;
+
+		pthread_mutex_unlock(&topdplock);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
@@ -643,9 +661,17 @@ forkMserver(str database, sabdb** stats, int force)
 		/* if we've never found a connection, try to figure out why */
 		if (i >= 20) {
 			int state = (*stats)->state;
+			dpair pdp;
 
 			/* starting failed */
 			SABAOTHfreeStatus(stats);
+
+			/* in the meanwhile the list may have changed so refetch the
+			 * parent */
+			pthread_mutex_lock(&topdplock);
+			pdp = topdp;
+			while (pdp->next != dp)
+				pdp = pdp->next;
 
 			switch (state) {
 				case SABdbRunning:
@@ -655,18 +681,20 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"timeout when waiting for database '%s' to "
 								"open up a communication channel or to "
 								"initialise the sql scenario", database));
 				case SABdbCrashed:
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed", database));
@@ -681,18 +709,20 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
 								"itself down after starting", database));
 				default:
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_lock(&topdplock);
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
@@ -1381,9 +1411,11 @@ controlRunner(void *d)
 				} else if (strcmp(p, "stop") == 0 ||
 						strcmp(p, "kill") == 0)
 				{
+					dpair dp;
 					/* we need to find the right dpair, that is we
 					 * sort of assume the control signal is right */
-					dpair dp = topdp;
+					pthread_mutex_lock(&topdplock);
+					dp = topdp->next; /* don't need the console/log */
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
@@ -1409,6 +1441,7 @@ controlRunner(void *d)
 								"%s is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
+					pthread_mutex_unlock(&topdplock);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
