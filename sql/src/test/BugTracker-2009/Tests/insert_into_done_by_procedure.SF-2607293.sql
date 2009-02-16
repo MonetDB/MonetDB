@@ -6,7 +6,6 @@ schem ,
 clust ,
 id as real_time
 from columns order by id limit 1;
-delete from callhistory;
 END;
 
 call save_times('triples', 'pso');
