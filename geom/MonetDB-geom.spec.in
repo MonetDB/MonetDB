@@ -118,27 +118,6 @@ accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to develop with %{name}.
 
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%package devel4
-Summary: MonetDB SQL GIS development package
-Group: Applications/Databases
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-Requires: %{name}-MonetDB4
-Requires: MonetDB4-server-devel
-%endif
-Requires: %{name}-devel
-Requires: MonetDB-devel
-Requires: geos-devel
-
-%description devel4
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to develop with %{name}.
-%endif
-
 %prep
 rm -rf $RPM_BUILD_ROOT
 
@@ -176,24 +155,18 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/MonetDB/sql/geom.sql
 %if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
 %files MonetDB4
-%{_libdir}/MonetDB4/lib/lib_geom.so.*
+%{_libdir}/MonetDB4/lib/lib_geom.so*
 %{_libdir}/MonetDB4/geom.mil
 %endif
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
 %files MonetDB5
-%{_libdir}/MonetDB5/lib/lib_geom.so.*
+%{_libdir}/MonetDB5/lib/lib_geom.so*
 %{_libdir}/MonetDB5/geom.mal
 %endif
 
 %files devel
 %{_bindir}/monetdb-geom-config
 %if %{?_with_monetdb5:1}%{!?_with_monetdb5:0}
-%{_libdir}/MonetDB5/lib/lib_geom.so
-%endif
-
-%if %{?_with_monetdb4:1}%{!?_with_monetdb4:0}
-%files devel4
-%{_libdir}/MonetDB4/lib/lib_geom.so
 %endif
 
 %changelog
