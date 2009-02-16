@@ -24,6 +24,7 @@ segfault_when_quitting_debugger.SF-2538837
 row_number_bug.SF-2546109
 set_history_and_drop_table.SF-2607045
 TypeException_having_count_distinct.SF-2494227
+insert_into_done_by_procedure.SF-2607293
 decimal_needs_truncation.SF-2605686
 number_between_col1_and_col2
 order_by_column_position
