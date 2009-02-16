@@ -252,15 +252,16 @@ Twig:   nil                                       =  86 (10);
 
 Fcns:   fcns (Twig, Fcns)                         =  87 (10);
 Fcns:   fcns (content (Frag, EmptyRel), Fcns)     =  88 (10);
-Fcns:   nil                                       =  89 (10);
+Fcns:   fcns (nil, nil)                           =  89 (10);
+Fcns:   nil                                       =  90 (10);
 
-Side:   error (Side, Rel)                         =  90 (10);
-Side:   nil                                       =  91 (10);
-Side:   trace (Side, Trc)                         =  92 (10);
-Trc:    trace_items (Rel, Msg)                    =  93 (10);
-Msg:    trace_msg (Rel, Map)                      =  94 (10);
-Map:    trace_map (Rel, Map)                      =  95 (10);
-Map:    nil                                       =  96 (10);
+Side:   error (Side, Rel)                         =  91 (10);
+Side:   nil                                       =  92 (10);
+Side:   trace (Side, Trc)                         =  93 (10);
+Trc:    trace_items (Rel, Msg)                    =  94 (10);
+Msg:    trace_msg (Rel, Map)                      =  95 (10);
+Map:    trace_map (Rel, Map)                      =  96 (10);
+Map:    nil                                       =  97 (10);
 
 Rel:    rec_fix (side_effects (Side, Rec), Rel)   =  98 (10);
 Rel:    rec_base                                  =  99 (10);
@@ -1484,6 +1485,8 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Fcns:   fcns (content (Frag, EmptyRel), Fcns) */
         case 88:
+        /* Fcns:   fcns (nil, nil) */
+        case 89:
             /* This rewrite splits up the R(p) operator... */
             *p = *R(p);
             /* ... and we at least have to create a new property to avoid

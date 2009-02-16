@@ -280,9 +280,9 @@ Rel:      twig (attribute (Rel))                                   = 103 (10);
 Rel:      twig (textnode (Rel))                                    = 104 (10);
 Fcns:     fcns (Twig, Fcns)                                        = 105 (10);
 Fcns:     fcns (Twig, nil)                                         = 106 (10);
-Twig:     docnode (Rel, fcns (nil, nil))                           = 107 (10);
+Twig:     docnode (Rel, nil)                                       = 107 (10);
 Twig:     docnode (Rel, Fcns)                                      = 108 (10);
-Twig:     element (Rel, fcns (nil, nil))                           = 109 (10);
+Twig:     element (Rel, nil)                                       = 109 (10);
 Twig:     element (Rel, Fcns)                                      = 110 (10);
 Twig:     attribute (Rel)                                          = 111 (10);
 Twig:     textnode (Rel)                                           = 112 (10);
@@ -8280,7 +8280,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
             break; /* fold) */
 
-        /* Twig:     docnode (Rel, fcns (nil, nil)) */
+        /* Twig:     docnode (Rel, nil) */
         case 107: /* fold( */
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
         {
@@ -8451,7 +8451,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         }
             break; /* fold) */
 
-        /* Twig:     element (Rel, fcns (nil, nil)) */
+        /* Twig:     element (Rel, nil) */
         case 109: /* fold( */
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_qname);
