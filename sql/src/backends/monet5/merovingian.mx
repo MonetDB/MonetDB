@@ -116,6 +116,7 @@ typedef struct _remotedb {
 	struct _remotedb* next;
 }* remotedb;
 static remotedb _merovingian_remotedbs = NULL;
+static pthread_mutex_t remotedblock = PTHREAD_MUTEX_INITIALIZER;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
@@ -451,8 +452,12 @@ forkMserver(str database, sabdb** stats, int force)
 	}
 
 	if (*stats == NULL) {
+		remotedb rdb;
+
 		/* check the remote databases */
-		remotedb rdb = _merovingian_remotedbs;
+		pthread_mutex_lock(&remotedblock);
+
+		rdb = _merovingian_remotedbs;
 		while (rdb != NULL) {
 			if (strcmp(rdb->dbname, database) == 0) {
 				/* take first match, create a fake sabdb struct */
@@ -468,10 +473,13 @@ forkMserver(str database, sabdb** stats, int force)
 				(*stats)->conns->val = GDKstrdup(rdb->conn);
 				(*stats)->conns->next = NULL;
 				(*stats)->next = NULL;
+				pthread_mutex_unlock(&remotedblock);
 				return(NO_ERR);
 			}
 			rdb = rdb->next;
 		}
+
+		pthread_mutex_unlock(&remotedblock);
 
 		return(newErr("no such database: %s", database));
 	}
@@ -1448,6 +1456,8 @@ controlRunner(void *d)
 					/* return a list of remote databases from our Aranita */
 					remotedb rdb;
 
+					pthread_mutex_lock(&remotedblock);
+
 					rdb = _merovingian_remotedbs;
 					while (rdb != NULL) {
 						len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
@@ -1455,6 +1465,9 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 						rdb = rdb->next;
 					}
+
+					pthread_mutex_unlock(&remotedblock);
+
 					/* because this command is multi line, you can't
 					 * combine it, disconnect the client */
 					break;
@@ -1585,6 +1598,8 @@ discoveryRunner(void *d)
 
 		/* do a round to see if we have to cleanup anything (expired
 		 * ttl) */
+		pthread_mutex_lock(&remotedblock);
+
 		prv = NULL;
 		rdb = _merovingian_remotedbs;
 		while (rdb != NULL) {
@@ -1605,6 +1620,8 @@ discoveryRunner(void *d)
 			prv = rdb;
 			rdb = rdb->next;
 		}
+
+		pthread_mutex_unlock(&remotedblock);
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		FD_ZERO(&fds);
@@ -1671,6 +1688,8 @@ discoveryRunner(void *d)
 			 * that only the original registrant can unregister a
 			 * database, however... do we really care that much? */
 
+			pthread_mutex_lock(&remotedblock);
+
 			prv = NULL;
 			rdb = _merovingian_remotedbs;
 			while (rdb != NULL) {
@@ -1693,6 +1712,8 @@ discoveryRunner(void *d)
 				prv = rdb;
 				rdb = rdb->next;
 			}
+
+			pthread_mutex_unlock(&remotedblock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
@@ -1707,6 +1728,8 @@ discoveryRunner(void *d)
 
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
+
+			pthread_mutex_lock(&remotedblock);
 
 			if (_merovingian_remotedbs == NULL) {
 				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
@@ -1727,14 +1750,18 @@ discoveryRunner(void *d)
 					prv = rdb;
 					rdb = rdb->next;
 				}
-				if (rdb == prv)
+				if (rdb == prv) {
+					pthread_mutex_unlock(&remotedblock);
 					continue;
+				}
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
 			rdb->dbname = strdup(dbname);
 			rdb->conn = strdup(conn);
 			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
+
+			pthread_mutex_unlock(&remotedblock);
 
 			merlog("discovered neighbour database %s at %s "
 					"(refresh from %s in %s seconds)",

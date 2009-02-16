@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  16 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
+  Protect shared linked list structures from being accessed and/or modified by
+  two or more threads concurrently. This resolves random crashes. Fixes bug
+  #2605706
+
   16 Feb 2009; Fabian Groffen <fabian@cwi.nl> monetdb.mx:
   Fixed crash when using monetdb stop on a non-started database.  Bug #2605105
 
