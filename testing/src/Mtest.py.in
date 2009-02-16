@@ -2318,7 +2318,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             d.sort()
             for f in d:
                 if test.match(f):
-                    if CALL == "mal":
+                    if CALL[:3] == "mal":
                         killed = RunIt(cmd + f, open(devnull), ClntOut, ClntErr, TIMEOUT)
                     elif par['M5']:
                         killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(devnull), ClntOut, ClntErr, TIMEOUT)
