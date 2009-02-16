@@ -420,14 +420,17 @@ fn_bui_node_name_attr_filter (const PFla_op_t* loop,
     self_attr_spec.qname = PFqname (PFns_wild, NULL); 
     
     attributes = attach (
-                    PFla_step_simple (
-                        PFla_set_to_la (args[0].frag),
-                        project (args[0].rel,
-                                 proj (col_iter, col_iter),
-                                 proj (col_item, col_item)),
-                        self_attr_spec,
-                        col_iter, col_item, col_item),
-                    col_pos, lit_int(1));
+                     project (
+                         PFla_step_join_simple (
+                             PFla_set_to_la (args[0].frag),
+                             project (args[0].rel,
+                                      proj (col_iter, col_iter),
+                                      proj (col_item, col_item)),
+                             self_attr_spec,
+                             col_item, col_res),
+                         proj (col_iter, col_iter),
+                         proj (col_item, col_res)),
+                     col_pos, lit_int(1));
 
     return (struct PFla_pair_t) {
                     .rel = attributes,
@@ -453,14 +456,17 @@ fn_bui_node_name_element_filter (const PFla_op_t* loop,
     self_elem_spec.qname = PFqname (PFns_wild, NULL);
     
     elements = attach (
-                    PFla_step_simple (
-                        PFla_set_to_la (args[0].frag),
-                        project (args[0].rel,
-                                 proj (col_iter, col_iter),
-                                 proj (col_item, col_item)),
-                        self_elem_spec,
-                        col_iter, col_item, col_item),
-                        col_pos, lit_int(1));
+                   project (
+                       PFla_step_join_simple (
+                           PFla_set_to_la (args[0].frag),
+                           project (args[0].rel,
+                                    proj (col_iter, col_iter),
+                                    proj (col_item, col_item)),
+                           self_elem_spec,
+                           col_item, col_res),
+                       proj (col_iter, col_iter),
+                       proj (col_item, col_res)),
+                   col_pos, lit_int(1));
                                 
     return (struct PFla_pair_t) {
                     .rel = elements,
@@ -4153,13 +4159,17 @@ PFbui_fn_root (const PFla_op_t *loop,
     /* do an ancestor-or-self::node() step
        with exact position values */
     node_scj = rownum (
-                   PFla_step_simple (
-                       PFla_set_to_la (args[0].frag),
-                       project (args[0].rel,
-                                proj (col_iter, col_iter),
-                                proj (col_item, col_item)),
-                       anc_node_spec,
-                       col_iter, col_item, col_item),
+                   distinct (
+                       project (
+                           PFla_step_join_simple (
+                               PFla_set_to_la (args[0].frag),
+                               project (args[0].rel,
+                                        proj (col_iter, col_iter),
+                                        proj (col_item, col_item)),
+                               anc_node_spec,
+                               col_item, col_res),
+                           proj (col_iter, col_iter),
+                           proj (col_item, col_res))),
                    col_pos, sortby (col_item), col_iter);
     
     /* select the first ancestor */
@@ -4201,9 +4211,10 @@ PFbui_fn_boolean_bln (const PFla_op_t *loop,
                       PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) side_effects;
-
-    return args[0];
+    if (PFprop_type_of (args[0].rel, col_item) != aat_bln)
+        return PFbui_fn_boolean_item (loop, ordering, side_effects, args);
+    else
+        return args[0];
 }
 
 /**
@@ -4230,21 +4241,22 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop,
                          PFla_op_t **side_effects,
                          struct PFla_pair_t *args)
 {
-    (void) ordering; (void) side_effects;
-
-    return (struct PFla_pair_t) {
-        .rel = disjunion (
-                   args[0].rel,
-                   attach (
+    if (PFprop_type_of (args[0].rel, col_item) != aat_bln)
+        return PFbui_fn_boolean_item (loop, ordering, side_effects, args);
+    else
+        return (struct PFla_pair_t) {
+            .rel = disjunion (
+                       args[0].rel,
                        attach (
-                           difference (
-                               loop,
-                               project (
-                                   args[0].rel,
-                                   proj (col_iter, col_iter))),
-                                       col_pos, lit_nat (1)),
-                       col_item, lit_bln (false))),
-        .frag = PFla_empty_set () };
+                           attach (
+                               difference (
+                                   loop,
+                                   project (
+                                       args[0].rel,
+                                       proj (col_iter, col_iter))),
+                                           col_pos, lit_nat (1)),
+                           col_item, lit_bln (false))),
+            .frag = PFla_empty_set () };
 }
 
 /**
