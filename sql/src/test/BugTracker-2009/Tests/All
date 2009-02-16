@@ -25,3 +25,4 @@ row_number_bug.SF-2546109
 set_history_and_drop_table.SF-2607045
 TypeException_having_count_distinct.SF-2494227
 decimal_needs_truncation.SF-2605686
+number_between_col1_and_col2

@@ -236,7 +236,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_table_projections( sql,  rel->l, tname);
+		exps = rel_table_projections( sql, rel->l, tname);
 		if (exps) 
 			return exps;
 		return rel_table_projections( sql, rel->r, tname);
@@ -2571,7 +2571,25 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			re1 = tmp;
 		}
 
-		if (sc->token == SQL_NOT_BETWEEN) {
+		if (le->card == CARD_ATOM) {
+			sql_exp *e1, *e2;
+			if (sc->token == SQL_NOT_BETWEEN) {
+				e1 = rel_binop_(sql, le, re1, NULL, "<", 0);
+				e2 = rel_binop_(sql, exp_dup(le), re2, NULL, ">", 0);
+			} else {
+				e1 = rel_binop_(sql, le, re1, NULL, ">=", 0);
+				e2 = rel_binop_(sql, exp_dup(le), re2, NULL, "<=", 0);
+			}
+			if (!e1 || !e2)
+				return NULL;
+			if (sc->token == SQL_NOT_BETWEEN) {
+				e1 = rel_binop_(sql, e1, e2, NULL, "or", 0);
+			} else {
+				e1 = rel_binop_(sql, e1, e2, NULL, "and", 0);
+			}
+			e2 = exp_atom_bool(1);
+			rel = rel_select(rel, exp_compare( e1, e2, cmp_equal));
+		} else if (sc->token == SQL_NOT_BETWEEN) {
 			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 1);
 		} else {
 			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 0);
@@ -3680,8 +3698,6 @@ column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 static list *
 rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 {
-	if (column_e->token == SQL_OP)
-		printf("SQL_OP\n");
 	if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps = rel_table_projections(sql, rel, tname);
