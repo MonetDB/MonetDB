@@ -1318,12 +1318,34 @@ rel_var_ref(mvc *sql, char *name, int at)
 }
 
 static sql_exp *
+exps_get_exp(list *exps, int nth)
+{
+	node *n = NULL;
+	int i = 0;
+
+	if (exps) 
+		for (n=exps->h, i=1; n && i<nth; n=n->next, i++)
+			;
+	if (n && i == nth)
+		return n->data;
+	return NULL;
+}
+
+static sql_exp *
 rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 {
 	sql_exp *exp = NULL;
 	dlist *l = column_r->data.lval;
 
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+	assert(column_r->token == SQL_COLUMN && 
+		(column_r->type == type_list || column_r->type == type_int));
+	if (column_r->type == type_int) { /* dirty old column refs by number */
+		sql_exp *e = exps_get_exp((*rel)->exps, column_r->data.i_val);
+		
+		if (!e)
+			return NULL;
+		return exp_column(rel_name(*rel), e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
+	}
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
 		atom *a;
@@ -3410,6 +3432,8 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 {
 	dlist *l = column_r->data.lval;
 
+	if (column_r->type == type_int)
+		return NULL;
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
 	assert(is_project(r->op));
@@ -3451,7 +3475,7 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 				sql->errstr[0] = '\0';
 
 				e = rel_order_by_column_exp(sql, rel, col);
-				if (e->card != rel->card) {
+				if (e && e->card != rel->card) {
 					exp_destroy(e);
 					e = NULL;
 				}

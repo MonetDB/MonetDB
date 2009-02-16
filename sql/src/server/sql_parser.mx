@@ -3050,6 +3050,11 @@ ordering_spec:
 	  append_symbol(l, _symbol_create_list(SQL_COLUMN, $1));
 	  append_int(l, $2);
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
+ | nonzero opt_asc_desc
+	{ dlist *l = L();
+	  append_symbol(l, _symbol_create_int(SQL_COLUMN, $1));
+	  append_int(l, $2);
+	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
 
  ;
 
