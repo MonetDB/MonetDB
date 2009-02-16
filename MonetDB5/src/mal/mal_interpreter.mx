@@ -1993,14 +1993,14 @@ as much as possible.
 The recycler works for any variable and relies on policy functions
 registered.
 @= MALrecycleStart
-	if ( pci->recycle >= 0)
+	if ( pci->recycle > 0)
 		@1->clk = GDKusec();
 	if( !RECYCLEentry(cntxt, mb,stk,pci) )
 @= MALrecycleExit
-	if ( pci->recycle >= 0)
+	if( pci->recycle > 0 ){
 		tcs = GDKusec() - @1->clk;
-	if( pci->recycle > 0 )
 		RECYCLEexit(cntxt, mb,stk,pci,tcs);
+	}
 @}
 @-
 @node Garbage Collection, Stack Management, Exception Handling, The MAL Interpreter
