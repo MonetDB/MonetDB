@@ -283,6 +283,7 @@ with the transaction commits.
 	GDKfree(span);
 	GDKfree(old);
 	GDKfree(recycled);
+	mb->recycle = actions > 0;
 	return actions;
 }
 @include optimizerWrapper.mx

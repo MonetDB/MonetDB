@@ -243,6 +243,7 @@ an upgrade and resolve it afterwards.
 		if (!getModuleId(q) && q->token == ASSIGNsymbol &&
 		    q->argc == 2 && isVarConstant(mq, getArg(q,1)) && 
 		    upgrade[getArg(q,0)] &&
+			getArgType(mq,q,0) == TYPE_void &&
 		    !isaBatType(getArgType(mq, q, 1)) ){
 				/* handle nil assignment */
 				if( ATOMcmp(getArgGDKType(mq, q, 1),
