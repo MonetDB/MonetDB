@@ -1832,8 +1832,6 @@ handler(int sig)
 	_keepListening = 0;
 }
 
-static dpair servers;
-
 static void
 childhandler(int sig, siginfo_t *si, void *unused)
 {
@@ -1856,7 +1854,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	}
 
 	/* get the pid from the former child, and locate it in our list */
-	q = servers;
+	pthread_mutex_lock(&topdplock);
+
+	q = topdp->next;
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
@@ -1880,16 +1880,21 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						p->dbname, p->pid);
 			}
 			/* if we're starting up, don't clean up */
-			if (p->started == 0)
+			if (p->started == 0) {
+				pthread_mutex_unlock(&topdplock);
 				return;
+			}
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
+			pthread_mutex_unlock(&topdplock);
 			return;
 		}
 		q = p;
 		p = q->next;
 	}
+
+	pthread_mutex_unlock(&topdplock);
 	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
 }
 
@@ -2217,8 +2222,6 @@ main(int argc, char *argv[])
 	fprintf(pidfile, "%d\n", (int)d->pid);
 	fflush(pidfile);
 	fclose(pidfile);
-
-	servers = d;
 
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
 		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
