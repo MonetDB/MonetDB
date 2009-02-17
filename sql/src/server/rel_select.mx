@@ -2167,7 +2167,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		sql_exp *re1 = rel_value_exp(sql, rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(sql, rel, ro2, f, ek);
 		sql_exp *e1 = NULL, *e2 = NULL;
-		sql_subtype *ct = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
@@ -2176,9 +2175,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			exp_destroy(re2);
 			return NULL;
 		}
-		ct = exp_subtype(le);
-		re1 = rel_check_type(sql, ct, re1, type_equal);
-		re2 = rel_check_type(sql, ct, re2, type_equal);
+		
+		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
+		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) {
+			exp_destroy(le);
+			exp_destroy(re1);
+			exp_destroy(re2);
+			return NULL;
+		}
 
 		if (!re1 || !re2) {
 			exp_destroy(le);
@@ -2565,7 +2569,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(sql, &rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(sql, &rel, ro2, f, ek);
-		sql_subtype *ct = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
@@ -2574,9 +2577,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			exp_destroy(re2);
 			return NULL;
 		}
-		ct = exp_subtype(le);
-		re1 = rel_check_type(sql, ct, re1, type_equal);
-		re2 = rel_check_type(sql, ct, re2, type_equal);
+
+		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
+		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) { 
+			exp_destroy(le);
+			exp_destroy(re1);
+			exp_destroy(re2);
+			return NULL;
+		}
 
 		if (!re1 || !re2) {
 			exp_destroy(le);
