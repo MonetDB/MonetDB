@@ -1,6 +1,6 @@
-NOT_ALGEBRA?add_del_doc_noxrpc
+add_del_doc_noxrpc
 NOT_ALGEBRA?add_del_doc
-NOT_ALGEBRA?backup_restore_noxrpc
+backup_restore_noxrpc
 NOT_ALGEBRA?backup_restore
 NOT_ALGEBRA?db_stats_noxrpc
 NOT_ALGEBRA?db_stats
