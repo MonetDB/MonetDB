@@ -190,7 +190,6 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			continue;
 		}	
 		if (getModuleId(p)==sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
-			printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 			@:initCounter(tuples,aggr,count,wrd)@
 			q= pushArgument(mb,q, getArg(p,3));
 		}
