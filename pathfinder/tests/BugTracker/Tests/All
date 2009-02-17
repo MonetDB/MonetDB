@@ -1,4 +1,4 @@
-# tests related to bug reports:
+# tests related to bug reports_
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
 # first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
@@ -95,7 +95,7 @@ entities_dtd.SF-1642665
 NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
 conflict_normal_xrpc_queries_nx.SF-1644610
 conflict_normal_xrpc_queries_xn.SF-1644610
-# fn:put()
+# fn_put()
 NOT_ALGEBRA?interleave_PUT_GET_crashes_Mserver.SF-1676443
 id-function_fails_to_locate_some_kinds_of_nodes.SF-1698498
 char_escape_SF-1681921
@@ -103,7 +103,7 @@ pf_add-doc_property_error.SF-1706438
 corrupt_after_update.SF-1706640
 nested_element_construction.SF-1712578
 mposjoin_missing_matches.SF-1712595
-# fn:put()
+# fn_put()
 NOT_ALGEBRA?put_to_tmp.SF-1718066
 type_check.SF-1705898
 accessing_renamed_inserted_deleted_node.SF-1718622-1718635-1718709
@@ -161,7 +161,7 @@ join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
 compilation_or_runtime_choice.SF-1991738_0_ALG
-#type error: can't cast type 'untypedAtomic*' to type 'integer?'
+#type error_ can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
@@ -187,7 +187,7 @@ root-node_of_constructed_element.SF-2456324
 ebv.SF-2474519
 side-effects.SF-2124300
 query_compilation_item3.SF-2130051
-Parse_error_with_pf:collection.SF-2020631
+Parse_error_with_pf_collection.SF-2020631
 XML_document_cache_broken.SF-1414720
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
