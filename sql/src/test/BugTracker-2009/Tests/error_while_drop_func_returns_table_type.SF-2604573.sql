@@ -1,9 +1,20 @@
-create function test_002() returns table( j varchar(20) )
+create function test_002() returns table(i int)
 begin
-create table tb2( j varchar(20) );
-insert into tb2 values( 'aaa' );
-insert into tb2 values( 'bbb' );
-return tb2;
+create table tbl(i int);
+insert into tbl values(110);
+insert into tbl values(210);
+return tbl;
 end;
-select * from test_002() n;
+select * from test_002();
+
+drop function test_002;
+create function test_002() returns table( j char(20) )
+begin
+create table tbl( j char(20) );
+insert into tbl values( 'aaa' );
+insert into tbl values( 'bbb' );
+return tbl;
+end;
+select * from test_002();
+
 drop function test_002;
