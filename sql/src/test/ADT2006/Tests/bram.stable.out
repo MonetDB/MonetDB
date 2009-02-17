@@ -205,8 +205,8 @@ Over..
 [ "Sergeant",	3	]
 [ "Inspector",	8	]
 [ "Major",	1	]
-% .,	. # table_name
-% single_value,	average_height # name
+% .L61,	. # table_name
+% L61,	average_height # name
 % char,	char # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]

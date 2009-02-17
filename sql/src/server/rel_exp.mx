@@ -82,6 +82,8 @@ extern int exp_is_atom(sql_exp *e);
 extern sql_exp *exps_bind_column( list *exps, char *cname);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
 
+extern void exps_fix_card( list *exps, int card);
+
 #endif /* _REL_EXP_H_ */
 @c
 #include <sql_config.h>
@@ -434,8 +436,6 @@ exp_name( sql_exp *e )
 		return e->name;
 	if (e->type == e_convert && e->l)
 		return exp_name(e->l);
-	if (!e->name && e->type == e_atom)
-		return "single_value";
 	return NULL;
 }
 
@@ -653,3 +653,23 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 	}
 	return NULL;
 }
+
+/* when pushing projections up (or or-ing to expression lists) 
+ * we may introduce new projects around operators with lower 
+ * cardinality then before. So we need to fix
+ * the cardinality of these expressions (to atleast match that of the
+ * inner relation).
+ */
+void
+exps_fix_card( list *exps, int card)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->card > card)
+			e->card = card;
+	}
+}
+
