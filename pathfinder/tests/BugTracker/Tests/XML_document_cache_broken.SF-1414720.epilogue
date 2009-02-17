@@ -1,0 +1,2 @@
+#xmlcache_print();
+table( doc_location.select("http://www.cwi.nl/~boncz/xmark/auctions.xml").col_name("URI"), doc_collection.leftjoin(collection_size).col_name("size"));
