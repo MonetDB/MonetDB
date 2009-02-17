@@ -67,8 +67,6 @@ extern void exp_swap( sql_exp *e );
 extern sql_subtype * exp_subtype( sql_exp *e );
 extern char * exp_name( sql_exp *e );
 
-extern int exps_card( list *l );
-
 extern char *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
@@ -82,7 +80,11 @@ extern int exp_is_atom(sql_exp *e);
 extern sql_exp *exps_bind_column( list *exps, char *cname);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
 
+extern int exps_card( list *l );
 extern void exps_fix_card( list *exps, int card);
+extern int exps_intern(list *exps);
+
+extern char *compare_func( comp_type t );
 
 #endif /* _REL_EXP_H_ */
 @c
@@ -440,21 +442,6 @@ exp_name( sql_exp *e )
 }
 
 
-int
-exps_card( list *l ) 
-{
-	node *n;
-	int card = 0;
-
-	if (l) for(n = l->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (card < e->card)
-			card = e->card;
-	}
-	return card;
-}
-	
 char *
 exp_find_rel_name(sql_exp *e)
 {
@@ -654,12 +641,21 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 	return NULL;
 }
 
-/* when pushing projections up (or or-ing to expression lists) 
- * we may introduce new projects around operators with lower 
- * cardinality then before. So we need to fix
- * the cardinality of these expressions (to atleast match that of the
- * inner relation).
- */
+int
+exps_card( list *l ) 
+{
+	node *n;
+	int card = 0;
+
+	if (l) for(n = l->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (card < e->card)
+			card = e->card;
+	}
+	return card;
+}
+	
 void
 exps_fix_card( list *exps, int card)
 {
@@ -670,6 +666,41 @@ exps_fix_card( list *exps, int card)
 
 		if (e->card > card)
 			e->card = card;
+	}
+}
+
+int
+exps_intern(list *exps)
+{
+	node *n;
+			
+	for (n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;		
+
+		if (is_intern(e))
+			return 1;
+	}
+	return 0;
+}
+
+char *
+compare_func( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return "=";
+	case cmp_lt:
+		return "<";
+	case cmp_lte:
+		return "<=";
+	case cmp_gte:
+		return ">=";
+	case cmp_gt:
+		return ">";
+	case cmp_notequal:
+		return "<>";
+	default:
+		return NULL;
 	}
 }
 

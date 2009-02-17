@@ -2098,20 +2098,6 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 
 
 static int
-exps_intern(list *exps)
-{
-	node *n;
-			
-	for (n=exps->h; n; n = n->next) {
-		sql_exp *e = n->data;		
-
-		if (is_intern(e))
-			return 1;
-	}
-	return 0;
-}
-
-static int
 exps_distinct( sql_rel *l, list *l_exps, sql_rel *r, list *r_exps)
 {
 	(void)l;

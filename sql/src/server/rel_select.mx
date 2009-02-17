@@ -3005,6 +3005,35 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 }
 
 static sql_exp *
+flatten_exps( mvc *sql, list *exps )
+{
+	node *n;
+	sql_exp *e = NULL;
+
+	for (n=exps->h; n; n=n->next) {
+		sql_exp *c = n->data, *ne = NULL;
+	
+		switch(c->type)  {
+		case e_cmp:
+			if (!c->f) {
+				char *cmp = compare_func(c->flag);
+				ne = rel_binop_(sql, 
+					exp_dup(c->l), 
+					exp_dup(c->r), NULL, cmp, 0);
+				if (!e)
+					e = ne;
+				else
+					e = rel_binop_(sql, e, ne, NULL, "sql_and", 0);
+			}
+			break;
+		default:
+			assert(0);
+		}
+	}
+	return e;
+}
+
+static sql_exp *
 rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
@@ -3047,6 +3076,16 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
 			column expression */
+
+		/* for correlated selections, we need to count on the
+		   join expression */
+		if (groupby->r && exps_intern(groupby->r)) {
+			sql_rel *i = groupby->l;
+
+			e = flatten_exps(sql, i->exps);
+			e = exp_aggr1(e, a, distinct, 1, groupby->card, 0);
+			return e;
+		}
 		e = exp_aggr(NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */ 
 			return e;
@@ -3971,6 +4010,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					if (!is_project(outer->op)) 
 						rel->l = outer = rel_project(outer, rel_projections(sql, outer, NULL, 1, 1));
  					e = rel_unop_(sql, exp_dup(outer->exps->h->data), NULL, "identity", 0);
+					set_intern(e);
 					rel_project_add_exp(sql, outer, e);
 					set_processed(outer);
 					e = rel_lastexp(sql, outer);
