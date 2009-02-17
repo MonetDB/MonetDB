@@ -236,7 +236,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = rel_table_projections( sql,  rel->l, tname);
+		exps = rel_table_projections( sql, rel->l, tname);
 		if (exps) 
 			return exps;
 		return rel_table_projections( sql, rel->r, tname);
@@ -1318,12 +1318,34 @@ rel_var_ref(mvc *sql, char *name, int at)
 }
 
 static sql_exp *
+exps_get_exp(list *exps, int nth)
+{
+	node *n = NULL;
+	int i = 0;
+
+	if (exps) 
+		for (n=exps->h, i=1; n && i<nth; n=n->next, i++)
+			;
+	if (n && i == nth)
+		return n->data;
+	return NULL;
+}
+
+static sql_exp *
 rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 {
 	sql_exp *exp = NULL;
 	dlist *l = column_r->data.lval;
 
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+	assert(column_r->token == SQL_COLUMN && 
+		(column_r->type == type_list || column_r->type == type_int));
+	if (column_r->type == type_int) { /* dirty old column refs by number */
+		sql_exp *e = exps_get_exp((*rel)->exps, column_r->data.i_val);
+		
+		if (!e)
+			return NULL;
+		return exp_column(rel_name(*rel), e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
+	}
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
 		atom *a;
@@ -2571,7 +2593,25 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			re1 = tmp;
 		}
 
-		if (sc->token == SQL_NOT_BETWEEN) {
+		if (le->card == CARD_ATOM) {
+			sql_exp *e1, *e2;
+			if (sc->token == SQL_NOT_BETWEEN) {
+				e1 = rel_binop_(sql, le, re1, NULL, "<", 0);
+				e2 = rel_binop_(sql, exp_dup(le), re2, NULL, ">", 0);
+			} else {
+				e1 = rel_binop_(sql, le, re1, NULL, ">=", 0);
+				e2 = rel_binop_(sql, exp_dup(le), re2, NULL, "<=", 0);
+			}
+			if (!e1 || !e2)
+				return NULL;
+			if (sc->token == SQL_NOT_BETWEEN) {
+				e1 = rel_binop_(sql, e1, e2, NULL, "or", 0);
+			} else {
+				e1 = rel_binop_(sql, e1, e2, NULL, "and", 0);
+			}
+			e2 = exp_atom_bool(1);
+			rel = rel_select(rel, exp_compare( e1, e2, cmp_equal));
+		} else if (sc->token == SQL_NOT_BETWEEN) {
 			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 1);
 		} else {
 			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3, 0);
@@ -2611,12 +2651,15 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel_select(rel, e);
 	} 
 	case SQL_COLUMN: {
-		sql_subtype bt; 
 		sql_rel *or = rel;
 		sql_exp *e = rel_column_ref(sql, &rel, sc);
 
-		sql_find_subtype(&bt, "boolean", 0, 0);
-		e = rel_check_type(sql, &bt, e, type_equal);
+		if (e) {
+			sql_subtype bt; 
+
+			sql_find_subtype(&bt, "boolean", 0, 0);
+			e = rel_check_type(sql, &bt, e, type_equal);
+		}
 		if (!e || or != rel)
 			return NULL;
 		return rel_select(rel, e);
@@ -3389,6 +3432,8 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 {
 	dlist *l = column_r->data.lval;
 
+	if (column_r->type == type_int)
+		return NULL;
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
 	assert(is_project(r->op));
@@ -3430,7 +3475,7 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 				sql->errstr[0] = '\0';
 
 				e = rel_order_by_column_exp(sql, rel, col);
-				if (e->card != rel->card) {
+				if (e && e->card != rel->card) {
 					exp_destroy(e);
 					e = NULL;
 				}
@@ -3677,8 +3722,6 @@ column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 static list *
 rel_table_exp(mvc *sql, sql_rel *rel, symbol *column_e )
 {
-	if (column_e->token == SQL_OP)
-		printf("SQL_OP\n");
 	if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps = rel_table_projections(sql, rel, tname);

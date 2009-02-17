@@ -526,9 +526,9 @@ atom_cast(atom *a, sql_subtype *tp)
 		}
 		if (at->type->eclass == EC_DEC && tp->type->eclass == EC_DEC &&
 		    at->type->localtype <= tp->type->localtype &&
-		    at->digits <= tp->digits &&
-		    at->scale <= tp->scale) {
-			lng mul = 1;
+		    at->digits <= tp->digits /* &&
+		    at->scale <= tp->scale*/) {
+			lng mul = 1, div = 0, rnd = 0;
 			/* cast numerics */
 			switch( tp->type->localtype) {
 			case TYPE_bte:
@@ -563,22 +563,43 @@ atom_cast(atom *a, sql_subtype *tp)
 				return 0;
 			}
 			/* fix scale */
-			mul = scales[tp->scale-at->scale];
+			if (tp->scale >= at->scale) {
+				mul = scales[tp->scale-at->scale];
+			} else {
+				/* only round when going to a lower scale */
+				mul = scales[at->scale-tp->scale];
+				rnd = mul>>1;
+				div = 1;
+			}
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
-			if (a->data.vtype == TYPE_lng)
-				a->data.val.lval *= mul;
-			else if (a->data.vtype == TYPE_int) {
-				assert((lng) GDK_int_min <= (lng) a->data.val.ival * mul && (lng) a->data.val.ival * mul <= (lng) GDK_int_max);
-				a->data.val.ival *= (int) mul;
-			}
-			else if (a->data.vtype == TYPE_sht) {
-				assert((lng) GDK_sht_min <= (lng) a->data.val.shval * mul && (lng) a->data.val.shval * mul <= (lng) GDK_sht_max);
-				a->data.val.shval *= (sht) mul;
-			}
-			else if (a->data.vtype == TYPE_bte) {
-				assert((lng) GDK_bte_min <= (lng) a->data.val.btval * mul && (lng) a->data.val.btval * mul <= (lng) GDK_bte_max);
-				a->data.val.btval *= (bte) mul;
+			if (a->data.vtype == TYPE_lng) {
+				a->data.val.lval += rnd;
+				if (div)
+					a->data.val.lval /= mul;
+				else
+					a->data.val.lval *= mul;
+			} else if (a->data.vtype == TYPE_int) {
+				assert(div || ((lng) GDK_int_min <= (lng) a->data.val.ival * mul && (lng) a->data.val.ival * mul <= (lng) GDK_int_max));
+				a->data.val.ival += (int)rnd;
+				if (div)
+					a->data.val.ival /= (int) mul;
+				else
+					a->data.val.ival *= (int) mul;
+			} else if (a->data.vtype == TYPE_sht) {
+				assert(div || ((lng) GDK_sht_min <= (lng) a->data.val.shval * mul && (lng) a->data.val.shval * mul <= (lng) GDK_sht_max));
+				a->data.val.shval += (sht)rnd;
+				if (div)
+					a->data.val.shval /= (sht) mul;
+				else
+					a->data.val.shval *= (sht) mul;
+			} else if (a->data.vtype == TYPE_bte) {
+				assert(div || ((lng) GDK_bte_min <= (lng) a->data.val.btval * mul && (lng) a->data.val.btval * mul <= (lng) GDK_bte_max));
+				a->data.val.btval += (bte)rnd;
+				if (div)
+					a->data.val.btval /= (bte) mul;
+				else
+					a->data.val.btval *= (bte) mul;
 			}
 			return 1;
 		}

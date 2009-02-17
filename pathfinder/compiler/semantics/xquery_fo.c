@@ -1604,7 +1604,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_plus }
+        .alg = NULL }
     , /* op:subtract-yearMonthDurations (yearMonthDuration, yearMonthDuration)
          as yearMonthDuration */
       { .ns = PFns_op, .loc = "minus",
@@ -1612,7 +1612,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_minus }
+        .alg = NULL }
     , /* op:multiply-yearMonthDuration (yearMonthDuration, double)
          as yearMonthDuration */
       { .ns = PFns_op, .loc = "times",
@@ -1620,7 +1620,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_double () },
             .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_times }
+        .alg = NULL }
     , /* op:divide-yearMonthDuration  (yearMonthDuration, double)
          as yearMonthDuration */
       { .ns = PFns_op, .loc = "div",
@@ -1628,7 +1628,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_double () },
             .ret_ty = PFty_xs_yearmonthduration () } },
-        .alg = PFbui_op_yearmonthduration_div_dbl }
+        .alg = NULL }
     , /* op:divide-yearMonthDuration-by-yearMonthDuration (yearMonthDuration,
          yearMonthDuration) as decimal */
       { .ns = PFns_op, .loc = "div",
@@ -1636,7 +1636,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_yearmonthduration (),
                                    PFty_xs_yearmonthduration () },
             .ret_ty = PFty_xs_decimal () } },
-        .alg = PFbui_op_yearmonthduration_div }
+        .alg = NULL }
     , /* op:add-dayTimeDurations (dayTimeDuration, dayTimeDuration)
          as dayTimeDuration */
       { .ns = PFns_op, .loc = "plus",
@@ -1644,7 +1644,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_plus }
+        .alg = NULL }
     , /* op:subtract-dayTimeDurations (dayTimeDuration, dayTimeDuration)
          as dayTimeDuration */
       { .ns = PFns_op, .loc = "minus",
@@ -1652,7 +1652,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_minus }
+        .alg = NULL }
     , /* op:multiply-dayTimeDuration (dayTimeDuration, double)
          as dayTimeDuration */
       { .ns = PFns_op, .loc = "times",
@@ -1660,7 +1660,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_double () },
             .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_times }
+        .alg = NULL }
     , /* op:divide-dayTimeDuration  (dayTimeDuration, double)
          as dayTimeDuration */
       { .ns = PFns_op, .loc = "div",
@@ -1668,7 +1668,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_double () },
             .ret_ty = PFty_xs_daytimeduration () } },
-        .alg = PFbui_op_daytimeduration_div_dbl }
+        .alg = NULL }
     , /* op:divide-dayTimeDuration-by-dayTimeDuration (dayTimeDuration,
          dayTimeDuration) as decimal */
       { .ns = PFns_op, .loc = "div",
@@ -1676,7 +1676,7 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_daytimeduration (),
                                    PFty_xs_daytimeduration () },
             .ret_ty = PFty_xs_decimal () } },
-        .alg = PFbui_op_daytimeduration_div }
+        .alg = NULL }
 
 /* 10.7 Timezone Adjustment Functions on Dates and Time Values */
     , /* fn:adjust-dateTime-to-timezone (dateTime?) as dateTime? */
@@ -2492,7 +2492,7 @@ PFfun_xquery_fo (void)
         .arity = 2, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_anyNode (), PFty_xs_string () },
             .ret_ty = PFty_empty() } } ,
-        .alg = PFbui_fn_put }
+        .alg = NULL }
     , /* pf:documents () as element()* */
       { .ns = PFns_lib, .loc = "documents",
         .arity = 0, .sig_count = 1, .sigs = { {

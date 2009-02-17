@@ -1204,7 +1204,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 	/* any updates */
 	if (BUNlast(ups) > BUNfirst(ups)) {
 		if (BUNlast(ups) > ups->batInserted && (store_nr_active > 1 || cluster)) { 
-			BAT *cu = temp_descriptor(obat->ubid);//, *ncu;
+			BAT *cu = temp_descriptor(obat->ubid);
 
 			if (isEUbat(cu)) {
 				temp_destroy(obat->ubid);

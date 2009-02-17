@@ -2135,7 +2135,7 @@ exps_distinct( sql_rel *l, list *l_exps, sql_rel *r, list *r_exps)
 	(void)l_exps;
 	(void)r;
 	(void)r_exps;
-	return 1;
+	return 0;
 }
 
 static int

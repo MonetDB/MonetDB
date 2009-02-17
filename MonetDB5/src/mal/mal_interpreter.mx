@@ -497,7 +497,7 @@ We rely on optimizing compilers to remove the redundant code.
 				goto workslow;
             
 				@:MALrecycleStart(stk)@ {
-				lng tcs;
+				lng tcs = 0;
 				@:MALinterpret(FAST)@
 				@:MALrecycleExit(stk)@
 			}
@@ -797,7 +797,7 @@ limited.
 We don't allow sequential flow control here.
 @c
 	@:MALrecycleStart(t)@ {
-        lng tcs;
+        lng tcs = 0;
         switch (pci->token){
 		case ASSIGNsymbol: @:assignStmt(SLOW,fs->pc = -1; return ret,t)@ break;
 		case PATcall: @:patterncall(SLOW,fs->pc = -1; return ret,t)@ break;

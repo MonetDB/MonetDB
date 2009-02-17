@@ -280,9 +280,9 @@ Rel:      twig (attribute (Rel))                                   = 103 (10);
 Rel:      twig (textnode (Rel))                                    = 104 (10);
 Fcns:     fcns (Twig, Fcns)                                        = 105 (10);
 Fcns:     fcns (Twig, nil)                                         = 106 (10);
-Twig:     docnode (Rel, fcns (nil, nil))                           = 107 (10);
+Twig:     docnode (Rel, nil)                                       = 107 (10);
 Twig:     docnode (Rel, Fcns)                                      = 108 (10);
-Twig:     element (Rel, fcns (nil, nil))                           = 109 (10);
+Twig:     element (Rel, nil)                                       = 109 (10);
 Twig:     element (Rel, Fcns)                                      = 110 (10);
 Twig:     attribute (Rel)                                          = 111 (10);
 Twig:     textnode (Rel)                                           = 112 (10);
@@ -1344,11 +1344,15 @@ order_extend (PFpa_op_t *p, PFord_ordering_t ord, mvar_t *res)
  *                entries are assigned to
  * @param[out] cont the MIL variable the containers to the respective
  *                  QName references are assigned to
+ *
+ * @return indicate if all rows provide a QName
  */
-static void
-fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont)
+static bool
+fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont, bool set)
 { /* fold( */
-    PFalg_simple_type_t ty = type_of (p, col);
+    PFla_op_t          *origin     = PFprop_lineage (p->prop, col);
+    bool                names_only = false;
+    PFalg_simple_type_t ty         = type_of (p, col);
 
     if (ty == aat_pnode) {
         /* find all element nodes and extract their QName references */
@@ -1359,35 +1363,51 @@ fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont)
         PFmil_t *pre       = VAR (p->env, col, aat_pre),
                 *pre_cont  = VAR (p->env, col, aat_frag);
 
-        execute (
-            assgn (var (kind->name),
-                   mposjoin (
-                       pre,
-                       pre_cont,
-                       fetch (var (PF_MIL_VAR_WS),
-                              var (PF_MIL_VAR_PRE_KIND)))),
-            assgn (var (map->name),
-                   hmark (select_ (var (kind->name),
-                                   var (PF_MIL_VAR_KIND_ELEM)),
-                          lit_oid (0))),
-            assgn (var (elem->name),
-                   leftfetchjoin (var (map->name), pre)),
-            assgn (var (elem_cont->name),
-                   leftfetchjoin (var (map->name), pre_cont)),
-            assgn (var (id->name),
-                   leftfetchjoin (
-                       reverse (var (map->name)),
-                       mposjoin (var (elem->name),
-                                 var (elem_cont->name),
+        /* check if the input stems from an element step */
+        if (origin && origin->kind == la_step_join &&
+            origin->sem.step.item_res == PFprop_lineage_col (p->prop, col) &&
+            origin->sem.step.spec.kind == node_kind_elem) {
+            execute (
+                assgn (var (id->name),
+                       mposjoin (pre, pre_cont,
                                  fetch (var (PF_MIL_VAR_WS),
-                                        var (PF_MIL_VAR_PRE_PROP))))),
-            assgn (var (cont->name),
-                   leftfetchjoin (
-                       reverse (var (map->name)),
-                       mposjoin (var (elem->name),
-                                 var (elem_cont->name),
+                                        var (PF_MIL_VAR_PRE_PROP)))),
+                assgn (var (cont->name),
+                       mposjoin (pre, pre_cont,
                                  fetch (var (PF_MIL_VAR_WS),
-                                        var (PF_MIL_VAR_PRE_CONT))))));
+                                        var (PF_MIL_VAR_PRE_CONT)))));
+            names_only = true;
+        }
+        else
+            execute (
+                assgn (var (kind->name),
+                       mposjoin (
+                           pre,
+                           pre_cont,
+                           fetch (var (PF_MIL_VAR_WS),
+                                  var (PF_MIL_VAR_PRE_KIND)))),
+                assgn (var (map->name),
+                       hmark (select_ (var (kind->name),
+                                       var (PF_MIL_VAR_KIND_ELEM)),
+                              lit_oid (0))),
+                assgn (var (elem->name),
+                       leftfetchjoin (var (map->name), pre)),
+                assgn (var (elem_cont->name),
+                       leftfetchjoin (var (map->name), pre_cont)),
+                assgn (var (id->name),
+                       leftfetchjoin (
+                           reverse (var (map->name)),
+                           mposjoin (var (elem->name),
+                                     var (elem_cont->name),
+                                     fetch (var (PF_MIL_VAR_WS),
+                                            var (PF_MIL_VAR_PRE_PROP))))),
+                assgn (var (cont->name),
+                       leftfetchjoin (
+                           reverse (var (map->name)),
+                           mposjoin (var (elem->name),
+                                     var (elem_cont->name),
+                                     fetch (var (PF_MIL_VAR_WS),
+                                            var (PF_MIL_VAR_PRE_CONT))))));
 
         unpin (kind, 1);
         unpin (elem, 1);
@@ -1410,6 +1430,7 @@ fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont)
                              attr_cont,
                              fetch (var (PF_MIL_VAR_WS),
                                     var (PF_MIL_VAR_ATTR_CONT)))));
+        names_only = true;
     }
     else {
         assert (ty == aat_node);
@@ -1517,6 +1538,43 @@ fn_node_name (PFpa_op_t *p, PFalg_col_t col, mvar_t *id, mvar_t *cont)
         unpin (pcont, 1);
         unpin (res, 1);
     }
+
+    /* remove the duplicates early -- before
+       duplicates are removed based on strings */
+    if (set &&
+        /* avoid rewrite if we are not done afterwards */
+        names_only &&
+        /* test for a constant fragment */
+        origin &&
+        origin->kind == la_step_join &&
+        origin->sem.step.item_res == PFprop_lineage_col (p->prop, col) &&
+        L(origin)->kind == la_frag_union &&
+        LL(origin)->kind == la_empty_frag &&
+        LR(origin)->kind == la_fragment &&
+        LRL(origin)->kind == la_doc_tbl &&
+        PFprop_const (LRL(origin)->prop,
+                      LRL(origin)->sem.doc_tbl.col)) {
+        /* we assign new head values here -- as we are sure that
+           this logical column (BATs id & cont) is the only column
+           that is used lateron */
+        mvar_t *min = new_var (1);
+        execute (
+            assgn (var (min->name),
+                   PFmil_gmin (reverse (var (id->name)))),
+            /* make sure that the output is sorted
+               in the input order again */
+            assgn (var (min->name),
+                   reverse (sort (reverse (var (min->name)), DIR_ASC))),
+            assgn (var (id->name),
+                   hmark (var (min->name), lit_oid (0))),
+            assgn (var (cont->name),
+                   tmark (
+                       leftfetchjoin (var (min->name), var (cont->name)),
+                       lit_oid (0))));
+        unpin (min, 1);
+    }
+
+    return names_only;
 } /* fold) */
 
 /**
@@ -5631,13 +5689,19 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                *empty_str   = new_var (1),
                                *mu          = new_var (1),
                                *prefix      = new_var (1),
-                               *name        = new_var (1),
                                *prefix_bool = new_var (1),
                                *true_oid    = new_var (1),
                                *false_oid   = new_var (1);
+                    bool        set,
+                                names_only;
+
+                    /* check whether we are allowed to remove duplicates */
+                    set = PFprop_set (p->prop) &&
+                          PFprop_icols_count (p->prop) == 1 &&
+                          PFprop_icol (p->prop, p->sem.fun_1to1.res);
 
                     /* look up the correct QName references */
-                    fn_node_name (L(p), col, id, cont);
+                    names_only = fn_node_name (L(p), col, id, cont, set);
 
                     /* get all prefixes */
                     execute (
@@ -5673,7 +5737,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                tmark (
                                    fetch (var (mu->name), lit_int (1)),
                                    lit_oid (0))),
-                        assgn (var (name->name),
+                        assgn (var (res->name),
                                madd (var (prefix->name),
                                      mposjoin (tmark (var (id->name),
                                                       lit_oid (0)),
@@ -5681,30 +5745,31 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                                       lit_oid (0)),
                                                fetch (
                                                    var (PF_MIL_VAR_WS),
-                                                   var (PF_MIL_VAR_QN_LOC))))),
-                        /* empty names for nodes that have no QName */
-                        assgn (var (empty_str->name),
-                               project (kdiff (ANY_VAR(L(p)->env),
-                                               var (id->name)),
-                                        lit_str (""))),
-                        assgn (var (mu->name),
-                               merged_union (
-                                   arg (hmark (var (id->name), lit_oid (0)),
-                                        arg (hmark (var (empty_str->name),
-                                                    lit_oid (0)),
-                                             arg (var (name->name),
-                                                  tmark (var (empty_str->name),
-                                                         lit_oid (0))))))),
-                        assgn (var (res->name),
-                               tmark (fetch (var (mu->name), lit_int (1)),
-                                      lit_oid (0))));
+                                                   var (PF_MIL_VAR_QN_LOC))))));
+                    if (!names_only)
+                        execute (
+                            /* empty names for nodes that have no QName */
+                            assgn (var (empty_str->name),
+                                   project (kdiff (ANY_VAR(L(p)->env),
+                                                   var (id->name)),
+                                            lit_str (""))),
+                            assgn (var (mu->name),
+                                   merged_union (
+                                       arg (hmark (var (id->name), lit_oid (0)),
+                                            arg (hmark (var (empty_str->name),
+                                                        lit_oid (0)),
+                                                 arg (var (res->name),
+                                                      tmark (var (empty_str->name),
+                                                             lit_oid (0))))))),
+                            assgn (var (res->name),
+                                   tmark (fetch (var (mu->name), lit_int (1)),
+                                          lit_oid (0))));
 
                     unpin (id, 1);
                     unpin (cont, 1);
                     unpin (empty_str, 1);
                     unpin (mu, 1);
                     unpin (prefix, 1);
-                    unpin (name, 1);
                     unpin (prefix_bool, 1);
                     unpin (true_oid, 1);
                     unpin (false_oid, 1);
@@ -5717,10 +5782,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     PFalg_col_t   col         = clat (p->sem.fun_1to1.refs, 0);
                     mvar_t       *id          = new_var (1),
                                  *cont        = new_var (1),
-                                 *name        = new_var (1),
                                  *empty_str   = new_var (1),
                                  *mu          = new_var (1);
                     PFmil_ident_t uri_loc     = PF_MIL_VAR_UNUSED;
+                    bool          set,
+                                  names_only;
 
                     switch (p->sem.fun_1to1.kind) {
                         case alg_fun_fn_local_name:
@@ -5731,36 +5797,42 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             assert(!"should never reach here"); break;
                     }
 
+                    /* check whether we are allowed to remove duplicates */
+                    set = PFprop_set (p->prop) &&
+                          PFprop_icols_count (p->prop) == 1 &&
+                          PFprop_icol (p->prop, p->sem.fun_1to1.res);
+
                     /* look up the correct QName references */
-                    fn_node_name (L(p), col, id, cont);
+                    names_only = fn_node_name (L(p), col, id, cont, set);
 
                     /* get all prefixes */
                     execute (
-                        assgn (var (name->name),
+                        assgn (var (res->name),
                                mposjoin (tmark (var (id->name), lit_oid (0)),
                                          tmark (var (cont->name), lit_oid (0)),
                                          fetch (var (PF_MIL_VAR_WS),
-                                                var (uri_loc)))),
-                        /* empty names for nodes that have no QName */
-                        assgn (var (empty_str->name),
-                               project (kdiff (ANY_VAR(L(p)->env),
-                                               var (id->name)),
-                                        lit_str (""))),
-                        assgn (var (mu->name),
-                               merged_union (
-                                   arg (hmark (var (id->name), lit_oid (0)),
-                                        arg (hmark (var (empty_str->name),
-                                                    lit_oid (0)),
-                                             arg (var (name->name),
-                                                  tmark (var (empty_str->name),
-                                                         lit_oid (0))))))),
-                        assgn (var (res->name),
-                               tmark (fetch (var (mu->name), lit_int (1)),
-                                      lit_oid (0))));
+                                                var (uri_loc)))));
+                    if (!names_only)
+                        execute (
+                            /* empty names for nodes that have no QName */
+                            assgn (var (empty_str->name),
+                                   project (kdiff (ANY_VAR(L(p)->env),
+                                                   var (id->name)),
+                                            lit_str (""))),
+                            assgn (var (mu->name),
+                                   merged_union (
+                                       arg (hmark (var (id->name), lit_oid (0)),
+                                            arg (hmark (var (empty_str->name),
+                                                        lit_oid (0)),
+                                                 arg (var (res->name),
+                                                      tmark (var (empty_str->name),
+                                                             lit_oid (0))))))),
+                            assgn (var (res->name),
+                                   tmark (fetch (var (mu->name), lit_int (1)),
+                                          lit_oid (0))));
 
                     unpin (id, 1);
                     unpin (cont, 1);
-                    unpin (name, 1);
                     unpin (empty_str, 1);
                     unpin (mu, 1);
 
@@ -8289,7 +8361,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
             break; /* fold) */
 
-        /* Twig:     docnode (Rel, fcns (nil, nil)) */
+        /* Twig:     docnode (Rel, nil) */
         case 107: /* fold( */
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
         {
@@ -8460,7 +8532,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         }
             break; /* fold) */
 
-        /* Twig:     element (Rel, fcns (nil, nil)) */
+        /* Twig:     element (Rel, nil) */
         case 109: /* fold( */
             assert (type_of (L(p), p->sem.ii.iter) == aat_nat);
             assert (type_of (L(p), p->sem.ii.item) == aat_qname);

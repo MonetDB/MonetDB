@@ -3050,6 +3050,11 @@ ordering_spec:
 	  append_symbol(l, _symbol_create_list(SQL_COLUMN, $1));
 	  append_int(l, $2);
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
+ | nonzero opt_asc_desc
+	{ dlist *l = L();
+	  append_symbol(l, _symbol_create_int(SQL_COLUMN, $1));
+	  append_int(l, $2);
+	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
 
  ;
 
@@ -4190,10 +4195,10 @@ data_type:
 			{ 
 			  int d = $3;
 			  int s = $5;
-			  if (s >= d || s + d > 18) {
+			  if (s > d || s + d > 18) {
 				char *msg = NULL;
-				if (s >= d)
-					msg = sql_message("scale (%d) should be less than precision (%d)", s, d);
+				if (s > d)
+					msg = sql_message("scale (%d) should be less or equal to the precision (%d)", s, d);
 				else
 					msg = sql_message("decimal(%d,%d) isn't supported because P=%d + S=%d > 18", d, s, d, s);
 				yyerror(msg);

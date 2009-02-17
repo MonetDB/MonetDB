@@ -107,6 +107,7 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
+static pthread_mutex_t topdplock = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct _remotedb {
 	char* dbname;
@@ -115,6 +116,7 @@ typedef struct _remotedb {
 	struct _remotedb* next;
 }* remotedb;
 static remotedb _merovingian_remotedbs = NULL;
+static pthread_mutex_t remotedblock = PTHREAD_MUTEX_INITIALIZER;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
@@ -177,6 +179,10 @@ logListener(void *x)
 		tv.tv_usec = 0;
 		FD_ZERO(&readfds);
 		nfds = 0;
+
+		/* make sure noone is killing or adding entries here */
+		pthread_mutex_lock(&topdplock);
+
 		w = d;
 		while (w != NULL) {
 			FD_SET(w->out, &readfds);
@@ -187,8 +193,14 @@ logListener(void *x)
 				nfds = w->err;
 			w = w->next;
 		}
+
+		pthread_mutex_unlock(&topdplock);
+		
 		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0)
 			continue;
+
+		pthread_mutex_lock(&topdplock);
+
 		w = d;
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0) {
@@ -249,6 +261,8 @@ logListener(void *x)
 			}
 			w = w->next;
 		}
+
+		pthread_mutex_unlock(&topdplock);
 
 		fflush(fout);
 		if (equalouterr == 0)
@@ -426,7 +440,7 @@ forkMserver(str database, sabdb** stats, int force)
 	char tstr[20];
 	int pfdo[2];
 	int pfde[2];
-	dpair dp = topdp;
+	dpair dp;
 	str vaultkey = NULL;
 	struct stat statbuf;
 
@@ -438,8 +452,12 @@ forkMserver(str database, sabdb** stats, int force)
 	}
 
 	if (*stats == NULL) {
+		remotedb rdb;
+
 		/* check the remote databases */
-		remotedb rdb = _merovingian_remotedbs;
+		pthread_mutex_lock(&remotedblock);
+
+		rdb = _merovingian_remotedbs;
 		while (rdb != NULL) {
 			if (strcmp(rdb->dbname, database) == 0) {
 				/* take first match, create a fake sabdb struct */
@@ -455,10 +473,13 @@ forkMserver(str database, sabdb** stats, int force)
 				(*stats)->conns->val = GDKstrdup(rdb->conn);
 				(*stats)->conns->next = NULL;
 				(*stats)->next = NULL;
+				pthread_mutex_unlock(&remotedblock);
 				return(NO_ERR);
 			}
 			rdb = rdb->next;
 		}
+
+		pthread_mutex_unlock(&remotedblock);
 
 		return(newErr("no such database: %s", database));
 	}
@@ -593,12 +614,15 @@ forkMserver(str database, sabdb** stats, int force)
 		exit(1);
 	} else if (pid > 0) {
 		int i;
-		dpair pdp;
+
+		/* make sure no entries are shot while adding and that we
+		 * deliver a consistent state */
+		pthread_mutex_lock(&topdplock);
 
 		/* parent: fine, let's add the pipes for this child */
+		dp = topdp;
 		while (dp->next != NULL)
 			dp = dp->next;
-		pdp = dp;
 		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
 		dp->out = pfdo[0];
 		close(pfdo[1]);
@@ -608,6 +632,8 @@ forkMserver(str database, sabdb** stats, int force)
 		dp->pid = pid;
 		dp->dbname = GDKstrdup(database);
 		dp->started = 0;
+
+		pthread_mutex_unlock(&topdplock);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
@@ -643,9 +669,17 @@ forkMserver(str database, sabdb** stats, int force)
 		/* if we've never found a connection, try to figure out why */
 		if (i >= 20) {
 			int state = (*stats)->state;
+			dpair pdp;
 
 			/* starting failed */
 			SABAOTHfreeStatus(stats);
+
+			/* in the meanwhile the list may have changed so refetch the
+			 * parent */
+			pthread_mutex_lock(&topdplock);
+			pdp = topdp;
+			while (pdp->next != dp)
+				pdp = pdp->next;
 
 			switch (state) {
 				case SABdbRunning:
@@ -655,18 +689,20 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"timeout when waiting for database '%s' to "
 								"open up a communication channel or to "
 								"initialise the sql scenario", database));
 				case SABdbCrashed:
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed", database));
@@ -681,18 +717,20 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
 								"itself down after starting", database));
 				default:
 					/* remove from the list again */
+					pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
-					pdp->next = NULL;
+					pthread_mutex_lock(&topdplock);
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
@@ -1381,9 +1419,11 @@ controlRunner(void *d)
 				} else if (strcmp(p, "stop") == 0 ||
 						strcmp(p, "kill") == 0)
 				{
+					dpair dp;
 					/* we need to find the right dpair, that is we
 					 * sort of assume the control signal is right */
-					dpair dp = topdp;
+					pthread_mutex_lock(&topdplock);
+					dp = topdp->next; /* don't need the console/log */
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
@@ -1409,11 +1449,14 @@ controlRunner(void *d)
 								"%s is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
+					pthread_mutex_unlock(&topdplock);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
 					/* return a list of remote databases from our Aranita */
 					remotedb rdb;
+
+					pthread_mutex_lock(&remotedblock);
 
 					rdb = _merovingian_remotedbs;
 					while (rdb != NULL) {
@@ -1422,6 +1465,9 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 						rdb = rdb->next;
 					}
+
+					pthread_mutex_unlock(&remotedblock);
+
 					/* because this command is multi line, you can't
 					 * combine it, disconnect the client */
 					break;
@@ -1552,6 +1598,8 @@ discoveryRunner(void *d)
 
 		/* do a round to see if we have to cleanup anything (expired
 		 * ttl) */
+		pthread_mutex_lock(&remotedblock);
+
 		prv = NULL;
 		rdb = _merovingian_remotedbs;
 		while (rdb != NULL) {
@@ -1572,6 +1620,8 @@ discoveryRunner(void *d)
 			prv = rdb;
 			rdb = rdb->next;
 		}
+
+		pthread_mutex_unlock(&remotedblock);
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		FD_ZERO(&fds);
@@ -1638,6 +1688,8 @@ discoveryRunner(void *d)
 			 * that only the original registrant can unregister a
 			 * database, however... do we really care that much? */
 
+			pthread_mutex_lock(&remotedblock);
+
 			prv = NULL;
 			rdb = _merovingian_remotedbs;
 			while (rdb != NULL) {
@@ -1660,6 +1712,8 @@ discoveryRunner(void *d)
 				prv = rdb;
 				rdb = rdb->next;
 			}
+
+			pthread_mutex_unlock(&remotedblock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
@@ -1674,6 +1728,8 @@ discoveryRunner(void *d)
 
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
+
+			pthread_mutex_lock(&remotedblock);
 
 			if (_merovingian_remotedbs == NULL) {
 				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
@@ -1694,14 +1750,18 @@ discoveryRunner(void *d)
 					prv = rdb;
 					rdb = rdb->next;
 				}
-				if (rdb == prv)
+				if (rdb == prv) {
+					pthread_mutex_unlock(&remotedblock);
 					continue;
+				}
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
 			rdb->dbname = strdup(dbname);
 			rdb->conn = strdup(conn);
 			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
+
+			pthread_mutex_unlock(&remotedblock);
 
 			merlog("discovered neighbour database %s at %s "
 					"(refresh from %s in %s seconds)",
@@ -1772,8 +1832,6 @@ handler(int sig)
 	_keepListening = 0;
 }
 
-static dpair servers;
-
 static void
 childhandler(int sig, siginfo_t *si, void *unused)
 {
@@ -1796,7 +1854,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	}
 
 	/* get the pid from the former child, and locate it in our list */
-	q = servers;
+	pthread_mutex_lock(&topdplock);
+
+	q = topdp->next;
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
@@ -1820,16 +1880,21 @@ childhandler(int sig, siginfo_t *si, void *unused)
 						p->dbname, p->pid);
 			}
 			/* if we're starting up, don't clean up */
-			if (p->started == 0)
+			if (p->started == 0) {
+				pthread_mutex_unlock(&topdplock);
 				return;
+			}
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
+			pthread_mutex_unlock(&topdplock);
 			return;
 		}
 		q = p;
 		p = q->next;
 	}
+
+	pthread_mutex_unlock(&topdplock);
 	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
 }
 
@@ -2157,8 +2222,6 @@ main(int argc, char *argv[])
 	fprintf(pidfile, "%d\n", (int)d->pid);
 	fflush(pidfile);
 	fclose(pidfile);
-
-	servers = d;
 
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
 		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);

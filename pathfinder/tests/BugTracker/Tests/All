@@ -173,6 +173,12 @@ intersect_duplicates.SF-2142522
 string_substring.SF-2153484
 multi_merged_union.SF-2276427
 non-existing_collection.SF-1991726
+root-node_of_constructed_element.SF-2456324
+ebv.SF-2474519
+side-effects.SF-2124300
+query_compilation_item3.SF-2130051
+Parse_error_with_pf:collection.SF-2020631
+XML_document_cache_broken.SF-1414720
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
