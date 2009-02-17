@@ -1,4 +1,4 @@
-stderr of test 'Parse_error_with_pf:collection.SF-2020631` in directory 'tests/BugTracker` itself:
+stderr of test 'Parse_error_with_pf_collection.SF-2020631` in directory 'tests/BugTracker` itself:
 
 
 # 00:42:41 >  
@@ -7,7 +7,7 @@ stderr of test 'Parse_error_with_pf:collection.SF-2020631` in directory 'tests/B
 
 
 # 00:42:42 >  
-# 00:42:42 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31173 -g Parse_error_with_pf:collection.SF-2020631.xq
+# 00:42:42 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=31173 -g Parse_error_with_pf_collection.SF-2020631.xq
 # 00:42:42 >  
 
 

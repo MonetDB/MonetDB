@@ -1,4 +1,4 @@
-# tests related to bug reports_
+# tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
 # first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
@@ -151,7 +151,7 @@ join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
 compilation_or_runtime_choice.SF-1991738_0_ALG
-#type error_ can't cast type 'untypedAtomic*' to type 'integer?'
+#type error: can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
