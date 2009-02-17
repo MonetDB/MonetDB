@@ -109,9 +109,13 @@ opt_monetxq (PFla_op_t *p)
                 R(p)->kind == la_project &&
                 R(p)->sem.proj.items[0].new == p->sem.step.item &&
                 R(p)->sem.proj.items[0].old == RL(p)->sem.step.item_res &&
+                /* check for a '//element(*)' step */
                 RL(p)->kind == la_step_join &&
                 (RL(p)->sem.step.spec.axis == alg_desc ||
                  RL(p)->sem.step.spec.axis == alg_desc_s) &&
+                RL(p)->sem.step.spec.kind == node_kind_elem &&
+                PFqname_ns_wildcard (RL(p)->sem.step.spec.qname) &&
+                PFqname_loc_wildcard (RL(p)->sem.step.spec.qname) &&
                 RLR(p)->kind == la_roots &&
                 RLRL(p)->kind == la_doc_tbl &&
                 RL(p)->sem.step.item == RLRL(p)->sem.doc_tbl.res) {
