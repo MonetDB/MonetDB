@@ -22,7 +22,7 @@ Over..
 # 00:19:16 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult><result><monthly_result><month>01</month><item_count>1</item_count></monthly_result><monthly_result><month>02</month><item_count>2</item_count></monthly_result><monthly_result><month>03</month><item_count>3</item_count></monthly_result><monthly_result><month>04</month><item_count>1</item_count></monthly_result><monthly_result><month>05</month><item_count>1</item_count></monthly_result></result></XQueryResult>
+<XQueryResult><result><monthly_result><month>1</month><item_count>1</item_count></monthly_result><monthly_result><month>2</month><item_count>2</item_count></monthly_result><monthly_result><month>3</month><item_count>3</item_count></monthly_result><monthly_result><month>4</month><item_count>1</item_count></monthly_result><monthly_result><month>5</month><item_count>1</item_count></monthly_result></result></XQueryResult>
 
 # 00:19:16 >  
 # 00:19:16 >  Done.
