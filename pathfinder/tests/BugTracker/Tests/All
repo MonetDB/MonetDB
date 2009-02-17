@@ -157,8 +157,7 @@ compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
 NOT_ALGEBRA?pfmil_prints_garbage.SF-2015232
 NOT_ALGEBRA?pfmil_loses_last_bun.SF-2015219
-NOT_ALGEBRA?pfmil_and_nil_in_results_1.SF-2015135
-NOT_ALGEBRA?pfmil_and_nil_in_results_2.SF-2015135
+NOT_ALGEBRA?pfmil_and_nil_in_results.SF-2015135
 distinct-values-triggers-assertion.SF-2122091_ALG
 duplicates_error.SF-2142522
 order_by.SF-2140992
