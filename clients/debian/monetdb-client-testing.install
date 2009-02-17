@@ -1,0 +1,11 @@
+debian/tmp/usr/lib/MonetDB/Tests/odbcsample1 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sample0 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sample1 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sample2 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sample3 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sample4 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/smack00 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/smack01 usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sqlsample.php usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/sqlsample.py usr/lib/MonetDB/Tests
+debian/tmp/usr/lib/MonetDB/Tests/testgetinfo usr/lib/MonetDB/Tests

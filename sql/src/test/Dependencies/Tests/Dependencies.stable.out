@@ -107,8 +107,8 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
-% .t,	.tri,	. # table_name
-% name,	trigname,	single_value # name
+% .t,	.tri,	.L10 # table_name
+% name,	trigname,	L10 # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
@@ -227,8 +227,8 @@ Cleanup
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
-% .t,	.t,	. # table_name
-% name,	name,	single_value # name
+% .t,	.t,	.L4 # table_name
+% name,	name,	L4 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 % .t,	sys.fk,	. # table_name

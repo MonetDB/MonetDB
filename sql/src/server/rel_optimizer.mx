@@ -1471,6 +1471,7 @@ rel_find_aggr_exp( sql_rel *rel, list *exps, sql_exp *e, char *name)
 	sql_exp *a = NULL, *eae;
 	node *n;
 
+	(void)rel;
 	if (list_length(ea) != 1)
 		return NULL;
 	eae = ea->h->data;
@@ -1495,7 +1496,7 @@ rel_find_aggr_exp( sql_rel *rel, list *exps, sql_exp *e, char *name)
 				    strcmp(aae->l, eae->l) == 0)) &&
 				    (aae->r && eae->r &&
 				    strcmp(aae->r, eae->r) == 0)) 
-					return exp_column(rel_name(rel), exp_name(a), exp_subtype(a), a->card, has_nil(a), is_intern(a));
+					return exp_column(a->rname, exp_name(a), exp_subtype(a), a->card, has_nil(a), is_intern(a));
 			}
 		}
 	}
@@ -1633,24 +1634,6 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 		*changes = 1;
 	}
 	return rel;
-}
-
-/* when pushing projections up we may introduce new projects around
- * operators with lower cardinality then before. So we need to fix
- * the cardinality of these expressions (to atleast match that of the
- * inner relation).
- */
-static void
-exps_fix_card( list *exps, int card)
-{
-	node *n;
-
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->card > card)
-			e->card = card;
-	}
 }
 
 /* Pushing projects up the tree. Done very early in the optimizer.
@@ -2250,7 +2233,7 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter)
 }
 
 
-/*
+/* TODO
 	Rewrite if the expressions c and z are equal
 		REF
 			R()
@@ -2290,6 +2273,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	rel_print(sql, rel, 0);
 #endif
 	/* TODO cleanup rel_optimzer.mx (reorder code, remove unused etc) */
+	/* make parts conditional (via debug flag) */
 
 	/* Remove unused expressions */
 	if (gp.cnt[op_project])

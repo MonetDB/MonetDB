@@ -1,0 +1,12 @@
+## Here you can set startup options for the monetdb 5 server
+##
+## change this to
+##
+##   DAEMON_OPTS="--dbinit=\"include sql;\""
+##
+## to enable SQL support.
+##
+DAEMON_OPTS=""
+
+DAEMONUSER="monetdb"
+

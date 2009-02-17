@@ -111,13 +111,13 @@ Over..
 % char # type
 % 27 # length
 [ "dropping kwmTemp"	]
-% .,	sys.s4_keywords # table_name
-% single_value,	L13 # name
+% .L13,	sys.s4_keywords # table_name
+% L13,	L14 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
-% .,	sys.s4_kwm # table_name
-% single_value,	L14 # name
+% .L15,	sys.s4_kwm # table_name
+% L15,	L16 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]

@@ -1,0 +1,101 @@
+#!/bin/sh 
+#
+### BEGIN INIT INFO
+# Provides:          monetdb5-server
+# Required-Start:    $network $local_fs
+# Required-Stop:     
+# Should-Start:      $named
+# Should-Stop:       
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: MonetDB database server 5
+# Description:       <Enter a long description of the software>
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+DAEMON=/usr/bin/mserver5
+NAME=monetdb5-server
+DESC="MonetDB database server 5"
+LOGDIR=/var/log/monetdb 
+
+PIDFILE=/var/run/$NAME.pid 
+
+test -x $DAEMON || exit 0
+test -x $DAEMON_WRAPPER || exit 0
+
+. /lib/lsb/init-functions
+
+# Default options, these can be overriden by the information
+# at /etc/default/$NAME
+DAEMON_OPTS=""          # Additional options given to the server 
+
+DODTIME=10              # Time to wait for the server to die, in seconds
+                        # If this value is set too low you might not
+                        # let some servers to die gracefully and
+                        # 'restart' will not work
+                        
+LOGFILE=$LOGDIR/$NAME.log  # Server logfile
+DAEMONUSER=monetdb
+
+# Include defaults if available
+if [ -f /etc/default/$NAME ] ; then
+	. /etc/default/$NAME
+fi
+
+# Check that the user exists (if we set a user)
+# Does the user exist?
+if [ -n "$DAEMONUSER" ] ; then
+    if getent passwd | grep -q "^$DAEMONUSER:"; then
+        # Obtain the uid and gid
+        DAEMONUID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $3}'`
+        DAEMONGID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $4}'`
+    else
+        log_failure_msg "The user $DAEMONUSER, required to run $NAME does not exist."
+        exit 1
+    fi
+fi
+
+
+set -e
+
+start_server() {
+    start-stop-daemon --start -b --chuid $DAEMONUSER --exec $DAEMON -- --daemon=yes $DAEMON_OPTS
+    errcode=$?
+    return $errcode
+}
+
+stop_server() {
+    pkill -x mserver5 || true
+    return 0
+}
+
+case "$1" in
+  start)
+        log_daemon_msg "Starting $DESC" "$NAME"
+        if start_server ;  then
+            log_end_msg 0
+        else
+            log_end_msg 1
+        fi
+	;;
+  stop)
+        log_daemon_msg "Stopping $DESC" "$NAME"
+        stop_server
+        log_end_msg 0
+        ;;
+  restart)
+        log_daemon_msg "Restarting $DESC" "$NAME"
+        stop_server
+        [ -n "$DIETIME" ] && sleep $DIETIME
+        start_server
+        log_end_msg $?
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

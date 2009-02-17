@@ -1,0 +1,9 @@
+
+
+debian/tmp/usr/bin/monetdb4-config usr/bin
+debian/tmp/usr/include/MonetDB4/calibrator usr/include/MonetDB4
+debian/tmp/usr/include/MonetDB4/contrib usr/include/MonetDB4
+debian/tmp/usr/include/MonetDB4/mapi usr/include/MonetDB4
+debian/tmp/usr/include/MonetDB4/monet usr/include/MonetDB4
+debian/tmp/usr/include/MonetDB4/plain usr/include/MonetDB4
+debian/tmp/usr/lib/lib*.so /usr/lib

@@ -1,0 +1,7 @@
+debian/tmp/usr/bin/monetdb-config usr/bin
+debian/tmp/usr/include/MonetDB/common/* usr/include/MonetDB/common
+debian/tmp/usr/include/MonetDB/gdk/* usr/include/MonetDB/gdk
+debian/tmp/usr/include/MonetDB/*.h usr/include/MonetDB
+debian/tmp/usr/lib/libbat.so usr/lib
+debian/tmp/usr/lib/libmutils.so usr/lib
+debian/tmp/usr/lib/libstream.so usr/lib

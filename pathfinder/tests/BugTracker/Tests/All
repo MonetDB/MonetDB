@@ -1,4 +1,4 @@
-# tests related to bug reports:
+# tests related to bug reports_
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
 
 # first test loads default XMark document from benchmarks/XMark/Tests/auctionG.xml
@@ -151,7 +151,7 @@ join-query_compilation_error.SF-1889694
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
 compilation_or_runtime_choice.SF-1991738_0_ALG
-#type error: can't cast type 'untypedAtomic*' to type 'integer?'
+#type error_ can't cast type 'untypedAtomic*' to type 'integer?'
 untypedAtomic?compilation_or_runtime_choice.SF-1991738_1_MPS
 compilation_or_runtime_choice.SF-1991738_1_ALG
 test_order.SF-2009467
@@ -177,7 +177,7 @@ root-node_of_constructed_element.SF-2456324
 ebv.SF-2474519
 side-effects.SF-2124300
 query_compilation_item3.SF-2130051
-Parse_error_with_pf:collection.SF-2020631
+Parse_error_with_pf_collection.SF-2020631
 XML_document_cache_broken.SF-1414720
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 

@@ -22,7 +22,7 @@ EXTRA_DIST = configure.ag RunMtest.in \
 		RunMserver.bat.in RunMserver.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
 
-EXTRA_DIST_DIR = NT tests
+EXTRA_DIST_DIR = NT tests debian
 
 headers_pc = {
 	HEADERS = pc

@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/MonetDB4/geom.mil /usr/lib/MonetDB4
+debian/tmp/usr/lib/MonetDB4/lib/lib_geom.so* /usr/lib/MonetDB4

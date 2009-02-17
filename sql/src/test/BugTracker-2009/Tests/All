@@ -29,3 +29,4 @@ decimal_needs_truncation.SF-2605686
 number_between_col1_and_col2
 order_by_column_position
 error_while_drop_func_returns_table_type.SF-2604573
+having_or_bug

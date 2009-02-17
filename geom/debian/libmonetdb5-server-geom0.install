@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/MonetDB5/geom.mal /usr/lib/MonetDB5
+debian/tmp/usr/lib/MonetDB5/lib/lib_geom.so* /usr/lib/MonetDB5

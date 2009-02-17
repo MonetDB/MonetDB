@@ -1,0 +1,3 @@
+debian/tmp/usr/bin/monetdb-sql-config usr/bin
+debian/tmp/usr/include/MonetDB5/sql/embeddedclient.h usr/include/MonetDB5/sql
+debian/tmp/usr/lib/lib*.so /usr/lib

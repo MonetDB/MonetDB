@@ -1891,6 +1891,11 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	rel = rel_setop(l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	rel = rel_distinct(rel);
+	if (exps_card(l->exps) <= CARD_AGGR &&
+	    exps_card(r->exps) <= CARD_AGGR) {
+		rel->card = exps_card(l->exps);
+		exps_fix_card( rel->exps, rel->card);
+	}
 	return rel;
 }
 
@@ -4016,17 +4021,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		/* having implies group by, ie if not supplied do a group by */
 		if (rel->op != op_groupby) 
 			rel = rel_groupby( rel, NULL);
-
-		inner = rel;
 		aggr = 1;
-		rel = rel_logical_exp(sql, rel, sn->having, sql_having);
-
-		if (!rel) 
-			return NULL;
-		if (rel -> exps && exps_card(rel->exps) > CARD_AGGR) {
-			/* clean up missing */
-			return sql_error(sql, 02, "SELECT: cannot compare sets with values, probably an aggregate function missing");
-		}
 	}
 
 	if (sn->selection) {
@@ -4040,8 +4035,6 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			else
 				rel = rel_project(rel, new_exp_list());
 		}
-		/* when we have a 'having clause' we need to lift  the 
-		   group by expressions and aggregates to the outer project */
 		if (!inner)
 			inner = rel;
 		for (; n; n = n->next) {
@@ -4074,19 +4067,14 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 					}
 				}
-				if (sn->having) {
-					ce = rel_groupby_add_aggr(sql, inner, ce);
-					rel_project_add_exp(sql, rel, ce);
-				} else {
-					/* 
-					   because of the selection, the inner
-					   relation may change.
-					   We try hard to keep a projection
-					   around this inner relation.
-					*/
-					rel_project_add_exp(sql, inner, ce);
-					rel = inner;
-				}
+				/* 
+				   because of the selection, the inner
+				   relation may change.
+				   We try hard to keep a projection
+				   around this inner relation.
+				*/
+				rel_project_add_exp(sql, inner, ce);
+				rel = inner;
 				continue;
 			} else if (!ce) {
 				te = rel_table_exp(sql, rel, n->data.sym);
@@ -4121,6 +4109,18 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		}
 	}
 
+	if (sn->having) {
+		inner = rel->l;
+		assert(is_project(rel->op) && inner);
+	
+		inner = rel_logical_exp(sql, inner, sn->having, sql_having);
+
+		if (!inner) 
+			return NULL;
+		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR) 
+			return sql_error(sql, 02, "SELECT: cannot compare sets with values, probably an aggregate function missing");
+		rel -> l = inner;
+	}
 	if (rel)
 		set_processed(rel);
 
@@ -4260,8 +4260,8 @@ rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
 		node *n, *m;
 		int changes = 0;
 
-		list *ls = rel_projections(sql, l, NULL, 1, 1);
-		list *rs = rel_projections(sql, r, NULL, 1, 1);
+		list *ls = rel_projections(sql, l, NULL, 0, 1);
+		list *rs = rel_projections(sql, r, NULL, 0, 1);
 		list *nls = new_exp_list();
 		list *nrs = new_exp_list();
 

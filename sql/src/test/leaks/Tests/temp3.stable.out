@@ -25,13 +25,13 @@ Over..
 # 22:02:53 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35803 
 # 22:02:53 >  
 
-% .,	.bbp # table_name
-% single_value,	L1 # name
+% .L1,	.bbp # table_name
+% L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
 [ "transient",	163	]
-% .,	.bbp # table_name
-% single_value,	L2 # name
+% .L3,	.bbp # table_name
+% L3,	L4 # name
 % char,	wrd # type
 % 10,	3 # length
 [ "persistent",	227	]
