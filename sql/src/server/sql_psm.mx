@@ -162,7 +162,8 @@ psm_declare_table(mvc *sql, dnode *n)
 			name);
 	
 	assert(n->next->next->next->type == type_int);
-	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, qname, n->next->next->data.sym, n->next->next->next->data.i_val);
+	
+	ret = sql_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val);
 
 	if (!ret)
 		return NULL;
@@ -744,6 +745,8 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int is_func)
 	if (!drop_action && mvc_check_dependency(sql, func->base.id, func->is_func ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 		return sql_error(sql, 02, "DROP %s: there are database objects dependent on %s %s;", F, f, func->base.name);
 	
+	if (is_func && func->res.comp_type) 
+		mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
 	mvc_drop_func(sql, s, func, drop_action);
 
 	return stmt_none();
