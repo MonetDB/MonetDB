@@ -1344,7 +1344,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 		
 		if (!e)
 			return NULL;
-		return exp_column(rel_name(*rel), e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
+		return exp_column(e->rname, e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
 	}
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
@@ -2167,7 +2167,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		sql_exp *re1 = rel_value_exp(sql, rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(sql, rel, ro2, f, ek);
 		sql_exp *e1 = NULL, *e2 = NULL;
-		sql_subtype *ct = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
@@ -2176,9 +2175,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			exp_destroy(re2);
 			return NULL;
 		}
-		ct = exp_subtype(le);
-		re1 = rel_check_type(sql, ct, re1, type_equal);
-		re2 = rel_check_type(sql, ct, re2, type_equal);
+		
+		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
+		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) {
+			exp_destroy(le);
+			exp_destroy(re1);
+			exp_destroy(re2);
+			return NULL;
+		}
 
 		if (!re1 || !re2) {
 			exp_destroy(le);
@@ -2565,7 +2569,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re1 = rel_value_exp(sql, &rel, ro1, f, ek);
 		sql_exp *re2 = rel_value_exp(sql, &rel, ro2, f, ek);
-		sql_subtype *ct = NULL;
 
 		assert(sc->data.lval->h->next->type == type_int);
 		if (!le || !re1 || !re2) {
@@ -2574,9 +2577,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			exp_destroy(re2);
 			return NULL;
 		}
-		ct = exp_subtype(le);
-		re1 = rel_check_type(sql, ct, re1, type_equal);
-		re2 = rel_check_type(sql, ct, re2, type_equal);
+
+		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
+		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) { 
+			exp_destroy(le);
+			exp_destroy(re1);
+			exp_destroy(re2);
+			return NULL;
+		}
 
 		if (!re1 || !re2) {
 			exp_destroy(le);
@@ -3005,6 +3013,35 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 }
 
 static sql_exp *
+flatten_exps( mvc *sql, list *exps )
+{
+	node *n;
+	sql_exp *e = NULL;
+
+	for (n=exps->h; n; n=n->next) {
+		sql_exp *c = n->data, *ne = NULL;
+	
+		switch(c->type)  {
+		case e_cmp:
+			if (!c->f) {
+				char *cmp = compare_func((comp_type)c->flag);
+				ne = rel_binop_(sql, 
+					exp_dup(c->l), 
+					exp_dup(c->r), NULL, cmp, 0);
+				if (!e)
+					e = ne;
+				else
+					e = rel_binop_(sql, e, ne, NULL, "sql_and", 0);
+			}
+			break;
+		default:
+			assert(0);
+		}
+	}
+	return e;
+}
+
+static sql_exp *
 rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
@@ -3047,6 +3084,16 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
 			column expression */
+
+		/* for correlated selections, we need to count on the
+		   join expression */
+		if (groupby->r && exps_intern(groupby->r)) {
+			sql_rel *i = groupby->l;
+
+			e = flatten_exps(sql, i->exps);
+			e = exp_aggr1(e, a, distinct, 1, groupby->card, 0);
+			return e;
+		}
 		e = exp_aggr(NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */ 
 			return e;
@@ -3971,6 +4018,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					if (!is_project(outer->op)) 
 						rel->l = outer = rel_project(outer, rel_projections(sql, outer, NULL, 1, 1));
  					e = rel_unop_(sql, exp_dup(outer->exps->h->data), NULL, "identity", 0);
+					set_intern(e);
 					rel_project_add_exp(sql, outer, e);
 					set_processed(outer);
 					e = rel_lastexp(sql, outer);

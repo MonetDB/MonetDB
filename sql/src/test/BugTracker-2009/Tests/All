@@ -30,3 +30,5 @@ number_between_col1_and_col2
 order_by_column_position
 error_while_drop_func_returns_table_type.SF-2604573
 having_or_bug
+count_bug.SF-2604583
+order_by_column_position_rel_name_bug

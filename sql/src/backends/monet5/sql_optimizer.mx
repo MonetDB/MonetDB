@@ -131,7 +131,7 @@ Organized by module:
 #define _SQL_OPTIMIZER_H_
 #include "sql.h"
 
-/* #define _SQL_OPTIMIZER_DEBUG   */
+/* #define _SQL_OPTIMIZER_DEBUG */
 
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);

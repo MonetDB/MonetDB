@@ -1357,45 +1357,12 @@ reduce (PFla_op_t *p, int goalnt)
                 break;
             }
         } /* fall trough otherwise */
-        /* Rel:    cast (Rel) */
-        case 59:
-        {
-            /*
-             * If an algebra expression already has the requested
-             * type, replace it by a projection.
-             */
-            bool cast_req = true;
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->sem.type.col == p->schema.items[i].name &&
-                    p->sem.type.ty == p->schema.items[i].type) {
-                    cast_req = false;
-                    break;
-                }
-
-            if (!cast_req) {
-                PFalg_proj_t *proj = PFmalloc (p->schema.count
-                                               * sizeof (PFalg_proj_t));
-
-                for (unsigned int j = 0; j < p->schema.count; j++)
-                    if (p->schema.items[j].name != p->sem.type.res) {
-                        proj[j] = PFalg_proj (p->schema.items[j].name,
-                                              p->schema.items[j].name);
-                    } else {
-                        proj[j] = PFalg_proj (p->sem.type.res,
-                                              p->sem.type.col);
-                    }
-
-                *p = *PFla_project_ (L(p), p->schema.count, proj);
-                SEEN(p) = false;
-                relabel (p, kids);
-                break;
-            }
-        }   break;
 
         /* Rel:    cast (lit_tbl) */
         case 58:
             /* apply the cast in the literal table */
-            if (p->sem.type.ty == aat_int &&
+            if (L(p)->kind == la_lit_tbl &&
+                p->sem.type.ty == aat_int &&
                 PFprop_type_of (p, p->sem.type.col) == aat_nat) {
                 unsigned int     i, j,
                                  count  = p->schema.count,
@@ -1434,7 +1401,42 @@ reduce (PFla_op_t *p, int goalnt)
                 SEEN(p) = false;
                 label (p);
             }
-            break;
+            /* fall trough otherwise */
+
+        /* Rel:    cast (Rel) */
+        case 59:
+        {
+            /*
+             * If an algebra expression already has the requested
+             * type, replace it by a projection.
+             */
+            bool cast_req = true;
+            for (unsigned int i = 0; i < p->schema.count; i++)
+                if (p->sem.type.col == p->schema.items[i].name &&
+                    p->sem.type.ty == p->schema.items[i].type) {
+                    cast_req = false;
+                    break;
+                }
+
+            if (!cast_req) {
+                PFalg_proj_t *proj = PFmalloc (p->schema.count
+                                               * sizeof (PFalg_proj_t));
+
+                for (unsigned int j = 0; j < p->schema.count; j++)
+                    if (p->schema.items[j].name != p->sem.type.res) {
+                        proj[j] = PFalg_proj (p->schema.items[j].name,
+                                              p->schema.items[j].name);
+                    } else {
+                        proj[j] = PFalg_proj (p->sem.type.res,
+                                              p->sem.type.col);
+                    }
+
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+        }   break;
 
         /* ScjRel: step (Frag, ScjRel) */
         case 64:

@@ -178,6 +178,7 @@ side-effects.SF-2124300
 query_compilation_item3.SF-2130051
 Parse_error_with_pf_collection.SF-2020631
 XML_document_cache_broken.SF-1414720
+function_parameter_without_type.SF-1898518
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556

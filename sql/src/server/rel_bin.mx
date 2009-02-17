@@ -154,26 +154,6 @@ row2cols( stmt *sub)
 	return sub;
 }
 
-char *compare_func( comp_type t )
-{
-	switch(t) {
-	case cmp_equal:
-		return "=";
-	case cmp_lt:
-		return "<";
-	case cmp_lte:
-		return "<=";
-	case cmp_gte:
-		return ">=";
-	case cmp_gt:
-		return ">";
-	case cmp_notequal:
-		return "<>";
-	default:
-		return NULL;
-	}
-}
-
 stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel) 
 {

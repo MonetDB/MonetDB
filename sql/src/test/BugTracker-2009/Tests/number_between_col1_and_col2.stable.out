@@ -31,6 +31,12 @@ Over..
 % int,	int # type
 % 1,	1 # length
 [ 1,	4	]
+[ 1	]
+% sys.btest,	sys.btest # table_name
+% links,	rechts # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	4	]
 
 # 23:50:24 >  
 # 23:50:24 >  Done.

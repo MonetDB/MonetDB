@@ -30,7 +30,7 @@
 #include "sql_statement.h"
 
 extern stmt *schemas(mvc *sql, symbol *sym);
-extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action);
+extern stmt *sql_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *tname, symbol *table_elements_or_subquery, int commit_action);
 
 #endif /*_SQL_SCHEMA_H_*/
 
@@ -1705,10 +1705,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 stmt *
-sql_create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action)
+sql_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, symbol *table_elements_or_subquery, int commit_action)
 {
-	char *name = qname_table(qname);
-	char *sname = qname_schema(qname);
 	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1913,10 +1911,13 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
+				dlist *qname = l->h->next->data.lval;
+				char *sname = qname_schema(qname);
+				char *name = qname_table(qname);
 
 				assert(l->h->type == type_int);
 				assert(l->h->next->next->next->type == type_int);
-				res = sql_create_table(sql, ss, l->h->data.i_val, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
+				res = sql_create_table(sql, ss, l->h->data.i_val, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 #ifndef NDEBUG
 				dlist *l = n->data.sym->data.lval;
@@ -2012,12 +2013,14 @@ schemas(mvc *sql, symbol *s)
 		break;
 	case SQL_CREATE_TABLE:
 	{
-
 		dlist *l = s->data.lval;
+		dlist *qname = l->h->next->data.lval;
+		char *sname = qname_schema(qname);
+		char *name = qname_table(qname);
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = sql_create_table(sql, cur_schema(sql), l->h->data.i_val, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
+		ret = sql_create_table(sql, cur_schema(sql), l->h->data.i_val, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;
