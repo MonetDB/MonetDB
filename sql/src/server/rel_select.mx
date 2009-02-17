@@ -1344,7 +1344,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 		
 		if (!e)
 			return NULL;
-		return exp_column(rel_name(*rel), e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
+		return exp_column(e->rname, e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
 	}
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
