@@ -95,14 +95,16 @@ entities_dtd.SF-1642665
 NOT_ALGEBRA?call2builtin_function_crashes_XRPC_client.SF-1655857
 conflict_normal_xrpc_queries_nx.SF-1644610
 conflict_normal_xrpc_queries_xn.SF-1644610
-interleave_PUT_GET_crashes_Mserver.SF-1676443
+# fn:put()
+NOT_ALGEBRA?interleave_PUT_GET_crashes_Mserver.SF-1676443
 id-function_fails_to_locate_some_kinds_of_nodes.SF-1698498
 char_escape_SF-1681921
 pf_add-doc_property_error.SF-1706438
 corrupt_after_update.SF-1706640
 nested_element_construction.SF-1712578
 mposjoin_missing_matches.SF-1712595
-put_to_tmp.SF-1718066
+# fn:put()
+NOT_ALGEBRA?put_to_tmp.SF-1718066
 type_check.SF-1705898
 accessing_renamed_inserted_deleted_node.SF-1718622-1718635-1718709
 # recursive function
