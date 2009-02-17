@@ -31,11 +31,10 @@ Over..
 % 3 # length
 [ 110	]
 [ 210	]
-
-% .n # table_name
+% . # table_name
 % j # name
-% varchar # type
-% 3 # length
+% char # type
+% 20 # length
 [ "aaa"	]
 [ "bbb"	]
 
