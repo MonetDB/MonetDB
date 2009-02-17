@@ -1,8 +1,0 @@
-add_del_doc_noxrpc
-NOT_ALGEBRA?add_del_doc
-backup_restore_noxrpc
-NOT_ALGEBRA?backup_restore
-NOT_ALGEBRA?db_stats_noxrpc
-NOT_ALGEBRA?db_stats
-NOT_ALGEBRA?db_env_noxrpc
-NOT_ALGEBRA?db_env

@@ -1,9 +1,0 @@
-for $a in distinct-values (doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
-    [date_of_release >= "1990-01-01"]
-    [date_of_release < "1991-01-01"]/publisher/name)
-let $b := doc("$TSTTRGDIR/small.catalog.xml")/catalog/item/publisher[name=$a]
-return
-    <Output>
-        <Publisher>{$a}</Publisher>
-        <NumberOfItems>{count($b)}</NumberOfItems>
-    </Output>

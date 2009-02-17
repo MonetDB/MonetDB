@@ -1,7 +1,0 @@
-let $item := doc("$TSTTRGDIR/small.catalog.xml")/catalog/item[@id="I2"]
-let $prevItem := $item/preceding::item[1]
-return
-    <Output>
-        <CurrentItem>{$item/@id}</CurrentItem>
-        <PreviousItem>{$prevItem/@id}</PreviousItem>
-    </Output>

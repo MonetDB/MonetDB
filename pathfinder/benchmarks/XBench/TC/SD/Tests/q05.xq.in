@@ -1,4 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where $a/hwg/hw="that"
-return
-    $a/ss/s[1]
