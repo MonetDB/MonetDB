@@ -23,7 +23,7 @@ EXTRA_DIST = configure.ag rpm.mk.in \
 		RunMapprove.in \
 		Runmclient.bat.in
 
-EXTRA_DIST_DIR = NT
+EXTRA_DIST_DIR = NT debian
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

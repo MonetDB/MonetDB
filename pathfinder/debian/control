@@ -1,0 +1,43 @@
+Source: monetdb-xquery
+Section: misc
+Priority: extra
+Maintainer: MonetDB BV <monet@cwi.nl>
+Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libxml2-dev, cdbs, monetdb4-server, libmonetdb-client-dev, libmonetdb4-server4, libmonetdb4-server-dev
+Standards-Version: 3.8.0
+
+Package: monetdb-xquery
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb4-xquery0, monetdb4-server
+Description: database system for high-performance applications, xquery frontend
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators, SQL- and XML- frontends.
+ .
+ This package contains the XQuery frontend.
+
+Package: libmonetdb4-xquery0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb1, libmonetdb4-server4
+Description: MonetDB xquery support for MonetDB4-server
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators, SQL- and XML- frontends.
+ .
+ This package contains the XQuery frontend for monetdb4.
+
+Package: libmonetdb4-xquery-dev
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libmonetdb4-xquery0, libmonetdb-dev, libmonetdb4-server-dev
+Description: MonetDB xquery libraries
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators, SQL- and XML- frontends.
+ .
+ This package contains the files needed to develop with MonetDB/XQuery
+ library.
+

@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/python2.5/site-packages/MonetDB/* /usr/lib/python2.5/site-packages/MonetDB
+debian/tmp/usr/lib/python2.5/site-packages/MonetSQLdb/* /usr/lib/python2.5/site-packages/MonetSQLdb

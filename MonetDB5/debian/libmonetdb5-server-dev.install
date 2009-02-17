@@ -1,0 +1,9 @@
+debian/tmp/usr/bin/monetdb5-config usr/bin
+debian/tmp/usr/include/MonetDB5/atoms/*.h usr/include/MonetDB5/atoms
+debian/tmp/usr/include/MonetDB5/compiler/*.h usr/include/MonetDB5/compiler
+debian/tmp/usr/include/MonetDB5/crackers/*.h usr/include/MonetDB5/crackers
+debian/tmp/usr/include/MonetDB5/kernel/*.h usr/include/MonetDB5/kernel
+debian/tmp/usr/include/MonetDB5/mal/*.h usr/include/MonetDB5/mal
+debian/tmp/usr/include/MonetDB5/optimizer/*.h usr/include/MonetDB5/optimizer
+debian/tmp/usr/include/MonetDB5/scheduler/*.h usr/include/MonetDB5/scheduler
+debian/tmp/usr/lib/lib*.so usr/lib

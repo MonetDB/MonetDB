@@ -20,6 +20,6 @@ SUBDIRS = src conf
 EXTRA_DIST = configure.ag rpm.mk.in sysdefs.h.in \
 		MonetDB.spec MonetDB.spec.in
 
-EXTRA_DIST_DIR = NT
+EXTRA_DIST_DIR = NT debian
 
 EXTRA_HEADERS = sysdefs.h

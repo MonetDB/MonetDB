@@ -1,0 +1,3 @@
+debian/tmp/usr/bin/monetdb-clients-config usr/bin
+debian/tmp/usr/include/MonetDB/mapilib/Mapi.h usr/include/MonetDB/mapilib
+debian/tmp/usr/lib/libMapi.so usr/lib

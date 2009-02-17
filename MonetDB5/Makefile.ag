@@ -23,7 +23,7 @@ EXTRA_DIST = configure.ag RunMtest.in \
 		RunMserver.in RunMserver.bat.in \
 		rpm.mk.in MonetDB-server.spec MonetDB-server.spec.in
 
-EXTRA_DIST_DIR = NT tests
+EXTRA_DIST_DIR = NT tests debian
 
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)

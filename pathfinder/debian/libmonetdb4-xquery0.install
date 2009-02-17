@@ -1,0 +1,2 @@
+debian/tmp/usr/lib/MonetDB4/lib/lib*.so* usr/lib/MonetDB4/lib
+debian/tmp/usr/lib/libembeddedxq.so.* /usr/lib
