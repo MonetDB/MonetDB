@@ -10,6 +10,14 @@ for file; do
     fi
 
     case "$file" in
+    *:*)
+	# you're never allowed to commit a file that has forbidden
+	# characters in the name (such as : -- doesn't work on Windows)
+	echo "Pre-commit check failed:"
+	echo "You are not allowed to commit files with a colon (:) in the name"
+	echo "since this doesn't work on Windows."
+	exit 1
+	;;
     *.stable.out* | *.stable.err*)
 	# you're never allowed to commit a test that failed with a signal
 	if grep -q '^!Mtimeout: signal' "$file" || grep -q '^!ERROR: BATSIGcrash' "$file"; then
