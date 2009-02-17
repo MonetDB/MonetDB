@@ -3016,7 +3016,7 @@ flatten_exps( mvc *sql, list *exps )
 		switch(c->type)  {
 		case e_cmp:
 			if (!c->f) {
-				char *cmp = compare_func(c->flag);
+				char *cmp = compare_func((comp_type)c->flag);
 				ne = rel_binop_(sql, 
 					exp_dup(c->l), 
 					exp_dup(c->r), NULL, cmp, 0);
