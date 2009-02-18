@@ -4008,6 +4008,12 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             }
 
             unpin (err, 1);
+#ifdef HAVE_PFTIJAH
+            execute(
+                assgn (var (PF_MIL_TIJAH_SCORE_DB), unused() ),
+                assgn (var (PF_MIL_TIJAH_DUMMYPOS), unused() )
+            );
+#endif
         }   break; /* fold) */
 
         /* Query:   serialize (Side, empty_tbl) */
