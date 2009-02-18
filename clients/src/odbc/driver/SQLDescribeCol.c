@@ -188,6 +188,7 @@ SQLDescribeColW(SQLHSTMT hStmt,
 	rc = SQLDescribeCol_(stmt, nCol, NULL, 0, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
+	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	colname = malloc(n);
 	rc = SQLDescribeCol_(stmt, nCol, colname, n, &n, pnSQLDataType, pnColSize, pnDecDigits, pnNullable);

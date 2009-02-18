@@ -355,6 +355,7 @@ SQLDriverConnectW(SQLHDBC hDbc,
 			       nDriverCompletion, 1);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
+	clearDbcErrors(dbc);
 	n++;			/* account for NUL byte */
 	out = malloc(n);
 	rc = SQLDriverConnect_(dbc, hWnd, in, SQL_NTS, out, n, &n,
