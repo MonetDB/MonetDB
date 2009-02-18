@@ -80,6 +80,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_namespace.h"
 #include "mal_sabaoth.h"
 #include "mal_debugger.h"
+#include "mal_recycle.h"
 #include "bat5.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -454,8 +455,10 @@ SQLcacheRefresh(mvc *m){
 	if (m && !m->session->active) {
 		int schema_changed = mvc_trans(m);
 		if (m->cache && (schema_changed || m->qc->id > 10000)){
-			if (m->qc)
+			if (m->qc){
 				qc_destroy(m->qc);
+                RECYCLEshutdown(MCgetClient());
+            }               
 			m->qc = qc_create(m->clientid);
 		}
 	}

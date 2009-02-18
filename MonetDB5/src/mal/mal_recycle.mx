@@ -158,7 +158,7 @@ mal_export void RECYCLEexit(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export void RECYCLEreset(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export void RECYCLEshutdown(Client cntxt);
 mal_export int RECYCLEinterest(InstrPtr p);
-mal_export int RECYCLEnewQryStat(QryPatPtr qp, str nm, MalBlkPtr mb);
+mal_export int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb);
 mal_export void RECYCLEinitQPat(int sz);
 mal_export bte RECYCLEgetQryCat(int qidx);
 mal_export bit isBindInstr(InstrPtr p);
@@ -290,52 +290,66 @@ int recycleCurQ = -1;
 void RECYCLEinitQPat(int sz)
 {
 	if (recycleQPat == NULL) {
+		mal_set_lock(recycleLock,"recycle");
 		recycleQPat = (QryPatPtr) GDKzalloc(sizeof(QryPat));
 		recycleQPat->ptrn = (QryStatPtr *) GDKzalloc(sz * sizeof(QryStatPtr));
 		recycleQPat->sz = sz;
+		mal_unset_lock(recycleLock,"recycle");
 	}
 }
 
-static void extendQPat(QryPatPtr qp)
+static void extendQPat()
 {
 	int s, i;
-	QryStatPtr *old = qp->ptrn;
+	QryStatPtr *old;
 
-	s = qp->sz * 2;
-	qp->ptrn = (QryStatPtr *) GDKzalloc(s * sizeof(QryStatPtr));
-	for( i=0; i< qp->cnt; i++)
-		qp->ptrn[i] = old[i];
-	qp->sz = s;
+	if (recycleQPat == NULL)
+		RECYCLEinitQPat(20);
+	if (recycleQPat->cnt < recycleQPat->sz) 
+		return;
+	old = recycleQPat->ptrn;
+	s = recycleQPat->sz * 2;
+	recycleQPat->ptrn = (QryStatPtr *) GDKzalloc(s * sizeof(QryStatPtr));
+	for( i=0; i< recycleQPat->cnt; i++)
+		 recycleQPat->ptrn[i] = old[i];
+	recycleQPat->sz = s;
 	GDKfree(old);
 }
 
-static int findQryStat(QryPatPtr qp, str nm)
+static int findQryStat(str nm)
 {
 	int i;
-		
-	for(i = 0; i< qp->cnt; i++)
-		if (strcmp(qp->ptrn[i]->name, nm) == 0)
+
+	if (recycleQPat == NULL)
+		return -1;		
+	for(i = 0; i< recycleQPat->cnt; i++)
+		if (strcmp(recycleQPat->ptrn[i]->name, nm) == 0)
 			return i;
 	return -1;
 }
 
-int RECYCLEnewQryStat(QryPatPtr qp, str nm, MalBlkPtr mb)
+int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
 {
 	int idx;
 	QryStatPtr qstat;
+	str nm = getFunctionId(mb->stmt[0]);
 	
-    if ((idx = findQryStat(qp,nm)) >= 0)
-		qp->ptrn[idx]->calls++;
-	else {
-		qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
-		qstat->name = GDKstrdup(nm);
-		qstat->calls = 1;
-		qstat->mb = mb;
-		if (qp->cnt == qp->sz) 
-			extendQPat(qp);
-		idx = qp->cnt++;
-		qp->ptrn[idx] = qstat;
+	if ((idx = findQryStat(nm)) >= 0){
+		if (mb == recycleQPat->ptrn[idx]->mb){
+			recycleQPat->ptrn[idx]->calls++;
+			return idx;
+		}
+		else /* inconsistent state */
+			RECYCLEshutdown(cntxt);
 	}
+	qstat = (QryStatPtr) GDKzalloc(sizeof(QryStat));
+	qstat->name = GDKstrdup(nm);
+	qstat->calls = 1;
+	qstat->mb = mb;
+	extendQPat();
+	idx = recycleQPat->cnt++;
+	recycleQPat->ptrn[idx] = qstat;
+	
 	return idx;
 }
 
@@ -1318,9 +1332,9 @@ RECYCLEshutdown(Client cntxt){
 	ccTime = 0;
 	ccInstr = 0;
 	crdInstr = 0;
-    GDKfree(recycleQPat->ptrn);
-    GDKfree(recycleQPat);
-    recycleQPat = NULL;
+	GDKfree(recycleQPat->ptrn);
+	GDKfree(recycleQPat);
+	recycleQPat = NULL;
 #ifdef _DEBUG_CACHE_
 	recycleMiss = 0;
 	recycleRem = 0;
