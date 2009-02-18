@@ -113,6 +113,7 @@ SQLGetCursorNameW(SQLHSTMT hStmt,
 	rc = SQLGetCursorName_(stmt, NULL, 0, &n);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
+	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	cursor = malloc(n);
 	rc = SQLGetCursorName_(stmt, cursor, nCursorMaxLength, &n);

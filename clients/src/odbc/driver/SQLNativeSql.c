@@ -130,6 +130,7 @@ SQLNativeSqlW(SQLHSTMT hStmt,
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, NULL, 0, &n);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
+	clearStmtErrors(stmt);
 	n++;			/* account for NUL byte */
 	sqlout = malloc(n);
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, n, &n);

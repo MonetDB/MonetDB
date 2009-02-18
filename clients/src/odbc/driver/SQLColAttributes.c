@@ -152,6 +152,7 @@ SQLColAttributesW(SQLHSTMT hStmt,
 		rc = SQLColAttributes_(stmt, nCol, nDescType, NULL, 0, &n, pfDesc);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
+		clearStmtErrors(stmt);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;

@@ -832,6 +832,7 @@ SQLGetInfoW(SQLHDBC hDbc,
 		rc = SQLGetInfo_(dbc, nInfoType, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
+		clearDbcErrors(dbc);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;

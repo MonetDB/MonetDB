@@ -272,6 +272,7 @@ SQLColAttributeW(SQLHSTMT hStmt,
 		rc = SQLColAttribute_(stmt, nCol, nFieldIdentifier, NULL, 0, &n, pnValue);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
+		clearStmtErrors(stmt);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;

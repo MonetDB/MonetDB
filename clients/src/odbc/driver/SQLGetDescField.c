@@ -303,6 +303,7 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 		rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
+		clearDescErrors(desc);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;

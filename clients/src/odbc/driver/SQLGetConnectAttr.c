@@ -172,6 +172,7 @@ SQLGetConnectAttrW(SQLHDBC hDbc,
 		rc = SQLGetConnectAttr_(dbc, Attribute, NULL, 0, &n);
 		if (!SQL_SUCCEEDED(rc))
 			return rc;
+		clearDbcErrors(dbc);
 		n++;		/* account for NUL byte */
 		ptr = (SQLPOINTER) malloc(n);
 		break;
