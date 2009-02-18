@@ -277,12 +277,16 @@ ALGjoinCost(BAT *l, BAT *r)
 		return lsize;
 	}
 #endif
+	/* estimate the maximal, because the determines work */
+	/* avoid materialization of views to early */
+	if (isVIEW(l)  && lc>rc)
+		return MAX(lc,rc);
     /* merge joins are by far the cheapest */
 	if( l->tsorted && r->hsorted)
 		return MIN(lc,rc);
 	/* foreign key joins are common */
 	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
-		return MIN(lc,rc);
+		return MAX(lc,rc);
 	/* if either operand is very small, we should use that one */
 	if (rc < SMALL_OPERAND )
 		return rc;
@@ -296,6 +300,13 @@ ALGjoinCost(BAT *l, BAT *r)
 The join path type analysis should also be done at run time,
 because the expressive power of MAL is insufficient to
 enforce a proper join type list.
+The current  costmodel is rather limited. It takes as default
+the order presented and catches a few more cases that do not
+lead to materialization of large views. This solved the earlier
+problem noticable on TPC-H that join order was producing slower
+results. Now, on TPCH-H, all queries run equal or better.
+about 12 out of 84 joinpaths are improved with more then 10%.
+(affecting Q2, Q5, Q7, Q8,Q11,Q13)
 @h
 opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins);
 @c
@@ -311,7 +322,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 		j = 0;
 		estimate = ALGjoinCost(joins[0],joins[1]);
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(cntxt->fdout,"estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
+		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 			joins[1]->batCacheid,(int)estimate);
 #else
 	(void) cntxt;
@@ -319,7 +330,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(joins[i], joins[i + 1]);
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(cntxt->fdout,"estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
+		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
 #endif
 			if (e < estimate) {
@@ -335,7 +346,7 @@ may fire a BATproperty check in a few cases.
 		if (b==NULL)
 			return NULL;
 #ifdef DEBUG_OPT_JOINPATH
-		stream_printf(cntxt->fdout, "%d:= join(%d,%d)\n", 
+		stream_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 #endif
 		BBPdecref(joins[j]->batCacheid, FALSE);
@@ -347,7 +358,7 @@ may fire a BATproperty check in a few cases.
 			joins[i] = joins[i + 1];
 	}
 #ifdef DEBUG_OPT_JOINPATH
-	stream_printf(cntxt->fdout, "final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
+	stream_printf(cntxt->fdout, "#joinPath final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
 	b = BATjoin(joins[0], joins[1], BUN_NONE);
 	BBPdecref(joins[0]->batCacheid, FALSE);
@@ -360,6 +371,7 @@ str
 ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,*bid,top=0;
+	int *r = (int*) getArgReference(stk, pci, 0);
 	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
 
 	(void)mb;
@@ -374,8 +386,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
-	BBPkeepref(b->batCacheid);
-	*(int *) getArgReference(stk, pci, 0) = b->batCacheid;
+	BBPkeepref( *r = b->batCacheid);
 	return MAL_SUCCEED;
 }
 @}
