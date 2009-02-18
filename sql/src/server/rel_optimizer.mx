@@ -1329,10 +1329,21 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 							tname = _strdup(ne->rname);
 						exp_setname(ne, tname, e->name);
 						list_append(nr, ne);
+					} else {
+						all = 0;
+						exp_destroy(ne);
 					}
 				}
-				list_destroy(res);
-				rel->r = nr;
+				if (all) {
+					list_destroy(res);
+					rel->r = nr;
+				} else {
+					/* leave as is */
+					list_destroy(nr);
+					list_destroy(rel->exps);
+					rel->exps = exps;
+					return rel;
+				}
 			}
 			rel->l = r->l;
 			r->l = NULL;
