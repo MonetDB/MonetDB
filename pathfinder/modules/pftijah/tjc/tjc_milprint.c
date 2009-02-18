@@ -97,6 +97,7 @@ void milprint_init (tjc_config *tjc_c) {
 }
 
 void milprint_init2 (tjc_config *tjc_c) {
+    TJCPRINTF(MILOUT,"{\n");
     if (tjc_c->debug) {
 	TJCPRINTF(MILOUT,"trace := TRUE;\n");
     }
@@ -159,6 +160,7 @@ void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
     if (tjc_c->returnall) {
         TJCPRINTF(MILOUT,"returnAllElements := FALSE;\n");
     } 
+    TJCPRINTF(MILOUT,"}\n");
 }
 
 void milprint_qenv2 (tjc_config *tjc_c) {
