@@ -34,6 +34,9 @@
 .COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes, BAT[void,oid] nodes) : void = CMDtijah_query;
  "INCOMPLETE"
 
+.COMMAND tj_checkHashTable(BAT[oid,str]) : void = CMDcheckHashTable;
+ "INCOMPLETE"
+
 .COMMAND tj_normalizeTerm(str, str) : str = CMDtj_normalizeTerm;
  "INCOMPLETE"
 
@@ -263,6 +266,21 @@ PROC modify_qenv(BAT[oid,str] qenv, oid key, str val) : void
        qenv.insert(key, val);
     }
 }
+
+#
+# Hash utility functions
+#
+
+PROC tj_init_termHash(str ftiName) : void :=
+{
+	tj_checkHashTable(bat(_tj_TermBat(ftiName)));
+}
+
+PROC tj_init_tagHash(str ftiName) : void :=
+{
+	tj_checkHashTable(bat(_tj_TagBat(ftiName)));
+}
+
 
 #####################################################################
 #                                                                   #
@@ -4219,6 +4237,18 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 extern char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF);
 
 extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_name, char** errBUFF);
+
+int CMDcheckHashTable(BAT* b) {
+    if ( b->H->hash == NULL ) {
+         if ( !BAThash(b,0) ) {
+                 stream_printf(GDKout,"#termdb:tdb_checkHashTable: fail to creat hashtable on [oid,str] bat.\n");
+             return GDK_FAIL;
+         } else {
+            if(0) stream_printf(GDKout,"#termdb:tdb_checkHashTable(): created hashtable on [oid,str] bat.\n");
+	}
+    }
+    return GDK_SUCCEED;
+}
 
 static int nexiTmpCounter = 0;
 

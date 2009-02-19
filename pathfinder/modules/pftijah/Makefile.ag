@@ -65,6 +65,10 @@ lib__pftijah = {
 		stem_UTF_8_dutch.c \
 		stem_UTF_8_english.h \
 		stem_UTF_8_english.c \
+		stem_UTF_8_german.h \
+		stem_UTF_8_german.c \
+		stem_UTF_8_french.h \
+		stem_UTF_8_french.c \
 		stem_UTF_8_porter.h \
 		stem_UTF_8_porter.c \
 		porter_eng.h \

@@ -92,7 +92,6 @@ void milprint_init (tjc_config *tjc_c) {
     if (tjc_c->startNodes) {
         TJCPRINTF(MILOUT,"var startNodes := bat(\"%s\");\n", tjc_c->startNodes);
     }
-
     TJCPRINTF(MILOUT,"\n");
 }
 
@@ -103,7 +102,6 @@ void milprint_init2 (tjc_config *tjc_c) {
     if (tjc_c->timing) {
 	TJCPRINTF(MILOUT,"timing := TRUE;\n");
     }
-
     TJCPRINTF(MILOUT,"\n");
 }
 
@@ -163,6 +161,8 @@ void milprint_end2 (tjc_config *tjc_c, TJatree_t *tree) {
 
 void milprint_qenv2 (tjc_config *tjc_c) {
     TJCPRINTF(MILOUT,"var ftindex := \"%s\";\n", tjc_c->ftindex);    
+    TJCPRINTF(MILOUT,"tj_init_termHash(ftindex);\n");    
+    TJCPRINTF(MILOUT,"tj_init_tagHash(ftindex);\n");    
     TJCPRINTF(MILOUT,"var scorebase := dbl(%f);\n", tjc_c->scorebase);    
     TJCPRINTF(MILOUT,"var c_lambda := dbl(%f);\n", tjc_c->lambda);    
     TJCPRINTF(MILOUT,"var okapi_k1 := dbl(%f);\n", tjc_c->okapik1);    

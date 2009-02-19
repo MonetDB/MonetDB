@@ -1,11 +1,3 @@
-/**
- * This software was created by the Snowball Project
- * (see http://snowball.tartarus.org/) and is covered by the
- * BSD license:
- * 
- * http://www.opensource.org/licenses/bsd-license.html 
- * 
- */
 
 typedef unsigned char symbol;
 
@@ -21,15 +13,14 @@ typedef unsigned char symbol;
 
 struct SN_env {
     symbol * p;
-    int c; int a; int l; int lb; int bra; int ket;
-    int S_size; int I_size; int B_size;
+    int c; int l; int lb; int bra; int ket;
     symbol * * S;
     int * I;
-    symbol * B;
+    unsigned char * B;
 };
 
 extern struct SN_env * SN_create_env(int S_size, int I_size, int B_size);
-extern void SN_close_env(struct SN_env * z);
+extern void SN_close_env(struct SN_env * z, int S_size);
 
 extern int SN_set_current(struct SN_env * z, int size, const symbol * s);
 

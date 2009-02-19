@@ -627,6 +627,74 @@ static int snb_dutch_clear(void* ctx) {
 
 static tjStemCtx snb_dutch = { "snowball-dutch", snb_dutch_init, snb_dutch_stem, snb_dutch_clear, NULL , NULL_STOPWORDS };
 
+#include "stem_UTF_8_french.h"
+
+static int snb_french_init(void* ctx, char* s) {
+	(void)s;
+	struct SN_env *env =  french_UTF_8_create_env();
+	((tjStemCtx*)ctx)->udf = env;
+	return 1;
+}
+
+static const char* snb_french_stem(void* ctx, const char* s) {
+	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
+
+	SN_set_current(env,strlen(s),(unsigned char*)s);
+	if ( !french_UTF_8_stem(env) ) {
+		fprintf(stderr,"french_stem(\"%s\") FAILS \n",s);
+		return NULL;
+	}
+	env->p[env->l] = 0;
+#ifdef STEMMING_DEBUG
+	stream_printf(GDKout,"+ stem-snowball-french(%s)=\"%s\"\n",s,env->p);
+#endif
+	return (const char*)env->p;
+}
+
+static int snb_french_clear(void* ctx) {
+	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
+
+ 	french_UTF_8_close_env(env);
+	((tjStemCtx*)ctx)->udf = NULL;
+	return 1;
+}
+
+static tjStemCtx snb_french = { "snowball-french", snb_french_init, snb_french_stem, snb_french_clear, NULL , NULL_STOPWORDS };
+
+#include "stem_UTF_8_german.h"
+
+static int snb_german_init(void* ctx, char* s) {
+	(void)s;
+	struct SN_env *env =  german_UTF_8_create_env();
+	((tjStemCtx*)ctx)->udf = env;
+	return 1;
+}
+
+static const char* snb_german_stem(void* ctx, const char* s) {
+	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
+
+	SN_set_current(env,strlen(s),(unsigned char*)s);
+	if ( !german_UTF_8_stem(env) ) {
+		fprintf(stderr,"german_stem(\"%s\") FAILS \n",s);
+		return NULL;
+	}
+	env->p[env->l] = 0;
+#ifdef STEMMING_DEBUG
+	stream_printf(GDKout,"+ stem-snowball-german(%s)=\"%s\"\n",s,env->p);
+#endif
+	return (const char*)env->p;
+}
+
+static int snb_german_clear(void* ctx) {
+	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
+
+ 	german_UTF_8_close_env(env);
+	((tjStemCtx*)ctx)->udf = NULL;
+	return 1;
+}
+
+static tjStemCtx snb_german = { "snowball-german", snb_german_init, snb_german_stem, snb_german_clear, NULL , NULL_STOPWORDS };
+
 /*
  *
  * a fast porter stemmer experiment
@@ -720,6 +788,10 @@ tjStemCtx* getStemmingContext(char* name) {
 	    res = & snb_english;
 	else if ( strcmp(name,"snowball-dutch")==0 )
 	    res = & snb_dutch;
+	else if ( strcmp(name,"snowball-french")==0 )
+	    res = & snb_french;
+	else if ( strcmp(name,"snowball-german")==0 )
+	    res = & snb_german;
 	else if ( strcmp(name,"porter-english")==0 )
 	    res = & porter_english;
 	else if ( strcmp(name,"porter-dutch")==0 )
