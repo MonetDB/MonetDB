@@ -22,9 +22,7 @@ end main;
 #    io.print("hello world");
 #end main;
 function user.mytest():void;
-#see if we can register functions 
-    language.register("user","mytest","io.print(\"hello world\");","first test");
-    mdb.list("user","mytest");
+    io.print("hello world");
 end mytest;
 
 # 23:05:10 >  
