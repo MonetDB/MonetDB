@@ -636,7 +636,7 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
           new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
           bat("tj_" + ftiName + "_fragments").append(1@0);
           new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
-          new(str,oid).persists(true).bbpname("tj_" + ftiName + "_conceptdict");
+          new(oid,str).persists(true).bbpname("tj_" + ftiName + "_conceptdict");
           new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_tid");
           new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_elem");
           new(void,dbl).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_score");

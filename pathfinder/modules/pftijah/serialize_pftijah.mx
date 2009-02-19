@@ -1098,13 +1098,14 @@ handle_dictionary(tjCtx* tjctx, oid elem) {
         BUN bun;
 	oid dict_oid;
 	
-        if ( (bun = BUNfnd(tjctx->b_conceptdict,key)) != BUN_NONE ) {
-            BATiter ti = bat_iterator(tjctx->b_conceptdict);
+	BAT* mcd = BATmirror(tjctx->b_conceptdict);
+        if ( (bun = BUNfnd(mcd,key)) != BUN_NONE ) {
+            BATiter ti = bat_iterator(mcd);
             dict_oid = *(oid*)BUNtail(ti,bun);
         } else {
 	    dict_oid = (oid)BATcount(tjctx->b_conceptdict);
 
-    	    if ( !BUNins(tjctx->b_conceptdict, (str)key, &dict_oid, FALSE)){
+    	    if ( !BUNins(tjctx->b_conceptdict, &dict_oid,(str)key, FALSE)){
     	        GDKerror("dictbat: insert \"%s\" in tagbat fails.\n",key);
     	        return false;
 	    }
