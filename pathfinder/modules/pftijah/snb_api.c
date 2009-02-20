@@ -1,3 +1,4 @@
+#include <pf_config.h>
 
 #include <stdlib.h> /* for calloc, free */
 #include "snb_header.h"
