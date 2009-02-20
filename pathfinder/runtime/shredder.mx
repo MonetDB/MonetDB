@@ -1105,9 +1105,20 @@ shred_characters(void *xmlCtx,
                  const xmlChar *cs, 
                  int n)
 {
+#ifdef OLD_SHRED_CHARACTERS
+    shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
+    int l = MIN(PFSHRED_STRLEN_MAX -(int) shredCtx->content, n);
+
+    memcpy(&(shredCtx->content_buf[shredCtx->content]), cs, l);
+    shredCtx->content += l;
+
+    if (l < n)
+        stream_printf(GDKout, "!WARNING: shred_characters truncated text node > %d characters(starts with `%.16s...')\n",
+        (int) PFSHRED_STRLEN_MAX, cs);
+#else
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
 
-    if ( (shredCtx->content + n + 1) < shredCtx->content_max) {
+    if ( (shredCtx->content + n + 1) > shredCtx->content_max) {
 	shredCtx->content_max = shredCtx->content + n + 1;
         shredCtx->content_buf = GDKrealloc(shredCtx->content_buf, shredCtx->content_max);
 	if (shredCtx->content_buf == NULL) {
@@ -1117,6 +1128,7 @@ shred_characters(void *xmlCtx,
     }
     memcpy(&(shredCtx->content_buf[shredCtx->content]), cs, n);
     shredCtx->content += n;
+#endif
 }
 
 /**
