@@ -369,6 +369,7 @@ int yydebug=1;
 	atom
 	insert_atom
 	simple_atom
+	value
 	literal
 	null
 	interval_expression
@@ -478,6 +479,7 @@ int yydebug=1;
 	schema_name_list
 	column_ref
 	atom_commalist
+	value_commalist
 	row_commalist
 	qname
 	qfunc
@@ -2612,6 +2614,12 @@ atom_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
+value_commalist:
+    value		{ $$ = append_symbol(L(), $1); }
+ |  value_commalist ',' value
+			{ $$ = append_symbol($1, $3); }
+ ;
+
 null:
    sqlNULL
 	 { 
@@ -2640,6 +2648,11 @@ simple_atom:
 insert_atom:
     simple_atom
  |  select_no_parens_orderby
+ ;
+
+value:
+    simple_atom
+ |  select_no_parens
  ;
 
 opt_distinct:
@@ -3158,12 +3171,12 @@ test_for_null:
  ;
 
 in_predicate:
-    pred_exp NOT sqlIN '(' atom_commalist ')'
+    pred_exp NOT sqlIN '(' value_commalist ')'
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_list(l, $5);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  pred_exp sqlIN '(' atom_commalist ')'
+ |  pred_exp sqlIN '(' value_commalist ')'
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_list(l, $4);
@@ -4471,7 +4484,7 @@ exec_ref:
   	  append_int(l, $1);
   	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   intval '(' atom_commalist ')'
+|   intval '(' value_commalist ')'
 	{ dlist *l = L();
   	  append_int(l, $1);
   	  append_list(l, $3);
