@@ -362,6 +362,7 @@ typedef struct shredCtxStruct {
     int      sp;                 /* the stackpointer */
     /* buffer administration */
     int      content;            /* content ptr in char buff */
+    int	     content_max;        /* max size of content buffer */
     char     *content_buf;       /* character buffer */
     /* */
     size_t   fileSize;           /* size of the input file */
@@ -1105,14 +1106,13 @@ shred_characters(void *xmlCtx,
                  int n)
 {
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
-    int l = MIN(PFSHRED_STRLEN_MAX -(int) shredCtx->content, n);
 
-    memcpy(&(shredCtx->content_buf[shredCtx->content]), cs, l);
-    shredCtx->content += l;
-
-    if (l < n)
-        stream_printf(GDKout, "!WARNING: shred_characters truncated text node > %d characters(starts with `%.16s...')\n", 
-               (int) PFSHRED_STRLEN_MAX, cs);
+    if ( (shredCtx->content + n + 1) < shredCtx->content_max) {
+	shredCtx->content_max = shredCtx->content + n + 1;
+        shredCtx->content_buf = GDKrealloc(shredCtx->content_buf, shredCtx->content_max);
+    }
+    memcpy(&(shredCtx->content_buf[shredCtx->content]), cs, n);
+    shredCtx->content += n;
 }
 
 /**
@@ -1831,7 +1831,8 @@ shredder_create(char *location,
     /* allocate some buffers used during parse */
     shredCtx->val = (char*) GDKmalloc(PFSHRED_BUFLEN+1);
     shredCtx->lifo = (node_t *) GDKmalloc((XML_DEPTH_MAX+1) * sizeof(node_t));
-    shredCtx->content_buf = (char*) GDKmalloc(PFSHRED_STRLEN_MAX);
+    shredCtx->content_max = PFSHRED_STRLEN_MAX;
+    shredCtx->content_buf = (char*) GDKmalloc(shredCtx->content_max);
     if (shredCtx->val == NULL || shredCtx->content_buf == NULL || shredCtx->lifo == NULL) {
         return shredder_free(shredCtx,-shredCtx->incremental);
     }
