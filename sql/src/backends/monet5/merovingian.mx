@@ -51,7 +51,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.8"
+#define MEROV_VERSION   "0.9"
 #define MEROV_PORT      50000
 
 @c
@@ -678,8 +678,10 @@ forkMserver(str database, sabdb** stats, int force)
 			 * parent */
 			pthread_mutex_lock(&topdplock);
 			pdp = topdp;
-			while (pdp->next != dp)
+			while (pdp != NULL && pdp->next != dp)
 				pdp = pdp->next;
+			/* pdp is NULL when the database terminates somehow while
+			 * starting, we still need to free db in that case */
 
 			switch (state) {
 				case SABdbRunning:
@@ -689,7 +691,8 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
-					pdp->next = dp->next;
+					if (pdp != NULL)
+						pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
 					pthread_mutex_unlock(&topdplock);
@@ -699,7 +702,8 @@ forkMserver(str database, sabdb** stats, int force)
 								"initialise the sql scenario", database));
 				case SABdbCrashed:
 					/* remove from the list again */
-					pdp->next = dp->next;
+					if (pdp != NULL)
+						pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
 					pthread_mutex_unlock(&topdplock);
@@ -717,7 +721,8 @@ forkMserver(str database, sabdb** stats, int force)
 					/* allow the logger to catch up */
 					MT_sleep_ms(100);
 					/* remove from the list again */
-					pdp->next = dp->next;
+					if (pdp != NULL)
+						pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
 					pthread_mutex_unlock(&topdplock);
@@ -727,7 +732,8 @@ forkMserver(str database, sabdb** stats, int force)
 								"itself down after starting", database));
 				default:
 					/* remove from the list again */
-					pdp->next = dp->next;
+					if (pdp != NULL)
+						pdp->next = dp->next;
 					GDKfree(dp->dbname);
 					GDKfree(dp);
 					pthread_mutex_lock(&topdplock);

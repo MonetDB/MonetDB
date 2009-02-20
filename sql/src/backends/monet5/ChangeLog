@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  19 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
+  Fixed crash of merovingian when a to be started database terminates
+  immediately after startup (such as when it crashes)
+
   16 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
   Protect shared linked list structures from being accessed and/or modified by
   two or more threads concurrently. This resolves random crashes. Fixes bug
