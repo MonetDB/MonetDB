@@ -1445,6 +1445,7 @@ PROC tj_query_handler(
 }
 
 var nexi_score_xfer  := nil;
+var nexi_sn_xfer     := nil;
 var nexi_parser_lock := lock_create();
 
 PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void,oid] nodes) : BAT[oid,dbl] :=
@@ -1468,10 +1469,12 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
 	var res := nil;
         lock_set(nexi_parser_lock);
         var err := CATCH({
+	    nexi_sn_xfer := nodes;
 	    _run_tijah_query(opt,rtagbat,use_startnodes,nodes);
 	    res := nexi_score_xfer;
         });
 	nexi_score_xfer := nil;
+	nexi_sn_xfer := nil;
         lock_unset(nexi_parser_lock);
         if (not(isnil(err))) ERROR(err);
 	return res;
