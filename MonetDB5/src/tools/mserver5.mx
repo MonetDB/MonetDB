@@ -184,6 +184,8 @@ monet_hello(opt *set, int setlen)
 	s += strlen(s);
 	snprintf(s,size,"# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
 			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
+	size -= strlen(s);
+	s += strlen(s);
 #ifdef MONET_GLOBAL_DEBUG
 	snprintf(s,size,"# Configuration:%s\n", GDKgetenv("config"));
 	size -= strlen(s);
