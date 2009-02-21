@@ -835,8 +835,8 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 			}
 		}
 		if (histo == NULL) {
-			assert(histo);
 			BBPunfix(bn->batCacheid);
+			return GDK_FAIL;
 		}
 
 		/* postprocess the result bat 'bn' */
@@ -1404,6 +1404,8 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
 	*rethisto = histo ? histo->batCacheid : 0;
+	if (!bn) 
+		throw(MAL, "group.new", "group failed");
 	*retbid = bn->batCacheid;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
