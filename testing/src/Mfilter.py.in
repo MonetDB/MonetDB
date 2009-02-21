@@ -222,6 +222,10 @@ test = (
                     r'^type error:   .*$',
                 # Debugging "strange" errors on Solaris x86:
                     "^!ERROR: interpret: no matching MIL operator to '\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb\xdb.*$",
+                 ])+')',  re.MULTILINE),
+        # warnings and messages that should be treated as errors:
+        re.compile('(?:'+')|(?:'.join([
+                    r'^#BATpropcheck: .*$',
                  ])+')',  re.MULTILINE)
        )
 
@@ -338,6 +342,9 @@ def mFilter (FILE, IGNORE) :
             # ignore differences in "VariableOutput" or "ProfilingOutput"
             oline = "#~ " + iline
             n = n + 1
+        elif test[5].match(iline):
+            # warnings and messages that should be treated as errors:
+            oline = "!~" + iline
         elif test[0].match(iline):
             # potential differences, which we want to ignore; see above
             oline = "#~ " + iline
