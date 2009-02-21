@@ -96,15 +96,15 @@ Prepare the call to the history manager.
 	q = newStmt(mb,"sql","argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
-	arg= getArg(q,0)= newVariable(mb,"args",TYPE_str);
+	arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
 @-
 @= initCounter
 	q = newStmt(mb,"@2","@3");
-	@1= getArg(q,0)= newVariable(mb,"@1",TYPE_@4);
+	@1= getArg(q,0)= newVariable(mb,GDKstrdup("@1"),TYPE_@4);
 @= zeroCounter
 	q = newAssignment(mb);
 	q = push@2(mb,q,0);
-	@1= getArg(q,0)= newVariable(mb,"@1",TYPE_@3);
+	@1= getArg(q,0)= newVariable(mb,GDKstrdup("@1"),TYPE_@3);
 @= initCounters
 	@:initCounter(ctime,mtime,current_timestamp,any)@
 	@:arguments@
@@ -190,7 +190,6 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			continue;
 		}	
 		if (getModuleId(p)==sqlRef && idcmp(getFunctionId(p),"resultSet")==0 ){
-			printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
 			@:initCounter(tuples,aggr,count,wrd)@
 			q= pushArgument(mb,q, getArg(p,3));
 		}
