@@ -31,7 +31,7 @@
 @m
 .MODULE pftijah;
 
-.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes, BAT[void,oid] nodes) : void = CMDtijah_query;
+.COMMAND _run_tijah_query(BAT[str,str] opt, BAT[oid,str] rtag, bit use_startnodes) : void = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_checkHashTable(BAT[oid,str]) : void = CMDcheckHashTable;
@@ -1470,7 +1470,7 @@ PROC run_tijah_query(str ftiName, BAT[str,str] opt, bit use_startnodes, BAT[void
         lock_set(nexi_parser_lock);
         var err := CATCH({
 	    nexi_sn_xfer := nodes;
-	    _run_tijah_query(opt,rtagbat,use_startnodes,nodes);
+	    _run_tijah_query(opt,rtagbat,use_startnodes);
 	    res := nexi_score_xfer;
         });
 	nexi_score_xfer := nil;
@@ -2023,9 +2023,9 @@ PROC tj_select_star() : bat[oid,any] :=
 # Select all startNodes (node context set coming from pathfinder)
 # Returns a bat [pre, any].
 ##
-PROC tj_select_startnodes(str name) : bat[oid,any] :=
+PROC tj_select_startnodes() : bat[oid,any] :=
 {
-    return bat(name);
+    return nexi_sn_xfer.reverse();
 }
 
 ##
@@ -4239,7 +4239,7 @@ int CMDtj_chk_dict_hash(BAT* b_tag, BAT* b_term)
 
 extern char* tijahParse(BAT* optbat, char* startNodes_name, char** errBUFF);
 
-extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_name, char** errBUFF);
+extern char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** errBUFF);
 
 int CMDcheckHashTable(BAT* b) {
     if ( b->H->hash == NULL ) {
@@ -4253,31 +4253,18 @@ int CMDcheckHashTable(BAT* b) {
     return GDK_SUCCEED;
 }
 
-static int nexiTmpCounter = 0;
-
-int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNodes) {
+int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
 	char* err;
 	char* mil;
-	char  nameBUFF[32], *startNodes_name;
+	int use_sn;
 
         int parser_timing = 0;
 	lng time_start = GDKusec();
 
 	if (TDEBUG(1)) stream_printf(GDKout,"# CMDtijah_query: start.\n");
-	if ( *use_startnodes ) {
-	    BATmode(startNodes,PERSISTENT);
-	    sprintf(&nameBUFF[0],"%s%d","nexi_start",nexiTmpCounter++);
-	    /* make persistent, the generated script should undo this again */
-	    if ( BBPrename(startNodes->batCacheid,(str)&nameBUFF[0]) != 0) {
-                GDKerror("CMDtijah_query: fail to name startNode bat: \"%s\".\n", &nameBUFF[0]);
-	        return GDK_FAIL;
-	    }
-	    startNodes_name = &nameBUFF[0];
-	    if (TDEBUG(2)) stream_printf(GDKout,"# CMDtijah_query: using startnodes.\n");
-	    if (TDEBUG(2)) BATprintf(GDKout,startNodes);
-	} else {
-	    startNodes_name = NULL;
-	}
+
+	use_sn = 0;
+        if (*use_startnodes) use_sn = 1;
 
 	if ( !optbat ) {
             GDKerror("CMDtijah_query: missing option bat.\n");
@@ -4306,12 +4293,12 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes, BAT* startNod
 
 	lng time_parse_start = GDKusec();
 	if ( newversion ) {
-	    if ( !(mil=tjc_new_parse(query_text,optbat,rtagbat,startNodes_name,&err)) ) {
+	    if ( !(mil=tjc_new_parse(query_text,optbat,rtagbat,use_sn,&err)) ) {
                 GDKerror("CMDtijah_query: %s.\n", err);
 	        return GDK_FAIL;
 	    }
 	} else {
-	    if ( !(mil=tijahParse(optbat,startNodes_name,&err)) ) {
+	    if ( !(mil=tijahParse(optbat,"nexi_sn_xfer",&err)) ) {
                 GDKerror("CMDtijah_query: %s.\n", err);
 	        return GDK_FAIL;
 	    }

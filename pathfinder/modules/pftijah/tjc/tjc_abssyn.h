@@ -131,6 +131,7 @@ struct TJptree_t {
     TJpnode_t 	node[TJPTREE_MAXSIZE];
     int 	capacity;
     int		length;
+    char	is_rel_path_exp;
 };
 
 

@@ -274,7 +274,7 @@ int save2file(char* name, char *content) {
 	return 1;
 }
 
-char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_name, char** errBUFF)
+char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** errBUFF)
 {
     tjc_config *tjc_c = (tjc_config*)TJCmalloc(sizeof(struct tjc_config));
 
@@ -286,11 +286,6 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
     TJpnode_t *root;
     TJatree_t *atree;
   
-    if (startNodes_name)
-    	tjc_c->startNodes = startNodes_name;
-    else
-	tjc_c->startNodes = NULL;
-
     if (DEBUG) stream_printf(GDKout,"#!tjc interpreting options\n");
     if ( !interpret_options(tjc_c,optbat) ) {
     	*errBUFF = GDKstrdup("option handling error");
@@ -299,6 +294,16 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, char* startNodes_nam
     if (DEBUG) stream_printf(GDKout,"#!tjc parsing[%s]\n!",query);
     int status = tjc_parser(query,&ptree);
     if (DEBUG) stream_printf(GDKout,"#!tjc status = %d\n",status);
+    if (use_sn && (ptree->is_rel_path_exp == 0)) {
+	*errBUFF = GDKstrdup("Error (new NEXI syntax): A query with startnodes should start with a relative path expression");
+        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
+	return NULL;
+    }
+    if ((use_sn == 0) && ptree->is_rel_path_exp) {
+	*errBUFF = GDKstrdup("Error (new NEXI syntax): A query without startnodes should start with an absolute path expression");
+        if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
+	return NULL;
+    }
     if (!status && ptree) {
 	root = &ptree->node[ptree->length - 1];
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");

@@ -89,9 +89,6 @@ void milprint_init (tjc_config *tjc_c) {
     if (tjc_c->returnall) {
         TJCPRINTF(MILOUT,"returnAllElements := TRUE;\n");
     }
-    if (tjc_c->startNodes) {
-        TJCPRINTF(MILOUT,"var startNodes := bat(\"%s\");\n", tjc_c->startNodes);
-    }
     TJCPRINTF(MILOUT,"\n");
 }
 
@@ -321,7 +318,7 @@ void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short 
     switch (node->kind) { 
 	case a_select_element :
 	    if (strcmp (node->op, "select_startnodes") == 0)
-	        TJCPRINTF(MILOUT,"var R%d := tj_%s(\"%s\");\n", nid, node->op, tjc_c->startNodes);
+	        TJCPRINTF(MILOUT,"var R%d := tj_%s();\n", nid, node->op);
 	    else if (strcmp (node->op, "select_star") == 0)
 	        TJCPRINTF(MILOUT,"var R%d := tj_%s();\n", nid, node->op);
 	    else

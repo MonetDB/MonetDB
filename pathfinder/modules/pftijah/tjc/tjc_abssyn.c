@@ -165,6 +165,7 @@ tjcp_inittree ()
 
     ptree->capacity = TJPTREE_MAXSIZE;
     ptree->length = 0;
+    ptree->is_rel_path_exp = 0;
 
     return ptree;
 }

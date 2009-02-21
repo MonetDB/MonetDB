@@ -128,9 +128,9 @@ NexiQuery		: Path OptPathNoPred
 			    else { $$ = tjcp_wire1 (tjc_tree, p_nexi, $1->root); TJCfree($1); }
 			  }  
 	   		| RelativePath_
-			  { $$ = tjcp_wire1 (tjc_tree, p_nexi, $1); }
+			  { tjc_tree->is_rel_path_exp = 1; $$ = tjcp_wire1 (tjc_tree, p_nexi, $1); }
 			| RelativePath_ Path OptPathNoPred
-			  { *($2->fixme) = $1; 
+			  { tjc_tree->is_rel_path_exp = 1; *($2->fixme) = $1; 
 			    if ($3) { *($3->fixme) = $2->root; $$ = tjcp_wire1 (tjc_tree, p_nexi, $3->root); 
 			    TJCfree($2); TJCfree($3); }
 			    else { $$ = tjcp_wire1 (tjc_tree, p_nexi, $2->root); TJCfree($2); }

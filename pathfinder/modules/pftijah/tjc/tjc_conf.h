@@ -50,7 +50,6 @@ typedef struct tjc_config {
 	char* upprop;
 	char* downprop;
 	char* prior;
-	char* startNodes;
 	double scorebase;
 	double lambda;
 	double okapik1;
