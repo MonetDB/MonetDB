@@ -524,7 +524,7 @@ workslow:
 				t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x') {
-				cntxt->itrace= 0;
+				stk->cmd = 0;
 				stkpc = mb->stop;
 				continue;
 			}
@@ -773,7 +773,6 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		mdbStep(cntxt,mb,stk,getPC(mb,pci));
 		if (stk->cmd == 'x') {
 			/* need a way to skip */
-			cntxt->itrace= 0;
 			stkpc = mb->stop;
 			fs->pc = -1;
 			return ret;
@@ -1851,7 +1850,6 @@ reaching end of function block.
 		stk->cmd = 'n';
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x') {
-			cntxt->itrace= 0;
 			stkpc = mb->stop;
 			@2;
 		}
@@ -1945,7 +1943,6 @@ if( ret != MAL_SUCCEED ) {
 		stk->cmd= '\n';	/* in debugging go to step mode */
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x' || stk->cmd == 'q' ) {
-			cntxt->itrace= 0;
 			stkpc= mb->stop;
 			@2;
 		}
