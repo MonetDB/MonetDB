@@ -319,6 +319,7 @@ int main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_trace(dbh,1);*/
+	printf("#connection with server for '%s' established\n",dbname);
 
 	/* set counters */
 	for(i=0; profileCounter[i].tag; i++){
@@ -372,6 +373,7 @@ int main(int argc, char **argv)
 	if(gnuplot)
 		plottemplate(colind,colcnt);
 
+	printf("#ready to receive events\n");
 	while( stream_read(s, buf, 1, BUFSIZ) ) {
 		char *e;
 		response = buf;
