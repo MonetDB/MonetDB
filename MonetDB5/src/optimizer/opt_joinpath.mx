@@ -106,7 +106,7 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	int i,j,k,cnt,top=0;
 	str joinPathRef = putName("joinPath",8);
 	InstrPtr q,p,*old, *paths;
-	int limit,slimit, *used;
+	int limit, *used;
 
 	(void) cntxt;
 	paths = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * mb->stop);
@@ -139,7 +139,6 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	/* now replace the joinpaths that have a common head */
 	old= mb->stmt;
 	limit= mb->stop;
-	slimit= mb->ssize;
 	newMalBlkStmt(mb,mb->ssize);
 
 	for (i = 0; i<limit; i++){
@@ -261,7 +260,8 @@ Final type check.
 	if(old[i])
 		freeInstruction(old[i]);
 	/* perform the second phase */
-	OPTjoinPathPrefix(cntxt, mb);
+	if (actions)
+		OPTjoinPathPrefix(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
 	return actions;
