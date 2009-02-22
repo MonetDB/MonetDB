@@ -116,14 +116,15 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	if ( getFunctionId(mb->stmt[i])== joinPathRef){
 		paths[top++] = mb->stmt[i];
 	}
-	/* determine the joinpaths whose header should be replaced */
+	/* determine the joinpaths whose header should be replaced, because
+	   it occurs multiple times */
 	for( k=i=0; i<top; i++){
 		cnt =0;
 		for ( j=i+1; j<top; j++)
 		if ( getArg(paths[i], 1) == getArg(paths[j],1) &&
 			getArg(paths[i], 2) == getArg(paths[j],2) )
 			cnt++;
-		if ( cnt == 0) 
+		if ( cnt ) 
 			paths[k++] = paths[i];
 	}
 	top = k;
