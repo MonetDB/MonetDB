@@ -1327,9 +1327,6 @@ controlRunner(void *d)
 	size_t len;
 	err e;
 
-	/* Try to handle control signals.  We can get race conditions due to
-	 * clients coming in at the same time.  We might need to fix this
-	 * situation sometime. */
 	do {
 		/* handle socket connections */
 		FD_ZERO(&fds);
