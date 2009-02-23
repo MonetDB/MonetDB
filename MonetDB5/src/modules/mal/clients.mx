@@ -85,7 +85,7 @@ command getUsers( ):bat[:int,:str]
 address CLTusers
 comment "Pseudo bat of users logged in.";
 
-command stop(id:int)
+pattern stop(id:int)
 address CLTstop
 comment "Stop the query execution at the next eligble statement.";
 
@@ -404,10 +404,11 @@ CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int id = *(int*) getArgReference(stk,pci,1);
+	if ( cntxt->user == mal_clients[id].user || 
+		mal_clients[0].user == cntxt->user)
+		mal_clients[id].mode = FINISHING;
 	(void) mb;		/* fool compiler */
-	(void) stk;
-	(void) pci;
-	cntxt->mode = FINISHING;
 	throw(MAL, "client.exit", "Exit session with soft error");
 }
 str
@@ -424,10 +425,13 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int id=  *(int *) getArgReference(stk,pci,1);
 	(void) mb;
-	(void) stk;
-	(void) pci;
-	cntxt->itrace='x';	/* this forces it to stop at the next instruction */
+	if ( cntxt->user == mal_clients[id].user || 
+		mal_clients[0].user == cntxt->user){
+		mal_clients[id].itrace = 'x';
+	}
+	/* this forces the designated client to stop at the next instruction */
     return MAL_SUCCEED;
 }
 

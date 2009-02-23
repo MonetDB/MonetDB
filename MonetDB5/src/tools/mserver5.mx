@@ -164,6 +164,8 @@ changes.
 void
 monet_hello(opt *set, int setlen)
 {
+	char *s= monet_motd;
+	size_t size= 2048;
 #ifdef MONETDB_STATIC
 	char *linkinfo = "statically";
 #else
@@ -171,22 +173,36 @@ monet_hello(opt *set, int setlen)
 #endif
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
-	if (msg && strcmp(msg, "yes") == 0) {
-		printf("# MonetDB server v" VERSION ", based on kernel v%s\n",
-				GDKversion());
-		printf("# Serving database '%s', using %d thread%s\n",
-				GDKgetenv("gdk_dbname"),
-				GDKnr_threads, (GDKnr_threads > 1) ? "s" : "");
-		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
-				HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
+	snprintf(s,size,"# MonetDB server v" VERSION ", based on kernel v%s\n",
+			GDKversion());
+	size -= strlen(s);
+	s += strlen(s);
+	snprintf(s,size,"# Serving database '%s', using %d thread%s\n",
+			GDKgetenv("gdk_dbname"),
+			GDKnr_threads, (GDKnr_threads > 1) ? "s" : "");
+	size -= strlen(s);
+	s += strlen(s);
+	snprintf(s,size,"# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
+			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
+	size -= strlen(s);
+	s += strlen(s);
 #ifdef MONET_GLOBAL_DEBUG
-		printf("# Configuration:%s\n", GDKgetenv("config"));
-		printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
+	snprintf(s,size,"# Configuration:%s\n", GDKgetenv("config"));
+	size -= strlen(s);
+	s += strlen(s);
+	snprintf(s,size,"# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
+	size -= strlen(s);
+	s += strlen(s);
 #endif
-		printf("# Copyright (c) 1993-July 2008 CWI.\n");
-		printf("# Copyright (c) August 2008- MonetDB B.V., all rights reserved\n");
+	snprintf(s,size,"# Copyright (c) 1993-July 2008 CWI.\n");
+	size -= strlen(s);
+	s += strlen(s);
+	snprintf(s,size,"# Copyright (c) August 2008- MonetDB B.V., all rights reserved\n");
+	if (msg && strcmp(msg, "yes") == 0){
+		printf(monet_motd);
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
+	/* extend monet_motd with compilation information for performance tracing */
 }
 
 @-
