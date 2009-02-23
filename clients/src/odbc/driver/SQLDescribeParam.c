@@ -68,13 +68,13 @@ SQLDescribeParam(SQLHSTMT hStmt,
 		return SQL_ERROR;
 	}
 
-	if (nParmNumber < 1 || nParmNumber > stmt->ImplRowDescr->sql_desc_count) {
+	if (nParmNumber < 1 || nParmNumber > stmt->ImplParamDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
 
-	rec = &stmt->ImplRowDescr->descRec[nParmNumber];
+	rec = &stmt->ImplParamDescr->descRec[nParmNumber];
 
 	if (pnDataType)
 		*pnDataType = rec->sql_desc_concise_type;

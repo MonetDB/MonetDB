@@ -967,7 +967,7 @@ handleClient(int sock)
 	if (stream_read_block(fdin, buf, 8095, 1) < 0) {
 		/* we didn't get a terminated block :/ */
 		e = newErr("client sent challenge in incomplete block: %s", buf);
-		stream_printf(fout, "!client sent something this server could not understand, sorry\n", user);
+		stream_printf(fout, "!merovingian: client sent something this server could not understand, sorry\n", user);
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -986,7 +986,7 @@ handleClient(int sock)
 		user = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1001,7 +1001,7 @@ handleClient(int sock)
 		/* decode algorithm, i.e. {plain}mypasswordchallenge */
 		if (*passwd != '{') {
 			e = newErr("client challenge error: %s", buf);
-			stream_printf(fout, "!invalid password entry\n");
+			stream_printf(fout, "!merovingian: invalid password entry\n");
 			stream_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -1011,7 +1011,7 @@ handleClient(int sock)
 		s = strchr(algo, '}');
 		if (!s) {
 			e = newErr("client challenge error: %s", buf);
-			stream_printf(fout, "!invalid password entry\n");
+			stream_printf(fout, "!merovingian: invalid password entry\n");
 			stream_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -1021,7 +1021,7 @@ handleClient(int sock)
 		passwd = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_printf(fout, "!merovingian: incomplete challenge '%s'\n", user);
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1035,7 +1035,7 @@ handleClient(int sock)
 		lang = s + 1;
 	} else {
 		e = newErr("client challenge error: %s", buf);
-		stream_printf(fout, "!incomplete challenge, missing language\n");
+		stream_printf(fout, "!merovingian: incomplete challenge, missing language\n");
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1056,7 +1056,7 @@ handleClient(int sock)
 	if (*database == '\0') {
 		/* we need to have a database, if we haven't gotten one,
 		 * complain */
-		stream_printf(fout, "!please specify a database\n");
+		stream_printf(fout, "!merovingian: please specify a database\n");
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1064,9 +1064,9 @@ handleClient(int sock)
 	} else {
 		if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
 			if (top == NULL) {
-				stream_printf(fout, "!no such database '%s', please create it first\n", database);
+				stream_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
 			} else {
-				stream_printf(fout, "!internal error while starting mserver, please refer to the logs\n");
+				stream_printf(fout, "!merovingian: internal error while starting mserver, please refer to the logs\n");
 			}
 			stream_flush(fout);
 			close_stream(fout);
@@ -1079,7 +1079,7 @@ handleClient(int sock)
 	/* if we can't redirect, our mission ends here */
 	if (stat->conns == NULL || stat->conns->val == NULL) {
 		e = newErr("database '%s' does not allow connections", stat->dbname);
-		stream_printf(fout, "!database '%s' does not allow connections\n", stat->dbname);
+		stream_printf(fout, "!merovingian: database '%s' does not allow connections\n", stat->dbname);
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1121,7 +1121,8 @@ handleClient(int sock)
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
-			stream_printf(fout, "!an internal error has occurred, please try again later\n");
+			/* TODO: I violate the protocol this way */
+			stream_printf(fout, "!merovingian: an internal error has occurred, please try again later\n");
 			stream_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -1327,9 +1328,6 @@ controlRunner(void *d)
 	size_t len;
 	err e;
 
-	/* Try to handle control signals.  We can get race conditions due to
-	 * clients coming in at the same time.  We might need to fix this
-	 * situation sometime. */
 	do {
 		/* handle socket connections */
 		FD_ZERO(&fds);
