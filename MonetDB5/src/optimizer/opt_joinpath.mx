@@ -106,24 +106,40 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	int i,j,k,cnt,top=0;
 	str joinPathRef = putName("joinPath",8);
 	InstrPtr q,p,*old, *paths;
-	int limit,slimit, *used;
+	int limit, *used;
 
 	(void) cntxt;
 	paths = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * mb->stop);
 
 	limit= mb->stop;
 	for(i=0; i< limit; i++)
-	if ( getFunctionId(mb->stmt[i])== joinPathRef){
+	if ( getFunctionId(mb->stmt[i])== joinPathRef)
 		paths[top++] = mb->stmt[i];
+
+	/* let's trim the paths first , because they are incrementally added */
+	k=1;
+	for (i=1;i<top; ){
+		if (paths[i]->argv[1] == paths[k-1]->argv[1]){
+			i++;
+			continue;
+		}
+		if (paths[i]->argv[2] == paths[k-1]->argv[1]){
+			i++;
+			continue;
+		}
+		paths[k++]= paths[i++];
 	}
-	/* determine the joinpaths whose header should be replaced */
+	top=k;
+
+	/* determine the joinpaths whose header should be replaced, because
+	   it occurs multiple times */
 	for( k=i=0; i<top; i++){
 		cnt =0;
 		for ( j=i+1; j<top; j++)
 		if ( getArg(paths[i], 1) == getArg(paths[j],1) &&
 			getArg(paths[i], 2) == getArg(paths[j],2) )
 			cnt++;
-		if ( cnt == 0) 
+		if ( cnt >= 2)
 			paths[k++] = paths[i];
 	}
 	top = k;
@@ -139,7 +155,6 @@ OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
 	/* now replace the joinpaths that have a common head */
 	old= mb->stmt;
 	limit= mb->stop;
-	slimit= mb->ssize;
 	newMalBlkStmt(mb,mb->ssize);
 
 	for (i = 0; i<limit; i++){
@@ -205,7 +220,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== joinRef ){
 @-
-Try to expand its argument list
+Try to expand its argument list with what we have found so far.
+This creates a series of join paths, many of which will be removed during deadcode elimination.
 @c
 			q= copyInstruction(p);
 			q->argc=1;
@@ -261,7 +277,8 @@ Final type check.
 	if(old[i])
 		freeInstruction(old[i]);
 	/* perform the second phase */
-	OPTjoinPathPrefix(cntxt, mb);
+	if (actions )
+		OPTjoinPathPrefix(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
 	return actions;

@@ -1150,6 +1150,48 @@ exps_save(list *exps)
 }
 
 /*
+ * Push TopN (only LIMIT, no ORDER BY) down through projections underneath crossproduct, i.e.,
+ *
+ *     topn(                          topn(
+ *         project(                       project(
+ *             crossproduct(                  crossproduct(
+ *                 L,           =>                topn( L )[ n ],
+ *                 R                              topn( R )[ n ]
+ *             )                              )
+ *         )[ Cs ]*                       )[ Cs ]*
+ *     )[ n ]                         )[ n ]
+ *
+ *  (TODO: in case of n==1 we can omit the original top-level TopN)
+ */
+static sql_rel *
+rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *r = rel->l;
+
+	(void)sql;
+	if (rel->op == op_topn) {
+		/* pass through projections */
+		while (r && is_project(r->op) && !(rel_is_ref(r))) {
+			/* ensure there is no order by */
+			if (!r->r) {
+				r = r->l;
+			} else {
+				r = NULL;
+			}
+		}
+		/* push topn under crossproduct */
+		if (r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
+		    ((sql_rel *)r->l)->op != op_topn && ((sql_rel *)r->r)->op != op_topn) {
+			r->l = rel_topn( r->l, list_dup(rel->exps, (fdup)&exp_dup) );
+			r->r = rel_topn( r->r, list_dup(rel->exps, (fdup)&exp_dup) );
+			(*changes)++;
+			return rel;
+		}
+	}
+	return rel;
+}
+
+/*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
@@ -2291,6 +2333,9 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_push_select_down); 
+
+	if (gp.cnt[op_topn])
+		rel = rewrite(sql, rel, &rel_push_topn_down); 
 
 	/* TODO push select up. Sounds bad, but isn't. In case of an join-idx we want the selection on
 	   the 'unique/primary (right hand side)' done before the (fake)-join and the selections on the foreign 
