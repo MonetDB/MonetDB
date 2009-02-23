@@ -1328,6 +1328,7 @@ controlRunner(void *d)
 	int pos = 0;
 	int retval;
 	fd_set fds;
+	struct timeval tv;
 	int msgsock;
 	size_t len;
 	err e;
@@ -1337,7 +1338,10 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 
-		retval = select(sock + 1, &fds, NULL, NULL, NULL);
+		/* Wait up to 5 seconds. */
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
