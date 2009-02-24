@@ -114,7 +114,7 @@ dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 	size_t maxquerylen = 0;
 
 	if (tname != NULL) {
-		maxquerylen = BUFSIZ + strlen(tname) + strlen(schema);
+		maxquerylen = 1024 + strlen(tname) + strlen(schema);
 		query = malloc(maxquerylen);
 		snprintf(query, maxquerylen,
 			 "SELECT \"pkt\".\"name\","		/* 0 */
@@ -288,7 +288,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 		schema = sname;
 	}
 
-	maxquerylen = BUFSIZ + strlen(tname) + strlen(schema);
+	maxquerylen = 512 + strlen(tname) + strlen(schema);
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
