@@ -165,102 +165,6 @@ join_properties(sql_rel *rel)
 }
 
 static void
-exp_properties(sql_rel *rel, sql_exp *e)
-{
-	sql_exp *ne = NULL;
-
-	switch(e->type) {
-	case e_column:
-		ne = rel_find_exp(rel, e);
-		break;
-	case e_convert:
-		exp_properties(rel, e->l);
-		break;
-	case e_aggr:
-	case e_func: 
-		if (e->l) {
-			list *l = e->l;
-			node *n = l->h;
-	
-			for (;n != NULL; n = n->next) 
-				exp_properties(rel, n->data);
-		}
-		/* rank operators have a second list of arguments */
-		if (e->r) {
-			list *l = e->r;
-			node *n = l->h;
-	
-			for (;n != NULL; n = n->next) 
-				exp_properties(rel, n->data);
-		}
-		break;
-	case e_cmp:	
-		exp_properties(rel, e->l);
-		exp_properties(rel, e->r);
-		if (e->f)
-			exp_properties(rel, e->f);
-		break;
-	case e_atom:
-		/* atoms are used in e_cmp */
-		e->p = prop_create(PROP_USED, e->p);
-		break;
-	}
-	if (ne)
-		ne->p = prop_create(PROP_USED, ne->p);
-}
-
-static void
-exps_properties(sql_rel *rel, sql_rel *subrel)
-{
-	if (rel->exps) {
-		node *n;
-		for (n=rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			exp_properties(subrel, e);
-		}
-	}
-	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
-		list *l = rel->r;
-		node *n;
-
-		for (n=l->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			exp_properties(rel, e);
-			/* possibly project/groupby uses columns from the inner */ 
-			exp_properties(subrel, e);
-		}
-	}
-}
-
-static void
-exps_used(list *l)
-{
-	node *n;
-
-	if (l) {
-		for (n = l->h; n; n = n->next) {
-			sql_exp *e = n->data;
-	
-			e->p = prop_create(PROP_USED, e->p);
-		}
-	}
-}
-
-static void
-rel_used(sql_rel *rel)
-{
-	if (is_topn(rel->op))
-		rel = rel->l;
-	if (rel->exps) {
-		exps_used(rel->exps);
-		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
-			exps_used(rel->r);
-	}
-}
-
-static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
 	gp->cnt[(int)rel->op]++;
@@ -281,25 +185,13 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_except: 
 		rel_properties(sql, gp, rel->l);
 		rel_properties(sql, gp, rel->r);
-		exps_properties(rel, rel->l);
-		exps_properties(rel, rel->r);
-
-		/* right hand expressions of set ops are used */
-		if (is_set(rel->op) && rel->r) {
-			sql_rel *r = rel->r;
-			/* setops have no clear dependency relation */
-			if (r->exps)
-				exps_used(r->exps);
-		}
 		break;
 	case op_project:
 	case op_select: 
 	case op_groupby: 
 	case op_topn: 
-		if (rel->l) {
+		if (rel->l) 
 			rel_properties(sql, gp, rel->l);
-			exps_properties(rel, rel->l);
-		}
 		break;
 	case op_insert:
 	case op_update:
@@ -308,9 +200,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			sql_rel *r = rel->r;
 
 			rel_properties(sql, gp, r);
-			/* updates have no clear dependency relation */
-			if (r->exps)
-				exps_used(r->exps);
 		}
 		break;
 	}
@@ -1828,34 +1717,337 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
-rel_dce(int *changes, mvc *sql, sql_rel *rel) 
+static void
+exp_mark_used(sql_rel *subrel, sql_exp *e)
+{
+	sql_exp *ne = NULL;
+
+	switch(e->type) {
+	case e_column:
+		ne = rel_find_exp(subrel, e);
+		break;
+	case e_convert:
+		exp_mark_used(subrel, e->l);
+		break;
+	case e_aggr:
+	case e_func: {
+		if (e->l) {
+			list *l = e->l;
+			node *n = l->h;
+	
+			for (;n != NULL; n = n->next) 
+				exp_mark_used(subrel, n->data);
+		}
+		/* rank operators have a second list of arguments */
+		if (e->r) {
+			list *l = e->r;
+			node *n = l->h;
+	
+			for (;n != NULL; n = n->next) 
+				exp_mark_used(subrel, n->data);
+		}
+		break;
+	}
+	case e_cmp:
+		exp_mark_used(subrel, e->l);
+		exp_mark_used(subrel, e->r);
+		if (e->f)
+			exp_mark_used(subrel, e->f);
+		break;
+	case e_atom:
+		/* atoms are used in e_cmp */
+		e->used = 1;
+		break;
+	}
+	if (ne)
+		ne->used = 1;
+}
+
+static void
+exps_mark_used(sql_rel *rel, sql_rel *subrel)
+{
+	if (rel->exps) {
+		node *n;
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			exp_mark_used(subrel, e);
+		}
+	}
+	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
+		list *l = rel->r;
+		node *n;
+
+		for (n=l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			exp_mark_used(rel, e);
+			/* possibly project/groupby uses columns from the inner */ 
+			exp_mark_used(subrel, e);
+		}
+	}
+}
+
+static void
+exps_used(list *l)
+{
+	node *n;
+
+	if (l) {
+		for (n = l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+	
+			e->used = 1;
+		}
+	}
+}
+
+static void
+rel_used(sql_rel *rel)
+{
+	if (is_topn(rel->op))
+		rel = rel->l;
+	if (rel->exps) {
+		exps_used(rel->exps);
+		if (rel->r && (rel->op == op_project || rel->op  == op_groupby))
+			exps_used(rel->r);
+	}
+}
+
+static void
+rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 {
 	(void)sql;
-	if (is_project(rel->op) || rel->op == op_basetable) {
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+
+	case op_topn: 
+		if (proj)
+			rel = rel ->l;
+	case op_project:
+	case op_groupby: 
+		if (proj && rel->l) {
+			exps_mark_used(rel, rel->l);
+			rel_mark_used(sql, rel->l, 0);
+		}
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		break;
+
+	case op_select: 
+		if (rel->l) {
+			exps_mark_used(rel, rel->l);
+			rel_mark_used(sql, rel->l, 0);
+		}
+		break;
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		/* For now we mark all union expression as used */
+
+		/* Later we should (in case of union all) remove unused
+		 * columns from the projection.
+		 * 
+ 		 * Project part of union is based on column position.
+		 */
+		if (proj) {
+			/* properly mark left/right based on exps list */
+			rel_used(rel->l);
+			rel_used(rel->r);
+			rel_mark_used(sql, rel->l, 0);
+			rel_mark_used(sql, rel->r, 0);
+		}
+		break;
+
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+		exps_mark_used(rel, rel->l);
+		exps_mark_used(rel, rel->r);
+		rel_mark_used(sql, rel->l, 0);
+		rel_mark_used(sql, rel->r, 0);
+		break;
+	}
+}
+
+static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
+
+static sql_rel *
+rel_remove_unused(mvc *sql, sql_rel *rel) 
+{
+	if (!rel || rel_is_ref(rel))
+		return rel;
+
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
 		if (rel->exps) {
 			node *n;
 			list *exps = new_exp_list();
 
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				if (find_prop(e->p, PROP_USED) ||
-					is_intern(e))
+
+				if (e->used || is_intern(e))
 					append(exps, exp_dup(e));
+			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
+			if (list_length(exps) == 0) {
+				sql_exp *e = rel->exps->h->data;
+				append(exps, exp_dup(e));
 			}
 			list_destroy(rel->exps);
 			rel->exps = exps;
-			if (list_length(exps) == 0) {
-				sql_rel *r = rel->l;
-
-				rel->l = NULL;
-				rel_destroy(rel);
-				*changes = 1;
-				return r;
-			}
 		}
 		return rel;
+
+	case op_topn: 
+
+		if (rel->l)
+			rel->l = rel_remove_unused(sql, rel->l);
+		return rel;
+
+	case op_project:
+	case op_groupby: 
+
+		if (rel->l && rel->exps) {
+			node *n;
+			list *exps = new_exp_list();
+
+			for(n=rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (e->used || is_intern(e))
+					append(exps, exp_dup(e));
+			}
+			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) ! */
+			if (list_length(exps) == 0) {
+				sql_exp *e = rel->exps->h->data;
+				append(exps, exp_dup(e));
+			}
+			list_destroy(rel->exps);
+			rel->exps = exps;
+		}
+		return rel;
+
+	case op_insert:
+	case op_update:
+	case op_delete:
+
+	case op_select: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		/* We cannot remove here as set projection are based on column
+		   position */
+
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+		return rel;
 	}
+	return rel;
+}
+
+static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
+
+static sql_rel *
+rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj) 
+{
+	if (!rel)
+		return rel;
+
+	switch(rel->op) {
+	case op_basetable:
+	case op_table:
+
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
+
+	case op_insert:
+	case op_update:
+	case op_delete:
+
+		return rel;
+
+	case op_topn: 
+	case op_project:
+	case op_groupby: 
+
+		if (skip_proj && rel->l)
+			rel->l = rel_dce_down(sql, rel->l, is_topn(rel->op));
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
+		return rel;
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		if (skip_proj) {
+			if (rel->l)
+				rel->l = rel_dce_down(sql, rel->l, 0);
+			if (rel->r)
+				rel->r = rel_dce_down(sql, rel->r, 0);
+		}
+		if (!skip_proj)
+			rel_dce_sub(sql, rel);
+		return rel;
+
+	case op_select: 
+		if (rel->l)
+			rel->l = rel_dce_down(sql, rel->l, 0);
+		return rel;
+
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+		if (rel->l)
+			rel->l = rel_dce_down(sql, rel->l, 0);
+		if (rel->r)
+			rel->r = rel_dce_down(sql, rel->r, 0);
+		return rel;
+	}
+	return rel;
+}
+
+/* DCE
+ *
+ * Based on top relation expressions mark sub expressions as used.
+ * Then recurse down until the projections. Clean them up and repeat.
+ */
+static sql_rel *
+rel_dce_sub(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+
+	rel = rel_remove_unused(sql, rel);
+	/* mark used up until the next project */
+	rel_mark_used(sql, rel, 1);
+	rel_dce_down(sql, rel, 1);
+	return rel;
+}
+
+static sql_rel *
+rel_dce(mvc *sql, sql_rel *rel)
+{
+	rel_used(rel);
+	rel_dce_sub(sql, rel);
 	return rel;
 }
 
@@ -2296,7 +2488,6 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	memset(&gp, 0, sizeof(global_props));
 	rel_properties(sql, &gp, rel);
-	rel_used(rel);
 
 #ifdef DEBUG
 {
@@ -2316,7 +2507,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	/* Remove unused expressions */
 	if (gp.cnt[op_project])
-		rel = rewrite(sql, rel, &rel_dce); 
+		rel = rel_dce(sql, rel);
 
 	/* TODO add optimizer which removes unions 
 		(for example common rels, with only one different expression) */

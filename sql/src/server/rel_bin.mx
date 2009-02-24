@@ -1401,6 +1401,11 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 	} else {
 		predicate = rel2bin_predicate();
 	}
+	if (!rel->exps->h) {
+		if (sub)
+			return sub;
+		return predicate;
+	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
 	if ( (en = rel->exps->h) != NULL) { 
