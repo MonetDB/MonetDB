@@ -267,6 +267,14 @@ PROC modify_qenv(BAT[oid,str] qenv, oid key, str val) : void
     }
 }
 
+# safe bat removal
+PROC _tj_safe_remove(str batName) : void := {
+    var err := CATCH({
+        bat(batName).persists(false);
+    });
+    if (not(isnil(err))) printf("#IGNORING: " + err);
+}
+
 #
 # Hash utility functions
 #
@@ -464,13 +472,13 @@ PROC tj_delete_global() : void :=
   	  tj_delete_collection($t,false);
       }
       if ( GLOBAL_TTBAT ) {
-          bat(_tj_TermBat("")).persists(false);
-          bat(_tj_TagBat("")).persists(false);
-          bat(_tj_RTagBat("")).persists(false);
+          _tj_safe_remove(_tj_TermBat(""));
+          _tj_safe_remove(_tj_TagBat(""));
+          _tj_safe_remove(_tj_RTagBat(""));
       }
-      bat("tj_collName").persists(false);
-      bat("tj_pfc_fti_dep").persists(false);
-      bat("tj_pfc_fti_dep_star").persists(false);
+      _tj_safe_remove("tj_collName");
+      _tj_safe_remove("tj_pfc_fti_dep");
+      _tj_safe_remove("tj_pfc_fti_dep_star");
       var globals := new(void,str).seqbase(0@0);
       if ( GLOBAL_TTBAT ) {
           globals.append(_tj_TermBat(""));
@@ -608,10 +616,10 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 	  while (frag_offset < frag_last)
 	  {
 		var bn := "tj_" + ftiName + "_tid" + str(frag_offset);
-		bat(bn).persists(FALSE);
+		_tj_safe_remove(bn);
                 extra_del_bat.append(bn);
 		bn := "tj_" + ftiName + "_size" + str(frag_offset);
-		bat(bn).persists(FALSE);
+		_tj_safe_remove(bn);
                 extra_del_bat.append(bn);
 		frag_offset :+= 1;
 	  }
@@ -712,10 +720,10 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
       }
       if ( rebuild ) {
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
-		bat("tj_" + ftiName + "_TermIndex").persists(false);
-		bat("tj_" + ftiName + "_Terms").persists(false);
-		bat("tj_" + ftiName + "_TagIndex").persists(false);
-		bat("tj_" + ftiName + "_Tags").persists(false);
+		_tj_safe_remove("tj_" + ftiName + "_TermIndex");
+		_tj_safe_remove("tj_" + ftiName + "_Terms");
+		_tj_safe_remove("tj_" + ftiName + "_TagIndex");
+		_tj_safe_remove("tj_" + ftiName + "_Tags");
 	}
       }
     });
@@ -881,30 +889,30 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
     lock_set(coll_lock);
     var err := CATCH({
         if ( not(GLOBAL_TTBAT) ) {
-          bat(_tj_TermBat(ftiName)).persists(false);
-          bat(_tj_TagBat(ftiName)).persists(false);
-          bat(_tj_RTagBat(ftiName)).persists(false);
+          _tj_safe_remove(_tj_TermBat(ftiName));
+          _tj_safe_remove(_tj_TagBat(ftiName));
+          _tj_safe_remove(_tj_RTagBat(ftiName));
         }
-	bat("tj_" + ftiName + "_doc_name").persists(false);
-	bat("tj_" + ftiName + "_doc_firstpre").persists(false);
-	bat("tj_" + ftiName + "_param").persists(false);
-	bat("tj_" + ftiName + "_pfpre").persists(false);
-	bat("tj_" + ftiName + "_conceptdict").persists(false);
-	bat("tj_" + ftiName + "_concept_tid").persists(false);
-	bat("tj_" + ftiName + "_concept_elem").persists(false);
-	bat("tj_" + ftiName + "_concept_score").persists(false);
+	_tj_safe_remove("tj_" + ftiName + "_doc_name");
+	_tj_safe_remove("tj_" + ftiName + "_doc_firstpre");
+	_tj_safe_remove("tj_" + ftiName + "_param");
+	_tj_safe_remove("tj_" + ftiName + "_pfpre");
+	_tj_safe_remove("tj_" + ftiName + "_conceptdict");
+	_tj_safe_remove("tj_" + ftiName + "_concept_tid");
+	_tj_safe_remove("tj_" + ftiName + "_concept_elem");
+	_tj_safe_remove("tj_" + ftiName + "_concept_score");
 	bat("tj_" + ftiName + "_fragments")@batloop() {
 	    var fpfx := str(int($h));
-	    bat("tj_" + ftiName + "_tid"+fpfx).persists(false);
-	    bat("tj_" + ftiName + "_size"+fpfx).persists(false);
+	    _tj_safe_remove("tj_" + ftiName + "_tid"+fpfx);
+	    _tj_safe_remove("tj_" + ftiName + "_size"+fpfx);
 	}
 	bat("tj_" + ftiName + "_fragments").persists(false);
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
-		bat("tj_" + ftiName + "_TermIndex").persists(false);
-		bat("tj_" + ftiName + "_Terms").persists(false);
-		bat("tj_" + ftiName + "_TagIndex").persists(false);
-		bat("tj_" + ftiName + "_TagSize").persists(false);
-		bat("tj_" + ftiName + "_Tags").persists(false);
+		_tj_safe_remove("tj_" + ftiName + "_TermIndex");
+		_tj_safe_remove("tj_" + ftiName + "_Terms");
+		_tj_safe_remove("tj_" + ftiName + "_TagIndex");
+		_tj_safe_remove("tj_" + ftiName + "_TagSize");
+		_tj_safe_remove("tj_" + ftiName + "_Tags");
 	}
         delete_pfc_fti(ftiName);
         subcommit(_tj_collection_str(ftiName));
