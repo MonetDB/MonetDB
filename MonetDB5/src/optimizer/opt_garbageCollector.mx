@@ -218,8 +218,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 #endif
 	for(; i<slimit; i++)
+	if( old[i] == pci)
+		freeInstruction(pci);
+	else
 	if( old[i])
-		freeInstruction(old[i]);
+		pushInstruction(mb,old[i]);
 	GDKfree(old);
 	GDKfree(span);
 	return actions;
