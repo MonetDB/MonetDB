@@ -244,7 +244,7 @@ handled by the alias removal part
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
-	PROPDEBUG
+	OPTDEBUG
 	if (actions)
 		stream_printf(cntxt->fdout,"#opt_commonTerms: %d statemtents catched\n",actions);
 	return actions;
