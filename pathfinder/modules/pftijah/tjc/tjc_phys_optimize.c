@@ -365,7 +365,7 @@ void set_physical_operators(TJatree_t *tree)
 		    param1 = "prop";
 		else
 		    param1 = "noprop";
-		if (node->nested)
+		if (node->child[1]->nested)
 		    param2 = "nest";
 		else
 		    param2 = "unnest";
@@ -423,7 +423,11 @@ void set_physical_operators(TJatree_t *tree)
 		sprintf(operator, "nid2pre");
 		break;
 	    case a_pre2nid :
-		sprintf(operator, "pre2nid");
+		if (node->scored)
+		    param1 = "prop";
+		else
+		    param1 = "noprop";
+		sprintf(operator, "pre2nid_%s", param1);
 		break; 
 	    case a_add_pre :
 		sprintf(operator, "add_pre");

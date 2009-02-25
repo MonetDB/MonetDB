@@ -2079,14 +2079,25 @@ PROC tj_nid2pre(bat[oid,any] nid_score) : bat[oid,any] :=
 
 ##
 # Translate all pre identifiers to nid identifiers
-# Returns a bat [nid, any].
+# Returns a bat [nid, score].
 ##
-PROC tj_pre2nid(bat[oid,any] pre_score) : bat[oid,any] :=
+PROC tj_pre2nid_prop(bat[oid,any] pre_score) : bat[oid,any] :=
 {
     # todo: if join turns out to be expensive, we can slice out the part belonging to
     # the respective tagname. pre2nid is only used, if result region has a single tag-name.
 
-    return pre_score.reverse().join(bat("tj_" + ftindex + "_Tags").reverse()).reverse().sort();
+    return bat("tj_" + ftindex + "_Tags").leftjoin(pre_score).chk_order();
+}
+##
+# Translate all pre identifiers to nid identifiers, pre remains in tail
+# Returns a bat [nid, pre].
+##
+PROC tj_pre2nid_noprop(bat[oid,any] pre_score) : bat[oid,any] :=
+{
+    # todo: if join turns out to be expensive, we can slice out the part belonging to
+    # the respective tagname. pre2nid is only used, if result region has a single tag-name.
+
+    return bat("tj_" + ftindex + "_Tags").leftjoin(pre_score.mirror()).chk_order();
 }
 
 #####################################################################
@@ -2268,20 +2279,20 @@ PROC _getTermPositions (oid tid) : bat[void,oid] := {
 @:getTermDocCnt_nid(unnest)@
 @= getTermDocCnt_nid
 PROC _getTermDocCnt_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
-     
-	# get doc - term relation
-        var e_tPre := treemergejoin_@1_nid(e_pre, e_size, t_pre);
-        return e_tPre.reverse().histogram().sort();
+    
+    # get doc - term relation
+    var e_tPre := treemergejoin_@1_nid(e_pre, e_size, t_pre);
+    return e_tPre.reverse().histogram().sort();
 }
 @mil
 @:getTermDocCnt_pre(nest)@
 @:getTermDocCnt_pre(unnest)@
 @= getTermDocCnt_pre
 PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
-     
-	# get doc - term relation
-        var e_tPre := treemergejoin_@1_pre(e_pre, e_size, t_pre.reverse());
-        return e_tPre.reverse().histogram().sort();
+    
+    # get doc - term relation
+    var e_tPre := treemergejoin_@1_pre(e_pre, e_size, t_pre.reverse());
+    return e_tPre.reverse().histogram().sort();
 }
 @mil
 
@@ -5216,6 +5227,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
     D_cur = BUNfirst(Dstart);
@@ -5250,6 +5262,10 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
            new_stack_item.ctx = *(oid*)BUNhead(Ai, A_cur);
            new_stack_item.eocs = *(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)];
            stack[stack_top++] = new_stack_item;
+           if (stack_top >= max_stack_size) {
+               GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               return(GDK_FAIL);
+           }
 	}
 	A_cur++;
       }
@@ -5261,7 +5277,10 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
       {
      	BATsetcount(res, hdst - sdst);
         BUN sz = BATgrows(res);
-        if (BATextend(res, sz) == NULL)
+        while (sz < ((hdst - sdst) + stack_top)) 
+          sz = 2 * sz;
+        res = BATextend(res, sz);
+        if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
@@ -5356,6 +5375,7 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
     D_cur = BUNfirst(Dstart);
@@ -5368,7 +5388,7 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
            tdst = (oid*)Tloc(res, BUNlast(res));
 
     /* -------------------------------- main ---------------------------------------- */
-    
+ 
     while(D_cur < D_last) {
       
       D_cur_pre = *(oid*)BUNtail(Di, D_cur);
@@ -5390,6 +5410,10 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
            new_stack_item.ctx = *(oid*)BUNhead(Ai, A_cur);
            new_stack_item.eocs = *(oid*)BUNtail(Ai, A_cur) + size[*(oid*)BUNhead(Ai, A_cur)];
            stack[stack_top++] = new_stack_item;
+           if (stack_top >= max_stack_size) {
+               GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               return(GDK_FAIL);
+           }
 	}
 	A_cur++;
       }
@@ -5399,9 +5423,12 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
       /* it has to end after Dend. */
       if (free < stack_top)
       {
-     	BATsetcount(res, hdst - sdst);
+        BATsetcount(res, hdst - sdst);
         BUN sz = BATgrows(res);
-        if (BATextend(res, sz) == NULL)
+        while (sz < ((hdst - sdst) + stack_top)) 
+          sz = 2 * sz;
+        res = BATextend(res, sz);
+        if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
@@ -5493,6 +5520,7 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur = BUNfirst(Dstart);
@@ -5527,6 +5555,10 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
            new_stack_item.ctx = A_cur_pre;
            new_stack_item.eocs = A_cur_pre + size[A_cur_pre];
            stack[stack_top++] = new_stack_item;
+           if (stack_top >= max_stack_size) {
+               GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               return(GDK_FAIL);
+           }
 	}
 	A_cur++;
       }
@@ -5538,7 +5570,10 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
       {
      	BATsetcount(res, hdst - sdst);
         BUN sz = BATgrows(res);
-        if (BATextend(res, sz) == NULL)
+        while (sz < ((hdst - sdst) + stack_top)) 
+          sz = 2 * sz;
+        res = BATextend(res, sz);
+        if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
           return(GDK_FAIL);
@@ -5618,6 +5653,7 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *nid_size, BAT
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
     D_cur = BUNfirst(Dstart);
@@ -5721,6 +5757,7 @@ int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT 
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(nid_size, BUNfirst(nid_size))) - (int)nid_size->hseqbase;
     D_cur = BUNfirst(Dstart);
@@ -5825,6 +5862,7 @@ int CMDtreemergejoin_unnested_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT 
        GDKerror("%s: could not allocate result BAT.\n", name);
        return(GDK_FAIL);
     }
+    free = BATcapacity(res);
     
     size = ((int*) Tloc(pre_size, BUNfirst(pre_size))) - (int)pre_size->hseqbase;
     D_cur = BUNfirst(Dstart);

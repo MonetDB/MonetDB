@@ -344,10 +344,15 @@ void milprint_node2 (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, short 
     }
     node->visited++;
 
+    // debug output
+    if (tjc_c->debug > 9)
+	TJCPRINTF(MILOUT,"R%d.print();\n", nid);
+ 
     // free children if their scope ends
     for (c = 0; c < TJPNODE_MAXCHILD; c++) 
         if (child[c] != -1 && node_scope[child[c]] == nid)
 	    TJCPRINTF(MILOUT,"R%d := nil;\n", child[c]);
+
 }
 
 char* milprint (tjc_config *tjc_c, TJpnode_t *root)
