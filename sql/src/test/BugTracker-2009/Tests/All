@@ -33,4 +33,4 @@ having_or_bug
 count_bug.SF-2604583
 order_by_column_position_rel_name_bug
 limit_in_subquery.SF-2620437
-ambigious_view
+ambiguous_view
