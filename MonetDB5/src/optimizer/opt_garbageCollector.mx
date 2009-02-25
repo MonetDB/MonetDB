@@ -217,12 +217,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		stream_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif
+/* causes a crash
 	for(; i<slimit; i++)
 	if( old[i] == pci)
 		freeInstruction(pci);
 	else
 	if( old[i])
 		pushInstruction(mb,old[i]);
+*/
 	GDKfree(old);
 	GDKfree(span);
 	return actions;
