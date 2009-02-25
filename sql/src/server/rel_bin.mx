@@ -53,6 +53,8 @@ print_stmtlist( stmt *l )
 		char *nme = column_name(n->data);
 
 		printf("%s.%s\n", rnme, nme);
+		_DELETE(rnme);
+		_DELETE(nme);
 	}
 }
 
@@ -70,8 +72,14 @@ bin_find_column( stmt *sub, char *rname, char *name )
 			if (rnme && strcmp(rnme, rname) == 0 && 
 				    strcmp(nme, name) == 0) {
 				res = n->data;
+				_DELETE(rnme);
+				_DELETE(nme);
 				break;
 			}
+			if (rnme)
+				_DELETE(rnme);
+			if (nme)
+				_DELETE(nme);
 		}
 	} else {
 		for (n = sub->op1.lval->h; n; n = n->next) {
@@ -79,8 +87,11 @@ bin_find_column( stmt *sub, char *rname, char *name )
 
 			if (strcmp(nme, name) == 0) {
 				res = n->data;
+				_DELETE(nme);
 				break;
 			}
+			if (nme)
+				_DELETE(nme);
 		}
 	}
 	if (!res)
@@ -99,6 +110,7 @@ bin_find_columns( stmt *sub, char *name )
 
 		if (strcmp(nme, name) == 0) 
 			append(l, stmt_dup(n->data));
+		_DELETE(nme);
 	}
 	if (list_length(l)) 
 		return l;
@@ -482,8 +494,6 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 		name = column_name(s);
 	if (!rname)
 		rname = table_name(s);
-	name = _strdup(name);
-	rname = (rname)?_strdup(rname):NULL;
 	s = stmt_alias(s, rname, name);
 	return s;
 }
@@ -718,8 +728,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(s, stmt_const(stmt_dup(rd), stmt_atom(atom_general(tail_type(c), NULL, 0))));
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(jl);
@@ -738,8 +747,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(s, stmt_join(stmt_dup(rd), stmt_dup(c), cmp_equal));
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(jr);
@@ -836,8 +844,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(join), column(c), cmp_equal);
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(join);
@@ -919,8 +926,6 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		   so we create append on copies.
 		*/
 		s = stmt_append(Column(c1), c2);
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
@@ -1058,8 +1063,6 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
 		rnme = table_name(c1);
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		c1 = stmt_alias(c1, rnme, nme);
 		list_append(stmts, c1);
 	}
@@ -1185,9 +1188,6 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
 		rnme = table_name(c1);
-		
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		c1 = stmt_alias(c1, rnme, nme);
 		list_append(stmts, c1);
 	}
