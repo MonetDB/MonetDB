@@ -1754,6 +1754,9 @@ fail:
 		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
 #endif
 	}
+	OPTDEBUG
+	if( actions)
+		stream_printf(cntxt->fdout,"#opt_mergetable: %d merge actions\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

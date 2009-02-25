@@ -93,7 +93,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
-	int limit;
+	int limit,slimit;
 	Lifespan span;
 
 	/* don't use dataflow on single processor systems */
@@ -108,6 +108,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
 #endif
 	limit= mb->stop;
+	slimit= mb->ssize;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
 	pushInstruction(mb,old[0]);
@@ -159,6 +160,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 
+		if ( p->token == REMsymbol)
+			pushInstruction(mb,p);
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
 			entries = 0;
@@ -179,6 +182,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef DEBUG_DATAFLOW_OPT
 	printFunction(GDKstdout, mb, LIST_MAL_ALL);
 #endif
+	OPTDEBUG
+	if(actions)
+		stream_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

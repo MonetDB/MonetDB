@@ -144,6 +144,10 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* we may have uncovered new use-less operations */
 	if (actions) 
 		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
+	OPTDEBUG
+	if ( actions)
+		stream_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n",
+			actions);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
 	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);

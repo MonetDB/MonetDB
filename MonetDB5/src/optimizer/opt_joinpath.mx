@@ -281,6 +281,9 @@ Final type check.
 		OPTjoinPathPrefix(cntxt, mb);
 	GDKfree(old);
 	GDKfree(pc);
+	OPTDEBUG
+	if ( actions)
+		stream_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

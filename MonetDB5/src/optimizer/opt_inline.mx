@@ -53,11 +53,12 @@ extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
 int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i;
+	int i,limit;
 	InstrPtr q,sig;
 	int actions = 0;
 	(void) p;
 
+	limit = mb->stop;
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk ){
@@ -108,6 +109,11 @@ Check if the local call is tagged as being inlined.
 		}
 	}
 	(void)stk;
+	OPTDEBUG
+		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars\n",mb->stop,mb->vtop);
+	OPTDEBUG
+	if (actions)
+		stream_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
 	return actions;
 }
 

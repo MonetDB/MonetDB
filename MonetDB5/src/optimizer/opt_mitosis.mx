@@ -68,21 +68,18 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j,k, limit, estimate=0, tpe;
+	int i, j, k, limit, estimate=0, tpe, pieces=1;
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old;
 	VarPtr v;
-	int *parts= (int*) alloca(sizeof(int)* GDKnr_threads);
+	int *parts=0;
 
 	(void)cntxt;
 	(void) stk;
 	
-	if (GDKnr_threads <= 1)
-		return 0;
-
 	/* locate the largest table */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
@@ -102,22 +99,39 @@ base table and passes them on as a row property.
 		   )
 			r= (BUN) v->value.val.lval;
 			if (r >= rowcnt && r > PARTITION_THRESHOLD){
-			schema = getVarConstant(mb, getArg(q,1)).val.sval;
-			table = getVarConstant(mb, getArg(q,2)).val.sval;
-			rowcnt = r;
-			estimate++;
-			r = 0;
+				schema = getVarConstant(mb, getArg(q,1)).val.sval;
+				table = getVarConstant(mb, getArg(q,2)).val.sval;
+				rowcnt = r;
+				estimate++;
+				r = 0;
+			}
 		}
-	}
+@-
+The number of pieces should be based on the footprint of the queryplan,
+such that preferrably it can be handled without swapping intermediates.
+For the time being we just go for small pieces compared to memory
+spread evenly over the threads and the common type.
+@c
+	r= GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads; /* how much fits  */
+	if (rowcnt >r )
+		pieces = rowcnt /r+1;	
+	if (pieces < GDKnr_threads && rowcnt >PARTITION_THRESHOLD)
+		pieces = GDKnr_threads;
+	if (pieces >128)
+		pieces = 128; /* cut off potential plan explosion */
 
-	if (schema == 0 || (size_t) rowcnt < (size_t) GDKnr_threads)
+	if (schema == 0 || (size_t) rowcnt < (size_t) pieces || pieces <=1)
 		return 0;
+	OPTDEBUG
+		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
+			"on %d threads %d pieces\n",
+			schema,table,GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS
-	stream_printf(cntxt->fdout,"opt_mitosis: target is %s.%s on %d threads\n",
-		schema,table,GDKnr_threads);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
+
 	/* inject the MAT versions for the largest table */
+	parts= (int*) alloca(sizeof(int)* pieces);
 
 	old = mb->stmt;
 	limit= mb->stop;
@@ -150,11 +164,11 @@ base table and passes them on as a row property.
 
 		q= newStmt(mb,batRef,partitionRef);
 		q->argc=0;
-		slice= (BUN) (rowcnt/GDKnr_threads);
+		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
 		low.value.val.oval= 0;
-		for(j=0;j<GDKnr_threads;j++){
-			if (j+1<GDKnr_threads)
+		for(j=0; j < pieces; j++){
+			if (j+1 < pieces)
 				hgh.value.val.oval= low.value.val.oval+slice;
 			else
 				hgh.value.val.oval= (oid) rowcnt;

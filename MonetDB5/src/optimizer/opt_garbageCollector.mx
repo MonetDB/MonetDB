@@ -167,7 +167,7 @@ OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx)
 static int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit,slimit, done;
+	int i, j, k, limit,done;
 	InstrPtr p, q, *old;
 	Module s = cntxt->nspace;
 	int actions = 0;
@@ -184,7 +184,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	old= mb->stmt;
 	limit = mb->stop;
-	slimit = mb->ssize;
 	newMalBlkStmt(mb,mb->ssize);
 
 	for (i = 0; i < limit; i++) {
@@ -217,16 +216,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		stream_printf(cntxt->fdout, "End of GCoptimizer\n");
 	}
 #endif
-/* causes a crash
-	for(; i<slimit; i++)
-	if( old[i] == pci)
-		freeInstruction(pci);
-	else
-	if( old[i])
-		pushInstruction(mb,old[i]);
-*/
 	GDKfree(old);
 	GDKfree(span);
+	OPTDEBUG
+	if(actions)
+		stream_printf(cntxt->fdout,"#opt_garbagecollector: %d variables reset\n",actions);
 	return actions;
 }
 

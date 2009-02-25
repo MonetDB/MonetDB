@@ -14,7 +14,7 @@ end slow;
 s:= slow();
 l:= 23:lng;
 h:= 144:lng;
-mdb.setThread(true);
+mdb.setTimer(true);
 barrier go:= language.dataflow();
 	t1:= algebra.select(s,l,h);
 	t2:= algebra.select(s,l,h);

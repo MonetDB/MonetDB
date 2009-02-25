@@ -72,7 +72,6 @@ optimizer.prelude();
 #define _OPTIMIZER_H
 /* #define OPTIMIZER_DEBUG*/
 
-
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
 #include "mal_namespace.h"

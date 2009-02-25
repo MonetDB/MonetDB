@@ -23,6 +23,8 @@ These definitions are handy to have around in the optimizer
 #define MAL_PRELUDE
 #include "opt_support.h"
 
+#define OPTDEBUG		if (GDKdebug & GRPoptimizers)
+
 opt_export  str affectedRowsRef;
 opt_export  str aggrRef;
 opt_export  str alarmRef;

@@ -277,6 +277,8 @@ of removal of superflous constructions.
 		freeInstruction(old[i]);
 	GDKfree(old);
 	if( actions) {
+		OPTDEBUG
+			stream_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */
 	}
 #ifdef DEBUG_OPT_EMPTYSET
