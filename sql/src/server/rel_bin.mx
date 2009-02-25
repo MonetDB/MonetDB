@@ -3124,7 +3124,7 @@ sql_delete(mvc *sql, sql_table *t, stmt *delete)
 		list_append(l, stmt_delete(t, stmt_reverse(v)));
 	} else { /* delete all */
 		/* first column */
-		v = stmt_mirror(stmt_bat(t->columns.set->h->data, stmt_basetable(t, _strdup(t->base.name)), RDONLY));
+		v = stmt_mirror(stmt_bat(t->columns.set->h->data, stmt_basetable(t, t->base.name), RDONLY));
 		s = stmt_table_clear(t);
 		list_append(l, stmt_dup(s));
 	}
