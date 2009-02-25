@@ -217,6 +217,7 @@ mal_export char 			monet_motd[2048];
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPxproperties (XPROPMASK )
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
+#define GRPoptimizers  (JOINPROPMASK * 2)
 @c 
 #include <mal_config.h>
 #include <mal.h>
