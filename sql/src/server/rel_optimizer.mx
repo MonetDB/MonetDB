@@ -1149,7 +1149,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 					/* only pushed down selects are counted */
 					if (r == rel->l) {
 						(*changes)++;
-					} else { /* Not usefull to introduce an extra select */
+					} else { /* Not useful to introduce an extra select */
 						sql_rel *r = rel->l;
 
 						rel->l = r->l;
@@ -1232,9 +1232,15 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				if (ne && ne != e) {
 					char *tname = e->rname;
 					/* we need to keep the alias */
-					if (!tname && ne->rname)
-						tname = _strdup(ne->rname);
+					if (!tname && ne->rname) {
+						tname = ne->rname;
+						ne->rname = NULL;  /* prevent from being freed prematurely in exp_setname */
+					}
 					exp_setname(ne, tname, e->name);
+					if (tname && tname != e->rname) {
+						/* tname == old ne->rname, so need to free */
+						_DELETE(tname);
+					}
 					list_append(rel->exps, ne);
 				} else {
 					all = 0;
@@ -1256,9 +1262,15 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 					if (ne && ne != e) {
 						char *tname = e->rname;
 						/* we need to keep the alias */
-						if (!tname && ne->rname)
-							tname = _strdup(ne->rname);
+						if (!tname && ne->rname) {
+							tname = ne->rname;
+							ne->rname = NULL;  /* prevent from being freed prematurely in exp_setname */
+						}
 						exp_setname(ne, tname, e->name);
+						if (tname && tname != e->rname) {
+							/* tname == old ne->rname, so need to free */
+							_DELETE(tname);
+						}
 						list_append(nr, ne);
 					} else {
 						all = 0;
@@ -1502,8 +1514,8 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			sql_subtype *dbl_t;
 			char *rname = NULL, *name = NULL;
 
-			rname = (avg->rname)?_strdup(avg->rname):NULL;
-			name = (avg->name)?_strdup(avg->name):NULL;
+			rname = avg->rname;
+			name = avg->name;
 			if (!cnt) {
 				list *l = avg->l;
 				sql_subaggr *cf = sql_bind_aggr(sql->session->schema, "count", exp_subtype(l->h->data));

@@ -690,8 +690,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				join = stmt_reljoin(stmt_releqjoin1(eqjns), neqjns);
 			} else {
 				join = stmt_reljoin(NULL, jns);
-				list_destroy(eqjns);
 			}
+			list_destroy(eqjns);
 		} else {
 			join = stmt_dup(jns->h->data); 
 			list_destroy(jns);
