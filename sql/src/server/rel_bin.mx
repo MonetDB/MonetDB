@@ -492,8 +492,12 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 	(void)rel;
 	if (!name)
 		name = column_name(s);
+	else
+		name = _strdup(name);
 	if (!rname)
 		rname = table_name(s);
+	else
+		rname = _strdup(rname);
 	s = stmt_alias(s, rname, name);
 	return s;
 }
