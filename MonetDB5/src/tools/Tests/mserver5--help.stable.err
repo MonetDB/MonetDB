@@ -10,7 +10,7 @@ stderr of test 'mserver5--help` in directory 'src/tools` itself:
 # 16:36:12 >  Mtimeout -timeout 60 mserver5 --config= --help
 # 16:36:12 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/virgin/MonetDB5/x86_64-unknown-linux-gnu/src/tools/.libs/lt-mserver5 [options] [scripts]
+Usage: mserver5 [options] [scripts]
     --dbname=<database_name>  Specify database name
     --dbfarm=<directory>      Specify database location
     --dbinit=<stmt>           Execute statement at startup
@@ -31,6 +31,7 @@ The debug options:
      --algorithms
      --xproperties
      --performance
+     --optimizers
      --debug=<bitmask>
 
 # 10:03:11 >  

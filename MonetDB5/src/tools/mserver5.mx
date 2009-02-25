@@ -142,7 +142,7 @@ usage(char *prog)
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
-	fprintf(stderr,"The debug options:\n");
+	fprintf(stderr,"The trace options:\n");
 	fprintf(stderr,"     --threads\n");
 	fprintf(stderr,"     --memory\n");
 	fprintf(stderr,"     --properties\n");
@@ -152,6 +152,7 @@ usage(char *prog)
 	fprintf(stderr,"     --algorithms\n");
 	fprintf(stderr,"     --xproperties\n");
 	fprintf(stderr,"     --performance\n");
+	fprintf(stderr,"     --optimizers\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
 
 	exit(0);
@@ -260,7 +261,7 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int idx = 0, debug = 0, setlen = 0, listing = 0, i = 0;
+	int idx = 0, grpdebug=0, debug = 0, setlen = 0, listing = 0, i = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 
@@ -284,6 +285,7 @@ main(int argc, char **av)
 		{"transaction",0,0,0},
 		{"modules",0,0,0},
 		{"algorithms",0,0,0},
+		{"optimizers",0,0,0},
 		{"performance",0,0,0},
 		{"xproperties",0,0,0},
 		{0, 0, 0, 0}
@@ -383,39 +385,43 @@ faster system start.
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "properties") == 0) {
-				debug |= GRPproperties;
+				grpdebug |= GRPproperties;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
-				debug |= GRPalgorithms;
+				grpdebug |= GRPalgorithms;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "optimizers") == 0) {
+				grpdebug |= GRPoptimizers;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
-				debug |= GRPxproperties;
+				grpdebug |= GRPxproperties;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {
-				debug |= GRPperformance;
+				grpdebug |= GRPperformance;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "io") == 0) {
-				debug |= GRPio;
+				grpdebug |= GRPio;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "memory") == 0) {
-				debug |= GRPmemory;
+				grpdebug |= GRPmemory;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "modules") == 0) {
-				debug |= GRPmodules;
+				grpdebug |= GRPmodules;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "transactions") == 0) {
-				debug |= GRPtransactions;
+				grpdebug |= GRPtransactions;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "threads") == 0) {
-				debug |= GRPthreads;
+				grpdebug |= GRPthreads;
 				break;
 			}
 			usage(prog);
@@ -462,9 +468,12 @@ faster system start.
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
 
-	if (debug) {
+	if (debug || grpdebug) {
 		long_str buf;
 
+		if (debug)
+			mo_print_options(set, setlen);
+		debug |= grpdebug;	/* add the algorithm tracers */
 		snprintf(buf, sizeof(long_str)-1, "%d", debug);
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
 	}
@@ -478,8 +487,6 @@ faster system start.
 		idx++;
 	}
 
-	if (debug)
-		mo_print_options(set, setlen);
 	if (monet_init(set, setlen) == 0 ) {
 		mo_free_options(set, setlen);
 		return 0;
