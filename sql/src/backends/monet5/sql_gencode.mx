@@ -1358,7 +1358,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int restype = s->op4.aggrval->res.type->localtype;
 			int output_type_needed = 0;
 			
-			if (strcmp(aggrfunc, "sum") == 0) 
+			if (strcmp(aggrfunc, "sum") == 0 
+			 || strcmp(aggrfunc, "prod") == 0 )
 				output_type_needed = 1;
 
 			if (s->flag) { 

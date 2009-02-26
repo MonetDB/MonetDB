@@ -1361,6 +1361,35 @@ sqltypeinit(void)
 	t++; /* LNG */
 	sql_create_aggr("sum", "aggr", "sum", *(t), *(t));
 
+	/* prod for numerical and decimals */
+	sql_create_aggr("prod", "aggr", "product", BTE, SHT);
+	sql_create_aggr("prod", "aggr", "product", BTE, INT);
+	sql_create_aggr("prod", "aggr", "product", BTE, WRD);
+	sql_create_aggr("prod", "aggr", "product", BTE, LNG);
+
+	sql_create_aggr("prod", "aggr", "product", SHT, INT);
+	sql_create_aggr("prod", "aggr", "product", SHT, WRD);
+	sql_create_aggr("prod", "aggr", "product", SHT, LNG);
+
+	sql_create_aggr("prod", "aggr", "product", INT, WRD);
+	sql_create_aggr("prod", "aggr", "product", INT, LNG);
+
+	sql_create_aggr("prod", "aggr", "product", WRD, WRD);
+	sql_create_aggr("prod", "aggr", "product", WRD, LNG);
+	sql_create_aggr("prod", "aggr", "product", LNG, LNG);
+
+	t = decimals; /* BTE */
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+2));
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+3));
+	t++; /* SHT */
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+2));
+	t++; /* INT */
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
+	t++; /* LNG */
+	sql_create_aggr("prod", "aggr", "product", *(t), *(t));
+
 	for (t = numerical; t < floats; t++) {
 		sql_create_aggr("avg", "aggr", "avg", *(t), DBL);
 		sql_create_func("mod", "calc", "%", *t, *t, *t, SCALE_FIX);
@@ -1368,6 +1397,7 @@ sqltypeinit(void)
 
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr("sum", "aggr", "sum", *t, *t);
+		sql_create_aggr("prod", "aggr", "product", *t, *t);
 		sql_create_aggr("avg", "aggr", "avg", *t, DBL);
 
 		sql_create_func("mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
