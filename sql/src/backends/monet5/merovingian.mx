@@ -1121,8 +1121,12 @@ handleClient(int sock)
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
-			/* TODO: I violate the protocol this way */
-			stream_printf(fout, "!merovingian: an internal error has occurred, please try again later\n");
+			/* we need to let the client login in order not to violate
+			 * the protocol */
+			stream_printf(fout, "void:merovingian:8:plain:BIG");
+			stream_flush(fout);
+			stream_read_block(fdin, buf, 8095, 1); /* eat away client response */
+			stream_printf(fout, "!merovingian: an internal error has occurred, refer to the logs for details, please try again later\n");
 			stream_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
@@ -1324,6 +1328,7 @@ controlRunner(void *d)
 	int pos = 0;
 	int retval;
 	fd_set fds;
+	struct timeval tv;
 	int msgsock;
 	size_t len;
 	err e;
@@ -1333,7 +1338,10 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 
-		retval = select(sock + 1, &fds, NULL, NULL, NULL);
+		/* Wait up to 5 seconds. */
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
