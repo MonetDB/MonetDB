@@ -1119,7 +1119,7 @@ shred_characters(void *xmlCtx,
     shredCtxStruct *shredCtx = (shredCtxStruct*) xmlCtx;
 
     if ( (shredCtx->content + n + 1) > shredCtx->content_max) {
-	shredCtx->content_max = shredCtx->content + n + 1;
+	shredCtx->content_max = MAX(shredCtx->content + n + 1, 2*shredCtx->content_max);
         shredCtx->content_buf = GDKrealloc(shredCtx->content_buf, shredCtx->content_max);
 	if (shredCtx->content_buf == NULL) {
 	    GDKerror("shred_characters: GDKrealloc() failed.\n");
