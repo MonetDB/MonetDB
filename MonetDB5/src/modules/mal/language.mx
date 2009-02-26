@@ -264,7 +264,7 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
-	*ret = 0;	/* continue at end of block */
+	*ret = -1;	/* continue at end of block */
 	return msg;
 }
 
