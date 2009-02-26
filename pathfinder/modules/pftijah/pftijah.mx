@@ -4798,17 +4798,20 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, int* 
 	
 	ressize = BATcount(tidpre) + BATcount(oldpre);
 	newpre = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
+        if (newpre == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
-            	return(GDK_FAIL);
+            	BATfree(res);
+                return(GDK_FAIL);
         }
 	
 	ressize = *indsize;
 	newindex = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
+        if (newindex == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	BATfree(res);
+            	BATfree(newpre);
             	return(GDK_FAIL);
         }
 	
@@ -4936,24 +4939,30 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	
 	ressize = BATcount(tidpre) + BATcount(oldpre);
 	newpre = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
+        if (newpre == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
-            	return(GDK_FAIL);
+            	BATfree(res);
+                return(GDK_FAIL);
         }
 	
 	newsize = BATnew(TYPE_void, TYPE_int, ressize);
-        if (res == NULL) 
+        if (newsize == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[void,int] of size %d.\n", name, ressize);
+            	BATfree(res);
+            	BATfree(newpre);
             	return(GDK_FAIL);
         }
 	
 	ressize = *indsize;
 	newindex = BATnew(TYPE_void, TYPE_oid, ressize);
-        if (res == NULL) 
+        if (newindex == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	BATfree(res);
+            	BATfree(newpre);
+            	BATfree(newsize);
             	return(GDK_FAIL);
         }
 	
@@ -5109,6 +5118,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
         if (res == NULL) 
         { 
             	GDKerror("%s: could not allocate a result BAT[oid,oid] of size %d.\n", name, ressize);
+	        GDKfree(ind);
             	return(GDK_FAIL);
         }
 	sdst = hdst = (oid*)Hloc(res, BUNlast(res));
@@ -5225,6 +5235,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
     if (res == NULL) 
     { 
        GDKerror("%s: could not allocate result BAT.\n", name);
+       GDKfree(stack);
        return(GDK_FAIL);
     }
     free = BATcapacity(res);
@@ -5264,6 +5275,8 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
            stack[stack_top++] = new_stack_item;
            if (stack_top >= max_stack_size) {
                GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               GDKfree(stack);
+               BATfree(res);
                return(GDK_FAIL);
            }
 	}
@@ -5283,6 +5296,8 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
         if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
+          GDKfree(stack);
+          BATfree(res);
           return(GDK_FAIL);
     	}
         sdst = (oid*)Hloc(res, BUNfirst(res));
@@ -5373,6 +5388,7 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
     if (res == NULL) 
     { 
        GDKerror("%s: could not allocate result BAT.\n", name);
+       GDKfree(stack); 
        return(GDK_FAIL);
     }
     free = BATcapacity(res);
@@ -5412,6 +5428,8 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
            stack[stack_top++] = new_stack_item;
            if (stack_top >= max_stack_size) {
                GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               GDKfree(stack);
+               BATfree(res); 
                return(GDK_FAIL);
            }
 	}
@@ -5431,6 +5449,8 @@ int CMDtreemergejoin_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart) 
         if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
+          GDKfree(stack);
+          BATfree(res); 
           return(GDK_FAIL);
     	}
         sdst = (oid*)Hloc(res, BUNfirst(res));
@@ -5518,6 +5538,7 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
     if (res == NULL) 
     { 
        GDKerror("%s: could not allocate result BAT.\n", name);
+       GDKfree(stack);
        return(GDK_FAIL);
     }
     free = BATcapacity(res);
@@ -5557,6 +5578,8 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
            stack[stack_top++] = new_stack_item;
            if (stack_top >= max_stack_size) {
                GDKerror("%s: ancestor stack grew beyond stack-size.\n", name);
+               GDKfree(stack);
+               BATfree(res);
                return(GDK_FAIL);
            }
 	}
@@ -5576,6 +5599,8 @@ int CMDtreemergejoin_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT *Dstart) 
         if (res == NULL)
     	{ 
        	  GDKerror("%s: could not extend result BAT.\n", name);
+          GDKfree(stack);
+          BATfree(res);
           return(GDK_FAIL);
     	}
         sdst = (oid*)Hloc(res, BUNfirst(res));
