@@ -7,4 +7,5 @@
 	io.print(X17);
 
 optimizer.evaluate();
+optimizer.aliases();
 mdb.List();

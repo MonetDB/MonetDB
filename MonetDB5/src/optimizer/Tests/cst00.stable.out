@@ -12,30 +12,35 @@ stdout of test 'cst00` in directory 'src/optimizer` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37874/
+function user.tst():void;
+    a := calc.+(1,1);
+    io.print(a);
+    b := 2;
+    io.print(b);
+    c := calc.*(3,b);
+    io.print(c);
+    d := calc.flt(c);
+    io.print(d);
+    e := mmath.sin(d);
+    io.print(e);
+end tst;
 function user.main():void;
 # testing simple constant expression optimizations 
-    io.print(2);
-    io.print(2);
-    io.print(6);
-    io.print(6);
-    io.print(-0.279415488);
-    mdb.List();
+    mdb.List("user","tst");
 end main;
-[ 2 ]
-[ 2 ]
-[ 6 ]
-[ 6 ]
-[ -0.279415488 ]
-function user.main():void;              #  0 main:void := user.main() {G}
-# testing simple constant expression optimizations 
-    io.print(2);                        #  2 _4:void := IOprint_val(a:int) 
-    io.print(2);                        #  3 _7:void := IOprint_val(_6:int) 
-    io.print(6);                        #  4 _10:void := IOprint_val(c:int) 
-    io.print(6);                        #  5 _12:void := IOprint_val(d:flt) 
-    io.print(-0.279415488);             #  6 _14:void := IOprint_val(e:flt) 
-    mdb.List();                         #  7 _17:void := MDBlistDetail() 
-end main;                               #  8  
+function user.tst():void;               #  0 tst:void := user.tst() 
+    a := 2;                             #  1 a:int := _5:int 
+    io.print(2);                        #  2 _3:void := IOprint_val(a:int) 
+    b := 2;                             #  3 b:int := _5:int 
+    io.print(2);                        #  4 _6:void := IOprint_val(b:int) 
+    c := 6;                             #  5 c:int := c:int 
+    io.print(6);                        #  6 _9:void := IOprint_val(c:int) 
+    d := 6;                             #  7 d:flt := d:flt 
+    io.print(6);                        #  8 _11:void := IOprint_val(d:flt) 
+    e := -0.279415488;                  #  9 e:flt := e:flt 
+    io.print(-0.279415488);             # 10 _13:void := IOprint_val(e:flt) 
+end tst;                                # 11  
 
 # 08:40:57 >  
 # 08:40:57 >  Done.
