@@ -927,8 +927,13 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
 
-	if (!l || !r) 
+	if (!l || !r) {
+		if (l)
+			list_destroy(l);
+		if (r)
+			list_destroy(r);
 		return NULL;
+	}
 
 	p = rel;
 	for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
@@ -953,6 +958,8 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 			break;
 		p = lrel;
 	}
+	list_destroy(l);
+	list_destroy(r);
 	if (!lrel || !rrel)
 		return NULL;
 

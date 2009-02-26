@@ -674,6 +674,7 @@ order_joins(list *rels, list *exps)
 			}
 		}
 	}
+	list_destroy(n_rels);
 	if (list_length(rels)) { /* more relations */
 		node *n;
 		for(n=rels->h; n; n = n->next) {
