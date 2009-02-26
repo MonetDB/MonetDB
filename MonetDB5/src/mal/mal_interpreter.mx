@@ -43,6 +43,7 @@ to be passed by a handle.
 
 /*#define DEBUG_MAL_INTERPRETER*/
 /* #define DEBUG_FLOW */
+/* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
 
 mal_export void showErrors(Client cntxt);
@@ -764,6 +765,9 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	@:performanceVariables@
 
+#ifdef DEBUG_FLOW2
+	stream_printf(cntxt->fdout,"#execute thread %d \n", tid);
+#endif
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	pci = getInstrPtr(flow->mb, stkpc);
 	if (stk->cmd) {
