@@ -748,6 +748,7 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 	if (rj) {
 		l = stmt_mark(stmt_reverse(stmt_dup(rj)), 50);
 		r = stmt_mark(stmt_dup(rj), 50);
+		stmt_destroy(rj);
 	} else {
 		res = stmt_dup(n->data);
 		l = stmt_mark(stmt_reverse(res), 4);

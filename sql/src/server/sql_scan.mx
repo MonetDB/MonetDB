@@ -90,6 +90,7 @@ scanner_init_keywords(void)
 	keywords_insert("MIN", AGGR);
 	keywords_insert("MAX", AGGR);
 	keywords_insert("SUM", AGGR);
+	keywords_insert("PROD", AGGR);
 	keywords_insert("COUNT", AGGR);
 
 	keywords_insert("RANK", RANK);

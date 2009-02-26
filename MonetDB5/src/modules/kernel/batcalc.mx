@@ -186,6 +186,10 @@ C qualifier and the operands
 	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
+
+	command abs(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
+	address CMDunaryABS
+	comment "Unary abs over the tail of the bat";
 @mal
 @:unary(bte)@
 @:unary(sht)@
@@ -717,6 +721,15 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 #include "mal_config.h"
 #include "batcalc.h"
 
+/* the normal implementation of an operator is to just stick the
+   operator between the operands */
+#define calc_abs(s) ((s) > 0 ? (s) : -(s))
+/* not used, yet:
+#define calc_inv(s) (1/(s))
+#define calc_neg(s) (-(s))
+#define calc_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
+*/
+
 @= arithGrpImpl
 @:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
 @:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
@@ -987,14 +1000,14 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 
 		if (b->T->nonil)
 			for(; p<q; p++, o++)
-				*o = @2 *p;
+				*o = @2(*p);
 		else
 			for(; p<q; p++, o++){
 				/* this code is better as x?nil:y  */
 				if(*p == @1_nil )
 					*o = @1_nil;
 				else 
-					*o = @2 *p;
+					*o = @2(*p);
 			}
 	}
 @-
@@ -1039,6 +1052,7 @@ str CMDunary@1(int *ret, int *bid)
 @:unary_impl(MIN,-)@
 @:unary_impl(MINMIN,--)@
 @:unary_impl(PLUSPLUS,++)@
+@:unary_impl(ABS,calc_abs)@
 
 @= accumUnaryISNIL
 {
