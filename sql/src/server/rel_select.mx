@@ -4107,6 +4107,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			if (inner != o_inner) /* relation got rewritten */
 				rel = inner;
+
 			if (ce && exp_subtype(ce)) {
 				if (rel->card < ce->card) {
 					/* This doesn't work without de-correlations, ie in that case it should be done later */
@@ -4603,7 +4604,7 @@ rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek)
 	return rel_query(sql, rel, sq, toplevel, ek);
 }
 
-static void
+static char *
 as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 {
 	if (column_spec) {
@@ -4615,6 +4616,8 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 		}
 	} else {
@@ -4625,9 +4628,12 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 			char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 		}
 	}
+	return NULL;
 }
 
 static sql_rel *
@@ -4704,12 +4710,18 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 		if (!sq)
 			return NULL;
 
+
 		if (!create)
 			rel_add_intern(sql, sq);
 
 		if (create) {
+			char *n;
+
 			t = mvc_create_view(sql, s, name, q, 0);
-			as_subquery( sql, t, sq, column_spec );
+			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
+				rel_destroy(sq);
+				return sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
+			}
 		}
 
 		if (deps && sq) { 
