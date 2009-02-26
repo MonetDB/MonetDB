@@ -53,6 +53,8 @@ print_stmtlist( stmt *l )
 		char *nme = column_name(n->data);
 
 		printf("%s.%s\n", rnme, nme);
+		_DELETE(rnme);
+		_DELETE(nme);
 	}
 }
 
@@ -70,8 +72,14 @@ bin_find_column( stmt *sub, char *rname, char *name )
 			if (rnme && strcmp(rnme, rname) == 0 && 
 				    strcmp(nme, name) == 0) {
 				res = n->data;
+				_DELETE(rnme);
+				_DELETE(nme);
 				break;
 			}
+			if (rnme)
+				_DELETE(rnme);
+			if (nme)
+				_DELETE(nme);
 		}
 	} else {
 		for (n = sub->op1.lval->h; n; n = n->next) {
@@ -79,8 +87,11 @@ bin_find_column( stmt *sub, char *rname, char *name )
 
 			if (strcmp(nme, name) == 0) {
 				res = n->data;
+				_DELETE(nme);
 				break;
 			}
+			if (nme)
+				_DELETE(nme);
 		}
 	}
 	if (!res)
@@ -99,6 +110,7 @@ bin_find_columns( stmt *sub, char *name )
 
 		if (strcmp(nme, name) == 0) 
 			append(l, stmt_dup(n->data));
+		_DELETE(nme);
 	}
 	if (list_length(l)) 
 		return l;
@@ -480,10 +492,12 @@ stmt_rename( sql_rel *rel, sql_exp *exp, stmt *s )
 	(void)rel;
 	if (!name)
 		name = column_name(s);
+	else
+		name = _strdup(name);
 	if (!rname)
 		rname = table_name(s);
-	name = _strdup(name);
-	rname = (rname)?_strdup(rname):NULL;
+	else
+		rname = _strdup(rname);
 	s = stmt_alias(s, rname, name);
 	return s;
 }
@@ -676,8 +690,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				join = stmt_reljoin(stmt_releqjoin1(eqjns), neqjns);
 			} else {
 				join = stmt_reljoin(NULL, jns);
-				list_destroy(eqjns);
 			}
+			list_destroy(eqjns);
 		} else {
 			join = stmt_dup(jns->h->data); 
 			list_destroy(jns);
@@ -718,8 +732,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(s, stmt_const(stmt_dup(rd), stmt_atom(atom_general(tail_type(c), NULL, 0))));
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(jl);
@@ -738,8 +751,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		if (rel->op == op_right || rel->op == op_full) 
 			s = stmt_append(s, stmt_join(stmt_dup(rd), stmt_dup(c), cmp_equal));
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(jr);
@@ -836,8 +848,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(join), column(c), cmp_equal);
 
-		rnme = (rnme)?_strdup(rnme):NULL;
-		s = stmt_alias(s, rnme, _strdup(nme));
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(join);
@@ -864,6 +875,7 @@ rel2bin_distinct(stmt *s)
 
 			grp = grp_create(column(t), grp, NULL);
 		}
+		list_destroy(tids);
 	} else {
 		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;
@@ -919,8 +931,6 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 		   so we create append on copies.
 		*/
 		s = stmt_append(Column(c1), c2);
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
@@ -1058,8 +1068,6 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
 		rnme = table_name(c1);
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		c1 = stmt_alias(c1, rnme, nme);
 		list_append(stmts, c1);
 	}
@@ -1185,9 +1193,6 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
 
 		rnme = table_name(c1);
-		
-		nme = _strdup(nme);
-		rnme = (rnme)?_strdup(rnme):NULL;
 		c1 = stmt_alias(c1, rnme, nme);
 		list_append(stmts, c1);
 	}
@@ -1400,6 +1405,11 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		sub = row2cols(sub);
 	} else {
 		predicate = rel2bin_predicate();
+	}
+	if (!rel->exps->h) {
+		if (sub)
+			return sub;
+		return predicate;
 	}
 	/* handle possible index lookups */
 	/* expressions are in index order ! */
@@ -3115,7 +3125,7 @@ sql_delete(mvc *sql, sql_table *t, stmt *delete)
 		list_append(l, stmt_delete(t, stmt_reverse(v)));
 	} else { /* delete all */
 		/* first column */
-		v = stmt_mirror(stmt_bat(t->columns.set->h->data, stmt_basetable(t, _strdup(t->base.name)), RDONLY));
+		v = stmt_mirror(stmt_bat(t->columns.set->h->data, stmt_basetable(t, t->base.name), RDONLY));
 		s = stmt_table_clear(t);
 		list_append(l, stmt_dup(s));
 	}

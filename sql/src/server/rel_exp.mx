@@ -106,6 +106,7 @@ exp_create( int type )
 	e->type = (expression_type)type;
 	e->f = NULL;
 	e->p = NULL;
+	e->used = 0;
 	return e;
 }
 
@@ -125,6 +126,8 @@ exp_destroy(sql_exp *exp)
 		return;
 	if (exp->name) 
 		_DELETE(exp->name);
+	if (exp->rname) 
+		_DELETE(exp->rname);
 	switch(exp->type){
 	case e_atom:
 		if (exp->l) 

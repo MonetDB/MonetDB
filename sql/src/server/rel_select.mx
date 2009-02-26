@@ -927,8 +927,13 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
 
-	if (!l || !r) 
+	if (!l || !r) {
+		if (l)
+			list_destroy(l);
+		if (r)
+			list_destroy(r);
 		return NULL;
+	}
 
 	p = rel;
 	for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
@@ -953,6 +958,8 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 			break;
 		p = lrel;
 	}
+	list_destroy(l);
+	list_destroy(r);
 	if (!lrel || !rrel)
 		return NULL;
 
@@ -987,6 +994,22 @@ static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
 static sql_rel * rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *sq);
 
+static void
+rel_add_intern(mvc *sql, sql_rel *rel)
+{
+	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
+		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
+		node *n;
+	
+		for(n=prjs->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (is_intern(e)) 
+				append(rel->exps, e);
+		}
+	}
+}
+
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 {
@@ -1010,6 +1033,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 				exp_setname( ne->data, tname, NULL );
 		}
 	}
+	rel_add_intern(sql, sq);
 	return sq;
 }
 
@@ -2080,7 +2104,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				return e;
 			}
 			r = rel_lastexp(sql, right);
-			rel_setsubquery(right);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) {
 				exp_destroy(l);
 				exp_destroy(r);
@@ -2100,13 +2123,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				else 
 					*rel = left;
 			}
-			e = rel_binop_(sql, l, r, NULL, "=", 0);
-			l = rel_unop_(sql, e, NULL, "isnull", 0);
 			if (sc->token == SQL_NOT_IN) 
-				r = exp_atom_bool(1);
+				e = rel_binop_(sql, l, r, NULL, "!=", 0);
 			else
-				r = exp_atom_bool(0);
-			return rel_binop_(sql, l, r, NULL, "=", 0);
+				e = rel_binop_(sql, l, r, NULL, "=", 0);
+			return e;
 		}
 		return NULL;
 	}
@@ -3940,22 +3961,6 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
-static void
-rel_add_intern(mvc *sql, sql_rel *rel)
-{
-	if (rel->op == op_project && rel->l && rel->exps && !need_distinct(rel)) {
-		list *prjs = rel_projections(sql, rel->l, NULL, 1, 1);
-		node *n;
-	
-		for(n=prjs->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (is_intern(e)) 
-				append(rel->exps, e);
-		}
-	}
-}
-
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind ek)
 {
@@ -4102,6 +4107,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			if (inner != o_inner) /* relation got rewritten */
 				rel = inner;
+
 			if (ce && exp_subtype(ce)) {
 				if (rel->card < ce->card) {
 					/* This doesn't work without de-correlations, ie in that case it should be done later */
@@ -4365,6 +4371,8 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	if (!t1 || !t2) 
 		return NULL;
 
+	rel_remove_internal_exp(t1);
+	rel_remove_internal_exp(t2);
 	if (list_length(t1->exps) != list_length(t2->exps)) {
 		char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
@@ -4596,7 +4604,7 @@ rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek)
 	return rel_query(sql, rel, sq, toplevel, ek);
 }
 
-static void
+static char *
 as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 {
 	if (column_spec) {
@@ -4608,6 +4616,8 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 		}
 	} else {
@@ -4618,9 +4628,12 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 			char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 
+			if (mvc_bind_column(sql, t, cname))
+				return cname;
 			mvc_create_column(sql, t, cname, tp);
 		}
 	}
+	return NULL;
 }
 
 static sql_rel *
@@ -4697,12 +4710,18 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 		if (!sq)
 			return NULL;
 
+
 		if (!create)
 			rel_add_intern(sql, sq);
 
 		if (create) {
+			char *n;
+
 			t = mvc_create_view(sql, s, name, q, 0);
-			as_subquery( sql, t, sq, column_spec );
+			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
+				rel_destroy(sq);
+				return sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
+			}
 		}
 
 		if (deps && sq) { 

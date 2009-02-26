@@ -55,6 +55,7 @@ typedef struct expression {
 				(2 aggr)
 				(3 multi value)
 			*/
+	int used;	/* used for quick dead code removal */
 	void *p;	/* properties for the optimizer */
 } sql_exp;
 

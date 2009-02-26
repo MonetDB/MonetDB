@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  23 Feb 2009; Fabian Groffen <fabian@cwi.nl> ChangeLog:
+  Fix hang on Linux when shutting down. select() calls are not interrupted on
+  Linux, so make sure they time out. Fixes bug #2623838
+
   19 Feb 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
   Fixed crash of merovingian when a to be started database terminates
   immediately after startup (such as when it crashes)
