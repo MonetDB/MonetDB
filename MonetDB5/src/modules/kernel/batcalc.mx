@@ -724,9 +724,11 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 /* the normal implementation of an operator is to just stick the
    operator between the operands */
 #define calc_abs(s) ((s) > 0 ? (s) : -(s))
+/* not used, yet:
 #define calc_inv(s) (1/(s))
 #define calc_neg(s) (-(s))
 #define calc_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
+*/
 
 @= arithGrpImpl
 @:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
