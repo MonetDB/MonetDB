@@ -171,7 +171,7 @@ psm_declare_table(mvc *sql, dnode *n)
 	ctype.comp_type = find_basetable(ret); 
 
 	r = stmt_var(_strdup(name), &ctype, 1, sql->frame );
-	rel = rel_basetable(ctype.comp_type, _strdup(name));
+	rel = rel_basetable(ctype.comp_type, name);
 	stack_push_rel_var(sql, name, rel, &ctype);
 	stmt_destroy(ret);
 	return r;

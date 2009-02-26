@@ -875,6 +875,7 @@ rel2bin_distinct(stmt *s)
 
 			grp = grp_create(column(t), grp, NULL);
 		}
+		list_destroy(tids);
 	} else {
 		for (n = s->op1.lval->h; n; n = n->next) {
 			stmt *t = n->data;

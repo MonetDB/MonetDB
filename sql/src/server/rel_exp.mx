@@ -126,6 +126,8 @@ exp_destroy(sql_exp *exp)
 		return;
 	if (exp->name) 
 		_DELETE(exp->name);
+	if (exp->rname) 
+		_DELETE(exp->rname);
 	switch(exp->type){
 	case e_atom:
 		if (exp->l) 

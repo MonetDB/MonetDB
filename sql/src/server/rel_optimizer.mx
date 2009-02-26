@@ -1505,8 +1505,11 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			}
 			append(nexps, e);
 		}
-		if (!list_length(avgs))  
+		if (!list_length(avgs)) {
+			list_destroy(avgs);
+			list_destroy(nexps);
 			return rel;
+		}
 
 		/* For each avg, find count and sum */
 		for (m = avgs->h; m; m = m->next) {
@@ -1590,6 +1593,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = nexps;
 		rel = rel_project(rel, pexps);
 		*changes = 1;
+		list_destroy(avgs);
 	}
 	return rel;
 }
