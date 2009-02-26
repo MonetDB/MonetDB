@@ -721,6 +721,13 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 #include "mal_config.h"
 #include "batcalc.h"
 
+/* the normal implementation of an operator is to just stick the
+   operator between the operands */
+#define calc_abs(s) ((s) > 0 ? (s) : -(s))
+#define calc_inv(s) (1/(s))
+#define calc_neg(s) (-(s))
+#define calc_sign(s) ((s) < 0 ? -1 : (s) == 0 ? 0 : 1)
+
 @= arithGrpImpl
 @:arithmeticImpl(@1,@2,flt,flt,flt,@3,1)@
 @:arithmeticImpl(@1,@2,dbl,dbl,dbl,@3,1)@
@@ -1043,7 +1050,7 @@ str CMDunary@1(int *ret, int *bid)
 @:unary_impl(MIN,-)@
 @:unary_impl(MINMIN,--)@
 @:unary_impl(PLUSPLUS,++)@
-@:unary_impl(ABS,abs)@
+@:unary_impl(ABS,calc_abs)@
 
 @= accumUnaryISNIL
 {
