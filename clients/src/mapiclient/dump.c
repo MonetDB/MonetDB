@@ -270,6 +270,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	int cnt, i;
 	MapiHdl hdl;
 	char *query;
+	char *view = NULL;
 	size_t maxquerylen;
 	int *string;
 	char *sname = NULL;
@@ -292,7 +293,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "SELECT \"t\".\"name\" "
+		 "SELECT \"t\".\"name\", \"t\".\"query\" "
 		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
 		 "WHERE \"s\".\"name\" = '%s' "
 		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
@@ -310,12 +311,16 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		cnt++;
+		view = mapi_fetch_field(hdl, 1);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
 		mapi_close_handle(hdl);
+		view = NULL;
 		goto bailout;
 	}
+	if (view)
+		view = strdup(view);
 	mapi_close_handle(hdl);
 
 	if (cnt != 1) {
@@ -324,6 +329,12 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 		else
 			fprintf(stderr, "Table %s.%s not unique.\n", schema, tname);
 		goto bailout;
+	}
+
+	if (view) {
+		/* the table is actually a view */
+		stream_printf(toConsole, "%s\n", view);
+		goto doreturn;
 	}
 
 	stream_printf(toConsole, "CREATE TABLE ");
@@ -744,12 +755,17 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 		goto bailout;
 	}
 	mapi_close_handle(hdl);
+  doreturn:
+	if (view)
+		free(view);
 	if (query != NULL)
 		free(query);
 	if (sname != NULL)
 		free(sname);
 	return 0;
   bailout:
+	if (view)
+		free(view);
 	if (sname != NULL)
 		free(sname);
 	if (query != NULL)
@@ -879,15 +895,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"_tables\" \"t\" "
-		"WHERE \"t\".\"type\" = 0 AND "
-		      "\"t\".\"system\" = FALSE AND "
-		      "\"s\".\"id\" = \"t\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
-	const char *views = "SELECT \"s\".\"name\","
-		    "\"t\".\"query\" "
-		"FROM \"sys\".\"schemas\" \"s\", "
-		     "\"sys\".\"_tables\" \"t\" "
-		"WHERE \"t\".\"type\" = 1 AND "
+		"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
 		      "\"t\".\"system\" = FALSE AND "
 		      "\"s\".\"id\" = \"t\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
@@ -1157,31 +1165,6 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		mapi_close_handle(hdl);
 	}
-
-	/* dump views */
-	if ((hdl = mapi_query(mid, views)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
-	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *query = mapi_fetch_field(hdl, 1);
-
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
-
-		stream_printf(toConsole, "%s\n", query);
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
-	mapi_close_handle(hdl);
 
 	rc += dump_functions(mid, toConsole, sname);
 
