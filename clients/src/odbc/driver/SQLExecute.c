@@ -302,6 +302,16 @@ SQLExecute_(ODBCStmt *stmt)
 #endif
 
 	/* Have the server execute the query */
+	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+		/* we're the only Stmt handle, and we're only going forward */
+		if (stmt->Dbc->cachelimit != 1000)
+			mapi_cache_limit(stmt->Dbc->mid, 1000);
+		stmt->Dbc->cachelimit = 1000;
+	} else {
+		if (stmt->Dbc->cachelimit != 100)
+			mapi_cache_limit(stmt->Dbc->mid, 100);
+		stmt->Dbc->cachelimit = 100;
+	}
 	msg = mapi_query_handle(hdl, query);
 	free(query);
 	switch (msg) {
