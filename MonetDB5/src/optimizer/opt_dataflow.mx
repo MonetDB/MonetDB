@@ -93,7 +93,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *old, q;
-	int limit,slimit;
+	int limit;
 	Lifespan span;
 
 	/* don't use dataflow on single processor systems */
@@ -108,7 +108,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
 #endif
 	limit= mb->stop;
-	slimit= mb->ssize;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
 	pushInstruction(mb,old[0]);
