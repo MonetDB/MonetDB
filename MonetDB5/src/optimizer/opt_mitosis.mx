@@ -112,7 +112,7 @@ such that preferrably it can be handled without swapping intermediates.
 For the time being we just go for small pieces compared to memory
 spread evenly over the threads and the common type.
 @c
-	r= GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads; /* how much fits  */
+	r= (BUN) (GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads); /* how much fits  */
 	if (rowcnt >r )
 		pieces = rowcnt /r+1;	
 	if (pieces < GDKnr_threads && rowcnt >PARTITION_THRESHOLD)
