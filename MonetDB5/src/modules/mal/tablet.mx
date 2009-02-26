@@ -1353,7 +1353,7 @@ TABLETcollect_bats(Tablet * as)
 		BATpropcheck(fmt[i].c, BATPROPS_ALL);
 		BATpropcheck(BATmirror(fmt[i].c), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
-			GDKerror("Error: counts are not equal\n");
+			GDKerror("Error: the counts of column %d differes from first\n",i);
 			return NULL;
 		}
 	}

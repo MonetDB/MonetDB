@@ -92,8 +92,7 @@ more then depth*vtop elements on the stack.";
 
 pattern dataflow():int
 address MALstartDataflow
-comment "The current guarded block is executed using
-dataflow control. It returns the number of threads assigned for the job, which can be used testing.";
+comment "The current guarded block is executed using dataflow control. ";
 
 pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
@@ -260,13 +259,12 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int*) getArgReference(stk,pci,0);
 
 	(void) cntxt;
-	if (pci == NULL || stk == NULL || stk->cmd) {
+	if (pci == NULL || stk == NULL || stk->cmd ){
 		*ret = 1; /* ignore dataflow request */
 		return MAL_SUCCEED;
 	}
 	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
-	if (msg == MAL_SUCCEED)
-		*ret = -1;
+	*ret = -1;	/* continue at end of block */
 	return msg;
 }
 

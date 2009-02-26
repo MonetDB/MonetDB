@@ -163,7 +163,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	MalBlkPtr mq;
 	InstrPtr q,sig;
 	char buf[1024];
-	int i,j,k;
+	int i,j,k, actions=0;
 	int refbat=0;
 	bit *upgrade;
 	Symbol s;
@@ -284,6 +284,7 @@ an upgrade and resolve it afterwards.
 					snprintf(buf,1024,"bat%s",getModuleId(q));
 					setModuleId(q,putName(buf,strlen(buf)));
 
+					actions++;
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
@@ -299,6 +300,7 @@ an upgrade and resolve it afterwards.
 					q= pushArgument(mq,q, getArg(q,1));
 					getArg(q,1)= refbat;
 				
+					actions++;
 					typeChecker(cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
@@ -334,6 +336,9 @@ But first, shift the arguments of the multiplex.
 	stream_printf(cntxt->fdout,"Inlined result\n");
 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 #endif
+	OPTDEBUG
+	if( actions)
+		stream_printf(cntxt->fdout,"#opt_remap: %d mappings\n",actions);
 	GDKfree(upgrade);
 	return 1;
 }

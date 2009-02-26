@@ -279,6 +279,8 @@ an initially empty insertion BAT.
 			}
 		}
 	}
+	OPTDEBUG
+		stream_printf(cntxt->fdout,"#opt_costModel: processed\n");
 	return 1;
 }
 @include optimizerWrapper.mx

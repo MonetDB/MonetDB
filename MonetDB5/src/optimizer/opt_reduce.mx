@@ -68,6 +68,9 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	actions = mb->vtop;
 	trimMalVariables(mb);
 	actions = actions - mb->vtop;
+	OPTDEBUG
+	if (actions)
+		stream_printf(cntxt->fdout,"#opt_reduce: %d variables removed\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

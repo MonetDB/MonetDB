@@ -194,6 +194,9 @@ sure it becomes one.
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
+	OPTDEBUG
+	if ( actions)
+		stream_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);
 	return actions;
 }
 

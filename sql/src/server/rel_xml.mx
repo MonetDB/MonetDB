@@ -163,9 +163,7 @@ rel_xmlforest(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 			if (!tag) {
 				tag = exp_name(c_st);
 				if (!tag)
-					tag = _strdup("single_value");
-			} else {
-				tag = _strdup(tag);
+					tag = "single_value";
 			}
 			c_st = rel_nop_(sql, exp_atom_clob(tag), exp_dup(ns_st), exp_dup(attr_st), c_st, NULL, "element", 0);
 			/* lets glue the xml content together */
@@ -209,7 +207,7 @@ rel_xmlattribute(mvc *sql, sql_rel **rel, symbol *sym, int f, exp_kind knd)
 		/*TODO:convert simple column names into valid attribute names */
 		attr_name = exp_name(attr_st);
 		if (!attr_name)
-			attr_name = _strdup("single_value");
+			attr_name = "single_value";
 	}
 	attr_name_st = exp_atom_str(attr_name, &str_type);
 	return rel_binop_(sql, attr_name_st, attr_st, NULL, "attribute", 0); 

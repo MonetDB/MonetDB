@@ -159,6 +159,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 
+		if ( p->token == REMsymbol)
+			pushInstruction(mb,p);
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
 			entries = 0;
@@ -179,6 +181,9 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef DEBUG_DATAFLOW_OPT
 	printFunction(GDKstdout, mb, LIST_MAL_ALL);
 #endif
+	OPTDEBUG
+	if(actions)
+		stream_printf(cntxt->fdout,"#opt_dataflow: %d flow blocks created\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx

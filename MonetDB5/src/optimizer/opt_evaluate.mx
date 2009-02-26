@@ -85,7 +85,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int first=0, nxt, i, j, k, limit, done=0, again=0;
 	MalStkPtr env = NULL;
 	str msg;
-	int debugstate= cntxt->itrace;
+	int debugstate= cntxt->itrace, actions = 0;
 	Lifespan span;
 
 	cntxt->itrace= 0;
@@ -120,7 +120,9 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
 #endif
 			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
+				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ 
+				actions++;
+				msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
 				stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
 #endif
@@ -144,9 +146,9 @@ a constant itself.
 					GDKfree(msg);
 					mb->stmt[k++]=p;
 				}
-			} else {
+			} else
 				mb->stmt[k++]=p;
-			}
+	
 			/* make sure we don't have instructions twice */
 			if (k <= i)
 				mb->stmt[i] = NULL;
@@ -154,10 +156,13 @@ a constant itself.
 		mb->stop= k;
 		first = nxt;
 	} while( again );
+	OPTDEBUG
+	if ( actions)
+		stream_printf(cntxt->fdout,"#opt_evaluate: %d constant expressions evaluated\n",actions);
 	GDKfree(span);
 	freeStack(env);
 	cntxt->itrace= debugstate;
-	return 1;
+	return actions;
 }
 @include optimizerWrapper.mx
 @h
