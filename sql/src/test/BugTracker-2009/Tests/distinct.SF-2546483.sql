@@ -16,7 +16,7 @@ INSERT INTO b VALUES(2, 'TWO');
 INSERT INTO b VALUES(3, 'THREE');
 
 CREATE VIEW v AS
-SELECT va.x, b.x
+SELECT va.x as a, b.x as b
 FROM   va, b
 WHERE  va.n = b.n;
 select * from va;

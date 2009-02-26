@@ -40,7 +40,7 @@ Over..
 [ 2,	"TWO"	]
 [ 3,	"THREE"	]
 % sys.v,	sys.v # table_name
-% x,	x # name
+% a,	b # name
 % varchar,	varchar # type
 % 5,	5 # length
 [ "ONE",	"ONE"	]
