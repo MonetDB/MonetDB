@@ -114,7 +114,7 @@ spread evenly over the threads and the common type.
 @c
 	r= (BUN) (GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads); /* how much fits  */
 	if (rowcnt >r )
-		pieces = rowcnt /r+1;	
+		pieces = (int) (rowcnt /r+1);
 	if (pieces < GDKnr_threads && rowcnt >PARTITION_THRESHOLD)
 		pieces = GDKnr_threads;
 	if (pieces >128)
