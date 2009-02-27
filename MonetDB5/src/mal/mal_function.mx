@@ -742,8 +742,7 @@ setLifespan(MalBlkPtr mb, Lifespan span)
 				p->barrier != RETURNsymbol &&
 				p->barrier != YIELDsymbol)
 					span[v].lastUpdate= pc;
-			if (pc > span[v].endLifespan )
-				span[v].endLifespan = pc;
+			span[v].endLifespan = pc;
 		}
 @-
 At a block exit we can finalize some variables.
