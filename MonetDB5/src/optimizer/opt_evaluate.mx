@@ -42,6 +42,7 @@ The code produced by the optimizer would be
     io.print(6);
     io.print(-0.279415488);
 @end verbatim
+Likewise we attempt to catch barrier blocks based on constants.
 @{
 @mal
 pattern optimizer.evaluate():str
@@ -58,15 +59,20 @@ comment "Evaluate constant expressions once.";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_CX  */
+/*  #define DEBUG_OPT_CX  */
 @c  
 #include "mal_config.h"
 #include "opt_evaluate.h"
 #include "opt_aliases.h"
 
 static int
-OPTallConstant(MalBlkPtr mb, InstrPtr p){
+OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	int i;
+#ifdef DEBUG_OPT_CX
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
+#else
+	(void) cntxt;
+#endif
 
 	for( i= p->retc; i < p->argc; i++)
 		if( isVarConstant(mb, getArg(p,i)) == FALSE)
@@ -76,13 +82,68 @@ OPTallConstant(MalBlkPtr mb, InstrPtr p){
 			return FALSE;
 	return ( getModuleId(p) == calcRef || 
 			 getModuleId(p) == strRef ||
-			 getModuleId(p) == mmathRef);
+			 getModuleId(p) == mmathRef ||
+			p->token == ASSIGNsymbol);
 }
+
+static int
+OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb){
+	/* catch constant bounded blocks */
+	int i, j= 0, action=0, block=0, skip=0;
+	InstrPtr p;
+
+	for( i = 0; i<mb->stop; i++){
+		p= mb->stmt[i];
+		if (blockStart(p)){
+			block++;
+			if ( p->argc == 2 && isVarConstant(mb, getArg(p,1))  &&
+				getArgType(mb,p,1) == TYPE_bit &&
+				getVarConstant(mb,getArg(p,1)).val.cval[0] == 0){
+				skip=block;
+				action++;
+			}
+			/* for blocks definitely entered we may do a little more
+			   provided we respect the other flow of control statements
+				[todo]
+			if ( p->argc == 2 && isVarConstant(mb, getArg(p,1))  &&
+				getArgType(mb,p,1) == TYPE_bit &&
+				getVarConstant(mb,getArg(p,1)).val.cval[0] == 1){
+				p->token = REMsymbol;
+				getInstrPtr(mb, p->jump)->token = REMsymbol;
+			}
+			*/
+		}
+		if (blockExit(p))
+			block--;
+		if( skip)
+			freeInstruction(p);
+		else
+			mb->stmt[j++] =p;
+		if( block == 0)
+			skip = 0;
+	}
+	mb->stop = j;
+	for( ; j<i; j++)
+		mb->stmt[j] = NULL;
+	if (action)
+		chkProgram(cntxt->nspace,mb);
+	return action;
+}
+static int
+assignedOnce(MalBlkPtr mb, Lifespan span, int varid){
+	int i, cnt=0;
+	for( i= getBeginLifespan(span,varid) ; i<= getLastUpdate(span,varid); i++)
+		cnt += getArg(getInstrPtr(mb,i),0) == varid;
+	if ( getInstrPtr(mb,getLastUpdate(span,varid))->barrier == EXITsymbol)
+		cnt--;
+	return cnt == 1;
+}
+
 static int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int first=0, nxt, i, j, k, limit, done=0, again=0;
+	int i, limit;
 	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= cntxt->itrace, actions = 0;
@@ -104,61 +165,55 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	span = newLifespan(mb);
 	env= prepareMALstack(mb);
 	env->keepAlive= TRUE;
-	do {
-		setLifespan(mb,span);
-		again = 0;
-		limit = mb->stop;
-		nxt= first;
-		for (k=i= first ; i < limit; i++) {
-			p = getInstrPtr(mb,i);
-			j = OPTallConstant(mb,p);
-			if (j && nxt == first) nxt=i;
+
+	setLifespan(mb,span);
+	limit = mb->stop;
+	for (i= 1 ; i < limit; i++) {
+		p = getInstrPtr(mb,i);
 #ifdef DEBUG_OPT_CX
-			stream_printf(cntxt->fdout,"Constants:%d\n",j);
-			stream_printf(cntxt->fdout,"retc %d var %s\n",p->retc,getVarName(mb,getArg(p,0)));
-			stream_printf(cntxt->fdout,"last update:%d\n", getLastUpdate(span,getArg(p,0)));
-			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
+		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
 #endif
-			if( j && p->retc== 1 && p->barrier == 0 &&
-				getLastUpdate(span,getArg(p,0)) == i  && !isUnsafeFunction(p)){ 
-				actions++;
-				msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
+		/* be aware that you only assign once to a variable */
+		if( p->retc == 1 && OPTallConstant(cntxt,mb,p) && 
+			!isUnsafeFunction(p) && p->token!= EXITsymbol){ 
+			if( assignedOnce(mb,span,getArg(p,0)) ==FALSE)
+				continue;
+			actions++;
+			msg = reenterMAL(cntxt,mb,i,i+1,env,0,0);
 #ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
+			stream_printf(cntxt->fdout,"retc var %s\n",getVarName(mb,getArg(p,0)));
+			stream_printf(cntxt->fdout,"result:%s\n",msg==MAL_SUCCEED?"ok":msg);
 #endif
-				if (msg == MAL_SUCCEED){
-@-
-The last assignment of a constant expression turns the variable into
-a constant itself.
-@c
-					setVarConstant(mb,getArg(p,0));
+			if (msg == MAL_SUCCEED){
+				ValRecord cst;
+				VALcopy(&cst,&env->stk[getArg(p,0)]);
+				setVarConstant(mb,getArg(p,0));
+				setVarFixed(mb,getArg(p,0));
+				if ( getArgType(mb,p,0) == TYPE_str)
+					setVarCleanup(mb,getArg(p,0));
+				else
 					clrVarCleanup(mb,getArg(p,0));
-					setVarFixed(mb,getArg(p,0));
-					getVarConstant(mb,getArg(p,0)) = env->stk[getArg(p,0)];
-					env->stk[getArg(p,0)].vtype= TYPE_int; /* no garbage */
-					freeInstruction(p);
+				VALcopy(&getVarConstant(mb,getArg(p,0)) , &cst);
+				/* create a new constant assignment */
+				getArg(p,1)= defConstant(mb, getArgType(mb,p,0), &cst);
+				p->argc = 2;
+				p->token = ASSIGNsymbol;
+				clrFunction(p);
 #ifdef DEBUG_OPT_CX
-					stream_printf(cntxt->fdout,"Evaluated new constant=%d\n",getArg(p,0));
+				stream_printf(cntxt->fdout,"Evaluated new constant=%d\n",getArg(p,0));
 #endif
-					done++;
-					again++;
-				} else {
-					GDKfree(msg);
-					mb->stmt[k++]=p;
-				}
-			} else
-				mb->stmt[k++]=p;
-	
-			/* make sure we don't have instructions twice */
-			if (k <= i)
-				mb->stmt[i] = NULL;
-		}
-		mb->stop= k;
-		first = nxt;
-	} while( again );
+			} else {
+#ifdef DEBUG_OPT_CX
+				stream_printf(cntxt->fdout,"Evaluated %s\n",msg);
+#endif
+				GDKfree(msg);
+			}
+		} 
+	}
+	actions += OPTremoveUnusedBlocks(cntxt,mb);
 	OPTDEBUG
 	if ( actions)
-		stream_printf(cntxt->fdout,"#opt_evaluate: %d constant expressions evaluated\n",actions);
+		stream_printf(cntxt->fdout,"#opt_evaluate: %d constant expressions\n",actions);
 	GDKfree(span);
 	freeStack(env);
 	cntxt->itrace= debugstate;

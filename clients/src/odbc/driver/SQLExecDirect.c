@@ -83,6 +83,16 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
 	ODBCLOG("SQLExecDirect: \"%s\"\n", query);
 #endif
 
+	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+		/* we're the only Stmt handle, and we're only going forward */
+		if (stmt->Dbc->cachelimit != 10000)
+			mapi_cache_limit(stmt->Dbc->mid, 10000);
+		stmt->Dbc->cachelimit = 10000;
+	} else {
+		if (stmt->Dbc->cachelimit != 100)
+			mapi_cache_limit(stmt->Dbc->mid, 100);
+		stmt->Dbc->cachelimit = 100;
+	}
 	ret = mapi_query_handle(hdl, query);
 	free(query);
 	switch (ret) {

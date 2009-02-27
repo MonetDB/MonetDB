@@ -69,6 +69,7 @@ typedef struct tODBCDRIVERDBC {
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */
+	int cachelimit;		/* cache limit we requested */
 	int Mdebug;
 
 	/* Dbc children: list of ODBC Statement handles created within

@@ -70,6 +70,7 @@ SQLDisconnect(SQLHDBC hDbc)
 	mapi_destroy(dbc->mid);
 
 	dbc->mid = NULL;
+	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
 	dbc->Connected = 0;
 

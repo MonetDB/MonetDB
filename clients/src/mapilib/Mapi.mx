@@ -4110,6 +4110,9 @@ mapi_cache_limit(Mapi mid, int limit)
 	if (mid->languageId == LANG_SQL) {
 		MapiHdl hdl;
 
+		if (mid->active)
+			finish_handle(mid->active);
+
 		if (mid->tracelog) {
 			mapi_log_header(mid, "W");
 			stream_printf(mid->tracelog, "X" "reply_size %d\n", limit);

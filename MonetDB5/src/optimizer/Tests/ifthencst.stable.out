@@ -1,0 +1,50 @@
+stdout of test 'ifthencst` in directory 'src/optimizer` itself:
+
+
+# 16:52:54 >  
+# 16:52:54 >   mserver5 "--config=/ufs/mk/monet5//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=39977 --set xrpc_port=45771 --set xrpc_docroot=/ufs/mk/monet5/package/MonetDB5 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  ifthencst.mal
+# 16:52:54 >  
+
+# MonetDB server v5.10.0, based on kernel v1.28.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39977/
+function user.tst():void;
+barrier a := false;
+    io.print("never executed");
+exit a;
+barrier b := calc.not(false);
+    io.print("always executed");
+exit b;
+barrier c := true;
+    io.print("always executed");
+exit c;
+barrier d := calc.not(true);
+    io.print("never executed");
+exit d;
+end tst;
+[ "always executed" ]
+[ "always executed" ]
+function user.main():void;
+# some frontend generates the following code 
+    mdb.list("user","tst");
+    user.tst();
+end main;
+function user.tst():void;
+barrier b := true;
+    io.print("always executed");
+exit b := true;
+barrier c := true;
+    io.print("always executed");
+exit c := true;
+end tst;
+[ "always executed" ]
+[ "always executed" ]
+
+# 16:52:54 >  
+# 16:52:54 >  Done.
+# 16:52:54 >  
+
