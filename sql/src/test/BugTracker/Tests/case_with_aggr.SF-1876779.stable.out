@@ -26,7 +26,7 @@ Over..
 
 % sys.casebug # table_name
 % L1 # name
-% wrd # type
+% bigint # type
 % 20 # length
 [ NULL	]
 % sys.casebug # table_name
