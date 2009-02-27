@@ -57,7 +57,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D36E49ECDC9E4D9091AD3F0391D09115"
+        "MsmKey" = "8:_D27A31FE944E48ABB30E48A0143097F4"
         "OwnerKey" = "8:_C5249117205D42C183A8CFBF50D2C692"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -415,14 +415,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5 SQL GIS Module"
-        "ProductCode" = "8:{B20F4899-D5F5-44D7-9BF9-F3E09C9FD0FA}"
-        "PackageCode" = "8:{4F7539A9-BD94-4AE8-A111-BC9488E68753}"
+        "ProductCode" = "8:{0D100BCC-EF40-4680-A2EA-7E3CBCAFE51C}"
+        "PackageCode" = "8:{DC1951A6-E2D3-469A-8DF8-C292C1DECA1D}"
         "UpgradeCode" = "8:{8E6CDFDE-39B9-43D9-97B3-2440C012845C}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:9.2.20"
+        "ProductVersion" = "8:9.2.27"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -992,7 +992,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D36E49ECDC9E4D9091AD3F0391D09115"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D27A31FE944E48ABB30E48A0143097F4"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

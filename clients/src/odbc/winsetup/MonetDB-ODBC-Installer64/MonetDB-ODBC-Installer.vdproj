@@ -15,7 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_167EEF3511FD40D7A8159AF60B5B0667"
+        "MsmKey" = "8:_15893D12E4774011A700496CA6E712FD"
         "OwnerKey" = "8:_3517E482BC7F4EFC88537C979178E768"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -519,14 +519,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{B1AE9D27-F4BB-450B-BEA4-21444FA8E824}"
-        "PackageCode" = "8:{DACF90B7-210B-4D71-90F3-0FFFD84F4729}"
+        "ProductCode" = "8:{1D2B101D-CF63-4B66-850A-001F83074524}"
+        "PackageCode" = "8:{769D93DD-6C44-4682-BBC2-2684423B9AB9}"
         "UpgradeCode" = "8:{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:9.2.20"
+        "ProductVersion" = "8:9.2.27"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -1155,7 +1155,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_167EEF3511FD40D7A8159AF60B5B0667"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_15893D12E4774011A700496CA6E712FD"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
