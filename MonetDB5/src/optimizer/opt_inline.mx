@@ -110,7 +110,8 @@ Check if the local call is tagged as being inlined.
 	}
 	(void)stk;
 	OPTDEBUG
-		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars\n",mb->stop,mb->vtop);
+		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop, 
+		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
 	OPTDEBUG
 	if (actions)
 		stream_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
