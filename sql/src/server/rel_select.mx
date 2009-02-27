@@ -753,21 +753,19 @@ rel_select_copy(sql_rel *l, list *exps)
 }
 
 static sql_rel*
-rel_project2groupby(mvc *sql, sql_rel **g)
+rel_project2groupby(mvc *sql, sql_rel *g)
 {
-	if ((*g)->op == op_project) { 
+	if (g->op == op_project) { 
 		node *en;
-		sql_rel *r = *g;
 
-		r->card = CARD_ATOM; /* no groupby expressions */
-		r->op = op_groupby;
-		r->r = new_exp_list(); /* add empty groupby column list */
-		*g = r;
+		g->card = CARD_ATOM; /* no groupby expressions */
+		g->op = op_groupby;
+		g->r = new_exp_list(); /* add empty groupby column list */
 		
-		for (en = r->exps->h; en; en = en->next) {
+		for (en = g->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
-			if (e->card > r->card) {
+			if (e->card > g->card) {
 				if (e->type == e_column && e->r) {
 					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", e->r);
 				} else {
@@ -775,7 +773,7 @@ rel_project2groupby(mvc *sql, sql_rel **g)
 				}
 			}
 		}
-		return rel_project(r, rel_projections(sql, r, NULL, 1, 1));
+		return rel_project(g, rel_projections(sql, g, NULL, 1, 1));
 	}
 	return NULL;
 }
@@ -3071,7 +3069,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	int distinct = l->h->next->data.i_val;
 	char *aggrstr = l->h->data.sval;
 	sql_exp *e = NULL, *exp = NULL;
-	sql_rel *groupby, *old;
+	sql_rel *groupby;
 	int no_nil = 0;
 
 	assert(l->h->next->type == type_int);
@@ -3089,11 +3087,12 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
-	if (groupby->op != op_groupby)   	/* implicite groupby */
-		*rel = rel_project2groupby(sql, &groupby);
- 	old = *rel; 
-	if (!old)
+	if (groupby->op != op_groupby)   	/* implicit groupby */
+		*rel = rel_project2groupby(sql, groupby);
+	if (!*rel) {
+		rel_destroy(groupby);
 		return NULL;
+	}
 
 	if (f == sql_where && !groupby) 
 		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
@@ -3140,9 +3139,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		e = exp_aggr1(e, a, distinct, no_nil, groupby->card, has_nil(e));
 		exp = e;
-		if (*rel != old)
-			exp = rel_groupby_add_aggr(sql, *rel, exp);
-		else if (*rel != groupby || f != sql_sel) /* selection */ 
+		if (*rel != groupby || f != sql_sel) /* selection */ 
 			exp = rel_groupby_add_aggr(sql, groupby, exp);
 		return exp_fix_scale(sql, t, exp, 1, 
 					(t->type->scale == SCALE_FIX));
