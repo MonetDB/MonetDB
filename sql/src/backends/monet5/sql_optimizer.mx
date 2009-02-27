@@ -449,13 +449,13 @@ str defaultPlan=
 	/* "mitosis," */
 	"aliases,"
 	/* "crack," */
-	/*"joinPath,"*/ 
 	"mergetable," 
 #ifndef WIN32
 /*	"octopus,"*/
 #endif
 	"commonTerms,"
 /*	"replicator," */
+	"joinPath,"
 	"accumulators,"
 	"deadcode,"
 	/*"recycle,"*/

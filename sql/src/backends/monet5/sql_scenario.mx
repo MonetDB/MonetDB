@@ -851,9 +851,11 @@ SQLsetTrace(Client c, bit onoff)
 	c->itrace='c';
 	q = newStmt(c->curprg->def,"mdb","setTimer");
 	pushBit(c->curprg->def,q,onoff);
+	if( GDKnr_threads > 1){
+		q = newStmt(c->curprg->def,"mdb","setThread");
+		pushBit(c->curprg->def,q,onoff);
+	}
 /*
-	q = newStmt(c->curprg->def,"mdb","setThread");
-	pushBit(c->curprg->def,q,onoff);
 	q = newStmt(c->curprg->def,"mdb","setCount");
 	pushBit(c->curprg->def,q,onoff);
 */
