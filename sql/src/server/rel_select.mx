@@ -715,12 +715,13 @@ rel_select_add_exp(sql_rel *l, sql_exp *e)
 sql_rel *
 rel_select(sql_rel *l, sql_exp *e)
 {
-	sql_rel *rel = rel_create();
+	sql_rel *rel;
 	
 	if (l && l->op == op_select) { /* refine old select */
 		rel_select_add_exp(l, e);
 		return l;
 	}
+	rel = rel_create();
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
