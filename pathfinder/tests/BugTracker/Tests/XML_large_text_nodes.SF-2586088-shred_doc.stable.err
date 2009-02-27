@@ -1,0 +1,12 @@
+stderr of test 'XML_large_text_nodes.SF-2586088-shred_doc` in directory 'tests/BugTracker` itself:
+
+
+# 11:26:14 >  
+# 11:26:14 >   Mserver "--config=/usr/local/flokstra/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/usr/local/flokstra/lib/MonetDB4:/usr/local/flokstra/lib/MonetDB4/lib:/usr/local/flokstra/lib/MonetDB4/bin" --set "gdk_dbfarm=/usr/local/flokstra/var/MonetDB4/dbfarm" --set "sql_logdir=/usr/local/flokstra/var/MonetDB4/sql_logs" --set "xquery_logdir=/usr/local/flokstra/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36343 --set xrpc_port=42302 --set monet_prompt= --trace  --dbname=mTests_tests_BugTracker  
+# 11:26:14 >  
+
+
+# 11:26:21 >  
+# 11:26:21 >  Done.
+# 11:26:21 >  
+

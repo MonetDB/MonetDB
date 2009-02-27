@@ -190,12 +190,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p = old[i];
 
 		pushInstruction(mb, p);
-		for (j = p->retc; j < p->argc; j++) {
+		for (j = 0; j < p->argc; j++) {
 			if (getEndLifespan(span,getArg(p,j)) == i &&
 				isaBatType(getArgType(mb, p, j))) {
 				/* avoid duplicate releases */
 				done = 0;
-				for (k = j - 1; k >= p->retc; k--)
+				for (k = j - 1; k >= 0; k--)
 					if (getArg(p, j) == getArg(p, k))
 						done++;
 

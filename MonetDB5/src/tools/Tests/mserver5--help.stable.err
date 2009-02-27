@@ -21,7 +21,7 @@ Usage: mserver5 [options] [scripts]
     --set <option>=<value>    Set configuration option
     --help                    Print this list of options
     --version                 Print version and compile time info
-The debug options:
+The trace options:
      --threads
      --memory
      --properties

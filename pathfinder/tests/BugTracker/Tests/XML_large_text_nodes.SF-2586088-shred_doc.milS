@@ -1,0 +1,9 @@
+module(unix);
+module(pathfinder);
+var TSTTRGDIR := getenv("TSTTRGDIR");
+
+shred_doc(TSTTRGDIR+"/large_text_node.xml","large_text_node.xml");
+
+xquery("xml","fn:string-length(fn:doc(\"large_text_node.xml\")/aap/text())").printf();
+
+delete_doc("large_text_node.xml");

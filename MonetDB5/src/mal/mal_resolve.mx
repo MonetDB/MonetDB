@@ -704,7 +704,7 @@ using the target type.
 			setVarType(mb,getArg(p,k),rhs);
 			setVarFixed(mb,getArg(p,k));
 		}
-		@:prepostProcess(s1,0,mb)@
+		@:prepostProcess(s1,k,mb)@
 	}
 }
 @-
