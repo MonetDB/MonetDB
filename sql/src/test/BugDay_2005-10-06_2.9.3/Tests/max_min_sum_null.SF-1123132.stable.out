@@ -27,7 +27,7 @@ Over..
 [ 3	]
 % sys.t1123132,	sys.t1123132,	sys.t1123132 # table_name
 % L4,	L5,	L6 # name
-% int,	int,	wrd # type
+% int,	int,	bigint # type
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 

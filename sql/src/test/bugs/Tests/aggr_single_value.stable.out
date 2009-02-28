@@ -51,12 +51,12 @@ Over..
 [ NULL	]
 % . # table_name
 % L12 # name
-% smallint # type
+% bigint # type
 % 1 # length
 [ 1	]
 % . # table_name
 % L13 # name
-% wrd # type
+% bigint # type
 % 20 # length
 [ NULL	]
 % . # table_name

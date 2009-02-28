@@ -246,7 +246,7 @@ handled by the alias removal part
 	GDKfree(old);
 	OPTDEBUG
 	if (actions)
-		stream_printf(cntxt->fdout,"#opt_commonTerms: %d statemtents catched\n",actions);
+		stream_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
 	return actions;
 }
 

@@ -4855,7 +4855,7 @@ PROC do_update_insert_elements(bat[void, bat] ws,
           ancestor_nid.insert(new_size.project(doccont).reverse().join(ancestors_nid));
         } else {
           # the inserted data fits on the current page but we may have to
-          # move data around to make a hole big ineough in the right place
+          # move data around to make a hole big enough in the right place
 
           # holesize is the size of the hole after the node where we have to insert
           var holesize := 0;
@@ -4937,8 +4937,8 @@ PROC do_update_insert_elements(bat[void, bat] ws,
           var upd_ancestors := ancestors_end.join(ancestors_oldpre).join(pre_level).access(BAT_WRITE).myupdate(ancestors_end.join(ancestors_newrid).join(rid_level_update)).uselect(chr_nil, docinsertlevel, true, false);
           # now update the sizes of these ancestors (if any)
           if (upd_ancestors.count() > 0) {
-            # calculate new size
-            var new_size := [+](upd_ancestors.mirror().join(ancestors_size), insertsize);
+            # calculate new size (end of hole minus ancestor's PRE)
+            var new_size := [-](upd_ancestors.project(int(docinsertafter_newpre)+insertsize),[int](upd_ancestors.mirror().join(ancestors_newpre)));
             # figure out new and old pages since they need to be updated differently
             var upd_pages := [oid]([>>]([lng](upd_ancestors.mirror().join(ancestors_newrid)), REMAP_PAGE_BITS));
             var is_new_page := [isnil](upd_pages.outerjoin(map_pid));

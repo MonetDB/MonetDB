@@ -70,6 +70,17 @@ a materialized join.
 An alternative is to make recognition
 of the common re-useable paths an
 integral part of the joinPath body.
+
+@verbatim
+    x3:= algebra.join(a,b);
+	r3:= bat.reverse(x3);
+	j1:= join(c,r3);
+@end verbatim
+@verbatim
+	rb:= bat.reverse(b);
+	ra:= bat.reverse(a);
+	j1:= algebra.joinpath(c,rb,ra);
+@end verbatim
 @{
 @mal
 pattern optimizer.joinPath():str

@@ -1,0 +1,113 @@
+stdout of test 'copybug.SF-2642003` in directory 'tests/BugTracker` itself:
+
+
+# 15:12:36 >  
+# 15:12:36 >   Mserver "--config=/ufs/sjoerd/Monet-Stable/etc/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/runtime:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah/.libs:/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/modules/pftijah:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/lib:/ufs/sjoerd/Monet-Stable/lib64/MonetDB4/bin" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/sql_logs" --set "xquery_logdir=/ufs/sjoerd/src/MonetDB/stable/pathfinder/x86_64-unknown-linux-gnu/xquery_logs" --set "xrpc_docroot=/ufs/sjoerd/src/MonetDB/stable/pathfinder/runtime/xrpc" --set mapi_open=true --set xrpc_open=true --set mapi_port=35874 --set xrpc_port=41280 --set xrpc_docroot=/net/ottar/export/scratch1/sjoerd/src/MonetDB/stable/pathfinder --set monet_prompt= --trace  "--dbname=mTests_tests_BugTracker" "--dbinit= module(pathfinder);" ; echo ; echo Over..
+# 15:12:36 >  
+
+# MonetDB Server v4.28.0
+# based on GDK   v1.28.0
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+# PF/Tijah module v0.9.0 loaded. http://dbappl.cs.utwente.nl/pftijah
+# MonetDB/XQuery module v0.28.0 loaded (default back-end is 'algebra')
+# XRPC administrative console at http://127.0.0.1:41280/admin
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:12:37 >  
+# 15:12:37 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=ottar --port=35874 copybug.SF-2642003.xq
+# 15:12:37 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><reports>
+  <folder name="builtin">
+    <report-definition name="Cookies" project="*" shared="true">
+      <content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content>
+      <description>Reports cookies as a table and as details.</description>
+      <expertnote/>
+    </report-definition>
+  </folder>
+  <folder name="admin"/>
+  <folder name="demo"/>
+</reports></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><reports>
+  <folder name="builtin">
+    <report-definition name="Cookies" project="*" shared="true">
+      <content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content>
+      <description>Reports cookies as a table and as details.</description>
+      <expertnote/>
+    </report-definition>
+  </folder>
+  <folder name="admin"><report-definition name="Cookies" project="*" shared="true"><content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content><description>Reports cookies as a table and as details.</description><expertnote/></report-definition></folder>
+  <folder name="demo"/>
+</reports></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><reports>
+  <folder name="builtin">
+    <report-definition name="Cookies" project="*" shared="true">
+      <content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content>
+      <description>Reports cookies as a table and as details.</description>
+      <expertnote/>
+    </report-definition>
+  </folder>
+  <folder name="admin"><report-definition shared="true" project="*" name="Cookies"><content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content><description>Reports cookies as a table and as details.</description><expertnote>Copied this report template to user admin for testing purposes.</expertnote></report-definition></folder>
+  <folder name="demo"/>
+</reports></XQueryResult>
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult><reports>
+  <folder name="builtin">
+    <report-definition name="Cookies" project="*" shared="true">
+      <content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content>
+      <description>Reports cookies as a table and as details.</description>
+      <expertnote/>
+    </report-definition>
+  </folder>
+  <folder name="admin"><report-definition shared="true" project="*" name="Cookies"><content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content><description>Reports cookies as a table and as details.</description><expertnote>Copied this report template to user admin for testing purposes.</expertnote></report-definition><report-definition name="CopyOfCookies" shared="true" project="*"><content>
+        <reportroot>
+          <reportmarker type="report"><parameters format="DocBook"/></reportmarker>
+        </reportroot>
+      </content><description>Reports cookies as a table and as details.</description><expertnote>Copied this report template to user admin for testing purposes.</expertnote></report-definition></folder>
+  <folder name="demo"/>
+</reports></XQueryResult>
+
+# 15:12:38 >  
+# 15:12:38 >  Done.
+# 15:12:38 >  
+

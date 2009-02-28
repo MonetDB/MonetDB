@@ -1085,142 +1085,20 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-/*
- * Push select down, pushes the selects through (simple) projections. Also
- * it cleans up the projections which become useless.
- */
-static sql_rel *
-rel_push_select_down(int *changes, mvc *sql, sql_rel *rel) 
+sql_rel *
+rel_merge_projects(int *changes, mvc *sql, sql_rel *rel) 
 {
-	list *exps = NULL;
-	sql_rel *r = NULL;
+	list *exps = rel->exps;
+	sql_rel *r = rel->l;
 	node *n;
 
 	(void)sql;
-	/* remove empty select's */
-	if ((is_join(rel->op) || is_semi(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
-		sql_rel *l = rel->l;
-		if (l->op == op_select && !(rel_is_ref(l)) &&
-		   (!l->exps || list_length(l->exps) == 0)) {
-			rel->l = l->l;
-			l->l = NULL;
-			rel_destroy(l);
-			(*changes)++;
-			return rel;
-		} 
-	}
-	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
-		sql_rel *r = rel->r;
-		if (r->op == op_select && !(rel_is_ref(r)) &&
-	   	   (!r->exps || list_length(r->exps) == 0)) {
-			rel->r = r->l;
-			r->l = NULL;
-			rel_destroy(r);
-			(*changes)++;
-			return rel;
-		}
-	} 
-	/* merge 2 selects */
-	r = rel->l;
-	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except) && exps_save(rel->exps)) {
-		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
-		rel->l = NULL;
-		rel_destroy(rel);
-		(*changes)++;
-		return r;
-	}
-	/* push select through semi/anti join 
-	 * select (semi(A,B)) == semi(select(A), B) */
-	if (rel->op == op_select && r && is_semi(r->op) && !(rel_is_ref(r))) {
-		rel->l = r->l;
-		r->l = rel;
-		(*changes)++;
-		return r;
-	}
-	exps = rel->exps;
-
-	/* push select through join */
-	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
-		rel->exps = new_exp_list(); 
-		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = exp_dup(n->data);
-			if (e->type == e_cmp) {
-				sql_exp *re = e->r;
-
-				if (re->card >= CARD_AGGR) {
-					list_append(rel->exps, e);
-				} else {
-					rel->l = rel_push_select(r, e->l, e);
-					/* only pushed down selects are counted */
-					if (r == rel->l) {
-						(*changes)++;
-					} else { /* Not useful to introduce an extra select */
-						sql_rel *r = rel->l;
-
-						rel->l = r->l;
-						r->l = NULL;
-						list_append(rel->exps, exp_dup(e));
-						rel_destroy(r);
-						
-					}
-					assert(r == rel->l);
-				}
-			} else {
-				list_append(rel->exps, e);
-			} 
-		}
-		list_destroy(exps);
-		if (!list_length(rel->exps)) {
-			r = rel->l;
-			rel->l = NULL;
-			rel_destroy(rel);
-			return r;
-		}
-		return rel;
-	}
-
-	/* push select through set */
-	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
-		rel->exps = new_exp_list(); 
-		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = n->data, *ne = NULL;
-			if (e->type == e_cmp) {
-				int err = 0;
-				ne = exp_push_down(sql, e, r, r->l);
-				if (ne && ne != e) {
-					sql_exp *re = ne->r;
-					if (re->card >= CARD_AGGR) {
-						r->l = rel_push_join(r->l, ne->l, re, ne);
-					} else {
-						r->l = rel_push_select(r->l, ne->l, ne);
-					}
-				} else 
-					err = 1;
-				ne = exp_push_down(sql, e, r, r->r);
-				if (ne && ne != e) {
-					sql_exp *re = ne->r;
-					if (re->card >= CARD_AGGR) {
-						r->r = rel_push_join(r->r, ne->l, re, ne);
-					} else {
-						r->r = rel_push_select(r->r, ne->l, ne);
-					}
-				} else 
-					err = 1;
-
-				if (err)
-					list_append(rel->exps, exp_dup(e));
-			} else {
-				list_append(rel->exps, exp_dup(e));
-			} 
-		}
-		list_destroy(exps);
-		(*changes)++;
-		return r;
-	}
-
-	/* merge projects */
-	if (rel->op == op_project && r && r->op == op_project && !(rel_is_ref(r))) {
+	if (rel->op == op_project && 
+	    r && r->op == op_project && !(rel_is_ref(r))) {
 		int all = 1;
+
+		if (project_unsafe(rel) || project_unsafe(r))
+			return rel;
 
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(); 
@@ -1304,8 +1182,148 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			rel->exps = exps;
 		}
 		return rel;
-	/* push select through project */
-	} else if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
+	}
+	return rel;
+}
+
+/*
+ * Push select down, pushes the selects through (simple) projections. Also
+ * it cleans up the projections which become useless.
+ */
+static sql_rel *
+rel_push_select_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	list *exps = NULL;
+	sql_rel *r = NULL;
+	node *n;
+
+	(void)sql;
+	/* remove empty select's */
+	if ((is_join(rel->op) || is_semi(rel->op) || is_project(rel->op) || rel->op == op_topn) && rel->l) {
+		sql_rel *l = rel->l;
+		if (l->op == op_select && !(rel_is_ref(l)) &&
+		   (!l->exps || list_length(l->exps) == 0)) {
+			rel->l = l->l;
+			l->l = NULL;
+			rel_destroy(l);
+			(*changes)++;
+			return rel;
+		} 
+	}
+	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
+		sql_rel *r = rel->r;
+		if (r->op == op_select && !(rel_is_ref(r)) &&
+	   	   (!r->exps || list_length(r->exps) == 0)) {
+			rel->r = r->l;
+			r->l = NULL;
+			rel_destroy(r);
+			(*changes)++;
+			return rel;
+		}
+	} 
+	/* merge 2 selects */
+	r = rel->l;
+	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except) && exps_save(rel->exps)) {
+		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
+		rel->l = NULL;
+		rel_destroy(rel);
+		(*changes)++;
+		return r;
+	}
+	/* push select through semi/anti join 
+	 * select (semi(A,B)) == semi(select(A), B) */
+	if (rel->op == op_select && r && is_semi(r->op) && !(rel_is_ref(r))) {
+		rel->l = r->l;
+		r->l = rel;
+		(*changes)++;
+		return r;
+	}
+	exps = rel->exps;
+
+	if (rel->op == op_project && 
+	    r && r->op == op_project && !(rel_is_ref(r))) 
+		return rel_merge_projects(changes, sql, rel);
+
+	/* push select through join */
+	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+		rel->exps = new_exp_list(); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = exp_dup(n->data);
+			if (e->type == e_cmp) {
+				sql_exp *re = e->r;
+
+				if (re->card >= CARD_AGGR) {
+					list_append(rel->exps, e);
+				} else {
+					rel->l = rel_push_select(r, e->l, e);
+					/* only pushed down selects are counted */
+					if (r == rel->l) {
+						(*changes)++;
+					} else { /* Not useful to introduce an extra select */
+						sql_rel *r = rel->l;
+
+						rel->l = r->l;
+						r->l = NULL;
+						list_append(rel->exps, exp_dup(e));
+						rel_destroy(r);
+						
+					}
+					assert(r == rel->l);
+				}
+			} else {
+				list_append(rel->exps, e);
+			} 
+		}
+		list_destroy(exps);
+		if (!list_length(rel->exps)) {
+			r = rel->l;
+			rel->l = NULL;
+			rel_destroy(rel);
+			return r;
+		}
+		return rel;
+	}
+
+	/* push select through set */
+	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
+		rel->exps = new_exp_list(); 
+		for (n = exps->h; n; n = n->next) { 
+			sql_exp *e = n->data, *ne = NULL;
+			if (e->type == e_cmp) {
+				int err = 0;
+				ne = exp_push_down(sql, e, r, r->l);
+				if (ne && ne != e) {
+					sql_exp *re = ne->r;
+					if (re->card >= CARD_AGGR) {
+						r->l = rel_push_join(r->l, ne->l, re, ne);
+					} else {
+						r->l = rel_push_select(r->l, ne->l, ne);
+					}
+				} else 
+					err = 1;
+				ne = exp_push_down(sql, e, r, r->r);
+				if (ne && ne != e) {
+					sql_exp *re = ne->r;
+					if (re->card >= CARD_AGGR) {
+						r->r = rel_push_join(r->r, ne->l, re, ne);
+					} else {
+						r->r = rel_push_select(r->r, ne->l, ne);
+					}
+				} else 
+					err = 1;
+
+				if (err)
+					list_append(rel->exps, exp_dup(e));
+			} else {
+				list_append(rel->exps, exp_dup(e));
+			} 
+		}
+		list_destroy(exps);
+		(*changes)++;
+		return r;
+	}
+
+	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
 		if (project_unsafe(r))
@@ -1636,7 +1654,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 				if (is_column(e->type) && exp_is_atom(e)) {
 					list_append(exps, e);
-				} else if (e->type == e_column) {
+				} else if (e->type == e_column /*||
+					   e->type == e_func ||
+					   e->type == e_convert*/) {
 					if (e->name && e->name[0] == 'L')
 						return rel;
 					list_append(exps, e);
@@ -1657,7 +1677,9 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 
 				if (is_column(e->type) && exp_is_atom(e)) {
 					list_append(exps, e);
-				} else if (e->type == e_column) {
+				} else if (e->type == e_column /*||
+					   e->type == e_func ||
+					   e->type == e_convert*/) {
 					if (e->name && e->name[0] == 'L')
 						return rel;
 					list_append(exps, e);
@@ -2534,6 +2556,10 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 		(for example common rels, with only one different expression) */
 
 	/* TODO common sub relation/expression optimizer */
+
+	/* simple merging of projects */
+	if (gp.cnt[op_project])
+		rel = rewrite(sql, rel, &rel_merge_projects); 
 
 	/* push (simple renaming) projections up */
 	if (gp.cnt[op_project])

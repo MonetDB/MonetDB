@@ -1208,6 +1208,12 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
 	types_init(debug);
+
+#define FUNC_OIDS 1061
+	assert( store_oid <= FUNC_OIDS );
+	/* we store some spare oids */
+	store_oid = FUNC_OIDS;
+
 	sequences_init();
 	gtrans = tr = create_trans(stk);
 

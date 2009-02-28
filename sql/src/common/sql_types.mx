@@ -1333,28 +1333,15 @@ sqltypeinit(void)
 	sql_create_func3("ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
-	sql_create_aggr("sum", "aggr", "sum", BTE, SHT);
-	sql_create_aggr("sum", "aggr", "sum", BTE, INT);
-	sql_create_aggr("sum", "aggr", "sum", BTE, WRD);
 	sql_create_aggr("sum", "aggr", "sum", BTE, LNG);
-
-	sql_create_aggr("sum", "aggr", "sum", SHT, INT);
-	sql_create_aggr("sum", "aggr", "sum", SHT, WRD);
 	sql_create_aggr("sum", "aggr", "sum", SHT, LNG);
-
-	sql_create_aggr("sum", "aggr", "sum", INT, WRD);
 	sql_create_aggr("sum", "aggr", "sum", INT, LNG);
-
-	sql_create_aggr("sum", "aggr", "sum", WRD, WRD);
-	sql_create_aggr("sum", "aggr", "sum", WRD, LNG);
 	sql_create_aggr("sum", "aggr", "sum", LNG, LNG);
+	sql_create_aggr("sum", "aggr", "sum", WRD, WRD);
 
 	t = decimals; /* BTE */
-	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+1));
-	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+2));
 	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+3));
 	t++; /* SHT */
-	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+1));
 	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+2));
 	t++; /* INT */
 	sql_create_aggr("sum", "aggr", "sum", *(t), *(t+1));

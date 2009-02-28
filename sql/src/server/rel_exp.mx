@@ -444,7 +444,6 @@ exp_name( sql_exp *e )
 	return NULL;
 }
 
-
 char *
 exp_find_rel_name(sql_exp *e)
 {
@@ -607,7 +606,6 @@ exp_is_atom( sql_exp *e )
 	}
 	return 0;
 }
-
 
 sql_exp *
 exps_bind_column( list *exps, char *cname ) 
