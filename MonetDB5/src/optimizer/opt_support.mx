@@ -716,17 +716,21 @@ int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {   int k;
+	int (*cmp)(ptr,ptr);
+	VarPtr w,u;
+
 	(void) mb;
 	if( p== NULL || q== NULL || p->retc != q->retc || p->argc != q->argc)
 		return FALSE;
 	for(k=p->retc; k<p->argc;k++)
 		if( q->argv[k]!= p->argv[k]){
-			if( isVarConstant(mb,getArg(p,k)) && isVarConstant(mb,getArg(q,k)) ) {
-					ValPtr w,u;
-					w= &getVarConstant(mb,getArg(p,k));
-					u= &getVarConstant(mb,getArg(q,k));
-
-					if( w->vtype==u->vtype && ATOMcmp(w->vtype, VALget(w), VALget(u)) == 0)
+			if( isVarConstant(mb,getArg(p,k)) && 
+				isVarConstant(mb,getArg(q,k)) ) {
+					w= getVar(mb,getArg(p,k));
+					u= getVar(mb,getArg(q,k));
+					cmp = BATatoms[w->value.vtype].atomCmp;
+					if ( w->value.vtype == u->value.vtype &&
+						(*cmp)(VALget(&w->value), VALget(&u->value)) == 0)
 						continue;
 			}
 			return FALSE;
