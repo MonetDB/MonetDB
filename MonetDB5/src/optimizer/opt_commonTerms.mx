@@ -105,7 +105,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 {
 	int i, j, k, barrier= 0, last;
 	InstrPtr p, q;
-	int actions = 0;
+	int actions = 0, cnt;
 	int limit, slimit;
 	int *alias;
 	InstrPtr *old;
@@ -193,7 +193,7 @@ Like all optimizer decisions, it is safe to stop.
 			printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 			stream_printf(cntxt->fdout," :%d %d=%d %d %d %d %d %d\n", 
 				q->token != ASSIGNsymbol ,
-				lastassigned[getArg(p,0)],i,
+				lastassigned[getArg(q,0)],i,
 				!hasCommonResults(p, q), 
 				!hasSideEffects(q, TRUE),
 				isLinearFlow(q),
@@ -203,11 +203,15 @@ Like all optimizer decisions, it is safe to stop.
 				break;
 @-
 Simple assignments are not replaced either. They should be
-handled by the alias removal part
+handled by the alias removal part. All arguments should
+be assigned their value before instruction p.
 @c
+			cnt =0;
+			for (k = 0; k < q->retc; k++)
+				cnt += lastassigned[getArg(q,k)] <= i;
 			if (hasSameSignature(mb, p, q) && 
 				hasSameArguments(mb, p, q) && 
-				lastassigned[getArg(p,0)] <= i && /* all arguments */
+				cnt == q->retc &&
 				!hasCommonResults(p, q) && 
 				isLinearFlow(p) &&
 				isLinearFlow(q) 
@@ -219,11 +223,11 @@ handled by the alias removal part
 #endif
 				clrFunction(p);
 				p->token = ASSIGNsymbol;
-				p->argc = p->retc + q->retc;
+				p->argc = p->retc;
 				for (k = 0; k < q->retc; k++){
 					lastassigned[getArg(p,k)] = lastassigned[getArg(q,k)];
 					alias[getArg(p,k)] = alias[getArg(q,k)];
-					getArg(p,p->retc +k) = getArg(q,k);
+					p= pushArgument(mb,p, alias[getArg(q,k)]);
 				}
 #ifdef DEBUG_OPT_COMMONTERMS
 				stream_printf(cntxt->fdout, "COMMON MODIFIED EXPRESSION\n");

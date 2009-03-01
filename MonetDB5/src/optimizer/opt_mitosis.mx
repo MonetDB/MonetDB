@@ -191,7 +191,7 @@ spread evenly over the threads and the common type.
 		p= newStmt(mb,matRef,newRef);
 		getArg(p,0)=k;
 		setVarUDFtype(mb,k);
-		for(j=0; j<GDKnr_threads; j++)
+		for(j=0; j<pieces; j++)
 			p= pushArgument(mb,p,parts[j]);
 	}
 #ifdef _DEBUG_OPT_MITOSIS
