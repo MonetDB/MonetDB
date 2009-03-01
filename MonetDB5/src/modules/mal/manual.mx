@@ -52,7 +52,7 @@ comment "Generate a synopsis of a module for the reference manual";
 pattern index():void
 address MANUALcreateIndex
 comment "Produces an overview of all names grouped by module.";
-command summary():void
+pattern summary():void
 address MANUALcreateSummary
 comment "Produces a manual with help lines grouped by module.";
 
