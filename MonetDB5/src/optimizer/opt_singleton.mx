@@ -150,7 +150,7 @@ STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 	(void) cntxt;
 	if( mb->errors) 
 		return 0;
-	tuples = alloca(mb->stop * sizeof(STtuple));
+	tuples = (STtuple*) GDKmalloc(mb->stop * sizeof(STtuple));
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
@@ -330,6 +330,7 @@ variables on the stack.
 	printf("FINAL STAGE SINGLETON errors=%d\n", mb->errors);
 	printFunction(cntxt->fdout, mb, LIST_MAL_ALL);
 #endif
+	GDKfree(tuples);
 	return actions;
 }
 
@@ -341,7 +342,7 @@ OPTsingletonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	(void) cntxt;
 	(void) stk;
-	vars = (int *) alloca(mb->vtop);
+	vars = (int *) GDKmalloc(mb->vtop);
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -349,7 +350,9 @@ OPTsingletonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			if (varGetProp(mb, getArg(p, j), singletonProp) != NULL)
 				vars[cnt++] = getArg(p, j);
 	}
-	return STevaluate(cntxt, mb, cnt, vars);
+	i= STevaluate(cntxt, mb, cnt, vars);
+	GDKfree(vars);
+	return i;
 }
 
 @include optimizerWrapper.mx

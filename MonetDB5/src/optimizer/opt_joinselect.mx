@@ -62,10 +62,10 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) cntxt;
 #endif
 
-	ps= scr_s = (int*) alloca(scr_size * sizeof(int));
-	pi= scr_i = (int*) alloca(scr_size * sizeof(int));
-	pu= scr_u = (int*) alloca(scr_size * sizeof(int));
-	pd= scr_d = (int*) alloca(scr_size * sizeof(int));
+	ps= scr_s = (int*) GDKmalloc(scr_size * sizeof(int));
+	pi= scr_i = (int*) GDKmalloc(scr_size * sizeof(int));
+	pu= scr_u = (int*) GDKmalloc(scr_size * sizeof(int));
+	pd= scr_d = (int*) GDKmalloc(scr_size * sizeof(int));
 
 	(void) stk;
 	(void) pci;
@@ -289,6 +289,10 @@ end:
 #ifdef DEBUG_OPT_JOINSEL
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 #endif
+	GDKfree(ps);
+	GDKfree(pi);
+	GDKfree(pu);
+	GDKfree(pd);
 	return 1;
 }
 @include optimizerWrapper.mx

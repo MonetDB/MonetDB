@@ -80,11 +80,10 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 	setLifespan(mb,span);
-	alias= (int*) alloca(sizeof(int)*mb->vtop);
+	alias= (int*) GDKmalloc(sizeof(int)*mb->vtop);
 	for(j=0;j< mb->vtop; j++)
 		alias[j]=j;
-	available= (char*) alloca(sizeof(int)*mb->vtop);
-	memset(available,0, sizeof(int)* mb->vtop);
+	available= (char*) GDKzalloc(sizeof(int)*mb->vtop);
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
@@ -194,6 +193,8 @@ sure it becomes one.
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
+	GDKfree(alias);
+	GDKfree(available);
 	OPTDEBUG
 	if ( actions)
 		stream_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);

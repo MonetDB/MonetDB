@@ -115,7 +115,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) stk;
 	(void) cntxt;
-	alias= (int*) alloca(sizeof(int)* mb->vtop);
+	alias= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	for(i=0; i<mb->vtop; i++) alias[i]=i;
 
 	setLifespan(mb,span);
@@ -140,6 +140,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mb->stmt[i]= NULL;
 	mb->stop= k;
 	GDKfree(span);
+	GDKfree(alias);
 	OPTDEBUG
 	if (actions)
 		stream_printf(cntxt->fdout,"#opt_aliases: %d removed\n",actions);

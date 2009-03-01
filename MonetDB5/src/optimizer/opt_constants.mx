@@ -57,9 +57,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #ifdef DEBUG_OPT_CONSTANTS 
 	stream_printf(cntxt->fdout,"matching constant elements \n");
 #endif
-	alias= (int*) alloca(sizeof(int) * mb->vtop);
-	cst= (VarPtr*) alloca(sizeof(VarPtr) * mb->vtop);
-	index= (int*)alloca(sizeof(int) * mb->vtop);
+	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
+	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 
 	(void) stk;
 	(void) cntxt;
@@ -98,18 +98,14 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else
 			alias[i]=i;
 
-#ifdef DEBUG_OPT_CONSTANTS 
-/*
-	for( i=0;i < mb->vtop;i++)
-	stream_printf(cntxt->fdout,"map %d %d\n",i, alias[i]);
-*/
-#endif
-
 	for (i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		for (k=0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 	}
+	GDKfree(alias);
+	GDKfree(cst);
+	GDKfree(index);
 	return actions;
 }
 @include optimizerWrapper.mx

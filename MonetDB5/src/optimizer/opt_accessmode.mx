@@ -64,9 +64,8 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int top=0;
 	(void) stk;
 
-	candidate= (InstrPtr*) alloca(sizeof(InstrPtr) * mb->stop);
-	writeable= (int*) alloca(sizeof(int) * mb->vtop);
-	memset((char *)writeable,0, sizeof(int)*mb->vtop);
+	candidate= (InstrPtr*) GDKmalloc(sizeof(InstrPtr) * mb->stop);
+	writeable= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -106,6 +105,8 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #else
 	(void) cntxt;
 #endif
+	GDKfree(candidate);
+	GDKfree(writeable);
 	return actions;
 }
 @include optimizerWrapper.mx

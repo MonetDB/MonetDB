@@ -130,8 +130,8 @@ OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	before = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
-	within = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
+	before = (InstrPtr *) GDKmalloc((mb->ssize + 1) * sizeof(InstrPtr));
+	within = (InstrPtr *) GDKmalloc((mb->ssize + 1) * sizeof(InstrPtr));
 	bk = 0;
 	ik = 0;
 	blk = 0;
@@ -254,6 +254,8 @@ after the loop, because then you may not simple move an expression.
 	if( before[i])
 		pushInstruction(mb, before[i]);
 	GDKfree(span);
+	GDKfree(before);
+	GDKfree(within);
 	return actions;
 }
 @include optimizerWrapper.mx

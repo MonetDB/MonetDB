@@ -187,9 +187,8 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	if (mb->stop - pc < mc->stop - 2)
 		return 0;
 
-	cvar = (int *) alloca(mc->vtop * mc->maxarg);
-
-	mvar = (int *) alloca(mb->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
 	/* also trim the return statement */
 	lim = pc + mc->stop - 3;
 	k = 1;
@@ -213,6 +212,8 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 		for (j = i + 1; j < ctop; j++)
 			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j]))
 				return 0;
+	GDKfree(cvar);
+	GDKfree(mvar);
 	return 1;
 }
 
@@ -234,8 +235,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	p = getInstrPtr(mb, pc);
 	q = getInstrPtr(mc, 0);
 	ns = GDKzalloc((l = (mb->ssize + mc->ssize + p->retc - 3)) * sizeof(InstrPtr));
-	np = alloca(mc->ptop * sizeof(int));
-	nv = alloca(mc->vtop * sizeof(int));
+	np = (int*) GDKmalloc(mc->ptop * sizeof(int));
+	nv = (int*) GDKmalloc(mc->vtop * sizeof(int));
 
 	/* add all properties of the new block to the target environment */
 	for (n = 0; n < mc->ptop; n++) {
@@ -352,6 +353,8 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 
 	mb->ssize = l;
 	mb->stop = k;
+	GDKfree(np);
+	GDKfree(nv);
 	return pc;
 }
 
@@ -439,9 +442,8 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	int ctop = 0, mtop = 0;
 
 	/* collect variable map */
-	cvar = (int *) alloca(mc->vtop * mc->maxarg);
-
-	mvar = (int *) alloca(mb->vtop * mc->maxarg);
+	cvar = (int *) GDKmalloc(mc->vtop * mc->maxarg);
+	mvar = (int *) GDKmalloc(mb->vtop * mc->maxarg);
 	lim = pc + mc->stop - 2;
 	k = 1;
 	for (i = pc; i < lim; i++, k++) {
@@ -495,6 +497,8 @@ replaceMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 		mb->stmt[i] = 0;
 
 	mb->stop = k;
+	GDKfree(cvar);
+	GDKfree(mvar);
 	return pc;
 }
 

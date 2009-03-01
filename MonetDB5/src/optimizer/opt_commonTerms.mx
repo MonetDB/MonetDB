@@ -114,12 +114,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) cntxt;
 	(void) stk;
 	(void) pci;
-	lastassigned = (int*) alloca(sizeof(int) * mb->vtop);
-	alias = (int*) alloca(sizeof(int) * mb->vtop);
+	lastassigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	alias = (int*) GDKmalloc(sizeof(int) * mb->vtop);
 	for ( k=0;k<mb->vtop; k++)
 		alias[k]=k;
-	memset((void*) lastassigned, 0, mb->vtop * sizeof(int));
-
 
 #ifdef DEBUG_OPT_COMMONTERMS
 	stream_printf(cntxt->fdout,"START COMMONTERMS\n");
@@ -244,6 +242,8 @@ handled by the alias removal part
 	if( old[i])
 		freeInstruction(old[i]);
 	GDKfree(old);
+	GDKfree(alias);
+	GDKfree(lastassigned);
 	OPTDEBUG
 	if (actions)
 		stream_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);

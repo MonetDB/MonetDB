@@ -355,8 +355,6 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 #endif
 	/* dump properties to align decisions with the kernel */
 	OPTDEBUG{
-		stream_printf(cntxt->fdout,"#cost prediction BATs %d[%d] %d[%d]\n",
-			l->batCacheid, lc, r->batCacheid, rc);
 		stream_printf(cntxt->fdout,"#orderedvoidfetchjoin ? %d\n",
 			BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) );
 	}
@@ -455,7 +453,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,*bid,top=0;
 	int *r = (int*) getArgReference(stk, pci, 0);
-	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -470,6 +468,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
 	BBPkeepref( *r = b->batCacheid);
+	GDKfree(joins);
 	return MAL_SUCCEED;
 }
 @}

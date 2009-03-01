@@ -122,7 +122,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) stk;
-	alias= (int*) alloca(sizeof(int) * pci->maxarg);
+	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
@@ -224,6 +224,7 @@ find the actual arguments at the proper place of the callee.
 	q = newAssignment(mb);
 	getArg(q, 0) = getArg(pci, 0);
 	q= pushArgument(mb, q, resB);
+	GDKfree(alias);
 	return MAL_SUCCEED;
 }
 

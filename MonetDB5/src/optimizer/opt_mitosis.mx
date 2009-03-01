@@ -131,7 +131,7 @@ spread evenly over the threads and the common type.
 #endif
 
 	/* inject the MAT versions for the largest table */
-	parts= (int*) alloca(sizeof(int)* pieces);
+	parts= (int*) GDKmalloc(sizeof(int)* pieces);
 
 	old = mb->stmt;
 	limit= mb->stop;
@@ -197,6 +197,7 @@ spread evenly over the threads and the common type.
 #ifdef _DEBUG_OPT_MITOSIS
 	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
+	GDKfree(parts);
 	return 1;
 }
 @include optimizerWrapper.mx
