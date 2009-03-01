@@ -1235,6 +1235,7 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== uselectRef ||
 				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
+				getFunctionId(p)== thetauselectRef ||
 				getFunctionId(p)== likeselectRef ||
 				getFunctionId(p)== likeuselectRef ||
 				getFunctionId(p)== reuseRef
@@ -1259,6 +1260,7 @@ int isSelect(InstrPtr p)
 		getFunctionId(p)== uselectRef ||
 		getFunctionId(p)== projectRef ||
 		getFunctionId(p)== antiuselectRef ||
+		getFunctionId(p)== thetauselectRef ||
 		getFunctionId(p)== likeselectRef ||
 		getFunctionId(p)== likeuselectRef ));
 }
