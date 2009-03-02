@@ -826,6 +826,9 @@ BBPexit(void)
 			GDKfree(BBP_physical(i));
 			BBP_physical(i) = NULL;
 		}
+		if (BBP[i].bak[0])
+			GDKfree(BBP[i].bak[0]);
+		BBP[i].bak[0] = NULL;
 	}
 	GDKfree(BBP_hash);
 	BBP_hash = 0;
