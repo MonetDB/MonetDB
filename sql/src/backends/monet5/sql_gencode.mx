@@ -2088,7 +2088,7 @@ backend_create_func(backend *be, sql_func *f)
 	f->sql++;
 	s = sql_parse(m, f->imp, m_instantiate);
 	if (!s) {
-		fprintf(stderr, m->errstr);
+		fputs(m->errstr, stderr);
 		return;
 	} else {
 		stmt *opt;
