@@ -169,7 +169,7 @@ command_version()
 }
 
 static void
-secondsToString(char *buf, time_t t, int printlong)
+secondsToString(char *buf, time_t t, int longness)
 {
 	time_t p;
 	size_t i = 0;
@@ -178,7 +178,7 @@ secondsToString(char *buf, time_t t, int printlong)
 	if (t > p) {
 		i += sprintf(buf, "%dw", (int)(t / p));
 		t -= (t / p) * p;
-		if (printlong == 0)
+		if (--longness == 0)
 			return;
 		buf[i++] = ' ';
 	}
@@ -186,7 +186,7 @@ secondsToString(char *buf, time_t t, int printlong)
 	if (t > p) {
 		i += sprintf(buf, "%dd", (int)(t / p));
 		t -= (t / p) * p;
-		if (printlong == 0)
+		if (--longness == 0)
 			return;
 		buf[i++] = ' ';
 	}
@@ -194,7 +194,7 @@ secondsToString(char *buf, time_t t, int printlong)
 	if (t > p) {
 		i += sprintf(buf + i, "%dh", (int)(t / p));
 		t -= (t / p) * p;
-		if (printlong == 0)
+		if (--longness == 0)
 			return;
 		buf[i++] = ' ';
 	}
@@ -202,13 +202,13 @@ secondsToString(char *buf, time_t t, int printlong)
 	if (t > p) {
 		i += sprintf(buf + i, "%dm", (int)(t / p));
 		t -= (t / p) * p;
-		if (printlong == 0)
+		if (--longness == 0)
 			return;
 		buf[i++] = ' ';
 	}
 
 	/* t must be < 60 */
-	if (printlong == 0 || !(i > 0 && t == 0)) {
+	if (--longness == 0 || !(i > 0 && t == 0)) {
 		sprintf(buf + i, "%ds", (int)(t));
 	} else {
 		buf[--i] = '\0';
@@ -266,7 +266,7 @@ printStatus(sabdb *stats, int mode)
 		if (stats->state != SABdbRunning) {
 			uptime[0]= '\0';
 		} else {
-			secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+			secondsToString(uptime, time(NULL) - uplog.laststart, 3);
 		}
 
 		/* cut too long database names */
@@ -278,7 +278,7 @@ printStatus(sabdb *stats, int mode)
 			dbname = stats->dbname;
 		}
 		/* demo | state | uptime | health */
-		secondsToString(avg, uplog.avguptime, 0);
+		secondsToString(avg, uplog.avguptime, 1);
 			printf("%-14s  %s %12s",
 					dbname, state, uptime);
 		if (uplog.startcntr)
@@ -334,14 +334,14 @@ printStatus(sabdb *stats, int mode)
 		printf("  start count: %d\n  stop count: %d\n  crash count: %d\n",
 				uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
 		if (stats->state == SABdbRunning) {
-			secondsToString(up, time(NULL) - uplog.laststart, 1);
+			secondsToString(up, time(NULL) - uplog.laststart, 999);
 			printf("  current uptime: %s\n", up);
 		}
-		secondsToString(up, uplog.avguptime, 1);
+		secondsToString(up, uplog.avguptime, 999);
 		printf("  average uptime: %s\n", up);
-		secondsToString(up, uplog.maxuptime, 1);
+		secondsToString(up, uplog.maxuptime, 999);
 		printf("  maximum uptime: %s\n", up);
-		secondsToString(up, uplog.minuptime, 1);
+		secondsToString(up, uplog.minuptime, 999);
 		printf("  minimum uptime: %s\n", up);
 		if (uplog.lastcrash != -1) {
 			t = localtime(&uplog.lastcrash);
@@ -376,7 +376,7 @@ printStatus(sabdb *stats, int mode)
 				char up[32];
 				t = localtime(&uplog.laststart);
 				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S, ", t);
-				secondsToString(up, time(NULL) - uplog.laststart, 1);
+				secondsToString(up, time(NULL) - uplog.laststart, 999);
 				strcat(buf, up);
 			} break;
 			case SABdbCrashed:
@@ -397,9 +397,9 @@ printStatus(sabdb *stats, int mode)
 				"in total %d crashes\n",
 				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
 				uplog.crashcntr);
-		secondsToString(min, uplog.minuptime, 0);
-		secondsToString(avg, uplog.avguptime, 0);
-		secondsToString(max, uplog.maxuptime, 0);
+		secondsToString(min, uplog.minuptime, 1);
+		secondsToString(avg, uplog.avguptime, 1);
+		secondsToString(max, uplog.maxuptime, 1);
 		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
 				min, avg, max, uplog.stopcntr);
 	}
