@@ -1170,6 +1170,9 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
 {
 	sql_rel *p = NULL;
 
+	if (rel && is_project(rel->op) && !is_processed(rel)) 
+		rel = rel->l;
+
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
 		return NULL;
 
@@ -2508,6 +2511,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			 */
 			exps = rel_projections(sql, rel, NULL, 1, 1);
 			rel = rel_add_identity(sql, rel, &e);
+			set_processed(rel);
 
 			/* TODO double dup to make sure we reference the rel */
 			r = rel_subquery(sql, rel_dup(rel_dup(rel)), lo, ek);
@@ -2520,6 +2524,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			le = rel_bind_column(sql, rel, e->name);
 			re = rel_bind_column(sql, r, e->name);
 
+			if (!le || !re)
+				return NULL;
 			e = exp_compare(le, re, cmp_equal);
 		}
 		if (!r || !rel) 
@@ -3510,6 +3516,7 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 
 	assert(is_project(r->op));
 	r = r->l;
+	set_processed(r);
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 		return rel_bind_column(sql, r, name);

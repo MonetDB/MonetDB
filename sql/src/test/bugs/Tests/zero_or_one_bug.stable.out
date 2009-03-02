@@ -33,8 +33,8 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .,	.L5 # table_name
-% isnull_not_isnull_id1,	L5 # name
+% .,	.L6 # table_name
+% isnull_not_isnull_id1,	L6 # name
 % int,	varchar # type
 % 1,	1 # length
 [ 1,	NULL	]
@@ -46,7 +46,7 @@ Over..
 [ 7,	NULL	]
 [ 8,	NULL	]
 [ 9,	NULL	]
-% .,	.L7 # table_name
+% .,	.L11 # table_name
 % isnull_not_isnull_id1,	my_col1 # name
 % int,	varchar # type
 % 1,	1 # length
