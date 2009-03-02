@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  02 Mar 2009; Fabian Groffen <fabian@cwi.nl> monetdb.mx:
+  Small cosmetic fix not to overflow the uptime in monetdb status display
+
   23 Feb 2009; Fabian Groffen <fabian@cwi.nl> ChangeLog:
   Fix hang on Linux when shutting down. select() calls are not interrupted on
   Linux, so make sure they time out. Fixes bug #2623838

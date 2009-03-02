@@ -4611,7 +4611,8 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 	    /* make it a switch */
 	    if ( rangeBAT[myindex] == NULL ) {
 
-	      BAT* docs_in_cont = BATselect(BATmirror(doc_loaded),&container,&container);
+	      BAT* dlmirror = BATmirror(doc_loaded);
+	      BAT* docs_in_cont = BATselect(dlmirror,&container,&container);
               BATiter docs_in_conti = bat_iterator(docs_in_cont);
 	      BUN p_dic,q_dic;
 	      BATloop(docs_in_cont, p_dic, q_dic) {
@@ -4646,7 +4647,8 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		    } else {
 	                doc_end = oid_nil;
 		    }
-		    BAT* ds = BATselect(BATmirror(doc_pfpre),(ptr)&doc_start,(ptr)&doc_end);
+		    BAT* dpfpm = BATmirror(doc_pfpre);
+		    BAT* ds = BATselect(dpfpm,(ptr)&doc_start,(ptr)&doc_end);
 		    if ( rangeBAT[myindex] == NULL ) {
 		        rangeBAT[myindex] = BATsetaccess(ds, BAT_WRITE);
 		    } else {
@@ -4655,8 +4657,11 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 			   return GDK_FAIL;
 		        }
 		    }
+	            /* BBPunfix(BBPcacheid(ds)); FAILS */
 		} {
-		} } }
+		} } 
+	        BBPunfix(BBPcacheid(docs_in_cont));
+	      }
 	        if ( rangeBAT[myindex] ) {
 		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
 		    if ( range_bun != BUN_NONE ) {
@@ -4682,7 +4687,12 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
         }
 	GDKfree(rangeBAT);
 
-	*res = BATmirror(BATmark(BATmirror(*res), 0));
+	BAT *r1 = BATmirror(*res);
+	BAT *r2 = BATmark(r1, 0);
+	*res    = BATmirror(r2);
+
+	BBPunfix(BBPcacheid(r1));
+	/* BBPunfix(BBPcacheid(r2)); FAILS */
 
 	/* */
 	if ( debug ) 

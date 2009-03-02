@@ -892,21 +892,13 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		     "\"sys\".\"schemas\" \"s\" "
 		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";
-	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\" "
+	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\", \"t\".\"type\" "
 		"FROM \"sys\".\"schemas\" \"s\","
 		     "\"sys\".\"_tables\" \"t\" "
-		"WHERE \"t\".\"type\" = 0 AND "
+		"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
 		      "\"t\".\"system\" = FALSE AND "
 		      "\"s\".\"id\" = \"t\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
-	const char *views = "SELECT \"s\".\"name\","
-		    "\"t\".\"query\" "
-		"FROM \"sys\".\"schemas\" \"s\", "
-		     "\"sys\".\"_tables\" \"t\" "
-		"WHERE \"t\".\"type\" = 1 AND "
-		      "\"t\".\"system\" = FALSE AND "
-		      "\"s\".\"id\" = \"t\".\"schema_id\" "
-		"ORDER BY \"s\".\"name\",\"t\".\"name\"";
+		"ORDER BY \"t\".\"type\", \"s\".\"name\",\"t\".\"name\"";
 	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
@@ -1173,31 +1165,6 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		mapi_close_handle(hdl);
 	}
-
-	/* dump views */
-	if ((hdl = mapi_query(mid, views)) == NULL || mapi_error(mid)) {
-		if (hdl) {
-			mapi_explain_query(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return 1;
-	}
-	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *query = mapi_fetch_field(hdl, 1);
-
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
-
-		stream_printf(toConsole, "%s\n", query);
-	}
-	if (mapi_error(mid)) {
-		mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-		return 1;
-	}
-	mapi_close_handle(hdl);
 
 	rc += dump_functions(mid, toConsole, sname);
 
