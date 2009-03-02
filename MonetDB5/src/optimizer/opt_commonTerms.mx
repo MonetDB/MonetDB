@@ -214,7 +214,8 @@ be assigned their value before instruction p.
 				cnt == q->retc &&
 				!hasCommonResults(p, q) && 
 				isLinearFlow(p) &&
-				isLinearFlow(q) 
+				isLinearFlow(q)  &&
+				getModuleId(p) != matRef
 				) {
 #ifdef DEBUG_OPT_COMMONTERMS
 				stream_printf(cntxt->fdout, "Found a common expression " 
