@@ -1590,10 +1590,10 @@ expected usage pattern of the memory in a heap.
 gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
 #define REMAP_PAGE_BITS    GDK_mem_pagebits
-#define REMAP_PAGE_SIZE    (1 << REMAP_PAGE_BITS)
+#define REMAP_PAGE_SIZE    ((size_t) (1 << REMAP_PAGE_BITS))
 #define REMAP_PAGE_MASK    (REMAP_PAGE_SIZE - 1)
 #define REMAP_PAGE_MAXBITS (REMAP_PAGE_BITS+3)
-#define REMAP_PAGE_MAXSIZE (1<<REMAP_PAGE_MAXBITS)	/* max page bytesize of unary BUN heap (8-byte atom) */
+#define REMAP_PAGE_MAXSIZE ((size_t) (1<<REMAP_PAGE_MAXBITS)) /* max page bytesize of unary BUN heap (8-byte atom) */
 
 /* Buffer management advise for heaps */
 #define BUF_NORMAL	0	/* No further special treatment */
@@ -2219,8 +2219,7 @@ gdk_export int GDKmunmap(void *addr, size_t len);
 gdk_export ptr GDK_mem_start;		/* sbrk(0) at start of the program */
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use VM rather than heap */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
-gdk_export size_t GDK_vm_minsize;	/* smallest size allowed for a vm block */
-gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserverd vm */
+gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int    GDK_vm_trim;		/* run vmtrim thread */
 
 gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */

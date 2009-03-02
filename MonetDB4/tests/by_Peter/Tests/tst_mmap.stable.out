@@ -14,10 +14,6 @@ stdout of test 'tst_mmap` in directory 'tests/by_Peter` itself:
 # Monet Database Server V4.3.16_rc05
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# reduce mem_bigsize to trigger memory mapping
-#
-vm_minsize(lng(128*1024)); 
-
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.

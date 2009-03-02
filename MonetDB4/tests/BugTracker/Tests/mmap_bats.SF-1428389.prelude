@@ -1,7 +1,6 @@
 module(radix);
 
 mem_bigsize(1024LL);
-vm_minsize(1024LL);
 
 PROC killer_init(int count) : void
 {

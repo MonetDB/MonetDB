@@ -1157,10 +1157,7 @@ Module: "sys"
 [ "view_var_value",	  "BUILTIN:   ",  "view_var_value() : BAT[int,str] ",							  "Pseudo bat to map variable id to its value (as a string)."																																																								  ]
 [ "vm_cursize",		  "COMMAND:   ",  "vm_cursize() : lng",									  "the amount of logical VM space in KB that is currently in use"																																																							  ]
 [ "vm_maxsize",		  "COMMAND:   ",  "vm_maxsize() : lng",									  "the maximum usable amount of logical VM space in KB (target only)"																																																							  ]
-[ "vm_maxsize",		  "COMMAND:   ",  "vm_maxsize(lng) : void",								  "set the maximum usable amount of physical swapspace in KB"																																																								  ]
-[ "vm_minsize",		  "COMMAND:   ",  "vm_minsize() : lng",										  "Get the threshold. Block larger then this threshold will be mmapped."																																																																			  ]
-[ "vm_minsize",		  "COMMAND:   ",  "vm_minsize(lng) : void",									  "Set the threshold. Block larger then this threshold will be mmapped."																																																																			  ]
-[ "vm_trim",		  "COMMAND:   ",  "vm_trim(lng) : void",								  "flush memory maps"																																			  ]
+[ "vm_maxsize",		  "COMMAND:   ",  "vm_maxsize(lng) : void",								  "set the maximum usable amount of physical swapspace in KB"																																																								  ][ "vm_trim",		  "COMMAND:   ",  "vm_trim(lng) : void",								  "flush memory maps"																																			  ]
 [ "vm_usage",		  "COMMAND:   ",  "vm_usage(lng) : BAT[str,lng]",							  "get a split-up of how much virtual memory blocks are in use."																																																							  ]
 
 Module: "trans"

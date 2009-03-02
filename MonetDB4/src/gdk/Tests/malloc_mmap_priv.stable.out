@@ -10,8 +10,6 @@ stdout of test 'malloc_mmap_priv` in directory 'src/gdk` itself:
 # Copyright (c) 1993-2008, CWI. All rights reserved.
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-vm_minsize(lng(128*1024));
-
 # test memory map of string heap under append
 var i := 0;
 var b := 20000;

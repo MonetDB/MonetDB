@@ -1,6 +1,4 @@
 # test memory map of string heap under append
-vm_minsize(lng(128*1024));
-
 var b := 500000;
 #BIG := new(void,int,50000000); # claim 200MB
 var d := densebat(wrd(b)).[int]().[+](1);

@@ -446,23 +446,6 @@ get_vm_cursize(lng *num)
 }
 
 int
-get_vm_minsize(lng *num)
-{
-	*num = GDK_vm_minsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_vm_minsize(lng *num)
-{
-	@:num2sze(vm_minsize)@
-	if (sze < GDK_mem_bigsize)
-		set_mem_bigsize(num);
-	GDK_vm_minsize = MAX(GDK_mem_bigsize, sze);
-	return GDK_SUCCEED;
-}
-
-int
 get_vm_maxsize(lng *num)
 {
 	*num = GDK_vm_maxsize;
@@ -473,9 +456,7 @@ int
 set_vm_maxsize(lng *num)
 {
 	@:num2sze(vm_maxsize)@
-	if (sze < GDK_vm_minsize)
-		set_vm_minsize(num);
-	GDK_vm_maxsize = MAX(GDK_vm_minsize, sze);
+	GDK_vm_maxsize = MAX(REMAP_PAGE_MAXSIZE, sze);
 	return GDK_SUCCEED;
 }
 

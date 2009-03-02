@@ -86,10 +86,6 @@ low value (say 64KB).
  	"set the maximum usable amount of physical swapspace in KB"
 .COMMAND vm_cursize() : lng = get_vm_cursize;
  	"the amount of logical VM space in KB that is currently in use"
-.COMMAND vm_minsize() : lng = get_vm_minsize;
- 	"Get the threshold. Block larger then this threshold will be mmapped."
-.COMMAND vm_minsize(lng) : void = set_vm_minsize;
- 	"Set the threshold. Block larger then this threshold will be mmapped."
 .COMMAND vm_maxsize() : lng = get_vm_maxsize;
  	"the maximum usable amount of logical VM space in KB (target only)"
 .COMMAND vm_maxsize(lng) : void = set_vm_maxsize;
@@ -1460,23 +1456,6 @@ get_vm_cursize(lng *num)
 }
 
 int
-get_vm_minsize(lng *num)
-{
-	*num = GDK_vm_minsize;
-	return GDK_SUCCEED;
-}
-
-int
-set_vm_minsize(lng *num)
-{
-	@:num2sze(vm_minsize)@
-	if (sze < GDK_mem_bigsize)
-		set_mem_bigsize(num);
-	GDK_vm_minsize = MAX(GDK_mem_bigsize, sze);
-	return GDK_SUCCEED;
-}
-
-int
 get_vm_maxsize(lng *num)
 {
 	*num = GDK_vm_maxsize;
@@ -1487,9 +1466,7 @@ int
 set_vm_maxsize(lng *num)
 {
 	@:num2sze(vm_maxsize)@
-	if (sze < GDK_vm_minsize)
-		set_vm_minsize(num);
-	GDK_vm_maxsize = MAX(GDK_vm_minsize, sze);
+	GDK_vm_maxsize = MAX(REMAP_PAGE_MAXSIZE, sze);
 	return GDK_SUCCEED;
 }
 

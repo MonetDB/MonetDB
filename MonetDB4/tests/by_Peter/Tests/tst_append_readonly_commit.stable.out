@@ -9,10 +9,6 @@ stdout of test 'tst_append_readonly_commit` in directory 'tests/by_Peter` itself
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-# reduce mem_bigsize to trigger memory mapping
-#
-vm_minsize(lng(128*1024)); 
-
 # test memory map of string heap under append
 var b := 20000;
 #BIG := new(void,int,50000000); # claim 200MB

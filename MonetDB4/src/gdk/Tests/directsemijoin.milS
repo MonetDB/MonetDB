@@ -1,6 +1,4 @@
 module(xtables);
-vm_minsize(lng(270000));
-print(vm_minsize());
 
 var dbgmsk := debugmask();
 var a:=new(void,int).seqbase(oid(0));

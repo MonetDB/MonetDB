@@ -1,5 +1,3 @@
-vm_minsize(lng(128*1024));
-
 # test memory map of string heap under append
 var i := 0;
 var b := 20000;

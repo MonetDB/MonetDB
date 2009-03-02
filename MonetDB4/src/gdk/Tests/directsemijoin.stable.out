@@ -11,9 +11,6 @@ stdout of test 'directsemijoin` in directory 'src/gdk` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(xtables);
-vm_minsize(lng(270000));
-print(vm_minsize());
-[ 270000 ]
 
 var dbgmsk := debugmask();
 var a:=new(void,int).seqbase(oid(0));
