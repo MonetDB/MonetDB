@@ -200,7 +200,7 @@ monet_hello(opt *set, int setlen)
 	s += strlen(s);
 	snprintf(s,size,"# Copyright (c) August 2008- MonetDB B.V., all rights reserved\n");
 	if (msg && strcmp(msg, "yes") == 0){
-		printf(monet_motd);
+		printf("%s",monet_motd);
 		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
 	/* extend monet_motd with compilation information for performance tracing */
