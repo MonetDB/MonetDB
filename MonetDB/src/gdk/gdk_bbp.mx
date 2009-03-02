@@ -814,11 +814,13 @@ BBPexit(void)
 					BATfree(b);
 			}
 			BBPuncacheit_(i, TRUE);
-			if (BBP_logical(i) != BBP[ABS(i)].bak[(i) < 0])
-				GDKfree(BBP[ABS(i)].bak[(i) < 0]);
-			BBP[ABS(i)].bak[(i) < 0] = NULL;
-			GDKfree(BBP_logical(i));
-			BBP_logical(i) = NULL;
+			if (BBP[i].nme[0] != BBP[i].bak[0])
+				GDKfree(BBP[i].bak[0]);
+			BBP[i].bak[0] = NULL;
+			GDKfree(BBP[i].nme[0]);
+			BBP[i].nme[0] = NULL;
+			GDKfree(BBP[i].nme[1]);
+			BBP[i].nme[1] = NULL;
 		}
 		if (BBP_physical(i)) {
 			GDKfree(BBP_physical(i));
