@@ -2004,6 +2004,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel * rel_dce(mvc *sql, sql_rel *rel);
 static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
 
 static sql_rel *
@@ -2011,6 +2012,9 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 {
 	if (!rel)
 		return rel;
+
+	if (!skip_proj && rel_is_ref(rel))
+		return rel_dce(sql, rel);
 
 	switch(rel->op) {
 	case op_basetable:
@@ -2073,12 +2077,13 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
  * Based on top relation expressions mark sub expressions as used.
  * Then recurse down until the projections. Clean them up and repeat.
  */
+
 static sql_rel *
 rel_dce_sub(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return rel;
-
+	
 	rel = rel_remove_unused(sql, rel);
 	/* mark used up until the next project */
 	rel_mark_used(sql, rel, 1);

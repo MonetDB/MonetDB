@@ -33,8 +33,8 @@ Over..
 % . # table_name
 % single_value # name
 % varchar # type
-% 154 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 163 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,joinPath,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 % . # table_name
 % single_value # name
 % varchar # type
@@ -43,13 +43,13 @@ Over..
 % . # table_name
 % single_value # name
 % varchar # type
-% 154 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 163 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,joinPath,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 % . # table_name
 % single_value # name
 % varchar # type
-% 154 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
+% 163 # length
+[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,commonTerms,joinPath,accumulators,deadcode,reduce,garbageCollector,dataflow,history,multiplex"	]
 
 # 20:30:45 >  
 # 20:30:45 >  Done.

@@ -93,13 +93,13 @@ opt_export str OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 @-
 Prepare the call to the history manager.
 @= arguments
-	q = newStmt(mb,"sql","argRecord");
+	q = newStmt1(mb, sqlRef, "argRecord");
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 	arg= getArg(q,0)= newVariable(mb,GDKstrdup("args"),TYPE_str);
 @-
 @= initCounter
-	q = newStmt(mb,"@2","@3");
+	q = newStmt(mb, "@2", "@3");
 	@1= getArg(q,0)= newVariable(mb,GDKstrdup("@1"),TYPE_@4);
 @= zeroCounter
 	q = newAssignment(mb);
@@ -173,13 +173,13 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	/* run the keepQuery operation once only */
 	pushInstruction(mb, q = copyInstruction(keepQuery));
 	q->token = ASSIGNsymbol;
-	q = newStmt(mb,sqlRef,"forgetPrevious");
+	q = newStmt1(mb, sqlRef, "forgetPrevious");
 
 	/* collect the statistics */
 	@:initCounters@
 
 	for (i = 1; i < limit; i++) {
-		p= old[i];
+		p = old[i];
 		
 		if ( getModuleId(p)==sqlRef && 
 			(idcmp(getFunctionId(p),"exportValue")==0 ||
@@ -206,10 +206,10 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			returnseen++;
 @-
 @= update
-			q = newStmt(mb,"@2","@3");
-			r = newStmt(mb,"calc","@4");
-			r = pushArgument(mb,r, getArg(q,0));
-			r = pushArgument(mb,r, @1);
+			q = newStmt(mb, "@2", "@3");
+			r = newStmt1(mb, calcRef, "@4");
+			r = pushArgument(mb, r, getArg(q,0));
+			r = pushArgument(mb, r, @1);
 			getArg(r,0)=@1;
 @c
 			@:initCounter(foot,profiler,getFootprint,lng)@
@@ -217,7 +217,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			@:update(oublock,profiler,getDiskWrites,-)@
 			@:update(inblock,profiler,getDiskReads,-)@
 
-			q = newStmt(mb,"user","keepcall");
+			q = newStmt(mb, "user", "keepcall");
 			q = pushArgument(mb, q, getArg(keepQuery,1)); /* query identifier */
 			q = pushArgument(mb, q, ctime); /* arguments */
 			q = pushArgument(mb, q, arg);   /* arguments */

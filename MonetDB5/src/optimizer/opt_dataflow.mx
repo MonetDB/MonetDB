@@ -158,9 +158,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			pushInstruction(mb,p);
 			continue;
 		}
-
-		if ( p->token == REMsymbol)
-			pushInstruction(mb,p);
 		if (flowblock == 0){
 			flowblock = newTmpVariable(mb,TYPE_int);
 			entries = 0;

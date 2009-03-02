@@ -4717,8 +4717,9 @@ rel_view(mvc *sql, dlist *qname, dlist *column_spec, symbol *query, int check, i
 
 			t = mvc_create_view(sql, s, name, q, 0);
 			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
+				sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
 				rel_destroy(sq);
-				return sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
+				return NULL;
 			}
 		}
 
