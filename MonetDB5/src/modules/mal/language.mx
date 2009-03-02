@@ -88,7 +88,7 @@ comment "Assertion test.";
 pattern assertSpace(depth:int)
 address safeguardStack
 comment "Ensures that the current call does not consume
-more then depth*vtop elements on the stack.";
+more than depth*vtop elements on the stack.";
 
 pattern dataflow():int
 address MALstartDataflow

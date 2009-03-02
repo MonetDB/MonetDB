@@ -59,8 +59,8 @@ create table callHistory(
 );
 
 create view queryLog as
-select * from queryHistory qd, callHistory ql
-where qd.id= ql.id;
+select qd.*, ql.ctime, ql.arguments, ql.xtime, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryHistory qd, callHistory ql
+where qd.id = ql.id;
 
 -- the signature is used in the kernel, don't change it
 create procedure keepQuery(

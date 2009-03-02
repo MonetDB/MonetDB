@@ -540,7 +540,7 @@ static int
 disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 {
 	int i, j;
-	char *used = alloca(mat[m].mi->argc);
+	char *used = GDKzalloc(mat[m].mi->argc);
 	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
 	int tpe = getVarType(mb,getArg(mat[m].mi, 0));
 	int vj, vi;
@@ -548,8 +548,6 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	stream_printf(GDKout,"MAT optimizer, mat_disjoint\n");
 	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
 #endif
-
-	memset(used, 0, mat[m].mi->argc);
 
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
@@ -582,6 +580,7 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	}
 	pushInstruction(mb,r);
 	*mtop = mat_add(mat, *mtop, r, NULL, mat_none);
+	GDKfree(used);
 	return *mtop -1;
 }
 
@@ -960,7 +959,7 @@ static InstrPtr
 mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 {
 	int cnt = group_chain_list_length(mb, getArg(mat[g].mi1, 1), mb->stop);
-	int *attrs = alloca(cnt * sizeof(int) * mat[ext].mi->argc), k, i;
+	int *attrs = (int*) GDKmalloc(cnt * sizeof(int) * mat[ext].mi->argc), k, i;
 	InstrPtr cur = NULL;
 
 #ifdef DEBUG_OPT_MERGETABLE
@@ -997,7 +996,8 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 	}
 	getArg(cur, 0) = mat[g].mv;
 	getArg(cur, 1) = mat[g].mv1;
-assert(cur);
+	assert(cur);
+	GDKfree(attrs);
 	return cur;
 }
 
@@ -1469,8 +1469,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stop = 0;
 
 	/* the number of MATs is limited to the variable stack*/
-	mat = (mat_t*) alloca(mb->vtop * sizeof(mat_t));
-	memset((char*) mat, 0, mb->vtop * sizeof(mat_t));
+	mat = (mat_t*) GDKzalloc(mb->vtop * sizeof(mat_t));
 
 	for( i=0; i<oldtop; i++){
 		int n = -1, o = -1;
@@ -1757,6 +1756,7 @@ fail:
 	OPTDEBUG
 	if( actions)
 		stream_printf(cntxt->fdout,"#opt_mergetable: %d merge actions\n",actions);
+	GDKfree(mat);
 	return actions;
 }
 @include optimizerWrapper.mx

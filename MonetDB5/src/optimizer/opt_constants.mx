@@ -18,12 +18,10 @@
 @f opt_constants
 @- Constant Duplicate Removal
 The compilers may generate an abundance of constants on
-the stack. This simple optimizer re-organizes the variable table
-such that all constants are moved to the beginning of the
-symbol table, right after the signature variables.
-This makes it easier to search for duplicates and alias
-their variables.
-Furthermore, it makes it easier to find common terms.
+the stack. This simple optimizer re-organizes performs a complete
+job to use constants only once.
+This makes it easier to search for statement duplicates 
+and alias their variables.
 
 @{
 @mal
@@ -40,7 +38,7 @@ comment "Duplicate constant removal optimizer";
 #include "opt_support.h"
 #include "mal_exception.h"
 
-/* #define DEBUG_OPT_CONSTANTS       show partial result */
+/* #define DEBUG_OPT_CONSTANTS        show partial result */
 
 @-
 We have to keep an alias table to reorganize the program
@@ -56,9 +54,12 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int *alias, *index;
 	VarPtr x,y, *cst;
 
-	alias= (int*) alloca(sizeof(int) * mb->vtop);
-	cst= (VarPtr*) alloca(sizeof(VarPtr) * mb->vtop);
-	index= (int*)alloca(sizeof(int) * mb->vtop);
+#ifdef DEBUG_OPT_CONSTANTS 
+	stream_printf(cntxt->fdout,"matching constant elements \n");
+#endif
+	alias= (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
+	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 
 	(void) stk;
 	(void) cntxt;
@@ -73,7 +74,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if ( x->type == y->type &&
 					ATOMcmp(x->type, VALget(&x->value), VALget(&y->value)) == 0){
 #ifdef DEBUG_OPT_CONSTANTS 
-	stream_printf(cntxt->fdout,"matching elements %d %d\n", i,k);
+	stream_printf(cntxt->fdout,"matching elements %s %d %d ", getVarName(mb,i), i,k);
+	ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
+	stream_printf(cntxt->fdout,"\n");
 #endif
 					/* re-use a constant */
 					alias[i]= index[k];
@@ -95,16 +98,14 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else
 			alias[i]=i;
 
-#ifdef DEBUG_OPT_CONSTANTS 
-	for( i=0;i < mb->vtop;i++)
-	stream_printf(cntxt->fdout,"map %d %d\n",i, alias[i]);
-#endif
-
 	for (i = 0; i < mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		for (k=0; k < p->argc; k++)
 			getArg(p,k) = alias[getArg(p,k)];
 	}
+	GDKfree(alias);
+	GDKfree(cst);
+	GDKfree(index);
 	return actions;
 }
 @include optimizerWrapper.mx

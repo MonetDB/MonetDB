@@ -445,7 +445,6 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	/* "accessmode," not needed after patches to BKCappend */
 	/* "mitosis," */
 	"aliases,"
 	/* "crack," */
@@ -453,6 +452,7 @@ str defaultPlan=
 #ifndef WIN32
 /*	"octopus,"*/
 #endif
+	"constants,"
 	"commonTerms,"
 /*	"replicator," */
 	"joinPath,"

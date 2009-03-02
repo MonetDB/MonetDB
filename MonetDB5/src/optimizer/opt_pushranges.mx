@@ -111,12 +111,12 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	int i,j, limit,actions=0;
 	InstrPtr p, *old;
 	int x,y,z;
-	Range range= (Range) alloca(mb->vtop * sizeof(RangeRec));
+	Range range;
 
-	memset((char*) range, 0, mb->vtop * sizeof(RangeRec));
 	if( mb->errors) 
 		return 0;
 
+	range= (Range) GDKzalloc(mb->vtop * sizeof(RangeRec));
 #ifdef DEBUG_OPT_RANGEPUSH
 	stream_printf(cntxt->fdout,"#Range select optimizer started\n");
 #else
@@ -241,6 +241,7 @@ Phase II, if we succeeded in pushing constants around and
 changing instructions, we might as well try once more to perform
 aliasRemoval, constantExpression, and pushranges.
 @c
+	GDKfree(range);
 	return actions;
 }
 @include optimizerWrapper.mx

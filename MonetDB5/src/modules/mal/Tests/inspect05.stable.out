@@ -920,7 +920,7 @@ end main;
 [ "createXML",			  "pattern",	  "manual",	  "(mod:str):void ",															  "MANUALcreate1;"					  ]
 [ "help",			  "pattern",	  "manual",	  "(text:str):void ",															  "MANUALhelp;"						  ]
 [ "index",			  "pattern",	  "manual",	  "():void ",																  "MANUALcreateIndex;"					  ]
-[ "summary",			  "command",	  "manual",	  "():void ",																  "MANUALcreateSummary;"				  ]
+[ "summary",			  "pattern",	  "manual",	  "():void ",														  "MANUALcreateSummary;"				  ]
 [ "section",			  "pattern",	  "manual",	  "(mod:str):void ",															  "MANUALcreateSection;"				  ]
 [ "search",			  "pattern",	  "manual",	  "(text:str):void ",															  "MANUALsearch;"					  ]
 [ "equalType",			  "pattern",	  "inspect",	  "(l:any,r:any):bit ",															  "INSPECTequalType;"					  ]

@@ -328,7 +328,7 @@ For the time being we limit ourself to a default of 1Kelements
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
 BUN
-ALGjoinCost(BAT *l, BAT *r)
+ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 {
 	BUN lc, rc;
 #if 0
@@ -353,15 +353,20 @@ ALGjoinCost(BAT *l, BAT *r)
 		return lsize;
 	}
 #endif
+	/* dump properties to align decisions with the kernel */
+	OPTDEBUG{
+		stream_printf(cntxt->fdout,"#orderedvoidfetchjoin ? %d\n",
+			BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) );
+	}
 	/* estimate the maximal, because the determines work */
 	/* avoid materialization of views to early */
-	if (isVIEW(l)  && lc>rc)
-		return MAX(lc,rc);
     /* merge joins are by far the cheapest */
+	if ( isVIEW(l) && lc > rc )
+		return lc;
 	if( l->tsorted && r->hsorted)
 		return MIN(lc,rc);
 	/* foreign key joins are common */
-	if( l->ttype== TYPE_oid || r->htype== TYPE_oid )
+	if( l->ttype== TYPE_oid  || r->htype == TYPE_oid || r->htype== TYPE_void)
 		return MAX(lc,rc);
 	/* if either operand is very small, we should use that one */
 	if (rc < SMALL_OPERAND )
@@ -396,7 +401,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 	/* solve the join by pairing the smallest first */
 	while (top > 2) {
 		j = 0;
-		estimate = ALGjoinCost(joins[0],joins[1]);
+		estimate = ALGjoinCost(cntxt,joins[0],joins[1]);
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[0]->batCacheid, 
 			joins[1]->batCacheid,(int)estimate);
@@ -404,7 +409,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 	(void) cntxt;
 #endif
 		for (i = 1; i < top - 1; i++) {
-			e = ALGjoinCost(joins[i], joins[i + 1]);
+			e = ALGjoinCost(cntxt,joins[i], joins[i + 1]);
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
@@ -448,7 +453,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,*bid,top=0;
 	int *r = (int*) getArgReference(stk, pci, 0);
-	BAT *b, **joins = (BAT**)alloca(pci->argc*sizeof(BAT*)); 
+	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -463,6 +468,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
 	BBPkeepref( *r = b->batCacheid);
+	GDKfree(joins);
 	return MAL_SUCCEED;
 }
 @}

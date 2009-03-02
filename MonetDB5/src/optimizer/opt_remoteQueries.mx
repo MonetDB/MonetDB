@@ -266,10 +266,8 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	location= alloca(mb->vsize * sizeof(int));
-	memset((char*) location, 0, mb->vsize * sizeof(int));
-	dbalias= (DBalias*) alloca(128 * sizeof(DBalias));
-	memset((char*) dbalias, 0, 128 * sizeof(DBalias));
+	location= (int*) GDKzalloc(mb->vsize * sizeof(int));
+	dbalias= (DBalias*) GDKzalloc(128 * sizeof(DBalias));
 	dbtop= 0;
 
 	newMalBlkStmt(mb, mb->ssize);
@@ -452,6 +450,8 @@ to be shipped should be simple.
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 	}
 #endif
+	GDKfree(location);
+	GDKfree(dbalias);
 	return doit;
 }
 @include optimizerWrapper.mx

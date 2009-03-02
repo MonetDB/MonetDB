@@ -141,8 +141,8 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 		return 0;
 
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
-	constraints= (InstrPtr *) alloca(sizeof(InstrPtr)*slimit);
-	alias = (int*) alloca(sizeof(int)*mb->vtop);
+	constraints= (InstrPtr *) GDKmalloc(sizeof(InstrPtr)*slimit);
+	alias = (int*) GDKmalloc(sizeof(int)*mb->vtop);
 	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
 	/* Symbolic evaluation of the empty BAT variables */
@@ -285,6 +285,8 @@ of removal of superflous constructions.
 	printf("FINAL STAGE errors=%d\n", mb->errors);
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
 #endif
+	GDKfree(constraints);
+	GDKfree(alias);
 	return actions;
 }
 @-
@@ -299,8 +301,7 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char *empty;
 	int i;
 
-	empty = (char *) alloca(mb->vsize * sizeof(char));
-	memset(empty,0,mb->vsize);
+	empty = (char *) GDKzalloc(mb->vsize * sizeof(char));
 	(void) stk;
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET
@@ -320,7 +321,9 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #ifdef DEBUG_OPT_EMPTYSET
 	stream_printf(cntxt->fdout, "\n");
 #endif
-	return ESevaluate(cntxt, mb, empty);
+	i= ESevaluate(cntxt, mb, empty);
+	GDKfree(empty);
+	return i;
 }
 
 @include optimizerWrapper.mx
