@@ -46,9 +46,8 @@ Currently implemented:
     The next features are not implemented:
     - cancel/getQueryTimeout/setQueryTimeout (query execution cannot be
       terminated, once started)
-    - execute with more than just an SQL query
-    - executeUpdate with more than just an SQL query
-    - getGeneratedKeys
+    - execute with column indices or names
+    - executeUpdate with column indices or names
     - getMaxFieldSize/setMaxFieldSize
     - setCursorName
     - setEscapeProcessing
