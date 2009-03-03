@@ -1628,23 +1628,26 @@ public class MonetConnection implements Connection {
 	// }}}
 
 	/**
-	 * The AffectedRowsResponse represents an update or schema message.
-	 * It keeps an additional count field that represents the affected
-	 * rows for update statements, and a success flag (negative numbers,
-	 * actually) for schema messages.<br />
-	 * <tt>&amp;2 af</tt>
+	 * The UpdateResponse represents an update statement response.  It
+	 * is issued on an UPDATE, INSERT or DELETE SQL statement.  This
+	 * response keeps a count field that represents the affected rows
+	 * and a field that contains the last inserted auto-generated ID, or
+	 * -1 if not applicable.<br />
+	 * <tt>&amp;2 0 -1</tt>
 	 */
-	// {{{ AffectedRowsResponse class implementation
-	class AffectedRowsResponse implements Response {
+	// {{{ UpdateResponse class implementation
+	class UpdateResponse implements Response {
 		public final int count;
+		public final String lastid;
 		
-		public AffectedRowsResponse(int cnt) {
-			// fill the blank final
+		public UpdateResponse(int cnt, String id) {
+			// fill the blank finals
 			this.count = cnt;
+			this.lastid = id;
 		}
 
 		public String addLine(String line, int linetype) {
-			return("Header lines are not supported for an AffectedRowsResponse");
+			return("Header lines are not supported for an UpdateResponse");
 		}
 
 		public boolean wantsMore() {
@@ -1652,7 +1655,38 @@ public class MonetConnection implements Connection {
 		}
 
 		public void complete() {
-			// we're empty, because we don't need to check anything...
+			// empty, because there is nothing to check
+		}
+
+		public void close() {
+			// nothing to do here...
+		}
+	}
+	// }}}
+
+	/**
+	 * The SchemaResponse represents an schema modification response.
+	 * It is issued on statements like CREATE, DROP or ALTER TABLE.
+	 * This response keeps a field that represents the success state, as
+	 * defined by JDBC, which is currently in MonetDB's case alwats
+	 * SUCCESS_NO_INFO.  Note that this state is not sent by the
+	 * server.<br />
+	 * <tt>&amp;3</tt>
+	 */
+	// {{{ SchemaResponse class implementation
+	class SchemaResponse implements Response {
+		public final int state = Statement.SUCCESS_NO_INFO;
+		
+		public String addLine(String line, int linetype) {
+			return("Header lines are not supported for a SchemaResponse");
+		}
+
+		public boolean wantsMore() {
+			return(false);
+		}
+
+		public void complete() {
+			// empty, because there is nothing to check
 		}
 
 		public void close() {
@@ -1664,14 +1698,13 @@ public class MonetConnection implements Connection {
 	/**
 	 * The AutoCommitResponse represents a transaction message.  It
 	 * stores (a change in) the server side auto commit mode.<br />
-	 * <tt>&amp;3 (t|f)</tt>
+	 * <tt>&amp;4 (t|f)</tt>
 	 */
 	// {{{ AutoCommitResponse class implementation
-	class AutoCommitResponse extends AffectedRowsResponse {
+	class AutoCommitResponse extends SchemaResponse {
 		public final boolean autocommit;
 		
 		public AutoCommitResponse(boolean ac) {
-			super(Statement.SUCCESS_NO_INFO);
 			// fill the blank final
 			this.autocommit = ac;
 		}
@@ -1915,15 +1948,14 @@ public class MonetConnection implements Connection {
 										}
 									} break;
 									case StartOfHeaderParser.Q_UPDATE:
-										res = new AffectedRowsResponse(
-												sohp.getNextAsInt()	// count
+										res = new UpdateResponse(
+												sohp.getNextAsInt(),   // count
+												sohp.getNextAsString() // key-id
 												);
-										break;
+									break;
 									case StartOfHeaderParser.Q_SCHEMA:
-										res = new AffectedRowsResponse(
-												Statement.SUCCESS_NO_INFO
-												);
-										break;
+										res = new SchemaResponse();
+									break;
 									case StartOfHeaderParser.Q_TRANS:
 										boolean ac = sohp.getNextAsString().equals("t") ? true : false;
 										if (autoCommit && ac) {
@@ -1933,15 +1965,7 @@ public class MonetConnection implements Connection {
 													);
 										}
 										autoCommit = ac;
-										// note: the use of a special header
-										// here is not really clear.  Maybe
-										// ditch it and use
-										// AffectedRowsResponse (which
-										// is a superclass of
-										// AutoCommitResponse anyway).
-										res = new AutoCommitResponse(
-												ac
-										);
+										res = new AutoCommitResponse(ac);
 									break;
 									case StartOfHeaderParser.Q_BLOCK: {
 										// a new block of results for a
@@ -2059,7 +2083,7 @@ public class MonetConnection implements Connection {
 				if (error != null) throw new SQLException(error.trim());
 			} catch (IOException e) {
 				closed = true;
-				throw new SQLException(e.getMessage() + " (Mserver still alive?)");
+				throw new SQLException(e.getMessage() + " (mserver still alive?)");
 			}
 		}
 	}

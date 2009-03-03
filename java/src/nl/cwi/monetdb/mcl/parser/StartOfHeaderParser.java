@@ -46,7 +46,7 @@ public class StartOfHeaderParser {
 	/** A tabular response (typical ResultSet) */
 	public final static int Q_TABLE    = '1';
 	/** A response to an update statement, contains number of affected
-	 * rows */
+	 * rows and generated key-id */
 	public final static int Q_UPDATE   = '2';
 	/** A response to a schema update */
 	public final static int Q_SCHEMA   = '3';
@@ -78,6 +78,9 @@ public class StartOfHeaderParser {
 				soh.get();
 			break;
 			case Q_UPDATE:
+				len = 2;
+				soh.get();
+			break;
 			case Q_TRANS:
 				len = 1;
 				soh.get();
