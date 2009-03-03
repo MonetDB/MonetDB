@@ -4179,6 +4179,7 @@ extern int pftijah_debug;
 #include <pathfinder.h>
 
 #include "pftijah.h"
+#include "pftijah_util.h"
 
 #include "termdb.h"
 
@@ -4650,19 +4651,19 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		    BAT* dpfpm = BATmirror(doc_pfpre);
 		    BAT* ds = BATselect(dpfpm,(ptr)&doc_start,(ptr)&doc_end);
 		    if ( rangeBAT[myindex] == NULL ) {
-		        rangeBAT[myindex] = BATsetaccess(ds, BAT_WRITE);
-		    } else {
-		        if ( !BATins(rangeBAT[myindex],ds,1) ) {
-	    	           stream_printf(GDKout,"CMDpf2tijah_node: BATins in rangeBAT fails.\n");
-			   return GDK_FAIL;
-		        }
+		        rangeBAT[myindex] = BATnew(TYPE_oid, TYPE_oid, BATcount(ds));
+			// BBPfix(BBPcacheid(rangeBAT[myindex]));
+		    } 
+		    if ( !BATins(rangeBAT[myindex],ds,1) ) {
+	    	       stream_printf(GDKout,"CMDpf2tijah_node: BATins in rangeBAT fails.\n");
+		       return GDK_FAIL;
 		    }
-	            /* BBPunfix(BBPcacheid(ds)); FAILS */
+	            BBPunfix(BBPcacheid(ds));
 		} {
 		} } 
 	        BBPunfix(BBPcacheid(docs_in_cont));
 	      }
-	        if ( rangeBAT[myindex] ) {
+	      if ( rangeBAT[myindex] ) {
 		    BUN range_bun = BUNfnd(rangeBAT[myindex],&pfpre);
 		    if ( range_bun != BUN_NONE ) {
 			/* found the tijah index value */
@@ -4674,9 +4675,9 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 		        if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
 		    }
 		    
-		} else {
+	      } else {
 			if ( debug ) stream_printf(GDKout,"* pf2tijah_index: pre(%d@0) @ cont(%d) = NOT INDEXED.\n", pfpre, container);
-		}
+	      }
 	}
 	/* cleanup BAT's */
 	for(int i=0; i<nDocs; i++) {
@@ -4689,10 +4690,8 @@ int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre
 
 	BAT *r1 = BATmirror(*res);
 	BAT *r2 = BATmark(r1, 0);
+	BBPunfix(BBPcacheid(*res));
 	*res    = BATmirror(r2);
-
-	BBPunfix(BBPcacheid(r1));
-	/* BBPunfix(BBPcacheid(r2)); FAILS */
 
 	/* */
 	if ( debug ) 
