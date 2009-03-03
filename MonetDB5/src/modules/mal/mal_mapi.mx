@@ -496,7 +496,7 @@ SERVERlistenThread(SOCKET *Sock)
 	char *cmd = threadcommand;
 	SOCKET sock = *Sock;
 
-	GDKfree(Sock);
+	if ( Sock) GDKfree(Sock);
 	if( lastlistener < 8 )
 		listener[lastlistener++] = MT_getpid();
 	do {
@@ -602,7 +602,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
-	SOCKET *Sock = GDKmalloc(sizeof(SOCKET));
+	SOCKET *Sock;
 	int accept_any=0;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -725,10 +725,11 @@ errno == WSAEADDRINUSE &&
 	stream_printf(cntxt->fdout, "#SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
+	Sock = GDKmalloc(sizeof(SOCKET));
 	*Sock = sock;
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
-		if (Sock) GDKfree(Sock);
+		GDKfree(Sock);
 		throw(MAL, "mal_mapi.listen", "Starting thread failed");
 	} 
 #ifdef HAVE_SYS_UN_H
