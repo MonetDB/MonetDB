@@ -1349,28 +1349,15 @@ sqltypeinit(void)
 	sql_create_aggr("sum", "aggr", "sum", *(t), *(t));
 
 	/* prod for numerical and decimals */
-	sql_create_aggr("prod", "aggr", "product", BTE, SHT);
-	sql_create_aggr("prod", "aggr", "product", BTE, INT);
-	sql_create_aggr("prod", "aggr", "product", BTE, WRD);
 	sql_create_aggr("prod", "aggr", "product", BTE, LNG);
-
-	sql_create_aggr("prod", "aggr", "product", SHT, INT);
-	sql_create_aggr("prod", "aggr", "product", SHT, WRD);
 	sql_create_aggr("prod", "aggr", "product", SHT, LNG);
-
-	sql_create_aggr("prod", "aggr", "product", INT, WRD);
 	sql_create_aggr("prod", "aggr", "product", INT, LNG);
-
-	sql_create_aggr("prod", "aggr", "product", WRD, WRD);
-	sql_create_aggr("prod", "aggr", "product", WRD, LNG);
 	sql_create_aggr("prod", "aggr", "product", LNG, LNG);
+	/*sql_create_aggr("prod", "aggr", "product", WRD, WRD);*/
 
 	t = decimals; /* BTE */
-	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
-	sql_create_aggr("prod", "aggr", "product", *(t), *(t+2));
 	sql_create_aggr("prod", "aggr", "product", *(t), *(t+3));
 	t++; /* SHT */
-	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
 	sql_create_aggr("prod", "aggr", "product", *(t), *(t+2));
 	t++; /* INT */
 	sql_create_aggr("prod", "aggr", "product", *(t), *(t+1));
