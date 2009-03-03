@@ -4183,6 +4183,16 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 	if (rel)
 		set_processed(rel);
+	if (aggr && rel) {
+		sql_rel *l = rel;
+		while(l && !is_groupby(l->op))
+			if (is_project(l->op))
+				l = l -> l;
+			else
+				l = NULL;
+		if (l)
+			set_processed(l);
+	}
 
 	if (rel && sn->distinct) 
 		rel = rel_distinct(rel);
