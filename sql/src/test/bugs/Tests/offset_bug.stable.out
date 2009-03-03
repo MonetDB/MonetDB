@@ -53,7 +53,7 @@ Over..
 [ 3,	"ed"	]
 [ 4,	"wendy"	]
 [ 5,	"laura"	]
-% sys.,	sys.query_users # table_name
+% sys.query_users,	sys.query_users # table_name
 % user_id,	user_name # name
 % int,	varchar # type
 % 1,	5 # length

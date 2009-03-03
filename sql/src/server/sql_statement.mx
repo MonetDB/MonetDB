@@ -2393,6 +2393,7 @@ table_name(stmt *st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
+	case st_limit:
 	case st_semijoin:
 	case st_diff:
 	case st_aggr:

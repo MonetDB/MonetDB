@@ -39,7 +39,7 @@ Over..
 [ 19260104,	3	]
 [ 19260105,	4	]
 [ 19260106,	5	]
-% sys.,	.e1,	sys.e2,	.e2 # table_name
+% sys.e1,	.e1,	sys.e2,	.e2 # table_name
 % date,	rn,	date,	rn # name
 % int,	int,	int,	int # type
 % 8,	1,	8,	1 # length
@@ -48,7 +48,7 @@ Over..
 [ 19260104,	3,	19260104,	3	]
 [ 19260105,	4,	19260105,	4	]
 [ 19260106,	5,	19260106,	5	]
-% sys.,	.e1,	sys.e2,	.e2 # table_name
+% sys.e1,	.e1,	sys.e2,	.e2 # table_name
 % date,	rn,	date,	rn # name
 % int,	int,	int,	int # type
 % 8,	1,	8,	1 # length

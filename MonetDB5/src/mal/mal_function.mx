@@ -748,8 +748,9 @@ setLifespan(MalBlkPtr mb, Lifespan span)
 At a block exit we can finalize some variables.
 @c
 		if( blockExit(p)){
-			for(top--; top>=scopes[depth]; top--)
+			for(top--; top>scopes[depth]; top--) 
 				span[decl[top]].endLifespan= pc;
+			assert(top >= 0 && top < mb->vsize);
 			if( depth== 0) {
 				mb->errors++;
 				GDKfree(decl);
