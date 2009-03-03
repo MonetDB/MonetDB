@@ -32,7 +32,7 @@ Currently implemented:
     - createStatement with result set holdability
     - nativeSQL (there is no query parsing for JDBC escapes yet)
     - prepareCall (CallableStatement not supported)
-    - prepareStatement with more than just an SQL prepare statement
+    - prepareStatement with column indices or names
     - setCatalog (there is no catalog management yet)
     - getHoldability/setHoldability (close/hold cursors over commit is
       not configurable)
