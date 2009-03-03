@@ -412,16 +412,11 @@ public class MonetStatement implements Statement {
 	 * Executes the given SQL statement, which may be an INSERT, UPDATE, or
 	 * DELETE statement or an SQL statement that returns nothing, such as an
 	 * SQL DDL statement.
-	 * <br /><br />
-	 * make an implementation which returns affected rows, need protocol
-	 * modification for that!!!
 	 *
 	 * @param sql an SQL INSERT, UPDATE or DELETE statement or an SQL statement
 	 *        that returns nothing
 	 * @return either the row count for INSERT, UPDATE  or DELETE statements, or
 	 *         0 for SQL statements that return nothing<br />
-	 *         <b>currently always returns -1 since the mapi protocol doesn't
-	 *         return the affected rows!!!</b>
 	 * @throws SQLException if a database access error occurs or the given SQL
 	 *         statement produces a ResultSet object
 	 */
