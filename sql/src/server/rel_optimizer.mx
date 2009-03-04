@@ -1007,7 +1007,7 @@ project_unsafe(sql_rel *rel)
 {
 	node *n;
 
-	if (need_distinct(rel))
+	if (need_distinct(rel) || rel->r /* order by */)
 		return 1;
 	if (!rel->exps)
 		return 0;
