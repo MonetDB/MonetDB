@@ -2555,7 +2555,7 @@ def CheckClassPath(quiet) :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-[0-9]\.[0-9]-jdbc\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-[0-9]\.[0-9]+-jdbc\.jar$'),
         'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
         'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
         'HAVE_XRPCAPI_JAR'     : re.compile('^xrpcapi\.jar$'),
