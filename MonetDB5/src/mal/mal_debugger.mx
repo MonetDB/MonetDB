@@ -786,8 +786,7 @@ BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		/* what happened to this BAT */
 		if ( BBPmirror[i] != BBP_lrefs(i)){
 			BBPlogical(i,lbuf);
-			if ( BBPtracePattern  && 
-				strncmp(lbuf,BBPtracePattern,strlen(BBPtracePattern)) )
+			if ( BBPtracePattern  && strstr(lbuf,BBPtracePattern) != NULL )
 				continue;
 			BBPphysical(i,pbuf);
 			stream_printf(cntxt->fdout, "#BBP state change of %s %s entry %d refs %d:\n", 
@@ -1160,6 +1159,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				for (; i < limit; i++)
 					if (BBP_logical(i) && BBP_cache(i) ) {
 						BAT *bd= BATdescriptor(i);
+						stream_printf(out,"#");
 						printBATproperties(out,bd);
 						if( *b=='d' && BBP_refs(i)==0) continue;
 						BBPunfix(i);
@@ -1497,11 +1497,9 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		return;
 	}
 
-	if ( BBPTraceCall(cntxt,mb,stk,pc))
-		mdbCommand(cntxt, mb, stk, p, pc);
+	p = getInstrPtr(mb, pc);
 	switch (stk->cmd) {
 	case 'c':
-		p = getInstrPtr(mb, pc);
 		ch= isBreakpoint(cntxt,mb, p, pc);
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
@@ -1513,7 +1511,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		break;
 	case 's':
 	case 'n':
-		p = getInstrPtr(mb, pc);
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':

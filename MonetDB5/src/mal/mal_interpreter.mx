@@ -252,7 +252,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	ValPtr lhs,rhs;
 	InstrPtr pci=getInstrPtr(mb,0);
 	str ret;
-	int stkpc=0;
+	int stkpc = 0;
 	@:performanceVariables@
 
 	if (mb->errors) {
@@ -396,7 +396,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
 	int i;
 	ValPtr lhs,rhs;
 	InstrPtr pci= getInstrPtr(mb,0);
-	int stkpc=0;
+	int stkpc = 0;
 	@:performanceVariables@
 
 #ifdef DEBUG_CALLMAL
@@ -464,7 +464,7 @@ str runMALsequence( Client cntxt, MalBlkPtr mb, int startpc,
 	str *sbackup= (str*) alloca(mb->maxarg * sizeof(str));
 	lng oldtimer=0;
 	struct Mallinfo oldMemory;
-	int stkpc=0;
+	int stkpc = 0, prevpc = 0;
 	MT_Lock *lock = NULL;
 	int tid = 0;
 
@@ -523,6 +523,8 @@ workslow:
 			if( stk->cmd== 0) stk->cmd= cntxt->itrace;
 			if( oldtimer)
 				t= GDKusec();
+			BBPTraceCall(cntxt,mb,stk,prevpc);
+			prevpc = stkpc;
 			mdbStep(cntxt,mb,stk,stkpc);
 			if( stk->cmd == 'x') {
 				stk->cmd = 0;
@@ -756,6 +758,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	lng oldtimer=0;
 	struct Mallinfo oldMemory = MT_mallinfo();
 	MT_Lock *lock = &flow->done->l;
+	int prevpc = 0;
 	int tid = t->id;
     
 #ifdef HAVE_SYS_RESOURCE_H
@@ -774,7 +777,8 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 		lng tm = 0;
 		if( oldtimer)
 			tm = GDKusec();
-		mdbStep(cntxt,mb,stk,getPC(mb,pci));
+		BBPTraceCall(cntxt,mb,stk,prevpc);
+		mdbStep(cntxt,mb,stk, prevpc = getPC(mb,pci));
 		if (stk->cmd == 'x') {
 			/* need a way to skip */
 			stkpc = mb->stop;
@@ -1852,6 +1856,8 @@ reaching end of function block.
 @= skipToCatch
 	if( stk->cmd == 'C') {
 		stk->cmd = 'n';
+		BBPTraceCall(cntxt,mb,stk,prevpc);
+		prevpc = stkpc;
 		mdbStep(cntxt,mb,stk,stkpc);
 		if( stk->cmd == 'x') {
 			stkpc = mb->stop;
