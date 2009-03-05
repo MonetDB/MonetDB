@@ -43,8 +43,8 @@ extern sql_rel *rel_select(sql_rel *l, sql_exp *e);
 extern sql_rel *rel_select_copy(sql_rel *l, list *exps);
 extern sql_rel *rel_basetable(sql_table *t, char *tname);
 
-extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname );
-extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname );
+extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f );
+extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f );
 
 extern sql_exp * rel_value_exp(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek);
 extern sql_exp * rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_last);
@@ -183,8 +183,10 @@ rel_label( mvc *sql, sql_rel *r)
 	char name[16], *nme;
 
 	nme = number2name(name, 16, nr);
-	if (!is_project(r->op)) 
+	if (!is_project(r->op)) {
 		r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
+		set_processed(r);
+	}
 	if (is_project(r->op) && r->exps) {
 		node *ne = r->exps->h;
 
@@ -1166,11 +1168,11 @@ rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 }
 
 sql_exp *
-rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
+rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 {
 	sql_rel *p = NULL;
 
-	if (rel && is_project(rel->op) && !is_processed(rel)) 
+	if (f == sql_sel && rel && is_project(rel->op) && !is_processed(rel)) 
 		rel = rel->l;
 
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
@@ -1185,8 +1187,14 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname )
 }
 
 sql_exp *
-rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
+rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 {
+	if (f == sql_sel && rel && is_project(rel->op) && !is_processed(rel)) 
+		rel = rel->l;
+
+	if (!rel)
+		return NULL;
+
 	if (rel->exps) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 		if (e)
@@ -1194,18 +1202,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname )
 	}
 	if (is_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
-			return rel_bind_column2(sql, rel->l, tname, cname);
+			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {
-		sql_exp *e = rel_bind_column2(sql, rel->l, tname, cname);
+		sql_exp *e = rel_bind_column2(sql, rel->l, tname, cname, f);
 		if (!e)
-			e = rel_bind_column2(sql, rel->r, tname, cname);
+			e = rel_bind_column2(sql, rel->r, tname, cname, f);
 		return e;
 	} else if (is_set(rel->op) || 
 		   is_sort(rel) || 
 		   is_semi(rel->op) || 
 		   is_select(rel->op)) {
 		if (rel->l)
-			return rel_bind_column2(sql, rel->l, tname, cname);
+			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	}
 	return NULL;
 }
@@ -1288,6 +1296,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
 
 			temp_table = rel_project(temp_table, exps);
+			set_processed(temp_table);
 			for (n = exps->h; n; n = n->next) 
 				exp_setname(n->data, tname, NULL);
 			return temp_table;
@@ -1359,7 +1368,7 @@ exps_get_exp(list *exps, int nth)
 }
 
 static sql_exp *
-rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
+rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 {
 	sql_exp *exp = NULL;
 	dlist *l = column_r->data.lval;
@@ -1386,7 +1395,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 		int var = (stack_find_var(sql, name) != NULL);
 		
 		if (*rel)
-			exp = rel_bind_column(sql, *rel, name);
+			exp = rel_bind_column(sql, *rel, name, f);
 		if (exp) {
 			if (var || a) 
 				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
@@ -1405,7 +1414,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 		char *cname = l->h->next->data.sval;
 
 		if (*rel)
-			exp = rel_bind_column2(sql, *rel, tname, cname);
+			exp = rel_bind_column2(sql, *rel, tname, cname, f);
 
 		/* some views are just in the stack, 
 			like before and after updates views */
@@ -1417,7 +1426,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r)
 					*rel = rel_crossproduct(*rel, v, op_join);
 				else
 					*rel = v;
-				exp = rel_bind_column(sql, *rel, cname);
+				exp = rel_bind_column(sql, *rel, cname, f);
 			}
 		}
 		if (!exp)
@@ -1915,6 +1924,8 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	(void)f;
 	l = rel_project(l, rel_projections(sql, l, NULL, 1, 1));
 	r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
+	set_processed(l);
+	set_processed(r);
 	rel = rel_setop(l, r, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	rel = rel_distinct(rel);
@@ -2272,7 +2283,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		}
 	} 
 	case SQL_COLUMN: 
-		return rel_column_ref(sql, rel, sc);
+		return rel_column_ref(sql, rel, sc, f);
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
@@ -2521,8 +2532,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			r = rel_label(sql, r);
 
 			/* lookup the identity columns and label these */
-			le = rel_bind_column(sql, rel, e->name);
-			re = rel_bind_column(sql, r, e->name);
+			le = rel_bind_column(sql, rel, e->name, f);
+			re = rel_bind_column(sql, r, e->name, f);
 
 			if (!le || !re)
 				return NULL;
@@ -2692,7 +2703,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	} 
 	case SQL_COLUMN: {
 		sql_rel *or = rel;
-		sql_exp *e = rel_column_ref(sql, &rel, sc);
+		sql_exp *e = rel_column_ref(sql, &rel, sc, f);
 
 		if (e) {
 			sql_subtype bt; 
@@ -3474,7 +3485,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 }
 
 static list *
-rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection )
+rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 {
 	sql_rel *or = rel;
 	dnode *o = groupby->data.lval->h;
@@ -3482,7 +3493,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection )
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
-		sql_exp *e = rel_column_ref(sql, &rel, grp);
+		sql_exp *e = rel_column_ref(sql, &rel, grp, f);
 
 		if (or != rel) 
 			return NULL;
@@ -3519,19 +3530,19 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	set_processed(r);
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
-		return rel_bind_column(sql, r, name);
+		return rel_bind_column(sql, r, name, sql_sel);
 	}
 	if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *name = l->h->next->data.sval;
 
-		return rel_bind_column2(sql, r, tname, name);
+		return rel_bind_column2(sql, r, tname, name, sql_sel);
 	}
 	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
 }
 
 static list *
-rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
+rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby, int f )
 {
 	sql_rel *or = rel;
 	list *exps = new_exp_list();
@@ -3543,7 +3554,7 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby )
 		if (order->token == SQL_COLUMN) {
 			symbol *col = order->data.lval->h->data.sym;
 			int direction = order->data.lval->h->next->data.i_val;
-			sql_exp *e = rel_column_ref(sql, &rel, col);
+			sql_exp *e = rel_column_ref(sql, &rel, col, f);
 
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
@@ -3601,13 +3612,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {
-		gbe = rel_group_by(sql, r, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */ );
+		gbe = rel_group_by(sql, r, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
 	}
 	/* Order By */
 	if (window_specification->h->next->data.sym) {
-		obe = rel_order_by(sql, r, window_specification->h->next->data.sym);
+		obe = rel_order_by(sql, r, window_specification->h->next->data.sym, f);
 		if (!obe)
 			return NULL;
 	}
@@ -3646,7 +3657,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 	case SQL_RANK:
 		return rel_rankop(sql, rel, se, f);
 	case SQL_COLUMN:
-		return rel_column_ref(sql, rel, se );
+		return rel_column_ref(sql, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
 	case SQL_SELECT: {
@@ -3915,7 +3926,9 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 	}
 	list_merge(outexps, r_exps, (fdup)&exp_dup);
 	list_destroy(r_exps);
-	return rel_project(rel, outexps);
+	rel = rel_project(rel, outexps);
+	set_processed(rel);
+	return rel;
 }
 
 
@@ -4001,7 +4014,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 	if (rel) {
 		if (rel && sn->groupby) {
-			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection);
+			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
 
 			if (!gbe) 
 				return NULL;
@@ -4183,6 +4196,16 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 	if (rel)
 		set_processed(rel);
+	if (aggr && rel) {
+		sql_rel *l = rel;
+		while(l && !is_groupby(l->op))
+			if (is_project(l->op))
+				l = l -> l;
+			else
+				l = NULL;
+		if (l)
+			set_processed(l);
+	}
 
 	if (rel && sn->distinct) 
 		rel = rel_distinct(rel);
@@ -4235,7 +4258,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 
 	if (rel && sn->orderby) {
-		list *obe = rel_order_by(sql, rel, sn->orderby);
+		list *obe = rel_order_by(sql, rel, sn->orderby, sql_sel);
 
 		if (!obe)
 			return NULL;
@@ -4457,8 +4480,8 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond;
-			sql_exp *ls = rel_bind_column(sql, t1, nm);
-			sql_exp *rs = rel_bind_column(sql, t2, nm);
+			sql_exp *ls = rel_bind_column(sql, t1, nm, sql_where);
+			sql_exp *rs = rel_bind_column(sql, t2, nm, sql_where);
 
 			if (!ls || !rs) {
 				sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", rel_get_name(t1)?rel_get_name(t1):"", rel_get_name(t2)?rel_get_name(t2):"", nm);
@@ -4573,7 +4596,7 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	rexps = new_exp_list();
 	for (m = lexps->h; m; m = m->next) {
 		sql_exp *le = m->data;
-		sql_exp *rc = rel_bind_column(sql, rv, le->name);
+		sql_exp *rc = rel_bind_column(sql, rv, le->name, sql_where);
 			
 		if (!rc && all) 
 			break;
@@ -4590,6 +4613,8 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	}
 	lv = rel_project(lv, lexps);
 	rv = rel_project(rv, rexps);
+	set_processed(lv);
+	set_processed(rv);
 	rel = rel_setop(lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
 	if (!all)
@@ -4667,7 +4692,9 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 		return sql_error(sql, 02, "Column lists do not match");
 	}
 	(void)name;
-	return rel_project(sq, l);
+	sq = rel_project(sq, l);
+	set_processed(sq);
+	return sq;
 }
 
 

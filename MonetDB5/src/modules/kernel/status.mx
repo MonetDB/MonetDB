@@ -564,6 +564,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	BBPunlock("SYSmem_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -626,6 +627,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	BBPunlock("SYSvm_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

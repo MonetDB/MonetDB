@@ -863,9 +863,9 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return exp_dup(e);
 		e = NULL;
 		if (ne->name && ne->r && ne->l) 
-			e = rel_bind_column2(sql, t, ne->l, ne->r);
+			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
-			e = rel_bind_column(sql, t, ne->r);
+			e = rel_bind_column(sql, t, ne->r, 0);
 		if (!e && exp_is_atom(ne))
 			return exp_dup(ne);
 		return e;
@@ -942,9 +942,9 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return NULL;
 		e = NULL;
 		if (ne->name && ne->r && ne->l) 
-			e = rel_bind_column2(sql, t, ne->l, ne->r);
+			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
-			e = rel_bind_column(sql, t, ne->r);
+			e = rel_bind_column(sql, t, ne->r, 0);
 		if (e && flag)
 			e->flag = flag;
 		/* if the upper exp was an alias, keep this */ 
@@ -1007,7 +1007,7 @@ project_unsafe(sql_rel *rel)
 {
 	node *n;
 
-	if (need_distinct(rel))
+	if (need_distinct(rel) || rel->r /* order by */)
 		return 1;
 	if (!rel->exps)
 		return 0;
@@ -1611,6 +1611,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 		}
 		rel->exps = nexps;
 		rel = rel_project(rel, pexps);
+		set_processed(rel);
 		*changes = 1;
 		list_destroy(avgs);
 	}
@@ -1754,6 +1755,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		/* Done, ie introduce new project */
 		exps_fix_card(exps, rel->card);
 		rel = rel_project(rel, exps);
+		set_processed(rel);
 		*changes = 1;
 		return rel;
 	}
