@@ -21,8 +21,10 @@ function user.main():void;
     raise PermissionDeniedException := 1234;
     io.print("should not come here\n");
 end main;
-!MALException:user.main[3]:Exception raised
-!PermissionDeniedException:user.main[5]:Exception not caught
+
+
+
+
 
 # 17:45:29 >  
 # 17:45:29 >  Done.

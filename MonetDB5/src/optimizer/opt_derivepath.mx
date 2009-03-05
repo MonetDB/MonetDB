@@ -1,0 +1,142 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_derivepath
+@- Group derive paths
+The routine @sc{optimizer.derivepaths()}
+walks through the program looking for grouping operations
+and cascades them into a single multiple group paths.
+To illustrate, consider
+@verbatim
+	(ext1,grp1) := group.new(b);
+	(ext2,grp2) := group.derive(ext1,grp1, c);
+	(ext3,grp3) := group.derive(ext2,grp2, d);
+@end verbatim
+The result becomes.
+@verbatim
+	(ext3,grp3) := group.derivepath(b,c,d);
+@end verbatim
+@{
+@mal
+pattern optimizer.derivePath():str
+address OPTderivePath;
+pattern optimizer.derivePath(mod:str, fcn:str):str
+address OPTderivePath
+comment "Join path constructor";
+pattern group.derivePath(l:bat[:any,:any]...):bat[:any,:any]
+address ALGderivePath
+comment "internal routine to handle join paths.
+	The type analysis is rather tricky.";
+@h
+#ifndef _OPT_DERIVEPATH_
+#define _OPT_DERIVEPATH_
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "mal_interpreter.h"
+
+/* #define DEBUG_OPT_DERIVEPATH  */
+@c
+#include "mal_config.h"
+#include "opt_derivepath.h"
+
+static int
+OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, actions=0;
+	int *pc;
+	str derivePathRef = putName("derivePath",10);
+	InstrPtr q;
+	InstrPtr *old;
+	int limit,slimit;
+
+	(void) cntxt;
+	(void) stk;
+	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+		return 0;
+
+	old= mb->stmt;
+	limit= mb->stop;
+	slimit= mb->ssize;
+	newMalBlkStmt(mb,mb->ssize);
+
+	/* beware, new variables and instructions are introduced */
+	pc= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
+	memset((char*) pc, 0, sizeof(int)* mb->vtop *2);
+
+	for (i = 0; i<limit; i++){
+		p= old[i];
+		if( getModuleId(p)== groupRef && getFunctionId(p)== newRef ){
+			pc[getArg(p,0)] = i;
+			pc[getArg(p,1)] = i;
+		}
+		if( getModuleId(p)== groupRef && getFunctionId(p)== deriveRef ){
+@-
+Try to expand its argument list with what we have found so far.
+This creates a series of join paths, many of which will be removed during deadcode elimination.
+@c
+			if (pc[getArg(p,2)]== pc[getArg(p,3)]){
+				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
+				q= pushArgument(mb,q, getArg(p,5));
+				pc[getArg(p,0)] = i;
+				pc[getArg(p,1)] = i;
+				setFunctionId(q,derivePathRef);
+				p= q;
+				actions++;
+#ifdef DEBUG_OPT_DERIVEPATH 
+				stream_printf(cntxt->fdout,"new derivePath instruction\n");
+				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
+#endif
+			}
+		} 
+		pushInstruction(mb,p);
+	}
+	for(; i<slimit; i++)
+	if(old[i])
+		freeInstruction(old[i]);
+	GDKfree(old);
+	GDKfree(pc);
+	OPTDEBUG
+	if ( actions)
+		stream_printf(cntxt->fdout,"#opt_derivepath: %d statements glued\n",actions);
+	return actions;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(derivePath)@
+#endif
+opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(derivePath,OPT_CHECK_ALL)@
+@-
+The derive path optimizer takes a derivation sequence and
+attempts to minimize the intermediate result.
+The choice depends on a good estimate of intermediate
+results using properties.
+For the time being, we use a simplistic model, based
+on the assumption that most joins are foreign key joins anyway.
+@c
+str
+ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	throw(MAL,"group.derivePath","nyi");
+}
+@}
