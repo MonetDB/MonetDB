@@ -32,7 +32,7 @@ lib_optimizer = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
+		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx
@@ -53,7 +53,7 @@ headers_optimizer = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
+		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx
@@ -72,7 +72,7 @@ headers_mal = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx \
+		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_mitosis.mx opt_octopus.mx opt_replicator.mx opt_history.mx

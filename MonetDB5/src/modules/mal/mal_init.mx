@@ -191,6 +191,7 @@ include opt_evaluate;
 include opt_factorize;
 include opt_garbageCollector;
 include opt_inline;
+include opt_derivepath;
 include opt_joinpath;
 include opt_macro;
 include opt_accessmode;

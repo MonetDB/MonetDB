@@ -32,6 +32,7 @@ cst00
 cst01
 
 remap
+inlineFunction
 
 #mat00
 #mat01
