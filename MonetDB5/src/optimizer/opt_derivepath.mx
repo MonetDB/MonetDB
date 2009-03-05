@@ -91,6 +91,8 @@ This creates a series of join paths, many of which will be removed during deadco
 			if (pc[getArg(p,2)]== pc[getArg(p,3)]){
 				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
 				q= pushArgument(mb,q, getArg(p,4));
+				getArg(q,0)= getArg(p,0);
+				getArg(q,1)= getArg(p,1);
 				pc[getArg(p,0)] = i;
 				pc[getArg(p,1)] = i;
 				setFunctionId(q,derivePathRef);
