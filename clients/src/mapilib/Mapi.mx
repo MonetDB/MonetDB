@@ -1623,10 +1623,10 @@ close_result(MapiHdl hdl)
 	if (mid->trace == MAPI_TRACE)
 		printf("closing result set\n");
 	if (result->tableid >= 0 && result->querytype != Q_PREPARE) {
-		if (mid->active && !mid->active->needmore && read_into_cache(mid->active, 0) != MOK)
+		if (mid->active && result->next == NULL && !mid->active->needmore && read_into_cache(mid->active, -1) != MOK)
 			return MERROR;
 		assert(hdl->npending_close == 0 || (hdl->npending_close > 0 && hdl->pending_close != NULL));
-		if (mid->active && result->cache.tuplecount < result->row_count) {
+		if (mid->active && (mid->active->active != result || result->cache.tuplecount < result->row_count)) {
 			/* can't write "X" commands now, so save for later */
 			REALLOC(hdl->pending_close, hdl->npending_close + 1);
 			hdl->pending_close[hdl->npending_close] = result->tableid;
