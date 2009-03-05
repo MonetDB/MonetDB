@@ -796,7 +796,7 @@ copts.produceHelpMessage()
 
 		// execute the query, let the driver decide what type it is
 		int aff = -1;
-		boolean	nextRslt = stmt.execute(query);
+		boolean	nextRslt = stmt.execute(query, Statement.RETURN_GENERATED_KEYS);
 		if (!nextRslt) aff = stmt.getUpdateCount();
 		do {
 			if (nextRslt) {
@@ -825,7 +825,16 @@ copts.produceHelpMessage()
 					out.println("Operation successful");
 				} else {
 					// we have an update count
-					out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
+					// see if a key was generated
+					ResultSet rs = stmt.getGeneratedKeys();
+					if (rs.next()) {
+						out.println(aff + " affected row" +
+								(aff != 1 ? "s" : "") +
+								", generated key: " + rs.getString(1));
+					} else {
+						out.println(aff + " affected row" +
+								(aff != 1 ? "s" : ""));
+					}
 				}
 			}
 
