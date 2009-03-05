@@ -74,6 +74,7 @@ inlineCst
 mitosis00
 
 joinpath
+groupderive
 
 ifthencst
 CXerror1
