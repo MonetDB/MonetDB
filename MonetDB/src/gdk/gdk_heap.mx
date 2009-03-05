@@ -101,7 +101,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
 		h->maxsize = (1 + (h->maxsize >> 16)) << 16;
 	}
-	if (h->filename == NULL || (h->size < GDK_mem_maxsize)) {
+	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 1);
 	}
@@ -166,7 +166,7 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
-		int must_mmap = can_mmap && (size >= GDK_mem_maxsize || h->newstorage != STORE_MEM);
+		int must_mmap = can_mmap && (size >= GDK_mmap_minsize || h->newstorage != STORE_MEM);
 
 		h->size = size;
 

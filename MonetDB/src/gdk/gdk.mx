@@ -2217,7 +2217,8 @@ gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
 gdk_export int GDKmunmap(void *addr, size_t len);
 
 gdk_export ptr GDK_mem_start;		/* sbrk(0) at start of the program */
-gdk_export size_t GDK_mem_bigsize;	/* size after which we use VM rather than heap */
+gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
+gdk_export size_t GDK_mmap_minsize;	/* size after which we use tempfile VM rather than malloc/anonymous VM */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 gdk_export int    GDK_vm_trim;		/* run vmtrim thread */

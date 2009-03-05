@@ -387,6 +387,7 @@ the memory consumption.
 #define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
 #endif
 @c
+size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_bigsize = 1 << 20;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
@@ -1494,6 +1495,7 @@ GDKinit(opt *set, int setlen)
 
 	/* Mserver intends to rob 80% of all memory as a default */
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+	GDK_mmap_minsize = GDK_mem_maxsize;
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);
 	BBPinit();
@@ -1536,7 +1538,10 @@ GDKinit(opt *set, int setlen)
 		lng max_mem_bigsize = GDK_mem_maxsize/16;
 
 		/* sanity check to avoid memory fragmentation */
-		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtol(p, NULL, 10));
+		GDK_mem_bigsize = (size_t) MIN(max_mem_bigsize, strtoll(p, NULL, 10));
+	}
+	if ((p = GDKgetenv("gdk_mmap_minsize"))) {
+		GDK_mmap_minsize = MAX(REMAP_PAGE_MAXSIZE, (size_t) strtoll(p, NULL, 10));
 	}
 	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) 
 		GDKembedded = 1;
