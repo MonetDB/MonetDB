@@ -83,6 +83,7 @@ extern char * rel_name( sql_rel *r );
 #include "rel_xml.h"
 #include "rel_bin.h"
 #include "rel_dump.h"
+#include "rel_prop.h"
 
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
 
@@ -117,6 +118,11 @@ rel_destroy_(sql_rel *rel)
 	} else if (rel->op == op_table) {
 		if (rel->l)
 			exp_destroy(rel->l);
+		if (rel->p)
+			prop_destroy(rel->p);
+	} else if (rel->op == op_basetable) {
+		if (rel->p)
+			prop_destroy(rel->p);
 	}
 }
 
