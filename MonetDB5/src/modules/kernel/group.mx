@@ -684,6 +684,10 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		}
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
+		if (histo != ct_histo)
+			BBPreclaim(histo);
+		if (map != ct_map)
+			BBPreclaim(map);
 		if (r == 0)
 			r = BATcount(ct_histo);
 		if (bits(r) > *N)
