@@ -693,11 +693,13 @@ saveBox(Box box, int flag)
 				BATcommit(b);
 			}
 		} else {
+			str tnme = getTypeName(v->vtype);
 			stream_printf(f, "%s := ", getVarName(box->sym, i));
 			ATOMprint(v->vtype, VALptr(v), f);
-			stream_printf(f, ":%s;\n", getTypeName(v->vtype));
+			stream_printf(f, ":%s;\n", tnme);
 			stream_printf(f, "%s.deposit(\"%s\",%s);\n", 
 				box->name, getVarName(box->sym, i), getVarName(box->sym, i));
+			GDKfree(tnme);
 		}
 	}
 	close_stream(f);

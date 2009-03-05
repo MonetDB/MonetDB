@@ -34,6 +34,7 @@ tablet.setRowBracket("<row>","</row>");
 tablet.setBracket(0,"<age>","</age>");
 tablet.setBracket(1,"<title>","</title>");
 tablet.page(b1,b2);
+tablet.finish();
 
 #leftover typeing
 #function someone(i:any...);
