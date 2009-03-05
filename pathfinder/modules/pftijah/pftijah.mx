@@ -2607,7 +2607,7 @@ PROC tj_containing_query_@1_@2_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : b
 
 PROC tj_ent2tid (bat[str,dbl] concept_score) : bat[oid,dbl] :=
 {
-    return concept_score.reverse().join(bat("tj_" + ftindex + "_conceptdict")).reverse();
+    return bat("tj_" + ftindex + "_conceptdict").join(concept_score);
 }
 
 # returns the pre-order positions of the concept c
