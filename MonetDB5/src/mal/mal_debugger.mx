@@ -489,6 +489,7 @@ mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
+mal_export char BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 
 mal_export str runMALDebugger(Client cntxt, Symbol s);
@@ -742,6 +743,62 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 	stream_printf(out, "#%s\n", msg);
 	GDKfree(msg);
 }
+static void
+mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
+	for (; stk != NULL; stk = stk->up) {
+		printCall(cntxt, stk->blk, stk, pci);
+		if (stk->up)
+			pci = stk->up->pcup;
+	}
+}
+@-
+Sometimes we may want to trace the changes applied to the
+BAT buffer pool and report them together with the MAL
+instruction where it happened.
+@c
+static int BBPtraceEnabled = 0;
+static str BBPtracePattern = NULL;
+char
+BBPTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	static int *BBPmirror = NULL;
+	static int bbpsize;
+	char lbuf[1024], pbuf[1024];
+	int i, action;
+	(void) mb;
+
+	if ( BBPtraceEnabled == 0)
+		return 0;
+	if (BBPmirror == NULL ){
+		bbpsize= BBPsize;
+		BBPmirror = (int*) GDKzalloc(sizeof(int) * BBPsize);
+	}
+	if( BBPsize > bbpsize) {
+		int *old = BBPmirror;
+		BBPmirror = (int*)  GDKzalloc(sizeof(int) * BBPsize);
+		memcpy((char*)BBPmirror, (char*)old, sizeof(int) * bbpsize);
+		bbpsize= BBPsize;
+		GDKfree(old);
+	}
+	/* no growing BBP yet */
+	action = 0;
+	for ( i=0; i<bbpsize; i++){
+		/* what happened to this BAT */
+		if ( BBPmirror[i] != BBP_lrefs(i)){
+			BBPlogical(i,lbuf);
+			if ( BBPtracePattern  && strstr(lbuf,BBPtracePattern) != NULL )
+				continue;
+			BBPphysical(i,pbuf);
+			stream_printf(cntxt->fdout, "#BBP state change of %s %s entry %d refs %d:\n", 
+				 lbuf,pbuf,i, BBP_lrefs(i));
+			action = 1;
+		}
+		BBPmirror[i] = BBP_lrefs(i);
+	}
+	if ( action )
+		mdbBacktrace(cntxt, stk, pc);
+	return 's';
+}
 
 static void
 printBATproperties(stream *f, BAT *b){
@@ -756,7 +813,7 @@ printBATproperties(stream *f, BAT *b){
 	if (b->T->parentid)
 		stream_printf(f, "tail view on %s ", BBPname(b->T->parentid));
 }
-@+ MAL parser
+@+ MAL debugger parser
 The debugger structure is inherited from GDB.
 The routine mdbCommand is called with p=0 after finishing a mal- function call
 and before continuing at the next level of invocation.
@@ -802,14 +859,6 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 	return getMalBlkHistory(mb,-1);
 }
 
-static void
-mdbBacktrace(Client cntxt, MalStkPtr stk, int pci){
-	for (; stk != NULL; stk = stk->up) {
-		printCall(cntxt, stk->blk, stk, pci);
-		if (stk->up)
-			pci = stk->up->pcup;
-	}
-}
 
 void
 mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
@@ -1089,6 +1138,16 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				int i,limit;
 
 				skipWord(cntxt, b);
+				/* bbp change tracing enabling */
+				if ( strncmp(b,"trace",5) == 0){
+					skipWord(cntxt, b);
+					BBPtraceEnabled = !BBPtraceEnabled;
+					if ( BBPtraceEnabled &&  *b )
+						BBPtracePattern = GDKstrdup(b);
+					stream_printf(out,"#bbp trace enabled %d\n", BBPtraceEnabled);
+					stk->cmd = 'c';
+					break;
+				}
 				i = BBPindex(b);
 				if( i)
 					limit=i+1;
@@ -1100,6 +1159,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				for (; i < limit; i++)
 					if (BBP_logical(i) && BBP_cache(i) ) {
 						BAT *bd= BATdescriptor(i);
+						stream_printf(out,"#");
 						printBATproperties(out,bd);
 						if( *b=='d' && BBP_refs(i)==0) continue;
 						BBPunfix(i);
@@ -1437,9 +1497,9 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		return;
 	}
 
+	p = getInstrPtr(mb, pc);
 	switch (stk->cmd) {
 	case 'c':
-		p = getInstrPtr(mb, pc);
 		ch= isBreakpoint(cntxt,mb, p, pc);
 		if( ch == 't'){
 			if (cntxt != mal_clients) 
@@ -1451,7 +1511,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		break;
 	case 's':
 	case 'n':
-		p = getInstrPtr(mb, pc);
 		mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 't':

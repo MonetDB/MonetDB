@@ -155,6 +155,7 @@ main(int argc, char **argv)
 			printf("%s", motd);
 	}
 	mapi_trace(mid, trace);
+	mapi_cache_limit(mid, 10000);
 
 	out = file_wastream(stdout, "stdout");
 	if (functions)
