@@ -1,7 +1,7 @@
 function tst();
 	b:= bat.new(:oid,:int);
-	c:= bat.new(:oid,:int);
-	d:= bat.new(:oid,:int);
+	c:= bat.new(:oid,:str);
+	d:= bat.new(:oid,:flt);
     (ext1,grp1) := group.new(b);
     (ext2,grp2) := group.derive(ext1,grp1, c);
     (ext3,grp3) := group.derive(ext2,grp2, d);
