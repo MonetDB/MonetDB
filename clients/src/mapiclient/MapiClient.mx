@@ -2020,7 +2020,7 @@ main(int argc, char **argv)
 			fprintf(stderr,"%s\n",mapi_error_str(mid));
 		exit(2);
 	}
-	mapi_cache_limit(mid, 10000);
+	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
 			dump_tables(mid, toConsole, 0);
