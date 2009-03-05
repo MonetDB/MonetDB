@@ -1417,13 +1417,15 @@ switch(pci->barrier){
 		break;
 	case RAISEsymbol:
 		exceptionVar = getDestVar(pci);
+		ret = NULL;
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
 				stk->stk[getDestVar(pci)].val.sval);
-		} else
-			ret = createScriptException(mb, stkpc, MAL, NULL,
-					"Exception raised");
+		} 
 		@:skipToCatch(exceptionVar,@2,stk)@
+		if ( stkpc == mb->stop)
+			ret = createScriptException(mb, stkpc, MAL, ret,
+					"Exception raised");
 		break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)

@@ -13,6 +13,5 @@ end g;
 z:= bat.new(:int,:str);
 f(z);
 g(z);
-g(z);
 zrev:= bat.reverse(z);
 h(zrev);
