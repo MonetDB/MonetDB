@@ -2329,7 +2329,11 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                     (cse->sem.aggr.part != col_NULL &&
                      ori->sem.aggr.part != col_NULL));
 
-            if (cse->sem.aggr.part != col_NULL)
+            /* if grouping is performed on the same attribute as the
+               aggregate function is applied don't add this item to
+               the mapping structure */
+            if ((cse->sem.aggr.part != col_NULL) && 
+                (ori->sem.aggr.part != ori->sem.aggr.col))
                 INACTCOL (actmap,
                           actcol (cse->sem.aggr.part, ori->sem.aggr.part));
 
