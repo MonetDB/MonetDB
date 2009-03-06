@@ -1406,17 +1406,26 @@ GDKprotect(void)
 static void
 GDKvmtrim(void *limit)
 {
-	int wt = 1;
+	size_t bak_mmap_minsize = 0;
+	int highload = 0;
 
 	do {
 		stream *fp = NULL;
 
-		MT_sleep_ms(wt ? 5000 : 500);
+		MT_sleep_ms(highload ? 500 : 5000);
 		MEMDEBUG {
 			fp = GDKout;
 			THRprintf(fp, "#GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
 		}
-		wt = !MT_mmap_trim(*(size_t *) limit, fp);
+		highload = MT_mmap_trim(*(size_t *) limit, fp);
+		if (highload) {
+			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
+ 			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
+			GDK_mmap_minsize = 1<<27; /* HEAPalloc/extend > 128MB uses it */ 
+		} else if (bak_mmap_minsize) {
+			GDK_mmap_minsize = bak_mmap_minsize; /* revert to default setting */
+			bak_mmap_minsize = 0;
+		}
 	} while (!GDKstopped);
 }
 #endif
