@@ -2114,8 +2114,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 #endif
 #endif
 
-#define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
-#define SWIZZLE_CHECK(idx) ((map[(idx >> REMAP_PAGE_BITS) & (ok &= ((idx >= max) - 1))] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
+#define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & (oid) REMAP_PAGE_MASK))  
+#define SWIZZLE_CHECK(idx) ((map[(idx >> REMAP_PAGE_BITS) & (ok &= ((idx >= max) - 1))] << REMAP_PAGE_BITS) | (idx & (oid) REMAP_PAGE_MASK))  
 
 static int 
 swizzle(oid max, int htpe, oid tbase, BUN cnt, 
