@@ -4205,7 +4205,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (aggr && rel) {
 		sql_rel *l = rel;
 		while(l && !is_groupby(l->op))
-			if (is_project(l->op))
+			if (is_project(l->op) || is_select(l->op))
 				l = l -> l;
 			else
 				l = NULL;
