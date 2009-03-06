@@ -260,12 +260,10 @@ grp_new(BAT *b, BAT *h)
 			return GDK_FAIL;
 		}
 		if (!(h->batDirty&2)) h = BATsetaccess(h, BAT_READ); 
-		BBPkeepref(h->batCacheid);
 	} else {
 		assert(h);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); 
-	BBPkeepref(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -686,6 +684,10 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		}
 		BBPunfix(histo->batCacheid);
 		BBPunfix(map->batCacheid);
+		if (histo != ct_histo)
+			BBPreclaim(histo);
+		if (map != ct_map)
+			BBPreclaim(map);
 		if (r == 0)
 			r = BATcount(ct_histo);
 		if (bits(r) > *N)
@@ -1386,8 +1388,13 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		return GRPgroup_custom(rethisto, retbid, bid, &B, &one);
 	}
 	@:chkHeader(b,GRPgroup)@
-	CTgroup(&bn, &histo, b);
-	*rethisto = histo ? histo->batCacheid : 0;
+	if (CTgroup(&bn, &histo, b) == GDK_FAIL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.new","CTgroup failed");
+	}
+	BBPkeepref(bn->batCacheid);
+	BBPkeepref(histo->batCacheid);
+	*rethisto = histo->batCacheid;
 	*retbid = bn->batCacheid;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1402,10 +1409,13 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 		throw(MAL, "group.new", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPgroup)@
-	CTgroup_custom(&bn, &histo, b, N, rng);
-	*rethisto = histo ? histo->batCacheid : 0;
-	if (!bn) 
-		throw(MAL, "group.new", "group failed");
+	if (CTgroup_custom(&bn, &histo, b, N, rng) == GDK_FAIL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "group.new","CTgroup_custom failed");
+	}
+	BBPkeepref(bn->batCacheid);
+	BBPkeepref(histo->batCacheid);
+	*rethisto = histo->batCacheid;
 	*retbid = bn->batCacheid;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1439,6 +1449,8 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 		BBPreleaseref(ct_histo->batCacheid);
 		throw(MAL, "group.derive","Could not derive group");
 	}
+	BBPkeepref(bn->batCacheid);
+	BBPkeepref(histo->batCacheid);
 
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;

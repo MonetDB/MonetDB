@@ -1249,9 +1249,11 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 @= MALwrapup
 	if( exceptionVar >= 0) {
 		if (ret) {
+			str oldret = ret;
 			ret = createScriptException(mb, mb->stop-1,
 					getExceptionType(getVarName(mb,exceptionVar)),
 					ret, "Exception not caught");
+			GDKfree(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop-1, MAL,

@@ -3722,6 +3722,7 @@ MTIMEtzone_fromstr(tzone *ret, str *s)
 
 	tzone_fromstr(*s, &len, &d);
 	*ret = *d;
+	GDKfree(d);
 	return MAL_SUCCEED;
 }
 
@@ -3733,6 +3734,7 @@ MTIMEdaytime_fromstr(daytime *ret, str *s)
 
 	daytime_fromstr(*s, &len, &d);
 	*ret = *d;
+	GDKfree(d);
 	return MAL_SUCCEED;
 }
 

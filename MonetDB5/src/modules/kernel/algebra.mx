@@ -1744,12 +1744,13 @@ CMDlike(BAT **ret, BAT *b, str s)
 {
 	BATiter bi = bat_iterator(b);
 	BAT *c = BATnew(BAThtype(b), TYPE_str, BATcount(b) / 10);
-	str t = GDKstrdup(s);
+	str t;
 	BUN u, v;
 	BUN yy = 0;
 
 	if (c == NULL)
 		return GDK_FAIL;
+	t = GDKstrdup(s);
 	for (s = t; *s; s++, yy++)
 		*s = tolower(*s);
 
@@ -1758,6 +1759,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 			if (like(BUNtvar(bi, u), t, yy))
 			if (BUNfastins(c, BUNhvar(bi, u), BUNtvar(bi, u)) == NULL) {
 				BBPreclaim(c);
+				GDKfree(t);
 				return GDK_FAIL;
 			}
 	} else {
@@ -1765,6 +1767,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 			if (like(BUNtvar(bi, u), t, yy))
 			if (BUNfastins(c, BUNhloc(bi, u), BUNtvar(bi, u)) == NULL) {
 				BBPreclaim(c);
+				GDKfree(t);
 				return GDK_FAIL;
 			}
 	}
@@ -1773,6 +1776,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 	c->H->nonil = b->H->nonil;
 	c->T->nonil = b->T->nonil;
 	*ret = c;
+	GDKfree(t);
 	return GDK_SUCCEED;
 }
 

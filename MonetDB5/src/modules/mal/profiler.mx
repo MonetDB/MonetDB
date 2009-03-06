@@ -287,6 +287,8 @@ CMDsetAllProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) pc;
 	checkProfiler("setFilter");
 	setFilter(cntxt->nspace, x, y);
+	GDKfree(x);
+	GDKfree(y);
 	return MAL_SUCCEED;
 }
 
