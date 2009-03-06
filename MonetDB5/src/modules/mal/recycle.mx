@@ -457,8 +457,8 @@ RECYCLEprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	recycleRecent = -1;
 	recycled0 = recycled; 
 	time0 = GDKusec();
-   if (recycleQPat == NULL)
-   	RECYCLEinitQPat(20);
+   	if (recycleQPat == NULL)
+   		RECYCLEinitQPat(20);
 	recycleCurQ = RECYCLEnewQryStat(cntxt,mb);
 	return MAL_SUCCEED;
 }
@@ -468,6 +468,7 @@ RECYCLEepilogue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
+	recycleCurQ = -1;  
 	if (monitorRecycler == 2 ) 
 		return RECYCLErunningStat(cntxt,mb);
 	return MAL_SUCCEED;

@@ -1223,7 +1223,10 @@ RECYCLEentry(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( recycleBlk == NULL )
 		return 0;
 	if ( !RECYCLEinterest(p) )  /* don't scan RP for non-monitored instructions */
-        return 0;
+        	return 0;
+	if ( recycleCurQ < 0 )	/* don't use recycling before initialization
+				by prelude() */
+		return 0;
 	i = RECYCLEreuse(cntxt,mb,stk,p) >= 0;
 #ifdef _DEBUG_RECYCLE_
         stream_printf(cntxt->fdout,"Reuse %d for ",i);
@@ -1296,6 +1299,9 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 
 void
 RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks){
+	if ( recycleCurQ < 0 ) /* don't use recycling before initialization
+				by prelude() */
+		return;
 	mal_set_lock(recycleLock,"recycle");
 	RECYCLEexitImpl(cntxt,mb,stk,p, ticks);
 	mal_unset_lock(recycleLock,"recycle");
