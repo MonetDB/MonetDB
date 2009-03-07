@@ -1330,6 +1330,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_sequence *seq = find_sql_sequence(s, *seqname);
 
 		if (seq && seq_next_value(seq, res)) {
+			stack_set_number(m, "last_id", m->last_id);
 			m->last_id = *res;
 			return MAL_SUCCEED;
 		}

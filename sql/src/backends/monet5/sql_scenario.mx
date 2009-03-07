@@ -274,7 +274,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	stmt *r = NULL;
-	lng sec = 0;
+	lng sec = 0, last_id = -1;
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
@@ -282,6 +282,7 @@ global_variables(mvc *sql, char *user, char *schema)
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("debug", &sql->debug);
+	SQLglobal("last_id", &last_id);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 1024, 0);
