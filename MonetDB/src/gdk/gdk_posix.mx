@@ -375,7 +375,7 @@ char *MT_heapbase = NULL;
  * A VMtrim thread keeps an eye on the RSS (memory pressure) and large writable
  * memory maps. If RSS approaches mem_maxsize(), it starts to *worry*, and starts
  * to write dirty data from these writable maps to disk in 128MB tiles. So, if 
- * memory pressure rises further in the near future, the OS has some optiont to release 
+ * memory pressure rises further in the near future, the OS has some option to release 
  * memory pages cheaply (i.e. without needing I/O). This is also done explicitly by the 
  * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS to release pages.
  * The reason is that Linux is not smart enough to do even this. Anyway..
@@ -768,7 +768,7 @@ MT_mmap_trim(size_t target, void *fp)
 {
 	stream *err = (stream *) fp;
 	size_t off, rss = MT_getrss();
-	int i, worry = (rss * 4 > target * 3);
+	int i, worry = MAX(4, rss*8/target) - 4;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	if (err) {
@@ -801,12 +801,12 @@ MT_mmap_trim(size_t target, void *fp)
 					/* first run, walk backwards until we hit an unsaved tile */
 					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
 						if (MT_mmap_save_tile(i, off, err))
-							return 1;
+							return worry;
 				} else {
 					/* save the next tile */
 					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
 						if (MT_mmap_save_tile(i, off, err))
-							return 1;
+							return worry;
 					}
 					/* we seem to have run through all savable tiles */
 					if (!MT_mmap_tab[i].last_tile) {
