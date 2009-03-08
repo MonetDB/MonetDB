@@ -184,6 +184,7 @@ include opt_coercion;
 include opt_constants;
 include opt_dataflow;
 include opt_deadcode;
+include opt_datacyclotron;
 include opt_commonTerms;
 include opt_costModel;
 include opt_emptySet;
