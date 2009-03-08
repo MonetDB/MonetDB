@@ -88,7 +88,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			getArg(p,j)= k;
 			pushArgument(mb,q,j);
 		}
-		if (functionExit(mb,p))
+		if (functionExit(p))
 		for (j = 0; j< mb->vtop; j++)
 		if ( used[j]){
 			q= newStmt(mb,"datacyclotron","unpin");
