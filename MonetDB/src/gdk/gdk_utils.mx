@@ -1403,11 +1403,18 @@ GDKprotect(void)
 }
 
 #ifndef WIN32
+static int membits = 0;
 static void
 GDKvmtrim(void *limit)
 {
 	size_t bak_mmap_minsize = 0;
 	int highload = 0;
+
+	if (membits == 0) {
+		/* compute rounded down log2 of memsize */ 
+		size_t s = GDK_mem_maxsize;
+		while((s >>= 1) > 0) membits++; 
+	}
 
 	do {
 		stream *fp = NULL;
@@ -1418,10 +1425,10 @@ GDKvmtrim(void *limit)
 			THRprintf(fp, "#GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
 		}
 		highload = MT_mmap_trim(*(size_t *) limit, fp);
-		if (highload) { /* memcrunch distress varies from 1 to 5 */
+		if (highload) { /* memcrunch distress varies from 1 to 4 */
 			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
  			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
-			GDK_mmap_minsize = 1<<(29-highload); /* HEAPalloc/extend > [256-16]MB uses it */ 
+			GDK_mmap_minsize = 1<<(membits-(highload+highload)); /* HEAPalloc/extend > [256-16]MB uses it */ 
 		} else if (bak_mmap_minsize) {
 			GDK_mmap_minsize = bak_mmap_minsize; /* revert to default setting */
 			bak_mmap_minsize = 0;
