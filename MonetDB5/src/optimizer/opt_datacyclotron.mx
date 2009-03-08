@@ -27,7 +27,7 @@ pattern optimizer.datacyclotron(mod:str, fcn:str):str
 address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
-command request(schema:str, tab:str, col:str, kind:int)
+command request(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
 address DCrequest
 comment "Inform the DataCyclotron about the intended access";
 command pin(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
@@ -55,15 +55,13 @@ The number of overloaded instructions is kept to a minimum.
 static int
 OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, k, actions=0;
+	int i, j, actions=0;
 	InstrPtr *old, q;
-	Lifespan span = newLifespan(mb);
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
 
 	(void) cntxt;
 	(void) stk;
-	setLifespan(mb,span);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);
@@ -81,16 +79,15 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 				actions++;
 			}
 		for (j = p->retc; j<p->argc; j++)
-		if ( used[getArg(p,j)] && getBeginLifespan(span,getArg(p,j))==i){
+		if ( used[getArg(p,j)] == 1 ){
+			used[getArg(p,j)] = 2;
 			q= newStmt(mb,"datacyclotron","pin");
-			k= getArg(q,0);
-			getArg(q,0)= getArg(p,j);
-			getArg(p,j)= k;
-			pushArgument(mb,q,j);
+			pushArgument(mb,q,getArg(p,j));
+			getArg(p,j)= getArg(q,0);
 		}
 		if (functionExit(p))
 		for (j = 0; j< mb->vtop; j++)
-		if ( used[j]){
+		if ( used[j] == 2){
 			q= newStmt(mb,"datacyclotron","unpin");
 			pushArgument(mb,q,j);
 		}
@@ -105,7 +102,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(datacyclotron,OPT_CHECK_TYPES)@
+@:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
 @- The DataCyclotron Wrapper
 @c
 str

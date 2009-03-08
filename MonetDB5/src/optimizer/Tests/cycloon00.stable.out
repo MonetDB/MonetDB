@@ -1,0 +1,64 @@
+stdout of test 'cycloon00` in directory 'src/optimizer` itself:
+
+
+# 23:40:58 >  
+# 23:40:58 >   mserver5 "--config=/ufs/mk/monet5Head//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/monet5Head//Linux/lib/MonetDB5:/ufs/mk/monet5Head//Linux/lib/MonetDB5/lib:/ufs/mk/monet5Head//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5Head//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5Head//Linux/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=31497 --set xrpc_port=47208 --set xrpc_docroot=/ufs/mk/monet5Head/package/MonetDB5 --set monet_prompt= --trace  --dbname=mTests_src_optimizer  cycloon00.mal
+# 23:40:58 >  
+
+# MonetDB server v5.11.0, based on kernel v1.29.0
+# Serving database 'mTests_src_optimizer', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:31497/
+function sql.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
+    return _5 := bat.new(:any_1,:any_2);
+end bind;
+function sql.exportResult(x:any_1,y:bat[:any_3,:any_2]):void;
+    io.print(1);
+end exportResult;
+function sql.rsColumn(x:any_1,s:str,t:str,k:str,i:int,kk:int,z:bat[:any_3,:any_4]):void;
+    io.print(1);
+end rsColumn;
+function sql.resultSet(i:int,j:int,k:bat[:any_1,:any_2]):bat[:oid,:oid];
+    return _4 := bat.new(:oid,:oid);
+end resultSet;
+function user.tst():void;
+    x1 := sql.bind("sys","tab","id",0);
+    x6 := sql.bind("sys","col","t_id",0);
+    x9 := bat.reverse(x6);
+    x10 := algebra.join(x1,x9);
+    x13 := algebra.markT(x10,0@0);
+    x14 := bat.reverse(x13);
+    x15 := algebra.join(x14,x1);
+    x16 := sql.resultSet(1,1,x15);
+    sql.rsColumn(x16,"sys.c","t_id","int",32,0,x15);
+    x22 := io.stdout();
+    sql.exportResult(x22,x16);
+end tst;
+function user.main():void;
+    mdb.list("user","tst");
+end main;
+function user.tst():void;
+    x1:bat[:oid,:int]  := datacyclotron.request("sys","tab","id",0);
+    x6:bat[:oid,:int]  := datacyclotron.request("sys","col","t_id",0);
+    _23 := datacyclotron.pin(x6);
+    x9 := bat.reverse(_23);
+    _24 := datacyclotron.pin(x1);
+    x10 := algebra.join(_24,x9);
+    x13 := algebra.markT(x10,0@0);
+    x14 := bat.reverse(x13);
+    x15 := algebra.join(x14,x1);
+    x16 := sql.resultSet(1,1,x15);
+    sql.rsColumn(x16,"sys.c","t_id","int",32,0,x15);
+    x22 := io.stdout();
+    sql.exportResult(x22,x16);
+    datacyclotron.unpin(x1);
+    datacyclotron.unpin(x6);
+end tst;
+
+# 23:40:58 >  
+# 23:40:58 >  Done.
+# 23:40:58 >  
+
