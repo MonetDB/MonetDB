@@ -15,7 +15,7 @@
 @' Copyright August 2008-2009 MonetDB B.V.
 @' All Rights Reserved.
 
-@f opt_recycler
+@f opt_datacyclotron
 @- The data cyclotron 
 
 @mal
@@ -30,6 +30,12 @@ comment "Datacyclotron code injection";
 command request(schema:str, tab:str, col:str, kind:int)
 address DCrequest
 comment "Inform the DataCyclotron about the intended access";
+command pin(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address DCpin
+comment "Inform the DataCyclotron about a pin request";
+command unpin(b:bat[:any_1,:any_2])
+address DCunpin
+comment "Inform the DataCyclotron about a pin request";
 @-
 The number of overloaded instructions is kept to a minimum.
 @h
@@ -51,7 +57,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 {
 	int i, j, k, actions=0;
 	InstrPtr *old, q;
-	Lifespan span = newLifespan();
+	Lifespan span = newLifespan(mb);
 	char *used= (char*) GDKzalloc(mb->vtop *sizeof(char));
 	int limit;
 
@@ -69,8 +75,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			(getFunctionId(p) == bindRef || 
 			 getFunctionId(p) == getName("bind_idxbat",11) ||
 			 getFunctionId(p) == binddbatRef) ) {
-				setModuleId(p) = putName("datacyclotron",13);
-				setFunctionId(p)= putName("request",7);
+				setModuleId(p,putName("datacyclotron",13));
+				setFunctionId(p, putName("request",7));
 				used[getArg(p,0)] = 1;
 				actions++;
 			}
@@ -95,11 +101,11 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(recycle)@
+@:exportOptimizer(datacyclotron)@
 #endif
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(recycle,OPT_CHECK_TYPES)@
+@:wrapOptimizer(datacyclotron,OPT_CHECK_TYPES)@
 @- The DataCyclotron Wrapper
 @c
 str
@@ -110,5 +116,20 @@ DCrequest(int *ret, str *sch, str *tab, str *col, int *kind){
 	(void) col;
 	(void) kind;
 	throw(MAL,"datacyclotron.request","nyi");
+}
+
+str
+DCpin(int *ret, int *bid){
+	(void) ret;
+	(void) bid;
+	throw(MAL,"datacyclotron.pin","nyi");
+}
+
+
+str
+DCunpin(int *ret, int *bid){
+	(void) ret;
+	(void) bid;
+	throw(MAL,"datacyclotron.unpin","nyi");
 }
 
