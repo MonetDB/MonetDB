@@ -158,12 +158,12 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_const (root);
     if (req_node)
         PFprop_infer_req_node (root);
+    if (set)
+        PFprop_infer_set_extended (root);
     if (reqval)
         PFprop_infer_reqval (root);
     if (dom)
         PFprop_infer_dom (root);
-    if (set)
-        PFprop_infer_set_extended (root);
     if (icol)
         PFprop_infer_icol (root);
     if (ocols)
