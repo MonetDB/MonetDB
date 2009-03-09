@@ -606,6 +606,23 @@ PFalg_proj_merge (PFalg_proj_t *upper_proj, unsigned int upper_count,
 }
 
 /**
+ * Create a projection list based on a schema. The new projection
+ * list will be as wide as the upper projection (@a upper_count).
+ */
+PFalg_proj_t *
+PFalg_proj_create (PFalg_schema_t schema)
+{
+    unsigned int  i;
+    PFalg_proj_t *proj = PFmalloc (schema.count * sizeof (*(proj)));
+
+    for (i = 0; i < schema.count; i++) {
+        proj[i] = PFalg_proj (schema.items[i].name,
+                              schema.items[i].name);
+    }
+    return proj;
+}
+
+/**
  * Constructor for column lists (e.g., for literal table
  * construction, or sort specifications in the rownum operator).
  *

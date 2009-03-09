@@ -572,6 +572,10 @@ PFalg_proj_t * PFalg_proj_merge (PFalg_proj_t *upper_proj,
                                  unsigned int upper_count,
                                  PFalg_proj_t *lower_proj,
                                  unsigned int lower_count);
+/**
+ * Create a projection list based on a schema.
+ */
+PFalg_proj_t * PFalg_proj_create (PFalg_schema_t schema);
 
 /**
  * Test if two atomic values are comparable

@@ -72,6 +72,69 @@ find_old_name (PFla_op_t *op, PFalg_col_t col)
 }
 
 /**
+ * Replace a thetajoin with a one-row literal table by a selection.
+ */
+static PFla_op_t *
+replace_thetajoin (PFla_op_t *p, bool replace_left)
+{
+    PFla_op_t *lp  = replace_left ? L(p) : R(p),
+              *res = replace_left ? R(p) : L(p);
+
+    assert (p->kind == la_thetajoin &&
+            PFprop_card (lp->prop) &&
+            (lp->kind == la_lit_tbl ||
+             (lp->kind == la_project && L(lp)->kind == la_lit_tbl)));
+        
+    /* attach all columns of the to-be-replaced side
+       to the other side */
+    for (unsigned int i = 0; i < lp->schema.count; i++) {
+        assert (PFprop_const (p->prop,
+                              lp->schema.items[i].name));
+        res = attach (res,
+                      lp->schema.items[i].name,
+                      PFprop_const_val (
+                          p->prop,
+                          lp->schema.items[i].name));
+    }
+
+    /* evaluate selections on the relation */
+    for (unsigned int i = 0; i < p->sem.thetajoin.count; i++) {
+        PFalg_col_t col1 = p->sem.thetajoin.pred[i].left,
+                    col2 = p->sem.thetajoin.pred[i].right,
+                    new  = PFcol_new (col1),
+                    tmp;
+        switch (p->sem.thetajoin.pred[0].comp) {
+            case alg_comp_eq:
+                res = eq (res, new, col1, col2);
+                break;
+            case alg_comp_gt:
+                res = gt (res, new, col1, col2);
+                break;
+            case alg_comp_ge:
+                tmp = PFcol_new (col1);
+                res = not (gt (res, tmp, col2, col1), new, tmp);
+                break;
+            case alg_comp_lt:
+                res = gt (res, new, col2, col1);
+                break;
+            case alg_comp_le:
+                tmp = PFcol_new (col1);
+                res = not (gt (res, tmp, col1, col2), new, tmp);
+                break;
+            case alg_comp_ne:
+                tmp = PFcol_new (col1);
+                res = not (eq (res, tmp, col1, col2), new, tmp);
+                break;
+        }
+        res = select_ (res, new);
+    }
+    /* remove additional columns */
+    return PFla_project_ (res,
+                          p->schema.count,
+                          PFalg_proj_create (p->schema));
+}
+
+/**
  * This function checks for the following bigger pattern:
  *
  *                    |
@@ -1300,6 +1363,45 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_thetajoin:
+            /* rewrite thetajoin into equi-join if it seems to be a mapping join */
+            if (p->sem.thetajoin.count == 1 &&
+                p->sem.thetajoin.pred[0].comp == alg_comp_eq &&
+                ((PFprop_key_left (p->prop, p->sem.thetajoin.pred[0].left) &&
+                  PFprop_subdom (p->prop,
+                                 PFprop_dom_right (p->prop,
+                                                   p->sem.thetajoin.pred[0].right),
+                                 PFprop_dom_left (p->prop,
+                                                  p->sem.thetajoin.pred[0].left))) ||
+                 (PFprop_key_right (p->prop, p->sem.thetajoin.pred[0].right) &&
+                  PFprop_subdom (p->prop,
+                                 PFprop_dom_left (p->prop,
+                                                   p->sem.thetajoin.pred[0].left),
+                                 PFprop_dom_right (p->prop,
+                                                  p->sem.thetajoin.pred[0].right))))) {
+                *p = *PFla_eqjoin (L(p), R(p),
+                                   p->sem.thetajoin.pred[0].left,
+                                   p->sem.thetajoin.pred[0].right);
+                modified = true;
+            }
+            /* unfold a thetajoin with a one-row literal table */
+            else if (PFprop_card (L(p)->prop) == 1 &&
+                     (L(p)->kind == la_lit_tbl ||
+                      (L(p)->kind == la_project &&
+                       LL(p)->kind == la_lit_tbl))) {
+                *p = *replace_thetajoin (p, true);
+                modified = true;
+            }
+            /* unfold a thetajoin with a one-row literal table */
+            else if (PFprop_card (R(p)->prop) == 1 &&
+                     (R(p)->kind == la_lit_tbl ||
+                      (R(p)->kind == la_project &&
+                       RL(p)->kind == la_lit_tbl))) {
+                *p = *replace_thetajoin (p, false);
+                modified = true;
+            }
+            break;
+
         case la_cross:
             /* PFprop_icols_count () == 0 is also true
                for nodes without inferred properties
@@ -2445,11 +2547,13 @@ PFalgopt_complex (PFla_op_t *root)
     split_rowid_for_side_effects (root);
 
     while (modified) {
-        /* Infer key, icols, domain, reqval,
+        /* Infer key, const, icols, domain, reqval,
            and refctr properties first */
         PFprop_infer_lineage (root);
         PFprop_infer_functional_dependencies (root);
+        /* card property inferred by key */
         PFprop_infer_key (root);
+        PFprop_infer_const (root);
         PFprop_infer_level (root);
         PFprop_infer_composite_key (root);
         PFprop_infer_icol (root);
