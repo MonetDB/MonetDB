@@ -113,9 +113,10 @@ opt_monetxq (PFla_op_t *p)
                 RL(p)->kind == la_step_join &&
                 (RL(p)->sem.step.spec.axis == alg_desc ||
                  RL(p)->sem.step.spec.axis == alg_desc_s) &&
-                RL(p)->sem.step.spec.kind == node_kind_elem &&
-                PFqname_ns_wildcard (RL(p)->sem.step.spec.qname) &&
-                PFqname_loc_wildcard (RL(p)->sem.step.spec.qname) &&
+                ((RL(p)->sem.step.spec.kind == node_kind_elem &&
+                  PFqname_ns_wildcard (RL(p)->sem.step.spec.qname) &&
+                  PFqname_loc_wildcard (RL(p)->sem.step.spec.qname)) ||
+                 RL(p)->sem.step.spec.kind == node_kind_node) &&
                 RLR(p)->kind == la_roots &&
                 RLRL(p)->kind == la_doc_tbl &&
                 RL(p)->sem.step.item == RLRL(p)->sem.doc_tbl.res) {
