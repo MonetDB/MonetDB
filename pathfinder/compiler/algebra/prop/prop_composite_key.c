@@ -404,6 +404,19 @@ infer_ckey (PFla_op_t *n)
                         union_ (CKEYS,
                                 clconcat (llat (LCKEYS, i),
                                           llat (RCKEYS, j)));
+                        /* if both join arguments together form a
+                           composite key we can also drop one column */
+                        if (in (llat (LCKEYS, i), n->sem.eqjoin.col1) &&
+                            in (llat (RCKEYS, i), n->sem.eqjoin.col2)) {
+                            union_ (CKEYS,
+                                    remove_col (clconcat (llat (LCKEYS, i),
+                                                          llat (RCKEYS, j)),
+                                                n->sem.eqjoin.col1));
+                            union_ (CKEYS,
+                                    remove_col (clconcat (llat (LCKEYS, i),
+                                                          llat (RCKEYS, j)),
+                                                n->sem.eqjoin.col2));
+                        }
                     }
             }
 
