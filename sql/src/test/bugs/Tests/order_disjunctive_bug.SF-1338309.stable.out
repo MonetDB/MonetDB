@@ -31,7 +31,7 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-% .urlparts # table_name
+% sys.urlparts # table_name
 % urlid # name
 % int # type
 % 4 # length
@@ -40,15 +40,15 @@ Over..
 [ 329	]
 [ 3857	]
 [ 3868	]
-% .urlparts # table_name
+% sys.urlparts # table_name
 % urlid # name
 % int # type
 % 4 # length
+[ 218	]
+[ 219	]
 [ 3868	]
 [ 3857	]
 [ 329	]
-[ 219	]
-[ 218	]
 
 # 12:59:13 >  
 # 12:59:13 >  Done.

@@ -1,28 +1,42 @@
 stdout of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 12:39:48 >  
-# 12:39:48 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:39:48 >  
+# 08:23:41 >  
+# 08:23:41 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=34095 --set xrpc_port=44539 --set xrpc_docroot=/net/alf.ins.cwi.nl/export/scratch1/niels/monetdb/sql --set monet_prompt= --trace  "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 08:23:41 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.11.0, based on kernel v1.29.0
+# Serving database 'mTests_src_test_BugDay_2005-10-06_2.9.3', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34095/
+# MonetDB/SQL module v2.29.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
-# 11:07:22 >  
-# 11:07:22 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33775  < set_types.SF-932360.sql
-# 11:07:22 >  
+# 08:23:41 >  
+# 08:23:41 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34095 
+# 08:23:41 >  
 
+% . # table_name
+% single_value # name
+% sec_interval # type
+% 0 # length
+[ 60	]
+% . # table_name
+% single_value # name
+% sec_interval # type
+% 0 # length
+[ 0	]
 
-# 11:07:22 >  
-# 11:07:22 >  Done.
-# 11:07:22 >  
+# 08:23:41 >  
+# 08:23:41 >  Done.
+# 08:23:41 >  
 

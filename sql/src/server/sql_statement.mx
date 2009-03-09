@@ -135,7 +135,8 @@ typedef enum comp_type {
 	cmp_notequal = 5,
 	cmp_notlike = 6,
 	cmp_like = 7,
-	cmp_all = 8
+	cmp_all = 8,
+	cmp_or = 9
 } comp_type;
 
 /* flag to indicate anti join/select */
@@ -1487,7 +1488,7 @@ stmt_relselect_init()
 	stmt *s = stmt_create(st_relselect);
 
 	s->op1.lval = list_create((fdestroy) &stmt_destroy);
-	s->nrcols = 1;
+	s->nrcols = 0;
 	return s;
 }
 
@@ -1495,6 +1496,8 @@ void
 stmt_relselect_fill(stmt *rs, stmt *sel)
 {
 	list_append(rs->op1.lval, sel);
+	if (sel->nrcols > rs->nrcols)
+		rs->nrcols = sel->nrcols;
 	if (!rs->h)
 		rs->h = stmt_dup(((stmt *) (rs->op1.lval->h->data))->h);
 }

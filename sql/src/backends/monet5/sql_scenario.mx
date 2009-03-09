@@ -264,7 +264,7 @@ SQLexit(Client c)
 	stmt_destroy(r);			   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 8
+#define NR_GLOBAL_VARS 9
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -1032,7 +1032,7 @@ produce code.
 			SQLsetTrace(c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain && m->emode != m_plan) || s->type == st_none) {
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
 			if( m->emode == m_inplace)
@@ -1224,7 +1224,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_explain) {
+	if (m->emode == m_explain || m->emode == m_plan) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}

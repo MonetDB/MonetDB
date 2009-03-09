@@ -166,7 +166,7 @@ typedef enum operator_type {
 #define set_subquery(rel) \
 	rel->subquery = 1
 
-#define rel_is_ref(rel) 	(((sql_rel*)rel)->ref.refcnt > 2)
+#define rel_is_ref(rel) 	(((sql_rel*)rel)->ref.refcnt > 1)
 
 typedef struct relation {
 	sql_ref ref;

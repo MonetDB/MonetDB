@@ -26,19 +26,30 @@ Over..
 # 23:29:58 >  
 
 function user.s1_1():void;
-barrier (_25,_4) := scheduler.octopus(10);
-    _27 := octopus.tentacle_s1_1_69();
-    _28 := octopus.tentacle_s1_1_70();
-    _29 := octopus.tentacle_s1_1_71();
-    _30 := octopus.tentacle_s1_1_72();
-    _31 := octopus.tentacle_s1_1_73();
-    _4 := mat.pack(_27,_28,_29,_30,_31);
-exit (_25,_4);
-    _5 := sql.resultSet(1,1,_4);
-    sql.rsColumn(_5,"sys.squida","bid","int",32,0,_4);
-    _4 := nil;
-    _10 := io.stdout();
-    sql.exportResult(_10,_5);
+barrier _34 := language.dataflow();
+    _1:bat[:oid,:int]  := sql.bind("sys","squida","bid",0);
+    _6:bat[:oid,:int]  := sql.bind("sys","squida","bid",2);
+    _8 := algebra.kdifference(_1,_6);
+    _1:bat[:oid,:int]  := nil;
+    _9 := algebra.kunion(_8,_6);
+    _8 := nil;
+    _6:bat[:oid,:int]  := nil;
+    _10:bat[:oid,:int]  := sql.bind("sys","squida","bid",1);
+    _12 := algebra.kunion(_9,_10);
+    _9 := nil;
+    _10:bat[:oid,:int]  := nil;
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
+    _14 := bat.reverse(_13);
+    _13:bat[:oid,:oid]  := nil;
+    _15 := algebra.kdifference(_12,_14);
+    _12 := nil;
+    _14 := nil;
+exit _34;
+    _16 := sql.resultSet(1,1,_15);
+    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
+    _15 := nil;
+    _21 := io.stdout();
+    sql.exportResult(_21,_16);
 end s1_1;
 % sys.squida # table_name
 % bid # name

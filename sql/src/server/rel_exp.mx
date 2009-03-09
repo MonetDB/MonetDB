@@ -30,6 +30,7 @@ extern void exp_destroy(sql_exp* e);
 
 extern sql_exp *exp_compare( sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
+extern sql_exp *exp_or( list *l, list *r);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
@@ -72,6 +73,7 @@ extern char *exp_find_rel_name(sql_exp *e);
 extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
+extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern int exp_is_join(sql_exp *e);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
@@ -141,10 +143,15 @@ exp_destroy(sql_exp *exp)
 		_DELETE(exp->r);
 		break;
 	case e_cmp:
-		exp_destroy(exp->l);
-		exp_destroy(exp->r);
-		if (exp->f)
-			exp_destroy(exp->f);
+		if (exp->flag == cmp_or) {
+			list_destroy(exp->l);
+			list_destroy(exp->r);
+		} else {
+			exp_destroy(exp->l);
+			exp_destroy(exp->r);
+			if (exp->f)
+				exp_destroy(exp->f);
+		}
 		break;
 	case e_convert:
 		exp_destroy(exp->l);
@@ -185,6 +192,19 @@ exp_compare2( sql_exp *l, sql_exp *r, sql_exp *h, int cmptype)
 	if (h)
 		e->f = h;
 	e->flag = cmptype;
+	return e;
+}
+
+sql_exp *
+exp_or( list *l, list *r)
+{
+	sql_exp *e1 = l->h->data;
+	sql_exp *e = exp_create(e_cmp);
+	e->card = e1->card;
+	e->l = l;
+	e->r = r;
+	e->f = e1->f;
+	e->flag = cmp_or;
 	return e;
 }
 
@@ -464,6 +484,22 @@ int
 exp_cmp( sql_exp *e1, sql_exp *e2)
 {
 	return (e1 == e2)?0:-1;
+}
+
+int 
+exp_match( sql_exp *e1, sql_exp *e2)
+{
+	if (exp_cmp(e1, e2) == 0)
+		return 1;
+	if (e1->type == e2->type && e1->type == e_column) {
+		if (!e1->name || !e2->name || strcmp(e1->name, e2->name) != 0)
+			return 0;
+		if (!e1->l || !e2->l || strcmp(e1->l, e2->l) != 0)
+			return 0;
+		/* e1->r */
+		return 1;
+	}
+	return 0;
 }
 
 int

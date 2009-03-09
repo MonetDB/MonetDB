@@ -161,7 +161,7 @@ Over..
 [ "JET",	15	]
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
-% .flight,	.aircraft,	.flight_class # table_name
+% sys.flight,	sys.aircraft,	sys.flight_class # table_name
 % flight_number,	range_miles,	fare_class # name
 % decimal,	decimal,	char # type
 % 5,	6,	3 # length

@@ -193,9 +193,9 @@ Over..
 % name,	cases # name
 % varchar,	wrd # type
 % 23,	1 # length
-[ "Inspector Edmund Reid",	3	]
 [ "James Monro",	2	]
 [ "Sir Melville Macnaghten",	2	]
+[ "Inspector Edmund Reid",	3	]
 % .,	.inspector # table_name
 % grade,	inspectors # name
 % char,	wrd # type
@@ -211,7 +211,7 @@ Over..
 % 6,	4 # length
 [ "blonde",	"5'7\""	]
 [ "brown",	"5'5\""	]
-% .victim # table_name
+% sys.victim # table_name
 % victim # name
 % varchar # type
 % 42 # length

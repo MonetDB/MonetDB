@@ -46,13 +46,17 @@ int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i);
  *         1 for sec intervals and value in val, 
  *         <0 for errors */
 
-int interval_from_str(char *str, int sk, int ek, lng *val);
+int interval_from_str(char *str, int d, lng *val);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
  *         <0 for errors */
 
 char *datetime_field(itype field);
 /* returns the datetime_field string representation */
+
+int inttype2digits( int sk, int ek );
+int digits2sk( int digits);
+int digits2ek( int digits );
 
 #endif /*_SQL_DATETIME_H_*/
 
@@ -230,8 +234,10 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 	}
 }
 
-int interval_from_str(char *str, int sk, int ek, lng *val)
+int interval_from_str(char *str, int d, lng *val)
 {
+	int sk = digits2sk(d);
+	int ek = digits2ek(d);
 	*val = 0;
 	return parse_interval(NULL, 1, str, sk, ek, val);
 }
@@ -257,3 +263,77 @@ datetime_field(itype f)
 	}
 	return "year";
 }
+
+int inttype2digits( int sk, int ek )
+{
+	switch(sk) {
+	case iyear:
+		if(ek == iyear) 
+			return 1;
+		return 2;
+	case imonth:
+		return 3;
+	case iday:
+		switch(ek) {
+		case iday: 
+			return 4;
+		case ihour:
+			return 5;
+		case imin:
+			return 6;
+		default:
+			return 7;
+		}
+	case ihour:
+		switch(ek) {
+		case ihour:
+			return 8;
+		case imin:
+			return 9;
+		default:
+			return 10;
+		}
+	case imin:
+		if(ek == imin) 
+			return 11;
+		return 12;
+	case isec:
+		return 13;
+	}
+	return 1;
+}
+
+int digits2sk( int digits)
+{
+	int sk = iyear;
+	
+	if (digits > 2)
+		sk = imonth;
+	if (digits > 3)
+		sk = iday;
+	if (digits > 7)
+		sk = ihour;
+	if (digits > 10)
+		sk = imin;
+	if (digits > 12)
+		sk = isec;
+	return sk;
+}
+
+int digits2ek( int digits)
+{
+	int ek = iyear;
+	
+	if (digits == 2 || digits == 3)
+		ek = imonth;
+	if (digits == 4)
+		ek = iday;
+	if (digits == 5 || digits == 8)
+		ek = ihour;
+	if (digits == 6 || digits == 9 || digits == 11)
+		ek = imin;
+	if (digits == 7 || digits == 10 || digits == 12 || digits == 13)
+		ek = isec;
+	return ek;
+}
+

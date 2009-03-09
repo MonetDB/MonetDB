@@ -79,12 +79,6 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 # 19:22:50 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32644 
 # 19:22:50 >  
 
-MAPI  = monetdb@alf:32644
-QUERY = set current_timezone = 60;
-ERROR = !IllegalArgumentException:calc.second_interval:illegal argument
-MAPI  = monetdb@alf:32644
-QUERY = set current_timezone = 0;
-ERROR = !IllegalArgumentException:calc.second_interval:illegal argument
 
 # 19:22:50 >  
 # 19:22:50 >  Done.

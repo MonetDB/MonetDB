@@ -1096,7 +1096,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	} else {
 		r = rel_optimizer(c, r);
 		if (c->emode == m_plan) {
-			c->emode = m_inplace;
+			//c->emode = m_inplace;
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);
@@ -3655,11 +3655,12 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 @:numcastdown(wrd,lng)@
 
 str 
-month_interval_str( int *ret, str *s, int *ek, int *sk )
+month_interval_str( int *ret, str *s, int *d, int *sk )
 {
 	lng res;
 
-	if (interval_from_str( *s, *sk, *ek, &res ) < 0)
+	(void)sk;
+	if (interval_from_str( *s, *d, &res ) < 0)
 		throw(SQL, "calc.month_interval",
 			"wrong format (%s)", *s);
 	assert((lng) GDK_int_min <= res && res <= (lng) GDK_int_max);
@@ -3668,10 +3669,10 @@ month_interval_str( int *ret, str *s, int *ek, int *sk )
 }
 
 str 
-second_interval_str( lng *res, str *s, int *ek, int *sk )
+second_interval_str( lng *res, str *s, int *d, int *sk )
 {
-
-	if (interval_from_str( *s, *sk, *ek, res ) < 0)
+	(void)sk;
+	if (interval_from_str( *s, *d, res ) < 0)
 		throw(SQL, "calc.second_interval",
 			"wrong format (%s)", *s);
 	return MAL_SUCCEED;
@@ -3679,11 +3680,12 @@ second_interval_str( lng *res, str *s, int *ek, int *sk )
 
 @= c_interval
 str
-month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
+month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
+	int k = digits2sk(*d);
 	int r = (int)*s;
 
-	(void)ek;
-	switch(*sk) {
+	(void)sk;
+	switch(k) {
 	case iyear: 	
 		r *= 12;
 	case imonth:
@@ -3695,11 +3697,12 @@ month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	return MAL_SUCCEED;
 }
 str
-second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
+second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
+	int k = digits2sk(*d);
 	lng r = *s;
 
-	(void)ek;
-	switch(*sk) {
+	(void)sk;
+	switch(k) {
 	case iday: 	
 		r *= 24;
 	case ihour:

@@ -72,7 +72,7 @@ Over..
 % smallint # type
 % 2 # length
 [ 15	]
-% ._tables,	._tables,	._tables,	._tables,	._tables # table_name
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
 % name,	query,	type,	system,	commit_action # name
 % varchar,	varchar,	smallint,	boolean,	smallint # type
 % 0,	0,	1,	5,	1 # length

@@ -1,19 +1,20 @@
-stderr of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory 'src/test/BugTracker-2008` itself:
+stderr of test 'order_by_complex_exp` in directory 'src/test` itself:
 
 
-# 18:44:11 >  
-# 18:44:11 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38181 --set xrpc_port=45061 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2008" --set sql_debug=16384 --set xquery_backend=algebra --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 18:44:11 >  
+# 14:06:10 >  
+# 14:06:10 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=34580 --set xrpc_port=42462 --set xrpc_docroot=/net/alf.ins.cwi.nl/export/scratch1/niels/monetdb/sql --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 14:06:10 >  
 
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
-# builtin opt 	gdk_version = 1.26.0
-# builtin opt 	monet_pid = 19307
-# builtin opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+# builtin opt 	gdk_version = 1.29.0
+# builtin opt 	monet_pid = 26261
+# builtin opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
 # builtin opt 	gdk_mem_bigsize = 262144
+# builtin opt 	gdk_mmap_minsize = 137438953472
 # builtin opt 	gdk_alloc_map = yes
 # builtin opt 	gdk_mem_pagebits = 14
 # builtin opt 	gdk_vmtrim = yes
@@ -33,9 +34,9 @@ stderr of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory '
 # builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
 # builtin opt 	standoff_start = start
 # builtin opt 	standoff_end = end
-# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+# config opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
 # config opt 	config = ${prefix}/etc/monetdb5.conf
-# config opt 	prefix = /ufs/niels/scratch/rc/Linux-x86_64
+# config opt 	prefix = /ufs/niels/scratch/monetdb/Linux-x86_64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
 # config opt 	gdk_dbname = demo
@@ -53,40 +54,34 @@ stderr of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory '
 # config opt 	mero_doproxy = yes
 # config opt 	mero_discoveryttl = 600
 # config opt 	mal_init = ${exec_prefix}/lib/MonetDB5/mal_init.mal
-# config opt 	mal_listing = 58
+# config opt 	mal_listing = 2
 # config opt 	checkpoint_dir = ${prefix}/var/MonetDB5/chkpnt
 # config opt 	mapi_port = 50000
 # config opt 	mapi_open = false
-# config opt 	sql_debug = 0
 # config opt 	sql_logdir = ${prefix}/var/MonetDB5/sql_logs
 # config opt 	sql_init = ${exec_prefix}/lib/MonetDB5/sql_init.sql
-# cmdline opt 	config = /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	monet_mod_path = /ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin
-# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs
+# cmdline opt 	config = /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 4
+# cmdline opt 	monet_mod_path = /ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm
+# cmdline opt 	sql_logdir = /ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs
 # cmdline opt 	mapi_open = true
 # cmdline opt 	xrpc_open = true
-# cmdline opt 	mapi_port = 38181
-# cmdline opt 	xrpc_port = 45061
+# cmdline opt 	mapi_port = 34580
+# cmdline opt 	xrpc_port = 42462
+# cmdline opt 	xrpc_docroot = /net/alf.ins.cwi.nl/export/scratch1/niels/monetdb/sql
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker-2008
-# cmdline opt 	sql_debug = 16384
-# cmdline opt 	xquery_backend = algebra
+# cmdline opt 	gdk_dbname = mTests_src_test
 # cmdline opt 	mal_listing = 0
-# cmdline opt 	gdk_debug = 10
 #warning: please don't forget to set your vault key!
-#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+#(see /ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf)
 
-# 18:44:11 >  
-# 18:44:11 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38181  -G
-# 18:44:11 >  
+# 14:06:10 >  
+# 14:06:10 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34580 
+# 14:06:10 >  
 
-MAPI  = monetdb@alf:34580
-QUERY = select count(subtotal) from bigramlex order by subtotal;
-ERROR = !SELECT: identifier 'subtotal' unknown
 
-# 18:44:11 >  
-# 18:44:11 >  Done.
-# 18:44:11 >  
+# 14:06:10 >  
+# 14:06:10 >  Done.
+# 14:06:10 >  
 

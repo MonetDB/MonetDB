@@ -445,7 +445,8 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	/* "mitosis," */
+	"mitosis," 
+//	"cluster,"
 	"aliases,"
 	/* "crack," */
 	"mergetable," 
@@ -456,7 +457,7 @@ str defaultPlan=
 	"commonTerms,"
 /*	"replicator," */
 	"joinPath,"
-	"accumulators,"
+//	"accumulators,"
 	"deadcode,"
 	/*"recycle,"*/
 	"reduce,"

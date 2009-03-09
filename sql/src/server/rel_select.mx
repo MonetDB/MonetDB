@@ -725,7 +725,7 @@ rel_select(sql_rel *l, sql_exp *e)
 {
 	sql_rel *rel;
 	
-	if (l && l->op == op_select) { /* refine old select */
+	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
 		rel_select_add_exp(l, e);
 		return l;
 	}
@@ -898,7 +898,7 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 	}
 	if (!lrel)
 		return NULL;
-	if (p && p->op == op_select) { /* refine old select */
+	if (p && p->op == op_select && !rel_is_ref(p)) { /* refine old select */
 		rel_select_add_exp(p, e);
 	} else {
 		sql_rel *n = rel_select(lrel, e);
@@ -1257,6 +1257,55 @@ rel_table_func_named(mvc *sql, sql_rel *rel, symbol *query)
 }
 
 static sql_rel *
+rel_values( mvc *sql, symbol *tableref)
+{
+	sql_rel *r = NULL;
+	dlist *rowlist = tableref->data.lval;
+	symbol *optname = rowlist->t->data.sym;
+	dnode *o;
+
+	exp_kind ek = {type_value, card_value, TRUE};
+	if (!rowlist->h) 
+		r = rel_project(NULL, NULL);
+
+	/* last element in the list is the table_name */
+	for (o = rowlist->h; o->next; o = o->next) {
+		dlist *values = o->data.lval;
+
+		if (r && list_length(r->exps) != dlist_length(values)) {
+			rel_destroy(r);
+			return sql_error(sql, 02, "VALUES: number of values doesn't match");
+		} else {
+			sql_rel *i = NULL;
+			list *exps = new_exp_list();
+			dnode *n;
+
+			for (n = values->h; n; n = n->next) {
+				sql_rel *r = NULL;
+				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, ek);
+				if (!e) {
+					list_destroy(exps);
+					rel_destroy(r);
+					return NULL;
+				}
+				if (!e->name)
+					exp_label(e, ++sql->label);
+				list_append(exps, e);
+			}
+			i = rel_project(NULL, exps);
+			if (r) {
+				r = rel_setop(r, i, op_union);
+				r->exps = rel_projections(sql, r, NULL, 1, 1);
+			} else {
+				r = i;
+			}
+		}
+	}
+	rel_table_optname(sql, r, optname);
+	return r;
+}
+
+static sql_rel *
 table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 {
 	char *tname = NULL;
@@ -1335,6 +1384,8 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			return rel;
 		}
 		return rel_basetable(t, tname);
+	} else if (tableref->token == SQL_VALUES) {
+		return rel_values(sql, tableref);
 	} else if (tableref->token == SQL_TABLE) {
 		return rel_table_func_named(sql, rel, tableref);
 	} else if (tableref->token == SQL_SELECT) {
@@ -2344,8 +2395,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!rel)
 			return NULL;
 		lr = rel;
-		rr = rel_copy(lr);
-		//rr = rel_dup(rel_dup(lr));
+		rr = rel_dup(lr);
 
 		lr = rel_logical_exp(sql, lr, lo, f);
 		rr = rel_logical_exp(sql, rr, ro, f);
@@ -2428,9 +2478,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					sql->session->status = 0;
 					sql->errstr[0] = 0;
 
-					/* TODO double dup to make sure we reference the rel */
 					/* TODO remove null checking (not needed in correlated case because of the semi/anti join) ! */
-					rel = left = rel_dup(rel_dup(left));
+					rel = left = rel_dup(left);
 					r = rel_value_exp(sql, &rel, sval, f, ek);
 					z = rel;
 					correlated = 1;
@@ -2530,8 +2579,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			rel = rel_add_identity(sql, rel, &e);
 			set_processed(rel);
 
-			/* TODO double dup to make sure we reference the rel */
-			r = rel_subquery(sql, rel_dup(rel_dup(rel)), lo, ek);
+			r = rel_subquery(sql, rel_dup(rel), lo, ek);
 			if (!r) 
 				return NULL;
 
@@ -3523,8 +3571,9 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 
 /* first limit to simple columns only */
 static sql_exp *
-rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
+rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 {
+	sql_exp *e = NULL;
 	dlist *l = column_r->data.lval;
 
 	if (column_r->type == type_int)
@@ -3536,20 +3585,65 @@ rel_order_by_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	set_processed(r);
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
-		return rel_bind_column(sql, r, name, sql_sel);
+		e = rel_bind_column(sql, r, name, sql_sel);
 	}
 	if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
 		char *name = l->h->next->data.sval;
 
-		return rel_bind_column2(sql, r, tname, name, sql_sel);
+		e = rel_bind_column2(sql, r, tname, name, sql_sel);
 	}
+	if (!e) {
+		/* now we need to rewrite r 
+			project( project( all exps + order_exps), 
+				order_exps, exps )
+		*/
+	}
+	if (e) 
+		return e;
 	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
 }
 
-static list *
-rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby, int f )
+/* second complex columns only */
+static sql_exp *
+rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r)
 {
+	sql_rel *r = *R;
+	sql_exp *e = NULL;
+	exp_kind ek = {type_value, card_column, FALSE};
+
+	/* TODO rewrite relation !!! */
+	assert(is_project(r->op));
+	r = r->l;
+
+	if (!is_project(r->op)) {
+		r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
+		(*R)->l = r;
+		set_processed(r);
+	}
+
+	if (!e) {
+		sql_rel *or = r;
+
+		e = rel_value_exp(sql, &r, column_r, sql_sel, ek);
+		if (r && or != r)
+			(*R)->l = r;
+		/* add to internal project */
+		if (e) {
+			rel_project_add_exp(sql, r, e);
+			e = rel_lastexp(sql, r);
+		}
+	}
+	if (e) 
+		return e;
+	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
+}
+
+
+static list *
+rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
+{
+	sql_rel *rel = *R;
 	sql_rel *or = rel;
 	list *exps = new_exp_list();
 	dnode *o = orderby->data.lval->h;
@@ -3560,17 +3654,31 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby, int f )
 		if (order->token == SQL_COLUMN) {
 			symbol *col = order->data.lval->h->data.sym;
 			int direction = order->data.lval->h->next->data.i_val;
-			sql_exp *e = rel_column_ref(sql, &rel, col, f);
+			sql_exp *e = NULL;
+
+			if (col->token == SQL_COLUMN)
+				e = rel_column_ref(sql, &rel, col, f);
 
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
 				return NULL;
+			if (!e && col->token == SQL_COLUMN) {
+				/* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+
+				e = rel_order_by_simple_column_exp(sql, rel, col);
+				if (e && e->card != rel->card) {
+					exp_destroy(e);
+					e = NULL;
+				}
+			}
 			if (!e) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				e = rel_order_by_column_exp(sql, rel, col);
+				e = rel_order_by_column_exp(sql, &rel, col);
 				if (e && e->card != rel->card) {
 					exp_destroy(e);
 					e = NULL;
@@ -3586,6 +3694,7 @@ rel_order_by(mvc *sql, sql_rel *rel, symbol *orderby, int f )
 			return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 		}
 	}
+	*R = rel;
 	return exps;
 }
 
@@ -3624,7 +3733,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 	/* Order By */
 	if (window_specification->h->next->data.sym) {
-		obe = rel_order_by(sql, r, window_specification->h->next->data.sym, f);
+		obe = rel_order_by(sql, &r, window_specification->h->next->data.sym, f);
 		if (!obe)
 			return NULL;
 	}
@@ -4205,7 +4314,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (aggr && rel) {
 		sql_rel *l = rel;
 		while(l && !is_groupby(l->op))
-			if (is_project(l->op))
+			if (is_project(l->op) || is_select(l->op))
 				l = l -> l;
 			else
 				l = NULL;
@@ -4264,7 +4373,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	}
 
 	if (rel && sn->orderby) {
-		list *obe = rel_order_by(sql, rel, sn->orderby, sql_sel);
+		list *obe = rel_order_by(sql, &rel, sn->orderby, sql_sel);
 
 		if (!obe)
 			return NULL;

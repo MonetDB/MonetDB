@@ -25,7 +25,7 @@ Over..
 # 11:50:18 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781  < jdbc_crashes_on_getTables.SF_944316.sql
 # 11:50:18 >  
 
-% .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
+% .tables,	sys.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
 % 0,	0,	0,	12,	0,	0,	0,	0,	2,	6 # length

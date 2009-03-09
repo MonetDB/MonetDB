@@ -20,7 +20,7 @@ Over..
 # 13:04:59 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36428 
 # 13:04:59 >  
 
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
@@ -28,7 +28,7 @@ Over..
 [ "f1"	]
 [ "f2"	]
 [ "f3"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
@@ -36,32 +36,32 @@ Over..
 [ "f1"	]
 [ "f2"	]
 [ "f3"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "f1"	]
 [ "f2"	]
 [ "f3"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "f1"	]
 [ "f2"	]
 [ "f3"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "f1"	]
 [ "f3"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 2 # length
 [ "f1"	]
-% .functions # table_name
+% sys.functions # table_name
 % name # name
 % varchar # type
 % 0 # length

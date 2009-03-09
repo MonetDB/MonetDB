@@ -351,7 +351,7 @@ int yydebug=1;
 	column_constraint_type
 	generated_column
 	like_table
-/*	domain_constraint_type */
+	domain_constraint_type 
 	opt_order_by_clause
 	default
 	default_value
@@ -1701,6 +1701,8 @@ column_constraint_type:
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  /*TODO: Implemente domain_constraint_type*/
+
+ |  domain_constraint_type
  ;
 
 table_constraint_type:
@@ -1721,11 +1723,10 @@ table_constraint_type:
  /*TODO: Implemente domain_constraint_type*/
  ;
 
-/*
 domain_constraint_type:
-    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+/*    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }*/
+    CHECK '(' search_condition ')' { $$ = NULL; }
  ;
-*/
 
 ident_commalist:
     ident
@@ -3063,6 +3064,16 @@ ordering_spec:
 	  append_symbol(l, _symbol_create_list(SQL_COLUMN, $1));
 	  append_int(l, $2);
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
+ | func_ref opt_asc_desc
+	{ dlist *l = L();
+	  append_symbol(l, $1);
+	  append_int(l, $2);
+	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
+ | aggr_ref opt_asc_desc
+	{ dlist *l = L();
+	  append_symbol(l, $1);
+	  append_int(l, $2);
+	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
  | nonzero opt_asc_desc
 	{ dlist *l = L();
 	  append_symbol(l, _symbol_create_int(SQL_COLUMN, $1));
@@ -3207,6 +3218,8 @@ existence_test:
 
 subquery:
     '(' select_no_parens ')'	{ $$ = $2; }
+ |  '(' VALUES row_commalist ')'	
+				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
  ;
 
 	/* simple_scalar expressions */
@@ -3690,10 +3703,11 @@ interval_type:
 			yyerror("incorrect interval");
 			YYABORT;
 	  	} else {
+			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
-				sql_find_subtype(&$$, "month_interval", ek, sk);
+				sql_find_subtype(&$$, "month_interval", d, 0);
 			} else {
-				sql_find_subtype(&$$, "sec_interval", ek, sk);
+				sql_find_subtype(&$$, "sec_interval", d, 0);
 			}
 	  	}
 	}
@@ -3964,10 +3978,11 @@ interval_expression:
 			yyerror("incorrect interval");
 			YYABORT;
 	  	} else {
+			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
-				r=sql_find_subtype(&t, "month_interval", ek, sk);
+				r=sql_find_subtype(&t, "month_interval", d, 0);
 			} else {
-				r=sql_find_subtype(&t, "sec_interval", ek, sk);
+				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}
 	  	}
 	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0 ){

@@ -18,8 +18,8 @@
 # All Rights Reserved.
 
 PWD=`pwd`
-SQL='mclient -lsql -umonetdb -Pmonetdb -G'
-SQL1='mclient -lsql -uskyserver -Pskyserver -G'
+SQL='mclient -lsql -umonetdb -Pmonetdb'
+SQL1='mclient -lsql -uskyserver -Pskyserver'
 if [ $# -eq 1 ]; then
 	SQL=$1
 fi

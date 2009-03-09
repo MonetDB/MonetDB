@@ -25,7 +25,7 @@ Over..
 # 19:47:27 >  
 
 [ 1	]
-% .dbl_sht_cast_bug # table_name
+% sys.dbl_sht_cast_bug # table_name
 % L4 # name
 % wrd # type
 % 1 # length

@@ -26,12 +26,14 @@
 #include "rel_semantic.h"
 
 extern void rel_print(mvc *sql, sql_rel *rel, int depth);
+extern void _rel_print(mvc *sql, sql_rel *rel);
 extern const char *op2string(operator_type op);
 
 #endif /*_REL_DUMP_H_*/
 @c
 #include "sql_config.h"
-#define LINESIZE 80
+#define LINESIZE 160
+#define TABSTOP 2
 
 #include "rel_dump.h"
 
@@ -42,14 +44,17 @@ print_indent( mvc *sql, stream *fout, int depth)
 	int i;
 
 	(void)sql;
-	depth *= 4; /* tab stop 4 */
+	depth *= TABSTOP;
 	if (depth > LINESIZE)
 		depth = LINESIZE;
 	for(i=0; i<depth; i++){
-		buf[i] = ' ';
+		if ((i%TABSTOP) == 0)	
+			buf[i] = '|';
+		else
+			buf[i] = ' ';
 	}
 	buf[i] = 0;
-	stream_printf(fout, "\n%s", buf);
+	stream_printf(fout, "\n#%s", buf);
 }
 
 static void
@@ -68,6 +73,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_notlike: 	r = "notlike"; break;
 	case cmp_like: 		r = "like"; break;
 	case cmp_all: 		r = "all"; break;
+	case cmp_or: 		r = "or"; break;
 	default:
 		r = "";
 	}
@@ -135,14 +141,20 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 	 	break;
 	case e_cmp: 
-		exp_print(sql, fout, e->l, depth+1, 0, 0);
-		if (is_anti(e))
-			stream_printf(fout, " ! ");
-		cmp_print(sql, fout, e->flag );
-		exp_print(sql, fout, e->r, depth+1, 0, 0);
-		if (e->f) {
-			stream_printf(fout, ", ");
-			exp_print(sql, fout, e->f, depth+1, 0, 0);
+		if (e->flag == cmp_or) {
+			exps_print(sql, fout, e->l, depth, alias, 1);
+			cmp_print(sql, fout, e->flag );
+			exps_print(sql, fout, e->r, depth, alias, 1);
+		} else {
+			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			if (is_anti(e))
+				stream_printf(fout, " ! ");
+			cmp_print(sql, fout, e->flag );
+			exp_print(sql, fout, e->r, depth+1, 0, 0);
+			if (e->f) {
+				stream_printf(fout, ", ");
+				exp_print(sql, fout, e->f, depth+1, 0, 0);
+			}
 		}
 	 	break;
 	default:
@@ -242,7 +254,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 
 	if (rel_is_ref(rel)) {
 		int nr = list_length(refs) + 1;
-		stream_printf(fout, "REF %d ", nr);
+		int cnt = rel->ref.refcnt;
+		stream_printf(fout, "# REF %d (%d)\n", nr, cnt);
 	}
 
 	switch (rel->op) {
@@ -303,7 +316,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		stream_printf(fout, ",");
 		if (rel_is_ref(rel->r)) {
 			int nr = find_ref(refs, rel->r);
-			stream_printf(fout, " & REF %d ", nr);
+			stream_printf(fout, " & REF %d  ", nr);
 		} else
 			rel_print_(sql, fout, rel->r, depth+1, refs);
 		print_indent(sql, fout, depth);
@@ -373,8 +386,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 	default:
 		assert(0);
 	}
-	if (!depth)
-		stream_printf(fout, "\n");
 }
 
 static void
@@ -426,6 +437,16 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs)
 		}
 		break;
 	}
+}
+
+void
+_rel_print(mvc *sql, sql_rel *rel) 
+{
+	list *refs = list_create(NULL);
+	rel_print_refs(sql, THRdata[0], rel, 0, refs);
+	rel_print_(sql, THRdata[0], rel, 0, refs);
+	stream_printf(THRdata[0], "\n");
+	list_destroy(refs);
 }
 
 void

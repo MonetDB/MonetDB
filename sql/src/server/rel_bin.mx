@@ -351,6 +351,39 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
+		if (e->flag == cmp_or) {
+			list *l = e->l;
+			node *n;
+			stmt *sel1 = stmt_relselect_init();
+			stmt *sel2 = stmt_relselect_init();
+
+			for( n = l->h; n; n = n->next ) {
+				s = exp_bin(sql, n->data, left, right, grp, sel); 
+				if (!s) {
+					stmt_destroy(sel1);
+					stmt_destroy(sel2);
+					return s;
+				}
+				stmt_relselect_fill(sel1, s);
+			}
+			l = e->r;
+			for( n = l->h; n; n = n->next ) {
+				s = exp_bin(sql, n->data, left, right, grp, sel); 
+				if (!s) {
+					stmt_destroy(sel1);
+					stmt_destroy(sel2);
+					return s;
+				}
+				stmt_relselect_fill(sel2, s);
+			}
+			if (sel1->nrcols == 0 && sel2->nrcols == 0) {
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subfunc *f = sql_bind_func(sql->session->schema, "or", bt, bt);
+				assert(f);
+				return stmt_binop(sel1, sel2, f);
+			}
+			return stmt_union(sel1,sel2);
+		}
 		/* here we handle join indices */
 		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
 			sql_idx *i = p->value;
@@ -868,7 +901,7 @@ rel2bin_distinct(stmt *s)
 	if (s->key && s->nrcols == 0)
 		return s;
 
-	/* TODO Change to use 'all' %TID% columns */
+	/* Use 'all' %TID% columns */
 	if ((tids = bin_find_columns(s, "%TID%")) != NULL) {
 		for (n = tids->h; n; n = n->next) {
 			stmt *t = n->data;
@@ -3267,9 +3300,15 @@ subrel_bin(mvc *sql, sql_rel *rel, list *refs)
 stmt *
 rel_bin(mvc *sql, sql_rel *rel) 
 {
-	list *refs = create_stmt_list();
+	node *n;
+	list *refs = list_create(NULL);
 	stmt *s = subrel_bin( sql, rel, refs);
+
+	/* clean stmts properly (but don't touch the rels) ! */
+	for (n = refs->h; n; n = n->next->next) 
+		stmt_destroy(n->next->data);
 	list_destroy(refs);
+
 	if (s && s->type == st_list) {
 		stmt *cnt = s->op1.lval->t->data;
 		if (cnt && cnt->type == st_affected_rows)

@@ -786,7 +786,8 @@ sql_bind_func_(sql_schema *s, char *sqlfname, list *ops)
 						if (a && a->scale > scale)
 							scale = a->scale;
 					}
-				}
+				} else if (f->res.scale) 
+					scale = f->res.scale;
 				/* same type as the first input */
 				if (f->res.type->eclass == EC_ANY) {
 					node *m;
@@ -1241,10 +1242,11 @@ sqltypeinit(void)
 	sql_type *ts[100];
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
-	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD;
+	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD, *DEC;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY;
+	sql_func *f;
 
 	ANY = sql_create_type("ANY", 0, 0, 0, EC_ANY, "any");
 
@@ -1276,7 +1278,7 @@ sqltypeinit(void)
 	   s scale indicates nr of digits after the dot .) */
 	*t++ = sql_create_type("DECIMAL",  2, SCALE_FIX, 10, EC_DEC, "bte");
 	*t++ = sql_create_type("DECIMAL",  4, SCALE_FIX, 10, EC_DEC, "sht");
-	*t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
+	DEC = *t++ = sql_create_type("DECIMAL",  9, SCALE_FIX, 10, EC_DEC, "int");
 	*t++ = sql_create_type("DECIMAL", 19, SCALE_FIX, 10, EC_DEC, "lng");
 
 	/* float(n) (n indicates precision of atleast n digits) */
@@ -1292,7 +1294,7 @@ sqltypeinit(void)
 
 	dates = t;
 	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 32, 0, 2, EC_INTERVAL, "int");
-	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 64, 0, 2, EC_INTERVAL, "lng");
+	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 19, SCALE_FIX, 10, EC_INTERVAL, "lng");
 	TME = *t++ = sql_create_type("TIME", 7, 0, 0, EC_TIME, "daytime");
 	TMETZ = *t++ = sql_create_type("TIMETZ", 7, SCALE_FIX, 0, EC_TIME, "daytime");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, EC_DATE, "date");
@@ -1512,21 +1514,25 @@ sqltypeinit(void)
 	sql_create_func("day", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "mtime", "minutes", TME, NULL, INT, SCALE_FIX);
-	sql_create_func("second", "mtime", "seconds", TME, NULL, INT, SCALE_FIX);
+	f = sql_create_func("second", "mtime", "milliseconds", TME, NULL, DEC, SCALE_NONE);
+	/* fix result type */
+	f->res.scale = 3;
 
 	sql_create_func("year", "mtime", "year", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("month", "mtime", "month", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("day", "mtime", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("hour", "mtime", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "mtime", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
-	sql_create_func("second", "mtime", "seconds", TMESTAMP, NULL, INT, SCALE_FIX);
+	f = sql_create_func("second", "mtime", "milliseconds", TMESTAMP, NULL, DEC, SCALE_NONE);
+	/* fix result type */
+	f->res.scale = 3;
 
-	sql_create_func("year", "mtime", "year", MONINT, NULL, INT, SCALE_FIX);
-	sql_create_func("month", "mtime", "month", MONINT, NULL, INT, SCALE_FIX);
-	sql_create_func("day", "mtime", "day", SECINT, NULL, LNG, SCALE_FIX);
-	sql_create_func("hour", "mtime", "hours", SECINT, NULL, INT, SCALE_FIX);
-	sql_create_func("minute", "mtime", "minutes", SECINT, NULL, INT, SCALE_FIX);
-	sql_create_func("second", "mtime", "seconds", SECINT, NULL, INT, SCALE_FIX);
+	sql_create_func("year", "mtime", "year", MONINT, NULL, INT, SCALE_NONE);
+	sql_create_func("month", "mtime", "month", MONINT, NULL, INT, SCALE_NONE);
+	sql_create_func("day", "mtime", "day", SECINT, NULL, LNG, SCALE_NONE);
+	sql_create_func("hour", "mtime", "hours", SECINT, NULL, INT, SCALE_NONE);
+	sql_create_func("minute", "mtime", "minutes", SECINT, NULL, INT, SCALE_NONE);
+	sql_create_func("second", "mtime", "seconds", SECINT, NULL, INT, SCALE_NONE);
 
 	sql_create_func("dayofyear", "mtime", "dayofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("weekofyear", "mtime", "weekofyear", DTE, NULL, INT, SCALE_FIX);
