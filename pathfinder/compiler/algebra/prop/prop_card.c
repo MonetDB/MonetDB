@@ -81,7 +81,6 @@ infer_card (PFla_op_t *n)
         case la_pos_select:
         case la_intersect:
         case la_difference:
-        case la_distinct:
         case la_step:
         case la_step_join:
         case la_doc_index_join:
@@ -150,6 +149,14 @@ infer_card (PFla_op_t *n)
                both of them */
             n->prop->card = L(n)->prop->card && R(n)->prop->card ?
                             L(n)->prop->card + R(n)->prop->card : 0;
+            break;
+
+        case la_distinct:
+            if (L(n)->prop->card == 1)
+                n->prop->card = 1;
+            else
+                /* can't say something specific about cardinality */
+                n->prop->card = 0;
             break;
 
         case la_to:
