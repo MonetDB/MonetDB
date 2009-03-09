@@ -202,6 +202,18 @@ opt_const_attach (PFla_op_t *p)
                                    PFprop_const_val_left (p->prop,
                                                           p->sem.aggr.col));
             }
+            /* fall through */
+        case la_avg:
+        case la_max:
+        case la_min:
+        case la_count:
+            /* introduce attach if necessary */
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.part)) {
+                L(p) = add_attach (L(p), p->sem.aggr.part,
+                                   PFprop_const_val_left (p->prop,
+                                                          p->sem.aggr.part));
+            }
             break;
 
         case la_type:
