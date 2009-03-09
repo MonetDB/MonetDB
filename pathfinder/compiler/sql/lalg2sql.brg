@@ -1091,6 +1091,15 @@ step_sibling (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
                     eq (LEVEL(ctx), LEVEL(step)));
 }
 
+static bool
+is_step (PFla_op_t *p)
+{
+    return p->kind == la_step ||
+           p->kind == la_guide_step ||
+           p->kind == la_step_join ||
+           p->kind == la_guide_step_join;
+}
+
 static void
 step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
            PFalg_axis_t axis, PFsql_t *fragment, int level_in)
@@ -1118,7 +1127,7 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
         case alg_chld:
         /* attribute axis */
         case alg_attr:
-            if (selectivity) {
+            if (selectivity && is_step (p)) {
                 if ((level_in == 0 || level_in == 1) &&
                     /* check for steps from a single document */
                     L(p)->kind == la_frag_union &&
@@ -1152,7 +1161,7 @@ step_axis (PFla_op_t *p, PFsql_aident_t ctx, PFsql_aident_t step,
 
         /* descendant-or-self axis */
         case alg_desc_s:
-            if (selectivity) {
+            if (selectivity && is_step (p)) {
                 if ((level_in == 0 || level_in == 1) &&
                     /* check for steps from a single document */
                     L(p)->kind == la_frag_union &&
