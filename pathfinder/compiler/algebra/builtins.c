@@ -5261,7 +5261,7 @@ fn_prod (PFalg_simple_type_t t,
                         difference (
                             loop,
                             project (prod, proj (col_iter, col_iter))),
-                        col_item, lit_int (0))),
+                        col_item, lit_int (1))),
                 col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
