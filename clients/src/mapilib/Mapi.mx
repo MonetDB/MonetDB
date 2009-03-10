@@ -4111,7 +4111,7 @@ mapi_cache_limit(Mapi mid, int limit)
 		MapiHdl hdl;
 
 		if (mid->active)
-			finish_handle(mid->active);
+			read_into_cache(mid->active, 0);
 
 		if (mid->tracelog) {
 			mapi_log_header(mid, "W");
