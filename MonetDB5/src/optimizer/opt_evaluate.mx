@@ -187,7 +187,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (msg == MAL_SUCCEED){
 				ValRecord cst;
 				VALcopy(&cst,&env->stk[getArg(p,0)]);
-				setVarConstant(mb,getArg(p,0));
 				setVarFixed(mb,getArg(p,0));
 				if ( getArgType(mb,p,0) == TYPE_str)
 					setVarCleanup(mb,getArg(p,0));
