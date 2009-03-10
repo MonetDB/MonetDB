@@ -580,7 +580,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 PFalg_proj_t *proj_list1,
                              *proj_list2;
                 PFalg_col_t   new_name;
-                bool          conflict;
+                bool          conflict = false;
 
                 /* create projection lists */
                 proj_list1 = PFmalloc ((p->schema.count + PFarray_last (pred)) *
@@ -639,9 +639,15 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                 i--;
                                 continue;
                             }
-                        } else
+                        } else {
+                            /* check if the result is used with two different names */
+                            for (; j < p->sem.proj.count; j++)
+                                conflict |= (RES_AT (pred, i) ==
+                                             p->sem.proj.items[j].old);
+
                             /* update the column name of the result column */
                             RES_AT (pred, i) = p->sem.proj.items[j].new;
+                        }
                     }
 
                     if (LEFT_VIS_AT (pred, i)) {
@@ -709,7 +715,6 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                     }
                 }
 
-                conflict = false;
                 for (i = 0; i < count1; i++)
                     for (j = 0; j < count2; j++)
                         conflict |= (proj_list1[i].new == proj_list2[j].new);
