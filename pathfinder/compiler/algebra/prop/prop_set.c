@@ -100,6 +100,7 @@ prop_infer_set (PFla_op_t *n, bool set)
         case la_pos_select:
         case la_avg:
         case la_sum:
+        case la_prod:
         case la_count:
         case la_rownum:
         case la_rowid:
@@ -411,6 +412,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
 
         case la_avg:
         case la_sum:
+        case la_prod:
         case la_count:
             /* Switch the set property from TRUE to MAYBE (TRUE+col)
                if there is a partition column col and keep the MAYBE

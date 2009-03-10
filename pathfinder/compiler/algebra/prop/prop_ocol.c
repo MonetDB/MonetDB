@@ -328,6 +328,8 @@ infer_ocol (PFla_op_t *n)
                 case alg_fun_fn_abs:
                 case alg_fun_fn_ceiling:
                 case alg_fun_fn_floor:
+                case alg_fun_pf_log:
+                case alg_fun_pf_sqrt:
                 case alg_fun_fn_round:
                     assert (clsize (n->sem.fun_1to1.refs) == 1);
                     /* make sure the column is of numeric type */
@@ -710,6 +712,7 @@ infer_ocol (PFla_op_t *n)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             /* set number of schema items in the result schema:
              * result column plus partitioning column
              * (if available -- constant optimizations may

@@ -1775,6 +1775,66 @@ PFbui_fn_round_dbl (const PFla_op_t *loop,
                            loop, ordering, side_effects, args);
 }
 
+struct PFla_pair_t
+PFbui_pf_sqrt_int (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_pf_sqrt,
+                           loop, ordering, side_effects, args);
+}
+
+struct PFla_pair_t
+PFbui_pf_sqrt_dec (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_pf_sqrt,
+                           loop, ordering, side_effects, args);
+}
+
+struct PFla_pair_t
+PFbui_pf_sqrt_dbl (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_pf_sqrt,
+                           loop, ordering, side_effects, args);
+}
+
+struct PFla_pair_t
+PFbui_pf_log_int (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_int, alg_fun_pf_log,
+                           loop, ordering, side_effects, args);
+}
+
+struct PFla_pair_t
+PFbui_pf_log_dec (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dec, alg_fun_pf_log,
+                           loop, ordering, side_effects, args);
+}
+
+struct PFla_pair_t
+PFbui_pf_log_dbl (const PFla_op_t *loop,
+                      bool ordering,
+                      PFla_op_t **side_effects,
+                      struct PFla_pair_t *args)
+{
+    return numeric_fun_op (aat_dbl, alg_fun_pf_log,
+                           loop, ordering, side_effects, args);
+}
+
 /* ----------------------- */
 /* 7. FUNCTIONS ON STRINGS */
 /* ----------------------- */
@@ -5178,6 +5238,34 @@ fn_sum (PFalg_simple_type_t t,
         .frag = PFla_empty_set () };
 }
 
+static struct PFla_pair_t
+fn_prod (PFalg_simple_type_t t,
+        const PFla_op_t *loop,
+        bool ordering,
+        PFla_op_t **side_effects,
+        struct PFla_pair_t *args)
+{
+    (void) ordering; (void) side_effects;
+
+    PFla_op_t *prod = aggr (la_prod,
+                           project (cast(args[0].rel, col_cast, col_item, t),
+                                   proj (col_iter, col_iter),
+                                   proj (col_item, col_cast)),
+                           col_item, col_item, col_iter);
+
+    return (struct PFla_pair_t) {
+        .rel = attach (
+                disjunion (
+                    prod,
+                    attach (
+                        difference (
+                            loop,
+                            project (prod, proj (col_iter, col_iter))),
+                        col_item, lit_int (0))),
+                col_pos, lit_nat (1)),
+        .frag = PFla_empty_set () };
+}
+
 /**
  * Build up operator tree for built-in function 'fn:sum (integer*)'.
  */
@@ -5212,6 +5300,18 @@ PFbui_fn_sum_dbl (const PFla_op_t *loop,
                   struct PFla_pair_t *args)
 {
     return fn_sum(aat_dbl, loop, ordering, side_effects, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'pf:prod (double*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_prod_dbl (const PFla_op_t *loop,
+                  bool ordering,
+                  PFla_op_t **side_effects,
+                  struct PFla_pair_t *args)
+{
+    return fn_prod(aat_dbl, loop, ordering, side_effects, args);
 }
 
 /**

@@ -390,6 +390,8 @@ enum PFalg_fun_t {
     , alg_fun_fn_ceiling          /**< fn:ceiling */
     , alg_fun_fn_floor            /**< fn:floor */
     , alg_fun_fn_round            /**< fn:round */
+    , alg_fun_pf_log              /**< pf:log */
+    , alg_fun_pf_sqrt             /**< pf:sqrt */
     , alg_fun_fn_concat           /**< fn:concat */
     , alg_fun_fn_substring        /**< fn:substring */
     , alg_fun_fn_substring_dbl    /**< fn:substring with length specified*/

@@ -81,6 +81,7 @@
                  | expression '.max ()'                     <m_max>
                  | expression '.min ()'                     <m_min>
                  | expression '.sum ()'                     <m_sum>
+                 | expression '.prod ()'                    <m_prod>
                  | expression 'bat ()'                      <m_bat>
                  | expression '.CTgroup ()'                 <m_ctgroup>
                  | expression '.CTmap ()'                   <m_ctmap>
@@ -116,6 +117,8 @@
                  | '[abs](' expression ')'                  <m_mabs>
                  | '[ceil](' expression ')'                 <m_mceiling>
                  | '[floor](' expression ')'                <m_mfloor>
+                 | '[log](' expression ')'                  <m_mlog>
+                 | '[sqrt](' expression ')'                 <m_msqrt>
                  | '[round_up](' expression ')'             <m_mround_up>
                  | '>(' expression ',' expression ')'       <m_gt>
                  | '<=(' expression ',' expression ')'      <m_le>
@@ -156,6 +159,7 @@
                  | '{max}(' expression ')'                  <m_gmax>
                  | '{min}(' expression ')'                  <m_gmin>
                  | '{sum}(' expression ')'                  <m_gsum>
+                 | '{prod}(' expression ')'                 <m_gprod>
                  | '{sum}(' expression ',' expression ')'   <m_egsum>
                  | 'usec ()'                                <m_usec>
                  | 'new_ws ('exp')'                         <m_new_ws>
@@ -330,6 +334,8 @@ static char *ID[] = {
     , [m_mabs]         = "[abs]"
     , [m_mceiling]     = "[ceil]"
     , [m_mfloor]       = "[floor]"
+    , [m_mlog]         = "[log]"
+    , [m_msqrt]        = "[sqrt]"
     , [m_mround_up]    = "[round_up]"
     , [m_gt]           = ">"
     , [m_le]           = "<="
@@ -419,9 +425,11 @@ static char *ID[] = {
     , [m_gmax]     = "{max}"
     , [m_min]      = "min"
     , [m_gmin]     = "{min}"
-    , [m_sum]      = "sum"
     , [m_gsum]     = "{sum}"
     , [m_egsum]    = "{sum}"
+    , [m_prod]     = "prod"
+    , [m_gprod]    = "{prod}"
+    , [m_gprod]    = "{prod}"
     , [m_bat]      = "bat"
     , [m_catch]    = "CATCH"
     , [m_error]    = "ERROR"
@@ -815,6 +823,8 @@ print_expression (PFmil_t * n)
         case m_min:
         /* expression : expression '.sum' */
         case m_sum:
+        /* expression : expression '.prod' */
+        case m_prod:
         /* expression : expression 'bat()' */
         case m_bat:
         /* expression '.CTgroup ()' */
@@ -1006,6 +1016,8 @@ print_expression (PFmil_t * n)
         case m_gmin:
         /* expression: '{sum}(' expression ')' */
         case m_gsum:
+        /* expression: '{prod}(' expression ')' */
+        case m_gprod:
 #ifdef HAVE_GEOXML
         /* expression : '[create_wkb] '(' expression ')' */
         case m_mgeo_create_wkb:
@@ -1054,6 +1066,10 @@ print_expression (PFmil_t * n)
         case m_mceiling:
         /* expression : '[floor](' expression ')' */
         case m_mfloor:
+        /* expression : '[log](' expression ')' */
+        case m_mlog:
+        /* expression : '[sqrt](' expression ')' */
+        case m_msqrt:
         /* expression : '[round_up](' expression ')' */
         case m_mround_up:
         /* expression : 'not(' expression ')' */

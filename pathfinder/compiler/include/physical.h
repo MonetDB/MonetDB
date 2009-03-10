@@ -99,7 +99,8 @@ enum PFpa_op_kind_t {
     , pa_cast           =  65 /**< cast a table to a given type */
     , pa_seqty1          = 66 /**< test for exactly one type occurrence in one
                                    iteration (Pathfinder extension) */
-    , pa_all             = 67 /**< test if all items in an iteration are true */
+    , pa_all            = 67 /**< test if all items in an iteration are true */
+    , pa_prod		= 68  /**< product aggregate, should be after pa_sum */
     , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
     , pa_llscjoin_dup   = 101 /**< Loop-Lifted StaircaseJoin with duplicates */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */

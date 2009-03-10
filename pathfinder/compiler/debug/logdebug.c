@@ -83,6 +83,7 @@ static char *a_id[]  = {
     , [la_max]              = "MAX"
     , [la_min]              = "MIN"
     , [la_sum]              = "SUM"
+    , [la_prod]             = "PROD"
     , [la_count]            = "COUNT"
     , [la_rownum]           = "ROWNUM"
     , [la_rowrank]          = "ROWRANK"
@@ -166,6 +167,7 @@ static char *xml_id[]  = {
     , [la_max]              = "max"
     , [la_min]              = "min"
     , [la_sum]              = "sum"
+    , [la_prod]             = "prod"
     , [la_count]            = "count"
     , [la_rownum]           = "rownum"
     , [la_rowrank]          = "rowrank"
@@ -425,6 +427,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         , [la_max]             = "#A0A0A0"
         , [la_min]             = "#A0A0A0"
         , [la_sum]             = "#A0A0A0"
+        , [la_prod]            = "#A0A0A0"
         , [la_count]           = "#A0A0A0"
         , [la_rownum]          = "#FF0000"
         , [la_rowrank]         = "#FF0000"
@@ -731,6 +734,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_seqty1:
         case la_all:
             if (n->sem.aggr.part == col_NULL)
@@ -2020,6 +2024,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_seqty1:
         case la_all:
             PFarray_printf (xml,

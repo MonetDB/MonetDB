@@ -1151,6 +1151,8 @@ PFalg_fun_str (PFalg_fun_t fun)
         case alg_fun_fn_ceiling:          return "fn:ceiling";
         case alg_fun_fn_floor:            return "fn:floor";
         case alg_fun_fn_round:            return "fn:round";
+        case alg_fun_pf_sqrt:             return "pf:sqrt";
+        case alg_fun_pf_log:              return "pf:log";
         case alg_fun_fn_concat:           return "fn:concat";
         case alg_fun_fn_substring:        return "fn:substring";
         case alg_fun_fn_substring_dbl:    return "fn:substring3";

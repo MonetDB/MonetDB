@@ -1208,6 +1208,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_max                  :
     case la_min                  :
     case la_sum                  :
+    case la_prod                 :
         {
             /*
            <content>

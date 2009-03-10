@@ -95,6 +95,7 @@ static char *ID[] = {
     , [la_max]             = "la_max"
     , [la_min]             = "la_min"
     , [la_sum]             = "la_sum"
+    , [la_prod]            = "la_prod"
     , [la_count]           = "la_count"
     , [la_rownum]          = "la_rownum"
     , [la_rowrank]         = "la_rowrank"
@@ -997,6 +998,7 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_count:
             /* partition column is not necesserily set */
             if (IS_NULL(a->sem.aggr.part)?col_NULL:
@@ -1718,6 +1720,7 @@ new_operator (PFla_op_t *n)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             return PFla_aggr (n->kind, CSE(L(n)),
                               create_unq_name (CSE(L(n))->schema,
                                                n->sem.aggr.res),
@@ -2319,6 +2322,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             actmap = create_actcol_map ();
             INACTCOL (actmap,
                       actcol (cse->sem.aggr.res, ori->sem.aggr.res),

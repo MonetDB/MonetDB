@@ -365,6 +365,7 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_count:
         case la_seqty1:
         case la_all:

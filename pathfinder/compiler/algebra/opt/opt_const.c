@@ -196,6 +196,7 @@ opt_const_attach (PFla_op_t *p)
             break;
 
         case la_sum:
+        case la_prod:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
                 L(p) = add_attach (L(p), p->sem.aggr.col,
@@ -794,6 +795,7 @@ opt_const (PFla_op_t *p)
          result otherwise. */
          
         case la_sum:
+        case la_prod:
             /* if partitiong column is constant remove it
                and attach it after the operator */
             if (p->sem.aggr.part &&

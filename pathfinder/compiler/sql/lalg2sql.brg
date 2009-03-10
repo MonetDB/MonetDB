@@ -3702,6 +3702,8 @@ reduce (PFla_op_t * p, int goalnt)
                 case alg_fun_geo_relate:
                 case alg_fun_geo_intersection:
 #endif
+                case alg_fun_pf_log:
+                case alg_fun_pf_sqrt:
                     /* FIXME: implementation is missing */
 
                     assert (!"missing");

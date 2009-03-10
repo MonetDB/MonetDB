@@ -178,6 +178,8 @@ enum PFla_op_kind_t {
     , la_internal_op     = 99 /**< operator used inside optimizations */
     /* builtin support for XQuery functions */
     , la_string_join     =102 /**< fn:string-join */
+    
+    , la_prod		 =110 /**< pf:product should be after la_sum */
 
     , la_dummy           =120 /**< dummy operator that does nothing */
 

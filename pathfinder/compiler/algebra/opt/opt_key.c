@@ -81,6 +81,7 @@ opt_key (PFla_op_t *p)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_seqty1:
         case la_all:
             /* if part is key we already have our aggregate */

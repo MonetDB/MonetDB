@@ -1140,6 +1140,24 @@ PFmil_egsum (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet prod operator
+ */
+PFmil_t *
+PFmil_prod (const PFmil_t *a)
+{
+    return wire1 (m_prod, a);
+}
+
+/**
+ * Monet grouped prod operator `{prod}()'
+ */
+PFmil_t *
+PFmil_gprod (const PFmil_t *a)
+{
+    return wire1 (m_gprod, a);
+}
+
+/**
  * Type cast.
  */
 PFmil_t *
@@ -1325,6 +1343,24 @@ PFmil_t *
 PFmil_mfloor (const PFmil_t *a)
 {
     return wire1 (m_mfloor, a);
+}
+
+/**
+ * Multiplexed operator log
+ */
+PFmil_t *
+PFmil_mlog (const PFmil_t *a)
+{
+    return wire1 (m_mlog, a);
+}
+
+/**
+ * Multiplexed operator sqrt
+ */
+PFmil_t *
+PFmil_msqrt (const PFmil_t *a)
+{
+    return wire1 (m_msqrt, a);
 }
 
 /**

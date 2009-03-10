@@ -1586,6 +1586,8 @@ PFpa_fun_1to1 (const PFpa_op_t *n,
         case alg_fun_fn_abs:
         case alg_fun_fn_ceiling:
         case alg_fun_fn_floor:
+        case alg_fun_pf_log:
+        case alg_fun_pf_sqrt:
         case alg_fun_fn_round:
             assert (clsize (refs) == 1);
 

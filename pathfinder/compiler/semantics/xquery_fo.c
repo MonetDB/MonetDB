@@ -2623,46 +2623,78 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t[]) { PFty_xs_anyNode () },
             .ret_ty = PFty_xs_string () } },
         .alg = PFbui_pf_nid }
+    , /* pf:log (integer) as integer */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_pf_log_int }
     , /* pf:log (decimal) as decimal */
       { .ns = PFns_lib, .loc = "log",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_decimal () },
-            .ret_ty = PFty_xs_decimal () } } }
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_pf_log_dec }
     , /* pf:log (double) as double */
       { .ns = PFns_lib, .loc = "log",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_double () },
-            .ret_ty = PFty_xs_double () } } }
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_pf_log_dbl }
+    , /* pf:log (integer?) as integer? */
+      { .ns = PFns_lib, .loc = "log",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_pf_log_int }
     , /* pf:log (decimal?) as decimal? */
       { .ns = PFns_lib, .loc = "log",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_pf_log_dec }
     , /* pf:log (double?) as double? */
       { .ns = PFns_lib, .loc = "log",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_pf_log_dbl }
+    , /* pf:sqrt (integer) as integer */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_integer () },
+            .ret_ty = PFty_xs_integer () } },
+        .alg = PFbui_pf_sqrt_int }
     , /* pf:sqrt (decimal) as decimal */
       { .ns = PFns_lib, .loc = "sqrt",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_decimal () },
-            .ret_ty = PFty_xs_decimal () } } }
+            .ret_ty = PFty_xs_decimal () } },
+        .alg = PFbui_pf_sqrt_dec }
     , /* pf:sqrt (double) as double */
       { .ns = PFns_lib, .loc = "sqrt",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_xs_double () },
-            .ret_ty = PFty_xs_double () } } }
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_pf_sqrt_dbl }
+    , /* pf:sqrt (integer?) as integer? */
+      { .ns = PFns_lib, .loc = "sqrt",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_integer ()) },
+            .ret_ty = PFty_opt (PFty_xs_integer ()) } },
+        .alg = PFbui_pf_sqrt_int }
     , /* pf:sqrt (decimal?) as decimal? */
       { .ns = PFns_lib, .loc = "sqrt",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_decimal ()) },
-            .ret_ty = PFty_opt (PFty_xs_decimal ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_decimal ()) } },
+        .alg = PFbui_pf_sqrt_dec }
     , /* pf:sqrt (double?) as double? */
       { .ns = PFns_lib, .loc = "sqrt",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_opt (PFty_xs_double ()) },
-            .ret_ty = PFty_opt (PFty_xs_double ()) } } }
+            .ret_ty = PFty_opt (PFty_xs_double ()) } },
+        .alg = PFbui_pf_sqrt_dbl }
     , /* pf:pow (decimal, decimal) as decimal */
       { .ns = PFns_lib, .loc = "pow",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -2691,9 +2723,8 @@ PFfun_xquery_fo (void)
       { .ns = PFns_lib, .loc = "product",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_star (PFty_xs_double ()) },
-            .ret_ty = PFty_xs_double () } }
-      }
-
+            .ret_ty = PFty_xs_double () } },
+        .alg = PFbui_fn_prod_dbl }
 
 /* #3. UPDATE FUNCTIONS */
     /* Below are the function declarations for the UpdateX functions */

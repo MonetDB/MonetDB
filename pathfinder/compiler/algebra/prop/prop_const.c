@@ -547,6 +547,7 @@ infer_const (PFla_op_t *n)
                         n->sem.aggr.res,
                         PFprop_const_val (L(n)->prop, n->sem.aggr.col));
         case la_sum:
+        case la_prod:
         case la_count:
         case la_seqty1:
         case la_all:

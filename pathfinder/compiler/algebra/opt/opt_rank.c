@@ -689,6 +689,7 @@ opt_rank (PFla_op_t *p)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_count:
         case la_seqty1:
         case la_all:

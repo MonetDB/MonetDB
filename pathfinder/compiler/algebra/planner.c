@@ -1425,7 +1425,7 @@ plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
 
     assert (n);
     assert (n->kind == la_avg || n->kind == la_max
-            || n->kind == la_min || n->kind == la_sum
+            || n->kind == la_min || n->kind == la_sum || n->kind == la_prod
             || n->kind == la_seqty1 || n->kind == la_all);
     assert (L(n)); assert (L(n)->plans);
 
@@ -3458,6 +3458,7 @@ plan_subexpression (PFla_op_t *n)
         case la_max:            plans = plan_aggr (pa_max, n);    break;
         case la_min:            plans = plan_aggr (pa_min, n);    break;
         case la_sum:            plans = plan_aggr (pa_sum, n);    break;
+        case la_prod:           plans = plan_aggr (pa_prod, n);   break;
 
         case la_rownum:         plans = plan_rownum (n);          break;
         case la_rowrank:

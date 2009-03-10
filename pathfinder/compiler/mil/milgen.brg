@@ -183,6 +183,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term cast           =  65
 %term seqty1         =  66
 %term all            =  67
+%term prod           =  68
 %term llscjoin       = 100
 %term llscjoin_dup   = 101
 %term doc_tbl        = 120
@@ -270,6 +271,7 @@ Rel:      type_assert (Rel)                                        =  77 (10);
 Rel:      cast (Rel)                                               =  78 (10);
 Rel:      seqty1 (Rel)                                             =  79 (10);
 Rel:      all (Rel)                                                =  80 (10);
+Rel:      prod (Rel)                                               =  81 (10);
 
 Rel:      llscjoin (Rel)                                           =  90 (10);
 Rel:      llscjoin_dup (Rel)                                       =  91 (10);
@@ -5269,6 +5271,8 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                 case alg_fun_fn_abs:
                 case alg_fun_fn_ceiling:
                 case alg_fun_fn_floor:
+                case alg_fun_pf_log:
+                case alg_fun_pf_sqrt:
                 case alg_fun_fn_round: /* fold( */
                 {
                     PFmil_t * (*op) (const PFmil_t *) = NULL;
@@ -5288,6 +5292,10 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                             op = PFmil_mceil; break;
                         case alg_fun_fn_floor:
                             op = PFmil_mfloor; break;
+                        case alg_fun_pf_log:
+                            op = PFmil_mlog; break;
+                        case alg_fun_pf_sqrt:
+                            op = PFmil_msqrt; break;
                         case alg_fun_fn_round:
                             op = PFmil_mround_up; break;
                         default:
@@ -6670,6 +6678,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
              aggr_function (PFmil_sum, PFmil_gsum, p);
              break;
 
+        /* Rel:      prod (Rel) */
+        case 81:
+             aggr_function (PFmil_prod, PFmil_gprod, p);
+             break;
+      
         /* Rel:      mark (Rel) */
         case 71: /* fold( */
         {

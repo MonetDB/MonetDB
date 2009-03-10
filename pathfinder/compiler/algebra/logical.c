@@ -1406,6 +1406,8 @@ PFla_fun_1to1 (const PFla_op_t *n,
         case alg_fun_fn_abs:
         case alg_fun_fn_ceiling:
         case alg_fun_fn_floor:
+        case alg_fun_pf_log:
+        case alg_fun_pf_sqrt:
         case alg_fun_fn_round:
             assert (clsize (refs) == 1);
             /* make sure the column is of numeric type */
@@ -4363,6 +4365,7 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             return PFla_aggr (n->kind, left,
                               n->sem.aggr.res,
                               n->sem.aggr.col,

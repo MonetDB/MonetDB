@@ -353,7 +353,6 @@ struct PFla_pair_t PFbui_fn_floor_dbl (const PFla_op_t *loop,
                                      bool ordering,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
-
 struct PFla_pair_t PFbui_fn_round_int (const PFla_op_t *loop,
                                      bool ordering,
                                      PFla_op_t **side_effects,
@@ -363,6 +362,30 @@ struct PFla_pair_t PFbui_fn_round_dec (const PFla_op_t *loop,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_round_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_sqrt_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_sqrt_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_sqrt_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_log_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_log_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_log_dbl (const PFla_op_t *loop,
                                      bool ordering,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);
@@ -917,6 +940,11 @@ struct PFla_pair_t PFbui_fn_sum_dec (const PFla_op_t *loop,
                                      struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_sum_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     PFla_op_t **side_effects,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_prod_dbl (const PFla_op_t *loop,
                                      bool ordering,
                                      PFla_op_t **side_effects,
                                      struct PFla_pair_t *args);

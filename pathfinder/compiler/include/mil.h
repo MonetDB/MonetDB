@@ -255,6 +255,8 @@ enum PFmil_kind_t {
     , m_mabs         /**< multiplexed operator abs */
     , m_mceiling     /**< multiplexed operator ceil */
     , m_mfloor       /**< multiplexed operator floor */
+    , m_mlog         /**< multiplexed operator log */
+    , m_msqrt        /**< multiplexed operator sqrt */
     , m_mround_up    /**< multiplexed operator round_up */
 
     , m_gt           /**< greater than */
@@ -288,6 +290,8 @@ enum PFmil_kind_t {
     , m_sum          /**< MIL sum() function */
     , m_gsum         /**< Grouped sum() function `{sum}()' */
     , m_egsum        /**< Grouped sum() function `{sum}()' */
+    , m_prod         /**< MIL prod() function */
+    , m_gprod        /**< Grouped prod() function `{prod}()' */
 
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
@@ -761,6 +765,12 @@ PFmil_t * PFmil_gsum (const PFmil_t *);
     (aka. ``pumped sum'') */
 PFmil_t * PFmil_egsum (const PFmil_t *, const PFmil_t *);
 
+/** MIL prod() function */
+PFmil_t * PFmil_prod (const PFmil_t *);
+
+/** Grouped prod function `{sum}()' (aka. ``pumped prod'') */
+PFmil_t * PFmil_gprod (const PFmil_t *);
+
 /** typecast */
 PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);
 
@@ -821,6 +831,12 @@ PFmil_t * PFmil_mceil (const PFmil_t *);
 
 /** MIL multiplexed operator floor */
 PFmil_t * PFmil_mfloor (const PFmil_t *);
+
+/** MIL multiplexed operator log */
+PFmil_t * PFmil_mlog (const PFmil_t *);
+
+/** MIL multiplexed operator sqrt */
+PFmil_t * PFmil_msqrt (const PFmil_t *);
 
 /** MIL multiplexed operator round_up */
 PFmil_t * PFmil_mround_up (const PFmil_t *);

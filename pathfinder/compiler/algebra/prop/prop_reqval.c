@@ -513,6 +513,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
          n->kind == la_max ||
          n->kind == la_min ||
          n->kind == la_sum ||
+         n->kind == la_prod ||
          n->kind == la_count ||
          n->kind == la_seqty1 ||
          n->kind == la_all ||
@@ -857,6 +858,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_count:
         case la_seqty1:
         case la_all:

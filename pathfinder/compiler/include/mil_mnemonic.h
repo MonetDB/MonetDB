@@ -256,6 +256,10 @@
 #define gsum(a) PFmil_gsum(a)
 #define egsum(a,b) PFmil_egsum((a),(b))
 
+/** prod() operator and grouped sum */
+#define prod(a) PFmil_sum(a)
+#define gprod(a) PFmil_gsum(a)
+
 /** type cast */
 #define cast(type,e) PFmil_cast ((type), (e))
 

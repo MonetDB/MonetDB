@@ -285,6 +285,7 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
         case la_seqty1:
         case la_all:
             diff_np (np_list, n->sem.aggr.res);

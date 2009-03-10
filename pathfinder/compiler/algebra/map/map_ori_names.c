@@ -498,6 +498,7 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             res = aggr (p->kind, PROJ(LEFT, p),
                         ONAME(p, p->sem.aggr.res),
                         ONAME(p, p->sem.aggr.col),

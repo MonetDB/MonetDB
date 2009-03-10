@@ -937,6 +937,7 @@ infer_dom (PFla_op_t *n)
 
         case la_avg:
         case la_sum:
+        case la_prod:
         case la_count:
         case la_seqty1:
         case la_all:

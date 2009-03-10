@@ -486,6 +486,7 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
         case la_max:
         case la_min:
         case la_sum:
+        case la_prod:
             res = aggr (p->kind, U(L(p)),
                         UNAME(p, p->sem.aggr.res),
                         /* column col is stored only in child operator */

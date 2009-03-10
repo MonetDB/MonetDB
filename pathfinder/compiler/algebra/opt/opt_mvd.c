@@ -1047,6 +1047,9 @@ do_opt_mvd (PFla_op_t *p, bool modified)
     case la_sum:
         modified = modify_aggr (p, la_sum) || modified;
         break;
+    case la_prod:
+        modified = modify_aggr (p, la_prod) || modified;
+        break;
     case la_count:
         /* An expression that contains the partitioning column is
            independent of the aggregate. The translation thus moves the

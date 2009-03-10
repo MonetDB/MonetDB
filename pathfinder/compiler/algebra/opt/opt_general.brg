@@ -158,6 +158,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  fun_param       =  91
 %term  fun_frag_param  =  92
 %term  string_join     = 102
+%term  prod            = 110
 %term  dummy           = 120
 
 %%
@@ -363,6 +364,9 @@ Rel:    rec_fix (side_effects (
                     error (Side, EmptyRel),
                     Rec),
                 Rel)                              = 197  (0);
+
+Rel:    prod (Rel)                                = 198 (10);
+EmptyRel:    prod (EmptyRel)                      = 199  (0);
 
 %%
 
@@ -1533,6 +1537,9 @@ reduce (PFla_op_t *p, int goalnt)
             SEEN(p) = false;
             relabel (p, kids);
             break;
+        case 199:
+	    /* INCOMPLETE, GENERATE A CONSTANT '1' HERE */
+	    /* fall through */
 
         default:
             /* every occurrence of EmptyRel already copes with

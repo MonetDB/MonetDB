@@ -91,6 +91,7 @@ static char *a_id[]  = {
     , [pa_min]             = "MAX"
     , [pa_max]             = "MIN"
     , [pa_sum]             = "SUM"
+    , [pa_prod]            = "PRODUCT"
     , [pa_count_ext]       = "{COUNT}"
     , [pa_count]           = "COUNT"
     , [pa_mark]            = "mark"
@@ -239,6 +240,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_max]             = "\"#A0A0A0\""
         , [pa_min]             = "\"#A0A0A0\""
         , [pa_sum]             = "\"#A0A0A0\""
+        , [pa_prod]            = "\"#A0A0A0\""
         , [pa_count_ext]       = "\"#A0A0A0\""
         , [pa_count]           = "\"#A0A0A0\""
         , [pa_mark]            = "\"#FFBBBB\""
@@ -476,6 +478,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         case pa_max:
         case pa_min:
         case pa_sum:
+        case pa_prod:
         case pa_seqty1:
         case pa_all:
             if (n->sem.aggr.part == col_NULL)
