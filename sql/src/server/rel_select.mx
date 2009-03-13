@@ -3146,9 +3146,8 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	assert(l->h->next->type == type_int);
 	groupby = *rel;
 
-	if (f == sql_having && is_select(groupby->op)) {
+	if (f == sql_having && is_select(groupby->op)) 
 		groupby = groupby->l;
-	}
 
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
