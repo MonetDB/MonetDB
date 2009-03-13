@@ -1011,9 +1011,12 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 		for(n=prjs->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (is_intern(e)) 
+			if (is_intern(e)) {
 				append(rel->exps, e);
+				n->data = NULL;
+			}
 		}
+		list_destroy(prjs);
 	}
 }
 
