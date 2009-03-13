@@ -2617,7 +2617,7 @@ PROC _getConceptPositions (oid tid) : bat[void,oid] := {
      var offset1 := int(index.fetch(int(tid)));
      var offset2 := int(index.fetch(int(tid) + 1));
      var res := bat("tj_" + ftindex + "_Concepts").slice(offset1, offset2 - 1);
-     res := res.seqbase(0@0).chk_order();
+     res := res.chk_order();
      return res;
 }
 
@@ -2631,7 +2631,7 @@ PROC _getConceptDocScr_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void
 	# get doc - Concept relation
 	var c_Scr := bat("tj_" + ftindex + "_ConceptScore");
         var e_c := treemergejoin_@1_nid(e_pre, e_size, c_pre);
-	var eself_c := e_pre.join(c_pre.reverse());
+        var eself_c := e_pre.join(c_pre.reverse());
 	var e_cScr := {sum}(c_Scr, e_c.reverse(), e_c.kunique()).sort();
 	var eself_cScr := {sum}(c_Scr, eself_c.reverse(), eself_c.kunique()).sort();
         return union_add(e_cScr, eself_cScr);
@@ -4553,15 +4553,22 @@ int CMDunion_div_dbl(BAT** res, BAT*l, BAT*r) {
 
 int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre, BAT* item, BAT* kind, BAT* doc_loaded ) {
         int debug = 0;
+        int nDocs;
+        BAT **rangeBAT;
 
-	int nDocs = BATcount(doc_loaded);
-	BAT **rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
-	if (!rangeBAT) {
+        if (BATcount(item) == 0) {
+            *res = BATnew(TYPE_void, TYPE_oid, 0);
+            return GDK_SUCCEED;
+        }
+
+        nDocs = BATcount(doc_loaded);
+        rangeBAT = (BAT**)GDKmalloc(nDocs*sizeof(BAT*));
+        if (!rangeBAT) {
             GDKerror("CMDpf2tijah_node: GDKmalloc() failed.\n");
-	    return GDK_FAIL;
-	}
-	for(int i=0; i<nDocs; i++) {
-	    rangeBAT[i] = NULL;
+            return GDK_FAIL;
+        }
+        for(int i=0; i<nDocs; i++) {
+            rangeBAT[i] = NULL;
         }
 
 	*res = BATnew(TYPE_void, TYPE_oid, BATcount(item));

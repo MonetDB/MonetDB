@@ -194,6 +194,7 @@ int serialize_pftijah_options_DRIVER(
 	    /* error locked ?? */
 	    return GDK_FAIL;
 	}
+	SET_TDEBUG(0);
 	GLOBAL_PTOS = &ptos;
 	ptos.cnt = 0;
 	ptos.bat = BATnew(TYPE_str, TYPE_str, 32);
