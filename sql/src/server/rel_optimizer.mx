@@ -1326,7 +1326,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
-		if (project_unsafe(r))
+		if (!r->l || project_unsafe(r))
 			return rel;
 
 		/* here we need to fix aliases */
