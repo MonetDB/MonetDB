@@ -325,7 +325,7 @@ typedef struct VARRECORD {
 	int tmpindex;		/* temporary variable */
 	ValRecord value;
 	int propc, maxprop;	/* proc count and max number of properties */
-	int prps[];		/* property array */
+	int prps[MAXARG];		/* property array */
 } *VarPtr, VarRecord;
 
 /* Variable properties */
@@ -371,7 +371,7 @@ upon destruction of the definition. They are part of the global namespace.
 	str modname;		/* module context */
 	str fcnname;		/* function name */
 	int argc, retc, maxarg;	/* total and result argument count */
-	int argv[];		/* at least a few entries */
+	int argv[MAXARG];		/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 @-
@@ -956,7 +956,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		p = GDKmalloc(MAXARG * sizeof(p->maxarg) + sizeof(InstrRecord));
+		p = GDKmalloc(sizeof(InstrRecord));
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;
@@ -1408,7 +1408,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	}
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 	mb->var[n]->name = name;
 	mb->var[n]->propc = 0;
 	mb->var[n]->maxprop = MAXARG;
@@ -1459,7 +1459,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
 	@:makeVarSpace@
 	n = mb->vtop;
 	if (getVar(mb, n) == NULL)
-		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord) + MAXARG * sizeof(int));
+		getVar(mb, n) = (VarPtr) GDKzalloc(sizeof(VarRecord));
 	getVarTmp(mb, n) = n;
 	setVarType(mb, n, type);
 	mb->var[n]->propc = 0;
