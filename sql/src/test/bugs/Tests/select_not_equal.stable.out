@@ -36,7 +36,7 @@ Over..
 % 2 # length
 [ 20	]
 [ 30	]
-% sys.tst123 # table_name
+% .tst123 # table_name
 % col1 # name
 % int # type
 % 2 # length

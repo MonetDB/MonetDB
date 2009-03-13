@@ -559,7 +559,7 @@ rel_project(sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = l?CARD_MULTI:CARD_ATOM; 
+	rel->card = CARD_MULTI; 
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -2063,14 +2063,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		ek.card = card_set;
 
-		/* only selection phase ! */
-		if (f < sql_sel)
-			assert(0);
-
 		if (!left) 
 			left = *rel;
 
-		if (!left || !left->l) {
+		if (!left || (!left->l && f == sql_sel)) {
 			needproj = (left != NULL);
 			left = rel_project_exp(l);
 		} else 
