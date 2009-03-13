@@ -108,17 +108,14 @@ FROM    (SELECT  dir AS dir, seg AS seg, carid as carid, (time/60)+1 AS tme,  sp
                 GROUP BY dir,seg,carid,tme ) AS temp_B
         GROUP BY dir,seg,tme) AS temp_C;
 
-explain
 UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3 <= statistics.time_minute - 1);
 
 select count(*) from statistics where lav is null;
 
-explain
 UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3  >= statistics.time_minute - 5);
 
 select count(*) from statistics where lav is null;
 
-explain
 UPDATE statistics SET lav = (SELECT floor(avg(prelav.lav)) FROM   prelav WHERE  statistics.dir = prelav.dir AND statistics.seg = prelav.seg AND prelav.time_minute3 <= statistics.time_minute - 1 AND prelav.time_minute3 >= statistics.time_minute - 5);
 
 select count(*) from statistics;
