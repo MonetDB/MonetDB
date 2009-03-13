@@ -3092,14 +3092,13 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	int distinct = l->h->next->data.i_val;
 	char *aggrstr = l->h->data.sval;
 	sql_exp *e = NULL, *exp = NULL;
-	sql_rel *groupby, *p = NULL;
+	sql_rel *groupby;
 	int no_nil = 0;
 
 	assert(l->h->next->type == type_int);
 	groupby = *rel;
 
 	if (f == sql_having && is_select(groupby->op)) {
-		p = groupby;
 		groupby = groupby->l;
 	}
 
