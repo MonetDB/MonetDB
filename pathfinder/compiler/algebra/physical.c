@@ -2709,31 +2709,62 @@ PFpa_llscjoin (const PFpa_op_t *ctx,
 
     /* ---- LLSCJoin: costs ---- */
 
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
+    if (spec.axis == alg_attr) {
+        if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
+            /* input has iter|item ordering */
 
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * SORT_COST;
+            if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
+                /* output has iter|item ordering */
+                ret->cost = 0 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+                ret->cost = 2 * SORT_COST;
+            }
+
         }
         else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * SORT_COST;
-        }
+            /* input has item|iter ordering */
 
+            if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
+                /* output has iter|item ordering */
+                ret->cost = 1 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+
+                /* should be cheapest */
+                ret->cost = 3 * SORT_COST;
+            }
+        }
     }
     else {
-        /* input has item|iter ordering */
+        if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
+            /* input has iter|item ordering */
 
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * SORT_COST;
+            if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
+                /* output has iter|item ordering */
+                ret->cost = 3 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+                ret->cost = 2 * SORT_COST;
+            }
+
         }
         else {
-            /* output has item|iter ordering */
+            /* input has item|iter ordering */
 
-            /* should be cheapest */
-            ret->cost = 0 * SORT_COST;
+            if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
+                /* output has iter|item ordering */
+                ret->cost = 1 * SORT_COST;
+            }
+            else {
+                /* output has item|iter ordering */
+
+                /* should be cheapest */
+                ret->cost = 0 * SORT_COST;
+            }
         }
     }
 
@@ -2860,6 +2891,16 @@ PFpa_llscjoin_dup (const PFpa_op_t *ctx,
                 ret->cost = 3 * SORT_COST;
             }
         }
+
+        if (PFprop_key (ctx->prop, item)) 
+            /* staircase-join with duplicates should
+               be more less expensive if the output does
+               not contain duplicates and can be reused */
+            ret->cost += ctx->cost;
+        else
+            /* staircase-join with duplicates should
+               be more expensive than normal staircase-join */
+            ret->cost += ctx->cost + 5 * JOIN_COST;
     }
     else {
         if (!ret->sem.scjoin.in) {
@@ -2889,11 +2930,10 @@ PFpa_llscjoin_dup (const PFpa_op_t *ctx,
                 ret->cost = 0 * SORT_COST;
             }
         }
+        /* staircase-join with duplicates should
+           be more expensive than normal staircase-join */
+        ret->cost += ctx->cost + 5 * JOIN_COST;
     }
-
-    /* staircase-join with duplicates should
-       be more expensive than normal staircase-join */
-    ret->cost += ctx->cost + 5 * JOIN_COST;
 
     return ret;
 }
