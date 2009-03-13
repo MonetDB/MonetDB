@@ -265,6 +265,10 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		*cnt += 100;
 	switch(e->type) {
 	case e_cmp:
+		if (e->flag != cmp_or) {
+			exp_count(cnt, seqnr, e->l); 
+			exp_count(cnt, seqnr, e->r);
+		}
 		switch (e->flag) {
 		case cmp_equal:
 			*cnt += 10;
@@ -292,7 +296,14 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 		default:
 			return 0;
 		}
+	case e_column:
+		*cnt += 1;
+		return 1;
+	case e_atom:
+		*cnt += 10;
+		return 10;
 	default:
+		*cnt -= 5;
 		return -5;
 	}
 }
@@ -884,6 +895,8 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r, 0);
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
 			return exp_dup(ne);
 		return e;
@@ -939,28 +952,60 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return NULL;
 }
 
-/* push the expression down, ie translate colum references from relation f into expression of relation t */ 
+/* push the expression down, ie translate colum references 
+	from relation f into expression of relation t 
+*/ 
+
+static sql_exp * exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
+
+static list *
+exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
+{
+	node *n;
+	list *nl = new_exp_list();
+
+	for(n = exps->h; n; n=n->next) {
+		sql_exp *arg = n->data;
+
+		arg = exp_push_down(sql, arg, f, t);
+		if (!arg) {
+			list_destroy(nl);
+			return NULL;
+		}
+		append(nl, arg);
+	}
+	return nl;
+}
+
 static sql_exp *
 exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) 
 {
 	int flag = e->flag;
 	sql_exp *ne = NULL, *l, *r, *r2;
 
+	if (is_join(f->op) || is_select(f->op)) {
+		if (f->l && (ne = exp_push_down(sql, e, f->l, t)) != NULL)
+			return ne;
+		if (f->r && (ne = exp_push_down(sql, e, f->r, t)) != NULL) 
+			return ne;
+	}
 	switch(e->type) {
 	case e_column:
 		if (e->l) { 
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 			/* if relation name matches expressions relation name, find column based on column name alone */
 		}
-		if (!ne)
+		if (!ne && !e->l)
 			ne = exps_bind_column(f->exps, e->r);
 		if (!ne)
 			return NULL;
 		e = NULL;
 		if (ne->name && ne->r && ne->l) 
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
-		if (!e && ne->r)
+		if (!e && ne->r && !ne->l)
 			e = rel_bind_column(sql, t, ne->r, 0);
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
 		if (e && flag)
 			e->flag = flag;
 		/* if the upper exp was an alias, keep this */ 
@@ -968,18 +1013,28 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			exp_setname(e, ne->rname, ne->name);
 		return e;
 	case e_cmp: 
-		assert(e->flag != cmp_or);
-		l = exp_push_down(sql, e->l, f, t);
-		r = exp_push_down(sql, e->r, f, t);
-		if (e->f) {
-			r2 = exp_push_down(sql, e->f, f, t);
-			if (l && r && r2)
-				return exp_compare2( l, r, r2, e->flag);
-		} else if (l && r) {
-			return exp_compare( l, r, e->flag);
+		if (e->flag == cmp_or) {
+			list *l = exps_push_down(sql, e->l, f, t);
+			list *r = exps_push_down(sql, e->r, f, t);
+			if (!l || !r) {
+				list_destroy(l);
+				list_destroy(r);
+				return NULL;
+			}
+			return exp_or(l,r);
+		} else {
+			l = exp_push_down(sql, e->l, f, t);
+			r = exp_push_down(sql, e->r, f, t);
+			if (e->f) {
+				r2 = exp_push_down(sql, e->f, f, t);
+				if (l && r && r2)
+					return exp_compare2( l, r, r2, e->flag);
+			} else if (l && r) {
+				return exp_compare( l, r, e->flag);
+			}
+			exp_destroy(l);
+			exp_destroy(r);
 		}
-		exp_destroy(l);
-		exp_destroy(r);
 		return NULL;
 	case e_convert:
 		l = exp_push_down(sql, e->l, f, t);
@@ -993,19 +1048,9 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (!l) {
 			return exp_dup(e);
 		} else {
-			node *n;
-
-			nl = new_exp_list();
-			for(n=l->h; n; n=n->next) {
-				sql_exp *arg = n->data;
-
-				arg = exp_push_down(sql, arg, f, t);
-				if (!arg) {
-					list_destroy(nl);
-					return NULL;
-				}
-				append(nl, arg);
-			}
+			nl = exps_push_down(sql, l, f, t);
+			if (!nl)
+				return NULL;
 		}
 		if (e->type == e_func)
 			return exp_op(nl, sql_dup_func(e->f));
@@ -1036,28 +1081,6 @@ project_unsafe(sql_rel *rel)
 			return 1;
 	}
 	return 0;
-}
-
-static int
-exps_save(list *exps)
-{
-	node *n;
-
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *l = e->l, *r = e->r;
-
-		if (e->type != e_cmp) 
-			return 0;
-		if (l->type != e_column && l->type != e_atom && l->type != e_convert)
-			return 0;
-		if (r->type != e_column && r->type != e_atom && r->type != e_convert)
-			return 0;
-		if (l->type == e_convert && ((sql_exp*)l->l)->type != e_atom)
-			return 0;
-		if (r->type == e_convert && ((sql_exp*)r->l)->type != e_atom)
-			return 0;
-	}
-	return 1;
 }
 
 /*
@@ -1344,7 +1367,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	} 
 	/* merge 2 selects */
 	r = rel->l;
-	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except) && exps_save(rel->exps)) {
+	if (rel->op == op_select && r && !(rel_is_ref(r)) && (r->op == op_select || r->op == op_except)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)&exp_dup);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -1367,70 +1390,64 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 
 	/* push select through join */
 	if (rel->op == op_select && r && r->op == op_join && !(rel_is_ref(r))) {
+		sql_rel *jl = r->l;
+		sql_rel *jr = r->r;
+
+		/* introduce selects under the join (if needed) */
+		if (!is_select(jl->op))
+			r->l = jl = rel_select(jl, NULL);
+		if (!is_select(jr->op))
+			r->r = jr = rel_select(jr, NULL);
+		
 		rel->exps = new_exp_list(); 
 		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = exp_dup(n->data);
-			if (e->type == e_cmp && e->flag != cmp_or) {
-				sql_exp *re = e->r;
-
-				if (re->card >= CARD_AGGR) {
-					list_append(rel->exps, e);
-				} else {
-					rel->l = rel_push_select(r, e->l, e);
-					/* only pushed down selects are counted */
-					if (r == rel->l) {
-						(*changes)++;
-					} else { /* Not useful to introduce an extra select */
-						sql_rel *r = rel->l;
-
-						rel->l = r->l;
-						r->l = NULL;
-						list_append(rel->exps, exp_dup(e));
-						rel_destroy(r);
-						
-					}
-					assert(r == rel->l);
-				}
+			sql_exp *e = n->data, *ne = NULL;
+			int done = 0;
+	
+			ne = exp_push_down(sql, e, r, jl);
+			if (ne && ne != e) {
+				done = 1; 
+				rel_select_add_exp(jl, ne);
 			} else {
-				list_append(rel->exps, e);
-			} 
+				ne = exp_push_down(sql, e, r, jr);
+				if (ne && ne != e) {
+					done = 1; 
+					rel_select_add_exp(jr, ne);
+				}
+			}
+			if (!done)
+				append(rel->exps, exp_dup(e));
+			*changes += done;
 		}
 		list_destroy(exps);
-		if (!list_length(rel->exps)) {
-			r = rel->l;
-			rel->l = NULL;
-			rel_destroy(rel);
-			return r;
-		}
 		return rel;
 	}
 
 	/* push select through set */
 	if (rel->op == op_select && r && is_set(r->op) && !(rel_is_ref(r))) {
 		sql_rel *res = r;
+		sql_rel *sl = r->l;
+		sql_rel *sr = r->r;
+
+		/* introduce selects under the set (if needed) */
+		if (!is_select(sl->op))
+			r->l = sl = rel_select(sl, NULL);
+		if (!is_select(sr->op))
+			r->r = sr = rel_select(sr, NULL);
+		
 		rel->exps = new_exp_list(); 
 		for (n = exps->h; n; n = n->next) { 
 			sql_exp *e = n->data, *ne = NULL;
-			if (e->type == e_cmp && e->flag != cmp_or) {
+			if (e->type == e_cmp) {
 				int err = 0;
-				ne = exp_push_down(sql, e, r, r->l);
+				ne = exp_push_down(sql, e, r, sl);
 				if (ne && ne != e) {
-					sql_exp *re = ne->r;
-					if (re->card >= CARD_AGGR) {
-						r->l = rel_push_join(r->l, ne->l, re, ne);
-					} else {
-						r->l = rel_push_select(r->l, ne->l, ne);
-					}
+					rel_select_add_exp(sl, ne);
 				} else 
 					err = 1;
-				ne = exp_push_down(sql, e, r, r->r);
+				ne = exp_push_down(sql, e, r, sr);
 				if (ne && ne != e) {
-					sql_exp *re = ne->r;
-					if (re->card >= CARD_AGGR) {
-						r->r = rel_push_join(r->r, ne->l, re, ne);
-					} else {
-						r->r = rel_push_select(r->r, ne->l, ne);
-					}
+					rel_select_add_exp(sr, ne);
 				} else 
 					err = 1;
 
@@ -1441,47 +1458,41 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			} else {
 				list_append(rel->exps, exp_dup(e));
 				res = rel;
-			} 
+			}
 		}
 		list_destroy(exps);
 		return res;
 	}
 
-	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r)) && exps_save(exps)) {
+	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
+		sql_rel *pl;
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
-		if (project_unsafe(r))
+		if (!r->l || project_unsafe(r))
 			return rel;
 
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(); 
+		pl = r->l;
+		/* introduce selects under the project (if needed) */
+		if (!is_select(pl->op))
+			r->l = pl = rel_select(pl, NULL);
+
 		/* for each exp check if we can rename it */
 		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = n->data, *ne = NULL, *le, *re;
-			sql_rel *prj = r, *nr, *nl;
+			sql_exp *e = n->data, *ne = NULL;
 
 			/* sometimes we also have functions in the expression list (TODO change them to e_cmp (predicates like (1=0))) */
-			if (e->type == e_cmp && e->flag != cmp_or) {
-				ne = exp_push_down(sql, e, prj, prj->l);
+			if (e->type == e_cmp) {
+				ne = exp_push_down(sql, e, r, pl);
 
 				/* can we move it down */
 				if (ne && ne != e) {
+					rel_select_add_exp(pl, ne);
 					(*changes)++;
-					nr = prj->l;
 				} else {
-					nr = rel;
-					exp_destroy(ne);
-					ne = exp_dup(e);
+					append(rel->exps, (ne)?ne:exp_dup(e));
 				}
- 				le = ne->l;
-				re = ne->r;
-				if (re->card >= CARD_AGGR) {
-					nl = rel_push_join(nr, le, re, ne);
-				} else {
-					nl = rel_push_select(nr, le, ne);
-				}
-				if (nl != nr)
-					prj->l = nl;
 			} else {
 				list_append(rel->exps, exp_dup(e));
 			}
@@ -2394,7 +2405,9 @@ exp_merge(list *exps)
 		/*sql_exp *le = e->l;*/
 		sql_exp *re = e->r;
 
-		assert(e->type == e_cmp && e->flag != cmp_or);
+		if (e->type == e_cmp && e->flag != cmp_or)
+			continue;
+
 		/* only look for gt, gte, lte, lt */
 		if (re->card == CARD_ATOM && e->flag < cmp_equal) {
 			for (m=n->next; m; m = m->next) {

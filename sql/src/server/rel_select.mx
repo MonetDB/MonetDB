@@ -726,7 +726,8 @@ rel_select(sql_rel *l, sql_exp *e)
 	sql_rel *rel;
 	
 	if (l && l->op == op_select && !rel_is_ref(l)) { /* refine old select */
-		rel_select_add_exp(l, e);
+		if (e)
+			rel_select_add_exp(l, e);
 		return l;
 	}
 	rel = rel_create();
@@ -2124,8 +2125,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!left || !left->l) {
 			needproj = (left != NULL);
 			left = rel_project_exp(l);
-		} else 
-			left = rel_dup(left);
+		} 
 
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);

@@ -1422,7 +1422,7 @@ stack_push_rel_view(mvc *sql, char *name, sql_rel *var)
 		sql->sizevars <<= 1;
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
-	sql->vars[sql->topvars].s = rel_dup(var);
+	sql->vars[sql->topvars].s = var;
 	sql->vars[sql->topvars].name = _strdup(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].view = 1;

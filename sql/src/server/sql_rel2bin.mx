@@ -799,6 +799,29 @@ find_unique( stmt *s, void *v)
 stmt *
 push_semijoin( stmt *select, stmt *s )
 {
+	if (select->type == st_list){ 
+		list *l = create_stmt_list();
+		node *n;
+
+		for(n = select->op1.lval->h; n; n = n->next) {
+			stmt *a = stmt_dup(n->data), *n;
+
+			if (a->nrcols) {
+				n = push_semijoin( a, stmt_dup(s));
+				if (n == a) {
+					list_destroy(l);
+					stmt_destroy(s);
+					return select;
+				}
+				list_append(l, n);
+			} else {
+				list_append(l, a);
+			}
+		}
+		stmt_destroy(select);
+		stmt_destroy(s);
+		return stmt_list(l);
+	}
 	if (select->type == st_convert){ 
 		sql_subtype f = select->op3.typeval;
 		sql_subtype t = select->op4.typeval;
@@ -825,6 +848,14 @@ push_semijoin( stmt *select, stmt *s )
 		stmt_destroy(select);
 		stmt_destroy(s);
 		return stmt_binop(op1, op2, sql_dup_func(select->op4.funcval));
+	}
+	if (select->type == st_Nop) {
+		stmt *ops = stmt_dup(select->op1.stval);
+		if (ops->nrcols) 
+			ops = push_semijoin(ops, stmt_dup(s));
+		stmt_destroy(select);
+		stmt_destroy(s);
+		return stmt_Nop(ops, sql_dup_func(select->op4.funcval));
 	}
 	if (select->type == st_diff) {
 		stmt *op1 = stmt_dup(select->op1.stval);
