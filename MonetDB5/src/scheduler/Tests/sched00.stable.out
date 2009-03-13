@@ -25,7 +25,7 @@ function user.main():void;
     user.f();
 #shows self-modification in action 
 end main;
-function user.f():void;                 #  0 f:void := user.f() 
+function user.f():void;                 #  0 f:void := user.f() {G}
     i{runonce,rows>4} := 1;             #  1 i:int := _3:int 
 # just properties 
     mdb.List();                         #  3 _5:void := MDBlistDetail() 
@@ -35,7 +35,7 @@ function user.f():void;                 #  0 f:void := user.f()
     mdb.List();                         #  7 _11:void := MDBlistDetail() 
 end f;                                  #  8  
 [ "start running\n" ]
-function user.f():void;                 #  0 f:void := user.f() 
+function user.f():void;                 #  0 f:void := user.f() {G}
     i{runonce,rows>4} := 1;             #  1 i:int := _3:int 
 # just properties 
     mdb.List();                         #  3 _5:void := MDBlistDetail() 
