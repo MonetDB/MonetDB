@@ -224,8 +224,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	newMalBlkStmt(mb,mb->ssize);
 
 	/* beware, new variables and instructions are introduced */
-	pc= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
-	memset((char*) pc, 0, sizeof(int)* mb->vtop *2);
+	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
@@ -461,9 +460,9 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ((b = BATdescriptor(*bid)) == NULL) {
 			for( --top; top>=0; top--)
 				BBPreleaseref(joins[top]->batCacheid);
+			GDKfree(joins);
 			throw(MAL, "algebra.joinPath", "Cannot access descriptor");
 		}
-
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
