@@ -792,6 +792,7 @@ reorder_join(mvc *sql, sql_rel *rel)
 		}
 	} else { 
  		get_relations(rel, rels);
+<<<<<<< rel_optimizer.mx
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(rels, exps);
 			rel = order_joins(rels, exps);
@@ -799,6 +800,10 @@ reorder_join(mvc *sql, sql_rel *rel)
 			rel->exps = exps;
 			exps = NULL;
 		}
+=======
+		rels = push_in_join_down(rels, exps);
+		rel = order_joins(rels, exps);
+>>>>>>> 1.37.2.22
 	}
 	list_destroy(rels);
 	if (exps) list_destroy(exps);
@@ -1083,6 +1088,39 @@ project_unsafe(sql_rel *rel)
 	return 0;
 }
 
+<<<<<<< rel_optimizer.mx
+=======
+static int
+exp_save(sql_exp *e)
+{
+	sql_exp *l = e->l, *r = e->r;
+
+	if (e->type != e_cmp) 
+		return 0;
+	if (l->type != e_column && l->type != e_atom && l->type != e_convert)
+		return 0;
+	if (r->type != e_column && r->type != e_atom && r->type != e_convert)
+		return 0;
+	if (l->type == e_convert)
+		return exp_save(e->l);
+	if (r->type == e_convert)
+		return exp_save(e->r);
+	return 1;
+}
+
+static int
+exps_save(list *exps)
+{
+	node *n;
+
+	for (n = exps->h; n; n = n->next) {
+		if (!exp_save(n->data))
+			return 0;
+	}
+	return 1;
+}
+
+>>>>>>> 1.37.2.22
 /*
  * Push TopN (only LIMIT, no ORDER BY) down through projections underneath crossproduct, i.e.,
  *
@@ -1461,7 +1499,11 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			}
 		}
 		list_destroy(exps);
+<<<<<<< rel_optimizer.mx
 		return res;
+=======
+		return r;
+>>>>>>> 1.37.2.22
 	}
 
 	if (rel->op == op_select && r && r->op == op_project && !(rel_is_ref(r))) {
@@ -2510,6 +2552,7 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+<<<<<<< rel_optimizer.mx
 /* rewrite sqltype into backend types */
 static sql_rel *
 rel_rewrite_types(int *changes, mvc *sql, sql_rel *rel)
@@ -2519,6 +2562,8 @@ rel_rewrite_types(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+=======
+>>>>>>> 1.37.2.22
 static sql_rel *
 rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter) 
 {

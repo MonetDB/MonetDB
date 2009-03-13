@@ -559,7 +559,7 @@ rel_project(sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = l?CARD_MULTI:CARD_ATOM; 
+	rel->card = CARD_MULTI; 
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -1012,9 +1012,12 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 		for(n=prjs->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (is_intern(e)) 
+			if (is_intern(e)) {
 				append(rel->exps, e);
+				n->data = NULL;
+			}
 		}
+		list_destroy(prjs);
 	}
 }
 
@@ -1876,14 +1879,14 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 }
 
 static sql_rel *
-rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int f )
+rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int reduce )
 {
 	comp_type type = cmp_equal;
 
 	if (!ls || !rs)
 		return NULL;
 
-	if (!rel || f == sql_sel || (ls->card <= CARD_ATOM && rs->card <= CARD_ATOM)) {
+	if (!rel || !reduce) {
 		sql_exp *e;
 
 		if (compare_op[0] == 'l') 
@@ -1899,7 +1902,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 
 		if (!e)
 			return NULL;
-		if (f == sql_sel) {
+		if (!reduce) {
 			if (rel->op == op_project) { 
 				append(rel->exps, e);
 			} else {
@@ -1917,7 +1920,7 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 }
 
 static sql_rel *
-rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, int f )
+rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, int f, exp_kind k )
 {
 	sql_exp *rs = 0, *ls;
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -1971,7 +1974,7 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, in
 		exp_destroy(ls);
 		return NULL;
 	}
-	return rel_compare_exp(sql, rel, ls, rs, compare_op, NULL, f);
+	return rel_compare_exp(sql, rel, ls, rs, compare_op, NULL, k.reduce);
 }
 
 static sql_rel *
@@ -2115,14 +2118,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		ek.card = card_set;
 
-		/* only selection phase ! */
-		if (f < sql_sel)
-			assert(0);
-
 		if (!left) 
 			left = *rel;
 
-		if (!left || !left->l) {
+		if (!left || (!left->l && f == sql_sel)) {
 			needproj = (left != NULL);
 			left = rel_project_exp(l);
 		} 
@@ -2376,7 +2375,7 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 {
-	exp_kind ek = {type_value, card_column, FALSE};
+	exp_kind ek = {type_value, card_column, TRUE};
 
 	if (!sc)
 		return NULL;
@@ -2421,7 +2420,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		char *compare_op = sc->data.lval->h->next->data.sval;
 		/* currently we don't handle the (universial and existential) 
 		   quantifiers (all and any/some) */
-		return rel_compare(sql, rel, lo, ro, compare_op, f);
+		return rel_compare(sql, rel, lo, ro, compare_op, f, ek);
 	}
 		break;
 	/* Set Member ship */
@@ -2648,8 +2647,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		}
 		if (sc->token == SQL_LIKE) 
-			return rel_compare_exp(sql, rel, le, re, "l", ee, f);
-		return rel_compare_exp(sql, rel, le, re, "n", ee, f);
+			return rel_compare_exp(sql, rel, le, re, "l", ee, TRUE);
+		return rel_compare_exp(sql, rel, le, re, "n", ee, TRUE);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -3146,6 +3145,10 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	assert(l->h->next->type == type_int);
 	groupby = *rel;
+
+	if (f == sql_having && is_select(groupby->op)) {
+		groupby = groupby->l;
+	}
 
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
@@ -4018,7 +4021,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 
 		if (re) {
 			found = 1;
-			rel = rel_compare_exp(sql, rel, exp_dup(le), exp_dup(re), "=", NULL, sql_where);
+			rel = rel_compare_exp(sql, rel, exp_dup(le), exp_dup(re), "=", NULL, TRUE);
 			if (full) {
 				sql_exp *cond;
 				cond = rel_unop_(sql, exp_dup(le), NULL, "isnull", 0);
@@ -4604,7 +4607,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				rel_destroy(rel);
 				return NULL;
 			}
-			rel = rel_compare_exp(sql, rel, exp_dup(ls), exp_dup(rs), "=", NULL, sql_where);
+			rel = rel_compare_exp(sql, rel, exp_dup(ls), exp_dup(rs), "=", NULL, TRUE);
 			cond = rel_unop_(sql, exp_dup(ls), NULL, "isnull", 0);
 			ls = rel_nop_(sql, cond, exp_dup(rs), exp_dup(ls), NULL, NULL, "ifthenelse", 0);
 			exp_setname(ls, rnme, nm);

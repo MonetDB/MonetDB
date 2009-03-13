@@ -1,0 +1,10 @@
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b='x';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b<>'x';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b = 'y';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b='x';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b<>'x';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b = 'y';
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b IN ('x');
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b IN ('y');
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b IN ('x');
+SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b IN ('y');
