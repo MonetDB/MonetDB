@@ -1058,8 +1058,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		if (l + 3 > *len) {
 			GDKfree(buf);
 			*len = 2 * l + 3;
-			*buf = GDKmalloc(*len);
-			memset(*buf,0,*len);
+			*buf = GDKzalloc(*len);
 		}
 		dst = *buf;
 		dst[0] = '"';
@@ -2465,16 +2464,14 @@ makeTableSpace(int rnr, unsigned int acnt)
 	if (t == 0) {
 		int len = sizeof(Tablet) + acnt * sizeof(Column);
 
-		t = tableReports[rnr] = (Tablet *) GDKmalloc(len);
-		memset((char *) t, 0, len);
+		t = tableReports[rnr] = (Tablet *) GDKzalloc(len);
 		t->max_attrs = acnt;
 	}
 	if (t && t->max_attrs < acnt) {
 		Tablet *tn;
 		int len = sizeof(Tablet) + acnt * sizeof(Column);
 
-		tn = tableReports[rnr] = (Tablet *) GDKmalloc(len);
-		memset((char *) tn, 0, len);
+		tn = tableReports[rnr] = (Tablet *) GDKzalloc(len);
 		memcpy((char *) tn, (char *) t, sizeof(Tablet) + t->max_attrs * sizeof(Column));
 		GDKfree(t);
 		tn->max_attrs = acnt;
@@ -2532,8 +2529,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 
 	if (anr >= t->nr_attrs)
 		t->nr_attrs = anr + 1;
-	buf = (char *) GDKmalloc(BUFSIZ);
-	memset(buf,0,BUFSIZ);
+	buf = (char *) GDKzalloc(BUFSIZ);
 
 	if (tpe == TYPE_bat) {
 		BAT *b;
