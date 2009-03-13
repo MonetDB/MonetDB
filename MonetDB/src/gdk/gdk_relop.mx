@@ -937,7 +937,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		lht = l->htype;
 		rtt = r->ttype;
 
-		if (ATOMstorage(rtt) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap) */ ) {
+		if (ATOMstorage(rtt) == TYPE_str && estimate > batcache_maxbuckets*BATTINY /*&& GDK_ELIMDOUBLES(r->theap) */ ) {
 			if (!rcount || (lcount << 3) > rcount)
 				rtt = TYPE_var;	/* insert double-eliminated strings as ints */
 		}
@@ -988,7 +988,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
-		if (ATOMstorage(tpe) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap) */ ) {
+		if (ATOMstorage(tpe) == TYPE_str && estimate > batcache_maxbuckets*BATTINY /*&& GDK_ELIMDOUBLES(r->theap) */ ) {
 			if (!rcount || (lcount << 3) > rcount)
 				tpe = TYPE_var;	/* insert double-eliminated strings as ints */
 		}

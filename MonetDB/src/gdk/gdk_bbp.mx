@@ -1072,6 +1072,87 @@ BBPdir(int cnt, bat *subcommit)
 	return -1;
 }
 
+void
+BBPdump()
+{
+	bat i;
+	size_t mem=0, vm=0;
+	size_t cmem = 0, cvm = 0;
+
+	for (i = 0; i < BBPsize; i++) 
+	if (BBP[i].b[0]) {
+		THRprintf(GDKout,"# %d: ", i);
+		THRprintf(GDKout,"b=["PTRFMT","PTRFMT"] ",PTRFMTCAST BBP[i].b[0],PTRFMTCAST BBP[i].b[1]);
+		THRprintf(GDKout,"nme=['%s','%s'] ",BBP[i].nme[0]?BBP[i].nme[0]:"<NULL>",BBP[i].nme[1]?BBP[i].nme[1]:"<NULL>");
+		THRprintf(GDKout,"bak=['%s','%s'] ",BBP[i].bak[0]?BBP[i].bak[0]:"<NULL>",BBP[i].bak[1]?BBP[i].bak[1]:"<NULL>");
+		THRprintf(GDKout,"next=[%d,%d] ",BBP[i].next[0],BBP[i].next[1]);
+		THRprintf(GDKout,"cache="PTRFMT" ",PTRFMTCAST BBP[i].cache);
+		THRprintf(GDKout,"path='%s' ",BBP[i].path?BBP[i].path:"<NULL>");
+		THRprintf(GDKout,"refs=%d ",BBP[i].refs);
+		THRprintf(GDKout,"lrefs=%d ",BBP[i].lrefs);
+		/*THRprintf(GDKout,"lastused=%d ",BBP[i].lastused);*/
+		THRprintf(GDKout,"status=%d ",BBP[i].status);
+		THRprintf(GDKout,"Hheap=["SZFMT","SZFMT"] ",HEAPmemsize(&BBP[i].b[0]->H->heap),HEAPvmsize(&BBP[i].b[0]->H->heap));
+		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			cmem += HEAPmemsize(&BBP[i].b[0]->H->heap);
+			cvm += HEAPvmsize(&BBP[i].b[0]->H->heap);
+		} else {
+			mem+=HEAPmemsize(&BBP[i].b[0]->H->heap);
+			vm+=HEAPvmsize(&BBP[i].b[0]->H->heap);
+		}
+		if (BBP[i].b[0]->H->vheap) {
+			THRprintf(GDKout,"Hvheap=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->H->vheap),HEAPvmsize(BBP[i].b[0]->H->vheap));
+			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+				cmem += HEAPmemsize(BBP[i].b[0]->H->vheap);
+				cvm += HEAPvmsize(BBP[i].b[0]->H->vheap);
+			} else {
+				mem+=HEAPmemsize(BBP[i].b[0]->H->vheap);
+				vm+=HEAPvmsize(BBP[i].b[0]->H->vheap);
+			}
+		}
+		if (BBP[i].b[0]->H->hash) {
+			THRprintf(GDKout,"Hhash=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->H->hash->heap),HEAPvmsize(BBP[i].b[0]->H->hash->heap));
+			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+				cmem += HEAPmemsize(BBP[i].b[0]->H->hash->heap);
+				cvm += HEAPvmsize(BBP[i].b[0]->H->hash->heap);
+			} else {
+				mem+=HEAPmemsize(BBP[i].b[0]->H->hash->heap);
+				vm+=HEAPvmsize(BBP[i].b[0]->H->hash->heap);
+			}
+		}
+		THRprintf(GDKout,"Theap=["SZFMT","SZFMT"] ",HEAPmemsize(&BBP[i].b[0]->T->heap),HEAPvmsize(&BBP[i].b[0]->T->heap));
+		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			cmem += HEAPmemsize(&BBP[i].b[0]->T->heap);
+			cvm += HEAPvmsize(&BBP[i].b[0]->T->heap);
+		} else {
+			mem+=HEAPmemsize(&BBP[i].b[0]->T->heap);
+			vm+=HEAPvmsize(&BBP[i].b[0]->T->heap);
+		}
+		if (BBP[i].b[0]->T->vheap) {
+			THRprintf(GDKout,"Tvheap=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->T->vheap),HEAPvmsize(BBP[i].b[0]->T->vheap));
+			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+				cmem += HEAPmemsize(BBP[i].b[0]->T->vheap);
+				cvm += HEAPvmsize(BBP[i].b[0]->T->vheap);
+			} else {
+				mem+=HEAPmemsize(BBP[i].b[0]->T->vheap);
+				vm+=HEAPvmsize(BBP[i].b[0]->T->vheap);
+			}
+		}
+		if (BBP[i].b[0]->T->hash) {
+			THRprintf(GDKout,"Thash=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->T->hash->heap),HEAPvmsize(BBP[i].b[0]->T->hash->heap));
+			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+				cmem += HEAPmemsize(BBP[i].b[0]->T->hash->heap);
+				cvm += HEAPvmsize(BBP[i].b[0]->T->hash->heap);
+			} else {
+				mem+=HEAPmemsize(BBP[i].b[0]->T->hash->heap);
+				vm+=HEAPvmsize(BBP[i].b[0]->T->hash->heap);
+			}
+		}
+		THRprintf(GDKout,"\n");
+	}
+	THRprintf(GDKout,"# mem="SZFMT", vm="SZFMT" cached: mem="SZFMT", vm="SZFMT"\n",mem,vm,cmem,cvm);
+}
+
 @}
 @+ BBP Readonly Interface
 
@@ -1502,8 +1583,6 @@ Only real bats without memory references can be unloaded.
 @h
 #define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && !isVIEW(b) && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
-
-#endif /* _GDK_BBP_H_ */
 @- 
 The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
@@ -2473,12 +2552,17 @@ though I expect the gains to be smaller in general.
 #define BATCACHE_SIZE 		1023	/* max size: 32767 */
 #define BATCACHE_DIMS 		6	/* 0,1,2,4,8 byte types + str */
 #define BATCACHE_BIN(h,t) 	(batcache_headbin[ATOMstorage(h)]+batcache_tailbin[ATOMstorage(t)])
+#define BATCACHE_BUCKETS	2  /* initial value */
+#define BATCACHE_MAXBUCKETS	4  /* how big this can ever be */
 
 int batcache_headbin[TYPE_str + 1], batcache_tailbin[TYPE_str + 1];	/* fast bin computation */
 
 typedef signed short batcache_int;	/* make compact, whole structure is < 500 bytes: CPU cache resident  */
 
-size_t batcache_minsize = BATTINY;
+int batcache_maxbuckets = BATCACHE_BUCKETS;
+@h
+extern int batcache_maxbuckets;	/* used in gdk_relop.mx */
+@c
 
 /* the list elements, use int as element pointer type (<0 means: no such element) */
 typedef struct {
@@ -2501,8 +2585,44 @@ typedef struct {
 	batcache_int free;	/* misuses ->fifo_next for connecting the list */
 } batcache_t;
 
-/* we have multiple bat caches for better SMP performance */
-static batcache_t batcache[BBP_THREADMASK + 1];
+/* we have multiple bat caches for different bat sizes */
+static batcache_t batcache[BATCACHE_MAXBUCKETS];
+
+void
+BBPdumpcache(void)
+{
+	int t;
+
+	for (t = 0; t < BATCACHE_MAXBUCKETS; t++) {
+		batcache_t *bc = batcache + t;
+		int i, p, b;
+
+		if (bc->first == -1 && bc->last == -1) {
+			for (b = 0; b < BATCACHE_DIMS * BATCACHE_DIMS; b++)
+				if (bc->batbin[b] != -1)
+					stream_printf(GDKout, "#THREAD %d, BIN %d X\n", t, b);
+			continue;
+		}
+		stream_printf(GDKout, "#THREAD %d\nFIFO:", t);
+		for (p = -1, i = bc->first; i >= 0; p = i, i = bc->elt[i].fifo_next) {
+			stream_printf(GDKout, " %d", bc->elt[i].bid);
+			if (bc->elt[i].fifo_prev != p)
+				stream_printf(GDKout, "X");
+		}
+		if (bc->last != p)
+			stream_printf(GDKout, "Z");
+		stream_printf(GDKout, "\n");
+		for (b = 0; b < BATCACHE_DIMS * BATCACHE_DIMS; b++) {
+			stream_printf(GDKout, "#BIN %d:", b);
+			for (p = -1, i = bc->batbin[b]; i >= 0; p = i, i = bc->elt[i].bin_next) {
+				stream_printf(GDKout, " %d", bc->elt[i].bid);
+				if (bc->elt[i].bin_prev != p)
+					stream_printf(GDKout, "X");
+			}
+			stream_printf(GDKout, "\n");
+		}
+	}
+}
 
 static void
 BBPinitcache(void)
@@ -2523,7 +2643,7 @@ BBPinitcache(void)
 	batcache_tailbin[i] = 5 * BATCACHE_DIMS;	/* TYPE_str */
 
 	/* initialize the cache */
-	for (j = 0; j <= BBP_THREADMASK; j++) {
+	for (j = 0; j < BATCACHE_MAXBUCKETS; j++) {
 		MT_init_lock(batcache[j].lock, "GDKbinsLock");
 
 		for (i = 0; i < BATCACHE_SIZE; i++) {
@@ -2576,7 +2696,7 @@ batcache_del(batcache_t * bc)
 	assert(b->H->parentid == 0 && b->T->parentid == 0);
 	BATfree(b);		/* maybe unsafe without lock ? */
 	*BBP_logical(bid) = 't';
-	assert(bc - batcache <= BBP_THREADMASK);
+	assert(bc - batcache < batcache_maxbuckets);
 	bbpclear(bid, (int)(bc - batcache), "batcache_del");
 	return i;
 }
@@ -2679,7 +2799,7 @@ BBPaddtobin(BAT *b)
 
 	/* only cache simple non-saved non-renamed transient bats */
 	if (m == NULL ||
-	    batcache_minsize == 0 ||
+	    batcache_maxbuckets == 0 ||
 	    b->batCopiedtodisk || 	
 	    (b->H->heap.storage & STORE_MMAP) || 
 	    (b->T->heap.storage & STORE_MMAP) ||
@@ -2687,16 +2807,18 @@ BBPaddtobin(BAT *b)
 	    BBPtmpcheck(s) == 0 ||
 	    b->htype > TYPE_str ||
 	    b->ttype > TYPE_str) {
+		BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d "BUNFMT" %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 		return 1;
 	}
 	if ((hp == 0 && tp == 0) && (b->htype | b->ttype)) {
 		/* additional restrictions do not hold for views and void,void bats */
 		/* bat should be of the right size, types and BUN layout */
-		if (b->U->capacity < batcache_minsize ||
-		    b->U->capacity >= (batcache_minsize<<1) ||
+		if (b->U->capacity > (BUN) BATTINY * batcache_maxbuckets ||
+		    (b->U->capacity & ((BUN) BATTINY - 1)) != 0 ||
 		    BATCACHE_NOTYPE(b->htype) ||
 		    BATCACHE_NOTYPE(b->ttype)) {
+			BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d "BUNFMT" %d N2\n", b->htype, b->ttype, b->U->capacity, bin);
 			BATdelete(b);	/* handles persistent case also (file deletes) */
 			return 1;
 		}
@@ -2705,6 +2827,7 @@ BBPaddtobin(BAT *b)
 	assert(BBP_lrefs(bid) == 0);
 	assert(b->batCacheid > 0);
 
+	BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d "BUNFMT" %d Y\n", b->htype, b->ttype, b->U->capacity, bin);
 	/* change views into void,void bats */
 	if (hp || tp) {
 		BATstore *bs = BBP_desc(b->batCacheid);
@@ -2738,6 +2861,8 @@ BBPaddtobin(BAT *b)
 		b->T->width = 0;
 		b->T->seq = oid_nil;
 
+		bin = BATCACHE_BIN(b->htype, b->ttype);
+
 		/* was shared with parent! */
 		b->H->heap.base = b->T->heap.base = NULL;
 		b->H->vheap = b->T->vheap = NULL;
@@ -2766,7 +2891,7 @@ BBPaddtobin(BAT *b)
 		b->T->props = NULL;
 	}
 
-	batcache_put(batcache + (BBP_getpid() & BBP_THREADMASK), bin, b->batCacheid);
+	batcache_put(batcache + (bin == 0 ? 0 : (b->U->capacity >> BATTINY_BITS) - 1), bin, b->batCacheid);
 	return 0;
 }
 
@@ -2777,12 +2902,19 @@ BBPrecycle(int ht, int tt, size_t cap)
 	bat bid = 0;
 	BATstore *bs;
 
-	if (cap > batcache_minsize || BATCACHE_NOTYPE(ht) || BATCACHE_NOTYPE(tt))
+	if (ht == TYPE_void && tt == TYPE_void)
+		cap = BATTINY;
+	if (batcache_maxbuckets == 0 || cap > batcache_maxbuckets * (BUN) BATTINY || BATCACHE_NOTYPE(ht) || BATCACHE_NOTYPE(tt)) {
+		BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d "SZFMT" (%d, %d %d %d) N1\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 		return NULL;
+	}
 
-	bid = batcache_get(batcache + (BBP_getpid() & BBP_THREADMASK), bin);
+	assert((cap & (BATTINY - 1)) == 0);
+
+	bid = batcache_get(batcache + (bin == 0 ? 0 : (cap >> BATTINY_BITS) - 1), bin);
 	bs = BBP_desc(bid);
 	if (bs) {
+		BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d "SZFMT" (%d, %d %d %d) Y\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 		/* make the bat empty; do this extra work only if the bat is reused (not in BBPaddtobin) */
 		bs->H.type = ht;
         	bs->H.varsized = BATatoms[bs->H.type].varsized;
@@ -2820,6 +2952,7 @@ BBPrecycle(int ht, int tt, size_t cap)
 			memset(bs->T.vheap->base, 0, bs->T.vheap->free = GDK_STRHASHTABLE * sizeof(var_t));
 		return bs;
 	}
+	BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d "SZFMT" (%d, %d %d %d) N2\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 	return NULL;
 }
 
@@ -2830,7 +2963,7 @@ BBPrecycle_minsize(wrd val)
 	if (val != wrd_nil) {
 		int j;		/* flush the caches */
 
-		for (j = 0; j <= BBP_THREADMASK; j++) {
+		for (j = 0; j < batcache_maxbuckets; j++) {
 			gdk_set_lock(batcache[j].lock, "BBPrecycle_minsize");
 
 			while (batcache[j].first >= 0) {
@@ -2841,9 +2974,13 @@ BBPrecycle_minsize(wrd val)
 			}
 			gdk_unset_lock(batcache[j].lock, "BBPrecycle_minsize");
 		}
-		batcache_minsize = val;
+		batcache_maxbuckets = (int) ((val + BATTINY - 1) / BATTINY);
+		if (batcache_maxbuckets < 0)
+			batcache_maxbuckets = 0;
+		if (batcache_maxbuckets > BATCACHE_MAXBUCKETS)
+			batcache_maxbuckets = BATCACHE_MAXBUCKETS;
 	}
-	val = (wrd) batcache_minsize;
+	val = (wrd) (batcache_maxbuckets * BATTINY);
 	return val;
 }
 
@@ -3547,4 +3684,7 @@ BBPatom_load(int atom)
 	BBPunlock("BBPatom_load");
 }
 @}
-
+@{
+@h
+#endif /* _GDK_BBP_H_ */
+@}
