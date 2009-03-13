@@ -290,8 +290,10 @@ BATnew(int ht, int tt, BUN cap)
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
-	/* determine the minimum size. BATTINY bats will be cached */
-	cap = MAX(BATTINY, cap);
+	/* round up to multiple of BATTINY */
+	cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
+	if (cap < BATTINY)
+		cap = BATTINY;
 	bs = BATnewstorage(ht, tt, cap);
 	return bs == NULL ? NULL : &bs->B;
 }
