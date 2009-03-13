@@ -7468,7 +7468,9 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                    leftjoin (
                                        reverse (var (iter_res->name)),
                                        var (item_str->name)),
-                                   project (var (iter->name), lit_str ("")))));
+                                   project (var (iter->name), lit_str ("")))),
+                        assgn (var (str->name),
+                               tmark(var (str->name), lit_oid (0))));
                     /* (In the beginning of this rule we used the head values
                         as iter values. This allows to ignore the back-mapping
                         after the string-join operator (see rule
