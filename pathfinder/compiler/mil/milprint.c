@@ -429,7 +429,6 @@ static char *ID[] = {
     , [m_egsum]    = "{sum}"
     , [m_prod]     = "prod"
     , [m_gprod]    = "{prod}"
-    , [m_gprod]    = "{prod}"
     , [m_bat]      = "bat"
     , [m_catch]    = "CATCH"
     , [m_error]    = "ERROR"
