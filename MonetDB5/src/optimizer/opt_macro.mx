@@ -195,8 +195,11 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 	for (i = pc; i < lim; i++, k++) {
 		p = getInstrPtr(mb, i);
 		q = getInstrPtr(mc, k);
-		if (malMatch(p, q) == 0)
+		if (malMatch(p, q) == 0){
+			GDKfree(cvar);
+			GDKfree(mvar);
 			return 0;
+		}
 		for (j = 0; j < p->argc; j++)
 			cvar[ctop++] = getArg(p, j);
 
@@ -210,13 +213,15 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 #endif
 	for (i = 0; i < ctop; i++)
 		for (j = i + 1; j < ctop; j++)
-			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j]))
+			if ((cvar[i] == cvar[j] && mvar[i] != mvar[j]) ||(mvar[i] == mvar[j] && cvar[i] != cvar[j])){
+				GDKfree(cvar);
+				GDKfree(mvar);
 				return 0;
+			}
 	GDKfree(cvar);
 	GDKfree(mvar);
 	return 1;
 }
-
 @- Macro expansions
 The macro expansion routine walks through the MAL code block in search
 for the function to be expanded.  
