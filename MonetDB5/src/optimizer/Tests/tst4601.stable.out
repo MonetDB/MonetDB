@@ -39,7 +39,7 @@ end main;
 [ "Welcome" ]
 [ "Welcome" ]
 [ 2 ]
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
     io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
     _13 := 0;                           #  3 _13:int := _14:int 

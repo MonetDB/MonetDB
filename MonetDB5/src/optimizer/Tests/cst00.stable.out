@@ -31,15 +31,15 @@ function user.main():void;
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() 
     a := 2;                             #  1 a:int := _5:int 
-    io.print(2);                        #  2 _3:void := IOprint_val(a:int) 
+    io.print(2);                        #  2 _3:void := IOprint_val(_5:int) 
     b := 2;                             #  3 b:int := _5:int 
-    io.print(2);                        #  4 _6:void := IOprint_val(b:int) 
-    c := 6;                             #  5 c:int := c:int 
-    io.print(6);                        #  6 _9:void := IOprint_val(c:int) 
-    d := 6;                             #  7 d:flt := d:flt 
-    io.print(6);                        #  8 _11:void := IOprint_val(d:flt) 
-    e := -0.279415488;                  #  9 e:flt := e:flt 
-    io.print(-0.279415488);             # 10 _13:void := IOprint_val(e:flt) 
+    io.print(2);                        #  4 _6:void := IOprint_val(_5:int) 
+    c := 6;                             #  5 c:int := _14:int 
+    io.print(6);                        #  6 _9:void := IOprint_val(_14:int) 
+    d := 6;                             #  7 d:flt := _15:flt 
+    io.print(6);                        #  8 _11:void := IOprint_val(_15:flt) 
+    e := -0.279415488;                  #  9 e:flt := _16:flt 
+    io.print(-0.279415488);             # 10 _13:void := IOprint_val(_16:flt) 
 end tst;                                # 11  
 
 # 08:40:57 >  

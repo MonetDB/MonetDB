@@ -35,7 +35,7 @@ end main;
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-function user.main():void;              #  0 main:void := user.main() 
+function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
     io.print("test expansion");         #  2 _5:void := IOprint_val(_6:str) 
     _12 := 0;                           #  3 _12:int := _13:int 

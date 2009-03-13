@@ -19,7 +19,7 @@ end main;
 [ 57.295779513082323 ]
 function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions 
-    io.print(57.295779513082323);       #  2 _9:void := IOprint_val(X17:dbl) 
+    io.print(57.295779513082323);       #  2 _9:void := IOprint_val(_16:dbl) 
     mdb.List();                         #  3 _12:void := MDBlistDetail() 
 end main;                               #  4  
 

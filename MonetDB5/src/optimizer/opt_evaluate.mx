@@ -68,11 +68,7 @@ comment "Evaluate constant expressions once.";
 static int
 OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	int i;
-#ifdef DEBUG_OPT_CX
-		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
-#else
 	(void) cntxt;
-#endif
 
 	for( i= p->retc; i < p->argc; i++)
 		if( isVarConstant(mb, getArg(p,i)) == FALSE)
@@ -143,7 +139,7 @@ static int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, limit;
+	int i, k, limit, *alias;
 	MalStkPtr env = NULL;
 	str msg;
 	int debugstate= cntxt->itrace, actions = 0;
@@ -163,13 +159,17 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 	
 	span = newLifespan(mb);
-	env= prepareMALstack(mb);
+	env= prepareMALstack(mb, 2 * mb->vsize);
 	env->keepAlive= TRUE;
+	alias = (int*) GDKzalloc(mb->vsize * sizeof(int) *2); /* we introduce more */
 
 	setLifespan(mb,span);
 	limit = mb->stop;
 	for (i= 1 ; i < limit; i++) {
 		p = getInstrPtr(mb,i);
+		for (k=p->retc; k<p->argc; k++)
+		if (alias[getArg(p,k)] )
+			getArg(p,k) = alias[getArg(p,k)];
 #ifdef DEBUG_OPT_CX
 		printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);	
 #endif
@@ -187,19 +187,21 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (msg == MAL_SUCCEED){
 				ValRecord cst;
 				VALcopy(&cst,&env->stk[getArg(p,0)]);
-				setVarFixed(mb,getArg(p,0));
-				if ( getArgType(mb,p,0) == TYPE_str)
-					setVarCleanup(mb,getArg(p,0));
-				else
-					clrVarCleanup(mb,getArg(p,0));
-				VALcopy(&getVarConstant(mb,getArg(p,0)) , &cst);
 				/* create a new constant assignment */
 				getArg(p,1)= defConstant(mb, getArgType(mb,p,0), &cst);
+				/* update the stack frame for next evaluations */
+				if ( getArgType(mb,p,1) == TYPE_str)
+					setVarCleanup(mb,getArg(p,1));
+				else
+					clrVarCleanup(mb,getArg(p,1));
+				VALcopy(&env->stk[getArg(p,1)],&getVarConstant(mb,getArg(p,1)));
+				alias[getArg(p,0)]= getArg(p,1);
 				p->argc = 2;
 				p->token = ASSIGNsymbol;
 				clrFunction(p);
 #ifdef DEBUG_OPT_CX
-				stream_printf(cntxt->fdout,"Evaluated new constant=%d\n",getArg(p,0));
+				stream_printf(cntxt->fdout,"Evaluated new constant=%d -> %d:%s\n",
+					getArg(p,0), getArg(p,1), getTypeName(getArgType(mb,p,1)));
 #endif
 			} else {
 #ifdef DEBUG_OPT_CX
@@ -214,6 +216,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if ( actions)
 		stream_printf(cntxt->fdout,"#opt_evaluate: %d constant expressions\n",actions);
 	GDKfree(span);
+	GDKfree(alias);
 	freeStack(env);
 	cntxt->itrace= debugstate;
 	return actions;
