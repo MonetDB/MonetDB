@@ -124,7 +124,7 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		if (mb->stop <= cnt + 1) {	/* complete comments */
 			mb->typefixed = 0;
 			mb->flowfixed = 0;
-			mb->stop = 1;
+			mb->stop = cnt;
 			cntxt->glb = 0;
 			return;
 		}

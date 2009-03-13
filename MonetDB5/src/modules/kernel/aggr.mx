@@ -1447,8 +1447,8 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, 
 int
 CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_@2, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	BAT *bn;
+	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
 	@2 zero = (@2) 0, *sums;
 	BUN p, q, r;
 	oid range;
@@ -1457,16 +1457,22 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	BUN base, end, w;
 	ssize_t offset;
 
-	if( bn == NULL)
-		return GDK_FAIL;
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g), BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_sum_@1_@2(ret, BATjoin(BATmirror(g),b,BUN_NONE), e);
+		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
+		int rtrn = CMDaggrX3_sum_@1_@2(ret, gb, e);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
+
+	bn = BATnew(e->htype, TYPE_@2, BATcount(e));
+	if( bn == NULL)
+		return GDK_FAIL;
+	bni = bat_iterator(bn);
 
 	*ret = bn;
 
@@ -1559,8 +1565,8 @@ aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range,
 int
 CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_@2, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	BAT *bn;
+	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
 	@2 zero = (@2) 1, *prods;
 	BUN p, q, r;
 	oid range;
@@ -1569,17 +1575,22 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	BUN base, end, w;
 	ssize_t offset;
 
-	if( bn == NULL)
-		return GDK_FAIL;
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_prod3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_prod3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_prod3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_prod_@1_@2(ret, BATjoin(BATmirror(g),b,BUN_NONE), e);
+		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
+		int rtrn = CMDaggrX3_prod_@1_@2(ret, gb, e);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
 
+	bn = BATnew(e->htype, TYPE_@2, BATcount(e));
+	if( bn == NULL)
+		return GDK_FAIL;
+	bni = bat_iterator(bn);
 	*ret = bn;
 
 	/* init: set all prods to zero and calculate min/max oid */
@@ -1683,8 +1694,8 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 int
 CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	BAT *bn;
+	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
 	BUN off;
 	BUN *cnt;
 	oid range;
@@ -1696,18 +1707,23 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	BUN base, end, w;
 	ssize_t offset;
 
-	if( bn == NULL)
-		return GDK_FAIL;
-	off = BUNfirst(bn);
-
 	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_avg_@1(ret, BATjoin(BATmirror(g),b,BUN_NONE), e);
+		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
+		int rtrn = CMDaggrX3_avg_@1(ret, gb, e);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
+
+	bn = BATnew(e->htype, TYPE_dbl, BATcount(e));
+	if( bn == NULL)
+		return GDK_FAIL;
+	bni = bat_iterator(bn);
+	off = BUNfirst(bn);
 
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(dbl)@
@@ -1900,8 +1916,8 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 static int
 aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
-	BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b), gi = bat_iterator(g);
+	BAT *bn;
+	BATiter bni, bi = bat_iterator(b), gi = bat_iterator(g);
 	int (*cmp)(ptr,ptr);
 	ptr nil;
 	BUN off;
@@ -1914,11 +1930,6 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	BUN base, end, w;
 	ssize_t offset;
 
-	if(bn == NULL)
-		return GDK_FAIL;
-	cmp = BATatoms[bn->ttype].atomCmp;
-	nil = ATOMnilptr(bn->ttype);
-	off = BUNfirst(bn);
 	*ret = NULL;
 
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,g=%s,e=%s);\n",
@@ -1927,8 +1938,19 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13_@3_@4_@5: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return aggrX3_@1_@3_@4_@5(ret, BATjoin(BATmirror(g),b,BUN_NONE), e);
+		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
+		int rtrn = aggrX3_@1_@3_@4_@5(ret, gb, e);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
+
+	bn = BATnew(e->htype, BATttype(b), BATcount(e));
+	if(bn == NULL)
+		return GDK_FAIL;
+	bni = bat_iterator(bn);
+	cmp = BATatoms[bn->ttype].atomCmp;
+	nil = ATOMnilptr(bn->ttype);
+	off = BUNfirst(bn);
 
 	/* init: prepare the result bat;
 	 * trick: by using "tail-type" void, we only write the head column, here */
@@ -2000,7 +2022,10 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13: head of BAT g must not be nil.\n");
 
 	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
-		return CMDaggrX3_@1(ret, BATjoin(BATmirror(g),b,BUN_NONE), e);
+		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
+		rtrn = CMDaggrX3_@1(ret, gb, e);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
 
 	if (b->ttype == TYPE_void) {
@@ -2165,7 +2190,10 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_count3: head of BAT g must not be nil.\n");
 
 	if ((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b) & 1)) || (!g->hkey)) {
-		return CMDaggrX3_count(ret, BATjoin(BATmirror(g), b, BUN_NONE), e, ignore_nils);
+		BAT *gb = BATjoin(BATmirror(g), b, BUN_NONE);
+		int rtrn = CMDaggrX3_count(ret, gb, e, ignore_nils);
+		BBPunfix(gb->batCacheid);
+		return rtrn;
 	}
 
 	if (e->htype == TYPE_void && 

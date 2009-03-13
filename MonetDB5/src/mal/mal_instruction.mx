@@ -956,7 +956,7 @@ newInstruction(MalBlkPtr mb, int kind)
 		mb->stmt[mb->stop] = NULL;
 	}
 	if (p == NULL) {
-		p = GDKmalloc(MAXARG * sizeof(p->maxarg) + sizeof(InstrRecord));
+		p = GDKzalloc(MAXARG * sizeof(p->maxarg) + sizeof(InstrRecord));
 		p->maxarg = MAXARG;
 	}
 	p->typechk = TYPE_UNKNOWN;

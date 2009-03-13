@@ -387,14 +387,15 @@ Beware, this is not yet effectuated in the interpreter.
 		@:prepostProcess(ts,i,mb)@
 	}
 @-
- signatures are handled by the caller
-	if( p == getSignature(s)){
-printf("handle signature prepost\n");
-	for(i=p->retc;i<p->argc;i++) {
-		int ts= getArgType(mb,p,i);
-		@:prepostProcess(ts,i,mb)@
+Also the arguments may contain constants
+to be garbage collected.
+@c
+	for(i=p->retc;i<p->argc;i++) 
+	if ( findGDKtype(getArgType(mb,p,i)) == TYPE_str ||
+	    (!isPolyType(getArgType(mb,p,i)) && getArgType(mb,p,i)< TYPE_any && 
+             getArgType(mb,p,i)>=0 && ATOMstorage(getArgType(mb,p,i)) == TYPE_str)){
+		getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 	}
-}
 @-
 It may happen that an argument was still untyped and as a result of
 the polymorphism matching became strongly typed. This should be
