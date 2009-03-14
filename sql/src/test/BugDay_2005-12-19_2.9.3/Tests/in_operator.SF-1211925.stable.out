@@ -26,7 +26,7 @@ Over..
 # 11:51:00 >  
 
 % . # table_name
-% =_single_value # name
+% or_=_single_value # name
 % boolean # type
 % 5 # length
 [ true	]

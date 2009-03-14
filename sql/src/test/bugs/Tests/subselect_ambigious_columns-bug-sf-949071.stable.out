@@ -29,28 +29,28 @@ Over..
 % name # name
 % varchar # type
 % 10 # length
-[ "functions"	]
 [ "args"	]
+[ "functions"	]
+[ "idxs"	]
+[ "keys"	]
 [ "sequences"	]
-[ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
 [ "keycolumns"	]
+[ "keys"	]
 % .tables # table_name
 % name # name
 % varchar # type
 % 10 # length
-[ "functions"	]
 [ "args"	]
+[ "functions"	]
+[ "idxs"	]
+[ "keys"	]
 [ "sequences"	]
-[ "keys"	]
 [ "idxs"	]
 [ "keycolumns"	]
-[ "keys"	]
-[ "idxs"	]
 [ "keycolumns"	]
+[ "keys"	]
 
 # 21:42:22 >  
 # 21:42:22 >  Done.

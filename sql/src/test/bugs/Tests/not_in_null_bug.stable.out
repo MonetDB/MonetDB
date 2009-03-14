@@ -34,7 +34,7 @@ Over..
 % 4 # length
 [ "matt"	]
 [ "fred"	]
-% .query_users # table_name
+% sys.query_users # table_name
 % user_name # name
 % varchar # type
 % 0 # length

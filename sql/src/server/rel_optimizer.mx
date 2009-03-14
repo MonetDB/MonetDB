@@ -1125,7 +1125,7 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
+static sql_rel *
 rel_merge_projects(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = rel->exps;
@@ -1330,45 +1330,6 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_dereference(int *changes, mvc *sql, sql_rel *rel) 
-{
-	sql_rel *l = rel->l;
-	sql_rel *r = rel->r;
-
-	(void)sql;
-	if (rel->op == op_union && 
-	    rel_find_ref(l) && rel_find_ref(l) == rel_find_ref(r)) {
-		sql_rel *ll = l->l;
-		sql_rel *rl = r->l;
-
-		while (ll && !rel_is_ref(ll) &&
-	      	      (is_project(ll->op) || is_select(ll->op) || is_join(ll->op))) {
-			l = ll;
-			ll = ll->l;
-		}
-
-		if (rel_is_ref(ll)) {
-			rel_destroy(ll);	/* decrease ref */
-			l->l = rel_copy(ll);
-			*changes = 1;
-		}
-
-		while (rl && !rel_is_ref(rl) &&
-	      	      (is_project(rl->op) || is_select(rl->op) || is_join(rl->op))) {
-			r = rl;
-			rl = rl->l;
-		}
-
-		if (rel_is_ref(rl)) {
-			rel_destroy(rl);	/* decrease ref */
-			r->l = rel_copy(rl);
-			*changes = 1;
-		}
-	}
-	return rel;
-}
-
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
@@ -1442,12 +1403,12 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data, *ne = NULL;
 			int done = 0;
 	
-			ne = exp_push_down(sql, e, r, jl);
+			ne = exp_push_down(sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1; 
 				rel_select_add_exp(jl, ne);
 			} else {
-				ne = exp_push_down(sql, e, r, jr);
+				ne = exp_push_down(sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1; 
 					rel_select_add_exp(jr, ne);
@@ -1623,7 +1584,7 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
  * When the join is on the group by columns, we can push the joins left
  * under the group by.
  */
-sql_rel *
+static sql_rel *
 rel_push_join_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = NULL;
@@ -1871,7 +1832,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 /* Pushing projects up the tree. Done very early in the optimizer.
  * Makes later steps easier. 
  */
-sql_rel *
+static sql_rel *
 rel_push_project_up(int *changes, mvc *sql, sql_rel *rel) 
 {
 	/* project/project cleanup is done later */
@@ -2707,10 +2668,6 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_union]) 
 		rel = rewrite(sql, rel, &rel_merge_union); 
-
-	/* copy remaining refenences in unions */
-	if (gp.cnt[op_union]) 
-		rel = rewrite(sql, rel, &rel_dereference); 
 
 	/* Remove unused expressions */
 	if (gp.cnt[op_project])
