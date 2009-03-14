@@ -576,10 +576,11 @@ TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t->rowwidth = (int) (strlen(t->rlbrk) + strlen(t->rrbrk) - 2);
 
 	for (i = pci->retc; i < pci->argc; anr++, i++) {
+		char *name=getArgName(mb, pci, i);
 		/* The type should be taken from the stack ! */
 		tpe = stk->stk[pci->argv[i]].vtype;
 		val = (ptr) getArgReference(stk, pci, i);
-		bindVariable(t, anr, getArgName(mb, pci, i), tpe, val, &k);
+		bindVariable(t, anr, name, tpe, val, &k);
 	}
 	t->nr_attrs = anr;
 	t->fd = cntxt->fdout;
@@ -759,6 +760,7 @@ TABsetDelimiter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
 		throw(MAL, "tablet.setDelimiters", "Header information missing");
+	CLEAR(tableReports[rnr]->sep);
 	tableReports[rnr]->sep = !strNil(*sep) ? GDKstrdup(*sep) : 0;
 	return MAL_SUCCEED;
 }
@@ -782,6 +784,7 @@ TABsetColumnName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
+	CLEAR(tableReports[rnr]->columns[*idx].name);
 	tableReports[rnr]->columns[*idx].name = !strNil(*s) ? GDKstrdup(*s) : 0;
 	return MAL_SUCCEED;
 }
@@ -795,6 +798,8 @@ TABsetTableBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
+	CLEAR(tableReports[rnr]->ttopbrk);
+	CLEAR(tableReports[rnr]->tbotbrk);
 	tableReports[rnr]->ttopbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->tbotbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
 	return MAL_SUCCEED;
@@ -809,6 +814,8 @@ TABsetRowBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, MAXARG);
+	CLEAR(tableReports[rnr]->rlbrk);
+	CLEAR(tableReports[rnr]->rrbrk);
 	tableReports[rnr]->rlbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->rrbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
 	return MAL_SUCCEED;
@@ -824,6 +831,8 @@ TABsetColumnBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
+	CLEAR(tableReports[rnr]->columns[*idx].lbrk);
+	CLEAR(tableReports[rnr]->columns[*idx].rbrk);
 	tableReports[rnr]->columns[*idx].lbrk = !strNil(*lbrk) ? GDKstrdup(*lbrk) : 0;
 	tableReports[rnr]->columns[*idx].rbrk = !strNil(*rbrk) ? GDKstrdup(*rbrk) : 0;
 	return MAL_SUCCEED;
@@ -838,6 +847,7 @@ TABsetColumnNull(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
+	CLEAR(tableReports[rnr]->columns[*idx].nullstr);
 	tableReports[rnr]->columns[*idx].nullstr = !strNil(*nullstr) ? GDKstrdup(*nullstr) : 0;
 	return MAL_SUCCEED;
 }
@@ -2422,6 +2432,7 @@ clearColumn(Column * c)
 {
 	CLEAR(c->batname);
 	CLEAR(c->name);
+	CLEAR(c->type);
 	CLEAR(c->sep);
 	c->width = 0;
 	c->tabs = 0;
@@ -2434,8 +2445,12 @@ clearTable(Tablet * t)
 {
 	unsigned int i;
 
-	for (i = 0; i < t->nr_attrs; i++)
+	for (i = 0; i < t->nr_attrs; i++){
 		clearColumn(t->columns + i);
+		CLEAR(t->columns[i].lbrk);
+		CLEAR(t->columns[i].rbrk);
+		CLEAR(t->columns[i].nullstr);
+	}
 	CLEAR(t->ttopbrk);
 	CLEAR(t->tbotbrk);
 	CLEAR(t->rlbrk);
@@ -2842,9 +2857,9 @@ setTabwidth(Column * c)
 		title = GDKmalloc(strlen(BATgetId(c->c)) + 7);
 		snprintf(title, 20, "%s", BATgetId(c->c));
 	}
+	CLEAR(c->type);
 	c->type = GDKstrdup(ATOMname(c->c->ttype));
 	c->adt = c->c->ttype;
-	buf = (char *) GDKmalloc(ret = strLen(title));
 	max = MAX((int) strlen(c->type), ret);
 	if (c->nullstr)
 		max = MAX(max, (unsigned int) strlen(c->nullstr));
@@ -2863,9 +2878,13 @@ setTabwidth(Column * c)
 			j = off + ((cnt < probe) ? i : ((BUN) rand() % cnt));
 			(*tostr) (&buf, &ret, BUNtail(c->ci, j));
 			max = MAX(max, (unsigned int) strlen(buf));
+			GDKfree(buf);
+			buf = 0;
+			ret = 0;
 		}
 	}
 	c->width = max;
+	CLEAR(c->name);
 	c->name = GDKstrdup(title);
 	return c->width;
 }
