@@ -344,6 +344,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	} 
 
 	/* copy the remainder of the stable part */
+	freeInstruction(p);
 	for (i = pc + 1; i < mb->stop; i++){
 		ns[k++] = mb->stmt[i];
 	}
@@ -551,7 +552,6 @@ OPT@1Implementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int j;
 
 	(void) cntxt;
-	(void) p;
 	(void) stk;
 
 	if( p->argc == 3){
@@ -608,6 +608,8 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int actions = 0;
 
 	optimizerInit();
+	if( p )
+		removeInstruction(mb, p);
 	if( p->argc == 3){
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
@@ -624,8 +626,6 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		return msg;
 	if( mb->errors == 0)
 		actions= OPT@1Implementation(cntxt,mb,stk,p);
-	if( p )
-		removeInstruction(mb, p);
     return optimizerCheck(cntxt,mb, "optimizer.@1", actions, GDKusec() - clk, OPT_CHECK_ALL);
 }
 @h
