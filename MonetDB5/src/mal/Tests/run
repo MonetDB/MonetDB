@@ -10,7 +10,7 @@ echo "Initialize database"
 rm -rf $DBFARM/$DBNAME
 echo 'clients.quit();' | $MSERVER
 
-mkdir -p test_out_err
+mkdir -p valgrind
 for f in  `ls tst*.mal`
 do
 	b=`basename $f .mal`
