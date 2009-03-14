@@ -142,7 +142,7 @@ Over..
 # 11:48:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:05 >  
 
-% .shipping,	.shipping,	.shipping,	.shipping # table_name
+% sys.shipping,	sys.shipping,	sys.shipping,	sys.shipping # table_name
 % supp_nation,	cust_nation,	l_year,	revenue # name
 % varchar,	varchar,	int,	decimal # type
 % 7,	7,	4,	21 # length
@@ -153,8 +153,8 @@ Over..
 % .stats,	.stats # table_name
 % rewrite,	count # name
 % clob,	int # type
-% 7,	2 # length
-[ "joinidx",	10	]
+% 7,	1 # length
+[ "joinidx",	5	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
@@ -1204,7 +1204,7 @@ Over..
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
 # 11:48:06 >  
 
-% . # table_name
+% sys. # table_name
 % revenue # name
 % decimal # type
 % 21 # length
@@ -1213,7 +1213,7 @@ Over..
 % rewrite,	count # name
 % clob,	int # type
 % 7,	1 # length
-[ "joinidx",	3	]
+[ "joinidx",	1	]
 
 # 11:48:06 >  
 # 11:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35781
