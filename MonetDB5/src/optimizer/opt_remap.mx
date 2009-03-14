@@ -339,6 +339,7 @@ But first, shift the arguments of the multiplex.
 	OPTDEBUG
 	if( actions)
 		stream_printf(cntxt->fdout,"#opt_remap: %d mappings\n",actions);
+	freeMalBlk(mq);
 	GDKfree(upgrade);
 	return 1;
 }
