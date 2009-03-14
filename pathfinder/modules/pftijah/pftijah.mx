@@ -367,6 +367,9 @@ PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str :=
         res := tj_options.find("ft-index");
     }
     if ( chk_exists ) {
+      if ( not(view_bbp_name().reverse().exist("tj_collName")) ) {
+        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
+      }
       if ( not(bat("tj_collName").reverse().exist(res)) ) {
     	ERROR("tj_get_ft_index, ft-index \"%s\" does not exist\n",res);
       }
@@ -4550,6 +4553,8 @@ int CMDunion_div_dbl(BAT** res, BAT*l, BAT*r) {
  *
  *
  */
+
+#define LEAK_PROBLEM
 
 int CMDpf2tijah_node(BAT** res, BAT* doc_name, BAT* doc_firstpre, BAT* doc_pfpre, BAT* item, BAT* kind, BAT* doc_loaded ) {
         int debug = 0;
