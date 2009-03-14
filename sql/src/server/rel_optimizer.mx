@@ -1279,7 +1279,7 @@ exps_has_predicate( list *l )
 	return 0;
 }
 
-sql_rel *
+static sql_rel *
 rel_merge_union(int *changes, mvc *sql, sql_rel *rel) 
 {
 	sql_rel *l = rel->l;
@@ -1326,6 +1326,45 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 		rs->exps = NULL;
 		rel_destroy(rel);
 		return nls;
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_dereference(int *changes, mvc *sql, sql_rel *rel) 
+{
+	sql_rel *l = rel->l;
+	sql_rel *r = rel->r;
+
+	(void)sql;
+	if (rel->op == op_union && 
+	    rel_find_ref(l) && rel_find_ref(l) == rel_find_ref(r)) {
+		sql_rel *ll = l->l;
+		sql_rel *rl = r->l;
+
+		while (ll && !rel_is_ref(ll) &&
+	      	      (is_project(ll->op) || is_select(ll->op) || is_join(ll->op))) {
+			l = ll;
+			ll = ll->l;
+		}
+
+		if (rel_is_ref(ll)) {
+			rel_destroy(ll);	/* decrease ref */
+			l->l = rel_copy(ll);
+			*changes = 1;
+		}
+
+		while (rl && !rel_is_ref(rl) &&
+	      	      (is_project(rl->op) || is_select(rl->op) || is_join(rl->op))) {
+			r = rl;
+			rl = rl->l;
+		}
+
+		if (rel_is_ref(rl)) {
+			rel_destroy(rl);	/* decrease ref */
+			r->l = rel_copy(rl);
+			*changes = 1;
+		}
 	}
 	return rel;
 }
@@ -2662,14 +2701,16 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	/* make parts conditional (via debug flag) */
 
-	/* TODO common sub relation/expression optimizer */
-
 	/* simple merging of projects */
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_merge_projects); 
 
 	if (gp.cnt[op_union]) 
 		rel = rewrite(sql, rel, &rel_merge_union); 
+
+	/* copy remaining refenences in unions */
+	if (gp.cnt[op_union]) 
+		rel = rewrite(sql, rel, &rel_dereference); 
 
 	/* Remove unused expressions */
 	if (gp.cnt[op_project])
@@ -2681,7 +2722,7 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	rel = rewrite(sql, rel, &rel_rewrite_types); 
 
-	/* rewrite op_anti/semi (A,C=join(A,B)) [ A.tid  = C.A.tid ] */
+	/* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
 	if (gp.cnt[op_anti] || gp.cnt[op_semi])
 		rel = rewrite(sql, rel, &rel_rewrite_semijoin);
 
@@ -2709,6 +2750,8 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 
 	if (gp.cnt[op_join] || gp.cnt[op_left])
 		rel = rewrite(sql, rel, &rel_join_order); 
+
+	/* Todo rel_find_range_exps (and then remove from later code) */
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_select_order); 
