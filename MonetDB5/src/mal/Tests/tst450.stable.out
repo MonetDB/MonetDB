@@ -99,6 +99,7 @@ end main;
 [ "const",	  nil	  ]
 [ "constraints",  nil	  ]
 [ "crackers",	  nil	  ]
+[ "datacyclotron",	  nil	  ]
 [ "date",	  nil	  ]
 [ "daytime",	  nil	  ]
 [ "factories",	  nil	  ]
