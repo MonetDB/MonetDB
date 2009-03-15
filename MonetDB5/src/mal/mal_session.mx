@@ -512,7 +512,7 @@ str
 MALexitClient(Client c)
 {
 	int i;
-	if (c->glb) 
+	if (c->glb && c->curprg->def->errors == 0) 
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
 	for ( i=1; i<c->curprg->def->vtop; i++)
 		freeVariable(c->curprg->def,i);
