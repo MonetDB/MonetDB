@@ -150,14 +150,6 @@ logListener(void *x)
 		equalouterr = 0;
 	}
 
-	/* if we print to the console, avoid double TME messages */
-	if (d->dbname == NULL) {
-		equalouterr = 1;
-	} else {
-		equalouterr = 0;
-	}
-
-
 	/* skip the first entry, we don't care about it in the normal loop */
 	d = d->next;
 
@@ -2164,7 +2156,6 @@ main(int argc, char *argv[])
 			MERO_EXIT(1);
 			return(1);
 		}
-		topdp->dbname = "file";
 	}
 
 	/* where should our err output go to? */
@@ -2186,7 +2177,6 @@ main(int argc, char *argv[])
 				return(1);
 			}
 		}
-		topdp->dbname = "file";
 	}
 	GDKfree(msglog);
 	GDKfree(errlog);
