@@ -3352,7 +3352,7 @@ failed to disprove on exhaustive check => succeeded to prove
 		if ((sorted_bak & 1) && !(BAThordered(b) & 1)) {
 			THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 			if (BAThordered(b))
-				THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples remains marked radix-clustered on %d bits; not checked!", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
+				THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples remains marked radix-clustered on %d bits; not checked!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b), BAThordered(b) >> 1);
 		}
 		if (key_bak && !b->hkey)
 			THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
