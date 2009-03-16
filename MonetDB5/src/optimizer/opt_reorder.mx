@@ -40,13 +40,51 @@ comment "Reorder by dataflow dependencies";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_REORDER */
+#define DEBUG_OPT_REORDER 
 @c
 #include "mal_config.h"
 #include "opt_reorder.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 
+@-
+Collect the statement dependencies in a table first
+This can be done in linear time in size of the program.
+@c
+typedef struct{
+	int cnt;
+	int stmt[];
+} *Node, NodeRecord;
+
+static Node *
+OPTdependencies(MalBlkPtr mb){
+	Node *list = (Node *) GDKmalloc(sizeof(NodeRecord) * mb->stop);
+	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	int i,j;
+	InstrPtr p;
+
+	for ( i=0; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		list[i]= (Node) GDKmalloc(sizeof(NodeRecord)+sizeof(int)*p->argc);
+		list[i]->cnt= p->argc;
+		for( j=p->retc; j<p->argc; j++){
+			list[i]->stmt[j]= var[getArg(p,j)];
+		}
+		for( j=0; j<p->retc; j++){
+			var[getArg(p,j)]= i;
+		}
+	}
+	GDKfree(var);
+	return list;
+}
+
+static void
+OPTremoveDep(Node *list, int lim){
+	int i;
+	for( i=0; i< lim; i++)
+		GDKfree(list[i]);
+	GDKfree(list);
+}
 static void
 OPTdepthfirst(MalBlkPtr mb, InstrPtr old[], int pc, int idx, int start)
 {
@@ -63,9 +101,11 @@ OPTdepthfirst(MalBlkPtr mb, InstrPtr old[], int pc, int idx, int start)
 				break;
 		if ( i< p->retc){
 			for(i=p->retc; i<p->argc; i++)
-			OPTdepthfirst(mb,old,pc,i,start);
+			if( !isVarConstant(mb,getArg(p,i)) )
+				OPTdepthfirst(mb,old,pc,getArg(p,i),start);
 			pushInstruction(mb,p);
 			old[pc] =0;
+			return;
 		}
 	}
 }
@@ -76,15 +116,17 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j, start;
 	InstrPtr *old;
 	int limit;
+	Node *depend;
 
 	(void) cntxt;
 	(void) stk;
-#ifdef DEBUG_DATAFLOW_OPT
+#ifdef DEBUG_OPT_REORDER
 	printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
 #endif
+	depend = OPTdependencies(mb);
 	limit= mb->stop;
 	old = mb->stmt;
-	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
+	newMalBlkStmt(mb, mb->ssize); /* some marge */
 	pushInstruction(mb,old[0]);
 
 	start=1;
@@ -92,7 +134,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= old[i];
 		if( hasSideEffects(p,TRUE) || p->barrier || p->token== ENDsymbol){
 			for(j=p->retc; j<p->argc; j++)
-				OPTdepthfirst(mb,old,i,j,start);
+			if( !isVarConstant(mb,getArg(p,j)) )
+				OPTdepthfirst(mb,old,i,getArg(p,j),start);
 			/* collect all left */
 			for(j=start; j<=i;j++)
 			if( old[j])
@@ -100,9 +143,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			start = i+1;
 		}
 	}
+	OPTremoveDep(depend, mb->stop);
 	GDKfree(old);
-#ifdef DEBUG_DATAFLOW_OPT
-	printFunction(GDKstdout, mb, LIST_MAL_ALL);
+#ifdef DEBUG_OPT_REORDER
+	printFunction(GDKstdout, mb,0,  LIST_MAL_ALL);
 #endif
 	return 1;
 }

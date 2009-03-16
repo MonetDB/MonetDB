@@ -166,7 +166,7 @@ static int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, sig, *old, *locks;
-	int i, j, k, first, last, limit, actions=0, ltop;
+	int i, j, k, first= 0, last= 0, limit, actions=0, ltop;
 	char buf[256];
 	int *declared;
 	Symbol factory;
