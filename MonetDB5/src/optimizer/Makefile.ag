@@ -31,7 +31,7 @@ lib_optimizer = {
 		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_datacell.mx \
+		opt_datacell.mx opt_reorder.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
@@ -54,7 +54,7 @@ headers_optimizer = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_datacell.mx \
+		opt_datacell.mx opt_reorder.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
@@ -74,7 +74,7 @@ headers_mal = {
 		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx opt_partitions.mx \
-		opt_datacell.mx \
+		opt_datacell.mx opt_reorder.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mx opt_trace.mx  opt_recycler.mx opt_dataflow.mx \

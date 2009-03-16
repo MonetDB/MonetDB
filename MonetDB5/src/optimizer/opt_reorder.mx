@@ -1,0 +1,117 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_reorder
+@- The dataflow reorder
+MAL programs are largely logical descriptions of an execution plan.
+After the mitosis and mergetable optimizers we have a large program, which when
+executed as is, does not benefit from the locality
+data and operations. The breath-first traversal of all independent
+plans should be turned into a depth-first traversal.
+
+The approach here is to reorder the complete program.
+It is performed by basic block that ends in a side-effect
+bearing instruction.
+@{
+@mal
+pattern optimizer.reorder():str
+address OPTreorder;
+pattern optimizer.reorder(mod:str, fcn:str):str
+address OPTreorder
+comment "Reorder by dataflow dependencies";
+
+@h
+#ifndef _OPT_REORDER_
+#define _OPT_REORDER_
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+/* #define DEBUG_OPT_REORDER */
+@c
+#include "mal_config.h"
+#include "opt_reorder.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
+
+static void
+OPTdepthfirst(MalBlkPtr mb, InstrPtr old[], int pc, int idx, int start)
+{
+	int i;
+	InstrPtr p;
+
+	/* we need to collect the argument depth-first recursively */
+	for( pc--; pc >= start; pc--){
+		p= old[pc];
+		if (p == 0)
+			continue;
+		for(i=0;i<p->retc;i++)
+			if( getArg(p,i)== idx)
+				break;
+		if ( i< p->retc){
+			for(i=p->retc; i<p->argc; i++)
+			OPTdepthfirst(mb,old,pc,i,start);
+			pushInstruction(mb,p);
+			old[pc] =0;
+		}
+	}
+}
+
+static int
+OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,j, start;
+	InstrPtr *old;
+	int limit;
+
+	(void) cntxt;
+	(void) stk;
+#ifdef DEBUG_DATAFLOW_OPT
+	printFunction(GDKstdout, mb,0, LIST_MAL_ALL);
+#endif
+	limit= mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb, mb->ssize+20); /* some marge */
+	pushInstruction(mb,old[0]);
+
+	start=1;
+	for( i=1; i<limit; i++){
+		p= old[i];
+		if( hasSideEffects(p,TRUE) || p->barrier || p->token== ENDsymbol){
+			for(j=p->retc; j<p->argc; j++)
+				OPTdepthfirst(mb,old,i,j,start);
+			/* collect all left */
+			for(j=start; j<=i;j++)
+			if( old[j])
+				pushInstruction(mb,old[j]);
+			start = i+1;
+		}
+	}
+	GDKfree(old);
+#ifdef DEBUG_DATAFLOW_OPT
+	printFunction(GDKstdout, mb, LIST_MAL_ALL);
+#endif
+	return 1;
+}
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(reorder)@
+#endif
+@c
+#include "opt_statistics.h"
+
+@:wrapOptimizer(reorder,OPT_CHECK_ALL)@
+@}
