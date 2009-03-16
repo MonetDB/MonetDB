@@ -1455,7 +1455,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 		sql_arg *a = sql_bind_param(sql, name);
 		int var = (stack_find_var(sql, name) != NULL);
 		
-		if (*rel)
+		if (rel && *rel)
 			exp = rel_bind_column(sql, *rel, name, f);
 		if (exp) {
 			if (var || a) 
@@ -1474,7 +1474,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 		char *tname = l->h->data.sval;
 		char *cname = l->h->next->data.sval;
 
-		if (*rel)
+		if (rel && *rel)
 			exp = rel_bind_column2(sql, *rel, tname, cname, f);
 
 		/* some views are just in the stack, 

@@ -96,3 +96,4 @@ reljoin_join2_bug
 rangejoin_optimize_bug
 alter_table_add_column
 create_index
+select_from_values
