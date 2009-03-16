@@ -150,14 +150,6 @@ logListener(void *x)
 		equalouterr = 0;
 	}
 
-	/* if we print to the console, avoid double TME messages */
-	if (d->dbname == NULL) {
-		equalouterr = 1;
-	} else {
-		equalouterr = 0;
-	}
-
-
 	/* skip the first entry, we don't care about it in the normal loop */
 	d = d->next;
 
@@ -1412,11 +1404,11 @@ controlRunner(void *d)
 				*p++ = '\0';
 				if (strcmp(p, "start") == 0) {
 					err e;
-					merlog("starting database %s due to control signal", q);
+					merlog("starting database '%s' due to control signal", q);
 					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
 						fprintf(stderr, "failed to fork mserver: %s\n",
 								getErrMsg(e));
-						len = snprintf(buf2, sizeof(buf2), "starting %s failed: %s\n",
+						len = snprintf(buf2, sizeof(buf2), "starting '%s' failed: %s\n",
 								q, getErrMsg(e));
 						send(msgsock, buf2, len, 0);
 						freeErr(e);
@@ -1439,11 +1431,11 @@ controlRunner(void *d)
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
-								merlog("stopping database %s due to control "
+								merlog("stopping database '%s' due to control "
 										"signal", q);
 								kill(dp->pid, SIGTERM);
 							} else {
-								merlog("killing database %s due to control "
+								merlog("killing database '%s' due to control "
 										"signal", q);
 								kill(dp->pid, SIGKILL);
 							}
@@ -1458,7 +1450,7 @@ controlRunner(void *d)
 								"database not under merovingian control: %s\n",
 								q);
 						len = snprintf(buf2, sizeof(buf2),
-								"%s is not controlled by merovingian\n", q);
+								"'%s' is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
 					pthread_mutex_unlock(&topdplock);
@@ -2164,7 +2156,6 @@ main(int argc, char *argv[])
 			MERO_EXIT(1);
 			return(1);
 		}
-		topdp->dbname = "file";
 	}
 
 	/* where should our err output go to? */
@@ -2186,7 +2177,6 @@ main(int argc, char *argv[])
 				return(1);
 			}
 		}
-		topdp->dbname = "file";
 	}
 	GDKfree(msglog);
 	GDKfree(errlog);
