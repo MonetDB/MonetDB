@@ -75,7 +75,6 @@ class BuiltinOptions:
     gdk_dbfarm = os.path.join('@QXlocalstatedir@','@PACKAGE@')
     gdk_debug = '8'
     gdk_mem_bigsize = '256K'
-    gdk_mmap_minsize = '137438953472'
     monet_admin = 'adm'
     monet_prompt = '>'
     monet_welcome = 'yes'
