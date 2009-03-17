@@ -3701,7 +3701,7 @@ PROC do_update_start(bat[void,bat] ws, bat[void,oid] affected_conts) : void
   var cont_names := affected_conts.leftjoin(ws.fetch(CONT_NAME)).reverse().mirror();
   var conflict := [tj_is_indexed](cont_names).uselect(true);
   if (count(conflict) > 0) {
-    ERROR("cannot update text-indexed collection %s (%s such errors).\n", reverse(conflict).fetch(0), count(confict));
+    ERROR("cannot update text-indexed collection %s (%s such errors).\n", reverse(conflict).fetch(0), count(conflict));
   }
 
   # check that all containers are updatable (i.e. that none are read-only)
