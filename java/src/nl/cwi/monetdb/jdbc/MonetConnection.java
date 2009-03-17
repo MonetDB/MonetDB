@@ -927,18 +927,18 @@ public class MonetConnection implements Connection {
 	/**
 	 * Puts this connection in read-only mode as a hint to the driver to
 	 * enable database optimizations.  MonetDB doesn't support writable
-	 * ResultSets, hence an SQLException is thrown if attempted to set
+	 * ResultSets, hence an SQLWarning is generated if attempted to set
 	 * to false here.
 	 *
 	 * @param readOnly true enables read-only mode; false disables it
 	 * @throws SQLException if a database access error occurs or this
-	 *         method is called during a transaction or set to false.
+	 *         method is called during a transaction.
 	 */
 	public void setReadOnly(boolean readOnly) throws SQLException {
 		if (autoCommit == false) throw
 			new SQLException("changing read-only setting not allowed during transactions");
-		if (readOnly == false) throw
-			new SQLException("writable mode not supported");
+		if (readOnly == false)
+			addWarning("cannot setReadOnly(false): writable mode not supported");
 	}
 
 	/**
