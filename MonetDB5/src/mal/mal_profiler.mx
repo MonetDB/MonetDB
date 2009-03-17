@@ -289,6 +289,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFdisk    9	
 #define PROFstmt   10
 #define PROFaggr   11
+#define PROFprocess 12
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -306,6 +307,7 @@ static struct {
 	/*  9 */  { "disk", 0},
 	/*  10 */  { "statement", 0},
 	/*  11 */  { "aggregate", 0},
+	/*  12 */  { "process", 0},
 	/*  12 */  { 0, 0}
 };
 
@@ -419,11 +421,13 @@ offlineProfilerHeader(void)
 		log0("uordblks,\t");
 	}
 	if (profileCounter[PROFio].status) {
+		log0("blk reads,\t");
+		log0("blk writes,\t");
+	}
+	if (profileCounter[PROFprocess].status) {
 		log0("pg reclaim,\t");
 		log0("pg faults,\t");
 		log0("swaps,\t");
-		log0("blk reads,\t");
-		log0("blk writes,\t");
 		log0("ctxt switch,\t");
 		log0("inv switch,\t");
 	}
@@ -540,11 +544,14 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if (profileCounter[PROFio].status && delayswitch<0) {
+		log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		prevUsage = infoUsage;
+	}
+	if (profileCounter[PROFprocess].status && delayswitch<0) {
 		log("%d,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
 		log("%d,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
 		log("%d,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-		log("%d,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-		log("%d,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
 		log("%d,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
 		log("%d,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
 		prevUsage = infoUsage;
@@ -1120,18 +1127,21 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	    log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
 	    prevMalloc = infoMalloc;
 	}
-	if( profileCounter[PROFio].status ){
 #ifdef HAVE_SYS_RESOURCE_H
+	if( profileCounter[PROFio].status ){
+	    log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
+	    log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
+	    prevUsage = infoUsage;
+	}
+	if( profileCounter[PROFprocess].status ){
 	    log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
 	    log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
 	    log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
-	    log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
-	    log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
 	    log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
 	    log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
 	    prevUsage = infoUsage;
-#endif
 	}
+#endif
 */
 	if (profileCounter[PROFbytes].status) {
 		BUNins(TRACE_id_ibytes, &evnt, &mb->profiler[pc].ibytes, FALSE);
