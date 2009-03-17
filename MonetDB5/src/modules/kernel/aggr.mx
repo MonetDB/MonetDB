@@ -344,7 +344,7 @@ as the latter turned out to be rather expensive ...
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNt@7(bni, p);
 			if (hit[yy] == 0) {
-				*dst = dbl_nil;
+				*dst = @9_nil;
 			}
 			yy++;
 		}
@@ -444,7 +444,7 @@ as the latter turned out to be rather expensive ...
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNt@7(bni, p);
 			if (hit[yy] == 0) {
-				*dst = dbl_nil;
+				*dst = @9_nil;
 			}
 			yy++;
 		}
@@ -1419,7 +1419,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[yy] == 0) {
-				*dst = dbl_nil;
+				*dst = @9_nil;
 			}
 			yy++;
 		}
@@ -1532,7 +1532,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[yy] == 0) {
-				*dst = dbl_nil;
+				*dst = @9_nil;
 			}
 			yy++;
 		}
