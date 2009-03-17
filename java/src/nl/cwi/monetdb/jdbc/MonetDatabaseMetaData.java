@@ -554,12 +554,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Are multiple ResultSets from a single execute supported?
-	 * MonetDB probably supports it, but I don't
 	 *
 	 * @return true if so
 	 */
 	public boolean supportsMultipleResultSets() {
-		return(false);
+		return(true);
 	}
 
 	/**
