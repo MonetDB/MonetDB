@@ -77,7 +77,8 @@ public class MonetPreparedStatementJavaImpl
 		super(
 			connection,
 			resultSetType,
-			resultSetConcurrency
+			resultSetConcurrency,
+			ResultSet.HOLD_CURSORS_OVER_COMMIT
 		);
 
 		pQuery = prepareQuery;

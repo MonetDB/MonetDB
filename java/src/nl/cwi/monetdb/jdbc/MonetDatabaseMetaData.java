@@ -554,12 +554,11 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 
 	/**
 	 * Are multiple ResultSets from a single execute supported?
-	 * MonetDB probably supports it, but I don't
 	 *
 	 * @return true if so
 	 */
 	public boolean supportsMultipleResultSets() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -2772,7 +2771,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		   simultaneously; <code>false</code> otherwise
 	 */
 	public boolean supportsMultipleOpenResults() {
-		return(false);
+		return(true);
 	}
 
 	/**
@@ -2783,13 +2782,13 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		   after a statement has executed; <code>false</code> otherwise
 	 */
 	public boolean supportsGetGeneratedKeys() {
-		return(false);
+		return(true);
 	}
 
 	/**
-	 * Retrieves a description of the user-defined type (UDT) hierarchies defined in a
-	 * particular schema in this database. Only the immediate super type/
-	 * sub type relationship is modeled.
+	 * Retrieves a description of the user-defined type (UDT)
+	 * hierarchies defined in a particular schema in this database. Only
+	 * the immediate super type/ sub type relationship is modeled.
 	 * <P>
 	 * Only supertype information for UDTs matching the catalog,
 	 * schema, and type name is returned. The type name parameter

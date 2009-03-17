@@ -88,16 +88,18 @@ public class MonetPreparedStatement
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
 	MonetPreparedStatement(
-		MonetConnection connection,
-		int resultSetType,
-		int resultSetConcurrency,
-		String prepareQuery)
+			MonetConnection connection,
+			int resultSetType,
+			int resultSetConcurrency,
+			int resultSetHoldability,
+			String prepareQuery)
 		throws SQLException, IllegalArgumentException
 	{
 		super(
 			connection,
 			resultSetType,
-			resultSetConcurrency
+			resultSetConcurrency,
+			resultSetHoldability
 		);
 
 		if (!super.execute("PREPARE " + prepareQuery))
@@ -136,15 +138,17 @@ public class MonetPreparedStatement
 	 * @throws SQLException if an error occurs during login
 	 */
 	MonetPreparedStatement(
-		MonetConnection connection,
-		int resultSetType,
-		int resultSetConcurrency)
+			MonetConnection connection,
+			int resultSetType,
+			int resultSetConcurrency,
+			int resultSetHoldability)
 		throws SQLException
 	{
 		super(
 			connection,
 			resultSetType,
-			resultSetConcurrency
+			resultSetConcurrency,
+			resultSetHoldability
 		);
 		// initialise blank finals
 		monetdbType = null;

@@ -368,7 +368,8 @@ public class MonetConnection implements Connection {
 	public Statement createStatement() throws SQLException {
 		return(createStatement(
 					ResultSet.TYPE_FORWARD_ONLY,
-					ResultSet.CONCUR_READ_ONLY));
+					ResultSet.CONCUR_READ_ONLY,
+					ResultSet.HOLD_CURSORS_OVER_COMMIT));
 	}
 
 	/**
@@ -387,14 +388,52 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Statement createStatement(
-		int resultSetType,
-		int resultSetConcurrency)
+			int resultSetType,
+			int resultSetConcurrency)
+		throws SQLException
+	{
+		return(createStatement(
+					resultSetType,
+					resultSetConcurrency,
+					ResultSet.HOLD_CURSORS_OVER_COMMIT));
+	}
+
+	/**
+	 * Creates a Statement object that will generate ResultSet objects
+	 * with the given type, concurrency, and holdability.  This method
+	 * is the same as the createStatement method above, but it allows
+	 * the default result set type, concurrency, and holdability to be
+	 * overridden.
+	 *
+	 * @param resultSetType one of the following ResultSet constants:
+	 * ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE,
+	 * or ResultSet.TYPE_SCROLL_SENSITIVE
+	 * @param resultSetConcurrency one of the following ResultSet
+	 * constants: ResultSet.CONCUR_READ_ONLY or
+	 * ResultSet.CONCUR_UPDATABLE
+	 * @param resultSetHoldability one of the following ResultSet
+	 * constants: ResultSet.HOLD_CURSORS_OVER_COMMIT or
+	 * ResultSet.CLOSE_CURSORS_AT_COMMIT 
+	 *
+	 * @return a new Statement      object that will generate ResultSet
+	 * objects with the given type, concurrency, and holdability 
+	 * @throws SQLException if a database access error occurs or the
+	 * given parameters are not ResultSet constants indicating type,
+	 * concurrency, and holdability
+	 */
+	public Statement createStatement(
+			int resultSetType,
+			int resultSetConcurrency,
+			int resultSetHoldability)
 		throws SQLException
 	{
 		try {
 			Statement ret =
 				new MonetStatement(
-					this, resultSetType, resultSetConcurrency
+					this,
+					resultSetType,
+					resultSetConcurrency,
+					resultSetHoldability
 				);
 			// store it in the map for when we close...
 			statements.put(ret, null);
@@ -405,8 +444,6 @@ public class MonetConnection implements Connection {
 		// we don't have to catch SQLException because that is declared to
 		// be thrown
 	}
-
-	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
 
 	/**
 	 * Retrieves the current auto-commit mode for this Connection
@@ -588,7 +625,8 @@ public class MonetConnection implements Connection {
 			prepareStatement(
 					sql,
 					ResultSet.TYPE_FORWARD_ONLY,
-					ResultSet.CONCUR_READ_ONLY
+					ResultSet.CONCUR_READ_ONLY,
+					ResultSet.HOLD_CURSORS_OVER_COMMIT
 			)
 		);
 	}
@@ -614,9 +652,52 @@ public class MonetConnection implements Connection {
 	 *                      type and concurrency
 	 */
 	public PreparedStatement prepareStatement(
-		String sql,
-		int resultSetType,
-		int resultSetConcurrency)
+			String sql,
+			int resultSetType,
+			int resultSetConcurrency)
+		throws SQLException
+	{
+		return(
+			prepareStatement(
+					sql,
+					resultSetType,
+					resultSetConcurrency,
+					ResultSet.HOLD_CURSORS_OVER_COMMIT
+			)
+		);
+	}
+
+	/**
+	 * Creates a PreparedStatement object that will generate ResultSet
+	 * objects with the given type, concurrency, and holdability.
+	 * <br /><br />
+	 * This method is the same as the prepareStatement method above, but
+	 * it allows the default result set type, concurrency, and
+	 * holdability to be overridden.
+	 *
+	 * @param sql a String object that is the SQL statement to be sent
+	 * to the database; may contain one or more ? IN parameters
+	 * @param resultSetType one of the following ResultSet constants:
+	 * ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE,
+	 * or ResultSet.TYPE_SCROLL_SENSITIVE
+	 * @param resultSetConcurrency one of the following ResultSet
+	 * constants: ResultSet.CONCUR_READ_ONLY or
+	 * ResultSet.CONCUR_UPDATABLE
+	 * @param resultSetHoldability one of the following ResultSet
+	 * constants: ResultSet.HOLD_CURSORS_OVER_COMMIT or
+	 * ResultSet.CLOSE_CURSORS_AT_COMMIT 
+	 * @return a new PreparedStatement object, containing the
+	 * pre-compiled SQL statement, that will generate ResultSet objects
+	 * with the given type, concurrency, and holdability 
+	 * @throws SQLException if a database access error occurs or the
+	 * given parameters are not ResultSet constants indicating type,
+	 * concurrency, and holdability
+	 */
+	public PreparedStatement prepareStatement(
+			String sql,
+			int resultSetType,
+			int resultSetConcurrency,
+			int resultSetHoldability)
 		throws SQLException
 	{
 		try {
@@ -624,7 +705,11 @@ public class MonetConnection implements Connection {
 			if (!javaPreparedStatements) {
 				// use a server-side PreparedStatement
 				ret = new MonetPreparedStatement(
-					this, resultSetType, resultSetConcurrency, sql
+					this,
+					resultSetType,
+					resultSetConcurrency,
+					resultSetHoldability,
+					sql
 				);
 			} else {
 				// use a Java implementation of a PreparedStatement
@@ -696,7 +781,6 @@ public class MonetConnection implements Connection {
 	}
 
 	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) {return(null);}
-	public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return(null);}
 
 	/**
