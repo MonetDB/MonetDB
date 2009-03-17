@@ -89,7 +89,8 @@ public class MonetStatement implements Statement {
 	MonetStatement(
 		MonetConnection connection,
 		int resultSetType,
-		int resultSetConcurrency)
+		int resultSetConcurrency,
+		int resultSetHoldability)
 		throws SQLException, IllegalArgumentException
 	{
 		if (connection == null) throw
@@ -109,6 +110,11 @@ public class MonetStatement implements Statement {
 		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
 			addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.");
 			resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
+		}
+
+		// check type for supported holdability
+		if (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
+			addWarning("Close cursors at commit not supported, continuing with holdability to hold open cursors over commit.");
 		}
 
 		closed = false;

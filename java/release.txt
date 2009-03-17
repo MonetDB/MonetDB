@@ -34,8 +34,8 @@ Currently implemented:
     - prepareCall (CallableStatement not supported)
     - prepareStatement with column indices or names
     - setCatalog (there is no catalog management yet)
-    - getHoldability/setHoldability (close/hold cursors over commit is
-      not configurable)
+    - setHoldability (close/hold cursors over commit is not
+      configurable)
     - isReadOnly/setReadOnly (updateable result sets are not supported at
       all)
 
