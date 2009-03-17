@@ -314,6 +314,10 @@ as the latter turned out to be rather expensive ...
 		/* create tmp. sums array */
 		oid i;
 		sums = (@9*) GDKmalloc(range*sizeof(@9));
+		if (sums == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			sums[i] = zero;
 	}
@@ -378,6 +382,10 @@ as the latter turned out to be rather expensive ...
 		/* create tmp. prods array */
 		oid i;
 		prods = (@9*) GDKmalloc(range*sizeof(@9));
+		if (prods == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			prods[i] = zero;
 	}
@@ -442,6 +450,10 @@ as the latter turned out to be rather expensive ...
 		/* create tmp. sums array */
 		oid i;
 		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
+		if (sums == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			sums[i] = zero;
 	}
@@ -452,6 +464,12 @@ as the latter turned out to be rather expensive ...
 		return GDK_FAIL;
 	}
 	cnt = (BUN*) GDKmalloc(slots*sizeof(cnt[0]));
+	if (cnt == NULL) {
+		if (@1)
+			GDKfree(sums);
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	memset(cnt, 0, slots*sizeof(cnt[0]));
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
@@ -761,12 +779,15 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 @= aggrX3_minmax_ptr
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@2 && BATprepareHash(e)) {
-		GDKfree(extremes);
 		BBPreclaim(e);
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (ptr*) GDKmalloc(slots*sizeof(ptr));
+	if (extremes == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	memset(extremes, 0, slots*sizeof(ptr));
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	bhsb = b->hseqbase - 1;
@@ -817,12 +838,15 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 @= aggrX3_minmax_oid
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 	if (@2 && BATprepareHash(e)) {
-		GDKfree(extremes);
 		BBPreclaim(e);
 		return GDK_FAIL;
 	}
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (oid*) GDKmalloc(slots*sizeof(oid));
+	if (extremes == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	bhsb = b->hseqbase - 1;
@@ -1000,6 +1024,10 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 	if (@1) {
 		/* create tmp. cnt array */
 		cnt = (int*) GDKmalloc(range*sizeof(int));
+		if (cnt == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		memset(cnt, 0, range*sizeof(int));
 	}
 	if (@2 && BATprepareHash(bn)) {
@@ -1234,6 +1262,10 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		/* create tmp. sums array */
 		oid i;
 		sums = (@9*) GDKmalloc(range*sizeof(@9));
+		if (sums == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			sums[i] = zero;
 	}
@@ -1310,6 +1342,10 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		/* create tmp. prods array */
 		oid i;
 		prods = (@9*) GDKmalloc(range*sizeof(@9));
+		if (prods == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			prods[i] = zero;
 	}
@@ -1383,6 +1419,10 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		/* create tmp. sums array */
 		oid i;
 		sums = (dbl*) GDKmalloc(range*sizeof(dbl));
+		if (sums == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		for (i = 0; i < range; i++)
 			sums[i] = zero;
 	}
@@ -1393,6 +1433,12 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	cnt = (BUN*) GDKmalloc(slots*sizeof(cnt[0]));
+	if (cnt == NULL) {
+		if (@1)
+			GDKfree(sums);
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	memset(cnt, 0, slots*sizeof(cnt[0]));
 	/* scan b & g, adding sums, and incrementing counts */
 	base = BUNfirst(g);
@@ -1841,6 +1887,10 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (ptr*) GDKmalloc(slots*sizeof(ptr));
+	if (extremes == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	memset(extremes, 0, slots*sizeof(ptr));
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -1903,6 +1953,10 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	}
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (oid*) GDKmalloc(slots*sizeof(oid));
+	if (extremes == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
 	{ BUN i = 0; for (; i < slots; i++ ) extremes[i] = GDK_oid_@9; }
 	/* scan b & g and replace totals by the extreme value (just pointers to vals in b) */
 	base = BUNfirst(g);
@@ -2110,6 +2164,10 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	if (@1) {
 		/* create tmp. cnt array */
 		cnt = (int*) GDKmalloc(range*sizeof(int));
+		if (cnt == NULL) {
+			BBPreclaim(bn);
+			return GDK_FAIL;
+		}
 		memset(cnt, 0, range*sizeof(int));
 	}
 	if (@2 && BATprepareHash(bn)) {
