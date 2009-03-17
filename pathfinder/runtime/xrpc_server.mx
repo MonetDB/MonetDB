@@ -137,7 +137,8 @@ Find the options that should be pass to the XRPC server, currently \
 
 PROC rpcd_start() : void {
     var port := get_xrpc_port();
-    xrpc_trusted.append("http://127.0.0.1:"+str(port));
+    if(count(xrpc_trusted) > 0)
+        xrpc_trusted.append("http://127.0.0.1:"+str(port));
     if (monet_environment.find("monet_welcome") = "yes") 
         printf("%c XRPC administrative console at http://127.0.0.1:%d/admin\n", int(35), port);
     fork( rpcd_start(port, get_xrpc_open(), get_xrpc_options()) );
