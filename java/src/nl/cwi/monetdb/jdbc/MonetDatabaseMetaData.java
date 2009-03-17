@@ -2771,7 +2771,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 *		   simultaneously; <code>false</code> otherwise
 	 */
 	public boolean supportsMultipleOpenResults() {
-		return(false);
+		return(true);
 	}
 
 	/**
