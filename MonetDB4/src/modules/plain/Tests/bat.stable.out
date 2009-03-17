@@ -1065,8 +1065,8 @@ if (isnil(CATCH(count(bat("bc"))))) {
   }
   var i := 0LL;
   var n := lng(100*REMAP_PAGE_SIZE);
-  bc := bat(void,chr,n - 1LL).mmap(1).seqbase(0@0).rename("bc");
-  bl := bat(void,lng,n - 1LL).mmap(1).seqbase(0@0).rename("bl");
+  bc := bat(void,chr,n - 256LL).mmap(1).seqbase(0@0).rename("bc");
+  bl := bat(void,lng,n - 256LL).mmap(1).seqbase(0@0).rename("bl");
   while((i :+= 128LL) <= n) {
      bc.append(ac);
      bl.append(al);
