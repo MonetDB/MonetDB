@@ -1,0 +1,9 @@
+pf:add-doc("$TSTSRCDIR/parent_wrong_properties.SF-2668437.consumer04.xml","consumer04.xml")
+<>
+count(doc("consumer04.xml")//properties)
+<>
+count(doc("consumer04.xml")//*[properties])
+<>
+count(doc("consumer04.xml")//properties/..)
+<>
+count(doc("consumer04.xml")//properties/../properties)
