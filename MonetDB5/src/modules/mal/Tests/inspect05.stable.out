@@ -774,6 +774,8 @@ end main;
 [ "remap",			  "pattern",	  "optimizer",	  "():str ",																  "OPTremap;"						  ]
 [ "reduce",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTreduce;"						  ]
 [ "reduce",			  "pattern",	  "optimizer",	  "():str ",																  "OPTreduce;"						  ]
+[ "reorder",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",															  "OPTreorder;"					  ]
+[ "reorder",			  "pattern",	  "optimizer",	  "():str ",																	  "OPTreorder;"					  ]
 [ "strengthReduction",		  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTstrengthReduction;"				  ]
 [ "strengthReduction",		  "pattern",	  "optimizer",	  "():str ",																  "OPTstrengthReduction;"				  ]
 [ "singleton",			  "pattern",	  "optimizer",	  "(mod:str,fcn:str):str ",														  "OPTsingleton;"					  ]
