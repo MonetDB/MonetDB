@@ -204,7 +204,7 @@ On Windows64, in a command interpreter, run ``nmake clean VC`` in the
 extracted ``pthreads.2`` folder with the Visual Studio environment set
 to the appropriate values, e.g. by executing the command ``Open Visual
 Studio 2005 x64 Win64 Command Prompt``.  Then copy the files
-``pthreadsVC2.dll`` and ``pthreadsVC2.lib`` to ``C:\Pthreads\lib``.
+``pthreadVC2.dll`` and ``pthreadVC2.lib`` to ``C:\Pthreads\lib``.
 
 Diff
 ----
