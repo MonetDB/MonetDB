@@ -25,7 +25,9 @@ plans should be turned into a depth-first traversal.
 
 The approach here is to reorder the complete program.
 It is performed by basic block that ends in a side-effect
-bearing instruction.
+bearing instruction. 
+Simply walking backward and pulling out subplans is then
+the way to go.
 @{
 @mal
 pattern optimizer.reorder():str
@@ -135,19 +137,16 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			stream_printf(cntxt->fdout,"apply:");
 			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #endif
-			for(j=p->retc; j<p->argc; j++)
-			if( !isVarConstant(mb,getArg(p,j)) )
-				OPTdepthfirst(cntxt, mb, i, old, dep);
-			/* collect all left */
-			for(j=start; j<=i;j++)
-			if( old[j]){
+			/* collect all seen sofar by backward grouping */
+			for(j=i-1; j>=start;j--) {
 #ifdef DEBUG_OPT_REORDER
 			stream_printf(cntxt->fdout,"leftover: %d",start+1);
 			printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
 #endif
-				pushInstruction(mb,old[j]);
-				old[j]=0;
+				OPTdepthfirst(cntxt, mb, j, old, dep);
 			}
+			pushInstruction(mb,p);
+			old[i]= 0;
 			start = i+1;
 		}
 	}
