@@ -3059,24 +3059,9 @@ sort_specification_list:
  ;
 
 ordering_spec:
-    column_ref opt_asc_desc
-	{ dlist *l = L();
-	  append_symbol(l, _symbol_create_list(SQL_COLUMN, $1));
-	  append_int(l, $2);
-	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
- | func_ref opt_asc_desc
+    scalar_exp opt_asc_desc
 	{ dlist *l = L();
 	  append_symbol(l, $1);
-	  append_int(l, $2);
-	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
- | aggr_ref opt_asc_desc
-	{ dlist *l = L();
-	  append_symbol(l, $1);
-	  append_int(l, $2);
-	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
- | nonzero opt_asc_desc
-	{ dlist *l = L();
-	  append_symbol(l, _symbol_create_int(SQL_COLUMN, $1));
 	  append_int(l, $2);
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
 

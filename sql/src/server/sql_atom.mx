@@ -62,6 +62,9 @@ extern sql_subtype *atom_type(atom *a);
 extern void atom_destroy(atom *a);
 
 extern void atom_dump(atom *a, stream *s);
+
+extern lng atom_get_int(atom *a);
+
 #endif /* _SQL_ATOM_H_ */
 
 @c
@@ -135,6 +138,34 @@ atom_int(sql_subtype *tpe, lng val)
 		return a;
 	}
 }
+
+lng 
+atom_get_int(atom *a)
+{
+	lng r = 0;
+
+	if (!a->isnull) {
+		switch (ATOMstorage(a->data.vtype)) {
+		case TYPE_bte:
+			r = a->data.val.btval;
+			break;
+		case TYPE_sht:
+			r = a->data.val.shval;
+			break;
+		case TYPE_int:
+			r = a->data.val.ival;
+			break;
+		case TYPE_wrd:
+			r = a->data.val.wval;
+			break;
+		case TYPE_lng:
+			r = a->data.val.lval;
+			break;
+		}
+	}
+	return r;
+}
+
 
 atom *
 atom_dec(sql_subtype *tpe, lng val, double dval)

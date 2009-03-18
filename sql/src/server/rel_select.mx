@@ -1436,13 +1436,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 
 	assert(column_r->token == SQL_COLUMN && 
 		(column_r->type == type_list || column_r->type == type_int));
-	if (column_r->type == type_int) { /* dirty old column refs by number */
-		sql_exp *e = exps_get_exp((*rel)->exps, column_r->data.i_val);
-		
-		if (!e)
-			return NULL;
-		return exp_column(e->rname, e->r, exp_subtype(e), (*rel)->card, has_nil(e), is_intern(e));
-	}
+
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
 		atom *a;
@@ -3713,8 +3707,25 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			int direction = order->data.lval->h->next->data.i_val;
 			sql_exp *e = NULL;
 
-			if (col->token == SQL_COLUMN)
+			if (col->token == SQL_COLUMN) {
 				e = rel_column_ref(sql, &rel, col, f);
+				if (e && e->card <= CARD_ATOM) {
+					sql_subtype *tpe = e->f;
+					/* integer atom on the stack */
+					if (e->type == e_atom && 
+					    tpe->type->eclass == EC_NUM) {
+						atom *a = e->l?e->l:sql->args[e->flag];
+						int nr = (int)atom_get_int(a);
+
+						e = exps_get_exp(rel->exps, nr);
+						if (!e)
+							return NULL;
+						e = exp_column(e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+					} else {
+						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
+					}
+				}
+			}
 
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
