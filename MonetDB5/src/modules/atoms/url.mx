@@ -18,7 +18,6 @@
 @f url
 @a M. Kersten
 @a Y. Zhang
-@a L. Sidirourgos
 @v 1.3
 @* The URL module
 The URL module contains a collection of commands to manipulate
@@ -181,19 +180,6 @@ typedef str url;
 
 url_export str escape_str(str *retval, str s);
 url_export str unescape_str(str *retval, str s);
-
-#endif /* URL_H */
-
-@c
-#include "mal_config.h"
-#include "url.h"
-#include "mal.h"
-#include "mal_exception.h"
-
-void getword(char *word, char *line, char stop);
-char x2c(char *what);
-void plustospace(char *str);
-
 url_export str URLnew(str *url, str *val);
 url_export str URLgetAnchor(str *retval, str *val);
 url_export str URLgetBasename(str *retval, str *t);
@@ -216,6 +202,18 @@ url_export str URLnew4(str *url, str *protocol, str *server,
 url_export str URLnew3(str *url, str *protocol, str *server, str *file);
 url_export int URLfromString(str src, int *len, str *url);
 url_export int URLtoString(str *s, int *len, str src);
+
+#endif /* URL_H */
+
+@c
+#include "mal_config.h"
+#include "url.h"
+#include "mal.h"
+#include "mal_exception.h"
+
+void getword(char *word, char *line, char stop);
+char x2c(char *what);
+void plustospace(char *str);
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
