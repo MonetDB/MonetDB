@@ -1,0 +1,36 @@
+stdout of test 'or_in_crash` in directory 'src/test/bugs` itself:
+
+
+# 21:31:25 >  
+# 21:31:25 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=39745 --set xrpc_port=46837 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 21:31:25 >  
+
+# MonetDB server v5.11.0, based on kernel v1.29.0
+# Serving database 'mTests_src_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39745/
+# MonetDB/SQL module v2.29.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 21:31:25 >  
+# 21:31:25 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39745 
+# 21:31:25 >  
+
+% sys.product_class,	sys.product_class,	sys.product_class,	sys.customer # table_name
+% c0,	c1,	c2,	c3 # name
+% varchar,	varchar,	varchar,	varchar # type
+% 0,	0,	0,	0 # length
+
+# 21:31:25 >  
+# 21:31:25 >  Done.
+# 21:31:25 >  
+
