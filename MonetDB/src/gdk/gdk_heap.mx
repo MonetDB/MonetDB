@@ -184,7 +184,7 @@ HEAPextend(Heap *h, size_t size)
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
-			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
+			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 1);
 			ALLOCDEBUG THRprintf(GDKout, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, p, h->base);
 			if (h->base)
 				return 0;
