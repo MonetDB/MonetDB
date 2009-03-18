@@ -1,0 +1,491 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2008 CWI.
+@' All Rights Reserved.
+
+@f rdf_shredder
+@a L.Sidirourgos
+
+@+ Shredder for RDF Documents
+
+@c
+#include "mal_config.h"
+#include "mal_exception.h"
+#include <gdk.h>
+#include "url.h"
+#include "rdf.h"
+#include "raptor.h"
+
+typedef struct graphBATdef {
+	graphBATType batType;    /* BAT type             */
+	str name;                /* name of the BAT      */
+	int headType;            /* type of left column  */
+	int tailType;            /* type of right column */
+} graphBATdef;
+
+/* this list should be kept alligned with the graphBATType enum */
+static graphBATdef graphdef[N_GRAPH_BAT] = {
+	{S_SPO,   "_s_spo",   TYPE_void, TYPE_oid},
+	{P_SPO,   "_p_spo",   TYPE_void, TYPE_oid},
+	{O_SPO,   "_o_spo",   TYPE_void, TYPE_oid},
+	{S_SOP,   "_s_sop",   TYPE_void, TYPE_oid},
+	{P_SOP,   "_p_sop",   TYPE_void, TYPE_oid},
+	{O_SOP,   "_o_sop",   TYPE_void, TYPE_oid},
+	{S_PSO,   "_s_pso",   TYPE_void, TYPE_oid},
+	{P_PSO,   "_p_pso",   TYPE_void, TYPE_oid},
+	{O_PSO,   "_o_pso",   TYPE_void, TYPE_oid},
+	{S_POS,   "_s_pos",   TYPE_void, TYPE_oid},
+	{P_POS,   "_p_pos",   TYPE_void, TYPE_oid},
+	{O_POS,   "_o_pos",   TYPE_void, TYPE_oid},
+	{S_OSP,   "_s_osp",   TYPE_void, TYPE_oid},
+	{P_OSP,   "_p_osp",   TYPE_void, TYPE_oid},
+	{O_OSP,   "_o_osp",   TYPE_void, TYPE_oid},
+	{S_OPS,   "_s_ops",   TYPE_void, TYPE_oid},
+	{P_OPS,   "_p_ops",   TYPE_void, TYPE_oid},
+	{O_OPS,   "_o_ops",   TYPE_void, TYPE_oid},
+	{MAP_LEX, "_map_lex", TYPE_void, TYPE_str}
+};
+
+typedef struct parserData {
+	                              /**PROPERTIES             */
+	str location;                 /* rdf data file location */
+	oid tcount;                   /* triple count           */
+	raptor_parser *rparser;       /* the parser object      */
+	                              /**ERROR HANDLING         */
+	int exception;                /* raise an exception     */
+	int warning;                  /* number of warning msgs */
+	int error;                    /* number of error   msgs */
+	int fatal;                    /* number of fatal   msgs */
+	const char *exceptionMsg;     /* exception msgs         */
+	const char *warningMsg;       /* warning msgs           */
+	const char *errorMsg;         /* error   msgs           */
+	const char *fatalMsg;         /* fatal   msgs           */
+	                              /**GRAPH DATA             */
+	BAT *graph[N_GRAPH_BAT];      /* BATs for the result
+	                                 shredded RDF graph     */
+} parserData;
+
+@{
+@-
+The (fatal) errors and warnings produced by the raptor parser are handled
+by the next three message handler functions.
+
+@= raptor_exception
+@1->exception++;
+@1->exceptionMsg = @2;
+raptor_parse_abort (@1->rparser);
+
+@= rdf_parser_handler
+static void
+@1Handler (void *user_data, raptor_locator* locator,
+		const char *message)
+{
+	parserData *pdata = (parserData *) user_data;
+	pdata->@1Msg = GDKstrdup(message);
+	pdata->@1++;
+
+	/* check for a valid locator object and only then use it */
+	if (locator != NULL) {
+	} else {
+	}
+}
+
+@}
+
+@c
+@:rdf_parser_handler(fatal)@
+@:rdf_parser_handler(error)@
+@:rdf_parser_handler(warning)@
+
+@-
+The raptor parser needs to register a callback function that handles one triple
+at a time. Function rdf_parser_triple_handler() does exactly this.
+
+@= rdf_BUNappend_unq
+bun = BUNfnd(BATmirror(@2),(ptr)@3);
+if (bun == BUN_NONE) {
+	if (BATcount(@2) > 4 * @2->T->hash->mask) {
+		HASHdestroy(@2);
+		BAThash(BATmirror(@2), 2*BATcount(@2));
+	}
+	bun = (BUN) @2->batCount;
+	@2 = BUNappend(@2, (ptr)@3, TRUE);
+	if (@2 == NULL) {
+		@:raptor_exception(pdata, "could not append in@2")@
+	}
+}
+
+@= rdf_BUNappend
+BUNappend(@1, @2, TRUE);
+if (@1 == NULL) {
+	@:raptor_exception(pdata, "could not append in@1")@
+}
+
+@c
+static void
+tripleHandler(void* user_data, const raptor_statement* triple)
+{
+	parserData *pdata = ((parserData *) user_data);
+	BUN bun = BUN_NONE;
+	BAT **graph = pdata->graph;
+
+	if (triple->subject_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
+			|| triple->subject_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS) {
+		@:rdf_BUNappend_unq(bun, graph[MAP_LEX], triple->subject)@
+		@:rdf_BUNappend(graph[S_SPO], &bun)@
+		bun = BUN_NONE;
+	} else {
+		@:raptor_exception(pdata, "could not determine type of subject")@
+	}
+
+	if (triple->predicate_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE) {
+		@:rdf_BUNappend_unq(bun, graph[MAP_LEX], triple->predicate)@
+		@:rdf_BUNappend(graph[P_SPO], &bun)@
+		bun = BUN_NONE;
+	} else {
+		@:raptor_exception(pdata, "could not determine type of property")@
+	}
+
+	if (triple->object_type == RAPTOR_IDENTIFIER_TYPE_RESOURCE
+			|| triple->object_type == RAPTOR_IDENTIFIER_TYPE_ANONYMOUS
+			|| triple->object_type == RAPTOR_IDENTIFIER_TYPE_LITERAL) {
+		@:rdf_BUNappend_unq(bun, graph[MAP_LEX], triple->object)@
+		@:rdf_BUNappend(graph[O_SPO], &bun)@
+		bun = BUN_NONE;
+	} else {
+		@:raptor_exception(pdata, "could not determine type of object")@
+	}
+
+	pdata->tcount++;
+	return;
+}
+
+@-
+Function RDFParser() is the entry point to parse an RDF document.
+
+@= set_handlers
+/* set callback handler for triples */
+raptor_set_statement_handler   (@1, @2, tripleHandler);
+/* set message handlers */
+raptor_set_fatal_error_handler (@1, @2, fatalHandler);
+raptor_set_error_handler       (@1, @2, errorHandler);
+raptor_set_warning_handler     (@1, @2, warningHandler);
+
+@c
+/* creates a BAT for the triple table */
+static BAT*
+create_BAT(int ht, int tt, int size)
+{
+	BAT *b = BATnew(ht, tt, size);
+	if (b == NULL) {
+		return b;
+	}
+	BATseqbase(b, 0);
+
+	/* disable all properties */
+	b->tsorted = FALSE;
+	b->T->nosorted = 0;
+	b->tdense = FALSE;
+	b->T->nodense = 0;
+	b->tkey = FALSE;
+	b->T->nokey[0] = 0;
+	b->T->nokey[1] = 1;
+
+	return b;
+}
+
+static parserData*
+parserData_create (str location)
+{
+	int i;
+
+	parserData *pdata = (parserData *) GDKmalloc(sizeof(parserData));
+	if (pdata == NULL) return NULL;
+
+	pdata->tcount = 0;
+	pdata->exception = 0;
+	pdata->fatal = 0;
+	pdata->error = 0;
+	pdata->warning = 0;
+	pdata->location = location;
+
+	/* New empty BATs for shredding. We only reserve memory for
+	 * S_SPO, P_SPO, O_SPO and MAP_LEX in this stage, since these
+	 * are the ones to be populated now, while the rest will be
+	 * created in a post-shredding processing step
+	 */
+	for (i = 0; i <= O_SPO; i++) {
+		pdata->graph[i] = create_BAT (
+				graphdef[i].headType,
+				graphdef[i].tailType,
+				BATTINY);                       /* DOTO: estimate size */
+		if (pdata->graph[i] == NULL) {
+			return NULL;
+		}
+	}
+
+	/* create the MAP_LEX BAT */
+	pdata->graph[MAP_LEX] = create_BAT (
+			graphdef[MAP_LEX].headType,
+			graphdef[MAP_LEX].tailType,
+			BATTINY);                           /* DOTO: estimate size */
+	if (pdata->graph[MAP_LEX] == NULL) {
+		return NULL;
+	}
+	/* MAP_LEX must have the key property */
+	pdata->graph[MAP_LEX]->tkey = BOUND2BTRUE;
+	pdata->graph[MAP_LEX]->T->nokey[0] = 0;
+	pdata->graph[MAP_LEX]->T->nokey[1] = 0;
+
+	return pdata;
+}
+
+@-
+After the RDF document has been shredded into 3 bats and a lexical value
+dictionary, a post-shred processing step follows that orders the lexical
+dictionary, re-maps oids to match the ordered dictionary and finaly creates
+all 6 permutations of the (subject, predicate, object) order.
+
+However, it is still to be examined if it worth the time to refine the order
+of the last column. In most cases, during query time, the last column will need
+to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
+so we can investigate both possibilities.
+
+@= order
+@:order2(@1,@2,@3,@4,@5)@
+
+@
+
+@= order2
+if (!CTrefine(&ctref, @1, @3))         /* refine @3 given @1= sorted  */
+	goto bailout;
+BATsetaccess(ctref, BAT_READ);         /* force BATmark not to create copy   */
+ctref = BATmirror(BATmark(ctref,0));   /* map_oid[void,oid] gives the order  */
+
+/* leftfetchjoin to re-order all BATs */
+graph[@2_@5] = BATleftfetchjoin(ctref, @2, cnt);
+if (graph[@2_@5] == NULL) goto bailout;
+BBPcold(graph[@2_@5]->batCacheid);
+graph[@3_@5] = BATleftfetchjoin(ctref, @3, cnt);
+if (graph[@3_@5] == NULL) goto bailout;
+BBPcold(graph[@3_@5]->batCacheid);
+graph[@4_@5] = BATleftfetchjoin(ctref, @4, cnt);
+if (graph[@4_@5] == NULL) goto bailout;
+BBPcold(graph[@4_@5]->batCacheid);
+/* free ctref */
+BBPreclaim(ctref);
+@
+
+@= order3
+if ( !(CTrefine(&map_oid, @1, @3)         /* refine @3 given @1= sorted  */
+		&& CTrefine(&ctref, map_oid, @4)))/* refine @4 given @3          */
+	goto bailout;
+
+BBPreclaim(map_oid);                   /* free map_oid                       */
+map_oid = BATmirror(BATmark(ctref,0)); /* map_oid[void,oid] gives the order  */
+BBPreclaim(ctref);                     /* free o                             */
+
+/* leftfetchjoin to re-order all BATs */
+graph[@2_@5] = BATleftfetchjoin(map_oid, @2, cnt);
+if (graph[@2_@5] == NULL) goto bailout;
+BBPcold(graph[@2_@5]->batCacheid);
+graph[@3_@5] = BATleftfetchjoin(map_oid, @3, cnt);
+if (graph[@3_@5] == NULL) goto bailout;
+BBPcold(graph[@3_@5]->batCacheid);
+graph[@4_@5] = BATleftfetchjoin(map_oid, @4, cnt);
+if (graph[@4_@5] == NULL) goto bailout;
+BBPcold(graph[@4_@5]->batCacheid);
+/* free map_oid */
+BBPreclaim(map_oid);
+@
+
+@c
+int CTrefine(BAT **ret, BAT *b, BAT *a); /* from modules/kernel/group.mx */
+
+static str
+post_processing (parserData *pdata)
+{
+	int cnt;
+	BAT *map_oid, *S, *P, *O, *sorted, *ctref;
+	BAT **graph = pdata->graph;
+
+	/* order MAP_LEX */
+	BATorder(BATmirror(graph[MAP_LEX]));
+	map_oid = BATmark(graph[MAP_LEX], 0);   /* BATmark will create a copy */
+	BATorder(map_oid);
+	BATsetaccess(map_oid, BAT_READ);        /* force BAtmark not to copy bat */
+	map_oid = BATmirror(BATmark(BATmirror(map_oid), 0));
+	BATsetaccess(graph[MAP_LEX], BAT_READ); /* force BATmark not to copy bat */
+	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), 0));
+
+	/* convert old oids of S_SPO, P_SPO, O_SPO to new ones */
+	cnt = BATcount(graph[S_SPO]);
+	S = BATfetchjoin(graph[S_SPO], map_oid, cnt);
+	if (S == NULL) goto bailout;
+	BBPreclaim(graph[S_SPO]);
+	P = BATfetchjoin(graph[P_SPO], map_oid, cnt);
+	if (P == NULL) goto bailout;
+	BBPreclaim(graph[P_SPO]);
+	O = BATfetchjoin(graph[O_SPO], map_oid, cnt);
+	if (O == NULL) goto bailout;
+	BBPreclaim(graph[O_SPO]);
+	BBPreclaim(map_oid);
+
+	/* order SPO/SOP */
+	sorted = BATmirror(BATsort(BATmirror(S))); /* sort on S */
+	@:order(sorted,S,P,O,SPO)@
+	@:order(sorted,S,O,P,SOP)@
+	BBPreclaim(sorted);
+
+	/* order PSO/POS */
+	sorted = BATmirror(BATsort(BATmirror(P))); /* sort on P */
+	@:order(sorted,P,S,O,PSO)@
+	@:order(sorted,P,O,S,POS)@
+	BBPreclaim(sorted);
+
+	/* order OPS/OSP */
+	sorted = BATmirror(BATsort(BATmirror(O))); /* sort on O */
+	@:order(sorted,O,P,S,OPS)@
+	@:order(sorted,O,S,P,OSP)@
+	BBPreclaim(sorted);
+
+	/* free memory */
+	BBPreclaim(S);
+	BBPreclaim(P);
+	BBPreclaim(O);
+
+	return MAL_SUCCEED;
+
+bailout:
+	if (sorted  != NULL) BBPreclaim(sorted);
+	if (map_oid != NULL) BBPreclaim(map_oid);
+	if (ctref   != NULL) BBPreclaim(ctref);
+	if (S       != NULL) BBPreclaim(S);
+	if (P       != NULL) BBPreclaim(P);
+	if (O       != NULL) BBPreclaim(O);
+	return NULL;
+}
+
+@= clean_raptor
+/* Free memory of raptor */
+raptor_free_parser(rparser);
+raptor_free_uri(uri);
+raptor_finish();
+@
+
+@= clean
+if (pdata != NULL) {
+	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
+		if (pdata->graph[iret] != NULL)
+			BBPreclaim(pdata->graph[iret]);
+	}
+	GDKfree(pdata);
+}
+@
+
+@c
+/* Main RDF parser function that drives raptor */
+str
+RDFParser (int *retval, str *location, str *graphname)
+{
+	raptor_parser *rparser;
+	parserData *pdata;
+	raptor_uri *uri;
+	bit isURI;
+	str ret;
+	int iret;
+	BAT **graph;
+	BAT *retbat;
+	(void) graphname;
+
+	/* Init pdata  */
+	pdata = parserData_create(*location);
+	if (pdata == NULL) {
+		@:clean@
+		throw(RDF, "rdf.rdfShred",
+				"could not allocate enough memory for pdata\n");
+	}
+
+	/* Init raptor */
+	raptor_init();
+	pdata->rparser = rparser = raptor_new_parser("guess");
+	if (rparser == NULL) {
+		raptor_finish();
+		@:clean@
+		throw(RDF, "rdf.rdfShred", "could not create raptor parser object\n");
+	}
+	@:set_handlers(rparser, pdata)@
+	raptor_set_parser_strict(rparser, 0);
+
+	/* Parse URI or local file. */
+	ret = URLisaURL(&isURI, location);
+	if (ret != MAL_SUCCEED) {
+		return ret;
+	} else if (isURI) {
+		uri = raptor_new_uri((unsigned char *) pdata->location);
+		iret = raptor_parse_uri(rparser, uri, NULL);
+	} else {
+		uri = raptor_new_uri(
+				raptor_uri_filename_to_uri_string(pdata->location));
+		iret = raptor_parse_file(rparser, uri, NULL);
+	}
+	@:clean_raptor@
+
+	graph = pdata->graph;
+	assert (pdata->tcount == BATcount(graph[S_SPO]) &&
+			pdata->tcount == BATcount(graph[P_SPO]) &&
+			pdata->tcount == BATcount(graph[O_SPO]));
+
+	/* error check */
+	if (iret) {
+		@:clean@
+		throw(RDF, "rdf.rdfShred", "parsing failed\n");
+	}
+	if (pdata->exception) {
+		throw(RDF, "rdf.rdfShred", "%s\n", pdata->exceptionMsg);
+	} else if (pdata->fatal) {
+		throw(RDF, "rdf.rdfShred", "last fatal error was:\n%s\n",
+				pdata->fatalMsg);
+	} else if (pdata->error) {
+		throw(RDF, "rdf.rdfShred", "last error was:\n%s\n",
+				pdata->errorMsg);
+	} else if (pdata->warning) {
+		throw(RDF, "rdf.rdfShred", "last warning was:\n%s\n",
+				pdata->warningMsg);
+	}
+
+	/* post processing step */
+	ret = post_processing(pdata);
+	if (ret != MAL_SUCCEED) {
+		throw(RDF, "rdf.rdfShred", "could not post-proccess data");
+	}
+
+	/* prepare return bat of bats */
+	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
+	if (retbat == NULL) {
+		throw(RDF, "rdf.rdfShred",
+				"could not allocate enough memory for return bat");
+	}
+	BATseqbase(retbat, 0);
+	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
+		retbat = BUNappend(retbat, &graph[iret]->batCacheid, TRUE);
+		BBPunfix(graph[iret]->batCacheid);
+	}
+
+	GDKfree(pdata);
+
+	BBPkeepref(*retval = retbat->batCacheid);
+
+	return MAL_SUCCEED;
+}
