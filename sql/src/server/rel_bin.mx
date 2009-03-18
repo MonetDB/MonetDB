@@ -168,7 +168,7 @@ row2cols( stmt *sub)
 
 /* Here we also recognize 'IN'.
  * We change that into a 
- * reverse(semijoin( reverse(column), bat_of_vals)). 
+ * mark(reverse(semijoin( reverse(column), bat_of_vals)), 0). 
  */
 static int
 are_equality_exps( list *exps ) 
@@ -230,7 +230,7 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 		s = stmt_append(s, i);
 	}
 	c = exp_bin(sql, ce, left, right, grp, NULL);
-	s = stmt_reverse(stmt_semijoin(stmt_reverse(c), stmt_reverse(s)));
+	s = stmt_mark_tail(stmt_reverse(stmt_semijoin(stmt_reverse(c), stmt_reverse(s))), 0);
 
 	list_destroy(nl);
 	return s;
