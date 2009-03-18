@@ -1029,6 +1029,10 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 #endif
 
 
+@-
+The emergency flag can be set to force a fatal error if needed.
+Otherwise, the caller is able to deal with the lack of memory.
+@c
 void *
 GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 {
@@ -1047,7 +1051,7 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		size_t newmax = MAX(*maxsize, newsize);
 
 		s = (ssize_t *) GDKvmalloc(newsize, &newmax, emergency);
-		if (s == 0 && emergency == 0)
+		if (s == 0)
 			return s;
 		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
@@ -1062,12 +1066,12 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		GDKmemfail("GDKmalloc", size, BBPTRIM_ALL, 0);
 		GDKmalloc_prefixsize(s, size);
 		if (s == NULL) {
-			if (emergency){
-				GDKerror("GDKmallocmax: failed for %u bytes", size);
+			if (emergency == 0){
+				GDKerror("GDKmallocmax: failed for "SZFMT" bytes", size);
 				return NULL;
 			}
 			MT_alloc_print();
-			GDKfatal("GDKmallocmax: failed for %u bytes", size);
+			GDKfatal("GDKmallocmax: failed for "SZFMT" bytes", size);
 		} else {
 			THRprintf(GDKout, "#GDKmallocmax: recovery ok. Continuing..\n");
 		}
@@ -1082,7 +1086,7 @@ GDKmalloc(size_t size)
 {
 	size_t sz = size;
 	void *p;
-	p = GDKmallocmax(size, &size, 1);
+	p = GDKmallocmax(size, &size, 0);
 	ALLOCDEBUG THRprintf(GDKout, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", sz, size, PTRFMTCAST p);
 	return p;
 }
@@ -1091,7 +1095,7 @@ void *
 GDKzalloc(size_t size)
 {
 	size_t maxsize = size;
-	void *p = GDKmallocmax(size, &maxsize, 1);
+	void *p = GDKmallocmax(size, &maxsize, 0);
 	ALLOCDEBUG THRprintf(GDKout, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
 	if (p) memset(p, 0, size);
 	return p;
@@ -1170,7 +1174,7 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 	}
 #endif
 	if (size <= 0) {
-		GDKfatal("GDKreallocmax: called with size %u", size);
+		GDKfatal("GDKreallocmax: called with size "SZFMT"", size);
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	oldsize = GDK_MEM_BLKSIZE(s);
@@ -1198,9 +1202,19 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 
 		CHKMEM(newsize, 0);
 		blk = realloc(((char *) blk) - 8, newsize + GLIBC_BUG);
-		if (blk == NULL && emergency) {
+		if (blk == NULL) {
 			GDKmemfail("GDKrealloc", newsize, BBPTRIM_ALL, 0);
 			blk = realloc(((char *) oldblk) - 8, newsize);
+			if (s == NULL) {
+				if (emergency == 0){
+					GDKerror("GDKreallocmax: failed for "SZFMT" bytes", newsize);
+					return NULL;
+				}
+				MT_alloc_print();
+				GDKfatal("GDKreallocmax: failed for "SZFMT" bytes", newsize);
+			} else {
+				THRprintf(GDKout, "#GDKremallocmax: recovery ok. Continuing..\n");
+			}
 		}
 		if (blk != NULL) {
 			/* place 8 bytes before it */
@@ -1236,7 +1250,7 @@ GDKrealloc(void *blk, size_t size)
 {
 	size_t sz = size;
 	void *p;
-	p = GDKreallocmax(blk, size, &size, 1);
+	p = GDKreallocmax(blk, size, &size, 0);
 	ALLOCDEBUG THRprintf(GDKout, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p);
 	return p;
 }
@@ -1317,10 +1331,11 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 		if (ret == NULL) {
 			if (emergency == 0) {
 				ALLOCDEBUG THRprintf(GDKout, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
+				GDKerror("GDKvmalloc: failed for "SZFMT" bytes", size);
 				return NULL;
 			}
 			MT_alloc_print();
-			GDKfatal("GDKvmalloc: failed for %u bytes", size);
+			GDKfatal("GDKvmalloc: failed for "SZFMT" bytes", size);
 		} else {
 			THRprintf(GDKout, "#GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
 		}
@@ -1339,16 +1354,16 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 	void *ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
 
 	if (ret == NULL) {
-		GDKmemfail("GDKvrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
+		GDKmemfail("GDKvmrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
 		ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
 		if (ret == NULL) {
 			if (emergency == 0) {
 				ALLOCDEBUG THRprintf(GDKout, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
-
+				GDKerror("GDKvmalloc: failed for "SZFMT" bytes (from "SZFMT")", newsize, oldsize);
 				return NULL;
 			}
 			MT_alloc_print();
-			GDKfatal("GDKvrealloc: failed for %u bytes (from %u)", newsize, oldsize);
+			GDKfatal("GDKvmrealloc: failed for "SZFMT" bytes (from "SZFMT")", newsize, oldsize);
 		} else {
 			THRprintf(GDKout, "#GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
 		}
