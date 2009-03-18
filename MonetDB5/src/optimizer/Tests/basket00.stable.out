@@ -48,7 +48,9 @@ function user.main():void;
 #make the test self contained. 
     mdb.list("datacell","bqs0_0");
 end main;
-factory user.bqs0_0(X7:int):void;
+factory datacell.bqs0_0(X7:int):void;
+    basket.lock(X2);
+    basket.lock(X3);
 # the marker of the [ 
 #generate binds for all columns 
     X2:bat[:oid,:int]  := basket.bind("sys","r","i",0);
@@ -69,7 +71,9 @@ factory user.bqs0_0(X7:int):void;
     bat.delete(X2,X21);
     basket.unlock(X3);
     basket.unlock(X2);
-barrier _34 := true;
+barrier _36 := true;
+    basket.lock(X2);
+    basket.lock(X3);
 # the marker of the [ 
 #generate binds for all columns 
     X2:bat[:oid,:int]  := basket.bind("sys","r","i",0);
@@ -90,8 +94,8 @@ barrier _34 := true;
     bat.delete(X2,X21);
     basket.unlock(X3);
     basket.unlock(X2);
-    redo _34 := true;
-exit _34;
+    redo _36 := true;
+exit _36;
 end bqs0_0;
 
 # 14:09:12 >  
