@@ -1006,15 +1006,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #STDOUT.flush()
 
     if THISFILE == "Mtest.py":
-        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR', 'XRPC_DOCROOT':
+        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR':
             if env.has_key(LogDBvar):
                 LogDBdir = os.path.join(env[LogDBvar],TSTDB)
                 if LogDBvar in 'SQL_LOGDIR':
                     LogDBtxt = "sql log directory for "
                 elif LogDBvar in 'XQUERY_LOGDIR':
                     LogDBtxt = "xquery log directory for "
-                elif LogDBvar in 'XRPC_DOCROOT':
-                    LogDBtxt = "xrpc http document root directory for "
                 else:
                     LogDBtxt = ""
                 if LogDBdir and os.path.exists(LogDBdir):
@@ -3383,11 +3381,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set xrpc_docroot=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['TSTSRCBASE'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set xrpc_docroot=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['TSTSRCBASE'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])

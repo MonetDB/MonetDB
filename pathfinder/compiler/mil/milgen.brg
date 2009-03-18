@@ -10315,13 +10315,25 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 				         lit_int(4)) ) ) );
                         env_add (p->env, fc_item_a, aat_int, new_item);
 		    }
-
-		    /* copy the pos bat */
 		    PFalg_simple_type_t postype = op1->schema.items[1].type;
-	            mvar_t *p_pos  = env_mvar (
+		    /* now copy the pos bat */
+	            mvar_t *p_pos  = env_mvar_unsafe (
                                          op1->env,
                                          op1->schema.items[1].name /* pos */,
                                          postype);
+		    if ( !p_pos && (postype & aat_pre) ) {
+		        /* it must be a polymorpic pos, try it with only aat_pre as type */
+	               	p_pos  = env_mvar (
+                                         op1->env,
+                                         op1->schema.items[1].name /* pos */,
+                                         aat_pre);
+		    } else {
+		        /* make it generate the original error */
+	                p_pos  = env_mvar(
+                                         op1->env,
+                                         op1->schema.items[1].name /* pos */,
+                                         postype);
+		    }
 		    pin(p_pos,1);
                     env_add (p->env, fc_pos_a, aat_nat, p_pos);
 		} else if (strcmp(fcname,PFT_INFO) == 0 ) {
