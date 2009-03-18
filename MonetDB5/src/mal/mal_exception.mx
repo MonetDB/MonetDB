@@ -139,7 +139,8 @@ enum malexception {
 	PARSE,
 	ARITH,
 	PERMD,
-	SQL
+	SQL,
+	RDF
 };
 
 #define MAL_SUCCEED ((str) 0) /* no error */
@@ -182,6 +183,7 @@ static char *exceptionNames[] = {
 /*11 */	"ArithmeticException",
 /*12 */	"PermissionDeniedException",
 /*13 */	"SQLException",
+/*13 */	"RDFException",
 /*EOE*/	NULL
 };
 
