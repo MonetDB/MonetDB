@@ -123,6 +123,9 @@ rel_destroy_(sql_rel *rel)
 	} else if (rel->op == op_basetable) {
 		if (rel->p)
 			prop_destroy(rel->p);
+	} else if (is_modify(rel->op)) {
+		if (rel->r)
+			rel_destroy(rel->r);
 	}
 }
 
@@ -2072,6 +2075,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!left || (!left->l && f == sql_sel)) {
 			needproj = (left != NULL);
 			left = rel_project_exp(l);
+			l = exp_dup(l);
 		} else 
 			left = rel_dup(left);
 
@@ -2141,8 +2145,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				else 
 					*rel = left;
 			}
+			l = exp_dup(l);
+			r = exp_dup(r);
 			if (sc->token == SQL_NOT_IN) 
-				e = rel_binop_(sql, l, r, NULL, "!=", 0);
+				e = rel_binop_(sql, l, r, NULL, "<>", 0);
 			else
 				e = rel_binop_(sql, l, r, NULL, "=", 0);
 			return e;
@@ -2394,6 +2400,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			l = rel_value_exp(sql, &left, lo, f, ek);
 		} else if (!left) {
  			left = rel_project_exp(exp_label(l, ++sql->label));
+			l = exp_dup(l);
 		}
 		if (!l)
 			return NULL;

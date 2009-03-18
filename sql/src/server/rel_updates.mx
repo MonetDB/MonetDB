@@ -241,6 +241,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	exps = new_exp_list();
 	for (i = 0; i<len; i++) 
 		list_append(exps, inserts[i]);
+	_DELETE(inserts);
 	list_destroy(r->exps);
 	r->exps = exps;
 	return rel_insert(t, r);

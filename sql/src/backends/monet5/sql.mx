@@ -1033,6 +1033,7 @@ First introduce the routines to be called by the front-end.
 #include <store_sequence.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
+#include <rel_select.h>
 #include <rel_dump.h>
 #include <rel_bin.h>
 #include <math.h>
@@ -1100,6 +1101,7 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 			rel_print(c, r, 0);
 		}
 		s = output_rel_bin(c, r);
+		rel_destroy(r);
 		if (s) {
 			stmt *opt;
 
