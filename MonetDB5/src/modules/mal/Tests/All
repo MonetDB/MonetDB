@@ -62,4 +62,4 @@ xml10
 
 cluster00
 
-HAVE_RAPTOR?rdf
+#HAVE_RAPTOR?rdf
