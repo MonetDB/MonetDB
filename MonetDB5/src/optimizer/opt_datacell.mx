@@ -111,7 +111,7 @@ pattern optimizer.datacell():str
 address OPTdatacell;
 pattern optimizer.datacell(mod:str, fcn:str):str
 address OPTdatacell
-comment "Map-execute-reduce parallelism optimizer";
+comment "Basket expression optimizer";
 
 @h
 #ifndef _OPT_DATACELL_
@@ -136,7 +136,7 @@ This means we have to take them out one-by-one.
 static int
 BASKETblock(Client cntxt, MalBlkPtr mb, int *start, int *last)
 {
-	int i, started= 0, baskets=0;
+	int i, var= 0, baskets=0;
 	InstrPtr p;
 
 	(void) cntxt;
@@ -146,17 +146,15 @@ BASKETblock(Client cntxt, MalBlkPtr mb, int *start, int *last)
 		if ( p->barrier== BARRIERsymbol &&
 			 getModuleId(p) == datacellRef &&
 			 getFunctionId(p) == basketRef){
-			if ( started) 
-				return 0;
 			*start = i+1;
-			started= getArg(p,0);
+			var= getArg(p,0);
 			baskets++;
 		}
 		/* check for closing stuff */
 		if ( p->barrier == EXITsymbol &&
-			getArg(p,0) == started){
+			getArg(p,0) == var){
 			*last = i;
-			started = 0;
+			return 1;
 		}
 	}
 	return baskets;
@@ -189,7 +187,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* bake a factory */
 		snprintf(buf,256,"bq%s", getArgName(mb,getInstrPtr(mb,0),0));
-		factory= newFunction(putName("user",4), putName(buf,strlen(buf)), FACTORYsymbol);
+		factory= newFunction(putName("datacell",8), putName(buf,strlen(buf)), FACTORYsymbol);
 		insertSymbol(cntxt->nspace,factory);
 		/* copy symbol table from source */
 		mf= factory->def;
@@ -200,10 +198,11 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			copyVariable(mf, mb, getVar(mb, i));
 			mf->vtop++;
 		}
-
 		sig= getInstrPtr(mf,0);
+/*
 		setFunctionId(sig,putName(buf,strlen(buf)));
 		sig->token = FACTORYsymbol;
+*/
 
 		limit = mb->stop;
 		old = mb->stmt;
@@ -211,7 +210,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		/* copy the first part without modification */
 		for (i = 0; i < first-1; i++) 
 			pushInstruction(mb,old[i]);
-		q= newStmt(mb,putName("user",4),sig->fcnname);
+		q= newStmt(mb,putName("datacell",8),sig->fcnname);
 @-
 Copying the statements should be done with care. In particular,
 all variables not declared within the basket expression should
@@ -222,6 +221,18 @@ denote variables in the factory.
 		declared = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 		locks = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->stop);
 		ltop = 0;
+@-
+Keep a list of bind operations, because they trigger unlocks.
+@c
+		for (i = first; i < last; i++) {
+			p = old[i];
+			if( getModuleId(p) == basketRef &&
+				getFunctionId(p) == bindRef){
+				locks[ltop++] = p;
+				p= newStmt(mf,basketRef,putName("lock",4));
+				p= pushArgument(mf,p, getArg(old[i],0));
+			}
+		}
 
 		for (i = first; i < last; i++) {
 			p = old[i];
@@ -236,13 +247,6 @@ denote variables in the factory.
 
 			for (k=0; k<p->retc; k++)
 				declared[getArg(p,k)]= TRUE;
-@-
-Keep a list of bind operations, because they trigger unlocks.
-@c
-			if( getModuleId(p) == basketRef &&
-				getFunctionId(p) == bindRef)
-				locks[ltop++] = p;
-
 			pushInstruction(mf,p);
 		}
 @-

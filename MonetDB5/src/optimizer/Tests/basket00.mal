@@ -1,4 +1,5 @@
 #make the test self contained.
+#insert into s select sum(i) from r where r.i>0;
 module basket;
 function unlock(a:any);
 end unlock;
@@ -14,7 +15,7 @@ end basket;
 function datacell.s0_0(A0:int):void;
     X7 := A0;
 barrier go:=datacell.basket(); # the marker of the [
-    #generate binds for all columns
+    #generate binds for all input columns
     X2:bat[:oid,:int]  := basket.bind("sys","r","i",0);
     X8 := algebra.thetauselect(X2,X7,">");
     X10 := calc.oid(0@0);
@@ -24,7 +25,7 @@ barrier go:=datacell.basket(); # the marker of the [
     X17 := algebra.selectNotNil(X14);
     X18:lng  := aggr.sum(X17);
     X19 := calc.int(X18);
-    #generate binds for all columns
+    #generate binds for all output columns
     X3:bat[:oid,:int]  := basket.bind("sys","s","j",1);
     #generate updates for all columns
     X20:= bat.append(X3,X19);
