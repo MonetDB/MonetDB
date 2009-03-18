@@ -240,9 +240,11 @@ the next one.
 @h
 	int		actions;
 	lng		totaltime;	/* sum of elapsed processing times */
+	struct RECSTAT *rcc;	/* recycling stat */
 #ifdef HAVE_TIMES
 	struct tms	workload;
 #endif
+
 } *Client, ClientRec;
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
@@ -296,7 +298,7 @@ actions to obtain client records.
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
-#include "mal_recycle.h"
+
 
 /* This should be in src/mal/mal.h, as the function is implemented in 
  * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
@@ -404,6 +406,7 @@ Client MCgetClient()
 	return NULL;
 }
 
+
 Client MCfindClient(oid user, str scen, bstream *fin, stream *fout) 
 {
 	Client c = NULL;
@@ -443,7 +446,9 @@ Client MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 		c->flags= MCdefault;
 		c->fdout = fout ? fout : GDKstdout;
 		c->mdb = 0;
-		RECYCLEshutdown(c);
+		c->login = time(0);
+		memset((char *)c->rcc, 0, sizeof(RecStat));
+		c->rcc->curQ = -1;
 		/* (re)activate thread */
 		MT_up_sema(c->s, "MCfindClient");
       return c;
@@ -534,6 +539,8 @@ Client MCinitClient(oid user, bstream *fin, stream *fout)
 
 	c->actions =0;
 	c->totaltime= 0;
+	c->rcc = (RecPtr) GDKzalloc(sizeof(RecStat));
+	c->rcc->curQ = -1;
 	MT_init_sema(c->s, 0, "MCinitClient");
 	return c;
 }
@@ -633,7 +640,6 @@ void freeClient(Client c)
 	Thread t= c->mythread;
 	c->mode = FINISHING;
 
-    RECYCLEshutdown(c);
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, 
@@ -661,6 +667,10 @@ void freeClient(Client c)
 	c->father = 0;
 	c->login = c->lastcmd = 0;
 	c->delay =  0;
+	if(c->rcc){ 
+		GDKfree(c->rcc);
+		c->rcc = NULL;
+	}
 @-
 The threads may not be removed, but should become dormant
 @c
