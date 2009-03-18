@@ -459,7 +459,7 @@ str defaultPlan=
 	"joinPath,"
 /*	"accumulators,"*/
 	"deadcode,"
-	"reorder,"
+ 	/* "reorder,"*/
 	/*"recycle,"*/
 	"reduce,"
 	"garbageCollector,"
