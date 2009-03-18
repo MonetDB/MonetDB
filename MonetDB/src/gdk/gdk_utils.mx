@@ -1083,7 +1083,7 @@ GDKmalloc(size_t size)
 	size_t sz = size;
 	void *p;
 	p = GDKmallocmax(size, &size, 1);
-	ALLOCDEBUG THRprintf(GDKout, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", sz, size, p);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", sz, size, PTRFMTCAST p);
 	return p;
 }
 
@@ -1092,7 +1092,7 @@ GDKzalloc(size_t size)
 {
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 1);
-	ALLOCDEBUG THRprintf(GDKout, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, p);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
 	if (p) memset(p, 0, size);
 	return p;
 }
@@ -1150,7 +1150,7 @@ GDKfree_(void *blk)
 void
 GDKfree(void *blk)
 {
-	ALLOCDEBUG THRprintf(GDKout, "#GDKfree " PTRFMT "\n", blk);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKfree " PTRFMT "\n", PTRFMTCAST blk);
 	GDKfree_(blk);
 }
 
@@ -1237,7 +1237,7 @@ GDKrealloc(void *blk, size_t size)
 	size_t sz = size;
 	void *p;
 	p = GDKreallocmax(blk, size, &size, 1);
-	ALLOCDEBUG THRprintf(GDKout, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, blk, p);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p);
 	return p;
 }
 
@@ -1275,7 +1275,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 			THRprintf(GDKout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
-	ALLOCDEBUG THRprintf(GDKout, "#GDKmmap " SZFMT " " SZFMT " " PTRFMT "\n", off, len, ret);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKmmap " SZFMT " " SZFMT " " PTRFMT "\n", off, len, PTRFMTCAST ret);
 	if (ret != (void *) -1L) {
 		/* since mmap directly have content we say its zero-ed memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
@@ -1290,7 +1290,7 @@ GDKmunmap(void *addr, size_t size)
 {
 	int ret;
 
-	ALLOCDEBUG THRprintf(GDKout, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, addr);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
 	MT_alloc_register(addr, size, 'm');
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
@@ -1316,7 +1316,7 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 		ret = MT_vmalloc(size, maxsize);
 		if (ret == NULL) {
 			if (emergency == 0) {
-				ALLOCDEBUG THRprintf(GDKout, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, ret);
+				ALLOCDEBUG THRprintf(GDKout, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
 				return NULL;
 			}
 			MT_alloc_print();
@@ -1325,7 +1325,7 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 			THRprintf(GDKout, "#GDKvmalloc(" SZFMT "): recovery ok. Continuing..\n", size);
 		}
 	}
-	ALLOCDEBUG THRprintf(GDKout, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, ret);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
 	if (ret != NULL) {
 		@:meminc(size,*maxsize,"GDKvmalloc")@
 		CHKMEM(size, *maxsize);
@@ -1343,7 +1343,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 		ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
 		if (ret == NULL) {
 			if (emergency == 0) {
-				ALLOCDEBUG THRprintf(GDKout, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, pold, ret);
+				ALLOCDEBUG THRprintf(GDKout, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
 
 				return NULL;
 			}
@@ -1353,7 +1353,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 			THRprintf(GDKout, "#GDKvmrealloc(" SZFMT "): recovery ok. Continuing..\n", newsize);
 		}
 	}
-	ALLOCDEBUG THRprintf(GDKout, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, pold, ret);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
 	if (ret != NULL) {
 		@:memdec(oldsize,oldmax,"GDKvmrealloc")@
 		@:meminc(newsize,*newmax,"GDKvmrealloc")@
@@ -1365,7 +1365,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 void
 GDKvmfree(void *blk, size_t size, size_t maxsize)
 {
-	ALLOCDEBUG THRprintf(GDKout, "#GDKvmfree " SZFMT " " PTRFMT "\n", maxsize, blk);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKvmfree " SZFMT " " PTRFMT "\n", maxsize, PTRFMTCAST blk);
 	MT_vmfree(blk, maxsize);
 	@:memdec(size,maxsize,"GDKvmfree")@
 }
