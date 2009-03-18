@@ -516,6 +516,8 @@ MALexitClient(Client c)
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
 	for ( i=1; i<c->curprg->def->vtop; i++)
 		freeVariable(c->curprg->def,i);
+	GDKfree(c->glb);
+	c->glb = NULL;
 	c->curprg->def->vtop = 1;
 	MSinitClientPrg(c,"user", "main");
 	return NULL;
