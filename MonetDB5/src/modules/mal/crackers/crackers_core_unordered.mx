@@ -216,7 +216,6 @@ CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
         oid hdummy;
         @1 tdummy;
 	
-printf("# CRKcrackUnorderedZero_@2_@1(b,mval,first="OIDFMT",last="OIDFMT")\n",(oid)first,(oid)last);
 
         /* set bounds for the iterator */
         t0 = (@1 *)Tloc(b, BUNfirst(b));
@@ -225,26 +224,19 @@ printf("# CRKcrackUnorderedZero_@2_@1(b,mval,first="OIDFMT",last="OIDFMT")\n",(o
         fh = (oid*)Hloc(b, BUNfirst(b) + first);
         lh = (oid*)Hloc(b, BUNfirst(b) + last);
 
-	while (ft < lt && @5_@3(ft, &mval, @6@1)) {
-		ft++; fh++;
-	}  
-	hdummy = *fh;
-	tdummy = *ft;
-	while (ft < lt) {
-		while (ft < lt && @5_@4(lt, &mval, @6@1)) {
-			lt--; lh--;
-		}  
-		*fh = *lh;
-		*ft = *lt;
-		while (ft < lt && @5_@3(ft, &mval, @6@1)) {
-			ft++; fh++;
-		}  
-		*lh = *fh;
-		*lt = *ft;
-	}  
-	assert(ft == lt);
-	*fh = hdummy;
-	*ft = tdummy;
+        while(ft<lt) {
+                if (@5_@3(ft, &mval,@6@1)){
+                        ft++; fh++;
+		}
+                else {
+                        while( @5_@4(lt, &mval,@6@1) && lt>ft){
+                                lt--; lh--;
+			}
+                        @:shuffle(@1,ft,lt,fh,lh)@
+                        lt--;lh--;
+                        ft++;fh++;
+                }
+        }
 
 	if (lt == ft) {
 		if (@5_@4(lt, &mval,@6@1)){
@@ -265,8 +257,6 @@ printf("# CRKcrackUnorderedZero_@2_@1(b,mval,first="OIDFMT",last="OIDFMT")\n",(o
 		else
 			*pos = (oid) BUNfirst(b);
 	}		
-
-printf("# => pos="OIDFMT"\n",*pos);
 		
         return MAL_SUCCEED;
 }

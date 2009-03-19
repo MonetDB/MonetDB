@@ -571,7 +571,7 @@ ll_upwards(               /* RESULT: */
         }
         bn->tsorted = 0;
         if (niters == 1) {
-            /*bn->tsorted = GDK_SORTED;*/
+            bn->tsorted = GDK_SORTED;
             BATkey(BATmirror(bn), 1);
         }
         *ret = bn;
