@@ -1291,7 +1291,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 			THRprintf(GDKout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
-	ALLOCDEBUG THRprintf(GDKout, "#GDKmmap " SZFMT " " SZFMT " " PTRFMT "\n", off, len, PTRFMTCAST ret);
+	ALLOCDEBUG THRprintf(GDKout, "#GDKmmap " LLFMT " " SZFMT " " PTRFMT "\n", (lng) off, len, PTRFMTCAST ret);
 	if (ret != (void *) -1L) {
 		/* since mmap directly have content we say its zero-ed memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
