@@ -318,7 +318,8 @@ static str
 post_processing (parserData *pdata)
 {
 	int cnt;
-	BAT *map_oid, *S, *P, *O, *sorted, *ctref;
+	BAT *map_oid = NULL, *S = NULL, *P = NULL, *O = NULL, *sorted = NULL,
+			*ctref= NULL;
 	BAT **graph = pdata->graph;
 
 	/* order MAP_LEX */
