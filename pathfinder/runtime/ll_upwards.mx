@@ -571,7 +571,15 @@ ll_upwards(               /* RESULT: */
         }
         bn->tsorted = 0;
         if (niters == 1) {
-            bn->tsorted = GDK_SORTED;
+            /* StM:
+             * With only 1 iter, the item's/pre's in the result should be sorted,
+             * but they are apparently not. Not setting the sortedness property
+             * seems to avoid
+             * [ 2668437 ] PF runtime: parent step produces not/wrongly sorted result
+             * https://sourceforge.net/tracker/index.php?func=detail&aid=2668437&group_id=56967&atid=482468
+             * without harming any (other) Pathfinder/XQuery tests.
+             */
+            /*bn->tsorted = GDK_SORTED;*/
             BATkey(BATmirror(bn), 1);
         }
         *ret = bn;
