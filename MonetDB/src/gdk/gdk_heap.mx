@@ -120,7 +120,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKfree(of);
 	}
 	if (h->base == NULL) {
-		GDKerror("HEAPalloc: Insufficient space for HEAP.");
+		GDKerror("HEAPalloc: Insufficient space for HEAP of "SZFMT" bytes.", h->size);
 		return -1;
 	}
 	h->newstorage = h->storage;
