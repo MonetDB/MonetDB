@@ -6453,6 +6453,13 @@ xquery_prelude(void)
 #endif
     }
 
+    if (GDKgetenv("xrpc_docroot") == NULL) {
+        char xrpc_docroot[1024];
+        snprintf(xrpc_docroot, 1024, "%s%cshare%cMonetDB%cxrpc",
+                    PATHFINDER_PREFIX, DIR_SEP, DIR_SEP, DIR_SEP);
+        GDKsetenv("xrpc_docroot",xrpc_docroot);
+    }
+
     MT_init_lock(pf_compiler_lock, "pf_compiler_lock");
     MT_init_lock(pf_module_lock, "pf_module_lock");
     MT_init_lock(pf_cache_lock, "pf_cache_lock");
