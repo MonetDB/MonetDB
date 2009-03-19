@@ -106,7 +106,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
 		ALLOCDEBUG THRprintf(GDKout, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
 		if (h->base == 0)
-			GDKerror("HEAPalloc: Insufficient space for HEAP.");
+			GDKerror("HEAPalloc: Insufficient space for HEAP of "SZFMT" bytes.", h->size);
 	}
 	if (h->filename && h->base == NULL) {
 		char *of = h->filename;

@@ -18,7 +18,7 @@
 MTSAFE
 INCLUDES = -I.. $(MONETDB_INCS) $(READLINE_INCS) $(OPENSSL_INCS) $(ICONV_CFLAGS)
 
-MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS) $(ICONV_LIBS)
+MAPI_LIBS = $(SOCKET_LIBS) $(READLINE_LIBS) $(OPENSSL_LIBS) $(ICONV_LIBS)
 
 lib_mcutil = {
 	NOINST
@@ -28,16 +28,14 @@ lib_mcutil = {
 #Name alignment of tools in M5 context. 
 bin_mclient = {
 	SOURCES = MapiClient.mx ReadlineTools.mx
-	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) $(READLINE_LIBS) \
-		$(MONETDB_LIBS) -lmutils -lstream \
-		$(ICONV_LIBS)
+	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) \
+		$(MONETDB_LIBS) -lmutils -lstream
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c
 	LIBS = libmcutil ../mapilib/libMapi $(MAPI_LIBS) \
-		$(MONETDB_LIBS) -lmutils -lstream \
-		$(ICONV_LIBS)
+		$(MONETDB_LIBS) -lmutils -lstream
 }
 
 man_MANS = mclient.1
