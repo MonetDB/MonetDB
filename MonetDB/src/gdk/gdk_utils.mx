@@ -1205,7 +1205,7 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 		if (blk == NULL) {
 			GDKmemfail("GDKrealloc", newsize, BBPTRIM_ALL, 0);
 			blk = realloc(((char *) oldblk) - 8, newsize);
-			if (s == NULL) {
+			if (blk == NULL) {
 				if (emergency == 0){
 					GDKerror("GDKreallocmax: failed for "SZFMT" bytes", newsize);
 					return NULL;
