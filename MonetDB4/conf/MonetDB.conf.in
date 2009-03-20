@@ -157,7 +157,7 @@ xrpc_open=true
 xrpc_options=""
 
 # Root directory of files that could be served by the XRPC HTTP server
-xrpc_docroot="@Xdatadir@@DIRSEP@MonetDB@DIRSEP@xrpc"
+#xrpc_docroot="@Xdatadir@@DIRSEP@MonetDB@DIRSEP@xrpc"
 
 # IP addresses or hostname separated by ';' who can execute scripts in
 # <datadir>/MonetDB/xrpc/admin/
