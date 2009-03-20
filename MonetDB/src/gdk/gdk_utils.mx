@@ -1050,7 +1050,6 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-#if 0
 	if (size > GDK_mem_bigsize) {
 		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
 		size_t newmax = MAX(*maxsize, newsize);
@@ -1065,7 +1064,6 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
 		return (void *) s;
 	}
-#endif
 	CHKMEM(size, 0);
 	GDKmalloc_prefixsize(s, size);
 	if (s == NULL) {
@@ -1194,15 +1192,15 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 		size_t newmax = MAX(*maxsize, newsize);
 
 		s = (ssize_t *) GDKvmrealloc((ptr) (s - 2), (size_t) - oldsize, newsize, oldmax, &newmax, emergency);
-		if (s == NULL)
-			return NULL;
-		s[0] = (ssize_t) newmax;
-		s[1] = -((ssize_t) newsize);
-		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-		return (ptr) (s + 2);
+		if (s) {
+			s[0] = (ssize_t) newmax;
+			s[1] = -((ssize_t) newsize);
+			*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
+			return (ptr) (s + 2);
+		}
 	}
 #ifndef GDK_MEM_MISALIGN
-	if (size <= GDK_mem_bigsize) {
+	else if (size <= GDK_mem_bigsize) {
 		void *oldblk = blk;
 		size_t newsize = size + 8;
 
@@ -1337,7 +1335,6 @@ GDKvmalloc(size_t size, size_t * maxsize, int emergency)
 		if (ret == NULL) {
 			if (emergency == 0) {
 				ALLOCDEBUG fprintf(stderr, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
-				GDKerror("GDKvmalloc: failed for "SZFMT" bytes", size);
 				return NULL;
 			}
 			MT_alloc_print();
@@ -1365,7 +1362,6 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 		if (ret == NULL) {
 			if (emergency == 0) {
 				ALLOCDEBUG fprintf(stderr, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
-				GDKerror("GDKvmalloc: failed for "SZFMT" bytes (from "SZFMT")", newsize, oldsize);
 				return NULL;
 			}
 			MT_alloc_print();
