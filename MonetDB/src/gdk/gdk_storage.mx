@@ -253,7 +253,6 @@ int
 GDKsave(str nme, str ext, void *buf, size_t size, int mode)
 {
 	int fd = -1, err = 0;
-	FILE *fp = NULL;
 
 	IODEBUG THRprintf(GDKout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 
@@ -296,9 +295,7 @@ at commit-time.
 			err = -1;
 		}
 	}
-	if (fp) {
-		err |= fclose(fp);
-	} else if (fd >= 0) {
+	if (fd >= 0) {
 		err |= close(fd);
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images (BBPrecover on restart will kill them) */
