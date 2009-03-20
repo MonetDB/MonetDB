@@ -311,7 +311,7 @@ BATattach(int tt, const char *heapfile)
 	ERRORcheck(tt <= 0 || tt >= TYPE_str, "BATattach: bad tail type\n");
 	ERRORcheck(heapfile == 0, "BATattach: bad heapfile name\n");
 	if (lstat(heapfile, &st) < 0) {
-		GDKerror("BATnew_heal: cannot stat heapfile\n");
+		GDKerror("BATattach: cannot stat heapfile\n");
 		return 0;
 	}
 	ERRORcheck(!S_ISREG(st.st_mode), "BATattach: heapfile must be a regular file\n");
