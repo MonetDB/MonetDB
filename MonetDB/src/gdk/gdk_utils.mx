@@ -999,7 +999,11 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 /* the blocksize is stored in the ssize_t before it. Negative size <=> VM memory */
 #define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
+#ifdef __GLIBC__
 #define GLIBC_BUG 8
+#else
+#define GLIBC_BUG 0
+#endif
 
 #ifndef GDK_MEM_MISALIGN
 
@@ -1231,7 +1235,7 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 			return blk;
 		}
 	}
-	/* alloc&copy due too failed realloc (may be very big heap that needs vm) */
+	/* alloc&copy due to failed realloc (may be very big heap that needs vm) */
 #else
 	/* alloc&copy because we cannot trust realloc due to misalignment */
 	if (oldsize & 1)
