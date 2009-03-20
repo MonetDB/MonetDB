@@ -155,7 +155,7 @@ PFstate_init (PFstate_t *status)
     status->opt_alg             = "OIKCG_VG_JISI_GECSVR_OK_N"
                                        "}MT{JISI_GECSVR_"
                                        "}MT{JISI_OK_GECSVR_"
-                                       "DC_GP";
+                                       "DC_GYP";
     status->opt_sql             = "OIKCG_VG_JISI_GECSVR_OK_N"
                                     "QU_}MT{JISI_GECSVR_"
                                     "QU_}MT{JISI_OK_GECSVR_"
