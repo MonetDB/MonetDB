@@ -1,16 +1,15 @@
 stdout of test 'test_01` in directory 'tests/suite_08` itself:
 
 
-# 18:41:06 >  
-# 18:41:06 >   Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs" --set mapi_open=true --set xrpc_open=true --set mapi_port=36006 --set xrpc_port=40862 --set monet_prompt= --trace --dbname=mTests_tests_suite_08  
-# 18:41:06 >  
+# 09:23:19 >  
+# 09:23:19 >   Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/conf/MonetDB.conf" --debug=10 --set gdk_nr_threads=1 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/plain/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/plain:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/contrib/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/contrib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/calibrator/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/calibrator:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/mapi/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/mapi:/ufs/manegold/_/scratch0/Monet/Testing/Stable/source/MonetDB4/scripts/tools" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/sql_logs" --set "xquery_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/xquery_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33016 --set xrpc_port=47741 --set monet_prompt= --trace  --dbname=mTests_tests_suite_08  
+# 09:23:19 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
-# MonetDB Server v4.20.0
-# based on GDK   v1.20.0
-# Copyright (c) 1993-2007, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# MonetDB Server v4.28.0
+# based on GDK   v1.28.1
+# Copyright (c) 1993-July 2008, CWI. All rights reserved.
+# Copyright (c) August 2008-, MonetDB B.V.. All rights reserved.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 setoid(oid(20000000));
 # Test for the 'sys' module.
@@ -242,14 +241,14 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																  ]
-[ "gdk_version",	  "1.20.0"																			  ]
-[ "monet_pid",		  "24377"																			  ]
-[ "prefix",		  "/ufs/niels/scratch/rc/Linux-x86_64"																  ]
-[ "exec_prefix",	  "/ufs/niels/scratch/rc/Linux-x86_64"																  ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "gdk_arch",		  "64bitx86_64-unknown-linux-gnu"																																																																																																																																																										  ]
+[ "gdk_version",	  "1.28.0"																																																																																																																																																													  ]
+[ "monet_pid",		  "25852"																																																																																																																																																													  ]
+[ "prefix",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert"																																																																																																																																															  ]
+[ "exec_prefix",	  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert"																																																																																																																																															  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/dbfarm"													  ]
+[ "gdk_dbfarm",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/dbfarm"																																																																																																																																													  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "262144"																		  ]
 [ "gdk_alloc_map",	  "no"										  ]
@@ -258,37 +257,36 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB4/bin"	  ]
+[ "monet_mod_path",	  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/plain/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/plain:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/contrib/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/contrib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/calibrator/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/modules/calibrator:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/mapi/.libs:/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/src/mapi:/ufs/manegold/_/scratch0/Monet/Testing/Stable/source/MonetDB4/scripts/tools"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "36006"																			  ]
+[ "mapi_port",		  "33016"																																																																																																																																																													  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/sql_logs"													  ]
-[ "xquery_logdir",	  "/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB4/xquery_logs"													  ]
+[ "sql_logdir",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/sql_logs"																																																																																																																																													  ]
+[ "xquery_logdir",	  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/xquery_logs"																																																																																																																																													  ]
 [ "standoff_ns",	  ""																																																															  ]
 [ "standoff_start",	  "start"																																																														  ]
 [ "standoff_end",	  "end"																																																															  ]
-[ "config",		  "/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf"														  ]
-[ "gdk_nr_threads",	  "4"																				  ]
-[ "xrpc_docroot",     "/scratch/monet.GNU.64.64.d.0.4074/MonetDB4/.GNU.64.64.d.0-Fedora8/share/MonetDB/xrpc"   ]
+[ "config",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/conf/MonetDB.conf"																																																																																																																																												  ]
+[ "gdk_nr_threads",	  "1"																																																																																																																																																														  ]
 [ "mapi_open",		  "true"																										  ]
 [ "xrpc_open",		  "true"																			  ]
-[ "xrpc_port",		  "40862"																			  ]
-[ "datadir",		  "/ufs/niels/scratch/rc/Linux-x86_64/share"															  ]
+[ "xrpc_port",		  "47741"																																																																																																																																																													  ]
+[ "datadir",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/share"																																																																																																																																														  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "xquery_output",	  "dm"																			  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
 [ "xquery_cacherules",	  ""																																														  ]
 [ "xquery_procMB",	  "128"																			  ]
 [ "xrpc_options",	  ""																																														  ]
-[ "xrpc_admin",		  "127.0.0.1"																																													  ]
-[ "xrpc_user",		  "127.0.0.1"																			  ]
-[ "xrpc_trusted",	  "http://monetdb.cwi.nl;/ufs/niels/scratch/rc/Linux-x86_64/share/MonetDB/xrpc/export"										  ]
-[ "monet_cwd",		  "/net/koala.ins.cwi.nl/export/scratch0/niels/rc/Linux-x86_64/mTests/tests/suite_08"										  ]
-[ "monet_version",	  "4.20.0"																			  ]
+[ "xrpc_admin",		  "http://127.0.0.1;127.0.0.1;http://localhost;localhost"																																																																																																																																																							  ]
+[ "xrpc_user",		  "http://127.0.0.1;127.0.0.1;http://localhost;localhost"																																																																																																																																																							  ]
+[ "xrpc_trusted",	  "http://monetdb.cwi.nl;http://127.0.0.1;http://localhost;/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/share/MonetDB/xrpc/export"																																																																																																																																					  ]
+[ "monet_cwd",		  "/net/rig.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/mTests/tests/suite_08"																																																																																																																																									  ]
+[ "monet_version",	  "4.28.0"																																																																																																																																																													  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -318,7 +316,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sat Oct 27 18:41:06 2007"	  ]
+[ 0,	  "Fri Mar 20 09:23:19 2009"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

@@ -1355,7 +1355,6 @@ MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
 
 	ret = MapViewOfFileEx((HANDLE) hdl->hdl, hdl->mode, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, (void *) ((char *) hdl->fixed));
 	if (ret == NULL) {
-		GDKsyserror("MT_mmap: MapViewOfFileEx(" PTRFMT ", %d, %d, %u, %d, " PTRFMT ") failed\n", PTRFMTCAST hdl->hdl, hdl->mode, (DWORD) ((gdk_int64) off >> 32), (DWORD) off, len, PTRFMTCAST hdl->fixed);
 		return (void *) -1;
 	}
 	if (map)

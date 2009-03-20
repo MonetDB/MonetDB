@@ -253,7 +253,6 @@ int
 GDKsave(str nme, str ext, void *buf, size_t size, int mode)
 {
 	int fd = -1, err = 0;
-	FILE *fp = NULL;
 
 	IODEBUG THRprintf(GDKout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 
@@ -296,9 +295,7 @@ at commit-time.
 			err = -1;
 		}
 	}
-	if (fp) {
-		err |= fclose(fp);
-	} else if (fd >= 0) {
+	if (fd >= 0) {
 		err |= close(fd);
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images (BBPrecover on restart will kill them) */
@@ -375,14 +372,11 @@ GDKload(str nme, str ext, size_t size, size_t maxsize, int mode)
 				mod |= MMAP_COPY;
 			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
 			if (ret == (char *) -1L) {
-				GDKsyserror("GDKload: cannot mmap(): name=%s, ext=%s\n", nme, ext ? ext : "");
 				ret = NULL;
 			}
 			IODEBUG THRprintf(GDKout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
 		}
 	}
-	if (ret == NULL)
-		GDKerror("GDKload: failed name=%s, ext=%s\n", nme, ext ? ext : "");
 	return ret;
 }
 

@@ -104,7 +104,9 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
-		ALLOCDEBUG THRprintf(GDKout, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
+		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
+		if (h->base == 0)
+			GDKerror("HEAPalloc: Insufficient space for HEAP of "SZFMT" bytes.", h->size);
 	}
 	if (h->filename && h->base == NULL) {
 		char *of = h->filename;
@@ -187,7 +189,7 @@ HEAPextend(Heap *h, size_t size)
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
-			ALLOCDEBUG THRprintf(GDKout, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
+			ALLOCDEBUG fprintf(stderr, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
 				return 0;
 		}
@@ -201,16 +203,34 @@ HEAPextend(Heap *h, size_t size)
 				if (h->storage == STORE_MEM)
 					h->newstorage = h->storage = STORE_MMAP;
 				h->base = NULL;
+				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+					/* copy data to heap and free old memory */
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
 				}
+				/* couldn't allocate, now first save data to file */
+				if (HEAPsave(&bak, nme, ext) < 0) {
+					*h = bak;
+					return -1;
+				}
+				/* then free memory */
+				HEAPfree(&bak);
+				of = NULL; /* file name is freed by HEAPfree */
+				/* and load heap back in via memory-mapped file */
+				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+					/* success! */
+					return 0;
+				}
+				/* we failed */
 			}
-			GDKfree(of);
+			if (of)
+				GDKfree(of);
 		}
 		*h = bak;
 	}
+	GDKerror("HEAPextend: failed to extend to "SZFMT" for %s%s\n", size, nme, ext ? ext : "");
 	return -1;
 }
 
