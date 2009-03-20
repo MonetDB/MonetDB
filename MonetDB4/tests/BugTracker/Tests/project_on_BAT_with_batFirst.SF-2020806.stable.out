@@ -63,7 +63,6 @@ a.sort().project(1).print();
 [ "xquery_output",	  1	  ]
 [ "xquery_procMB",	  1	  ]
 [ "xrpc_admin",		  1	  ]
-[ "xrpc_docroot",     1	  ]
 [ "xrpc_open",		  1	  ]
 [ "xrpc_options",	  1	  ]
 [ "xrpc_port",		  1	  ]
