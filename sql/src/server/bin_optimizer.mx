@@ -38,7 +38,7 @@ extern stmt *bin_optimizer(mvc *c, stmt *s);
 #include "sql_rel2bin.h"
 #include "sql_env.h"
 
-stmt *
+static stmt *
 stmt_uselect_select(stmt *s)
 {
 	assert(s->type == st_uselect2 || (s->type == st_uselect && !s->op2.stval->nrcols));
@@ -51,7 +51,7 @@ stmt_uselect_select(stmt *s)
 	return s;
 }
 
-stmt *
+static stmt *
 eliminate_semijoin(stmt *s)
 {
 	stmt *s1, *s2;
@@ -149,7 +149,7 @@ eliminate_semijoin(stmt *s)
 	return stmt_dup(s);
 }
 
-stmt *
+static stmt *
 eliminate_reverse(stmt *s)
 {
 	stmt *os = s->op1.stval, *ns;
@@ -171,7 +171,7 @@ eliminate_reverse(stmt *s)
 }
 
 /* push this select through the statement s */
-stmt *
+static stmt *
 push_select( stmt *select, stmt *s )
 {
 	if (select->type == st_select2) 

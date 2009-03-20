@@ -2143,11 +2143,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					list_destroy(vals);
 					return NULL;
 				}
-				list_append(vals, exp_dup(r));
 				if (z) {
 					vals_only = 0;
 					rl = z;
 				} else {
+					list_append(vals, exp_dup(r));
  					rl = rel_project_exp(r);
 				}
 				if (right) {
