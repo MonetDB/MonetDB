@@ -81,6 +81,10 @@ integral part of the joinPath body.
 	ra:= bat.reverse(a);
 	j1:= algebra.joinpath(c,rb,ra);
 @end verbatim
+
+As a final step in the speed up of the joinpath
+we consider clustering large operands if that
+is expected to improve IO behavior.
 @{
 @mal
 pattern optimizer.joinPath():str
@@ -110,6 +114,7 @@ and materialize them.
 @c
 #include "mal_config.h"
 #include "opt_joinpath.h"
+#include "cluster.h"
 
 static int
 OPTjoinPathPrefix(Client cntxt, MalBlkPtr mb)
@@ -326,6 +331,7 @@ For the time being we limit ourself to a default of 1Kelements
 @c
 /*#define SAMPLE_THRESHOLD_lOG 17*/
 #define SMALL_OPERAND	1024
+#define CLUSTER_THRESHOLD	(1<<21) /* 2M */
 BUN
 ALGjoinCost(Client cntxt, BAT *l, BAT *r)
 {
@@ -440,7 +446,17 @@ may fire a BATproperty check in a few cases.
 #ifdef DEBUG_OPT_JOINPATH
 	stream_printf(cntxt->fdout, "#joinPath final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
-	b = BATjoin(joins[0], joins[1], BUN_NONE);
+@-
+If we can predict that the underlying tables will fall into
+an IO thrashing situation, it may proof valuable to first
+recluster the operands. Propagating the cluster map through
+the sequence as well.
+@c
+	if ( BATcount(joins[0]) >CLUSTER_THRESHOLD ){
+		/* to be filled */
+		b = BATjoin(joins[0], joins[1], BUN_NONE);
+	} else
+		b = BATjoin(joins[0], joins[1], BUN_NONE);
 	BBPdecref(joins[0]->batCacheid, FALSE);
 	BBPdecref(joins[1]->batCacheid, FALSE);
 	if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
