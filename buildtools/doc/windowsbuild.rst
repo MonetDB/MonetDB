@@ -111,6 +111,12 @@ geom
 The geom component provides a module for the MonetDB SQL frontend.
 This component is optional.
 
+testing
+-------
+
+The testing component contains some files and programs we use for
+testing the MonetDB suite.  This component is optional.
+
 Prerequisites
 =============
 
