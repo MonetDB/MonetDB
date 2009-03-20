@@ -47,6 +47,7 @@ lib_opt = {
                 opt_key.c \
                 opt_monetxq.c \
                 opt_mvd.c \
+				opt_projection.c \
                 opt_req_node.c \
                 opt_reqval.c \
                 opt_rank.c \
