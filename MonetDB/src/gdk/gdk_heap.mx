@@ -104,7 +104,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (h->filename == NULL || (h->size < GDK_vm_minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
-		ALLOCDEBUG THRprintf(GDKout, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
+		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
 		if (h->base == 0)
 			GDKerror("HEAPalloc: Insufficient space for HEAP of "SZFMT" bytes.", h->size);
 	}
@@ -185,7 +185,7 @@ HEAPextend(Heap *h, size_t size)
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
 			h->base = (char *) GDKreallocmax(h->base, size, &h->maxsize, 0);
-			ALLOCDEBUG THRprintf(GDKout, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
+			ALLOCDEBUG fprintf(stderr, "#HEAPextend " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", size, h->maxsize, PTRFMTCAST p, PTRFMTCAST h->base);
 			if (h->base)
 				return 0;
 		}
