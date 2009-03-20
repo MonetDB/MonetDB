@@ -582,7 +582,7 @@ static void RECYCLEcleanCache(lng wr0){
 	int k, *lvs, *vm;
 	int limit, mem, idx;
 	int cont, reserve;
-	lng oldclk, starttm, wr;
+	lng oldclk, wr;
 	dbl mincrd, crd;
 	bte maxcat, cat, *used;
 	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
@@ -593,7 +593,6 @@ static void RECYCLEcleanCache(lng wr0){
 		return;
 
 	cntxt->rcc->ccCalls++;
-	starttm = GDKusec();
 newpass:
 	cont = 0;	
 	wr = wr0;
@@ -819,11 +818,8 @@ newpass:
          p->token = NOOPsymbol;
 			cntxt->rcc->recycleRem ++;
 			cntxt->rcc->ccInstr++;
-			if ( recycleBlk->profiler[i].counter >1) {
-            /*  getIPtr(p,r,j,pc);
-                if (r && r->recycle <REC_MAX_INTEREST) */
+			if ( recycleBlk->profiler[i].counter >1) 
 				returnCrd(p);
-			}
 		}
 	}
 
@@ -838,12 +834,8 @@ newpass:
 		if( dmask[i] ) {
 			RECYCLEgarbagecollect(recycleBlk,p,used);
 			recyclerUsedMemory -= recycleBlk->profiler[i].obytes;
-			if ( recycleBlk->profiler[i].counter >1) {
-			/*	getIPtr(p,r,j,pc);
-				if (r && r->recycle <REC_MAX_INTEREST)
-					r->recycle++;*/
+			if ( recycleBlk->profiler[i].counter >1) 
 				returnCrd(p);
-			}
 			freeInstruction(p);
 			cntxt->rcc->ccInstr++;
 		}
@@ -860,7 +852,6 @@ newpass:
 #endif
 	GDKfree(dmask);
 	if (cont) goto newpass;
-/*	ccTime = GDKusec() - starttm; */
 
 }
 
