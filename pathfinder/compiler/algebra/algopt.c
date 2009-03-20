@@ -179,19 +179,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                     PFlog ("   MonetDB specific optimizations:  %s",
                            PFtimer_str (tm));
                 break;
-                
-            case 'Y':
-                /*REMOVE_PROXIES("MonetDB specific optimization")*/
-
-                tm = PFtimer_start ();
-
-                root = PFalgopt_projection (root);
-
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("   project optimizations:  %s",
-                           PFtimer_str (tm));
-                break;
 
             case 'E':
                 MAP_UNQ_NAMES("common subexpression elimination")
