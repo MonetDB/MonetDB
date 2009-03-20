@@ -30,6 +30,7 @@ The trace options:
     b =bytes read/written
     d =diskspace needed
     s =statement
+    p =pg faults, cntxt switches
 
 # 11:43:47 >  
 # 11:43:47 >  Done.

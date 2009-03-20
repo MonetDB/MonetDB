@@ -56,6 +56,7 @@ Event selector:
     b =bytes read/written
     d =diskspace needed
     s =statement
+	p =pgfaults,cntxtswitches
 @end verbatim
 
 Ideally, the stream of events should be piped into a
@@ -65,6 +66,9 @@ to display the numerics organized as time lines.
 With a backup of the event lists give you all the
 information needed for a descent post-mortem analysis.
 
+A convenient way to watch most of the SQL interaction
+you may use the command:
+stethoscope  +tis algebra.* bat.* group.* sql.* aggr.*
 @{
 @c
 #include "mal_config.h"
@@ -111,17 +115,17 @@ static struct {
     /*  6  */  {'m', "memory", "hblks", 0},
     /*  7  */  {'m', "memory", "fsmblks", 0},
     /*  8  */  {'m', "memory", "uordblks", 0},
-    /*  9  */  {'i', "io","pg reclaim", 0},
-    /*  0  */  {'i', "io","pg faults", 0},
-    /*  1  */  {'i', "io","swaps", 0},
-    /*  2  */  {'i', "io","blk reads", 0},
-    /*  3  */  {'i', "io","blk writes", 0},
-    /*  4  */  {'i', "io","ctxt switch", 0},
-    /*  5  */  {'i', "io","inv switch", 0},
-    /*  6  */  {'b', "bytes", "rdbytes", 0},
-    /*  7  */  {'b', "bytes", "wrbytes", 0},
-    /*  8  */  {'d', "disk", "diskspace", 0},
-    /*  9  */  {'s', "statement", "statement", 2},
+    /*  9  */  {'i', "io","blk reads", 0},
+    /*  0  */  {'i', "io","blk writes", 0},
+    /*  1  */  {'b', "bytes", "rdbytes", 0},
+    /*  2  */  {'b', "bytes", "wrbytes", 0},
+    /*  3  */  {'d', "disk", "diskspace", 0},
+    /*  4  */  {'s', "statement", "statement", 2},
+    /*  5  */  {'p', "process","pg reclaim", 0},
+    /*  6  */  {'p', "process","pg faults", 0},
+    /*  7  */  {'p', "process","swaps", 0},
+    /*  8  */  {'p', "process","ctxt switch", 0},
+    /*  9  */  {'p', "process","inv switch", 0},
     /*  0  */  {0, 0,  0, 0}
 };
 
@@ -160,6 +164,7 @@ usage(){
 	fprintf(stderr,"    b =bytes read/written\n");
 	fprintf(stderr,"    d =diskspace needed\n");
 	fprintf(stderr,"    s =statement\n");
+	fprintf(stderr,"    p =pg faults, cntxt switches\n");
 }
 @-
 Any signal should be captured and turned into a graceful
