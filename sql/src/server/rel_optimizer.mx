@@ -190,11 +190,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-		if (rel->r) {
-			sql_rel *r = rel->r;
-
-			rel_properties(sql, gp, r);
-		}
+		if (rel->r) 
+			rel_properties(sql, gp, rel->r);
 		break;
 	}
 

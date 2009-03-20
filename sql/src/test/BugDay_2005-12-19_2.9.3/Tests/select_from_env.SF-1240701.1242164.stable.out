@@ -63,7 +63,6 @@ Over..
 [ "mapi_open"	]
 [ "xrpc_open"	]
 [ "xrpc_port"	]
-[ "xrpc_docroot"	]
 [ "mal_listing"	]
 [ "gdk_embedded"	]
 [ "mero_msglog"	]

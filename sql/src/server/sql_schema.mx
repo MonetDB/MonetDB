@@ -1441,7 +1441,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
 			dnode *nms = s->data.lval->h;
 			sql_key *k;
-			list *l = create_stmt_list();
+			list *l = NULL;
 
 			if (kt == pkey && t->pkey) 
 				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
@@ -1449,6 +1449,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 				return sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
 			
  			k = mvc_create_ukey(sql, t, name, kt);
+			if (alter)
+ 				l = create_stmt_list();
 			for (; nms; nms = nms->next) {
 				char *nm = nms->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, nm);
@@ -1476,6 +1478,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 				list_append(l, res);
 				res = stmt_list(l);
 			} else {
+				list_destroy(l);
 				res = stmt_none();
 			}
 		}
