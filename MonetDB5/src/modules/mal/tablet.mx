@@ -2160,8 +2160,8 @@ estimator(char *datafile){
 	size= ftell(f);
 	fclose(f);
 	if( nr == 0) 
-		return (BUN) (size/BUFSIZ);
-	return (BUN) (size/BUFSIZ/nr);
+		return (BUN) (size/40);  /* some handhaving for stream input*/
+	return (BUN) ((size/BUFSIZ+1)/nr)*1.3; /* take some slack */
 }
 
 BAT *

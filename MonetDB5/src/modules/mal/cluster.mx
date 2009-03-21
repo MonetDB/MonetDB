@@ -29,7 +29,7 @@ list are physically close, as are the lists of subsequent lists.
 
 This module extends the built in hashing scheme with a method 
 to reorganize BATs based on their hash key. It is a linear-time,
-near-optimal N-way reclustering based on key ranges.
+near-optimal N-way reclustering based on hash key ranges.
 
 We start with collecting all hash keys from the underlying 
 table into the table H[:oid,:oid].
