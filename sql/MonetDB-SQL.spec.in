@@ -123,8 +123,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 #find $RPM_BUILD_ROOT -name .incs.in | xargs rm
 find $RPM_BUILD_ROOT -name \*.la | xargs rm -f
 rm -rf $RPM_BUILD_ROOT%{_prefix}/lib*/python*/site-packages
-mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/log $RPM_BUILD_ROOT/%{_localstatedir}/run
-touch $RPM_BUILD_ROOT/%{_localstatedir}/log/merovingian.log $RPM_BUILD_ROOT/%{_localstatedir}/run/merovingian.pid
+mkdir -p $RPM_BUILD_ROOT/%{_localstatedir}/log/MonetDB $RPM_BUILD_ROOT/%{_localstatedir}/run/MonetDB
 
 %post -p /sbin/ldconfig
 
@@ -152,8 +151,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/monetdb
 %{_mandir}/man1/monetdb.1.gz
 %{_mandir}/man1/merovingian.1.gz
-%attr(660,monetdb,monetdb) %verify(not md5 size mtime) %{_localstatedir}/log/merovingian.log
-%attr(660,monetdb,monetdb) %verify(not md5 size mtime) %{_localstatedir}/run/merovingian.pid
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/MonetDB
+%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/MonetDB
 
 %files devel
 %defattr(-,root,root)
