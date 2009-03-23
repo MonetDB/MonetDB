@@ -68,6 +68,7 @@ struct node_t {
     nat           post_stretched;       /* postorder in stretched plane */
     node_t       *parent;               /* pointer to parent */
     nat           size;                 /* # of nodes in subtree */
+    nat           children;             /* # of children nodes collected so far */
     int           level;                /* length of path from node to root */
     kind_t        kind;                 /* XML node kind */
     xmlChar      *localname;            /* localname of element/attribute */

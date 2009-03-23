@@ -164,6 +164,7 @@ print_help (char *progname)
             "\t%%o: node postorder rank\n"
             "\t%%E: node preorder rank in stretched pre/post plane\n"
             "\t%%O: node postorder rank in stretched pre/post plane\n"
+            "\t%%h: node ORDPATH label as required by SQL SERVERs hierarchyid type\n"
             "\t%%s: size of subtree below node\n"
             "\t%%l: length of path from root to node (level)\n"
             "\t%%k: node kind\n"

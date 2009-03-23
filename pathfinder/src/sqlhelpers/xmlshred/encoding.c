@@ -216,6 +216,14 @@ static void lambda_E (node_t n)
 static void lambda_O (node_t n) 
 { fprintf (out, SSZFMT, n.post_stretched); }
 
+static void lambda_h (node_t n) 
+{ if (n.parent) {
+      lambda_h (*(n.parent));
+      fprintf (out, SSZFMT, n.parent->children + 1);
+  }
+  fprintf (out, "/");
+}
+
 static void lambda_s (node_t n) 
 { fprintf (out, SSZFMT, n.size); }
 
@@ -255,6 +263,7 @@ static fmt_lambda_t *fmt_lambdas[] = {
   , ['o'] = lambda_o 
   , ['E'] = lambda_E 
   , ['O'] = lambda_O 
+  , ['h'] = lambda_h 
   , ['s'] = lambda_s 
   , ['l'] = lambda_l 
   , ['k'] = lambda_k
@@ -398,6 +407,7 @@ flush_node (kind_t kind,
       , .post_stretched = rank + 1
       , .parent         = stack + level - 1
       , .size           = 0
+      , .children       = 0
       , .level          = level
       , .kind           = kind
       , .localname      = xmlStrdup (localname)
@@ -422,6 +432,8 @@ flush_node (kind_t kind,
     if (stack[level].value)     xmlFree (stack[level].value);
 
     level--;
+    /* add one more child node */
+    stack[level].children++;
 }
 
 static void
@@ -459,6 +471,7 @@ start_document (void *ctx)
         , .post_stretched = 0
         , .parent         = NULL
         , .size           = 0
+        , .children       = 0
         , .level          = level
         , .kind           = doc
         , .localname      = NULL
@@ -547,6 +560,7 @@ start_element (void *ctx,
       , .post_stretched = 0
       , .parent         = stack + level - 1
       , .size           = 0
+      , .children       = 0
       , .level          = level
       , .kind           = elem
       , .localname      = xmlStrdup (localname)
@@ -660,6 +674,8 @@ end_element (void *ctx,
         xmlFree (stack[level].value);
 
     level--;
+    /* add one more child node */
+    stack[level].children++;
     assert (level >= 0);    
 }   
 
