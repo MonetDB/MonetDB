@@ -4,10 +4,9 @@ set -e
 
 case "$1" in
     configure)
-	mkdir -p /var/run /var/log
-	touch /var/run/merovingian.pid /var/log/merovingian.log
-	chown monetdb.monetdb /var/run/merovingian.pid /var/log/merovingian.log
-	chmod ug=rw,o= /var/run/merovingian.pid /var/log/merovingian.log
+	mkdir -p /var/lib/MonetDB /var/run/MonetDB
+	chown monetdb.monetdb /var/lib/MonetDB /var/run/MonetDB
+	chmod ug=rwx,o= /var/lib/MonetDB /var/run/MonetDB
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
