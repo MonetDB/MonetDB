@@ -69,7 +69,7 @@ FIXME: actually implement that
 #include <netdb.h>
 #include <netinet/in.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <unistd.h> /* unlink */
 #include <string.h> /* strerror */
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
@@ -2190,7 +2190,6 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 		return(1);
 	}
-	GDKfree(pidfilename);
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
@@ -2330,7 +2329,7 @@ main(int argc, char *argv[])
 			pthread_join(dtid, NULL);
 	}
 
-	unlink(lockfile);
+	/* control channel is already closed at this point */
 	unlink(buf);
 
 	if (e != NO_ERR) {
@@ -2377,6 +2376,8 @@ main(int argc, char *argv[])
 		}
 	}
 
+	/* need to do this here, since the logging thread is shut down as
+	 * next thing */
 	merlog("Merovingian %s stopped", MEROV_VERSION);
 
 	_keepLogging = 0;
@@ -2398,6 +2399,11 @@ main(int argc, char *argv[])
 		GDKfree(d);
 		d = topdp;
 	}
+
+	/* remove files that suggest our existence */
+	unlink(lockfile);
+	unlink(pidfilename);
+	GDKfree(pidfilename);
 
 	/* the child's return code at this point doesn't matter, as noone
 	 * will see it */
