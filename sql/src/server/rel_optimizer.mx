@@ -231,20 +231,15 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 static void
 get_relations(sql_rel *rel, list *rels)
 {
-	if (rel->op == op_join && rel->exps == NULL) {
+	if (!rel_is_ref(rel) && rel->op == op_join && rel->exps == NULL) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		
-		/* don't reorder relations with use referenced relations */
-		if (rel_is_ref(l) || rel_is_ref(r)) {
-			append(rels, rel);
-		} else {
-			get_relations(l, rels);
-			get_relations(r, rels);
-			rel->l = NULL;
-			rel->r = NULL;
-			rel_destroy(rel);
-		}
+		get_relations(l, rels);
+		get_relations(r, rels);
+		rel->l = NULL;
+		rel->r = NULL;
+		rel_destroy(rel);
 	} else {
 		append(rels, rel);
 	}
@@ -805,13 +800,16 @@ reorder_join(mvc *sql, sql_rel *rel)
 static list *
 push_up_join_exps( sql_rel *rel) 
 {
+	if (rel_is_ref(rel))
+		return NULL;
+
 	switch(rel->op) {
 	case op_join: {
 		sql_rel *rl = rel->l;
 		sql_rel *rr = rel->r;
 		list *l, *r;
 
-		if (rel_is_ref(rl) || rel_is_ref(rr)) {
+		if (rel_is_ref(rl) && rel_is_ref(rr)) {
 			l = rel->exps;
 			rel->exps = NULL;
 			return l;
@@ -2069,7 +2067,12 @@ exps_used(list *l)
 static void
 rel_used(sql_rel *rel)
 {
-	if (is_topn(rel->op))
+	if (is_join(rel->op) || is_union(rel->op)) {
+		if (rel->l) 
+			rel_used(rel->l);
+		if (rel->r) 
+			rel_used(rel->r);
+	} else if (is_topn(rel->op) || is_select(rel->op))
 		rel = rel->l;
 	if (rel->exps) {
 		exps_used(rel->exps);

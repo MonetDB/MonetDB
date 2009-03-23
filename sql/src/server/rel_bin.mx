@@ -649,21 +649,14 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 		sc = stmt_alias(sc, rnme, _strdup("%TID%"));
 		list_append(l, sc);
 	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *i = n->data;
-			stmt *sc = stmt_idxbat(i, RDONLY);
-			char *rnme = _strdup(tname);
-
-			sc = stmt_alias(sc, rnme, _strdup(i->base.name));
-			list_append(l, sc);
-		}
-	}
 	stmt_destroy(ts);
+
 	sub = stmt_list(l);
 	/* add aliases */
 	if (rel->exps) {
 		node *en;
+
+		l = create_stmt_list();
 		for( en = rel->exps->h; en; en = en->next ) {
 			sql_exp *exp = en->data;
 			stmt *s = bin_find_column(sub, exp->l, exp->r);
@@ -677,6 +670,18 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 			rname = rname?_strdup(rname):NULL;
 			s = stmt_alias(s, rname, _strdup(exp->name));
 			list_append(l, s);
+		}
+		stmt_destroy(sub);
+		sub = stmt_list(l);
+	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			stmt *sc = stmt_idxbat(i, RDONLY);
+			char *rnme = _strdup(tname);
+
+			sc = stmt_alias(sc, rnme, _strdup(i->base.name));
+			list_append(l, sc);
 		}
 	}
 	return sub;

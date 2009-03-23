@@ -1097,7 +1097,6 @@ sql_symbol2stmt(mvc *c, symbol *sym)
 	} else {
 		r = rel_optimizer(c, r);
 		if (c->emode == m_plan) {
-			//c->emode = m_inplace;
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);

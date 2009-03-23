@@ -2716,24 +2716,36 @@ stmt2dot(stmt *s, int i, char *fn)
 
 static void dump1(stmt *s, char *name, int *nr)
 {
-	int o1 = print_stmt(s->op1.stval, nr);
+	int o1 = 0;
+
+	if (s->op1.stval)
+		o1 = print_stmt(s->op1.stval, nr);
 
 	printf("s%d = %s( s%d );\n", -s->nr, name, o1);
 }
 
 static void dump2(stmt *s, char *name, int *nr)
 {
-	int o1 = print_stmt(s->op1.stval, nr);
-	int o2 = print_stmt(s->op2.stval, nr);
+	int o1 = 0, o2 = 0;
+
+	if (s->op1.stval)
+		o1 = print_stmt(s->op1.stval, nr);
+	if (s->op2.stval)
+		o2 = print_stmt(s->op2.stval, nr);
 
 	printf("s%d = %s( s%d, s%d );\n", -s->nr, name, o1, o2);
 }
 
 static void dump3(stmt *s, char *name, int *nr)
 {
-	int o1 = print_stmt(s->op1.stval, nr);
-	int o2 = print_stmt(s->op2.stval, nr);
-	int o3 = print_stmt(s->op3.stval, nr);
+	int o1 = 0, o2 = 0, o3 = 0;
+
+	if (s->op1.stval)
+		o1 = print_stmt(s->op1.stval, nr);
+	if (s->op2.stval)
+		o2 = print_stmt(s->op2.stval, nr);
+	if (s->op3.stval)
+		o3 = print_stmt(s->op3.stval, nr);
 
 	printf("s%d = %s( s%d, s%d, s%d );\n", -s->nr, name, o1, o2, o3);
 }
@@ -2756,8 +2768,7 @@ print_stmt(stmt *s, int *nr)
 	case st_none: 	
 	case st_temp:
 	case st_unique:
-	case st_Nop:
-		 	printf("temp,unique,Nop\n"); break;
+		 	printf("temp,unique,none\n"); break;
 	case st_exception:
 		 	printf("exception\n"); break;
 	case st_rs_column:
@@ -2809,7 +2820,11 @@ print_stmt(stmt *s, int *nr)
 	case st_union:	dump2(s, "union", nr); break;
 	case st_outerjoin:
 	case st_join:	
-			dump2(s, "join", nr); break;
+			if (s->flag == cmp_all)
+				dump2(s, "crossproduct", nr); 
+			else
+				dump2(s, "join", nr); 
+			break;
 	case st_join2:	
 			dump3(s, "join", nr); break;
 	case st_group:	dump1(s, "group", nr); break;
@@ -2845,13 +2860,21 @@ print_stmt(stmt *s, int *nr)
 			printf("s%d = delete(\"%s\".\"%s\", s%d);\n", -s->nr, t->s->base.name, t->base.name, r);
 	} break;
 	case st_table_clear: printf("s%d := clear(\"%s\".\"%s\");\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name); break;
-	case st_alias: 	dump1(s, "alias", nr); break;
+	case st_alias: 	dump3(s, "alias", nr); break;
 	case st_output: dump1(s, "output", nr); break;
 	case st_table:  dump1(s, "table", nr); break;
+	case st_Nop:	
+		(void)print_stmt(s->op1.stval, nr);
+		printf("s%d = %s(list)\n", -s->nr, s->op4.funcval->func->imp);
+		break;
 	case st_list:
 	case st_relselect:
+		if (s->type == st_relselect) 
+			printf("s%d = relselect(\n", -s->nr);
 		for (n = s->op1.lval->h; n; n = n->next) 
 			(void) print_stmt(n->data, nr);
+		if (s->type != st_list)
+			printf(")\n");
 		break;
 	case st_releqjoin:
 		printf("s%d = releqjoin(\n", -s->nr);
