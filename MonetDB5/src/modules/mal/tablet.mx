@@ -1426,7 +1426,9 @@ insert_val(Column * fmt, char *s, char *e, char quote, ptr key, str *err, int c)
 		bak = *e;
 		*e = 0;
 		if ((s == e && fmt->nullstr[0] == 0) ||
-			(e > s && strncasecmp(s, fmt->nullstr, fmt->nillen +1) == 0 ) ) {
+			(quote == fmt->nullstr[0] && e > s && 
+			 strncasecmp(s, fmt->nullstr+1, fmt->nillen) == 0 &&
+			 quote == fmt->nullstr[fmt->nillen-1])) {
 			adt = fmt->nildata;
 			fmt->c->T->nonil = 0;
 		} else
