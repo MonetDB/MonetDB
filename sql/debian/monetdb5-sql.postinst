@@ -7,7 +7,7 @@ case "$1" in
 	mkdir -p /var/run /var/log
 	touch /var/run/merovingian.pid /var/log/merovingian.log
 	chown monetdb.monetdb /var/run/merovingian.pid /var/log/merovingian.log
-	chmod ug=rwx,o= /var/run/merovingian.pid /var/log/merovingian.log
+	chmod ug=rw,o= /var/run/merovingian.pid /var/log/merovingian.log
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
