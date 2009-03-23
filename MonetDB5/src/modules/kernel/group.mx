@@ -348,7 +348,7 @@ typedef struct {
 	} else {							\
 		BUN _yy;						\
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
-		hash = (BUN*) GDKmalloc((int)(sizeof(BUN)*((mask=@2)+1))); \
+		hash = (BUN*) GDKmalloc((size_t)(sizeof(BUN)*((mask=@2)+1))); \
 		if (hash) for (_yy=0; _yy<=@2; _yy++) {			\
 			hash[_yy] = BUN_NONE;				\
 		}							\
