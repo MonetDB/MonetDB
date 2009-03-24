@@ -446,7 +446,7 @@ Stem( char *word )  /* in/out: the word stemmed */
             /* Part 1: Check to ensure the word is all alphabetic */
    for ( end = word; *end != EOS; end++ )
       if ( !isalpha(*end) ) return( FALSE );
-      else *end = tolower( *end );
+      //else *end = tolower( *end );
    end--;
 
                 /*  Part 2: Run through the Porter algorithm */
