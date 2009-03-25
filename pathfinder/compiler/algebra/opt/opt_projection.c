@@ -59,7 +59,8 @@
 /* changes the column name back to the old
  * when swaping an an operator and a projection, it is sometimes 
  * necsesary to rename colums for the operator, because the 
- * projection can renames colums */ 
+ * projection can renames colums 
+ * this method renames single colums */ 
 static PFalg_col_t
 re_rename_col (PFalg_col_t col, PFalg_proj_t *proj, unsigned int count) 
 {
@@ -74,23 +75,54 @@ re_rename_col (PFalg_col_t col, PFalg_proj_t *proj, unsigned int count)
 /* changes the column name back to the old
  * when swaping an an operator and a projection, it is sometimes 
  * necsesary to rename colums for the operator, because the 
- * projection can renames colums */ 
-static void
-re_rename_col_in_collist (PFalg_collist_t *cl, PFalg_proj_t *proj, 
+ * projection can renames colums 
+ * this method renames multiple colums in column lists */ 
+static PFalg_collist_t
+*re_rename_col_in_collist (PFalg_collist_t *collist, PFalg_proj_t *proj, 
                           unsigned int count) 
 {
+    PFalg_collist_t *cl = PFalg_collist_copy (collist);
+    
     /* check for each column in the columnlist */
     for(unsigned int i = 0; i < count; i++)
         for (unsigned int j = 0; j < clsize(cl); j++)
             /* check only if current column in projectio has been renamed */
             if(proj[i].new != proj[i].old && clat(cl, j) == proj[i].new) 
                 clat(cl, j) = proj[i].old;
+    
+    return cl;
+}
+
+/* changes the column name back to the old
+ * when swaping an an operator and a projection, it is sometimes 
+ * necsesary to rename colums for the operator, because the 
+ * projection can renames colums 
+ * this method renames multiple colums in ordering arrays */ 
+static PFord_ordering_t
+re_rename_col_in_ordering (PFord_ordering_t ord, PFalg_proj_t *proj, 
+                          unsigned int count) 
+{
+    /* allocation new predicate array */
+    PFord_ordering_t order = PFarray_copy(ord);
+    
+    /* check for each column in the ordering */
+    for(unsigned int i = 0; i < count; i++)
+        for (unsigned int j = 0; j < PFord_count(ord); j++)
+            /* check only if current column in projectio has been renamed */
+            if (proj[i].new != proj[i].old 
+                && PFord_order_col_at (ord, j) == proj[i].new) 
+            {
+                 PFord_set_order_col_at (order, j, proj[i].old);
+            }
+                 
+    return order;
 }
 
 /* renames columns in predicates back to the old name 
  * when swaping an a join and a projection, it is sometimes 
  * necsesary to rename the predicate columns, because the 
- * projection might have renamed them */ 
+ * projection might have renamed them 
+ * this method renames multiple colums in join predicate lists */
 static PFalg_sel_t
 *re_rename_col_in_pred (PFalg_sel_t *pred, 
                     PFalg_proj_t *left_proj, 
@@ -237,20 +269,20 @@ opt_projection (PFla_op_t *p)
             proj[i] = LL(p)->sem.proj.items[i];
                     
         /* make column name unique */
-        PFalg_col_t res = make_col_unq(p->sem.sort.res);
+        PFalg_col_t res = make_col_unq(L(p)->sem.doc_tbl.res);
                     
         /* add result column to projection */
-        proj[count] = PFalg_proj (res, res);
+        proj[count] = PFalg_proj (res, L(p)->sem.doc_tbl.res);
     
         *p = *PFla_project_ (
                 PFla_roots ( 
                     PFla_doc_tbl (
                         LLL(p),
-                        res, 
-                        re_rename_col (p->sem.doc_tbl.col, 
+                        L(p)->sem.doc_tbl.res, 
+                        re_rename_col (L(p)->sem.doc_tbl.col, 
                             LL(p)->sem.proj.items,
                             LL(p)->schema.count),
-                        p->sem.doc_tbl.kind)),
+                        L(p)->sem.doc_tbl.kind)),
                 (count+1),
                 proj);
     }
@@ -325,18 +357,33 @@ opt_projection (PFla_op_t *p)
              * be re-renamed before swaping the projection and the
              * operator p
              */
-            case la_attach:
+             case la_attach: {
+                /* add result column to projection 
+                 * create new projection list */
+                unsigned int count = L(p)->schema.count;
+                PFalg_proj_t *proj = PFmalloc ((count + 1) *
+                                                   sizeof (PFalg_proj_t));
+                           
+                /* copy projections */
+                 for (unsigned int i = 0; i < count; i++)
+                    proj[i] = L(p)->sem.proj.items[i];
+                    
+                /* make column name unique */
+                PFalg_col_t res = make_col_unq(p->sem.attach.res);
+                    
+                /* add rowrank column to projection */
+                proj[count] = PFalg_proj (res, p->sem.attach.res);
+
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_attach (
                             LL(p), 
-                            re_rename_col (p->sem.select.col, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
+                            p->sem.attach.res,
                             p->sem.attach.value),
-                        L(p)->schema.count,
-                        L(p)->sem.proj.items);
+                        (count+1),
+                        proj);
                 break;
+            }
             
             /* swap projection and current operatior p
              *
@@ -354,8 +401,10 @@ opt_projection (PFla_op_t *p)
                 *p = *PFla_project_ (
                         PFla_pos_select (
                             LL(p), 
-                            L(p)->sem.pos_sel.pos,
-                            L(p)->sem.pos_sel.sortby,
+                            p->sem.pos_sel.pos,
+                            re_rename_col_in_ordering (p->sem.pos_sel.sortby,
+                                                       L(p)->sem.proj.items,
+                                                       L(p)->sem.proj.count),
                             re_rename_col (p->sem.pos_sel.part, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count)),
@@ -390,13 +439,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.sort.res);
                     
                 /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.sort.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_to (
                             LL(p), 
-                            res, 
+                            p->sem.sort.res, 
                             re_rename_col (p->sem.binary.col1, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -440,14 +489,16 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.sort.res);
                     
                 /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.sort.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_rowrank (
                             LL(p), 
-                            res, 
-                            p->sem.sort.sortby),
+                            p->sem.sort.res, 
+                            re_rename_col_in_ordering (p->sem.sort.sortby,
+                                                       L(p)->sem.proj.items,
+                                                       L(p)->sem.proj.count)),
                         (count + 1),
                         proj);
                 break; 
@@ -483,14 +534,16 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.sort.res);
                     
                 /* add rownum column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.sort.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_rownum (
                             LL(p), 
-                            res,
-                            p->sem.sort.sortby,
+                            p->sem.sort.res,
+                            re_rename_col_in_ordering (p->sem.sort.sortby,
+                                                       L(p)->sem.proj.items,
+                                                       L(p)->sem.proj.count),
                             re_rename_col (p->sem.sort.part, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count)),
@@ -530,14 +583,16 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.sort.res);
                     
                 /* add rank column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.sort.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_rank (
                             LL(p), 
-                            res, 
-                            p->sem.sort.sortby),
+                            p->sem.sort.res, 
+                            re_rename_col_in_ordering (p->sem.sort.sortby,
+                                                       L(p)->sem.proj.items,
+                                                       L(p)->sem.proj.count)),
                         (count + 1),
                         proj); 
                 break; 
@@ -573,13 +628,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.rowid.res);
                     
                 /* add rowid column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.rowid.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_rowid (
                             LL(p), 
-                            res),
+                            p->sem.rowid.res),
                         (count+1),
                         proj);
                 break; 
@@ -612,13 +667,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.type.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.type.res);
                 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_type (
                             LL(p), 
-                            res,
+                            p->sem.type.res,
                             re_rename_col (p->sem.type.col, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -655,13 +710,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.type.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.type.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_cast (
                             LL(p), 
-                            res,
+                            p->sem.type.res,
                             re_rename_col (p->sem.type.col, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -741,7 +796,7 @@ opt_projection (PFla_op_t *p)
              */  
             case la_attribute:
                 /* swap projection and current operatior */
-                *p = *PFla_project_ (
+        /*        *p = *PFla_project_ (
                         PFla_attribute (
                             LL(p), 
                             p->sem.iter_item1_item2.iter, 
@@ -752,7 +807,7 @@ opt_projection (PFla_op_t *p)
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count)),
                         L(p)->schema.count,
-                        L(p)->sem.proj.items);
+                        L(p)->sem.proj.items); */
                 break;
                 
             /* pass the projection rigth thru and duplicate operator 
@@ -783,21 +838,17 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.fun_1to1.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
-                
-                PFalg_collist_t *collist = 
-                                PFalg_collist_copy (p->sem.fun_1to1.refs);
-                re_rename_col_in_collist (collist, 
-                                    L(p)->sem.proj.items,
-                                    L(p)->schema.count);
+                proj[count] = PFalg_proj (res, p->sem.fun_1to1.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_fun_1to1 (
                             LL(p), 
                             p->sem.fun_1to1.kind,
-                            res,
-                            collist),
+                            p->sem.fun_1to1.res,
+                            re_rename_col_in_collist (p->sem.fun_1to1.refs, 
+                                                      L(p)->sem.proj.items,
+                                                      L(p)->schema.count)),
                         (count + 1),
                         proj);
                 break; 
@@ -829,13 +880,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.binary.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.binary.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_or (
                             LL(p), 
-                            res,
+                            p->sem.binary.res,
                             re_rename_col (p->sem.binary.col1, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -875,13 +926,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.binary.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.binary.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_and (
                             LL(p), 
-                            res,
+                            p->sem.binary.res,
                             re_rename_col (p->sem.binary.col1, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -921,13 +972,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.unary.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.unary.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_not (
                             LL(p), 
-                            res,
+                            p->sem.unary.res,
                             re_rename_col (p->sem.unary.col, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count)),
@@ -964,13 +1015,13 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.binary.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.binary.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_eq (
                             LL(p), 
-                            res,
+                            p->sem.binary.res,
                             re_rename_col (p->sem.binary.col1, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
@@ -1010,7 +1061,7 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.binary.res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.binary.res);
 
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
@@ -1057,7 +1108,7 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.step.item_res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.step.item_res);
             
                 *p = *PFla_project_ (
                         PFla_step_join (
@@ -1068,7 +1119,7 @@ opt_projection (PFla_op_t *p)
                             re_rename_col (p->sem.step.item, 
                                             R(p)->sem.proj.items,
                                             R(p)->schema.count),
-                            res),
+                            p->sem.step.item_res),
                         (count+1),
                         proj );
                 break;
@@ -1103,7 +1154,7 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.doc_join.item_res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.doc_join.item_res);
             
                 *p = *PFla_project_ (
                         PFla_doc_index_join (
@@ -1111,7 +1162,7 @@ opt_projection (PFla_op_t *p)
                             RL(p),
                             p->sem.doc_join.kind,
                             p->sem.doc_join.item,
-                            res,
+                            p->sem.doc_join.item_res,
                             re_rename_col (p->sem.doc_join.item_doc, 
                                             R(p)->sem.proj.items,
                                             R(p)->schema.count)),
@@ -1147,7 +1198,7 @@ opt_projection (PFla_op_t *p)
                 PFalg_col_t res = make_col_unq(p->sem.step.item_res);
                     
                 /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
+                proj[count] = PFalg_proj (res, p->sem.step.item_res);
             
                 *p = *PFla_project_ (
                         PFla_guide_step_join (
@@ -1160,7 +1211,7 @@ opt_projection (PFla_op_t *p)
                             re_rename_col (p->sem.step.item, 
                                             R(p)->sem.proj.items,
                                             R(p)->schema.count),
-                            res),
+                            p->sem.step.item_res),
                         (count+1),
                         proj );
                 break;
@@ -1533,7 +1584,7 @@ opt_projection (PFla_op_t *p)
                         PFla_doc_access (
                             L(p),
                             RL(p), 
-                            res,
+                            p->sem.doc_access.res,
                             re_rename_col (p->sem.doc_access.col,
                                             R(p)->sem.proj.items,
                                             R(p)->schema.count),
@@ -1592,3 +1643,6 @@ PFalgopt_projection (PFla_op_t *root)
 
     return root;
 }
+
+/* vim:set shiftwidth=4 expandtab filetype=c: */
+
