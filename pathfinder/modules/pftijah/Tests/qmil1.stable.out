@@ -15,7 +15,7 @@ module(pathfinder);
 var res := xquery("dm"," let $opt:=<TijahOptions ft-index=\"testcoll0\" ir-model=\"NLLR\" debug=\"0\" top=\"99\"/> let $x := tijah:queryall-id(\"//panel[about(.,dilbert)]\",$opt) let $n := tijah:nodes($x) for $i in $n return (fn:round(100*tijah:score($x,$i)),$i) ");
 
 printf("%s",res);
-44.000000,
+46.000000,
 <panel id="d2">
     <dat>19940216</dat>
     <speech>

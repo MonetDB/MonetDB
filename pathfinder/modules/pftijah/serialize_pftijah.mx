@@ -157,15 +157,15 @@ dbat_extend(dbat* dbat, oid min_i /*raw-index*/, BUN forced_size) {
        newsize = MAX(MIN(MAX(MINCHUNK,dbat->raw_max*2),(BUN)(dbat->raw_max+MAXCHUNK)),(BUN)min_i);
     }
 
-    /* first check if the number of BUN's < INT_MAX. If this was the case
-     * and the previous time INT_MAX was returned this means the BAT cannot
+    /* first check if the number of BUN's < GDK_oid_max. If this was the case
+     * and the previous time GDK_oid_max was returned this means the BAT cannot
      * grow any longer.
      */
-    if ( newsize > INT_MAX ) {
-    	newsize = INT_MAX;
+    if ( newsize > GDK_oid_max ) {
+    	newsize = GDK_oid_max;
 
-	if ( dbat->raw_max == INT_MAX ) {
-        	GDKerror("dbat_extend: BATextend[\"%s\"](size>INT_MAX) fails\n","incomplete");
+	if ( dbat->raw_max == GDK_oid_max ) {
+        	GDKerror("dbat_extend: BATextend[\"%s\"](size>GDK_oid_max) fails\n","incomplete");
 		return -1;
 	}
     }
