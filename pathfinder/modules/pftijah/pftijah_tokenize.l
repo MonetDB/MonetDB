@@ -42,7 +42,6 @@
 #endif
 
 static char *c, *e;
-static int  use_multi_chars;
 
 /* This fix is to prevent problems with flex 2.5.33 and lower on Debian and
  * Gentoo systems. When flex.2.5.4 and higher is obligatory this define
@@ -211,7 +210,6 @@ int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
 int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   // the original
   int len = strlen(buf);
-  use_multi_chars = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   while (pftijah_tokenizelex()) {
       if ( !handleTijahTerm(tjCtx, e) )
@@ -219,7 +217,6 @@ int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
       if ( e != pftijah_tokenizetext )  {
       	GDKfree(e);
       }
-      use_multi_chars = 0;
   }
   yy_delete_buffer(myBuf);
   return 1;
@@ -324,7 +321,6 @@ int tokenize_fast(char* input, struct tijahContextStruct* tjctx)
 char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
   int cnt = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
-  use_multi_chars = 0;
   while (pftijah_tokenizelex()) {
       if ( cnt++ )
           strcat(outbuf," ");
@@ -332,7 +328,6 @@ char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
       if ( e != pftijah_tokenizetext )  {
       	GDKfree(e);
       }
-      use_multi_chars = 0;
   }
   yy_delete_buffer(myBuf);
   return outbuf;
@@ -343,7 +338,6 @@ char* flexScanOneTerm(char* buf) {
   char resBUFF[256];
   int len = strlen(buf);
 
-  use_multi_chars = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   if ( pftijah_tokenizelex() ) {
       res = &resBUFF[0];
