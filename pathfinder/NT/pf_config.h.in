@@ -60,3 +60,6 @@ typedef unsigned char uint8_t;
 
 /* also see rules.msc */
 #define HAVE_PFTIJAH 1
+
+/* tell compiler to use prototypes in flex-generated code */
+#define YY_USE_PROTOS
