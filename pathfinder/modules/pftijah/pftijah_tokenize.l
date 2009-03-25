@@ -107,78 +107,67 @@ AlphaNumChar			 {Letter}|{Digit}|{CharRef}
 /* XML Character Classes (http://www.w3.org/TR/REC-xml/#CharClasses) */
 /* 8 bit characters from the Letter class
    see http://www.w3.org/TR/REC-xml/#NT-Letter */
-Capital                             [\x41-\x5a\xc0-\xd6\xd8-\xde]
-
-/* restrictive Words
-   Word                                ({Capital}{Small_Letter}+)|({Small_Letter}{Small_Letter}+) */
+Capital                          [\x41-\x5a\xc0-\xd6\xd8-\xde]
 
 
 /* most relaxed condition for words, parsing almost everything expect whitespace */
-Word                                {AlphaNumChar}{2,}
+Word                             {AlphaNumChar}{2,}
+
+AsciiAlphaNumChar		 {OneByteBaseChar}|{Digit}
+
+AsciiWord			 {AsciiAlphaNumChar}{2,}
 
 %%
 
-{TwoByteBaseChar}		    { use_multi_chars = 1; }
-
-{ThreeByteBaseChar}		    { use_multi_chars = 1; }
+{AsciiWord}			    { /* case simple WORD */ 
+                                      for (e = pftijah_tokenizetext; *e != '\0'; e++) 
+                                          *e = tolower(*e); 
+				      e = pftijah_tokenizetext;
+				      return 1;
+ 				    }
 
 {S}	                            { /* zap white space */ }
 
 {Word}                              { /* case WORD */
-				      if ( use_multi_chars ) {
-                                      	strLower(&e, pftijah_tokenizetext);
-				      } else {
-                                        for (e = pftijah_tokenizetext; *e != '\0'; e++) 
-                                          *e = tolower(*e); 
-					e = pftijah_tokenizetext;
-				      }
-				      // stream_printf(GDKout,"EMIT[%s]\n",e);
+                                      strLower(&e, pftijah_tokenizetext);
 				      return 1;
 				    }
 
-{AlphaNumChar}{1,2}[-]{Word}        { /* case e-mail, e-government, on-line 
+{AsciiAlphaNumChar}{1,2}[-]{AsciiWord} { /* case e-mail, e-government, on-line 
                                          problem: make-up */ 
                                         /* strip hyphen */
-				      if ( use_multi_chars ) {
-                                        bit repeat = 0;
-                                        strSubstitute(&c, pftijah_tokenizetext, "-", "", &repeat); 
-				        strLower(&e, c);
-
-				      } else {
-                                        e = pftijah_tokenizetext;
-                                        for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                      e = pftijah_tokenizetext;
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                           if (*c != '-') 
                                             *(e++) = tolower(*c);
-                                        *e = '\0';
-					e = pftijah_tokenizetext;
-				      }
+                                      *e = '\0';
+				      e = pftijah_tokenizetext;
                                       return 1;
 				    }
 
-{Word}[\']{AlphaNumChar}{1,2}       { /* case CONTRACTION */ 
-				      if ( use_multi_chars ) 
-                                      	strLower(&e, pftijah_tokenizetext);
-				      else {
-                                        for (e = pftijah_tokenizetext; *e != '\0'; e++) 
-                                          *e = tolower(*e); 
-					e = pftijah_tokenizetext;
-				      }
+{AsciiWord}[\']{AsciiAlphaNumChar}{1,2} { /* case CONTRACTION */ 
+                                        /* strip "'" */
+                                      e = pftijah_tokenizetext;
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                          if (*c != '\'') 
+                                            *(e++) = tolower(*c);
+                                      *e = '\0';
+				      e = pftijah_tokenizetext;
+				      return 1;
+				    }
+{Word}[\']{AlphaNumChar}{1,2} 	    { /* case CONTRACTION */ 
+                                      bit repeat = 1;
+                                      strSubstitute(&c, pftijah_tokenizetext, "'", "", &repeat); 
+				      strLower(&e, c);
+				      GDKfree(c);
 				      return 1;
 				    }
 
 {Capital}[\.]({Capital}[\.])+       { /* case ACRONYM */ 
-				      if ( use_multi_chars )  {
-                                        bit repeat = 1;
-                                        strSubstitute(&c, pftijah_tokenizetext, ".", "", &repeat); 
-				        strLower(&e, c);
-				      } else {
-                                        e = pftijah_tokenizetext;
-                                        for (c = pftijah_tokenizetext; *c != '\0'; c++) 
-                                          if (*c != '.') 
-                                            *(e++) = tolower(*c);
-                                        *e = '\0';
-                                        e = pftijah_tokenizetext;
-				      }
+                                      bit repeat = 1;
+                                      strSubstitute(&c, pftijah_tokenizetext, ".", "", &repeat); 
+				      strLower(&e, c);
+				      GDKfree(c);
                                       return 1;
                                     }
 
