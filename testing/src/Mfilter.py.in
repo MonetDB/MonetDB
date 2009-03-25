@@ -423,7 +423,29 @@ def mFilter (FILE, IGNORE) :
         fout.write("= %9d lines, %9d words, %9d chars   in lines not matching '^$|%s`\n"    % (el,ew,ec,IGNORE))
         fout.write("# %9d lines, %9d words, %9d chars   in all lines\n"                     % (al,aw,ac))
         fout.write("\n")
+        treatxml = False
         for ln in ftmp:
+            if not treatxml and '<?xml' in ln:
+                treatxml = True
+            if treatxml and (ln[:1] != '#' or ln[:3] == '#~ '):
+                # Add a newline after each > and before each <, but
+                # only add a single one between >< and don't add an
+                # extra one when the line starts with < or ends with >.
+                # We also recognize some line prefixes and repeat them
+                # after each added newline.
+                for pref in ['#~ ', '!~', '=']:
+                    if ln[:len(pref)] == pref:
+                        break
+                else:
+                    pref = ''
+                preflen = len(pref)
+                ln = ln.replace('>', '>&\n').replace('<','&\n<').replace('>&\n&\n<', '>&\n<')
+                if ln[:2 + preflen] == pref + '&\n':
+                    ln = pref + ln[2 + preflen:]
+                if ln[-3:] == '&\n\n':
+                    ln = ln[:-3] + '\n'
+                if pref:
+                    ln = ln[:-1].replace('\n', '\n' + pref) + '\n'
             try:
                 fout.write(ln)
             except IOError, (IOerrNo, IOerrStr):
