@@ -60,31 +60,33 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 	BAT *bl,*br,*bn;
 	BUN lpages, rpages;
 
+	*rl = *rr = 0;
 	if( (bl= BATdescriptor(*l)) == NULL ){
 		throw(MAL, "algebra.prejoin", "Cannot access descriptor");
 	}
 	if( (br= BATdescriptor(*r)) == NULL ){
-		BBPreleaseref(*l);
+		BBPreleaseref(bl->batCacheid);
 		throw(MAL, "algebra.prejoin", "Cannot access descriptor");
 	}
 	lpages= (bl->H->heap.size + bl->T->heap.size)/MT_pagesize();
 	rpages= (br->H->heap.size + br->T->heap.size)/MT_pagesize();
 
-	if( bl->batPersistence != TRANSIENT || 	
-		BATtordered(bl) ||
-		bl->batSharecnt ||
-		rpages < GDKmem_inuse()/MT_pagesize()/4  ||
-		BATcount(bl) < rpages + rpages * log(rpages)){
+	if( bl->batPersistence != TRANSIENT || 	/* no change in persistent */
+		BATtordered(bl) ||		/* ordered tails are fine */
+		bl->batSharecnt ||		/* avoid dependent views */
+		rpages + lpages <= GDKmem_inuse()/MT_pagesize()  ||	/* small operands are ok*/
+		BATcount(bl) < 2* rpages * log(rpages)){
 		BBPkeepref(*rl = bl->batCacheid);
 		BBPkeepref(*rr = br->batCacheid);
 		return MAL_SUCCEED;
 	}
-#ifdef DEBUG_OPT_PREJOIN
-	stream_printf(GDKout,"Prepare the join operand" BUNFMT "\n",rpages);
-#endif
+	ALGODEBUG{
+	stream_printf(GDKout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
+		BATcount(bl), lpages, rpages);
+	}
 	bn= BATmirror(BATsort(BATmirror(bl)));
 	BBPkeepref(*rr = br->batCacheid);
-	BBPkeepref(*rl=bn->batCacheid);
+	BBPkeepref(*rl = bn->batCacheid);
 	BBPreleaseref(bl->batCacheid);
 	return MAL_SUCCEED;
 }
