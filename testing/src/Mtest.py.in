@@ -50,6 +50,15 @@ import select
 #import getpass
 import Mfilter
 
+# Python 2.3 doesn't know about os.devnull...
+try:
+    os.devnull
+except AttributeError:
+    if os.name == 'nt':
+        os.devnull = 'nul'
+    else:
+        os.devnull = '/dev/null'
+
 def _configure(str):
     # expand configure variables in str and return result
     config = [
