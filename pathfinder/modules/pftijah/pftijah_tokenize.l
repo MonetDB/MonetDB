@@ -42,6 +42,7 @@
 #endif
 
 static char *c, *e;
+static int  use_multi_chars;
 
 /* This fix is to prevent problems with flex 2.5.33 and lower on Debian and
  * Gentoo systems. When flex.2.5.4 and higher is obligatory this define
@@ -117,31 +118,67 @@ Word                                {AlphaNumChar}{2,}
 
 %%
 
+{TwoByteBaseChar}		    { use_multi_chars = 1; }
+
+{ThreeByteBaseChar}		    { use_multi_chars = 1; }
+
 {S}	                            { /* zap white space */ }
 
 {Word}                              { /* case WORD */
-                                      strLower(&e, pftijah_tokenizetext);
+				      if ( use_multi_chars ) {
+                                      	strLower(&e, pftijah_tokenizetext);
+				      } else {
+                                        for (e = pftijah_tokenizetext; *e != '\0'; e++) 
+                                          *e = tolower(*e); 
+					e = pftijah_tokenizetext;
+				      }
+				      // stream_printf(GDKout,"EMIT[%s]\n",e);
 				      return 1;
 				    }
 
 {AlphaNumChar}{1,2}[-]{Word}        { /* case e-mail, e-government, on-line 
                                          problem: make-up */ 
-                                      /* strip hyphen */
-                                      bit repeat = 0;
-                                      strSubstitute(&c, pftijah_tokenizetext, "-", "", &repeat); 
-				      strLower(&e, c);
+                                        /* strip hyphen */
+				      if ( use_multi_chars ) {
+                                        bit repeat = 0;
+                                        strSubstitute(&c, pftijah_tokenizetext, "-", "", &repeat); 
+				        strLower(&e, c);
+
+				      } else {
+                                        e = pftijah_tokenizetext;
+                                        for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                          if (*c != '-') 
+                                            *(e++) = tolower(*c);
+                                        *e = '\0';
+					e = pftijah_tokenizetext;
+				      }
                                       return 1;
 				    }
 
 {Word}[\']{AlphaNumChar}{1,2}       { /* case CONTRACTION */ 
-                                      strLower(&e, pftijah_tokenizetext);
-                                      return 1;
+				      if ( use_multi_chars ) 
+                                      	strLower(&e, pftijah_tokenizetext);
+				      else {
+                                        for (e = pftijah_tokenizetext; *e != '\0'; e++) 
+                                          *e = tolower(*e); 
+					e = pftijah_tokenizetext;
+				      }
+				      return 1;
 				    }
 
 {Capital}[\.]({Capital}[\.])+       { /* case ACRONYM */ 
-                                      bit repeat = 1;
-                                      strSubstitute(&c, pftijah_tokenizetext, ".", "", &repeat); 
-				      strLower(&e, c);
+				      if ( use_multi_chars )  {
+                                        bit repeat = 1;
+                                        strSubstitute(&c, pftijah_tokenizetext, ".", "", &repeat); 
+				        strLower(&e, c);
+				      } else {
+                                        e = pftijah_tokenizetext;
+                                        for (c = pftijah_tokenizetext; *c != '\0'; c++) 
+                                          if (*c != '.') 
+                                            *(e++) = tolower(*c);
+                                        *e = '\0';
+                                        e = pftijah_tokenizetext;
+				      }
                                       return 1;
                                     }
 
@@ -185,10 +222,15 @@ int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
 int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   // the original
   int len = strlen(buf);
+  use_multi_chars = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   while (pftijah_tokenizelex()) {
       if ( !handleTijahTerm(tjCtx, e) )
           return 0;
+      if ( e != pftijah_tokenizetext )  {
+      	GDKfree(e);
+      }
+      use_multi_chars = 0;
   }
   yy_delete_buffer(myBuf);
   return 1;
@@ -293,10 +335,15 @@ int tokenize_fast(char* input, struct tijahContextStruct* tjctx)
 char* tijah_tokenize_string(char* buf, int len, char* outbuf) {
   int cnt = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
+  use_multi_chars = 0;
   while (pftijah_tokenizelex()) {
       if ( cnt++ )
           strcat(outbuf," ");
       strcat(outbuf,e);
+      if ( e != pftijah_tokenizetext )  {
+      	GDKfree(e);
+      }
+      use_multi_chars = 0;
   }
   yy_delete_buffer(myBuf);
   return outbuf;
@@ -307,10 +354,14 @@ char* flexScanOneTerm(char* buf) {
   char resBUFF[256];
   int len = strlen(buf);
 
+  use_multi_chars = 0;
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
   if ( pftijah_tokenizelex() ) {
       res = &resBUFF[0];
       strncpy(res,e,256);
+      if ( e != pftijah_tokenizetext )  {
+      	GDKfree(e);
+      }
   } else
       res = NULL;
   yy_delete_buffer(myBuf);
