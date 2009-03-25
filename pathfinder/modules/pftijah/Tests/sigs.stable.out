@@ -40,6 +40,7 @@ module 'pftijah'
 [ "offsetindex(BAT[void,oid], int) : BAT[void,oid]"															  ]
 [ "pf2tijah_node(BAT[oid,str], BAT[oid,oid], BAT[oid,oid], BAT[oid,oid], BAT[oid,int], BAT[oid,str]) : BAT[void,oid]"							  ]
 [ "serialize_tijah_opt(BAT[void,BAT], int, BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,str]) : BAT[str,str]"	  ]
+[ "set_tailkeysorted(BAT[any,any]) : BAT[any,any]"															  ]
 [ "tijah_tokenize(str) : str"																		  ]
 [ "tj_add2collection(str, BAT[str,str], bit) : void"															  ]
 [ "tj_add2collection(str, str, str, bit) : void"															  ]

@@ -1,6 +1,6 @@
 @' Copyright Notice:
 @' -----------------
-@'
+u'
 @' The contents of this file are subject to the PfTijah Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
@@ -156,6 +156,9 @@ BAT[void,oid] - bat with indexed offset and tail values to be returned
 DESCRIPTION:
 the join algorithm comes down to a repeated slice and insert operation.
 "
+
+.COMMAND set_tailkeysorted(BAT[any,any]) : BAT[any,any] = CMDsettailkeysorted; 
+"set bat properties of the tail to key and sorted"
 
 .COMMAND treemergejoin_sort(BAT[oid,oid],BAT[void,int],BAT[oid,oid]) : BAT[oid,oid] = CMDtreemergejoin_sort; 
 "Stack tree merge join descendant"
@@ -2027,7 +2030,9 @@ PROC tj_play_doc_tape(BAT[void,BAT] ws,
 PROC tj_select_star() : bat[oid,any] := 
 {
     # deselect document root
-    return bat("tj_" + ftindex + "_pfpre").slice(1, bat("tj_" + ftindex + "_pfpre").count() - 1);
+    var res := bat("tj_" + ftindex + "_pfpre").slice(1, bat("tj_" + ftindex + "_pfpre").count() - 1);
+    res.set_tailkeysorted();
+    return res;
 }
 
 ##
@@ -2051,7 +2056,7 @@ PROC tj_select_tag(str name) : bat[oid,any] :=
     var index := bat("tj_" + ftindex + "_TagIndex");
     var offset1 := int(index.fetch(tid));
     var offset2 := int(index.fetch(tid + 1)) - 1;
-    return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2).chk_order();
+    return bat("tj_" + ftindex + "_Tags").slice(offset1, offset2).set_tailkeysorted();
 }
 
 #####################################################################
@@ -2089,7 +2094,7 @@ PROC tj_pre2nid_prop(bat[oid,any] pre_score) : bat[oid,any] :=
     # todo: if join turns out to be expensive, we can slice out the part belonging to
     # the respective tagname. pre2nid is only used, if result region has a single tag-name.
 
-    return bat("tj_" + ftindex + "_Tags").leftjoin(pre_score).chk_order();
+    return bat("tj_" + ftindex + "_Tags").leftjoin(pre_score);
 }
 ##
 # Translate all pre identifiers to nid identifiers, pre remains in tail
@@ -2128,7 +2133,7 @@ PROC tj_contained_by_noprop_@1_pre (bat[oid,oid] left, bat[oid,oid] right) : bat
 {
     var size := bat("tj_" + ftindex + "_size1");
     var right_left := treemergejoin_@1_pre(right, size, left);
-    var result := right_left.reverse().chk_order();
+    var result := right_left.reverse();
     return result;
 }
 @mil
@@ -2191,7 +2196,7 @@ PROC tj_containing_noprop_@1_nid (bat[oid,oid] left, bat[oid,oid] right) : bat[o
 {
     var size := bat("tj_" + ftindex + "_TagSize");
     var left_right := treemergejoin_@1_nid(left, size, right);
-    var result := left.semijoin(left_right).chk_order();
+    var result := left.semijoin(left_right);
     return result;
 }
 @mil
@@ -2203,7 +2208,7 @@ PROC tj_containing_noprop_@1_pre (bat[oid,oid] left, bat[oid,oid] right) : bat[o
 {
     var size := bat("tj_" + ftindex + "_size1");
     var left_right := treemergejoin_@1_pre(left, size, right);
-    var result := left_right.chk_order();
+    var result := left_right;
     return result;
 }
 @mil
@@ -2272,7 +2277,7 @@ PROC _getTermPositions (oid tid) : bat[void,oid] := {
      var offset1 := int(index.fetch(int(tid)));
      var offset2 := int(index.fetch(int(tid) + 1));
      var res := bat("tj_" + ftindex + "_Terms").slice(offset1, offset2 - 1);
-     res := res.seqbase(0@0).chk_order();
+     res := res.seqbase(0@0).set_tailkeysorted();
      return res;
 }
 
@@ -2620,7 +2625,7 @@ PROC _getConceptPositions (oid tid) : bat[void,oid] := {
      var offset1 := int(index.fetch(int(tid)));
      var offset2 := int(index.fetch(int(tid) + 1));
      var res := bat("tj_" + ftindex + "_Concepts").slice(offset1, offset2 - 1);
-     res := res.chk_order();
+     res := res.set_tailkeysorted();
      return res;
 }
 
@@ -2656,7 +2661,7 @@ PROC _getConceptDocScr_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void
 @mil
 
 #                 __              
-# LogSum(d|q) =   >_   qCnt(c) * log dScr(c) 
+# LogSum(d|q) =   >_   qCnt(c) * log (dScr(c) + 1)
 #              c in q             
 #
 # where qCnt(c) = count of concept c in query q
@@ -2664,7 +2669,8 @@ PROC _getConceptDocScr_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void
 #
 
 PROC _score_LogSum(dbl q_cCnt, BAT[oid,dbl] e_cScr) : bat[oid,dbl] := {
-    var e_cScores := [log](e_cScr);
+    var e_cScores := e_cScr.[+](dbl(1)); 
+    e_cScores := [log](e_cScores);
     e_cScores := e_cScores.[*](q_cCnt);
     return e_cScores;
 }
@@ -5193,6 +5199,16 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 @
 
 @c
+int
+CMDsettailkeysorted(BAT **result, BAT *input)
+{
+	*result = input;
+	BATkey(BATmirror(*result), BOUND2BTRUE);
+	(*result)->tsorted = GDK_SORTED;
+	BBPfix(input->batCacheid);
+	return GDK_SUCCEED;
+}
+
 #define max_stack_size 128
 
 typedef struct stack_item si;
@@ -5309,7 +5325,7 @@ int CMDtreemergejoin_sort(BAT **result, BAT *Astart, BAT *nid_size, BAT *Dstart)
       /* it has to end after Dend. */
       if (free < stack_top)
       {
-     	BATsetcount(res, hdst - sdst);
+	BATsetcount(res, hdst - sdst);
         BUN sz = BATgrows(res);
         while (sz < ((hdst - sdst) + stack_top)) 
           sz = 2 * sz;

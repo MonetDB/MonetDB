@@ -249,7 +249,7 @@ TJpnode_t* rule1_2(TJptree_t *ptree, TJpnode_t *root)
  *     
  *        par                    par
  *         |                      |
- *       about                   and
+ *       about                   or 
  *       /  \        -->       /     \
  *      x  query           about     about
  *                         /  \       /  \
@@ -262,7 +262,7 @@ TJpnode_t* rule3(TJptree_t *ptree, TJpnode_t *root)
     int childno, c, num_about;
     TJqnode_t *qn, *qn1, *qn2;
     TJpnode_child_t nl_about[TJPNODELIST_MAXSIZE];
-    TJpnode_t *n_about_par, *n_about, *n_query2, *n_about2, *n_and; 
+    TJpnode_t *n_about_par, *n_about, *n_query2, *n_about2, *n_or; 
 
     num_about = find_all_par_tree (ptree, p_about, nl_about);
     for (c = 0; c < num_about; c++) {
@@ -289,8 +289,8 @@ TJpnode_t* rule3(TJptree_t *ptree, TJpnode_t *root)
 	    n_query2 = tjcp_leaf (ptree, p_query);
 	    n_query2->sem.qnode = qn2;
 	    n_about2 = tjcp_wire2 (ptree, p_about, n_about->child[0], n_query2); 
-	    n_and = tjcp_wire2 (ptree, p_and, n_about, n_about2);
-	    n_about_par->child[childno] = n_and;
+	    n_or = tjcp_wire2 (ptree, p_or, n_about, n_about2);
+	    n_about_par->child[childno] = n_or;
 	}
     }
     return NULL; /* HENNING CHECK */
