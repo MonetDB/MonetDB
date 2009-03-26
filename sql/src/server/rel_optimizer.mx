@@ -2551,6 +2551,7 @@ is_identity_of(sql_exp *e, sql_rel *l)
 }
 
 /* rewrite {semi,anti}join (A, join(A,B)) into {semi,anti}join (A,B) */
+/* TODO handle A, join(B,A) as well */
 static sql_rel *
 rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -2560,7 +2561,7 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *r = rel->r;
 		sql_rel *rl = (r->l)?r->l:NULL;
 
-		if (l->ref.refcnt == 3 && 
+		if (l->ref.refcnt == 2 && 
 		   ((is_join(r->op) && l == r->l) || 
 		    (is_project(r->op) && rl && is_join(rl->op) && l == rl->l))){
 			sql_rel *or = r;
@@ -2577,11 +2578,9 @@ rel_rewrite_semijoin(int *changes, mvc *sql, sql_rel *rel)
 			list_destroy(rel->exps);
 			rel->exps = r->exps;
 			r->exps = NULL;
-			rel_destroy(l);
 			rel_destroy(or);
 			(*changes)++;
 		}
-
 	}
 	return rel;
 }
