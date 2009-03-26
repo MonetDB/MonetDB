@@ -795,6 +795,7 @@ void
 BBPexit(void)
 {
 	bat i;
+	int skipped = 1;
 
 	if (!BBP)
 		return;		/* AARGH */
@@ -803,32 +804,45 @@ BBPexit(void)
 	BBPlock("BBPexit");	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
-	for (i = 0; i < BBPsize; i++) {
-		if (BBPvalid(i)) {
-			BAT *b = BBP_cache(i);
+	while (skipped) {
+		skipped = 0;
+		for (i = 0; i < BBPsize; i++) {
+			if (BBPvalid(i)) {
+				BAT *b = BBP_cache(i);
 
-			if (b) {
-				if (isVIEW(b))
-					VIEWdestroy(b);
-				else
-					BATfree(b);
+				if (b) {
+					if (b->batSharecnt > 0) {
+						skipped = 1;
+						continue;
+					}
+					if (isVIEW(b)) {
+						bat hp = b->H->parentid, tp = b->T->parentid;
+
+						VIEWdestroy(b);
+						if (hp)
+							BBP_cache(hp)->batSharecnt--;
+						if (tp)
+							BBP_cache(tp)->batSharecnt--;
+					} else
+						BATfree(b);
+				}
+				BBPuncacheit_(i, TRUE);
+				if (BBP[i].nme[0] != BBP[i].bak[0])
+					GDKfree(BBP[i].bak[0]);
+				BBP[i].bak[0] = NULL;
+				GDKfree(BBP[i].nme[0]);
+				BBP[i].nme[0] = NULL;
+				GDKfree(BBP[i].nme[1]);
+				BBP[i].nme[1] = NULL;
 			}
-			BBPuncacheit_(i, TRUE);
-			if (BBP[i].nme[0] != BBP[i].bak[0])
+			if (BBP_physical(i)) {
+				GDKfree(BBP_physical(i));
+				BBP_physical(i) = NULL;
+			}
+			if (BBP[i].bak[0])
 				GDKfree(BBP[i].bak[0]);
 			BBP[i].bak[0] = NULL;
-			GDKfree(BBP[i].nme[0]);
-			BBP[i].nme[0] = NULL;
-			GDKfree(BBP[i].nme[1]);
-			BBP[i].nme[1] = NULL;
 		}
-		if (BBP_physical(i)) {
-			GDKfree(BBP_physical(i));
-			BBP_physical(i) = NULL;
-		}
-		if (BBP[i].bak[0])
-			GDKfree(BBP[i].bak[0]);
-		BBP[i].bak[0] = NULL;
 	}
 	GDKfree(BBP_hash);
 	BBP_hash = 0;
