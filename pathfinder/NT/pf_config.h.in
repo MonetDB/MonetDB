@@ -63,3 +63,6 @@ typedef unsigned char uint8_t;
 
 /* tell compiler to use prototypes in flex-generated code */
 #define YY_USE_PROTOS
+
+/* tell compiler to use const in flex-generated code */
+#define YY_USE_CONST
