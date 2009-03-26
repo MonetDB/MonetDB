@@ -1,6 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+*Feb2009-SP1
+
   23 Mar 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
   Remove the pid file upon shutdown, fixes bug #2705666
 

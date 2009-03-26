@@ -795,6 +795,7 @@ void
 BBPexit(void)
 {
 	bat i;
+	int skipped = 1;
 
 	if (!BBP)
 		return;		/* AARGH */
@@ -803,32 +804,45 @@ BBPexit(void)
 	BBPlock("BBPexit");	/* stop all threads ever touching more descriptors */
 
 	/* free all memory (just for leak-checking in Purify) */
-	for (i = 0; i < BBPsize; i++) {
-		if (BBPvalid(i)) {
-			BAT *b = BBP_cache(i);
+	while (skipped) {
+		skipped = 0;
+		for (i = 0; i < BBPsize; i++) {
+			if (BBPvalid(i)) {
+				BAT *b = BBP_cache(i);
 
-			if (b) {
-				if (isVIEW(b))
-					VIEWdestroy(b);
-				else
-					BATfree(b);
+				if (b) {
+					if (b->batSharecnt > 0) {
+						skipped = 1;
+						continue;
+					}
+					if (isVIEW(b)) {
+						bat hp = b->H->parentid, tp = b->T->parentid;
+
+						VIEWdestroy(b);
+						if (hp)
+							BBP_cache(hp)->batSharecnt--;
+						if (tp)
+							BBP_cache(tp)->batSharecnt--;
+					} else
+						BATfree(b);
+				}
+				BBPuncacheit_(i, TRUE);
+				if (BBP[i].nme[0] != BBP[i].bak[0])
+					GDKfree(BBP[i].bak[0]);
+				BBP[i].bak[0] = NULL;
+				GDKfree(BBP[i].nme[0]);
+				BBP[i].nme[0] = NULL;
+				GDKfree(BBP[i].nme[1]);
+				BBP[i].nme[1] = NULL;
 			}
-			BBPuncacheit_(i, TRUE);
-			if (BBP[i].nme[0] != BBP[i].bak[0])
+			if (BBP_physical(i)) {
+				GDKfree(BBP_physical(i));
+				BBP_physical(i) = NULL;
+			}
+			if (BBP[i].bak[0])
 				GDKfree(BBP[i].bak[0]);
 			BBP[i].bak[0] = NULL;
-			GDKfree(BBP[i].nme[0]);
-			BBP[i].nme[0] = NULL;
-			GDKfree(BBP[i].nme[1]);
-			BBP[i].nme[1] = NULL;
 		}
-		if (BBP_physical(i)) {
-			GDKfree(BBP_physical(i));
-			BBP_physical(i) = NULL;
-		}
-		if (BBP[i].bak[0])
-			GDKfree(BBP[i].bak[0]);
-		BBP[i].bak[0] = NULL;
 	}
 	GDKfree(BBP_hash);
 	BBP_hash = 0;
@@ -1078,79 +1092,83 @@ BBPdump()
 	bat i;
 	size_t mem=0, vm=0;
 	size_t cmem = 0, cvm = 0;
+	int n = 0, nc = 0;
 
-	for (i = 0; i < BBPsize; i++) 
-	if (BBP[i].b[0]) {
-		THRprintf(GDKout,"# %d: ", i);
-		THRprintf(GDKout,"b=["PTRFMT","PTRFMT"] ",PTRFMTCAST BBP[i].b[0],PTRFMTCAST BBP[i].b[1]);
-		THRprintf(GDKout,"nme=['%s','%s'] ",BBP[i].nme[0]?BBP[i].nme[0]:"<NULL>",BBP[i].nme[1]?BBP[i].nme[1]:"<NULL>");
-		THRprintf(GDKout,"bak=['%s','%s'] ",BBP[i].bak[0]?BBP[i].bak[0]:"<NULL>",BBP[i].bak[1]?BBP[i].bak[1]:"<NULL>");
-		THRprintf(GDKout,"next=[%d,%d] ",BBP[i].next[0],BBP[i].next[1]);
-		THRprintf(GDKout,"cache="PTRFMT" ",PTRFMTCAST BBP[i].cache);
-		THRprintf(GDKout,"path='%s' ",BBP[i].path?BBP[i].path:"<NULL>");
-		THRprintf(GDKout,"refs=%d ",BBP[i].refs);
-		THRprintf(GDKout,"lrefs=%d ",BBP[i].lrefs);
-		/*THRprintf(GDKout,"lastused=%d ",BBP[i].lastused);*/
-		THRprintf(GDKout,"status=%d ",BBP[i].status);
-		THRprintf(GDKout,"Hheap=["SZFMT","SZFMT"] ",HEAPmemsize(&BBP[i].b[0]->H->heap),HEAPvmsize(&BBP[i].b[0]->H->heap));
+	for (i = 0; i < BBPsize; i++) {
+		BAT *b = BBP[i].b[0];
+		if (b == NULL)
+			continue;
+		THRprintf(GDKout,
+			  "# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d status=%d "
+			  "Hheap=["SZFMT","SZFMT"] Hvheap=["SZFMT","SZFMT"] Hhash=["SZFMT","SZFMT"] "
+			  "Theap=["SZFMT","SZFMT"] Tvheap=["SZFMT","SZFMT"] Thash=["SZFMT","SZFMT"]\n",
+			  i, ATOMname(b->H->type), ATOMname(b->T->type),
+			  BBP[i].nme[0] ? BBP[i].nme[0] : "<NULL>", BBP[i].nme[1] ? BBP[i].nme[1] : "<NULL>",
+			  BBP[i].refs, BBP[i].lrefs, BBP[i].status,
+			  HEAPmemsize(&b->H->heap), HEAPvmsize(&b->H->heap),
+			  HEAPmemsize(b->H->vheap), HEAPvmsize(b->H->vheap),
+			  b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0,
+			  b->H->hash ? HEAPvmsize(b->H->hash->heap) : 0,
+			  HEAPmemsize(&b->T->heap), HEAPvmsize(&b->T->heap),
+			  HEAPmemsize(b->T->vheap), HEAPvmsize(b->T->vheap),
+			  b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0,
+			  b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0);
 		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-			cmem += HEAPmemsize(&BBP[i].b[0]->H->heap);
-			cvm += HEAPvmsize(&BBP[i].b[0]->H->heap);
+			cmem += HEAPmemsize(&b->H->heap);
+			cvm += HEAPvmsize(&b->H->heap);
+			nc++;
 		} else {
-			mem+=HEAPmemsize(&BBP[i].b[0]->H->heap);
-			vm+=HEAPvmsize(&BBP[i].b[0]->H->heap);
+			mem+=HEAPmemsize(&b->H->heap);
+			vm+=HEAPvmsize(&b->H->heap);
+			n++;
 		}
-		if (BBP[i].b[0]->H->vheap) {
-			THRprintf(GDKout,"Hvheap=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->H->vheap),HEAPvmsize(BBP[i].b[0]->H->vheap));
+		if (b->H->vheap) {
 			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-				cmem += HEAPmemsize(BBP[i].b[0]->H->vheap);
-				cvm += HEAPvmsize(BBP[i].b[0]->H->vheap);
+				cmem += HEAPmemsize(b->H->vheap);
+				cvm += HEAPvmsize(b->H->vheap);
 			} else {
-				mem+=HEAPmemsize(BBP[i].b[0]->H->vheap);
-				vm+=HEAPvmsize(BBP[i].b[0]->H->vheap);
+				mem+=HEAPmemsize(b->H->vheap);
+				vm+=HEAPvmsize(b->H->vheap);
 			}
 		}
-		if (BBP[i].b[0]->H->hash) {
-			THRprintf(GDKout,"Hhash=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->H->hash->heap),HEAPvmsize(BBP[i].b[0]->H->hash->heap));
+		if (b->H->hash) {
 			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-				cmem += HEAPmemsize(BBP[i].b[0]->H->hash->heap);
-				cvm += HEAPvmsize(BBP[i].b[0]->H->hash->heap);
+				cmem += HEAPmemsize(b->H->hash->heap);
+				cvm += HEAPvmsize(b->H->hash->heap);
 			} else {
-				mem+=HEAPmemsize(BBP[i].b[0]->H->hash->heap);
-				vm+=HEAPvmsize(BBP[i].b[0]->H->hash->heap);
+				mem+=HEAPmemsize(b->H->hash->heap);
+				vm+=HEAPvmsize(b->H->hash->heap);
 			}
 		}
-		THRprintf(GDKout,"Theap=["SZFMT","SZFMT"] ",HEAPmemsize(&BBP[i].b[0]->T->heap),HEAPvmsize(&BBP[i].b[0]->T->heap));
 		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-			cmem += HEAPmemsize(&BBP[i].b[0]->T->heap);
-			cvm += HEAPvmsize(&BBP[i].b[0]->T->heap);
+			cmem += HEAPmemsize(&b->T->heap);
+			cvm += HEAPvmsize(&b->T->heap);
 		} else {
-			mem+=HEAPmemsize(&BBP[i].b[0]->T->heap);
-			vm+=HEAPvmsize(&BBP[i].b[0]->T->heap);
+			mem+=HEAPmemsize(&b->T->heap);
+			vm+=HEAPvmsize(&b->T->heap);
 		}
-		if (BBP[i].b[0]->T->vheap) {
-			THRprintf(GDKout,"Tvheap=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->T->vheap),HEAPvmsize(BBP[i].b[0]->T->vheap));
+		if (b->T->vheap) {
 			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-				cmem += HEAPmemsize(BBP[i].b[0]->T->vheap);
-				cvm += HEAPvmsize(BBP[i].b[0]->T->vheap);
+				cmem += HEAPmemsize(b->T->vheap);
+				cvm += HEAPvmsize(b->T->vheap);
 			} else {
-				mem+=HEAPmemsize(BBP[i].b[0]->T->vheap);
-				vm+=HEAPvmsize(BBP[i].b[0]->T->vheap);
+				mem+=HEAPmemsize(b->T->vheap);
+				vm+=HEAPvmsize(b->T->vheap);
 			}
 		}
-		if (BBP[i].b[0]->T->hash) {
-			THRprintf(GDKout,"Thash=["SZFMT","SZFMT"] ",HEAPmemsize(BBP[i].b[0]->T->hash->heap),HEAPvmsize(BBP[i].b[0]->T->hash->heap));
+		if (b->T->hash) {
 			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
-				cmem += HEAPmemsize(BBP[i].b[0]->T->hash->heap);
-				cvm += HEAPvmsize(BBP[i].b[0]->T->hash->heap);
+				cmem += HEAPmemsize(b->T->hash->heap);
+				cvm += HEAPvmsize(b->T->hash->heap);
 			} else {
-				mem+=HEAPmemsize(BBP[i].b[0]->T->hash->heap);
-				vm+=HEAPvmsize(BBP[i].b[0]->T->hash->heap);
+				mem+=HEAPmemsize(b->T->hash->heap);
+				vm+=HEAPvmsize(b->T->hash->heap);
 			}
 		}
-		THRprintf(GDKout,"\n");
 	}
-	THRprintf(GDKout,"# mem="SZFMT", vm="SZFMT" cached: mem="SZFMT", vm="SZFMT"\n",mem,vm,cmem,cvm);
+	THRprintf(GDKout,
+		  "# %d bats: mem="SZFMT", vm="SZFMT" %d cached bats: mem="SZFMT", vm="SZFMT"\n",
+		  n, mem, vm, nc, cmem, cvm);
 }
 
 @}
