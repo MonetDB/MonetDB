@@ -768,7 +768,7 @@ MT_mmap_trim(size_t target, void *fp)
 {
 	stream *err = (stream *) fp;
 	size_t off, rss = MT_getrss();
-	int i, worry = MAX(4, rss*8/target) - 4;
+	int i, worry = (int) MAX(4, rss*8/target) - 4;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	if (err) {
