@@ -737,7 +737,8 @@ setLifespan(MalBlkPtr mb, Lifespan span)
 			if (span[v].beginLifespan == 0 ){
 				span[v].beginLifespan = pc;
 				/* remember the variable in the scope stack*/
-				decl[top++]= v;
+				if( depth )
+					decl[top++]= v;
 			}
 			if (k < p->retc && 
 				p->barrier != RETURNsymbol &&
