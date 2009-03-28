@@ -1611,7 +1611,7 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		       /* the follwoing might be trivial cases,
 			* but the "optimized" nlthetajoin implementation cannot handle them, yet ... */
 		       && l->ttype != TYPE_void && r->htype != TYPE_void;
-	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate + 128);
+	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate >= BUN_MAX - 128 ? BUN_MAX : estimate + 128);
 	int lo = 0, hi = 0;
 
 	if (bn == NULL)
