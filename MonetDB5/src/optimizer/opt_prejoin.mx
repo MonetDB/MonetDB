@@ -75,7 +75,7 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 		BATtordered(bl) ||		/* ordered tails are fine */
 		bl->batSharecnt ||		/* avoid dependent views */
 		rpages + lpages <= GDKmem_inuse()/MT_pagesize()  ||	/* small operands are ok*/
-		BATcount(bl) < (BUN) ( 2* rpages * log(rpages)) ){
+		(dbl)BATcount(bl) < ( 2* rpages * log(rpages)) ){
 		BBPkeepref(*rl = bl->batCacheid);
 		BBPkeepref(*rr = br->batCacheid);
 		return MAL_SUCCEED;
