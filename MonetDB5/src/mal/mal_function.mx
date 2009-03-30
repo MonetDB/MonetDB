@@ -718,7 +718,7 @@ block, due to possible REDO actions.
 Variables defined within the block can be finished at
 any time, but at EXIT at the latest.
 @c
-voi
+void
 setLifespan(MalBlkPtr mb, Lifespan span)
 {
 	int pc, k, depth=0;
