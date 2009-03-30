@@ -2040,7 +2040,7 @@ draw_queryflow(
     BATiter bi;
 
     if (logdir == NULL) return GDK_FAIL;
-    snprintf(base_name, 2048, "%s%cqflow_"LLFMT, logdir, DIR_SEP, xrpc_seqnr);
+    snprintf(base_name, 2048, "%sqflow_"LLFMT, logdir, xrpc_seqnr);
     snprintf(dotFile, 2048, "%s.dot", base_name);
 
     /* replace all non-alpha-numeric chars in the string with '_', so
