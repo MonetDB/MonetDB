@@ -106,13 +106,6 @@ potential interesting results or issueing a memory map advice.
 Furthermore, it makes sense to only release larger temporary BATs
 during the execution, because they may unnecessarily push base
 tables out of memory.
-@= releaseBAT
-{	q= newInstruction(NULL,ASSIGNsymbol);
-	getArg(q,0) = getArg(p,j);
-	q= pushNil(mb,q, TYPE_bat);
-	pushInstruction(mb,q);
-	typeChecker(s,mb,q,TRUE);
-}
 @= releaseBATbyFunction
 {
 	q= newInstruction(NULL,ASSIGNsymbol);
@@ -169,7 +162,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 {
 	int i, j, k, limit,done;
 	InstrPtr p, q, *old;
-	Module s = cntxt->nspace;
 	int actions = 0;
 	Lifespan span;
 
@@ -203,10 +195,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 #ifdef DEBUG_OPT_GARBAGE
 				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
 #endif
-					@:releaseBAT()@
+					q= newAssignment(mb);
+					getArg(q,0) = getArg(p,j);
+					q= pushNil(mb,q, TYPE_bat);
 					actions++;
 				}
 			} 
+		}
+		if (blockExit(p) ){
+			for (k = 0; k < mb->vtop; k++)
+			if (getEndLifespan(span,k) == i &&
+				isaBatType(getVarType(mb,k)) &&
+				varGetProp(mb, k, keepProp) == NULL){
+					q= newAssignment(mb);
+					getArg(q,0) = k;
+					q= pushNil(mb,q, TYPE_bat);
+					actions++;
+			}
 		}
 	}
 #ifdef DEBUG_OPT_GARBAGE
