@@ -1116,17 +1116,19 @@ command_destroy(int argc, char *argv[])
 				continue;
 			}
 			SABAOTHfreeStatus(&stats);
-			/* this is annoying, but till the time we have something
-			 * better, we should do it like this; the logdir is a
-			 * separate directory */
-			snprintf(buf, 8096, "%s/%s", logdir, dbname);
-			if ((e = deletedir(buf)) != NULL) {
-				fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
-						argv[1], e);
-				GDKfree(e);
-				state |= 1;
-				hadwork = 1;
-				continue;
+			if (logdir[0] == '/') {
+				/* this is annoying, but till the time we have something
+				 * better, we should do it like this; the logdir is a
+				 * separate directory */
+				snprintf(buf, 8096, "%s/%s", logdir, dbname);
+				if ((e = deletedir(buf)) != NULL) {
+					fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
+							argv[1], e);
+					GDKfree(e);
+					state |= 1;
+					hadwork = 1;
+					continue;
+				}
 			}
 			printf("successfully destroyed database '%s'\n", dbname);
 		} else {

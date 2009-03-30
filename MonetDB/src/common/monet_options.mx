@@ -478,12 +478,12 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_logdir");
-	snprintf(buf, BUFSIZ, "%s%c%s", MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE);
+	snprintf(buf, BUFSIZ, "%s_logdir", PACKAGE);
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("xquery_logdir");
-	snprintf(buf, BUFSIZ, "%s%c%s", MONETDB_LOCALSTATEDIR, DIR_SEP, PACKAGE);
+	snprintf(buf, BUFSIZ, "%s_logdir", PACKAGE);
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;

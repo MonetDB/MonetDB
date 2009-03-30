@@ -1037,7 +1037,12 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 
 	lg->tid = 0;
 
-	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP, fn, DIR_SEP);
+	if (MT_path_absolute(logdir))
+		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP, fn, DIR_SEP);
+	else {
+		char *dbfarm = GDKgetenv("gdk_dbfarm");
+		snprintf(filename, BUFSIZ, "%s%c%s%c%s%c%s%c", dbfarm, DIR_SEP, dbname, DIR_SEP, logdir, DIR_SEP, fn, DIR_SEP);
+	}
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->phandler = phandler;

@@ -220,7 +220,7 @@ mapi_open=false     # should be set to 'true' to allow for
 # Place to store transaction logs
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
-sql_logdir=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@sql_logs
+sql_logdir=sql_logs
 
 # The sql_init is a comma separated list of sql files to be
 # executed upon system restart. It is primarily used to make

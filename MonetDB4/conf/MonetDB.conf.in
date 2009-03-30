@@ -109,17 +109,6 @@ mapi_debug=0
 # (smaller than 1 is not very useful)
 #mapi_clients=2
 
-# SQL Interface Section
-#======================
-# The SQL debug level (should be disabled for normal use)
-sql_debug=0
-
-# Place to store transaction logs
-# The logs are typically stored on a different storage medium
-# to protect the database against accidental hardware loss.
-# it should be different directory as used for xquery!
-sql_logdir=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@sql_logs
-
 # XQuery Interface Section
 #=========================
 
@@ -144,7 +133,7 @@ xquery_procMB=128
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 # it should be different directory as used for sql!
-xquery_logdir=@Xlocalstatedir@@DIRSEP@MonetDB4@DIRSEP@xquery_logs
+xquery_logdir=xquery_logs
 
 # if not set port to address the HTTP server for pathfinder = mapi_port+1
 xrpc_port=""
