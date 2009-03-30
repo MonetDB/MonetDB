@@ -291,7 +291,8 @@ BATnew(int ht, int tt, BUN cap)
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
 	/* round up to multiple of BATTINY */
-	cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
+	if (cap < BUN_MAX - BATTINY)
+		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
 	if (cap < BATTINY)
 		cap = BATTINY;
 	bs = BATnewstorage(ht, tt, cap);
