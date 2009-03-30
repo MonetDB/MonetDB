@@ -252,7 +252,7 @@ evalFile(Client c, str fname, int listing){
 	fd = malOpenSource(fname);
 	if (stream_errnr(fd) == OPEN_ERROR) {
 		stream_destroy(fd);
-		stream_printf(c->fdout, "#WARNING: could not open file: %s", fname);
+		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
 	} else {
 		c->fdin = bstream_create(fd, 128 * BLOCK);
 		MSinitClientPrg(c,"user","main");	/* re-initialize context */
