@@ -97,7 +97,6 @@ delta_bind_ubat(sql_delta *bat, int access)
 	assert(access == RD_UPD);
 	b = temp_descriptor(bat->ubid);
 	assert(b);
-	b->batDirty |= 2;
 	return b;
 }
 
@@ -128,8 +127,6 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 		b = temp_descriptor(bat->bid);
 		bat_set_access(b, BAT_READ);
 	}
-	assert(b);
-	b->batDirty |= 2;
 	assert(b);
 	return b;
 }
@@ -165,7 +162,6 @@ delta_bind_del(sql_dbat *bat, int access)
 
 	b = temp_descriptor(bat->dbid);
 	assert(b);
-	b->batDirty |= 2;
 	return b;
 }
 
@@ -228,7 +224,6 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 		b = temp_descriptor(bat->ibid);
 		void_replace_bat(b, upd, TRUE);
 	}
-	b->batDirty |= 2;
 	bat_destroy(b);
 }
 
@@ -295,7 +290,6 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		temp_destroy(bat->ibid);
 		bat->ibid = temp_create(i);
 		BATseqbase(i, bat->ibase);
-		i->batDirty |= 2;
 	} else if (!isEbat(b)){
 		/* try to use mmap() */
 		if (BATcount(b)+BATcount(i) > (BUN) REMAP_PAGE_MAXSIZE) { 
@@ -360,14 +354,12 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		temp_destroy(bat->dbid);
 		bat->dbid = temp_create(i);
-		i->batDirty |= 2;
 	} else {
 		if (isEbat(b)) {
 			temp_destroy(bat->dbid);
 			bat->dbid = temp_copy(b->batCacheid, FALSE);
 			bat_destroy(b);
 			b = temp_descriptor(bat->dbid);
-			b->batDirty |= 2;
 		}
 		BATappend(b, i, TRUE);
 	}
@@ -385,7 +377,6 @@ delta_delete_val( sql_dbat *bat, ssize_t rid )
 		bat->dbid = temp_copy(b->batCacheid, FALSE);
 		bat_destroy(b);
 		b = temp_descriptor(bat->dbid);
-		b->batDirty |= 2;
 	}
 	BUNappend(b, (ptr)&rid, TRUE);
 	bat_destroy(b);
