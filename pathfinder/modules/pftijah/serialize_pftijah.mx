@@ -982,7 +982,7 @@ pftijah_handle_endDocument(XqueryCtx* ctx) {
     --tjctx->doc_height;
     oid start = tj_popTag(tjctx); /* oid of the first node of the element */
     int size  = tjctx->tijahPre - start - 1; /* the Tijah document size */
-    dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+    dbat_set_int(&tjctx->dbat_collSize,start,size);
 #else
     (void) ctx;
 #endif
@@ -1136,7 +1136,7 @@ pftijah_complete_startElementEmpty(XqueryCtx* ctx) {
     if ( DOEMIT(tjctx) ) {
         oid start = tj_popTag(tjctx); /* oid of the first node of the element */
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
-        dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+        dbat_set_int(&tjctx->dbat_collSize,start,size);
     };
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:empty_endElement: \"%s\"\n", tjctx->name,"");
@@ -1167,7 +1167,7 @@ pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     if ( DOEMIT(tjctx) ) {
         oid start = tj_popTag(tjctx); /* oid of the first node of the element */
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
-	dbat_set_int(&tjctx->dbat_collSize,(int)start,size);
+	dbat_set_int(&tjctx->dbat_collSize,start,size);
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:endElement: \"%s\"\n", tjctx->name,name);
 #endif
