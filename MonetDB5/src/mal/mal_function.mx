@@ -668,7 +668,8 @@ beginLifespan,endLifespan. The beginLifespan denotes the intruction where
 it receives its first value, the endLifespan the last instruction in which 
 it was used as operand or target.
 
-If, however, the last use lies within a BARRIER block, we can not be sure
+If, however, the last use lies within a BARRIER block and the
+variable is defined outside the block, we can not be sure
 about its end of life status, because a block redo may implictly
 revive it. For these situations we associate the endLifespan with
 the block exit.
@@ -710,69 +711,60 @@ debugLifespan(MalBlkPtr mb, Lifespan span)
 			stream_printf(cntxt->fdout,"constant \n"); 
 	}
 }
-
+@-
+The scope of a variable should respect the guarded blocks.
+Variables defined outside, can not be freed insight the
+block, due to possible REDO actions.
+Variables defined within the block can be finished at
+any time, but at EXIT at the latest.
+@c
 void
 setLifespan(MalBlkPtr mb, Lifespan span)
 {
-	int pc, k, depth=0, scopes[256];
+	int pc, k, depth=0;
 	InstrPtr p;
-	int top=0, *decl;
+	int *blk;
 
-	decl= (int *) GDKzalloc(sizeof(int)*mb->vsize);
-	assert(decl!= NULL);
 	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
-	p = getInstrPtr(mb, 0);
-	for(k= 0; k<p->argc; k++){
-		span[getArg(p,k)].beginLifespan= 1;
-		span[getArg(p,k)].endLifespan= mb->stop-1;
-	}
-	for (pc = 1; pc < mb->stop; pc++) {
+
+	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);
+
+	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
 		if( p->token == NOOPsymbol)
 			continue;
+
+		if( blockStart(p))
+			depth++;
 
 		for (k = 0; k < p->argc; k++) {
 			int v = getArg(p,k);
 
 			if (span[v].beginLifespan == 0 ){
 				span[v].beginLifespan = pc;
-				/* remember the variable in the scope stack*/
-				if( depth )
-					decl[top++]= v;
+				blk[v]= depth;
 			}
-			if (k < p->retc && 
-				p->barrier != RETURNsymbol &&
-				p->barrier != YIELDsymbol)
-					span[v].lastUpdate= pc;
-			span[v].endLifespan = pc;
+			if (k < p->retc )
+				span[v].lastUpdate= pc;
+			if ( blk[v] == depth )
+				span[v].endLifespan = pc;
+			if ( k >= p->retc && blk[v] <depth)
+				span[v].endLifespan = 0;
 		}
 @-
-At a block exit we can finalize some variables.
+At a block exit we can finalize all variables defined within that block.
 @c
 		if( blockExit(p)){
-			for(top--; top>scopes[depth]; top--) 
-				span[decl[top]].endLifespan= pc;
-			assert(top >= 0 && top < mb->vsize);
-			if( depth== 0) {
-				mb->errors++;
-				GDKfree(decl);
-				/* ignore this block.
-				setlifespan:too many unnest operations. */
-				return;
-			}
+			for (k = 0; k < mb->vtop; k++)
+			if ( span[k].endLifespan == 0 && blk[k]==depth)
+				span[k].endLifespan = pc;
 			depth--;
 		}
-		if( blockStart(p)){
-			if( depth== 255) {
-				mb->errors++;
-				GDKfree(decl);
-				/* setlifespan:too deeply nested scope*/
-				return;
-			}
-			scopes[++depth]= top;
-		}
 	}
-	GDKfree(decl);
+	for (k = 0; k < mb->vtop; k++)
+	if ( span[k].endLifespan == 0 )
+		span[k].endLifespan = pc-2;/* generate them before the end */
+	GDKfree(blk);
 	/* debugLifespan(mb); */
 }
 
