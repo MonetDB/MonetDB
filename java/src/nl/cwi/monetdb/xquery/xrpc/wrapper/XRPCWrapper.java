@@ -52,7 +52,7 @@ public class XRPCWrapper {
 	public static final String WF_FILE = "wrapper_functions.xq";
 	public static final String WELCOME_MSG =
 		"# XRPC Wrapper v" + XRPC_WRAPPER_VERSION + "\n" +
-		"# Copyright (c) 1993-July 2008, CWI.\n# Copyright (c) August 2008- MonetDB B.V.  All rights reserved.\n\n";
+		"# Copyright (c) 1993-July 2008, CWI.\n# Copyright (c) August 2008-2009 MonetDB B.V.  All rights reserved.\n\n";
 
 	CmdLineOpts opts;
 
