@@ -103,12 +103,12 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 }
 
 
-int dbat_finalize(dbat* dbat, int topidx) {
+int dbat_finalize(dbat* dbat, oid topidx) {
         void* top;
         BAT* b = dbat->bat;
         
-	topidx -= (int)dbat->seqbase;
-        int bottomTop = topidx;
+	topidx -= dbat->seqbase;
+        oid bottomTop = topidx;
         switch( b->ttype ) {
          case TYPE_int :
                 top = &dbat->cast.intCAST[bottomTop];
