@@ -322,7 +322,6 @@ append_bat( sql_bpm *p, BAT *i )
 			BAT *ni = i;
 			if (isVIEW(i) || i->htype != TYPE_void || i->ttype == TYPE_void)
 				ni = BATcopy(i, TYPE_void, i->ttype, TRUE);
-			ni->batDirty |= 2;
 			extend_part(p, ni, 0);
 			if (ni != i)
 				bat_destroy(ni);
@@ -339,7 +338,6 @@ append_bat( sql_bpm *p, BAT *i )
 			while(todo > 0) {
 				v = BATslice(i, (BUN) l, (BUN) (l + sz));
 				ni = BATcopy(v, TYPE_void, v->ttype, TRUE);
-				ni->batDirty |= 2;
 				bat_destroy(v);
 				extend_part(p, ni, 0);
 				todo -= sz;
@@ -349,7 +347,6 @@ append_bat( sql_bpm *p, BAT *i )
 	} else if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		temp_destroy(p->parts[p->nr-1].bid);
 		p->parts[p->nr-1].bid = temp_create(i);
-		i->batDirty |= 2;
 	} else {
 		BATappend(b, i, TRUE);
 	}

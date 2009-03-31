@@ -62,7 +62,6 @@ bind_col(sql_trans *tr, sql_column *c, int access)
  	b = temp_descriptor(bat->bid);
 	assert(b);
 	bat_set_access(b, BAT_READ);
-	b->batDirty |= 2;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
@@ -80,7 +79,6 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
  	b = temp_descriptor(bat->bid);
 	assert(b);
 	bat_set_access(b, BAT_READ);
-	b->batDirty |= 2;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	return b;
 }
@@ -97,7 +95,6 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 	assert(access == RDONLY);
 	b = temp_descriptor(bat->bid);
 	assert(b);
-	b->batDirty |= 2;
 	t->s->base.rtime = t->base.rtime = tr->stime;
 	return b;
 }
@@ -124,7 +121,6 @@ update_bat( sql_bat *bat, BAT *upd, int isnew)
 		bat_destroy(u);
 		bat_destroy(r);
 	}
-	b->batDirty |= 2;
 	void_replace_bat(b, upd, TRUE);
 	bat_destroy(b);
 }
@@ -200,7 +196,6 @@ append_bat( sql_bat *bat, BAT *i )
 		temp_destroy(bat->bid);
 		bat->bid = temp_create(i);
 		BATseqbase(i, 0);
-		i->batDirty |= 2;
 	} else {
 		BATappend(b, i, TRUE);
 	}
@@ -251,7 +246,6 @@ delete_bat( sql_bat *bat, BAT *i )
 	if (BATcount(b) == 0 && !isVIEW(i) && i->htype == TYPE_void && i->ttype != TYPE_void){
 		temp_destroy(bat->bid);
 		bat->bid = temp_create(i);
-		i->batDirty |= 2;
 	} else {
 		BATappend(b, i, TRUE);
 	}

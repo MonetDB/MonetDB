@@ -113,7 +113,6 @@ bat_new(int ht, int tt, BUN size)
 
 	if (ht == TYPE_void)
 		BATseqbase(nb, 0);
-	nb->batDirty |= 2;
 	return nb;
 }
 
@@ -219,7 +218,6 @@ ebat2real(log_bid b, oid ibase)
 	log_bid r;
 
 	BATseqbase(c, ibase );
-	c->batDirty |= 2;
 	r = temp_create(c);
 	bat_destroy(c);
 	bat_destroy(o);
@@ -257,7 +255,6 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	if (!temp && BATcount(o)) {
 		c = BATcopy(o, TYPE_void, o->ttype, TRUE);
 		BATseqbase(c, ibase );
-		c->batDirty |= 2;
 		BATcommit(c);
 		bat_set_access(c, BAT_READ);
 		r = temp_create(c);
