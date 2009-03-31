@@ -1099,12 +1099,12 @@ BBPdump()
 		if (b == NULL)
 			continue;
 		THRprintf(GDKout,
-			  "# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d status=%d "
+			  "# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d status=%d count="BUNFMT" "
 			  "Hheap=["SZFMT","SZFMT"] Hvheap=["SZFMT","SZFMT"] Hhash=["SZFMT","SZFMT"] "
 			  "Theap=["SZFMT","SZFMT"] Tvheap=["SZFMT","SZFMT"] Thash=["SZFMT","SZFMT"]\n",
 			  i, ATOMname(b->H->type), ATOMname(b->T->type),
 			  BBP[i].nme[0] ? BBP[i].nme[0] : "<NULL>", BBP[i].nme[1] ? BBP[i].nme[1] : "<NULL>",
-			  BBP[i].refs, BBP[i].lrefs, BBP[i].status,
+			  BBP[i].refs, BBP[i].lrefs, BBP[i].status, BBP[i].b[0]->U->count,
 			  HEAPmemsize(&b->H->heap), HEAPvmsize(&b->H->heap),
 			  HEAPmemsize(b->H->vheap), HEAPvmsize(b->H->vheap),
 			  b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0,

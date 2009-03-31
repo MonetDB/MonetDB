@@ -446,22 +446,26 @@ DESCsetmodes(BAT *b)
 	int ret = 0;
 
 	if (b->batMaphead) {
-		b->H->heap.newstorage = b->H->heap.storage = STORE_MODE(b->batMaphead,brestrict,existing);
-		ret = 1;
+		int m = STORE_MODE(b->batMaphead,brestrict,existing);
+		ret |= m != b->H->heap.newstorage || m != b->H->heap.storage;
+		b->H->heap.newstorage = b->H->heap.storage = m;
 	}
 	if (b->batMaptail) {
-		b->T->heap.newstorage = b->T->heap.storage = STORE_MODE(b->batMaptail,brestrict,existing);
-		ret = 1;
+		int m = STORE_MODE(b->batMaptail,brestrict,existing);
+		ret |= b->T->heap.newstorage != m || b->T->heap.storage != m;
+		b->T->heap.newstorage = b->T->heap.storage = m;
 	}
 	if (b->hheap && b->batMaphheap) {
  		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = b->H->vheap->storage = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing);
-		ret = 1;
+		int m = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing);
+		ret |= b->H->vheap->newstorage != m || b->H->vheap->storage != m;
+		b->H->vheap->newstorage = b->H->vheap->storage = m;
 	}
 	if (b->theap && b->batMaptheap) {
  		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = b->T->vheap->storage = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing);
-		ret = 1;
+		int m = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing);
+		ret |= b->T->vheap->newstorage != m || b->T->vheap->storage != m;
+		b->T->vheap->newstorage = b->T->vheap->storage = m;
 	}
 	return ret;
 }
