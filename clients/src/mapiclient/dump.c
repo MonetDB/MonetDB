@@ -791,7 +791,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname)
 		"WHERE \"f\".\"sql\" = TRUE AND "
 		      "\"s\".\"id\" = \"f\".\"schema_id\""
 		      "%s%s%s "
-		"ORDER BY \"f\".\"func\"";
+		"ORDER BY \"f\".\"id\"";
 	MapiHdl hdl;
 	char *q;
 
@@ -901,13 +901,37 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		     "\"sys\".\"schemas\" \"s\" "
 		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";
-	const char *tables = "SELECT \"s\".\"name\",\"t\".\"name\", \"t\".\"type\" "
-		"FROM \"sys\".\"schemas\" \"s\","
-		     "\"sys\".\"_tables\" \"t\" "
-		"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
-		      "\"t\".\"system\" = FALSE AND "
-		      "\"s\".\"id\" = \"t\".\"schema_id\" "
-		"ORDER BY \"t\".\"type\", \"s\".\"name\",\"t\".\"name\"";
+	const char *tables_and_functions = "WITH \"tf\" AS ("
+			"SELECT \"s\".\"name\" AS \"sname\", "
+			       "\"f\".\"name\" AS \"name\", "
+			       "\"f\".\"id\" AS \"id\", "
+			       "\"f\".\"func\" AS \"func\" "
+			"FROM \"sys\".\"schemas\" \"s\", "
+			     "\"sys\".\"functions\" \"f\" "
+			"WHERE \"f\".\"sql\" = TRUE AND "
+			      "\"s\".\"id\" = \"f\".\"schema_id\" "
+			"UNION "
+			"SELECT \"s\".\"name\" AS \"sname\", "
+			       "\"t\".\"name\" AS \"name\", "
+			       "\"t\".\"id\" AS \"id\", "
+			       "CAST(NULL AS VARCHAR(8196)) AS \"func\" "
+			"FROM \"sys\".\"schemas\" \"s\", "
+			     "\"sys\".\"_tables\" \"t\" "
+			"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
+			      "\"t\".\"system\" = FALSE AND "
+			      "\"s\".\"id\" = \"t\".\"schema_id\" "
+			"UNION "
+			"SELECT \"s\".\"name\" AS \"sname\", "
+			       "\"tr\".\"name\" AS \"name\", "
+			       "\"tr\".\"id\" AS \"id\", "
+			       "\"tr\".\"statement\" AS \"func\" "
+			"FROM \"sys\".\"triggers\" \"tr\", "
+			     "\"sys\".\"schemas\" \"s\", "
+			     "\"sys\".\"_tables\" \"t\" "
+			"WHERE \"s\".\"id\" = \"t\".\"schema_id\" AND "
+			      "\"t\".\"id\" = \"tr\".\"table_id\""
+		") "
+		"SELECT * FROM \"tf\" ORDER BY \"tf\".\"id\"";
 	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
@@ -1100,7 +1124,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	mapi_close_handle(hdl);
 
 	/* dump tables */
-	if ((hdl = mapi_query(mid, tables)) == NULL || mapi_error(mid)) {
+	if ((hdl = mapi_query(mid, tables_and_functions)) == NULL || mapi_error(mid)) {
 		if (hdl) {
 			mapi_explain_query(hdl, stderr);
 			mapi_close_handle(hdl);
@@ -1112,6 +1136,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
 		char *tname = mapi_fetch_field(hdl, 1);
+		char *func = mapi_fetch_field(hdl, 3);
 
 		if (mapi_error(mid)) {
 			mapi_explain(mid, stderr);
@@ -1120,7 +1145,10 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		rc += dump_table(mid, schema, tname, toConsole, describe, describe);
+		if (func == NULL)
+			rc += dump_table(mid, schema, tname, toConsole, describe, describe);
+		else
+			stream_printf(toConsole, "%s\n", func);
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
@@ -1174,8 +1202,6 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		mapi_close_handle(hdl);
 	}
-
-	rc += dump_functions(mid, toConsole, sname);
 
 	if ((hdl = mapi_query(mid, end)) == NULL || mapi_error(mid)) {
 		if (hdl) {
