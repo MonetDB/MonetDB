@@ -1,12 +1,6 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-  30 Mar 2009; Sjoerd Mullender <sjoerd@cwi.nl> monetdb.mx:
-  If the logdir argument to logger_create is a relative path name, the
-  logdir will be located inside the dbfarm/dbname directory.  If it is
-  an absolute path name, that path is used.  Fixed monetdb destroy with
-  regard to this new behaviour.
-
 *Feb2009-SP1
 
   23 Mar 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx:
