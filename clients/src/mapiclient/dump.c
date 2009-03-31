@@ -919,7 +919,17 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			     "\"sys\".\"_tables\" \"t\" "
 			"WHERE \"t\".\"type\" BETWEEN 0 AND 1 AND "
 			      "\"t\".\"system\" = FALSE AND "
-			      "\"s\".\"id\" = \"t\".\"schema_id\""
+			      "\"s\".\"id\" = \"t\".\"schema_id\" "
+			"UNION "
+			"SELECT \"s\".\"name\" AS \"sname\", "
+			       "\"tr\".\"name\" AS \"name\", "
+			       "\"tr\".\"id\" AS \"id\", "
+			       "\"tr\".\"statement\" AS \"func\" "
+			"FROM \"sys\".\"triggers\" \"tr\", "
+			     "\"sys\".\"schemas\" \"s\", "
+			     "\"sys\".\"_tables\" \"t\" "
+			"WHERE \"s\".\"id\" = \"t\".\"schema_id\" AND "
+			      "\"t\".\"id\" = \"tr\".\"table_id\""
 		") "
 		"SELECT * FROM \"tf\" ORDER BY \"tf\".\"id\"";
 	char *sname;
