@@ -12,7 +12,7 @@
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008- MonetDB B.V.
+@' Copyright August 2008-2009 MonetDB B.V.
 @' All Rights Reserved.
 
 @f rdf
@@ -52,12 +52,13 @@ comment "print triples of a graph for debug purposes. Order is: 1=SPO, 2=SOP, 3=
 rdf_export str RDFParser(int *retval, str *location, str *graphname);
 
 typedef enum {
-	S_SPO, P_SPO, O_SPO, /* spo */
-	S_SOP, P_SOP, O_SOP, /* sop */
-	S_PSO, P_PSO, O_PSO, /* pso */
-	S_POS, P_POS, O_POS, /* pos */
-	S_OSP, P_OSP, O_OSP, /* osp */
-	S_OPS, P_OPS, O_OPS, /* ops */
+	S_sort, P_sort, O_sort, /* sorted */
+	P_PO, O_PO, /* spo */
+	P_OP, O_OP, /* sop */
+	S_SO, O_SO, /* pso */
+	S_OS, O_OS, /* pos */
+	S_SP, P_SP, /* osp */
+	S_PS, P_PS, /* ops */
 	MAP_LEX
 } graphBATType;
 
@@ -72,20 +73,20 @@ typedef enum {
 #include "rdf.h"
 
 @= printTriples
-if ((s = BATdescriptor(g[S_@1])) == NULL) {
+if ((s = BATdescriptor(g[@1])) == NULL) {
 	BBPunfix(graph->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT S_@1 is missing");
+	throw(MAL, "rdf.printTriples", "BAT @1 is missing");
 }
-if ((p = BATdescriptor(g[P_@1])) == NULL) {
+if ((p = BATdescriptor(g[@2])) == NULL) {
 	BBPunfix(graph->batCacheid);
 	BBPunfix(s->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT P_@1 is missing");
+	throw(MAL, "rdf.printTriples", "BAT @2 is missing");
 }
-if ((o = BATdescriptor(g[O_@1])) == NULL) {
+if ((o = BATdescriptor(g[@3])) == NULL) {
 	BBPunfix(graph->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(p->batCacheid);
-	throw(MAL, "rdf.printTriples", "BAT O_@1 is missing");
+	throw(MAL, "rdf.printTriples", "BAT @3 is missing");
 }
 if ((m = BATdescriptor(g[MAP_LEX])) == NULL) {
 	BBPunfix(graph->batCacheid);
@@ -111,27 +112,27 @@ RDFPrintTriples (int retval, bat *Graph, int *order) {
 	switch (*order) {
 		case 1:
 			stream_printf(GDKout, "\tOrder = [Subject, Property, Object]\n");
-			@:printTriples(SPO)@
+			@:printTriples(S_sort,P_PO,O_PO)@
 			break;
 		case 2:
 			stream_printf(GDKout, "\tOrder = [Subject, Object, Property]\n");
-			@:printTriples(SOP)@
+			@:printTriples(S_sort,P_OP,O_OP)@
 			break;
 		case 3:
 			stream_printf(GDKout, "\tOrder = [Property, Subject, Object]\n");
-			@:printTriples(PSO)@
+			@:printTriples(S_SO,P_sort,O_SO)@
 			break;
 		case 4:
 			stream_printf(GDKout, "\tOrder = [Property, Object, Subject]\n");
-			@:printTriples(POS)@
+			@:printTriples(S_OS,P_sort, O_OS)@
 			break;
 		case 5:
 			stream_printf(GDKout, "\tOrder = [Object, Property, Subject]\n");
-			@:printTriples(OPS)@
+			@:printTriples(S_PS,P_PS,O_sort)@
 			break;
 		case 6:
 			stream_printf(GDKout, "\tOrder = [Object, Subject, Property]\n");
-			@:printTriples(OSP)@
+			@:printTriples(S_SP,P_SP,O_sort)@
 			break;
 		default:
 			BBPunfix(graph->batCacheid);
