@@ -40,3 +40,4 @@ lookup_column_name_bug_2.SF-2656762
 insert_order_by.SF-2658243
 not_equal.SF-2678502
 TribooleanFailureWithSubquery.SF-2679434
+nullstr.SF-2704016
