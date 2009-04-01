@@ -32,7 +32,7 @@ Requires: MonetDB >= 1.26
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: MonetDB-python
+Requires: MonetDB-python, MonetDB-devel
 BuildRequires: python
 
 %if !%{?buildsystem}
