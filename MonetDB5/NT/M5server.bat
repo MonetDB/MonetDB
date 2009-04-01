@@ -9,50 +9,32 @@ rem remove the final backslash from the path
 set MONETDB=%MONETDB:~0,-1%
 
 rem extend the search path with our EXE and DLL folders
-rem we depend on pthreadVCE.dll having been copied to the lib folder
-set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\bin;%MONETDB%\lib\MonetDB5;%MONETDB%\lib\MonetDB;%PATH%
+rem we depend on pthreadVC2.dll having been copied to the lib folder
+set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\MonetDB5;%PATH%
 
-rem possibly move the database from a previous installation to our
-rem currently preferred location, and prepare the arguments to Mserver
-rem to tell it where that location is
+rem prepare the arguments to mserver5 to tell it where to put the dbfarm
 
-set MONETDBDIR=
+if "%APPDATA%" == "" (
+rem if the APPDATA variable does not exist, put the database in the
+rem installation folder (i.e. default location, so no command line argument)
+set MONETDBDIR=%MONETDB%\var\MonetDB5
 set MONETDBFARM=
-set SQLLOGDIR=
-rem use the Application Data folder for our database
-
-rem if installed for just the current user, the file
-rem %APPDATA%\MonetDB\VERSION was created by the installer, so set
-rem MONETDBDIR accordingly.
-rem if ALLUSERSPROFILE and APPDATA variables don't exist, forget about
-rem this whole exercise and use the default (i.e. %MONETDB\var\MonetDB).
-
-if "%APPDATA%" == "" goto skip
-
+) else (
+rem if the APPDATA variable does exist, put the database there
 set MONETDBDIR=%APPDATA%\MonetDB5
+set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
+)
 
-set MONETDBFARM=--dbfarm="%MONETDBDIR%\dbfarm"
-set SQLLOGDIR=--set "sql_logdir=%MONETDBDIR%\sql_logs"
-set XQUERYLOGDIR=--set "xquery_logdir=%MONETDBDIR%\xquery_logs"
+rem the SQL log directory used to be in %MONETDBDIR%, but we now
+rem prefer it inside the dbfarm, so move it there
 
-if exist "%MONETDBDIR%" goto skip
-
-rem if the database exists by the ancient name, move it
-if not exist "%MONETDB%\var\MonetDB5" goto skip1
-move "%MONETDB%\var\MonetDB5" "%MONETDBDIR%"
-rmdir "%MONETDB%\var"
-goto skip
-
-:skip1
-
-rem if the database exists by the old name, move it
-if not exist "%ALLUSERSPROFILE%\Application Data\MonetDB5" goto skip
-move "%ALLUSERSPROFILE%\Application Data\MonetDB5" "%MONETDBDIR%"
-
-:skip
+if exist "%MONETDBDIR%\sql_logs" (
+for /d %i in ("%MONETDBDIR%"\sql_logs\*) do move "%i" "%MONETDBDIR%\dbfarm"\%~ni\sql_logs
+rmdir "%MONETDBDIR%\sql_logs"
+)
 
 rem start the real server
-"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %SQLLOGDIR% %*
+"%MONETDB%\bin\mserver5.exe" --set "prefix=%MONETDB%" --set "exec_prefix=%MONETDB%" %MONETDBFARM% %*
 
 if ERRORLEVEL 1 pause
 
