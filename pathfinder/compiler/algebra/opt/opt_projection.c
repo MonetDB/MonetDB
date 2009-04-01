@@ -677,7 +677,7 @@ opt_projection (PFla_op_t *p)
                             re_rename_col (p->sem.type.col, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
-                            L(p)->sem.type.ty),
+                            p->sem.type.ty),
                         (count+1),
                         proj);
                 break;  
@@ -780,34 +780,6 @@ opt_projection (PFla_op_t *p)
                                             L(p)->schema.count)),
                         L(p)->schema.count,
                         L(p)->sem.proj.items);
-                break;
-
-            /* swap projection and current operatior p
-             *
-             *      |                    |
-             *  attribute (p)         project
-             *      |          -->       |
-             *   project             attribute (p)
-             *      |                    |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */  
-            case la_attribute:
-                /* swap projection and current operatior */
-        /*        *p = *PFla_project_ (
-                        PFla_attribute (
-                            LL(p), 
-                            p->sem.iter_item1_item2.iter, 
-                            re_rename_col (p->sem.iter_item1_item2.item1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.iter_item1_item2.item2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        L(p)->schema.count,
-                        L(p)->sem.proj.items); */
                 break;
                 
             /* pass the projection rigth thru and duplicate operator 
