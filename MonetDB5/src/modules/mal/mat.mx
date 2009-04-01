@@ -134,22 +134,31 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 The pack operation could be quite expensive, because it
 may create a really large BAT.
 For the experiments we materialize the BAT in the first
-component. 
+component.  It should be extended upfront to accomodate
+all elements.
 @c
 str
 MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 {
 	int i,*ret;
 	BAT *b, *bn;
+	BUN cap=0;
 
 	bn= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
-	if( bn == NULL)
-		throw(MAL, "mat.pack","Could access BAT");
-	if (BAThrestricted(bn) || BATtrestricted(bn)) {
+	if (bn && (BAThrestricted(bn) || BATtrestricted(bn)) ){
 		b = BATcopy(bn, bn->htype, bn->ttype, TRUE);
 		BBPunfix(bn->batCacheid);
 		bn = b;
 	}
+	if( bn == NULL)
+		throw(MAL, "mat.pack","Could not access BAT");
+
+	for(i=first; i<p->argc; i++){
+		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		cap += BATcount(b);
+		BBPunfix(b->batCacheid);
+	}
+	bn = BATextend(bn, cap);
 	for(i=first+1; i<p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
@@ -158,12 +167,6 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 			BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
-	if (bn->htype == TYPE_oid && !BAThordered(bn)) {
-		BAT *b = BATsort(bn);
-		BBPunfix(bn->batCacheid);
-		bn = b;
-	}
-	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
