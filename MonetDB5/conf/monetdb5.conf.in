@@ -1,3 +1,21 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2009 MonetDB B.V.
+# All Rights Reserved.
+
+
 # Configuration file for MonetDB Version 5 server
 
 # The configuration file is an integral part of a database store
@@ -92,6 +110,7 @@ gdk_debug=0
 # --algorithms (ALGOMASK | ESTIMASK)
 # --xproperties (XPROPMASK )
 # --performance (JOINPROPMASK | DEADBEEFMASK)
+# --optimizers (2 * JOINPROPMASK)
 
 
 # Monet Section
@@ -190,7 +209,7 @@ mero_discoveryttl=600
 # Monet Virtual Machine
 #====================================
 mal_init=@libdir@@DIRSEP@MonetDB5/mal_init.mal
-mal_listing = 2           # List everything
+mal_listing = 2 
 #    1 = List the original input
 #    2 = List the MAL instruction
 #    4 = List the MAL type information
@@ -198,13 +217,6 @@ mal_listing = 2           # List everything
 #    16 = List the MAL properties
 #    32 = List the hidden details
 #    64 = List the bat tuple count
-
-# Checkpoint and recovery
-#===================================
-# Checkpoints are stored in their own area, preferrably
-# on a different storage device. Checkpoints should be
-# initialized manually.
-checkpoint_dir=@localstatedir@@DIRSEP@MonetDB5@DIRSEP@chkpnt
 
 # Monet Application Interface Section
 #====================================
@@ -221,8 +233,3 @@ mapi_open=false     # should be set to 'true' to allow for
 # The logs are typically stored on a different storage medium
 # to protect the database against accidental hardware loss.
 sql_logdir=sql_logs
-
-# The sql_init is a comma separated list of sql files to be
-# executed upon system restart. It is primarily used to make
-# SQL library functions known to all users.
-sql_init=@libdir@@DIRSEP@MonetDB5/sql_init.sql
