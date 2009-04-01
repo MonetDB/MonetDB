@@ -1472,7 +1472,7 @@ GDKvmtrim(void *limit)
 		if (highload) { /* memcrunch distress varies from 1 to 4 */
 			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
  			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
-			GDK_mmap_minsize = 1<<(membits-(highload+highload)); /* HEAPalloc/extend > [256-16]MB uses it */ 
+			GDK_mmap_minsize = ((size_t) 1) << (membits-(highload+highload)); /* HEAPalloc/extend > [256-16]MB uses it */ 
 		} else if (bak_mmap_minsize) {
 			GDK_mmap_minsize = bak_mmap_minsize; /* revert to default setting */
 			bak_mmap_minsize = 0;
