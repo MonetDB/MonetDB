@@ -1112,7 +1112,7 @@ opt_projection (PFla_op_t *p)
             
                 *p = *PFla_project_ (
                         PFla_step_join (
-                            LL(p), 
+                            L(p), 
                             RL(p),
                             p->sem.step.spec,
                             p->sem.step.level,
@@ -1202,7 +1202,7 @@ opt_projection (PFla_op_t *p)
             
                 *p = *PFla_project_ (
                         PFla_guide_step_join (
-                            LL(p), 
+                            L(p), 
                             RL(p),
                             p->sem.step.spec,
                             p->sem.step.guide_count,
