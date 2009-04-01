@@ -6900,6 +6900,28 @@ PFbui_tijah_query_n_so (const PFla_op_t *loop,
                 );
 }
 
+/* The Fulltext fun stuff */
+
+struct PFla_pair_t
+PFbui_tijah_ftfun_b_sxx (const PFla_op_t *loop,
+                        bool ordering,
+                        PFla_op_t **side_effects,
+                        struct PFla_pair_t *args)
+{
+    return PFbui_tijah_query_HANDLER(
+                loop,
+                ordering,
+                side_effects,
+                PFT_FTFUN_B_SXX,
+                aat_bln,
+                pft_query_param2(&args[0],
+                                 PFTIJAH_NODEKIND,
+                                 &args[1],
+                                 aat_str
+				 )
+                );
+}
+
 /*
  *
  */

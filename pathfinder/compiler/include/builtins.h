@@ -1281,6 +1281,14 @@ struct PFla_pair_t PFbui_manage_fti_r_xo (const PFla_op_t *loop,
                                           struct PFla_pair_t *args);
 
 /*
+ * The ftfun functions
+ */
+struct PFla_pair_t PFbui_tijah_ftfun_b_sxx(const PFla_op_t *loop,
+                                           bool ordering,
+                                           PFla_op_t **side_effects,
+                                           struct PFla_pair_t *args);
+
+/*
  * The main query functions
  */
 struct PFla_pair_t PFbui_tijah_query_i_xx (const PFla_op_t *loop,

@@ -421,6 +421,7 @@ enum PFmil_kind_t {
     , m_tj_pfop
     , m_tj_tokenize
     , m_tj_query_handler
+    , m_tj_ftfun_handler
     , m_tj_query_score
     , m_tj_query_nodes
     , m_tj_ft_index_info
@@ -1086,6 +1087,8 @@ PFmil_t *PFmil_seq_ (int count, const PFmil_t **stmts);
 #ifdef HAVE_PFTIJAH
 
 PFmil_t * PFmil_tj_query_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g);
+
+PFmil_t * PFmil_tj_ftfun_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g, const PFmil_t *h);
 
 PFmil_t * PFmil_tj_query_score (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d);
 

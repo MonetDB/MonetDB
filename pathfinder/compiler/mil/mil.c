@@ -2073,6 +2073,13 @@ PFmil_tj_query_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, co
     return wire7 (m_tj_query_handler, a, b, c, d, e, f, g);
 }
 
+/** pftijah main ftfun handler */
+PFmil_t *
+PFmil_tj_ftfun_handler (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f, const PFmil_t *g, const PFmil_t *h)
+{
+    return wire8 (m_tj_ftfun_handler, a, b, c, d, e, f, g, h);
+}
+
 PFmil_t *
 PFmil_tj_add_fti_tape (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c, const PFmil_t *d, const PFmil_t *e, const PFmil_t *f)
 {

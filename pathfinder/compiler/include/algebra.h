@@ -669,21 +669,31 @@ PFalg_sel_t PFalg_sel (PFalg_comp_t comp,
 
 #define PFT_FUN(F)              (strncmp(F,"pftijah_",8)==0)
 
-#define PFT_QUERY_N_XX "pftijah_query_n_xx"
-#define PFT_QUERY_N_SX "pftijah_query_n_sx"
-#define PFT_QUERY_N_XO "pftijah_query_n_xo"
-#define PFT_QUERY_N_SO "pftijah_query_n_so"
-#define PFT_QUERY_I_XX "pftijah_query_i_xx"
-#define PFT_QUERY_I_SX "pftijah_query_i_sx"
-#define PFT_QUERY_I_XO "pftijah_query_i_xo"
-#define PFT_QUERY_I_SO "pftijah_query_i_so"
+#define PFT_QUERY_N_XX  "pftijah_query_n_xx"
+#define PFT_QUERY_N_SX  "pftijah_query_n_sx"
+#define PFT_QUERY_N_XO  "pftijah_query_n_xo"
+#define PFT_QUERY_N_SO  "pftijah_query_n_so"
+#define PFT_QUERY_I_XX  "pftijah_query_i_xx"
+#define PFT_QUERY_I_SX  "pftijah_query_i_sx"
+#define PFT_QUERY_I_XO  "pftijah_query_i_xo"
+#define PFT_QUERY_I_SO  "pftijah_query_i_so"
+
+#define PFT_FTFUN_N_SOI "pftijah_ftfun_n_soi"
+#define PFT_FTFUN_B_SXX "pftijah_ftfun_b_sxx"
+#define PFT_FTFUN_B_SOI "pftijah_ftfun_b_soi"
 
 #define PFT_FUN_QUERY(F)        (strncmp(F,"pftijah_query_",14)==0)
+#define PFT_FUN_FTFUN(F)        (strncmp(F,"pftijah_ftfun_",14)==0)
 
 #define PTF_QUERY_NODES(N)      (N[14]=='n')
 #define PTF_QUERY_STARTNODES(N) (N[16]=='s')
 #define PTF_QUERY_OPTIONS(N)    (N[17]=='o')
 
+#define PTF_FTFUN_RESNODE(N)    (N[14]=='n')
+#define PTF_FTFUN_RESBOOL(N)    (N[14]=='b')
+#define PTF_FTFUN_STARTNODES(N) (N[16]=='s')
+#define PTF_FTFUN_OPTIONS(N)    (N[17]=='o')
+#define PTF_FTFUN_IGNORES(N)    (N[18]=='i')
 
 #define PFT_MANAGE_FTI_C_XX "pftijah_manage_fti_c_xx"
 #define PFT_MANAGE_FTI_C_CX "pftijah_manage_fti_c_cx"

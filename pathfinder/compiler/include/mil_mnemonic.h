@@ -477,6 +477,9 @@
 /** pftijah main query handler */
 #define tj_query_handler(a,b,c,d,e,f,g) PFmil_tj_query_handler ((a), (b), (c), (d), (e), (f), (g))
 
+/** pftijah main ftfun handler */
+#define tj_ftfun_handler(a,b,c,d,e,f,g,h) PFmil_tj_ftfun_handler ((a), (b), (c), (d), (e), (f), (g), (h))
+
 /** pftijah computes nodes from id's */
 #define tj_query_nodes(a,b,c)   PFmil_tj_query_nodes ((a), (b), (c) )
 
