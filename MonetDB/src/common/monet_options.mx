@@ -366,7 +366,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	28	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	25	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -379,11 +379,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_version");
 	set[i].value = strdup(VERSION);
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("monet_pid");
-	snprintf(buf, BUFSIZ, "%d", (int) getpid());
-	set[i].value = strdup(buf);
 	i++;
 
 	set[i].kind = opt_builtin;
@@ -408,20 +403,8 @@ mo_builtin_settings(opt **Set)
 	set[i].value = strdup("8");
 	i++;
 	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_mem_bigsize");
-	set[i].value = strdup("262144");
-	i++;
-	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_alloc_map");
 	set[i].value = strdup("yes");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_mem_pagebits");
-#ifdef WIN32
-	set[i].value = strdup("16");
-#else
-	set[i].value = strdup("14");
-#endif
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
@@ -443,9 +426,13 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("monet_mod_path");
 	/* on most platforms, we only need libdir/PACKAGE, but with
 	 * MinGW, we also need libdir/bin */
+#ifdef __MINGW32__
 	snprintf(buf, BUFSIZ, "%s%c%s%c%s%cbin",
 		 MONETDB_LIBDIR, DIR_SEP, PACKAGE, PATH_SEP,
 		 MONETDB_LIBDIR, DIR_SEP);
+#else
+	snprintf(buf, BUFSIZ, "%s%c%s", MONETDB_LIBDIR, DIR_SEP, PACKAGE);
+#endif
 	set[i].value = strdup(buf);
 	i++;
 	set[i].kind = opt_builtin;
@@ -478,13 +465,11 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("sql_logdir");
-	snprintf(buf, BUFSIZ, "%s_logdir", PACKAGE);
-	set[i].value = strdup(buf);
+	set[i].value = strdup("sql_logs");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("xquery_logdir");
-	snprintf(buf, BUFSIZ, "%s_logdir", PACKAGE);
-	set[i].value = strdup(buf);
+	set[i].value = strdup("xquery_logs");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("standoff_ns");
