@@ -691,11 +691,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
                    Element('a', {'href': url(env['RELSRCDIR']),
                                  'target': target},
                            Text('src')))
-    for d in env['RELBLDDIR'], os.path.dirname(env['RELBLDDIR']), env['RELBLDBASE']:
-        if os.path.isdir(d):
-            text.addchild(Text(', '))
-            text.addchild(Element('a', {'href': url(d), 'target': target},
-                                  Text('BLD')))
     text.addchild(Text(')'))
     html = Element('html', {},
                    Element('head', {},
@@ -968,7 +963,6 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     else:
         TSTDIR = testdir[len(TSTSRCBASE+os.sep):]
     TSTSRCDIR = os.path.normpath(os.path.join(testdir,TSTSUFF))
-    TSTBLDDIR = os.path.normpath(os.path.join(env['TSTBLDBASE'],TSTDIR,TSTSUFF))
     TSTTRGDIR = os.path.normpath(os.path.join(env['TSTTRGBASE'],TSTPREF,TSTDIR))
 
     if THISFILE == "Mtest.py":
@@ -997,20 +991,16 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     env['TSTDB']     = TSTDB
     env['TSTDIR']    = TSTDIR
     env['TSTSRCDIR'] = TSTSRCDIR
-    env['TSTBLDDIR'] = TSTBLDDIR
     env['TSTTRGDIR'] = TSTTRGDIR
     env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF).replace(os.sep+os.sep,os.sep)
-    env['RELBLDDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELBLDBASE'],TSTDIR,TSTSUFF).replace(os.sep+os.sep,os.sep)
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
-    os.environ['TSTBLDDIR'] = TSTBLDDIR
     os.environ['TSTTRGDIR'] = TSTTRGDIR
     os.environ['RELSRCDIR'] = env['RELSRCDIR']
-    os.environ['RELBLDDIR'] = env['RELBLDDIR']
 
     #STDERR.flush()
-    #for v in 'RELSRCDIR', 'RELBLDDIR':
+    #for v in 'RELSRCDIR':
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
@@ -2864,8 +2854,7 @@ def main(argv) :
         SQLprefix = os.environ['SQL_PREFIX']
 
     vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
-            'TSTSRCBASE'  , 'TSTBLDBASE' , 'TSTTRGBASE'  ,
-            'SQL_PREFIX']
+            'TSTSRCBASE'    , 'TSTTRGBASE'   , 'SQL_PREFIX']
     if THISFILE == "Mtest.py":
         vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
@@ -2877,7 +2866,6 @@ def main(argv) :
     dft['MONETDB_PREFIX']   = "GetMonetConfig('monetdb','--prefix')"    # or THISPATH ?
     dft['SQL_PREFIX']     = "SQLprefix"
     dft['TSTSRCBASE']     = "GetMonetConfig(par['PACKAGE'],'--source')"
-    dft['TSTBLDBASE']     = "GetMonetConfig(par['PACKAGE'],'--build')"
     dft['TSTTRGBASE']     = "GetMonetConfig(par['PACKAGE'],'--prefix')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
@@ -2929,8 +2917,6 @@ def main(argv) :
          'default: `sql-config --prefix` = "%s"' % SQLprefix),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
          'default: `<package>-config --source` = "%s"' % GetMonetConfig(par['PACKAGE'],'--source')),
-        ('TSTBLDBASE', None, 'TSTBLDBASE', '<path>',
-         'default: `<package>-config --build` = "%s"' % GetMonetConfig(par['PACKAGE'],'--build')),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
          'default: `<package>-config --prefix` = "%s"' % GetMonetConfig(par['PACKAGE'],'--prefix')),
         ('quiet', 'q', 'quiet', None,
@@ -3250,7 +3236,7 @@ def main(argv) :
         ErrXit('TSTSRCBASE itself must not be a test-directory, i.e., called "%s" and contain an "All" file!' % TSTSUFF)
 
     # make TSTxxxBASE absolute physical paths
-    for p in 'TSTSRCBASE', 'TSTBLDBASE', 'TSTTRGBASE':
+    for p in 'TSTSRCBASE', 'TSTTRGBASE':
         if os.path.isdir(env[p]):
             rp = os.path.realpath(env[p])
             if not quiet and os.path.normcase(rp) != os.path.normcase(env[p]):
@@ -3302,19 +3288,16 @@ def main(argv) :
             ErrXit("System (-S) must match '"+sv+"' !")
 
     # some relative path's for relocatable HTML output
-    if os.path.normcase(env['TSTSRCBASE']) == os.path.normcase(env['TSTBLDBASE'])  and  os.path.normcase(env['TSTBLDBASE']) == os.path.normcase(env['TSTTRGBASE']):
+    if os.path.normcase(env['TSTSRCBASE']) == os.path.normcase(env['TSTTRGBASE']):
         RELSRCBASE = os.curdir
-        RELBLDBASE = os.curdir
     else:
-        TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(env['TSTSRCBASE']),os.path.normcase(env['TSTBLDBASE']),os.path.normcase(env['TSTTRGBASE'])]))
+        TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(env['TSTSRCBASE']),os.path.normcase(env['TSTTRGBASE'])]))
         RELBASE = ((os.pardir+os.sep)*len(env['TSTTRGBASE'][len(TSTBASE+os.sep):].split(os.sep)))
         RELSRCBASE = RELBASE+env['TSTSRCBASE'][len(TSTBASE):]
-        RELBLDBASE = RELBASE+env['TSTBLDBASE'][len(TSTBASE):]
     env['RELSRCBASE'] = RELSRCBASE
-    env['RELBLDBASE'] = RELBLDBASE
 
     #STDERR.flush()
-    #for v in 'RELSRCBASE', 'RELBLDBASE':
+    #for v in 'RELSRCBASE':
     #       print v+" = "+str(env[v])
     #STDOUT.flush()
 
@@ -3733,18 +3716,22 @@ def main(argv) :
             product += env['TST_FIVE']
             product += env['TST_ALGEBRA']
             product += env['TST_NOALGEBRA']
+
         compiler = ''
-        if os.name == 'nt':
-            compiler = 'Mic' # Microsoft Visual Studio C
-            #compiler = 'Int' # Intel icc
-        else:
-            f = os.path.join(env['TSTBLDBASE'],'Makefile')
-            if os.path.isfile(f):
-                r = re.compile("^CC = (.*)$", re.MULTILINE)
-                for l in open(f):
-                    mt = r.match(l)
-                    if mt:
-                        compiler = mt.group(1)
+        # TODO:
+        # use `monetdb*-config --compiler` for this
+        # (and then also allow compiler-specific output)
+        #if os.name == 'nt':
+        #    compiler = 'Mic' # Microsoft Visual Studio C
+        #    #compiler = 'Int' # Intel icc
+        #else:
+        #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
+        #    if os.path.isfile(f):
+        #        r = re.compile("^CC = (.*)$", re.MULTILINE)
+        #        for l in open(f):
+        #            mt = r.match(l)
+        #            if mt:
+        #                compiler = mt.group(1)
 
         # start of times.sql output preparation
         try:

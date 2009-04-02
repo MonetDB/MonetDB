@@ -9,8 +9,8 @@ PYTHONPATH="`monetdb-sql-config --pythonlibdir`:`monetdb-sql-config --pythonlibd
 export PYTHONPATH
 
 c=`monetdb5-config --sysconfdir`/monetdb5.conf
-PYTHONPATH="$TSTBLDBASE/src/backends/python/monet5/:$PYTHONPATH"
-PYTHONPATH="$TSTBLDBASE/src/backends/python/monet5/.libs:$PYTHONPATH"
+PYTHONPATH="`monetdb-sql-config --build`/src/backends/python/monet5/:$PYTHONPATH"
+PYTHONPATH="`monetdb-sql-config --build`/src/backends/python/monet5/.libs:$PYTHONPATH"
 export PYTHONPATH
 # make sure we find module sql[_server]
 mv $c $c.BAK

@@ -71,10 +71,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	TST[.*].src  exists instead of  TST[.*],
 	TST[.*].src  is expected to contain a single line
 	giving the original location of the test file to be used.
-	E.g.,  src/modules/plain/Tests/arith.milS.src  contains
-		$TSTBLDBASE/$TSTDIR/arith.mil
-	in order to use the MIL script extracted from
-	src/modules/plain/arith.mx  as test script.
    (`) For each test file TST.* involved,
         if a file called
 	TST.*.in  exists instead of  TST.*,  all environment variables in
@@ -167,14 +163,12 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
    See "mclient --help" for details.)
 
 
-- Mtest.py uses three directory trees based at TSTSRCBASE, TSTBLDBASE, and
-  TSTTRGBASE, respectively. These trees have similar purpose as the SOURCE,
-  BUILD, and PREFIX trees when configuring and compiling MonetDB: the original
-  tests are found in TSTSRCBASE, tests extracted from .mx or .in files
-  during testing are fould in TSTBLDBASE, and Mtest.py writes the test
-  output to TSTTRGBASE. The default settings are as follows:
-	TSTSRCBASE=$MONETDB_SOURCE  (where you cecked out MonetDB's source tree)
-	TSTBLDBASE=$MONETDB_BUILD   (where you called configure and make)
+- Mtest.py uses two directory trees based at TSTSRCBASE and TSTTRGBASE,
+  respectively. These trees have similar purpose as the SOURCE and PREFIX
+  trees when configuring and compiling MonetDB: the original tests are found
+  in TSTSRCBASE and Mtest.py writes the test output to TSTTRGBASE.
+  The default settings are as follows:
+	TSTSRCBASE=$MONETDB_SOURCE  (where you checked out MonetDB's source tree)
 	TSTTRGBASE=$MONETDB_PREFIX  (where you told configure to put MonetDB)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
@@ -204,10 +198,9 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      before running Mtest.py 
      or using the respective command line options to Mtest.py
   or
-  b) overrule the default settings of TSTSRCBASE, TSTBLDBASE, and
-     TSTTRGBASE (e.g.) as follows
+  b) overrule the default settings of TSTSRCBASE and TSTTRGBASE (e.g.) as
+     follows
 	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
-	TSTBLDBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
 	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
      either by setting the repective environment variables
      or by using the respective command line options to Mtest.py (see
@@ -240,7 +233,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	MONETDB_BUILD	(where you called configure & make)	base of extracted source tree
 	MONETDB_PREFIX	(where you installed MonetDB to)	base of MonetDB distribution
 	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
-	TSTBLDBASE	$MONETDB_BUILD				base of extracted test tree
 	TSTTRGBASE	$MONETDB_PREFIX				base for test output
 	MILCLIENT	mclient	-lmil				mil-client program	`)
 	MALCLIENT	mclient -lmal				mal-client program	`)
@@ -282,7 +274,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   	TSTDB		name of default test database, unique for each directory
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
-	TSTBLDDIR	$TSTBLDBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
 	MONETDB_CONF	location of MonetDB.conf (default: $MONETDB_PREFIX/etc/MonetDB.conf)
 	SQL_LOGDIR	as read from $MONETDB_CONF or set by --sql_logdir=<path>
@@ -343,7 +334,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 
 - A development session is then supposed to proceed as follows:
-  (assuming TSTSRCBASE=$MONETDB_SOURCE and TSTBLDBASE=$MONETDB_BUILD)
+  (assuming TSTSRCBASE=$MONETDB_SOURCE)
 
 	cd $TSTSRCBASE
 	run  cvs update
@@ -353,7 +344,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 				# write & compile your code
 				cd $TSTSRCBASE/$TSTDIR
 				edit source
-				cd $TSTBLDBASE/$TSTDIR
+				cd $MONETDB_BUILD/$TSTDIR
 				[g]make
 				[g]make install
 			endloop
