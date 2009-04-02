@@ -1341,7 +1341,8 @@ group_broken( InstrPtr p, int mtpe, int pack_mirror)
 	2) semijoin cases
 		1) both mats and aligned (pair wise)
 		2) else merge both !
-		3) semi(mat,bat) ?
+		3) semi(mat,bat) (pair wise)
+
 		4) semi(bat,mat) ?
 	3) kdiff cases
 		1) both mats and aligned (pair wise)
@@ -1662,6 +1663,15 @@ Look at the depth of the MAT definition to limit the explosion.
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
 @c
+		if (match == 1 && isDiffOp(p) && fm == 1 && 
+		   (m=isMATalias(getArg(p,fm), mat, mtop)) >= 0){
+			InstrPtr r;
+
+			if ((r = mat_apply1(mb, p, mat, m, fm, 0)) != NULL)
+				mtop = mat_add(mat, mtop, r, NULL, mat_none);
+			actions++;
+			continue;
+		}
 		if (match == 1 && isFragmentGroup(p) && 
 		   (m=isMATalias(getArg(p,fm), mat, mtop)) >= 0){
 			int pack_mirror = 0;
