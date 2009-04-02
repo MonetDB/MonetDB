@@ -1,0 +1,5 @@
+pf:add-doc("$TSTTRGDIR/ancestor-or-self.SF-2636285.xml","ancestor-or-self.SF-2636285.xml")
+<>
+doc("ancestor-or-self.SF-2636285.xml")//properties/../ancestor-or-self::*/name()
+<>
+pf:del-doc("ancestor-or-self.SF-2636285.xml")

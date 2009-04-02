@@ -1,0 +1,14 @@
+stdout of test 'ancestor-or-self.SF-2636285.unpack_doc` in directory 'tests/BugTracker` itself:
+
+
+# 23:44:11 >  
+# 23:44:11 >  /usr/bin/python ancestor-or-self.SF-2636285.unpack_doc.py ancestor-or-self.SF-2636285.unpack_doc 
+# 23:44:11 >  
+
+Archive:  ancestor-or-self.SF-2636285.unpack_doc.zip
+  inflating: ancestor-or-self.SF-2636285.xml
+
+# 23:44:12 >  
+# 23:44:12 >  Done.
+# 23:44:12 >  
+
