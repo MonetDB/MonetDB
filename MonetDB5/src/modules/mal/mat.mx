@@ -167,6 +167,7 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 			BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
+	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
