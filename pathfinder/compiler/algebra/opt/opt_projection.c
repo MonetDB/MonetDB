@@ -1587,12 +1587,12 @@ opt_projection (PFla_op_t *p)
             case la_rec_param:
             case la_rec_arg:
             case la_rec_base:
-            case la_fun_param:
             case la_fun_frag_param:
+            case la_fun_param:
             case la_proxy_base:
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
-                        PFla_op_duplicate (p, LL(p), LR(p)),
+                        PFla_op_duplicate (p, LL(p), R(p)),
                         L(p)->schema.count,
                         L(p)->sem.proj.items);
                 break;
