@@ -41,3 +41,4 @@ insert_order_by.SF-2658243
 not_equal.SF-2678502
 TribooleanFailureWithSubquery.SF-2679434
 nullstr.SF-2704016
+POWER_vs_prod.SF-2596114
