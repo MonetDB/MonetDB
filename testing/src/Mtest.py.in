@@ -2110,13 +2110,16 @@ def killProc(proc, outfile = None, cmd = None):
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
 
-def LaunchIt(cmd, TestInput, TestOut, TestErr) :
+def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut) :
     TestOut.write(Prompt(cmd))
     TestOut.flush()
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = TestErr, universal_newlines = True)
+    proc.killed = False
+    t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+    t.start()
 
     if TestInput:
         proc.stdin.write(TestInput)
@@ -2125,7 +2128,7 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr) :
         except IOError, (IOerrNo, IOerrStr):
             Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-    return proc
+    return proc, t
 ### LaunchIt(cmd, TestIn, TestOut, TestErr) #
 
 def CollectIt(pOut, TestOut) :
@@ -2223,272 +2226,273 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     XRPCsockets[1].close()
 
     ServerReady = True
-    if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
-        SrvrOutFile = TST+".server.out"
-        SrvrErrFile = TST+".server.err"
-        SrvrOut = open(SrvrOutFile,"w")
-        SrvrErr = open(SrvrErrFile,"w")
-        ClntOutFile = TST+".client.out"
-        ClntErrFile = TST+".client.err"
-        ClntOut = open(ClntOutFile,"w")
-        ClntErr = open(ClntErrFile,"w")
+    pSrvr = None
+    pSrvrTimer = None
+    try:
+        if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
+            SrvrOutFile = TST+".server.out"
+            SrvrErrFile = TST+".server.err"
+            SrvrOut = open(SrvrOutFile,"w")
+            SrvrErr = open(SrvrErrFile,"w")
+            ClntOutFile = TST+".client.out"
+            ClntErrFile = TST+".client.err"
+            ClntOut = open(ClntOutFile,"w")
+            ClntErr = open(ClntErrFile,"w")
 
-        PROLOGUE = ""
-        if os.path.isfile(TST+".prologue") and par['M4']:
-            PROLOGUE = " "+TST+".prologue"
-        if os.path.isfile(TST+".prologue5") and par['M5']:
-            PROLOGUE = " "+TST+".prologue5"
+            PROLOGUE = ""
+            if os.path.isfile(TST+".prologue") and par['M4']:
+                PROLOGUE = " "+TST+".prologue"
+            if os.path.isfile(TST+".prologue5") and par['M5']:
+                PROLOGUE = " "+TST+".prologue5"
 
-        Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
-        if par['ALGEBRA']:
-            Srvr += ' --set xquery_backend=algebra'
-        if par['NOALGEBRA']:
-            Srvr += ' --set xquery_backend=milprint_summer'
-
-        DBINIT=""
-        if os.path.isfile(TST+".dbinit") and par['M4']:
-            dbinit = TST+".dbinit"
-            DBINIT = open(dbinit).readline().strip()
-        if os.path.isfile(TST+".dbinit5") and par['M5']:
-            dbinit = TST+".dbinit5"
-            DBINIT = open(dbinit).readline().strip()
-
-        lang=""
-
-        if SERVER == "MIL":
-            lang="mil"
-            Srvr = '%s "--dbinit=%s module(mapi); mil_start();"' % (Srvr, DBINIT)
-        if SERVER == "MAL":
-            lang="mal"
-            Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
-        if SERVER == "SQL":
-            lang="sql"
-            if par['M5']:
-                Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
-            else:
-                Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
-        if SERVER == "XQUERY":
-            lang="xquery"
-            Srvr = '%s "--dbinit=%s module(pathfinder);"' % (Srvr, DBINIT)
-        Srvr = Srvr+PROLOGUE
-        if os.name == "nt":
-            Srvr = Srvr+' & echo.& '
-        else:
-            Srvr = Srvr+' ; echo ; '
-        Srvr = Srvr+'echo Over..'
-
-        pSrvr = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr)
-        ln="dummy"
-        while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
-            ln=pSrvr.stdout.readline()
-            SrvrOut.write(ln)
-            SrvrOut.flush()
-        if ln[:6] != 'Ready.':
-            ServerReady = False
-
-        if ServerReady:
-            port = int(env['MAPIPORT'])
-            ServerReady = mapi_ping(port, lang)
-        #if ServerReady and SERVER = "XQUERY":
-        #    port = int(env['XRPCPORT'])
-        #    ServerReady = mapi_ping(port, lang)
-
-    else:
-        ClntOut = open(TestOutFile, 'a')
-        ClntErr = open(TestErrFile, 'a')
-
-    killed = False
-    if ServerReady:
-        if   CALL == "other":
-            cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
-            killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
-        elif CALL == "python":
-            cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-            killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
-        elif CALL in ["mal", "malXs", "milS", "milSXs"]:
-            cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
+            Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
             if par['ALGEBRA']:
-                cmd += ' --set xquery_backend=algebra'
+                Srvr += ' --set xquery_backend=algebra'
             if par['NOALGEBRA']:
-                cmd += ' --set xquery_backend=milprint_summer'
-            if CALL in ["mal", "milS"]:
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    if CALL[:3] == "mal":
-                        killed = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                    elif par['M5']:
-                        killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
-                    else:
-                        killed = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
-                if killed:
-                    break
-        elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
-            TSTs = []
-            if CALL in ("milC", "malC"):
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
+                Srvr += ' --set xquery_backend=milprint_summer'
 
-            if CALL[:3] == "mil":
-                Clnt = exe['MIL_Client'][1]
-            elif CALL[:3] == "mal":
-                Clnt = exe['MAL_Client'][1]
+            DBINIT=""
+            if os.path.isfile(TST+".dbinit") and par['M4']:
+                dbinit = TST+".dbinit"
+                DBINIT = open(dbinit).readline().strip()
+            if os.path.isfile(TST+".dbinit5") and par['M5']:
+                dbinit = TST+".dbinit5"
+                DBINIT = open(dbinit).readline().strip()
+
+            lang=""
+
+            if SERVER == "MIL":
+                lang="mil"
+                Srvr = '%s "--dbinit=%s module(mapi); mil_start();"' % (Srvr, DBINIT)
+            if SERVER == "MAL":
+                lang="mal"
+                Srvr = '%s "--dbinit=%s"' % (Srvr, DBINIT)
+            if SERVER == "SQL":
+                lang="sql"
+                if par['M5']:
+                    Srvr = '%s --set mal_listing=0 "--dbinit=%s include sql;"' % (Srvr, DBINIT)
+                else:
+                    Srvr = '%s "--dbinit=%s module(sql_server);"' % (Srvr, DBINIT)
+            if SERVER == "XQUERY":
+                lang="xquery"
+                Srvr = '%s "--dbinit=%s module(pathfinder);"' % (Srvr, DBINIT)
+            Srvr = Srvr+PROLOGUE
+            if os.name == "nt":
+                Srvr = Srvr+' & echo.& '
             else:
-                Clnt = ''               # cannot happen
-            for f in TSTs:
-                killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                if killed:
-                    break
+                Srvr = Srvr+' ; echo ; '
+            Srvr = Srvr+'echo Over..'
 
-            #TODO
-            #elif CALL == "milCXp":
-        elif CALL in ["sql", "sqlXs"]:
-            TSTs = []
-            if CALL == "sql":
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
-
-            Clnt = exe['SQL_Client'][1]
-            for f in TSTs:
-                killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
-                if killed:
-                    break
-        elif CALL in ["xq", "xqXs"]:
-            TSTs = []
-            if CALL == "xq":
-                X=""
-            else:
-                X="_s[0-9][0-9]"
-            test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-            d = os.listdir(os.getcwd())
-            d.sort()
-            for f in d:
-                if test.match(f):
-                    TSTs.append(f)
-
-            Clnt = exe['XQuery_Client'][1]+" "
-            for f in TSTs:
-                killed = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
-                if killed:
-                    break
-    else:
-        for fp in ClntOut,ClntErr:
-            fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
-    ClntOut.close()
-    ClntErr.close()
-
-    if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
-        EPILOGUE = None
-        if os.path.isfile(TST+".epilogue") and par['M4']:
-            EPILOGUE = open(TST+".epilogue",'r')
-        if os.path.isfile(TST+".epilogue5") and par['M5']:
-            EPILOGUE = open(TST+".epilogue5",'r')
-        if EPILOGUE:
-            EpiFailed = ""
-            try:
-                pSrvr.stdin.write(EPILOGUE.read())
-                pSrvr.stdin.flush()
-                pSrvr.stdin.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
-                pSrvr.stdin.flush()
-            except IOError, (IOerrNo, IOerrStr):
-                EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
-                EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
-            while 0 < len(ln) and ln[:6] not in ['Done..','Over..']:
+            while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
                 ln=pSrvr.stdout.readline()
                 SrvrOut.write(ln)
                 SrvrOut.flush()
-            SrvrOut.write(EpiFailed)
-            SrvrOut.flush()
-            EPILOGUE.close()
+            if ln[:6] != 'Ready.':
+                ServerReady = False
 
-        try:
-            if par['M5']:
-                pSrvr.stdin.write('clients.quit();\n')
-            else:
-                pSrvr.stdin.write('quit();\n')
-            pSrvr.stdin.flush()
-        except IOError:
-            pass
-        try:
-            pSrvr.stdin.close()
-        except IOError, (IOerrNo, IOerrStr):
-            Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+            if ServerReady:
+                port = int(env['MAPIPORT'])
+                ServerReady = mapi_ping(port, lang)
+            #if ServerReady and SERVER = "XQUERY":
+            #    port = int(env['XRPCPORT'])
+            #    ServerReady = mapi_ping(port, lang)
 
-        if MkillUsersAT:
-            ATJOB2 = StartAt(MkillUsersAT)
-        pSrvr.killed = False
-        t = Timer(TIMEOUT, killProc, args = [pSrvr, SrvrErr, Srvr])
-        try:
-            t.start()
+        else:
+            ClntOut = open(TestOutFile, 'a')
+            ClntErr = open(TestErrFile, 'a')
+
+        killed = False
+        if ServerReady:
+            if   CALL == "other":
+                cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
+                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+            elif CALL == "python":
+                cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
+                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+            elif CALL in ["mal", "malXs", "milS", "milSXs"]:
+                cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
+                if par['ALGEBRA']:
+                    cmd += ' --set xquery_backend=algebra'
+                if par['NOALGEBRA']:
+                    cmd += ' --set xquery_backend=milprint_summer'
+                if CALL in ["mal", "milS"]:
+                    X=""
+                else:
+                    X="_s[0-9][0-9]"
+                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                d = os.listdir(os.getcwd())
+                d.sort()
+                for f in d:
+                    if test.match(f):
+                        if CALL[:3] == "mal":
+                            killed = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        elif par['M5']:
+                            killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        else:
+                            killed = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if killed:
+                        break
+            elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
+                TSTs = []
+                if CALL in ("milC", "malC"):
+                    X=""
+                else:
+                    X="_s[0-9][0-9]"
+                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                d = os.listdir(os.getcwd())
+                d.sort()
+                for f in d:
+                    if test.match(f):
+                        TSTs.append(f)
+
+                if CALL[:3] == "mil":
+                    Clnt = exe['MIL_Client'][1]
+                elif CALL[:3] == "mal":
+                    Clnt = exe['MAL_Client'][1]
+                else:
+                    Clnt = ''               # cannot happen
+                for f in TSTs:
+                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if killed:
+                        break
+
+                #TODO
+                #elif CALL == "milCXp":
+            elif CALL in ["sql", "sqlXs"]:
+                TSTs = []
+                if CALL == "sql":
+                    X=""
+                else:
+                    X="_s[0-9][0-9]"
+                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                d = os.listdir(os.getcwd())
+                d.sort()
+                for f in d:
+                    if test.match(f):
+                        TSTs.append(f)
+
+                Clnt = exe['SQL_Client'][1]
+                for f in TSTs:
+                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    if killed:
+                        break
+            elif CALL in ["xq", "xqXs"]:
+                TSTs = []
+                if CALL == "xq":
+                    X=""
+                else:
+                    X="_s[0-9][0-9]"
+                test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
+                d = os.listdir(os.getcwd())
+                d.sort()
+                for f in d:
+                    if test.match(f):
+                        TSTs.append(f)
+
+                Clnt = exe['XQuery_Client'][1]+" "
+                for f in TSTs:
+                    killed = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
+                    if killed:
+                        break
+        else:
+            for fp in ClntOut,ClntErr:
+                fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
+        ClntOut.close()
+        ClntErr.close()
+
+        if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
+            EPILOGUE = None
+            if os.path.isfile(TST+".epilogue") and par['M4']:
+                EPILOGUE = open(TST+".epilogue",'r')
+            if os.path.isfile(TST+".epilogue5") and par['M5']:
+                EPILOGUE = open(TST+".epilogue5",'r')
+            if EPILOGUE:
+                EpiFailed = ""
+                try:
+                    pSrvr.stdin.write(EPILOGUE.read())
+                    pSrvr.stdin.flush()
+                    pSrvr.stdin.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
+                    pSrvr.stdin.flush()
+                except IOError, (IOerrNo, IOerrStr):
+                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
+                    EpiFailed = EpiFailed+"\n! Probably, Mserver/mserver5 has died before or during. !\n"
+                ln="dummy"
+                while 0 < len(ln) and ln[:6] not in ['Done..','Over..']:
+                    ln=pSrvr.stdout.readline()
+                    SrvrOut.write(ln)
+                    SrvrOut.flush()
+                SrvrOut.write(EpiFailed)
+                SrvrOut.flush()
+                EPILOGUE.close()
+
+            try:
+                if par['M5']:
+                    pSrvr.stdin.write('clients.quit();\n')
+                else:
+                    pSrvr.stdin.write('quit();\n')
+                pSrvr.stdin.flush()
+            except IOError:
+                pass
+            try:
+                pSrvr.stdin.close()
+            except IOError, (IOerrNo, IOerrStr):
+                Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+
+            if MkillUsersAT:
+                ATJOB2 = StartAt(MkillUsersAT)
             CollectIt(pSrvr.stdout, SrvrOut)
-            t.cancel()
-        except KeyboardInterrupt:
-            t.cancel()
+            pSrvrTimer.cancel()
+            pSrvrTimer = None
+            killed = killed or pSrvr.killed
+            if MkillUsersAT:
+                StopAt(ATJOB2,ME)
+
+            AllOut = [SrvrOut, ClntOutFile]
+            AllErr = [SrvrErr, ClntErrFile]
+            TestOut = open(TestOutFile, 'a')
+            for q in AllOut:
+                if type(q) is type(''):
+                    n = q
+                else:
+                    n = q.name
+                    q.close()
+                q = open(n,'r')
+                try:
+                    TestOut.write(q.read())
+                except IOError, (IOerrNo, IOerrStr):
+                    Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, IOerrNo, IOerrStr))
+                except MemoryError:
+                    Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
+                TestOut.flush()
+                q.close()
+            TestErr = open(TestErrFile, 'a')
+            for q in AllErr:
+                if type(q) is type(''):
+                    n = q
+                else:
+                    n = q.name
+                    q.close()
+                q = open(n,'r')
+                TestErr.write(q.read())
+                TestErr.flush()
+                q.close()
+        else:
+            TestOut = try_open(TestOutFile, 'a')
+            TestErr = try_open(TestErrFile, 'a')
+
+        if TestOut is not None:
+            TestOut.write(Prompt('Done.'))
+            TestOut.close()
+        if TestErr is not None:
+            TestErr.write(Prompt('Done.'))
+            TestErr.close()
+    except KeyboardInterrupt:
+        if pSrvrTimer is not None:
+            pSrvrTimer.cancel()
             killProc(pSrvr, SrvrErr, Srvr)
             raise
-        killed = killed or pSrvr.killed
-        if MkillUsersAT:
-            StopAt(ATJOB2,ME)
-
-        AllOut = [SrvrOut, ClntOutFile]
-        AllErr = [SrvrErr, ClntErrFile]
-        TestOut = open(TestOutFile, 'a')
-        for q in AllOut:
-            if type(q) is type(''):
-                n = q
-            else:
-                n = q.name
-                q.close()
-            q = open(n,'r')
-            try:
-                TestOut.write(q.read())
-            except IOError, (IOerrNo, IOerrStr):
-                Warn("Reading from input '%s' or writing to output '%s' failed with #%d: '%s'." % (q.name, TestOut.name, IOerrNo, IOerrStr))
-            except MemoryError:
-                Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
-            TestOut.flush()
-            q.close()
-        TestErr = open(TestErrFile, 'a')
-        for q in AllErr:
-            if type(q) is type(''):
-                n = q
-            else:
-                n = q.name
-                q.close()
-            q = open(n,'r')
-            TestErr.write(q.read())
-            TestErr.flush()
-            q.close()
-    else:
-        TestOut = try_open(TestOutFile, 'a')
-        TestErr = try_open(TestErrFile, 'a')
-
-    if TestOut is not None:
-        TestOut.write(Prompt('Done.'))
-        TestOut.close()
-    if TestErr is not None:
-        TestErr.write(Prompt('Done.'))
-        TestErr.close()
 
     if not killed:
         TO = re.compile("^!.*Mtimeout.*: Timeout: ", re.MULTILINE)
