@@ -2839,38 +2839,25 @@ if os.path.exists(os.path.join('CVS', 'Repository')):
             par['PACKAGE'] = 'monetdb'
             Warn('Using default package="%s".' % par['PACKAGE'])
 
-SQLprefix = ''
 dft = {}
 
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
 
-    try:
-        SQLprefix = GetConfig('monetdb-sql-config', '--prefix')
-    except:
-        SQLprefix = ''
-    if os.environ.has_key('SQL_PREFIX'):
-        SQLprefix = os.environ['SQL_PREFIX']
-
-    vars = ['MONETDB_SOURCE', 'MONETDB_BUILD', 'MONETDB_PREFIX',
-            'TSTSRCBASE'    , 'TSTTRGBASE'   , 'SQL_PREFIX']
+    vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
         vars = vars + [ 'MILCLIENT', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'XQUERYCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
 
     # most intuitive (?) default settings
-    dft['MONETDB_SOURCE']   = "GetMonetConfig('monetdb','--source')"
-    dft['MONETDB_BUILD']    = "GetMonetConfig('monetdb','--build')"
-    dft['MONETDB_PREFIX']   = "GetMonetConfig('monetdb','--prefix')"    # or THISPATH ?
-    dft['SQL_PREFIX']     = "SQLprefix"
     dft['TSTSRCBASE']     = "GetMonetConfig(par['PACKAGE'],'--source')"
     dft['TSTTRGBASE']     = "GetMonetConfig(par['PACKAGE'],'--prefix')"   # or os.getcwd() ?
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
-        dft['MONETDB_MOD_PATH'] = "''"   #"os.path.join(env['MONETDB_PREFIX'],'lib')+os.pathsep+os.path.join(env['MONETDB_PREFIX'],'lib','MonetDB')"
+        dft['MONETDB_MOD_PATH'] = "''"   #"GetMonetConfig(par['PACKAGE'],'--modpath')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
@@ -2907,14 +2894,6 @@ def main(argv) :
          "do not use the algebra version of the XQuery compiler"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
-        ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
-         'default: `monetdb-config --source` = "%s"' % GetMonetConfig('monetdb','--source')),
-        ('MONETDB_BUILD', None, 'MONETDB_BUILD', '<path>',
-         'default: `monetdb-config --build` = "%s"' % GetMonetConfig('monetdb','--build')),
-        ('MONETDB_PREFIX', None, 'MONETDB_PREFIX', '<path>',
-         'default: `monetdb-config --prefix` = "%s"' % GetMonetConfig('monetdb','--prefix')),
-        ('SQL_PREFIX', None, 'SQL_PREFIX', '<path>',
-         'default: `sql-config --prefix` = "%s"' % SQLprefix),
         ('TSTSRCBASE', None, 'TSTSRCBASE', '<path>',
          'default: `<package>-config --source` = "%s"' % GetMonetConfig(par['PACKAGE'],'--source')),
         ('TSTTRGBASE', None, 'TSTTRGBASE', '<path>',
@@ -3169,20 +3148,6 @@ def main(argv) :
     if par['M4']:
         env['GDK_NR_THREADS'] = "1"
 
-    #if env.has_key('MONETDB_PREFIX'):
-        #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
-        #if os.environ.has_key('PATH'):
-            #bp = bp+os.pathsep+os.environ['PATH']
-        #os.environ['PATH'] = bp
-
-    #if env.has_key('SQL_PREFIX'):
-        #bp = os.path.join(env['SQL_PREFIX'],"bin")
-        #if not os.path.isdir(bp):
-            #bp = env['SQL_PREFIX']
-        #if os.environ.has_key('PATH'):
-            #bp = bp+os.pathsep+os.environ['PATH']
-        #os.environ['PATH'] = bp
-
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
         vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
@@ -3224,12 +3189,6 @@ def main(argv) :
     #
     #if not os.path.indir(TSTSRCBASE):
     #       ErrXit("Illegal TSTSRCBASE: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONETDB_SOURCE):
-    #       ErrXit("Illegal MONETDB_SOURCE: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONETDB_BUILD):
-    #       ErrXit("Illegal MONETDB_BUILD: directory '"+a"` does not exist!")
-    #if not os.path.indir(MONETDB_PREFIX):
-    #       ErrXit("Illegal MONETDB_PREFIX: directory '"+a"` does not exist!")
 
     # ensure consistent TSTSRCBASE
     if os.path.basename(env['TSTSRCBASE']) == TSTSUFF  and  os.path.isfile(os.path.join(env['TSTSRCBASE'],"All")):
@@ -3337,7 +3296,7 @@ def main(argv) :
     env['QUIET'] = quiet
 
     ## set/extend PATH & LD_LIBRARY_PATH
-    #bp = ""        #os.path.join(env['MONETDB_PREFIX'],"bin")
+    #bp = ""        #os.path.join(GetMonetConfig(par['PACKAGE'],'--prefix'),"bin")
     #if THISFILE == "Mtest.py":
     #       lp = env['MONETDB_MOD_PATH']
     #else: # THISFILE == "Mapprove.py"

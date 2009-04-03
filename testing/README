@@ -168,8 +168,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   trees when configuring and compiling MonetDB: the original tests are found
   in TSTSRCBASE and Mtest.py writes the test output to TSTTRGBASE.
   The default settings are as follows:
-	TSTSRCBASE=$MONETDB_SOURCE  (where you checked out MonetDB's source tree)
-	TSTTRGBASE=$MONETDB_PREFIX  (where you told configure to put MonetDB)
+	TSTSRCBASE=`<PACKAGE>-config --source`  (where you checked out <PACKAGE>'s source tree)
+	TSTTRGBASE=`<PACKAGE>-config --prefix`  (where you told configure to install <PACKAGE>)
   You can over rule any of these defaults by setting the respective
   environment variable, or by giving, e.g., --TSTTRGBASE=/tmp as command
   line option to Mtest.py. 
@@ -183,28 +183,13 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   the time being, using paths that contain symbolic links will cause
   problems with Mtest.py.
   Hence, if you compiled MonetDB in a path that contains a symbolic link,
-  e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet,
-  you should either
-  a) overrule the initial setting of MONETDB_SOURCE, MONETDB_BUILD,
-     and MONETDB_PREFIX which were hardcoded during configure as (e.g.)
-	MONETDB_SOURCE=~/dev/monet
-	MONETDB_BUILD=~/dev/monet/$SYSTVER
-	MONETDB_PREFIX=~/dev/monet/$SYSTVER
-     by
-     either setting the respective environment variables (e.g.) as follows
-	MONETDB_SOURCE=/net/myhost/export/scratch1/myname/monet
-	MONETDB_BUILD=/net/myhost/export/scratch1/myname/monet/$SYSTVER
-	MONETDB_PREFIX=/net/myhost/export/scratch1/myname/monet/$SYSTVER
-     before running Mtest.py 
-     or using the respective command line options to Mtest.py
-  or
-  b) overrule the default settings of TSTSRCBASE and TSTTRGBASE (e.g.) as
-     follows
+  e.g., ~/dev/monet -> /net/myhost/export/scratch1/myname/monet, you should
+  overrule the default settings of TSTSRCBASE and TSTTRGBASE (e.g.) as
+  follows
 	TSTSRCBASE=/net/myhost/export/scratch1/myname/monet
 	TSTTRGBASE=/net/myhost/export/scratch1/myname/monet/$SYSTVER
-     either by setting the repective environment variables
-     or by using the respective command line options to Mtest.py (see
-     above).
+  either by setting the repective environment variables or by using the
+  respective command line options to Mtest.py (see above).
 
 
 - Each test is identified by its name and its directory path relative to
@@ -229,11 +214,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
     default settings:
 	name		default					description
 	----		-------					-----------
-	MONETDB_SOURCE	(where you checked out MonetDB)		base of MonetDB's source tree
-	MONETDB_BUILD	(where you called configure & make)	base of extracted source tree
-	MONETDB_PREFIX	(where you installed MonetDB to)	base of MonetDB distribution
-	TSTSRCBASE	$MONETDB_SOURCE				base of test source tree
-	TSTTRGBASE	$MONETDB_PREFIX				base for test output
+	TSTSRCBASE	`<PACKAGE>-config --source`		base of test source tree
+	TSTTRGBASE	`<PACKAGE>-config --prefix`		base for test output
 	MILCLIENT	mclient	-lmil				mil-client program	`)
 	MALCLIENT	mclient -lmal				mal-client program	`)
 	SQLCLIENT	mclient -lsql				sql-client program	`)
@@ -244,7 +226,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
        "--config=", "--host=", & "--port=" options.
 
     The following variables are currently still used legacy, but they will disappear soon...
-	MONETDB_MOD_PATH	$MONETDB_PREFIX/lib(64);MONETDB_PREFIX/lib(64)/MonetDB
+	MONETDB_MOD_PATH	`<PACKAGE>-config --modpath([45])`
 
     The setting of all these environment variables maybe overruled
     by commandline options with the same names, e.g., "--MILCLIENT=mclient.py".
@@ -275,7 +257,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	TSTDIR		current test directory without $TSTSRCBASE/ & /Tests
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
-	MONETDB_CONF	location of MonetDB.conf (default: $MONETDB_PREFIX/etc/MonetDB.conf)
+	MONETDB_CONF	location of MonetDB.conf (default: `monetdb4-config --sysconfdir`/MonetDB.conf)
 	SQL_LOGDIR	as read from $MONETDB_CONF or set by --sql_logdir=<path>
 	XQUERY_LOGDIR	as read from $MONETDB_CONF or set by --xquery_logdir=<path>
 	GDK_DBFARM	as read from $MONETDB_CONF or set by --dbfarm=<path>
@@ -334,7 +316,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 
 - A development session is then supposed to proceed as follows:
-  (assuming TSTSRCBASE=$MONETDB_SOURCE)
+  (assuming TSTSRCBASE=`<PACKAGE>-config --source`)
 
 	cd $TSTSRCBASE
 	run  cvs update
@@ -344,7 +326,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 				# write & compile your code
 				cd $TSTSRCBASE/$TSTDIR
 				edit source
-				cd $MONETDB_BUILD/$TSTDIR
+				cd `<PACKAGE>-config --build`/$TSTDIR
 				[g]make
 				[g]make install
 			endloop
