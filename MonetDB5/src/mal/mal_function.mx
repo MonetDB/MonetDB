@@ -89,7 +89,7 @@ mal_export int getBlockExit(MalBlkPtr mb,int pc);
 mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 
 #define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vsize)
-mal_export void setLifespan(MalBlkPtr mb, Lifespan span);
+mal_export Lifespan setLifespan(MalBlkPtr mb);
 mal_export void debugLifespan(MalBlkPtr mb, Lifespan span);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
@@ -718,12 +718,13 @@ block, due to possible REDO actions.
 Variables defined within the block can be finished at
 any time, but at EXIT at the latest.
 @c
-void
-setLifespan(MalBlkPtr mb, Lifespan span)
+Lifespan 
+setLifespan(MalBlkPtr mb)
 {
 	int pc, k, depth=0;
 	InstrPtr p;
 	int *blk;
+	Lifespan span= newLifespan(mb);
 
 	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
 
@@ -766,6 +767,7 @@ At a block exit we can finalize all variables defined within that block.
 		span[k].endLifespan = pc-2;/* generate them before the end */
 	GDKfree(blk);
 	/* debugLifespan(mb); */
+	return span;
 }
 
 int
@@ -1055,7 +1057,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	InstrPtr p;
 	int i, k;
 	Lifespan span;
-	span = newLifespan(mb);
 
 	(void) stk;		/* fool the compiler */
 
@@ -1063,7 +1064,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		f = GDKout;
 	else
 		f = open_wastream(fname);
-	setLifespan(mb,span);
+	span= setLifespan(mb);
 	p = getInstrPtr(mb, 0);
 	stream_printf(f, "digraph %s{\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
