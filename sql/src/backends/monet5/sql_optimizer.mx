@@ -450,20 +450,22 @@ str defaultPlan=
 	"aliases,"
 	/* "crack," */
 	"mergetable," 
+	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
 /*	"octopus,"*/
 #endif
 	"constants,"
 	"commonTerms,"
 /*	"replicator," */
+ 	"reorder,"
 	"joinPath,"
-/*	"accumulators,"*/
+	/*"accumulators," clashes with the mergetable */
 	"deadcode,"
- 	/* "reorder,"*/
 	/*"recycle,"*/
 	"reduce,"
 	"garbageCollector,"
 	"dataflow,"
+	/*"prejoin,"		   sort large operands */
 	"history,"
 	"multiplex";
 static str minimalPlan=
