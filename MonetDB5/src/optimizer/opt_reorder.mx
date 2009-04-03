@@ -20,7 +20,7 @@
 MAL programs are largely logical descriptions of an execution plan.
 After the mitosis and mergetable optimizers we have a large program, which when
 executed as is, does not benefit from the locality
-data and operations. The breath-first traversal of all independent
+of data and operations. The breath-first traversal of all independent
 plans should be turned into a depth-first traversal.
 
 The approach here is to reorder the complete program.
@@ -42,7 +42,7 @@ comment "Reorder by dataflow dependencies";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_REORDER  */
+/* #define DEBUG_OPT_REORDER  */
 @c
 #include "mal_config.h"
 #include "opt_reorder.h"
@@ -59,24 +59,40 @@ typedef struct{
 } *Node, NodeRecord;
 
 static Node *
-OPTdependencies(MalBlkPtr mb){
+OPTdependencies(Client cntxt, MalBlkPtr mb){
 	Node *list = (Node *) GDKzalloc(sizeof(Node) * mb->stop);
 	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	int i,j;
 	InstrPtr p;
+	
+	if (list == NULL || var == NULL){
+		if (list ) GDKfree(list);
+		if (var) GDKfree(var);
+		return NULL;
+	}
 
 	for ( i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
-		list[i]= (Node) GDKmalloc(sizeof(NodeRecord)+sizeof(int)*p->maxarg);
+		list[i]= (Node) GDKzalloc(sizeof(NodeRecord)+sizeof(int)*p->maxarg);
 		list[i]->cnt= p->argc;
-		for( j=p->retc; j<p->argc; j++){
+		for( j=p->retc; j<p->argc; j++)
 			list[i]->stmt[j]= var[getArg(p,j)];
-		}
-		/* where is was used last */
+		/* where it was assigned last */
 		for( j=0; j<p->retc; j++){
 			var[getArg(p,j)]= i;
 		}
 	}
+#ifdef DEBUG_OPT_REORDER
+	stream_printf(cntxt->fdout,"DEPENDENCY TABLE\n");
+	for(i=0;i<mb->stop; i++){
+		stream_printf(cntxt->fdout,"[%d]",i);
+		for(j=p->retc; j< list[i]->cnt; j++)
+			stream_printf(cntxt->fdout," %d",list[i]->stmt[j]);
+		stream_printf(cntxt->fdout,"\n");
+	}
+#else
+	(void) cntxt;
+#endif
 	GDKfree(var);
 	return list;
 }
@@ -89,6 +105,7 @@ OPTremoveDep(Node *list, int lim){
 		GDKfree(list[i]);
 	GDKfree(list);
 }
+
 static void
 OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 {
@@ -102,7 +119,7 @@ OPTdepthfirst(Client cntxt, MalBlkPtr mb, int pc, InstrPtr old[], Node dep[])
 	for (i= p->retc; i< p->argc; i++)
 		OPTdepthfirst(cntxt, mb,dep[pc]->stmt[i], old, dep);
 #ifdef DEBUG_OPT_REORDER
-			stream_printf(cntxt->fdout,"dump:");
+			stream_printf(cntxt->fdout,"dump[%d]:",pc);
 			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #endif
 	pushInstruction(mb, p);
@@ -122,7 +139,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	stream_printf(cntxt->fdout,"REORDER\n");
 	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
 #endif
-	dep = OPTdependencies(mb);
+	dep = OPTdependencies(cntxt,mb);
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize); /* some marge */
@@ -132,16 +149,25 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	start=1;
 	for( i=1; i<limit; i++){
 		p= old[i];
-		if( hasSideEffects(p,TRUE) || p->barrier || p->token== ENDsymbol){
+		if( p->token == ENDsymbol)
+			break;
+		if( hasSideEffects(p,TRUE)  || p->barrier ){
 #ifdef DEBUG_OPT_REORDER
-			stream_printf(cntxt->fdout,"apply:");
+			stream_printf(cntxt->fdout,"apply[%d]:",i);
 			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #endif
+			OPTdepthfirst(cntxt, mb, i, old, dep);
+			/* remove last instruction and keep for later */
+			p= mb->stmt[mb->stop-1];
+			mb->stmt[mb->stop-1]=0;
+			mb->stop--;
 			/* collect all seen sofar by backward grouping */
+			/* since p has side-effects, we should secure all seen sofar */
 			for(j=i-1; j>=start;j--) {
 #ifdef DEBUG_OPT_REORDER
 			stream_printf(cntxt->fdout,"leftover: %d",start+1);
-			printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
+			if( old[j])
+				printInstruction(cntxt->fdout,mb,0,old[j],LIST_MAL_STMT);
 #endif
 				OPTdepthfirst(cntxt, mb, j, old, dep);
 			}
@@ -150,6 +176,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			start = i+1;
 		}
 	}
+	for(i=0; i<limit; i++)
+		if (old[i])
+			pushInstruction(mb,old[i]);
 	OPTremoveDep(dep, limit);
 	GDKfree(old);
 #ifdef DEBUG_OPT_REORDER
