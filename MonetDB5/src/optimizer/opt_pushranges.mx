@@ -117,6 +117,8 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		return 0;
 
 	range= (Range) GDKzalloc(mb->vtop * sizeof(RangeRec));
+	if (range == NULL)
+		return 0;
 #ifdef DEBUG_OPT_RANGEPUSH
 	stream_printf(cntxt->fdout,"#Range select optimizer started\n");
 #else

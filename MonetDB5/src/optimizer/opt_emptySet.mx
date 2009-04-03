@@ -142,7 +142,13 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
 	constraints= (InstrPtr *) GDKmalloc(sizeof(InstrPtr)*slimit);
+	if ( constraints == NULL)
+		return 0;
 	alias = (int*) GDKmalloc(sizeof(int)*mb->vtop);
+	if( alias == NULL){
+		GDKfree(constraints);
+		return 0;
+	}
 	for(i=0;i<mb->vtop; i++) alias[i]=i;
 
 	/* Symbolic evaluation of the empty BAT variables */
@@ -302,6 +308,8 @@ OPTemptySetImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i;
 
 	empty = (char *) GDKzalloc(mb->vsize * sizeof(char));
+	if ( empty == NULL)
+		return 0;
 	(void) stk;
 	(void) p;
 #ifdef DEBUG_OPT_EMPTYSET

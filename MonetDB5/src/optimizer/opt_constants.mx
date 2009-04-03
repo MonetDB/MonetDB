@@ -61,6 +61,13 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	cst= (VarPtr*) GDKmalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKmalloc(sizeof(int) * mb->vtop);
 
+	if ( alias == NULL || cst == NULL || index == NULL){
+		if( alias) GDKfree(alias);
+		if( cst) GDKfree(cst);
+		if( index) GDKfree(index);
+		return 0;
+	}
+
 	(void) stk;
 	(void) cntxt;
 

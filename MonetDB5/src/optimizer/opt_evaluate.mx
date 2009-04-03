@@ -158,12 +158,16 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) cntxt;
 #endif
 	
-	span = newLifespan(mb);
+	span = setLifespan(mb);
+	if ( span == NULL)
+		return 0;
+
 	env= prepareMALstack(mb, 2 * mb->vsize);
 	env->keepAlive= TRUE;
 	alias = (int*) GDKzalloc(mb->vsize * sizeof(int) *2); /* we introduce more */
+	if ( alias == NULL)
+		return 0;
 
-	setLifespan(mb,span);
 	limit = mb->stop;
 	for (i= 1 ; i < limit; i++) {
 		p = getInstrPtr(mb,i);

@@ -132,6 +132,8 @@ spread evenly over the threads and the common type.
 
 	/* inject the MAT versions for the largest table */
 	parts= (int*) GDKmalloc(sizeof(int)* pieces);
+	if (parts == NULL)
+		return 0;
 
 	old = mb->stmt;
 	limit= mb->stop;

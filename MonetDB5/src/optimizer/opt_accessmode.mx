@@ -65,7 +65,13 @@ OPTaccessmodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	(void) stk;
 
 	candidate= (InstrPtr*) GDKmalloc(sizeof(InstrPtr) * mb->stop);
+	if ( candidate == NULL)
+		return 0;
 	writeable= (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( writeable  == NULL){
+		GDKfree(candidate);
+		return 0;
+	}
 
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);

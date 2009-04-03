@@ -111,6 +111,8 @@ static QEP
 QEPnew(int p, int c){
 	QEP qep;
 	qep = (QEP) GDKmalloc( sizeof(struct QEPrecord));
+	if (qep == NULL)
+		return NULL;
 	qep->mb= NULL;
 	qep->p = NULL;
 	qep->plimit = p;

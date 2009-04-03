@@ -62,6 +62,8 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	(void) cntxt;
 	(void) stk;
+	if ( used == NULL)
+		return 0;
 	limit= mb->stop;
 	old = mb->stmt;
 	newMalBlkStmt(mb, mb->ssize);

@@ -191,6 +191,8 @@ Determine the variables to be upgraded and adjust their type
 		printInstruction(cntxt->fdout,mb, 0, p,LIST_MAL_ALL);
 #endif
 	upgrade = (bit*) GDKzalloc(sizeof(bit)*mq->vtop);
+	if( upgrade == NULL) 
+		return 0;
 
 	setVarType(mq, 0,newBatType(TYPE_oid, getArgType(mb,p,0)));
 	clrVarFixed(mq,getArg(getInstrPtr(mq,0),0)); /* for typing */

@@ -130,9 +130,13 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			updstmt = 1;
 	}
 
+	span = setLifespan(mb);
+	if ( span == NULL)
+		return 0;
+
 	recycled= GDKzalloc(sizeof(char)*mb->vtop*2);
-	span= newLifespan(mb);
-	setLifespan(mb,span);
+	if ( recycled == NULL)
+		return 0;
 	newMalBlkStmt(mb, mb->ssize);
 	pushInstruction(mb,old[0]);
 

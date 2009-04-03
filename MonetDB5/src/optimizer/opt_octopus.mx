@@ -140,6 +140,11 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	str name= NULL;
 	Symbol s;
 
+	if (list == NULL || needed == NULL){
+		if ( list ) GDKfree(list);
+		if ( needed) GDKfree(needed);
+		return 0;
+	}
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
 	printInstruction(cntxt->fdout,mb,0,pci,0);
@@ -243,6 +248,8 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int target=0;
 
 
+	if ( tentacle == NULL)
+		return 0;
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "#Octopus optimizer started\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);

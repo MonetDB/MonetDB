@@ -549,6 +549,8 @@ disjoint(mat_t *mat, int *mtop, int m, MalBlkPtr mb)
 	printInstruction(GDKout, mb, 0, mat[m].mi, LIST_MAL_ALL);
 #endif
 
+	if (used == NULL)
+		return 0;
 	setModuleId(r,matRef);
 	setFunctionId(r,newRef);
 	getArg(r,0) = newTmpVariable(mb, tpe);
@@ -962,6 +964,8 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 	int *attrs = (int*) GDKmalloc(cnt * sizeof(int) * mat[ext].mi->argc), k, i;
 	InstrPtr cur = NULL;
 
+	if ( attrs == NULL)
+		return NULL;
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"MAT optimizer, mat_pack_group\n");
 	printInstruction(GDKout, mb, 0, mat[ext].mi, LIST_MAL_ALL);

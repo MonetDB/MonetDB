@@ -115,7 +115,13 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) stk;
 	(void) pci;
 	lastassigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( lastassigned == NULL)
+		return 0;
 	alias = (int*) GDKmalloc(sizeof(int) * mb->vtop);
+	if ( alias == NULL){
+		GDKfree(lastassigned);
+		return 0;
+	}
 	for ( k=0;k<mb->vtop; k++)
 		alias[k]=k;
 

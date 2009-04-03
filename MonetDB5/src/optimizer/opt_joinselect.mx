@@ -67,6 +67,14 @@ OPTjoinselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pu= scr_u = (int*) GDKmalloc(scr_size * sizeof(int));
 	pd= scr_d = (int*) GDKmalloc(scr_size * sizeof(int));
 
+	if (ps == NULL || pi == NULL || pu == NULL || pd == NULL){
+		if (ps) GDKfree(ps);
+		if (pi) GDKfree(pi);
+		if (pu) GDKfree(pu);
+		if (pd) GDKfree(pd);
+		return 0;
+	}
+
 	(void) stk;
 	(void) pci;
 	limit = mb->stop;

@@ -120,14 +120,19 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0, retvar=0;
 	InstrPtr *first, *second;
-	Lifespan span= newLifespan(mb);
+	Lifespan span;
 
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	setLifespan(mb,span);
+	span = setLifespan(mb);
+	if( span == NULL)
+		return 0;
+
 	varused = GDKmalloc(mb->vtop * sizeof(int));
+	if ( varused == NULL)
+		return 0;
 	for (i = 0; i < mb->vtop; i++)
 		varused[i] = 0;
 
@@ -137,7 +142,11 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		varused[i] = 1;
 
 	first = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
+	if ( first == NULL)
+		return 0;
 	second = (InstrPtr *) GDKzalloc(mb->ssize * sizeof(InstrPtr));
+	if ( second == NULL)
+		return 0;
 
 	first[fk++] = getInstrPtr(mb, 0);	/* to become a factory */
 	for (i = 1; i < mb->stop - 1; i++) {

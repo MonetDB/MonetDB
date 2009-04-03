@@ -222,7 +222,13 @@ OPTnaiveIterations(MalBlkPtr mb){
 	if( !OPTisSimple(mb))
 		return 0;
 	alias= (int*) GDKzalloc(sizeof(int)*vlimit);
+	if (alias == NULL)
+		return 0;
 	garbage= (int*) GDKzalloc(sizeof(int)*vlimit);
+	if (garbage== NULL){
+		GDKfree(alias);
+		return 0;
+	}
 
 	limit= mb->stop;
 	old = mb->stmt;

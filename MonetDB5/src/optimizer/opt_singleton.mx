@@ -151,6 +151,8 @@ STevaluate(Client cntxt, MalBlkPtr mb, int cnt, int *vars)
 	if( mb->errors) 
 		return 0;
 	tuples = (STtuple*) GDKmalloc(mb->stop * sizeof(STtuple));
+	if (tuples == NULL)
+		return 0;
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
@@ -343,6 +345,8 @@ OPTsingletonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void) cntxt;
 	(void) stk;
 	vars = (int *) GDKmalloc(mb->vtop);
+	if (vars == NULL)
+		return 0;
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);

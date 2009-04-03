@@ -124,6 +124,8 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	str s,cv= NULL;
 
 	msg = (str) GDKmalloc(BUFSIZ);
+	if (msg == NULL)
+		return NULL;
 	msg[0]='#';
 	msg[1]=0;
 	if( p->barrier)

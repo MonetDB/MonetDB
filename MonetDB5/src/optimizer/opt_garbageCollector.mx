@@ -171,8 +171,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
-	span = newLifespan(mb);
-	setLifespan(mb,span);
+	span = setLifespan(mb);
+	if ( span == NULL)
+		return 0;
 
 	old= mb->stmt;
 	limit = mb->stop;

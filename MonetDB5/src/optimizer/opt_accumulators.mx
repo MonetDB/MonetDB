@@ -75,12 +75,16 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	char *available;
 	int *alias;
 	InstrPtr *old;
-	Lifespan span= newLifespan(mb);
+	Lifespan span;
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
-	setLifespan(mb,span);
+	span = setLifespan(mb);
+	if( span == NULL)
+		return 0;
 	alias= (int*) GDKmalloc(sizeof(int)*mb->vtop);
+	if (alias == NULL)
+		return 0;
 	for(j=0;j< mb->vtop; j++)
 		alias[j]=j;
 	available= (char*) GDKzalloc(sizeof(int)*mb->vtop);

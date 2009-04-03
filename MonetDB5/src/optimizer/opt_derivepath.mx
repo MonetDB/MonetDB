@@ -75,6 +75,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKmalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
+	if ( pc == NULL)
+		return 0;
 	memset((char*) pc, 0, sizeof(int)* mb->vtop *2);
 
 	for (i = 0; i<limit; i++){
