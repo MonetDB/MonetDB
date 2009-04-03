@@ -1500,6 +1500,7 @@ GDKinit(opt *set, int setlen)
 	char *p;
 	opt *n;
 	int i, j, nlen = 0;
+	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
 	assert(sizeof(char) == SIZEOF_CHAR);
@@ -1615,6 +1616,18 @@ GDKinit(opt *set, int setlen)
 	}
 	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) 
 		GDKembedded = 1;
+	if (GDKgetenv("gdk_mem_pagebits") == NULL) {
+		snprintf(buf, sizeof(buf), "%d", GDK_mem_pagebits);
+		GDKsetenv("gdk_mem_pagebits", buf);
+	}
+	if (GDKgetenv("gdk_mem_bigsize") == NULL) {
+		snprintf(buf, sizeof(buf), SZFMT, GDK_mem_bigsize);
+		GDKsetenv("gdk_mem_bigsize", buf);
+	}
+	if (GDKgetenv("monet_pid") == NULL) {
+		snprintf(buf, sizeof(buf), "%d", (int) getpid());
+		GDKsetenv("monet_pid", buf);
+	}
 
 #ifdef HAVE_POSIX_FADVISE
 	if (!GDKembedded && GDK_vm_trim) {
