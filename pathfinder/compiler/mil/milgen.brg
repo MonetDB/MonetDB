@@ -10176,7 +10176,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 			restype = aat_pre;
 		    } else {
 		        execute (assgn(var(retNodes->name),lit_bit(true)));
-			restype = aat_int;
+			restype = aat_bln;
 		    }
 
 		    mvar_t *pfop_sn, *pfop_terms, *pfop_opt, *pfop_ign;
