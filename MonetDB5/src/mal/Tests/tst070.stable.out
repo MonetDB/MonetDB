@@ -15,7 +15,7 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 !TypeException:user.foo[2]:'user.getName' undefined in: (initial:str, surname:str) := user.getName()
 function user.foo():void;
     (x,y) := user.point(1);
-    (initial,surname) := user.getName();
+    (initial:str ,surname:str ) := user.getName();
 end foo;
 #
 function user.main():void;

@@ -22,12 +22,12 @@ stdout of test 'tst300` in directory 'src/mal` itself:
 #exit	myNewException;
 #end tst;
 function user.tst():void;
-    raise myNewException := "new exception";
+    raise myNewException:str  := "new exception";
     io.printf("should not come here\n");
 #exception block; 
-catch myNewException;
+catch myNewException:str ;
     io.printf("caught exception\n");
-exit myNewException;
+exit myNewException:str ;
 end tst;
 #
 #tst();

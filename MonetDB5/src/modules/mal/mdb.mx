@@ -665,7 +665,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str
 MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Lifespan span= newLifespan(mb);
+	Lifespan span;
 	str modnme;
 	str fcnnme;
 	Symbol s = NULL;
@@ -683,7 +683,9 @@ MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", "Could not find function");
-	setLifespan(s->def,span);
+	span = setLifespan(s->def);
+	if( span == NULL)
+		throw(MAL,"mdb.inspect","could not allocate space");
 	debugLifespan(s->def,span);
 	GDKfree(span);
 	(void) p;

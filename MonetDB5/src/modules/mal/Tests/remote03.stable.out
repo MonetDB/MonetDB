@@ -18,38 +18,38 @@ stdout of test 'remote03` in directory 'src/modules/mal` itself:
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
     db := const.take("dbname");
-    conn := remote.connect(db,"monetdb","monetdb");
+    conn:str  := remote.connect(db,"monetdb","monetdb");
 # this is invalid, as io.print is an invalid module, and bla will be 
 # taken as function 
-    f := remote.exec(conn,"io.print","bla");
-catch MALException;
+    f:str  := remote.exec(conn,"io.print","bla");
+catch MALException:str ;
     io.print("Received first error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException;
+exit MALException:str ;
 # now do it with a function that returns something (a BAT in this case) 
-    b := remote.exec(conn,"inspect","getAtomNames");
-catch MALException;
+    b:str  := remote.exec(conn,"inspect","getAtomNames");
+catch MALException:str ;
     io.print("Received second error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException;
-    c := remote.get(conn,b);
+exit MALException:str ;
+    c:bat[:int,:str]  := remote.get(conn,b);
     io.print(c);
-catch MALException;
+catch MALException:str ;
     io.print("Received third error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException;
+exit MALException:str ;
 # io.print only outputs things, but returns nothing 
-    a := remote.exec(conn,"io","print",b);
-catch MALException;
+    a:str  := remote.exec(conn,"io","print",b);
+catch MALException:str ;
     io.print("Received fourth error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException;
-    d := remote.get(conn,a);
+exit MALException:str ;
+    d:void  := remote.get(conn,a);
     io.print(d);
-catch MALException;
+catch MALException:str ;
     io.print("Received fifth error from the remote site");
     io.printf("!%s\n",MALException);
-exit MALException;
+exit MALException:str ;
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);

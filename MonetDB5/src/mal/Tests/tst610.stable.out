@@ -83,33 +83,33 @@ function user.main():void;
     io.print("open box");
     bbp.open();
 #user.refs(); 
-    t := bbp.bind("tasks");
+    t:bat[:int,:int]  := bbp.bind("tasks");
     io.print(t);
     bbp.release(t);
 #user.refs(); 
     io.print(t);
-catch MALException;
+catch MALException:str ;
     io.print("BAT was released");
-exit MALException;
+exit MALException:str ;
 # the bat is still visible, because the destroy only 
 # marks it for deletion at the end of session or 
 # when the reference counters drop to zero 
-    t := bbp.bind("tasks");
+    t:bat[:int,:int]  := bbp.bind("tasks");
 #user.refs(); 
 # to really remove, we get rid of the current 
 # references as well 
     bbp.destroy(t,true);
 #user.refs(); 
     io.print(t);
-catch MALException;
+catch MALException:str ;
     io.print("BAT was destroyed");
-exit MALException;
-    z := bbp.bind("tasks");
+exit MALException:str ;
+    z:bat[:any,:any]  := bbp.bind("tasks");
     io.print(z);
 #it is not in the box anymore either 
-catch MALException;
+catch MALException:str ;
     io.print("BAT was removed from the box");
-exit MALException;
+exit MALException:str ;
 end main;
 [ "open box" ]
 #-----------------#

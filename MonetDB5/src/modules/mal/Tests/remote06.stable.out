@@ -16,9 +16,9 @@ function user.main():void;
 # let connect figure out itself how to connect to the running db 
     db := const.take("dbname");
 # create a persistent connecton to ourself 
-    conn1 := remote.connect(db,"monetdb","monetdb");
+    conn1:str  := remote.connect(db,"monetdb","monetdb");
 # do it again ... 
-    conn2 := remote.connect(db,"monetdb","monetdb");
+    conn2:str  := remote.connect(db,"monetdb","monetdb");
 # ... and check they are the same 
 barrier if := calc.==(conn1,conn2);
     io.printf("!oops: %s == %s\n",conn1,conn2);

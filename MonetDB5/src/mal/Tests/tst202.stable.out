@@ -38,7 +38,7 @@ function user.main():void;
 # GDK layer should produce exceptions rather then direct warnings 
 # or ignoring. 
 # a typical case is to try to rename an existing (persistent) bat 
-    b := bat.new(:int,:int);
+    b:bat[:int,:int]  := bat.new(:int,:int);
     bat.setName(b,"mybat");
 #setPersistent(b); 
     bat.setColumn(b,"first","second");
@@ -49,9 +49,9 @@ function user.main():void;
 #setPersistent(c); 
     io.print(c);
     io.printf("caught anything?\n");
-catch GDKerror;
+catch GDKerror:str ;
     io.printf("Catched the renaming exception\n");
-exit GDKerror;
+exit GDKerror:str ;
 #get rid of it again 
 #destroy(b); 
 #destroy(c); 

@@ -23,11 +23,11 @@ stdout of test 'remap` in directory 'src/optimizer` itself:
 function user.main():void;
     b := bat.new(:oid,:int);
 # a correct call 
-    z := batcalc.+(b,1);
-    f := batcalc.<(b,3);
-    f := batcalc.>(b,3);
+    z:bat[:oid,:int]  := batcalc.+(b,1);
+    f:bat[:oid,:bit]  := batcalc.<(b,3);
+    f:bat[:oid,:bit]  := batcalc.>(b,3);
     d := bat.new(:oid,:str);
-    a := batcalc.isnil(d);
+    a:bat[:oid,:bit]  := batcalc.isnil(d);
 # demonstrate an error 
     _22 := bat.new(nil:int,nil:int);
 barrier (_25,_26,_27) := bat.newIterator(b);
@@ -35,18 +35,18 @@ barrier (_25,_26,_27) := bat.newIterator(b);
     bat.insert(_22,_26,_29);
     redo (_25,_26,_27) := bat.hasMoreElements(b);
 exit (_25,_26,_27);
-    y := _22;
+    y:bat[:int,:int]  := _22;
 # it will be ignored by the optimizer 
     mdb.List();
 end main;
 function user.main():void;
     b := bat.new(:oid,:int);
 # a correct call 
-    z := batcalc.+(b,1);
-    f := batcalc.<(b,3);
-    f := batcalc.>(b,3);
+    z:bat[:oid,:int]  := batcalc.+(b,1);
+    f:bat[:oid,:bit]  := batcalc.<(b,3);
+    f:bat[:oid,:bit]  := batcalc.>(b,3);
     d := bat.new(:oid,:str);
-    a := batcalc.isnil(d);
+    a:bat[:oid,:bit]  := batcalc.isnil(d);
 # demonstrate an error 
     _22 := bat.new(nil:int,nil:int);
 barrier (_25,_26,_27) := bat.newIterator(b);
@@ -54,7 +54,7 @@ barrier (_25,_26,_27) := bat.newIterator(b);
     bat.insert(_22,_26,_29);
     redo (_25,_26,_27) := bat.hasMoreElements(b);
 exit (_25,_26,_27);
-    y := _22;
+    y:bat[:int,:int]  := _22;
 # it will be ignored by the optimizer 
     mdb.List();
 end main;

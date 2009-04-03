@@ -43,7 +43,7 @@ barrier (_23,_24,_25) := bat.newIterator(b);
     bat.insert(_20,_24,_27);
     redo (_23,_24,_25) := bat.hasMoreElements(b);
 exit (_23,_24,_25);
-    xz := _20;
+    xz:bat[:lng,:lng]  := _20;
     io.print(xz);
 end main;
 #-----------------#

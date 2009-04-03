@@ -14,9 +14,9 @@ stdout of test 'emptyset01` in directory 'src/optimizer` itself:
 function user.do{inline}(V1:bat[:oid,:int]):void;
 barrier (x,y,z) := bat.newIterator(V1);
     io.print("loop");
-catch MALException;
+catch MALException:str ;
     io.print(MALException);
-exit MALException;
+exit MALException:str ;
 exit (x,y,z);
 end do;
 function user.tst():void;

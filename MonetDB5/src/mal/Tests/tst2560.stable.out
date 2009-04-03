@@ -48,8 +48,8 @@ stdout of test 'tst2560` in directory 'src/mal` itself:
 #exit always;
 #end view1;
 factory user.view1(l:int,h:int):bat[:oid,:str];
-    a := bbp.bind("emp","age");
-    b := bbp.bind("emp","name");
+    a:bat[:oid,:int]  := bbp.bind("emp","age");
+    b:bat[:oid,:str]  := bbp.bind("emp","name");
 barrier always := true;
     lOld := l;
     hOld := h;

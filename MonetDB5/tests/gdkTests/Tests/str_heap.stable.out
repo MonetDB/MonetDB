@@ -25,7 +25,7 @@ function user.main():void;
     io.print(b);
     bat.unload("DRUID_sample");
     bat.load("DRUID_sample");
-    c := bbp.bind("DRUID_sample");
+    c:bat[:int,:str]  := bbp.bind("DRUID_sample");
     io.print(c);
     bat.setPersistent(c,false);
     clients.quit();

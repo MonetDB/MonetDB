@@ -15,7 +15,7 @@ stdout of test 'statistics01` in directory 'src/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
 function user.main():void;
 #test the statistics module 
-    tz := bbp.bind("timezones");
+    tz:bat[:str,:timezone]  := bbp.bind("timezones");
     statistics.prelude();
 #statistics.dump();		is size dependent 
     statistics.deposit("timezones");
@@ -24,20 +24,20 @@ function user.main():void;
 #io.print(b); 
     l := statistics.getCount("timezones");
     io.print(l);
-catch MALException;
+catch MALException:str ;
     io.print("could not get count from timezones");
-exit MALException;
+exit MALException:str ;
     m := statistics.getMin("timezones");
-catch MALException;
+catch MALException:str ;
     io.print("could not get minimum from timezones");
-exit MALException;
+exit MALException:str ;
     io.print(m);
     h := statistics.getHistogram("timezones");
-catch MALException;
+catch MALException:str ;
     io.print("could not get histogram from timezones");
     io.print(MALException);
     h := bat.new(:oid,:int);
-exit MALException;
+exit MALException:str ;
     io.print("histogram");
     io.print(h);
     hc := aggr.count(h);

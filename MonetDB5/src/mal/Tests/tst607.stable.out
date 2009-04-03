@@ -29,14 +29,14 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 #
 function user.main():void;
 # using spaces 
-    u := const.take("user");
+    u:str  := const.take("user");
     io.printf("#User bound to %s\n",u);
     roomnumber := 321;
     const.deposit("roomnumber",roomnumber);
-    v := const.take("roomnumber");
+    v:int  := const.take("roomnumber");
     io.print(v);
-    v := 123;
-    v := calc.+(v,1);
+    v:int  := 123;
+    v:int  := calc.+(v,1);
     const.release("roomnumber");
     io.print("attempt twice to release");
     const.release("roomnumber");

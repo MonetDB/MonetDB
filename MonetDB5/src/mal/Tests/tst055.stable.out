@@ -24,19 +24,19 @@ stdout of test 'tst055` in directory 'src/mal` itself:
 #
 function user.main():void;
 # Nil values 
-    s := nil:str;
+    s:str  := nil:str;
     io.print(s);
-    i := nil:sht;
+    i:sht  := nil:sht;
     io.print(i);
-    b := nil:bit;
+    b:bit  := nil:bit;
     io.print(b);
-    f := nil:flt;
+    f:flt  := nil:flt;
     io.print(f);
-    d := nil:dbl;
+    d:dbl  := nil:dbl;
     io.print(d);
-    l := nil:lng;
+    l:lng  := nil:lng;
     io.print(l);
-    j := nil:int;
+    j:int  := nil:int;
     io.print(j);
 end main;
 [ nil ]

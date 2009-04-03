@@ -20,8 +20,8 @@ function user.qry():void;
     bat.insert(b,0@0,1);
     zz := user.foo(1,2);
 # base line test for inlining 
-    z := mal.multiplex("user","foo",b,b);
-    z := mal.multiplex("user","foo",b,2);
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
 end qry;
 function user.main():void;
 # remapping inline functions 

@@ -33,7 +33,7 @@ barrier (_19,_20,_21) := bat.newIterator(t);
     bat.insert(_15,_20,_23);
     redo (_19,_20,_21) := bat.hasMoreElements(t);
 exit (_19,_20,_21);
-    b := _15;
+    b:bat[:oid,:bit]  := _15;
     io.print(b);
 end main;
 #-------------------------#

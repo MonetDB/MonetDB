@@ -114,9 +114,9 @@ function user.main():void;
     bat.insert(scens,"mal",nil:oid);
 # this should fail, the monetdb user is already there 
     id := clients.addUser("monetdb","Pmonetdb",scens);
-catch MALException;
+catch MALException:str ;
     io.printf("%s\n",MALException);
-exit MALException;
+exit MALException:str ;
 # should print 0@1 or something 
     id := clients.addUser("test","test",scens);
     io.print(id);
@@ -142,54 +142,54 @@ exit MALException;
     clients.removeScenario("test","sql");
 # this one should fail: it's not there 
     clients.removeScenario("test","mil");
-catch MALException;
+catch MALException:str ;
     io.printf("%s\n",MALException);
-    MALException := nil:str;
-exit MALException;
+    MALException:str  := nil:str;
+exit MALException:str ;
 # and add a scenario again 
     clients.addScenario("test","mal");
 # do it again, see what happens (should fail) 
     clients.addScenario("test","mal");
-catch MALException;
+catch MALException:str ;
     io.printf("%s\n",MALException);
-    MALException := nil:str;
-exit MALException;
+    MALException:str  := nil:str;
+exit MALException:str ;
 # forcefully set the password of the user test 
     clients.setPassword("test","newpass");
 # now try to set the password for ourself, should fail 
     clients.setPassword("monetdb","badpass");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-exit InvalidCredentialsException;
+exit InvalidCredentialsException:str ;
 # change our own password 
     clients.changePassword("monetdb","newdb");
 # try it again, should fail... 
     clients.changePassword("monetdb","newdb");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException := nil:str;
-exit InvalidCredentialsException;
+    InvalidCredentialsException:str  := nil:str;
+exit InvalidCredentialsException:str ;
 # all should fail 
     clients.checkPermission("monetdb","Pmonetdb","sql");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException := nil:str;
-exit InvalidCredentialsException;
+    InvalidCredentialsException:str  := nil:str;
+exit InvalidCredentialsException:str ;
     clients.checkPermission("monetdb","x","sql");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException := nil:str;
-exit InvalidCredentialsException;
+    InvalidCredentialsException:str  := nil:str;
+exit InvalidCredentialsException:str ;
     clients.checkPermission("monetdb","Pmonetdb","x");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException := nil:str;
-exit InvalidCredentialsException;
+    InvalidCredentialsException:str  := nil:str;
+exit InvalidCredentialsException:str ;
     clients.checkPermission("x","Pmonetdb","sql");
-catch InvalidCredentialsException;
+catch InvalidCredentialsException:str ;
     io.printf("%s\n",InvalidCredentialsException);
-    InvalidCredentialsException := nil:str;
-exit InvalidCredentialsException;
+    InvalidCredentialsException:str  := nil:str;
+exit InvalidCredentialsException:str ;
 end main;
 MALException:addUser:user 'monetdb' already exists
 [ 1@0 ]

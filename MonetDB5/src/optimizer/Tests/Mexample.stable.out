@@ -21,7 +21,7 @@ barrier (_13,_14,_15) := bat.newIterator(b);
     bat.insert(_10,_14,_17);
     redo (_13,_14,_15) := bat.hasMoreElements(b);
 exit (_13,_14,_15);
-    c := _10;
+    c:bat[:int,:int]  := _10;
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}

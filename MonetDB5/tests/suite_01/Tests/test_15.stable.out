@@ -68,13 +68,13 @@ end main;
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4159	  ]
+[ "minflt",	  3974	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  32	  ]
-[ "nvcsw",	  3	  ]
-[ "ninvcsw",	  8	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  5	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -86,13 +86,13 @@ end main;
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  4164	  ]
+[ "minflt",	  3978	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  40	  ]
-[ "nvcsw",	  5	  ]
-[ "ninvcsw",	  8	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  5	  ]
 #~EndVariableOutput~#
 #quit();
 

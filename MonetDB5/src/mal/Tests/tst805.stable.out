@@ -17,9 +17,9 @@ function user.main():void;
     c := bat.new(:str,:BAT);
     bat.insert(c,"a",b);
     io.print(c);
-barrier (x,s,d) := bat.newIterator(c);
+barrier (x:lng ,s:str ,d:bat[:oid,:int] ) := bat.newIterator(c);
     io.print(d);
-exit (x,s,d);
+exit (x:lng ,s:str ,d:bat[:oid,:int] );
 end main;
 #-------------------------#
 # h	t		  # name

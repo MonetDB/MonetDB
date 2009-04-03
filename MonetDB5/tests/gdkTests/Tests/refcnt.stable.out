@@ -88,7 +88,7 @@ barrier (_88,_89,_90) := bat.newIterator(m);
     bat.insert(_84,_89,_92);
     redo (_88,_89,_90) := bat.hasMoreElements(m);
 exit (_88,_89,_90);
-    r := _84;
+    r:bat[:oid,:BAT]  := _84;
     io.print(r);
 #tmp(); 
     io.print("done multiplex");

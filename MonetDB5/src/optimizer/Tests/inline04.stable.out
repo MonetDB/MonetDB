@@ -24,8 +24,8 @@ end foo;
 function user.qry():void;
     b := bat.new(:oid,:int);
     bat.insert(b,0@0,1);
-    z := mal.multiplex("user","foo",b,b);
-    z := mal.multiplex("user","foo",b,2);
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,b);
+    z:bat[:oid,:int]  := mal.multiplex("user","foo",b,2);
 end qry;
 function user.main():void;
 # remapping inline functions 

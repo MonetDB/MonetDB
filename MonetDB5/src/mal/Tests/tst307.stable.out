@@ -26,9 +26,9 @@ function user.main():void;
     b := bat.new(:int,:int);
     z := algebra.find(b,0);
     io.print("should not come here anymore");
-catch MALException;
+catch MALException:str ;
     io.print("caught the exception");
-exit MALException;
+exit MALException:str ;
 end main;
 [ "caught the exception" ]
 

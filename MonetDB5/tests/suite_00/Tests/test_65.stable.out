@@ -63,7 +63,7 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 6@0,	  36	  ]
+[ 4@0,	  16	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(1).print(); io.printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
@@ -71,7 +71,7 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 4@0,	  16	  ]
+[ 2@0,	  4	  ]
 #~EndVariableOutput~#
 #printf(\"#~BeginVariableOutput~#\\n\"); b.sample(9).print(); ioprintf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#

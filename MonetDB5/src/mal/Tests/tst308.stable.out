@@ -21,10 +21,10 @@ stdout of test 'tst308` in directory 'src/mal` itself:
 #exit NotDefinedException;
 #end foo;
 function user.foo():void;
-catch NotDefinedException;
+catch NotDefinedException:str ;
     io.print("Shouldn't do this");
     io.print(NotDefinedException);
-exit NotDefinedException;
+exit NotDefinedException:str ;
 end foo;
 #
 function user.main():void;

@@ -39,21 +39,21 @@ function user.main():void;
     io.printf("fieldcount %d\n",i);
     i := mapi.fetch_field(mid,0);
     io.printf("field 0 %d\n",i);
-    s := mapi.fetch_field(mid,1);
+    s:str  := mapi.fetch_field(mid,1);
     io.printf("field 1 %s\n",s);
     mapi.query(mid,"r:= bat.new(:oid,:int);");
     io.printf("shipped first query\n");
     mapi.query(mid,"bat.insert(r, 1@0,311);");
     mapi.query(mid,"bat.insert(r,2@0,433);");
-    b := mapi.rpc(mid,"io.print(r);");
+    b:bat[:oid,:int]  := mapi.rpc(mid,"io.print(r);");
     io.print(b);
 # use the BAT fetch operation 
 #b:bat[:oid,:int]:= mapi.receive(mid,"remotename"); 
-    msg := mapi.rpc(mid,"io.print(\"hello world\");");
+    msg:str  := mapi.rpc(mid,"io.print(\"hello world\");");
     io.print(msg);
-    o := mapi.rpc(mid,"io.print(34@0);");
+    o:oid  := mapi.rpc(mid,"io.print(34@0);");
     io.print(o);
-    o := mapi.rpc(mid,"io.print(nil:oid);");
+    o:oid  := mapi.rpc(mid,"io.print(nil:oid);");
     io.print(o);
 #needs type checks 
 #(k:int,s:str):= mapi.rpc(mid,"io.print(nil:int,\"done\");"); 
@@ -74,9 +74,9 @@ function user.main():void;
 # algebra.join@remotedb(a,b) using remote objects 
 # c:= mapi.rpc(remotedb,algebra,join,a,b) 
 # the remainder should be tested  
-catch MapiException;
+catch MapiException:str ;
     io.printf("foutje:%s\n",MapiException);
-exit MapiException;
+exit MapiException:str ;
     mapi.disconnect(mid);
 end main;
 [ 1 ]

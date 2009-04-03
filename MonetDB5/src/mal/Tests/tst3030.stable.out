@@ -33,11 +33,11 @@ function user.main():void;
 #Parsing properties and keeping them around 
 # note the use of the first parameter to obtain property set 
     z := bat.new(:int,:int);
-    w := bat.new(:int,:int);
-    w := bat.new(:int,:int);
-    y := algebra.sort(w);
+    w:bat[:int,:int]  := bat.new(:int,:int);
+    w:bat[:int,:int]  := bat.new(:int,:int);
+    y:int  := algebra.sort(w);
     io.print(1);
-    y := algebra.sort(w);
+    y:int  := algebra.sort(w);
 end main;
 
 # 08:01:16 >  

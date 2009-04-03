@@ -32,9 +32,9 @@ function user.main():void;
     c := bbp.take("myfirstbat");
     io.print(c);
     bbp.close();
-catch MALException;
+catch MALException:str ;
     io.printf("%s\n",MALException);
-exit MALException;
+exit MALException:str ;
 end main;
 MALException:bbp.take:failed to take object from box
 

@@ -18,7 +18,7 @@ stdout of test 'remote04` in directory 'src/modules/mal` itself:
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
     db := const.take("dbname");
-    conn := remote.connect(db,"monetdb","monetdb");
+    conn:str  := remote.connect(db,"monetdb","monetdb");
     b := bat.new(:str,:int);
     bat.insert(b,"bla",1);
     bat.insert(b,"boe",2);
@@ -30,7 +30,7 @@ function user.main():void;
     m := remote.put(conn,10);
 # perform a selection remote, and get the result back 
     t := remote.exec(conn,"algebra","select",k,l,m);
-    j := remote.get(conn,t);
+    j:bat[:str,:int]  := remote.get(conn,t);
     io.print(j);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 

@@ -54,7 +54,7 @@ barrier (_52,_53,_54) := bat.newIterator(l2);
     bat.insert(_48,_53,_58);
     redo (_52,_53,_54) := bat.hasMoreElements(l2);
 exit (_52,_53,_54);
-    z := _48;
+    z:bat[:oid,:int]  := _48;
     c := aggr.count(z);
     io.print(c);
 # the other case when binsearch is chosen, is if r is sorted, 
@@ -71,7 +71,7 @@ barrier (_65,_66,_67) := bat.newIterator(nr);
     bat.insert(_63,_66,_71);
     redo (_65,_66,_67) := bat.hasMoreElements(nr);
 exit (_65,_66,_67);
-    z := _63;
+    z:bat[:oid,:int]  := _63;
     c := aggr.count(z);
     io.print(c);
 #[+](Nseq(81).reverse().project(oid(0)).reverse(),r.sort()).count().print(); 

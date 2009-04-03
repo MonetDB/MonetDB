@@ -32,10 +32,10 @@ function user.main():void;
     io.print(t);
     rb := bat.new(:int,:url);
     io.print("start loop");
-barrier (mloop,h,B2) := bat.newIterator(t);
+barrier (mloop:lng ,h:int ,B2:url ) := bat.newIterator(t);
     io.print(B2);
-    redo (mloop,h,B2) := bat.hasMoreElements(t);
-exit mloop;
+    redo (mloop:lng ,h:int ,B2:url ) := bat.hasMoreElements(t);
+exit mloop:lng ;
 end main;
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#

@@ -306,7 +306,7 @@ barrier (_214,_215,_216) := bat.newIterator(tzone_bat);
     bat.insert(_210,_215,_218);
     redo (_214,_215,_216) := bat.hasMoreElements(tzone_bat);
 exit (_214,_215,_216);
-    kd_a := _210;
+    kd_a:bat[:oid,:int]  := _210;
     bat.setColumn(kd_a,"minutes");
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
     _223 := bat.new(nil:oid,nil:zrule);
@@ -315,7 +315,7 @@ barrier (_226,_227,_228) := bat.newIterator(tzone_bat);
     bat.insert(_223,_227,_230);
     redo (_226,_227,_228) := bat.hasMoreElements(tzone_bat);
 exit (_226,_227,_228);
-    md_a := _223;
+    md_a:bat[:oid,:zrule]  := _223;
     bat.setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
     _235 := bat.new(nil:oid,nil:zrule);
@@ -324,7 +324,7 @@ barrier (_237,_238,_239) := bat.newIterator(tzone_bat);
     bat.insert(_235,_238,_241);
     redo (_237,_238,_239) := bat.hasMoreElements(tzone_bat);
 exit (_237,_238,_239);
-    od_a := _235;
+    od_a:bat[:oid,:zrule]  := _235;
     bat.setColumn(od_a,"end_dst");
     io.print("print(kd_a,md_a,od_a)");
     qd_a := io.print(kd_a,md_a,od_a);

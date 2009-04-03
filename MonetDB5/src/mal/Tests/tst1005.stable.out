@@ -56,9 +56,9 @@ function user.main():void;
 # the temporary bats of the user 
     bbp.open();
     v := bbp.take("myfirstbat");
-catch MALException;
+catch MALException:str ;
     io.printf("%s\n",MALException);
-exit MALException;
+exit MALException:str ;
     io.print("v");
     io.print(v);
     x := bbp.getObjects();

@@ -16,11 +16,11 @@ function user.f():void;
     i := 0;
 barrier go := true;
 # remove from disk 
-    a := bbp.bind("P_bat");
+    a:bat[:oid,:dbl]  := bbp.bind("P_bat");
     bat.setPersistent(a,false);
     transaction.commit();
 # alter the values 
-    a := batcalc.+(a,1);
+    a:bat[:oid,:dbl]  := batcalc.+(a,1);
 # store it to disk with the same name 
     bat.setName(a,"P_bat");
     bat.setPersistent(a,true);

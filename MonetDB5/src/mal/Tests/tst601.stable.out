@@ -33,7 +33,7 @@ function user.main():void;
     const.open();
     pi := 3.14700007:flt;
     const.deposit("pi",pi);
-    p2 := const.take("pi");
+    p2:flt  := const.take("pi");
     io.print(p2);
     const.close();
 # save the content on persistent store 

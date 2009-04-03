@@ -18,24 +18,24 @@ stdout of test 'remote02` in directory 'src/modules/mal` itself:
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
     db := const.take("dbname");
-    conn := remote.connect(db,"monetdb","monetdb");
-    a := "Fabian!";
-    b := 4.30000019;
-    c := 12;
-    d := bat.new(:str,:int);
+    conn:str  := remote.connect(db,"monetdb","monetdb");
+    a:str  := "Fabian!";
+    b:flt  := 4.30000019;
+    c:int  := 12;
+    d:bat[:str,:int]  := bat.new(:str,:int);
     bat.insert(d,"bla",1);
     bat.insert(d,nil:str,2);
     bat.insert(d,"boe",nil:int);
 # store the values 
-    i := remote.put(conn,a);
-    j := remote.put(conn,b);
-    k := remote.put(conn,c);
-    l := remote.put(conn,d);
+    i:str  := remote.put(conn,a);
+    j:str  := remote.put(conn,b);
+    k:str  := remote.put(conn,c);
+    l:str  := remote.put(conn,d);
 # retrieve the value 
-    r := remote.get(conn,i);
-    s := remote.get(conn,j);
-    t := remote.get(conn,k);
-    u := remote.get(conn,l);
+    r:str  := remote.get(conn,i);
+    s:flt  := remote.get(conn,j);
+    t:int  := remote.get(conn,k);
+    u:bat[:str,:int]  := remote.get(conn,l);
 # see if it really is here 
     io.print(r);
     io.print(s);
