@@ -309,7 +309,7 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");
 	normalize(ptree, root);
         if (DEBUG) stream_printf(GDKout,"#!tjc start optimize\n");
-	optimize(ptree, root);
+	optimize(tjc_c, ptree, root);
 	atree = phys_optimize (ptree, root, rtagbat);
 
 	// optional dot output

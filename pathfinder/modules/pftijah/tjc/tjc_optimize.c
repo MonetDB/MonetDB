@@ -407,14 +407,16 @@ void rule8(TJptree_t *ptree)
 
 
 
-void optimize(TJptree_t *ptree, TJpnode_t *root)
+void optimize(tjc_config *tjc_c, TJptree_t *ptree, TJpnode_t *root)
 {
     //root is not used in the current optimization rules
     (void) root;
     rule4 (ptree);
     rule5 (ptree);
     rule6 (ptree);
-    rule7 (ptree);
+    //rule 7 would change the semnatics for conjunctive retrieval models
+    if (strcmp(tjc_c->irmodel, "LM") != 0)
+        rule7 (ptree);
     rule8 (ptree);
 }
 

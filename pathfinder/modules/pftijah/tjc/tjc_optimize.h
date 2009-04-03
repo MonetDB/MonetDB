@@ -36,7 +36,7 @@
 #include "tjc_normalize.h"
 
 void
-optimize(TJptree_t *ptree, TJpnode_t *node);
+optimize(tjc_config *tjc_c, TJptree_t *ptree, TJpnode_t *node);
 
 #endif  /* OPTIMIZE_H */
 
