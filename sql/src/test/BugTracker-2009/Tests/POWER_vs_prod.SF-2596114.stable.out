@@ -1,0 +1,90 @@
+stdout of test 'POWER_vs_prod.SF-2596114` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 23:02:29 >  
+# 23:02:29 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=33742 --set xrpc_port=44239 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:02:29 >  
+
+# MonetDB server v5.10.3, based on kernel v1.28.3
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33742/
+# MonetDB/SQL module v2.28.1 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 23:02:29 >  
+# 23:02:29 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33742 
+# 23:02:29 >  
+
+function user.s0_1():void;
+barrier _45 := language.dataflow();
+    _1:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
+    _6:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",2);
+    _8 := algebra.kdifference(_1,_6);
+    _1:bat[:oid,:dbl]  := nil;
+    _9 := algebra.kunion(_8,_6);
+    _8 := nil;
+    _6:bat[:oid,:dbl]  := nil;
+    _10:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",1);
+    _12 := algebra.kunion(_9,_10);
+    _9 := nil;
+    _10:bat[:oid,:dbl]  := nil;
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","sf_2596114",1);
+    _14 := bat.reverse(_13);
+    _13:bat[:oid,:oid]  := nil;
+    _15 := algebra.kdifference(_12,_14);
+    _12 := nil;
+    _14 := nil;
+    _16:bat[:oid,:dbl]  := batmmath.pow(_15,2);
+    _15 := nil;
+exit _45;
+    _17 := sql.resultSet(1,1,_16);
+    sql.rsColumn(_17,"sys.","power_x","double",53,0,_16);
+    _16:bat[:oid,:dbl]  := nil;
+    _23 := io.stdout();
+    sql.exportResult(_23,_17);
+end s0_1;
+function user.s1_1():void;
+barrier _46 := language.dataflow();
+    _1:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
+    _6:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",2);
+    _8 := algebra.kdifference(_1,_6);
+    _1:bat[:oid,:dbl]  := nil;
+    _9 := algebra.kunion(_8,_6);
+    _8 := nil;
+    _6:bat[:oid,:dbl]  := nil;
+    _10:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",1);
+    _12 := algebra.kunion(_9,_10);
+    _9 := nil;
+    _10:bat[:oid,:dbl]  := nil;
+    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","sf_2596114",1);
+    _14 := bat.reverse(_13);
+    _13:bat[:oid,:oid]  := nil;
+    _15 := algebra.kdifference(_12,_14);
+    _12 := nil;
+    _14 := nil;
+exit _46;
+    _33 := algebra.reuse(_15);
+    _16:bat[:oid,:dbl]  := batcalc.*(_33,_15,_15);
+    _33 := nil;
+    _15 := nil;
+    _17 := sql.resultSet(1,1,_16);
+    sql.rsColumn(_17,"sys.","sql_mul_x","double",53,0,_16);
+    _16:bat[:oid,:dbl]  := nil;
+    _23 := io.stdout();
+    sql.exportResult(_23,_17);
+end s1_1;
+
+# 23:02:30 >  
+# 23:02:30 >  Done.
+# 23:02:30 >  
+
