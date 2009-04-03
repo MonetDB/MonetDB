@@ -972,7 +972,13 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 				bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
 				GDKfilepath(bn->theap->filename, NULL, nme, "theap");
 			}
-			if (HEAPcopy(bn->theap, r->theap) < 0) {
+			if (r->batRestricted == BAT_READ && HEAPshare(bn->theap, r->theap, 0) == 0) {
+                                int parent = r->T->parentid;
+				if (!parent) parent = -r->batCacheid;
+                                bn->P->lview = TRUE;
+                                bn->T->parentid = parent;
+                                BBPshare(parent);
+			} else if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
 				goto ready;
 			}

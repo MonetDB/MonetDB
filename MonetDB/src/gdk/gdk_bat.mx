@@ -670,11 +670,9 @@ This new mode is used by the XQuery isolation mechanism and is available in MIL
 as rcopy(). 
 @{
 @c
-static int
-heapcopy(Heap *dst, Heap *src, int *remap)
-{
-	if (*remap && src->storage == STORE_MMAP) {
-		/* use copy-on-write mmap for isolatable copy */
+int HEAPshare(Heap *dst, Heap *src, int copy_on_write) {
+	/* use copy-on-write mmap for isolatable copy */
+	if (src->storage == STORE_MMAP) {
 		*dst = *src;
 		dst->base = (char *) -1;
 		dst->filename = GDKstrdup(src->filename);
@@ -682,15 +680,24 @@ heapcopy(Heap *dst, Heap *src, int *remap)
 			char path[PATHLENGTH];
 
 			GDKfilepath(path, BATDIR, dst->filename, NULL);
-			dst->base = GDKmmap(path, MMAP_READ | MMAP_SEQUENTIAL | MMAP_COPY, 0, dst->maxsize);
+			dst->base = GDKmmap(path, MMAP_READ | MMAP_SEQUENTIAL | (copy_on_write?MMAP_COPY:0), 0, dst->maxsize);
 			if (dst->base != (char *) -1) {
 				dst->copied = 1;
-				dst->newstorage = dst->storage = STORE_PRIV;
+				dst->newstorage = dst->storage = copy_on_write?STORE_PRIV:STORE_MMAP;
 				return 0;
 			}
 			GDKfree(dst->filename);
 			dst->filename = NULL;
 		}
+	}
+	return -1;
+}
+
+static int
+heapcopy(Heap *dst, Heap *src, int *remap)
+{
+	if (*remap && HEAPshare(dst, src, *remap) == 0) {
+		return 0; /* use a shared memory heap */
 	}
 	*remap = 0;
 	return HEAPcopy(dst, src);
@@ -2766,7 +2773,7 @@ BATsetaccess(BAT *b, int newmode)
 		int b0, b1, b2 = 0, b3 = 0;
 
 		/* copy-on-write isolated bats that change mode should be made independent */
-		if (b->P->lview && batunshare(b, "BATsetaccess") < 0)
+		if (b->P->lview && newmode != BAT_READ && batunshare(b, "BATsetaccess") < 0)
 			return NULL;
 
 		if (b->batSharecnt && newmode != BAT_READ) {

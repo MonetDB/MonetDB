@@ -1048,6 +1048,7 @@ gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
 gdk_export int HEAPload(Heap *h, str nme, str ext, int trunc);
 gdk_export int HEAPsave(Heap *h, str nme, str ext);
+gdk_export int HEAPshare(Heap *dst, Heap *src, int copy_on_write);
 gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export int HEAPwarm(Heap *h);
 gdk_export size_t HEAPsubcopy(Heap *dst, Heap *src, size_t size, size_t offset);

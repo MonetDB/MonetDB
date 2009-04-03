@@ -824,6 +824,13 @@ MT_mmap_trim(size_t target, void *fp)
 				}
 			}
 		}
+		/* could not save anything -- reset the save_tile to the start to try all heaps again */
+		for (i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
+			if (MT_mmap_tab[i].fd >= 0 &&
+			    MT_mmap_tab[i].writable &&
+			    (MT_mmap_tab[i].pincnt == 0 || MT_mmap_tab[i].len > target)) 
+				MT_mmap_tab[i].save_tile = 1;
+		}
 		MT_mmap_cur = i;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
