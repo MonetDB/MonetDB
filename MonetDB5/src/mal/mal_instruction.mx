@@ -2512,7 +2512,7 @@ operatorName(int i)
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else
-	if (flg & LIST_MAL_UDF  && i < p->retc){
+		if ( flg & (LIST_MAL_UDF | LIST_MAL_STMT)  && i < p->retc) {
 		if ( isVarUDFtype(mb, getArg(p, i))) {
 			str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 			snprintf(t,(len-(t-base)), ":%s ", tpe);
