@@ -2389,16 +2389,21 @@ PROC tj_containing_query_@1_@2_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[
 	# score elements by this term
         var e_tScores := _score_LM($t, c_tCnt, cSize, e_tCnt, e_size);
         e_tCnt := nil;
+        e_tScores := e_tScores.kunion(left.kdiff(e_tScores).project(dbl(0))).sort();
         
 	# aggregate term scores
-        eScores := eScores.union_mul(e_tScores);
+        eScores := e_tScores.left_mul(eScores);
 	e_tScores := nil;
     }
     eScores.access(BAT_READ);
     
     var res;
-    res := eScores;
-    
+    if (returnall) {
+        res := eScores;
+    } else {
+        var unchanged := eScores.uselect(dbl(0));
+        res := eScores.kdiff(unchanged);
+    }
     t_total :+= time();
     if (timing) printf("# LM timing: total: %d\n", t_total);
     return res;
