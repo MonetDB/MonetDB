@@ -1056,7 +1056,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	stream *f;
 	InstrPtr p;
 	int i, k;
-	Lifespan span;
 
 	(void) stk;		/* fool the compiler */
 
@@ -1064,7 +1063,6 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		f = GDKout;
 	else
 		f = open_wastream(fname);
-	span= setLifespan(mb);
 	p = getInstrPtr(mb, 0);
 	stream_printf(f, "digraph %s{\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
