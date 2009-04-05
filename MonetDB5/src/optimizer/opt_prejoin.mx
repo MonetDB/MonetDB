@@ -87,7 +87,8 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 	bn= BATmirror(BATsort(BATmirror(bl)));
 	BBPkeepref(*rr = br->batCacheid);
 	BBPkeepref(*rl = bn->batCacheid);
-	BBPreleaseref(bl->batCacheid);
+	if ( bn != bl)
+		BBPreleaseref(bl->batCacheid);
 	return MAL_SUCCEED;
 }
 
