@@ -946,6 +946,16 @@ DFLOWreassign(DataFlow flow, FlowStep fs, int oa)
 	flow->inuse[oa] = use;
 }
 
+static int
+isOutputArg(InstrPtr p, int a)
+{
+	int k;
+	for (k=0; k<p->retc; k++)
+		if( getArg(p,k)== a) 
+			return 1;
+	return 0;
+}
+
 static void
 DFLOWinit(DataFlow flow, FlowStep fs)
 {
@@ -953,7 +963,7 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 
 	for (n=0, i = flow->start; i<flow->stop; i++, n++) {
 		InstrPtr p = getInstrPtr(flow->mb, i);
-		int j, a, oa = -1;
+		int j, a;
 
 		/* initial state, ie everything can run */
 		fs[n].pc = i;
@@ -971,11 +981,9 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 			if (!flow->reassign[a] && !flow->blocked[a] && !flow->inuse[a])
 				flow->blocked[a] = 1;
 		}
-		if (p->retc)
-			oa = getArg(p, 0);
 		for (j=p->retc; j<p->argc; j++){
 			a = getArg(p, j);
-			if (!isVarConstant(flow->mb, a) && oa != a && !flow->reassign[a])
+			if (!isVarConstant(flow->mb, a) && !isOutputArg(p,a) && !flow->reassign[a])
 				flow->inuse[a]++;
 		}
 	}
@@ -988,9 +996,11 @@ for (i=0; i < flow->mb->vtop; i++) {
 }
 #endif
 }
-
+@-
+Garbage collection statements are recognized by the pattern V:=nil:bat;
+@c
 static int
-garbage( MalBlkPtr mb, InstrPtr p) 
+isGarbageStmt( MalBlkPtr mb, InstrPtr p) 
 {
 	int ia;
 	ValPtr s;
@@ -1029,7 +1039,7 @@ DFLOWexecute( DataFlow flow )
 					pc++;
 			if (fs[i].status == DFLOWpending) { 
 				InstrPtr p = getInstrPtr(flow->mb, fs[i].pc);
-				int blocked = 0, oa = getArg(p,0);
+				int blocked = 0;
 
 				/* check if output args are blocked */
 				for(j=0; j<p->retc && !blocked; j++) {
@@ -1047,10 +1057,10 @@ DFLOWexecute( DataFlow flow )
 				for(j=p->retc; j<p->argc && !blocked; j++) {
 					int ia = getArg(p,j);
 
-					if ((!isVarConstant(flow->mb, ia) &&
-					    ia != oa &&
+					if ((!isOutputArg(p,ia) &&
+						 !isVarConstant(flow->mb, ia) &&
 					    flow->blocked[ia]) || 
-					   (ia != oa &&
+					   (!isOutputArg(p,ia) &&
 					    flow->reassign[ia] &&
 					    flow->reassign[ia] <= fs[i].pc)) 
 						blocked++;
@@ -1093,7 +1103,6 @@ if (blocked) {
 				return f->error;
 			} else {
 				InstrPtr p = getInstrPtr(flow->mb, f->pc);
-				int oa = getArg(p,0);
 
 #ifdef DEBUG_FLOW
 	printf("done %d\n", f->pc);
@@ -1112,10 +1121,10 @@ if (blocked) {
 					/* based on type check for reassign */
 					if (flow->inuse[oa] == 0 && 
 					    flow->reassign[oa] == f->pc+1 &&
-					    !garbage(flow->mb, p)) {
+					    !isGarbageStmt(flow->mb, p)) {
 						DFLOWreassign(flow, fs, oa);
 					} else if (flow->inuse[oa] == 0 &&
-					    !garbage(flow->mb, p)) {
+					    !isGarbageStmt(flow->mb, p)) {
 						/* enable reassign */
 						flow->blocked[oa] = 1;
 						if (flow->reassign[oa])
@@ -1127,11 +1136,11 @@ if (blocked) {
 				for(j=p->retc; j<p->argc; j++) {
 					int ia = getArg(p,j);
 
-					if (ia != oa && !isVarConstant(flow->mb, ia))
+					if (!isOutputArg(p,ia) && !isVarConstant(flow->mb, ia))
 						flow->inuse[ia]--;
 					assert(flow->inuse[ia] >= 0);
 					
-					if (ia != oa && flow->inuse[ia] == 0 && flow->reassign[ia]) {
+					if (!isOutputArg(p,ia) && flow->inuse[ia] == 0 && flow->reassign[ia]) {
 						/* enable reassign */
 						flow->blocked[ia] = 1;
 						if (flow->reassign[ia])
