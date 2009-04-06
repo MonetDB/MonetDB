@@ -1056,7 +1056,7 @@ RECYCLEfind(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 /* check if instruction p at the stack is a subset selection of the RP instruction q */
 
 static int 
-selectSubset(InstrPtr p, InstrPtr q, MalStkPtr s)
+selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
 	int lcomp, rcomp, cover=0;
 	bit li, hi, lip, hip;
@@ -1087,17 +1087,77 @@ selectSubset(InstrPtr p, InstrPtr q, MalStkPtr s)
 	return cover;
 }
 
+static int 
+likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
+{
+	str ps, qs, pd, qd;
+	int first = 1, pl, ql;
+	int endp = 0, stop = 0, cover = 0;
+
+	ps = GDKstrdup(s->stk[getArg(p,2)].val.sval);
+	qs = GDKstrdup(getVar(recycleBlk,getArg(q,2))->value.val.sval);
+
+	while ((qd = strchr(qs,'%')) != NULL && !stop && !endp){
+		*qd = 0;
+		if ((pd = strchr(ps,'%')) == NULL)
+			endp = 1;
+		else *pd = 0;
+		ql = strlen(qs);
+   	pl = strlen(ps);
+	   if (ql > pl ){
+			stop = 1; 
+			break;
+	   }
+		if (first){
+			if (strncmp(ps,qs,ql) != 0) {
+				stop = 1; 
+				break;
+			}
+			first = 0;
+		}
+		else {
+	 		if (strstr(ps,qs) == NULL) {
+				stop = 1; 
+				break;
+			}
+		}
+		if (!endp) ps = pd+1;
+		qs = qd+1;
+ 	}
+
+	if (stop) cover = 0;
+	else  /* compare remainders after the last % in some of the strings*/
+		if (strcmp(ps,"")==0 && strcmp(qs,"")==0) { /*printf("Successful subsumption\n");*/
+      cover = 1;
+   } else {
+		ql = strlen(qs);
+	   pl = strlen(ps);
+   	if (ql > pl ){			/* printf("No subsumption\n"); */
+      	cover = 0;
+   	}
+		else if (strncmp(ps+pl-ql,qs,ql) != 0) {/*printf("No subsumption\n"); */
+			cover = 0;
+		}
+		else cover = 1;
+	}
+	GDKfree(ps);
+	GDKfree(qs);
+	return cover;
+}
+
 static int
 RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 {
     int i, j, ridx, idx, pc = -1, evicted=0;
     bat bid= -1, nbid= -1;
     InstrPtr q;
-    static str selectRef;
+    static str selectRef, like_selectRef;
     bit gluse = FALSE;
 
     if (selectRef == 0)
         selectRef= getName("select",6);
+	 if (like_selectRef == 0)
+        like_selectRef= getName("like_select",11);
 
     if( recycleBlk == 0 || reusePolicy == 0)
         return -1;
@@ -1118,13 +1178,19 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
             /* 1: reuse smallest range covering */
             ridx= getArg(q,1);
             idx= getArg(p,1);
-            if (q->argc-1 > 3 && getFunctionId(p) == selectRef &&
+            if (q->argc-1 > 3 && 
+					 (getFunctionId(p) == selectRef  || getFunctionId(p) == like_selectRef) &&
                 getVarConstant(recycleBlk, ridx).val.bval == s->stk[idx].val.   bval &&
                 BATatoms[getArgType(recycleBlk,q,2)].linear )
 
-            {
-                /* Time to check for the inclusion constraint */
-                if (selectSubset(p,q,s)){
+            {	int subsmp = 0;
+					/* Time to check for the inclusion constraint */
+					if (getFunctionId(p) == selectRef)
+						subsmp = selectSubsume(p,q,s);
+					else if (getFunctionId(p) == like_selectRef)
+						subsmp = likeSubsume(p,q,s);
+               
+                if (subsmp){
                     BAT *b1, *b2;
                     nbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
                     if( bid == -1){
