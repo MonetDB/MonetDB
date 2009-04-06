@@ -1522,7 +1522,7 @@ PROC ALG_tj_pfop(
 PROC ALG_tj_pfop(
 		BAT[oid,oid] iter,
 		BAT[oid,any] item,
-		BAT[oid,oid] frag,
+		BAT[oid,any] frag,
 		BAT[oid,oid] pos) : BAT[void,bat] :=
 {
 	var res := new(void,bat).seqbase(0@0);
@@ -1781,6 +1781,176 @@ PROC ALG_tj_query_handler(
      var res := ALG_tj_pfop(iter,item,kind,pos.materialize(ipik));
      #
      if ( verbose ) printf("# ALG_tj_query_handler: FINISH.\n");
+     return res;
+}
+
+# temporary algebra query handler
+PROC ALG_tj_ftfun_handler(
+        bit par_storeScore,
+        BAT[oid,bat] pfop_sn,
+        BAT[oid,bat] pfop_query, # == terms
+        BAT[oid,bat] pfop_opt,
+        BAT[oid,bat] pfop_ign,
+        BAT[void,any]  par_loop,
+        BAT[oid,bat]  par_ws,
+        BAT[oid,bat] par_scoreDB
+        ) : BAT[void,bat] :=
+{
+     var result_id;
+     var result_iter;
+     var result_item;
+     var result_pos;
+     var result_frag;
+
+    if ( true ) {
+     var xx_iter := pfop_sn.fetch(0@0);
+     var xx_item := pfop_sn.fetch(1@0).project(true);
+     var xx_ipik := xx_item;
+     var xx_kind := pfop_sn.fetch(2@0).set_kind(BOOL);
+     var xx_pos  := pfop_sn.fetch(3@0);
+     # xxxxxxxxxxxxxxxxxxxxxxxxxx
+     return ALG_tj_pfop(xx_iter,xx_item,xx_kind,xx_pos.materialize(xx_ipik));
+    }
+
+    if ( verbose ) printf("# ALG_tj_ftfun_handler: START.\n");
+     if ( par_storeScore ) {
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: storeScore=TRUE.\n");
+      result_id   := new(void,lng).seqbase(0@0);
+     } else {
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: storeScore=FALSE.\n");
+      result_iter := new(void,oid).seqbase(0@0);
+      result_item := new(void,oid).seqbase(0@0);
+      result_pos  := new(void,oid).seqbase(0@0);
+      result_frag := new(void,oid).seqbase(0@0);
+     }
+
+     var has_sn      := (pfop_sn.count() > 0);
+     var has_options := (pfop_opt.count() > 0);
+
+     par_loop@batloop() {
+      var optbat;
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: loop start, id=%d.\n",$t);
+      if ( has_options ) {
+       if ( verbose ) printf("# ALG_tj_ftfun_handler: running option handler.\n");
+       var opt_iter := pfop_opt.fetch(0@0).select($t);
+       var opt_item := pfop_opt.fetch(1@0).semijoin(opt_iter);
+       var opt_kind := pfop_opt.fetch(2@0).semijoin(opt_iter);
+       opt_iter := opt_iter.tmark(0@0);
+       opt_item := opt_item.tmark(0@0);
+       opt_kind := opt_kind.tmark(0@0);
+       optbat := serialize_tijah_opt(par_ws,1,opt_iter,opt_iter,opt_item,set_kind(opt_kind,ELEM),new(void,lng),new(void,dbl),new(void,str));
+       if ( verbose ) optbat.print();
+      } else {
+       optbat := new(str,str,32);
+      }
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: handle startNodes.\n");
+      var ftindex := tj_get_ft_index(optbat,true);
+      var tijah_lock := tj_get_collection_lock(ftindex);
+      lock_set(tijah_lock);
+      var err := CATCH({
+        var startNodes;
+        if ( has_sn ) {
+         var sn_iter := pfop_sn.fetch(0@0);
+         var sn_iteration := pfop_query.fetch(0@0).fetch(int($h));
+         sn_iter := sn_iter.select(sn_iteration);
+         var sn_item := pfop_sn.fetch(1@0).semijoin(sn_iter);
+         var sn_kind := pfop_sn.fetch(2@0).semijoin(sn_iter);
+         sn_item := sn_item.tmark(0@0);
+         sn_kind := sn_kind.tmark(0@0);
+
+         var xdoc_name := bat("tj_" + ftindex + "_doc_name");
+         var xdoc_firstpre := bat("tj_" + ftindex + "_doc_firstpre");
+         var xpfpre := bat("tj_" + ftindex + "_pfpre");
+         var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+         if ( verbose ) printf("# ALG_tj_ftfun_handler: compute startnodes\n");
+         startNodes := pf2tijah_node(xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
+        } else {
+         startNodes := new(void,oid);
+        }
+        optbat.access(BAT_WRITE);
+        optbat.insert("_query",pfop_query.fetch(1@0).fetch(int($h)));
+        if ( verbose ) printf("# ALG_tj_ftfun_handler: run tijah query.\n");
+        var nexi_allscores := run_tijah_query(ftindex,optbat,has_sn,startNodes);
+        var nexi_score;
+        if ( verbose ) printf("# ALG_tj_ftfun_handler: handling scores.\n");
+        if ( optbat.exist("returnNumber") ) {
+         var retNum := int(optbat.find("returnNumber"));
+         nexi_score := nexi_allscores.slice(0, retNum - 1);
+        } else {
+         nexi_score := nexi_allscores;
+        }
+        var docpre := bat("tj_" + ftindex + "_doc_firstpre").[oid]();
+        var pfpre  :=  bat("tj_" + ftindex + "_pfpre");
+        var item   := nexi_score.hmark(0@0);
+        var frag := [find_lower](const docpre.reverse().mark(0@0), item);
+        item := item.join(pfpre).sort().tmark();
+        var needed_docs := bat("tj_" + ftindex + "_doc_name").semijoin(frag.tunique());
+        var loaded_docs := par_ws.fetch(OPEN_NAME).reverse();
+        var docs_to_load := kdiff(needed_docs.reverse(),loaded_docs).hmark(0@0);
+        ws_opendoc(par_ws, docs_to_load);
+        var doc_loaded := reverse(par_ws.fetch(OPEN_CONT)).leftfetchjoin(par_ws.fetch(OPEN_NAME));
+	# On the forced document loading size we keep using the old interface
+	# until ws.fetch(OPEN_CONT|OPEN_DOC) disappears. This interface is
+	# much cheaper for us and works also correct when the OPEN_CONT|DOC
+	# bats are not complete.
+	# var doc_loaded := par_ws.fetch(CONT_COLL).join(bat("doc_collection").reverse()).join(bat("doc_name"));
+        var fid_pffid := needed_docs.join(doc_loaded.reverse());
+        frag := frag.join(fid_pffid).sort().tmark();
+        if ( verbose ) printf("# ALG_tj_ftfun_handler: handled new frags/documents.\n");
+        if ( par_storeScore ) {
+         var tID := oid(par_scoreDB.fetch(0@0).count() + 8888);
+         par_scoreDB.fetch(4@0).insert(lng(tID),lng(nexi_allscores.count()));
+         par_scoreDB.fetch(0@0).append(item.project(tID));
+         par_scoreDB.fetch(1@0).append(frag);
+         par_scoreDB.fetch(2@0).append(item);
+         par_scoreDB.fetch(3@0).append(nexi_score.tmark());
+         result_id.append(lng(tID));
+         if ( verbose ) printf("# ALG_tj_ftfun_handler: stored loop score.\n");
+        } else {
+         result_iter.append(item.project($t));
+         result_pos.append(item.mark(1@0));
+         result_frag.append(frag);
+         result_item.append(item);
+        }
+      });
+      lock_unset(tijah_lock);
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: released lock.\n");
+      if (not(isnil(err))) ERROR(err);
+       if ( verbose ) printf("# ALG_tj_ftfun_handler: stored loop nodes in result.\n");
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: loop finish, id=%d.\n",$t);
+     } # end batloop over queries
+     if ( verbose ) printf("# ALG_tj_ftfun_handler: batloop finished.\n");
+     var iter;
+     var item;
+     var ipik;
+     var kind;
+     var pos;
+     if ( par_storeScore ) {
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: create int return.\n");
+      item := result_id;
+      iter := par_loop.tmark(oid(0));
+      ipik := iter;
+      pos  := oid(1);
+      kind := new(oid,oid);
+     } else {
+      if ( verbose ) printf("# ALG_tj_ftfun_handler: create node return.\n");
+      iter := result_iter;
+      pos  := result_pos;
+      kind := result_frag;
+      item := result_item;
+      ipik := iter;
+     }
+      if ( verbose ) {
+         printf("# ALG_tj_ftfun_handler: iter/item/kind/pos result start\n");
+         iter.print();
+         item.print();
+         kind.print();
+         pos.print();
+         printf("# ALG_tj_ftfun_handler: iter/item/kind/pos result finish\n");
+      }
+     var res := ALG_tj_pfop(iter,item,kind,pos.materialize(ipik));
+     #
+     if ( verbose ) printf("# ALG_tj_ftfun_handler: FINISH.\n");
      return res;
 }
 
