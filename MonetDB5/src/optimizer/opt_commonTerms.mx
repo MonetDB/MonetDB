@@ -105,7 +105,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 {
 	int i, j, k, barrier= 0, last;
 	InstrPtr p, q;
-	int actions = 0, cnt;
+	int actions = 0;
 	int limit, slimit;
 	int *alias;
 	InstrPtr *old;
@@ -164,7 +164,7 @@ relevant assignment.
 
 		pushInstruction(mb,p);
 @-
-A non-empty barrier block signals the end of this optimizer,
+Any non-empty barrier block signals the end of this optimizer,
 the impact of the block can affect the common code.
 @c
 		barrier |= (p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol) &&
@@ -205,23 +205,22 @@ Like all optimizer decisions, it is safe to stop.
 				isLinearFlow(q),
 				isLinearFlow(p));
 #endif
-			if (safetyBarrier(p, q) )
+			if (safetyBarrier(p, q) ){
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+			stream_printf(cntxt->fdout,"safetybarrier reached\n");
+#endif
 				break;
+			}
 @-
 Simple assignments are not replaced either. They should be
 handled by the alias removal part. All arguments should
 be assigned their value before instruction p.
 @c
-			cnt =0;
-			for (k = 0; k < q->retc; k++)
-				cnt += lastassigned[getArg(q,k)] <= i;
 			if (hasSameSignature(mb, p, q) && 
 				hasSameArguments(mb, p, q) && 
-				cnt == q->retc &&
 				!hasCommonResults(p, q) && 
 				isLinearFlow(p) &&
-				isLinearFlow(q)  &&
-				getModuleId(p) != matRef
+				isLinearFlow(q)  
 				) {
 #ifdef DEBUG_OPT_COMMONTERMS
 				stream_printf(cntxt->fdout, "Found a common expression " 
