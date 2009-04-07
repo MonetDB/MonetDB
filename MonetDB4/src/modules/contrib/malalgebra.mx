@@ -43,7 +43,7 @@ Too many bugs.
 @:leftjoin(fetch,\nCAUTION: positional matches are assumed not to be out-of-bounds!!)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
-  .COMMAND leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) :
+  .COMMAND leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode, lng estimate) :
                     BAT[any::1,any::3] = CMDleftthetajoin;
   "Hook directly into the 'leftthetajoin' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
@@ -107,6 +107,9 @@ Too many bugs.
 @:sum(dbl)@
 
 @= milsum
+  PROC leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) : BAT[any::1,any::3] {
+    RETURN leftthetajoin(left, right, mode, min(count(int(left)),count(int(right))));
+  }
   PROC {csum}( BAT[oid,@1] b): BAT[oid,@1] {
     IF ( b.ordered() )
       RETURN {_csum}( b );
@@ -245,9 +248,9 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 @:joincmd(lefthash)@
 
 int
-CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
+CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 {
-	return (*result = BATleftthetajoin(l, r, *mode, MIN(BATcount(l), BATcount(r)))) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATleftthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
