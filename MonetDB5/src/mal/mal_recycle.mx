@@ -1090,12 +1090,14 @@ selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static int 
 likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
-	str ps, qs, pd, qd;
+	str ps, qs, pd, qd, ps0, qs0;
 	size_t pl, ql;
 	bit first = 1, endp = 0, stop = 0, cover = 0;
 
 	ps = GDKstrdup(s->stk[getArg(p,2)].val.sval);
 	qs = GDKstrdup(getVar(recycleBlk,getArg(q,2))->value.val.sval);
+
+    ps0 = ps; qs0 = qs;
 
 	while ((qd = strchr(qs,'%')) != NULL && !stop && !endp){
 		*qd = 0;
@@ -1103,11 +1105,11 @@ likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 			endp = 1;
 		else *pd = 0;
 		ql = strlen(qs);
-   	pl = strlen(ps);
-	   if (ql > pl ){
+   	    pl = strlen(ps);
+	    if (ql > pl ){
 			stop = 1; 
 			break;
-	   }
+	    }
 		if (first){
 			if (strncmp(ps,qs,ql) != 0) {
 				stop = 1; 
@@ -1130,8 +1132,8 @@ likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 		if (strcmp(ps,"")==0 && strcmp(qs,"")==0) { /*printf("Successful subsumption\n");*/
       cover = 1;
    } else {
-		ql = strlen(qs);
-	   pl = strlen(ps);
+	    ql = strlen(qs);
+        pl = strlen(ps);
    	if (ql > pl ){			/* printf("No subsumption\n"); */
       	cover = 0;
    	}
@@ -1140,8 +1142,8 @@ likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 		}
 		else cover = 1;
 	}
-	GDKfree(ps);
-	GDKfree(qs);
+	GDKfree(ps0);
+	GDKfree(qs0);
 	return cover;
 }
 

@@ -271,18 +271,19 @@ are marked for re-use.
 			else if( getFunctionId(p)== likeuselectRef && recycled[getArg(p,1)]) {
 				q = copyInstruction(p);
 				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
-				setFunctionId(q, likeselectRef); 
+				setFunctionId(q, likeselectRef);
 				q->recycle = REC_MAX_INTEREST;
 				recycled[getArg(q,0)] = 1;
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
 				setFunctionId(p,markTRef);
-				p->argc = 2;
+                setModuleId(p,algebraRef);
+                p->argc = 2;
 				p->recycle = REC_MAX_INTEREST;
 				actions ++; 
 				if (getLastUpdate(span, getArg(p,0)) == i)
 					recycled[getArg(p,0)] = 1;
-			}
+			} 
 		}
 
 
