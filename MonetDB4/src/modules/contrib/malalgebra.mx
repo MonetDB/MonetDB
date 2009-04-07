@@ -107,9 +107,6 @@ Too many bugs.
 @:sum(dbl)@
 
 @= milsum
-  PROC leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) : BAT[any::1,any::3] {
-    RETURN leftthetajoin(left, right, mode, min(count(int(left)),count(int(right))));
-  }
   PROC {csum}( BAT[oid,@1] b): BAT[oid,@1] {
     IF ( b.ordered() )
       RETURN {_csum}( b );
@@ -396,6 +393,10 @@ IF( not( isnil(@1result_@2) ) ) {
 }
 @
 @mil
+
+PROC leftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) : BAT[any::1,any::3] {
+    RETURN leftthetajoin(left, right, mode, min(count(int(left)),count(int(right))));
+}
 
 PROC test_malalgebra() : void {   
 	#
