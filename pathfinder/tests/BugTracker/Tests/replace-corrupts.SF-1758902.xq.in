@@ -34,3 +34,5 @@ let $on := element objectnote { attribute xid {"14"}, attribute user {"unknown"}
 return if (exists($orig)) then (do replace $orig with $on) else (do insert $on as last into $doc/notes)
 <>
 let $doc := doc("notes_consumer02.xml") return $doc
+<>
+pf:del-doc("notes_consumer02.xml")
