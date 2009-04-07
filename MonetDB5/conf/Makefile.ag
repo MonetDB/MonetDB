@@ -46,3 +46,5 @@ monetdb_var_rundir = $(localstatedir)/run
 monetdb_var_run_DATA = 
 monetdb_var_dbfarmdir = $(localstatedir)/MonetDB5/dbfarm
 monetdb_var_dbfarm_DATA = 
+
+EXTRA_DIST_DIR = Tests
