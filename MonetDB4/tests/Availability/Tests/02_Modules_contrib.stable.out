@@ -181,8 +181,8 @@ Module: "image"
 
 Module: "malalgebra"
 
-[ 33 ]
-[ 33 ]
+[ 34 ]
+[ 34 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																													  # name
 # str			str		str										str																													  # type
@@ -196,7 +196,8 @@ Module: "malalgebra"
 [ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",		  "Hook directly into the 'leftjoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head is maintained in the result. "																								  ]
 [ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",		  "Hook directly into the 'leftmergejoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head is maintained in the result. "																							  ]
 [ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[any::1,any::2], BAT[any::2,any::3], lng) : BAT[lng,BAT]",				  "leftmergejoin, but limit the result (by cutting off result generation) \n   return a BAT[lng,BAT] containing [full_result_estimate,limited_result]"																																		  ]
-[ "leftthetajoin",	  "COMMAND:   ",  "leftthetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",	  "Hook directly into the 'leftthetajoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head is maintained in the result."																							  ]
+[ "leftthetajoin",	  "COMMAND:   ",  "leftthetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int, lng) : BAT[any::1,any::3]",		  "Hook directly into the 'leftthetajoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head is maintained in the result."																							  ]
+[ "leftthetajoin",	  "PROC:      ",  "leftthetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int) : BAT[any::1,any::3]",			  "not available"																																																		  ]
 [ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "Hook directly into the 'mergejoin' implementation of the join."																						  ]
 [ "nlthetajoin",	  "COMMAND:   ",  "nlthetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int, lng) : BAT[any::1,any::3]",	  "Hook directly into the 'nested-loop-thetajoin' implementation of the join.\n   prefix 'left' means that left and right input are not swapped during processing,\n   and hence, the order of the left input's head is maintained in the result.\n   Also, for each left tuple, all matching right tuples will appear in their order\n   of appearrance in the right BAT. This property is handy for XQuery processing."	  ]
 [ "ord_select",		  "COMMAND:   ",  "ord_select(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",			  "Like standard 'select(b, value);', but preserves the order of the input BAT;\n (for the time being) this means, only the scan-based select algorithm is used."										  ]
