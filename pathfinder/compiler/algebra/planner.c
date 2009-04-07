@@ -518,12 +518,50 @@ plan_thetajoin (const PFla_op_t *n)
         cur_type != aat_pnode)
         /* combine each plan in R with each plan in S */
         for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
-            for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++)
+            for (unsigned int s = 0; s < PFarray_last (R(n)->plans); s++) {
                 join_worker (ret,
                              n->sem.thetajoin.pred[0].left,
                              n->sem.thetajoin.pred[0].right,
                              *(plan_t **) PFarray_at (L(n)->plans, r),
                              *(plan_t **) PFarray_at (R(n)->plans, s));
+
+                /* right side is only used to check for matches */
+                if ((*(plan_t **) PFarray_at (R(n)->plans, s))->schema.count == 1 &&
+                    PFprop_set (n->prop)) {
+                    PFalg_proj_t *proj = PFalg_proj_create (n->schema);
+                    /* replace the right join column by the left one */
+                    for (unsigned int i = 0; i < n->schema.count; i++)
+                        if (proj[i].old == n->sem.thetajoin.pred[0].right)
+                            proj[i].old = n->sem.thetajoin.pred[0].left;
+                    add_plan (ret,
+                              project (
+                                  /* use semijoin to avoid result explosion */
+                                  semijoin (n->sem.thetajoin.pred[0].left,
+                                            n->sem.thetajoin.pred[0].right,
+                                            *(plan_t **) PFarray_at (L(n)->plans, r),
+                                            *(plan_t **) PFarray_at (R(n)->plans, s)),
+                                  n->schema.count,
+                                  proj));
+                }
+                /* left side is only used to check for matches */
+                if ((*(plan_t **) PFarray_at (L(n)->plans, r))->schema.count == 1 &&
+                    PFprop_set (n->prop)) {
+                    PFalg_proj_t *proj = PFalg_proj_create (n->schema);
+                    /* replace the left join column by the right one */
+                    for (unsigned int i = 0; i < n->schema.count; i++)
+                        if (proj[i].old == n->sem.thetajoin.pred[0].left)
+                            proj[i].old = n->sem.thetajoin.pred[0].right;
+                    add_plan (ret,
+                              project (
+                                  /* use semijoin to avoid result explosion */
+                                  semijoin (n->sem.thetajoin.pred[0].right,
+                                            n->sem.thetajoin.pred[0].left,
+                                            *(plan_t **) PFarray_at (R(n)->plans, s),
+                                            *(plan_t **) PFarray_at (L(n)->plans, r)),
+                                  n->schema.count,
+                                  proj));
+                }
+            }
 
     return ret;
 }
