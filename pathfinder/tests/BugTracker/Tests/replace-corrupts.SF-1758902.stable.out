@@ -45,7 +45,7 @@ Over..
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult><notes>
 <objectnote user="hans" unixtime="1180000000" xid="4">This is my first note</objectnote>
-<objectnote xid="14" user="unknown" unixtime="1185198696">nootje, pinda<original></original></objectnote></notes></XQueryResult>
+<objectnote xid="14" user="unknown" unixtime="1185198696">nootje, pinda<original><objectnote xid="14" user="unknown" unixtime="1185198696">nootje<original/></objectnote></original></objectnote></notes></XQueryResult>
 
 # 13:02:10 >  
 # 13:02:10 >  Done.
