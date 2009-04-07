@@ -92,3 +92,5 @@ load_with_offset
 copy_into
 antiselect
 median_stdev
+
+bogus-auto-generated-keys
