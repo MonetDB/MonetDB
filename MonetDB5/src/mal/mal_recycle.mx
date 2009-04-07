@@ -1156,7 +1156,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 
     if (selectRef == 0)
         selectRef= getName("select",6);
-	 if (like_selectRef == 0)
+	if (like_selectRef == 0)
         like_selectRef= getName("like_select",11);
 
     if( recycleBlk == 0 || reusePolicy == 0)

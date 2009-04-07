@@ -60,6 +60,9 @@ comment "Select tuples based on the pattern, only returning the head";
 command like_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
 address PCRElike_uselect_pcre;
 
+command like_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
+address PCRElike_select_pcre;
+
 command match(s:str, pat:str):bit
 address PCREmatch
 comment "POSIX pattern matching against a string";
@@ -174,6 +177,7 @@ pcre_export str PCRElike2(bit *ret, str *s, str *pat);
 pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
@@ -290,6 +294,34 @@ re_uselect(RE *pattern, BAT *strs)
 	BATkey(r, BAThkey(strs));
 	r->T->nonil = FALSE;
 	r->tsorted = FALSE;
+
+	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
+	return r;
+}
+
+static BAT *
+re_select(RE *pattern, BAT *strs)
+{
+	BATiter strsi = bat_iterator(strs);
+	BAT *r;
+	BUN p, q;
+
+	if (strs->htype == TYPE_void)
+		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
+	else
+		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
+	
+	BATloop(strs, p, q) {
+		str s = BUNtail(strsi, p);
+
+		if (re_match(s, pattern)) 
+			BUNins(r, BUNhead(strsi, p), s, FALSE);
+	}
+	r->H->nonil = strs->H->nonil;
+	r->hsorted = strs->hsorted;
+/*	BATkey(r, BAThkey(strs)); ?*/
+	r->T->nonil = strs->T->nonil;
+	r->tsorted = strs->tsorted;
 
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	return r;
@@ -1286,7 +1318,7 @@ re_simple(char *pat)
 }
 
 str
-PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
+PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 {
 	char *ppat = NULL;
 	str r; 
@@ -1297,7 +1329,10 @@ PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 		RE *re = re_create(*pat, nr);
 
 		BAT *bp = BATdescriptor(*b);
-		BAT *res = re_uselect(re, bp);
+		BAT *res;
+
+		if (us) res = re_uselect(re, bp);
+		else res =  re_select(re, bp);
 			
 		re_destroy(re);
 		*ret = res->batCacheid;
@@ -1311,18 +1346,35 @@ PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BAT *bp = BATdescriptor(*b);
-			BAT *res = BATuselect(bp, *pat, *pat);
+			BAT *res;
+			
+			if (us) res = BATuselect(bp, *pat, *pat);
+			else BATselect(bp, *pat, *pat);
 			
 			*ret = res->batCacheid;
 			BBPkeepref(res->batCacheid);
 			BBPreleaseref(bp->batCacheid);
 			r = MAL_SUCCEED;
 		} else {
-			r = PCREuselect(ret, &ppat, b);
+			if (us)
+				r = PCREuselect(ret, &ppat, b);
+			else r = PCREselect(ret, &ppat, b);
 		}
 	}
 	if (ppat)
 		GDKfree(ppat);
 	return r;
+}  
+
+str
+PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
+{
+	return PCRElike_pcre(ret,b,pat,esc,TRUE);
+}  
+
+str
+PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc)
+{
+	return PCRElike_pcre(ret,b,pat,esc,FALSE);
 }  
 @}

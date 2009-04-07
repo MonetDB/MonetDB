@@ -106,12 +106,12 @@ are monitored and also trigger cleaning the cache.
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, cnt, actions=0;
+	int i, j, cnt, actions = 0;
 	Lifespan span;
 	InstrPtr *old, q;
 	int limit, updstmt = 0;
 	char *recycled;
-	short app_sc=-1,app_tbl =-1;
+	short app_sc = -1,app_tbl = -1;
 
 	(void) cntxt;
 	(void) stk;
@@ -232,8 +232,8 @@ are marked for re-use.
 		the range is often template parameter*/
 		if(( getFunctionId(p)== selectRef || 
 		     getFunctionId(p)== antiuselectRef ||
+		     getFunctionId(p)== likeselectRef ||
 		     getFunctionId(p)== putName("like",4) || 
-		     getFunctionId(p)== putName("like_uselect",12) ||
 	             getFunctionId(p)== putName("thetaselect",11) ||
         	     getFunctionId(p)== putName("thetauselect",12) ) &&
 	      		recycled[getArg(p,1)] ){
@@ -267,8 +267,25 @@ are marked for re-use.
 				actions ++;
 				if (getLastUpdate(span, getArg(p,0)) == i)
 				recycled[getArg(p,0)] = 1;
+			} 
+			else if( getFunctionId(p)== likeuselectRef && recycled[getArg(p,1)]) {
+				q = copyInstruction(p);
+				getArg(q,0)= newTmpVariable(mb,TYPE_any); 
+				setFunctionId(q, likeselectRef); 
+				q->recycle = REC_MAX_INTEREST;
+				recycled[getArg(q,0)] = 1;
+				pushInstruction(mb,q);
+				getArg(p,1) = getArg(q,0);
+				setFunctionId(p,markTRef);
+				p->argc = 2;
+				p->recycle = REC_MAX_INTEREST;
+				actions ++; 
+				if (getLastUpdate(span, getArg(p,0)) == i)
+					recycled[getArg(p,0)] = 1;
 			}
 		}
+
+
 @-
 The sql.bind instructions should be handled carefully
 The delete and update BATs should not be recycled,
