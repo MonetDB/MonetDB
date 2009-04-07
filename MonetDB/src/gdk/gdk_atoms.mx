@@ -2082,7 +2082,10 @@ strPut(Heap *h, var_t *dst, str v)
 	if (!GDK_ELIMDOUBLES(h)) {
 		if (GDK_STRHASHCREDIT(h) == 0) {
 			/* if credits are gone, we do not hash insert at all */
-			assert(h->free <= VAR_MAX);
+			if (h->free > VAR_MAX) {
+				GDKerror("strPut: string heaps gets larger than 2GB -- too large for 32-bits oids.\n");
+				return 0;
+			}
 			*dst = (var_t) h->free;
 			memcpy(h->base + h->free, v, i);
 			h->free += i;	/* in this case, we do not round to var_t either */
