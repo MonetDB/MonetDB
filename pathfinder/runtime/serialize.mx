@@ -1902,6 +1902,10 @@ xquery_print_result_driver (
                 case ELEM:
                     {
                         /* node_kind and cont have been already looked up */
+			if (!valoid) {
+                    		GDKerror ("serialize.mx: cannot print the special collection node.\n");
+                    		return GDK_FAIL;
+			}
 
                         /* print top level text nodes */
                         if (node_kind == (char)1 /* TEXT */) {
