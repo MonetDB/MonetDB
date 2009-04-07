@@ -26,3 +26,5 @@ scripts_sh = {
 	DIR = bindir
 	SOURCES = monetdb-template-config.in
 }
+
+EXTRA_DIST_DIR = Tests
