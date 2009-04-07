@@ -1091,8 +1091,8 @@ static int
 likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
 	str ps, qs, pd, qd;
-	int first = 1, pl, ql;
-	int endp = 0, stop = 0, cover = 0;
+	size_t pl, ql;
+	bit first = 1, endp = 0, stop = 0, cover = 0;
 
 	ps = GDKstrdup(s->stk[getArg(p,2)].val.sval);
 	qs = GDKstrdup(getVar(recycleBlk,getArg(q,2))->value.val.sval);
