@@ -69,6 +69,9 @@
 /** simple schema constructor iter|pos|item */
 #define ipi_schema(a) PFalg_iter_pos_item_schema((a))
 
+/** simple schema constructor iter|pos|item|score */
+#define ipis_schema(a) PFalg_iter_pos_item_score_schema((a))
+
 /** simple schema constructor iter|item*/
 #define ii_schema(a) PFalg_iter_item_schema((a))
 

@@ -676,6 +676,28 @@ PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t)
 }
 
 /**
+ * Return a schema of iter|pos|item|score where item type is item_t
+ */
+PFalg_schema_t
+PFalg_iter_pos_item_score_schema(PFalg_simple_type_t item_t)
+{
+    PFalg_schema_t schema;
+    schema.count = 4;
+    schema.items = PFmalloc (4 * sizeof (PFalg_schema_t));
+
+    schema.items[0].name = col_iter;
+    schema.items[0].type = aat_nat;
+    schema.items[1].name = col_pos;
+    schema.items[1].type = aat_nat;
+    schema.items[2].name = col_item;
+    schema.items[2].type = item_t;
+    schema.items[3].name = col_score1;
+    schema.items[3].type = aat_dbl;
+
+    return schema;
+}
+
+/**
  * Return a schema of iter|item where item type is item_t
  */
 PFalg_schema_t

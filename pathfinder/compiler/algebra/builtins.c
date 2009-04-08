@@ -45,6 +45,7 @@
 #include "oops.h"
 
 #include <assert.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "mem.h"
@@ -6726,7 +6727,8 @@ PFbui_tijah_query_HANDLER (const PFla_op_t *loop,
         .rel =  fun_call(
                     loop,
                     p_fun_param.rel,
-                    ipi_schema(funcall_t),
+		    ((PFT_FUN_FTFUN(query_name)) ? 
+		    	ipis_schema(funcall_t) : ipi_schema(funcall_t) ),
                     alg_fun_call_tijah,
                     PFqname (PFns_wild, query_name),
                     NULL, /* ctx */

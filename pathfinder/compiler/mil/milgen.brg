@@ -2078,7 +2078,8 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 		     PFalg_col_t a_iter,
 		     PFalg_col_t a_item, PFalg_simple_type_t t_item,
 		     PFalg_col_t a_frag,
-		     PFalg_col_t a_pos
+		     PFalg_col_t a_pos,
+		     PFalg_col_t a_score
 		    )
 {
 	mvar_t *v_iter  = new_var (dest->refctr);
@@ -2106,6 +2107,14 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 	    assgn (var (v_pos->name),
 		fetch (var (pack->name), lit_int (3))));
 	env_add (dest->env, a_pos, aat_nat, v_pos);
+
+	if ( a_score ) {
+	    mvar_t *v_score  = new_var (dest->refctr);
+	    execute (
+	        assgn (var (v_score->name),
+		    fetch (var (pack->name), lit_int (3))));
+	    env_add (dest->env, a_score, aat_dbl, v_score);
+	}
 }
 
 #endif
@@ -10161,11 +10170,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    unpin(pfop_query,1);
 		    unpin(pfop_opt,1);
 
-		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a);
+		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a,0);
 
 		    unpin(tjqres,1);
 		} else if ( PFT_FUN_FTFUN(fcname) ) {
 		    int fcci = 0;
+	            PFalg_col_t fc_score_a = p->schema.items[3].name;
+
 		    PFalg_simple_type_t restype;
 		    /* function returns nodes OR booleans */
 		    int returnNodes = PTF_QUERY_NODES(fcname);
@@ -10227,7 +10238,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    unpin(pfop_opt,1);
 		    unpin(pfop_ign,1);
 
-		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a);
+		    pft_unpack_pfop(p,tjqres,fc_iter_a,fc_item_a,restype,fc_item_a,fc_pos_a,fc_score_a);
 
 		    unpin(tjqres,1);
 		} else if ( PFT_FUN_MANAGE(fcname) ) {
@@ -10322,7 +10333,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    unpin(pfop_id,1);
 		    unpin(pfop_nodes,1);
 
-		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_dbl,0,fc_pos_a);
+		    pft_unpack_pfop(p,tjsres,fc_iter_a,fc_item_a,aat_dbl,0,fc_pos_a,0);
 
 		    unpin(tjsres,1);
 		} else if (strcmp(fcname,PFT_NODES) == 0 ) {
@@ -10342,7 +10353,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    );
 		    unpin(pfop_id,1);
 
-		    pft_unpack_pfop(p,tjnres,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
+		    pft_unpack_pfop(p,tjnres,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a,0);
 
 		    unpin(tjnres,1);
 		} else if ( (strcmp(fcname,PFT_TOKENIZE) == 0) ||
@@ -10425,7 +10436,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
 		    );
 		    unpin(pfop_names,1);
 
-		    pft_unpack_pfop(p,tjires,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a);
+		    pft_unpack_pfop(p,tjires,fc_iter_a,fc_item_a,aat_pre,fc_item_a,fc_pos_a,0);
 
 		    unpin(tjires,1);
 		} else {

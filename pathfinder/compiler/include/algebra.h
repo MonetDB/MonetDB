@@ -558,6 +558,7 @@ PFalg_collist_t * PFalg_collist_ (unsigned int count, PFalg_col_t *cols);
  * Constructor for an empty schema with iter|pos|item and item of type item_t
  */
 PFalg_schema_t PFalg_iter_pos_item_schema(PFalg_simple_type_t item_t);
+PFalg_schema_t PFalg_iter_pos_item_score_schema(PFalg_simple_type_t item_t);
 
 /** 
  * Constructor for an empty schema with iter|item and item of type item_t
