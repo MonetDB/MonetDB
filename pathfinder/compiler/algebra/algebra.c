@@ -792,6 +792,9 @@ PFalg_simple_type_str (PFalg_simple_type_t type) {
 }
 
 static unsigned int highest_col_name_id;
+/* define an internal unique score column identifier
+   (mix of col_pos and col_item) */
+#define col_score 0x00000003
 
 /**
  * Initialize the column name counter.
@@ -873,9 +876,12 @@ col_ori_unq (PFalg_col_t ori, unsigned int id)
         case col_subty:
         case col_itemty:
         case col_notsub:
-        case col_isint:
-        case col_isdec:
             unq = col_item;
+            break;
+
+        case col_score1:
+        case col_score2:
+            unq = col_score;
             break;
 
         default:
@@ -926,7 +932,7 @@ PFcol_new_fixed (PFalg_col_t col, unsigned int id)
 PFalg_col_t
 PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free)
 {
-    switch (unq & (col_iter | col_pos | col_item)) {
+    switch (unq & (col_iter | col_pos | col_item || col_score)) {
         case col_iter:
             if (free & col_iter)   return col_iter;
             if (free & col_iter1)  return col_iter1;
@@ -962,11 +968,13 @@ PFcol_ori_name (PFalg_col_t unq, PFalg_col_t free)
             if (free & col_subty)  return col_subty;
             if (free & col_itemty) return col_itemty;
             if (free & col_notsub) return col_notsub;
-            if (free & col_isint)  return col_isint;
-            if (free & col_isdec)  return col_isdec;
             if (free & col_res)    return col_res;
             if (free & col_res1)   return col_res1;
             if (free & col_cast)   return col_cast;
+
+        case col_score:
+            if (free & col_score1) return col_score1;
+            if (free & col_score2) return col_score2;
 
             /* repeat iter and pos columns to allow
                other names for item columns as well */
@@ -1040,8 +1048,8 @@ PFcol_str (PFalg_col_t col) {
         case col_subty:   return "item4";
         case col_itemty:  return "item5";
         case col_notsub:  return "item6";
-        case col_isint:   return "item7";
-        case col_isdec:   return "item8";
+        case col_score1:  return "score1";
+        case col_score2:  return "score2";
         default:
             if (col & (1 << 3)) {
                 unsigned int id     = col >> 4,
@@ -1055,12 +1063,14 @@ PFcol_str (PFalg_col_t col) {
                 }
                 res = PFmalloc (len+1);
 
-                if (col & col_iter)
+                if ((col & col_iter) == col_iter)
                     snprintf (res, len, "%s%u", "iter", id);
-                else if (col & col_pos)
+                else if ((col & col_pos) == col_pos)
                     snprintf (res, len, "%s%u", "pos", id);
-                else if (col & col_item)
+                else if ((col & col_item) == col_item)
                     snprintf (res, len, "%s%u", "item", id);
+                else if ((col & col_score) == col_score)
+                    snprintf (res, len, "%s%u", "score", id);
                 res[len] = 0;
 
                 return res;

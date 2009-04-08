@@ -175,8 +175,8 @@ PFxml2la_conv_2PFLA_attributeName (const char* s)
     else if (strcmp(s, "item4" ) == 0) return col_subty;
     else if (strcmp(s, "item5" ) == 0) return col_itemty;
     else if (strcmp(s, "item6" ) == 0) return col_notsub;
-    else if (strcmp(s, "item7" ) == 0) return col_isint;
-    else if (strcmp(s, "item8" ) == 0) return col_isdec;
+    else if (strcmp(s, "score1") == 0) return col_score1;
+    else if (strcmp(s, "score2") == 0) return col_score2;
 
     PFoops (OOPS_FATAL, "unknown attribute name (%s)", s);
     return -1; /* pacify picky compilers */
@@ -200,6 +200,10 @@ PFxml2la_conv_2PFLA_attributeName_unq (const char* s)
     else if (PFstrUtils_beginsWith(s, "item")) {
         ori = col_item;
         length = strlen("item");
+    }
+    else if (PFstrUtils_beginsWith(s, "score")) {
+        ori = col_score1;
+        length = strlen("score");
     }
     else
         PFoops (OOPS_FATAL, "don't know what to do with (%s)", s);

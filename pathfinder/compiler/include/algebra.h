@@ -269,9 +269,9 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 #define col_subty   0x04000000    /**< subty column */
 #define col_itemty  0x08000000    /**< itemty column */
 #define col_notsub  0x10000000    /**< notsub column */
-#define col_isint   0x20000000    /**< isint column */
-#define col_isdec   0x40000000    /**< isdec column */
-#define col_item3   0x80000000    /**< item3 column */
+#define col_item3   0x20000000    /**< item3 column */
+#define col_score1  0x40000000    /**< score1 column */
+#define col_score2  0x80000000    /**< score2 column */
 
 /** column names */
 typedef unsigned int PFalg_col_t;
