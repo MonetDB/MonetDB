@@ -1495,7 +1495,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              spec,
-             A2INT_O("/content/step/@level", -1), 
+             A2INT_O("/content/step/@level", UNKNOWN_LEVEL), 
              PFLA_ATT("/content/column[@function='iter']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT("/content/column[@function='item']/@name")
@@ -1531,7 +1531,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              (
              CHILDNODE(0), CHILDNODE(1), 
              spec,
-             A2INT_O("/content/step/@level", -1), 
+             A2INT_O("/content/step/@level", UNKNOWN_LEVEL), 
              PFLA_ATT("/content/column[@function='item']/@name"), 
              PFLA_ATT("/content/column[@new='true']/@name")
              );
