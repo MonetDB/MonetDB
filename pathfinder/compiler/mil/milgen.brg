@@ -2112,7 +2112,7 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 	    mvar_t *v_score  = new_var (dest->refctr);
 	    execute (
 	        assgn (var (v_score->name),
-		    fetch (var (pack->name), lit_int (3))));
+		    fetch (var (pack->name), lit_int (4))));
 	    env_add (dest->env, a_score, aat_dbl, v_score);
 	}
 }
