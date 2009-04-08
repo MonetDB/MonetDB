@@ -436,16 +436,16 @@ opt_projection (PFla_op_t *p)
                     proj[i] = L(p)->sem.proj.items[i];
                     
                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.sort.res);
+                PFalg_col_t res = make_col_unq(p->sem.binary.res);
                     
                 /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, p->sem.sort.res);
+                proj[count] = PFalg_proj (res, p->sem.binary.res);
             
                 /* swap projection and current operatior */
                 *p = *PFla_project_ (
                         PFla_to (
                             LL(p), 
-                            p->sem.sort.res, 
+                            p->sem.binary.res, 
                             re_rename_col (p->sem.binary.col1, 
                                             L(p)->sem.proj.items,
                                             L(p)->schema.count),
