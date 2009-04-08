@@ -23,6 +23,7 @@ procs();
 [ "ALG_tj_ft_index_info(BAT[oid,BAT], BAT[void,any], BAT[oid,BAT]) : BAT[void,BAT]"																			  ]
 [ "ALG_tj_ftfun_handler(bit, BAT[oid,BAT], BAT[oid,BAT], BAT[oid,BAT], BAT[oid,BAT], BAT[void,any], BAT[oid,BAT], BAT[oid,BAT]) : BAT[void,BAT]"												  ]
 [ "ALG_tj_pfop(BAT[oid,oid], BAT[oid,any], BAT[oid,any], BAT[oid,oid]) : BAT[void,BAT]"																				  ]
+[ "ALG_tj_pfop(BAT[oid,oid], BAT[oid,any], BAT[oid,any], BAT[oid,oid], BAT[oid,dbl]) : BAT[void,BAT]"															  ]
 [ "ALG_tj_pfop(BAT[oid,oid], BAT[oid,any], int, BAT[oid,oid]) : BAT[void,BAT]"									  ]
 [ "ALG_tj_query_handler(bit, BAT[oid,BAT], BAT[oid,BAT], BAT[oid,BAT], BAT[void,any], BAT[oid,BAT], BAT[oid,BAT]) : BAT[void,BAT]"		  ]
 [ "ALG_tj_query_nodes(BAT[void,any], BAT[oid,BAT], BAT[oid,BAT]) : BAT[void,BAT]"								  ]

@@ -222,6 +222,22 @@ int tokenize_flex(char* buf, struct tijahContextStruct* tjCtx) {
   return 1;
 }
 
+BAT* tokenize2bat(char* buf) {
+  BAT *res = BATnew(TYPE_void, TYPE_str, 0);
+  int len = strlen(buf);
+  YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
+  while (pftijah_tokenizelex()) {
+      str s= (str)e;
+      if ( !BUNappend(res, s, 0) )
+          return 0;
+      if ( e != pftijah_tokenizetext )  {
+      	GDKfree(e);
+      }
+  }
+  yy_delete_buffer(myBuf);
+  return res;
+}
+
 /*
  * Implementation of the fast tokenizer in "C"
  *

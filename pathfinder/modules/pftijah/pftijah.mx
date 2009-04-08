@@ -52,6 +52,9 @@
 .COMMAND tijah_tokenize(str) : str = CMDtijah_tokenize;
  "INCOMPLETE"
 
+.COMMAND tijah_tokenize2bat(str) : BAT[void,str] = CMDtijah_tokenize2bat;
+ "INCOMPLETE"
+
 .COMMAND tj_chk_dict_hash(BAT[void,str], BAT[void,str]) : void = CMDtj_chk_dict_hash;
 "INCOMPLETE"
 
@@ -1523,15 +1526,33 @@ PROC ALG_tj_pfop(
 PROC ALG_tj_pfop(
 		BAT[oid,oid] iter,
 		BAT[oid,any] item,
-		BAT[oid,any] frag,
+		BAT[oid,any] kind,
 		BAT[oid,oid] pos) : BAT[void,bat] :=
 {
 	var res := new(void,bat).seqbase(0@0);
 
 	res.append(iter);
 	res.append(item);
-	res.append(frag);
+	res.append(kind);
 	res.append(pos);
+
+	return res;
+}
+
+PROC ALG_tj_pfop(
+		BAT[oid,oid] iter,
+		BAT[oid,any] item,
+		BAT[oid,any] kind,
+		BAT[oid,oid] pos,
+		BAT[oid,dbl] score) : BAT[void,bat] :=
+{
+	var res := new(void,bat).seqbase(0@0);
+
+	res.append(iter);
+	res.append(item);
+	res.append(kind);
+	res.append(pos);
+	res.append(score);
 
 	return res;
 }
@@ -1822,7 +1843,7 @@ PROC ALG_tj_ftfun_handler(
 
      par_loop@batloop() {
         var iter_tjPre;
-        var ftterm := pfop_query.fetch(1@0).fetch(int($h));
+        var ftc_term := pfop_query.fetch(1@0).fetch(int($h));
 
         var ftindex := dflt_ft_index; # incomplete
         var tijah_lock := tj_get_collection_lock(ftindex);
@@ -1841,9 +1862,8 @@ PROC ALG_tj_ftfun_handler(
           if ( verbose ) printf("# ALG_tj_ftfun_handler: compute startnodes\n");
           iter_tjPre := pf2tijah_node(true,xdoc_name,xdoc_firstpre,xpfpre,sn_item,[int](sn_kind),doc_loaded);
 	  
-	  # INCOMPLETE, SHOULD TOKENIZE HERE
-	  var Q := new(str,dbl);
-	  Q.insert(ftterm, dbl(1.000000));
+	  # now tokenize the term string and add a default weight
+	  var Q := tijah_tokenize2bat(ftc_term).reverse().project(dbl(1.0));
 	  Q := tj_term2tid(Q);
 
 	  # tj_init_termHash(ftindex);
@@ -1872,7 +1892,7 @@ PROC ALG_tj_ftfun_handler(
      result_ipik   := result_item_b;
      result_kind   := pfop_sn.fetch(2@0).set_kind(BOOL);
      var result_pos:= pfop_sn.fetch(3@0);
-     var res := ALG_tj_pfop(result_iter,result_item_b,result_kind,result_pos.materialize(result_ipik));
+     var res := ALG_tj_pfop(result_iter,result_item_b,result_kind,result_pos.materialize(result_ipik),result_item_s);
      if ( verbose ) printf("# ALG_tj_ftfun_handler: FINISH.\n");
      return res;
 }
@@ -4463,6 +4483,7 @@ int CMDtijah_query(BAT* optbat, BAT *rtagbat, bit* use_startnodes) {
 }
 
 char* tijah_tokenize_string(char* buf, int len, char* outbuf);
+BAT* tokenize2bat(char* buf);
 
 int CMDtijah_tokenize (str* res, str arg)
 {
@@ -4477,6 +4498,14 @@ int CMDtijah_tokenize (str* res, str arg)
 	buf[0] = 0;
 	*res = tijah_tokenize_string(arg,sz,buf);
 
+	return GDK_SUCCEED;
+}
+
+int CMDtijah_tokenize2bat (BAT** res, str arg)
+{
+	if ( !(*res = tokenize2bat(arg)))
+	    return GDK_FAIL;
+	
 	return GDK_SUCCEED;
 }
 
