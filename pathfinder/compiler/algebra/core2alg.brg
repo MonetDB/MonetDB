@@ -3565,9 +3565,9 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
          * Test for both types. The `type' operator merely adds a boolean
          * column. We OR them after testing for for both types.
          */
-        itemty = or (type (type (e.rel, col_isint, col_item, aat_int),
-                           col_isdec, col_item, aat_dec),
-                     col_itemty, col_isint, col_isdec);
+        itemty = or (type (type (e.rel, col_item2, col_item, aat_int),
+                           col_item3, col_item, aat_dec),
+                     col_itemty, col_item2, col_item3);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_double ())))
         itemty = type (e.rel, col_itemty, col_item, aat_dbl);
     else if (PFty_subtype (ty, PFty_star (PFty_xs_boolean ())))
