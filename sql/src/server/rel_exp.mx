@@ -74,6 +74,7 @@ extern sql_exp *rel_find_exp( sql_rel *rel, sql_exp *e);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
+extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern int exp_is_join(sql_exp *e);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
@@ -498,6 +499,19 @@ exp_match( sql_exp *e1, sql_exp *e2)
 			return 0;
 		/* e1->r */
 		return 1;
+	}
+	return 0;
+}
+
+int 
+exp_match_exp( sql_exp *e1, sql_exp *e2)
+{
+	if (exp_match(e1, e2))
+		return 1;
+	if (e1->type == e2->type && e1->type == e_cmp && 
+	    e1->flag == e2->flag && e1->flag != cmp_or) {
+		if (exp_match(e1->l, e2->l) && exp_match(e1->r, e2->r))
+			return 1;
 	}
 	return 0;
 }

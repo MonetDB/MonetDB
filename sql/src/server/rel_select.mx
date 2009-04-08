@@ -975,7 +975,7 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 		return NULL;
 
 	/* filter on columns of this relation */
-	if (lrel == rrel && lrel->op != op_join) {
+	if ((lrel == rrel && lrel->op != op_join) || rel_is_ref(p)) {
 		if (lrel->op == op_select) {
 			rel_select_add_exp(lrel, e);
 		} else if (p && p->op == op_select) {
