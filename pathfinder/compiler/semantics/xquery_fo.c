@@ -2977,8 +2977,14 @@ PFfun_xquery_fo (void)
                                     PFty_xs_anyElement () },
              .ret_ty = PFty_xs_double () } },
         .alg = PFbui_tijah_score }
-    , /* tijah:tokenize(string?) as string */
+    , /* tijah:tokenize(string?) as string REPLACED by clean-text() */
       { .ns = PFns_tijah, .loc = "tokenize",
+        .arity = 1, .sig_count = 1, .sigs = { {
+             .par_ty = (PFty_t[]) { PFty_xs_string () },
+             .ret_ty = PFty_xs_string () } },
+        .alg = PFbui_tijah_tokenize }
+    , /* tijah:clean-text(string?) as string */
+      { .ns = PFns_tijah, .loc = "clean-text",
         .arity = 1, .sig_count = 1, .sigs = { {
              .par_ty = (PFty_t[]) { PFty_xs_string () },
              .ret_ty = PFty_xs_string () } },
