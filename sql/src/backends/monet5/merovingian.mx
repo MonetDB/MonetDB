@@ -1433,7 +1433,7 @@ controlRunner(void *d)
 							if (strcmp(p, "stop") == 0) {
 								merlog("stopping database '%s' due to control "
 										"signal", q);
-								kill(dp->pid, SIGTERM);
+								terminateProcess(dp);
 							} else {
 								merlog("killing database '%s' due to control "
 										"signal", q);
