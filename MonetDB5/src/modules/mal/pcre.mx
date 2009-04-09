@@ -1329,7 +1329,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 		RE *re = re_create(*pat, nr);
 
 		BAT *bp = BATdescriptor(*b);
-		BAT *res;
+		BAT *res = NULL;
 
 		if (us) res = re_uselect(re, bp);
 		else res =  re_select(re, bp);
