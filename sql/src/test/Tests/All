@@ -94,4 +94,4 @@ copy_into
 antiselect
 median_stdev
 
-bogus-auto-generated-keys
+HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys

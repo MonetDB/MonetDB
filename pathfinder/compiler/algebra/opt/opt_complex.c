@@ -55,6 +55,8 @@
 /* Easily access subtree-parts */
 #include "child_mnemonic.h"
 
+#include "oops.h"
+
 #define SEEN(p) ((p)->bit_dag)
 
 /* lookup the input name of an output column
@@ -827,6 +829,8 @@ opt_complex (PFla_op_t *p)
         return false;
     else
         SEEN(p) = true;
+
+    PFrecursion_fence();
 
     /* apply complex optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)

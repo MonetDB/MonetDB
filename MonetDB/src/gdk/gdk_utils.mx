@@ -1941,10 +1941,12 @@ GDKaddbuf(const char *message)
 	}
 }
 
+#define GDKERRLEN	1024
+
  /*VARARGS*/ int
 GDKwarning(const char *format, ...)
 {
-	char message[GDKMAXERRLEN];
+	char message[GDKERRLEN];
 	size_t len = strlen(GDKWARNING);
 	va_list ap;
 
@@ -1954,7 +1956,7 @@ GDKwarning(const char *format, ...)
 		strcpy(message, GDKWARNING);
 	}
 	va_start(ap, format);
-	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
 	GDKaddbuf(message);
@@ -1966,7 +1968,7 @@ GDKwarning(const char *format, ...)
  /*VARARGS*/ int
 GDKerror(const char *format, ...)
 {
-	char message[GDKMAXERRLEN];
+	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
 	va_list ap;
 
@@ -1976,7 +1978,7 @@ GDKerror(const char *format, ...)
 		strcpy(message, GDKERROR);
 	}
 	va_start(ap, format);
-	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
 	GDKaddbuf(message);
@@ -1987,7 +1989,7 @@ GDKerror(const char *format, ...)
  /*VARARGS*/ int
 GDKsyserror(const char *format, ...)
 {
-	char message[GDKMAXERRLEN];
+	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
 
 #ifdef NATIVE_WIN32
@@ -2030,7 +2032,7 @@ GDKsyserror(const char *format, ...)
 		len2 = len1 + strlen(GDKMESSAGE);
 		len3 = len2 + strlen(osmsg);
 
-		if (len3 + 2 < GDKMAXERRLEN) {
+		if (len3 + 2 < sizeof(message)) {
 			strcpy(message + len1, GDKMESSAGE);
 			strcpy(message + len2, osmsg);
 			if (len3 > 0 && message[len3 - 1] != '\n') {
@@ -2048,7 +2050,7 @@ GDKsyserror(const char *format, ...)
  /*VARARGS*/ int
 GDKfatal(const char *format, ...)
 {
-	char message[GDKMAXERRLEN];
+	char message[GDKERRLEN];
 	size_t len = strlen(GDKFATAL);
 	va_list ap;
 	FILE *fd = stderr;
@@ -2063,7 +2065,7 @@ GDKfatal(const char *format, ...)
 		strcpy(message, GDKFATAL);
 	}
 	va_start(ap, format);
-	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
+	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
 	if (GDKsilent == 0) {
@@ -2283,11 +2285,16 @@ THRcnt(void)
 int
 THRhighwater(void)
 {
-	size_t c = THRsp();
-	Thread s = GDK_find_thread(MT_getpid());
-	size_t diff = (c < s->sp) ? s->sp - c : c - s->sp;
+	size_t c;
+	Thread s;
+	size_t diff;
 
-	if (diff > (THREAD_STACK_SIZE - 2048)) {
+	s = GDK_find_thread(MT_getpid());
+	if (s == NULL)
+		return 0;
+	c = THRsp();
+	diff = (c < s->sp) ? s->sp - c : c - s->sp;
+	if (diff > (THREAD_STACK_SIZE - sizeof(size_t)*2048)) {
 		return 1;
 	}
 	return 0;

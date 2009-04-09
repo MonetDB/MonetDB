@@ -47,3 +47,5 @@ headers_mal = {
 	DIR = libdir/MonetDB5
 	SOURCES = mal_compiler.mx 
 }
+
+EXTRA_DIST_DIR = Tests
