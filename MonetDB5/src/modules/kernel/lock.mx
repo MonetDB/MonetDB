@@ -46,10 +46,13 @@ address lockToStr
 comment "Overloaded atom function";
 
 @+ Implementation
-@c
-#include "mal_config.h"
+
+@h
+#ifndef _LOCK_H
+#define _LOCK_H
+
 #include <gdk.h>
-#include "mal_exception.h"
+
 typedef ptr lock;
 typedef ptr monet_lock;
 
@@ -62,6 +65,14 @@ typedef ptr monet_lock;
 #else
 #define lock_export extern
 #endif
+
+#endif /* _LOCK_H */
+
+@c
+#include "mal_config.h"
+#include "mal.h"
+#include "mal_exception.h"
+#include "lock.h"
 
 int
 create_lock(monet_lock *l)
