@@ -64,14 +64,16 @@ connections.  Here a close binding with Merovingian and Sabaoth is
 inevitable to make remote aware of possible connections in the vincinity
 of the server.  This translates into the getList() function, that returns a
 list of databases. For each we can ask its type getKind(),
-which is either "local", "remote" or "user".  
-The "local" type is used for databases known by Sabaoth, which are hence local.
-The second translates into the discovered neighbours by Merovingian (as
+which is either "self", "local", "remote" or "user".
+Obviously "self" is the database served by the current engine.  The
+"local" type is used for databases known by Sabaoth, which are hence
+local.  The next, "remote", translates into the discovered neighbours by
+Merovingian (as
 returned by `monetdb discover`), which are remote as such.  Lastly, a
 user can add her own connection using the create() function, which
 also appears in the output of list().  Connections added using create()
 are currently not persistent over server restarts, but can be removed
-using destroy(). They are marked "user".
+using destroy().  They are marked "user".
 
 Connections are activated using a call to connect().  Each client has
 its own stack of connection handles.  By default, a connection is
@@ -337,14 +339,14 @@ remote_export str RMTgetList(int *ret, int *ret2);
 #define SOCKPTR struct sockaddr *
 /**
  * Returns a BAT with available connections.  In the head the dbname is
- * stored, in the tail "user", "local" or "remote".  The entries are
- * grouped in that order.
+ * stored, in the tail "user", "self", "local" or "remote".  The entries
+ * are grouped in that order.
  */
 remote_export str RMTgetList(int *ret, int *ret2){
 	BAT *list, *kind;
 	str type;
 	userconn c;
-	sabdb *sab, *osab;
+	sabdb *sab, *osab, *me;
 	str tmp;
 #ifndef WIN32
 	char path[8096];
@@ -373,18 +375,30 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	}
 	mal_unset_lock(mal_remoteLock, "remote.list");
 
-	/* part 2: "local" -- bit more tricky, contact Sabaoth */
+	/* part 2: "self" -- contact Sabaoth */
+	type = "self";
+	rethrow("remote.list", tmp, SABAOTHgetMyStatus(&me));
+	/* it is REALLY strange if you can have an operational server
+	 * without a database */
+	assert(me != NULL);
+	BUNappend(list, (ptr)me->dbname, FALSE);
+	BUNappend(kind, (ptr)type, FALSE);
+
+	/* part 3: "local" -- bit more tricky, contact Sabaoth */
 	type = "local";
 	rethrow("remote.list", tmp, SABAOTHgetStatus(&osab, NULL));
 	sab = osab;
 	while (sab != NULL) {
-		BUNappend(list, (ptr)sab->dbname, FALSE);
-		BUNappend(kind, (ptr)type, FALSE);
+		if (strcmp(sab->dbname, me->dbname) != 0) {
+			BUNappend(list, (ptr)sab->dbname, FALSE);
+			BUNappend(kind, (ptr)type, FALSE);
+		}
 		sab = sab->next;
 	}
 	SABAOTHfreeStatus(&osab);
+	SABAOTHfreeStatus(&me);
 
-	/* part 3: "remote" -- ask merovingian over a UNIX socket, oops
+	/* part 4: "remote" -- ask merovingian over a UNIX socket, oops
 	 *                     portability issues! */
 	type = "remote";
 #ifndef WIN32
