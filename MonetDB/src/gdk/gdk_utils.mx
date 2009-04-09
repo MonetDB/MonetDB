@@ -2248,7 +2248,7 @@ THRhighwater(void)
 	Thread s = GDK_find_thread(MT_getpid());
 	size_t diff = (c < s->sp) ? s->sp - c : c - s->sp;
 
-	if (diff > (THREAD_STACK_SIZE - 2048)) {
+	if (diff > (THREAD_STACK_SIZE - sizeof(size_t)*2048)) {
 		return 1;
 	}
 	return 0;
