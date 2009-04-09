@@ -26,65 +26,52 @@
 @'
 @' $Id$
 
-@f shredder
-@a Jan Flokstra
-@a Peter Boncz
-@a Niels Nes
-@t shredder
+@f xquery_shredder
+@a
+@t Monet5/XQuery XML Document Shredder
+
+This shredder is based on the original implementation by Jan Flokstra, Peter
+Boncz, and Niels Nes. The original shredder can be found at:
+pathfinder/runtime/shredder.mx (snapshot tag M42M5)
 
 @h
-#ifndef SHREDDER_H
-#define SHREDDER_H
+#ifndef _XQ_SHREDDER_H
+#define _XQ_SHREDDER_H
 
 #define XML_DEPTH_MAX 128
 
-#include "serialize.h" /* for struct serializeFunStruct & struct XqueryCtx */
-#include "pf_support.h"
+#include "xquery.h"
+#include <lock.h>
 
-/* for PFtijah */
-pf_support_export int shred(BAT *docBAT, str location, str buffer, stream *s, lng percentage, struct serializeFunStruct *serFun, struct XqueryCtx *serCtx, lock *collLock);
+/* MAL commands to shred XML from a {uri,string,stream} */
+xquery_export str XQUERYShredUrl(int retval, bat *doc, str location,
+		lng *percentage, lock* collLock, bit *verbose);
+xquery_export str XQUERYShredStr(int retval, bat *doc, str buffer,
+		lng *percentage, lock* collLock, bit *verbose);
+xquery_export str XQUERYShredStream(int retval, bat *doc, stream *s,
+		lng *percentage, lock* collLock, bit *verbose);
 
-/* MIL commands to shred XML from a {uri,string,stream}. */
-pf_support_export int CMDshred_url(BAT *docBAT, str location, lng *percentage, lock* collLock, bit *verbose);
-pf_support_export int CMDshred_str(BAT *docBAT, str buffer, lng *percentage, lock* collLock, bit *verbose);
-pf_support_export int CMDshred_stream(BAT *docBAT, Stream *s, lng *percentage, lock* collLock, bit *verbose);
-
-#endif /* SHREDDER_H */
+#endif /* _XQ_SHREDDER_H */
 @c
-/* ====================================================================================
- * shredder.mx : xml document shredder for pathfinder
- *
- * Original code by Jan Flokstra. 
- * Incremental stream parser addition by Niels Nes.
- * Revised by Peter Boncz(code restructuring, attempt at documentation, multi-doc 
- *                         collections, garbage collection, error checking, atomicity). 
- * ==================================================================================== */
+#include "pf_config.h"
+#include <mal_exception.h>
+#include "xquery_shredder.h"
+#include "libxml/parser.h"                  /* SAX parser interface(libxml2) */
+#include "libxml/parserInternals.h"
+#include "temp.h"             /*  TEMPORY DEFINITIONS TO MAKE THE M42M5 WORK */
+#include "serialize.h"   /* for struct serializeFunStruct & struct XqueryCtx */
 
-/* #define DEBUG */
 
+#define DEBUG_XQ_SHRD
 #define PRINT_STAT 0
 
-#include <pf_config.h>
-#include <gdk.h>
-#include <monet.h>
-
-#include "pathfinder.h"
-#include "pf_support.h"
-#include "shredder.h"
-
-/**
- * XML node kinds
- */
+/* XML node kinds */
 #define ELEMENT   0
 #define PFTEXT    1
 #define COMMENT   2
 #define PI        3
 #define DOCUMENT  4
 #define COLLECTION 5
-
-/* SAX parser interface(libxml2) */
-#include "libxml/parser.h"
-#include "libxml/parserInternals.h"
 
 char*
 timer_str(lng elapsed, char* buf)
@@ -114,34 +101,37 @@ timer_str(lng elapsed, char* buf)
     return buf;
 }
 
-/* ====================================================================================
- * attribute DB to distinguish attrs that have ID/IDREF semantics(filled during DTD parse)
- * - attrDB_init()    initialize the attribute database
- * - attrDB_find()    find if an attribute is already registered in the database
- * - attrDB_insert()  register an attribute as an ID/IDREF attribute
- * - attrDB_check()   check if this attribute is an ID/IDREF attribute  
- * - attrDB_free()    free resources
- * ==================================================================================== */
+@- Attribute DB
+
+We build an attribute DB to distinguish attrs that have ID/IDREF semantics. It
+is populated during DTD parse. The following functions are available:
+
+ - attrDB_init()    initialize the attribute database
+ - attrDB_find()    find if an attribute is already registered in the database
+ - attrDB_insert()  register an attribute as an ID/IDREF attribute
+ - attrDB_check()   check if this attribute is an ID/IDREF attribute 
+ - attrDB_free()    free resources
+
+@c
 
 /* #define ADB_DEBUG */
 /* #define ADB_USE_NAMES */
-
 #define ADB_STARTSIZE       256 
 
 typedef struct specAttrStr {
     char*      ownerTag;
     char*      attrTag;
-    int        type; /* XML_ATTRIBUTE_[ID|IDREF|IDREFS] */
+    int        type;                      /* XML_ATTRIBUTE_[ID|IDREF|IDREFS] */
 } specAttrStr;
 
 typedef struct idrefAttrDBStr {
-    int doCheck;  /* boolean to signal if the attr db is in use */
+    int doCheck;               /* boolean to signal if the attr db is in use */
     int n_specAttr;
     int max_specAttr;
     specAttrStr* specAttr;
 } idrefAttrDBStr;
 
-static void 
+static void
 attrDB_init(idrefAttrDBStr* adb)
 {
 #ifdef ADB_DEBUG
@@ -150,48 +140,43 @@ attrDB_init(idrefAttrDBStr* adb)
     adb->n_specAttr = adb->max_specAttr = 0;
     adb->specAttr   = 0;
 #ifdef ADB_USE_NAMES
-    /* in this case even when no attributes are encountered the db is in use. */
+    /* in this case even when no attributes are encountered the db is in use */
     adb->doCheck    = 1;
 #else
     adb->doCheck    = 0;
 #endif
 }
 
-static specAttrStr* 
-attrDB_find(idrefAttrDBStr *adb, 
-           char *oTag, 
-           char *aTag)
+static specAttrStr*
+attrDB_find(idrefAttrDBStr *adb, char *oTag, char *aTag)
 {
     int i;
     for(i=0; i<adb->n_specAttr; i++) {
         specAttrStr *sas = &adb->specAttr[i];
         if ((strcmp(oTag, sas->ownerTag) == 0) &&
-               (strcmp(aTag, sas->attrTag) == 0)) {
-#ifdef ADB_DEBUG
-            /* stream_printf(GDKout, "[ADB] found(%s, %s, %d)\n", sas->ownerTag, sas->attrTag, sas->type); */
-#endif
+                (strcmp(aTag, sas->attrTag) == 0)) {
             return sas;
-        };
+        }
     }
     return NULL;
 }
 
-static int 
-attrDB_check(idrefAttrDBStr *adb, 
-             char *oTag, 
-             char *aTag)
+static int
+attrDB_check(idrefAttrDBStr *adb, char *oTag, char *aTag)
 {
-    if (adb->doCheck) { /* check if db is in use */
+    if (adb->doCheck) {                             /* check if db is in use */
         specAttrStr *sas;
         if ((sas = attrDB_find(adb, oTag, aTag)))
             return sas->type;
         else {
 #ifdef ADB_USE_NAMES
-            if ((strcmp(aTag, "id") == 0) ||(strcmp(aTag, "ID") == 0))
+            if ((strcmp(aTag, "id") == 0) || (strcmp(aTag, "ID") == 0))
                 return XML_ATTRIBUTE_ID;
-            else if ((strcmp(aTag, "idref") == 0) ||(strcmp(aTag, "IDREF") == 0))
+            else if ((strcmp(aTag, "idref") == 0) ||
+                    (strcmp(aTag, "IDREF") == 0))
                 return XML_ATTRIBUTE_IDREF;
-            else if ((strcmp(aTag, "idrefs") == 0) ||(strcmp(aTag, "IDREFS") == 0))
+            else if ((strcmp(aTag, "idrefs") == 0) ||
+                    (strcmp(aTag, "IDREFS") == 0))
                 return XML_ATTRIBUTE_IDREFS;
 #endif
         }
@@ -199,17 +184,15 @@ attrDB_check(idrefAttrDBStr *adb,
     return 0;
 }
 
-static int 
-attrDB_insert(idrefAttrDBStr *adb, 
-              char *oTag, 
-              char *aTag, 
-              int type) 
+static int
+attrDB_insert(idrefAttrDBStr *adb, char *oTag, char *aTag, int type)
 {
     specAttrStr *sas = NULL;
 
-    adb->doCheck = 1; /* signal database is in use */
+    adb->doCheck = 1;                           /* signal database is in use */
     if (attrDB_find(adb, oTag, aTag)) {
-        GDKerror("attrDB_insert: idrefAttrDB(%s, %s, %d) is duplicate.\n", oTag, aTag, type);
+        GDKerror("attrDB_insert: idrefAttrDB(%s, %s, %d) is duplicate.\n",
+                oTag, aTag, type);
         return GDK_FAIL;
     }
     oTag = GDKstrdup(oTag);
@@ -243,7 +226,7 @@ error:
     return GDK_FAIL;
 }
 
-static void 
+static void
 attrDB_free(idrefAttrDBStr *adb)
 {
     int i;
@@ -263,10 +246,9 @@ attrDB_free(idrefAttrDBStr *adb)
 #endif
 }
 
-/* ====================================================================================
- * main shredder data structures(the shredCtx, containing the shredBATdefs)
- * ==================================================================================== */
+@- The main shredder data structure (the shredCtx, containing the shredBATdefs)
 
+@c
 /* define the number of BATs in the requuired result set */
 #define SHRED_BATS (ATTR_PROP+1)
 
@@ -312,7 +294,7 @@ typedef struct shredBAT {
     oid             dupl; /* the number of duplicate BUNins so far */
     BUN             size; /* current maximum size of the BAT */
     BAT             *bat; /* the physical BAT */
-    BUN        abortSize; /* size previous to shredding */ 
+    BUN        abortSize; /* size previous to shredding */
     size_t      heapSize; /* size of string tail heap(->free) */
     void     *heapBackup; /* image of the internal str-heap hash-table */
     /* */
@@ -339,11 +321,11 @@ typedef struct shredBAT {
  */
 typedef struct node_t node_t;
 struct node_t {
-    oid      pre;                /**< preorder rank */
-    oid      nid;                /**< stable nid */
-    int      level;              /**< tree level of parent(0 if root, -1 if document node) */
-    oid      prop;               /**< property ID */
-    chr      kind;               /**< node kind */
+    oid      pre;    /* preorder rank */
+    oid      nid;    /* stable nid */
+    int      level;  /* tree level of parent(0 if root, -1 if document node) */
+    oid      prop;   /* property ID */
+    chr      kind;   /* node kind */
 };
 
 /* the computing context environmentf the shredding process */
@@ -362,7 +344,7 @@ typedef struct shredCtxStruct {
     int      sp;                 /* the stackpointer */
     /* buffer administration */
     int      content;            /* content ptr in char buff */
-    int	     content_max;        /* max size of content buffer */
+    int      content_max;        /* max size of content buffer */
     char     *content_buf;       /* character buffer */
     /* */
     size_t   fileSize;           /* size of the input file */
@@ -371,12 +353,12 @@ typedef struct shredCtxStruct {
     BUN   pageFree;              /* number of tuples per page to leave empty */
 
     /* attributes for shred into collection */
-    int      incremental;         /* boolean: incremental shred? */
-    int      updatable;           /* boolean: is nid-rid-pre the identity mapping? */
-    char     *val;                /* temporary PFSHRED_BUFLEN-byte string workspace */
-    
+    int      incremental;  /* boolean: incremental shred? */
+    int      updatable;    /* boolean: is nid-rid-pre the identity mapping? */
+    char     *val;         /* temporary PFSHRED_BUFLEN-byte string workspace */
+
     /* the database containing the ID|IDREF|IDREFS attributes */
-    idrefAttrDBStr idrefAttrDB;        
+    idrefAttrDBStr idrefAttrDB;
 
     char*    base_dir;           /* base location of the shredded doc. Used to
                                   * locate relative external subsets */
@@ -401,17 +383,17 @@ typedef struct shredCtxStruct {
 #define PFSHRED_BUFLEN     (1 << 10)
 #define XML_TAG_MAX        PFSHRED_STRLEN_MAX
 
-/* ====================================================================================
- * shredder low-level routines that add data to bats, while parsing
- * - shredBAT_newsize()    compute a suitable new bat size
- * - shredBAT_extend()     low-level way of increasing the logical size of a bat
- * - shredBAT_setcount()   make more room in a BAT(using BATextend)
- * - shredBAT_append_str() append into a BAT[void,str], possibly with compression(double-elim) 
- * ==================================================================================== */
- 
-static void 
-shredBAT_setcount(shredBAT *sb, 
-                  oid n)
+@- Shredder low-level routines that add data to bats durring parsing
+  - shredBAT_newsize()    compute a suitable new bat size
+  - shredBAT_extend()     low-level way of increasing the logical size of a bat
+  - shredBAT_setcount()   make more room in a BAT(using BATextend)
+  - shredBAT_append_str() append into a BAT[void,str], possibly with
+                          compression(double-elim)
+
+@c
+
+static void
+shredBAT_setcount(shredBAT *sb, oid n)
 {
     BAT *b = sb->bat;
     BATsetcount(b, n);
@@ -423,11 +405,11 @@ shredBAT_setcount(shredBAT *sb,
 }
 
 
-static BUN 
+static BUN
 shredBAT_newsize(shredBAT *sb, BUN newsize)
 {
     newsize = MAX(sb->size, newsize + MAX(BATTINY, newsize/4));
-    if (sb->def->table == PRE_SIZE && (newsize & REMAP_PAGE_MASK)) { 
+    if (sb->def->table == PRE_SIZE && (newsize & REMAP_PAGE_MASK)) {
         /* align rid bats on the page-size */
         newsize += REMAP_PAGE_SIZE - (newsize & REMAP_PAGE_MASK);
     }
@@ -439,16 +421,16 @@ shredBAT_newsize(shredBAT *sb, BUN newsize)
     if (newsize > INT_MAX) {
         newsize = INT_MAX;
         if (sb->size == INT_MAX) {
-            GDKerror("shredBAT_newsize: %s cannot be extended beyond %d (INT_MAX)\n", sb->def->name, INT_MAX);
+            GDKerror("shredBAT_newsize: %s cannot be extended beyond %d "
+                    "(INT_MAX)\n", sb->def->name, INT_MAX);
             return 0;
         }
     }
     return newsize;
 }
 
-static int 
-shredBAT_extend(shredBAT *sb, 
-                BUN newsize)
+static int
+shredBAT_extend(shredBAT *sb, BUN newsize)
 {
     shredBAT_setcount(sb, sb->size);
     sb->size = newsize;
@@ -459,18 +441,16 @@ shredBAT_extend(shredBAT *sb,
         BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     if (!(sb->bat = BATextend(sb->bat, newsize))) {
-        GDKerror("shredBAT_extend: BATextend[\"%s\"](%d to %d) fails\n", sb->def->name, sb->size, newsize);
+        GDKerror("shredBAT_extend: BATextend[\"%s\"](%d to %d) fails\n",
+                sb->def->name, sb->size, newsize);
         return GDK_FAIL;
     }
     sb->cast.voidCAST =(void*)Tloc(sb->bat, BUNfirst(sb->bat));
     return GDK_SUCCEED;
 }
 
-
-static INLINE oid 
-shredBAT_append_str(shredCtxStruct *shredCtx, 
-                    int idx, 
-                    str v)
+static INLINE oid
+shredBAT_append_str(shredCtxStruct *shredCtx, int idx, str v)
 {
     shredBAT *sb = & shredCtx->dstBAT[idx];
     BUN oldsize, newsize;
@@ -498,31 +478,27 @@ shredBAT_append_str(shredCtxStruct *shredCtx,
 
     oldsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (!BUNappend(sb->bat,(ptr)v, TRUE)) {
-        GDKerror("shredBAT_append_str: APPEND-STR[%s](%s), BUNappend fails\n", sb->def->name, v);
+        GDKerror("shredBAT_append_str: APPEND-STR[%s](%s), BUNappend fails\n",
+                sb->def->name, v);
         return oid_nil;
     }
     newsize = sb->bat->T->heap.free & (REMAP_PAGE_MAXSIZE-1);
     if (oldsize > newsize) { /* try to use mmap() */
-        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP, GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
+        BATmmap(sb->bat, STORE_MMAP, STORE_MMAP, STORE_MMAP,
+                GDK_ELIMDOUBLES(sb->bat->theap)?STORE_MEM:STORE_MMAP);
     }
     return BATcount(sb->bat)-1;
 }
 
-/* ====================================================================================
- * shredder helper functions: emitting nodes
- * - emit_tuple()  inserts a tuple in the RID bats
- * - emit_node()   emit a node (calls emit_tuple)
- * - emit_string() emit a text node (calls emit_node)
- * ==================================================================================== */
+@- Shredder helper functions: emitting nodes
+ - emit_tuple()  inserts a tuple in the RID bats
+ - emit_node()   emit a node (calls emit_tuple)
+ - emit_string() emit a text node (calls emit_node)
 
+@c
 static INLINE int
-emit_tuple(shredCtxStruct* shredCtx, 
-           oid pre, 
-           int size, 
-           int level, 
-           oid prop, 
-           chr kind, 
-           oid nid)
+emit_tuple(shredCtxStruct* shredCtx, oid pre, int size, int level, oid prop,
+        chr kind, oid nid)
 {
     if (size >= GDK_int_max) {
         GDKerror("emit_tuple: node.size >= GDK_int_max\n");
@@ -554,15 +530,13 @@ emit_tuple(shredCtxStruct* shredCtx,
     if (pre >= shredCtx->dstBAT[PRE_SIZE].size) {
         BUN newsize = shredBAT_newsize(&shredCtx->dstBAT[PRE_SIZE], pre);
         int err = 0;
-        MT_sema_down(shredCtx->extend_sema, "shredder_extend"); 
-        err = 
+        err =
             !(newsize &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_SIZE],  newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_LEVEL], newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_PROP],  newsize) &&
               shredBAT_extend(&shredCtx->dstBAT[PRE_KIND],  newsize) &&
               (shredCtx->updatable == 0 || shredBAT_extend(&shredCtx->dstBAT[PRE_NID], newsize)));
-        MT_sema_up(shredCtx->extend_sema, "shredder_extend"); 
         if (err) return GDK_FAIL;
     }
     /* insert the new RID tuple */
@@ -1644,13 +1618,6 @@ shredder_create(char *location,
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
     shredCtx->coll_lock = coll_lock;
-    {
-    /* avoid "dereferencing type-punned pointer will break strict-aliasing rules" with gcc >= 4.1 */
-    /* (void) CMDpflock_get((ptr*) &(shredCtx->extend_sema), &i); */
-    ptr s = (ptr)shredCtx->extend_sema;
-    (void) CMDpflock_get(&s, &i);
-    shredCtx->extend_sema = s;
-    }
     shredCtx->incremental = (BATcount(docBAT) > 0);
 
     /* as we want to release the lock once in a while, but having the lock alone does not guarantee
@@ -1971,14 +1938,13 @@ shredder_finalize(shredCtxStruct *shredCtx, BAT *docBAT)
 }
 
 
-/* ====================================================================================
- * the implemented MIL commands:
- * - shred()           the routine that implements all
- * - CMDshred_url()    MIL command that shreds from a url
- * - CMDshred_str()    MIL command that shreds from a string
- * - CMDshred_stream() MIL command that shreds from a stream
- * ==================================================================================== */
+@- The implemented MAL commands
 
+- shred_url()    MAL command that shreds from a url
+- shred_str()    MAL command that shreds from a string
+- CMDshred_stream() MAL command that shreds from a stream
+
+@c
 #define DEFAULT_ESTIMATE        1048576
 
 /* function which tries to determine the base location of a document from
@@ -2076,38 +2042,72 @@ shred(BAT *docBAT,
     return res;
 }
 
-int
-CMDshred_url(BAT *docBAT, 
-             str location, 
-             lng *percentage,
-             lock *collLock,
-             bit *verbose)
+str
+XQUERYShredUrl (int retval, bat *doc, str location, lng *percentage,
+        lock* collLock, bit *verbose)
 {
+    int res;
+    BAT *docBAT;
+    (void) retval;
+
     assert(percentage);
-    return shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+
+    if ((docBAT = BATdescriptor(*doc)) == NULL) {
+        throw(XQUERY, "xquery.shred_url", "wrong doc BAT");
+    }
+
+    res = shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL,
+            (*verbose==TRUE)?NULL:collLock);
+
+    if (res == GDK_FAIL)
+        throw(XQUERY, "xquery.shred_url", "unable to shred the specified url");
+    return MAL_SUCCEED;
 }
 
-int
-CMDshred_str(BAT *docBAT, 
-             str buffer, 
-             lng *percentage,
-             lock *collLock,
-             bit *verbose)
+str
+XQUERYShredStr (int retval, bat *doc, str buffer, lng *percentage,
+        lock* collLock, bit *verbose)
 {
+    int res;
+    BAT *docBAT;
+    (void) retval;
+
     assert(percentage);
-    return shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+
+    if ((docBAT = BATdescriptor(*doc)) == NULL) {
+        throw(XQUERY, "xquery.shred_str", "wrong doc BAT");
+    }
+
+    res = shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL,
+            (*verbose==TRUE)?NULL:collLock);
+
+    if (res == GDK_FAIL)
+        throw(XQUERY, "xquery.shred_str",
+                "unable to shred the specified string");
+    return MAL_SUCCEED;
 }
 
-int
-CMDshred_stream(BAT *docBAT, 
-                Stream *fp,
-                lng *percentage,
-                lock *collLock,
-                bit *verbose)
+str
+XQUERYShredStream (int retval, bat *doc, stream *s, lng *percentage,
+        lock* collLock, bit *verbose)
 {
-    stream *s = (stream*) ((fp && *(ptr*) fp != ptr_nil)?*fp:NULL);
+    int res;
+    BAT *docBAT;
+    (void) retval;
+
     assert(percentage);
-    return shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL, (*verbose==TRUE)?NULL:collLock);
+
+    if ((docBAT = BATdescriptor(*doc)) == NULL) {
+        throw(XQUERY, "xquery.shred_stream", "wrong doc BAT");
+    }
+
+    res = shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL,
+            (*verbose==TRUE)?NULL:collLock);
+
+    if (res == GDK_FAIL)
+        throw(XQUERY, "xquery.shred_stream",
+                "unable to shred the specified stream");
+    return MAL_SUCCEED;
 }
-@c
+
 /* vim:set shiftwidth=4 expandtab: */
