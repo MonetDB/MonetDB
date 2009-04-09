@@ -776,7 +776,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 	while (stats != NULL) {
 		if (mode == STOP || mode == KILL) {
 			if (stats->state == SABdbRunning) {
-				printf("%sing database '%s'... ", type, stats->dbname);
+				printf("%s%sing database '%s'... ", type, mode == STOP ? "p" : "", stats->dbname);
 				fflush(stdout);
 				len = snprintf(buf, sizeof(buf),
 						"%s %s\n", stats->dbname, type);
