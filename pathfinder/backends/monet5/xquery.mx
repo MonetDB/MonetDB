@@ -37,16 +37,16 @@ module xquery;
 @mal
 command shred_url(doc:bat[:str,:bat], url:str, percentage:lng, l:lock, verbose:bit) :void
 address XQUERYShredURL
-comment "Shredd an XML document from a URL. Parameters: URL - document located at this URL is shredded, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
+comment "Shred an XML document from a URL. Parameters: URL - document located at this URL is shredded, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 
 command shred_str(doc:bat[:str,:bat], buffer:str, percentage:lng, l:lock, verbose:bit) : void
 address XQUERYShredStr
-comment "Shredd an XML document from a string. Parameters: buffer - the XML string to shred,  percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
+comment "Shred an XML document from a string. Parameters: buffer - the XML string to shred,  percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 
 
 command shred_stream(doc:bat[:str,:bat], s:stream, percentage:lng, l:lock, verbose:bit) : void
 adress XQUERYShredStream
-comment "Shredd an XML document from a stream. Parameters: s - XML input stream, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
+comment "Shred an XML document from a stream. Parameters: s - XML input stream, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 
 @h
 #ifndef _XQUERY_H
