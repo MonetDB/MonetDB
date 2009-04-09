@@ -159,13 +159,13 @@ gdk_export MT_Id MT_locktrace;
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */
 /* to avoid address space fragmentation   */
-#define THREAD_STACK_SIZE	((size_t)2*512*1024)
+#define THREAD_STACK_SIZE	((size_t)1024*1024)
 #else
 /* "increased" stack size on 64-bit systems    */
 /* since some compilers seem to require this   */
 /* for burg-generated code in pathfinder       */
 /* and address space fragmentation is no issue */
-#define THREAD_STACK_SIZE	((size_t)4*512*1024)
+#define THREAD_STACK_SIZE	((size_t)2*1024*1024)
 #endif
 
 
@@ -402,7 +402,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
 	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 4 * THREAD_STACK_SIZE);
+	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0)
 #ifdef PTW32
