@@ -65,6 +65,7 @@ extern void atom_dump(atom *a, stream *s);
 
 extern lng atom_get_int(atom *a);
 
+extern int atom_cmp(atom *a1, atom *a2);
 #endif /* _SQL_ATOM_H_ */
 
 @c
@@ -796,4 +797,16 @@ atom_neg( atom *a )
 	if (a->d != dbl_nil)
 		a->d = -a->d;
 	return 0;
+}
+
+int 
+atom_cmp(atom *a1, atom *a2)
+{
+	if ( a1->tpe.type->localtype != a2->tpe.type->localtype) 
+		return -1;
+	if ( a1->isnull != a2->isnull)
+		return -1;
+	if ( a1->isnull)
+		return 0;
+	return VALcmp(&a1->data, &a2->data);
 }
