@@ -52,7 +52,7 @@ comment "Shredd an XML document from a stream. Parameters: s - XML input stream,
 #ifndef _XQUERY_H
 #define _XQUERY_H
 
-#define DEBUG_XQR
+#define DEBUG_XQ
 
 #ifdef WIN32
 #ifndef LIBXQUERY
@@ -67,6 +67,5 @@ comment "Shredd an XML document from a stream. Parameters: s - XML input stream,
 #endif /* _XQUERY_H */
 
 @c
-#include "mal_config.h"
-#include "mal_exception.h"
+#include "pf_config.h"
 #include "xquery.h"

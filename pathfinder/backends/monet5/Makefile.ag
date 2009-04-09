@@ -25,7 +25,7 @@
 # Rights Reserved.
 #
 
-INCLUDES = ../compiler/include ../runtime $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
+INCLUDES = ../../compiler/include ../../runtime $(MONETDB5_INCS) $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 lib__xquery = {
@@ -36,7 +36,7 @@ lib__xquery = {
 	LIBS = \
 		$(PF_LIBS) \
 		$(MONETDB5_MODS) -l_optimizer -l_bat5 \
-		../runtime/libserialize ../runtime/libpf \
+		../../runtime/libserialize ../../runtime/libpf \
 		$(MONETDB_LIBS) $(MONETDB5_LIBS) -lmonetdb5 -lbat -lstream \
 		$(READLINE_LIBS) $(PTHREAD_LIBS)
 }
