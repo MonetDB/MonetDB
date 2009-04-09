@@ -1600,7 +1600,7 @@ Only real bats without memory references can be unloaded.
 @{
 @h
 #define BBPswappable(b) ((b) && BBP_refs((b)->batCacheid) == 0)
-#define BBPtrimmable(b) (BBPswappable(b) && !isVIEW(b) && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+#define BBPtrimmable(b) (BBPswappable(b) && b->P->lview == 0 && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 @- 
 The @%BBP_ref@ contains the amount of live references to a BAT.
 These might be in recursive BATs, C or MIL variables.  The count is 
