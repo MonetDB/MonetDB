@@ -66,6 +66,13 @@ typedef ptr monet_lock;
 #define lock_export extern
 #endif
 
+lock_export int lockToStr(char **dst, int *len, ptr *src);
+lock_export str LCKcreate(monet_lock *l);
+lock_export str LCKset(int *res, monet_lock *l);
+lock_export str LCKtry(int *res, monet_lock *l);
+lock_export str LCKunset(int *res, monet_lock *l);
+lock_export str LCKdestroy(int *res, monet_lock *l);
+
 #endif /* _LOCK_H */
 
 @c
@@ -120,8 +127,6 @@ destroy_lock(monet_lock *l)
 @-
 The old code base is wrapped to ease update propagation.
 @c
-#include "mal.h"
-lock_export int lockToStr(char **dst, int *len, ptr *src);
 int
 lockToStr(char **dst, int *len, ptr *src)
 {
@@ -135,7 +140,6 @@ lockToStr(char **dst, int *len, ptr *src)
 	return (int) strlen(*dst);
 }
 
-lock_export str LCKcreate(monet_lock *l);
 str
 LCKcreate(monet_lock *l)
 {
@@ -143,7 +147,6 @@ LCKcreate(monet_lock *l)
 	return MAL_SUCCEED;
 }
 
-lock_export str LCKset(int *res, monet_lock *l);
 str
 LCKset(int *res, monet_lock *l)
 {
@@ -152,7 +155,6 @@ LCKset(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
-lock_export str LCKtry(int *res, monet_lock *l);
 str
 LCKtry(int *res, monet_lock *l)
 {
@@ -160,7 +162,6 @@ LCKtry(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
-lock_export str LCKunset(int *res, monet_lock *l);
 str
 LCKunset(int *res, monet_lock *l)
 {
@@ -169,7 +170,6 @@ LCKunset(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
-lock_export str LCKdestroy(int *res, monet_lock *l);
 str
 LCKdestroy(int *res, monet_lock *l)
 {
