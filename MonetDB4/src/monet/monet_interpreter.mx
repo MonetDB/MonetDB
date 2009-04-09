@@ -670,11 +670,11 @@ interpret(Cntxt stk, YYSTREE lt, ValPtr res)
 	@:profileCapture@
 #endif
 @-
-We do not want recursive programs crashing the server, so once in
-a while we check whether we are running dangerously low on available
+We do not want recursive programs crashing the server, so
+we check whether we are running dangerously low on available
 stack space.
 @c
-	if ((stk & 31) == 31 && THRhighwater()) {
+	if (THRhighwater()) {
 		GDKerror("interpret: running out of physical stack space!\n");
 		return -1;
 	}
