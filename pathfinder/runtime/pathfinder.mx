@@ -4638,10 +4638,11 @@ xquery_compile_exec(xquery_client *ctx,
         if (is_mil && query == NULL) {
             *prologue = xquery; *epilogue = NULL;
         } else {
-            /* determine how much stack space we have: add 8192 to
-               local var to conservatively estimate bottom of stack,
-               then subtract stack size to find top */
-            PFmaxstack = ((char*) &xquery) + 8192 - THREAD_STACK_SIZE;
+            /* determine how much stack space we have: add extra to
+               local var to conservatively estimate bottom of stack
+               and to have some slack after last test, then subtract
+               stack size to find top */
+            PFmaxstack = ((char*) &xquery) + sizeof(size_t)*2048 - THREAD_STACK_SIZE;
             PFerrbuf = ctx->errbuf;
             PFerrbuf[0] = 0;
             err = PFcompile_MonetDB(xquery, url, prologue, &del, epilogue, options,
