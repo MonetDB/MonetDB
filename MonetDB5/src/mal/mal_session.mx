@@ -495,10 +495,14 @@ instruction added should be cleaned. Beware that the instruction
 table may have grown in size.
 
 @= restoreState
-	if( c->listing) 
-		printFunction(c->fdout,c->curprg->def, 0, c->listing);
-	MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-	resetMalBlk(c->curprg->def,oldstate.stop);
+{	int i;
+	for ( i=1; i<c->curprg->def->vtop; i++)
+		freeVariable(c->curprg->def,i);
+	GDKfree(c->glb);
+	c->glb = NULL;
+	c->curprg->def->vtop = 1;
+	MSinitClientPrg(c,"user", "main");
+}
 @c
 str
 MALinitClient(Client c)
@@ -511,15 +515,9 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	int i;
 	if (c->glb && c->curprg->def->errors == 0) 
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
-	for ( i=1; i<c->curprg->def->vtop; i++)
-		freeVariable(c->curprg->def,i);
-	GDKfree(c->glb);
-	c->glb = NULL;
-	c->curprg->def->vtop = 1;
-	MSinitClientPrg(c,"user", "main");
+	@:restoreState@
 	return NULL;
 }
 
@@ -547,18 +545,20 @@ MALreader(Client c)
 str
 MALparser(Client c)
 {
-	InstrPtr p;
 	MalBlkRecord oldstate;
 
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
-	if (parseMAL(c, c->curprg) || c->curprg->def->errors) {
+	if (parseMAL(c, c->curprg) || c->curprg->def->errors ||
+		getInstrPtr(c->curprg->def, 0)->token != FUNCTIONsymbol ){;
 		/* just complete it for visibility */
 		pushEndInstruction(c->curprg->def);
 		/* caught errors */
 		showErrors(c);
+		if( c->listing) 
+			printFunction(c->fdout,c->curprg->def, 0, c->listing);
 		@:restoreState@
 		/* now the parsing is done we should advance the stream */
 		c->fdin->pos += c->yycur;
@@ -577,15 +577,12 @@ MALparser(Client c)
 	if (c->curprg->def->stop == 1)
 		return MAL_SUCCEED;
 
-	p = getInstrPtr(c->curprg->def, 0);
-	if (p->token != FUNCTIONsymbol) {
-		@:restoreState@
-		throw(MAL, "MAL.parser", "Function signature missing");
-	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
+		if( c->listing) 
+			printFunction(c->fdout,c->curprg->def, 0, c->listing);
 		@:restoreState@
 		throw(MAL, "MAL.parser", "Semantic errors detected");
 	}
@@ -619,6 +616,7 @@ MALengine(Client c)
 
 	if (prg->def->errors > 0) {
 		showErrors(c);
+		/* constructed MAL programs may not have been shown */
 		if (c->listing )
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		@:restoreState@
@@ -651,8 +649,6 @@ and marking all non-temporary variables as being (potentially) used.
 		str place = getExceptionPlace(msg);
 		showException(getExceptionType(msg), place, getExceptionMessage(msg));
 		GDKfree(place);
-		if (!c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		showErrors(c);
 	}
 	MSresetVariables(c,prg->def, c->glb, 0);
