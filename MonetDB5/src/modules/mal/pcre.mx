@@ -1346,10 +1346,10 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BAT *bp = BATdescriptor(*b);
-			BAT *res;
+			BAT *res = NULL;
 			
 			if (us) res = BATuselect(bp, *pat, *pat);
-			else BATselect(bp, *pat, *pat);
+			else res = BATselect(bp, *pat, *pat);
 			
 			*ret = res->batCacheid;
 			BBPkeepref(res->batCacheid);
