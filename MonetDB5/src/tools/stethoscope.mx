@@ -258,36 +258,26 @@ int main(int argc, char **argv)
     };
 	for(;;){
 		int option_index=0;
-		int c=  getopt_long(argc, argv, "d:u:P:p:?:h",
+		int c=  getopt_long(argc, argv, "d:u:P:p:?:h:g",
                     long_options, &option_index);
 		if( c == -1)
 			break;
 		switch(c){
 		case 'd':
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
-				dbname= optarg;
-				break;
-			}
+			dbname= optarg;
+			break;
 		case 'u':
-			if (strcmp(long_options[option_index].name, "user") == 0) {
-				user= optarg;
-				break;
-			}
+			user= optarg;
+			break;
 		case 'P':
-			if (strcmp(long_options[option_index].name, "password") == 0) {
-				password= optarg;
-				break;
-			}
+			password= optarg;
+			break;
 		case 'p':
-			if (strcmp(long_options[option_index].name, "port") == 0) {
-				portnr= atol(optarg);
-				break;
-			}
+			portnr= atol(optarg);
+			break;
 		case 'g':
-			if (strcmp(long_options[option_index].name, "gnuplot") == 0) {
-				gnuplot= TRUE;
-				break;
-			}
+			gnuplot= TRUE;
+			break;
 		case 'h':
 			if (strcmp(long_options[option_index].name, "help") == 0) {
 				printf("help\n");
