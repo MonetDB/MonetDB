@@ -394,7 +394,6 @@ profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		offlineProfilerEvent(cntxt, mb, stk, pc);
 	if (cachedProfiling)
 		cachedProfilerEvent(cntxt, mb, stk, pc);
-	flushLog();
 #else
 	(void) cntxt;
 	(void) mb;
@@ -460,6 +459,7 @@ offlineProfilerHeader(void)
 		log0("stmt,\t");
 	}
 	log0("# name\n");
+	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 
@@ -598,6 +598,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 	log0(" ]\n");
 	eventcounter++;
+	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 #endif
@@ -679,6 +680,7 @@ setStartPoint(Module cntxt, str mod, str fcn)
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
 	stream_printf(GDKout, "# start point not set\n");
+	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
@@ -695,6 +697,7 @@ setEndPoint(Module cntxt, str mod, str fcn)
 #ifdef MALprofiler
 	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */ )@
 	stream_printf(GDKout, "# end point not set\n");
+	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
@@ -1171,6 +1174,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		BUNins(TRACE_id_diskspace, &evnt, &disk, FALSE);
 	}
 	eventcounter++;
+	flushLog();
 	mal_unset_lock(profileLock, "profileLock");
 }
 #endif

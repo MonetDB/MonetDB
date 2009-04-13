@@ -285,7 +285,7 @@ being called.
 		pci= pcicaller;
 	} else {
 		newStack(stk,mb->vsize);
-		memset((char *) stk, 0, stackSize(mb->vtop));
+		memset((char *) stk, 0, stackSize(mb->vsize));
 		stk->stktop= mb->vtop; 
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
