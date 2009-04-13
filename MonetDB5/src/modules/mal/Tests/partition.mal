@@ -1,0 +1,13 @@
+b:= bat.new(:oid,:int);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,4);
+bat.append(b,5);
+
+c:= bat.partition(b,2,0);
+io.print(c);
+d:= bat.partition(b,2,1);
+io.print(d);
+e:= bat.partition(b,2,-1);
+io.print(e);

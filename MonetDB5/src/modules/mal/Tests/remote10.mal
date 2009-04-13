@@ -1,43 +1,9 @@
-#testing registrations of mal functions remotely
-# for testweb, we need to ask the server itself how it is available, use
-# sabaoth for that
-include sabaoth;
+function octopus.qry(version:int):bat[:oid,:int];
+	b:= bat.new(:oid,:int);
+	bat.append(b,23);
+	return qry:= b;
+end octopus.qry;
 
-h := sabaoth.getLocalConnectionHost();
-p := sabaoth.getLocalConnectionPort();
-
-# test function to ship
-function mal.hello(s:str):str;
-	return hello:= s;
-end hello;
-
-# create a connecton to ourself
-remote.create("test", h, p, nil:str, "monetdb", "monetdb");
-
-# retrieve a value (that for sure won't exist)
-remote.register("test","mal","hello");
-catch MALException:str;
-	io.printf("!%s\n",MALException);
-exit MALException;
-
-arg:rmtobj := remote.put("test","hello");
-argtst:str := remote.get("test",arg);
-io.print(argtst);
-
-call:rmtobj := remote.exec("test","mal","hello",arg);
-msg:str:= remote.get("test",call);
-io.print(msg);
-catch MALException:str;
-	io.printf("!%s\n",MALException);
-exit MALException;
-
-# this should fail 
-remote.register("test","inspect","getSignature");
-catch MALException:str;
-	io.printf("!%s\n",MALException);
-exit MALException;
-
-# help testweb a bit, since currently no cleanup is done on server
-# shutdown
-remote.destroy("test");
-
+db :=const.take("dbname");
+conn:str:= remote.connect(db,"monetdb","monetdb");
+remote.register(conn,"octopus","qry");

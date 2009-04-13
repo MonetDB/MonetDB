@@ -41,8 +41,9 @@ remote03
 remote04
 remote06
 
-#remote10
+remote10
 
+partition
 printf
 #some remote related tests
 mapi04
