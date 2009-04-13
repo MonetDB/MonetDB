@@ -545,10 +545,7 @@ MALreader(Client c)
 str
 MALparser(Client c)
 {
-	MalBlkRecord oldstate;
-
 	c->curprg->def->errors = 0;
-	oldstate = *c->curprg->def;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
 	if (parseMAL(c, c->curprg) || c->curprg->def->errors ||
@@ -605,8 +602,6 @@ MALengine(Client c)
 {
 	Symbol prg;
 	str msg = MAL_SUCCEED;
-	MalBlkRecord oldstate = *c->curprg->def;
-	oldstate.stop = 0;
 
 	if( c->blkmode)
 		return MAL_SUCCEED;
