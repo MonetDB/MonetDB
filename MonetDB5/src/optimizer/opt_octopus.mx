@@ -34,67 +34,102 @@ based on the head and propagate the effect through the plan.
 Breaking the table depends on the number of sites to play with,
 which can be obtained dynamically from the merovingian.
 
-The octopus untangles the resulting plan into a controlling head function,
-which controls the actions, and specific plans for each tentacle.
-The octopus is called just after the mergetable optimizer.
+The octopus untangles the resulting plan into a controlling function
+and a plan for each tentacle.
+The octopus is to be called after the mergetable optimizer.
 
-For this experiment we assume that all sites have a replica
-or can access a shared version of the database.
-
-To make the structure work, we need asynchronous execution of
-the individual legs.
-
-A snippet of an octopus with two legs is shown below 
+A snippet of an octopus plan with two tentacles is shown below 
 
 @verbatim
-function user.s1_0():void;
-barrier (_100,_15):= scheduler.octopus(10);
-    _87 := octopus.exec("siteA","user","leg1");
-    _88 := octopus.exec("siteB","user","leg2");
+function octopus.exec_qry(srv:str,fcn:str, ver:int):bat[:oid,:int];
+	conn:= remote.connect(srv,"monetdb","monetdb");
+	v:= remote.put(conn,ver);
+	r:= remote.exec(conn,"octopus",fcn,v);
+	b:bat[:oid,:int]:= remote.get(conn,r);
+	return b;
+end exec_qry;
+function octopus.leg0(version:int):bat[:oid,:int];
+	conn:= remote.connect("demo","monetdb","monetdb");
+    _54:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",0,version,2,0);
+    _64:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,version,2,0);
+    _72 := algebra.kdifference(_54,_64);
+    _78 := algebra.kunion(_72,_64);
+    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version,2,1);
+    _14 := bat.reverse(_13);
+    _85 := algebra.kdifference(_78,_14);
+    return leg0:= _85;
+end octopus.leg0;
+function octopus.leg1( version:int):bat[:oid,:int];
+	conn:= remote.connect("demo","monetdb","monetdb");
+    _56:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",0,version,2,1);
+    _65:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,version,2,1);
+    _72 := algebra.kdifference(_56,_65);
+    _78 := algebra.kunion(_72,_65);
+    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version,2,1);
+    _14 := bat.reverse(_13);
+    _85 := algebra.kdifference(_78,_14);
+    return leg1= _85;
+end octopus.leg1;
+
+function user.qry():void;
+barrier (_100,version:int):= scheduler.octopus(10);
+    _87 := octopus.exec_qry("tbd","leg0",version);
+    _88 := octopus.exec_qry("tbd","leg1",version);
+exit (_100,version);
     _15 := mat.pack(_87,_88);
-exit (_100,_15);
     _16 := sql.resultSet(1,1,_15);
     sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
     _21 := io.stdout();
     sql.exportResult(_21,_16);
-end s1_0;
-function user.leg1():void;
-    _52 := sql.bind("sys","squida","bid",0);
-    (_54,_56) := bat.partition(_52);
-    _62 := sql.bind("sys","squida","bid",2);
-    (_64,_65) := bat.partition(_62);
-    _72 := algebra.kdifference(_54,_64);
-    _78 := algebra.kunion(_72,_64);
-    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
-    _14 := bat.reverse(_13);
-    _85 := algebra.kdifference(_78,_14);
-    return leg1:= _85;
-end leg1;
-function user.leg2():void;
-    _52 := sql.bind("sys","squida","bid",0);
-    (_54,_56) := bat.partition(_52);
-    _62 := sql.bind("sys","squida","bid",2);
-    (_64,_65) := bat.partition(_62);
-    _72 := algebra.kdifference(_56,_65);
-    _78 := algebra.kunion(_72,_65);
-    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
-    _14 := bat.reverse(_13);
-    _85 := algebra.kdifference(_78,_14);
-    return leg2:= _85;
-end leg1;
-
+end qry;
 @end verbatim
 
-The octopus interferes with the recycler as follows.
-Let the octopus head be C and two tentacles A and B.
-Then at C we can built a list of recycled instructions, which
-need not be executed twice. Inclusing remote requests.
-However, in that case we should be
-sure that the recycler cache at A,B, and C are synchronized.
-This can be guaranteed if all remote sites are under control of C
-solely and the protocols for eviction are serialzed.
-An option is to explicitly evict remote instructions, but 
-an implicit is more elegant. [Work todo]
+[versioning]
+The argument to the tentacle is the expected version of the database
+to be used and optional arguments for the query.
+
+[partition access]
+For a tentacle to work it needs access to its storage layer.
+It is encapsulated in the operation octopus.bind(Conn,S,T,C,V,P,I),
+which performs an upcall to the octopus Conn to deliver 
+the Ith piece of the column S.T.C partitioned into P pieces 
+matching version V.
+
+Ideally, the interaction with the head is restricted
+to calling for a handle to access the partition from
+its source directly. 
+In a shared disk setup, we merely ensure that a
+possibly cached version is not out of date.
+The last resort is to deliver the partition by the
+octopus using a remote BAT copy.
+Doing so would effectively implement
+a kind of distributed disk system. The current state of
+affairs allows for a track where even a low level 
+ftp- call would suffice to obtain the complete BAT
+from anywhere, or we can provide a NAS functionality
+over the database store that delivers the partitions
+of interest.
+
+The octopus upcalls for delivering the partitions should
+be encapsulated into a function to shield all possible
+remote access operations. It is a function registered
+by the SQL front-end.
+
+[recycling]
+The version argument passed during the tentacle call
+is used to enforce synchronisation of the recycler caches
+between the octopus and its tentacles.
+If the version does not change between calls, the
+recylcer will simply step over the bind() calls,
+reusing with it already have instead.
+If for local resource management decisions the cache
+is cleared, then it will automatically trigger a
+re-execution of the bind().
+
+[Naming]
+The tentacles received from the octopus should be ensured
+not to clash with those already known. Therefore, we simply
+tag them by orginating site.
 @{
 @mal
 module octopus; 
@@ -109,7 +144,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS        show partial result */
+#define DEBUG_OPT_OCTOPUS          /* show partial result */
 
 @c
 #include "mal_config.h"
@@ -129,15 +164,25 @@ Therefore, we recursively break a plan by looking for the
 pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
+static void
+OCTinitcode(Client cntxt, MalBlkPtr mb){
+	InstrPtr p;
+	(void) cntxt;
+	p = newStmt(mb, remoteRef,connectRef);
+    p= pushStr(mb,p, GDKgetenv("gdk_dbname"));
+    p= pushStr(mb,p,"monetdb");
+    p= pushStr(mb,p,"monetdb");
+}
+
 static MalBlkPtr 
-OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
+OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v2){
 	MalBlkPtr tm= NULL;
 	InstrPtr p, q,anchor=NULL;
-	int varid= pci->argv[idx],i,j,top=0, fnd;
+	int varid= pci->argv[idx],i,j,top=0, fnd, version;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
-	str name= NULL;
+	str name= NULL, name2= NULL;
 	Symbol s;
 
 	if (list == NULL || needed == NULL){
@@ -146,40 +191,47 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 		return 0;
 	}
 #ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout,"create tentacle for %d\n",varid);
+	stream_printf(cntxt->fdout,"#create tentacle for %d\n",varid);
 	printInstruction(cntxt->fdout,mb,0,pci,0);
 #else
 	(void) cntxt;
 #endif
 
 	/* locate the last assignment for varid */
+	fnd = -1;
 	for (i = start; i > 0; i--){
 		p= getInstrPtr(mb,i);
-		fnd = -1;
 		for (j=0; j<p->retc; j++)
-			if ( getArg(p,j) == varid)
+			if ( getArg(p,j) == varid){
 				fnd= j;
-
-		if ( fnd > -1){
-			snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
-				getFunctionId(getInstrPtr(mb,0)),varid);
-			name =  putName(buf,strlen(buf));
-			q= newFcnCall(mb,octopusRef, name);
-			getArg(q,0)= newTmpVariable(mb,getArgType(mb,pci,idx));
-			needed[varid]= 1;
-			anchor = q;
-			getArg(pci,idx) = getArg(q,0);
-			break;
-		}
+				goto foundit;
+			}
 	}
+foundit:
+	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
+		getFunctionId(getInstrPtr(mb,0)),varid);
+	name =  putName(buf,strlen(buf));
+	snprintf(buf,BUFSIZ,"exec_%s", 
+		getFunctionId(getInstrPtr(mb,0)));
+	name2 =  putName(buf,strlen(buf));
+	q= newFcnCall(mb,octopusRef, name2);
+	setArgType(mb,q,0,getArgType(mb,pci,idx));
+	q= pushStr(mb,q,"tbd");
+	q= pushStr(mb,q,name);
+	version = newVariable(mb,GDKstrdup("version"),TYPE_int);
+	q= pushArgument(mb,q,v2);
+	needed[varid]= 1;
+	anchor = q;
+	getArg(pci,idx) = getArg(q,0);
 #ifdef DEBUG_OPT_OCTOPUS
-	if (name == 0){
+if (name == 0){
 		stream_printf(cntxt->fdout,"OCTOPUS ASSERT var %s\n", getVarName(mb,varid));
 		printFunction(cntxt->fdout,mb,0,0);
 	}
 #endif
 	assert( name);
 
+	/* find the instructions needed */
 	for (; i > 0; i--){
 		p= getInstrPtr(mb,i);
 		fnd = 0;
@@ -214,10 +266,11 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	tm->var[0]->name= name;
 	setArgType(tm,p,0,getVarType(tm,varid));
 	p->argc=p->retc=1;
-	for(j=anchor->retc; j<anchor->argc; j++)
+	for(j=anchor->retc+2; j<anchor->argc; j++)
 		p= pushArgument(tm,p,getArg(anchor,j));
 
 	tm->stop =1;
+	OCTinitcode(cntxt, tm);
 	for (top--; top >= 0; top--)
 		pushInstruction(tm, copyInstruction(list[top]));
 
@@ -226,8 +279,6 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx){
 	pushArgument(tm,q,varid);
 	q->barrier= RETURNsymbol;
 	pushEndInstruction(tm);
-	(void) newStmt(tm,optimizerRef,replicatorRef);
-	(void) newStmt(tm,optimizerRef,putName("constants",9));
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 #ifdef DEBUG_OPT_OCTOPUS
@@ -244,15 +295,18 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr q, p, *old;
 	int last=0, i, j, limit, actions=0;
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
-	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn);
+	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm;
+	Symbol s2;
 	int target=0;
+	int version,v2;
+	int k,l;
+	char buf[BUFSIZ];
 
 
 	if ( tentacle == NULL)
 		return 0;
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "#Octopus optimizer started\n");
-	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #else
 	(void) cntxt;
 #endif
@@ -285,55 +339,102 @@ when scheduled correctly, would not lead to duplicate work.
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
-@-
-The mitosis mat result may not be of interest to the mergetable
-optimizer. Then we end up with sequences like:
-@verbatim
-	(_122,_123,_125,_127) := bat.partition(_120);
-    _27:bat[:oid,:dbl]  := mat.pack(_122,_123,_125,_127);
-@end verbatim
-Construction of a n-way process group to assemble the result
-is an overkill. A simple assignment is sufficient.
-@c
-		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
-			(getModuleId(old[i-1])== batRef && getFunctionId(old[i-1])== partitionRef) ) {
-			for(j=0; j<old[i-1]->retc; j++)
-				if ( getArg(old[i-1],j) != getArg(p,p->retc+j))
-					break;
-			if ( j==old[i-1]->retc && j== p->argc-p->retc){
-				/* assignment intended */
-				p->token= ASSIGNsymbol;
-				p->argc=2;
-				getArg(p,1)= getArg(old[i-1],old[i-1]->argc-1);
-				pushInstruction(mb,p);
-				continue;
-			}
-		}
-
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
 			i == target && tn + p->argc - p->retc < maxtn){
+			InstrPtr qq;
+			int conn,dbvar,qvar;
+
+			/* prepare the exec_ procedure */
+			snprintf(buf,BUFSIZ,"exec_%s", getFunctionId(getInstrPtr(mb,0)));
+			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
+			sm= s2->def;
+			q= getInstrPtr(sm,0);
+			setArgType(sm,q,0,getArgType(mb,p,0));
+			dbvar= newVariable(sm,GDKstrdup("dbname"),TYPE_str);
+			qvar = newVariable(sm,GDKstrdup("query"),TYPE_str);
+			version= newVariable(sm,GDKstrdup("version"),TYPE_int);
+			q= pushArgument(sm,q,dbvar);
+			q= pushArgument(sm,q,qvar);
+			q= pushArgument(sm,q,version);
+
 			/* create the tentacle, modifying the current plan */
-			/* barrier go:= scheduler.octopus(); */
-			q= newStmt(mb,schedulerRef,octopusRef);
+			/* barrier (go,version):= scheduler.octopus(timeout); */
+			qq= q= newStmt(mb,schedulerRef,octopusRef);
 			setArgType(mb,q,0, TYPE_bit);
-			pushArgument(mb,q,getArg(p,0));
+			v2= newVariable(mb,GDKstrdup("version"),TYPE_int);
+			pushArgument(mb,q, v2);
 			q->retc = 2;
 			q= pushInt(mb,q,10);
 			q->barrier = BARRIERsymbol;
 
 			for ( j= p->retc; j<p->argc; j++)
-				tentacle[tn++] =  OPTtentacle(cntxt,mb,p,mb->stop-1,j);
+				tentacle[tn++] =  OPTtentacle(cntxt,mb,p,mb->stop-1,j,v2);
+
+			/* exit c; */
+			q= newAssignment(mb);
+			q->barrier= EXITsymbol;
+			getArg(q,0)= getArg(qq,0);
+			getArg(q,1)= v2;
+			q->retc=2;
+			q->argc=2;
 
 			pushInstruction(mb,p);
 
-			/* exit c; */
-			p= newAssignment(mb);
-			p->barrier= EXITsymbol;
-			getArg(p,0)= getArg(q,0);
-			getArg(p,1)= getArg(q,1);
-			p->retc=2;
-			p->argc=2;
+			/* now finalize the exec operation */
+			q = newStmt(sm, remoteRef,connectRef);
+			conn= getArg(q,0);
+			q = pushArgument(sm, q, dbvar);
+			q= pushStr(sm,q,"monetdb");
+			q= pushStr(sm,q,"monetdb");
 
+			/* v:= remote.put(version) */
+			q= newFcnCall(sm,remoteRef,putRef);
+			q= pushArgument(sm,q,conn);
+			q= pushArgument(sm,q,version);
+			version= getArg(q,0);
+
+			/* get addition arguments needed in a tentacle */
+			p= getInstrPtr(tentacle[0],0);
+			for (j=p->retc+1; j< p->argc; j++){
+				snprintf(buf,BUFSIZ,"a_%d",j);
+				k= newVariable(sm, GDKstrdup(buf),getArgType(mb,p,j));
+				pushArgument(sm,getInstrPtr(sm,0),k);
+				l= newTmpVariable(sm,getArgType(mb,p,j));
+				q= newFcnCall(sm,remoteRef,putRef);
+				getArg(q,0)= l;
+				pushArgument(sm,q, getArg(getInstrPtr(sm,0),1));
+				pushArgument(sm,q,k);
+			}
+
+			/* k:= remote.exec(conn,octopus,qry,version....) */
+			q= newFcnCall(sm,remoteRef,execRef);
+			k= getArg(q,0);
+			q= pushArgument(sm,q,conn);
+			q= pushStr(sm,q,octopusRef);
+			q= pushArgument(sm,q,qvar);
+			q= pushArgument(sm,q,version);
+
+			/* l:=remote.get(conn,k) */
+			q= newFcnCall(sm,remoteRef,getRef);
+			q= pushArgument(sm,q,conn);
+			q= pushArgument(sm,q,k);
+			l= getArg(q,0);
+			setVarType(sm,l, getArgType(sm,getInstrPtr(sm,0),0));
+			setVarUDFtype(sm,l);
+
+			/* return exec_qry:= l; */
+			q= newAssignment(sm);
+			q->barrier= RETURNsymbol;
+			getArg(q,0)= getArg(getInstrPtr(sm,0),0);
+			pushArgument(sm,q,l);
+
+			pushEndInstruction(sm);
+			chkProgram(cntxt->nspace,sm);
+			insertSymbol(findModule(cntxt->nspace,octopusRef),s2);
+#ifdef DEBUG_OPT_OCTOPUS
+			stream_printf(cntxt->fdout, "#exec_qry\n");
+			printFunction(cntxt->fdout,sm,0,LIST_MAL_STMT);
+#endif
 			actions++;
 			continue;
 		} 
