@@ -608,7 +608,7 @@ wkbPUT(Heap *h, var_t *bun, wkb *val)
 	*bun = HEAP_malloc(h, wkb_size(val->len));
 	base = h->base;
 	if (*bun)
-		memcpy(&base[*bun], (char *) val, wkb_size(val->len));
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));
 	return *bun;
 }
 
