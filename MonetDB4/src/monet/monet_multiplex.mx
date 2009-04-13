@@ -900,7 +900,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	if (argc == 2) {
 #ifndef FIRST_PARAM_FIXEDSIZE
 		if (a1) {
-			@:arrayloop1(@1,a1+*(var_t*)p1)@
+			@:arrayloop1(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT))@
 		} else
 #endif
 		{
@@ -910,15 +910,15 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 #ifndef FIRST_PARAM_FIXEDSIZE
 		if (a1) {
 			if (a2) {
-				@:arrayloop2(@1,a1+*(var_t*)p1,a2+*(var_t*)p2)@
+				@:arrayloop2(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT))@
 			} else {
-				@:arrayloop2(@1,a1+*(var_t*)p1,p2)@
+				@:arrayloop2(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2)@
 			}
 		} else
 #endif
 		{
 			if (a2) {
-				@:arrayloop2(@1,p1,a2+*(var_t*)p2)@
+				@:arrayloop2(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT))@
 			} else {
 				@:arrayloop2(@1,p1,p2)@
 			}
@@ -927,28 +927,28 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	} else if (a1) {
 		if (a2) {
 			if (a3) {
-				@:arrayloop3(@1,a1+*(var_t*)p1,a2+*(var_t*)p2,a3+*(var_t*)p3)@
+				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT),a3+((*(var_t*)p3) << GDK_VARSHIFT))@
 			} else {
-				@:arrayloop3(@1,a1+*(var_t*)p1,a2+*(var_t*)p2,p3)@
+				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),a2+((*(var_t*)p2) << GDK_VARSHIFT),p3)@
 			}
 		} else {
 			if (a3) {
-				@:arrayloop3(@1,a1+*(var_t*)p1,p2,a3+*(var_t*)p3)@
+				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2,a3+((*(var_t*)p3) << GDK_VARSHIFT))@
 			} else {
-				@:arrayloop3(@1,a1+*(var_t*)p1,p2,p3)@
+				@:arrayloop3(@1,a1+((*(var_t*)p1) << GDK_VARSHIFT),p2,p3)@
 			}
 		}
 #endif
 	} else {
 		if (a2) {
 			if (a3) {
-				@:arrayloop3(@1,p1,a2+*(var_t*)p2,a3+*(var_t*)p3)@
+				@:arrayloop3(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT),a3+((*(var_t*)p3) << GDK_VARSHIFT))@
 			} else {
-				@:arrayloop3(@1,p1,a2+*(var_t*)p2,p3)@
+				@:arrayloop3(@1,p1,a2+((*(var_t*)p2) << GDK_VARSHIFT),p3)@
 			}
 		} else {
 			if (a3) {
-				@:arrayloop3(@1,p1,p2,a3+*(var_t*)p3)@
+				@:arrayloop3(@1,p1,p2,a3+((*(var_t*)p3) << GDK_VARSHIFT))@
 			} else {
 				@:arrayloop3(@1,p1,p2,p3)@
 			}

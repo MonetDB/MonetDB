@@ -112,11 +112,10 @@ var_t
 blob_put(Heap *h, var_t *bun, blob *val)
 {
 	char *base;
-
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
 	base = h->base;
 	if (*bun)
-		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, blobsize(val->nitems));
 	return *bun;
 }
 

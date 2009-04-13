@@ -2149,7 +2149,7 @@ fetch(ptr ret, BAT *b, lng i)
 	@:putTail((BUN)i)@
 @= putTail
 	if (b->ttype && b->theap) {
-		ptr _src = BUNtvar(bi,@1);/*b->theap->base + *(var_t*) BUNtloc(bi,@1);*/
+		ptr _src = BUNtvar(bi,@1);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		memcpy(_dst, _src, _len);

@@ -1003,7 +1003,7 @@ decimal_put(Heap *h, var_t *bun, decimal *val)
 
 	DECIMAL_DEBUG(val, "decimal_put() input", 1);
 	*bun = HEAP_malloc(h, len);
-	dst = (decimal *) (h->base + *bun);
+	dst = (decimal *) (h->base + (*bun << GDK_VARSHIFT));
 	if (*bun) {
 		unsigned int *d = dst->num;
 
@@ -1912,7 +1912,7 @@ decimal_bulkdivide(BAT **ret, BAT *b, decimal *dv, int *prec)
 		int nil = ISNIL(src);
 		int len = (zero || nil) ? (int) sizeof(decimal) : TOTLEN(divprc);
 		var_t idx = HEAP_malloc(&hp, len);
-		decimal *dst = (decimal *) (hp.base + idx);
+		decimal *dst = (decimal *) (hp.base + (idx << GDK_VARSHIFT));
 
 		if (BUNfastins(bn, BUNhead(bi, p), &idx) == NULL) {
 			*ret = NULL;

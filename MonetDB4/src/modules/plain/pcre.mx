@@ -734,7 +734,7 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 	*bun = HEAP_malloc(h, (var_t) pcresize(val));
 	base = h->base;
 	if (*bun)
-		memcpy(&base[*bun], (char *) val, pcresize(val));
+		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, pcresize(val));
 	return *bun;
 }
 

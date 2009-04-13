@@ -459,11 +459,9 @@ typedef struct {
     }
     
     var_t atom_@1s_put(Heap* h, var_t* bun, @1s* val) {
-        char* base;
-
-        *bun  = HEAP_malloc(h,@1ssize(val->dimension));
-        base = h->base;
-        if (*bun) memcpy(&base[*bun],(char *)val, @1ssize(val->dimension));
+        char* base = h->base;
+        *bun = HEAP_malloc(h,@1ssize(val->dimension));
+        if (*bun) memcpy(&base[*bun << GDK_VARSHIFT],(char *)val, @1ssize(val->dimension));
 	return *bun;
     }
 

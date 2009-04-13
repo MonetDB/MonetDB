@@ -941,7 +941,7 @@ enum_print_@1(str p, str q, BAT* b1, BAT* e1, BAT* b2)
 			*(--src) = ' ';
 		dst += 10;
 		*dst++ = '\t';
-		for (src = t1+h1[*p1<<1]; *src; src++,dst++)
+		for (src = t1+(h1[*p1<<1] << GDK_VARSHIFT); *src; src++,dst++)
 			*dst = *src;
 		*dst++ = '\n';
 	}
@@ -1024,10 +1024,10 @@ enum_print_@1_@2(str p, str q, BAT* b1, BAT* e1, BAT* b2, BAT* e2, BAT* b3)
 			*(--src) = ' ';
 		dst += 10;
 		*dst++ = '\t';
-		for (src = t2+h2[*p2<<1]; *src; src++,dst++)
+		for (src = t2+(h2[*p2<<1]<<GDK_VARSHIFT); *src; src++,dst++)
 			*dst = *src;
 		*dst++ = '\t';
-		for (src = t1+h1[*p1<<1]; *src; src++,dst++)
+		for (src = t1+(h1[*p1<<1]<<GDK_VARSHIFT); *src; src++,dst++)
 			*dst = *src;
 		*dst++ = '\n';
 	}

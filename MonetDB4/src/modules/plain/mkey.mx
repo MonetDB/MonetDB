@@ -475,7 +475,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		str base = b->theap->base;
 
 		while (cur < end) {
-                        str src = base + *cur;
+                        str src = base + (*cur << GDK_VARSHIFT);
 			BUN h;
 			int val;
 			GDK_STRHASH(src, h);
