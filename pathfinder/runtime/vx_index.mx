@@ -90,7 +90,7 @@ int CMD_XQH_H_bat(BAT **res, BAT* b) {
         var_t *src = (var_t*) Tloc(b, BUNfirst(b));
         int *dst = (int*) Tloc(bn, BUNfirst(bn));
         for(i=0; i<cnt; i++)
-            dst[i] =  XQH_H(base + src[i]);
+            dst[i] =  XQH_H(base + (src[i]<<GDK_VARSHIFT));
 
         ALIGNsetH(bn, b);
         BATsetcount(bn, cnt);
@@ -588,12 +588,12 @@ bats, nid_state, value_nid, nid_lexical. All BATs are shorted on head.
  * to be only of kind TEXT. This is not true during updates,
  * since there might *not* be a text node (deleted).
  */
-pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
+pre_hsh[pre] = XQH_H(text_base + (pre_text[pre_prop[pre]]<<GDK_VARSHIFT));
 cur++;
 
 @= found_update_string
 if (pre_kind[pre] == TEXT) {
-    pre_hsh[pre] = XQH_H(text_base + pre_text[pre_prop[pre]]);
+    pre_hsh[pre] = XQH_H(text_base + (pre_text[pre_prop[pre]]<<GDK_VARSHIFT));
     cur++;
 } else {
     /* deal with non-text nodes */
@@ -604,12 +604,12 @@ if (pre_kind[pre] == TEXT) {
  * to be only of kind TEXT. This is not true during updates,
  * since there might *not* be a text node (deleted).
  */
-pre_state[pre] = dbl_fsm(text_base + pre_text[pre_prop[pre]]);
+pre_state[pre] = dbl_fsm(text_base + (pre_text[pre_prop[pre]] << GDK_VARSHIFT));
 cur++;
 
 @= found_update_dbl
 if (pre_kind[pre] == TEXT) {
-    pre_state[pre] = dbl_fsm(text_base + pre_text[pre_prop[pre]]);
+    pre_state[pre] = dbl_fsm(text_base + (pre_text[pre_prop[pre]] << GDK_VARSHIFT));
     cur++;
 } else {
     /* deal with non-text nodes */
