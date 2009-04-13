@@ -70,6 +70,11 @@ comment "Designate a BAT as garbage.";
 pattern bat.partition(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]...
 address CMDbatpartition
 comment "Create a series of cheap slices over the first argument";
+
+pattern bat.partition(b:bat[:any_1,:any_2],n:int,i:int):bat[:any_1,:any_2]
+address CMDbatpartition2
+comment "Select a single partition ";
+
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a BAT.";
@@ -118,6 +123,7 @@ be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 be_export str CMDBBPprojectNil(int *ret, int *bid);
 be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -481,6 +487,46 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(*ret = bn->batCacheid);
 		low= hgh;
 	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b,*bn;
+	int *ret,bid;
+	int pieces= *(int*) getArgValue(stk, pci, 2);
+	int idx = *(int*) getArgValue(stk, pci, 3);
+	oid lval,hval=0, step;
+
+	(void) mb;
+	(void) cntxt;
+	if ( pieces <=0 )
+		throw(MAL, "bbp.partition", "Positive number of pieces expected");
+	if ( idx >= pieces || idx <0 )
+		throw(MAL, "bbp.partition", "Illegal BAT partition number");
+		
+	bid = *(int *) getArgValue(stk, pci, pci->retc);
+
+	if ((b = BATdescriptor(bid)) == NULL) {
+		throw(MAL, "bbp.partition", "Cannot access descriptor");
+	}
+	step = BATcount(b) / pieces;
+
+	lval = idx * step;
+	if ( idx == pieces-1)
+		hval = BATcount(b);
+	else
+		hval = lval+step;
+	bn =  BATslice(b, lval,hval);
+	BATseqbase(bn, lval);
+	if (bn== NULL){
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bbp.partition", "Partition slice not created");
+	}
+	stk->stk[getArg(pci,0)].val.bval = bn->batCacheid;
+	ret= (int *) getArgValue(stk,pci,0);
+	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
