@@ -254,7 +254,7 @@ str CMDconvert_str_@1(int *ret, int *bid)
 		ptr v = NULL; 
 		int len=0;
 
-		ATOMfromstr (TYPE_@1, &v, &len, (char*)Tbase(b)+*p);
+		ATOMfromstr (TYPE_@1, &v, &len, (char*)Tbase(b)+((*p)<<GDK_VARSHIFT));
 		ATOMput(TYPE_@1, bn->T->vheap, Tloc(bn,r), v);
 		if (ATOMextern(TYPE_@1) )
 			GDKfree(v);

@@ -1005,6 +1005,7 @@ static INLINE BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
 	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
+	int shift = 0;
 	oid id = *idp + 1;
 	ptr cur, val;
 	BUN i;
@@ -1017,11 +1018,12 @@ sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *td
 		} else {
 			GDKqsort(off, o, base, size, sizeof(var_t), sizeof(oid), tpe);
 		}
+		if (ATOMvarsized(tpe)) shift = GDK_VARSHIFT;
 	}
 
 	cur = base + off[0];
 	for (i=0; i < size; i++) {
-		val = base + off[i];
+		val = base + (off[i] << shift);
 		if ((*cmp) (cur, val)) {
 			cur = val;
 			id++;
