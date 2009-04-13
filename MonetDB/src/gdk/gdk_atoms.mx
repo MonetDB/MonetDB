@@ -175,7 +175,6 @@ gdk_export void strHeap(Heap *d, size_t cap);
 gdk_export int strLen(const char *s);
 gdk_export int strCmp(str l, str r);
 gdk_export int strNil(str s);
-gdk_export void strHeapConvert(Heap *h, int directon);
 gdk_export int strElimDoubles(Heap *h);
 gdk_export var_t strLocate(Heap *h, str v);
 gdk_export int strCmpNoNil(unsigned char *l, unsigned char *r);
@@ -457,7 +456,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0,
 	 (var_t (*)(Heap *, var_t *, ptr)) strPut, 0,
 	 (int (*)(ptr)) strLen, strHeap,
-	 (void (*)(Heap *, int)) strHeapConvert, 0},
+	 (void (*)(Heap *, int)) 0, 0},
 };
 int GDKatomcnt = TYPE_str + 1;
 
@@ -931,24 +930,25 @@ do {									\
 	}								\
 } while (0)
 
-#define GDK_STRHASHTABLE	(1<<10)
+/* string heaps:
+ * - strings are 8 byte aligned
+ * - start with a 1024 bucket hash table
+ * - heaps < 64KB are fully duplicate eliminated with this hash tables
+ * - heaps >= 64KB are opportunistically (imperfect) duplicate eliminated 
+ *   as only the last 128KB chunk is considered and there is no linked list
+ * - buckets and next pointers are unsigned short "indices"
+ * - indices should be multiplied by 8 and takes from ELIMBASE to get an offset
+ *
+ * Note that a 64KB chunk of the heap contains at most 8K 8-byte aligned
+ * strings. The 1K bucket list means that in worst load, the list length is 8 (OK).
+ */
+#define GDK_STRHASHTABLE	(1<<10) /* 1024 */ 
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
-#define GDK_STRHASHCREDIT(h)	(((var_t*) (h)->base)[GDK_STRHASHTABLE])
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
+#define GDK_ELIMPOWER		16 /* 64KB is the threshold */
 #define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
-#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)
+#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER) /* equivalently: ELIMBASE == 0 */
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
-#if SIZEOF_SIZE_T == SIZEOF_INT
-#define GDK_ELIMPOWER		16	/* makes for a max 64KB hash table 
-					 * ie 256 string bytes per hash bucket 
-					 * ~ 4 strings of UP4(8<=len<=11)=12 + 4 bytes 
-					 */
-#else
-#define GDK_ELIMPOWER		17	/* makes for a max 128KB hash table 
-					 * ie 512 string bytes per hash bucket 
-					 * ~ 5 strings of UP8(8<=len<=15)=16 + 8 bytes 
-					 */
-#endif
 
 @- Atomic ADT functions
 @c
@@ -1767,46 +1767,34 @@ octal digits to denote a character.
 Because in many typical situations lots of double string values occur
 in tables, the string insertion provides automatic double elimination.
 To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first 
-4096 (8192 on 64-bit architectures) bytes of the string heap, consisting of integer offsets of the first 
-string hashing to that bucket in the heap. Furthermore, the first 4(8) bytes 
-before each string in the heap is an integer offset to the next string hashing 
-to the same number.
+4096 bytes of the string heap, consisting an offset to the first string 
+hashing to that bucket in the heap. 
+These offsets are made small (stridx_t is an unsigned short) by exploiting 
+the fact that the double elimination chunks are (now) 64KB, hence a short 
+suffices.
 
-However, in many other situations the cardinality of string columns is large,
+In many other situations the cardinality of string columns is large,
 or the string values might even be unique. In those cases, our fixed-size hash 
 table will start to overflow quickly. Therefore, after the hash table is full
 (this is measured very simplistically by looking whether the string heap exceeds a 
-heap size = GDK_ELIMLIMIT -- done this way to keep compatibility with old bat images) 
-we flush the hash table. If one views the string heaps as consecutive chunks
-of size GDK_ELIMLIMIT bytes, then all strings within one chunk are double-eliminated.
-There is a macro GDK_ELIMBASE(offset) that computes the base of the chunk in which
-a certain byte-offset falls.
+heap size = GDK_ELIMLIMIT = 64KB) we flush the hash table. Even more, from that moment
+on, we do not use a linked list, but a lossy hash table that just contains
+the last position for each bucket. Basically, after exceeding GDK_ELIMLIMIT,
+we get a probabilistic/opportunistic duplicate elimination mechanism,
+that only looks at the last GDK_ELIMLIMIT chunk in the heap, in a lossy way.
+
+When comparing with the previous string implementation, the biggest difference
+is that on 64-nbits bt with 32-bits oids, strings are always 8-byte aligned 
+and var_t numbers are multiplied by 8 to get the true offset. The goal to do 
+this is to allow 32-bits var_t on 64-bits systems to address 32GB (using string 
+alignment=8).  For large database, the cost of padding (4 bytes avg) is offset 
+by the savings in var_t (allowing to go from 64- to 32-bits). Nothing lost there, 
+and 32-bits var_t also pay in smaller OIDs and smaller hash tables, reducing memory
+pressure. For small duplicate eliminated heaps, the short indices
+used in the hash table have now allowed more buckets (2K instead of 1K)
+and average 2 bytes overhead for the next pointers instead of 6-12. Therefore
+small heaps are now more compact than before.
 @-
-This is a departure from our previous policy of not looking at the hash tables at 
-all after overflow occurred. The advantage of the new approach is that if we have 
-a value distribution that is skewed (ie some values are very frequent), these 
-values will always be double eliminated, saving a considerable amount of space. 
-Disadvantage of the approach is that we always have to reserve space for the next 
-pointer (4(8) byte integer offset) that is stored right in front of the string (and 
-consequently have to keep all string chunks and offsets aligned to 4(8)). All this 
-translates into some wasted space. However, if there are that many different strings 
-that the hash table overflows, the strings must be relatively long and the relative 
-storage overhead should be low.
-@-
-Notice that this mechanism enables to keep a certain linear storage property
-in the string heaps. This is important if we want to take a BATslice on a BAT
-by simply loading or @strong{mmap()}ping slices of the BAT files on disk into memory.
-This is relevant in order to process a very large BAT iteratively by taking slices
-in order to reduce memory consumption. Notice that if there are few different string 
-values, the hash table has not overflowed, and the string heap size will be small 
-(i.e. < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
-If the hash table @strong{has} overflowed, we want to be able to only map a slice of the 
-string heap as well. Now, given that the first string in the BAT-slice is called F1 
-and its heap offset is O1 and the last string in the slice is F2 and its 
-offset is O2, then the slice we should take from the string heap is: 
-@example
-GDK_ELIMBASE(F1) .. MAX(GDK_ELIMBASE(F2)+GDK_ELIMLIMIT), O2+strlen(F2))
-@end example
 The routine strElimDoubles() can be used to check whether all 
 strings are still being double-eliminated in the original hash-table.
 Only then we know that unequal offset-integers in the BUN array means
@@ -1877,16 +1865,12 @@ void
 strHeap(Heap *d, size_t cap)
 {
 	size_t size;
-	var_t *h, *e;
 
 	cap = MAX(cap, BATTINY);
-	size = (GDK_STRHASHTABLE + 1) * sizeof(var_t) + MIN(GDK_ELIMLIMIT, cap * 12);
+	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	if (HEAPalloc(d, size, 1) >= 0) {
-		d->free = GDK_STRHASHTABLE * sizeof(var_t);
-		h = (var_t *) d->base;
-		for (e = h; e < h + GDK_STRHASHTABLE; e++) {
-			*e = 0;
-		}
+		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		memset(d->base, 0, d->free);
 	}
 }
 
@@ -1923,42 +1907,10 @@ strHash(str s)
 void
 strCleanHash(Heap *h, int rebuild)
 {
+	(void) rebuild;
 	if (!GDK_ELIMDOUBLES(h)) {
 		/* flush hash table for security */
 		memset(h->base, 0, GDK_STRHASHSIZE);
-	} else if (rebuild) {
-		var_t xx, cur = 0, end = 0;
-		str hash = (str) h->base;
-
-/* int cnt[GDK_STRHASHTABLE]; */
-		/* collect all values in one big linked list */
-		for (xx = 0; xx < GDK_STRHASHTABLE; xx++) {
-			var_t yy = ((var_t *) hash)[xx];
-
-/* cnt[xx]=0; */
-			((var_t *) hash)[xx] = 0;	/* clear hash table slot */
-
-			if (end) {
-				*(var_t *) (hash + end) = yy;
-			} else {
-				cur = yy;
-			}
-			for (; yy; yy = *(var_t *) (hash + yy))
-				end = yy;
-		}
-
-		/* process the linked list, inserting the values again */
-		for (; cur; cur = end) {
-			str val = hash + cur;
-			GDK_STRHASH(val + sizeof(var_t), xx);
-			xx &= GDK_STRHASHMASK;
-			end = *(var_t *) val;
-			*(var_t *) val = ((var_t *) hash)[xx];
-			((var_t *) hash)[xx] = cur;
-/* cnt[xx]++; */
-		}
-/* for(xx=0; xx<GDK_STRHASHTABLE; xx++)
-   if(cnt[xx]) stream_printf(GDKout, "%5d %6d", xx, cnt[xx]); */
 	}
 }
 
@@ -1970,90 +1922,63 @@ zero.
 var_t
 strLocate(Heap *h, str v)
 {
-	var_t *htab = (var_t *) h->base;
-	var_t *l, *e;
-	BUN idx;
+	stridx_t *ref, *next;
 
-	GDK_STRHASH(v, idx);
-	e = htab + (idx & GDK_STRHASHMASK);
-	if (*e) {
-		for (l = e; *l && *l < h->free; l = (var_t *) ((char *) h->base + *l)) {
-			str x = (str) ((char *) h->base + *l + sizeof(var_t));
+	/* search hash-table, if double-elimination is still in place */
+	BUN off; GDK_STRHASH(v, off);
+	off &= GDK_STRHASHMASK;
 
-			if (GDK_STRCMP(v, x) == 0) {
-				return *l + (var_t) sizeof(var_t);
-			}
-		}
+	/* should only use strLocate iff fully double eliminated */
+	assert(GDK_ELIMBASE(h->free) == 0);
+
+	/* search the linked list */
+	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) { 
+		next = (stridx_t*) (h->base + *ref);
+		if (GDK_STRCMP(v, (str) (next+1)) == 0) 
+			return (sizeof(stridx_t) + *ref) >> GDK_VARSHIFT; /* found */
 	}
 	return 0;
-}
-
-#if SIZEOF_SIZE_T == SIZEOF_INT
-#define normal_vart_SWAP(x)	((var_t) normal_int_SWAP((int)x))
-#else
-#define normal_vart_SWAP(x)	((var_t) long_long_SWAP((lng)x))
-#endif
-
-/* convert the integers in the implicit hash table structure */
-void
-strHeapConvert(Heap *h, int dir)
-{
-	var_t *htab = (var_t *) h->base;
-	var_t *l, i, j;
-
-	if (dir == CONV_HTON) {
-		for (i = 0; i < GDK_STRHASHTABLE; i++) {
-			for (l = htab + i; (j = *l) != 0 && j < h->free; l = (var_t *) (h->base + j)) {
-				*l = normal_vart_SWAP(j);
-			}
-		}
-	} else {
-		for (i = 0; i < GDK_STRHASHTABLE; i++) {
-			for (l = htab + i; (j = *l) != 0 && j < h->free; l = (var_t *) (h->base + *l)) {
-				*l = normal_vart_SWAP(j);
-			}
-		}
-	}
 }
 
 var_t
 strPut(Heap *h, var_t *dst, str v)
 {
-	var_t *l;
-	size_t i = GDK_STRLEN(v);
-	BUN off;
-
-	/* round up to var_t-byte alignment + var_t (next pointer) */
-	size_t len = ((i + sizeof(var_t) - 1) & ~(sizeof(var_t) - 1)) + sizeof(var_t);
-	size_t elimlimit = GDK_ELIMBASE(h->free) + GDK_ELIMLIMIT;
+	size_t elimbase = GDK_ELIMBASE(h->free);
+	size_t pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN-1));
+	size_t pos, len = GDK_STRLEN(v);
+	stridx_t *bucket, *ref, *next;
 
 	/* search hash-table, if double-elimination is still in place */
-	GDK_STRHASH(v, off);
+	BUN off; GDK_STRHASH(v, off);
 	off &= GDK_STRHASHMASK;
-	for (l = ((var_t *) h->base) + off; *l && *l < h->free; l = (var_t *) (h->base + *l)) {
-		str x = (str) (h->base + *l + sizeof(var_t));
+	bucket = ((stridx_t *) h->base) + off; 
 
-		if (GDK_STRCMP(v, x) == 0) {
-			*dst = *l + (var_t) sizeof(var_t);	/* already in heap; do not insert! */
-			if (GDK_ELIMDOUBLES(h) == 0 && GDK_STRHASHCREDIT(h))
-				GDK_STRHASHCREDIT(h) += 4;
-			return *dst;
+	if (elimbase == 0) { /* small string heap (<64KB) -- fully double eliminated */
+		for (ref = bucket; *ref; ref = next) { /* search the linked list */
+			next = (stridx_t*) (h->base + *ref);
+			if (GDK_STRCMP(v, (str) (next+1)) == 0) { /* found */
+				pos = sizeof(stridx_t) + *ref;
+				return *dst = (pos >> GDK_VARSHIFT); 
+			}
 		}
-	}
-
-	/* flush the hash table if it becomes too big (implies !GDK_ELIMDOUBLES) */
-	if (h->free + len >= elimlimit) {
-		/* if we are not hash-inserting anymore, h->free may no longer be var_t aligned */
-		size_t mask = h->free & (sizeof(var_t) - 1);
-
-		if (mask)
-			h->free += sizeof(var_t) - mask;	/* realign */
-		memset(h->base, 0, GDK_STRHASHSIZE);	/* start over hash inserting in a pristine hash table */
-		GDK_STRHASHCREDIT(h) = 32;	/* only tolerate limited misses in the future */
+		/* is there room for the next pointer in the padding space? */
+		if (pad < sizeof(stridx_t)) 
+			pad += GDK_VARALIGN; /* if not, pad more */
+	} else {
+	        /* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
+		pos = elimbase + *bucket;
+		if (GDK_STRCMP(v, (str) (h->base + pos)) == 0) {
+			return *dst = (pos >> GDK_VARSHIFT); /* already in heap; do not insert! */
+		}
+#if SIZEOF_VAR_T < SIZEOF_VOID_P
+		pad &= (GDK_VARALIGN-1); /* a full VARALIGN pad can be omitted */
+#else
+		pad = 0; /* only 32-bits var_t in 64-bits needs padding */
+#endif
 	}
 
 	/* check heap for space (limited to a certain maximum after which nils are inserted) */
-	if (h->free + len >= h->size) {
+	if (h->free + pad + len >= h->size) {
 		/* Something really strange happens here, In a special case
 		   (Pentium II Klamath, gcc version 2.96 20000731,
 		   GNU assembler version 2.10.90 using BFD version 2.10.0.18)
@@ -2064,11 +1989,15 @@ strPut(Heap *h, var_t *dst, str v)
 		 */
 		float batmargin = (float) BATMARGIN;
 		float hnewsize = h->size * batmargin;
-		size_t newsize = len + (size_t) hnewsize;
+		size_t newsize = pad + len + (size_t) hnewsize;
 
 		assert(newsize);
 
-		if (h->free + len < h->maxsize) {
+		if (h->free + pad + len >= (((size_t) VAR_MAX) << GDK_VARSHIFT)) {
+			GDKerror("strPut: string heaps gets larger than %dGB.\n", (((size_t) VAR_MAX) << GDK_VARSHIFT) >> 30);
+			return 0;
+		}
+		if (h->free + pad + len < h->maxsize) {
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
@@ -2077,32 +2006,27 @@ strPut(Heap *h, var_t *dst, str v)
 		}
 		/* fill should solve initialisation problems within valgrind */
 		memset(h->base + h->free, 0, h->size - h->free);
+
+		/* make bucket point into the enw heap */
+		bucket = ((stridx_t *) h->base) + off; 
 	}
 
-	if (!GDK_ELIMDOUBLES(h)) {
-		if (GDK_STRHASHCREDIT(h) == 0) {
-			/* if credits are gone, we do not hash insert at all */
-			if (h->free > VAR_MAX) {
-				GDKerror("strPut: string heaps gets larger than 2GB -- too large for 32-bits oids.\n");
-				return 0;
-			}
-			*dst = (var_t) h->free;
-			memcpy(h->base + h->free, v, i);
-			h->free += i;	/* in this case, we do not round to var_t either */
-			return *dst;
-		}
-		GDK_STRHASHCREDIT(h)--;
+	/* insert string */
+	pos = h->free + pad;
+	*dst = pos >> GDK_VARSHIFT;
+	memcpy(h->base + pos, v, len);
+	h->free += pad + len;	
+
+	/* maintain hash table */
+	if (elimbase == 0) { /* small string heap: link the next pointer */
+		pos -= sizeof(stridx_t); /* the stridx_t next pointer directly precedes the string */
+		*(stridx_t*) (h->base + pos) = *bucket;
 	}
+	*bucket = (stridx_t) (pos - elimbase); /* set bucket to the new string */
 
-	/* insert string in hash table and copy into the heap */
-	l = (var_t *) (h->base + h->free);
-	*(l++) = ((var_t *) h->base)[off];
-	assert(h->free + sizeof(var_t) <= VAR_MAX);
-	((var_t *) h->base)[off] = (var_t) h->free;
-	*dst = (var_t) (h->free + sizeof(var_t));
-	h->free += len;
-	memcpy((char *) l, v, i);
-
+	if (h->free >= elimbase + GDK_ELIMLIMIT) {
+		memset(h->base, 0, GDK_STRHASHSIZE); /* flush hash table */	
+	} 
 	return *dst;
 }
 

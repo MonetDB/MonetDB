@@ -75,8 +75,20 @@ files-with-holes on Unixes (on Windows, it actually always performs I/O which is
 nice).  
 @{
 @c
-int
-HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+size_t HEAPmargin(size_t maxsize) {
+	size_t ret;
+#if SIZEOF_VOID_P == 8
+	/* in 64-bits systems, try to enforce in-place realloc, but provoke the memcpy on 256MB, then 4GB */
+	size_t use = GDKvm_cursize();
+	ret = MIN(GDK_mem_maxsize, MAX(((size_t) 1) << 26, 16*maxsize));
+	if ((ret+ret) > (GDK_vm_maxsize-MIN(GDK_vm_maxsize,use))) /* only if room */
+#endif
+	ret = ((double) BATMARGIN)*maxsize - 1; /* do not waste VM on 32-bits */
+	return (1 + (MAX(maxsize,ret) >> 16)) << 16; /* round up to 64K */
+}
+
+/* in 64-bits space, use very large margins to accomodate reallocations */
+int HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 
@@ -98,8 +110,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	/* when using anonymous vm we malloc we need 64K chunks, also we
 	 * 20% extra malloc */
 	if (h->size > GDK_mem_bigsize) {
-		h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
-		h->maxsize = (1 + (h->maxsize >> 16)) << 16;
+		h->maxsize = HEAPmargin(h->maxsize);
 	}
 	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
 		h->storage = STORE_MEM;
@@ -169,17 +180,14 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
-		int must_mmap = can_mmap && (size >= GDK_mmap_minsize || h->newstorage != STORE_MEM);
+		int small_cpy = (h->size*4 < size) && (size >= GDK_mmap_minsize);
+		int must_mmap = can_mmap && (small_cpy || h->newstorage != STORE_MEM);
 
 		h->size = size;
 
 		if (can_mmap) {
 			/* in anonymous vm, if have to realloc anyway, we reserve some extra space */
-			if (size > h->maxsize) {
-				h->maxsize = (size_t) ((double) size * BATMARGIN);
-			}
-			/* when using anonymous vm we malloc we need 64K chunks */
-			h->maxsize = (1 + ((h->maxsize - 1) >> 16)) << 16;
+			h->maxsize = HEAPmargin(MAX(size,h->maxsize));
 		} else {
 			h->maxsize = size;	/* for normal GDKmalloc, maxsize = size */
 		}
@@ -514,9 +522,9 @@ TODO: user HEADER64 for both 32 and 64 bits (requires BAT format change)
 #define HEAPVERSION	20030408
 
 typedef struct heapheader {
-	var_t head;		/* index to first free block            */
+	size_t head;		/* index to first free block            */
 	int alignment;		/* alignment of objects on heap         */
-	var_t firstblock;	/* first block in heap                  */
+	size_t firstblock;	/* first block in heap                  */
 	int version;
 	int (*sizefcn) (ptr);	/* ADT function to ask length           */
 } HEADER32;
@@ -524,8 +532,8 @@ typedef struct heapheader {
 typedef struct {
 	int version;
 	int alignment;
-	var_t head;
-	var_t firstblock;
+	size_t head;
+	size_t firstblock;
 	int (*sizefcn) (ptr);
 } HEADER64;
 
@@ -537,8 +545,8 @@ typedef HEADER32 HEADER;
 typedef HEADER64 HEADER_OTHER;
 #endif
 typedef struct hfblock {
-	var_t size;		/* Size of this block in freelist        */
-	var_t next;		/* index of next block                   */
+	size_t size;		/* Size of this block in freelist        */
+	size_t next;		/* index of next block                   */
 } CHUNK;
 
 @c
@@ -546,13 +554,13 @@ typedef struct hfblock {
 #define roundup_4(x)	(((x)+3)&~3)
 #define blocksize(h,p)	((p)->size)
 
-static INLINE var_t
-roundup_num(var_t number, int alignment)
+static INLINE size_t
+roundup_num(size_t number, int alignment)
 {
-	var_t rval;
+	size_t rval;
 
-	rval = number + (var_t) alignment - 1;
-	rval -= (rval % (var_t) alignment);
+	rval = number + (size_t) alignment - 1;
+	rval -= (rval % (size_t) alignment);
 	return rval;
 }
 
@@ -560,7 +568,7 @@ var_t
 HEAP_private(Heap *h)
 {
 	(void) h;
-	return (var_t) roundup_8(sizeof(HEADER));
+	return (var_t) (roundup_8(sizeof(HEADER)) >> GDK_VARSHIFT);
 }
 
 #ifdef TRACE
@@ -568,7 +576,7 @@ static void
 HEAP_printstatus(Heap *heap)
 {
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
-	var_t block, cur_free = hheader->head;
+	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
 	THRprintf(GDKout, "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
@@ -591,7 +599,7 @@ HEAP_printstatus(Heap *heap)
 			cur_free = blockp->next;
 			block += blockp->size;
 		} else {
-			var_t size = blocksize(hheader, blockp);
+			size_t size = blocksize(hheader, blockp);
 
 			THRprintf(GDKout, "#   block at " SZFMT " with size " SZFMT "\n", block, size);
 			block += size;
@@ -611,7 +619,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	/*
 	   // Calculate position of first and only free block.
 	 */
-	var_t head = roundup_num((var_t) (roundup_8(sizeof(HEADER)) + roundup_8(nprivate)), alignment);
+	size_t head = roundup_num((size_t) (roundup_8(sizeof(HEADER)) + roundup_8(nprivate)), alignment);
 	CHUNK *headp = HEAP_index(heap, head, CHUNK);
 
 	assert(roundup_8(sizeof(HEADER)) + roundup_8(nprivate) <= VAR_MAX);
@@ -629,7 +637,7 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 	   // Fill first free block.
 	 */
 	assert(heap->size - head <= VAR_MAX);
-	headp->size = (var_t) (heap->size - head);
+	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
 #ifdef TRACE
 	THRprintf(GDKout, "#We created the following heap\n");
@@ -669,9 +677,9 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 
 
 var_t
-HEAP_malloc(Heap *heap, var_t nbytes)
+HEAP_malloc(Heap *heap, size_t nbytes)
 {
-	var_t block, trail, ttrail;
+	size_t block, trail, ttrail;
 	CHUNK *blockp;
 	CHUNK *trailp;
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
@@ -682,15 +690,9 @@ HEAP_malloc(Heap *heap, var_t nbytes)
 
 	/* add space for size field */
 	nbytes += hheader->alignment;
-	if (hheader->alignment == 8) {
-		nbytes = roundup_8(nbytes);
-	} else if (hheader->alignment == 4) {
-		nbytes = roundup_4(nbytes);
-	} else {
-		GDKfatal("HEAP_malloc: Heap structure corrupt\n");
-	}
+	nbytes = roundup_8(nbytes);
 	if (nbytes < sizeof(CHUNK))
-		nbytes = (var_t) sizeof(CHUNK);
+		nbytes = (size_t) sizeof(CHUNK);
 
 	/*
 	   // block  -- points to block with acceptable size (if available).
@@ -718,12 +720,12 @@ HEAP_malloc(Heap *heap, var_t nbytes)
 	   // If no block of acceptable size is found we try to enlarge the heap.
 	 */
 	if (block == 0) {
-		var_t newsize;
+		size_t newsize;
 
 		assert(heap->free + MAX(heap->free, nbytes) <= VAR_MAX);
-		newsize = (var_t) roundup_8(heap->free + MAX(heap->free, nbytes));
+		newsize = (size_t) roundup_8(heap->free + MAX(heap->free, nbytes));
 		assert(heap->free <= VAR_MAX);
-		block = (var_t) heap->free;	/* current end-of-heap */
+		block = (size_t) heap->free;	/* current end-of-heap */
 
 #ifdef TRACE
 		THRprintf(GDKout, "#No block found\n");
@@ -747,7 +749,7 @@ HEAP_malloc(Heap *heap, var_t nbytes)
 
 		blockp->next = 0;
 		assert(heap->free - block <= VAR_MAX);
-		blockp->size = (var_t) (heap->free - block);	/* determine size of allocated block */
+		blockp->size = (size_t) (heap->free - block);	/* determine size of allocated block */
 
 		/*
 		   // Try to join the last block in the freelist and the newly allocated
@@ -778,7 +780,7 @@ HEAP_malloc(Heap *heap, var_t nbytes)
 	   // TUNE: use different amount than 2*sizeof(CHUNK)
 	 */
 	if (blockp->size >= nbytes + 2 * sizeof(CHUNK)) {
-		var_t newblock = block + nbytes;
+		size_t newblock = block + nbytes;
 		CHUNK *newblockp = HEAP_index(heap, newblock, CHUNK);
 
 		newblockp->size = blockp->size - nbytes;
@@ -800,17 +802,17 @@ HEAP_malloc(Heap *heap, var_t nbytes)
 	}
 
 	block += hheader->alignment;
-	return block;
+	return block >> GDK_VARSHIFT;
 }
 
 void
-HEAP_free(Heap *heap, var_t block)
+HEAP_free(Heap *heap, var_t mem)
 {
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 	CHUNK *beforep;
 	CHUNK *blockp;
 	CHUNK *afterp;
-	var_t after, before;
+	size_t after, before, block = mem << GDK_VARSHIFT;
 
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
 		GDKfatal("HEAP_free: Heap structure corrupt\n");
@@ -884,10 +886,10 @@ int
 HEAP_check(Heap *heap, HeapRepair *hr)
 {
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
-	var_t head = hheader->head, alignshift = 2;
-	var_t block, nwords = (var_t) ((heap->free - 1) >> 7);
+	size_t head = hheader->head, alignshift = 2;
+	size_t block, nwords = (size_t) ((heap->free - 1) >> 7);
 	int *freemask;
-	var_t prevblock = 0;
+	size_t prevblock = 0;
 	CHUNK *blockp;
 
 	hr->alignment = hheader->alignment;
@@ -922,8 +924,8 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	   // Walk the freelist; register them in freemask
 	 */
 	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
-		var_t idx = block >> alignshift;
-		var_t pos = idx >> 5;
+		size_t idx = block >> alignshift;
+		size_t pos = idx >> 5;
 		int mask = 1 << (idx & 31);
 
 		if ((block <= prevblock) && (block != 0)) {
@@ -942,8 +944,8 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	 */
 	block = hheader->firstblock;
 	while (block < heap->free) {
-		var_t idx = block >> alignshift;
-		var_t pos = idx >> 5;
+		size_t idx = block >> alignshift;
+		size_t pos = idx >> 5;
 		int mask = 1 << (idx & 31);
 
 		hr->validmask[pos] |= mask;
@@ -965,8 +967,8 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	   // Check if there are left over free blocks
 	 */
 	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
-		var_t idx = block >> alignshift;
-		var_t pos = idx >> 5;
+		size_t idx = block >> alignshift;
+		size_t pos = idx >> 5;
 		int mask = 1 << (idx & 31);
 
 		if (freemask[pos] & mask) {
@@ -1046,14 +1048,14 @@ HEAP_init(Heap *heap, int tpe)
 	if (hheader->head > heap->free) {
 		hheader->head = 0;	/* cut off free block */
 	} else if (hheader->head) {
-		var_t idx = hheader->head;
+		size_t idx = hheader->head;
 
 		while (idx) {
 			CHUNK *blk = HEAP_index(heap, idx, CHUNK);
 
 			if (idx + blk->size > heap->free) {
 				assert(heap->free - idx <= VAR_MAX);
-				blk->size = (var_t) (heap->free - idx);	/* cut off illegal tail of block */
+				blk->size = (size_t) (heap->free - idx);	/* cut off illegal tail of block */
 			}
 			if (blk->next > heap->free || blk->next < (idx + blk->size) || (blk->next & (hheader->alignment - 1))) {
 				blk->next = 0;	/* cut off next block */

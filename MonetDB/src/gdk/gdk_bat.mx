@@ -434,7 +434,7 @@ Here we merely copy their references into the new administration space.
 BAT *
 BATextend(BAT *b, BUN newcap)
 {
-	size_t hheap_size, theap_size;
+	size_t hheap_size = newcap, theap_size = newcap;
 
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, "BATextend");
@@ -453,10 +453,10 @@ malloc.
 
 	b->batCapacity = newcap;
 
-	hheap_size = Hsize(b) * newcap;
+	hheap_size *= Hsize(b);
 	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
 		return NULL;
-	theap_size = Tsize(b) * newcap;
+	theap_size *= Tsize(b);
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);

@@ -1656,7 +1656,7 @@ BATordered@3(BAT* b)
 				if (b->hkey == 0) {
 					/* sorted and key? */
 					while (cur < end) {
-						char *val = base + *(((var_t *)b->H->heap.base)+ cur);
+						char *val = base + (*(((var_t *)b->H->heap.base)+ cur) << GDK_VARSHIFT);
 
 						if (cmp(prv, val) @5= 0) {
 							key = FALSE;
@@ -1668,7 +1668,7 @@ BATordered@3(BAT* b)
 				}
 				/* sorted? */
 				while (cur < end) {
-					char *val = base + *(((var_t *)b->H->heap.base)+ cur);
+					char *val = base + (*(((var_t *)b->H->heap.base)+ cur) << GDK_VARSHIFT);
 
 					if (cmp(prv, val) @5 0) {
 						/* record negative position info */

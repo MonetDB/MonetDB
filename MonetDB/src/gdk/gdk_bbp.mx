@@ -2965,9 +2965,9 @@ BBPrecycle(int ht, int tt, size_t cap)
 		BATsetcount(&bs->B, 0);
 
 		if (bs->H.vheap)
-			memset(bs->H.vheap->base, 0, bs->H.vheap->free = GDK_STRHASHTABLE * sizeof(var_t));
+			memset(bs->H.vheap->base, 0, bs->H.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t));
 		if (bs->T.vheap)
-			memset(bs->T.vheap->base, 0, bs->T.vheap->free = GDK_STRHASHTABLE * sizeof(var_t));
+			memset(bs->T.vheap->base, 0, bs->T.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t));
 		return bs;
 	}
 	BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d "SZFMT" (%d, %d %d %d) N2\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);

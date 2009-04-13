@@ -86,6 +86,7 @@ typedef struct {
 	char *offst;		/* NULL or start of varsized heap */
 	int hshift;		/* log2 of hs */
 	int tshift;		/* log2 of hs */
+	int vshift;		/* shift to be applied on var_ offsets */
 	unsigned hs;		/* width of head record */
 	unsigned ts;		/* width of tail record */
 	void *h;		/* start of head buns */		
@@ -189,7 +190,7 @@ typedef lng ptrdiff_t;
 #endif
 #endif
 
-#define offset(p)		(buf->offst + *(var_t*) (p))
+#define offset(p)		(buf->offst + ((*(var_t*) (p)) << buf->vshift))
 #define direct(p)		(p)
 
 #define any_LE(a,b)		((buf->cmp)(a,b) <= 0)
@@ -432,6 +433,7 @@ GDKqsort@1(void *h, void *t, void* base, size_t n, int hs, int ts, int tpe)
 	buf.ts = (unsigned) ts;
 	buf.hshift = ATOMelmshift(hs);
 	buf.tshift = ATOMelmshift(ts);
+	buf.vshift = ATOMvarsized(tpe)?GDK_VARSHIFT:0;
 	buf.h = h;
 	if (!t)
 		t = &x;

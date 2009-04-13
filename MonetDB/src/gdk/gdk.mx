@@ -1068,9 +1068,9 @@ HEAP_initialize  (Heap* h, size_t nbytes, size_t nprivate, int align )
 @item void
 HEAP_destroy     (Heap* h)
 @item var_t
-HEAP_malloc      (Heap* heap, var_t nbytes)
+HEAP_malloc      (Heap* heap, size_t nbytes)
 @item void
-HEAP_free        (Heap *heap, size_t block)
+HEAP_free        (Heap *heap, var_t block)
 @item int
 HEAP_private     (Heap* h)
 @item void
@@ -1111,7 +1111,7 @@ gdk_export void HEAP_initialize_compact(Heap *heap,	/* nbytes -- Initial size of
 					int (*sizefcn) (ptr) /* BATatoms[].atomLen function */
     );
 
-gdk_export var_t HEAP_malloc(Heap *heap, var_t nbytes);
+gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 gdk_export var_t HEAP_private(Heap *h);
 gdk_export void HEAP_checkformat(Heap *h);
@@ -1350,12 +1350,37 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define Hloc(b,p)	((b)->H->heap.base+((p)<<(b)->H->shift))
 #define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
 
+#if SIZEOF_VAR_T < SIZEOF_VOID_P
+/* NEW 11/4/2009: when compiled with 32-bits oids/var_t on 64-bits systems, align heap strings 
+ * on 8 byte boundaries always (wasting 4 padding bytes on avg). Note that in heaps where 
+ * duplicate elimination is succesful, such padding occurs anyway (as an aside, a better 
+ * implementation with two-bytes pointers in the string heap hash table, could reduce that 
+ * padding to avg 1 byte wasted -- see TODO below).
+ *
+ * This 8 byte alignment allows the offset in the fixed part of the BAT string column to be 
+ * interpreted as an index, which should be multiplied by 8 to get the position (VARSHIFT). The
+ * overall effect is that 32GB heaps can be addressed even when oids are limited to 4Gtuples.
+ *
+ * In the future, we might extend this such that the string alignment is set in the BAT header
+ * (columns with long strings take more storage space, but could tolerate more padding).
+ * It would mostly work, only the sort routine and strPut/strLocate (which do not see the BAT 
+ * header) extra parameters would be needed in their APIs.
+ */ 
+typedef unsigned short stridx_t;
+#define GDK_VARSHIFT 3 
+#define GDK_VARALIGN (1<<GDK_VARSHIFT)
+#else
+typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_t not to break BAT images */
+#define GDK_VARSHIFT 0 
+#define GDK_VARALIGN sizeof(stridx_t)
+#endif
+
 #define BUNhloc(bi,p)	Hloc((bi).b,p)
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNhpos(bi,p)	(Hpos(&(bi),p))
 #define BUNtpos(bi,p)	(Tpos(&(bi),p))
-#define BUNhvar(bi,p)	((bi).b->htype?(Hbase((bi).b)+*((var_t*)BUNhloc(bi,p))):BUNhpos(bi,p))
-#define BUNtvar(bi,p)	((bi).b->ttype?(Tbase((bi).b)+*((var_t*)BUNtloc(bi,p))):BUNtpos(bi,p))
+#define BUNhvar(bi,p)	((bi).b->htype?(Hbase((bi).b)+((*(var_t*)BUNhloc(bi,p))<<GDK_VARSHIFT)):BUNhpos(bi,p))
+#define BUNtvar(bi,p)	((bi).b->ttype?(Tbase((bi).b)+((*(var_t*)BUNtloc(bi,p))<<GDK_VARSHIFT)):BUNtpos(bi,p))
 #define BUNhead(bi,p)	((bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p))
 #define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
 
