@@ -731,14 +731,53 @@ comment "Cluster the columns of a table on the (first) primary key";
 pattern cluster2(sch:str, tbl:str)
 address SQLcluster2
 comment "Cluster the columns of a table on the (first) primary key";
+@-
+The distributed processing of queries requires the SQL runtime
+system to be able to deliver portions of the BATs in an efficient
+way. 
+It should be cast into a more efficient C procedure, which also
+takes care of NAS opportunities.
+@mal
+function octopus.bind(sch:str, tab:str,col:str,kind:int, version:int, 
+pieces:int, part:int):bat[:oid,:any_1];
+	b := sql.bind(sch,tab,col,kind);
+	z := bat.partition(b,pieces,part);
+	return bind:= z;
+end octopus.bind;
 
-pattern newAquarium(nme:str, host:str, port:int, usr:str, pw:str):void
-address SQLnewAquarium
-comment "Add a new site to the list of servers to consider in 
-distributed processing";
-pattern dropAquarium(nme:str):void
-address SQLdropAquarium
-comment "Remove a site from the list of servers";
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, version:int, 
+pieces:int, part:int):bat[:oid,:any_1];
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	c := remote.put(conn,col);
+	k := remote.put(conn,kind);
+	v := remote.put(conn,version);
+	n := remote.put(conn,pieces);
+	i := remote.put(conn,part);
+	bh:= remote.exec(conn,"sql","bind",s,t,c,k,n,v,i);
+	b:bat[:oid,:any_1]:= remote.get(conn,bh);
+	return bind:= b;
+end octopus.bind;
+
+function octopus.bind_dbat(sch:str, tab:str,access:int, version:int, 
+pieces:int, part:int):bat[:oid,:any_1];
+	b := sql.bind_dbat(sch,tab,access);
+	z := bat.partition(b,pieces,part);
+	return bind:= z;
+end octopus.bind_dbat;
+
+function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int,pieces:int,part:int):bat[:oid,:oid];
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	a := remote.put(conn,access);
+	v := remote.put(conn,version);
+	n := remote.put(conn,pieces);
+	i := remote.put(conn,part);
+	bh:= remote.exec(conn,"sql","bind_dbat",s,t,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	
+	return bind:= b;
+end octopus.bind_dbat;
 
 command prelude()
 address SQLprelude;
@@ -874,8 +913,8 @@ sql5_export str zero_or_one(ptr ret, int *bid);
 sql5_export str not_unique(bit *ret, int *bid);
 sql5_export str not_unique_oids(bat *ret, bat *bid);
 sql5_export str SQLcluster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLnewAquarium(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLdropAquarium(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLoctopusBind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLoctopusBinddbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
@@ -1038,7 +1077,6 @@ First introduce the routines to be called by the front-end.
 #include <rel_bin.h>
 #include <math.h>
 #include <cluster.h>
-#include <run_octopus.h>
 
 backend *
 backend_reset(backend *b)
@@ -4072,18 +4110,5 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPdecref(mid, TRUE);
 	}
 	return MAL_SUCCEED;
-}
-
-str SQLnewAquarium(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	/* add the element to the SQL tables */
-	/* todo */
-	return OCTOPUSworker(cntxt,mb,stk,pci);
-}
-str SQLdropAquarium(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	/* remove it from the SQL tables */
-	/* todo */
-	return OCTOPUSdrop(cntxt,mb,stk,pci);
 }
 
