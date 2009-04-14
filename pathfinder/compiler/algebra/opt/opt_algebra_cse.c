@@ -1201,6 +1201,7 @@ match (PFla_op_t *a, PFla_op_t *b)
         case la_fun_call:
         case la_fun_param:
         case la_fun_frag_param:
+        case la_frag_extract:
             return false;
 
         case la_proxy:
@@ -1223,9 +1224,8 @@ match (PFla_op_t *a, PFla_op_t *b)
             return false;
 
         case la_dummy:
+        case la_internal_op:
             break;
-        default:
-          return false;
     }
 
     PFoops (OOPS_FATAL, "this should not occur (match)");
@@ -2146,15 +2146,18 @@ new_operator (PFla_op_t *n)
             return PFla_fun_frag_param (
                         CSE (L(n)), CSE(R(n)),
                         n->sem.col_ref.pos);
+        case la_frag_extract:
+            return PFla_frag_extract (
+                        CSE (L(n)),
+                        n->sem.col_ref.pos);
         case la_proxy:
         case la_proxy_base:
+        case la_internal_op:
             PFoops (OOPS_FATAL,
                     "Logical operator cloning does not"
                     "support node kind (%s).",
                     ID[n->kind]);
             break;
-        default:
-           return NULL;
     }
     return NULL; /* satisfy picky compilers */
 }
@@ -2515,6 +2518,7 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
         case la_fragment:
         case la_empty_frag:
         case la_frag_union:
+        case la_frag_extract:
             /* this operator doesn't have schema information and thus no
              * projection list */
             actmap = create_actcol_map ();
@@ -2606,11 +2610,6 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             PFoops (OOPS_FATAL,
                     "In this plan dummy operators should not occur");
             break;
-
-        default:
-             PFoops (OOPS_FATAL,
-                    "This operator is not implemented");
-             break;
     }
 
     INACT (ori, actmap);
