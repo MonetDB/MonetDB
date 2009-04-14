@@ -71,10 +71,6 @@ pattern bat.partition(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]...
 address CMDbatpartition
 comment "Create a series of cheap slices over the first argument";
 
-pattern bat.partition(b:bat[:any_1,:any_2],n:int,i:int):bat[:any_1,:any_2]
-address CMDbatpartition2
-comment "Select a single partition ";
-
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a BAT.";
