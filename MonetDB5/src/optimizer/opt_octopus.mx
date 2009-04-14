@@ -207,6 +207,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 				goto foundit;
 			}
 	}
+	assert(fnd >= 0);
 foundit:
 	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 		getFunctionId(getInstrPtr(mb,0)),varid);
@@ -215,7 +216,7 @@ foundit:
 		getFunctionId(getInstrPtr(mb,0)));
 	name2 =  putName(buf,strlen(buf));
 	q= newFcnCall(mb,octopusRef, name2);
-	setArgType(mb,q,0,getArgType(mb,pci,idx));
+	setArgType(mb,q,0,getVarType(mb,varid));
 	q= pushStr(mb,q,"tbd");
 	q= pushStr(mb,q,name);
 	version = newVariable(mb,GDKstrdup("version"),TYPE_int);
