@@ -640,7 +640,7 @@ AM_CONDITIONAL(BITS64, test x"$bits" = x64)
 oids=$bits
 AC_ARG_ENABLE(oid32,
 	AC_HELP_STRING([--enable-oid32],
-		[use 32 bits vor OIDs on a 64-bit architecture]),
+		[use 32 bits for OIDs on a 64-bit architecture]),
 	enable_oid32=$enableval,
 	enable_oid32=no)
 case $bits-$enable_oid32 in
