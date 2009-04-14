@@ -4778,6 +4778,7 @@ end main;
 [ "orderReverse",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCorder_rev;"					  ]
 [ "order",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCorder;"						  ]
 [ "pack",			  "pattern",	  "bat",	  "(h:any_1,t:any_2):bat[:any_1,:any_2] ",												  "CMDbatpack;"						  ]
+[ "partition",			  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2],pieces:int,part:int):bat[:any_1,:any_2] ",							  "CMDbatpartition2;"				  ]
 [ "partition",			  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "CMDbatpartition;"					  ]
 [ "reduce",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "CMDBATreduce;"					  ]
 [ "replace",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:any_1,t:any_2,force:bit):bat[:any_1,:any_2] ",								  "BKCreplace_bun_force;"				  ]
