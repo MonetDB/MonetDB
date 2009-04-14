@@ -128,7 +128,7 @@ malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 	Module m;
 	Symbol s;
 	InstrPtr sig;
-	int i,k, unmatched = 0, s1, vararg = 0;
+	int i,k, unmatched = 0, s1;
 	int foundbutwrong=0;
 	int polytype[MAXTYPEVAR];
 	int *returntype;
@@ -222,11 +222,8 @@ be considered as well.
 	for(k=sig->retc; i<p->argc; k++, i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
-		if (k == sig->argc-1 && sig->varargs & VARARGS){ 
+		if (k == sig->argc-1 && sig->varargs & VARARGS)
 			k--;
-			/* last argument vararg are matched below */
-			vararg = 1;
-		}
 @-
 Take care of variable argument lists. 
 They are allowed as the last in the signature only.
@@ -880,12 +877,6 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h,t,ret=0;
 
-	if( formal== TYPE_any){
-		h=getTailIndex(formal);
-		polytype[h] = actual;
-		ret=0;
-		goto updLabel;
-	}
 	if( formal== TYPE_bat && isaBatType(actual) ) return 0;
 #ifdef DEBUG_MAL_RESOLVE
 	stream_printf(GDKout,"updateTypeMap:");
@@ -894,7 +885,8 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 #endif
 
 	if( (h=getTailIndex(formal))  ){
-		if( isaBatType(actual) && !isaBatType(formal) && polytype[h]== TYPE_any){
+		if( isaBatType(actual) && !isaBatType(formal) && 
+		   (polytype[h]== TYPE_any || polytype[h]== actual)){
 			polytype[h]= actual;
 			ret=0;
 			goto updLabel;
