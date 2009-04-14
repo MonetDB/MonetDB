@@ -178,12 +178,13 @@ static MalBlkPtr
 OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v2){
 	MalBlkPtr tm= NULL;
 	InstrPtr p, q,anchor=NULL;
-	int varid= pci->argv[idx],i,j,top=0, fnd;
+	int varid= pci->argv[idx],i,j,top=0, fnd,tbd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
 	str name= NULL, name2= NULL;
 	Symbol s;
+	ValRecord cst;
 
 	if (list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
@@ -217,7 +218,11 @@ foundit:
 	name2 =  putName(buf,strlen(buf));
 	q= newFcnCall(mb,octopusRef, name2);
 	setArgType(mb,q,0,getVarType(mb,varid));
-	q= pushStr(mb,q,"tbd");
+	cst.vtype = TYPE_str;
+	cst.val.sval= GDKstrdup("tbd");
+	cst.len= strlen(cst.val.sval);
+	tbd = defConstant(mb, TYPE_str, &cst);
+	q= pushArgument(mb,q,tbd);
 	q= pushStr(mb,q,name);
 	q= pushArgument(mb,q,v2);
 	needed[varid]= 1;
@@ -358,6 +363,11 @@ when scheduled correctly, would not lead to duplicate work.
 			q= pushArgument(sm,q,version);
 
 			/* create the tentacle, modifying the current plan */
+			/* initialize the result variables */
+			q= newAssignment(mb);
+			getArg(q,0)= getArg(p,0);
+			q= pushNil(mb,q, getVarType(mb, getArg(p,0)));
+
 			/* barrier (go,version):= scheduler.octopus(timeout); */
 			qq= q= newStmt(mb,schedulerRef,octopusRef);
 			setArgType(mb,q,0, TYPE_bit);
@@ -370,6 +380,8 @@ when scheduled correctly, would not lead to duplicate work.
 			for ( j= p->retc; j<p->argc; j++)
 				tentacle[tn++] =  OPTtentacle(cntxt,mb,p,mb->stop-1,j,v2);
 
+			pushInstruction(mb,p);
+
 			/* exit c; */
 			q= newAssignment(mb);
 			q->barrier= EXITsymbol;
@@ -377,8 +389,6 @@ when scheduled correctly, would not lead to duplicate work.
 			getArg(q,1)= v2;
 			q->retc=2;
 			q->argc=2;
-
-			pushInstruction(mb,p);
 
 			/* now finalize the exec operation */
 			q = newStmt(sm, remoteRef,connectRef);
@@ -447,12 +457,6 @@ when scheduled correctly, would not lead to duplicate work.
 		}
 	}
 	
-#ifdef DEBUG_OPT_OCTOPUS
-	if (actions) {
-		stream_printf(cntxt->fdout, "#octopus\n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-	}
-#endif
 @-
 The tentacle code should be optimized by the remaining optimizers.
 @c
@@ -461,19 +465,23 @@ The tentacle code should be optimized by the remaining optimizers.
 		pushInstruction(tentacle[i], copyInstruction(old[j]));
 	for (i=0; i<tn; i++){
 		chkProgram(cntxt->nspace, tentacle[i]);
+		optimizeMALBlock(cntxt,tentacle[i]);
 #ifdef DEBUG_OPT_OCTOPUS
-		stream_printf(cntxt->fdout, "NEXT LEVEL octopus\n");
+		stream_printf(cntxt->fdout, "NEXT octopus tentacle check\n");
 		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
 #endif
-		optimizeMALBlock(cntxt,tentacle[i]);
 		if ( tentacle[i]->errors ) {
 			showException(MAL,"optimizer.octopus","failed to compile");
 			mb->errors++;
 		}
 	}
-	
 #ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "OCTOPUS done\n");
+	if (actions) {
+		chkProgram(cntxt->nspace, mb);
+		optimizeMALBlock(cntxt,mb);
+		stream_printf(cntxt->fdout, "DONE octopus \n");
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+	}
 #endif
 	GDKfree(old);
 	GDKfree(tentacle);

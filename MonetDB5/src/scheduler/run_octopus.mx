@@ -230,12 +230,12 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	for (; pc< mb->stop; pc++){
 		if ( nrsea >1 && rr == 0) rr++; /* ignore default */
 		p= getInstrPtr(mb,pc);
-		if ( p->barrier == EXITsymbol)
+		if ( p->barrier == EXITsymbol || getFunctionId(p)== packRef)
 			break;
 		i = getArg(p,1);
-		assert( isVarConstant(mb, i));
+		assert( isVarConstant(mb, i) && getVarType(mb,i)== TYPE_str);
 		cst = &getVarConstant(mb, i);
-		if( cst->val.sval)
+		if( cst->val.sval )
 			GDKfree(cst->val.sval);
 		cst->val.sval= GDKstrdup(sea[rr].name);
 		cst->len = strlen(cst->val.sval);
@@ -274,9 +274,9 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int *res = (int*) getArgReference(stk,p,0);
 	int *version = (int*) getArgReference(stk,p,1);
 	int timeout = *(int*) getArgReference(stk,p,2);
-	int j,fnd, i = getPC(mb,p), threadcnt=0;
+	int j, fnd = 0, k, start, i = getPC(mb,p), threadcnt=0;
 	str msg = MAL_SUCCEED;
-	*res = 0;	/* skip the block */
+	*res = 1;	/* execute the block */
 
 	*version = 0;
 
@@ -293,10 +293,10 @@ Register the tentacle functions at all sites.
 	if (nrsea > 1) {
 		for (j= i+1; j<mb->stop ; j++){
 			p= getInstrPtr(mb,j);
-			if ( p->barrier == EXITsymbol )
+			if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
 				break;
 			msg= OCTOPUSregister(cntxt,mb,p);
-			if ( msg )
+			if ( msg && strstr(msg,"Function already defined remotely")==0 )
 				return msg;
 		}
 	}
@@ -304,33 +304,36 @@ Register the tentacle functions at all sites.
 	if ( msg )
 		return msg;
 
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(cntxt->fdout,"#OCTOPUS STARTING\n");
+		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
+		stream_flush(cntxt->fdout);
+#endif
 	/* do the actual parallel work */
+	start= i+1;
 	for (i++; i<mb->stop && msg == MAL_SUCCEED; i++){
 		p= getInstrPtr(mb,i);
-		if ( p->barrier == EXITsymbol ){
+		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef){
 			/* collect the results */
-			do{
+			while ( fnd < threadcnt && timeout > 0 ){
 				fnd = 0;
-				for( j=3; j<p->argc; j++)
-					fnd += stk->stk[getArg(p,j)].val.bval > 0;
+				for(k = start ; k < i; k++)
+					fnd += stk->stk[getArg(getInstrPtr(mb,k),0)].val.bval > 0;
 #ifdef DEBUG_RUN_OCTOPUS
-				stream_printf(cntxt->fdout,"await answer, seen %d\n",fnd);
+				stream_printf(cntxt->fdout,"await, %d out of %d\n",fnd,threadcnt);
 #endif
 				MT_sleep_ms(1000);
 				timeout--;
-			} while ( fnd < threadcnt && timeout > 0 );
+			}
 			if (timeout <= 0)
 				throw(MAL,"scheduler.octopus","Execution time out");
 			break;
 		}
 		if ( getModuleId(p) != octopusRef)
 			throw(MAL,"scheduler.octopus","tentacle expected");
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"#Start a new thread\n");
-#else
-	(void) cntxt;
-#endif
-		msg =runMALprocess(cntxt,mb,stk, getPC(mb,p), getPC(mb,p)+1);
+		/* use the dataflow semantics 
+			msg =runMALprocess(cntxt,mb,stk, i, i+1);
+		*/
 		threadcnt++;
 	}
 	return msg; 
