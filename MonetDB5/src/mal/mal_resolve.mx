@@ -212,8 +212,14 @@ Note, each function returns at least one value.
 @-
 Most polymorphic functions don;t have a variable argument
 list. So we save some instructions factoring this caise out.
+Be careful, the variable number of return arguments should
+be considered as well.
 @c
-	for(k=sig->retc,i=p->retc; i<p->argc && !vararg; k++, i++){
+	if ( sig->varargs & VARRETS)
+		i= p->argc -( sig->argc-sig->retc);
+	else
+		i= p->retc;
+	for(k=sig->retc; i<p->argc; k++, i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
 		if (k == sig->argc-1 && sig->varargs & VARARGS){ 
@@ -231,9 +237,6 @@ In all other cases the type should apply to all remaining arguments.
 @c
 		if (formal == actual)
 			continue;
-		if (isPolyType(formal)){
-			/* printf("perform union type check\n");*/
-		}
 		if( updateTypeMap(formal, actual, polytype)){
 			unmatched= i; 
 		   break;
@@ -344,7 +347,6 @@ the resulting type can not be determined.
 
 		if (k== sig->retc-1 && sig->varargs & VARRETS) k--;
 
-		updateTypeMap(formal, actual, polytype);
 		s1= getPolyType(formal, polytype);
 
 		returntype[i]= resolveType(s1,actual);
@@ -878,6 +880,12 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h,t,ret=0;
 
+	if( formal== TYPE_any){
+		h=getTailIndex(formal);
+		polytype[h] = actual;
+		ret=0;
+		goto updLabel;
+	}
 	if( formal== TYPE_bat && isaBatType(actual) ) return 0;
 #ifdef DEBUG_MAL_RESOLVE
 	stream_printf(GDKout,"updateTypeMap:");
