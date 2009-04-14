@@ -110,11 +110,18 @@ is supplied, all known databases, if the MonetDB Database Server
 .BR merovingian (1)
 is running.  The
 .B kill
-command should only be used as last resort for a database that doesn't
-respond any more to a
+command immediately sends a SIGKILL and should only be used as last
+resort for a database that doesn't respond any more.  Killing a database
+may result in (partial) data loss.
+It is more common to use the
 .B stop
-command.  Killing a database may result in (partial) data loss.
-The
+command to stop a database.  It will first attempt to stop the database,
+waiting for
+.I mero_exittimeout
+seconds and if that fails kill the database.
+When using the
+.B start
+command,
 .BR monetdb (1)
 will output diagnostic messages if the requested action failed.  When
 encountering an error, one should always consult the logfile of
@@ -131,7 +138,7 @@ indicates failure if one of the databases had a failure, even though
 other databases were successful.
 .IP discover
 Returns a list of remote databases that were discovered by
-.B merovingian (1).
+.BR merovingian (1).
 All databases listed can be connected to via the local MonetDB Database
 Server as if it were local databases.  The connection is redirected or
 proxied based on configuration settings.
