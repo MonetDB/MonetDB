@@ -1902,7 +1902,7 @@ GDKaddbuf(const char *message)
 	}
 }
 
-#define GDKERRLEN	1024
+#define GDKERRLEN	(1024+512)
 
  /*VARARGS*/ int
 GDKwarning(const char *format, ...)
