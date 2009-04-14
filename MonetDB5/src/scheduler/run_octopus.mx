@@ -220,9 +220,9 @@ The first policy is to simply perform round robin.
 The more advanced way is to negotiat with the remote sites.
 @c
 static str
-OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, int pc)
+OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
-	static int rr=0;
+	static int rr=0,i;
 	str msg = MAL_SUCCEED;
 	InstrPtr p;
 	ValPtr cst;
@@ -232,12 +232,15 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, int pc)
 		p= getInstrPtr(mb,pc);
 		if ( p->barrier == EXITsymbol)
 			break;
-		assert( isVarConstant(mb, getArg(p,1)) );
-		cst = &getVarConstant(mb, getArg(p,1));
+		i = getArg(p,1);
+		assert( isVarConstant(mb, i));
+		cst = &getVarConstant(mb, i);
 		if( cst->val.sval)
 			GDKfree(cst->val.sval);
 		cst->val.sval= GDKstrdup(sea[rr].name);
 		cst->len = strlen(cst->val.sval);
+		garbageElement(cntxt, &stk->stk[i]);
+		VALcopy(&stk->stk[i], cst);
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"octopus site selected %s\n",sea[rr].name);
 		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
@@ -297,7 +300,7 @@ Register the tentacle functions at all sites.
 				return msg;
 		}
 	}
-	msg= OCTOPUSworkdivision(cntxt,mb,i+1);
+	msg= OCTOPUSworkdivision(cntxt,mb,stk,i+1);
 	if ( msg )
 		return msg;
 
