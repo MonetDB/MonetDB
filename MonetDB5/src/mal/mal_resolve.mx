@@ -128,7 +128,7 @@ malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 	Module m;
 	Symbol s;
 	InstrPtr sig;
-	int i,k, unmatched = 0, s1;
+	int i,k, unmatched = 0, s1, vararg = 0;
 	int foundbutwrong=0;
 	int polytype[MAXTYPEVAR];
 	int *returntype;
@@ -213,10 +213,14 @@ Note, each function returns at least one value.
 Most polymorphic functions don;t have a variable argument
 list. So we save some instructions factoring this caise out.
 @c
-	for(k=sig->retc,i=p->retc; i<sig->argc; k++, i++){
+	for(k=sig->retc,i=p->retc; i<p->argc && !vararg; k++, i++){
 		int actual = getArgType(mb,p,i);
 		int formal = getArgType(s->def,sig,k);
-		if (k== sig->argc-1 && sig->varargs & VARARGS) k--;
+		if (k == sig->argc-1 && sig->varargs & VARARGS){ 
+			k--;
+			/* last argument vararg are matched below */
+			vararg = 1;
+		}
 @-
 Take care of variable argument lists. 
 They are allowed as the last in the signature only.

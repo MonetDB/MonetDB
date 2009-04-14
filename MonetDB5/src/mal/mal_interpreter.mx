@@ -715,9 +715,16 @@ q_dequeue(queue *q)
 	MT_set_lock(q->l, "q_dequeue");
 	if (q->first < 0) 
 		assert(0); 	/* nothing to dequeue */
-	r = q->data[--q->last];	/*LIFO favors garbage collection*/
-/*	r = q->data[q->first];
-	q->first = (q->first+1)&(q->size-1); */
+
+#ifndef FIFO 
+	/* LIFO favors garbage collection*/
+	r = q->data[--q->last];	
+#else
+	/* FIFO */
+	r = q->data[q->first];
+	q->first = (q->first+1)&(q->size-1); 
+#endif
+
 	if (q->first == q->last) /* empty */
 		q->first = -1;
 	MT_unset_lock(q->l, "q_dequeue");
