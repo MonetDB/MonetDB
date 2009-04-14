@@ -185,6 +185,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 	str name= NULL, name2= NULL;
 	Symbol s;
 	ValRecord cst;
+	int pieces=pci->argc-1, part=idx;
 
 	if (list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
@@ -276,8 +277,20 @@ if (name == 0){
 
 	tm->stop =1;
 	OCTinitcode(cntxt, tm);
-	for (top--; top >= 0; top--)
-		pushInstruction(tm, copyInstruction(list[top]));
+	for (top--; top >= 0; top--){
+		p = copyInstruction(list[top]);
+		if (getModuleId(p) == sqlRef &&
+			( getFunctionId(p) == bindRef ||
+			  getFunctionId(p) == binddbatRef ||
+			  getFunctionId(p) == bindidxRef)){
+			setModuleId(p, octopusRef);
+			p = pushArgument(tm, p, v2);
+			p= pushInt(tm,p,pieces);
+			p= pushInt(tm,p,part);
+			pushInstruction(tm, p);
+		} else
+			pushInstruction(tm, p);
+	}
 
 	q= newAssignment(tm);
 	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
