@@ -83,7 +83,7 @@ size_t HEAPmargin(size_t maxsize) {
 	ret = MIN(GDK_mem_maxsize, MAX(((size_t) 1) << 26, 16*maxsize));
 	if ((ret+ret) > (GDK_vm_maxsize-MIN(GDK_vm_maxsize,use))) /* only if room */
 #endif
-	ret = ((double) BATMARGIN)*maxsize - 1; /* do not waste VM on 32-bits */
+	ret = ((size_t) (((double) BATMARGIN)*(double) maxsize)) - 1; /* do not waste VM on 32-bits */
 	return (1 + (MAX(maxsize,ret) >> 16)) << 16; /* round up to 64K */
 }
 
@@ -804,7 +804,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	}
 
 	block += hheader->alignment;
-	return block >> GDK_VARSHIFT;
+	return (var_t) (block >> GDK_VARSHIFT);
 }
 
 void
