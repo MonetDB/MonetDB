@@ -178,7 +178,7 @@ static MalBlkPtr
 OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v2){
 	MalBlkPtr tm= NULL;
 	InstrPtr p, q,anchor=NULL;
-	int varid= pci->argv[idx],i,j,top=0, fnd, version;
+	int varid= pci->argv[idx],i,j,top=0, fnd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
@@ -219,7 +219,6 @@ foundit:
 	setArgType(mb,q,0,getVarType(mb,varid));
 	q= pushStr(mb,q,"tbd");
 	q= pushStr(mb,q,name);
-	version = newVariable(mb,GDKstrdup("version"),TYPE_int);
 	q= pushArgument(mb,q,v2);
 	needed[varid]= 1;
 	anchor = q;
