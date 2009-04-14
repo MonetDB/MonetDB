@@ -36,26 +36,24 @@ grouped together in a guarded block as follows:
 
 @verbatim
 barrier (parallel,version):= scheduler.octopus(timeout);
-a:= octopus.tentacle_1(sitename,fcnname,version);
+a:= octopus.exec_qry(sitename,fcnname,version);
 ...
-b:= octopus.tentacle_n(sitename,fcnname,version);
-exit (parallel,version);
+b:= octopus.exec_qry(sitename,fcnname,version);
 z:= mat.pack(a,...,b);
+exit (parallel,version);
 @end verbatim
 
-This way the MAL flow of control simplifies skipping to the end
-when parallel execution has been enacted and serial execution
-simply requires opening the guarded block.
+This way the scope of the instructions can be easily deduced.
+Moreover, the underlying data flow execution facility can
+be used to schedule and initiate interaction with remote sites.
+The octopus scheduler merely ensures that there are enough
+work threads available.
 
-Allowing MAL instructions inbetween complicates our work,
-because it would mean that we have to do a flow analysis.
-
-To make this work the scheduler needs a list of databases to play with.
-For the time being this consists of all the database known
-and ending with the phrase 'sea'.
-This list is obtained through the remote module using the
-support of Merovingian. The default is to use the local
-database as a target.
+To make the octopus work, the scheduler needs a list of databases
+to play with.
+For the time being this consists of all the database discovered
+using Merovingian and ending with the phrase 'sea'.
+The default is to use the local database as a target.
 @{
 @mal
 pattern scheduler.octopus(t:int)(:bit,version:int)
@@ -94,7 +92,6 @@ the (remote) database servers.
 #include "optimizer.h"
 #include <mapilib/Mapi.h>
 #include "remote.h"
-#include "alarm.h"
 
 typedef struct REGMAL{
 	str fcn;
@@ -175,7 +172,8 @@ OCTOPUSfind(Sea s, str qry){
 
 @-
 The functions called by the octopus.exec_qry are to be
-registered at all sites.
+registered at all sites. We assume for the time being
+that all instructions registered are unique.
 @c
 static str
 OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
@@ -253,89 +251,51 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 }
 @-
 The scheduler runs all tentacles asynchronously.
-The rigid structure makes it possible to wait for the
-threads to end their work. We simple set them to nil
-and wait for the assignments to have been completed.
-The the sole remainder is the timeout, which could be
-part of the scheduler arguments.
-
 We should be careful in accessing a site that runs out
-of clients or any failure. It may cause the scheduler to
+of clients or any failure. It may cause the system to
 wait forever.
 
-The database version should indicate to the tentacles
+The version argument indicates the tentacles
 if it is time to refresh their caches. 
 It should be obtained from the recycler where we
 know when updates have been taken place.
 @c
 str
-OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = (int*) getArgReference(stk,p,0);
-	int *version = (int*) getArgReference(stk,p,1);
-	int timeout = *(int*) getArgReference(stk,p,2);
-	int j, fnd = 0, k, start, i = getPC(mb,p), threadcnt=0;
+	bit *res = (bit*) getArgReference(stk,pci,0);
+	int *version = (int*) getArgReference(stk,pci,1);
+	int j, start, stop, threadcnt=0;
+	InstrPtr p;
 	str msg = MAL_SUCCEED;
 	*res = 1;	/* execute the block */
-
 	*version = 0;
 
-	if ( (msg= OCTOPUSdiscover(cntxt))  ){
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"#Run in local serial mode\n");
-#endif
-		*res = 1;
+	msg= OCTOPUSdiscover(cntxt);
+	if ( msg )
 		return msg; 
-	}
-@-
-Register the tentacle functions at all sites.
-@c
-	if (nrsea > 1) {
-		for (j= i+1; j<mb->stop ; j++){
-			p= getInstrPtr(mb,j);
-			if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
-				break;
+
+	start= getPC(mb,pci) + 1;
+	for (j= start; j<mb->stop ; j++){
+		p= getInstrPtr(mb,j);
+		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
+			break;
+		if (nrsea > 1) {
 			msg= OCTOPUSregister(cntxt,mb,p);
 			if ( msg && strstr(msg,"Function already defined remotely")==0 )
 				return msg;
+			threadcnt++;
 		}
 	}
-	msg= OCTOPUSworkdivision(cntxt,mb,stk,i+1);
+	stop =j;
+
+	msg= OCTOPUSworkdivision(cntxt,mb,stk,start);
 	if ( msg )
 		return msg;
 
-#ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"#OCTOPUS STARTING\n");
-		printFunction(cntxt->fdout, mb, stk, LIST_MAL_STMT);
-		stream_flush(cntxt->fdout);
-#endif
-	/* do the actual parallel work */
-	start= i+1;
-	for (i++; i<mb->stop && msg == MAL_SUCCEED; i++){
-		p= getInstrPtr(mb,i);
-		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef){
-			/* collect the results */
-			while ( fnd < threadcnt && timeout > 0 ){
-				fnd = 0;
-				for(k = start ; k < i; k++)
-					fnd += stk->stk[getArg(getInstrPtr(mb,k),0)].val.bval > 0;
-#ifdef DEBUG_RUN_OCTOPUS
-				stream_printf(cntxt->fdout,"await, %d out of %d\n",fnd,threadcnt);
-#endif
-				MT_sleep_ms(1000);
-				timeout--;
-			}
-			if (timeout <= 0)
-				throw(MAL,"scheduler.octopus","Execution time out");
-			break;
-		}
-		if ( getModuleId(p) != octopusRef)
-			throw(MAL,"scheduler.octopus","tentacle expected");
-		/* use the dataflow semantics 
-			msg =runMALprocess(cntxt,mb,stk, i, i+1);
-		*/
-		threadcnt++;
-	}
-	return msg; 
+	/* if necessary increase the worker set */
+	/* DFLOWworkers(threadcnt); */
+	(void) threadcnt;
+	return runMALdataflow(cntxt,mb,start,stop,stk,0,pci);
 }
 @}
