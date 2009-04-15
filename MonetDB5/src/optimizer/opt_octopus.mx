@@ -221,7 +221,7 @@ foundit:
 	setArgType(mb,q,0,getVarType(mb,varid));
 	cst.vtype = TYPE_str;
 	cst.val.sval= GDKstrdup("tbd");
-	cst.len= strlen(cst.val.sval);
+	cst.len= (int) strlen(cst.val.sval);
 	tbd = defConstant(mb, TYPE_str, &cst);
 	q= pushArgument(mb,q,tbd);
 	q= pushStr(mb,q,name);
