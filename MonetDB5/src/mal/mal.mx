@@ -357,6 +357,7 @@ int mal_init(){
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 
+	GDKprotect();
 	tstAligned();
 	memset((char*)mal_clients, 0, sizeof(ClientRec)*MAL_MAXCLIENTS);
 	initNamespace();

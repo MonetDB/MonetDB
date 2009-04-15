@@ -353,8 +353,6 @@ void MCpopClientInput(Client c)
 static Client MCnewClient()
 {
 	Client  c;
-	if (mal_clients[CONSOLE].mode)
-		GDKprotect();
 	mal_set_lock(mal_contextLock, "newClient");
 	if (mal_clients[CONSOLE].user &&
 	    mal_clients[CONSOLE].mode == FINISHING) {
