@@ -224,6 +224,68 @@ opt_monetxq (PFla_op_t *p)
     }
 }
 
+static void 
+opt_monetprojections (PFla_op_t *p)
+{
+    assert(p);
+    
+     /* infer properties for children */
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        opt_monetprojections (p->child[i]);
+
+    
+     /* action code */
+    switch (p->kind) {
+    
+        /*
+         *         |
+         *      project_(icols)
+         *         |
+         *         p
+         *         |
+         */
+        case la_pos_select:
+        case la_select:
+        case la_eqjoin:
+        case la_thetajoin:
+        case la_guide_step_join:
+        case la_step_join:
+        case la_roots:
+        case la_cross:
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+        case la_rowid:
+        case la_fun_1to1:
+        case la_num_gt:
+        case la_num_eq:
+        case la_bool_and:
+        case la_bool_not:
+        case la_bool_or:
+        case la_type: 
+        if (PFprop_icols_count(p->prop)) {
+            /* look up required columns (icols) */
+            PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
+            PFalg_proj_t    *proj = PFmalloc (clsize (icols) *
+                                                sizeof (PFalg_proj_t));
+                                                
+            /* fill the projection list of the lower projection (proj1) */
+            for (unsigned int i = 0; i < clsize (icols); i++)
+                proj[i] = PFalg_proj (clat (icols, i), clat (icols, i));
+        
+            /* Place a pi_(icols) operator on top of the operator. */
+            *p = *PFla_project_ (
+                        PFla_op_duplicate (p, L(p), R(p)),
+                        clsize (icols),
+                        proj);
+            break;
+        }
+        
+        default:
+            break;
+    }
+}
+
 /**
  * MonetDB/XQuery specific optimizations:
  *  - Introduce additional distinct operators.
@@ -240,6 +302,15 @@ PFalgopt_monetxq (PFla_op_t *root)
 
     PFla_dag_reset (root);
 
+    /* In addition optimize the resulting DAG using the icols property
+       to remove inconsistencies introduced by changing the types
+       of unreferenced columns (rule eqjoin). The icols optimization
+       will ensure that these columns are 'really' never used. */
+    root = PFalgopt_icol (root);
+    
+    /* start second transversal rewrite */
+    opt_monetprojections (root);
+    
     /* In addition optimize the resulting DAG using the icols property
        to remove inconsistencies introduced by changing the types
        of unreferenced columns (rule eqjoin). The icols optimization
