@@ -31,7 +31,7 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 lib__xquery = {
 	DIR = libdir/MonetDB5
 	SOURCES = \
-		xquery.mx \
+		xquery.mx temp.h \
 		xquery_shredder.mx
 	LIBS = \
 		$(PF_LIBS) \
