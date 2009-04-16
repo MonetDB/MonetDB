@@ -1958,7 +1958,7 @@ strPut(Heap *h, var_t *dst, str v)
 			next = (stridx_t*) (h->base + *ref);
 			if (GDK_STRCMP(v, (str) (next+1)) == 0) { /* found */
 				pos = sizeof(stridx_t) + *ref;
-				return *dst = (pos >> GDK_VARSHIFT); 
+				return *dst = (var_t) (pos >> GDK_VARSHIFT); 
 			}
 		}
 		/* is there room for the next pointer in the padding space? */
@@ -1968,7 +1968,7 @@ strPut(Heap *h, var_t *dst, str v)
 	        /* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket;
 		if (GDK_STRCMP(v, (str) (h->base + pos)) == 0) {
-			return *dst = (pos >> GDK_VARSHIFT); /* already in heap; do not insert! */
+			return *dst = (var_t) (pos >> GDK_VARSHIFT); /* already in heap; do not insert! */
 		}
 #if SIZEOF_VAR_T < SIZEOF_VOID_P
 		pad &= (GDK_VARALIGN-1); /* a full VARALIGN pad can be omitted */
@@ -2013,7 +2013,7 @@ strPut(Heap *h, var_t *dst, str v)
 
 	/* insert string */
 	pos = h->free + pad;
-	*dst = pos >> GDK_VARSHIFT;
+	*dst = (var_t) (pos >> GDK_VARSHIFT);
 	memcpy(h->base + pos, v, len);
 	h->free += pad + len;	
 
