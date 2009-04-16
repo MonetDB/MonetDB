@@ -334,7 +334,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr q, p, *old;
 	int last=0, i, j, limit, actions=0;
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
-	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm;
+	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
 	Symbol s2;
 	int target=0;
 	int version,v2;
