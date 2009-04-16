@@ -164,7 +164,7 @@ Therefore, we recursively break a plan by looking for the
 pack instructions and collect all dependent instructions.
 The original block is trimmed as far as needed.
 @c
-static void
+static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
 	(void) cntxt;
@@ -172,6 +172,21 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
     p= pushStr(mb,p, GDKgetenv("gdk_dbname"));
     p= pushStr(mb,p,"monetdb");
     p= pushStr(mb,p,"monetdb");
+	return getArg(p,0);
+}
+
+static void
+OCTexitcode(MalBlkPtr mb, int conn,int varid){
+	InstrPtr p;
+	p = newStmt(mb, remoteRef,disconnectRef);
+    pushArgument(mb,p,conn);
+	p= newAssignment(mb);
+	getArg(p,0) = getArg(getInstrPtr(mb,0), 0);
+	pushArgument(mb,p,varid);
+	p->barrier= RETURNsymbol;
+	pushEndInstruction(mb);
+	newStmt(mb,optimizerRef,putName("aliases",7));
+	newStmt(mb,optimizerRef,putName("deadcode",8));
 }
 
 static MalBlkPtr 
@@ -185,7 +200,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 	str name= NULL, name2= NULL;
 	Symbol s;
 	ValRecord cst;
-	int pieces=pci->argc-1, part=idx;
+	int pieces=pci->argc-1, part=idx, conn=0;
 
 	if (list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
@@ -276,7 +291,7 @@ if (name == 0){
 		p= pushArgument(tm,p,getArg(anchor,j));
 
 	tm->stop =1;
-	OCTinitcode(cntxt, tm);
+	conn= OCTinitcode(cntxt, tm);
 	for (top--; top >= 0; top--){
 		p = copyInstruction(list[top]);
 		if (getModuleId(p) == sqlRef &&
@@ -284,19 +299,25 @@ if (name == 0){
 			  getFunctionId(p) == binddbatRef ||
 			  getFunctionId(p) == bindidxRef)){
 			setModuleId(p, octopusRef);
-			p = pushArgument(tm, p, v2);
+			p= setArgument(tm,p,1,conn);
+			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 			p= pushInt(tm,p,pieces);
 			p= pushInt(tm,p,part);
-			pushInstruction(tm, p);
-		} else
-			pushInstruction(tm, p);
+			/* adjust the corresponding partition */
+			q = getInstrPtr(tm, tm->stop-1);
+			if ( getFunctionId(q) == partitionRef){
+				getArg(q,0)= getArg(q,idx-1); /* indx comes from packref */
+				getArg(q,1)= getArg(q,q->retc);
+				clrFunction(q);
+				q->retc=1;
+				q->argc=2;
+				q->token = ASSIGNsymbol;
+			}
+		} 
+		pushInstruction(tm, p);
 	}
 
-	q= newAssignment(tm);
-	getArg(q,0) = getArg(getInstrPtr(tm,0), 0);
-	pushArgument(tm,q,varid);
-	q->barrier= RETURNsymbol;
-	pushEndInstruction(tm);
+	OCTexitcode(tm, conn,varid);
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 #ifdef DEBUG_OPT_OCTOPUS
@@ -494,6 +515,8 @@ The tentacle code should be optimized by the remaining optimizers.
 		optimizeMALBlock(cntxt,mb);
 		stream_printf(cntxt->fdout, "DONE octopus \n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, tentacle[0], 0, LIST_MAL_STMT);
 	}
 #endif
 	GDKfree(old);
