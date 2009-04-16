@@ -794,7 +794,7 @@ str RMTconnect(
 	c->name = GDKstrdup(conn);
 	c->nextid = 0;
 	c->next = NULL;
-	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, "mal",
+	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, "msql",
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 
 	GDKfree(cdef->dbname);
