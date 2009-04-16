@@ -374,7 +374,7 @@ void set_physical_operators(TJatree_t *tree)
 {
     TJanode_t *node;
     TJqnode_t *qnode;
-    char *param1, *param2, *param3; 
+    char *param1, *param2, *param3 = NULL; 
     char operator[50];
     int i;
 
