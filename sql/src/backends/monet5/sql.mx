@@ -754,7 +754,7 @@ pieces:int, part:int):bat[:oid,:any_1];
 	v := remote.put(conn,version);
 	n := remote.put(conn,pieces);
 	i := remote.put(conn,part);
-	bh:= remote.exec(conn,"sql","bind",s,t,c,k,n,v,i);
+	bh:= remote.exec(conn,"octopus","bind",s,t,c,k,n,v,i);
 	b:bat[:oid,:any_1]:= remote.get(conn,bh);
 	return bind:= b;
 end octopus.bind;
@@ -1205,9 +1205,11 @@ getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 {
 	(void)mb;
 	if (cntxt == NULL ) 
-		throw(SQL, "mvc","Can not access client record");
+		throw(SQL, "mvc","No client record");
 	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
-		throw(SQL, "mvc","MAL_SCENARIO_PARSER not initialized");
+		SQLinitClient(cntxt);
+	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
+		throw(SQL, "mvc","SQL module not initialized");
 	*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
 	if (b)
 		*b = ((backend*) cntxt->state[MAL_SCENARIO_PARSER]);
