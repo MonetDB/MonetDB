@@ -536,7 +536,11 @@ BBPinit(void)
 		GDKerror("then restore into new database using this version.\n");
 		exit(1);
 	}
-	if (sz != GDKLIBRARY) {
+	if (sz != GDKLIBRARY
+#if GDK_VARSHIFT == 0
+	    && sz != GDKLIBRARY_PRE_VARSHIFT
+#endif
+	   ) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, sz);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL)

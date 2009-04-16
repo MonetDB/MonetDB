@@ -929,7 +929,8 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } COLrec;
 
-#define GDKLIBRARY      061022	/* 64-bits BAT */
+#define GDKLIBRARY_PRE_VARSHIFT	061022  /* almost compatible version, see gdk_bbp.mx */
+#define GDKLIBRARY		061023
 
 typedef struct BAT {
 	/* static bat properties */
