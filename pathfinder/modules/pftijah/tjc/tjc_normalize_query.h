@@ -29,14 +29,16 @@
 *            Jan Flokstra
 */
 
-#ifndef OPTIMIZE_H
-#define OPTIMIZE_H
+#ifndef NORMALIZE_QUERY_H
+#define NORMALIZE_QUERY_H
 
 #include "tjc_abssyn.h"
+#include "tjc_conf.h"
 
-void
-optimize(TJptree_t *ptree);
+void 
+normalize_query(tjc_config* tjc_c, TJptree_t *ptree);
 
-#endif  /* OPTIMIZE_H */
+
+#endif  /* NORMALIZE_QUERY_H */
 
 /* vim:set shiftwidth=4 expandtab: */

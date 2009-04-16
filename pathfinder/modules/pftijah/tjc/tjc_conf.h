@@ -38,7 +38,8 @@
 #define MAXMILSIZE      32000
 
 typedef struct tjc_config {
-	char* dotFile;
+	char* parseDotFile;
+	char* algDotFile;
 	char* milFile;
 	short debug;
 	char timing;

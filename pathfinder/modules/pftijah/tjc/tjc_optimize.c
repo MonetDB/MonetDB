@@ -62,7 +62,7 @@ TJpnode_t* find_node_by_children(TJpnode_t **nl, int length, TJpnode_t *n)
  *    /  \            x
  *  root  x
  */
-void rule4(TJptree_t *ptree)
+void rule1(TJptree_t *ptree)
 {
     int childno, c, num_desc, num_del;
     TJpnode_child_t nl_desc[TJPNODELIST_MAXSIZE];
@@ -93,7 +93,7 @@ void rule4(TJptree_t *ptree)
  *   /  \   /  \        /  \ /  \
  *  t1  t2 t2  t3      t1   t2   t3
  */
-void rule5(TJptree_t *ptree)
+void rule2(TJptree_t *ptree)
 {
     int childno, c, num_tag_cur, num_tag, num_del;
     char *str;
@@ -129,7 +129,7 @@ void rule5(TJptree_t *ptree)
  *    | /\ |         t1  t2
  *    t1  t2         
  */
-void rule6(TJptree_t *ptree)
+void rule3(TJptree_t *ptree)
 {
     int childno, c, num_desc_cur, num_desc, num_del;
     TJpnode_child_t nl_desc_cur[TJPNODELIST_MAXSIZE];
@@ -149,138 +149,6 @@ void rule6(TJptree_t *ptree)
 	if (n_desc != n_desc1) {
 	    nl_del[num_del++] = n_desc;
 	    n_desc_par->child[childno] = n_desc1;
-	}
-    }
-    mark_deleted_nodes(nl_del, num_del);
-}
-
-/* join and connected abouts, concatenate term/entity list
- *
- *          par                                
- *           |                         
- *        and/or                    par         
- *         /   \         -->        |         
- *      about  about              about  
- *      /   \ /    \              /   \ 
- *   term1   x    term2          x    term1, term2 
- */
-void rule7(TJptree_t *ptree)
-{
-    int childno, c, num_and, d, num_del;
-    TJpnode_child_t nl_and[TJPNODELIST_MAXSIZE];
-    TJpnode_t *nl_del[TJPNODELIST_MAXSIZE];
-    TJqnode_t *qn0, *qn1;
-    TJpnode_t *n_and_par, *n_and, *n_anc0, *n_anc1, *n_about0, *n_about1 /*, *n_lastlist */; 
-
-    num_del = 0;
-    num_and = find_all_par_tree (ptree, p_or, nl_and);
-    for (c = 0; c < num_and; c++) {
-	n_and_par = nl_and[c].node;
-	childno = nl_and[c].childno;
-	n_and = n_and_par->child[childno];
-
-	n_anc0 = NULL;
-	n_anc1 = NULL;
-	n_about0 = NULL;
-	n_about1 = NULL;
-	
-	// case1: with p_anc node between p_or and p_about
-	if (n_and->child[0]->kind == p_anc && n_and->child[1]->kind == p_anc)
-	{
-	    n_anc0 = n_and->child[0];
-	    n_anc1 = n_and->child[1];
-	    if (n_anc0->child[0]->kind == p_about && n_anc1->child[0]->kind == p_about
-		    && n_anc0->child[1] == n_anc1->child[1]) {
-		n_about0 = n_anc0->child[0];
-		n_about1 = n_anc1->child[0];
-	    }
-	}
-	// case2: p_about directly under p_or
-	if (n_and->child[0]->kind == p_about && n_and->child[1]->kind == p_about)
-	{
-	    n_about0 = n_and->child[0];
-	    n_about1 = n_and->child[1];
-	}
-	// if one of the upper cases matched and both score the same context
-	if (n_about0 && n_about1 && n_about0->child[0] == n_about1->child[0]) {
-	    qn0 = n_about0->child[1]->sem.qnode;
-	    qn1 = n_about1->child[1]->sem.qnode;
-	    // both have either term or entity list
-	    if ((qn0->kind == q_term && qn1->kind == q_term)
-		    || (qn0->kind == q_entity && qn1->kind == q_entity))
-	    {
-		for (d = 0; d < qn1->length; d++) {
-		    tjcq_addterm (qn0, qn1->tlist[d], qn1->elist[d], qn1->wlist[d]);
-		}
-		nl_del[num_del++] = n_about1->child[1];
-		nl_del[num_del++] = n_about1;
-		nl_del[num_del++] = n_and;
-		// case1 
-		if (n_anc0) { 
-		    nl_del[num_del++] = n_anc1;
-		    n_and_par->child[childno] = n_anc0;
-		}
-		// case2 
-		else
-		    n_and_par->child[childno] = n_about0;
-	    }
-	}
-    }
-    mark_deleted_nodes(nl_del, num_del);
-
-    // now do the same for "AND" nodes
-    num_del = 0;
-    num_and = find_all_par_tree (ptree, p_and, nl_and);
-    for (c = 0; c < num_and; c++) {
-	n_and_par = nl_and[c].node;
-	childno = nl_and[c].childno;
-	n_and = n_and_par->child[childno];
-
-	n_anc0 = NULL;
-	n_anc1 = NULL;
-	n_about0 = NULL;
-	n_about1 = NULL;
-	
-	// case1: with p_anc node between p_and and p_about
-	if (n_and->child[0]->kind == p_anc && n_and->child[1]->kind == p_anc)
-	{
-	    n_anc0 = n_and->child[0];
-	    n_anc1 = n_and->child[1];
-	    if (n_anc0->child[0]->kind == p_about && n_anc1->child[0]->kind == p_about
-		    && n_anc0->child[1] == n_anc1->child[1]) {
-		n_about0 = n_anc0->child[0];
-		n_about1 = n_anc1->child[0];
-	    }
-	}
-	// case2: p_about directly under p_and
-	if (n_and->child[0]->kind == p_about && n_and->child[1]->kind == p_about)
-	{
-	    n_about0 = n_and->child[0];
-	    n_about1 = n_and->child[1];
-	}
-	// if one of the upper cases matched and both score the same context
-	if (n_about0 && n_about1 && n_about0->child[0] == n_about1->child[0]) {
-	    qn0 = n_about0->child[1]->sem.qnode;
-	    qn1 = n_about1->child[1]->sem.qnode;
-	    // both have either term or entity list
-	    if ((qn0->kind == q_term && qn1->kind == q_term)
-		    || (qn0->kind == q_entity && qn1->kind == q_entity))
-	    {
-		for (d = 0; d < qn1->length; d++) {
-		    tjcq_addterm (qn0, qn1->tlist[d], qn1->elist[d], qn1->wlist[d]);
-		}
-		nl_del[num_del++] = n_about1->child[1];
-		nl_del[num_del++] = n_about1;
-		nl_del[num_del++] = n_and;
-		// case1 
-		if (n_anc0) { 
-		    nl_del[num_del++] = n_anc1;
-		    n_and_par->child[childno] = n_anc0;
-		}
-		// case2 
-		else
-		    n_and_par->child[childno] = n_about0;
-	    }
 	}
     }
     mark_deleted_nodes(nl_del, num_del);
@@ -333,7 +201,7 @@ void rule7(TJptree_t *ptree)
  *    /  \              / \  / \
  *   t1  t2            t1   t2
  */
-void rule8(TJptree_t *ptree)
+void rule4(TJptree_t *ptree)
 {
     int childno, c, num_about_par;
     TJpnode_child_t nl_about_par[TJPNODELIST_MAXSIZE];
@@ -404,20 +272,13 @@ void rule8(TJptree_t *ptree)
     }
 }
 
-
-
-
-void optimize(tjc_config *tjc_c, TJptree_t *ptree, TJpnode_t *root)
+void optimize(TJptree_t *ptree)
 {
     //root is not used in the current optimization rules
-    (void) root;
+    rule1 (ptree);
+    rule2 (ptree);
+    rule3 (ptree);
     rule4 (ptree);
-    rule5 (ptree);
-    rule6 (ptree);
-    //rule 7 would change the semnatics for conjunctive retrieval models
-    if (strcmp(tjc_c->irmodel, "LM") != 0)
-        rule7 (ptree);
-    rule8 (ptree);
 }
 
 

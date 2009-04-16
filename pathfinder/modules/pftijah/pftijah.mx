@@ -2368,7 +2368,7 @@ PROC tj_containing_prop_@1_pre (bat[oid,any] left, bat[oid,dbl] right) : bat[oid
 @mil
 
 #####################################################################
-# Containing_query
+# Containing_query_term
 #####################################################################
 
 PROC tj_term2tid (bat[str,dbl] term_score) : bat[oid,dbl] :=
@@ -2402,7 +2402,7 @@ PROC _getTermPositions (oid tid) : bat[void,oid] := {
 @:getTermDocCnt_nid(nest)@
 @:getTermDocCnt_nid(unnest)@
 @= getTermDocCnt_nid
-PROC _getTermDocCnt_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
+PROC _getTermDocCnt_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[oid,oid] t_pre) : BAT[oid,int] := {
     
     # get doc - term relation
     var e_tPre := treemergejoin_@1_nid(e_pre, e_size, t_pre);
@@ -2412,7 +2412,7 @@ PROC _getTermDocCnt_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oi
 @:getTermDocCnt_pre(nest)@
 @:getTermDocCnt_pre(unnest)@
 @= getTermDocCnt_pre
-PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oid] t_pre) : BAT[oid,int] := {
+PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[oid,oid] t_pre) : BAT[oid,int] := {
     
     # get doc - term relation
     var e_tPre := treemergejoin_@1_pre(e_pre, e_size, t_pre.reverse());
@@ -2516,12 +2516,12 @@ PROC _score_OKAPI(dbl q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, int cNd
 }
 
 
-@:containing_query_LM(nest,nid,TagSize)@
-@:containing_query_LM(unnest,nid,TagSize)@
-@:containing_query_LM(nest,pre,size1)@
-@:containing_query_LM(unnest,pre,size1)@
-@= containing_query_LM
-PROC tj_containing_query_@1_@2_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+@:containing_query_term_LM(nest,nid,TagSize)@
+@:containing_query_term_LM(unnest,nid,TagSize)@
+@:containing_query_term_LM(nest,pre,size1)@
+@:containing_query_term_LM(unnest,pre,size1)@
+@= containing_query_term_LM
+PROC tj_containing_query_@1_@2_term_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
 {
     var t_total := 0;
     t_total :-= time();
@@ -2569,12 +2569,12 @@ PROC tj_containing_query_@1_@2_LM (bat[oid,any] left, bat[oid,dbl] query) : bat[
 @mil
 
 
-@:containing_query_LMs(nest,nid,TagSize)@
-@:containing_query_LMs(unnest,nid,TagSize)@
-@:containing_query_LMs(nest,pre,size1)@
-@:containing_query_LMs(unnest,pre,size1)@
-@= containing_query_LMs
-PROC tj_containing_query_@1_@2_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+@:containing_query_term_LMs(nest,nid,TagSize)@
+@:containing_query_term_LMs(unnest,nid,TagSize)@
+@:containing_query_term_LMs(nest,pre,size1)@
+@:containing_query_term_LMs(unnest,pre,size1)@
+@= containing_query_term_LMs
+PROC tj_containing_query_@1_@2_term_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
 {
     var t_total := 0;
     t_total :-= time();
@@ -2625,12 +2625,12 @@ PROC tj_containing_query_@1_@2_LMs (bat[oid,any] left, bat[oid,dbl] query) : bat
 @mil
 
 
-@:containing_query_NLLR(nest,nid,TagSize)@
-@:containing_query_NLLR(unnest,nid,TagSize)@
-@:containing_query_NLLR(nest,pre,size1)@
-@:containing_query_NLLR(unnest,pre,size1)@
-@= containing_query_NLLR
-PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+@:containing_query_term_NLLR(nest,nid,TagSize)@
+@:containing_query_term_NLLR(unnest,nid,TagSize)@
+@:containing_query_term_NLLR(nest,pre,size1)@
+@:containing_query_term_NLLR(unnest,pre,size1)@
+@= containing_query_term_NLLR
+PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
 {
     var t_total := 0;
     t_total :-= time();
@@ -2678,12 +2678,12 @@ PROC tj_containing_query_@1_@2_NLLR (bat[oid,any] left, bat[oid,dbl] query) : ba
 @mil
 
 
-@:containing_query_OKAPI(nest,nid,TagSize)@
-@:containing_query_OKAPI(unnest,nid,TagSize)@
-@:containing_query_OKAPI(nest,pre,size1)@
-@:containing_query_OKAPI(unnest,pre,size1)@
-@= containing_query_OKAPI
-PROC tj_containing_query_@1_@2_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+@:containing_query_term_OKAPI(nest,nid,TagSize)@
+@:containing_query_term_OKAPI(unnest,nid,TagSize)@
+@:containing_query_term_OKAPI(nest,pre,size1)@
+@:containing_query_term_OKAPI(unnest,pre,size1)@
+@= containing_query_term_OKAPI
+PROC tj_containing_query_@1_@2_term_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
 {
     var t_total := 0;
     t_total :-= time();
@@ -2730,8 +2730,108 @@ PROC tj_containing_query_@1_@2_OKAPI (bat[oid,any] left, bat[oid,dbl] query) : b
 }
 @mil
 
+@:getTermDoc_nid(nest)@
+@:getTermDoc_nid(unnest)@
+@= getTermDoc_nid
+PROC _getTermDoc_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[oid,oid] t_pre) : BAT[oid,int] := {
+    
+    # get doc - term relation
+    return treemergejoin_@1_nid(e_pre, e_size, t_pre);
+}
+@mil
+@:getTermDoc_pre(nest)@
+@:getTermDoc_pre(unnest)@
+@= getTermDoc_pre
+PROC _getTermDoc_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[oid,oid] t_pre) : BAT[oid,int] := {
+    
+    # get doc - term relation
+    return treemergejoin_@1_pre(e_pre, e_size, t_pre.reverse());
+}
+@mil
+
+@:containing_query_term(nest,nid,plus,TagSize,semijoin)@
+@:containing_query_term(unnest,nid,plus,TagSize,semijoin)@
+@:containing_query_term(nest,pre,plus,size1,semijoin)@
+@:containing_query_term(unnest,pre,plus,size1,semijoin)@
+@:containing_query_term(nest,nid,min,TagSize,kdiff)@
+@:containing_query_term(unnest,nid,min,TagSize,kdiff)@
+@:containing_query_term(nest,pre,min,size1,kdiff)@
+@:containing_query_term(unnest,pre,min,size1,kdiff)@
+@= containing_query_term
+PROC tj_containing_query_@1_@2_term_@3 (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var e_pre := left.chk_order();
+    var e_size := bat("tj_" + ftindex + "_@4");
+    
+    # loop over query terms
+    query@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getTermPositions($h);
+        e_pre := e_pre.@5(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
+    }
+    
+    var res := e_pre;
+    
+    t_total :+= time();
+    if (timing) printf("# term_@3 timing: total: %d\n", t_total);
+    return res;
+}
+@mil
+
+#returns phrases (nid,pre) of first phrase term
+PROC _selectPhrase(bat[oid,dbl] query) : bat[oid,oid] :=
+{
+    # Select the term positions from the global term dictionary. 
+    var terms := query.reverse();
+    var t_pre := _getTermPositions(terms.fetch(0));
+    
+    var res := t_pre.reverse();
+    var j := terms.count();
+    var i := 1; 
+    while (i < j)
+    {
+        t_pre := _getTermPositions(terms.fetch(i));
+        res := res.semijoin(t_pre.[int]().[-](i).[oid]().reverse());   
+	i :+= 1;
+    }	
+    
+    return res.reverse().chk_order(); 
+}
+
+@:containing_query_phrase(nest,nid,TagSize)@
+@:containing_query_phrase(unnest,nid,TagSize)@
+@:containing_query_phrase(nest,pre,size1)@
+@:containing_query_phrase(unnest,pre,size1)@
+@= containing_query_phrase
+PROC tj_containing_query_@1_@2_phrase (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var e_pre := left.chk_order();
+    var e_size := bat("tj_" + ftindex + "_@3");
+    var t_pre := _selectPhrase(query);
+    var res := e_pre.semijoin(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
+    
+    t_total :+= time();
+    if (timing) printf("# phrase timing: total: %d\n", t_total);
+    return res;
+}
+@mil
+
+
 #####################################################################
-# Containing_conceptquery
+# Containing_query_entity
 #####################################################################
 
 PROC tj_ent2tid (bat[str,dbl] concept_score) : bat[oid,dbl] :=
@@ -2755,7 +2855,7 @@ PROC _getConceptPositions (oid tid) : bat[void,oid] := {
 @:getConceptDocScr_nid(nest)@
 @:getConceptDocScr_nid(unnest)@
 @= getConceptDocScr_nid
-PROC _getConceptDocScr_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void,oid] c_pre) : BAT[oid,int] := {
+PROC _getConceptDocScr_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[oid,oid] c_pre) : BAT[oid,int] := {
      
 	# get doc - Concept relation
 	var c_Scr := bat("tj_" + ftindex + "_ConceptScore");
@@ -2769,7 +2869,7 @@ PROC _getConceptDocScr_@1_nid(BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[void
 @:getConceptDocScr_pre(nest)@
 @:getConceptDocScr_pre(unnest)@
 @= getConceptDocScr_pre
-PROC _getConceptDocScr_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[void,oid] c_pre) : BAT[oid,int] := {
+PROC _getConceptDocScr_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[oid,oid] c_pre) : BAT[oid,int] := {
      
 	# get doc - Concept relation
 	var c_Scr := bat("tj_" + ftindex + "_ConceptScore");
@@ -2796,12 +2896,12 @@ PROC _score_LogSum(dbl q_cCnt, BAT[oid,dbl] e_cScr) : bat[oid,dbl] := {
     return e_cScores;
 }
 
-@:containing_conceptquery_LogSum(nest,nid,TagSize)@
-@:containing_conceptquery_LogSum(unnest,nid,TagSize)@
-@:containing_conceptquery_LogSum(nest,pre,size1)@
-@:containing_conceptquery_LogSum(unnest,pre,size1)@
-@= containing_conceptquery_LogSum
-PROC tj_containing_conceptquery_@1_@2_LogSum (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+@:containing_query_entity_LogSum(nest,nid,TagSize)@
+@:containing_query_entity_LogSum(unnest,nid,TagSize)@
+@:containing_query_entity_LogSum(nest,pre,size1)@
+@:containing_query_entity_LogSum(unnest,pre,size1)@
+@= containing_query_entity_LogSum
+PROC tj_containing_query_@1_@2_entity_LogSum (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
 {
     var t_total := 0;
     t_total :-= time();
@@ -2842,6 +2942,42 @@ PROC tj_containing_conceptquery_@1_@2_LogSum (bat[oid,any] left, bat[oid,dbl] qu
     
     t_total :+= time();
     if (timing) printf("# LogSum timing: total: %d\n", t_total);
+    return res;
+}
+@mil
+
+@:containing_query_entity(nest,nid,plus,TagSize,semijoin)@
+@:containing_query_entity(unnest,nid,plus,TagSize,semijoin)@
+@:containing_query_entity(nest,pre,plus,size1,semijoin)@
+@:containing_query_entity(unnest,pre,plus,size1,semijoin)@
+@:containing_query_entity(nest,nid,min,TagSize,kdiff)@
+@:containing_query_entity(unnest,nid,min,TagSize,kdiff)@
+@:containing_query_entity(nest,pre,min,size1,kdiff)@
+@:containing_query_entity(unnest,pre,min,size1,kdiff)@
+@= containing_query_entity
+PROC tj_containing_query_@1_@2_entity_@3 (bat[oid,any] left, bat[oid,dbl] query) : bat[oid,dbl] :=
+{
+    var t_total := 0;
+    t_total :-= time();
+    
+    if ( count(left) = 0 ) return new(oid,dbl);
+    if ( count(query) = 0 ) return new(oid,dbl);
+    
+    var e_pre := left.chk_order();
+    var e_size := bat("tj_" + ftindex + "_@4");
+    
+    # loop over query terms
+    query@batloop()
+    {
+        # get collection count of term
+        var t_pre := _getConceptPositions($h);
+        e_pre := e_pre.@5(_getTermDoc_@1_@2(e_pre, e_size, t_pre));
+    }
+    
+    var res := e_pre;
+    
+    t_total :+= time();
+    if (timing) printf("# entity_@3 timing: total: %d\n", t_total);
     return res;
 }
 @mil

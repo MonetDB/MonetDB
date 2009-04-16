@@ -61,6 +61,8 @@ lib_tjc = {
 		tjc_normalize.c \
 		tjc_optimize.h \
 		tjc_optimize.c \
+		tjc_normalize_query.h \
+		tjc_normalize_query.c \
 		tjc_phys_optimize.h \
 		tjc_phys_optimize.c
 }

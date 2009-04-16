@@ -34,7 +34,6 @@
 
 #include "tjc_conf.h"
 #include "tjc_abssyn.h"
-#include "tjc_normalize.h"
 #include <gdk.h>
 
 /** algebra tree node type indicators 

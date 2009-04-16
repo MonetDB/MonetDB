@@ -10,7 +10,7 @@ stderr of test 'colltest2` in directory 'modules/pftijah` itself:
 # 16:06:32 >  Mtimeout -timeout 60 MapiClient -lxquery -fxml -umonetdb -Pmonetdb --host=localhost --port=31150 colltest2.xq
 # 16:06:32 >  
 
-MAPI  = monetdb@asbjorn:36974
+MAPI  = monetdb@asbjorn:31515
 QUERY = let $opt := <TijahOptions debug="0" ft-index="FT_PFCOLL" ir-model="NLLR"/>
 ERROR = !ERROR: CMDtijah_query: Error (new NEXI syntax): A query with startnodes should start with a relative path expression.
         !ERROR: CMDtijah_query: operation failed.

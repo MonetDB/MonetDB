@@ -237,8 +237,12 @@ _                                {S}
 ")"			{ gotoState(PREDICATE); tj_yield (rparen); }
 {AlphaNum}		{ tjclval.str = TJstrndup(yytext); tj_yield (TERM); }
 {NCName}":"{AlphaNum}	{ tjclval.str = TJstrndup(yytext); tj_yield (ENTITY); }
-"{"{DecimalLiteral}"}"	{ tjclval.dbl = atof (TJsubstrndup(yytext, 1, yyleng - 2)); 
+"{"{DecimalLiteral}"}"	{ tjclval.dbl = atof (TJsubstrndup(yytext, 1, yyleng - 2));
 			  tj_yield (WEIGHT); }
+"+"			{ tj_yield (plus); }
+"-"			{ tj_yield (minus); }
+"'"			{ tj_yield (apos); }
+"\""			{ tj_yield (quote); }
 }
 
 %%

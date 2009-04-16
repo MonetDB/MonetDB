@@ -33,17 +33,13 @@
 #define MILPRINT_H
 
 #include "tjc_abssyn.h"
-#include "tjc_normalize.h"
 #include "tjc_phys_optimize.h"
 
 char* 
-milprint(tjc_config *tjc_c, TJpnode_t *node);
+milprint_empty (tjc_config *tjc_c);
 
 char* 
-milprint2(tjc_config *tjc_c, TJatree_t *tree);
-
-short
-assign_numbers (TJpnode_t *node, short cnt);
+milprint(tjc_config *tjc_c, TJatree_t *tree);
 
 #endif  /* MILPRINT_H */
 

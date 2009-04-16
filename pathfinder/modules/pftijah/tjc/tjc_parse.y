@@ -48,7 +48,9 @@
 extern int tjclex(void);
 
 /* temporary string in memory */
-static char *ent;
+static char *enttype;
+static double weight;
+static TJqkind_t kind; 
 
 /* temporary node memory */
 static TJpnode_t *c;
@@ -66,11 +68,9 @@ void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 %}
 
 %union {
-	int			num;
 	double			dbl;
 	char			*str;
 	struct TJpnode_t	*pnode;
-	struct TJqnode_t	*qnode;
 	struct TJpfixme_t	*pfixme;
 }
 
@@ -90,17 +90,20 @@ void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 %token or		"or"
 %token and		"and"
 %token about		"about"
+%token plus		"+"
+%token minus		"-"
+%token apos		"'"
+%token quote		"\""
 
 %type <str>
 	TERM
 	ENTITY
-	TAG	
+	TAG
+	QueryTerm
+	QueryEntity
 
 %type <dbl>
 	WEIGHT
-
-%type <qnode>
-	QueryClause
 
 %type <pnode>
 	NexiQuery
@@ -113,6 +116,11 @@ void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 	OrClause 
 	AndClause
 	AboutClause
+	QueryClause
+	QueryClause_p
+	QueryClause_s
+	PhraseQuery
+	SimpleQuery
 
 %type <pfixme>
 	Path
@@ -193,32 +201,93 @@ AndClause		: AboutClause
 	     		  { $$ = tjcp_wire2 (tjc_tree, p_and, $1, $3); }
 			;
 AboutClause		: "about" "(" RelativePathNoPred "," QueryClause ")"
-	     		  { c = tjcp_leaf (tjc_tree, p_query); c->sem.qnode = $5;
-			  $$ = tjcp_wire2 (tjc_tree, p_about, $3, c); }
+	     		  { $$ = tjcp_wire2 (tjc_tree, p_about, $3, $5); }
 	   		| "(" OrClause ")" 
 	     		  { $$ = $2; }
 	     		;
-QueryClause		: TERM
-       			  { $$ = tjcq_firstterm ($1, "!t", 1.0); } 
-			| TERM WEIGHT
-       			  { $$ = tjcq_firstterm ($1, "!t", $2); } 
-			| ENTITY
-       			  { ent = strtok ($1, ":");
-			    $$ = tjcq_firstterm (strtok (NULL, ":"), ent, 1.0); } 
-       			| ENTITY WEIGHT
-       			  { ent = strtok ($1, ":");
-			    $$ = tjcq_firstterm (strtok (NULL, ":"), ent, $2); } 
-			| QueryClause TERM
-       			  { $$ = tjcq_addterm ($1, $2, "!t", 1.0); } 
-			| QueryClause TERM WEIGHT
-       			  { $$ = tjcq_addterm ($1, $2, "!t", $3); } 
-			| QueryClause ENTITY
-       			  { ent = strtok ($2, ":");
-			    $$ = tjcq_addterm ($1, strtok (NULL, ":"), ent, 1.0); } 
-       			| QueryClause ENTITY WEIGHT
-       			  { ent = strtok ($2, ":");
-			    $$ = tjcq_addterm ($1, strtok (NULL, ":"), ent, $3); } 
+QueryClause		: QueryClause_s
+	     		  { $$ = $1; }
+	     		| QueryClause_p
+	     		  { $$ = $1; }
 			;
+QueryClause_s		: SimpleQuery
+	     		  { c = tjcp_leaf (tjc_tree, p_nil); $$ = tjcp_wire2 (tjc_tree, p_and, $1, c); }
+	       		| QueryClause_p SimpleQuery
+			  { $$ = tjcp_wire2 (tjc_tree, p_and, $2, $1); }
+			;
+QueryClause_p		: PhraseQuery
+	     		  { c = tjcp_leaf (tjc_tree, p_nil); $$ = tjcp_wire2 (tjc_tree, p_and, $1, c); }
+	       		| QueryClause_s PhraseQuery
+			  { $$ = tjcp_wire2 (tjc_tree, p_and, $2, $1); }
+			;
+	       		| QueryClause_p PhraseQuery
+			  { $$ = tjcp_wire2 (tjc_tree, p_and, $2, $1); }
+			;
+PhraseQuery		: quote SimpleQuery quote
+	                  { $$ = $2; $$->sem.qnode->kind = q_phrase;}
+			| apos SimpleQuery apos
+			  { $$ = $2; $$->sem.qnode->kind = q_phrase; }
+			;
+SimpleQuery		: QueryTerm
+       			  { $$ = tjcp_leaf (tjc_tree, p_query);
+			    $$->sem.qnode = tjcq_firstterm($1, "!t", weight, kind); } 
+			| QueryEntity
+			  { $$ = tjcp_leaf (tjc_tree, p_query);
+       			    $$->sem.qnode = tjcq_firstterm($1, enttype, weight, kind); } 
+			| SimpleQuery QueryTerm
+       			  { $1->sem.qnode = tjcq_addterm ($1->sem.qnode, $2, "!t", weight, kind);
+			    $$ = $1; } 
+			| SimpleQuery QueryEntity
+       			  { $1->sem.qnode = tjcq_addterm ($1->sem.qnode, $2, enttype, weight, kind);
+			    $$ = $1; } 
+			;
+QueryTerm		: TERM
+       			  { $$ = $1; 
+			    weight = 1.0;
+			    kind = q_normal;} 
+			| TERM WEIGHT
+       			  { $$ = $1; 
+			    weight = $2;
+			    kind = q_normal;}
+			| plus TERM
+       			  { $$ = $2; 
+			    weight = 1.0;
+			    kind = q_mandatory;}
+			| plus TERM WEIGHT
+       			  { $$ = $2; 
+			    weight = $3;
+			    kind = q_mandatory;}
+			| minus TERM
+       			  { $$ = $2; 
+			    weight = 1.0;
+			    kind = q_negated;}
+			;
+QueryEntity		: ENTITY
+       			  { enttype = strtok ($1, ":");
+			    $$ = strtok (NULL, ":");
+			    weight = 1.0;
+			    kind = q_normal;} 
+       			| ENTITY WEIGHT
+       			  { enttype = strtok ($1, ":");
+			    $$ = strtok (NULL, ":");
+			    weight = $2;
+			    kind = q_normal;}
+       			| plus ENTITY
+       			  { enttype = strtok ($2, ":");
+			    $$ = strtok (NULL, ":");
+			    weight = 1.0;
+			    kind = q_mandatory;}
+       			| plus ENTITY WEIGHT
+       			  { enttype = strtok ($2, ":");
+			    $$ = strtok (NULL, ":");
+			    weight = $3;
+			    kind = q_mandatory;}
+       			| minus ENTITY
+       			  { enttype = strtok ($2, ":");
+			    $$ = strtok (NULL, ":");
+			    weight = 1.0;
+			    kind = q_negated;}
+			;    
 
 %%
 

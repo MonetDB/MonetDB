@@ -36,92 +36,11 @@
 #include "tjc_abssyn.h"
 #include "tjc_normalize.h"
 #include "tjc_optimize.h"
+#include "tjc_normalize_query.h"
 #include "tjc_phys_optimize.h"
 #include "tjc_milprint.h"
 
 #define DEBUG 0
-
-void printTJpnode(tjc_config* tjc_c, TJpnode_t *node, short parID)
-{
-    char *type = "unknown";
-    TJptype_t num_type = node->kind;
-    TJqnode_t *qn;
-    short nID = node->nid;
-    int c;
-    
-    switch (num_type) {
-	case p_nexi  : type = "nexi"; break;
-	case p_desc  : type = "desc"; break;
-	case p_anc   : type = "anc"; break;
-	case p_tag   : type = "tag"; break;
-	case p_query : type = "query"; break;
-	case p_about : type = "about"; break;
-	case p_and   : type = "and"; break;
-	case p_or    : type = "or"; break;
-	case p_union : type = "union"; break;
-	case p_pred  : type = "pred"; break;
-	case p_root  : type = "root"; break;
-	case p_ctx   : type = "ctx"; break;
-	case p_nil   : type = "ERROR-NIL"; break;
-    }
-    
-    if (num_type == p_tag)
-    	TJCPRINTF(DOTOUT,"%d [label=\"%s-%s\"]\n", nID, type, node->sem.str);
-    else if (num_type == p_query) {
-	qn = node->sem.qnode;
-        switch (qn->kind) {
-	    case q_mixed : type = "mixed"; break;
-	    case q_term  : type = "term"; break;
-	    case q_entity: type = "entity"; break;
-	}
-    	TJCPRINTF(DOTOUT,"%d [label=\"%s-", nID, type);
-	for (c = 0; c < qn->length; c++)
-    	    TJCPRINTF(DOTOUT,"%s ", qn->tlist[c]);
-    	TJCPRINTF(DOTOUT,"\"]\n");
-    }
-    else
-        TJCPRINTF(DOTOUT,"%d [label=\"%s\"]\n", nID, type);
-    if (parID) 
-	TJCPRINTF(DOTOUT,"%d -> %d\n", parID, nID);
-
-    for (c = 0; c < TJPNODE_MAXCHILD; c++) {
-	if (node->child[c] != NULL) printTJpnode (tjc_c, node->child[c], nID);
-    }
-}
-
-void printTJptree(tjc_config* tjc_c, TJpnode_t *root)
-{
-    TJCPRINTF(DOTOUT,"digraph G {\n");
-    printTJpnode (tjc_c, root, 0);
-    TJCPRINTF(DOTOUT,"}\n");
-}
-
-void printTJptree_flat(tjc_config* tjc_c, TJptree_t *ptree)
-{
-    int c;
-    char *type = "unknown";
-
-    for (c = 0 ; c < ptree->length; c++) {
-	switch (ptree->node[c].kind) {
-	    case p_nexi  : type = "nexi"; break;
-	    case p_desc  : type = "desc"; break;
-	    case p_anc   : type = "anc"; break;
-	    case p_tag   : type = "tag"; break;
-	    case p_query : type = "query"; break;
-	    case p_about : type = "about"; break;
-	    case p_and   : type = "and"; break;
-	    case p_or    : type = "or"; break;
-	    case p_union : type = "union"; break;
-	    case p_pred  : type = "pred"; break;
-	    case p_root  : type = "root"; break;
-	    case p_ctx   : type = "ctx"; break;
-	    case p_nil   : type = "nil"; break;
-        }
-	TJCPRINTF(DOTOUT,"%d: %s\n", c, type);
-    }
-}
-
-/* THE NEW STUFF  */
 
 tjc_config* tjc_c_GLOBAL;
 
@@ -132,7 +51,8 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     /* 
      * initialize vars first 
      */
-    tjc_c->dotFile	= NULL;
+    tjc_c->parseDotFile	= NULL;
+    tjc_c->algDotFile	= NULL;
     tjc_c->milFile	= NULL;
     tjc_c->milBUFF[0]	= 0;
     tjc_c->dotBUFF[0]	= 0;
@@ -171,8 +91,10 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
                 tjc_c->timing = 1;
 	} else if ( strcmp(optName,"milfile") == 0 ) { 
 	    tjc_c->milFile = GDKstrdup(optVal);
-	} else if ( strcmp(optName,"dotfile") == 0 ) {
-	    tjc_c->dotFile = GDKstrdup(optVal);
+	} else if ( strcmp(optName,"parsedotfile") == 0 ) {
+	    tjc_c->parseDotFile = GDKstrdup(optVal);
+	} else if ( strcmp(optName,"algdotfile") == 0 ) {
+	    tjc_c->algDotFile = GDKstrdup(optVal);
 	} else if ( strcmp(optName,"ft-index") == 0 ) {
             tjc_c->ftindex = GDKstrdup(optVal);
         } else if ( strcmp(optName,"ir-model") == 0 ) {
@@ -286,14 +208,19 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
     TJpnode_t *root;
     TJatree_t *atree;
   
-    if (DEBUG) stream_printf(GDKout,"#!tjc interpreting options\n");
+    if (DEBUG) {
+	stream_printf(GDKout,"#!tjc interpreting options\n");
+	stream_printf(GDKout,"NEXI query: %s\n", query);
+    }
     if ( !interpret_options(tjc_c,optbat) ) {
+    	TJCfree(tjc_c);
     	*errBUFF = GDKstrdup("option handling error");
 	return NULL;
     }
+
     if (DEBUG) stream_printf(GDKout,"#!tjc parsing[%s]\n!",query);
     int status = tjc_parser(query,&ptree);
-    if (DEBUG) stream_printf(GDKout,"#!tjc status = %d\n",status);
+    if (DEBUG) stream_printf(GDKout,"#!tjc parser status = %d\n",status);
     if (use_sn && (ptree->is_rel_path_exp == 0)) {
 	*errBUFF = GDKstrdup("Error (new NEXI syntax): A query with startnodes should start with a relative path expression");
         if (DEBUG) stream_printf(GDKout,"#!tjc error <%s>\n",errBUFF);
@@ -307,32 +234,38 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
     if (!status && ptree) {
 	root = &ptree->node[ptree->length - 1];
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize\n");
-	normalize(ptree, root);
+	normalize(ptree);
         if (DEBUG) stream_printf(GDKout,"#!tjc start optimize\n");
-	optimize(tjc_c, ptree, root);
+	optimize(ptree);
+        if (DEBUG) stream_printf(GDKout,"#!tjc start normalize query\n");
+        normalize_query(tjc_c, ptree);
+        if (DEBUG) stream_printf(GDKout,"#!tjc start physical optimization\n");
 	atree = phys_optimize (ptree, root, rtagbat);
-
-	// optional dot output
-	if (tjc_c->dotFile) { 
-	    printTJatree (tjc_c, atree); 
-    	    save2file(tjc_c->dotFile, tjc_c->dotBUFF);
-	}
         if (DEBUG) stream_printf(GDKout,"#!tjc start mil generation\n");
-	// start henning
-	milres = milprint2 (tjc_c, atree);
-	milres = GDKstrdup(milres); // INCOMPLETE, check free
-	tjc_c->milBUFF[0] = '\0';
+	milres = milprint (tjc_c, atree);
+        
+	// optional parse tree dot output
+	if (tjc_c->parseDotFile) { 
+	    tjc_c->dotBUFF[0] = '\0';
+	    printTJptree (tjc_c, root); 
+    	    save2file(tjc_c->parseDotFile, tjc_c->dotBUFF);
+	}
+	// optional parse tree dot output
+	if (tjc_c->parseDotFile) { 
+	    tjc_c->dotBUFF[0] = '\0';
+	    printTJatree (tjc_c, atree); 
+    	    save2file(tjc_c->algDotFile, tjc_c->dotBUFF);
+	}
 	// optional mil output
         if ( tjc_c->milFile ) {
     	    save2file(tjc_c->milFile, milres);
         }
-	// end henning
-	//milres = milprint (tjc_c, root);
-	//milres = GDKstrdup(milres); // INCOMPLETE, check free
-	/* optional mil output
-        if ( tjc_c->milFile ) {
-    	    save2file(tjc_c->milFile, milres);
-        } */
+        //switch to see mil/dot output without the errors of an executed query
+	if (0) {
+	    tjc_c->milBUFF[0] = '\0';
+	    milres = milprint_empty (tjc_c);
+	}
+	milres = GDKstrdup(milres); // INCOMPLETE, check free
 	if (DEBUG) stream_printf(GDKout,"#!tjc start of mil:\n%s",milres);
 	if (DEBUG) stream_printf(GDKout,"#!tjc end of mil\n");
 	

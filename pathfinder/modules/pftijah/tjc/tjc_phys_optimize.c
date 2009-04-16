@@ -129,13 +129,57 @@ void free_atree (TJatree_t *atree) {
     TJCfree (atree);
 }
 
-TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt, BAT* rtagbat)
+TJanode_t* pnode2anode_about (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, TJanode_t *ctx, short *nt, BAT *rtagbat)
 {
     TJanode_t *anode;
     TJqnode_t *qnode;
     char qid;
     short nid = pnode - s;
     short i;
+
+    //ensure that anode is initialized (only to satisfy the compiler)
+    anode = atree->root;
+
+    // case: no "and" node below about
+    if (pnode->kind == p_query) { 
+    	anode = add_node1 (atree, a_containing_query, ctx);
+    	qnode = pnode->sem.qnode;
+    	qid = -1;
+    	for (i = 0; i < atree->qlength; i++)
+            if (atree->qnodes[i] == qnode) qid = (char)i;
+    	if (qid == -1) {
+            qid = atree->qlength++;
+            atree->qnodes[(short)qid] = qnode;
+	}
+    	anode->qid = qid;
+    	annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
+	if (qnode->kind == q_term || qnode->kind == q_ent)
+	    anode->scored = 1;
+    } 
+    // case: only one child below "and"
+    else if (pnode->kind == p_and && pnode->child[1]->kind == p_nil) {
+    	anode = pnode2anode_about (atree, s, pnode->child[0], ctx, nt, rtagbat);
+    }
+    // case : more than one query below
+    else {
+	anode = pnode2anode_about (atree, s, pnode->child[1], ctx, nt, rtagbat);
+	if (anode->scored == 0)
+	    anode = pnode2anode_about (atree, s, pnode->child[0], anode, nt, rtagbat);
+	else {
+	    // if a query contains entities and terms we like to "or"-combine the scores
+	    anode = add_node2 (atree, a_or, anode, 
+		    pnode2anode_about (atree, s, pnode->child[0], anode->child[0], nt, rtagbat));
+	    annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
+	}
+    }
+    nt[nid] = anode - atree->nodes;
+    return anode;
+}
+    
+TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short *nt, BAT *rtagbat)
+{
+    TJanode_t *anode, *anode1;
+    short nid = pnode - s;
 
     //check whether node was created before
     if (nt[nid] != -1)
@@ -166,6 +210,10 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
 	    annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
 	    if (anode->child[1]->scored)
 		anode->scored = 1;
+	    if (anode->child[0]->scored) {
+		anode = add_node2 (atree, a_and, anode->child[0], anode);
+		annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
+	    }
 	    break;
 	case p_anc :
 	    anode = add_node2 (atree, a_containing, 
@@ -174,20 +222,18 @@ TJanode_t* pnode2anode (TJatree_t *atree, TJpnode_t *s, TJpnode_t *pnode, short 
 	    annotate_node (anode, anode->child[0]->tag, 0, anode->child[0]->nested, anode->child[0]->preIDs);
 	    if (anode->child[1]->scored)
 		anode->scored = 1;
+	    if (anode->child[0]->scored) {
+		anode = add_node2 (atree, a_and, anode->child[0], anode);
+		annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
+	    }
 	    break;
 	case p_about :
-	    anode = add_node1 (atree, a_containing_query, 
-                               pnode2anode (atree, s, pnode->child[0], nt, rtagbat));
-	    qnode = pnode->child[1]->sem.qnode;
-            qid = -1;
-            for (i = 0; i < atree->qlength; i++)
-                if (atree->qnodes[i] == qnode) qid = (char)i;
-            if (qid == -1) {
-                qid = atree->qlength++;
-	        atree->qnodes[(short)qid] = qnode;
-            }
-	    anode->qid = qid;
-	    annotate_node (anode, anode->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
+	    anode1 = pnode2anode (atree, s, pnode->child[0], nt, rtagbat);
+	    anode = pnode2anode_about (atree, s, pnode->child[1], anode1, nt, rtagbat); 
+	    if (anode1->scored) {
+		anode = add_node2 (atree, a_and, anode1, anode);
+		annotate_node (anode, anode1->child[0]->tag, 1, anode->child[0]->nested, anode->child[0]->preIDs);
+	    }
 	    break;
 	case p_and :
 	    anode = add_node2 (atree, a_and, 
@@ -240,21 +286,17 @@ TJatree_t* ptree2atree(TJptree_t *ptree, TJpnode_t *proot, BAT* rtagbat)
     return atree;
 }
 
-void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_t *par, char visited)
+int printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, char visited)
 {
     char *type = "unknown";
-    TJatype_t num_type;
-    int nID, parID = 0;
+    int nID, childID = 0;
     int c;
 
-    if (node->visited > visited) return;
-    node->visited++;
     nID = node - tree->nodes;
+    if (node->visited > visited) return nID;
+    node->visited++;
 
-    if (par) parID = par - tree->nodes;
-    num_type = node->kind;
-
-    switch (num_type) {
+    switch (node->kind) {
 	case a_containing  : type = "containing"; break;
 	case a_contained_by : type = "contained_by"; break;
 	case a_select_element : type = "select_element"; break;
@@ -267,90 +309,78 @@ void printTJanode (tjc_config *tjc_c, TJatree_t *tree, TJanode_t *node, TJanode_
     }
     
     TJCPRINTF (DOTOUT, "%d [label=\"%s\\n%s:n%ds%dpre%d\\n%s\"]\n", nID, type, node->tag, node->nested, node->scored, node->preIDs, node->op);
-    if (par) 
-	TJCPRINTF (DOTOUT, "%d -> %d\n", parID, nID);
     
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
-	if (node->child[c]) printTJanode (tjc_c, tree, node->child[c], node, visited);
-    } 
+	if (node->child[c]) {
+	    childID = printTJanode (tjc_c, tree, node->child[c], visited);
+	    TJCPRINTF (DOTOUT, "%d -> %d\n", nID, childID);
+	}
+    }
+    return nID;
 }
 
 void printTJatree(tjc_config* tjc_c, TJatree_t *atree)
 {
     char visited = atree->root->visited;
     TJCPRINTF(DOTOUT,"digraph G {\n");
-    printTJanode (tjc_c, atree, atree->root, NULL, visited); 
+    printTJanode (tjc_c, atree, atree->root, visited); 
     TJCPRINTF(DOTOUT,"}\n");
 }
 
-void add_support_node(TJatree_t *tree, TJanode_t *node, TJanode_t *par, char visited)
+TJanode_t* add_support_node(TJatree_t *tree, TJanode_t *node, char visited)
 {
     int c;
     TJanode_t *nn;
 
-    if (node->visited > visited) return;
+    if (node->visited > visited) return node;
     node->visited++;
 
     //recursive function call and adding pre2nid or nid2pre translation if necessary
     for (c = 0; c < TJPNODE_MAXCHILD; c++) {
 	if (node->child[c]) {
-	    add_support_node (tree, node->child[c], node, visited);
-	    if (node->preIDs == 0 && node->child[c]->preIDs == 1) {
-		nn = add_node1 (tree, a_pre2nid, node->child[c]);
+	    nn = add_support_node (tree, node->child[c], visited);
+	    if (node->preIDs == 0 && nn->preIDs == 1) {
+		nn = add_node1 (tree, a_pre2nid, nn);
                 nn->visited = visited + 1;
 	        annotate_node (nn, node->child[c]->tag, node->child[c]->scored, node->child[c]->nested, 0);
 		node->child[c] = nn;
 	    }
-	    else if (node->preIDs == 1 && node->child[c]->preIDs == 0) {
-		nn = add_node1 (tree, a_nid2pre, node->child[c]);
+	    else if (node->preIDs == 1 && nn->preIDs == 0) {
+		nn = add_node1 (tree, a_nid2pre, nn);
                 nn->visited = visited + 1;
 	        annotate_node (nn, node->child[c]->tag, node->child[c]->scored, node->child[c]->nested, 1); 
 		node->child[c] = nn;
 	    }
 	}
     }
-
-    //add explicit score combination node if needed
-    //(the containment operator will only perform score propagation no score combination)
-    if (node->child[0] && node->child[0]->scored &&
+    // in case a containment operator works with NIDs and gets scored nodes as input, we also need to associate PREs
+    if (node->child[0] && node->child[0]->scored && node->preIDs == 0 &&
 	    (node->kind == a_contained_by || node->kind == a_containing || node->kind == a_containing_query)) {
-	nn = add_node2 (tree, a_and, node, node->child[0]);
+	nn = add_node1 (tree, a_add_pre, node->child[0]);
         nn->visited = visited + 1;
-	annotate_node (nn, node->tag, 1, node->nested, node->preIDs);
-	if (par) {
-	    c = 0; if (par->child[0] != node) c = 1;
-	    par->child[c] = nn;
-	} else {
-	    tree->root = nn;
-	}
-	// in case the node works with nids, we also need to associate pres
-	if (node->preIDs == 0) {
-	    nn = add_node1 (tree, a_add_pre, node->child[0]);
-            nn->visited = visited + 1;
-	    annotate_node (nn, node->child[0]->tag, 0, node->child[0]->nested, 0);
-	    node->child[0] = nn;
-	}
+	annotate_node (nn, node->child[0]->tag, 0, node->child[0]->nested, 0);
+	node->child[0] = nn;
     }
+    return node;
 }	    
 
 void add_support_nodes(TJatree_t *atree)
 {
     char visited = atree->root->visited;
-    add_support_node (atree, atree->root, NULL, visited); 
+    atree->root = add_support_node (atree, atree->root, visited); 
 }
 
 void set_physical_operators(TJatree_t *tree)
 {
     TJanode_t *node;
-    TJatype_t num_type;
+    TJqnode_t *qnode;
     char *param1, *param2, *param3; 
     char operator[50];
     int i;
 
     for (i = 0; i < tree->length; i++) {
 	node = &(tree->nodes[i]); 
-	num_type = node->kind;
-        switch (num_type) {
+        switch (node->kind) {
 	    case a_select_element : 
 		if (strcmp (node->tag, "!ctx") == 0)
 		    param1 = "startnodes";
@@ -391,6 +421,7 @@ void set_physical_operators(TJatree_t *tree)
 		sprintf(operator, "containing_%s_%s_%s", param1, param2, param3);
 		break;
 	    case a_containing_query :
+		qnode = tree->qnodes[(short)node->qid];
 		if (node->nested)
 		    param1 = "nest";
 		else
@@ -399,11 +430,16 @@ void set_physical_operators(TJatree_t *tree)
 		    param2 = "pre";
 		else
 		    param2 = "nid";
-		if ((tree->qnodes[(short)node->qid])->kind == q_entity)
-		    param3 = "concept";
-		else
-		    param3 = "";
-		sprintf(operator, "containing_%squery_%s_%s", param3, param1, param2);
+		switch (qnode->kind) {
+        	    case q_term      : param3 = "term"; break;
+        	    case q_ent       : param3 = "entity"; break;
+        	    case q_phrase    : param3 = "phrase"; break;
+        	    case q_term_plus : param3 = "term_plus"; break;
+        	    case q_term_min  : param3 = "term_min"; break;
+        	    case q_ent_plus  : param3 = "entity_plus"; break;
+        	    case q_ent_min   : param3 = "entity_min"; break;
+		}
+		sprintf(operator, "containing_query_%s_%s_%s", param1, param2, param3);
 		break;
 	    case a_and :
 		if (node->scored)
