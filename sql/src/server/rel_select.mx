@@ -102,10 +102,10 @@ rel_destroy_(sql_rel *rel)
 	if (rel->exps)
 		list_destroy(rel->exps);
 	if (is_join(rel->op) || 
-	    is_semi(rel->op) || 
-	    is_select(rel->op) || 
-	    is_set(rel->op) || 
-	    rel->op == op_topn) {
+			is_semi(rel->op) || 
+			is_select(rel->op) || 
+			is_set(rel->op) || 
+			rel->op == op_topn) {
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -584,8 +584,8 @@ static sql_rel *
 rel_distinct(sql_rel *l) 
 {
 	if (l->card >= CARD_AGGR) /* incase of CARD_AGGR, we could
-				     do better, ie check the group by
-				     list etc */
+	                             do better, ie check the group by
+	                             list etc */
 		set_distinct(l);
 	return l;
 }
@@ -887,16 +887,16 @@ rel_push_select(sql_rel *rel, sql_exp *ls, sql_exp *e)
 
 		if (rel_is_ref(lrel))
 			break;
-		
+
 		/* push down as long as the operators allow this */
 		if (!is_select(lrel->op) && 
-		    !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
-		    lrel->op != op_join && 
-		    lrel->op != op_left)
+				!(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+				lrel->op != op_join && 
+				lrel->op != op_left)
 			break;
-	        /* pushing through left head of a left join is allowed */
+		/* pushing through left head of a left join is allowed */
 		if (lrel->op == op_left && (
-			!n->next || lrel->l != n->next->data))
+					!n->next || lrel->l != n->next->data))
 			break;
 		p = lrel;
 	}
@@ -958,14 +958,14 @@ rel_push_join(sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
 			and the relation is equal.
 		 */
 		if (lrel != rrel || 
-		   (!is_select(lrel->op) && 
-		    !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
-		    lrel->op != op_join &&
-		    lrel->op != op_left))
+				(!is_select(lrel->op) && 
+				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+				 lrel->op != op_join &&
+				 lrel->op != op_left))
 			break;
-	        /* pushing through left head of a left join is allowed */
+		/* pushing through left head of a left join is allowed */
 		if (lrel->op == op_left && (
-			!ln->next || lrel->l != ln->next->data))
+					!ln->next || lrel->l != ln->next->data))
 			break;
 		p = lrel;
 	}
@@ -1475,7 +1475,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column2(sql, *rel, tname, cname, f);
 
 		/* some views are just in the stack, 
-			like before and after updates views */
+		   like before and after updates views */
 		if (!exp) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
@@ -1662,7 +1662,8 @@ static sql_exp *
 exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	if (strcmp(f->func->imp, "*") == 0 && 
-	    f->func->res.type->scale == SCALE_FIX) {
+			f->func->res.type->scale == SCALE_FIX)
+	{
 		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
@@ -1988,7 +1989,8 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, int f)
 	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 	rel = rel_distinct(rel);
 	if (exps_card(l->exps) <= CARD_AGGR &&
-	    exps_card(r->exps) <= CARD_AGGR) {
+			exps_card(r->exps) <= CARD_AGGR)
+	{
 		rel->card = exps_card(l->exps);
 		exps_fix_card( rel->exps, rel->card);
 	}
@@ -2290,7 +2292,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		}
 		
 		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
-		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) {
+				rel_convert_types(sql, &le, &re2, 1, type_equal) < 0)
+		{
 			exp_destroy(le);
 			exp_destroy(re1);
 			exp_destroy(re2);
@@ -2726,7 +2729,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 
 		if (rel_convert_types(sql, &le, &re1, 1, type_equal) < 0 ||
-		    rel_convert_types(sql, &le, &re2, 1, type_equal) < 0) { 
+				rel_convert_types(sql, &le, &re2, 1, type_equal) < 0)
+		{ 
 			exp_destroy(le);
 			exp_destroy(re1);
 			exp_destroy(re2);
@@ -3024,7 +3028,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int tab
 
 		/* everything failed, fall back to bind on function name only */
 		if ((f = sql_find_func(s, fname, 2)) != NULL && 
-		    (table_func || !f->res.comp_type)) {
+				(table_func || !f->res.comp_type)) {
 			node *m = f->func->ops->h;
 			sql_arg *a = m->data;
 
@@ -3541,11 +3545,11 @@ rel_next_value_for( mvc *sql, symbol *se )
 	if (!find_sql_sequence(s, seq)) 
 		return sql_error(sql, 02, "NEXT VALUE FOR: "
 			"no such sequence '%s'.'%s'", s->base.name, seq);
-        sql_find_subtype(&t, "varchar", 0, 0);
+	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(s, "next_value_for", &t, &t);
 	assert(f);
 	return exp_binop(exp_atom_str(s->base.name, &t), 
-			 exp_atom_str(seq, &t), f);
+			exp_atom_str(seq, &t), f);
 } 
 
 /* some users like to use aliases allready in the groupby */
@@ -3569,7 +3573,7 @@ rel_selection_ref(mvc *sql, sql_rel *rel, symbol *grp, dlist *selection )
 			dlist *l = n->data.sym->data.lval;
 			/* AS name */ 
 			if (l->h->next->data.sval &&
-			    strcmp(l->h->next->data.sval, name) == 0){
+					strcmp(l->h->next->data.sval, name) == 0){
 				sql_exp *ve = rel_value_exp(sql, &rel, l->h->data.sym, sql_sel, ek);
 				if (ve) {
 					dlist *l = dlist_create(sql->sa);
@@ -4291,7 +4295,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 		if (!outer || (!decorrelated && ek.card == card_set)) {
 			if (outer) /* for non decorrelated or card_set sub
-				      queries we project all of the outer */
+						  queries we project all of the outer */
 				rel = rel_project(rel, 
 					rel_projections(sql, outer, NULL, 1, 1));
 			else
@@ -4433,7 +4437,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			/* merge the expressions of the correlated outer, ie
 		   	   first prepend the identity then append 
-		    	   the result expression.  */ 
+			   the result expression.  */ 
 			for (n=rel->exps->h; n && n->next; n = n->next) 
 				list_prepend(outer_gbexps, exp_dup(n->data));
 			list_append(outer_gbexps, exp_dup(n->data));
@@ -4484,7 +4488,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 	assert(sn->s.token == SQL_SELECT);
 
 	if ((ek.card != card_relation && sn->limit >= 0) && 
-	    (ek.card == card_value && sn->limit != 1))
+			(ek.card == card_value && sn->limit != 1))
 		return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
 
 	if (ek.card != card_relation && sn->orderby)
