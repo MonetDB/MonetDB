@@ -236,7 +236,7 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if( cst->val.sval )
 			GDKfree(cst->val.sval);
 		cst->val.sval= GDKstrdup(sea[rr].name);
-		cst->len = strlen(cst->val.sval);
+		cst->len = (int) strlen(cst->val.sval);
 		garbageElement(cntxt, &stk->stk[i]);
 		VALcopy(&stk->stk[i], cst);
 #ifdef DEBUG_RUN_OCTOPUS
