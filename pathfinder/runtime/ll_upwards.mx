@@ -133,6 +133,7 @@ typedef struct {
     if (pos >= result_size) break; /* SANITY */
 
     iter_stack[depth-1][idx] = parent;
+    if (iter_parent > parent) tail_sorted = 0;
     result_pre[pos] = (iter_parent == parent)?oid_nil:parent; /* nils are later filtered out */
     result_iter[pos] = iter;
 
@@ -181,6 +182,7 @@ ll_upwards_@1(                            /* OUTPUT: */
     oid pre = root;  
     oid cur = 0;  
     int depth = 0;  
+    int tail_sorted = 2;  
 
     *stack++ = oid_nil; /* bogus parent, filtered out later */
    (void) bounds_t;
@@ -241,7 +243,7 @@ ll_upwards_@1(                            /* OUTPUT: */
             pre = stack[--depth];
         }
    }
-   return (cur == context_size);
+   return (cur == context_size) + tail_sorted;
 }
 
 @c
@@ -308,6 +310,7 @@ ll_upwards(               /* RESULT: */
     int status = GDK_FAIL;
     BAT *bn = NULL;
     oid *context_result_pre, *context_result_iter;
+    int tail_sorted = 1;
 
     if (!ALIGNsynced(iter_bat,ctx_bat)) {
         GDKerror("%s: iter and context bat should be in sync.\n", axis);
@@ -463,15 +466,14 @@ ll_upwards(               /* RESULT: */
 
             bn = BATnew(TYPE_oid, TYPE_oid, n);
             if (bn) {
-                if (ll_upwards_parent(
-                    context_result_iter = (oid*) Hloc(bn, BUNfirst(bn)),
-                    context_result_pre  = (oid*) Tloc(bn, BUNfirst(bn)),
-                    n, 
-                    bounds, NULL, iter_stack+1, 
-                    pre_size, pre_level,
-                    BATcount(size_bat), 
-                    min_iter, context, n))
-                {
+                int r = ll_upwards_parent(
+                            context_result_iter = (oid*) Hloc(bn, BUNfirst(bn)),
+                            context_result_pre  = (oid*) Tloc(bn, BUNfirst(bn)),
+                            n, bounds, NULL, iter_stack+1, 
+                            pre_size, pre_level,
+                            BATcount(size_bat), 
+                            min_iter, context, n);
+                 if (r) {
                     /* filter out duplicates and non-existing fragment roots (represented by oid_nils) */
                     for(m=i=0; i<n; i++) {
                         oid pre = context_result_pre[i];
@@ -483,7 +485,8 @@ ll_upwards(               /* RESULT: */
                     status = GDK_SUCCEED;
 
                     /* for each context node, parent gives back 1 or 0 results */ 
-                        if (iter_bat->tkey) BATkey(bn, TRUE);
+                    if (iter_bat->tkey) BATkey(bn, TRUE);
+                    tail_sorted = r >> 1;
                 } else  {
                     GDKerror("%s: illegal data in size column or context list.\n", axis);
                 }
@@ -571,15 +574,7 @@ ll_upwards(               /* RESULT: */
         }
         bn->tsorted = 0;
         if (niters == 1) {
-            /* StM:
-             * With only 1 iter, the item's/pre's in the result should be sorted,
-             * but they are apparently not. Not setting the sortedness property
-             * seems to avoid
-             * [ 2668437 ] PF runtime: parent step produces not/wrongly sorted result
-             * https://sourceforge.net/tracker/index.php?func=detail&aid=2668437&group_id=56967&atid=482468
-             * without harming any (other) Pathfinder/XQuery tests.
-             */
-            /*bn->tsorted = GDK_SORTED;*/
+            bn->tsorted = tail_sorted;
             BATkey(BATmirror(bn), 1);
         }
         *ret = bn;
