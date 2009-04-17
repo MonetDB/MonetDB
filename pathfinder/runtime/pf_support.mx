@@ -2582,15 +2582,22 @@ if (postfilter) {
 	       	@:mapping_code@
         }
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(contID).mirror(); # no selection: cands is everything
+      { cands := ws.fetch(PRE_SIZE).fetch(contID).mirror(); # no selection: cands is everything
+        collnode_filter := result_part_item; }
 @= kind_pre
-      { cands := ws.fetch(PRE_KIND).fetch(contID); kind_test := @1; }
+      { cands := ws.fetch(PRE_KIND).fetch(contID); 
+        kind_test := @1; 
+        collnode_filter := result_part_item; }
 @= nsloc_pre
-      { var nsloc := ns + NS_ACCEL_SEP + loc; @:prefilter(nsloc,QN_URI_LOC,ELEMENT)@ }
+      { var nsloc := ns + NS_ACCEL_SEP + loc; 
+        @:prefilter(nsloc,QN_URI_LOC,ELEMENT)@ 
+        collnode_filter := result_part_item; }
 @= loc_pre
-      { @:prefilter(loc,QN_LOC,ELEMENT)@ }
+      { @:prefilter(loc,QN_LOC,ELEMENT)@ 
+        collnode_filter := result_part_item; }
 @= ns_pre
-      { @:prefilter(ns,QN_URI,ELEMENT)@ }
+      { @:prefilter(ns,QN_URI,ELEMENT)@ 
+        collnode_filter := result_part_item; }
 @= prefilter
 	       cands := ws.fetch(PRE_SIZE).fetch(contID).mirror();
 	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
@@ -2630,15 +2637,15 @@ if (postfilter) {
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
 @
 @= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,,                                                               )@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
+@:loop_lifted_scj_step2(@1,               ,              ,               ,                   ,,,false)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,,false)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,,false)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,,false)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,,false)@
+@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,,false)@
 @
 @= loop_lifted_scj_step1x
-@:loop_lifted_scj_step2(@1,,,,,                                                               @:params1@,)@
+@:loop_lifted_scj_step2(@1,,,,,                                                               @:params1@,,false)@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,,                   @:params1@,kind_test := kind;)@
 @:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params1@,kind_test := ELEMENT;)@
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params1@,kind_test := ELEMENT;)@
@@ -2651,6 +2658,7 @@ if (postfilter) {
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
         result_part_cont := nil;
+	var collnode_filter := new(void,oid);
 
 	# pre-test
 	@4
@@ -2663,6 +2671,15 @@ if (postfilter) {
 
 	# post-test
 	@2
+
+        # filter out downward steps if the context contains the collection root
+        if (postfilter) {
+            if (collnode_filter.texist(0@0)) {
+                var pivot        := ws_docfilter(ws, result_part_item, contID, false);
+                result_part_item := pivot.tmark(0@0);
+                result_part_iter := pivot.hmark(0@0).leftfetchjoin(result_part_iter);
+            }
+	}
 @
 @= loop_lifted_scj_step2
 PROC loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws @3) : bat[void,bat]

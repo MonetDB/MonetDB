@@ -2468,7 +2468,7 @@ PROC ws_lookup(BAT[void,bat] ws,
         res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
     }
     # SCJ must catch error and use sequential post-filter instead.
-    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont).tmark(0@0);
+    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont, true).tmark(0@0);
 }
 
 
@@ -2566,7 +2566,7 @@ PROC vx_lookup(bat[void,bat] ws,
         if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
             id_pre := id_iter.project(1@0); break;
         }
-        var key_pre := ws_docfilter(ws, key_nid, $h).ssort(); # sort on [iter,pre]
+        var key_pre := ws_docfilter(ws, key_nid, $h, true).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
     return id_pre;
@@ -2576,7 +2576,7 @@ PROC vx_lookup(bat[void,bat] ws,
 # also makes sure that returned documents get an OPEN_DOCID ws entry
 PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
-                  oid cont) : bat[any::1,oid]
+                  oid cont, bit swizzle) : bat[any::1,oid]
 {
     var map_pid   := ws.fetch(MAP_PID).fetch(cont);
     var nid_rid   := ws.fetch(NID_RID).fetch(cont);
@@ -2587,8 +2587,9 @@ PROC ws_docfilter(bat[void,bat] ws,
     var open_name := ws.fetch(OPEN_NAME);
 
     # first, ensure sorted PREs
-    var isolate := (ttype(map_pid) = oid);
-    if (not(isolate)) {
+    if (swizzle) 
+        swizzle := (ttype(map_pid) = oid);
+    if (not(swizzle)) {
         any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
         if (frag_root.exist(TEMP_DOC)) return any_pre; # temporary document (collections) can never have been deleted
     } else if (any_pre.htype() = void) {
@@ -4193,7 +4194,7 @@ collection_cleanup(_collection_cleanup()); # silently clean up the repository
 
 mapi_register(xquery_frontend()); # open up mapi client access
 if (monet_environment.find("monet_welcome") = "yes") 
-    printf("%c MonetDB/XQuery module v0.29.0 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
+    printf("%c MonetDB/XQuery module v0.28.3 loaded (default back-end is '%s')\n", int(35), monet_environment.find("xquery_backend"));
     #                                 ^^^^^^
     # Maintained via vertoo. Please don't modify by hand!
     # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
