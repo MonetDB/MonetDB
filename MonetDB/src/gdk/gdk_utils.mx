@@ -658,7 +658,7 @@ GDKmemchk(int memchk, int vmchk)
 	size_t vmtarget = GDKvm_cursize();
 
 	MEMDEBUG {
-		/* Protect from being called recursivly because THRprintf
+		/* Protect from being called recursively because THRprintf
 		   allocates memory */
 		static int printing[THREADS];
 		int tid = THRgettid();
