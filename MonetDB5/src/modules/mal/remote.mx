@@ -636,7 +636,7 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 			/* does it match? */
 			if (strcmp(buf, dbname) == 0) {
 				ret = GDKzalloc(sizeof(struct _userconn));
-				ret->dbname = GDKstrdup(sab->dbname);
+				ret->dbname = GDKstrdup(dbname);
 				tmp = p;
 				if (strncmp(tmp, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
 					str port, t;
