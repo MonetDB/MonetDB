@@ -340,18 +340,33 @@ remote_export str RMTgetList(int *ret, int *ret2);
 /**
  * Returns a BAT with available connections.  In the head the dbname is
  * stored, in the tail "user", "self", "local" or "remote".  The entries
- * are grouped in that order.
+ * grouped in that order.  If merovingian is not running, only running
+ * local databases are returned.
  */
-remote_export str RMTgetList(int *ret, int *ret2){
+remote_export str RMTgetList(int *ret, int *ret2) {
 	BAT *list, *kind;
 	str type;
 	userconn c;
 	sabdb *sab, *osab, *me;
 	str tmp;
+	char mero_running;
 #ifndef WIN32
 	char path[8096];
-	char mero_running;
 	int fd;
+
+	mero_running = 1;
+	snprintf(path, 8096, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
+	fd = MT_lockf(path, F_TLOCK, 4, 1);
+	if (fd >= 0 || fd <= -2) {
+		if (fd >= 0) {
+			/* oops, not running */
+			close(fd);
+		}
+		mero_running = 0;
+	}
+#else
+	/* on windos we just simply say merovingian doesn't run */
+	mero_running = 0;
 #endif
 
 	list = BATnew(TYPE_oid, TYPE_str, 20);
@@ -389,7 +404,9 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	rethrow("remote.list", tmp, SABAOTHgetStatus(&osab, NULL));
 	sab = osab;
 	while (sab != NULL) {
-		if (strcmp(sab->dbname, me->dbname) != 0) {
+		if ((mero_running == 1 || sab->state == SABdbRunning) &&
+				strcmp(sab->dbname, me->dbname) != 0)
+		{
 			BUNappend(list, (ptr)sab->dbname, FALSE);
 			BUNappend(kind, (ptr)type, FALSE);
 		}
@@ -402,17 +419,6 @@ remote_export str RMTgetList(int *ret, int *ret2){
 	 *                     portability issues! */
 	type = "remote";
 #ifndef WIN32
-	mero_running = 1;
-	snprintf(path, 8096, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
-	fd = MT_lockf(path, F_TLOCK, 4, 1);
-	if (fd >= 0 || fd <= -2) {
-		if (fd >= 0) {
-			/* oops, not running */
-			close(fd);
-		}
-		mero_running = 0;
-	}
-
 	/* if Merovingian isn't running, there's not much we can do */
 	if (mero_running == 1) do {
 		char buf[256];
