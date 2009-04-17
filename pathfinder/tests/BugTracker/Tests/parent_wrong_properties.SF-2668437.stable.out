@@ -26,7 +26,6 @@ Over..
 # 18:06:36 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=rig --port=32985 parent_wrong_properties.SF-2668437.xq
 # 18:06:36 >  
 
-= Still needs to be checke/verified ... =
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>17291</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
@@ -35,7 +34,6 @@ Over..
 <XQueryResult>17291</XQueryResult>
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>17291</XQueryResult>
-= Still needs to be checke/verified ... =
 
 # 10:02:17 >  
 # 10:02:17 >  Done.
