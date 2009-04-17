@@ -3517,12 +3517,16 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 		if (or != rel) 
 			return NULL;
 		if (!e) {
+			char buf[ERRSIZE];
 			/* reset error */
 			sql->session->status = 0;
+			strcpy(buf, sql->errstr);
 			sql->errstr[0] = '\0';
 
 			e = rel_selection_ref(sql, rel, grp, selection);
 			if (!e) {
+				if (sql->errstr[0] == 0)
+					strcpy(sql->errstr, buf);
 				list_destroy(exps);
 				return NULL;
 			}
