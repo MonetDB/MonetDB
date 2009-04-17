@@ -37,7 +37,7 @@ descriptors.
 #ifndef _MONET_CLIENT_H_
 #define _MONET_CLIENT_H_
 
-#define MAXCLIENTS	512
+#define MAXCLIENTS	THREADS-4
 #define BLOCKMODE	32
 #define FINISHED	0
 #define STARTING	1
