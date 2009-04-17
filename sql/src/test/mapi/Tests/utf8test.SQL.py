@@ -21,6 +21,8 @@ def main():
     client('%s -fsql -s "select * from utf8test"' % mclient)
     client('%s -fraw -Eiso-8859-1 -s "select * from utf8test"' % mclient)
     client('%s -fsql -Eiso-8859-1 -s "select * from utf8test"' % mclient)
+    client('%s -fraw -Eus-ascii -s "select * from utf8test"' % mclient)
+    client('%s -fsql -Eus-ascii -s "select * from utf8test"' % mclient)
     client('%s -s "drop table utf8test"' % mclient)
 
 main()
