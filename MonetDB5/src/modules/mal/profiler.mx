@@ -82,7 +82,7 @@ address CMDopenProfilerStream
 comment "Sent the events to output stream";
 pattern openStream(fnme:str):void
 address CMDsetProfilerFile
-comment "Send the log events to a file ";
+comment "Send the log events to a file, stdout or console";
 pattern openStream(host:str, port:int):void
 address CMDsetProfilerStream
 comment "Send the log events to a stream ";
