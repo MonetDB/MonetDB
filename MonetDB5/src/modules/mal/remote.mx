@@ -1385,7 +1385,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 /**
  * exec executes the function with its given arguments on the remote
  * host, returning the function's return value.  exec is purposely kept
- * very spartan.  All arguments need to handles to previously put()
+ * very spartan.  All arguments need to be handles to previously put()
  * values.  It calls the function with the given arguments at the remote
  * site, and returns the handle which stores the return value of the
  * remotely executed function.  This return value can be retrieved using
