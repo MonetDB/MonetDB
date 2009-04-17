@@ -616,6 +616,9 @@ setLogFile(Module mod, str fname)
 		profileLockInitialized= 1;
 	}
 	mal_set_lock(profileLock, "profileLock");
+	if( strcmp(fname,"console")==0)
+		eventstream = mal_clients[0].fdout;
+	else
 	if( strcmp(fname,"stdout")==0)
 		eventstream = MCgetClient()->fdout;
 	else
