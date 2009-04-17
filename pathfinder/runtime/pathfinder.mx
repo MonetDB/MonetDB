@@ -2468,7 +2468,7 @@ PROC ws_lookup(BAT[void,bat] ws,
         res := res.access(BAT_WRITE).insert(ins).deleteBuns(del).access(BAT_READ);
     }
     # SCJ must catch error and use sequential post-filter instead.
-    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont).tmark(0@0);
+    return ws_docfilter(ws, sort(res).hmark(oid_nil), cont, true).tmark(0@0);
 }
 
 
@@ -2566,7 +2566,7 @@ PROC vx_lookup(bat[void,bat] ws,
         if ((count(id_pre) + count(key_nid)) > (10*count(iter_val))) {
             id_pre := id_iter.project(1@0); break;
         }
-        var key_pre := ws_docfilter(ws, key_nid, $h).ssort(); # sort on [iter,pre]
+        var key_pre := ws_docfilter(ws, key_nid, $h, true).ssort(); # sort on [iter,pre]
         id_pre.insert(reverse(reverse(key_pre).leftfetchjoin(key_id)));
     }
     return id_pre;
@@ -2576,7 +2576,7 @@ PROC vx_lookup(bat[void,bat] ws,
 # also makes sure that returned documents get an OPEN_DOCID ws entry
 PROC ws_docfilter(bat[void,bat] ws,
                   bat[any::1,oid] any_pre,
-                  oid cont) : bat[any::1,oid]
+                  oid cont, bit swizzle) : bat[any::1,oid]
 {
     var map_pid   := ws.fetch(MAP_PID).fetch(cont);
     var nid_rid   := ws.fetch(NID_RID).fetch(cont);
@@ -2587,8 +2587,9 @@ PROC ws_docfilter(bat[void,bat] ws,
     var open_name := ws.fetch(OPEN_NAME);
 
     # first, ensure sorted PREs
-    var isolate := (ttype(map_pid) = oid);
-    if (not(isolate)) {
+    if (swizzle) 
+        swizzle := (ttype(map_pid) = oid);
+    if (not(swizzle)) {
         any_pre := any_pre.tsort(); # no-op for read-only nsloc element index
         if (frag_root.exist(TEMP_DOC)) return any_pre; # temporary document (collections) can never have been deleted
     } else if (any_pre.htype() = void) {
@@ -3346,17 +3347,23 @@ PROC ws_docavailable(BAT[void,BAT] ws, BAT[void,str] idx_names) : BAT[void,bit]
     return ret;
 }
 
+PROC ws_collection_check(BAT[any::1,str] nms) : BAT[any::1,oid] {
+    var coll := nms.leftjoin(reverse(collection_name)); 
+    var miss := nms.kdiff(coll);
+    if (count(miss) > 0) 
+        ERROR("err:FODC0004: collection '%s' unknown (%d missing in total)", miss.fetch(0), count(tunique(miss)));
+    return coll;
+}
+
 # pf:collection(), get 'collection root' as a single startpoint to query an entire collection
 PROC ws_collection_root(BAT[void,BAT] ws, BAT[void,str] colnames) : BAT[oid,oid]
 {
     var colnames_unq := colnames.tdiff(ws.fetch(CONT_NAME)).tunique().mirror(); # [str,str]
     lock_set(pf_short);
-    var colnames_coll, err := CATCH({ colnames_coll := colnames_unq.leftjoin(reverse(collection_name));
+    var colnames_coll, err := CATCH({ colnames_coll := ws_collection_check(colnames_unq);
                                       colname_pins.insert(colnames_coll.project(ws_id(ws))); });
     lock_unset(pf_short);
-    var notfound := reverse(colnames_coll).tdiff(colnames);
-    if (count(notfound) > 0) ERROR("pf:collection() %s not found (%d such errors).\n", notfound.fetch(0), count(notfound));
-
+    if (not(isnil(err))) ERROR(err);
     colnames_coll@batloop() {
         var docBAT := [bat]([+](str(int($t)), ws_dsk).reverse().mirror()); # get master bats
         ws_opencoll(ws, docBAT, $h, $t); # collections are loaded one-by-one
@@ -3372,7 +3379,7 @@ PROC ws_collection(BAT[void,BAT] ws, BAT[oid,str] nms, BAT[void,oid] map) : BAT[
     nms := nms.fetch(nms.tmark(0@0).[startsWith]("::").ord_uselect(false));
 
     lock_set(pf_short);
-    err := CATCH({ var doc := nms.leftjoin(reverse(collection_name)).leftjoin(reverse(doc_collection)).tsort();
+    err := CATCH({ var doc := ws_collection_check(nms).leftjoin(reverse(doc_collection)).tsort();
                    var doch := doc.mark(0@0), doct := doc.tmark(0@0); # doc == doch.leftjoin(doct);
                    var docs := doct.leftjoin(doc_name).select(str_nil,str_nil);  # selected existing docs
                    doc := doch.leftjoin(docs.mirror().leftjoin(doct));  # reduced doc to existing docs
