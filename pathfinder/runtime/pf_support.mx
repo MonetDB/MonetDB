@@ -730,7 +730,6 @@ PROC get_root(BAT[oid,bat] ws, BAT[void,oid] item, BAT[void,int] kind, BAT[void,
                 }
                 var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
                 replace_root(result, frag_item, mirror(reverse(frag_root)));
-                var frag_item := cont.ord_uselect($h).mirror().leftfetchjoin(result);
         }
         return result.access(BAT_READ).tmark(seqbase);
 }
@@ -8630,7 +8629,7 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
         for (delta = (n-i) >> 4; delta > 40; delta >>= 4)
             while (i+delta < n && * (oid *) BUNtail(inputi, i+delta) <= docpre)
                 i += delta;
-        while (i < n && * (oid *) BUNtail(inputi, i) <= docpre)
+        while (i < n && * (oid *) BUNtail(inputi, i) < docpre)
             i++;
     }
     return GDK_SUCCEED;
