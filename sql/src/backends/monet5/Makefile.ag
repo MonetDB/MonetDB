@@ -32,6 +32,7 @@ lib__sql = {
 		sql_optimizer.mx \
 		sql_result.mx \
 		sql_readline.mx \
+		sql_emptyset.mx \
 		sql_bpm.mx
 	LIBS = ../../server/libsqlserver ../../storage/libstore ../../storage/bat/libbatstore ../../storage/restrict/librestrictstore ../../storage/bpm/libbpmstore ../../common/libsqlcommon \
 		$(MONETDB5_MODS) -l_blob -l_logger -l_mtime -l_bat5 -l_optimizer -l_tablet -l_cluster -l_bpm -l_remote -l_run_octopus $(MONETDB5_LIBS) -lmonetdb5 -l_mal_mapi \
@@ -62,7 +63,7 @@ headers_h = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
-	SOURCES = sql.mx sql_bpm.mx
+	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx
 }
 
 bin_merovingian = {

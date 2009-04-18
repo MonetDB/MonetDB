@@ -1,0 +1,315 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f sql_emptyset
+@a M. Kersten
+@- Readonly processing
+The SQL implementation is based on delta tables to collect the updates.
+A consequence is that both the plan becomes large and
+the instruction recycler can not keep information around.
+
+Therefore, we perform a just in time optimization, propagating
+all empty BATs (if possible) and run the modified plan.
+generation.
+
+During empty set propagation, new candidates may appear. For example,
+taking the intersection with an empty set creates a target variable
+that is empty too. It becomes an immediate target for optimization.
+The current implementation is conservative. A limited set of
+instructions is considered. Any addition to the MonetDB instruction
+set would call for assessment on their effect.
+
+@{
+@h
+#ifndef _SQL_EMPTYSET_
+#define _SQL_EMPTYSET_
+#include "opt_prelude.h"
+#include "opt_support.h"
+#include "sql.h"
+
+#define DEBUG_SQL_EMPTYSET	 /* show partial result */
+sql5_export str SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /*  _SQL_EMPTYSET_*/
+@c
+#include "sql_config.h"
+#include "sql_mvc.h"
+#include "sql_emptyset.h"
+@c
+str
+SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str likeRef = getName("like", 4);
+	str existRef = getName("exist", 5);
+	str uniqueRef = getName("unique", 6);
+	str suniqueRef = getName("sunique", 7);
+	str kuniqueRef = getName("kunique", 7);
+	str intersectRef = getName("intersect", 9);
+	str sintersectRef = getName("sintersect", 10);
+	str kintersectRef = getName("kintersect", 10);
+	str fragmentRef = getName("fragment", 8);
+	mvc *m = NULL;
+	int i, j, actions = 0, start= getPC(mb,pci);
+	char *empty;
+	int limit;
+	InstrPtr q, p, *old;
+	str msg = getContext(cntxt,mb, &m, NULL);
+	BAT *b;
+
+	(void) stk;
+	(void) p;
+	(void) cntxt;
+	if (msg)
+		return msg;
+	empty= (char*) GDKzalloc(mb->vtop);
+#ifdef DEBUG_SQL_EMPTYSET
+	printf("SQL_EMPTYSET \n");
+	printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
+#endif
+
+	limit = mb->stop;
+	old = mb->stmt;
+	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
+
+	for (i = 0; i < limit; i++) {
+		char *f;
+		p = old[i];
+		if ( p == pci)
+			continue;
+
+		p= copyInstruction(p);
+@-
+The bulk of the intelligence lies in inspecting the SQL columns
+and to filter/replace calls with empty arguments.
+@c
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef ||
+			getFunctionId(p) == bindidxRef) ){
+			b = mvc_bind(m, *(str*) getArgReference(stk,p,1),
+				 *(str*) getArgReference(stk,p,2),
+				 *(str*) getArgReference(stk,p,3),
+				 *(int*) getArgReference(stk,p,4));
+			if ( BATcount(b) == 0){
+#ifdef DEBUG_SQL_EMPTYSET
+				stream_printf(cntxt->fdout,"empty %d %s\n",
+					getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+				empty[getArg(p,0)] = 1;
+				BBPreleaseref(b->batCacheid);
+				q= newStmt(mb,batRef,newRef);
+				getArg(q,0)= getArg(p,0);
+				q= pushType(mb,q,getHeadType(getArgType(mb,p,0)));
+				q= pushType(mb,q,getTailType(getArgType(mb,p,0)));
+				freeInstruction(p);
+				actions++;
+				continue;
+			}
+			BBPreleaseref(b->batCacheid);
+		} 
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
+			b = mvc_bind_dbat(m, *(str*) getArgReference(stk,p,1),
+				 *(str*) getArgReference(stk,p,2),
+				 *(int*) getArgReference(stk,p,3));
+			if ( BATcount(b) == 0){
+#ifdef DEBUG_SQL_EMPTYSET
+				stream_printf(cntxt->fdout,"empty %d %s\n",
+					getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+				empty[getArg(p,0)] = 1;
+				BBPreleaseref(b->batCacheid);
+				q= newStmt(mb,batRef,newRef);
+				getArg(q,0)= getArg(p,0);
+				q= pushType(mb,q,getHeadType(getArgType(mb,p,0)));
+				q= pushType(mb,q,getTailType(getArgType(mb,p,0)));
+				freeInstruction(p);
+				actions++;
+				continue;
+			}
+			BBPreleaseref(b->batCacheid);
+		} 
+
+		if( p->token == ENDsymbol){
+			pushInstruction(mb,p);
+			for(i++; i<limit; i++)
+			if( old[i])
+				pushInstruction(mb,copyInstruction(old[i]));
+			break;
+		}
+
+		for (j = p->retc; j < p->argc; j++) {
+			if (empty[getArg(p, j)]) {
+				/* decode operations */
+				if (getModuleId(p)== algebraRef) {
+					f= getFunctionId(p);
+					if (f == existRef) {
+						/* always false */
+						setModuleId(p, NULL);
+						setFunctionId(p, NULL);
+						p->argc = 1;
+						p->token = ASSIGNsymbol;
+						p= pushBit(mb, p, FALSE);
+						actions++;
+						break;
+					} 
+					if ( f == selectRef || 
+					     f == thetauselectRef || 
+					     f == tuniqueRef || 
+					     f == likeRef  || 
+					     f == sortRef  || 
+					     f == sortTailRef  ||
+					     f == sortHTRef  || 
+					     f == sortTHRef  || 
+					     f == uniqueRef  || 
+					     f == suniqueRef  || 
+					     f == kuniqueRef  ||
+					     f == intersectRef  || 
+					     f == semijoinRef ||
+					     f == sintersectRef  || 
+					     f == kintersectRef  ||
+					     f == fragmentRef ){
+
+						/* result is empty */
+						p->token = ASSIGNsymbol;
+						p->fcn = 0;
+						getModuleId(p) = batRef;
+						getFunctionId(p) = newRef;
+						p->argc=1;
+						p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+						p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+						empty[getArg(p,0)]=1;
+#ifdef DEBUG_SQL_EMPTYSET
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+						break;
+					} 
+					if ( f == differenceRef || 
+					     f == kdifferenceRef ) {
+						if ( j == 1){
+							p->token = ASSIGNsymbol;
+							p->fcn = 0;
+							getModuleId(p) = batRef;
+							getFunctionId(p) = newRef;
+							p->argc=1;
+							p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+							p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+							empty[getArg(p,0)]=1;
+						} else {
+							p->token = ASSIGNsymbol;
+							clrFunction(p);
+							p->argc= 2;
+						}
+#ifdef DEBUG_SQL_EMPTYSET
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+						break;
+					}
+					if ( f == sunionRef || 
+					     f == kunionRef || 
+					     f == unionRef) {
+						/* copy non-empty argument */
+						if( j == 2) {
+							p->token = ASSIGNsymbol;
+							clrFunction(p);
+							p->argc= 2;
+							empty[getArg(p,0)] = empty[getArg(p,1)];
+#ifdef DEBUG_SQL_EMPTYSET
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+						} else {
+							p->token = ASSIGNsymbol;
+							clrFunction(p);
+							p->argc= 2;
+							getArg(p,1)= getArg(p,2);
+							empty[getArg(p,0)] = empty[getArg(p,1)];
+#ifdef DEBUG_SQL_EMPTYSET
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+						}
+						break;
+					} 
+				}
+				if ( getModuleId(p) == batRef && getFunctionId(p) == reverseRef){
+					p->token = ASSIGNsymbol;
+					p->fcn = 0;
+					getFunctionId(p) = newRef;
+					p->argc=1;
+					p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+					p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+					actions++;
+					empty[getArg(p,0)]=1;
+#ifdef DEBUG_SQL_EMPTYSET
+					stream_printf(cntxt->fdout,"empty %d %s\n",
+						getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+					break;
+				}
+@-
+If the target variable is empty and the function does not
+have a side-effect, we can replace it with a construction
+of the empty set. The dead-code optimizer will take care
+of removal of superflous constructions.
+@c
+				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
+					!isLinearFlow(p) &&
+					!isUnsafeFunction(p) &&
+					isaBatType(getArgType(mb,p,0))){
+					int tpe=getArgType(mb,p,0);
+					setModuleId(p, batRef);
+					setFunctionId(p, newRef);
+					p->argc = 1;
+					p->token = ASSIGNsymbol;
+					p->typechk= TYPE_UNKNOWN;
+					p->fcn = NULL;
+					p= pushArgument(mb, p, 
+						newTypeVariable(mb, getHeadType(tpe)));
+					p= pushArgument(mb, p, 
+						newTypeVariable(mb, getTailType(tpe)));
+					actions++;
+					break;
+				}
+			}
+		}
+		pushInstruction(mb,p);
+	}
+	newStmt(mb,optimizerRef,putName("aliases",7));
+	newStmt(mb,optimizerRef,putName("deadcode",8));
+	if( actions ){
+		clrAllTypes(mb);	 /* force a complete resolve */
+		chkProgram(cntxt->nspace,mb);
+		if ( optimizeMALBlock(cntxt,mb) == MAL_SUCCEED){
+#ifdef DEBUG_SQL_EMPTYSET
+			printf("FINAL STAGE actions %d errors=%d\n", actions, mb->errors);
+			printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
+#endif
+			msg= reenterMAL(cntxt,mb,start+1,0,stk,0,0);
+		}
+	} 
+	/* restore after execution */
+	for( i=0; i<mb->stop; i++){
+		freeInstruction(getInstrPtr(mb,i));
+		mb->stmt[i]= 0;
+	}
+	mb->stop= 0;
+	for( i=0; i<limit; i++)
+		pushInstruction(mb, old[i]);
+	GDKfree(old);
+	throw(MAL,"sql.emptyset","!skip-to-end");
+}
+
+@}

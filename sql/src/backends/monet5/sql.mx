@@ -283,6 +283,10 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
+pattern sql.emptyset()
+address SQLemptyset
+comment "Symbolic evaluation of empty BAT expressions";
+
 function times(elaps:int,inblock:lng, oublock:lng):void;
 	io.printf("#times %d ms",elaps);
 	io.printf(" %d reads",inblock);
@@ -826,6 +830,7 @@ include sql_bpm;
 #include "sql_string.h"
 #include "sql_qc.h"
 #include "sql_env.h"
+#include "sql_emptyset.h"
 
 #include <bat/bat_storage.h>
 
