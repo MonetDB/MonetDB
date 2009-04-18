@@ -299,6 +299,7 @@ if (name == 0){
 			  getFunctionId(p) == binddbatRef ||
 			  getFunctionId(p) == bindidxRef)){
 			setModuleId(p, octopusRef);
+			setVarUDFtype(tm,getArg(p,0));
 			p= setArgument(tm,p,1,conn);
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 			p= pushInt(tm,p,pieces);
