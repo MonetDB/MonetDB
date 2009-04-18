@@ -45,3 +45,5 @@ POWER_vs_prod.SF-2596114
 parallel_bulk-load.SF-2771052.unpack_csv
 parallel_bulk-load.SF-2771052.test
 wrong_error_message.SF-2637051
+AVG_of_SQRT.SF-2757642.unpack_csv
+AVG_of_SQRT.SF-2757642.test
