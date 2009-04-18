@@ -1,0 +1,31 @@
+# a simple dataflow test to check call methods.
+include sql;
+sql.init();
+
+function octopus.qry(hgh:int):int;
+    conn := remote.connect("demo","monetdb","monetdb");
+	r:= remote.put(conn,20);
+	i:int:= remote.get(conn,r);
+	hgh:= hgh+i;
+	return qry:= hgh;
+end octopus.qry;
+
+function octopus.exec0(dbname:str,query:str,version:int):int;
+    _4 := remote.connect(dbname,"monetdb","monetdb");
+    _6 := remote.put(_4,version);
+    _7 := remote.exec(_4,"octopus",query,_6);
+    _9:int  := remote.get(_4,_7);
+	io.print(_9);
+    return exec0 := _9;
+end octopus.exec0;
+
+barrier go:= language.dataflow();
+	t1:= octopus.exec0("demo","qry",1);
+	t2:= octopus.exec0("demo","qry",2);
+	t3:= octopus.exec0("demo","qry",3);
+	t4:= octopus.exec0("demo","qry",4);
+exit go;
+io.print(t1);
+io.print(t2);
+io.print(t3);
+io.print(t4);
