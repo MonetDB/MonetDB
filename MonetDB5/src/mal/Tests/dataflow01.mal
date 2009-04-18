@@ -2,8 +2,9 @@
 
 function load():bat[:oid,:lng];
 b:= bat.new(:oid,:lng);
+k:=0;
 barrier (go,i):= language.newRange(0:lng);
-	k:= mmath.rand();
+	k:= k+1;
 	l:= calc.lng(k);
 	bat.insert(b,nil:oid,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
