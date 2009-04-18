@@ -656,7 +656,7 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 			/* does it match? */
 			if (strcmp(buf, dbname) == 0) {
 				ret = GDKzalloc(sizeof(struct _userconn));
-				ret->dbname = GDKstrdup(sab->dbname);
+				ret->dbname = GDKstrdup(dbname);
 				tmp = p;
 				if (strncmp(tmp, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
 					str port, t;
@@ -1405,7 +1405,7 @@ remote_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 /**
  * exec executes the function with its given arguments on the remote
  * host, returning the function's return value.  exec is purposely kept
- * very spartan.  All arguments need to handles to previously put()
+ * very spartan.  All arguments need to be handles to previously put()
  * values.  It calls the function with the given arguments at the remote
  * site, and returns the handle which stores the return value of the
  * remotely executed function.  This return value can be retrieved using
