@@ -20,9 +20,6 @@ function qry(z:bat[:oid,:lng],low:int,hgh:int):wrd;
 end qry;
 
 s:= load();
-mdb.setTrace(true);
-mdb.setTimer(true);
-mdb.setThread(true);
 
 barrier go:= language.dataflow();
 	t1:= qry(s,1,100);
