@@ -1207,8 +1207,6 @@ getContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
 	if (cntxt == NULL ) 
 		throw(SQL, "mvc","No client record");
 	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
-		SQLinitClient(cntxt);
-	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
 		throw(SQL, "mvc","SQL module not initialized");
 	*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
 	if (b)
