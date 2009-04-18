@@ -1,5 +1,0 @@
-pf:add-doc("$TSTSRCDIR/swizzle-bug2.SF-1763495.xml","swizzle-bug2.SF-1763495.xml","swizzle-bug2.SF-1763495.xml",99)
-<>
-do delete doc("swizzle-bug2.SF-1763495.xml")//b
-<>
-doc("swizzle-bug2.SF-1763495.xml")/id("200")

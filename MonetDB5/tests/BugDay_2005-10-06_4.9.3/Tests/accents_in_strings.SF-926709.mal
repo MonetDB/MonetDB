@@ -1,2 +1,0 @@
-	t := str.str("André");
-	io.print(t);

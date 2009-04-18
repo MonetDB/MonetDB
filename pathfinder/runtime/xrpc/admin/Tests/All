@@ -1,8 +1,0 @@
-add_del_doc_noxrpc
-add_del_doc
-backup_restore_noxrpc
-backup_restore
-db_stats_noxrpc
-db_stats
-db_env_noxrpc
-db_env

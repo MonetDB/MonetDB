@@ -1722,7 +1722,7 @@ shredder_create(char *location,
                         GDKerror("shredder_create: malloc failure\n");
                         return shredder_free(shredCtx,0);
                     } 
-                    memcpy(sb->heapBackup, sb->bat->theap->base, GDK_STRHASHTABLE*sizeof(stridx_t));
+                    memcpy(sb->heapBackup, sb->bat->theap->base, GDK_STRHASHTABLE*sizeof(var_t));
                 }
             }
         } else {

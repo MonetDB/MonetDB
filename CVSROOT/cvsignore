@@ -1,9 +1,0 @@
-*.pyc
-*.pyo
-*.log
-*.rpt
-.incs.ag
-.incs.in
-Makefile.am
-Makefile.in
-Makefile.msc
