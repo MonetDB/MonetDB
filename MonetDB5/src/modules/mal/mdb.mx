@@ -70,6 +70,14 @@ command modules():bat[:int,:str]
 address CMDmodules
 comment "List available modules";
 
+pattern setTrap(mod:str, fcn:str, b:bit):void
+address MDBtrapFunction
+comment "Suspend upon a call to the MAL function.";
+
+pattern setTrap(idx:int):void
+address mdbTrapClient
+comment "Call debugger for a specific process.";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
@@ -159,9 +167,12 @@ pattern lifespan(M:str,F:str):void
 address MDBlifespan
 comment "Dump the current routine lifespan information on standard out.";
 
-pattern grab(id:int):void
-address MDBgrabClient
-comment "Stop and debug another client process.";
+pattern grab():void
+address mdbGrab
+comment "Call debugger for a suspended process.";
+pattern trap():void
+address mdbTrap
+comment "A suspended process for debugging.";
 
 pattern dot(M:str,F:str,s:str):void 
 address MDBshowFlowGraph
@@ -256,7 +267,8 @@ mdb_export str MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPt
 mdb_export str MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBgrabClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBgrapTrappedProcess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mdb_export str MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mdb_export str MDBdummy(int *ret);
 
@@ -882,46 +894,7 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	showFlowGraph(s->def, stk, fname);
 	return MAL_SUCCEED;
 }
-@-
-Grab a client process by exchange of streams
-@c
-str
-MDBgrabClient(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	Client c;
-	ClientRec old;
-	int *id = (int*) getArgReference(stk,pci,1);
 
-	(void) mb;
-	old= *cntxt;
-
-	if( *id<0 || *id>= MAL_MAXCLIENTS)
-		throw(MAL,"clients.grab","No client process");
-	fprintf(stderr,"grab %d\n",*id);
-	c= mal_clients+ *id;
-	if( c == 0)
-		throw(MAL,"clients.grab","No client process");
-	/* suspend target */
-	c->itrace='S';
-	while( c->itrace == 'S' ){
-		MT_sleep_ms(10);
-	}
-	cntxt->fdin= c->fdin;
-	cntxt->fdin->pos= c->fdin->len;
-	cntxt->fdout= c->fdout;
-	cntxt->yycur= c->yycur;
-	cntxt->prompt= c->prompt;
-	cntxt->promptlength= c->promptlength;
-	c->fdin= old.fdin;
-	c->fdin->pos= old.fdin->len;
-	c->fdout= old.fdout;
-	c->yycur= old.yycur;
-	c->prompt= old.prompt;
-	c->promptlength= old.promptlength;
-	c->itrace = 0;
-	fprintf(stderr,"exchanged descriptors\n");
-	return MAL_SUCCEED;
-}
 str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	mdbDump(cntxt,mb,stk,pci);
@@ -932,11 +905,22 @@ str MDBdummy(int *ret){
 	throw(MAL, "mdb.dummy", "Dummy routine called");
 }
 
+str
+MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str modnme = (str) getArgValue(stk, pci, 1);
+	str fcnnme = (str) getArgValue(stk, pci, 2);
+	bit b=  *(bit*) getArgValue(stk,pci,3);
+	(void) cntxt;
+	(void) mb;
+	if ( mdbSetTrap(modnme,fcnnme,b) )
+		throw(MAL,"mdb.trap","Function not found");
+	return MAL_SUCCEED;
+}
+	
 @- CMDmodules
 Obtains a list of modules by looking at what files are present in the
 module directory.
-
-
 @c
 BAT *
 TBL_getdir(void)
