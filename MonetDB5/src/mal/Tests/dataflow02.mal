@@ -1,4 +1,5 @@
 # a simple dataflow test to check call methods.
+# the instructions executed can be see using
 include sql;
 sql.init();
 
@@ -19,6 +20,8 @@ function octopus.exec0(dbname:str,query:str,version:int):int;
     return exec0 := _9;
 end octopus.exec0;
 
+# run the debugger on the console
+#mdb.setTrap("octopus","qry",true);
 barrier go:= language.dataflow();
 	t1:= octopus.exec0("demo","qry",1);
 	t2:= octopus.exec0("demo","qry",2);

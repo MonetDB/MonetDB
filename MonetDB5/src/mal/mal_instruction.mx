@@ -417,6 +417,7 @@ typedef struct MALBLK {
 	int maxarg;			/* keep track on the maximal arguments used */
 	ptr replica;		/* for the replicator tests */
 	sht recycle;		/* execution subject to recycler control */
+	sht trap;			/* call debugger when called */
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -674,6 +675,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->prps = NULL;
 	mb->replica = NULL;
 	mb->recycle = 0;
+	mb->trap = 0;
 	return mb;
 }
 
@@ -778,6 +780,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->typefixed = old->typefixed;
 	mb->flowfixed = old->flowfixed;
 	mb->recycle = old->recycle;
+	mb->trap = old->trap;
 	mb->replica = old->replica;
 	mb->maxarg= old->maxarg;
 	mb->profiler = NULL;
@@ -2344,6 +2347,7 @@ The instruction is complemented with simple flags to ease debugging.
 To limit the impact on test output, we only display them when they
 are set.
 
+D = debug the function call
 U = types not yet resolved
 P = polymorphic instruction
 G = subject to garbage control
@@ -2359,6 +2363,8 @@ J = jump towards other statement
 		case TYPE_RESOLVED:
 			/* implicit *s++ =' '; */ break;
 		}
+		if ( mb->trap && mb->stmt[0] == p)
+			*s++ ='D';
 		if (p->polymorphic)
 			*s++ ='P';
 		if (p->gc)
