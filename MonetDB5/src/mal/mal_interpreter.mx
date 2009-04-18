@@ -323,7 +323,6 @@ of the return statement.
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->up = env;
-		env->down = stk;
 	} 
 @-
 An optimization is to copy all constant variables used in functions immediately
@@ -509,7 +508,7 @@ We rely on optimizing compilers to remove the redundant code.
 	if (malProfileMode == 0 && cntxt->itrace==0 && cntxt->flags == 0 && GDKdebug == 0) {
 		while(stkpc < mb->stop && stkpc != stoppc ){
 			pci = getInstrPtr(mb,stkpc);
-			if (malProfileMode + cntxt->itrace)
+			if (malProfileMode + cntxt->itrace + mb->trap)
 				goto workslow;
             
 				@:MALinterpret(FAST)@
@@ -519,7 +518,7 @@ We rely on optimizing compilers to remove the redundant code.
 	while(stkpc < mb->stop && stkpc != stoppc ){
 		pci = getInstrPtr(mb,stkpc);
 workslow:
-		if( cntxt->itrace  ) {
+		if( cntxt->itrace || mb->trap  ) {
 			lng t=0;
 			if( stk->cmd== 0) stk->cmd= cntxt->itrace;
 			if( oldtimer)
@@ -781,7 +780,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 #endif
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	pci = getInstrPtr(flow->mb, stkpc);
-	if (stk->cmd) {
+	if (stk->cmd || mb->trap) {
 		lng tm = 0;
 		if( oldtimer)
 			tm = GDKusec();
@@ -1875,7 +1874,7 @@ The return value should be set to pass the error automatically upon
 reaching end of function block.
 @-
 @= skipToCatch
-	if( stk->cmd == 'C') {
+	if( stk->cmd == 'C' || mb->trap) {
 		stk->cmd = 'n';
 		BBPTraceCall(cntxt,mb,stk,prevpc);
 		prevpc = stkpc;
@@ -1969,7 +1968,7 @@ if(cntxt->errbuf && cntxt->errbuf[0] ) {
 }
 if( ret != MAL_SUCCEED ) {
 	str msg = 0;
-	if( stk->cmd  ) {
+	if( stk->cmd || mb->trap  ) {
 		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd= '\n';	/* in debugging go to step mode */
 		mdbStep(cntxt,mb,stk,stkpc);
