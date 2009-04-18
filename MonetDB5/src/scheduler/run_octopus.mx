@@ -116,11 +116,8 @@ OCTOPUSdiscover(Client cntxt){
 	BUN p,q;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
+	str dbname= GDKgetenv("gdk_dbname");
 
-	sea[nrsea].usr = GDKstrdup("monetdb");
-	sea[nrsea].pwd = GDKstrdup("monetdb");
-	sea[nrsea++].name= GDKstrdup(GDKgetenv("gdk_dbname"));
-	/* determine if sites are reachable */
 	msg = RMTgetList(&b1,&b2);
 	if ( msg != MAL_SUCCEED)
 		return msg;
@@ -138,7 +135,8 @@ OCTOPUSdiscover(Client cntxt){
 		str t= (str) BUNtail(bi,p);
 
 		if (nrsea ==MAXSITES) break;
-		if (strlen(t) >= 3 && strcmp("sea", t+strlen(t)-3) == 0){
+		if ( (strlen(t) >= 3 && strcmp("sea", t+strlen(t)-3) == 0) ||
+			strcmp(dbname,t) == 0) {
 			sea[nrsea].usr = GDKstrdup("monetdb");
 			sea[nrsea].pwd = GDKstrdup("monetdb");
 			sea[nrsea++].name= GDKstrdup(t);
@@ -226,7 +224,6 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	ValPtr cst;
 
 	for (; pc< mb->stop; pc++){
-		if ( nrsea >1 && rr == 0) rr++; /* ignore default */
 		p= getInstrPtr(mb,pc);
 		if ( p->barrier == EXITsymbol || getFunctionId(p)== packRef)
 			break;
