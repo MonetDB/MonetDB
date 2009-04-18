@@ -26,6 +26,10 @@ shred_doc(TSTSRCDIR+"/"+TST+".xml","noot.xml","aap2",50LL);
 # Shredded 1 XML document (noot.xml), total time after commit=0.148s
 shred_doc(TSTSRCDIR+"/"+TST+".xml","noot.xml","aap1",50LL);
 !ERROR: shred_doc: document noot.xml already exists in collection aap2 (1 such errors)!
+shred_doc(TSTSRCDIR+"/"+TST+".xml","aap.xml","aap1",50LL);
+# shredding with holes: pagesize=16384, #fillsize=8192
+# Elapsed time = 228us [032us/node]
+# Shredded 1 XML document (aap.xml), total time after commit=0.007s
 quit();
 
 # 19:10:14 >  
