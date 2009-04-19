@@ -47,7 +47,7 @@ is called as well to identify operations of interest.
 #include "opt_support.h"
 #include "sql.h"
 
-#define DEBUG_SQL_EMPTYSET	 /* show partial result */
+/*#define DEBUG_SQL_EMPTYSET	    show partial result */
 sql5_export str SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /*  _SQL_EMPTYSET_*/
 @c
@@ -107,6 +107,7 @@ and to filter/replace calls with empty arguments.
 				 *(str*) getArgReference(stk,p,2),
 				 *(str*) getArgReference(stk,p,3),
 				 *(int*) getArgReference(stk,p,4));
+			setVarUDFtype(mb,getArg(p,0));
 			if ( BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
 				stream_printf(cntxt->fdout,"empty %d %s\n",
@@ -128,6 +129,7 @@ and to filter/replace calls with empty arguments.
 			b = mvc_bind_dbat(m, *(str*) getArgReference(stk,p,1),
 				 *(str*) getArgReference(stk,p,2),
 				 *(int*) getArgReference(stk,p,3));
+			setVarUDFtype(mb,getArg(p,0));
 			if ( BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
 				stream_printf(cntxt->fdout,"empty %d %s\n",
@@ -171,6 +173,7 @@ and to filter/replace calls with empty arguments.
 						break;
 					} 
 					if ( f == selectRef || 
+					     f == uselectRef || 
 					     f == thetauselectRef || 
 					     /* f == markTRef ||  no, because you keep the seq */
 					     f == tuniqueRef || 
@@ -294,7 +297,6 @@ If the target variable is empty and the function does not
 have a side-effect, we can replace it with a construction
 of the empty set. The dead-code optimizer will take care
 of removal of superflous constructions.
-@c
 				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
 					!isLinearFlow(p) &&
 					!isUnsafeFunction(p) &&
@@ -314,6 +316,7 @@ of removal of superflous constructions.
 					actions++;
 					break;
 				}
+@c
 			}
 		}
 		/* we should reset all targets as not empty if nothing has changed */
@@ -336,11 +339,15 @@ of removal of superflous constructions.
 #endif
 		if ( optimizeMALBlock(cntxt,mb) == MAL_SUCCEED){
 #ifdef DEBUG_SQL_EMPTYSET
-			printf("FINAL STAGE actions %d errors=%d\n", actions, mb->errors);
+			printf("FINAL STAGE actions %d errors=%d restart= %d\n",
+				actions, mb->errors,start+1);
 			printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT);
 #endif
 			msg= reenterMAL(cntxt,mb,start+1,0,stk,0,0);
 		}
+#ifdef DEBUG_SQL_EMPTYSET
+		else stream_printf(cntxt->fdout,"#optimizer fails:%s\n",msg);
+#endif
 	} 
 	/* restore after execution */
 	for( i=0; i<mb->stop; i++){
@@ -351,7 +358,9 @@ of removal of superflous constructions.
 	for( i=0; i<limit; i++)
 		pushInstruction(mb, old[i]);
 	GDKfree(old);
-	throw(MAL,"sql.emptyset","!skip-to-end");
+	if (actions && msg == MAL_SUCCEED)
+		throw(MAL,"sql.emptyset","!skip-to-end");
+	return msg;
 }
 
 @}
