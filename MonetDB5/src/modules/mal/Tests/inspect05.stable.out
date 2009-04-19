@@ -1024,6 +1024,7 @@ end main;
 [ "new",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATnew;"						  ]
 [ "print",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):void ",													  "MATprint;"						  ]
 [ "pack",			  "pattern",	  "mat",	  "(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2] ",											  "MATpack;"						  ]
+[ "connect",				  "command",	  "remote",	  "(dbname:str,user:str,passwd:str,scen:str):str ",												  "RMTconnect2;"					  ]
 [ "connect",				  "command",	  "remote",	  "(dbname:str,user:str,passwd:str):str ",												  "RMTconnect;"					  ]
 [ "create",				  "command",	  "remote",	  "(dbname:str,host:str,port:int):str ",												  "RMTcreate;"					  ]
 [ "disconnect",				  "command",	  "remote",	  "(dbname:str):void ",															  "RMTdisconnect;"				  ]

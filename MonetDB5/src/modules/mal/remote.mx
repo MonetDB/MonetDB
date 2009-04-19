@@ -127,6 +127,10 @@ comment "List available databases with their property for use with connect().";
 command connect(dbname:str, user:str, passwd:str):str
 address RMTconnect
 comment "Returns a newly created connection for dbname, user name and password.";
+command connect(dbname:str, user:str, passwd:str, scen:str):str
+address RMTconnect2
+comment "Returns a newly created connection for dbname, user name, password
+and scenario.";
 
 command disconnect(dbname:str):void
 address RMTdisconnect
@@ -692,6 +696,12 @@ remote_export str RMTconnect(
 		str *dbname,
 		str *user,
 		str *passwd);
+remote_export str RMTconnect2(
+		str *ret,
+		str *dbname,
+		str *user,
+		str *passwd,
+		str *scen);
 @c
 #define serveget "\
     function user.remote_internal_servegetbat(type:str, o:bat[:any_1,:any_2]):void;\n\
@@ -727,11 +737,12 @@ remote_export str RMTconnect(
  * Returns a connection to the given dbname.  It always returns a newly
  * created connection.
  */
-str RMTconnect(
+static str RMTconnectInternal(
 		str *ret,
 		str *dbname,
 		str *user,
-		str *passwd)
+		str *passwd,
+		str *scen)
 {
 	connection c;
 	userconn cdef;
@@ -801,7 +812,7 @@ str RMTconnect(
 	c->name = GDKstrdup(conn);
 	c->nextid = 0;
 	c->next = NULL;
-	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, "mal",
+	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen,
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 
 	GDKfree(cdef->dbname);
@@ -835,6 +846,22 @@ str RMTconnect(
 
 	*ret = GDKstrdup(conn);
 	return(MAL_SUCCEED);
+}
+str RMTconnect(
+		str *ret,
+		str *dbname,
+		str *user,
+		str *passwd){
+	str scen="mal";
+	return RMTconnectInternal(ret,dbname,user,passwd,&scen);
+}
+str RMTconnect2(
+		str *ret,
+		str *dbname,
+		str *user,
+		str *passwd,
+		str *scen){
+	return RMTconnectInternal(ret,dbname,user,passwd,scen);
 }
 
 @h
