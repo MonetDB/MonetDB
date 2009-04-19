@@ -50,6 +50,21 @@ redo go:= i<2;
 exit go;
 	io.print("done");
 @end verbatim
+A special case is backward propagation of constants. 
+The following snippet is the result of the JITO emptyset.
+It can be further reduced to avoid useless assignments.
+@verbatim
+    _53 := sql.bind("sys","_tables","type",0);
+    (_54,_56,_58,_60) := bat.partition(_53);
+    _53 := nil;
+    _67 := _54;
+    _54 := nil;
+    _75 := _67;
+    _67 := nil;
+    _83 := _75;
+    _75 := nil;
+@end verbatim
+
 @{
 @mal
 pattern optimizer.aliases():str
@@ -144,6 +159,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for(i=k; i<limit; i++)
 		mb->stmt[i]= NULL;
 	mb->stop= k;
+@-
+The second phase is constant alias replacement should be implemented.
+@c
 	GDKfree(span);
 	GDKfree(alias);
 	OPTDEBUG

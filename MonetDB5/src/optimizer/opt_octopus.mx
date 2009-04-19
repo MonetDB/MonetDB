@@ -197,14 +197,16 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
+	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
 	str name= NULL, name2= NULL;
 	Symbol s;
 	ValRecord cst;
-	int pieces=pci->argc-1, part=idx, conn=0;
+	int pieces=pci->argc-pci->retc, part=idx-pci->retc, conn=0;
 
 	if (list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
 		if ( needed) GDKfree(needed);
+		if ( alias) GDKfree(alias);
 		return 0;
 	}
 #ifdef DEBUG_OPT_OCTOPUS
@@ -224,14 +226,37 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 				goto foundit;
 			}
 	}
-	assert(fnd >= 0);
 foundit:
+	assert(fnd >= 0);
+
+	for (j = 0; j < p->argc; j++)
+		needed[getArg(p,j)]= 1;
+	/* find the instructions needed */
+	for (; i > 0; i--){
+		p= getInstrPtr(mb,i);
+		fnd = 0;
+		if ( p->barrier){
+			for (j = 0; j < p->retc; j++)
+				needed[getArg(p,j)]= 1;
+			fnd = 1;
+		}
+		for (j = 0; j < p->retc; j++)
+			fnd += needed[getArg(p,j)];
+		if ( fnd) {
+			for (j = 0; j < p->argc; j++)
+				needed[getArg(p,j)]= 1;
+			list[top++] = p;
+		}
+	}
+
 	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 		getFunctionId(getInstrPtr(mb,0)),varid);
 	name =  putName(buf,strlen(buf));
+
 	snprintf(buf,BUFSIZ,"exec_%s", 
 		getFunctionId(getInstrPtr(mb,0)));
 	name2 =  putName(buf,strlen(buf));
+
 	q= newFcnCall(mb,octopusRef, name2);
 	setArgType(mb,q,0,getVarType(mb,varid));
 	cst.vtype = TYPE_str;
@@ -252,79 +277,49 @@ if (name == 0){
 #endif
 	assert( name);
 
-	/* find the instructions needed */
-	for (; i > 0; i--){
-		p= getInstrPtr(mb,i);
-		fnd = 0;
-		if ( p->barrier){
-			for (j = 0; j < p->retc; j++)
-				needed[getArg(p,j)]= 1;
-			fnd = 1;
-		}
-		for (j = 0; j < p->retc; j++)
-			fnd += needed[getArg(p,j)];
-		if ( fnd) {
-			for (j = p->retc; j < p->argc; j++)
-				needed[getArg(p,j)]= 1;
-			list[top++] = p;
-		}
-	}
-	/* we need the arguments as well */
-	p= getInstrPtr(mb,0);
-	for(i=p->retc; i<p->argc; i++)
-	if (needed[getArg(p,i)])
-		anchor= pushArgument(mb,anchor,getArg(p,i));
 	/* create the tentacle procedure */
-	s= (Symbol) GDKzalloc(sizeof(SymRecord));
-	s->name= name;
-	s->kind=FUNCTIONsymbol;
-	s->def= tm= copyMalBlk(mb);	/* get the symbol table for free */
-
-	/* recast the signature */
+	s= newFunction(octopusRef,name,FUNCTIONsymbol);
+	tm= s->def;
 	p= getInstrPtr(tm,0);
-	setModuleId(p,octopusRef);
-	setFunctionId(p,name);
-	tm->var[0]->name= name;
-	setArgType(tm,p,0,getVarType(tm,varid));
-	p->argc=p->retc=1;
-	for(j=anchor->retc+2; j<anchor->argc; j++)
-		p= pushArgument(tm,p,getArg(anchor,j));
+	for(i=anchor->retc+2; i<anchor->argc; i++){
+		j= cloneVariable(tm,mb,getArg(anchor,i));
+		p= pushArgument(tm,p,j);
+	}
+	setVarType(tm,getArg(p,0),getVarType(mb,varid));
 
-	tm->stop =1;
 	conn= OCTinitcode(cntxt, tm);
 	for (top--; top >= 0; top--){
 		p = copyInstruction(list[top]);
+		for (i= 0; i< p->argc; i++){
+			int a= alias[getArg(list[top],i)];
+			if (a==0) {
+				a= cloneVariable(tm,mb,getArg(list[top],i));
+				alias[getArg(list[top],i)] = a;
+			} 
+			getArg(p,i) = a;
+		}
 		if (getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == bindRef ||
 			  getFunctionId(p) == binddbatRef ||
 			  getFunctionId(p) == bindidxRef)){
 			setModuleId(p, octopusRef);
 			setVarUDFtype(tm,getArg(p,0));
+			setArgType(tm,p,0, getArgType(mb,list[top],0));
 			p= setArgument(tm,p,1,conn);
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 			p= pushInt(tm,p,pieces);
 			p= pushInt(tm,p,part);
-			/* adjust the corresponding partition */
-			q = getInstrPtr(tm, tm->stop-1);
-			if ( getFunctionId(q) == partitionRef){
-				getArg(q,0)= getArg(q,idx-1); /* indx comes from packref */
-				getArg(q,1)= getArg(q,q->retc);
-				clrFunction(q);
-				q->retc=1;
-				q->argc=2;
-				q->token = ASSIGNsymbol;
-			}
 		} 
 		pushInstruction(tm, p);
 	}
 
+	varid = alias[varid];
 	OCTexitcode(tm, conn,varid);
+	clrDeclarations(tm);
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
-#ifdef DEBUG_OPT_OCTOPUS
-	printFunction(cntxt->fdout,tm,0,LIST_MAL_STMT);
-#endif
 	GDKfree(list);
+	GDKfree(alias);
 	GDKfree(needed);
 	return tm;
 }
@@ -351,7 +346,6 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 #endif
 	(void) stk;
-	(void) pci;
 @-
 All octopus tentacle code is collected in a separate module
 to ease future distribution and scheduling.
@@ -379,6 +373,11 @@ when scheduled correctly, would not lead to duplicate work.
 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
+		if ( p == pci){
+			freeInstruction(pci);
+			old[i]= 0;
+			continue;
+		}
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) && 
 			i == target && tn + p->argc - p->retc < maxtn){
 			InstrPtr qq;
@@ -474,8 +473,9 @@ when scheduled correctly, would not lead to duplicate work.
 			pushArgument(sm,q,l);
 
 			pushEndInstruction(sm);
-			chkProgram(cntxt->nspace,sm);
 			insertSymbol(findModule(cntxt->nspace,octopusRef),s2);
+			clrDeclarations(sm);
+			chkProgram(cntxt->nspace,sm);
 #ifdef DEBUG_OPT_OCTOPUS
 			stream_printf(cntxt->fdout, "#exec_qry\n");
 			printFunction(cntxt->fdout,sm,0,LIST_MAL_STMT);
@@ -489,6 +489,7 @@ when scheduled correctly, would not lead to duplicate work.
 			   want to optimize */
 			(void) newStmt(mb,optimizerRef,putName("deadcode",8));
 			last= i;
+			break;
 		}
 	}
 	
@@ -497,9 +498,12 @@ The tentacle code should be optimized by the remaining optimizers.
 @c
 	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
-		pushInstruction(tentacle[i], copyInstruction(old[j]));
+		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));
+	
 	for (i=0; i<tn; i++){
-		chkProgram(cntxt->nspace, tentacle[i]);
+		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_ALL);
+		clrDeclarations(tentacle[i]);
+		chkProgram(cntxt->nspace,tentacle[i]);
 		optimizeMALBlock(cntxt,tentacle[i]);
 #ifdef DEBUG_OPT_OCTOPUS
 		stream_printf(cntxt->fdout, "NEXT octopus tentacle check\n");
@@ -512,12 +516,9 @@ The tentacle code should be optimized by the remaining optimizers.
 	}
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
-		chkProgram(cntxt->nspace, mb);
-		optimizeMALBlock(cntxt,mb);
 		stream_printf(cntxt->fdout, "DONE octopus \n");
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
-		printFunction(cntxt->fdout, tentacle[0], 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 	}
 #endif
 	GDKfree(old);
