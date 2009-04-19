@@ -172,6 +172,7 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
     p= pushStr(mb,p, GDKgetenv("gdk_dbname"));
     p= pushStr(mb,p,"monetdb");
     p= pushStr(mb,p,"monetdb");
+    p= pushStr(mb,p,"msql");
 	return getArg(p,0);
 }
 
@@ -430,6 +431,7 @@ when scheduled correctly, would not lead to duplicate work.
 			q = pushArgument(sm, q, dbvar);
 			q= pushStr(sm,q,"monetdb");
 			q= pushStr(sm,q,"monetdb");
+			q= pushStr(sm,q,"msql");
 
 			/* v:= remote.put(version) */
 			q= newFcnCall(sm,remoteRef,putRef);
