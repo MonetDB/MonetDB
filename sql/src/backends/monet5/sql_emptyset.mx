@@ -33,6 +33,12 @@ The current implementation is conservative. A limited set of
 instructions is considered. Any addition to the MonetDB instruction
 set would call for assessment on their effect.
 
+The end-result can be further optimized using alias removal.
+However, this is less effective then in the normal pipeline, because
+the garbage collector has already injected additional NIL assignments.
+
+The purpose of this operation is to improve recycling, which
+is called as well to identify operations of interest.
 @{
 @h
 #ifndef _SQL_EMPTYSET_
@@ -62,7 +68,7 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str kintersectRef = getName("kintersect", 10);
 	str fragmentRef = getName("fragment", 8);
 	mvc *m = NULL;
-	int i, j, actions = 0, start= getPC(mb,pci);
+	int i, j, act, actions = 0, start= getPC(mb,pci);
 	char *empty;
 	int limit;
 	InstrPtr q, p, *old;
@@ -148,6 +154,7 @@ and to filter/replace calls with empty arguments.
 			break;
 		}
 
+		act= actions;
 		for (j = p->retc; j < p->argc; j++) {
 			if (empty[getArg(p, j)]) {
 				/* decode operations */
@@ -165,6 +172,7 @@ and to filter/replace calls with empty arguments.
 					} 
 					if ( f == selectRef || 
 					     f == thetauselectRef || 
+					     /* f == markTRef ||  no, because you keep the seq */
 					     f == tuniqueRef || 
 					     f == likeRef  || 
 					     f == sortRef  || 
@@ -189,12 +197,29 @@ and to filter/replace calls with empty arguments.
 						p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
 						p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
 						empty[getArg(p,0)]=1;
+						actions++;
 #ifdef DEBUG_SQL_EMPTYSET
 						stream_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 						break;
 					} 
+					if ( f == joinRef) {
+						p->token = ASSIGNsymbol;
+						p->fcn = 0;
+						getModuleId(p) = batRef;
+						getFunctionId(p) = newRef;
+						p->argc=1;
+						p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+						p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+						empty[getArg(p,0)]=1;
+						actions++;
+#ifdef DEBUG_SQL_EMPTYSET
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
+#endif
+						break;
+					}
 					if ( f == differenceRef || 
 					     f == kdifferenceRef ) {
 						if ( j == 1){
@@ -206,6 +231,7 @@ and to filter/replace calls with empty arguments.
 							p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
 							p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
 							empty[getArg(p,0)]=1;
+							actions++;
 						} else {
 							p->token = ASSIGNsymbol;
 							clrFunction(p);
@@ -226,6 +252,7 @@ and to filter/replace calls with empty arguments.
 							clrFunction(p);
 							p->argc= 2;
 							empty[getArg(p,0)] = empty[getArg(p,1)];
+							actions++;
 #ifdef DEBUG_SQL_EMPTYSET
 						stream_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
@@ -236,6 +263,7 @@ and to filter/replace calls with empty arguments.
 							p->argc= 2;
 							getArg(p,1)= getArg(p,2);
 							empty[getArg(p,0)] = empty[getArg(p,1)];
+							actions++;
 #ifdef DEBUG_SQL_EMPTYSET
 						stream_printf(cntxt->fdout,"empty %d %s\n",
 							getArg(p,0), getVarName(mb,getArg(p,0)));
@@ -244,20 +272,22 @@ and to filter/replace calls with empty arguments.
 						break;
 					} 
 				}
-				if ( getModuleId(p) == batRef && getFunctionId(p) == reverseRef){
-					p->token = ASSIGNsymbol;
-					p->fcn = 0;
-					getFunctionId(p) = newRef;
-					p->argc=1;
-					p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
-					p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
-					actions++;
-					empty[getArg(p,0)]=1;
+				if ( getModuleId(p) == batRef ) {
+					if ( getFunctionId(p) == reverseRef){
+						p->token = ASSIGNsymbol;
+						p->fcn = 0;
+						getFunctionId(p) = newRef;
+						p->argc=1;
+						p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+						p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+						actions++;
+						empty[getArg(p,0)]=1;
 #ifdef DEBUG_SQL_EMPTYSET
-					stream_printf(cntxt->fdout,"empty %d %s\n",
-						getArg(p,0), getVarName(mb,getArg(p,0)));
+						stream_printf(cntxt->fdout,"empty %d %s\n",
+							getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
-					break;
+						break;
+					}
 				}
 @-
 If the target variable is empty and the function does not
@@ -268,6 +298,7 @@ of removal of superflous constructions.
 				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
 					!isLinearFlow(p) &&
 					!isUnsafeFunction(p) &&
+					empty[getArg(p,0)] &&
 					isaBatType(getArgType(mb,p,0))){
 					int tpe=getArgType(mb,p,0);
 					setModuleId(p, batRef);
@@ -285,13 +316,24 @@ of removal of superflous constructions.
 				}
 			}
 		}
+		/* we should reset all targets as not empty if nothing has changed */
+		if ( act == actions)
+			for( j=0; j< p->retc; j++)
+				empty[getArg(p,j)]=0;
 		pushInstruction(mb,p);
 	}
 	newStmt(mb,optimizerRef,putName("aliases",7));
 	newStmt(mb,optimizerRef,putName("deadcode",8));
+	/* newStmt(mb,optimizerRef,putName("recycle",7));*/
 	if( actions ){
 		clrAllTypes(mb);	 /* force a complete resolve */
 		chkProgram(cntxt->nspace,mb);
+#ifdef DEBUG_SQL_EMPTYSET
+		if (mb->errors){
+			printf("FINAL STAGE compile errors\n");
+			printFunction(cntxt->fdout, mb,0, LIST_MAL_ALL);
+		}
+#endif
 		if ( optimizeMALBlock(cntxt,mb) == MAL_SUCCEED){
 #ifdef DEBUG_SQL_EMPTYSET
 			printf("FINAL STAGE actions %d errors=%d\n", actions, mb->errors);
