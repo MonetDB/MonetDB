@@ -47,7 +47,7 @@ is called as well to identify operations of interest.
 #include "opt_support.h"
 #include "sql.h"
 
-/*#define DEBUG_SQL_EMPTYSET	    show partial result */
+/* #define DEBUG_SQL_EMPTYSET	     show partial result */
 sql5_export str SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /*  _SQL_EMPTYSET_*/
 @c
@@ -66,12 +66,11 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str intersectRef = getName("intersect", 9);
 	str sintersectRef = getName("sintersect", 10);
 	str kintersectRef = getName("kintersect", 10);
-	str fragmentRef = getName("fragment", 8);
 	mvc *m = NULL;
 	int i, j, act, actions = 0, start= getPC(mb,pci);
 	char *empty;
 	int limit;
-	InstrPtr q, p, *old;
+	InstrPtr p= NULL, *old;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	BAT *b;
 
@@ -108,44 +107,52 @@ and to filter/replace calls with empty arguments.
 				 *(str*) getArgReference(stk,p,3),
 				 *(int*) getArgReference(stk,p,4));
 			setVarUDFtype(mb,getArg(p,0));
-			if ( BATcount(b) == 0){
+			if (b && BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
 				stream_printf(cntxt->fdout,"empty %d %s\n",
 					getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 				empty[getArg(p,0)] = 1;
 				BBPreleaseref(b->batCacheid);
-				q= newStmt(mb,batRef,newRef);
-				getArg(q,0)= getArg(p,0);
-				q= pushType(mb,q,getHeadType(getArgType(mb,p,0)));
-				q= pushType(mb,q,getTailType(getArgType(mb,p,0)));
-				freeInstruction(p);
+				p->token = ASSIGNsymbol;
+				p->fcn = 0;
+				getModuleId(p) = batRef;
+				getFunctionId(p) = newRef;
+				p->argc=1;
+				p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+				p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+				pushInstruction(mb,p);
 				actions++;
 				continue;
 			}
-			BBPreleaseref(b->batCacheid);
+			if ( b )
+				BBPreleaseref(b->batCacheid);
 		} 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
 			b = mvc_bind_dbat(m, *(str*) getArgReference(stk,p,1),
 				 *(str*) getArgReference(stk,p,2),
 				 *(int*) getArgReference(stk,p,3));
 			setVarUDFtype(mb,getArg(p,0));
-			if ( BATcount(b) == 0){
+			if ( b && BATcount(b) == 0){
 #ifdef DEBUG_SQL_EMPTYSET
 				stream_printf(cntxt->fdout,"empty %d %s\n",
 					getArg(p,0), getVarName(mb,getArg(p,0)));
 #endif
 				empty[getArg(p,0)] = 1;
 				BBPreleaseref(b->batCacheid);
-				q= newStmt(mb,batRef,newRef);
-				getArg(q,0)= getArg(p,0);
-				q= pushType(mb,q,getHeadType(getArgType(mb,p,0)));
-				q= pushType(mb,q,getTailType(getArgType(mb,p,0)));
-				freeInstruction(p);
+				p->token = ASSIGNsymbol;
+				p->fcn = 0;
+				getModuleId(p) = batRef;
+				getFunctionId(p) = newRef;
+				p->argc=1;
+				p= pushType(mb,p,getHeadType(getArgType(mb,p,0)));
+				p= pushType(mb,p,getTailType(getArgType(mb,p,0)));
+				pushInstruction(mb,p);
 				actions++;
 				continue;
 			}
-			BBPreleaseref(b->batCacheid);
+			if ( b )
+				BBPreleaseref(b->batCacheid);
 		} 
 
 		if( p->token == ENDsymbol){
@@ -172,7 +179,7 @@ and to filter/replace calls with empty arguments.
 						actions++;
 						break;
 					} 
-					if ( f == selectRef || 
+					if ( ( f == selectRef || 
 					     f == uselectRef || 
 					     f == thetauselectRef || 
 					     /* f == markTRef ||  no, because you keep the seq */
@@ -185,11 +192,7 @@ and to filter/replace calls with empty arguments.
 					     f == uniqueRef  || 
 					     f == suniqueRef  || 
 					     f == kuniqueRef  ||
-					     f == intersectRef  || 
-					     f == semijoinRef ||
-					     f == sintersectRef  || 
-					     f == kintersectRef  ||
-					     f == fragmentRef ){
+					     f == semijoinRef ) && j ==1 ){
 
 						/* result is empty */
 						p->token = ASSIGNsymbol;
@@ -224,6 +227,9 @@ and to filter/replace calls with empty arguments.
 						break;
 					}
 					if ( f == differenceRef || 
+					     f == sintersectRef  || 
+					     f == kintersectRef  ||
+					     f == intersectRef  || 
 					     f == kdifferenceRef ) {
 						if ( j == 1){
 							p->token = ASSIGNsymbol;
@@ -292,31 +298,6 @@ and to filter/replace calls with empty arguments.
 						break;
 					}
 				}
-@-
-If the target variable is empty and the function does not
-have a side-effect, we can replace it with a construction
-of the empty set. The dead-code optimizer will take care
-of removal of superflous constructions.
-				if( p->retc==1 && !hasSideEffects(p, FALSE) &&
-					!isLinearFlow(p) &&
-					!isUnsafeFunction(p) &&
-					empty[getArg(p,0)] &&
-					isaBatType(getArgType(mb,p,0))){
-					int tpe=getArgType(mb,p,0);
-					setModuleId(p, batRef);
-					setFunctionId(p, newRef);
-					p->argc = 1;
-					p->token = ASSIGNsymbol;
-					p->typechk= TYPE_UNKNOWN;
-					p->fcn = NULL;
-					p= pushArgument(mb, p, 
-						newTypeVariable(mb, getHeadType(tpe)));
-					p= pushArgument(mb, p, 
-						newTypeVariable(mb, getTailType(tpe)));
-					actions++;
-					break;
-				}
-@c
 			}
 		}
 		/* we should reset all targets as not empty if nothing has changed */
