@@ -213,6 +213,7 @@ updateBigFoot(Client cntxt, int bid, int add)
 Copy the constant values onto the stack frame
 Also we cannot overwrite values on the stack as this maybe part of a 
 sequence of factory calls.
+BEWARE WE ASSUME THAT FIRST VARIABLES ON THE STACK ALIGN WITH THE SIGNATURE.
 @= initStack
 	for(i= @1; i< mb->vtop; i++) {
 		lhs = &stk->stk[i];
@@ -1968,6 +1969,7 @@ if(cntxt->errbuf && cntxt->errbuf[0] ) {
 }
 if( ret != MAL_SUCCEED ) {
 	str msg = 0;
+
 	if( stk->cmd || mb->trap  ) {
 		stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd= '\n';	/* in debugging go to step mode */
@@ -1985,6 +1987,12 @@ if( ret != MAL_SUCCEED ) {
 	}
 	/* Detect any exception received from the implementation. */
 	/* The first identifier is an optional exception name */
+	if( strstr(ret,"!skip-to-end") ){
+		GDKfree(ret);
+		ret= MAL_SUCCEED;
+		stkpc= mb->stop;
+		@2;
+	}
 	msg = strchr(ret,':');
 	if(msg) {
 		*msg= 0;
