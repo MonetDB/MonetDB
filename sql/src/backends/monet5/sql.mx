@@ -758,7 +758,7 @@ pieces:int, part:int):bat[:oid,:any_1];
 	v := remote.put(conn,version);
 	n := remote.put(conn,pieces);
 	i := remote.put(conn,part);
-	bh:= remote.exec(conn,"octopus","bind",s,t,c,k,n,v,i);
+	bh:= remote.exec(conn,"octopus","bind",s,t,c,k,v,n,i);
 	b:bat[:oid,:any_1]:= remote.get(conn,bh);
 	return bind:= b;
 end octopus.bind;
