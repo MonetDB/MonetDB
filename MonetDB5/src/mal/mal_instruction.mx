@@ -516,6 +516,7 @@ mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export str getVarName(MalBlkPtr mb, int i);
 mal_export str getRefName(MalBlkPtr mb, int i);
 mal_export int newVariable(MalBlkPtr mb, str name, malType type);
+mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str name);
 mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export void copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v);
@@ -1425,6 +1426,43 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	clrVarConstant(mb, n);
 	clrVarCleanup(mb, n);
 	mb->vtop++;
+	return n;
+}
+@-
+During the cloning of functions, we need to propagate
+variable definitions. The cloneVariable assumes that
+if names are identical then so are all properties.
+@c
+int
+cloneVariable(MalBlkPtr mb, MalBlkPtr src, int varid){
+	int i,n,len;
+	VarPtr v = src->var[varid];
+
+	@:makeVarSpace@
+	n = findVariable(mb, v->name);
+	if ( n >= 0)
+		return n; /* we already know it */
+
+	n= mb->vtop;
+	len = sizeof(VarRecord) + v->maxprop * sizeof(int);
+	getVar(mb, n) = (VarPtr) GDKzalloc(len);
+	memcpy((char*) getVar(mb,n), (char*) v, len);
+	VALcopy(&getVarConstant(mb,n), &getVarConstant(src,varid));
+	if ( v->name )
+		mb->var[n]->name= GDKstrdup(v->name);
+
+	if( v->tmpindex)
+		getVarTmp(mb, n) = n;
+	clrVarUsed(mb, n);
+	clrVarInit(mb, n);
+	clrVarDisabled(mb, n);
+	mb->vtop++;
+	mb->var[n]->propc=0;
+	for (i=0; i< v->propc; i++){
+		varSetProp(mb, n, src->prps[i].idx, src->prps[i].op, 
+			&getVarConstant(src,src->prps[i].var));
+	}
+
 	return n;
 }
 
