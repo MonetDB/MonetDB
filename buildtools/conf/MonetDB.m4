@@ -202,6 +202,7 @@ if test "x$have_monetdb" != xno; then
   case "$have_monetdb" in
   yes|auto) MPATH="${MONETDB_PREFIX+$MONETDB_PREFIX/bin:}$PATH:$prefix/bin";;
   included) MPATH="/hopefully-not-there";;
+  "") MPATH="$PATH" ;;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
@@ -274,6 +275,7 @@ if test "x$have_clients" != xno; then
   case "$have_clients" in
   yes|auto) MPATH="${CLIENTS_PREFIX+$CLIENTS_PREFIX/bin:}$PATH:$prefix/bin";;
   included) MPATH="/hopefully-not-there";;
+  "") MPATH="$PATH" ;;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(CLIENTS_CONFIG,monetdb-clients-config,,$MPATH)
@@ -349,6 +351,7 @@ if test "x$have_monetdb4" != xno; then
   case "$have_monetdb4" in
   yes|auto) MPATH="${MONETDB4_PREFIX+$MONETDB4_PREFIX/bin:}$PATH:$prefix/bin";;
   included) MPATH="/hopefully-not-there";;
+  "") MPATH="$PATH" ;;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB4_CONFIG,monetdb4-config,,$MPATH)
@@ -437,6 +440,7 @@ if test "x$have_monetdb5" != xno; then
   case "$have_monetdb5" in
   yes|auto) MPATH="${MONETDB5_PREFIX+$MONETDB5_PREFIX/bin:}$PATH:$prefix/bin";;
   included) MPATH="/hopefully-not-there";;
+  "") MPATH="$PATH" ;;
   *) MPATH="$withval/bin:$PATH";;
   esac
   AC_PATH_PROG(MONETDB5_CONFIG,monetdb5-config,,$MPATH)
@@ -2727,7 +2731,12 @@ AC_ARG_WITH(pcre,
 	have_pcre="$withval")
 if test "x$have_pcre" != xno; then
 
-    MPATH="$withval/bin:$PATH"
+	# just avoid /bin in case of empty $withval
+	if test "x$withval" != "x" ; then
+		MPATH="$withval/bin:$PATH"
+	else
+		MPATH="$PATH"
+	fi
     AC_PATH_PROG(PCRE_CONFIG,pcre-config,,$MPATH)
     if test "x$PCRE_CONFIG" = x; then
     	AC_MSG_RESULT(pcre-config not found; please use --with-pcre=<path>)
