@@ -191,6 +191,7 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
  			updcur = BATsemijoin(upd, b);
 			u = updcur;
 		}
+		bat_destroy(ib);
 
 		b = temp_descriptor(bat->ubid);
 		assert(b);
