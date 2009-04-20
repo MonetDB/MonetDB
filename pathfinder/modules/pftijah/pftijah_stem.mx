@@ -507,6 +507,13 @@ static tjStemCtx nostemming = { "nostemming", NULL, NULL, NULL, NULL, NULL_STOPW
 
 static tjStemCtx debug      = { "debug",      NULL, debugStem, NULL, NULL, NULL_STOPWORDS };
 
+
+/*
+ * no stemming with english stopwords
+ */
+
+static tjStemCtx stopwords_english = { "stopwords-english", NULL, NULL, NULL, NULL, ENGLISH_STOPWORDS };
+
 /*
  *
  * Definition of the pftijah interface to the "porter" Snowball stemmer
@@ -761,11 +768,13 @@ static int porter_dutch_clear(void* ctx) {
 
 static tjStemCtx porter_dutch = { "porter-dutch", porter_dutch_init, porter_dutch_stem, porter_dutch_clear, NULL , NULL_STOPWORDS };
 
+
 /*
  *
  * end of fast porter stemmer experiment
  *
  */
+
 
 /*
  * The getStemmingContext() function is the extern function called to get
@@ -782,6 +791,8 @@ tjStemCtx* getStemmingContext(char* name) {
 	    res = & nostemming;
 	else if ( strcmp(name,"debug")==0 )
 	    res = & debug;
+	else if ( strcmp(name,"stopwords-english")==0 )
+	    res = & stopwords_english;
 	else if ( strcmp(name,"snowball-porter")==0 )
 	    res = & snb_porter;
 	else if ( strcmp(name,"snowball-english")==0 )
