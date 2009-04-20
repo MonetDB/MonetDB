@@ -3421,7 +3421,9 @@ def main(argv) :
             # WARNING
         testlist = []
         for d in dirlist:
-            for t in find_test_dirs(d).sort():
+            test_dirs = find_test_dirs(d)
+            test_dirs.sort()
+            for t in test_dirs:
                 if t not in testdirs:
                     testdirs.append(t)
     else:
