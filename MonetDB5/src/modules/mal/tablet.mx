@@ -2610,7 +2610,7 @@ TABshowHeader(Tablet * t)
 		q = strchr(p, ',');
 		if (q)
 			*q = 0;
-		stream_write(t->fd, "# ", 1, 2);
+		stream_write(t->fd, "% ", 1, 2);
 		for (i = 0; i < t->nr_attrs; i++) {
 			Column *c = t->columns + i;
 			unsigned int len;

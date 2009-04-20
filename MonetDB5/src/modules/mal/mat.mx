@@ -143,12 +143,15 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 	int i,*ret;
 	BAT *b, *bn;
 	BUN cap=0;
+	oid seq=0;
 
 	bn= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
 	if (bn && (BAThrestricted(bn) || BATtrestricted(bn)) ){
 		b = BATcopy(bn, bn->htype, bn->ttype, TRUE);
 		BBPunfix(bn->batCacheid);
 		bn = b;
+		BATseqbase(bn,seq);
+		seq += (oid) BATcount(bn);
 	}
 	if( bn == NULL)
 		throw(MAL, "mat.pack","Could not access BAT");
@@ -163,8 +166,12 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack","Could not access component");
-		if( BATcount(b) )
+		if( BATcount(b) ){
+			/* use the right oid ranges */
+			BATseqbase(b,seq);
 			BATins(bn,b,FALSE);
+			seq = (oid) BATcount(bn);
+		}
 		BBPunfix(b->batCacheid);
 	}
 	ret= (int*) getArgReference(stk,p,0);
