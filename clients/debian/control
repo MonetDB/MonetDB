@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: MonetDB BV <monet@cwi.nl>
 Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libreadline5-dev, ruby1.8-dev, ruby, python-dev, cdbs
 
-Package: mclient
+Package: monetdb-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libreadline5, libmonetdb-client1
 Description: MonetDB database client
