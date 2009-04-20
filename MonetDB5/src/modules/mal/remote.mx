@@ -503,6 +503,8 @@ remote_export str RMTgetList(int *ret, int *ret2) {
  * bits to open up a connection.  This function is very similar to
  * RMTgetList, but differs on enough crucial points to warrant its own
  * copy.
+ * NOTE: this function assumes the caller has guaranteed
+ * thread-safeness, e.g. by setting the mal_remoteLock!!!
  */
 static INLINE userconn RMTgetConnDefinition(str dbname) {
 	userconn c;
@@ -555,12 +557,11 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 	}
 	sab = osab;
 	while (sab != NULL) {
-		if (strcmp(sab->dbname, dbname) == 0 &&
-				sab->conns != NULL && sab->conns->val != NULL)
-		{
-			ret = GDKzalloc(sizeof(struct _userconn));
-			ret->dbname = GDKstrdup(sab->dbname);
+		ret = NULL;
+		if (strcmp(sab->dbname, dbname) == 0) {
 			if (mero_running == 1) { /* use Merovingian */
+				ret = GDKzalloc(sizeof(struct _userconn));
+				ret->dbname = GDKstrdup(sab->dbname);
 				gethostname(path, 8096);
 				ret->host = GDKstrdup(path);
 				ret->port = 0;
@@ -571,6 +572,15 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 					ret->port = 50000;  /* hardcoded default from merovingian.mx */
 				break;
 			} else { /* just use the server's own connection */
+				if (sab->state != SABdbRunning ||
+						sab->conns == NULL || sab->conns->val == NULL)
+				{
+					/* only return this server if it's running and
+					 * reachable */
+					break;
+				}
+				ret = GDKzalloc(sizeof(struct _userconn));
+				ret->dbname = GDKstrdup(sab->dbname);
 				tmp = sab->conns->val;
 				if (strncmp(tmp, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
 					str port, t;
@@ -587,8 +597,10 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 					}
 				}
 			}
+			/* local ones must be unique */
 			GDKfree(ret);
 			ret = NULL;
+			break;
 		}
 		sab = sab->next;
 	}
@@ -763,17 +775,17 @@ static str RMTconnectInternal(
 		throw(ILLARG, "remote.connect", "password is NULL or nil");
 
 
-	mal_set_lock(mal_remoteLock,"remote.connect");
+	mal_set_lock(mal_remoteLock, "remote.connect");
 	/* generate a connection name */
 	id = 1;
 	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
 
 	/* check if we know the dbname */
-	cdef = RMTgetConnDefinition(*dbname);
-	if (cdef == NULL){
-		mal_unset_lock(mal_remoteLock,"remote.connect");
-		throw(MAL, "remote.connect", "no connection available for: '%s'",
-				*dbname);
+	cdef = RMTgetConnDefinition(*dbname); /* needs lock! */
+	if (cdef == NULL) {
+		mal_unset_lock(mal_remoteLock, "remote.connect");
+		throw(MAL, "remote.connect",
+				"unknown or unavailable connection: '%s'", *dbname);
 	}
 
 	/* find a free slot, start with special case of connections not
@@ -820,7 +832,7 @@ static str RMTconnectInternal(
 	GDKfree(cdef);
 
 	/* we have our private connection */
-	mal_unset_lock(mal_remoteLock,"remote.connect");
+	mal_unset_lock(mal_remoteLock, "remote.connect");
 
 	if (mapi_reconnect(c->mconn) != MOK){
 		mal_unset_lock(c->lock, "remote.connect"); 
@@ -847,21 +859,25 @@ static str RMTconnectInternal(
 	*ret = GDKstrdup(conn);
 	return(MAL_SUCCEED);
 }
+
 str RMTconnect(
 		str *ret,
 		str *dbname,
 		str *user,
-		str *passwd){
-	str scen="mal";
-	return RMTconnectInternal(ret,dbname,user,passwd,&scen);
+		str *passwd)
+{
+	str scen = "mal";
+	return RMTconnectInternal(ret, dbname, user, passwd, &scen);
 }
+
 str RMTconnect2(
 		str *ret,
 		str *dbname,
 		str *user,
 		str *passwd,
-		str *scen){
-	return RMTconnectInternal(ret,dbname,user,passwd,scen);
+		str *scen)
+{
+	return RMTconnectInternal(ret, dbname, user, passwd, scen);
 }
 
 @h
