@@ -224,16 +224,27 @@ opt_monetxq (PFla_op_t *p)
     }
 }
 
+/**
+ * Introduce additional projection operators
+ * (based in the available icols information)
+ * thus reducing the schema width.
+ */
 static void 
 opt_monetprojections (PFla_op_t *p)
 {
     assert(p);
     
+    /* nothing to do if we already visited that node */
+    if (SEEN(p))
+        return;
+    /* otherwise mark the node */
+    else
+        SEEN(p) = true;
+
      /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_monetprojections (p->child[i]);
 
-    
      /* action code */
     switch (p->kind) {
     
@@ -244,42 +255,49 @@ opt_monetprojections (PFla_op_t *p)
          *         p
          *         |
          */
-        case la_pos_select:
-        case la_select:
+        case la_attach:
+        case la_cross:
         case la_eqjoin:
         case la_thetajoin:
-        case la_guide_step_join:
-        case la_step_join:
-        case la_roots:
-        case la_cross:
+        case la_select:
+        case la_pos_select:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_to:
         case la_rownum:
         case la_rowrank:
         case la_rank:
         case la_rowid:
-        case la_fun_1to1:
-        case la_num_gt:
-        case la_num_eq:
-        case la_bool_and:
-        case la_bool_not:
-        case la_bool_or:
         case la_type: 
-        if (PFprop_icols_count(p->prop)) {
-            /* look up required columns (icols) */
-            PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
-            PFalg_proj_t    *proj = PFmalloc (clsize (icols) *
-                                                sizeof (PFalg_proj_t));
-                                                
-            /* fill the projection list of the lower projection (proj1) */
-            for (unsigned int i = 0; i < clsize (icols); i++)
-                proj[i] = PFalg_proj (clat (icols, i), clat (icols, i));
-        
-            /* Place a pi_(icols) operator on top of the operator. */
-            *p = *PFla_project_ (
-                        PFla_op_duplicate (p, L(p), R(p)),
-                        clsize (icols),
-                        proj);
+        case la_cast:
+        case la_step_join:
+        case la_guide_step_join:
+        case la_doc_index_join:
+        case la_doc_access:
+        case la_roots:
+            if (PFprop_icols_count(p->prop)) {
+                /* look up required columns (icols) */
+                PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
+                PFalg_proj_t    *proj = PFmalloc (clsize (icols) *
+                                                    sizeof (PFalg_proj_t));
+                                                    
+                /* fill the projection list of the lower projection (proj1) */
+                for (unsigned int i = 0; i < clsize (icols); i++)
+                    proj[i] = PFalg_proj (clat (icols, i), clat (icols, i));
+            
+                /* Place a pi_(icols) operator on top of the operator. */
+                *p = *PFla_project_ (
+                            PFla_op_duplicate (p, L(p), R(p)),
+                            clsize (icols),
+                            proj);
+                /* mark the new projection node as SEEN */
+                SEEN(p) = true;
+            }
             break;
-        }
         
         default:
             break;
@@ -290,6 +308,7 @@ opt_monetprojections (PFla_op_t *p)
  * MonetDB/XQuery specific optimizations:
  *  - Introduce additional distinct operators.
  *  - Rewrite //_[child::a] steps into //a/parent::_ steps
+ *  - Introduce additional projection operators (to reduce the schema width).
  */
 PFla_op_t *
 PFalgopt_monetxq (PFla_op_t *root)
@@ -308,13 +327,19 @@ PFalgopt_monetxq (PFla_op_t *root)
        will ensure that these columns are 'really' never used. */
     root = PFalgopt_icol (root);
     
-    /* start second transversal rewrite */
+    PFprop_infer_icol (root);
+
+    /* In a second traversal introduce projections where possible
+       to restrict the schema width. (This leads to better physical
+       path step planning and reduces the complexity of the enumeration
+       process in the planner.) */
     opt_monetprojections (root);
+
+    PFla_dag_reset (root);
     
     /* In addition optimize the resulting DAG using the icols property
-       to remove inconsistencies introduced by changing the types
-       of unreferenced columns (rule eqjoin). The icols optimization
-       will ensure that these columns are 'really' never used. */
+       to remove schema inconsistencies.  The icols optimization
+       will ensure that unreferenced columns are 'really' never used. */
     root = PFalgopt_icol (root);
 
     return root;
