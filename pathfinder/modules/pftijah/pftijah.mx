@@ -2666,7 +2666,7 @@ PROC tj_containing_query_@1_@2_term_NLLR (bat[oid,any] left, bat[oid,dbl] query)
     
     var res;
     if (returnall) {
-        res := union(eScores,left.kdiff(eScores).project(dbl(0)));
+        res := union(eScores,left.kdiff(eScores).project(dbl(0))).sort();
     } else {
         res := eScores;
     }
@@ -2719,7 +2719,7 @@ PROC tj_containing_query_@1_@2_term_OKAPI (bat[oid,any] left, bat[oid,dbl] query
     
     var res;
     if (returnall) {
-        res := union(eScores,left.kdiff(eScores).project(dbl(0)));
+        res := union(eScores,left.kdiff(eScores).project(dbl(0))).sort();
     } else {
         res := eScores;
     }
