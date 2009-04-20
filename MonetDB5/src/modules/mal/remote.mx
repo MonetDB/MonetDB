@@ -702,19 +702,6 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 	return(NULL);
 }
 
-@h
-remote_export str RMTconnect(
-		str *ret,
-		str *dbname,
-		str *user,
-		str *passwd);
-remote_export str RMTconnect2(
-		str *ret,
-		str *dbname,
-		str *user,
-		str *passwd,
-		str *scen);
-@c
 #define serveget "\
     function user.remote_internal_servegetbat(type:str, o:bat[:any_1,:any_2]):void;\n\
         t := inspect.getType(o);\n\
@@ -860,6 +847,13 @@ static str RMTconnectInternal(
 	return(MAL_SUCCEED);
 }
 
+@h
+remote_export str RMTconnect(
+		str *ret,
+		str *dbname,
+		str *user,
+		str *passwd);
+@c
 str RMTconnect(
 		str *ret,
 		str *dbname,
@@ -870,6 +864,14 @@ str RMTconnect(
 	return RMTconnectInternal(ret, dbname, user, passwd, &scen);
 }
 
+@h
+remote_export str RMTconnect2(
+		str *ret,
+		str *dbname,
+		str *user,
+		str *passwd,
+		str *scen);
+@c
 str RMTconnect2(
 		str *ret,
 		str *dbname,
@@ -897,8 +899,8 @@ str RMTdisconnect(int *ret, str *conn) {
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
-	mal_set_lock(mal_remoteLock, "remote.list");
 
+	mal_set_lock(mal_remoteLock, "remote.disconnect");
 	c = MCgetClient()->conn;
 	t = NULL;
 	/* walk through the list */
