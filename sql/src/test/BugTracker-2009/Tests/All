@@ -47,3 +47,4 @@ parallel_bulk-load.SF-2771052.test
 wrong_error_message.SF-2637051
 AVG_of_SQRT.SF-2757642.unpack_csv
 AVG_of_SQRT.SF-2757642.test
+missing_column_name.SF-2776100
