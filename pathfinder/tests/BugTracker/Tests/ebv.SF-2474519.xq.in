@@ -1,6 +1,0 @@
-pf:add-doc("$TSTSRCDIR/hello.xml","hello.xml","hello.xml")
-<>
-element result { if (distinct-values(exactly-one(doc("hello.xml"))//*)) then 1 else 2 }
-<>
-element result { if (not(empty(distinct-values(exactly-one(doc("hello.xml"))//*)))) then 1 else 2 }
-<>

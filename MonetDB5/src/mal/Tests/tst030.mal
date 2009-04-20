@@ -1,6 +1,0 @@
-# check testing for illegal assigments to control variables
-
-barrier w:= 1>0;
-	w:= false;
-	io.print(w);
-exit	w;

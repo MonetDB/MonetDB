@@ -1,3 +1,0 @@
-debian/tmp/usr/lib/lib*.so.* /usr/lib
-debian/tmp/usr/lib/MonetDB4/lib/lib*.so* /usr/lib/MonetDB4/lib
-debian/tmp/usr/lib/MonetDB4/*.mil /usr/lib/MonetDB4
