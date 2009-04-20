@@ -954,9 +954,7 @@ code for reconnecting if necessary
 
 /**
  * Helper function to return a connection matching a given string, or an
- * error if it does not exist.  Before the connection is returned, it is
- * made sure that it is usable.  If the connection cannot be made
- * useable, an error is returned.  Since this function is internal, it
+ * error if it does not exist.  Since this function is internal, it
  * doesn't check the argument conn, as it should have been checked
  * already.
  */
