@@ -38,6 +38,10 @@ command mix(b1:bat[:oid,:int]):bat[:oid,:int]
 address MBMmix
 comment "Mix the BUNs of this BAT";
 
+command skewed(base:oid, size:int, domain:int, skew:int):bat[:oid,:int]
+address MBMskewed
+comment "Create a BAT with skewed integer distribution";
+
 @+ Experimentation Gimmicks
 @- Data Generation
 @h
@@ -58,6 +62,7 @@ comment "Mix the BUNs of this BAT";
 mb_export str MBMuniform(int *ret, oid *base, int *size, int *domain);
 mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
 mb_export str MBMmix(int *ret, int *batid);
+mb_export str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 
 #endif /* _MBM_H_ */
 @c
@@ -105,6 +110,73 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	}
 
 	/* mix BUNs randomly */
+	for (r = i = 0; i < n; i++) {
+		BUN idx = i + ((r += (BUN) rand()) % (n - i));
+		int val;
+
+		p = firstbun + i;
+		q = firstbun + idx;
+		val = *(int *) Tloc(b, p);
+		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
+		*(int *) Tloc(b, q) = val;
+	}
+	b->hsorted = GDK_SORTED;
+	b->hdense = TRUE;
+	BATseqbase(b, *base);
+	BATkey(b, TRUE);
+	b->tsorted = FALSE;
+	b->tdense = FALSE;
+	BATkey(BATmirror(b), *size <= *domain);
+	*bn = b;
+	return GDK_SUCCEED;
+}
+
+int
+BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
+{
+	BUN n = (BUN) * size, i, r;
+	BAT *b = NULL;
+	BUN firstbun, lastbun, p, q;
+
+	int skewedSize;
+	int skewedDomain;
+
+	if (*size < 0) {
+		GDKerror("BATuniform: size must not be negative");
+		return GDK_FAIL;
+	}
+
+	b = BATnew(TYPE_void, TYPE_int, n);
+	if (b == NULL)
+		return GDK_FAIL;
+	if (n == 0) {
+		b->tsorted = GDK_SORTED;
+		b->hsorted = GDK_SORTED;
+		b->tdense = FALSE;
+		b->hdense = TRUE;
+		BATseqbase(b, *base);
+		BATkey(b, TRUE);
+		BATkey(BATmirror(b), TRUE);
+		*bn = b;
+		return GDK_SUCCEED;
+	}
+
+	firstbun = BUNfirst(b);
+	BATsetcount(b, n);
+	/* create BUNs with skewed distribution */
+	skewedSize = ((*skew) * (*size))/100;
+	skewedDomain = ((100-(*skew)) * (*domain))/100;
+
+	lastbun = firstbun + skewedSize;
+	for(p=firstbun; p <lastbun; p++)
+		*(int *) Tloc(b, p) = (int)rand() % skewedDomain;
+	
+	lastbun = BUNlast(b);
+	for(; p <lastbun; p++)
+		*(int *) Tloc(b, p) = ((int)rand() % (*domain-skewedDomain)) + skewedDomain;
+
+	/* mix BUNs randomly */
+
 	for (r = i = 0; i < n; i++) {
 		BUN idx = i + ((r += (BUN) rand()) % (n - i));
 		int val;
@@ -273,6 +345,18 @@ MBMmix(int *bn, int *batid)
 	BBPunfix(b->batCacheid);
 	*bn = b->batCacheid;
 
+	return MAL_SUCCEED;
+}
+
+str
+MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew){
+	BAT *bn;
+	
+	BATskewed(&bn, base, size, domain, skew);
+	if( bn ){
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		BBPkeepref(*ret= bn->batCacheid);
+	} else throw(MAL, "microbenchmark","uniform");
 	return MAL_SUCCEED;
 }
 @}
