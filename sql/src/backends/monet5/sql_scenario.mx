@@ -435,6 +435,9 @@ SQLexitClient(Client c)
 			reset_functions(m->session->tr);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	c->state[MAL_SCENARIO_PARSER] = NULL;
+	c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+	MALexitClient(c);
 	return MAL_SUCCEED;
 }
 

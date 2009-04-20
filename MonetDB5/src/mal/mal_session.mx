@@ -113,26 +113,31 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 {
 	InstrPtr p;
 	MalBlkPtr mb;
-	int i, cnt = 1;
+	int i;
 
 	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
 		mb = cntxt->curprg->def;
 		cntxt->itrace = 0;	/* turn off any debugging */
 		getInstrPtr(mb,0)->gc = 0;
-		for (i = 1; i < mb->stop; i++)
-			if (mb->stmt[i]->token == REMsymbol)
-				cnt++;
-		if (mb->stop <= cnt + 1) {	/* complete comments */
-			mb->typefixed = 0;
-			mb->flowfixed = 0;
-			mb->stop = cnt;
-			return;
-		}
 		/* remove any MAL history */
 		if( mb->history){
 			freeMalBlk(mb->history);
 			mb->history=0;
 		}
+
+		/* keep leading comment statements  ?*/
+		for (i = 1; i < mb->stop; i++)
+			if (mb->stmt[i]->token != REMsymbol)
+				break;
+		mb->typefixed = 0;
+		mb->flowfixed = 0;
+		mb->stop = i;
+		if ( cntxt->glb == 0){
+			cntxt->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
+			cntxt->glb->stktop = mb->vtop;
+			cntxt->glb->blk = mb;
+		}
+		return;
 	}
 	cntxt->curprg = newFunction(putName("user",4), putName(nme, strlen(nme)), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
@@ -445,9 +450,11 @@ A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
 @c
 	mb = c->curprg->def;
-	c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
-	c->glb->stktop = mb->vtop;
-	c->glb->blk = mb;
+	if ( c->glb == 0){
+		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
+		c->glb->stktop = mb->vtop;
+		c->glb->blk = mb;
+	}
 
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
@@ -516,7 +523,8 @@ MALexitClient(Client c)
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
 	for ( i=1; i<c->curprg->def->vtop; i++)
 		freeVariable(c->curprg->def,i);
-	GDKfree(c->glb);
+	if ( c->glb)
+		GDKfree(c->glb);
 	c->glb = NULL;
 	c->curprg->def->vtop = 1;
 	MSinitClientPrg(c,"user", "main");

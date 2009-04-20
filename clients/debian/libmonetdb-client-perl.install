@@ -1,0 +1,2 @@
+debian/tmp/usr/share/MonetDB/perl/Mapi.pm usr/share/MonetDB/perl
+debian/tmp/usr/lib/perl5/* usr/lib/perl5
