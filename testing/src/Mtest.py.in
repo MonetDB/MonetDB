@@ -3421,7 +3421,7 @@ def main(argv) :
             # WARNING
         testlist = []
         for d in dirlist:
-            for t in find_test_dirs(d):
+            for t in find_test_dirs(d).sort():
                 if t not in testdirs:
                     testdirs.append(t)
     else:
@@ -3650,7 +3650,6 @@ def main(argv) :
         if elem is not None:
             body.append(elem)
     else:
-        testdirs.sort()
         if not quiet:
             print "\nRunning all tests in directories %s.\n" % str(testdirs)
         for d in testdirs:
