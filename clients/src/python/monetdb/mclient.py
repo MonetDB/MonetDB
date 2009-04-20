@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!/usr/bin/env python
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -16,17 +16,19 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
+#
+
+# TODO: cleanup, do we need monet_options.py?
 
 import sys
 
-from MonetDB import monet_options
 try:
-    from MonetDB.Mapi import server
+    from monetdb import monet_options
+    from monetdb.mapi import Server
 except ImportError:
     # if running from the build directory Mapi is not in MonetDB module
-    from Mapi import server
-
-import fileinput
+    import monet_options
+    from mapi import Server
 
 
 def main(argv) :
@@ -55,13 +57,14 @@ def main(argv) :
         if encoding is None:
             encoding = locale.getdefaultlocale()[1]
 
-    s = server(opt.get("host", "localhost"),
-               int(opt.get("mapi_port", 50000)),
-               opt.get("user", "monetdb"),
-               opt.get("passwd", "monetdb"),
-               opt.get("language", "sql"),
-               opt.get("database", ""),
-               opt.get("mapi_trace", None) is not None)
+    s = Server()
+
+    s.connect(hostname = opt.get("host", "localhost"),
+              port = int(opt.get("mapi_port", 50000)),
+              username = opt.get("user", "monetdb"),
+              password = opt.get("passwd", "monetdb"),
+              language = opt.get("language", "sql"),
+              database = opt.get("database", ""))
     print "#mclient (python) connected to %s:%d as %s" % \
           (opt.get("host", "localhost"),
            int(opt.get("mapi_port", 50000)),

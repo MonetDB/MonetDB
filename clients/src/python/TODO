@@ -1,0 +1,21 @@
+
+* Write better documentation
+
+* Check if it is possible to support 2.5, 2.6 and 3.0 at the same time
+  Most stuff can work on all versions, only the exception syntax is problematic.
+
+* Check if everything works with merovingian (and fix)
+
+* Improve exception types and messages
+
+* Improve type conversion (for example string, can't handle substrings well)
+
+* Speed tests / profiling
+
+* Get the capabilities tests working
+
+* Configure the logging module correctly
+
+* Code cleanup
+
+
