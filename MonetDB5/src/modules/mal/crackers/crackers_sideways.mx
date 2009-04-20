@@ -51,6 +51,7 @@
 @:@1(dbl,str,simple,,dbl,@2)@
 @:@1(dbl,int,simple,,dbl,@2)@
 @:@1(dbl,dbl,simple,,dbl,@2)@
+@:@1(int,oid,simple,,int,@2)@
 
 @:@1(date,int,atom,TYPE_,loc,@2)@
 @:@1(date,str,atom,TYPE_,loc,@2)@
@@ -581,9 +582,9 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
 
 str
 CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh){
-        BAT *b, *p, *r, *c, *slice;
+        BAT *b, *p, *r, *c;
         @2 *pairt, *rest;
-	oid *pivott;
+	oid *pivott, *resh;
         oid size;
 	int m;
 	oid cl1=0,cl2=0,ch1=0,ch2=0;
@@ -626,17 +627,19 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
         	GetHgh_@1(*hgh, *inclusiveHgh, CrackerIndex[m].Tree, c, BUNfirst(c), &cl2, &ch2, 0, BUNlast(b)-(oid)1);
 	if (cl1 != 0) cl1++;
 
-        slice = BATslice(b, cl1, ch2+1);
 	
         if ((p = BATdescriptor(*PositionPivot)) == NULL) 
                 throw(MAL, "crackers.CRKProject", "Cannot access descriptor");
 
         size = BATcount(p);
- 	r = BATnew(TYPE_void,slice->ttype,size);
+ 	r = BATnew(TYPE_oid,b->ttype,size);
 
-        pairt  = (@2 *)Tloc(slice, BUNfirst(slice));
+        /*slice = BATslice(b, cl1, ch2+1);*/
+
+        pairt  = (@2 *)Tloc(b, BUNfirst(b));
         pivott = (oid*)Tloc(p, BUNfirst(p));
         rest   = (@2 *)Tloc(r, BUNfirst(r));
+        resh   = (oid *)Hloc(r, BUNfirst(r));
 
 	if (p->ttype==TYPE_void){
 		printf("\n void tail in positions \n");
@@ -651,6 +654,12 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
 			rest ++;
 			pivott ++;
 		}
+        	pivott = (oid*)Tloc(p, BUNfirst(p));
+		for (j = 0; j<size; j++){
+			*resh = *pivott; 
+			pivott ++;
+			resh++;
+		}
 	}
 
         BATsetcount(r, size);
@@ -664,7 +673,6 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
         BBPkeepref(r->batCacheid);
 
         BBPunfix(p->batCacheid);
-        BBPunfix(slice->batCacheid);
 	
 	if (newMap){
                 BBPkeepref(b->batCacheid);

@@ -46,6 +46,7 @@
 /* TODO: add the rest of the type combinations once code is stable */
 @:@1(int,int,simple,,,@2)@
 @:@1(int,date,simple,,,@2)@
+@:@1(int,oid,simple,,,@2)@
 @:@1(dbl,date,simple,,,@2)@
 @:@1(dbl,int,simple,,,@2)@
 @:@1(dbl,dbl,simple,,,@2)@
@@ -125,6 +126,7 @@ str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid las
 
 @= crackInTwoUnorderedPiecesSideways_decl
 str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos);
+str CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, oid first, oid last, oid *pos, lng *pieceSize);
 @
 
 @= crackInTwoUnorderedPiecesSideways_str_decl
@@ -573,6 +575,17 @@ CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid last, o
         *(@2*) @6 = tdummy;
 @
 
+@= printVarTypes
+{
+/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+	str MyBuf = NULL;
+	int MyBufLen = 0;
+	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));
+	printf("%s \n", MyBuf);
+	GDKfree(MyBuf);
+}
+@
+
 @= crackInTwoUnorderedPiecesSideways_impl
 str
 CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oid *pos){
@@ -590,6 +603,84 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oi
         vmt = (@2*)Tloc(b, firstBUN+first);
         vlt = (@2*)Tloc(b, firstBUN+last );
 
+        while(vm<vl) {
+                if (@6_@4(vm, &mval,@7@1)){
+                        vm  ++; 
+			vmt ++;
+		}
+                else {
+                        while( @6_@5(vl, &mval,@7@1) && vl>vm){
+                                vl  --; 
+				vlt --;
+			}
+                        @:shuffleSideways(@1,@2,vm,vl,vmt,vlt)@
+                        vl  --;
+			vlt --;
+                        vm  ++;
+			vmt ++;
+                }
+        }
+
+	if (vl == vm) {
+		if (@6_@5(vl, &mval,@7@1))
+			*pos = (oid) (vl - h0) - 1; /*works for empty left piece also*/
+		else{
+			*pos = (oid) (vl - h0);
+			if (*pos==last) /*empty right piece*/
+				*pos = *pos+(oid)1;
+		}
+	}
+	else
+		*pos = (oid) (vl - h0);
+		
+        return MAL_SUCCEED;
+}
+
+str
+CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN last, oid *pos, lng *pieceSize){
+        @1 *vm, *vl, *h0;
+        @2 *vmt, *vlt;
+        @1 hdummy;
+        @2 tdummy;
+	BUN firstBUN;
+
+	oid sampleSize;		
+	@1 mval;
+	@1 mval1=0;
+	@1 *stopSampling;
+
+        /* set bounds for the iterator */
+	firstBUN = BUNfirst(b);
+        h0  = (@1*)Hloc(b, firstBUN);
+        vm  = (@1*)Hloc(b, firstBUN+first);
+        vl  = (@1*)Hloc(b, firstBUN+last );
+        vmt = (@2*)Tloc(b, firstBUN+first);
+        vlt = (@2*)Tloc(b, firstBUN+last );
+
+	(void)pieceSize;
+	/*Sample*/
+	if (*mid == 0){
+		sampleSize = 100;
+
+		stopSampling = vm + sampleSize;
+		mval1 += *vm;
+		vm++;
+		for(;vm < stopSampling;vm++){
+			mval1 += *vm;
+		}
+
+		stopSampling = vl - sampleSize;
+		for(;vl > stopSampling;vl--){
+			mval1 += *vl;
+		}
+
+		*mid = mval1/(sampleSize*2);
+
+		vm  = (@1*)Hloc(b, firstBUN+first);
+		vl  = (@1*)Hloc(b, firstBUN+last );
+	}
+	
+	mval=*mid;
         while(vm<vl) {
                 if (@6_@4(vm, &mval,@7@1)){
                         vm  ++; 

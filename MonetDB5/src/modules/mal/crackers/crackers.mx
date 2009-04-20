@@ -134,9 +134,15 @@ ultra fast.
 @:@1(dbl,dbl)@
 @
 
-@= TypeSwitch_temp
-@:@1(@2,int)@
+@= TypeSwitch_joins1
+@:@1(int,int)@
+@:@1(int,oid)@
 @
+
+@= TypeSwitch_joins2
+@:@1(int)@
+@
+
 
 @- MAL file
 
@@ -151,7 +157,8 @@ module crackers;
 @:TypeSwitch_1(CoreOrdered)@
 @:TypeSwitch_1(Validate)@
 @:TypeSwitch_1(AVLindex)@
-@:TypeSwitch_temp(Joins)@
+@:TypeSwitch_joins1(Joins1)@
+@:TypeSwitch_joins2(Joins2)@
 @:TypeSwitch_2(Sideways)@
 
 command mapCount(b:bat[:oid,:oid]) :lng
@@ -526,58 +533,65 @@ address CRKdeleteFromAVL_@2
 comment "Delete a collection of values from the index";
 @
 
-@= Joins
-command simpleJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKsimpleJoin_@2
+@= Joins1
+command simpleJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKsimpleJoin_@1_@2
 comment "Join two maps based on head values by exploiting the already existing partitioning information";
 
-command crackJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKcrackJoin_@2
+command crackJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKcrackJoin_@1_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces";
 
-command cacheConsciousCrackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
-address CRKcacheConsciousCrackHashJoin_@2
+command cacheConsciousCrackHashJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
+address CRKcacheConsciousCrackHashJoin_@1_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
-command activeCacheConsciousCrackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng, minLeft:@2, maxLeft:@2, minRight:@2, maxRight:@2, mode:int):bat[:oid,:oid]
-address CRKactiveCacheConsciousCrackHashJoin_@2
+command activeCacheConsciousCrackHashJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng, minLeft:@1, maxLeft:@1, minRight:@1, maxRight:@1, mode:int):bat[:oid,:oid]
+address CRKactiveCacheConsciousCrackHashJoin_@1_@2
 comment "Join two maps based on head values with active cracking. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
-command cacheConsciousCrackHashJoinAlignOnly(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
-address CRKcacheConsciousCrackHashJoinAlignOnly_@2
+command activeJoin(b1:bat[:@1,:@2], reuseLeft:bit, b3:bat[:@1,:@2],reuseRight:bit,pieceSize:lng):bat[:oid,:oid]
+address CRKactiveJoin_@1_@2
+comment "Join two maps based on head values with active cracking. Align the maps to avoid overlapping pieces. Reuse hash tables";
+
+command cacheConsciousCrackHashJoinAlignOnly(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2],pieceSize:lng,joinThreshold:lng):bat[:oid,:oid]
+address CRKcacheConsciousCrackHashJoinAlignOnly_@1_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
-command crackHashJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2],b4:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKcrackHashJoin_@2
+command crackHashJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@2],b3:bat[:oid,:@1],b4:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKcrackHashJoin_@1_@2
 comment "Join two maps based on head values. Align the maps to avoid overlapping pieces. Reuse hash tables";
 
-command fullAlignment(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):void
-address CRKFullAlignment_@2
+command fullAlignment(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):void
+address CRKFullAlignment_@1_@2
 comment "Align a bat with the cracks on a map";
 
-command singlePassJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKOnePassJoin_@2
+command singlePassJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKOnePassJoin_@1_@2
 comment "First partition on separate pieces the left input based on the right index. Then join matching pieces";
 
-command alignJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKAlignJoin_@2
+command alignJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKAlignJoin_@1_@2
 comment "Join and on the fly align a map with an intermediate result bat, i.e., not cracked";
 
-command alignedJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],b3:bat[:oid,:@2]):bat[:oid,:oid]
-address CRKAlreadyAlignedJoin_@2
+command alignedJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],b3:bat[:oid,:@2]):bat[:oid,:oid]
+address CRKAlreadyAlignedJoin_@1_@2
 comment "Join an aligned cracker bat with a map";
+@
 
-command bandJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],c1:@2,c2:@2,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
-address CRKbandJoin_@2
+@= Joins2
+
+command bandJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],c1:@1,c2:@1,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
+address CRKbandJoin_@1
 comment "Band Join two maps based on head values. 
 	Continuously crack the right BAT for each tuple of the left one";
 
-command sortBandJoin(b1:bat[:oid,:@2],b2:bat[:oid,:@2],c1:@2,c2:@2,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
-address CRKsortBandJoin_@2
+command sortBandJoin(b1:bat[:oid,:@1],b2:bat[:oid,:@1],c1:@1,c2:@1,inclusiveLow:bit,inclusiveHgh:bit):bat[:oid,:oid]
+address CRKsortBandJoin_@1
 comment "Band Join two maps based on head values. 
 	First sort the right BAT and then continuously binary search the right BAT for each tuple of the left one";
 
-command materializeHead(b:bat[:oid,:@2]) :void
+command materializeHead(b:bat[:oid,:@1]) :void
 address CRKmaterializeH
 comment "Materialize the head of BAT b";
 
