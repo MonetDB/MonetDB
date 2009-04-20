@@ -4681,6 +4681,8 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 			char *cname = exp_name(e);
 			sql_subtype *tp = exp_subtype(e);
 
+			if (!cname)
+				cname = "v";
 			if (mvc_bind_column(sql, t, cname))
 				return cname;
 			mvc_create_column(sql, t, cname, tp);
