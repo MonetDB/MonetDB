@@ -924,26 +924,40 @@ plan_select (const PFla_op_t *n)
 static PFplanlist_t *
 plan_subsequence (const PFla_op_t *n)
 {
-    PFalg_col_t   order_col;
+    PFalg_col_t   sel_col,
+                  order_col,
+                  unary_col;
     long long int low,
                   high;
     unsigned int  count   = n->schema.count;
     PFplanlist_t *ret     = new_planlist ();
-    PFla_op_t    *op      = L(n),
-                 *proj_op = NULL;
+    PFla_op_t    *op      = L(n);
     PFalg_proj_t *proj;
 
     assert (n); assert (n->kind == la_select);
     assert (L(n));
 
+    sel_col = n->sem.select.col;
+
+    if (PFprop_icol (n->prop, sel_col))
+        return ret;
+
+    if (op->kind == la_project) {
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
+        op = L(op);
+    }
+
     /* check first three operators: select-gt-attach */
     if (op->kind != la_num_gt ||
-        n->sem.select.col != op->sem.binary.res ||
+        sel_col != op->sem.binary.res ||
         L(op)->kind != la_attach ||
         L(op)->sem.attach.res != op->sem.binary.col1 ||
-        PFprop_icol (n->prop, op->sem.binary.res) ||
-        PFprop_icol (n->prop, op->sem.binary.col1) ||
-        PFprop_icol (n->prop, op->sem.binary.col2) ||
+        PFprop_icol (op->prop, op->sem.binary.col1) ||
+        PFprop_icol (op->prop, op->sem.binary.col2) ||
         L(op)->sem.attach.value.type != aat_int)
         return ret;
 
@@ -951,38 +965,76 @@ plan_subsequence (const PFla_op_t *n)
     high      = L(op)->sem.attach.value.val.int_;
     op        = LL(op);
 
-    /* record the information for a possible projection */
     if (op->kind == la_project) {
-        /* adjust the order column (in case it gets renamed) */
-        for (unsigned int i = 0; i < op->sem.proj.count; i++)
-            if (op->sem.proj.items[i].new == order_col) {
-                order_col = op->sem.proj.items[i].old;
-                break;
-            }
-        proj_op = op;
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
+        op = L(op);
+    }
+
+    if (op->kind != la_select ||
+        PFprop_icol (op->prop, op->sem.select.col))
+        return ret;
+
+    sel_col = op->sem.select.col;
+    op      = L(op);
+
+    if (op->kind == la_project) {
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
         op = L(op);
     }
 
     /* check for the next operators: select-not-gt-attach-cast */
-    if (op->kind != la_select ||
-        L(op)->kind != la_bool_not ||
-        op->sem.select.col != L(op)->sem.unary.res ||
-        LL(op)->kind != la_num_gt ||
-        L(op)->sem.unary.col != LL(op)->sem.binary.res ||
-        LLL(op)->kind != la_attach ||
-        LLL(op)->sem.attach.res != LL(op)->sem.binary.col1 ||
-        order_col != LL(op)->sem.binary.col2 ||
-        PFprop_icol (op->prop, L(op)->sem.unary.res) ||
-        PFprop_icol (op->prop, LL(op)->sem.binary.res) ||
-        PFprop_icol (op->prop, LL(op)->sem.binary.col1) ||
-        LLLL(op)->kind != la_cast ||
-        LLLL(op)->sem.type.res != order_col ||
-        PFprop_type_of (LLLL(op), LLLL(op)->sem.type.col) != aat_nat)
+    if (op->kind != la_bool_not ||
+        sel_col != op->sem.unary.res ||
+        PFprop_icol (op->prop, op->sem.unary.col))
         return ret;
 
-    order_col = LLLL(op)->sem.type.col;
-    low       = LLL(op)->sem.attach.value.val.int_;
-    op        = LLLLL(op);
+    unary_col = op->sem.unary.col;
+    op        = L(op);
+
+    if (op->kind == la_project) {
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
+        op = L(op);
+    }
+
+    if (op->kind != la_num_gt ||
+        unary_col != op->sem.binary.res ||
+        L(op)->kind != la_attach ||
+        L(op)->sem.attach.res != op->sem.binary.col1 ||
+        order_col != op->sem.binary.col2 ||
+        PFprop_icol (op->prop, op->sem.binary.col1))
+        return ret;
+
+    low = L(op)->sem.attach.value.val.int_;
+    op  = LL(op);
+
+    if (op->kind == la_project) {
+        for (unsigned int i = 0; i < op->sem.proj.count; i++) {
+            /* check for a non-problematic projection */
+            if (op->sem.proj.items[i].new != op->sem.proj.items[i].new)
+                return ret;
+        }
+        op = L(op);
+    }
+
+    if (op->kind != la_cast ||
+        op->sem.type.res != order_col ||
+        PFprop_type_of (op, op->sem.type.col) != aat_nat)
+        return ret;
+
+    order_col = op->sem.type.col;
+    op        = L(op);
 
     /* and finally check for the row numbering operator
        that provides the position information */
@@ -998,24 +1050,8 @@ plan_subsequence (const PFla_op_t *n)
     for (unsigned int i = 0; i < count; i++) {
         PFalg_col_t cur = n->schema.items[i].name;
         /* column used: keep the column */
-        if (PFprop_icol (n->prop, cur)) {
-            /* In case a projection appeared in between
-               we have to look up the correct mapping. */
-            if (proj_op) {
-                unsigned int j;
-                for (j = 0; j < proj_op->sem.proj.count; j++)
-                    if (proj_op->sem.proj.items[j].new == cur) {
-                        proj[i] = proj_op->sem.proj.items[j];
-                        break;
-                    }
-                /* Because we have checked for the negative usage
-                   of all columns affected above the projection
-                   we are sure that we find a mapping. */
-                assert (j < proj_op->sem.proj.count);
-            }
-            else
-                proj[i] = PFalg_proj (cur, cur);
-        }
+        if (PFprop_icol (n->prop, cur))
+            proj[i] = PFalg_proj (cur, cur);
         /* column unused: introduce a dummy column */
         else
             proj[i] = PFalg_proj (cur, op->sem.sort.res);
@@ -1485,36 +1521,104 @@ static PFplanlist_t *
 plan_count_ext (const PFla_op_t *n)
 {
     PFplanlist_t  *ret  = new_planlist ();
+    PFalg_col_t    part_col,
+                   res_col,
+                   new_part_col,
+                   new_res_col,
+                   loop_col;
+    PFla_op_t     *op,
+                  *count_op = NULL;
+    PFalg_proj_t  *proj = PFmalloc (2 * sizeof (PFalg_proj_t));
 
     if (!n ||
         n->kind != la_disjunion ||
-        L(n)->kind != la_count ||
-        !L(n)->sem.aggr.part ||
-        R(n)->kind != la_attach ||
-        RL(n)->kind != la_difference ||
-        R(RL(n))->kind != la_project ||
-        RL(RL(n))->kind != la_count ||
-        L(n) != RL(RL(n)) ||
-        R(n)->sem.attach.res != L(n)->sem.aggr.res ||
-        R(n)->sem.attach.value.type != aat_int ||
-        R(n)->sem.attach.value.val.int_ != 0 ||
-        L(RL(n))->schema.count != 1 ||
-        PFprop_type_of (n, L(n)->sem.aggr.part) != aat_nat)
+        n->schema.count != 2)
         return ret;
 
-    assert (LL(n)->plans && L(RL(n))->plans);
+    op = L(n);
+
+    if (op->kind == la_project &&
+        L(op)->kind == la_count &&
+        L(op)->sem.aggr.part) {
+        part_col = L(op)->sem.aggr.part;
+        res_col  = L(op)->sem.aggr.res;
+        if (part_col == op->sem.proj.items[0].old &&
+            res_col  == op->sem.proj.items[1].old) {
+            new_part_col = op->sem.proj.items[0].new;
+            new_res_col  = op->sem.proj.items[1].new;
+        }
+        else {
+            assert (part_col == op->sem.proj.items[1].old &&
+                    res_col  == op->sem.proj.items[0].old);
+            new_part_col = op->sem.proj.items[1].new;
+            new_res_col  = op->sem.proj.items[0].new;
+        }
+        count_op = L(op);
+    }
+    else if (op->kind == la_count &&
+             op->sem.aggr.part) {
+        part_col     = L(op)->sem.aggr.part;
+        res_col      = L(op)->sem.aggr.res;
+        new_part_col = L(op)->sem.aggr.part;
+        new_res_col  = L(op)->sem.aggr.res;
+        count_op = op;
+    }
+    else
+        return ret;
+
+    op = R(n);
+    loop_col = new_part_col;
+
+    if (PFprop_type_of (n, new_part_col) != aat_nat ||
+        !PFprop_const (op->prop, new_res_col) ||
+        PFprop_const_val (op->prop, new_res_col).type != aat_int ||
+        PFprop_const_val (op->prop, new_res_col).val.int_ != 0 ||
+        op->sem.proj.items[0].old == op->sem.proj.items[1].old)
+        return ret;
+
+    if (op->kind == la_project) {
+        if (loop_col == op->sem.proj.items[0].new)
+            loop_col = op->sem.proj.items[0].old;
+        else
+            loop_col = op->sem.proj.items[1].old;
+        op = L(op);
+    }
+
+    if (op->kind != la_attach ||
+        op->sem.attach.res == loop_col)
+        return ret;
+
+    op = L(op);
+
+    if (op->kind != la_difference ||
+        R(op)->kind != la_project ||
+        RL(op)->kind != la_count ||
+        count_op != RL(op) ||
+        op->schema.count != 1 ||
+        R(op)->sem.proj.items[0].old != part_col)
+        return ret;
+
+    assert (L(count_op)->plans && L(op)->plans);
+
+    proj[0].new = new_part_col;
+    proj[0].old =     part_col;
+    proj[1].new = new_res_col;
+    proj[1].old =     res_col;
 
     /* consider each plan in L */
-    for (unsigned int l = 0; l < PFarray_last (LL(n)->plans); l++)
+    for (unsigned int l = 0; l < PFarray_last (L(count_op)->plans); l++)
         /* and each plan in R */
-        for (unsigned int r = 0; r < PFarray_last (L(RL(n))->plans); r++)
+        for (unsigned int r = 0; r < PFarray_last (L(op)->plans); r++)
             add_plan (ret,
-                      ecount (
-                          *(plan_t **) PFarray_at (LL(n)->plans, l),
-                          *(plan_t **) PFarray_at (L(RL(n))->plans, r),
-                          L(n)->sem.aggr.res,
-                          L(n)->sem.aggr.part,
-                          L(n)->sem.aggr.part));
+                      project (
+                          ecount (
+                              *(plan_t **) PFarray_at (L(count_op)->plans, l),
+                              *(plan_t **) PFarray_at (L(op)->plans, r),
+                              res_col,
+                              part_col,
+                              loop_col),
+                          2,
+                          proj));
 
     return ret;
 }
@@ -2014,8 +2118,6 @@ plan_step_join_to_llstep (const PFla_op_t *n)
 
     assert (n->schema.count == 2);
     assert (L(n)->kind == la_step_join);
-    assert (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
-            PFprop_set (L(n)->prop));
 
     item_res = L(n)->sem.step.item_res;
     item     = L(n)->sem.step.item;
@@ -2034,6 +2136,11 @@ plan_step_join_to_llstep (const PFla_op_t *n)
     }
     else
         return ret;
+
+    if (!PFprop_key (L(n)->prop, L(n)->sem.step.item_res) &&
+        !PFprop_set (L(n)->prop) &&
+        !PFprop_key_right (L(n)->prop, iter))
+        return ret;
         
     proj_in[0].new = iter_out;
     proj_in[0].old = iter;
@@ -2046,8 +2153,6 @@ plan_step_join_to_llstep (const PFla_op_t *n)
      * of the staircase join operators in MIL, this information is
      * encoded in a single integer value.
      */
-    const PFord_ordering_t in_in[2]
-        = { sortby (iter, item), sortby (item, iter) };
     const PFord_ordering_t in[2]
         = { sortby (iter_out, item_out), sortby (item_out, iter_out) };
     const PFord_ordering_t out[2]
@@ -2062,8 +2167,10 @@ plan_step_join_to_llstep (const PFla_op_t *n)
         for (unsigned int j = 0; j < PFarray_last (LR(n)->plans); j++) {
             add_plans (ordered,
                        ensure_ordering (
-                           *(plan_t **) PFarray_at (LR(n)->plans, j),
-                           in_in[i]));
+                           project (*(plan_t **) PFarray_at (LR(n)->plans, j),
+                                    2,
+                                    proj_in),
+                           in[i]));
         }
 
         /* generate plans for each input and each output ordering */
@@ -2073,7 +2180,7 @@ plan_step_join_to_llstep (const PFla_op_t *n)
                 plan = *(plan_t **) PFarray_at (ordered, k);
                 add_plan (ret,
                           llscjoin (
-                              project (plan, 2, proj_in),
+                              plan,
                               L(n)->sem.step.spec,
                               in[i],
                               out[o],
@@ -3408,11 +3515,8 @@ plan_subexpression (PFla_op_t *n)
             }
 
             if (n->schema.count == 2 &&
-                L(n)->kind == la_step_join &&
-                (PFprop_key (L(n)->prop, L(n)->sem.step.item_res) ||
-                 PFprop_set (L(n)->prop))) {
+                L(n)->kind == la_step_join) 
                 add_plans (plans, plan_step_join_to_llstep (n));
-            }
             break;
 
         case la_select:
