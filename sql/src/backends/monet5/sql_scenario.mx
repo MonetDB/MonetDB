@@ -80,6 +80,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_namespace.h"
 #include "mal_sabaoth.h"
 #include "mal_debugger.h"
+#include "mal_recycle.h"
 #include "bat5.h"
 #include <mtime.h>
 #include "optimizer.h"
@@ -263,7 +264,7 @@ SQLexit(Client c)
 	stmt_destroy(r);			   \
 	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
 
-#define NR_GLOBAL_VARS 8
+#define NR_GLOBAL_VARS 9
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -273,7 +274,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	stmt *r = NULL;
-	lng sec = 0;
+	lng sec = 0, last_id = -1;
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
@@ -281,6 +282,7 @@ global_variables(mvc *sql, char *user, char *schema)
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("debug", &sql->debug);
+	SQLglobal("last_id", &last_id);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 1024, 0);
@@ -433,6 +435,9 @@ SQLexitClient(Client c)
 			reset_functions(m->session->tr);
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	c->state[MAL_SCENARIO_PARSER] = NULL;
+	c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+	MALexitClient(c);
 	return MAL_SUCCEED;
 }
 
@@ -454,8 +459,10 @@ SQLcacheRefresh(mvc *m){
 	if (m && !m->session->active) {
 		int schema_changed = mvc_trans(m);
 		if (m->cache && (schema_changed || m->qc->id > 10000)){
-			if (m->qc)
+			if (m->qc){
 				qc_destroy(m->qc);
+                RECYCLEshutdown(MCgetClient());
+            }               
 			m->qc = qc_create(m->clientid);
 		}
 	}
@@ -1028,7 +1035,7 @@ produce code.
 			SQLsetTrace(c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE); 
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain) || s->type == st_none) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->cache && m->emode != m_explain && m->emode != m_plan) || s->type == st_none) {
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s );
 			if( m->emode == m_inplace)
@@ -1220,7 +1227,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_explain) {
+	if (m->emode == m_explain || m->emode == m_plan) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
