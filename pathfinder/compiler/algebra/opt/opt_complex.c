@@ -1939,21 +1939,21 @@ opt_complex (PFla_op_t *p)
                     modified = true;
                     break;
                 }
-            }
-            /* Push a rowid operator underneath the adjacent
-               projection thus hoping to find a composite key
-               that allows to replace the rowid operator by
-               a rank operator. */
-            else if (L(p)->kind == la_project) {
-                PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                               sizeof (PFalg_proj_t));
-                PFalg_col_t   col  = PFcol_new (p->sem.rowid.res);
-                for (unsigned int i = 0; i < L(p)->sem.proj.count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                proj[L(p)->schema.count] = PFalg_proj (p->sem.rowid.res,
-                                                       col);
-                *p = *PFla_project_ (rowid (LL(p), col), p->schema.count, proj);
-                modified = true;
+                /* Push a rowid operator underneath the adjacent
+                   projection thus hoping to find a composite key
+                   that allows to replace the rowid operator by
+                   a rank operator. */
+                else if (L(p)->kind == la_project) {
+                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    PFalg_col_t   col  = PFcol_new (p->sem.rowid.res);
+                    for (unsigned int i = 0; i < L(p)->sem.proj.count; i++)
+                        proj[i] = L(p)->sem.proj.items[i];
+                    proj[L(p)->schema.count] = PFalg_proj (p->sem.rowid.res,
+                                                           col);
+                    *p = *PFla_project_ (rowid (LL(p), col), p->schema.count, proj);
+                    modified = true;
+                }
             }
             break;
 
