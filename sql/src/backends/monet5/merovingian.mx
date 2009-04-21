@@ -102,12 +102,10 @@ typedef struct _dpair {
 	int err;          /* where to read stderr messages from */
 	pid_t pid;        /* this process' id */
 	char* dbname;     /* the database that this server serves */
-	pthread_t tid;    /* thread id used when terminating this server */
-	char started;     /* is it started? (and can be terminated) */
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
-static pthread_mutex_t topdplock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t topdplock;
 
 typedef struct _remotedb {
 	char* dbname;
@@ -117,6 +115,11 @@ typedef struct _remotedb {
 }* remotedb;
 static remotedb _merovingian_remotedbs = NULL;
 static pthread_mutex_t remotedblock = PTHREAD_MUTEX_INITIALIZER;
+
+typedef struct _threadlist {
+	pthread_t tid;
+	struct _threadlist* next;
+}* threadlist;
 
 static int _keepLogging = 1;
 static int _timeInterval = 0;
@@ -284,18 +287,22 @@ terminateProcess(void *p)
 	sabdb *stats;
 	str er;
 	int i;
+	/* make local copies since d will disappear when killed */
+	pthread_t pid = d->pid;
+	char *dbname = alloca(sizeof(char) * (strlen(d->dbname) + 1));
+	memcpy(dbname, d->dbname, strlen(d->dbname) + 1);
 
-	er = SABAOTHgetStatus(&stats, d->dbname);
+	er = SABAOTHgetStatus(&stats, dbname);
 	if (er != MAL_SUCCEED) {
 		fprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
-				(long long int)d->pid, er);
+				(long long int)pid, er);
 		GDKfree(er);
 		return;
 	}
 
 	if (stats == NULL) {
 		fprintf(stderr, "strange, process " LLFMT " serves database '%s' "
-				"which does not exist\n", (long long int)d->pid, d->dbname);
+				"which does not exist\n", (long long int)pid, dbname);
 		return;
 	}
 
@@ -306,12 +313,12 @@ terminateProcess(void *p)
 		case SABdbCrashed:
 			fprintf(stderr, "cannot shut down database '%s', mserver "
 					"(pid " LLFMT ") has crashed\n",
-					d->dbname, (long long int)d->pid);
+					dbname, (long long int)pid);
 			SABAOTHfreeStatus(&stats);
 			return;
 		case SABdbInactive:
 			fprintf(stdout, "database '%s' appears to have shut down already\n",
-					d->dbname);
+					dbname);
 			fflush(stdout);
 			SABAOTHfreeStatus(&stats);
 			return;
@@ -323,21 +330,21 @@ terminateProcess(void *p)
 
 	/* ok, once we get here, we'll be shutting down the server */
 	fprintf(stdout, "sending process " LLFMT " (database '%s') the "
-			"TERM signal\n", (long long int)d->pid, d->dbname);
+			"TERM signal\n", (long long int)pid, dbname);
 	fflush(stdout);
-	kill(d->pid, SIGTERM);
+	kill(pid, SIGTERM);
 	for (i = 0; i < timeout * 2; i++) {
 		if (stats != NULL)
 			SABAOTHfreeStatus(&stats);
 		MT_sleep_ms(500);
-		er = SABAOTHgetStatus(&stats, d->dbname);
+		er = SABAOTHgetStatus(&stats, dbname);
 		if (er != MAL_SUCCEED) {
 			fprintf(stderr, "unexpected problem: %s\n", er);
 			GDKfree(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
 			fprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
-					"any more\n", d->dbname);
+					"any more\n", dbname);
 		} else {
 			switch (stats->state) {
 				case SABdbRunning:
@@ -345,11 +352,11 @@ terminateProcess(void *p)
 				break;
 				case SABdbCrashed:
 					fprintf (stderr, "database '%s' crashed after SIGTERM\n",
-							d->dbname);
+							dbname);
 					SABAOTHfreeStatus(&stats);
 					return;
 				case SABdbInactive:
-					fprintf(stdout, "database '%s' has shut down\n", d->dbname);
+					fprintf(stdout, "database '%s' has shut down\n", dbname);
 					fflush(stdout);
 					SABAOTHfreeStatus(&stats);
 					return;
@@ -361,8 +368,8 @@ terminateProcess(void *p)
 	}
 	fprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
 			" (database '%s') the KILL signal\n",
-			timeout, (long long int)d->pid, d->dbname);
-	kill(d->pid, SIGKILL);
+			timeout, (long long int)pid, dbname);
+	kill(pid, SIGKILL);
 	return;
 }
 
@@ -623,7 +630,6 @@ forkMserver(str database, sabdb** stats, int force)
 		dp->next = NULL;
 		dp->pid = pid;
 		dp->dbname = GDKstrdup(database);
-		dp->started = 0;
 
 		pthread_mutex_unlock(&topdplock);
 
@@ -667,38 +673,49 @@ forkMserver(str database, sabdb** stats, int force)
 			SABAOTHfreeStatus(stats);
 
 			/* in the meanwhile the list may have changed so refetch the
-			 * parent */
+			 * parent and self */
 			pthread_mutex_lock(&topdplock);
+			dp = NULL;
 			pdp = topdp;
-			while (pdp != NULL && pdp->next != dp)
+			while (pdp != NULL && pdp->next->pid != pid)
 				pdp = pdp->next;
-			/* pdp is NULL when the database terminates somehow while
-			 * starting, we still need to free db in that case */
+
+			/* pdp is NULL when the database terminated somehow while
+			 * starting */
+			if (pdp != NULL) {
+				pthread_mutex_unlock(&topdplock);
+				switch (state) {
+					case SABdbRunning:
+						/* right, it's not there, but it's running */
+						return(newErr(
+									"database '%s' has inconsistent state "
+									"(running but dead)", database));
+					case SABdbCrashed:
+						return(newErr(
+									"database '%s' has crashed after starting, "
+									"manual intervention needed", database));
+					case SABdbInactive:
+						return(newErr(
+									"database '%s' appears to shut "
+									"itself down after starting", database));
+					default:
+						return(newErr("unknown state: %d", (int)(*stats)->state));
+				}
+			}
+
+			/* in this case something seems still to be running, which
+			 * we don't want */
+			dp = pdp->next;
+			terminateProcess(dp);
+			pthread_mutex_unlock(&topdplock);
 
 			switch (state) {
 				case SABdbRunning:
-					/* not sure what's going on with it, but its not
-					 * like we want to have it, so kill it */
-					terminateProcess(dp);
-					/* allow the logger to catch up */
-					MT_sleep_ms(100);
-					/* remove from the list again */
-					if (pdp != NULL)
-						pdp->next = dp->next;
-					GDKfree(dp->dbname);
-					GDKfree(dp);
-					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"timeout when waiting for database '%s' to "
 								"open up a communication channel or to "
 								"initialise the sql scenario", database));
 				case SABdbCrashed:
-					/* remove from the list again */
-					if (pdp != NULL)
-						pdp->next = dp->next;
-					GDKfree(dp->dbname);
-					GDKfree(dp);
-					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' has crashed after starting, "
 								"manual intervention needed", database));
@@ -709,26 +726,11 @@ forkMserver(str database, sabdb** stats, int force)
 					 * in this case GDK may still be trying to start up,
 					 * or that it indeed cleanly shut itself down after
 					 * starting... kill it in any case. */
-					terminateProcess(dp);
-					/* allow the logger to catch up */
-					MT_sleep_ms(100);
-					/* remove from the list again */
-					if (pdp != NULL)
-						pdp->next = dp->next;
-					GDKfree(dp->dbname);
-					GDKfree(dp);
-					pthread_mutex_unlock(&topdplock);
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
 								"itself down after starting", database));
 				default:
-					/* remove from the list again */
-					if (pdp != NULL)
-						pdp->next = dp->next;
-					GDKfree(dp->dbname);
-					GDKfree(dp);
-					pthread_mutex_lock(&topdplock);
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
 		}
@@ -736,9 +738,6 @@ forkMserver(str database, sabdb** stats, int force)
 			merlog("database '%s' has been put into maintenance "
 					"mode during startup", database);
 		}
-
-		/* from now on the SIGCHLD handler can find this database */
-		dp->started = 1;
 
 		return(NO_ERR);
 	}
@@ -1433,7 +1432,7 @@ controlRunner(void *d)
 							if (strcmp(p, "stop") == 0) {
 								merlog("stopping database '%s' due to control "
 										"signal", q);
-								kill(dp->pid, SIGTERM);
+								terminateProcess(dp);
 							} else {
 								merlog("killing database '%s' due to control "
 										"signal", q);
@@ -1836,6 +1835,12 @@ handler(int sig)
 	_keepListening = 0;
 }
 
+/**
+ * Handles SIGCHLD signals, that is, signals that a parent recieves
+ * about its children.  This handler deals with terminated children, by
+ * deregistering them from the internal administration (topdp) with the
+ * necessary cleanup.
+ */
 static void
 childhandler(int sig, siginfo_t *si, void *unused)
 {
@@ -1857,18 +1862,17 @@ childhandler(int sig, siginfo_t *si, void *unused)
 		return;
 	}
 
-	/* get the pid from the former child, and locate it in our list */
 	pthread_mutex_lock(&topdplock);
 
+	/* get the pid from the former child, and locate it in our list */
 	q = topdp->next;
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
 			/* wait a little (we're not in a hurry anyway, are we?) such
 			 * that the logger catches the messages (if any). */
-			MT_sleep_ms(100);
-			/* remove it, disconnect first, then free (because the
-			 * logger might access it otherwise after the free) */
+			MT_sleep_ms(400);
+			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
 			close(p->out);
@@ -1883,11 +1887,6 @@ childhandler(int sig, siginfo_t *si, void *unused)
 				merlog("database '%s' (%d) has crashed (dumped core)",
 						p->dbname, p->pid);
 			}
-			/* if we're starting up, don't clean up */
-			if (p->started == 0) {
-				pthread_mutex_unlock(&topdplock);
-				return;
-			}
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
@@ -1899,6 +1898,7 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	}
 
 	pthread_mutex_unlock(&topdplock);
+
 	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
 }
 
@@ -1925,6 +1925,7 @@ main(int argc, char *argv[])
 	struct stat sb;
 	FILE *oerr = NULL;
 	unsigned short port = MEROV_PORT;
+	pthread_mutexattr_t mta;
 
 	/* fork into the background immediately
 	 * By doing this our child can simply do everything it needs to do
@@ -2224,6 +2225,11 @@ main(int argc, char *argv[])
 	fflush(pidfile);
 	fclose(pidfile);
 
+	/* allow a thread to relock this mutex */
+	pthread_mutexattr_init(&mta);
+	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&topdplock, &mta);
+
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
 		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
 		MERO_EXIT(1);
@@ -2343,36 +2349,43 @@ main(int argc, char *argv[])
 	/* we don't need merovingian itself */
 	d = d->next;
 
-	/* before we kill all our children, make sure we won't shoot
-	 * ourself in the foot because of our SIGCHLD handler */
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sa.sa_handler = SIG_DFL;
-	/* ignore error, if it fails, the only thing we can do is fail and
-	 * don't kill anything, so risk a race condition with hard crash
-	 * here */
-	sigaction(SIGCHLD, &sa, NULL);
 	/* stop started mservers */
 	if (timeout > 0) {
-		dpair t = d;
+		dpair t;
+		threadlist tl = NULL, tlw = tl;
+
+		pthread_mutex_lock(&topdplock);
+		t = d;
 		while (t != NULL) {
-			if (pthread_create(&(t->tid), NULL,
+			if (tl == NULL) {
+				tl = tlw = malloc(sizeof(struct _threadlist));
+			} else {
+				tlw = tlw->next = malloc(sizeof(struct _threadlist));
+			}
+
+			tlw->next = NULL;
+			if (pthread_create(&(tlw->tid), NULL,
 						(void *(*)(void *))terminateProcess, (void *)t) < 0)
 			{
 				fprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s'\n", argv[0], d->dbname);
-				t->tid = 0;
+				tlw->tid = 0;
 			}
+
 			t = t->next;
 		}
+		pthread_mutex_unlock(&topdplock);
+
 		/* wait for all processes to be terminated */
-		t = d;
-		while (t != NULL) {
-			if (t->tid != 0 && (argp = pthread_join(t->tid, NULL)) != 0) {
+		tlw = tl;
+		while (tlw != NULL) {
+			if (tlw->tid != 0 && (argp = pthread_join(tlw->tid, NULL)) != 0) {
 				fprintf(stderr, "failed to wait for termination thread: "
 						"%s\n", strerror(argp));
 			}
-			t = t->next;
+			tl = tlw->next;
+			free(tlw);
+			tlw = tl;
 		}
 	}
 
@@ -2388,17 +2401,6 @@ main(int argc, char *argv[])
 	close(topdp->out);
 	if (topdp->out != topdp->err)
 		close(topdp->err);
-
-	/* clean up dbpair structs */
-	while (d != NULL) {
-		topdp = d->next;
-		close(d->out);
-		close(d->err);
-		if (d->dbname != NULL)
-			GDKfree(d->dbname);
-		GDKfree(d);
-		d = topdp;
-	}
 
 	/* remove files that suggest our existence */
 	unlink(lockfile);
