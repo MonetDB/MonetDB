@@ -25,7 +25,7 @@
 # Rights Reserved.
 #
 
-SUBDIRS = conf compiler HAVE_MONETDB4?runtime modules src HAVE_MONETDB5?backends
+SUBDIRS = conf compiler HAVE_MONETDB4?runtime modules src 
 
 EXTRA_DIST = extra.mk.in RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
