@@ -590,7 +590,7 @@ case "$GCC-$CC-$host_os-$host-$bits" in
 *-*-*-*-$native_bits)  
 	;;
 yes-*-solaris*-*-*)
-	case `$bits-$CC -v 2>&1` in
+	case "$bits-`$CC -v 2>&1`" in
 	32-*|*-*'gcc version '[[34]]'.'*)	;;
 	*)	AC_MSG_ERROR([need GCC version >=3.X for 64 bits]);;
 	esac
