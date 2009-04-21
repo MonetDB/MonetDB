@@ -1,3 +1,0 @@
-b := "bla";
-b := "bla";
-io.print(b);

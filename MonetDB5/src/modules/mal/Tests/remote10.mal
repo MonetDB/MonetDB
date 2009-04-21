@@ -1,9 +1,0 @@
-function octopus.qry(version:int):bat[:oid,:int];
-	b:= bat.new(:oid,:int);
-	bat.append(b,23);
-	return qry:= b;
-end octopus.qry;
-
-db :=const.take("dbname");
-conn:str:= remote.connect(db,"monetdb","monetdb");
-remote.register(conn,"octopus","qry");

@@ -1,5 +1,0 @@
-stderr of test 'bat2` in directory 'src/modules/plain` itself:
-
-#> Mtest (13:31:42):	other bat2 1200
-#> Mtest (13:31:42):	Mtimeout -timeout 1200 ./bat2 bat2
-#> Mlog (13:31:42):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain bat2.mil

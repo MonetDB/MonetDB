@@ -1,3 +1,0 @@
-CREATE SCHEMA "test_2" AUTHORIZATION "public";
-
-DROP USER monetdb;

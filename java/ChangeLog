@@ -1,8 +1,0 @@
-# ChangeLog file for java
-# This file is updated with mchangelog (Gentoo echangelog bastard script)
-
-  26 Mar 2009; Fabian Groffen <fabian@cwi.nl> configure.ag:
-  Fix configure handling for --enable-{jdbc,xrpc}, by Yue Sheng on
-  Monetdb-developers ML
-
-*Feb2009-SP1
