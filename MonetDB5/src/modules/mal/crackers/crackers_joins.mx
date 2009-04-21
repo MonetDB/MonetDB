@@ -1621,7 +1621,6 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 
 	printf("Total  %lld Join %lld Rest  %lld Joins %lld Crack %lld Pieces %lld \n", 
 			T2-T1, TJtotal, ((T2-T1)-TJtotal)-TCtotal, joinsDone, TCtotal, CrackerIndex[mapPosLeft].pieces + CrackerIndex[mapPosRight].pieces );
-	return MAL_SUCCEED;
 @
 
 @= JoinFunctions_impl_1
@@ -2922,13 +2921,15 @@ str CRKactiveCacheConsciousCrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL
                 throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
 	
 	@:ActiveJoinMainPart(@1,@5,)@
+
+	return MAL_SUCCEED;
 }	
 
 str CRKactiveJoin_@1_@5(int *resid, int *bidLeft, bit *makeLeft, int *bidRight, bit *makeRight, lng *pieceSize){
 
 	lng T1=GDKusec(), TJtotal = 0, T2, TCtotal = 0, TC1, TC2;
 	
-	int tapeLpos, mapPosLeft;
+	int tapeLpos=0, mapPosLeft;
 	struct Node *curNodeLeft, *prevNodeLeft; 
 	BAT *indexLeft, *mapLeft, *markedViewLeft;
 	BUN baseLeft;
@@ -2936,7 +2937,7 @@ str CRKactiveJoin_@1_@5(int *resid, int *bidLeft, bit *makeLeft, int *bidRight, 
 	@1  curValueLeft;
 	bit existsHashTableLeft;
 
-	int tapeRpos, mapPosRight;
+	int tapeRpos=0, mapPosRight;
 	struct Node *curNodeRight, *prevNodeRight; 
 	BAT *indexRight, *mapRight, *markedViewRight;
 	BUN baseRight;
@@ -3019,6 +3020,10 @@ str CRKactiveJoin_@1_@5(int *resid, int *bidLeft, bit *makeLeft, int *bidRight, 
                 throw(MAL, "crackers.simpleJoin", "Cannot access crack index");
 	
 	@:ActiveJoinMainPart(@1,@5,Intermediates)@
+
+	(void)existsHashTableLeft;
+	(void)existsHashTableRight;
+
 	BBPdecref(CrackerIndex[mapPosLeft].cid,TRUE);
 	BBPdecref(CrackerIndex[mapPosLeft].cbid,TRUE);
 	CrackerIndex[mapPosLeft].cid=-1;
@@ -3031,6 +3036,8 @@ str CRKactiveJoin_@1_@5(int *resid, int *bidLeft, bit *makeLeft, int *bidRight, 
 	CrackerIndex[mapPosRight].cbid=-1;
 	CrackerIndex[mapPosRight].bid=-1;
 	CrackerIndex[mapPosRight].pbid=-1;
+
+	return MAL_SUCCEED;
 }	
 
 str CRKcrackHashJoin_@1_@5(int *resid, int *bidL1, int *bidL2, int *bidR1, int *bidR2){
