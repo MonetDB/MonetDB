@@ -1,7 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
-  09 Apr 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx, monetdb.1:
+  21 Apr 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx, monetdb.1:
   Instead of sending SIGTERM and immediately returning, call the
   terminateProcess function such that we nicely wait for the process to have
   died, and eventually send a SIGKILL if that fails. Fixes bug #2747661
