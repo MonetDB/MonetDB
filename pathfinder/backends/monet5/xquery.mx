@@ -35,16 +35,16 @@ module xquery;
 
 @- XQuery shredder interface (xquery_shredder.mx)
 @mal
-command shred_url(doc:bat[:str,:bat], url:str, percentage:lng, l:lock, verbose:bit) :void
+command shred_url(doc:bat[:str,:bat], url:str, percentage:lng) :void
 address XQUERYShredURL
 comment "Shred an XML document from a URL. Parameters: URL - document located at this URL is shredded, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 
-command shred_str(doc:bat[:str,:bat], buffer:str, percentage:lng, l:lock, verbose:bit) : void
+command shred_str(doc:bat[:str,:bat], buffer:str, percentage:lng) : void
 address XQUERYShredStr
 comment "Shred an XML document from a string. Parameters: buffer - the XML string to shred,  percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 
 
-command shred_stream(doc:bat[:str,:bat], s:stream, percentage:lng, l:lock, verbose:bit) : void
+command shred_stream(doc:bat[:str,:bat], s:stream, percentage:lng) : void
 adress XQUERYShredStream
 comment "Shred an XML document from a stream. Parameters: s - XML input stream, percentage - a number [0,100] indicating the amount of free space to reserve for updates (percentage=0 leads to a read-only document)"
 

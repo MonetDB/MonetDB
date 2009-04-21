@@ -41,15 +41,11 @@ pathfinder/runtime/shredder.mx (snapshot tag M42M5)
 #define XML_DEPTH_MAX 128
 
 #include "xquery.h"
-#include <lock.h>
 
 /* MAL commands to shred XML from a {uri,string,stream} */
-xquery_export str XQUERYShredUrl(int retval, bat *doc, str location,
-		lng *percentage, lock* collLock, bit *verbose);
-xquery_export str XQUERYShredStr(int retval, bat *doc, str buffer,
-		lng *percentage, lock* collLock, bit *verbose);
-xquery_export str XQUERYShredStream(int retval, bat *doc, stream *s,
-		lng *percentage, lock* collLock, bit *verbose);
+xquery_export str XQUERYShredUrl(int retval, bat *doc, str location, lng *percentage);
+xquery_export str XQUERYShredStr(int retval, bat *doc, str buffer, lng *percentage);
+xquery_export str XQUERYShredStream(int retval, bat *doc, stream *s, lng *percentage);
 
 #endif /* _XQ_SHREDDER_H */
 @c
@@ -372,10 +368,6 @@ typedef struct shredCtxStruct {
      */
     struct serializeFunStruct *serFun; /* the functions */
     struct XqueryCtx *serCtx; /* the runtime data */
-
-     MT_Lock *coll_lock;
-     MT_Sema *extend_sema;
-     BAT     *lock_barrier;
 } shredCtxStruct;
 
 /* some string buffer sizes */
@@ -508,22 +500,6 @@ emit_tuple(shredCtxStruct* shredCtx, oid pre, int size, int level, oid prop,
     if (level > XML_DEPTH_MAX) {
         GDKerror("emit_tuple: node.level(%d) >= XML_DEPTH_MAX(%d)\n", level, XML_DEPTH_MAX);
         return GDK_FAIL;
-    }
-    if (shredCtx->coll_lock) { 
-        /* yield the lock every so many nodes to queries that want to start and need the masters */
-#ifdef _POSIX_PRIORITY_SCHEDULING
-        if ((shredCtx->nnode_pre&1023) == 0) do {
-            MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
-            sched_yield();
-            MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock) != BUN_NONE);
-#else
-        if ((shredCtx->nnode_pre&16383) == 0) do {
-            MT_lock_unset(shredCtx->coll_lock, "shredder_yield"); 
-            MT_sleep_ms(1); 
-            MT_lock_set(shredCtx->coll_lock, "shredder_yield"); 
-        } while (BUNfnd(shredCtx->lock_barrier, &shredCtx->coll_lock) != BUN_NONE);
-#endif
     }
 
     /* make sure the rid_* and nid_* bats have enough room */
@@ -1582,9 +1558,6 @@ shredder_free(shredCtxStruct *shredCtx,
     if (shredCtx->val) {
         GDKfree(shredCtx->val);
     }
-    if (shredCtx->lock_barrier) {
-        BBPunfix(shredCtx->lock_barrier->batCacheid);
-    }
     attrDB_free(&shredCtx->idrefAttrDB);
     GDKfree(shredCtx);
     return NULL;
@@ -1596,9 +1569,7 @@ shredder_create(char *location,
                 BUN pageFree, 
                 struct serializeFunStruct *serFun, 
                 struct XqueryCtx *serCtx, 
-                BAT *docBAT,
-                MT_Lock *coll_lock,
-                int verbose) 
+                BAT *docBAT) 
 {
     if (BATcount(docBAT) && BATcount(docBAT) != SHRED_BATS) {
         GDKerror("shredder_create: docBAT should be empty or have exactly %d buns.\n", SHRED_BATS);
@@ -1617,20 +1588,7 @@ shredder_create(char *location,
     shredCtx->estSize   = (BUN) MIN(MAX(BATTINY, fileSize/20), INT_MAX);
     shredCtx->serFun    = serFun;
     shredCtx->serCtx    = serCtx;
-    shredCtx->coll_lock = coll_lock;
     shredCtx->incremental = (BATcount(docBAT) > 0);
-
-    /* as we want to release the lock once in a while, but having the lock alone does not guarantee
-     * excusive access (anynmore), we now after retaking it we must make sure the lock-barrier BAT does 
-     * not contain entries for our coll_lock
-     */
-    i = BBPindex("shortlock_barrier");
-    shredCtx->lock_barrier = i?BATdescriptor(i):NULL;
-    if (shredCtx->lock_barrier == NULL) {
-        if (i) BBPunfix(i);
-        GDKerror("shredder_create: could not open collection_rdonly.\n");
-        return shredder_free(shredCtx, 0);
-    }
 
     /* init the idref attribute database */
     attrDB_init(&shredCtx->idrefAttrDB);
@@ -1739,7 +1697,7 @@ shredder_create(char *location,
             GDKerror("shredder_create: read-only collection cannot have materialized NID-RID mappings\n");
             return shredder_free(shredCtx,0);
         }
-        if (verbose && pageFree) {
+        if (pageFree) {
             stream_printf(GDKout, "!WARNING: cannot make a read-only collection writable (set pageFree to 0).\n");
             pageFree = 0;
         }
@@ -1749,9 +1707,6 @@ shredder_create(char *location,
         pageFree = REMAP_PAGE_SIZE - (REMAP_PAGE_SIZE*pageFree)/100; 
     }
     shredCtx->pageFree = pageFree;
-    if (verbose && pageFree) {
-        stream_printf(GDKout, "# shredding with holes: pagesize=%d, #fillsize=%d\n", REMAP_PAGE_SIZE, pageFree);
-    }
 
     if (!shredCtx->incremental) {
         /* first shred into new collection */
@@ -1970,11 +1925,8 @@ shred(BAT *docBAT,
       stream *s,
       lng percentage, 
       struct serializeFunStruct *serFun, 
-      struct XqueryCtx *serCtx, 
-      lock *collLock)
+      struct XqueryCtx *serCtx)
 {
-    MT_Lock *coll_lock = (MT_Lock*) ((collLock && *collLock != ptr_nil)?*collLock:NULL);
-    int verbose = (collLock == NULL);
     int res = GDK_FAIL;
 
     /* timing */
@@ -1982,7 +1934,6 @@ shred(BAT *docBAT,
 
     /* start timer */
     start = GDKusec();
-
 
     /* compute number of free nodes per block from a percentage(opt string param) */
     if (percentage < 0 || percentage > 99) {
@@ -2009,12 +1960,8 @@ shred(BAT *docBAT,
         location = "<input stream>";
     }
 
-    if (coll_lock) {
-        MT_lock_set(coll_lock, "shredder_start"); 
-    }
-
     /* shred it */
-    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT, coll_lock, verbose);
+    shredCtxStruct* shredCtx = shredder_create(location, estimatedSize, pageFree, serFun, serCtx, docBAT);
     if (shredCtx) {
         if ( location )
             /* determine base prefix to look for external subsets */
@@ -2023,7 +1970,7 @@ shred(BAT *docBAT,
             shredCtx->base_dir = NULL;
         if (shredder_parse(shredCtx, location, buffer, s)) {
             res = shredder_finalize(shredCtx, docBAT);
-            if (verbose && res && !s && !buffer) {
+            if (res && !s && !buffer) {
                 char buf1[80], buf2[80];
                 stop = GDKusec();
                 stream_printf(GDKout, "# Elapsed time = %s [%s/node]\n", 
@@ -2036,15 +1983,11 @@ shred(BAT *docBAT,
           if ( shredCtx->base_dir ) GDKfree(shredCtx->base_dir);
           shredder_free(shredCtx, res?1:-shredCtx->incremental);
     }
-    if (coll_lock) {
-        MT_lock_unset(coll_lock, "shredder_end"); 
-    }
     return res;
 }
 
 str
-XQUERYShredUrl (int retval, bat *doc, str location, lng *percentage,
-        lock* collLock, bit *verbose)
+XQUERYShredUrl (int retval, bat *doc, str location, lng *percentage)
 {
     int res;
     BAT *docBAT;
@@ -2056,8 +1999,7 @@ XQUERYShredUrl (int retval, bat *doc, str location, lng *percentage,
         throw(XQUERY, "xquery.shred_url", "wrong doc BAT");
     }
 
-    res = shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL,
-            (*verbose==TRUE)?NULL:collLock);
+    res = shred(docBAT, location, NULL, NULL, *percentage, NULL, NULL);
 
     if (res == GDK_FAIL)
         throw(XQUERY, "xquery.shred_url", "unable to shred the specified url");
@@ -2065,8 +2007,7 @@ XQUERYShredUrl (int retval, bat *doc, str location, lng *percentage,
 }
 
 str
-XQUERYShredStr (int retval, bat *doc, str buffer, lng *percentage,
-        lock* collLock, bit *verbose)
+XQUERYShredStr (int retval, bat *doc, str buffer, lng *percentage)
 {
     int res;
     BAT *docBAT;
@@ -2078,8 +2019,7 @@ XQUERYShredStr (int retval, bat *doc, str buffer, lng *percentage,
         throw(XQUERY, "xquery.shred_str", "wrong doc BAT");
     }
 
-    res = shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL,
-            (*verbose==TRUE)?NULL:collLock);
+    res = shred(docBAT, NULL, buffer, NULL, *percentage, NULL, NULL);
 
     if (res == GDK_FAIL)
         throw(XQUERY, "xquery.shred_str",
@@ -2088,8 +2028,7 @@ XQUERYShredStr (int retval, bat *doc, str buffer, lng *percentage,
 }
 
 str
-XQUERYShredStream (int retval, bat *doc, stream *s, lng *percentage,
-        lock* collLock, bit *verbose)
+XQUERYShredStream (int retval, bat *doc, stream *s, lng *percentage)
 {
     int res;
     BAT *docBAT;
@@ -2101,8 +2040,7 @@ XQUERYShredStream (int retval, bat *doc, stream *s, lng *percentage,
         throw(XQUERY, "xquery.shred_stream", "wrong doc BAT");
     }
 
-    res = shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL,
-            (*verbose==TRUE)?NULL:collLock);
+    res = shred(docBAT, NULL, NULL, s, *percentage, NULL, NULL);
 
     if (res == GDK_FAIL)
         throw(XQUERY, "xquery.shred_stream",
