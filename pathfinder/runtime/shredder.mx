@@ -1586,10 +1586,10 @@ shredder_free(shredCtxStruct *shredCtx,
                     sb->bat->theap->free = sb->heapSize; 
                     if (sb->heapBackup) {
                         /* restore internal hash table to pre-state */
-                        memcpy(sb->bat->theap->base, sb->heapBackup, GDK_STRHASHTABLE*sizeof(var_t));
+                        memcpy(sb->bat->theap->base, sb->heapBackup, GDK_STRHASHTABLE*sizeof(stridx_t));
                     } else {
                         /* zap internal hash table. is not critical */
-                        memset(sb->bat->theap->base, 0, GDK_STRHASHTABLE*sizeof(var_t));
+                        memset(sb->bat->theap->base, 0, GDK_STRHASHTABLE*sizeof(stridx_t));
                     }
                 }
                 shredBAT_setcount(sb, sb->abortSize);
@@ -1717,7 +1717,7 @@ shredder_create(char *location,
             if (sb->def->tailType == TYPE_str) {
                 sb->heapSize = sb->bat->theap->free;
                 if (GDK_ELIMDOUBLES(sb->bat->theap)) {
-                    sb->heapBackup = GDKmalloc(GDK_STRHASHTABLE*sizeof(var_t));
+                    sb->heapBackup = GDKmalloc(GDK_STRHASHTABLE*sizeof(stridx_t));
                     if (!sb->heapBackup) {
                         GDKerror("shredder_create: malloc failure\n");
                         return shredder_free(shredCtx,0);
