@@ -31,11 +31,11 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 %{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 
 %if !%{?buildsystem}
-BuildRequires: MonetDB-devel >= 1.26
+BuildRequires: MonetDB-devel >= 1.29
 #                               ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: MonetDB-client-devel >= 1.26
+BuildRequires: MonetDB-client-devel >= 1.29
 #                                      ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -58,12 +58,12 @@ This package contains some common files for the %{name}-server5 packages.
 %package server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server >= 5.8
+Requires: MonetDB5-server >= 5.11
 #                            ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %if !%{?buildsystem}
-BuildRequires: MonetDB5-server-devel >= 5.8
+BuildRequires: MonetDB5-server-devel >= 5.11
 #                                       ^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
