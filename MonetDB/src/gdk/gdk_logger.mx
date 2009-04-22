@@ -1664,7 +1664,7 @@ log_sequence(logger *lg, int seq, lng id)
 	l.nr = seq;
 
 	if (lg->debug)
-		fprintf(stderr, "log_sequence %d" LLFMT "\n", seq, id);
+		fprintf(stderr, "log_sequence (%d," LLFMT ")\n", seq, id);
 
 	if (BUNfnd(lg->seqs, &seq) != BUN_NONE) {
 		BUNdelHead(lg->seqs, &seq, FALSE);
