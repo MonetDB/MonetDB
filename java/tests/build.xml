@@ -116,6 +116,7 @@ All Rights Reserved.
     <antcall target="Test_Rtimedate" />
     <antcall target="Test_Sbatching" />
     <antcall target="BugConcurrent_clients_SF_1504657" />
+    <antcall target="BugConcurrent_sequences" />
   </target>
 
   <target name="test_class" depends="compile,jdbc">
@@ -225,6 +226,12 @@ All Rights Reserved.
   <target name="BugConcurrent_clients_SF_1504657">
     <antcall target="test_class">
       <param name="test.class" value="BugConcurrent_clients_SF_1504657" />
+    </antcall>
+  </target>
+
+  <target name="BugConcurrent_sequences">
+    <antcall target="test_class">
+      <param name="test.class" value="BugConcurrent_sequences" />
     </antcall>
   </target>
 

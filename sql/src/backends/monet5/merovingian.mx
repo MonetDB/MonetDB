@@ -288,7 +288,7 @@ terminateProcess(void *p)
 	str er;
 	int i;
 	/* make local copies since d will disappear when killed */
-	pthread_t pid = d->pid;
+	pid_t pid = d->pid;
 	char *dbname = alloca(sizeof(char) * (strlen(d->dbname) + 1));
 	memcpy(dbname, d->dbname, strlen(d->dbname) + 1);
 

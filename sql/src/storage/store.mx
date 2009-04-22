@@ -1850,8 +1850,8 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 
 	t->name = NULL;
 	if (bs_debug) 
-		fprintf(stderr, "trans init (%d,%d)\n", 
-			t->stime, t->schema_number ); 
+		fprintf(stderr, "trans (%p) init (%d,%d)\n", 
+			t, t->stime, t->schema_number ); 
 	return t;
 }
 
@@ -2710,13 +2710,12 @@ sql_trans_validate(sql_trans *tr)
 			sql_schema *s = n->data;
 			sql_schema *os;
 
-			
 			if (isTempSchema(s))
 				continue;
 
  			os = find_sql_schema(tr->parent, s->base.name);
 			if (os/* || (s->base.wtime == 0 && s->base.rtime == 0)*/) {
-				if (!validate_tables(s, os))
+				if (!validate_tables(s, os)) 
 					return 0;
 			}
 		}

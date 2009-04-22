@@ -47,7 +47,7 @@ lib__xtables = {
 	SOURCES = xtables.mx
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
-		../../monet/libmonet ./lib_algebra \
+		../../monet/libmonet lib_algebra \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -58,7 +58,7 @@ lib__logger = {
 	SOURCES = logger.mx
 	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lstream -lbat \
-		../../monet/libmonet ./lib_bat \
+		../../monet/libmonet lib_bat \
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
