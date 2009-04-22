@@ -71,7 +71,7 @@ lib__group = {
 	SEP = _
 	SOURCES = group.mx
 	#SCRIPTS = mil ""
-	LIBS = ./lib_algebra $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = lib_algebra $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
@@ -81,7 +81,7 @@ lib__array = {
 	SEP = _
 	SOURCES = array.mx
 	#SCRIPTS = mil ""
-	LIBS = ./lib_algebra $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = lib_algebra $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmonetdb5
 }
@@ -94,7 +94,7 @@ lib__logger = {
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
-		../../mal/libmonetdb5 ./lib_bat5
+		../../mal/libmonetdb5 lib_bat5
 		
 }
 
