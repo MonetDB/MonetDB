@@ -77,8 +77,8 @@ public class BugConcurrent_sequences {
 			System.out.println("2.2. check table status with client 2...");
 			rs2 = stmt2.executeQuery("SELECT * FROM t1");
 			while (rs2.next())
-				System.out.println(rs1.getInt("id") + ", " +
-						rs1.getString("who"));
+				System.out.println(rs2.getInt("id") + ", " +
+						rs2.getString("who"));
 			System.out.println("passed :)");
 		} catch (SQLException e) {
 			// this means we failed (table not there perhaps?)
