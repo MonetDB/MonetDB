@@ -248,12 +248,13 @@ opt_monetprojections (PFla_op_t *p)
      /* action code */
     switch (p->kind) {
     
-        /*
-         *         |
-         *      project_(icols)
-         *         |
-         *         p
-         *         |
+        /* adding projection_(icols) over operator p to restrict the 
+         * schema width
+         *                   |
+         *     |          project_(icols)
+         *     p   -->       |
+         *     |             p
+         *                   |
          */
         case la_attach:
         case la_cross:
@@ -279,17 +280,22 @@ opt_monetprojections (PFla_op_t *p)
         case la_doc_index_join:
         case la_doc_access:
         case la_roots:
+        
+            /* add projection only if there are icols for the current 
+               operator  */
             if (PFprop_icols_count(p->prop)) {
-                /* look up required columns (icols) */
+                /* get the icols as collist */
                 PFalg_collist_t *icols = PFprop_icols_to_collist (p->prop);
+                /* allocate projection list with size of icol collist */
                 PFalg_proj_t    *proj = PFmalloc (clsize (icols) *
                                                     sizeof (PFalg_proj_t));
                                                     
-                /* fill the projection list of the lower projection (proj1) */
+                /* fill the projection list with icols */
                 for (unsigned int i = 0; i < clsize (icols); i++)
                     proj[i] = PFalg_proj (clat (icols, i), clat (icols, i));
             
-                /* Place a pi_(icols) operator on top of the operator. */
+                /* Place new projection operator on top of current operator
+                   duplicating current opperator */
                 *p = *PFla_project_ (
                             PFla_op_duplicate (p, L(p), R(p)),
                             clsize (icols),
