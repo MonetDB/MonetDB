@@ -182,14 +182,15 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 		BAT *ib = temp_descriptor(bat->ibid), *u = upd;
 
 		if (BATcount(ib)) { 
-			BAT *b = temp_descriptor(bat->bid);
-			BAT *updins, *updcur;
+			BAT *updins;
 
  			updins = BATsemijoin(upd, ib);
 			void_replace_bat(ib, updins, TRUE);
 			bat_destroy(updins);
- 			updcur = BATsemijoin(upd, b);
-			u = updcur;
+#if 0
+			BAT *b = temp_descriptor(bat->bid);
+			u = BATsemijoin(upd, b);
+#endif
 		}
 		bat_destroy(ib);
 
@@ -325,8 +326,8 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
 	sql_delta *bat = c->data;
 
+	/* appends only write */
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, i);
 	else
@@ -338,8 +339,8 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 {
 	sql_delta *bat = i->data;
 
+	/* appends only write */
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_append_bat(bat, ib);
 	else
@@ -388,8 +389,8 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 {
 	sql_dbat *bat = t->data;
 
+	/* deletes only write */
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
-	t->base.rtime = t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
 		delta_delete_bat(bat, ib);
 	else
@@ -1156,6 +1157,14 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 	if (BUNlast(ins) > BUNfirst(ins)) {
 		if (BUNlast(ins) > ins->batInserted && (store_nr_active > 1 || cluster)) { 
 			BAT *ci = temp_descriptor(obat->ibid);
+
+			if (isEbat(ci)) {
+				temp_destroy(obat->ibid);
+				obat->ibid = temp_copy(ci->batCacheid, FALSE);
+				bat_destroy(ci);
+				ci = temp_descriptor(obat->ibid);
+			}
+			assert(obat->ibase == cbat->ibase);
 			append_inserted(ci, ins);
 			bat_destroy(ci);
 		}
@@ -1183,6 +1192,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, B
 				cbat->ibid = e_bat(cur->ttype);
 			}
 			bat_clear(pi);
+			assert(obat->ibase == cbat->ibase);
 			obat->ibase = cbat->ibase = BATcount(cur);
 			BATseqbase(pi, obat->ibase);
 			bat_destroy(pi);
@@ -1235,6 +1245,12 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb, int cleared)
 	if (BUNlast(db) > db->batInserted || cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 
+		if (isEbat(odb)) {
+			temp_destroy(tdb->dbid);
+			tdb->dbid = temp_copy(odb->batCacheid, FALSE);
+			bat_destroy(odb);
+			odb = temp_descriptor(tdb->dbid);
+		}
 		append_inserted(odb, db);
 		bat_destroy(odb);
 		BATcommit(db);
