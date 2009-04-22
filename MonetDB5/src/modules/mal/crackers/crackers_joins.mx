@@ -1072,14 +1072,10 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 		}
 	}else
 	if (*mode==5 && (size@3 > (oid)*pieceSize)){
-		//@1 oldmid;
-		bit activeCrack = TRUE;
-		//low=prevNode@3==NULL?*min@3:(*(@1 *)Tloc(index@3, base@3 + prevNode@3->position));
-		//hgh=curNode@3 ==NULL?*max@3:(*(@1 *)Tloc(index@3, base@3 + curNode@3->position ));
-		mid=0;
+		bit activeCrack = TRUE, sample = TRUE;
 		while (1){
 			TC1=GDKusec();	
-			CRKcrackUnorderedZeroSidewaysSample_RE_@1_@2(map@3, &mid, cprevPos@3, curPos@3, &newPosition, pieceSize);
+			CRKcrackUnorderedZeroSidewaysSample_RE_@1_@2(map@3, &mid, cprevPos@3, curPos@3, &newPosition, pieceSize, sample);
 			TC2=GDKusec();	
 			TCtotal+=TC2-TC1;
 			/*if we get an empty piece adjust the range in half and retry*/
@@ -1093,6 +1089,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 				hgh = mid;
 			oldmid = mid;		
 			mid    = (hgh - low)/2 +low;
+			sample = FALSE;
 			if (oldmid == mid || mid == *min@3 || mid == *max@3){
 				activeCrack = FALSE;
 				break;

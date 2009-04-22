@@ -126,7 +126,7 @@ str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid las
 
 @= crackInTwoUnorderedPiecesSideways_decl
 str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos);
-str CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, oid first, oid last, oid *pos, lng *pieceSize);
+str CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, oid first, oid last, oid *pos, lng *pieceSize, bit sample);
 @
 
 @= crackInTwoUnorderedPiecesSideways_str_decl
@@ -637,7 +637,7 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oi
 }
 
 str
-CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN last, oid *pos, lng *pieceSize){
+CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN last, oid *pos, lng *pieceSize, bit sample){
         @1 *vm, *vl, *h0;
         @2 *vmt, *vlt;
         @1 hdummy;
@@ -646,7 +646,7 @@ CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN la
 
 	oid sampleSize;		
 	@1 mval;
-	@1 mval1=0;
+	@1 mval1;
 	@1 *stopSampling;
 
         /* set bounds for the iterator */
@@ -659,11 +659,11 @@ CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN la
 
 	(void)pieceSize;
 	/*Sample*/
-	if (*mid == 0){
+	if (sample){
 		sampleSize = 100;
 
 		stopSampling = vm + sampleSize;
-		mval1 += *vm;
+		mval1 = *vm;
 		vm++;
 		for(;vm < stopSampling;vm++){
 			mval1 += *vm;
