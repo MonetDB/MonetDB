@@ -95,7 +95,7 @@ void milprint_end (tjc_config *tjc_c, TJatree_t *tree) {
     if (tjc_c->timing) {
 	TJCPRINTF(MILOUT,"timing := FALSE;\n");
     }
-    if (tjc_c->returnall) {
+    if (tjc_c->semantics == 1) {
         TJCPRINTF(MILOUT,"returnAllElements := FALSE;\n");
     } 
     TJCPRINTF(MILOUT,"}\n");
@@ -113,7 +113,7 @@ void milprint_qenv (tjc_config *tjc_c) {
     TJCPRINTF(MILOUT,"var upprop := \"%s\";\n", tjc_c->upprop);    
     TJCPRINTF(MILOUT,"var andcomb := \"%s\";\n", tjc_c->andcomb);    
     TJCPRINTF(MILOUT,"var orcomb := \"%s\";\n", tjc_c->orcomb);    
-    if (tjc_c->returnall) {
+    if (tjc_c->semantics == 1) {
         TJCPRINTF(MILOUT,"var returnall := TRUE;\n");
     } else {
         TJCPRINTF(MILOUT,"var returnall := FALSE;\n");

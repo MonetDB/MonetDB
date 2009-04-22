@@ -55,7 +55,7 @@ typedef struct tjc_config {
 	double lambda;
 	double okapik1;
 	double okapib;
-	char returnall;
+	char semantics;
 	char rmoverlap;
 	char errBUFF[1024];
 	char milBUFF[MAXMILSIZE];

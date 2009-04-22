@@ -70,7 +70,7 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
     tjc_c->lambda	= 0.8;
     tjc_c->okapik1	= 1.2;
     tjc_c->okapib	= 0.75;
-    tjc_c->returnall	= 0;
+    tjc_c->semantics	= 0;
     tjc_c->rmoverlap	= 0;
 
     /*
@@ -167,7 +167,12 @@ int interpret_options(tjc_config* tjc_c, BAT* optbat) {
                 tjc_c->okapib = atof (optVal);
         } else if ( strcmp(optName,"return-all") == 0 ) {
             if ( strcasecmp(optVal,"TRUE") == 0 ) 
-                tjc_c->returnall = 1;
+                tjc_c->semantics = 1;
+        } else if ( strcmp(optName,"semantics") == 0 ) {
+            if ( strcasecmp(optVal,"strict") == 0 ) 
+                tjc_c->semantics = 0;
+            else if ( strcasecmp(optVal,"vague") == 0 ) 
+                tjc_c->semantics = 1;
         } else if (strcmp(optName, "prior") == 0) {
             if (strcasecmp(optVal, "LENGTH_PRIOR") == 0) {
                 tjc_c->prior = "ls";
@@ -240,7 +245,7 @@ char* tjc_new_parse(char* query, BAT* optbat, BAT* rtagbat, int use_sn, char** e
         if (DEBUG) stream_printf(GDKout,"#!tjc start normalize query\n");
         normalize_query(tjc_c, ptree);
         if (DEBUG) stream_printf(GDKout,"#!tjc start physical optimization\n");
-	atree = phys_optimize (ptree, root, rtagbat);
+	atree = phys_optimize (tjc_c, ptree, root, rtagbat);
         if (DEBUG) stream_printf(GDKout,"#!tjc start mil generation\n");
 	milres = milprint (tjc_c, atree);
         
