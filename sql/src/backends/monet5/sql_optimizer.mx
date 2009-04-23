@@ -457,7 +457,7 @@ str defaultPlan=
 	"constants,"
 	"commonTerms,"
 /*	"replicator," */
- 	"reorder,"
+//	"reorder,"
 	"joinPath,"
 	/*"accumulators," clashes with the mergetable */
 	"deadcode,"
