@@ -57,6 +57,16 @@
 @:@1(date,date,atom,TYPE_,,@2)@
 @
 
+@= TypeSwitch_5
+/* TODO: add the rest of the type combinations once code is stable */
+@:@1(int,int,simple,,,@2)@
+@:@1(int,date,simple,,,@2)@
+@:@1(int,oid,simple,,,@2)@
+@:@1(dbl,date,simple,,,@2)@
+@:@1(dbl,int,simple,,,@2)@
+@:@1(dbl,dbl,simple,,,@2)@
+@
+
 @- Header file
 
 @h
@@ -67,6 +77,7 @@
 /* Signatures shared within the crackers module/library */
 @:TypeSwitch(operations,_decl)@
 @:TypeSwitch_4(operationsSideways,_decl)@
+@:TypeSwitch_5(operationsSidewaysSample,_decl)@
 @:TypeSwitch_2(operationsSideways_str,_decl)@
 #endif
 
@@ -115,6 +126,11 @@ str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid las
 @:crackInThreeUnorderedPiecesSideways@6(@1,@2,LE,RO,LT,GE,LT,GE,@3,@4)@
 @
 
+@= operationsSidewaysSample
+@:crackInTwoUnorderedPiecesSidewaysSample@6(@1,@2,LE,LE,GT,@3,@4)@
+@:crackInTwoUnorderedPiecesSidewaysSample@6(@1,@2,RE,LT,GE,@3,@4)@
+@
+
 @= operationsSideways_str
 @:crackInTwoUnorderedPiecesSideways_str@6(@1,,LE,LE,GT,@3,@4)@
 @:crackInTwoUnorderedPiecesSideways_str@6(@1,,RE,LT,GE,@3,@4)@
@@ -126,6 +142,9 @@ str CRKcrackUnorderedThree2_@2_@3_@1( BAT *b, @1 low, @1 hgh, oid first, oid las
 
 @= crackInTwoUnorderedPiecesSideways_decl
 str CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, oid first, oid last, oid *pos);
+@
+
+@= crackInTwoUnorderedPiecesSidewaysSample_decl
 str CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, oid first, oid last, oid *pos, lng *pieceSize, bit sample);
 @
 
@@ -154,6 +173,7 @@ str CRKcrackUnorderedThreeSideways_@3_@4_@1_str( BAT *b, @1 low, @1 hgh, oid fir
 /* Functions shared within the crackers module/library */
 @:TypeSwitch(operations,_impl)@
 @:TypeSwitch_4(operationsSideways,_impl)@
+@:TypeSwitch_5(operationsSidewaysSample,_impl)@
 @:TypeSwitch_2(operationsSideways_str,_impl)@
 
 /* Exported functions */
@@ -635,6 +655,9 @@ CRKcrackUnorderedZeroSideways_@3_@1_@2( BAT *b, @1 mval, BUN first, BUN last, oi
 		
         return MAL_SUCCEED;
 }
+@
+
+@= crackInTwoUnorderedPiecesSidewaysSample_impl
 
 str
 CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN last, oid *pos, lng *pieceSize, bit sample){
@@ -644,7 +667,7 @@ CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN la
         @2 tdummy;
 	BUN firstBUN;
 
-	oid sampleSize;		
+	int sampleSize;		
 	@1 mval;
 	@1 mval1;
 	@1 *stopSampling;
@@ -674,7 +697,7 @@ CRKcrackUnorderedZeroSidewaysSample_@3_@1_@2( BAT *b, @1 *mid, BUN first, BUN la
 			mval1 += *vl;
 		}
 
-		*mid = mval1/(sampleSize*2);
+		*mid = mval1/((@1)(sampleSize*2));
 
 		vm  = (@1*)Hloc(b, firstBUN+first);
 		vl  = (@1*)Hloc(b, firstBUN+last );
