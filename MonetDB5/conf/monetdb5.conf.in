@@ -99,6 +99,9 @@ gdk_debug=0
 #                          (e.g., for performance measurements)
 #33554432 = DEADBEEFMASK = disable "cleaning" of freed memory in GDKfree()
 #                          (e.g., for performance measurements)
+#67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing for debugging
+#                          (GDK developers, only)
+#134217728 = OPTMASK     = trace the actions, decisions and effects of MAL optimizers
 # 
 # Mserver 5 recognizes a series of command line names instead:
 # --threads ( 1 | PARMASK)
@@ -110,7 +113,7 @@ gdk_debug=0
 # --algorithms (ALGOMASK | ESTIMASK)
 # --xproperties (XPROPMASK )
 # --performance (JOINPROPMASK | DEADBEEFMASK)
-# --optimizers (2 * JOINPROPMASK)
+# --optimizers (OPTMASK)
 
 
 # Monet Section

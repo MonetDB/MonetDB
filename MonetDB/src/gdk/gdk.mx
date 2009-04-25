@@ -2449,6 +2449,14 @@ gdk_export MT_Lock GDKtmLock;
 #define ALLOCMASK	(1<<26)
 #define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
 
+/* M5, only; cf.,
+ * MonetDB5/src/optimizer/opt_prelude.mx
+ * MonetDB5/src/mal/mal.mx
+
+#define OPTMASK		(1<<27)
+#define OPTDEBUG	if (GDKdebug & OPTMASK)
+*/
+
 gdk_export int GDKnrofthreads;
 gdk_export int GDKembedded;
 gdk_export int GDKprotected;
