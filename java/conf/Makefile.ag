@@ -16,6 +16,4 @@
 # All Rights Reserved.
 
 EXTRA_DIST = \
-	config.guess config.sub \
-	install-sh missing \
-	ltmain.sh
+	install-sh missing
