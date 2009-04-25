@@ -54,7 +54,7 @@ function octopus.leg0(version:int):bat[:oid,:int];
     _64:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,version,2,0);
     _72 := algebra.kdifference(_54,_64);
     _78 := algebra.kunion(_72,_64);
-    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version,2,1);
+    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version);
     _14 := bat.reverse(_13);
     _85 := algebra.kdifference(_78,_14);
     return leg0:= _85;
@@ -65,7 +65,7 @@ function octopus.leg1( version:int):bat[:oid,:int];
     _65:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,version,2,1);
     _72 := algebra.kdifference(_56,_65);
     _78 := algebra.kunion(_72,_65);
-    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version,2,1);
+    _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version);
     _14 := bat.reverse(_13);
     _85 := algebra.kdifference(_78,_14);
     return leg1= _85;
@@ -198,6 +198,7 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
+	char *remote= (char*) GDKzalloc(mb->vtop);
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
 	str name= NULL, name2= NULL;
 	Symbol s;
@@ -211,8 +212,9 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 		return 0;
 	}
 #ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout,"#create tentacle for %d\n",varid);
+	stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
 	printInstruction(cntxt->fdout,mb,0,pci,0);
+	printFunction(cntxt->fdout,mb,0,0);
 #else
 	(void) cntxt;
 #endif
@@ -249,6 +251,11 @@ foundit:
 			list[top++] = p;
 		}
 	}
+#ifdef DEBUG_OPT_OCTOPUS
+	stream_printf(cntxt->fdout,"List of instructions\n");
+	for(i=top-1;i>=0;i--)
+		printInstruction(cntxt->fdout,mb,0,list[i], LIST_MAL_STMT);
+#endif
 
 	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 		getFunctionId(getInstrPtr(mb,0)),varid);
@@ -270,13 +277,6 @@ foundit:
 	needed[varid]= 1;
 	anchor = q;
 	getArg(pci,idx) = getArg(q,0);
-#ifdef DEBUG_OPT_OCTOPUS
-if (name == 0){
-		stream_printf(cntxt->fdout,"OCTOPUS ASSERT var %s\n", getVarName(mb,varid));
-		printFunction(cntxt->fdout,mb,0,0);
-	}
-#endif
-	assert( name);
 
 	/* create the tentacle procedure */
 	s= newFunction(octopusRef,name,FUNCTIONsymbol);
@@ -301,7 +301,6 @@ if (name == 0){
 		}
 		if (getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == bindRef ||
-			  getFunctionId(p) == binddbatRef ||
 			  getFunctionId(p) == bindidxRef)){
 			setModuleId(p, octopusRef);
 			setVarUDFtype(tm,getArg(p,0));
@@ -310,7 +309,28 @@ if (name == 0){
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 			p= pushInt(tm,p,pieces);
 			p= pushInt(tm,p,part);
+			remote[getArg(p,0)] = TRUE;
 		} 
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
+			setModuleId(p, octopusRef);
+			setVarUDFtype(tm,getArg(p,0));
+			setArgType(tm,p,0, getArgType(mb,list[top],0));
+			p= setArgument(tm,p,1,conn);
+			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
+		} 
+@-
+Partitioning the tables obtained remotely is done remotely.
+This means that the corresponding bat.partition statement
+can be turned into an alias.
+@c
+		if (getModuleId(p)== batRef && getFunctionId(p)==partitionRef &&
+			remote[getArg(p,p->retc)] ){
+			getArg(p,0)= getArg(p,part);
+			getArg(p,1)= getArg(p,p->retc);
+			p->retc = 1;
+			p->argc = 2;
+			clrFunction(p);
+		}
 		pushInstruction(tm, p);
 	}
 
@@ -322,6 +342,7 @@ if (name == 0){
 	GDKfree(list);
 	GDKfree(alias);
 	GDKfree(needed);
+	GDKfree(remote);
 	return tm;
 }
 
@@ -503,7 +524,6 @@ The tentacle code should be optimized by the remaining optimizers.
 		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));
 	
 	for (i=0; i<tn; i++){
-		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_ALL);
 		clrDeclarations(tentacle[i]);
 		chkProgram(cntxt->nspace,tentacle[i]);
 		optimizeMALBlock(cntxt,tentacle[i]);
