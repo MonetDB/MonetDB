@@ -1435,12 +1435,13 @@ if names are identical then so are all properties.
 @c
 int
 cloneVariable(MalBlkPtr mb, MalBlkPtr src, int varid){
-	int i,n,len;
+	int i, n = 0, len;
 	VarPtr v = src->var[varid];
 
 	@:makeVarSpace@
-	n = findVariable(mb, v->name);
-	if ( n >= 0)
+	if( v->tmpindex == 0)
+		n = findVariable(mb, v->name);
+	if ( n > 0)
 		return n; /* we already know it */
 
 	n= mb->vtop;
@@ -1448,11 +1449,13 @@ cloneVariable(MalBlkPtr mb, MalBlkPtr src, int varid){
 	getVar(mb, n) = (VarPtr) GDKzalloc(len);
 	memcpy((char*) getVar(mb,n), (char*) v, len);
 	VALcopy(&getVarConstant(mb,n), &getVarConstant(src,varid));
+	if( v->tmpindex){
+		getVarTmp(mb, n) = n;
+		mb->var[n]->name= NULL;
+	} else
 	if ( v->name )
 		mb->var[n]->name= GDKstrdup(v->name);
 
-	if( v->tmpindex)
-		getVarTmp(mb, n) = n;
 	clrVarUsed(mb, n);
 	clrVarInit(mb, n);
 	clrVarDisabled(mb, n);
@@ -2556,7 +2559,7 @@ operatorName(int i)
 		GDKfree(tpe);
 		advance(t,base,len);
 	} else
-		if ( flg & (LIST_MAL_UDF | LIST_MAL_STMT)  && i < p->retc) {
+		if ( flg & (LIST_MAL_UDF | LIST_MAL_STMT | LIST_MAL_VALUE)  && i < p->retc) {
 		if ( isVarUDFtype(mb, getArg(p, i))) {
 			str tpe = getTypeName(getVarType(mb, getArg(p, i)));
 			snprintf(t,(len-(t-base)), ":%s ", tpe);
@@ -2584,6 +2587,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	int low, high;
 	char nmebuf[PATHLENGTH];
 	str pstring = NULL;
+	str cv = NULL;
 
 	base = s = GDKmalloc(len);
 	if (flg) {
@@ -2656,6 +2660,32 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			snprintf(t,(len-(t-base)),"%s", getArgName(mb, p, i));
 			advance(t,base,len);
 			@:showVariableProperties@
+
+			if (stk && (flg & LIST_MAL_VALUE) && isaBatType(getArgType(mb,p,i))) {
+				BAT *d = 0;
+				cv = NULL;
+				VALformat(&cv, &stk->stk[getArg(p, i)]);
+				if ( cv && strlen(cv) > len - (t - s)) {
+					char *ns = (char *) GDKmalloc(len = strlen(cv) + len + 2);
+					*t = 0;
+					strcpy(ns, s);
+					t = ns + (t - s);
+					GDKfree(s);
+					s = ns;
+				}
+				if ( cv && strcmp(cv,"nil") ){
+					strcat(t, cv);
+					advance(t,base,len);
+					if (cv)
+						GDKfree(cv);
+					d= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+					if( d){
+						snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
+						BBPreleaseref(d->batCacheid);
+						advance(t,base,len);
+					}
+				}
+			}
 			if (i < p->retc - 1)
 				*t++ = ',';
 		}
@@ -2713,7 +2743,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		}
 		/* show the value if availabe */
 		if ( (isVarConstant(mb, getArg(p, i)) || stk) && !isVarTypedef(mb,getArg(p,i)) ){
-			str cv = NULL;
 
 			if (stk && flg & LIST_MAL_VALUE){
 				if ( !isVarConstant(mb, getArg(p,i)))
