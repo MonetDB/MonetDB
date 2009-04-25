@@ -809,7 +809,7 @@ printf("Join %lld, Cost %lld, Left "OIDFMT" Right "OIDFMT"\n",joinsDone, TJtotal
 @= CreateCrackerMapReuseExistingBAT
 		BAT *c, *b;
 		int m;
-		int sizeM;
+		oid sizeM;
 
 		TC1=GDKusec();	
                 if ((b = BATdescriptor(@3)) == NULL)
