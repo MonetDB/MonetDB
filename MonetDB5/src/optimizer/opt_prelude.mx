@@ -23,6 +23,7 @@ These definitions are handy to have around in the optimizer
 #define MAL_PRELUDE
 #include "opt_support.h"
 
+/* cf., MonetDB/src/gdk/gdk.mx */
 #define OPTDEBUG		if (GDKdebug & GRPoptimizers)
 
 opt_export  str affectedRowsRef;
