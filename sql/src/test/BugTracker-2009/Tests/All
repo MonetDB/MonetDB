@@ -51,3 +51,4 @@ missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
 dumping_tables.SF-2776908--optimizers
+name_clash_with_dump.SF-2780395
