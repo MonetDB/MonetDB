@@ -306,6 +306,7 @@ static int delayswitch = 0;	/* to wait before sending the profile info */
 #define PROFstmt   10
 #define PROFaggr   11
 #define PROFprocess 12
+#define PROFthread 13
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -324,7 +325,8 @@ static struct {
 	/*  10 */  { "statement", 0},
 	/*  11 */  { "aggregate", 0},
 	/*  12 */  { "process", 0},
-	/*  12 */  { 0, 0}
+	/*  13 */  { "thread", 0},
+	/*  14 */  { 0, 0}
 };
 
 @-
@@ -457,6 +459,9 @@ offlineProfilerHeader(void)
 		log0("count,\t clkticks,\t");
 	if (profileCounter[PROFstmt].status) {
 		log0("stmt,\t");
+	}
+	if (profileCounter[PROFthread].status) {
+		log0("thread,\t");
 	}
 	log0("# name\n");
 	flushLog();
@@ -595,6 +600,9 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			c++;
 		log(" \"%s\"", c);
 		GDKfree(stmt);
+	}
+	if (profileCounter[PROFthread].status) {
+		log(" %d", THRgettid());
 	}
 	log0(" ]\n");
 	eventcounter++;
@@ -952,6 +960,7 @@ static BAT *TRACE_id_stmt=0;
 static BAT *TRACE_id_ibytes=0;
 static BAT *TRACE_id_obytes=0;
 static BAT *TRACE_id_diskspace=0;
+static BAT *TRACE_id_thrd=0;
 
 static BAT *
 TRACEcreate(str hnme, str tnme, int ht, int tt)
@@ -989,6 +998,7 @@ initTrace(void)
 	TRACE_id_ibytes = TRACEcreate("id", "ibytes", TYPE_int, TYPE_lng);
 	TRACE_id_obytes = TRACEcreate("id", "obytes", TYPE_int, TYPE_lng);
 	TRACE_id_diskspace = TRACEcreate("id", "diskspace", TYPE_int, TYPE_lng);
+	TRACE_id_thrd = TRACEcreate("id", "thread", TYPE_int, TYPE_str);
 	TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
 }
@@ -1004,6 +1014,7 @@ cleanupProfiler(){
 	CLEANUPprofile( TRACE_id_ibytes );
 	CLEANUPprofile( TRACE_id_obytes );
 	CLEANUPprofile( TRACE_id_diskspace );
+	CLEANUPprofile( TRACE_id_thrd );
 	TRACE_init = 0;
 	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
@@ -1019,6 +1030,7 @@ clearTrace(void)
 	BATclear(TRACE_id_pc);
 	BATclear(TRACE_id_modfcn);
 	BATclear(TRACE_id_stmt);
+	BATclear(TRACE_id_thrd);
 }
 
 BAT *
@@ -1031,6 +1043,8 @@ getTrace(str nme)
 		return TRACE_id_ticks;
 	if (strcmp(nme, "pc") == 0)
 		return TRACE_id_pc;
+	if (strcmp(nme, "thread") == 0)
+		return TRACE_id_thrd;
 	if (strcmp(nme, "modfcn") == 0)
 		return TRACE_id_modfcn;
 	if (strcmp(nme, "statement") == 0)
@@ -1103,6 +1117,11 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			snprintf(buf, 1024, "%s", operatorName(pci->token));
 		}
 		BUNins(TRACE_id_modfcn, &evnt, buf, FALSE);
+	}
+	if (profileCounter[PROFthread].status) {
+		char buf[1024];
+		snprintf(buf, 1024, "%d", THRgettid());
+		BUNins(TRACE_id_thrd, &evnt, buf, FALSE);
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
