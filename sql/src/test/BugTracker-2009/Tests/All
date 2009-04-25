@@ -48,3 +48,6 @@ wrong_error_message.SF-2637051
 AVG_of_SQRT.SF-2757642.unpack_csv
 AVG_of_SQRT.SF-2757642.test
 missing_column_name.SF-2776100
+dumping_tables.SF-2776908
+dumping_tables.SF-2776908--performance
+dumping_tables.SF-2776908--optimizers
