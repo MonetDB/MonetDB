@@ -94,3 +94,8 @@ group by
 	"time_by_day"."month_of_year" 
 order by 1 ASC, 2 ASC, 3 ASC, 4 ASC;
 
+DROP TABLE "sys"."store"; 
+DROP TABLE "sys"."warehouse";
+DROP TABLE "sys"."warehouse_class";
+DROP TABLE "sys"."inventory_fact_1997";
+DROP TABLE "sys"."time_by_day";

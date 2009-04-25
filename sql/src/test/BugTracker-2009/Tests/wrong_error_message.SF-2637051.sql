@@ -4,3 +4,5 @@ CREATE TABLE "sys"."test2" (
 );
 
 select test from test2 group by test;
+
+drop table "sys"."test2";

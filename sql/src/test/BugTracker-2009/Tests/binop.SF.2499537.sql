@@ -10,3 +10,7 @@ create table points(p int);
 create table lines(l int);
 
 select * from points x,lines y where in_p_l(x.p,y.l);
+
+drop table lines;
+drop table points;
+drop function in_p_l;

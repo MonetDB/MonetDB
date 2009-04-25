@@ -27,3 +27,5 @@ ELSE 'big'
 END AS "NewColumnName"
 FROM sometable
 ;
+
+drop table sometable;
