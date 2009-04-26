@@ -96,6 +96,7 @@ derived from the parser to avoid a loop in the define-structure.
 
 
 mal_export str getTypeName(malType tpe);
+mal_export str getTypeIdentifier(malType tpe);
 mal_export int getTypeIndex(str nme, int len, int deftpe);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
@@ -151,6 +152,19 @@ getTypeName(malType tpe)
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));
+}
+@-
+It might be handy to encode the type information in an identifier
+string for ease of comparison later.
+@c
+str
+getTypeIdentifier(malType tpe){
+	str s,t;
+	s= getTypeName(tpe);
+	for ( t=s; *t; t++)
+		if ( !isalnum((int) *t) )
+			*t='_';
+	return s;
 }
 
 
