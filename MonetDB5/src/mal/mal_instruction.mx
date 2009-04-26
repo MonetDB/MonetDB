@@ -1242,7 +1242,7 @@ findVariableLength(MalBlkPtr mb, str name, int len)
 	int j;
 
 	for (i = mb->vtop - 1; i >= 0; i--)
-		if (mb->var[i]->name && !isTmpVar(mb, i)) {
+		if (mb->var[i] && mb->var[i]->name && !isTmpVar(mb, i)) {
 			str s = mb->var[i]->name;
 
 			j = 0;
@@ -1429,44 +1429,16 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	return n;
 }
 @-
-During the cloning of functions, we need to propagate
-variable definitions. The cloneVariable assumes that
-if names are identical then so are all properties.
+Simplified cloning without property propagation.
 @c
 int
-cloneVariable(MalBlkPtr mb, MalBlkPtr src, int varid){
-	int i, n = 0, len;
-	VarPtr v = src->var[varid];
-
-	@:makeVarSpace@
-	if( v->tmpindex == 0)
-		n = findVariable(mb, v->name);
-	if ( n > 0)
-		return n; /* we already know it */
-
-	n= mb->vtop;
-	len = sizeof(VarRecord) + v->maxprop * sizeof(int);
-	getVar(mb, n) = (VarPtr) GDKzalloc(len);
-	memcpy((char*) getVar(mb,n), (char*) v, len);
-	VALcopy(&getVarConstant(mb,n), &getVarConstant(src,varid));
-	if( v->tmpindex){
-		getVarTmp(mb, n) = n;
-		mb->var[n]->name= NULL;
-	} else
-	if ( v->name )
-		mb->var[n]->name= GDKstrdup(v->name);
-
-	clrVarUsed(mb, n);
-	clrVarInit(mb, n);
-	clrVarDisabled(mb, n);
-	mb->vtop++;
-	mb->var[n]->propc=0;
-	for (i=0; i< v->propc; i++){
-		varSetProp(mb, n, src->prps[i].idx, src->prps[i].op, 
-			&getVarConstant(src,src->prps[i].var));
-	}
-
-	return n;
+cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
+{
+	if ( isVarConstant(mb,x))
+		return defConstant(tm,getVarType(mb,x), &getVarConstant(mb,x));
+	if ( isTmpVar(mb,x))
+		return  newTmpVariable(tm, getVarType(mb,x));
+	return newVariable(tm,getVarName(mb,x), getVarType(mb,x));
 }
 
 void
