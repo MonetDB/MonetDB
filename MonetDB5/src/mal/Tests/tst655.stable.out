@@ -40,15 +40,15 @@ function user.main():void;
     tablet.setProperties("name,type,dense,sorted,key,min,max");
     tablet.display(b1,b2);
 end main;
-#---------------------------------------#
-# tmp_4,	tmp_5			# name
-# int,		str			# type
-# false,	false			# dense
-# true,		false			# sorted
-# true,		false			# key
-# 42,					# min
-# 49,					# max
-#---------------------------------------#
+#-------------------------------#
+% tmp_10,tmp_11			# name
+% int,	str			# type
+% false,false			# dense
+% true,	false			# sorted
+% true,	false			# key
+% 42,				# min
+% 49,				# max
+#-------------------------------#
 [ 42,		"hello world"		]
 [ 49,		"goodbye world"		]
 #---------------------------------------#
