@@ -758,25 +758,22 @@ pieces:int, part:int):bat[:oid,:any_1];
 	v := remote.put(conn,version);
 	n := remote.put(conn,pieces);
 	i := remote.put(conn,part);
+	bh:= remote.put(conn,bind);
 	bh:= remote.exec(conn,"octopus","bind",s,t,c,k,v,n,i);
 	b:bat[:oid,:any_1]:= remote.get(conn,bh);
 	return bind:= b;
 end octopus.bind;
 
-function octopus.bind_dbat(sch:str, tab:str,access:int, version:int, 
-pieces:int, part:int):bat[:oid,:any_1];
+function octopus.bind_dbat(sch:str, tab:str,access:int, version:int):bat[:oid,:any_1];
 	b := sql.bind_dbat(sch,tab,access);
-	z := bat.partition(b,pieces,part);
-	return bind:= z;
+	return bind:= b;
 end octopus.bind_dbat;
 
-function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int,pieces:int,part:int):bat[:oid,:oid];
+function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
 	s := remote.put(conn,sch);
 	t := remote.put(conn,tab);
 	a := remote.put(conn,access);
-	v := remote.put(conn,version);
-	n := remote.put(conn,pieces);
-	i := remote.put(conn,part);
+	bh:= remote.put(conn,bind_dbat);
 	bh:= remote.exec(conn,"sql","bind_dbat",s,t,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	
@@ -1526,9 +1523,19 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_column *c = NULL;
+
+	s = mvc_bind_schema(m, sname);
+	if ( s == NULL) 
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if ( t == NULL) 
+		return NULL;
+	c = mvc_bind_column(m, t, cname);
+	if ( c == NULL) 
+		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
 	return b;
@@ -1539,8 +1546,14 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	s = mvc_bind_schema(m, sname);
+	if ( s == NULL)
+		return NULL;
+	t = mvc_bind_table(m, s, tname);
+	if ( t == NULL)
+		return NULL;
 
 	b = store_funcs.bind_del(tr, t, access);
 	return b;
