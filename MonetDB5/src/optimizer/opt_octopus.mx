@@ -292,12 +292,10 @@ foundit:
 	for (top--; top >= 0; top--){
 		p = copyInstruction(list[top]);
 		for (i= 0; i< p->argc; i++){
-			int a= alias[getArg(list[top],i)];
-			if (a==0) {
-				a= cloneVariable(tm,mb,getArg(list[top],i));
-				alias[getArg(list[top],i)] = a;
-			} 
-			getArg(p,i) = a;
+			int a= getArg(list[top],i);
+			if (alias[a]==0) 
+				alias[a] = cloneVariable(tm,mb,a);
+			getArg(p,i) = alias[a];
 		}
 		if (getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == bindRef ||
@@ -329,6 +327,7 @@ can be turned into an alias.
 			getArg(p,1)= getArg(p,p->retc);
 			p->retc = 1;
 			p->argc = 2;
+			p->token = ASSIGNsymbol;
 			clrFunction(p);
 		}
 		pushInstruction(tm, p);
@@ -473,9 +472,14 @@ when scheduled correctly, would not lead to duplicate work.
 				pushArgument(sm,q,k);
 			}
 
+			/* k:= remote.put(conn,kvar) */
+			q= newFcnCall(sm,remoteRef,putRef);
+			q= pushArgument(sm,q,conn);
+			q= pushArgument(sm,q, getArg(getInstrPtr(sm,0),0));
+			k= getArg(q,0);
 			/* k:= remote.exec(conn,octopus,qry,version....) */
 			q= newFcnCall(sm,remoteRef,execRef);
-			k= getArg(q,0);
+			getArg(q,0)= k;
 			q= pushArgument(sm,q,conn);
 			q= pushStr(sm,q,octopusRef);
 			q= pushArgument(sm,q,qvar);
