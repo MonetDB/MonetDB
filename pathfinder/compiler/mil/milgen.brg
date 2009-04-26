@@ -4723,7 +4723,11 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     assgn (var (tmp->name),
                            slice (var (env_at (L(p)->env, i).mvar->name),
                                   lit_int (p->sem.slice.low),
-                                  lit_int (p->sem.slice.high))));
+                                  lit_int (p->sem.slice.high))),
+                    /* scary but true -- we need to let the seqbases start
+                       with 0@0 as otherwise alignment problems arise */
+                    assgn (var (tmp->name),
+                           tmark (var (tmp->name), lit_oid (0))));
 
                 env_add (p->env,
                          env_at (L(p)->env, i).col,

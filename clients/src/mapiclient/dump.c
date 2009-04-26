@@ -901,7 +901,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		     "\"sys\".\"schemas\" \"s\" "
 		"WHERE \"s\".\"id\" = \"seq\".\"schema_id\" "
 		"ORDER BY \"s\".\"name\",\"seq\".\"name\"";
-	const char *tables_and_functions = "WITH \"tf\" AS ("
+	const char *tables_and_functions = "WITH \"tf_xYzzY\" AS ("
 			"SELECT \"s\".\"name\" AS \"sname\", "
 			       "\"f\".\"name\" AS \"name\", "
 			       "\"f\".\"id\" AS \"id\", "
@@ -931,7 +931,7 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			"WHERE \"s\".\"id\" = \"t\".\"schema_id\" AND "
 			      "\"t\".\"id\" = \"tr\".\"table_id\""
 		") "
-		"SELECT * FROM \"tf\" ORDER BY \"tf\".\"id\"";
+		"SELECT * FROM \"tf_xYzzY\" ORDER BY \"tf_xYzzY\".\"id\"";
 	char *sname;
 	MapiHdl hdl;
 	int rc = 0;
