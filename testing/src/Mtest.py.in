@@ -1579,6 +1579,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
     elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
+    elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and not env['exe']['Mserver'][0]:
+        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
         elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
@@ -3491,27 +3493,25 @@ def main(argv) :
         else:
             QUIT = 'quit();\n'
 
-        if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
-            if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
-                sys.exit(1)
-            if GetBitsAndOIDsAndModsAndStatic(env):
-                sys.exit(1)
-        else:
+        env['TST_MODS'] = []
+        env['TST_BITS'] = ""
+        env['TST_OIDS'] = ""
+        env['TST_FIVE'] = ""
+        env['TST_STATIC'] = ""
+        env['TST_ALGEBRA'] = ""
+        env['TST_NOALGEBRA'] = ""
+        if par['PACKAGE'] in ('monetdb', 'monetdb-java', 'monetdb-clients'):
             if   CONDITIONALS.has_key('BITS32') and CONDITIONALS['BITS32']:
                 env['TST_BITS'] = "32bit"
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
-            else:
-                env['TST_BITS'] = ""
             if   CONDITIONALS.has_key('LINK_STATIC') and CONDITIONALS['LINK_STATIC']:
                 env['TST_STATIC'] = "STATIC"
-            else:
-                env['TST_STATIC'] = ""
-            env['TST_MODS'] = []
-            env['TST_OIDS'] = ""
-            env['TST_FIVE'] = ""
-            env['TST_ALGEBRA'] = ""
-            env['TST_NOALGEBRA'] = ""
+        else:
+            if Check('%s --dbname=%s' % (env['exe']['Mserver'][1], TSTPREF), QUIT):
+                sys.exit(1)
+            if GetBitsAndOIDsAndModsAndStatic(env):
+                sys.exit(1)
         STDERR.flush()
         if not quiet:
             print "Bits: ", env['TST_BITS']
