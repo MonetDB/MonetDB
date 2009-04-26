@@ -891,18 +891,18 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk= stkbase;
 
-	if (p != NULL) {
-		if (cntxt != mal_clients) 
-			/* help mclients with fake prompt */
-			stream_printf(out,"mdb>");
-		printTraceCall(out,mb,stk,pc,LIST_MAL_CALL);
-	}
-	if (cntxt == mal_clients) {
-		cntxt->prompt = "mdb>";
-		cntxt->promptlength = 4;
-	}
 	do {
 		int r;
+		if (p != NULL) {
+			if (cntxt != mal_clients) 
+				/* help mclients with fake prompt */
+				stream_printf(out,"mdb>");
+			printTraceCall(out,mb,stk,pc,LIST_MAL_CALL);
+		}
+		if (cntxt == mal_clients) {
+			cntxt->prompt = "mdb>";
+			cntxt->promptlength = 4;
+		}
 
 		if (cntxt->phase[MAL_SCENARIO_READER]) {
 			b= (char*) (*cntxt->phase[MAL_SCENARIO_READER]) (cntxt);
@@ -1740,7 +1740,8 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 
 		BBPunfix(b->batCacheid);
 		GDKfree(tpe);
-	}
+	} else
+		stream_printf(f,"\n");
 }
 
 
