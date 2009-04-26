@@ -108,6 +108,7 @@ static struct {
     /*  9  */  {'c', "cpu", "cutime", 0},
     /*  0  */  {'c', "cpu", "stime", 0},
     /*  1  */  {'c', "cpu", "cstime", 0},
+    /*  1  */  {'c', "cpu", "thread", 0},
     /*  2  */  {'m', "memory", "arena", 0},
     /*  3  */  {'m', "memory", "ordblks", 0},
     /*  4  */  {'m', "memory", "smblks", 0},
