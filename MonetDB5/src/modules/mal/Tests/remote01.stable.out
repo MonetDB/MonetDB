@@ -27,8 +27,9 @@ function user.main():void;
 # create a connecton to ourself 
     remote.create(d,h,p);
     conn := remote.connect(d,"monetdb","monetdb");
+    io.print(conn);
 # retrieve a value (that for sure won't exist) 
-    x:void  := remote.get(conn,"b1":str);
+    x:str  := remote.get(conn,"b1_str");
 catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
@@ -47,7 +48,8 @@ catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
 end main;
-!MALException:remote.get:'b1' may not be used before being initialized
+[ "mTests_src_modules_mal_monetdb_1" ]
+!MALException:remote.get:'b1_str' may not be used before being initialized
 
 !MALException:remote.create:connection with name 'mTests_src_modules_mal' already exists
 !MALException:remote.disconnect:no such connection with name 'mTests_src_modules_mal_monetdb_1'

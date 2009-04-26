@@ -19,6 +19,7 @@ function user.main():void;
 # let connect figure out itself how to connect to the running db 
     db := const.take("dbname");
     conn:str  := remote.connect(db,"monetdb","monetdb");
+    io.print(conn);
     b := bat.new(:str,:int);
     bat.insert(b,"bla",1);
     bat.insert(b,"boe",2);
@@ -26,16 +27,23 @@ function user.main():void;
     bat.insert(b,"bar",4);
     bat.insert(b,"baz",5);
     k := remote.put(conn,b);
+    io.print(k);
     l := remote.put(conn,3);
+    io.print(l);
     m := remote.put(conn,10);
+    io.print(m);
 # perform a selection remote, and get the result back 
-    t := remote.exec(conn,"algebra","select",k,l,m);
-    j:bat[:str,:int]  := remote.get(conn,t);
+    k := remote.exec(conn,"algebra","select",k,l,m);
+    j:bat[:str,:int]  := remote.get(conn,k);
     io.print(j);
 # help testweb a bit, since currently no cleanup is done on server 
 # shutdown 
     remote.disconnect(conn);
 end main;
+[ "mTests_src_modules_mal_monetdb_1" ]
+[ "rmt_user_main_b_bat__str__int_" ]
+[ "rmt_user_main__18_int" ]
+[ "rmt_user_main__30_int" ]
 #-----------------#
 # h	t	  # name
 # str	int	  # type

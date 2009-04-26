@@ -9,9 +9,10 @@ p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself
 remote.create(d, h, p);
 conn := remote.connect(d, "monetdb", "monetdb");
+io.print(conn);
 
 # retrieve a value (that for sure won't exist)
-x:void := remote.get(conn, "b1":str);
+x:str := remote.get(conn, "b1_str");
 catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;

@@ -4,18 +4,28 @@ conn:str := remote.connect(db, "monetdb", "monetdb");
 
 # this is invalid, as io.print is an invalid module, and bla will be
 # taken as function
-f:str := remote.exec(conn, "io.print", "bla");
+res:str := remote.put(conn,:void);
+res := remote.exec(conn, "io.print", "bla");
 catch MALException:str;
 	io.print("Received first error from the remote site");
 	io.printf("!%s\n", MALException);
 exit MALException;
 
 # now do it with a function that returns something (a BAT in this case)
-b:str := remote.exec(conn, "inspect", "getAtomNames");
+bn:= bat.new(:int,:str);
+b := remote.put(conn,bn);
+catch MALException:str;
+	io.print("Received second init error from the remote site");
+	io.printf("!%s\n", MALException);
+exit MALException;
+io.print(b);
+b := remote.exec(conn, "inspect", "getAtomNames");
 catch MALException:str;
 	io.print("Received second error from the remote site");
 	io.printf("!%s\n", MALException);
 exit MALException;
+io.print(b);
+
 c:bat[:int,:str] := remote.get(conn, b);
 io.print(c);
 catch MALException:str;
@@ -24,12 +34,15 @@ catch MALException:str;
 exit MALException;
 
 # io.print only outputs things, but returns nothing
-a:str := remote.exec(conn, "io", "print", b);
+ah:str := remote.put(conn,:void);
+io.print(ah);
+ah:str := remote.exec(conn, "io", "print", b);
 catch MALException:str;
 	io.print("Received fourth error from the remote site");
 	io.printf("!%s\n", MALException);
 exit MALException;
-d:void := remote.get(conn, a);
+
+d:void := remote.get(conn, ah);
 io.print(d);
 catch MALException:str;
 	io.print("Received fifth error from the remote site");
