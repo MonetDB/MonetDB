@@ -299,6 +299,7 @@ compileString(Symbol *fcn, Client c, str s)
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
+	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
 	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] && 
 		(msg= (str) (*c->phase[MAL_SCENARIO_READER])(c)) ){
@@ -341,6 +342,7 @@ callString(Client c, str s, int listing)
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	buffer_init(b, qry, len);
 	MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
+	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
 	@:runPhase(MAL_SCENARIO_READER,restoreClient3)@
 	@:runPhase(MAL_SCENARIO_PARSER,restoreClient3)@
