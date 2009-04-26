@@ -38,6 +38,7 @@ It may overwritten using a command line argument.
 mal_export int malBootstrap(void);
 mal_export void MSserveClient(void *dummy);
 mal_export void MSinitClientPrg(Client cntxt, str mod, str nme);
+mal_export void MSresetClientPrg(Client cntxt);
 mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
@@ -113,26 +114,29 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 {
 	InstrPtr p;
 	MalBlkPtr mb;
-	int i, cnt = 1;
 
 	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
+		MSresetClientPrg(cntxt);
+		return;
+/*
+	int i, cnt = 1;
 		mb = cntxt->curprg->def;
-		cntxt->itrace = 0;	/* turn off any debugging */
+		cntxt->itrace = 0;	
 		getInstrPtr(mb,0)->gc = 0;
 		for (i = 1; i < mb->stop; i++)
 			if (mb->stmt[i]->token == REMsymbol)
 				cnt++;
-		if (mb->stop <= cnt + 1) {	/* complete comments */
+		if (mb->stop <= cnt + 1) {	
 			mb->typefixed = 0;
 			mb->flowfixed = 0;
 			mb->stop = cnt;
 			return;
 		}
-		/* remove any MAL history */
 		if( mb->history){
 			freeMalBlk(mb->history);
 			mb->history=0;
 		}
+*/
 	}
 	cntxt->curprg = newFunction(putName("user",4), putName(nme, strlen(nme)), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
@@ -145,6 +149,31 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	insertSymbol(cntxt->nspace, cntxt->curprg);
 	cntxt->glb = 0;
 	assert(cntxt->curprg->def != NULL);
+}
+
+void
+MSresetClientPrg(Client cntxt)
+{
+	MalBlkPtr mb;
+	InstrPtr p;
+
+	cntxt->itrace = 0;	/* turn off any debugging */
+	mb = cntxt->curprg->def;
+	mb->typefixed = 0;
+	mb->flowfixed = 0;
+	mb->stop = 1;
+	mb->errors=0;
+	p= mb->stmt[0];
+	setModuleId(p,putName("user",4));
+	setFunctionId(p,putName("main",4));
+	p->gc = 0;
+	p->retc=1;
+	p->argc=1;
+	/* remove any MAL history */
+	if( mb->history){
+		freeMalBlk(mb->history);
+		mb->history=0;
+	}
 }
 
 @}
@@ -511,15 +540,9 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	int i;
 	if (c->glb && c->curprg->def->errors == 0) 
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
-	for ( i=1; i<c->curprg->def->vtop; i++)
-		freeVariable(c->curprg->def,i);
-	GDKfree(c->glb);
-	c->glb = NULL;
-	c->curprg->def->vtop = 1;
-	MSinitClientPrg(c,"user", "main");
+	MCcloseClient(c);
 	return NULL;
 }
 
