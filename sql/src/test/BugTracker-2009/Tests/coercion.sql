@@ -7,3 +7,4 @@ insert into t values(1), (2);
 select f(i) from t;
 
 drop table t;
+drop function f;

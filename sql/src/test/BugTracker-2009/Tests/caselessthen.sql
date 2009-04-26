@@ -15,3 +15,4 @@ from (
   select 13 as x
 ) sub
 ;
+drop table tcase;
