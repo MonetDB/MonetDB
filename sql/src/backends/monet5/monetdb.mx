@@ -561,6 +561,8 @@ command_discover(int argc, char *argv[])
 	char *p, *q;
 	int len;
 	int pos;
+	char dbname[15];
+	int buflen;
 
 	(void)argc;
 	(void)argv;
@@ -632,8 +634,15 @@ command_discover(int argc, char *argv[])
 		}
 		*q++ = '\0';
 
+		/* cut too long database names */
+		if ((buflen = strlen(buf)) > 14) {
+			buf[6] = '\0';
+			snprintf(dbname, 15, "%s...%s", buf, buf + buflen - 5);
+		} else {
+			snprintf(dbname, 15, "%s", buf);
+		}
 		/* show what we found */
-		printf("%-14s  %s\n", buf, q);
+		printf("%-14s  %s\n", dbname, q);
 
 		/* move it away */
 		len -= p - buf;
