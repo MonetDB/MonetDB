@@ -357,8 +357,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			return;
 		}
 		/* move this back !! */
-		c->nspace = newModule(NULL, putName("user", 4));
-		c->nspace->outer = mal_clients[0].nspace->outer;
+		if ( c->nspace == 0) {
+			c->nspace = newModule(NULL, putName("user", 4));
+			c->nspace->outer = mal_clients[0].nspace->outer;
+		}
 
 		if (!lang) {
 			if ((s = defaultScenario(c))) {
@@ -474,7 +476,8 @@ A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
 @c
 	mb = c->curprg->def;
-	c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
+	if ( c->glb == NULL)
+		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	c->glb->stktop = mb->vtop;
 	c->glb->blk = mb;
 
