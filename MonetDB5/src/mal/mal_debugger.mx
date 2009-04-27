@@ -512,6 +512,9 @@ to the user to alter the trace/debugger options.
 #include "mal_parser.h"
 #include "mal_namespace.h"
 
+#ifdef HAVE_SBRK
+#include <unistd.h>
+#endif
 
 int MDBdelay;			/* do not immediately react */
 

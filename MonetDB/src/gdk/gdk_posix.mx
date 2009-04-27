@@ -303,6 +303,7 @@ gdk_export int closedir(DIR *dir);
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <stdio.h>
+#include <unistd.h> /* sbrk on Solaris */
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
