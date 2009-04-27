@@ -18,6 +18,9 @@ import unittest
 import time
 
 # $Log$
+# Revision 1.2  2009/04/20 14:21:20  gijzelaerr
+# new native python API, removed old python API
+#
 # Revision 1.1.2.1  2006/02/25 03:44:32  adustman
 # Generic DB-API unit test module
 #
