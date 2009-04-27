@@ -820,7 +820,7 @@ file_fgetpos(stream *s, lng *p)
 #if defined(NATIVE_WIN32) && _MSC_VER >= 1400 /* Visual Studio 2005 */
 	*p = (lng) _ftelli64(fp); /* returns __int64 */
 #else
-#ifdef HAVE_FTELLO
+#ifdef HAVE_FSEEKO
 	*p = (lng) ftello(fp);	/* returns off_t */
 #else
 	*p = (lng) ftell(fp);	/* returns long */
