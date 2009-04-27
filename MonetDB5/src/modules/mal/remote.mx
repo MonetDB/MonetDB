@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f remote
-@a Fabian Groffen
+@a Fabian Groffen, Martin Kersten
 @+ Remote querying functionality
 Communication with other mservers at the MAL level is a delicate task.
 However, it is indispensable for any distributed functionality.  This
