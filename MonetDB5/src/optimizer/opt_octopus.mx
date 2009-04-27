@@ -218,6 +218,16 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 #else
 	(void) cntxt;
 #endif
+@-
+Beware, the packing is targeted to two sql.binds, which leads to a different
+number of pieces to take into account. The code now assumes that only
+the last one is different. TO BE CONFIRMED by mergetable optimizer
+@c
+	if ( idx == pci->argc -1 ){
+		pieces=1;
+		part = 0;
+	} else
+		pieces--;
 
 	/* locate the last assignment for varid */
 	fnd = -1;
@@ -363,6 +373,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		return 0;
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "#Octopus optimizer started\n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #else
 	(void) cntxt;
 #endif
