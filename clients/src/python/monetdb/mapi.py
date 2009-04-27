@@ -2,6 +2,7 @@
 import socket
 import logging
 import struct
+from cStringIO import StringIO
 
 try:
   from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError
@@ -107,7 +108,7 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        result = ""
+        result_io = StringIO()
         last = 0
         while not last:
             flag = self.__getbytes(2)
@@ -116,10 +117,12 @@ class Server:
             last = unpacked & 1
             logging.debug("II: reading %i bytes" % length)
             if length > 0:
-                data = self.__getbytes(length)
-                result += str(data)
+                result_io.write(str(self.__getbytes(length)))
+
+        result = result_io.getvalue()
         logging.debug("RX: %s" % result)
         return result
+
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""

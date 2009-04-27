@@ -21,9 +21,9 @@ def string_literal(s, d):
 
 def string_deliteral(str):
     """ removes quotes from string representation """
-    str = str.replace("\\\\", "\\")
-    str = str.replace("\\'", "'")
-    str = str.replace('\\"', '"')
+    #str = str.replace("\\\\", "\\")
+    #str = str.replace("\\'", "'")
+    #str = str.replace('\\"', '"')
     return str[1:-1]
 
 
@@ -230,9 +230,10 @@ def monet2python(value, typestr, conv=conversions):
     if value == "NULL":
         return None
 
-    if typestr in conv:
+    try:
         return conv[typestr](value)
-    return value
+    except KeyError:
+        return value
 
 
 

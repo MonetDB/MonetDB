@@ -317,8 +317,9 @@ class Cursor:
         self.__offset += len(self.__rows)
 
         end = min(self.rowcount, self.rownumber + self.arraysize)
+        amount = end - self.__offset
 
-        command = 'Xexport %s %s %s' % (self.__query_id, self.__offset, end)
+        command = 'Xexport %s %s %s' % (self.__query_id, self.__offset, amount)
         block = self.connection.command(command)
         self.__store_result(block)
         return True
@@ -432,8 +433,6 @@ class Cursor:
                     logging.debug("II store result finished")
                     return
 
-
-
         elif firstline.startswith(mapi.MSG_QBLOCK):
             rows = []
             for line in lines[1:]:
@@ -475,6 +474,15 @@ class Cursor:
 
     def __parse_tuple(self, line):
         """ parses a mapi data tuple, and returns a list of python types"""
+
+        # values are seperated by ,\t. Substrings can contain this also, so
+        # if the length of the tuple doesn't match, we do a manual split
+        elements = line[1:-1].split(',\t')
+        if len(elements) == len(self.description):
+            return [converters.monet2python(element.strip(), description[1]) for
+                    (element, description) in zip(elements, self.description)]
+
+
         elements = []
         sub_str = False
         buff = ""
@@ -497,8 +505,5 @@ class Cursor:
             raise ProgrammingError("length of data (%s) is not equal to length of description (%s)" % (len(elements), len(self.description)))
 
         #convert values to python types
-        for pos, element in enumerate(elements):
-            # we strip to clean up extra spaces
-            elements[pos] = converters.monet2python(element.strip(), self.description[pos][1])
-
-        return elements
+        return [converters.monet2python(element.strip(), description[1]) for
+                (element, description) in zip(elements, self.description)]

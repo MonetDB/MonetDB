@@ -14,22 +14,12 @@ except ImportError:
     sys.path.append(parent)
     import monetdb.sql
 
-
-x = monetdb.sql.connect()
-c = x.cursor()
-
-# some basic query
-c.arraysize=1
-c.execute('select * from tables')
-results = c.fetchmany()
-c.arraysize=3
-results = c.fetchmany()
-
-
-for arraysize in (1,10,100,1000):
-    t = time.time()
-    c.arraysize = arraysize
+def query():
+    x = monetdb.sql.connect()
+    c = x.cursor()
+    c.arraysize=1000
     c.execute('select * from tables, tables, tables')
     results = c.fetchall()
-    print arraysize, time.time() -t
 
+import cProfile
+cProfile.run('query()')
