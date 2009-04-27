@@ -1,0 +1,7 @@
+# test leakage of connection settings.
+db := const.take("dbname");
+barrier (k,v):= language.newRange(0:lng);
+	conn:str := remote.connect(db, "monetdb", "monetdb");
+	remote.disconnect(conn);
+	redo (k,v) := language.nextElement(1:lng,200:lng);
+exit (k,v);
