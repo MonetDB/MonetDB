@@ -714,6 +714,7 @@ available.  The following parameters are possible:
   and installed;
 - ``HAVE_MONETDB5=1`` - for sql and pathfinder: MonetDB5 was compiled
   and installed;
+- ``HAVE_NETCDF=1`` - the netcdf library is available;
 - ``HAVE_PERL=1`` - Perl is available;
 - ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
   and libraries are available--also need ``HAVE_PERL=1``);
