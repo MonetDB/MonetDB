@@ -420,6 +420,7 @@ AC_DEFUN([AM_MONETDB5],
 
 dnl check for monetdb5
 have_monetdb5=auto
+have_monetdb5_rdf=""
 MONETDB5_CFLAGS=""
 MONETDB5_LIBS=""
 MONETDB5_MODS=""
@@ -451,6 +452,12 @@ if test "x$have_monetdb5" != xno; then
     if test MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo $MONETDB5_REQUIRED_VERSION); then
       have_monetdb5=yes
       AC_MSG_RESULT($have_monetdb5: found version $MONETDB5_VERSION)
+      AC_MSG_CHECKING(whether MonetDB5 was compiled with lib raptor available, and hence provides RDF support)
+      have_monetdb5_raptor="`$MONETDB5_CONFIG --conds | grep '^HAVE_RAPTOR='`"
+      case "$have_monetdb5_raptor" in
+      'HAVE_RAPTOR=#') have_monetdb5_rdf=yes;;
+      esac
+      AC_MSG_RESULT($have_monetdb5_rdf: $MONETDB5_CONFIG --conds  says  $have_monetdb5_raptor)
     else
       have_monetdb5=no
       AC_MSG_RESULT($have_monetdb5: found only version $MONETDB5_VERSION)
@@ -500,6 +507,7 @@ AC_SUBST(MONETDB5_MOD_PATH)
 AC_SUBST(MONETDB5_PREFIX)
 AC_SUBST(MONETDB5_VERSION)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
+AM_CONDITIONAL(HAVE_MONETDB5_RDF,test x$have_monetdb5_rdf = xyes)
 ]) dnl AC_DEFUN AM_MONETDB5
 
 AC_DEFUN([AM_MONETDB_LINUX_DIST],
