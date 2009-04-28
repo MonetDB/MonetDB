@@ -1964,7 +1964,7 @@ strPut(Heap *h, var_t *dst, str v)
 		/* is there room for the next pointer in the padding space? */
 		if (pad < sizeof(stridx_t)) 
 			pad += GDK_VARALIGN; /* if not, pad more */
-	} else {
+	} else if (*bucket) {
 	        /* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket;
 		if (GDK_STRCMP(v, (str) (h->base + pos)) == 0) {
