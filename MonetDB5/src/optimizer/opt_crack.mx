@@ -69,41 +69,51 @@ OPTcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		/* find and replace algebra select commands with crack select ones*/
 
-		if (match2(p, batRef, newRef) ||
-			match2(p, sqlRef, bindRef)){  
-				/* add a property can be cracked to every base relation */
+		
+		/* add a property "can be cracked" to every base relation that is a candidate for selection cracking */
+		if ( match2(p, batRef, newRef) || match2(p, sqlRef, bindRef) ){  
 
-			if ( getTailType(mb->var[getArg(p,0)]->type)!=TYPE_int &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_dbl &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_lng &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_flt &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_sht &&
-			     getTailType(mb->var[getArg(p,0)]->type)!=TYPE_chr ) 
+		  	/* crack only supported data types */
+			if ( getTailType(mb->var[getArg(p,0)]->type)==TYPE_str )
 					continue;
 
-			if (getModuleId(p)== sqlRef &&
-				mb->var[getArg(p,4)]->value.val.ival != 0 ) continue;		
+			/* avoid cracking delta bats used for updates */
+			if (getModuleId(p)== sqlRef && mb->var[getArg(p,4)]->value.val.ival != 0 ) 
+				continue;		
 				
 			varSetProp(mb, getArg(p, 0), canBeCrackedProp, 0, NULL);
-			actions++;
+			
+			continue;
+			
 		}
-		if (match2(p, batRef, setWriteModeRef)){ /* propagete the canBeCracked property */
+
+		/* propagate the canBeCracked property */
+		if ( match2(p, batRef, setWriteModeRef) || 
+			  match2(p, batcalcRef, dblRef) || 
+			  match2(p, batcalcRef, intRef) ){ 
 
 			if (varGetProp(mb, getArg(p, 1), canBeCrackedProp) != NULL){
 				varSetProp(mb, getArg(p, 0), canBeCrackedProp, 0, NULL);
-				actions++;
 			}
+		
+			continue;
 		}
+
+		/* make the actual command change by changing the module name */
 		if (match2(p, algebraRef, selectRef) ||
-		    match2(p, algebraRef, uselectRef)){ 
+		    match2(p, algebraRef, uselectRef) || 
+		    match2(p, algebraRef, thetaselectRef) || 
+		    match2(p, algebraRef, thetauselectRef)){ 
+
 			if (varGetProp(mb, getArg(p,1), canBeCrackedProp) != NULL){
+
 				setModuleId(p,putName("crackers",8));
 				actions++;
 			}
+			continue;
 		}
-		if (p == pci) 
-			removeInstruction(mb, p);
 	}
+
 	return actions;
 }
 
