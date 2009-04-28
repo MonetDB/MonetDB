@@ -662,9 +662,13 @@ dnl MonetDB code requires some POSIX and XOPEN extensions
 case "$GCC-$CC-$host_os" in
 *-*-solaris*)
 	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx
-	dnl require SUSv3 to be aligned with the cygwin/bsd/irix/darwin case
-	dnl below
-	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == XOPEN_SOURCE=600
+	dnl newer OpenSolaris have posix_madvise, enabled by the
+	dnl _XOPEN_SOURCE flag.  Older OpenSolaris (and Solaris) systems
+	dnl do not have posix_madvise, and break with the above defined.
+	AC_CHECK_FUNC([posix_madvise], [
+		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	])
 	dnl unfortunately we use sbrk in common and monetdb5, which is only
 	dnl available as extension
 	AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
