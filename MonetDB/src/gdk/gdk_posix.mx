@@ -127,7 +127,9 @@ gdk_export int MT_alloc_table(void);
 
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
+# ifndef __USE_BSD
 #  define __USE_BSD
+# endif
 # include <sys/mman.h>
 #endif
 #ifndef HAVE_POSIX_MADVISE
@@ -303,6 +305,7 @@ gdk_export int closedir(DIR *dir);
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <stdio.h>
+#include <unistd.h> /* sbrk on Solaris */
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>

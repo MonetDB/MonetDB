@@ -970,6 +970,9 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
+
+	m->last_id = -1; /* reset after we exposed the value */
+
 	return 0;
 }
 

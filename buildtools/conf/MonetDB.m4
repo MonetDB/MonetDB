@@ -661,12 +661,18 @@ AM_MONETDB_LINUX_DIST()
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
 *-*-solaris*)
-	AC_DEFINE(_XPG6, 1, [Compiler flag])
+	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx
+	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == XOPEN_SOURCE=600
+	dnl newer OpenSolaris have posix_madvise, enabled by the
+	dnl _XOPEN_SOURCE flag.  Older OpenSolaris (and Solaris) systems
+	dnl do not have posix_madvise, and break with the above defined.
+	AC_CHECK_FUNC([posix_madvise], [
+		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	])
+	dnl unfortunately we use sbrk in common and monetdb5, which is only
+	dnl available as extension
 	AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
-	dnl also add __EXTENSIONS__ to the CFLAGS as the Mapi swig 
-	dnl clients include monetdb_config to late
-	CFLAGS="$CFLAGS -D__EXTENSIONS__"
-	;;
+;;
 yes-*-*)
 	case "$host_os" in
 	cygwin*|freebsd*|irix*|darwin*)
@@ -1221,6 +1227,7 @@ AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([alloca.h getopt.h netdb.h sys/types.h sys/times.h])
+AC_CHECK_HEADERS([sys/mman.h]) dnl gdk_posix.mx
 
 AC_SYS_LARGEFILE()
 
@@ -1257,7 +1264,8 @@ AC_C_CHAR_UNSIGNED
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ftruncate gettimeofday opendir sysconf times])
-AC_CHECK_FUNCS([ftello fseeko])
+AC_CHECK_FUNCS([madvise posix_fadvise posix_madvise]) dnl gdk_posix.mx
+AC_FUNC_FSEEKO()
 
 dnl AC_PROG_CC_STDC()
 if test -f "$srcdir"/vertoo.data; then
