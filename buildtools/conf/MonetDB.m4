@@ -455,7 +455,10 @@ if test "x$have_monetdb5" != xno; then
       AC_MSG_CHECKING(whether MonetDB5 was compiled with lib raptor available, and hence provides RDF support)
       have_monetdb5_raptor="`$MONETDB5_CONFIG --conds | grep '^HAVE_RAPTOR='`"
       case "$have_monetdb5_raptor" in
-      'HAVE_RAPTOR=#') have_monetdb5_rdf=yes;;
+      'HAVE_RAPTOR=#')
+        have_monetdb5_rdf=yes
+        AC_DEFINE(HAVE_MONETDB5_RDF, 1, [Define if MonetDB5 was compiled with lib raptor available, and hence provides RDF support (i.e., module rdf)])
+        ;;
       esac
       AC_MSG_RESULT($have_monetdb5_rdf: $MONETDB5_CONFIG --conds  says  $have_monetdb5_raptor)
     else
