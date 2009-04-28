@@ -192,7 +192,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					if (getArg(p, j) == getArg(p, k))
 						done++;
 
-				if (done == 0 && !OPTkeepVariable(mb,p,j)){
+				if (done == 0 && p->barrier != RETURNsymbol &&
+					 !OPTkeepVariable(mb,p,j)){
 #ifdef DEBUG_OPT_GARBAGE
 				printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);
 #endif

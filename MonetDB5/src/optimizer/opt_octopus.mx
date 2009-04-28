@@ -144,7 +144,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_OCTOPUS          /* show partial result */
+/*#define DEBUG_OPT_OCTOPUS           show partial result */
 
 @c
 #include "mal_config.h"
@@ -176,9 +176,19 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
 	return getArg(p,0);
 }
 
+@-
+Be prepared to catch errors from the remote site.
+You should catch them, otherwise the session is not closed.
+@c
 static void
 OCTexitcode(MalBlkPtr mb, int conn,int varid){
 	InstrPtr p;
+
+	newCatchStmt(mb, "RMTexception");
+	p= newStmt(mb,ioRef,printRef);
+	pushArgument(mb,p,findVariable(mb,"RMTexception"));
+	newExitStmt(mb, "RMTexception");
+
 	p = newStmt(mb, remoteRef,disconnectRef);
     pushArgument(mb,p,conn);
 	p= newAssignment(mb);
@@ -371,8 +381,9 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	if ( tentacle == NULL)
 		return 0;
+#define DEBUG_OPT_OCTOPUS
 #ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout, "#Octopus optimizer started\n");
+	stream_printf(cntxt->fdout, "#Octopus optimizer called\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #else
 	(void) cntxt;
@@ -504,6 +515,12 @@ when scheduled correctly, would not lead to duplicate work.
 			setVarType(sm,l, getArgType(sm,getInstrPtr(sm,0),0));
 			setVarUDFtype(sm,l);
 
+			/* catch any error first */
+			newCatchStmt(sm, "RMTexception");
+			p= newStmt(sm,ioRef,printRef);
+			pushArgument(sm,p,findVariable(sm,"RMTexception"));
+			newExitStmt(sm, "RMTexception");
+
 			/* return exec_qry:= l; */
 			q= newAssignment(sm);
 			q->barrier= RETURNsymbol;
@@ -514,10 +531,6 @@ when scheduled correctly, would not lead to duplicate work.
 			insertSymbol(findModule(cntxt->nspace,octopusRef),s2);
 			clrDeclarations(sm);
 			chkProgram(cntxt->nspace,sm);
-#ifdef DEBUG_OPT_OCTOPUS
-			stream_printf(cntxt->fdout, "#exec_qry\n");
-			printFunction(cntxt->fdout,sm,0,LIST_MAL_STMT);
-#endif
 			actions++;
 			continue;
 		} 
@@ -542,10 +555,6 @@ The tentacle code should be optimized by the remaining optimizers.
 		clrDeclarations(tentacle[i]);
 		chkProgram(cntxt->nspace,tentacle[i]);
 		optimizeMALBlock(cntxt,tentacle[i]);
-#ifdef DEBUG_OPT_OCTOPUS
-		stream_printf(cntxt->fdout, "NEXT octopus tentacle check\n");
-		printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
-#endif
 		if ( tentacle[i]->errors ) {
 			showException(MAL,"optimizer.octopus","failed to compile");
 			mb->errors++;
@@ -556,6 +565,8 @@ The tentacle code should be optimized by the remaining optimizers.
 		stream_printf(cntxt->fdout, "DONE octopus \n");
 		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+		for (i=0; i<tn; i++)
+			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
 	}
 #endif
 	GDKfree(old);
