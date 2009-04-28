@@ -60,6 +60,8 @@ crackers_export str CRKselectValue_@1(int *vid, int *bid, @1 *value);
 crackers_export str CRKuselectValue_@1(int *vid, int *bid, @1 *value);
 crackers_export str CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
 crackers_export str CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh);
+crackers_export str CRKthetaselect_@1(int *vid, int *bid, @1 *val, str *op);
+crackers_export str CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *op);
 @
 
 
@@ -137,6 +139,53 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh){
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }
+
+str
+CRKthetaselect_@1(int *vid, int *bid, @1 *val, str *OP){
+	ptr nilptr = ATOMnilptr(TYPE_@1); 
+	char *op = *OP; 
+	bit lin = TRUE, rin = TRUE;
+	@1 *low = nilptr, *high = nilptr;
+
+	if (op[0] == '=') {
+		low = val; 
+		high = NULL;
+	} else if (op[0] == '<') {
+		high = val;
+		rin = (op[1] == '=');
+	} else if (op[0] == '>') {
+		low = val;
+		lin = (op[1] == '=');
+	} else {
+		throw(MAL, "crackers.thetaselect", "unknown operator");
+	}
+
+	return CRKselectBounds_@1(vid, bid, low, high, &lin, &rin);
+}
+
+str
+CRKthetauselect_@1(int *vid, int *bid, @1 *val, str *OP){
+	ptr nilptr = ATOMnilptr(TYPE_@1); 
+	char *op = *OP; 
+	bit lin = TRUE, rin = TRUE;
+	@1 *low = nilptr, *high = nilptr;
+
+	if (op[0] == '=') {
+		low = val; 
+		high = NULL;
+	} else if (op[0] == '<') {
+		high = val;
+		rin = (op[1] == '=');
+	} else if (op[0] == '>') {
+		low = val;
+		lin = (op[1] == '=');
+	} else {
+		throw(MAL, "crackers.thetauselect", "unknown operator");
+	}
+
+	return CRKuselectBounds_@1(vid, bid, low, high, &lin, &rin);
+}
+
 @
 
 

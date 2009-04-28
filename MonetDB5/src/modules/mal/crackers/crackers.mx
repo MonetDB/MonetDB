@@ -209,8 +209,18 @@ address CRKuselectValue_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@2],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_1,:oid]
+command uselect(b:bat[:any_1,:@2],l:@2,h:@2,li:bit,hi:bit):bat[:any_1,:oid]
 address CRKuselectBounds_@2
+comment "Retrieve the subset using a cracker
+        index producing preferably a BATview.";
+
+command thetauselect(b:bat[:any_1,:@2],v:@2,op:str):bat[:any_1,:oid]
+address CRKthetauselect_@2
+comment "Retrieve the subset using a cracker
+        index producing preferably a BATview.";
+
+command thetaselect(b:bat[:any_1,:@2],v:@2,op:str):bat[:any_1,:oid]
+address CRKthetaselect_@2
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
  
