@@ -66,7 +66,7 @@ comment "Run the program block in parallel, but don't wait longer then t seconds
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#define DEBUG_RUN_OCTOPUS 		/* to trace processing */
+/* #define DEBUG_RUN_OCTOPUS 		to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
