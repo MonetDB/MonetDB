@@ -785,11 +785,10 @@ static str RMTconnectInternal(
 	GDKfree(cdef->host);
 	GDKfree(cdef);
 
-	/* we have our private connection */
-	mal_unset_lock(mal_remoteLock, "remote.connect");
 
 	if (mapi_reconnect(c->mconn) != MOK){
 		mal_unset_lock(c->lock, "remote.connect"); 
+		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(IO, "remote.connect", "an error occurred during "
 				"connect of connection '%s': %s",
 				conn, mapi_error_str(c->mconn));
@@ -801,6 +800,7 @@ static str RMTconnectInternal(
 #endif
 
 	mal_unset_lock(c->lock, "remote.connect"); 
+	mal_unset_lock(mal_remoteLock, "remote.connect");
 
 	*ret = GDKstrdup(conn);
 	return(MAL_SUCCEED);
@@ -851,6 +851,7 @@ remote_export str RMTdisconnect(int *ret, str *conn);
  */
 str RMTdisconnect(int *ret, str *conn) {
 	connection c, t;
+	Client cntxt= MCgetClient();
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.disconnect", "connection name is NULL or nil");
@@ -859,47 +860,35 @@ str RMTdisconnect(int *ret, str *conn) {
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 #ifdef _DEBUG_REMOTE
-	stream_printf(MCgetClient()->fdout,"#disconnect link %s\n", *conn);
+	stream_printf(cntxt->fdout,"#disconnect link %s\n", *conn);
 #endif
 
 	mal_set_lock(mal_remoteLock, "remote.disconnect");
-	c = MCgetClient()->conn;
+	c = cntxt->conn;
 	t = NULL;
 	/* walk through the list */
 	while (c != NULL) {
 		if (strcmp(c->name, *conn) == 0) {
 			/* ok, delete it... */
-			if (t == NULL) { /* the top */
-				t = c->next;
-				mal_set_lock(c->lock, "remote.disconnect"); /* shared connection */
-#ifdef _DEBUG_REMOTE
-				stream_printf(MCgetClient()->fdout,"#disconnect link %s\n", c->name);
-#endif
-				mapi_disconnect(c->mconn);
-				mapi_destroy(c->mconn);
-				mal_unset_lock(c->lock, "remote.disconnect");
-				MT_destroy_lock(c->lock);
-				GDKfree(c->name);
-				GDKfree(c);
-				MCgetClient()->conn = t;
-			} else {
-				/* connect the grand child to the grand parent */
+			if (t == NULL)
+				cntxt->conn = c->next;
+			else
 				t->next = c->next;
-				/* and kill the parent in the middle */
-				mal_set_lock(c->lock, "remote.disconnect"); /* shared connection */
-#ifdef _DEBUG_REMOTE
-				stream_printf(MCgetClient()->fdout,"#disconnect link %s\n", c->name);
-#endif
-				mapi_disconnect(c->mconn);
-				mapi_destroy(c->mconn);
-				mal_unset_lock(c->lock, "remote.disconnect");
-				GDKfree(c->name);
-				GDKfree(c);
-			}
 
+			mal_set_lock(c->lock, "remote.disconnect"); /* shared connection */
+#ifdef _DEBUG_REMOTE
+			stream_printf(cntxt->fdout,"#disconnect link %s\n", c->name);
+#endif
+			mapi_disconnect(c->mconn);
+			mapi_destroy(c->mconn);
+			mal_unset_lock(c->lock, "remote.disconnect");
+			MT_destroy_lock(c->lock);
+			GDKfree(c->name);
+			GDKfree(c);
 			mal_unset_lock(mal_remoteLock, "remote.disconnect");
-			return(MAL_SUCCEED);
+			return MAL_SUCCEED;
 		}
+		t = c;
 		c = c->next;
 	}
 

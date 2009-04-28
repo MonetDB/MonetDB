@@ -55,12 +55,12 @@ comment "Switch to other scenario handler, return previous one.";
 
 pattern quit():void
 address CLTquit
-comment "Terminate the server.
-	This command can only be initiated from the console.";
+comment "Terminate the client session.";
 
-pattern exit():void
-address CLTexit
-comment "Terminate the session for a single client using a soft error.";
+pattern quit(idx:int):void
+address CLTquit
+comment "Terminate the session for a single client using a soft error.
+It is the privilige of the console user.";
 
 @-
 Administrator operations
@@ -134,7 +134,6 @@ clients_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 clients_export str CLTchangeUsername(int *ret, str *old, str *new) ;
 clients_export str CLTusers(int *ret);
 clients_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTLogin(int *ret);
 clients_export str CLTLastCommand(int *ret);
@@ -402,24 +401,22 @@ CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int id = *(int*) getArgReference(stk,pci,1);
-	if ( cntxt->user == mal_clients[id].user || 
-		mal_clients[0].user == cntxt->user)
-		mal_clients[id].mode = FINISHING;
-	(void) mb;		/* fool compiler */
-	throw(MAL, "client.exit", "Exit session with soft error");
-}
-str
 CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int id;
+	
+	if ( pci->argc==2 && cntxt->idx != 0)
+		throw(MAL, "client.quit", "Other clients can only be stopped from the console.");
+	if ( pci->argc==2)
+		id = *(int*) getArgReference(stk,pci,1);
+	else id =cntxt->idx;
+
+	if (id == 0 && cntxt->fdout != GDKout )
+		throw(MAL, "client.exit", "Server not stopped from console.");
+	if ( cntxt->idx == mal_clients[id].idx)
+		mal_clients[id].mode = FINISHING;
 	(void) mb;		/* fool compiler */
-	(void) stk;
-	(void) pci;
-	if( cntxt != mal_clients )
-		throw(MAL, "client.quit", "Server not stopped from console.");
-	throw(MAL, "client.quit", "Server stopped.");
+	return MAL_SUCCEED;
 }
 
 str
