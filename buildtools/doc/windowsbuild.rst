@@ -714,6 +714,10 @@ available.  The following parameters are possible:
   and installed;
 - ``HAVE_MONETDB5=1`` - for sql and pathfinder: MonetDB5 was compiled
   and installed;
+- ``HAVE_MONETDB5_RDF=1`` - for sql and pathfinder: MonetDB5 was compiled
+  with the raptor library available (HAVE_RAPTOR=1), and hence provides RDF
+  support (i.e., module rdf);
+- ``HAVE_RAPTOR=1`` - the raptor library is available;
 - ``HAVE_NETCDF=1`` - the netcdf library is available;
 - ``HAVE_PERL=1`` - Perl is available;
 - ``HAVE_PERL_DEVEL=1`` - Perl development is possible (include files
