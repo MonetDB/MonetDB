@@ -1,0 +1,27 @@
+# test octopus frame work
+function octopus.qry();
+	conn:str := remote.connect("demo", "monetdb", "monetdb");
+	remote.disconnect(conn);
+	z:=clients.getUsers();
+	io.print(z);
+end qry;
+
+function octopus.rmt():str;
+	conn:str := remote.connect("demo", "monetdb", "monetdb");
+	l:= remote.put(conn,"demo");
+	r:= remote.put(conn,"monetdb");
+	v:= remote.put(conn,nil:void);
+	v:= remote.exec(conn,"octopus","qry");
+	catch RMTexception:str;
+	exit RMTexception;
+	remote.disconnect(conn);
+	return rmt:="done";
+end rmt;
+	
+octopus.qry();
+barrier (k,v):= language.newRange(0:lng);
+	octopus.rmt();
+	redo (k,v) := language.nextElement(1:lng,70:lng);
+exit (k,v);
+z:=clients.getUsers();
+io.print(z);
