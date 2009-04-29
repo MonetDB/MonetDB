@@ -232,7 +232,7 @@ CMDhash_int(wrd *res, int *val)
 int
 CMDhash_flt(wrd *res, flt *val)
 {
-	*res = *(wrd*) val;
+	*res = *(int*) val;
 	return GDK_SUCCEED;
 }
 
@@ -294,7 +294,7 @@ CMDhash(wrd *res, ptr val, int tpe)
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		code = *(wrd *) val;
+		code = *(int *) val;
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
