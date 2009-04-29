@@ -560,6 +560,9 @@ AC_SUBST(LINUX_DIST)
         
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
+ 
+# autoconf-2.60: enable extensions on systems that normally disable them
+AC_USE_SYSTEM_EXTENSIONS()
 
 AC_PROG_CPP()
 dnl check for compiler (also set GCC (yes/no)).
@@ -669,20 +672,100 @@ AC_C_BIGENDIAN()
 
 AM_MONETDB_LINUX_DIST()
 
+dnl find out, whether the C compiler is C99 compliant
+dnl TODO: use AC_PROG_CC_C99()
+AC_MSG_CHECKING([if your compiler is C99 compliant])
+have_c99=no
+
+dnl  We need more features than the C89 standard offers, but not all
+dnl  (if any at all) C/C++ compilers implements the complete C99
+dnl  standard.  Moreover, there seems to be no standard for the
+dnl  defines that enable the features beyond C89 in the various
+dnl  platforms.  Here's what we found working so far...
+
+case "$GCC-$CC-$host_os" in
+yes-*-*)
+	dnl  GNU (gcc/g++)
+	case "$gcc_ver-$host_os" in
+	*-cygwin*|*-mingw*)
+		dnl  testing/src/Mtimeout.c fails to compile with
+		dnl  "--std=c99" as the compiler then refuses to recognize
+		dnl  the "sa_handler" member of the "sigaction" struct,
+		dnl  which is defined in an unnamed union in
+		dnl  /usr/include/cygwin/signal.h ...
+		CFLAGS="$CFLAGS -std=gnu99"
+		;;
+	4.2.*-*)
+		dnl gcc 4.2 has a warning on inline functions in C99 mode being
+		dnl made for real in gcc 4.3.  We disable the warning and we
+		dnl want to get away for a little while with GNU89 inlining
+		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
+		dnl I think
+		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
+		;;
+	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
+		CFLAGS="$CFLAGS -std=c99"
+		;;
+	esac
+	;;
+-*icc*-linux*|-*ecc*-linux*)
+      	case "$host-$icc_ver" in
+        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
+        *-*-*-11.*)   	CFLAGS="$CFLAGS -std=c99"	;;
+      	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
+      	esac   
+	;;
+-*pgcc*-linux*)
+	CFLAGS="$CFLAGS -c9x"
+	;;
+-*-solaris*)
+	CFLAGS="$CFLAGS -xc99"
+	;;
+esac
+
+AC_TRY_COMPILE([], [
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
+return 0;
+#else
+#error "NOT C99 compliant"
+/* With some compilers, "#error" only triggers a warning; hence: */
+!Error "NOT C99 compliant"
+#endif
+], 
+[AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
+have_c99=yes
+AC_MSG_RESULT(yes)],
+AC_MSG_RESULT(no))
+
 dnl MonetDB code requires some POSIX and XOPEN extensions 
 case "$GCC-$CC-$host_os" in
 *-*-solaris*)
+	dnl Basically, we introduced a small hell by requiring C99 for the
+	dnl whole of MonetDB on Solaris.  Solaris' headers specify:
+	dnl  It is invalid to compile an XPG3, XPG4, XPG4v2, or XPG5 application
+	dnl  using c99.  The same is true for POSIX.1-1990, POSIX.2-1992, POSIX.1b,
+	dnl  and POSIX.1c applications. Likewise, it is invalid to compile an XPG6
+	dnl  or a POSIX.1-2001 application with anything other than a c99 or later
+	dnl  compiler.  Therefore, we force an error in both cases.
+	dnl Conclusion: if we enable C99 (which we just did), we HAVE to
+	dnl enable XPG6 and POSIX.1-2001.  Python (what else) in particular
+	dnl breaks here.
+	dnl
 	dnl MonetDB common requires XOPEN for popen/pclose in stream.mx
 	dnl SUSv3 == XPG6 == POSIX_C_SOURCE=200112L == XOPEN_SOURCE=600
 	dnl newer OpenSolaris have posix_madvise, enabled by the
 	dnl _XOPEN_SOURCE flag.  Older OpenSolaris (and Solaris) systems
 	dnl do not have posix_madvise, and break with the above defined.
+	dnl
+	dnl Not doing C99 would be really nice, but for now not an option,
+	dnl hence, the only way to get out of this if on older Solaris
+	dnl systems is to set the by system header forbidden to set flag
+	dnl _XPG6
 	AC_CHECK_FUNC([posix_madvise], [
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+	], [
+		AC_DEFINE(_XPG6, 1, [Compiler flag])
 	])
-	dnl unfortunately we use sbrk in common and monetdb5, which is only
-	dnl available as extension
-	AC_DEFINE(__EXTENSIONS__, 1, [Compiler flag])
 ;;
 yes-*-*)
 	case "$host_os" in
@@ -972,71 +1055,6 @@ case "$GCC-$CC-$host_os" in
 	*)	;;
 	esac
 esac
-
-dnl find out, whether the C compiler is C99 compliant
-AC_MSG_CHECKING([if your compiler is C99 compliant])
-have_c99=no
-
-dnl  We need more features than the C89 standard offers, but not all
-dnl  (if any at all) C/C++ compilers implements the complete C99
-dnl  standard.  Moreover, there seems to be no standard for the
-dnl  defines that enable the features beyond C89 in the various
-dnl  platforms.  Here's what we found working so far...
-
-case "$GCC-$CC-$host_os" in
-yes-*-*)
-	dnl  GNU (gcc/g++)
-	case "$gcc_ver-$host_os" in
-	*-cygwin*|*-mingw*)
-		dnl  testing/src/Mtimeout.c fails to compile with
-		dnl  "--std=c99" as the compiler then refuses to recognize
-		dnl  the "sa_handler" member of the "sigaction" struct,
-		dnl  which is defined in an unnamed union in
-		dnl  /usr/include/cygwin/signal.h ...
-		CFLAGS="$CFLAGS -std=gnu99"
-		;;
-	4.2.*-*)
-		dnl gcc 4.2 has a warning on inline functions in C99 mode being
-		dnl made for real in gcc 4.3.  We disable the warning and we
-		dnl want to get away for a little while with GNU89 inlining
-		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
-		dnl I think
-		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
-		;;
-	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
-		CFLAGS="$CFLAGS -std=c99"
-		;;
-	esac
-	;;
--*icc*-linux*|-*ecc*-linux*)
-      	case "$host-$icc_ver" in
-        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-        *-*-*-11.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-      	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
-      	esac   
-	;;
--*pgcc*-linux*)
-	CFLAGS="$CFLAGS -c9x"
-	;;
--*-solaris*)
-	CFLAGS="$CFLAGS -xc99"
-	;;
-esac
-
-AC_TRY_COMPILE([], [
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-return 0;
-#else
-#error "NOT C99 compliant"
-/* With some compilers, "#error" only triggers a warning; hence: */
-!Error "NOT C99 compliant"
-#endif
-], 
-[AC_DEFINE([HAVE_C99], 1, [Is your compiler C99 compliant?])
-have_c99=yes
-AC_MSG_RESULT(yes)],
-AC_MSG_RESULT(no))
-
 
 dnl some dirty hacks
 dnl we use LEXLIB=-ll because this is usually correctly installed 
@@ -1531,6 +1549,7 @@ else
 fi
 if test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
+	dnl fabian: we should just use python-config --cflags
 	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
 	AC_MSG_CHECKING([whether we can compile with Python])
 	AC_TRY_COMPILE([#include <Python.h>], [], [AC_MSG_RESULT(yes)],
