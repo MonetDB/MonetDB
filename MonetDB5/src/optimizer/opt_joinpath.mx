@@ -489,7 +489,8 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
-	BBPkeepref( *r = b->batCacheid);
+	if ( b)
+		BBPkeepref( *r = b->batCacheid);
 	GDKfree(joins);
 	return MAL_SUCCEED;
 }
