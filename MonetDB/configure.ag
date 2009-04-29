@@ -19,7 +19,7 @@
 
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.60)
 AC_INIT([MonetDB Common], [1.28.5], [monet@cwi.nl], [MonetDB])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
