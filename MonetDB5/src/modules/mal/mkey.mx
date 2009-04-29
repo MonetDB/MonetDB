@@ -232,7 +232,7 @@ CMDhash_int(wrd *res, int *val)
 int
 CMDhash_flt(wrd *res, flt *val)
 {
-	*res = *(wrd*) val;
+	*res = *(int*) val;
 	return GDK_SUCCEED;
 }
 
@@ -294,7 +294,7 @@ CMDhash(wrd *res, ptr val, int tpe)
 		break;
 	case TYPE_int:
 	case TYPE_flt:
-		code = *(wrd *) val;
+		code = *(int *) val;
 		break;
 	case TYPE_lng:
 	case TYPE_dbl:
@@ -326,7 +326,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	ptr *pval = (ptr) getArgReference(stk,p,3);
 	int lbit = *rotate;
 	int rbit = (sizeof(wrd)*8) - *rotate;
-	int mask = (1 << lbit) - 1;
+	wrd mask = (1 << lbit) - 1;
 
 	(void) cntxt;
 	if (tpe == TYPE_chr || tpe == TYPE_bte) {
@@ -365,7 +365,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	int tpe = ATOMstorage(b->ttype);
 	int lbit = *rotate;
 	int rbit = (sizeof(wrd)*8) - *rotate;
-	int mask = (1 << lbit) - 1;
+	wrd mask = (1 << lbit) - 1;
 
 	if (!ALIGNsynced(bn, b) && (BATcount(b) || BATcount(bn))) {
 #ifdef _DEBUG_MKEY_

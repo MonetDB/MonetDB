@@ -18,7 +18,7 @@
 # All Rights Reserved.
 
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.53)
+AC_PREREQ(2.60)
 AC_INIT([MonetDB SQL Server], [2.29.0], [monet@cwi.nl], [MonetDB-SQL])
 #                              ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
