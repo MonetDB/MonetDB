@@ -55,6 +55,7 @@
 @= JoinSelectFunctions_decl
 crackers_export str CRKjoinSelectDefault_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
 crackers_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left, bit *inPlace, bit *isForeignKey);
+crackers_export str CRKjointhetauselect_@1(int *res, int *right, @1 *val, str *OP, int *left, bit *inPlace, bit *isForeignKey);
 @
 
 
@@ -148,6 +149,29 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
                 	return JoinSelectRange_LE_RE_@1(res, l, r, low, hgh, *inPlace, *isForeignKey);
 	}
         throw(MAL, "crackers.crackJoinSelect", "case not handled");
+}
+
+str
+CRKjointhetauselect_@1(int *vid, int *bid, @1 *val, str *OP, int *left, bit *inplace, bit *foreignKey){
+	ptr nilptr = ATOMnilptr(TYPE_@1); 
+	char *op = *OP; 
+	bit lin = TRUE, rin = TRUE;
+	@1 *low = nilptr, *high = nilptr;
+
+	if (op[0] == '=') {
+		low = val; 
+		high = NULL;
+	} else if (op[0] == '<') {
+		high = val;
+		rin = (op[1] == '=');
+	} else if (op[0] == '>') {
+		low = val;
+		lin = (op[1] == '=');
+	} else {
+		throw(MAL, "crackers.thetajoinuselect", "unknown operator");
+	}
+
+	return CRKjoinSelectBounds_@1(vid, bid, low, high, &lin, &rin, left, inplace, foreignKey);
 }
 @
 

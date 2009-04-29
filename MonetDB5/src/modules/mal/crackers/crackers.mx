@@ -248,6 +248,16 @@ comment "Join left and right on head-OIDs.
 	and hence skip the respective check.
 	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
 
+command jointhetauselect( right:bat[:oid,:@2],v:@2,op:str, left:bat[:oid,:oid], inPlace:bit , isForeignKey:bit):bat[:oid,:oid]
+address CRKjointhetauselect_@2
+comment "Join left and right on head-OIDs.
+	From right, only those BUNs qualify that satisfy the range-restriction on the tail.
+	If inPlace is TRUE (and left has an OID head and is not a BAT-view), we operate in-place,
+	overwriting left and returning it as result. Otherwise, the result is a new [:oid,:void] BAT.
+	If isForeignKey is TRUE, we assume that each tuple from left finds a match in right,
+	and hence skip the respective check.
+	(NOTE: This may lead to CRASHES, if isForeignKey is incorrectly passed as TRUE!)";
+
 command joinselect( b:bat[:oid,:@2],l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
 address CRKjoinSelectSideways_@2
 comment "From cpair, only those BUNs qualify that satisfy the range-restriction on the tail.
