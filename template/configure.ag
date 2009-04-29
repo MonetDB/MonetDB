@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.59)
+AC_PREREQ(2.60)
 AC_INIT([MonetDB template], [0.5.5], [monet@cwi.nl], [MonetDB-template])
 #                            ^^^^^
 # Maintained via vertoo. Please don't modify by hand!
