@@ -166,6 +166,9 @@ opt_export  str antiuselectRef;
 opt_export  str antijoinRef;
 
 opt_export int canBeCrackedProp;	/* binary */
+opt_export int canBeJoinselectProp;	/* binary */
+opt_export int tableProp;	        /* str */
+
 opt_export int inlineProp;		/* binary */
 opt_export int keepProp;		/* binary */
 opt_export int notnilProp;		/* binary */
@@ -330,6 +333,9 @@ str antiuselectRef;
 str antijoinRef;
 
 int canBeCrackedProp;
+int canBeJoinselectProp;
+int tableProp;
+
 int inlineProp;
 int keepProp;
 int notnilProp;
@@ -490,6 +496,9 @@ void optimizerInit(){
 		userRef = putName("user",4);
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");
+		canBeJoinselectProp = PropertyIndex("canBeJoinselect");
+		tableProp = PropertyIndex("table");
+
 		inlineProp = PropertyIndex("inline");
 		keepProp = PropertyIndex("keep");
 		notnilProp = PropertyIndex("notnil");
