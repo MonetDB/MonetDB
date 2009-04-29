@@ -24,7 +24,7 @@
 # Rights Reserved.
 
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.53)
+AC_PREREQ(2.60)
 AC_INIT([MonetDB XQuery], [0.28.5], [monet@cwi.nl], [MonetDB-XQuery])
 #                          ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
