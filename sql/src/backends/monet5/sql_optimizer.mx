@@ -449,6 +449,7 @@ str defaultPlan=
 /*	"cluster,"*/
 	"aliases,"
 	/* "crack," */
+	/* "selcrack," */
 	"mergetable," 
 	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
