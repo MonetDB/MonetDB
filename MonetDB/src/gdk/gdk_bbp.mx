@@ -1852,7 +1852,7 @@ BBPreleaseref(bat i)
 }
 
 static INLINE void
-unshare(bat parent)
+GDKunshare(bat parent)
 {
 	if (parent < 0)
 		parent = -parent;
@@ -1862,7 +1862,7 @@ unshare(bat parent)
 void
 BBPunshare(bat parent)
 {
-	unshare(parent);
+	GDKunshare(parent);
 }
 
 @- 
@@ -2072,9 +2072,9 @@ BBPdestroy(BAT *b)
 
 	/* parent released when completely done with child */
 	if (hp)
-		unshare(hp);
+		GDKunshare(hp);
 	if (tp)
-		unshare(tp);
+		GDKunshare(tp);
 	return 0;
 }
 
@@ -2104,9 +2104,9 @@ BBPfree(BAT *b, str calledFrom)
 
 	/* parent released when completely done with child */
 	if (ret == 0 && hp)
-		unshare(hp);
+		GDKunshare(hp);
 	if (ret == 0 && tp)
-		unshare(tp);
+		GDKunshare(tp);
 	return ret;
 }
 
@@ -2853,9 +2853,9 @@ BBPaddtobin(BAT *b)
 		/* cut view loose from parent */
 		VIEWunlink(b);
 		if (hp)
-			unshare(hp);
+			GDKunshare(hp);
 		if (tp)
-			unshare(tp);
+			GDKunshare(tp);
 		b->H->parentid = b->T->parentid = 0;
 
 		/* take care of mirror views */
