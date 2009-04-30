@@ -62,7 +62,6 @@ comment "retrieve the definition from the partition catalogue";
 @h
 #ifndef _INSPECT_H
 #define _INSPECT_H 
-#include "mal_config.h"
 #include <stdarg.h>
 #include "mal_resolve.h"
 #include "mal_exception.h"
@@ -90,6 +89,7 @@ mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 @- 
 Mal symbol table and environment analysis.
 @c
+#include "mal_config.h"
 #include "mat.h"
 
 str

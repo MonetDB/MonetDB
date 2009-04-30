@@ -110,7 +110,6 @@ on linking in a portable library, e.g. libxml2 ?
 #ifndef XML_H
 #define XML_H
 
-#include "mal_config.h"
 #include <gdk.h>
 #include "mal.h"
 #include "mal_client.h"
@@ -158,6 +157,7 @@ xml_export str XMLprelude(void);
 
 #endif /* XML_H */
 @c
+#include "mal_config.h"
 #include "xml.h"
 #include "mal_interpreter.h"
 

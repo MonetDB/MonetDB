@@ -559,7 +559,6 @@ the string representations.
 #ifndef __calc_H__
 #define __calc_H__
 
-#include "mal_config.h"
 #include "stdlib.h"
 #include "mal.h"
 #include "mal_exception.h"
@@ -577,6 +576,7 @@ the string representations.
 
 #endif /* __calc_H__ */
 @c
+#include "mal_config.h"
 #include "calc.h"
 
 /* third param indicates return value if one of the params is nil */

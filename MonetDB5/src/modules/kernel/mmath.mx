@@ -213,7 +213,6 @@ The constants defined in math.h are defined in const.mx
 @h
 #ifndef __MMATH_H__
 #define __MMATH_H__
-#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include <math.h>
@@ -357,6 +356,7 @@ mmath_export str MATHpi(dbl *pi);
 
 @+ Implementation Code
 @c
+#include "mal_config.h"
 #include "mmath.h"
 
 @:unop(_ACOS,acos)@

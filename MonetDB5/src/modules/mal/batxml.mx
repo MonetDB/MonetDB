@@ -133,7 +133,6 @@ command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;
 @h
 #ifndef _BATXML_H_
 #define _BATXML_H_
-#include "mal_config.h"
 #include <gdk.h>
 #include "ctype.h"
 #include <string.h>
@@ -174,6 +173,7 @@ batxml_export str BATXMLagg3(int *ret, int *bid, int *grp, int *e);
 batxml_export str BATXMLgroup(int *ret, int *bid);
 #endif /* _BATXML_H_ */
 @c
+#include "mal_config.h"
 #include "batxml.h"
 
 #ifdef HAVE_LIBXML2
