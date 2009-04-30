@@ -40,7 +40,6 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 @h
 #ifndef _ALGEBRA_EXTENSIONS_H
 #define _ALGEBRA_EXTENSIONS_H
-#include "mal_config.h"
 #include "mal_box.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -62,6 +61,7 @@ ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
 @c
+#include "mal_config.h"
 #include "algebraExtensions.h"
 str
 ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){

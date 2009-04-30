@@ -75,7 +75,6 @@ comment "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram posit
 @h
 #ifndef _TXTSIM_H
 #define _TXTSIM_H
-#include "mal_config.h"
 #include "mal.h"
 #include <string.h>
 #include "gdk.h"

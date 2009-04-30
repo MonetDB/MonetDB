@@ -50,7 +50,6 @@ identifier.prelude();
 @h
 #ifndef _IDtype_DEF
 #define _IDtype_DEF
-#include "mal_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 
@@ -74,6 +73,7 @@ identifier_export str IDentifier(str *retval, str *in);
 #endif /* _IDTYPE_DEF */
 
 @c
+#include "mal_config.h"
 #include "identifier.h"	/* for the implementation of the functions */
 
 int TYPE_identifier;

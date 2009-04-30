@@ -81,7 +81,6 @@ comment "Collect SQL query statistics";
 #ifndef _OPT_QUERYHISTORY_
 #define _OPT_QUERYHISTORY_
 
-#include "mal_config.h"
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
@@ -119,6 +118,7 @@ Prepare the call to the history manager.
 A tricky piece of code. We invalidate an instruction
 based on the return variable.
 @c
+#include "mal_config.h"
 #include "opt_history.h"
 
 str 
