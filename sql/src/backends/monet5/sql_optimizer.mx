@@ -450,6 +450,7 @@ str defaultPlan=
 	"aliases,"
 	/* "crack," */
 	/* "selcrack," */
+	/* "sidcrack," */
 	"mergetable," 
 	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
