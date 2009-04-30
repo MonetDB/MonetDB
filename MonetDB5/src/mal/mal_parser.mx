@@ -1833,6 +1833,7 @@ The deadcode optimizer removes all comment information.
 				 continue;
 			  }
 			  if( MALkeyword(cntxt,"catch",5)){
+				 cntxt->blkmode++;
 				 cntrl= CATCHsymbol;
 				 goto allLeft;
 			  }
