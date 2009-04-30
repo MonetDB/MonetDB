@@ -167,6 +167,10 @@ opt_export  str antijoinRef;
 
 opt_export int canBeCrackedProp;	/* binary */
 opt_export int canBeJoinselectProp;	/* binary */
+opt_export int sidewaysSelectProp;	/* int */
+opt_export int headProp;		/* int */
+opt_export int pivotProp;		/* int */
+opt_export int removeProp;		/* int */
 opt_export int tableProp;	        /* str */
 
 opt_export int inlineProp;		/* binary */
@@ -334,6 +338,10 @@ str antijoinRef;
 
 int canBeCrackedProp;
 int canBeJoinselectProp;
+int sidewaysSelectProp;
+int headProp;
+int pivotProp;
+int removeProp;
 int tableProp;
 
 int inlineProp;
@@ -497,6 +505,10 @@ void optimizerInit(){
 
 		canBeCrackedProp = PropertyIndex("canBeCracked");
 		canBeJoinselectProp = PropertyIndex("canBeJoinselect");
+		sidewaysSelectProp = PropertyIndex("sidewaysSelect");
+		headProp = PropertyIndex("head");
+		pivotProp = PropertyIndex("pivot");
+		removeProp = PropertyIndex("remove");
 		tableProp = PropertyIndex("table");
 
 		inlineProp = PropertyIndex("inline");

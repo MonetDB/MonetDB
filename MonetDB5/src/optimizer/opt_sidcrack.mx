@@ -1,0 +1,345 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_sidcrack
+@a S.Idreos
+This cracker optimizer changes a query plan in order to use the sideways cracking operators
+
+@{
+@mal
+pattern optimizer.sidcrack():str
+address OPTsidcrack;
+pattern optimizer.sidcrack(mod:str, fcn:str):str
+address OPTsidcrack
+comment "Sideways cracking";
+
+@h
+#ifndef _OPT_SIDCRACK_
+#define _OPT_SIDCRACK_
+/* #define DEBUG_OPT_SIDCRACK */
+#include "opt_support.h"
+
+#define maxTables 10
+@c  
+#include "mal_config.h"
+#include "opt_sidcrack.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "opt_prelude.h"
+
+#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
+	getModuleId(X) && getModuleId(X)==M)
+
+static int
+OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr p, *old;
+	int i, limit, actions=0, j;
+
+	
+	str tables[maxTables];
+	int crackedTables=0;
+
+	for(j=0;j<maxTables;j++)
+		 tables[j] = NULL;	
+
+#ifdef DEBUG_OPT_SIDCRACK
+	printf("Crack optimizer started\n");
+#endif
+	(void) cntxt;
+	(void) stk; 
+	(void) pci;
+	
+	limit = mb->stop;
+	old = mb->stmt;
+	
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+
+		/* add a property "can be cracked" to every base relation that is a candidate for selection cracking */
+		/* also, for every candidate bat, maintain the table name */
+		if ( match2(p, batRef, newRef) || match2(p, sqlRef, bindRef) ){  
+			ValRecord v, *vp;
+
+		  	/* crack only supported data types */
+			if ( getTailType(mb->var[getArg(p,0)]->type)==TYPE_str )
+					continue;
+
+			/* avoid cracking delta bats used for updates */
+			if (getModuleId(p)== sqlRef && mb->var[getArg(p,4)]->value.val.ival != 0 ) 
+				continue;		
+				
+			vp = VALset(&v, TYPE_int,&i);
+			varSetProp(mb, getArg(p, 0), canBeCrackedProp, op_eq, vp);
+
+			continue;
+		}
+
+		/* propagate the canBeCracked property */
+		if ( match2(p, batRef, setWriteModeRef) || 
+			  match2(p, batcalcRef, dblRef) || 
+			  match2(p, batcalcRef, intRef) ){ 
+
+			if (varGetProp(mb, getArg(p, 1), canBeCrackedProp) != NULL){
+				ValRecord v, *vp;
+				vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,1), canBeCrackedProp)->value.val.ival);
+				varSetProp(mb, getArg(p, 0), canBeCrackedProp, op_eq, vp);
+			}
+		
+			continue;
+		}
+
+		if (match2(p, algebraRef, semijoinRef)){
+			if (varGetProp(mb, getArg(p, 1), canBeCrackedProp) != NULL){
+				ValRecord v, *vp;
+
+				vp = VALset(&v, TYPE_int,&i);
+				varSetProp(mb, getArg(p, 0), canBeJoinselectProp, op_eq, vp);
+
+				if (varGetProp(mb, getArg(p, 2), sidewaysSelectProp) != NULL){
+					ValRecord v, *vp;
+
+					vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,2), sidewaysSelectProp)->value.val.ival);
+					varSetProp(mb, getArg(p, 0), sidewaysSelectProp, op_eq, vp);
+				}
+			}
+			continue;
+		}
+
+		/* make the actual command changes */
+		if (match2(p, algebraRef, selectRef) ||
+		    match2(p, algebraRef, uselectRef) || 
+		    match2(p, algebraRef, thetauselectRef)){ 
+
+			if (varGetProp(mb, getArg(p,1), canBeCrackedProp) != NULL){
+				bit alreadyCracked = FALSE;
+
+				InstrPtr bind = old[varGetProp(mb, getArg(p,1), canBeCrackedProp)->value.val.ival];
+				str tablename = getVar(mb,getArg(bind,2))->value.val.sval; 
+				
+				/* see if we have already used a crackers select for this table */
+				for(j=0;j<crackedTables;j++)
+					if (strcmp(tables[j],tablename) == 0)
+						alreadyCracked = TRUE;
+	
+				/* if not then create the sideways crack property */
+				if (!alreadyCracked){
+					ValRecord v, *vp;
+
+					vp = VALset(&v, TYPE_int,&i);
+					varSetProp(mb, getArg(p, 0), sidewaysSelectProp, op_eq, vp);
+					continue;
+				}
+			}
+
+			if (varGetProp(mb, getArg(p,1), canBeJoinselectProp) != NULL && varGetProp(mb, getArg(p,1), sidewaysSelectProp) != NULL){
+				InstrPtr newSelect, newJoinselect, oldSelect, oldSemijoin, bind;
+				ValRecord v, *vp, v1, *vp1;
+
+				oldSemijoin = old[varGetProp(mb, getArg(p,1), canBeJoinselectProp)->value.val.ival];
+				oldSelect   = old[varGetProp(mb, getArg(p,1), sidewaysSelectProp )->value.val.ival];
+			
+				bind = old[varGetProp(mb, getArg(oldSelect,1), canBeCrackedProp)->value.val.ival];
+				tables[crackedTables]=GDKstrdup(getVar(mb,getArg(bind,2))->value.val.sval);
+				crackedTables++;
+
+				newSelect = newInstruction(mb,ASSIGNsymbol);
+				getArg(newSelect,0) = getArg(oldSelect,0);
+				setVarType(mb,getArg(newSelect,0), newBatType( TYPE_oid, getTailType(getArgType(mb,oldSemijoin,1))));
+				setModuleId(newSelect, putName("crackers", 8));
+				setFunctionId(newSelect, putName("tselect", 7));
+				newSelect= pushArgument(mb, newSelect, getArg(oldSelect, 1));
+				newSelect= pushArgument(mb, newSelect, getArg(oldSemijoin, 1));
+				for(j=2; j< p->argc; j++)
+					newSelect= pushArgument(mb, newSelect, getArg(oldSelect, j));
+				#ifdef DEBUG_OPT_SIDCRACK
+				printInstruction(cntxt->fdout,mb, 0, newSelect,0); 
+				#endif
+
+				newJoinselect = newInstruction(mb,ASSIGNsymbol);
+                                getArg(newJoinselect,0) = getArg(p,0);
+				setVarType(mb,getArg(newJoinselect,0), newBatType( TYPE_oid, TYPE_bit));
+                                setModuleId(newJoinselect, putName("crackers", 8));
+                                setFunctionId(newJoinselect, putName("joinselect", 10));
+                                newJoinselect= pushArgument(mb, newJoinselect, getArg(newSelect, 0));
+                                for(j=2; j< p->argc; j++)
+                                        newJoinselect= pushArgument(mb, newJoinselect, getArg(p, j));
+				#ifdef DEBUG_OPT_SIDCRACK
+                                printInstruction(cntxt->fdout,mb, 0, newJoinselect,0);
+				#endif
+
+				vp = VALset(&v, TYPE_int, &varGetProp(mb, getArg(p,1), sidewaysSelectProp)->value.val.ival);
+				varSetProp(mb, getArg(newJoinselect, 0), headProp, op_eq, vp);
+
+				/* replace operators and remove the prev semijoin */
+				old[varGetProp(mb, getArg(p,1), sidewaysSelectProp )->value.val.ival] = newSelect;
+				freeInstruction(oldSelect);
+				old[i] = newJoinselect;
+				freeInstruction(p);
+				removeInstruction(mb, oldSemijoin);
+				i--;
+
+				vp1 = VALset(&v1, TYPE_int, &i); 
+				varSetProp(mb, getArg(newJoinselect, 0), pivotProp, op_eq, vp1);
+
+				actions++;
+				continue;
+			}
+
+			if (varGetProp(mb, getArg(p,1), canBeJoinselectProp) != NULL){
+				InstrPtr newJoinselect, oldSemijoin, head;
+				ValRecord v, *vp, v1, *vp1;
+			
+				oldSemijoin = old[varGetProp(mb, getArg(p,1), canBeJoinselectProp)->value.val.ival];
+				head = old[varGetProp(mb, getArg(oldSemijoin,2), headProp)->value.val.ival];
+			
+				/* create the new operator call */	
+				newJoinselect = newInstruction(mb,ASSIGNsymbol);
+				getArg(newJoinselect,0) = getArg(p,0);
+				setVarType(mb,getArg(newJoinselect,0), newBatType( TYPE_oid, TYPE_bit));
+				setModuleId(newJoinselect, putName("crackers", 8));
+				if (match2(p, algebraRef, uselectRef)) 
+					setFunctionId(newJoinselect, putName("joinselect", 10));
+				else 
+				if (match2(p, algebraRef, thetauselectRef)) 
+					setFunctionId(newJoinselect, putName("jointhetaselect", 15));
+				newJoinselect= pushArgument(mb, newJoinselect, getArg(head, 1));
+				newJoinselect= pushArgument(mb, newJoinselect, getArg(oldSemijoin, 1));
+				newJoinselect= pushArgument(mb, newJoinselect, getArg(oldSemijoin, 2));
+				for(j=3; j< head->argc; j++)
+					newJoinselect= pushArgument(mb, newJoinselect, getArg(head, j));
+				for(j=2; j< p->argc; j++)
+					newJoinselect= pushArgument(mb, newJoinselect, getArg(p, j));
+				#ifdef DEBUG_OPT_SIDCRACK
+				printInstruction(cntxt->fdout,mb, 0, newJoinselect,0); 
+				#endif
+
+				vp = VALset(&v, TYPE_int, &varGetProp(mb, getArg(oldSemijoin,2), headProp)->value.val.ival);
+				varSetProp(mb, getArg(newJoinselect, 0), headProp, op_eq, vp);
+
+
+				/* replace the current with the new one and remove the prev semijoin*/
+				freeInstruction(p);
+				old[i]=newJoinselect;
+				removeInstruction(mb, oldSemijoin);
+				i--;
+
+				vp1 = VALset(&v1, TYPE_int, &i); 
+				varSetProp(mb, getArg(newJoinselect, 0), pivotProp, op_eq, vp1);
+
+				actions++;
+				continue;
+			}
+		}
+
+		
+		if (match2(p, algebraRef, markTRef) || match2(p, batRef, reverseRef)){
+			if (varGetProp(mb, getArg(p,1), pivotProp) != NULL){
+				ValRecord v, *vp, v1, *vp1, v2, *vp2;
+
+				printf("forward pivot \n");
+				vp = VALset(&v, TYPE_int,&varGetProp(mb, getArg(p,1), pivotProp)->value.val.ival);
+				varSetProp(mb, getArg(p, 0), pivotProp, op_eq, vp);
+
+				vp1 = VALset(&v1, TYPE_int,&i);
+				varSetProp(mb, getArg(p, 0), removeProp, op_eq, vp1);
+
+				vp2 = VALset(&v2, TYPE_int,&varGetProp(mb, getArg(p,1), headProp)->value.val.ival);
+				varSetProp(mb, getArg(p, 0), headProp, op_eq, vp2);
+			}
+			continue;
+		}
+		
+		/* replace tuple reconstruction operators */
+		if (match2(p, algebraRef, joinRef)){
+			InstrPtr newProject, pivot, head;
+
+			if (!(varGetProp(mb, getArg(p,1), pivotProp) != NULL && 
+			    varGetProp(mb, getArg(p,2), canBeCrackedProp) != NULL))
+				continue;
+
+			pivot = old[varGetProp(mb, getArg(p,1), pivotProp)->value.val.ival];
+			head  = old[varGetProp(mb, getArg(p,1), headProp )->value.val.ival];
+		
+			/* create the new operator call */	
+			newProject = newInstruction(mb,ASSIGNsymbol);
+			getArg(newProject,0) = getArg(p,0);
+			setModuleId(newProject, putName("crackers", 8));
+			setFunctionId(newProject, putName("project", 7));
+			newProject= pushArgument(mb, newProject, getArg(head, 1));
+			newProject= pushArgument(mb, newProject, getArg(p, 2));
+			newProject= pushArgument(mb, newProject, getArg(pivot, 0));
+			for(j=3; j< head->argc; j++)
+				newProject= pushArgument(mb, newProject, getArg(head, j));
+			#ifdef DEBUG_OPT_SIDCRACK
+			printInstruction(cntxt->fdout,mb, 0, newProject,0); 
+			#endif
+			
+			old[i]=newProject;
+				
+			if (varGetProp(mb, getArg(p,1), removeProp) != NULL){
+				if (varGetProp(mb, getArg(p,1), removeProp)->value.val.ival > 0){
+					InstrPtr oldReverse;
+					ValRecord v, *vp;
+					int pivotProperty = -1;
+
+					oldReverse = old[varGetProp(mb, getArg(p,1), removeProp)->value.val.ival];
+
+					if (varGetProp(mb, getArg(oldReverse,1), removeProp) != NULL){
+						InstrPtr oldMarkt = old[varGetProp(mb, getArg(oldReverse,1), removeProp)->value.val.ival];
+						removeInstruction(mb,oldMarkt); 	
+						i--;	
+						
+						oldReverse = old[varGetProp(mb, getArg(p,1), removeProp)->value.val.ival-1];
+						removeInstruction(mb,oldReverse); 	
+						i--;	
+					}else{
+						removeInstruction(mb,oldReverse); 	
+						i--;	
+					}
+					vp = VALset(&v, TYPE_int,&pivotProperty);
+					varSetProp(mb, getArg(p, 1), removeProp, op_eq, vp);
+				}
+			}
+			
+			freeInstruction(p);
+
+			actions++;
+			continue;
+		}
+	}
+
+	#ifdef DEBUG_OPT_SIDCRACK
+	printf("\n\n final plan \n\n");
+	limit = mb->stop;
+	old = mb->stmt;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		printInstruction(cntxt->fdout,mb, 0, p,0); 
+	}
+	#endif
+
+	return actions;
+}
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(sidcrack)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(sidcrack,OPT_CHECK_ALL)@
+@}
