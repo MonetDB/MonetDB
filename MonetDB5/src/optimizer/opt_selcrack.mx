@@ -33,6 +33,8 @@ comment "Selection cracking";
 /* #define DEBUG_OPT_SELCRACK */
 #include "opt_support.h"
 
+#define maxTables 10
+
 @c  
 #include "mal_config.h"
 #include "opt_selcrack.h"
@@ -51,7 +53,6 @@ OPTselcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i, limit, actions=0, j;
 
 	
-	int maxTables=10;
 	str tables[maxTables];
 	int crackedTables=0;
 
