@@ -125,6 +125,7 @@ ultra fast.
 @= TypeSwitch_2
 @:TypeSwitch_temp2(@1,int)@
 @:TypeSwitch_temp2(@1,date)@
+@:TypeSwitch_temp2(@1,dbl)@
 @:@1(date,lng)@
 @:@1(date,dbl)@
 @:@1(date,str)@
@@ -264,6 +265,11 @@ comment "From cpair, only those BUNs qualify that satisfy the range-restriction 
         The result is a new [:oid,:bit] BAT that reflects the positions of buns in cpair. 
 	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
 
+command jointhetaselect( b:bat[:oid,:@2],v:@2,op:str):bat[:oid,:bit]
+address CRKjointhetaSelectSideways_@2
+comment "From cpair, only those BUNs qualify that satisfy the range-restriction on the tail.
+        The result is a new [:oid,:bit] BAT that reflects the positions of buns in cpair. 
+	For each tuple that qualifies in cpair, the respective position in the pivot is marked with a 1";
 
 @
 
@@ -464,6 +470,11 @@ comment "Crack based on @1 and evaluate the @2 disjunctive predicate outside the
 
 command joinselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, h:@2, li:bit, hi:bit ):bat[:oid,:bit]
 address CRKjoinSelectSideways_P_@1_@2
+comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
+	 in the tail of cpair satisfies the range restriction. If not mark the pivot BUN as 0.";
+
+command jointhetaselect( b:bat[:oid,:@1],bp:bat[:oid,:@2], pivot:bat[:oid,:bit], cl:@1, ch:@1, cli:bit, chi:bit, l:@2, op:str):bat[:oid,:bit]
+address CRKjointhetaSelectSideways_P_@1_@2
 comment "Use the pivot. For each tuple in pivot with a 1, check if the respective tuple (in the same position)
 	 in the tail of cpair satisfies the range restriction. If not mark the pivot BUN as 0.";
 
