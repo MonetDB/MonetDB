@@ -145,7 +145,9 @@ update_val( sql_bat *bat, ssize_t rid, void *upd, int isnew)
 		if (BUNfnd(u, (ptr)&rid) == BUN_NONE) {
 			BUN p;
 			BATiter bi = bat_iterator(b);
-			BUNfndVOID(p, bi, (ptr)&rid);  
+			/* avoid "dereferencing type-punned pointer will break strict-aliasing rules" */
+			ptr _rid = (ptr)&rid;
+			BUNfndVOID(p, bi, _rid);  
 			BUNins(u, &rid, BUNtail(bi,p), FALSE);
 		}
 		bat_destroy(u);
