@@ -122,7 +122,9 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 @c
 #include "mal_config.h"
 #ifdef HAVE_STRCASESTR
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #endif
 #include <string.h>
 
