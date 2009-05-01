@@ -412,10 +412,13 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else id =cntxt->idx;
 
 	if (id == 0 && cntxt->fdout != GDKout )
-		throw(MAL, "client.exit", "Server not stopped from console.");
+		throw(MAL, "client.quit", "Server not stopped from console.");
 	if ( cntxt->idx == mal_clients[id].idx)
 		mal_clients[id].mode = FINISHING;
 	(void) mb;		/* fool compiler */
+	/* the console should be finished with an exception */
+	if (id == 0)
+		throw(MAL,"client.quit","Server stopped");
 	return MAL_SUCCEED;
 }
 
