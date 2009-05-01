@@ -56,7 +56,7 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x15{rows=1} := bat.reverse(x14{rows=1});# 12 x15:bat[:oid,:oid] := BKCreverse(x14:bat[:oid,:oid]) {G}
     x16{rows=1} := algebra.join(x15{rows=1},x1{notnil=true,rows=1,bid=2199});# 13 x16:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
     _44 := bpm.new(:oid,:int);          # 14 _44:bat[:oid,:int] := BPMnew(_45:oid, _46:int) {G}
-    x19{rows=1} := nil;                 # 15 x19:bat[:oid,:int] := _48:bat[:oid,:int] {G}
+    x19{rows=1} := nil:bat[:oid,:int];  # 15 x19:bat[:oid,:int] := _48:bat[:oid,:int] {G}
 barrier x17:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := bpm.newIterator(bpm17);# 16 x17:bat[:oid,:int] := BPMnewIterator(bpm17:bat[:oid,:int]) {GJ20}
     x19{rows=1} := algebra.join(x15{rows=1},x17{notnil=true,rows=1,bid=2201});# 17 x19:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x17:bat[:oid,:int]) {G}
     bpm.addPartition(_44,x19{rows=1});  # 18 _50:void := BPMaddPartition(_44:bat[:oid,:int], x19:bat[:oid,:int]) 
