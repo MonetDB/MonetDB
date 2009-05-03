@@ -1,0 +1,5 @@
+* improve activerecord driver (currently not committed to cvs)
+* profiling and performance tuning
+* improve type conversion
+* improve tests
+* code and documentation cleanup

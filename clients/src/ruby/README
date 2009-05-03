@@ -1,17 +1,84 @@
 == Standalone driver ==
+This directory contains the a ruby interface to monetdb5 
+written in pure ruby.
 
-- Required files:
 
-monetdb/MonetDB.rb
-monetdb/MonetDBConnection.rb
-monetdb/MonetDBStatements.rb
-monetdb/MonetDBData.rb
-monetdb/MonetDBExceptions.rb
-monetdb/hasher.rb
 
-monetdb/demo.rb: demo application how to interact with the database
-monetdb/ruby-monetdb-sql-0.1.gemspec: make file for rubygems
-monetdb/ruby-monetdb-sql-0.1.gem: actual gem; enables to install the driver and the documentation
+
+lib/MonetDB.rb
+lib/MonetDBConnection.rb
+lib/MonetDBStatements.rb
+lib/MonetDBData.rb
+lib/MonetDBExceptions.rb
+lib/hasher.rb
+lib/demo.rb: demo application how to interact with the database
+
+ruby-monetdb-sql-0.1.gemspec: make file for rubygems
+ruby-monetdb-sql-0.1.gem: actual gem; enables to install the driver and the documentation
 
 doc/: rubydoc in HTML format
 
+
+== Rubygem ==
+
+The standalone ruby driver can be distributed as a ruby gem.
+A gem file is already available; however, it can be generated 
+starting from the ruby-monetdb-sql-0.1.gemspec file:
+
+$ gem build ruby-monetdb-sql-0.1.gemspec
+
+To install the file run the command:
+
+$ gem install ruby-monetdb-sql-0.1.gem
+
+Documentation in ri and html format will be generated and installed as well
+
+== Usage ==
+To use the driver import the 'MonetDB' class and 'rubygems' (in case you installed it using gems).
+
+
+* Processing Statements that Return a Result Set
+
+A typical sequence of events is as follows:
+Invoke query using the database handle to send the statement to the server and get back a result set object.
+
+A result set object  has methods for fetching rows, moving around in the result set, obtaining column metadata, and releasing the result set.
+Use a row fetching method such as fetch_row or an iterator such as each to access the rows of the result set.
+If you want a count of the number of rows in the result set: invoke 'num_rows' method.
+Invoke 'free' to release the result set. 
+
+require 'MonetDB'
+
+db = MonetDB.new
+db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
+
+# set type_cast=true to enable MonetDB to Ruby type mapping
+res = db.query("SELECT * from tables;", type_cast = false)
+
+#puts res.debug_columns_type
+
+puts "Number of rows returned: " + res.num_rows.to_s
+puts "Number of fields: " + res.num_fields.to_s
+
+
+# Get the columns' name
+col_names = res.name_fields
+
+
+# Iterate over the record set and retrieve on row at a time
+puts res.fetch
+while row = res.fetch do
+  printf "%s \n", row
+end
+
+# Release the result set.
+res.free
+
+# Disconnect from server
+db.close
+
+
+
+
+
+See lib/demo.rb and the MonetDBDatar class documentation for more examples.
