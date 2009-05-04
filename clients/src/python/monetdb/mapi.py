@@ -2,13 +2,12 @@
 import socket
 import logging
 import struct
-#from cStringIO import StringIO
 from io import BytesIO
 
 try:
-  from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError
+  from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 except ImportError:
-  from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError
+  from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
 MAX_PACKAGE_LENGTH = 0xffff >> 1
 
@@ -68,7 +67,9 @@ class Server:
             logging.error(prompt[1:])
             raise DatabaseError(prompt[1:])
         else:
+            logging.error('!' + prompt[0])
             raise ProgrammingError("unknown state: %s" % prompt)
+
         self.state = STATE_READY
         return True
 
@@ -85,13 +86,17 @@ class Server:
 
     def __challenge_response(self, challenge):
         """ generate a response to a mapi login challenge """
-        salt, hostname, protocol, hashes, endian = challenge.split(':')
+        salt, identity, protocol, hashes, endian = challenge.split(':')
+
+        if protocol != "8":
+            raise NotSupportedError("We only speak protocol v8")
+
         h = hashes.split(",")
         if "SHA1" in h:
             import hashlib
             s = hashlib.sha1()
-            s.update(self.password)
-            s.update(salt)
+            s.update(self.password.encode())
+            s.update(salt.encode())
             pwhash = "{SHA1}" + s.hexdigest()
         elif "MD5" in h:
             import hashlib
@@ -109,7 +114,6 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        #result_io = StringIO()
         result_bytes = BytesIO()
         last = 0
         while not last:
@@ -119,9 +123,9 @@ class Server:
             last = unpacked & 1
             logging.debug("II: reading %i bytes" % length)
             if length > 0:
-                result_bytes.write(str(self.__getbytes(length)))
+                result_bytes.write(self.__getbytes(length))
 
-        result = str(result_bytes.getvalue())
+        result = result_bytes.getvalue().decode()
         logging.debug("RX: %s" % result)
         return result
 
@@ -144,5 +148,5 @@ class Server:
                 last = 1
             flag = struct.pack( '<h', ( len(data) << 1 ) + last )
             self.socket.send(flag)
-            self.socket.send(data)
+            self.socket.send(bytes(data.encode()))
             pos += len(data)

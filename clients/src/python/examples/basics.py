@@ -19,17 +19,18 @@ x = monetdb.sql.connect()
 c = x.cursor()
 
 # some basic query
-c.arraysize=1
-c.execute('select * from tables')
-results = c.fetchmany()
-c.arraysize=3
-results = c.fetchmany()
+#c.arraysize=1
+#c.execute('select * from tables')
+#results = c.fetchmany()
+#c.arraysize=3
+#results = c.fetchmany()
 
 
-for arraysize in (1,10,100,1000):
+for arraysize in (100,1000,10000, 100000):
     t = time.time()
     c.arraysize = arraysize
-    c.execute('select * from tables, tables, tables')
+    c.execute('select * from tables, tables, tables, tables')
     results = c.fetchall()
+    print len(results)
     print arraysize, time.time() -t
 

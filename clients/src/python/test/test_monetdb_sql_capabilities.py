@@ -87,10 +87,13 @@ class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
             ('col1 char(1)','col2 char(1)'),
             generator)
 
+    def test_LONG(self):
+        """ monetdb doesn't support LONG type """
+        pass
+
 if __name__ == '__main__':
     if Test_Monetdb_Sql.leak_test:
         import gc
         gc.enable()
         gc.set_debug(gc.DEBUG_LEAK)
     unittest.main()
-    print '''"Huh-huh, he said 'unit'." -- Butthead'''
