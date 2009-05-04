@@ -128,9 +128,6 @@ It should be reset before continuing.
 	Symbol oldprg = c->curprg;
 	MalStkPtr oldglb = c->glb;
 @= restoreState3
-#ifndef NDEBUG
-	bstream *oldfdin = c->fdin;
-#endif
 	int oldmode = c->mode;
 	int oldblkmode = c->blkmode;
 	str oldsrcFile = c->srcFile;
@@ -164,7 +161,6 @@ It should be reset before continuing.
 @= restoreClient3
 	if (c->fdin) 
 		MCpopClientInput(c);
-	assert(c->fdin == oldfdin); 
 	c->mode = oldmode;
 	c->blkmode = oldblkmode;
 	c->srcFile = oldsrcFile;
@@ -254,11 +250,12 @@ evalFile(Client c, str fname, int listing){
 		stream_destroy(fd);
 		stream_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
 	} else {
-		c->fdin = bstream_create(fd, 128 * BLOCK);
 		MSinitClientPrg(c,"user","main");	/* re-initialize context */
+		MCpushClientInput(c, bstream_create(fd, 128 * BLOCK),c->listing,"");
 		msg = runScenario(c);
 	}
 
+	@:restoreClient3()@
 	@:restoreClient()@
 	return msg;
 }
