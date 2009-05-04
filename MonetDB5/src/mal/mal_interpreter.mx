@@ -1993,13 +1993,21 @@ if( ret != MAL_SUCCEED ) {
 		stkpc= mb->stop;
 		@2;
 	}
+/*
+Exceptions are catched based on their name, which is part of
+the exception message. The ANYexception variable catches
+all.
+*/
+	exceptionVar = -1;
 	msg = strchr(ret,':');
 	if(msg) {
 		*msg= 0;
 		exceptionVar = findVariableLength(mb,ret,(int)(msg-ret));
 		*msg=':';
-	} else
-		exceptionVar = getDestVar(pci);
+	} 
+	if (exceptionVar == -1)
+		exceptionVar = findVariableLength(mb,"ANYexception",12);
+
 	/* unknown exceptions lead to propagation */
 	if( exceptionVar == -1){
 		@:endProfile(@3)@

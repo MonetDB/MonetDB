@@ -44,6 +44,8 @@ An exception message is linked with a exception variable of
 type string. If this variable is defined in the receiving block,
 the exception message can be delivered. Otherwise, it
 implicitly raises the exception in the surrounding scope.
+The variable ANYexception can be used to catch them 
+irrespective of their class.
 
 After an exception has been dealt with the catch block can be left
 at the normal @sc{exit} with the option @sc{leave} or
