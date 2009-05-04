@@ -756,7 +756,6 @@ The former comes with readline functionality.
 #ifdef _SQL_READER_DEBUG
 			stream_printf(GDKout, "Switch to backup stream\n");
 #endif
-			MCpopClientInput(c);
 			in = c->fdin;
 			blocked = isa_block_stream(in->s);
 			m->scanner.rs = c->fdin;
