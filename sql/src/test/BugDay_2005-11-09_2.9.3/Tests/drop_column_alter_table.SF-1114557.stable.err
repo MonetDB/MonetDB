@@ -10,15 +10,15 @@ stderr of test 'drop_column_alter_table.SF-1114557` in directory 'src/test/BugDa
 # 14:21:46 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40415  < drop_column_alter_table.SF-1114557.sql
 # 14:21:46 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@pegasus:34876
 QUERY = ALTER TABLE t1114557 DROP garbage;
-ERROR = !cannot drop unknown column garbage
-MAPI  = monetdb@localhost:45579
+ERROR = !ALTER TABLE: no such column 'garbage'
+MAPI  = monetdb@pegasus:34876
 QUERY = ALTER TABLE t1114557 DROP id;
-ERROR = !cannot drop column id (table needs atleast one column)
-MAPI  = monetdb@localhost:45579
+ERROR = !ALTER TABLE: cannot drop column 'id': table needs at least one column
+MAPI  = monetdb@pegasus:34876
 QUERY = ALTER TABLE t1114557 DROP name;
-ERROR = !cannot drop unknown column name
+ERROR = !ALTER TABLE: no such column 'name'
 
 # 14:21:47 >  
 # 14:21:47 >  Done.
