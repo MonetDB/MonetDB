@@ -140,11 +140,7 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 #define pcre_export extern
 #endif
 
-#ifndef HAVE_LIBPCRE
-#define pcre str
-#else
 #include <pcre.h>
-#endif
 
 pcre_export str PCREquote(str *r, str *v);
 pcre_export str PCREselect(int *res, str *pattern, int *bid);
@@ -323,108 +319,6 @@ re_select(RE *pattern, BAT *strs)
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	return r;
 }
-
-#ifndef HAVE_LIBPCRE
-str
-pcre_compile_wrap(pcre ** res, str pattern)
-{
-	(void) res;
-	(void) pattern;
-
-	throw(MAL, "pcre_compile", "not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_exec_wrap(bit *res, pcre * pattern, str s)
-{
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre_exec", "not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_index(int *res, pcre * pattern, str s)
-{
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre_index", "not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_select(BAT **res, str pattern, BAT *strs)
-{
-	(void) res, (void) pattern;
-	(void) strs;
-
-	throw(MAL, "pcre_select", "not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_uselect(BAT **res, str pattern, BAT *strs)
-{
-	(void) res, (void) pattern;
-	(void) strs;
-
-	throw(MAL,  "pcre_uselect", "not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
-{
-	(void) res;
-	(void) origin_str;
-	(void) pattern;
-	(void) replacement;
-	(void) flags;
-	throw(MAL, "pcre_replace","not available as required version of libpcre was not found by configure.\n");
-}
-
-str
-pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
-{
-	(void) res;
-	(void) origin_strs;
-	(void) pattern;
-	(void) replacement;
-	(void) flags;
-	throw(MAL, "pcre_replace_bat","not available as required version of libpcre was not found by configure.");
-}
-
-str 
-pcre_init(void)
-{
-	return NULL;
-}
-
-void
-pcre_exit(void)
-{
-}
-
-str
-pcre_match_with_flags(bit *ret, str val, str pat, str flags)
-{
-	(void) ret;
-	(void) val;
-	(void) pat;
-    (void)flags;
-	return "pcre_match_with_flags() not available as required version of libpcre was not found by configure.\n";
-}
-
-str
-pcre_match(bit *ret, str val, str pat)
-{
-	(void) ret;
-	(void) val;
-	(void) pat;
-	throw(MAL, "pcre_match", "not available as required version of libpcre was not found by configure.\n");
-}
-
-#else
-
-#include <pcre.h>
 
 #define m2p(p) (pcre*)(((size_t*)p)+1)
 #define p2m(p) (pcre*)(((size_t*)p)-1)
@@ -849,8 +743,6 @@ pcre_match(bit *ret, str val, str pat)
 	return msg;
 }
 
-#endif
-
 static int
 pcre_quote(str *res, str s)
 {
@@ -1093,25 +985,12 @@ PCREcompile_wrap(pcre ** res, str *pattern)
 str
 PCREexec_wrap(bit *res, pcre * pattern, str *s)
 {
-#ifndef HAVE_LIBPCRE
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre.select", "Library missing");
-#else
 	return pcre_exec_wrap(res, pattern, *s);
-#endif
 }
 
 str
 PCREselect(int *res, str *pattern, int *bid)
 {
-#ifndef HAVE_LIBPCRE
-	(void) res;
-	(void) pattern;
-	(void) bid;
-	throw(MAL, "pcre.select", "Library missing");
-#else
 	BAT *bn = NULL, *strs;
 	str msg;
 
@@ -1128,18 +1007,11 @@ PCREselect(int *res, str *pattern, int *bid)
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 	return msg;
-#endif
 }
 
 str
 PCREuselect(int *res, str *pattern, int *bid)
 {
-#ifndef HAVE_LIBPCRE
-	(void) res;
-	(void) pattern;
-	(void) bid;
-	throw(MAL, "pcre.select", "Library missing");
-#else
 	BAT *bn = NULL, *strs;
 	str msg;
 
@@ -1156,7 +1028,6 @@ PCREuselect(int *res, str *pattern, int *bid)
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 	return msg;
-#endif
 }
 
 str
@@ -1299,8 +1170,10 @@ re_simple(char *pat)
 	int nr = 0;
 	char *s = pat;
 
-//	if (*s++ != '%') 
-//		return 0;
+#if 0
+	if (*s++ != '%') 
+		return 0;
+#endif
 	if (*s == '%') 
 		s++;
 	while(*s) {

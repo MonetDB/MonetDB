@@ -91,6 +91,10 @@ AM_MONETDB_LIBS()
 
 AM_MONETDB_UTILS()
 
+if test "x$have_pcre" = xno; then
+	AC_MSG_ERROR([MonetDB 5 requires PCRE])
+fi
+
 AC_PROG_LIBTOOL
 
 dnl Checks for header files.
