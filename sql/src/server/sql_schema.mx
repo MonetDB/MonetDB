@@ -1545,7 +1545,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		return sql_error(sql, 02, "ALTER TABLE: cannot %s VIEW '%s'\n", 			msg, t->base.name);
+		return sql_error(sql, 02, "ALTER TABLE: cannot %s VIEW '%s'\n",
+				msg, t->base.name);
 	}
 
 	switch (s->token) {
@@ -1564,7 +1565,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		list *sl = NULL;
 
 		if (!c) {
-			return sql_error(sql, 02, "column '%s' not found\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 		} else {
 			if (column_options(sql, olist, ss, t, c, alter, &sl) == SQL_ERR) {
 				if (sl) list_destroy(sl);
@@ -1588,7 +1589,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		stmt *tmp;
 
 		if (!c) 
-			return sql_error(sql, 02, "column '%s' not found\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
  		tmp = value_exp(sql, sym, sql_sel, ek);
 		if (!tmp || (tmp = check_types(sql, &c->type, tmp, type_equal)) == NULL) 
 			return NULL;
@@ -1611,7 +1612,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 
 		if (!c) 
-			return sql_error(sql, 02, "column '%s' not found\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 		mvc_null(sql, c, null);
 		if (alter && !c->null) {
 			char *msg;
@@ -1635,7 +1636,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		if (!c) 
-			return sql_error(sql, 02, "column '%s' not found\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 		mvc_drop_default(sql,c);
 
 		res = stmt_none();
@@ -1663,15 +1664,15 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		assert(l->h->next->type == type_int);
 		if (col == NULL)
-			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
 		if (cs_size(&t->columns) <= 1)
-			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
 		if (t->system)
-			return sql_error(sql, 02, "cannot drop column %s (table is a system table)\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
 		if (isView(t))
-			return sql_error(sql, 02, "cannot drop column %s (%s is a view)\n", cname, t->base.name);
+			return sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
-			return sql_error(sql, 02, "unable to drop column %s (there are database objects which depend on it)\n", cname);
+			return sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
 		if (!drop_action  && t->keys.set) {
 			node *n, *m;
 
@@ -1679,8 +1680,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				sql_key *k = n->data;
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;
-					if (strcmp(kc->c->base.name, cname)==0) 
-						return sql_error(sql, 02, "unable to drop column %s (there are constraints which depend on it)\n", cname);
+					if (strcmp(kc->c->base.name, cname) == 0) 
+						return sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
 				}
 			}
 		}
@@ -1696,9 +1697,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		assert(l->h->next->type == type_int);
 		if ((key = mvc_bind_key(sql, ss, kname )) == NULL)
-			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
+			return sql_error(sql, 02, "ALTER TABLE: no such constraint '%s'\n", kname);
 		if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
-			return sql_error(sql, 02, "unable to drop constraint %s (there are database objects which depend on it)\n", key->base.name);
+			return sql_error(sql, 02, "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it\n", key->base.name);
 		mvc_drop_key(sql, ss, key, drop_action);
 		res = stmt_none();
 	} break;
