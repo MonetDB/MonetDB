@@ -326,7 +326,7 @@ void MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->bak = x;
 	c->fdin = new_input;
 	c->listing = listing;
-	c->prompt = GDKstrdup(prompt);
+	c->prompt = prompt? GDKstrdup(prompt):GDKstrdup("");
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
 }

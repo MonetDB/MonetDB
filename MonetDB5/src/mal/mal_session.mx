@@ -545,6 +545,8 @@ MALexitClient(Client c)
 {
 	if (c->glb && c->curprg->def->errors == 0) 
 		garbageCollector(c, c->curprg->def, c->glb,TRUE);
+	if ( c-> bak)
+		return NULL;
 	MCcloseClient(c);
 	return NULL;
 }
