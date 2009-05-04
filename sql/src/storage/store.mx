@@ -1366,7 +1366,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		sql_trans_destroy(tr);
 	}
 
-	id = store_oid; /* db objects up till id are allready created */
+	id = store_oid; /* db objects up till id are already created */
 	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
 	prev_oid = store_oid = (sqlid)lng_store_oid;
 
@@ -2276,7 +2276,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	int p = (tr->parent == gtrans && !isTempTable(ft));
 	int ok = LOG_OK;
 
-	/* cannot update views and temporaries tables */
+	/* cannot update views and temporary tables */
 	if (!isTable(ft) || isTempTable(ft))
 		return ok;
 
