@@ -603,7 +603,7 @@ create_col(sql_trans *tr, sql_column *c)
 	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
 		return load_bat(bat, type);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
-		return new_persistent_bat( tr, c->data, c->t->sz);
+		return new_persistent_bat(tr, c->data, c->t->sz);
 	} else if (!bat->ibid) {
 		/* alter ? */
 		if (c->t->base.flag == TR_OLD) {
@@ -623,7 +623,7 @@ create_col(sql_trans *tr, sql_column *c)
 			BAT *b = bat_new(TYPE_void, type, c->t->sz);
 			if (!b) 
 				return LOG_ERR;
-			create_delta( c->data, NULL, b, 0);
+			create_delta(c->data, NULL, b, 0);
 			bat_destroy(b);
 		}
 	}
