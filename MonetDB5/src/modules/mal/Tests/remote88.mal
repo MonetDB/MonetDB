@@ -23,7 +23,8 @@ function octopus.bind(conn:str,v:int):bat[:oid,:int];
 end bind;
 
 function octopus.tentacle(v:int):bat[:oid,:int];
-	conn:str := remote.connect("demo", "monetdb", "monetdb","msql");
+	d := const.take("dbname");
+	conn:str := remote.connect(d, "monetdb", "monetdb", "msql");
 	b:= octopus.bind(conn,v);
 catch RMTexception:str;
 	io.print(RMTexception);
@@ -44,11 +45,12 @@ end exec;
 	
 barrier (k,v):= language.newRange(0:int);
 	io.print(v);
+	d := const.take("dbname");
 barrier go:= language.dataflow();
-	v1:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
-	v2:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
-	v3:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
-	v4:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
+	v1:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
+	v2:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
+	v3:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
+	v4:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
 	res:= mat.pack(v1,v2,v3,v4);
 exit go;
 	redo (k,v) := language.nextElement(1:int,25:int);
