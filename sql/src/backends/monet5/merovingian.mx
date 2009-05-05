@@ -786,7 +786,7 @@ proxyThread(void *d)
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
-			merlog("client has %s disconnected from proxy", p->name);
+			merlog("client %s has disconnected from proxy", p->name);
 		} else {
 			merlog("server has terminated proxy connection, disconnecting client %s", p->name);
 		}
@@ -916,6 +916,75 @@ startProxy(stream *cfdin, stream *cfout, char *url, char *client)
 
 	return(NO_ERR);
 }
+
+#ifdef MYSQL_EMULATION_BLEEDING_EDGE_STUFF
+static err
+handleMySQLClient(int sock)
+{
+	stream *fdin, *fout;
+	str buf = alloca(sizeof(char) * 8096);
+	str p;
+	int len;
+
+	fdin = socket_rastream(sock, "merovingian<-mysqlclient (read)");
+	if (fdin == 0)
+		return(newErr("merovingian-mysqlclient inputstream problems"));
+
+	fout = socket_wastream(sock, "merovingian->mysqlclient (write)");
+	if (fout == 0) {
+		close_stream(fdin);
+		return(newErr("merovingian-mysqlclient outputstream problems"));
+	}
+
+#ifdef WORDS_BIGENDIAN
+#define le_int(P, X) \
+	*(P)++ = (unsigned int)X & 255; \
+	*(P)++ = ((unsigned int)X >> 8) & 255; \
+	*(P)++ = ((unsigned int)X >> 16) & 255; \
+	*(P)++ = ((unsigned int)X >> 24) & 255;
+#define le_sht(P, X) \
+	*(P)++ = (unsigned short)X & 255; \
+	*(P)++ = ((unsigned short)X >> 8) & 255;
+#else
+#define le_int(P, X) \
+	*(P)++ = ((unsigned int)X >> 24) & 255; \
+	*(P)++ = ((unsigned int)X >> 16) & 255; \
+	*(P)++ = ((unsigned int)X >> 8) & 255; \
+	*(P)++ = (unsigned int)X & 255;
+#define le_sht(P, X) \
+	*(P)++ = ((unsigned short)X >> 8) & 255; \
+	*(P)++ = (unsigned short)X & 255;
+#endif
+
+	/* Handshake Initialization Packet */
+	p = buf + 4;   /* skip bytes for package header */
+	*p++ = 0x10;   /* protocol_version */
+	p += sprintf(p, MEROV_VERSION "-merovingian") + 1; /* server_version\0 */
+	le_int(p, 0);  /* thread_number */
+	p += sprintf(p, "voidvoid"); /* scramble_buff */
+	*p++ = 0x00;   /* filler */
+	/* server_capabilities:
+	 * CLIENT_CONNECT_WITH_DB CLIENT_NO_SCHEMA CLIENT_PROTOCOL_41
+	 * CLIENT_INTERACTIVE CLIENT_MULTI_STATEMENTS CLIENT_MULTI_RESULTS
+	 */
+	le_sht(p, (8 | 16 | 512 | 1024 | 8192 | 65536 | 131072));
+	*p++ = 0x33;   /* server_language = utf8_general_ci */
+	le_sht(p, 2);  /* server_status = SERVER_STATUS_AUTOCOMMIT */
+	p += sprintf(p, "             ");  /* filler 14 bytes */
+
+	/* packet header */
+	len = p - buf;
+	p = buf;
+	le_int(p, len);
+	*p = *(p + 1); p++;
+	*p = *(p + 1); p++;
+	*p = *(p + 1); p++;
+	*p = 0x00;   /* packet number */
+	stream_flush(fout);
+
+	return(NO_ERR);
+}
+#endif
 
 static err
 handleClient(int sock)
