@@ -5,19 +5,20 @@
 	bat.insert(scens, "mal", nil:oid);
 
 	# this should fail, the monetdb user is already there
-	id := clients.addUser("monetdb", "Pmonetdb", scens);
+	pw := clients.sha1sum("Pmonetdb");
+	id := clients.addUser("monetdb", pw, scens);
 catch MALException:str;
 	io.printf("%s\n",MALException);
 exit MALException;
 
 	# should print 0@1 or something
-	id := clients.addUser("test", "test", scens);
+	id := clients.addUser("test", pw, scens);
 	io.print(id);
 
 	# this should work also
 	# don't use nil:bat[:str, :oid] here, it results in a crash
 	t := bat.new(:str, :oid);
-	id := clients.addUser("checkpoint", "Pcheckpoint", t);
+	id := clients.addUser("checkpoint", pw, t);
 	io.print(id);
 
 	# do a simple listing of users known
@@ -55,17 +56,18 @@ catch MALException:str;
 exit MALException;
 
 	# forcefully set the password of the user test
-	clients.setPassword("test", "newpass");
+	clients.setPassword("test", pw);
 	# now try to set the password for ourself, should fail
-	clients.setPassword("monetdb", "badpass");
+	clients.setPassword("monetdb", pw);
 catch InvalidCredentialsException:str;
 	io.printf("%s\n", InvalidCredentialsException);
 exit InvalidCredentialsException;
 
 	# change our own password
-	clients.changePassword("monetdb", "newdb");
+	mypw := clients.sha1sum("monetdb");
+	clients.changePassword(mypw, pw);
 	# try it again, should fail...
-	clients.changePassword("monetdb", "newdb");
+	clients.changePassword(mypw, pw);
 catch InvalidCredentialsException:str;
 	io.printf("%s\n",InvalidCredentialsException);
 	InvalidCredentialsException:= nil:str;
