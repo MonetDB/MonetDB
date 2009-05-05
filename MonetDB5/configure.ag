@@ -94,6 +94,9 @@ AM_MONETDB_UTILS()
 if test "x$have_pcre" = xno; then
 	AC_MSG_ERROR([MonetDB 5 requires PCRE])
 fi
+if test "xhave_openssl" = xno; then
+	AC_MSG_ERROR([MonetDB 5 requires OpenSSL])
+fi
 
 AC_PROG_LIBTOOL
 

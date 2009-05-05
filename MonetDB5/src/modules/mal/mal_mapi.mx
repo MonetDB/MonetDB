@@ -441,8 +441,8 @@ doChallenge(str cmd, stream *in, stream *out) {
 		challenge = alloca(sizeof(char) * (12 + 1));
 		generateChallenge(challenge, 8, 12);
 		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
-		/* note that we claim to speak proto 8 here */
-		stream_printf(fdout, "%s:mserver:8:%s:%s",
+		/* note that we claim to speak proto 9 here for SHA-1 passwords */
+		stream_printf(fdout, "%s:mserver:9:%s:%s",
 				challenge,
 				algos,
 #ifdef WORDS_BIGENDIAN

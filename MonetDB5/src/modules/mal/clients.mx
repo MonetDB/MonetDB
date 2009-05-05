@@ -146,6 +146,7 @@ clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
+clients_export str CLTsha1sum(str *ret, str *pw);
 clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
 clients_export str CLTremoveUser(int *ret, str *usr);
 clients_export str CLTchangePassword(int *ret, str *old, str *new);
@@ -455,6 +456,19 @@ These commands (except changePassword, changeUsername and
 checkPermission) can only be executed by the administrator.
 
 @mal
+command sha1sum(pw:str):str
+address CLTsha1sum
+comment "Return hex string representation of the SHA-1 hash of the given string";
+@c
+str CLTsha1sum(str *ret, str *pw) {
+	str tmp;
+	int len = strlen(*pw);
+	
+	rethrow("sha1sum", tmp, AUTHSHA1Sum(ret, pw, &len));
+	return(MAL_SUCCEED);
+}
+
+@mal
 command addUser(nme:str, pw:str, scen:bat[:str,:any_1]):oid
 address CLTaddUser
 comment "Allow user with password access to the given scenarios";
@@ -533,16 +547,22 @@ str CLTsetPassword(int *ret, str *usr, str *new) {
 @mal
 command checkPermission(usr:str, pw:str, sc:str):void
 address CLTcheckPermission
-comment "Check permission for a user";
+comment "Check permission for a user, requires password as SHA-1 hash";
 @c
 str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc) {
 	str tmp;
 	str ch = "";
-	str algo = "plain";
+	str algo = "SHA1";
 	oid id;
+	str pwd;
+	int len = strlen(*pw);
 	(void) ret;
 
-	rethrow("checkPermission", tmp, AUTHcheckCredentials(&id, usr, pw, &ch, &algo, sc));
+	rethrow("checkPermission", tmp,
+			AUTHSHA1Sum(&pwd, pw, &len));
+	rethrow("checkPermission", tmp,
+			AUTHcheckCredentials(&id, usr, &pwd, &ch, &algo, sc));
+	GDKfree(pwd);
 	return(MAL_SUCCEED);
 }
 

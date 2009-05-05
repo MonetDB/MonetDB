@@ -17,7 +17,7 @@
 
 @f mal_authorize
 @a M. Kersten, F. Groffen
-@v 0.2
+@v 0.3
 @+ Authorisation adminstration management
 Authorisation of users is a key concept in protecting the server from
 malicious and unauthorised users.  This file contains a number of
@@ -53,27 +53,30 @@ mal_export str AUTHrequireAdmin(void);
 mal_export str AUTHrequirteAdminOrUser(str *username);
 mal_export str AUTHinitTables(void);
 
+mal_export str AUTHSHA1Sum(str *ret, str *string, int *len);
+
 @-
-Authorisation is based on a password.  The passwords are stored cyphered
-in a BAT.  Access to this BAT should be prohibited from the MAL level,
-but still, the passwords in it are to be stored cyphered with an
-algorithm that has a decypher.  The database administrator can unlock
-the BAT that stores the password (the vault) by supplying the master
-password which is the key for the cypher algorithm.  The BAT will never
-contain decyphered passwords, as they will be decyphered on the fly when
+Authorisation is based on a password.  The passwords are stored hashed
+in a BAT.  Access to this BAT is ok from the MAL level, and in
+particular SQL needs it to dump (and later restore) users.
+The database administrator can unlock the BAT that stores the password
+(the vault) by supplying the master password which is the key for the
+cypher algorithm used to store the data.  The BAT will never
+contain the plain hashes, as they will be decyphered on the fly when
 needed.  A locked vault means noone can log into the system, hence, the
 vault needs to be unlocked as part of the server startup ritual.
 @h
 mal_export str AUTHunlockVault(str *password);
 
 @-
-To avoid the passwords from being sent over the wire in plain text
-format, MAPI starts with sending a challenge with salt.  This salt
-should be appended to the plain text password before it is hashed in
-order to make the password unreadable for eavesdroppers.  The hash
-algorithm used is specified by the client, and can be chosen from a
-comma separated list offered by the server through the challenge
-(protocol >=6).
+To avoid the password hashes from being sent over the wire in their
+original format (and allowing repeatability attacks), MAPI starts with
+sending a challenge with salt.  This salt should be appended to the
+password hash before it is hashed again in order to make the password
+unreadable for eavesdroppers.  The hash algorithm used is specified by
+the client, and can be chosen from a comma separated list offered by the
+server through the challenge (protocol >=6).  As of protocol version 9
+the crypt algorithm has been removed.
 @h
 mal_export str AUTHgetHashAlgorithms(str *ret);
 
@@ -86,22 +89,14 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_CRYPT_H
-#include <crypt.h>
-#else
-#if defined(HAVE_CRYPT) && defined(__MINGW32__)
-_CRTIMP char * __cdecl crypt(const char *key, const char *salt);
-#endif
-#endif
-#ifdef HAVE_OPENSSL
 #include <openssl/sha.h>
 #include <openssl/md5.h>
-#endif
 
 
 static str AUTHdecypherValue(str *ret, str *value);
 static str AUTHcypherValue(str *ret, str *value);
 static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
+static str AUTHverifySHA1Password(int *ret, str *passwd);
 
 static BAT *user = NULL;
 static BAT *pass = NULL;
@@ -209,14 +204,71 @@ AUTHinitTables() {
 	assert(b);
 	user = b;
 
-	/* load/create password BAT */
+	/* load old password BAT, upgrade to SHA-1, <monetdb-5.11 */
 	bid = BBPindex("M5system_auth_passwd");
+	if (bid) {
+		BAT *n;
+		BAT *s;
+
+		b = BATdescriptor(bid);
+		fprintf(stderr,
+				"#warning: converting old password store to new format\n");
+		fflush(stderr);
+
+		/* create new bat */
+		n = BATnew(TYPE_oid, TYPE_str, 256);
+		if (n == NULL)
+			throw(MAL, "initTables", "could not allocate password table");
+
+		BBPrename(BBPcacheid(n), "M5system_auth_passwd_v2");
+		BATmode(n, PERSISTENT);
+
+		/* convert data */
+		if (BATcount(b) > 0) {
+			BATiter bi = bat_iterator(b);
+			BUN p, q;
+			str tmp;
+			str pwd;
+			str sha1pwd;
+			int len;
+
+			BATloop(b, p, q) {
+				tmp = (str)BUNtail(bi, p);
+				rethrow("initTables", tmp,
+						AUTHdecypherValue(&pwd, &tmp));
+				len = strlen(pwd);
+				rethrow("initTables", tmp,
+						AUTHSHA1Sum(&sha1pwd, &pwd, &len));
+				GDKfree(pwd);
+				rethrow("initTables", tmp,
+						AUTHcypherValue(&pwd, &sha1pwd));
+				BUNins(n, BUNhead(bi, p), pwd, FALSE);
+				GDKfree(sha1pwd);
+				GDKfree(pwd);
+			}
+		}
+
+		/* destroy old bat */
+		BATmode(b, TRANSIENT);
+		BBPreleaseref(b->batCacheid);
+
+		/* commit the new situation */
+		s = BATnew(TYPE_oid, TYPE_str, 2);
+		assert(s);
+		BUNappend(s, BATgetId(n), FALSE);
+		BUNappend(s, BATgetId(b), FALSE);
+		TMsubcommit(s);
+		BBPreclaim(s);
+	}
+
+	/* load/create password BAT */
+	bid = BBPindex("M5system_auth_passwd_v2");
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
 			throw(MAL, "initTables", "could not allocate password table");
 
-		BBPrename(BBPcacheid(b), "M5system_auth_passwd");
+		BBPrename(BBPcacheid(b), "M5system_auth_passwd_v2");
 		BATmode(b, PERSISTENT);
 	} else {
 		b = BATdescriptor(bid);
@@ -246,12 +298,12 @@ AUTHinitTables() {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
-		str pass = "monetdb";
+		str pw = "4751fc28d9a64a043865922548ee7d623743bcad"; /* SHA-1: monetdb */
 		bat b = bat_nil;
 		str tmp;
 		oid uid;
 
-		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pass, &b));
+		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pw, &b));
 		if (uid != 0)
 			throw(MAL, "initTables", "authorisation BATs not empty, but they were just created !?!?!?");
 		AUTHcommit();
@@ -391,6 +443,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		throw(ILLARG, "addUser", "username cannot be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "addUser", "password cannot be nil");
+	rethrow("addUser", tmp, AUTHverifySHA1Password(NULL, passwd));
 
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
@@ -401,7 +454,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	/* needs force, as SQL makes a view over user */
 	BUNappend(user, *username, TRUE);
-	BUNappend(pass, hash, FALSE);	/* should always be private! */
+	BUNappend(pass, hash, FALSE);
 	GDKfree(hash);
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(BATmirror(user), *username);
@@ -425,7 +478,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		/* associate scenarios given in the BAT with the user */
 		if (BATcount(b) > 0) {
 			BATiter bi = bat_iterator(b);
-			
+
 			BATloop(b, p, q) {
 				/* needs force, as sql makes a view over it */
 				BUNins(scen, id, BUNhead(bi, p), TRUE);
@@ -546,6 +599,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 		throw(ILLARG, "changePassword", "old password should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "changePassword", "password should not be nil");
+	rethrow("changePassword", tmp, AUTHverifySHA1Password(NULL, passwd));
 
 	/* check the old password */
 	id = MCgetClient()->user;
@@ -555,7 +609,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	tmp = BUNtail(passi, p);
 	assert (tmp != NULL);
 	/* decypher the password */
-	rethrow("setPassword", err, AUTHdecypherValue(&hash, &tmp));
+	rethrow("changePassword", err, AUTHdecypherValue(&hash, &tmp));
 	if (strcmp(hash, *oldpass) != 0)
 		throw(INVCRED, "changePassword", "Access denied");
 
@@ -590,6 +644,7 @@ AUTHsetPassword(str *username, str *passwd) {
 		throw(ILLARG, "setPassword", "username should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "setPassword", "password should not be nil");
+	rethrow("changePassword", tmp, AUTHverifySHA1Password(NULL, passwd));
 
 	id = MCgetClient()->user;
 	/* find the name of the administrator and see if it equals username */
@@ -953,24 +1008,34 @@ AUTHcypherValue(str *ret, str *value) {
  */
 str
 AUTHgetHashAlgorithms(str *ret) {
-	/* currently, four "hashes" are available, SHA-1, MD5, crypt and
-	 * plain.  Both "sha1" and "md5" are supported if OpenSSL is
-	 * available at compile time.  The same holds for "crypt", the UNIX
-	 * crypt implementation.  The last option, "plain" is not a hash at
-	 * all, but always available as it requires no modifications to the
-	 * password, i.e. it is send over in plain text.
+	/* Currently, two "hashes" are available, SHA-1 and MD5.  Previous
+	 * versions supported UNIX crypt and plain text login, but those
+	 * were removed when SHA-1 became mandatory for hashing the plain
+	 * password in wire protocol version 9.  Better/stronger/faster
+	 * algorithms can be added in the future upon desire.
 	 */
-	str t = alloca(sizeof(char) * BUFSIZ);
-	*t = '\0';
-#ifdef HAVE_OPENSSL
-	strcat(t, "SHA1,MD5,");
-#endif
-#ifdef HAVE_CRYPT
-	strcat(t, "crypt,");
-#endif
-	strcat(t, "plain");
+	*ret = GDKstrdup("SHA1,MD5");
+	return(MAL_SUCCEED);
+}
 
-	*ret = GDKstrdup(t);
+/**
+ * Returns a GDKmalloced string representing the hex representation of
+ * the SHA-1 hash of the given string.
+ */
+str
+AUTHSHA1Sum(str *ret, str *string, int *len) {
+	unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
+
+	SHA1((unsigned char*)*string, *len, md);
+	*ret = GDKmalloc(sizeof(char) * (20 * 2 + 1));
+	sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+			md[0], md[1], md[2], md[3], md[4],
+			md[5], md[6], md[7], md[8], md[9],
+			md[10], md[11], md[12], md[13], md[14],
+			md[15], md[16], md[17], md[18], md[19]
+		   );
+
 	return(MAL_SUCCEED);
 }
 
@@ -983,34 +1048,16 @@ AUTHgetHashAlgorithms(str *ret) {
  */
 static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
-	if (strcmp(*algo, "plain") == 0) {
-		/* The plain text algorithm, doesn't really hash at all.  It's
-		 * the easiest algorithm, as it just appends the challenge to
-		 * the password and returns it.
-		 */
-		*ret = GDKmalloc(sizeof(char) * (strlen(*password) + strlen(*challenge) + 1));
-		sprintf(*ret, "%s%s", *password, *challenge);
-		return(MAL_SUCCEED);
-#ifdef HAVE_OPENSSL
-	} else if (strcmp(*algo, "SHA1") == 0) {
+	if (strcmp(*algo, "SHA1") == 0) {
 		/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
 		 * use in a string, a hexadecimal representation of the bit
 		 * sequence is used.
 		 */
-		unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
 		int len = strlen(*password) + strlen(*challenge);
-		char key[len];
+		str key = alloca(sizeof(char) * len);
 		strcpy(key, *password);
 		strncat(key, *challenge, strlen(*challenge));
-		SHA1((unsigned char*)key, len, md);
-		*ret = GDKmalloc(sizeof(char) * (20 * 2 + 1));
-		sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-				md[0], md[1], md[2], md[3], md[4],
-				md[5], md[6], md[7], md[8], md[9],
-				md[10], md[11], md[12], md[13], md[14],
-				md[15], md[16], md[17], md[18], md[19]
-			);
+		AUTHSHA1Sum(ret, &key, &len);
 		return(MAL_SUCCEED);
 	} else if (strcmp(*algo, "MD5") == 0) {
 		/* The MD5 hash algorithm is a 128 bit hash.  In order to
@@ -1032,44 +1079,36 @@ AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 				md[12], md[13], md[14], md[15]
 			);
 		return(MAL_SUCCEED);
-#endif
-#ifdef HAVE_CRYPT
-	} else if (strcmp(*algo, "crypt") == 0) {
-		/* The crypt hash algorithm uses UNIX crypt, a modification of
-		 * DES which uses a 2-char wide salt.  Because crypt only cares
-		 * about the first eight characters of the given password, the
-		 * challenge may not be taken into account at all.  As salt, the
-		 * last two characters of the challenge are used.
-		 */
-		char key[8]; /* NULL termination is not necessary */
-		char salt[3]; /* NULL termination is a necessity! */
-		str hash;
-		int len;
-
-		/* prepare the key */
-		len = strlen(*password);
-		if (len >= 8) {
-			strncpy(key, *password, 8);
-		} else {
-			/* pad with the challenge, we know it is always 8+ chars */
-			strncpy(key, *password, len);
-			strncpy(key + len, *challenge, 8 - len);
-		}
-
-		/* prepare the salt */
-		len = strlen(*challenge);
-		salt[0] = (*challenge)[len - 2];
-		salt[1] = (*challenge)[len - 1];
-		salt[2] = '\0';
-
-		/* call crypt to do the work */
-		hash = crypt(key, salt);
-		assert (hash != NULL);
-		*ret = GDKstrdup(hash);
-		return(MAL_SUCCEED);
-#endif
 	} else {
-		throw(MAL, "hashPassword", "unsupported hash type: '%s'", algo);
+		throw(MAL, "hashPassword", "unsupported hash type: '%s'", *algo);
 	}
+}
+
+/**
+ * Checks if the given string is a SHA-1 (hex represented) hash.  This
+ * check allows to at least forbid storing trivial plain text passwords
+ * by a simple check.
+ */
+static str
+AUTHverifySHA1Password(int *ret, str *passwd) {
+	char *p = *passwd;
+	size_t len = strlen(p);
+
+	(void)ret;
+
+	if (len != 40)
+		throw(MAL, "verifySHA1Password",
+				"password is not 40 chars long, is it a hex "
+				"representation of a SHA-1 password hash?");
+
+	while (*p != '\0') {
+		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
+			throw(MAL, "verifySHA1Password",
+					"password does contain invalid characters, is it a"
+					"lowercase hex representation of a SHA-1 password hash?");
+		p++;
+	}
+
+	return(MAL_SUCCEED);
 }
 @}
