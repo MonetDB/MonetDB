@@ -2354,6 +2354,7 @@ mapi_start_talking(Mapi mid)
 				int n = strlen(mid->password);
 				char key[n];
 
+				key[0] = '\0';
 				strncat(key, mid->password, n);
 				SHA1((unsigned char *)key, n, md);
 
