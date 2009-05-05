@@ -209,15 +209,11 @@ void delName(str nme, size_t len){
 }
 str putName(str nme, size_t len)
 {
-	size_t i,k=0,l,top;
-	int h;
+	size_t k=0,l,top;
 	char buf[1024];
-	str s;
 
 	if( nme == NULL)
 		return NULL;
-	/* protect this, as it will be updated by multiple threads */
-	mal_set_lock(mal_contextLock,"putName");
 	for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
 #ifdef _BACKUP_
 		chkName(l);
@@ -228,7 +224,11 @@ str putName(str nme, size_t len)
 			namespace.totalhit++;
 			/* aggressive test for reorganization needs */
 			/* this is a potential concurreny problem */
+/*	Move it to a separate routine, avoid excessive locking and
+	serialization
 			if( k && 2*namespace.hit[k] < namespace.hit[l]){
+				str s;
+				int h,i;
 				s= namespace.nme[l]; namespace.nme[l]= namespace.nme[k];
 				namespace.nme[k]=s;
 				h= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
@@ -246,12 +246,14 @@ str putName(str nme, size_t len)
 #endif
 				l=k;
 			}
-			mal_unset_lock(mal_contextLock,"putName");
+*/
 			return namespace.nme[l];
 	    }
 		k=l;
 	}
 
+	/* protect this, as it will be updated by multiple threads */
+	mal_set_lock(mal_contextLock,"putName");
 	if(len>=1024) GDKfatal("Identifier too long");
 	memcpy(buf, nme, len); 
 	buf[len]=0;
@@ -277,8 +279,7 @@ str putName(str nme, size_t len)
 	backup.nmetop++;
 #endif
 	mal_unset_lock(mal_contextLock,"putName");
-	nme= namespace.nme[top];
-	return namespace.nme[top];
+	return putName(nme, len);	/* just to be sure */
 }
 @-
 The namespace may become a bottleneck when the chain of identifiers grows.
