@@ -1,27 +1,57 @@
-# test octopus frame work
-function octopus.qry();
-	conn:str := remote.connect("demo", "monetdb", "monetdb");
-	remote.disconnect(conn);
-	z:=clients.getUsers();
-	io.print(z);
-end qry;
+# test octopus framework
+include sql;
+# The script occassionally shows parallism errors.
+# !MALException:remote.get:MALException:remote.get:'io.peephole' undefined in: _3:any := io.peephole(rmt_octopus_exec__9_bat__oid__int_:bat[:oid,:int])
+#
+#profiler.activate("statement");
+#profiler.setFilter("*","*");
+#profiler.openStream("console");
+#profiler.start();
 
-function octopus.rmt():str;
-	conn:str := remote.connect("demo", "monetdb", "monetdb");
-	l:= remote.put(conn,"demo");
-	r:= remote.put(conn,"monetdb");
-	v:= remote.put(conn,nil:void);
-	v:= remote.exec(conn,"octopus","qry");
-	catch RMTexception:str;
-	exit RMTexception;
+function octopus.bind(v:int):bat[:oid,:int];
+	b:= bat.new(:oid,:int);
+	bat.append(b,v);
+	return b;
+end bind;
+
+function octopus.bind(conn:str,v:int):bat[:oid,:int];
+	vh:= remote.put(conn,v);
+	b:= remote.put(conn,nil:bat[:oid,:int]);
+	b:= remote.exec(conn,"octopus","bind",vh);
+	bv:bat[:oid,:int]:= remote.get(conn,b);
+	return bv;
+end bind;
+
+function octopus.tentacle(v:int):bat[:oid,:int];
+	conn:str := remote.connect("demo", "monetdb", "monetdb","msql");
+	b:= octopus.bind(conn,v);
+catch RMTexception:str;
+	io.print(RMTexception);
+exit RMTexception;
 	remote.disconnect(conn);
-	return rmt:="done";
-end rmt;
+	return tentacle:=b;
+end tentacle;
+
+function octopus.exec(dbname:str, query:str, version:int):bat[:oid,:int];
+	conn:str := remote.connect(dbname, "monetdb", "monetdb","msql");
+	m:= remote.put(conn,version);
+	v:= remote.put(conn,nil:bat[:oid,:int]);
+	v:= remote.exec(conn,"octopus",query,m);
+	res:bat[:oid,:int]:= remote.get(conn,v);
+	remote.disconnect(conn);
+	return exec:=res;
+end exec;
 	
-octopus.qry();
-barrier (k,v):= language.newRange(0:lng);
-	octopus.rmt();
-	redo (k,v) := language.nextElement(1:lng,70:lng);
+barrier (k,v):= language.newRange(0:int);
+	io.print(v);
+barrier go:= language.dataflow();
+	v1:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
+	v2:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
+	v3:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
+	v4:bat[:oid,:int] :=octopus.exec("demo","tentacle",v);
+	res:= mat.pack(v1,v2,v3,v4);
+exit go;
+	redo (k,v) := language.nextElement(1:int,25:int);
 exit (k,v);
 z:=clients.getUsers();
 io.print(z);
