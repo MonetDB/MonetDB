@@ -2462,9 +2462,13 @@ mapi_start_talking(Mapi mid)
 			 * the easiest algorithm, as it just appends the challenge to
 			 * the password and returns it.
 			 * As of proto v9 this super insecure "hash" has been dropped. */
-			hash = malloc(sizeof(char) * (/*{plain}*/ 7 +
-						      strlen(mid->password) + strlen(chal) + 1));
-			sprintf(hash, "{plain}%s%s", mid->password, chal);
+			if (strcmp(server, "merovingian") == 0) {
+				hash = strdup("{plain}Mellon...");
+			} else {
+				hash = malloc(sizeof(char) * (/*{plain}*/ 7 +
+								  strlen(mid->password) + strlen(chal) + 1));
+				sprintf(hash, "{plain}%s%s", mid->password, chal);
+			}
 		}
 		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
