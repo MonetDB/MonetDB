@@ -499,8 +499,8 @@ remote_export str RMTgetList(int *ret, int *ret2) {
 
 
 /**
- * Helper function to return a userconn struct containing the needed
- * bits to open up a connection.  This function is very similar to
+ * Helper function to return a userconn struct containing the bits needed
+ * to open up a connection.  This function is very similar to
  * RMTgetList, but differs on enough crucial points to warrant its own
  * copy.
  * NOTE: this function assumes the caller has guaranteed
@@ -712,11 +712,12 @@ static str RMTconnectInternal(
 		str *passwd,
 		str *scen)
 {
-	connection c;
+	connection c,t;
 	userconn cdef;
 	char conn[BUFSIZ];
 	char *s;
-	int id;
+	static int id=0;	/* for unique connection identifiers */
+	Client cntxt = MCgetClient();
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -730,39 +731,24 @@ static str RMTconnectInternal(
 
 
 	mal_set_lock(mal_remoteLock, "remote.connect");
-	/* generate a connection name */
-	id = 1;
-	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
-
 	/* check if we know the dbname connection */
 	cdef = RMTgetConnDefinition(*dbname); /* needs lock! */
 	if (cdef == NULL) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(MAL, "remote.connect",
-				"unknown or unavailable connection: '%s'", *dbname);
-	}
+			"unknown or unavailable connection: '%s'", *dbname);
+	} 
+	/* generate an unique connection name, they are only known
+	 * within one  mserver */
+	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, ++id);
 
-	/* find a free slot, start with special case of connections not
-	 * being set */
-	if ((c = MCgetClient()->conn) == NULL) {
-		c = MCgetClient()->conn = GDKzalloc(sizeof(struct _connection));
-	} else {
-		/* ok, it's set, so find the last element in the list */
-		connection t = c;
-		do {
-			/* at the same time also check if this connection name
-			 * already exists */
-			if (strcmp(c->name, conn) == 0) {
-				/* try the next id, duplicate connections
-				 * must be allowed */
-				id++;
-				snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, id);
-			}
-			t = c;
-			c = c->next;
-		} while (c != NULL);
-		c = t->next = GDKzalloc(sizeof(struct _connection));
-	}
+	/* prepend the connection to the list of known ones */
+	t = cntxt->conn;
+	c = GDKzalloc(sizeof(struct _connection));
+	if ( t != NULL )
+		c->next = t;
+	cntxt->conn= c;
+
 	/* make sure we protect the just added connection (small race) */
 	MT_lock_init(&c->lock, "remote connection lock");
 	mal_set_lock(c->lock, "remote.connect");
@@ -777,7 +763,6 @@ static str RMTconnectInternal(
 
 	c->name = GDKstrdup(conn);
 	c->nextid = 0;
-	c->next = NULL;
 	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen,
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 
@@ -1001,6 +986,9 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 
 	*ret = NULL;
 	mhdl = mapi_query(conn, query);
+	if (mapi_error(conn) != MOK)
+		throw(IO, func, "an error occurred on connection: %s",
+				mapi_error_str(conn));
 	if (mhdl) {
 		if (mapi_result_error(mhdl) != NULL) {
 			str err = createException(
@@ -1010,14 +998,8 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			mapi_close_handle(mhdl);
 			return(err);
 		}
-	} else {
-		if (mapi_error(conn) != MOK) {
-			throw(IO, func, "an error occurred on connection: %s",
-					mapi_error_str(conn));
-		} else {
-			throw(MAL, func, "remote function invocation didn't return a result");
-		}
-	}
+	} else
+		throw(MAL, func, "remote function invocation didn't return a result");
 
 	*ret = mhdl;
 	return(MAL_SUCCEED);
