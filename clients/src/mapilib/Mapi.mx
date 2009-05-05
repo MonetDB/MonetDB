@@ -222,20 +222,12 @@ cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
 
 It assumes that the dynamic loadable libraries are in public places.
 If, however, the system is installed in your private environment
-then either one of the two following options can be used.
+then the following option can be used on most ELF platforms.
 
 @example
 @verbatim
 cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample \
--Wl,rpath,`monetdb-clients-config --libdir`
-./sample
-@end verbatim
-@end example
-
-@example
-@verbatim
-export LD_LIBRARY_PATH=`monetdb-clients-config --libdir`
-cc sample.c `monetdb-clients-config --cflags --libs` -lMapi -o sample
+`monetdb-clients-config --libs | sed -e's:-L:-R:g'`
 ./sample
 @end verbatim
 @end example
@@ -2327,7 +2319,7 @@ mapi_start_talking(Mapi mid)
 			 "Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		return mid->error;
-	} else if (pversion == 8) {
+	} else if (pversion == 8 || pversion == 9) {
 		char *hash = NULL;
 		char *hashes = NULL;
 
@@ -2343,6 +2335,41 @@ mapi_start_talking(Mapi mid)
 		}
 		hash = NULL;
 
+		/* Proto v9 is like v8, but mandates that the password is a
+		 * SHA-1 hash, that is salted like in v8.  If we do not have
+		 * SHA-1 support, but find a v9 server, we can't login. */
+#ifndef HAVE_OPENSSL
+		if (pversion == 9) {
+			/* can't hash the password as required */
+			snprintf(buf, BLOCK, "server requires SHA-1 hash, "
+					"but SHA-1 client support was not compiled in");
+			close_connection(mid);
+			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+		}
+#else
+		if (pversion == 9) {
+			/* hash password, if not already */
+			if (mid->password[0] != '\1' || strlen(mid->password + 1) != 40) {
+				unsigned char md[20];	/* should be SHA_DIGEST_LENGTH */
+				int n = strlen(mid->password);
+				char key[n];
+
+				strncat(key, mid->password, n);
+				SHA1((unsigned char *)key, n, md);
+
+				free(mid->password);
+				mid->password = malloc(sizeof(char) * (1 + 20 * 2 + 1));
+				sprintf(mid->password,
+						"\1%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+						"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+						md[0], md[1], md[2], md[3], md[4],
+						md[5], md[6], md[7], md[8], md[9],
+						md[10], md[11], md[12], md[13], md[14],
+						md[15], md[16], md[17], md[18], md[19]);
+			}
+		}
+#endif
+
 		/* TODO: make this actually obey the separation by commas, and
 		 * only allow full matches */
 		if (1 == 0) {	/* language construct issue */
@@ -2356,9 +2383,14 @@ mapi_start_talking(Mapi mid)
 			int n = strlen(mid->password) + strlen(chal);
 			char key[n];
 
-			strcpy(key, mid->password);
+			if (pversion == 9) {
+				strcpy(key, mid->password + 1);
+				n--;
+			} else {
+				strcpy(key, mid->password);
+			}
 			strncat(key, chal, strlen(chal));
-			SHA1((unsigned char *) key, n, md);
+			SHA1((unsigned char *)key, n, md);
 			hash = malloc(sizeof(char) * (/*{SHA1}*/ 6 + 20 * 2 + 1));
 			sprintf(hash, "{SHA1}%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2375,9 +2407,14 @@ mapi_start_talking(Mapi mid)
 			int n = strlen(mid->password) + strlen(chal);
 			char key[n];
 
-			strcpy(key, mid->password);
+			if (pversion == 9) {
+				strcpy(key, mid->password + 1);
+				n--;
+			} else {
+				strcpy(key, mid->password);
+			}
 			strncat(key, chal, strlen(chal));
-			MD5((unsigned char *) key, n, md);
+			MD5((unsigned char *)key, n, md);
 			hash = malloc(sizeof(char) * (/*{MD5}*/ 5 + 16 * 2 + 1));
 			sprintf(hash, "{MD5}%02x%02x%02x%02x%02x%02x%02x%02x"
 				"%02x%02x%02x%02x%02x%02x%02x%02x",
@@ -2386,13 +2423,13 @@ mapi_start_talking(Mapi mid)
 				md[10], md[11], md[12], md[13], md[14], md[15]);
 #endif
 #ifdef HAVE_CRYPT
-		} else if (strstr(hashes, "crypt") != NULL) {
+		} else if (pversion == 8 && strstr(hashes, "crypt") != NULL) {
 			/* The crypt hash algorithm uses UNIX crypt, a modification of
 			 * DES which uses a 2-char wide salt.  Because crypt only cares
 			 * about the first eight characters of the given password, the
 			 * challenge may not be taken into account at all.  As salt, the
 			 * last two characters of the challenge are used.
-			 */
+			 * As of proto v9 this weak hash has been dropped. */
 			char key[8];	/* NULL termination is not necessary */
 			char salt[3];	/* NULL termination is a necessity! */
 			char *cr;
@@ -2420,11 +2457,11 @@ mapi_start_talking(Mapi mid)
 			hash = malloc(sizeof(char) * (/*{crypt}*/ 7 + strlen(cr) + 1));
 			sprintf(hash, "{crypt}%s", cr);
 #endif
-		} else if (strstr(hashes, "plain") != NULL) {
+		} else if (pversion == 8 && strstr(hashes, "plain") != NULL) {
 			/* The plain text algorithm, doesn't really hash at all.  It's
 			 * the easiest algorithm, as it just appends the challenge to
 			 * the password and returns it.
-			 */
+			 * As of proto v9 this super insecure "hash" has been dropped. */
 			hash = malloc(sizeof(char) * (/*{plain}*/ 7 +
 						      strlen(mid->password) + strlen(chal) + 1));
 			sprintf(hash, "{plain}%s%s", mid->password, chal);
@@ -2458,8 +2495,7 @@ mapi_start_talking(Mapi mid)
 	} else {
 		/* we don't know what this is, so don't try to do anything with
 		 * it */
-		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-			 "This client only supports version 8.  "
+		snprintf(buf, BLOCK, "Unsupported protocol version: %d  "
 			 "Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		return mid->error;
