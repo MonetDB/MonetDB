@@ -2323,7 +2323,7 @@ mapi_start_talking(Mapi mid)
 		 * message saying so.
 		 */
 		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-			 "This client only supports version 8 and up.  "
+			 "This client only supports version 8.  "
 			 "Sorry, can't help you here!", pversion);
 		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		return mid->error;
@@ -2455,6 +2455,14 @@ mapi_start_talking(Mapi mid)
 			 mid->database == NULL ? "" : mid->database);
 
 		free(hash);
+	} else {
+		/* we don't know what this is, so don't try to do anything with
+		 * it */
+		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
+			 "This client only supports version 8.  "
+			 "Sorry, can't help you here!", pversion);
+		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+		return mid->error;
 	}
 	if (mid->trace == MAPI_TRACE) {
 		printf("sending first request [%d]:%s", BLOCK, buf);
