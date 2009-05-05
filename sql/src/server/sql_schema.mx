@@ -913,7 +913,7 @@ drop_index(mvc *sql, dlist *qname)
 }
 
 static stmt *
-create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
+create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema)
 {
 	char *err; 
 	int schema_id = 0;
@@ -924,7 +924,7 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
-	if ((err = backend_create_user(sql, user, passwd, fullname,
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname,
 					schema_id, sql->user_id)) != NULL)
 	{
 		(void) sql_error(sql, 02, "CREATE USER: %s", err);
@@ -2065,6 +2065,7 @@ schemas(mvc *sql, symbol *s)
 
 		ret = create_user(sql, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
+				  l->h->next->next->next->next->data.i_val, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
 				  l->h->next->next->next->data.sval);	/* dschema */
 		sql->type = Q_SCHEMA;

@@ -201,6 +201,8 @@ scanner_init_keywords(void)
 	keywords_insert("PRIMARY", PRIMARY);
 
 	keywords_insert("USER", USER);
+	keywords_insert("UNENCRYPTED", UNENCRYPTED);
+	keywords_insert("ENCRYPTED", ENCRYPTED);
 	keywords_insert("PASSWORD", PASSWORD);
 	keywords_insert("GRANT", GRANT);
 	keywords_insert("REVOKE", REVOKE);

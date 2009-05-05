@@ -44,7 +44,7 @@ typedef void (*freestack_fptr) (backend_stack stk);
 typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
 typedef void (*interpret_fptr) (backend_stack stk, char *code);
 
-typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char *fullname, sqlid schema_id, sqlid grantor_id);
+typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
 typedef int  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
@@ -68,7 +68,7 @@ typedef struct _backend_functions {
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 
-extern char *backend_create_user(ptr mvc, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor);
+extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);
 extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
@@ -101,10 +101,10 @@ backend_freecode(backend_code code, backend_stack stk, int nr, char *name)
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char *fullname, sqlid defschemid, sqlid grantor)
+backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor)
 {
 	if (be_funcs.fcuser != NULL)
-		return(be_funcs.fcuser(mvc, user, passwd, fullname, defschemid, grantor));
+		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, grantor));
 	return(NULL);
 }
 

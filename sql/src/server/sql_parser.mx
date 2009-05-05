@@ -144,6 +144,8 @@ typedef enum tokens {
 	SQL_EXECUTE,
 	SQL_PRIVILEGES,
 	SQL_ROLE,
+	SQL_PW_UNENCRYPTED,
+	SQL_PW_ENCRYPTED,
 	SQL_PARAMETER,
 	SQL_FUNC,
 	SQL_AGGR,
@@ -561,6 +563,7 @@ int yydebug=1;
 	nonzero
 	posint
 	opt_temp
+	opt_encrypted
 	opt_limit
 	opt_offset
 	opt_match
@@ -691,7 +694,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token SQL_EXPLAIN SQL_PLAN SQL_RECORD SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
-%token PASSWORD GRANT REVOKE ROLE ADMIN INTO
+%token ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
@@ -1366,13 +1369,20 @@ role_def:
 	  append_list(l, $3);
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  create USER ident WITH PASSWORD string sqlNAME string SCHEMA ident
+ |  create USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident
 	{ dlist *l = L();
 	  append_string(l, $3);
-	  append_string(l, $6);
-	  append_string(l, $8);
-	  append_string(l, $10);
+	  append_string(l, $7);
+	  append_string(l, $9);
+	  append_string(l, $11);
+	  append_int(l, $5);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
+ ;
+
+opt_encrypted:
+    /* empty */		{ $$ = SQL_PW_UNENCRYPTED; }
+ |  UNENCRYPTED		{ $$ = SQL_PW_UNENCRYPTED; }
+ |  ENCRYPTED		{ $$ = SQL_PW_ENCRYPTED; }
  ;
 
 table_def:
