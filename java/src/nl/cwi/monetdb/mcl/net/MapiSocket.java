@@ -372,8 +372,17 @@ public final class MapiSocket {
 			default:
 				throw new MCLException("Unsupported protocol version: " + version);
 			case 9:
-				// proto 9 is like 8, but has extensions in the response
-				// headers
+				// proto 9 is like 8, but uses a SHA-1 password hash
+				try {
+					MessageDigest md = MessageDigest.getInstance("SHA-1");
+					md.update(password.getBytes("UTF-8"));
+					byte[] digest = md.digest();
+					password = toHex(digest);
+				} catch (NoSuchAlgorithmException e) {
+					throw new AssertionError("internal error: " + e.toString());
+				} catch (UnsupportedEncodingException e) {
+					throw new AssertionError("internal error: " + e.toString());
+				}
 			case 8:
 				// proto 7 (finally) used the challenge and works with a
 				// password hash.  The supported implementations come
@@ -416,7 +425,7 @@ public final class MapiSocket {
 					} catch (UnsupportedEncodingException e) {
 						throw new AssertionError("internal error: " + e.toString());
 					}
-				} else if (hashes.indexOf("plain") != -1) {
+				} else if (version == 8 && hashes.indexOf("plain") != -1) {
 					pwhash = "{plain}" + password + challenge;
 				} else {
 					throw new MCLException("no supported password hashes in " + hashes);
