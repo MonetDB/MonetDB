@@ -73,7 +73,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		p = old[i];
 		if (getModuleId(p)== sqlRef && 
 			(getFunctionId(p) == bindRef || 
-			 getFunctionId(p) == getName("bind_idxbat",11) ||
+			 getFunctionId(p) == putName("bind_idxbat",11) ||
 			 getFunctionId(p) == binddbatRef) ) {
 				setModuleId(p,putName("datacyclotron",13));
 				setFunctionId(p, putName("request",7));

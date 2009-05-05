@@ -730,7 +730,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -755,7 +755,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -780,7 +780,7 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -884,7 +884,7 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fname = getArgDefault(mb, p, 3);
 	}
 
-	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL) {
 		char buf[1024];

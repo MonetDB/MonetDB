@@ -871,9 +871,9 @@ RECYCLEinterest(InstrPtr p){
 bit 
 isBindInstr(InstrPtr p)
 {
-	return (getModuleId(p)==getName("sql",3) &&
-		(getName("bind",4)== getFunctionId(p) ||
-		 getName("bind_idxbat",11) == getFunctionId(p)));
+	return (getModuleId(p)==putName("sql",3) &&
+		(putName("bind",4)== getFunctionId(p) ||
+		 putName("bind_idxbat",11) == getFunctionId(p)));
 				
 }
 
@@ -1157,9 +1157,9 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
     bit gluse = FALSE;
 
     if (selectRef == 0)
-        selectRef= getName("select",6);
+        selectRef= putName("select",6);
 	if (like_selectRef == 0)
-        like_selectRef= getName("like_select",11);
+        like_selectRef= putName("like_select",11);
 
     if( recycleBlk == 0 || reusePolicy == 0)
         return -1;

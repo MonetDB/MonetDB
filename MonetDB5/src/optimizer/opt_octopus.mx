@@ -50,8 +50,8 @@ function octopus.exec_qry(srv:str,fcn:str, ver:int):bat[:oid,:int];
 end exec_qry;
 function octopus.leg0(version:int):bat[:oid,:int];
 	conn:= remote.connect("demo","monetdb","monetdb");
-    _54:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",0,version,2,0);
-    _64:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,version,2,0);
+    _54:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",0,0@0,25@0,version);
+    _64:bat[:oid,:int] := octopus.bind(conn,"sys","squida","bid",2,0@0,25@0,version);
     _72 := algebra.kdifference(_54,_64);
     _78 := algebra.kunion(_72,_64);
     _13:bat[:oid,:oid]  := octopus.bind_dbat(conn,"sys","squida",1,version);
@@ -144,7 +144,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define DEBUG_OPT_OCTOPUS           show partial result */
+#define DEBUG_OPT_OCTOPUS           /* show partial result */
 
 @c
 #include "mal_config.h"
@@ -208,12 +208,11 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
 	char *needed= (char*) GDKzalloc(mb->vtop);
-	char *remote= (char*) GDKzalloc(mb->vtop);
 	int *alias= (int*) GDKzalloc(mb->vtop * sizeof(int));
 	str name= NULL, name2= NULL;
 	Symbol s;
 	ValRecord cst;
-	int pieces=pci->argc-pci->retc, part=idx-pci->retc, conn=0;
+	int conn=0;
 
 	if (list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
@@ -224,20 +223,9 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout,"#create tentacle for %d %d %d\n",start,idx,varid);
 	printInstruction(cntxt->fdout,mb,0,pci,0);
-	printFunction(cntxt->fdout,mb,0,0);
 #else
 	(void) cntxt;
 #endif
-@-
-Beware, the packing is targeted to two sql.binds, which leads to a different
-number of pieces to take into account. The code now assumes that only
-the last one is different. TO BE CONFIRMED by mergetable optimizer
-@c
-	if ( idx == pci->argc -1 ){
-		pieces=1;
-		part = 0;
-	} else
-		pieces--;
 
 	/* locate the last assignment for varid */
 	fnd = -1;
@@ -325,9 +313,6 @@ foundit:
 			setArgType(tm,p,0, getArgType(mb,list[top],0));
 			p= setArgument(tm,p,1,conn);
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
-			p= pushInt(tm,p,pieces);
-			p= pushInt(tm,p,part);
-			remote[getArg(p,0)] = TRUE;
 		} 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef ){
 			setModuleId(p, octopusRef);
@@ -336,20 +321,6 @@ foundit:
 			p= setArgument(tm,p,1,conn);
 			p = pushArgument(tm, p, getArg(getInstrPtr(tm,0),1));
 		} 
-@-
-Partitioning the tables obtained remotely is done remotely.
-This means that the corresponding bat.partition statement
-can be turned into an alias.
-@c
-		if (getModuleId(p)== batRef && getFunctionId(p)==partitionRef &&
-			remote[getArg(p,p->retc)] ){
-			getArg(p,0)= getArg(p,part);
-			getArg(p,1)= getArg(p,p->retc);
-			p->retc = 1;
-			p->argc = 2;
-			p->token = ASSIGNsymbol;
-			clrFunction(p);
-		}
 		pushInstruction(tm, p);
 	}
 
@@ -357,11 +328,14 @@ can be turned into an alias.
 	OCTexitcode(tm, conn,varid);
 	clrDeclarations(tm);
 
+#ifdef DEBUG_OPT_OCTOPUS
+	stream_printf(cntxt->fdout, "TENTACLE octopus \n");
+	printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
+#endif
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	GDKfree(list);
 	GDKfree(alias);
 	GDKfree(needed);
-	GDKfree(remote);
 	return tm;
 }
 
@@ -492,13 +466,16 @@ when scheduled correctly, would not lead to duplicate work.
 				getArg(q,0)= l;
 				pushArgument(sm,q, getArg(getInstrPtr(sm,0),1));
 				pushArgument(sm,q,k);
+				setVarUDFtype(sm,k);
 			}
 
 			/* k:= remote.put(conn,kvar) */
 			q= newFcnCall(sm,remoteRef,putRef);
 			q= pushArgument(sm,q,conn);
 			q= pushArgument(sm,q, getArg(getInstrPtr(sm,0),0));
+			setVarUDFtype(sm,getArg(q,q->argc-1));
 			k= getArg(q,0);
+
 			/* k:= remote.exec(conn,octopus,qry,version....) */
 			q= newFcnCall(sm,remoteRef,execRef);
 			getArg(q,0)= k;
@@ -506,6 +483,7 @@ when scheduled correctly, would not lead to duplicate work.
 			q= pushStr(sm,q,octopusRef);
 			q= pushArgument(sm,q,qvar);
 			q= pushArgument(sm,q,version);
+			/* deal with all arguments !*/
 
 			/* l:=remote.get(conn,k) */
 			q= newFcnCall(sm,remoteRef,getRef);
@@ -520,6 +498,10 @@ when scheduled correctly, would not lead to duplicate work.
 			p= newStmt(sm,ioRef,printRef);
 			pushArgument(sm,p,findVariable(sm,"RMTexception"));
 			newExitStmt(sm, "RMTexception");
+
+			/* close connection */
+			p = newStmt(sm, remoteRef,disconnectRef);
+			pushArgument(sm,p,conn);
 
 			/* return exec_qry:= l; */
 			q= newAssignment(sm);
@@ -563,8 +545,8 @@ The tentacle code should be optimized by the remaining optimizers.
 #ifdef DEBUG_OPT_OCTOPUS
 	if (actions) {
 		stream_printf(cntxt->fdout, "DONE octopus \n");
-		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
 		for (i=0; i<tn; i++)
 			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
 	}

@@ -365,7 +365,7 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 	char buf[BUFSIZ];
 	BAT *b;
 
-	s = findSymbol(getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", 
 				"failed to find <module>.<function>");

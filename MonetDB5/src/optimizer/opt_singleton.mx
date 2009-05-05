@@ -203,7 +203,7 @@ variables on the stack.
 			} else
 				goto STrepack;
 		} else if (getModuleId(p) == algebraRef) {
-			if (getName("markH", 5) == getFunctionId(p) && 
+			if (putName("markH", 5) == getFunctionId(p) && 
 				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				setModuleId(p, NULL);
@@ -267,14 +267,14 @@ variables on the stack.
 				/* just push instruction */
 			} else
 /*
-				getName("kunion",6)== getFunctionId(p) ||
+				putName("kunion",6)== getFunctionId(p) ||
 				getFunctionId(p) == joinRef ||
-				getName("fetchjoin",9)== getFunctionId(p) ||
-				getName("mergejoin",9)== getFunctionId(p) ||
-				getName("indexjoin",9)== getFunctionId(p) ||
-				getName("hashjoin",8)== getFunctionId(p) ||
-				getName("cartesianproduct",16)== getFunctionId(p) ||
-				getName("union",5)== getFunctionId(p) )
+				putName("fetchjoin",9)== getFunctionId(p) ||
+				putName("mergejoin",9)== getFunctionId(p) ||
+				putName("indexjoin",9)== getFunctionId(p) ||
+				putName("hashjoin",8)== getFunctionId(p) ||
+				putName("cartesianproduct",16)== getFunctionId(p) ||
+				putName("union",5)== getFunctionId(p) )
 */
 			if (getFunctionId(p) == countRef && 
 				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
@@ -292,14 +292,14 @@ variables on the stack.
 					if ((k = STalias(getArg(p, j), top, tuples)) >= 0 && tuples[k].packed == 0)
 						STpack(mb, k, tuples);
 			}
-		} else if (getName("datacell", 8) == getModuleId(p)) {
-			if (getName("bindReceptor", 12) && (k = STalias(getArg(p, 0), top, tuples)) >= 0) {
+		} else if (putName("datacell", 8) == getModuleId(p)) {
+			if (putName("bindReceptor", 12) && (k = STalias(getArg(p, 0), top, tuples)) >= 0) {
 				setFunctionId(p, putName("bindReceptorTuple", 17));
 				getArg(p, 0) = tuples[k].hidx;
 				setArgument(mb, p, 1, tuples[k].tidx);
 				p->retc++;
 				tuples[k].packed = 0;
-			} else if (getName("keep", 4) && p->argc >= 3 && (k = STalias(getArg(p, 3), top, tuples)) >= 0) {
+			} else if (putName("keep", 4) && p->argc >= 3 && (k = STalias(getArg(p, 3), top, tuples)) >= 0) {
 				getArg(p, 3) = tuples[k].tidx;
 			}
 		} else {

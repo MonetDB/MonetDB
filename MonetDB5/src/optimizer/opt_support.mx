@@ -1229,7 +1229,7 @@ int isFragmentGroup(InstrPtr p){
 	return		
 /*
 			(getModuleId(p)== constraintsRef && 
-				getFunctionId(p)== getName("emptySet",8)) ||
+				getFunctionId(p)== putName("emptySet",8)) ||
 */
 			(getModuleId(p)== algebraRef && (
 				getFunctionId(p)== selectRef ||

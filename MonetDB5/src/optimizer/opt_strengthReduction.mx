@@ -105,16 +105,16 @@ isNewSource(InstrPtr p) {
 	if( mp == batcalcRef) return 1;
 	if( mp == strRef) return 1;
 	if( mp == batstrRef) return 1;
-	if( mp == getName("array",5)) return 1;
-	if( mp == getName("url",3)) return 1;
-	if( mp == getName("daytime",7)) return 1;
-	if( mp == getName("day",3)) return 1;
-	if( mp == getName("date",4)) return 1;
-	if( mp == getName("time",4)) return 1;
-	if( mp == getName("tzone",5)) return 1;
-	if( mp == getName("color",4)) return 1;
-	if( mp == getName("batcolor",8)) return 1;
-	if( mp == getName("blob",4)) return 1;
+	if( mp == putName("array",5)) return 1;
+	if( mp == putName("url",3)) return 1;
+	if( mp == putName("daytime",7)) return 1;
+	if( mp == putName("day",3)) return 1;
+	if( mp == putName("date",4)) return 1;
+	if( mp == putName("time",4)) return 1;
+	if( mp == putName("tzone",5)) return 1;
+	if( mp == putName("color",4)) return 1;
+	if( mp == putName("batcolor",8)) return 1;
+	if( mp == putName("blob",4)) return 1;
 	return 0;
 }
 static int

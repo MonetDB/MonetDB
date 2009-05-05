@@ -984,14 +984,8 @@ static INLINE str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 	MapiHdl mhdl;
 
-	assert(conn!= NULL);
 	*ret = NULL;
 	mhdl = mapi_query(conn, query);
-	if (mapi_error(conn) != MOK){
-		mapi_explain(conn,stderr);
-		throw(IO, func, "an error occurred on connection: %s",
-				mapi_error_str(conn));
-	}
 	if (mhdl) {
 		if (mapi_result_error(mhdl) != NULL) {
 			str err = createException(
@@ -1001,8 +995,14 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 			mapi_close_handle(mhdl);
 			return(err);
 		}
-	} else
-		throw(MAL, func, "remote function invocation didn't return a result");
+	} else {
+		if (mapi_error(conn) != MOK) {
+			throw(IO, func, "an error occurred on connection: %s",
+					mapi_error_str(conn));
+		} else {
+			throw(MAL, func, "remote function invocation didn't return a result");
+		}
+	}
 
 	*ret = mhdl;
 	return(MAL_SUCCEED);
@@ -1328,7 +1328,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", "Connection name is NULL or nil");
 
 	/* find local definition */
-	sym= findSymbol(getName(mod,strlen(mod)),getName(fcn,strlen(fcn)));
+	sym= findSymbol(putName(mod,strlen(mod)),putName(fcn,strlen(fcn)));
 	if ( sym == NULL)
 		throw(MAL,"remote.register","Function not found");
 

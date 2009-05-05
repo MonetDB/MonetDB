@@ -119,15 +119,15 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 {
 	int i, j, actions = 0;
 	InstrPtr p;
-	str likeRef = getName("like", 4);
-	str existRef = getName("exist", 5);
-	str uniqueRef = getName("unique", 6);
-	str suniqueRef = getName("sunique", 7);
-	str kuniqueRef = getName("kunique", 7);
-	str intersectRef = getName("intersect", 9);
-	str sintersectRef = getName("sintersect", 10);
-	str kintersectRef = getName("kintersect", 10);
-	str fragmentRef = getName("fragment", 8);
+	str likeRef = putName("like", 4);
+	str existRef = putName("exist", 5);
+	str uniqueRef = putName("unique", 6);
+	str suniqueRef = putName("sunique", 7);
+	str kuniqueRef = putName("kunique", 7);
+	str intersectRef = putName("intersect", 9);
+	str sintersectRef = putName("sintersect", 10);
+	str kintersectRef = putName("kintersect", 10);
+	str fragmentRef = putName("fragment", 8);
 	int *alias;
 	int runonce= FALSE;
 

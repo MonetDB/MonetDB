@@ -192,6 +192,12 @@ command crackers.insert(b:bat[:oid,:date],bp:bat[:oid,:dbl],c:bat[:date,:dbl]):v
 command crackers.insert(b:bat[:oid,:date],bp:bat[:oid,:lng],c:bat[:date,:lng]):void address CRKinsert;
 #Keep the insertions BAT separatelly and merge in the future on demand with the Ripple
 
+command crackers.insert(b:bat[:oid,:dbl],bp:bat[:oid,:date],c:bat[:dbl,:date]):void address CRKinsert;
+#Keep the insertions BAT separatelly and merge in the future on demand with the Ripple
+
+command crackers.insert(b:bat[:oid,:dbl],bp:bat[:oid,:int],c:bat[:dbl,:int]):void address CRKinsert;
+#Keep the insertions BAT separatelly and merge in the future on demand with the Ripple
+
 command crackers.insert(b:bat[:oid,:date],bp:bat[:oid,:date],c:bat[:date,:date]):void address CRKinsert;
 #Keep the insertions BAT separatelly and merge in the future on demand with the Ripple
 
@@ -379,6 +385,12 @@ command crackers.printPendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:dbl]):voi
 command crackers.printPendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:lng]):void address CRKprintPendingInsertions;
 #Print the pending insertions
 
+command crackers.printPendingInsertions(b:bat[:oid,:dbl],bp:bat[:oid,:date]):void address CRKprintPendingInsertions;
+#Print the pending insertions
+
+command crackers.printPendingInsertions(b:bat[:oid,:dbl],bp:bat[:oid,:int]):void address CRKprintPendingInsertions;
+#Print the pending insertions
+
 command crackers.printPendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:date]):void address CRKprintPendingInsertions;
 #Print the pending insertions
 
@@ -431,6 +443,12 @@ command crackers.sizePendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:dbl]):void
 #Get the size of the pending insertions for this map
 
 command crackers.sizePendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:lng]):void address CRKsizePendingInsertions;
+#Get the size of the pending insertions for this map
+
+command crackers.sizePendingInsertions(b:bat[:oid,:dbl],bp:bat[:oid,:date]):void address CRKsizePendingInsertions;
+#Get the size of the pending insertions for this map
+
+command crackers.sizePendingInsertions(b:bat[:oid,:dbl],bp:bat[:oid,:int]):void address CRKsizePendingInsertions;
 #Get the size of the pending insertions for this map
 
 command crackers.sizePendingInsertions(b:bat[:oid,:date],bp:bat[:oid,:date]):void address CRKsizePendingInsertions;

@@ -23,6 +23,8 @@ function tst();
 	z:= my_case(1);
 end tst;
 optimizer.inline("user","tst");
+io.printf("#result of inline\n");
+mdb.list("user","tst");
 optimizer.remap("user","tst");
 optimizer.evaluate("user","tst");
 optimizer.costModel("user","tst");
@@ -37,5 +39,6 @@ optimizer.deadcode("user","tst");
 optimizer.reduce("user","tst");
 optimizer.garbageCollector("user","tst");
 optimizer.dataflow("user","tst");
+io.printf("#result of all optimizers\n");
 mdb.list("user","tst");
 

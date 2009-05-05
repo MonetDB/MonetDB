@@ -21,7 +21,7 @@
 The SQL plans are produced without knowledge of possible 
 benefits of parallel execution. It is the task of the mitosis
 optimizer to detect interesting cases and prepare the plan 
-where a large table is broken into identical pieces.
+where a large table is broken into pieces.
 
 There are two main directions to consider for mitosis.
 The first concerns parallel execution on a single machine using all the cores
@@ -57,7 +57,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/*#define _DEBUG_OPT_MITOSIS*/
+/* #define _DEBUG_OPT_MITOSIS*/
 #define PARTITION_THRESHOLD (BUN) GDKnr_threads
 
 @c
@@ -68,7 +68,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, k, limit, estimate=0, tpe, pieces=1;
+	int i, j, limit, estimate=0, tpe, pieces=1;
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
@@ -159,45 +159,43 @@ spread evenly over the threads and the common type.
 			pushInstruction(mb,p);
 			continue;
 		}
-		k= getArg(p,0);
-		getArg(p,0)= newTmpVariable(mb, tpe=getArgType(mb,p,0));
-		setVarUsed(mb,getArg(p,0));
-		pushInstruction(mb,p);
 
-		q= newStmt(mb,batRef,partitionRef);
-		q->argc=0;
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
 		low.value.val.oval= 0;
-		for(j=0; j < pieces; j++){
-			if (j+1 < pieces)
-				hgh.value.val.oval= low.value.val.oval+slice;
-			else
-				hgh.value.val.oval= (oid) rowcnt;
+		tpe = getVarType(mb,getArg(p,0));
 
-			parts[j]= newTmpVariable(mb,tpe);
+		for(j=0; j < pieces; j++){
+			q= copyInstruction(p);
+			q= pushOid(mb,q,low.value.val.oval);
+			if (j+1 < pieces){
+				hgh.value.val.oval= low.value.val.oval+slice;
+				q= pushOid(mb,q,hgh.value.val.oval);
+			} else
+				pushNil(mb,q, TYPE_oid);
+
+			getArg(q,0)= parts[j]= newTmpVariable(mb,tpe);
+			setVarUDFtype(mb,parts[j]);
 			setVarUsed(mb,parts[j]);
-			q= pushArgument(mb,q, parts[j]);
 			if (getFunctionId(p) == binddbatRef) {
-				varSetProp(mb, getArg(q,j), PropertyIndex("tlb"), op_gte, (ptr) &low.value);
-				varSetProp(mb, getArg(q,j), PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
+				varSetProp(mb, parts[j], PropertyIndex("tlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, parts[j], PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
 			} else {
-				varSetProp(mb, getArg(q,j), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-				varSetProp(mb, getArg(q,j), PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+				varSetProp(mb, parts[j], PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, parts[j], PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
 			}
 			low.value.val.oval += slice;
+			pushInstruction(mb,q);
 		}
-		q->retc= q->argc;
-		q= pushArgument(mb,q, getArg(p,0));
 
-		p= newStmt(mb,matRef,newRef);
-		getArg(p,0)=k;
-		setVarUDFtype(mb,k);
+		q= newStmt(mb,matRef,newRef);
+		getArg(q,0)= getArg(p,0);
 		for(j=0; j<pieces; j++)
-			p= pushArgument(mb,p,parts[j]);
+			q= pushArgument(mb,q,parts[j]);
 	}
 #ifdef _DEBUG_OPT_MITOSIS
-	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+	stream_printf(cntxt->fdout,"DONE MITOSIS\n");
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT);
 #endif
 	GDKfree(parts);
 	return 1;
