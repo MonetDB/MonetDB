@@ -1307,6 +1307,7 @@ end main;
 [ "removeScenario",		  "command",	  "clients",	  "(usr:str,sc:str):void ",														  "CLTremoveScenario;"					  ]
 [ "removeUser",			  "command",	  "clients",	  "(nme:str):void ",															  "CLTremoveUser;"					  ]
 [ "setPassword",		  "command",	  "clients",	  "(user:str,pass:str):void ",														  "CLTsetPassword;"					  ]
+[ "sha1sum",			  "command",	  "clients",		  "(pw:str):str ",															  "CLTsha1sum;"						  ]
 [ "shutdown",			  "command",	  "clients",	  "(forced:bit):void ",															  "CLTshutdown;"					  ]
 [ "suspend",			  "pattern",	  "clients",	  "(id:int):void ",															  "CLTsuspend;"						  ]
 [ "stop",				  "pattern",	  "clients",	  "(id:int):void ",													  "CLTstop;"						  ]
