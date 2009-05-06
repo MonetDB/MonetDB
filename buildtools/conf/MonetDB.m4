@@ -426,6 +426,7 @@ MONETDB5_LIBS=""
 MONETDB5_MODS=""
 MONETDB5_MOD_PATH=""
 MONETDB5_PREFIX="."
+MONETDB5_RDF_LIB=""
 if test "x$1" = "x"; then
   MONETDB5_REQUIRED_VERSION="5.11.0"
   #                          ^^^^^
@@ -458,6 +459,7 @@ if test "x$have_monetdb5" != xno; then
       'HAVE_RAPTOR=#')
         have_monetdb5_rdf=yes
         AC_DEFINE(HAVE_MONETDB5_RDF, 1, [Define if MonetDB5 was compiled with lib raptor available, and hence provides RDF support (i.e., module rdf)])
+        MONETDB5_RDF_LIB="-l_rdf"
         ;;
       esac
       AC_MSG_RESULT($have_monetdb5_rdf: $MONETDB5_CONFIG --conds  says  $have_monetdb5_raptor)
@@ -509,6 +511,7 @@ AC_SUBST(MONETDB5_MODS)
 AC_SUBST(MONETDB5_MOD_PATH)
 AC_SUBST(MONETDB5_PREFIX)
 AC_SUBST(MONETDB5_VERSION)
+AC_SUBST(MONETDB5_RDF_LIB)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
 AM_CONDITIONAL(HAVE_MONETDB5_RDF,test x$have_monetdb5_rdf = xyes)
 ]) dnl AC_DEFUN AM_MONETDB5
