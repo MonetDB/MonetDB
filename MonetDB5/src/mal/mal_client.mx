@@ -68,7 +68,7 @@ are located in mal_startup.
 #define _MAL_CLIENT_H_
 #define bitset int
 
-/* #define MAL_CLIENT_DEBUG*/
+/* #define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 #include "mal_profiler.h"
@@ -431,7 +431,7 @@ Client MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 	if (c == mal_clients+MAL_MAXCLIENTS) 
 		return NULL;
 #ifdef MAL_CLIENT_DEBUG
-	printf("Client found %d\n", (int)(c-mal_clients));
+	printf("Client found %d\n", c->idx);
 #endif
 	if (c) {
 		/* TODO reset client */
@@ -457,6 +457,9 @@ Client MCfindClient(oid user, str scen, bstream *fin, stream *fout)
 static void
 MCexitClient(Client c)
 {
+#ifdef MAL_CLIENT_DEBUG
+	printf("# Exit client %d\n", c->idx);
+#endif
 	if (c->father == NULL) { /* normal client */
 		if( c->fdout && c->fdout != GDKstdout){
 			MPresetProfiler(c->fdout);
@@ -485,7 +488,13 @@ MCwait(Client c)
 		MCexitClient(c);
 		/* wait for work */
 		mal_unset_lock(mal_contextLock, "wait");
+#ifdef MAL_DEBUG_CLIENT
+		stream_printf(c->fdout,"Put client into pool %d\n",c->idx);
+#endif
 		MT_down_sema(c->s, "MSserveClient");
+#ifdef MAL_DEBUG_CLIENT
+		stream_printf(c->fdout,"Awake client in pool %d\n",c->idx);
+#endif
 		c->mythread->data[1] = c->fdin;
 		c->mythread->data[0] = c->fdout;
 		return (c->mode == CLAIMED);
@@ -638,6 +647,9 @@ void freeClient(Client c)
 	Thread t= c->mythread;
 	c->mode = FINISHING;
 
+#ifdef MAL_CLIENT_DEBUG
+	printf("# Free client %d\n", c->idx);
+#endif
 	MCexitClient(c);
 
 	/* scope list and curprg can not be removed, 
@@ -815,7 +827,7 @@ int MCreadClient(Client c){
 	bstream *in = c->fdin;
 
 #ifdef MAL_CLIENT_DEBUG
-	printf("# streamClient " OIDFMT "\n",c->user);
+	printf("# streamClient %d %d\n",c->idx,isa_block_stream(in->s));
 #endif
 
 	while (in->pos < in->len && 
@@ -847,17 +859,23 @@ int MCreadClient(Client c){
 			if (p != in->buf + in->len -1)
 				in->len++;
 		}
-		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
+		if (sum == 0 && in->eof==0 && isa_block_stream(in->s)) {
 			/* we hadn't seen the EOF before, so just try again
 			   (this time with prompt) */
+#ifdef MAL_CLIENT_DEBUG
+			printf("# retry stream reading %d %d\n",c->idx, in->eof);
+#endif
 			return MCreadClient(c);
 		}
 #ifdef MAL_CLIENT_DEBUG
-		printf("# simple stream received:");
+		printf("# simple stream received %d sum " SZFMT "\n",c->idx,sum);
 #endif
 	}
 	if (in->pos >= in->len) {
 		/* end of stream reached */
+#ifdef MAL_CLIENT_DEBUG
+		printf("# end of stream received %d %d\n",c->idx,c->bak==0);
+#endif
 		if (c->bak) {
 			MCpopClientInput(c);
 			if( c->fdin == NULL)
@@ -871,6 +889,10 @@ int MCreadClient(Client c){
 		in->pos= in->len;
 		return MCreadClient(c);
 	} 
+#ifdef MAL_CLIENT_DEBUG
+	printf("# finished stream read %d %d\n", (int)in->pos,  (int)in->len);
+	printf("%s\n", in->buf);
+#endif
 	return 1;
 }
 @}
