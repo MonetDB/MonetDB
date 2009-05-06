@@ -209,7 +209,7 @@ void delName(str nme, size_t len){
 }
 str putName(str nme, size_t len)
 {
-	size_t k=0,l,top;
+	size_t l,top;
 	char buf[1024];
 
 	if( nme == NULL)
@@ -249,7 +249,6 @@ str putName(str nme, size_t len)
 */
 			return namespace.nme[l];
 	    }
-		k=l;
 	}
 
 	/* protect this, as it will be updated by multiple threads */
