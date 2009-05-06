@@ -182,18 +182,17 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 
-		if (updstmt){
-			if( p->token== ENDsymbol){
-				if ( app_sc >= 0 ){
+		if( p->token== ENDsymbol){
+			if ( updstmt && app_sc >= 0 ){
 					q= newFcnCall(mb,"recycle","reset");
 					pushArgument(mb,q, app_sc);
 					pushArgument(mb,q, app_tbl);
-				}
-				(void) newFcnCall(mb,"recycle","epilogue");
 			}
+			(void) newFcnCall(mb,"recycle","epilogue");
 			pushInstruction(mb,p);
 			continue;
 		} 
+
 		
 		/* skip simple assignments */
 		if( p->token == ASSIGNsymbol){
@@ -277,8 +276,8 @@ are marked for re-use.
 				pushInstruction(mb,q);
 				getArg(p,1) = getArg(q,0);
 				setFunctionId(p,markTRef);
-                setModuleId(p,algebraRef);
-                p->argc = 2;
+				setModuleId(p,algebraRef);
+				p->argc = 2;
 				p->recycle = REC_MAX_INTEREST;
 				actions ++; 
 				if (getLastUpdate(span, getArg(p,0)) == i)
@@ -301,9 +300,12 @@ with the transaction commits.
 				p->recycle = REC_NO_INTEREST; /* this instruction is not monitored */
 			}
 
-		if( p->token== ENDsymbol){
-			(void) newFcnCall(mb,"recycle","epilogue");
+		if (getModuleId(p) == octopusRef && 
+			 getFunctionId(p) == bindRef ) {
+				recycled[getArg(p,0)] = 1;
+				p->recycle = REC_MAX_INTEREST; 
 		}
+
 		pushInstruction(mb,p);
 	}
 	GDKfree(span);

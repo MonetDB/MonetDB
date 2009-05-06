@@ -1151,7 +1151,14 @@ hasSideEffects(InstrPtr p, int strict)
 	}
 	if (strict && getModuleId(p) != groupRef && getFunctionId(p)==newRef)
 		return TRUE;
-	if ( getModuleId(p) == octopusRef)
+
+	if ( getModuleId(p) == octopusRef){
+		if (getFunctionId(p) == bindRef) return FALSE;
+		if (getFunctionId(p) == bindidxRef) return FALSE;
+		if (getFunctionId(p) == binddbatRef) return FALSE;
+		return TRUE;
+	}
+	if ( getModuleId(p) == remoteRef)
 		return TRUE;
 	return FALSE;
 }
