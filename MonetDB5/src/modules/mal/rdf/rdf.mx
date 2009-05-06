@@ -29,7 +29,14 @@ comment "look behind you!"
 
 command printTriples(b:bat[:void, :bat], order:int):void
 address RDFPrintTriples
-comment "print triples of a graph for debug purposes. Order is: 1=SPO, 2=SOP, 3=PSO, 4=POS, 5=OPS, 6=OSP";
+comment "print triples of a graph for debug purposes.
+Order is:
+1=SPO,
+2=SOP,
+3=PSO,
+4=POS,
+5=OPS,
+6=OSP";
 
 @h
 #ifndef _RDF_H_

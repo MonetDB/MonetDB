@@ -51,12 +51,12 @@ static graphBATdef graphdef[N_GRAPH_BAT] = {
 	{S_OS,     "_s_os",     TYPE_void, TYPE_oid},
 	{O_OS,     "_o_os",     TYPE_void, TYPE_oid},
 
-	{S_SP,     "_s_sp",   TYPE_void, TYPE_oid},
-	{P_SP,     "_p_sp",   TYPE_void, TYPE_oid},
-	{S_PS,     "_s_ps",   TYPE_void, TYPE_oid},
-	{P_PS,     "_p_ps",   TYPE_void, TYPE_oid},
+	{S_SP,     "_s_sp",     TYPE_void, TYPE_oid},
+	{P_SP,     "_p_sp",     TYPE_void, TYPE_oid},
+	{S_PS,     "_s_ps",     TYPE_void, TYPE_oid},
+	{P_PS,     "_p_ps",     TYPE_void, TYPE_oid},
 
-	{MAP_LEX, "_map_lex", TYPE_void, TYPE_str}
+	{MAP_LEX, "_map_lex",   TYPE_void, TYPE_str}
 };
 
 typedef struct parserData {
