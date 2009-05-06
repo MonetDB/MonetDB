@@ -424,6 +424,30 @@ PFxml2la_conv_2PFLA_nodekind(char* s)
     return node_kind_node;
 }
 
+PFalg_fun_call_t 
+PFxml2la_conv_2PFLA_fun_callkind(char* s) 
+{
+    if (false) return node_kind_node; /* discard first case */
+#define mapto_fun_call_kind(kind)                              \
+    else if (strcmp (s, PFalg_fun_call_kind_str((kind))) == 0) \
+        return (kind);
+    /* the kind was copied from algebra.c:PFalg_node_kind_str()
+       (and should stay aligned) */
+    mapto_fun_call_kind (alg_fun_call_pf_documents)
+    mapto_fun_call_kind (alg_fun_call_pf_documents_unsafe)
+    mapto_fun_call_kind (alg_fun_call_pf_documents_str)
+    mapto_fun_call_kind (alg_fun_call_pf_documents_str_unsafe)
+    mapto_fun_call_kind (alg_fun_call_pf_collections)
+    mapto_fun_call_kind (alg_fun_call_pf_collections_unsafe)
+    mapto_fun_call_kind (alg_fun_call_xrpc)
+    mapto_fun_call_kind (alg_fun_call_xrpc_helpers)
+    mapto_fun_call_kind (alg_fun_call_tijah)
+
+    PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+    /* pacify picky compilers */
+    return node_kind_node;
+}
+
 PFalg_doc_t 
 PFxml2la_conv_2PFLA_docType(char* s) 
 {

@@ -64,6 +64,8 @@ PFalg_axis_t PFxml2la_conv_2PFLA_xpathaxis (char* s);
 
 PFalg_node_kind_t PFxml2la_conv_2PFLA_nodekind (char* s);
 
+PFalg_fun_call_t PFxml2la_conv_2PFLA_fun_callkind(char* s);
+
 PFalg_doc_t PFxml2la_conv_2PFLA_docType (char* s);
 
 PFalg_doc_tbl_kind_t PFxml2la_conv_2PFLA_doctblType (char* s);

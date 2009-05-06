@@ -214,6 +214,15 @@
                     PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
 
 /**              
+ * Macro return-type:  PFalg_fun_call_t 
+ * XPath return-type:  attribute(){1}
+ */
+#define PFLA_FUNCALLKIND(xpath) \
+            PFxml2la_conv_2PFLA_fun_callkind( \
+                PFxml2la_xpath_getAttributeValueFromAttributeNode( \
+                    PFxml2la_xpath_getNthNode(XPATH(xpath), 0)))
+
+/**              
  * Macro return-type:  PFalg_simple_type_t 
  * XPath return-type:  attribute(){1}
  */
@@ -1905,7 +1914,7 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
             newAlgNode = PFla_frag_extract
              (
              CHILDNODE(0),
-             PFLA_ATT("/content/column/@reference")
+             A2INT_O("/content/column/@reference", -1)
              );
         }  
         break;
@@ -2079,8 +2088,30 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_call             : 
 
         {
-            PFoops (OOPS_FATAL,
-                    "Import of la_fun_call operator is not implemented yet");
+            /* get occurrence indicator */
+            unsigned int    min = A2INT_O("/content/output/@min",0),
+                            max = A2INT_O("/content/output/@min",2);
+            PFalg_occ_ind_t occ_ind;
+
+            if (min == 1) { if (max == 1) occ_ind = alg_occ_exactly_one;
+                            else          occ_ind = alg_occ_one_or_more; }
+            else {          if (max == 1) occ_ind = alg_occ_zero_or_one;
+                            else          occ_ind = alg_occ_unknown; }
+
+            newAlgNode = PFla_fun_call
+             (
+             CHILDNODE(0), CHILDNODE(1),
+             PFLA_SCHEMA("/content/output/column"),
+             PFLA_FUNCALLKIND("/content/kind/@name"),
+             PFqname (
+                 (PFns_t)
+                 { .prefix = NULL,
+                   .uri    = A2STR_O("/content/function/@uri", NULL) },
+                 A2STR_O("/content/function/@name", NULL)),
+             NULL,
+             PFLA_ATT("/content/column[@function='iter']/@name"),
+             occ_ind
+             );
         }  
         break;
 
@@ -2090,8 +2121,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_param            : 
 
         {
-            PFoops (OOPS_FATAL,
-                    "Import of la_fun_param operator is not implemented yet");
+            newAlgNode = PFla_fun_param
+             (
+             CHILDNODE(0), CHILDNODE(1),
+             PFLA_SCHEMA("/content/column")
+             );
         }  
         break;
 
@@ -2101,9 +2135,11 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
     case la_fun_frag_param       : 
 
         {
-            PFoops (OOPS_FATAL,
-                    "Import of la_fun_frag_param operator "
-                    "is not implemented yet");
+            newAlgNode = PFla_fun_frag_param
+             (
+             CHILDNODE(0), CHILDNODE(1),
+             A2INT_O("/content/column/@reference", -1)
+             );
         }  
         break;
 
@@ -2491,9 +2527,19 @@ getPFLA_Schema(
         PFalg_simple_type_t columnType = PFxml2la_conv_2PFLA_atomType(
             PFxml2la_xpath_getAttributeValueFromElementNode(
                 column_xml, "type"));
+
+        /* in case we have a schema in a fixed order
+           we respect that order */
+        unsigned int pos = i;
+        char *pos_str = 
+            PFxml2la_xpath_getAttributeValueFromElementNode(
+                column_xml, "pos");
     
-        schema.items[i].name = columnName;
-        schema.items[i].type = columnType; 
+        if (pos_str)
+            pos = atoi (pos_str);
+
+        schema.items[pos].name = columnName;
+        schema.items[pos].type = columnType; 
     }
     
     return  schema;

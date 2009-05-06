@@ -2372,22 +2372,48 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
         case la_fun_call:
             PFarray_printf (xml,
                             "    <content>\n"
-                            "      <function uri=\"%s\" name=\"%s\"/>\n"
+                            "      <function");
+            if (PFqname_uri (n->sem.fun_call.qname))
+                PFarray_printf (xml,
+                                " uri=\"%s\"",
+                                PFqname_uri (n->sem.fun_call.qname));
+            PFarray_printf (xml,
+                                       " name=\"%s\"/>\n"
                             "      <kind name=\"%s\"/>\n"
                             "      <column name=\"%s\" function=\"iter\"/>\n"
-                            "    </content>\n",
-                            PFqname_uri (n->sem.fun_call.qname),
+                            "      <output min=\"%i\" max=\"%i\">\n",
                             PFqname_loc (n->sem.fun_call.qname),
                             PFalg_fun_call_kind_str (n->sem.fun_call.kind),
-                            PFcol_str (n->sem.fun_call.iter));
+                            PFcol_str (n->sem.fun_call.iter),
+                            n->sem.fun_call.occ_ind == alg_occ_exactly_one ||
+                            n->sem.fun_call.occ_ind == alg_occ_one_or_more
+                            ? 1 : 0,
+                            n->sem.fun_call.occ_ind == alg_occ_zero_or_one ||
+                            n->sem.fun_call.occ_ind == alg_occ_exactly_one
+                            ? 1 : 2);
+            for (c = 0; c < n->schema.count; c++)
+                PFarray_printf (xml,
+                                "        <column name=\"%s\""
+                                               " type=\"%s\""
+                                               " position=\"%u\"/>\n",
+                                PFcol_str (n->schema.items[c].name),
+                                PFalg_simple_type_str (n->schema.items[c].type),
+                                c);
+            PFarray_printf (xml,
+                            "      </output>\n"
+                            "    </content>\n");
             break;
 
         case la_fun_param:
             PFarray_printf (xml, "    <content>\n");
             for (c = 0; c < n->schema.count; c++)
                 PFarray_printf (xml,
-                                "      <column name=\"%s\" position=\"%u\"/>\n",
-                                PFcol_str (n->schema.items[c].name), c);
+                                "      <column name=\"%s\""
+                                             " type=\"%s\""
+                                             " position=\"%u\"/>\n",
+                                PFcol_str (n->schema.items[c].name),
+                                PFalg_simple_type_str (n->schema.items[c].type),
+                                c);
             PFarray_printf (xml, "    </content>\n");
             break;
 
