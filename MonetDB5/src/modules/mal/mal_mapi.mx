@@ -419,7 +419,7 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, stream *in, stream *out) {
 #ifdef DEBUG_SERVER
-	Client = MCgetClient();
+	Client cntxt= MCgetClient();
 #endif
 	if (cmd == NULL) {
 		char *buf = (char *) GDKmalloc(BLOCK + 1);
@@ -466,11 +466,11 @@ doChallenge(str cmd, stream *in, stream *out) {
 		}
 		buf[len] = 0;
 #ifdef DEBUG_SERVER
-		printf("mal_mapi:Client accepted %s\n", name);
+		printf("mal_mapi:Client accepted %s\n", buf);
 		fflush(stdout);
 
 		stream_printf(cntxt->fdout, "#SERVERlisten:client accepted\n");
-		stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", name);
+		stream_printf(cntxt->fdout, "#SERVERlisten:client string %s\n", buf);
 #endif
 		bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -1848,9 +1848,6 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	Mapi mid;
 	MapiHdl hdl;
 	char *s,*fld, *qry=0;
-#ifdef DEBUG_SERVER
-	Client cntxt= MCgetClient();
-#endif
 
 	(void) cntxt;
 	key= * (int*) getArgReference(stk,pci,pci->retc);
