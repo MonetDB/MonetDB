@@ -445,16 +445,16 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	"mitosis," 
+	/* "mitosis," */
 /*	"cluster,"*/
 	"aliases,"
 	/* "crack," */
 	/* "selcrack," */
 	/* "sidcrack," */
-	"mergetable," 
+	/* "mergetable," */
 	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
-/*	"octopus,"*/
+	/* "octopus,"*/
 #endif
 	"constants,"
 	"commonTerms,"
@@ -494,7 +494,7 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 		if (strcmp(optimizer,"default")==0){
 			str base= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
 			addOptimizers(c,mb,base);
-		} else if ((nme = getName(optimizer,strlen(optimizer))) == 0) {
+		} else if ((nme = putName(optimizer,strlen(optimizer))) == 0) {
 			showException(SQL,"optimizer"," '%s' does not exist\n",optimizer);
 			mb->errors++;
 		} else if (top<256)
