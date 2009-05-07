@@ -1,0 +1,4 @@
+* Thu  7 May 2009 17:03:01 CEST
+
+Added a check against the protocol version during authentication;
+Imported the activerecord code (available under adapter/).

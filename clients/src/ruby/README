@@ -3,8 +3,6 @@ This directory contains the a ruby interface to monetdb5
 written in pure ruby.
 
 
-
-
 lib/MonetDB.rb
 lib/MonetDBConnection.rb
 lib/MonetDBStatements.rb
@@ -17,6 +15,34 @@ ruby-monetdb-sql-0.1.gemspec: make file for rubygems
 ruby-monetdb-sql-0.1.gem: actual gem; enables to install the driver and the documentation
 
 doc/: rubydoc in HTML format
+
+== ActiveRecord adapter ==
+Active Record connects business objects and database tables to create a persistable domain model where logic and data are presented in one wrapping. It‘s an implementation of the object-relational mapping (ORM) pattern.
+
+Required files:
+adapter/lib/active_record/monetdb_adapter.rb
+
+At the moment connection and SELECT queries are supported.
+
+Usage example follows:
+
+
+require 'active_record'  
+
+ActiveRecord::Base.establish_connection(  
+        :adapter => "monetdb",  
+        :host => "localhost",  
+        :database => "demo"  
+)
+
+# map the tables schema to a class
+class Tables < ActiveRecord::Base
+end
+
+# return the first result of the query SELECT * from tables
+puts Tables.find(:first)
+  
+
 
 
 == Rubygem ==
@@ -76,9 +102,5 @@ res.free
 
 # Disconnect from server
 db.close
-
-
-
-
 
 See lib/demo.rb and the MonetDBDatar class documentation for more examples.

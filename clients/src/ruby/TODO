@@ -1,5 +1,5 @@
-* improve activerecord driver (currently not committed to cvs)
+* improve activerecord driver
 * profiling and performance tuning
-* improve type conversion
+* improve type conversion (do conversion "on demand" as in jdbc driver)
 * improve tests
 * code and documentation cleanup
