@@ -1570,6 +1570,7 @@ GDKinit(opt *set, int setlen)
 	GDKenv = BATnew(TYPE_str, TYPE_str, 100);
 	if (GDKenv == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
+	BATkey(GDKenv, BOUND2BTRUE);
 	BATrename(GDKenv, "monet_environment");
 	BATmode(GDKenv, TRANSIENT);
 
