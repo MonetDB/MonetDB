@@ -68,7 +68,7 @@ are located in mal_startup.
 #define _MAL_CLIENT_H_
 #define bitset int
 
-/* #define MAL_CLIENT_DEBUG */
+/*#define MAL_CLIENT_DEBUG */
 
 #include "mal_resolve.h"
 #include "mal_profiler.h"
@@ -859,7 +859,7 @@ int MCreadClient(Client c){
 			if (p != in->buf + in->len -1)
 				in->len++;
 		}
-		if (sum == 0 && in->eof==0 && isa_block_stream(in->s)) {
+		if (sum == 0 && in->eof && isa_block_stream(in->s)) {
 			/* we hadn't seen the EOF before, so just try again
 			   (this time with prompt) */
 #ifdef MAL_CLIENT_DEBUG
@@ -891,7 +891,7 @@ int MCreadClient(Client c){
 	} 
 #ifdef MAL_CLIENT_DEBUG
 	printf("# finished stream read %d %d\n", (int)in->pos,  (int)in->len);
-	printf("%s\n", in->buf);
+	printf("#%s\n", in->buf);
 #endif
 	return 1;
 }
