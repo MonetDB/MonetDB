@@ -20,6 +20,9 @@ class MonetDBConnection
   # endianness of a message sent to the server
   @@CLIENT_ENDIANNESS   = "BIG"
   
+  # MAPI protocols supported by the driver
+  @@SUPPORTED_PROTOCOLS = [ 8 ]
+  
   attr_reader :socket
   
   # Instantiates a new MonetDBConnection object
@@ -49,33 +52,34 @@ class MonetDBConnection
        if server_challenge != ""
          salt = server_challenge.split(':')[0]
          @server_name = server_challenge.split(':')[1]
-         @protocol = server_challenge.split(':')[2]
+         @protocol = server_challenge.split(':')[2].to_i
          @supported_auth_types = server_challenge.split(':')[3].split(',')
          @server_endianness = server_challenge.split(':')[4]
 
          reply = build_auth_string(auth_type, salt, db_name)
-
        end
        
-        if @socket != nil
-           @connection_established = true
+       # If the server protocol version is not 8: abort and notify the user.
+       if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
+         puts @protocol
+        raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
+       end
+       
+       if @socket != nil
+          @connection_established = true
 
-           encode_message(reply).each { |msg|
-             @socket.write(msg)
-           }
+          encode_message(reply).each { |msg|
+            @socket.write(msg)
+          }
 
-           f, monetdb_auth = recv_decode_hdr
+          f, monetdb_auth = recv_decode_hdr
 
-           if monetdb_auth > 0
-             @connection_established = false
-             raise MonetDBQueryError, monetdb_auth
-           else
-               # set timezone  
-                set_timezone
-               #  msg = encode_message("Xexport_size 1;\n")
-               #  @socket.write(msg)
-
-           end
+          if monetdb_auth > 0
+            @connection_established = false
+            raise MonetDBQueryError, monetdb_auth
+          else
+            set_timezone
+          end
         else
           raise MonetDBSocketError
         end

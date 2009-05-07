@@ -351,23 +351,6 @@ class MonetDBData < MonetDBStatement
     end
   end
   
- 
-  # Cursor method that retrieves the next set of records. Previously cached records are discarded.
-  # - row: current position
-  # - offset: number of rows to read
-  def fetch_next(row, offset)
-  end
-  
-  # Cursor method that returns the record preceding <i>row</i> from a cached record set.
-  # - row: target position
-  def fetch_prev(row)
-  end
-  
-  # Cursor method that returns the record following <i>row</i> from a cached record set.
-  # - row: target position
-  def fetch_succ(row)
-  end
-  
   # Cursor method that returns the record at position <i>row</i> from a cached record set.
   # If 'row' is not specified, the method returns the next row in the record set
   # - row: target position. 
@@ -378,38 +361,6 @@ class MonetDBData < MonetDBStatement
     end
     @Q_TABLE_instance.index = row.to_i + 1
     return @Q_TABLE_instance.record_set[row.to_i]
-  end
-  
-  # Cursor method that returns a range of records from a cached record set.
-  # - from: beginning of the range
-  # - to: end of the range
-  def fetch_rows(from, to)
-  end
-  
-  # Cursor method that returns the first record from a cached record set.
-  def fetch_first()
-  end
-  
-  # Cursor method that returns the last record from a cached record set.
-  def fetch_last()
-  end
-  
-  def debug_columns_order()
-    @Q_TABLE_instance.header["columns_order"].each { |pos|
-      puts pos
-    }
-  end
-  
-  def debug_columns_type()
-    @Q_TABLE_instance.header["columns_type"].each { |pos|
-      puts pos
-    }
-  end
-  
-  def debug_columns_length()
-    @Q_TABLE_instance.header["columns_length"].each { |pos|
-      puts pos
-    }
   end
   
   # MonetDB - Ruby types mapping

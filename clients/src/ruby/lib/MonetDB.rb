@@ -19,9 +19,9 @@
     # * lang: language (default is sql) 
     # * host: server hostanme or ip  (default is localhost)
     # * port: server port (default is 50000)
-    def connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
+    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
       # TODO: handle pools of connections
-      @connection = MonetDBConnection.new(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000)
+      @connection = MonetDBConnection.new(user = username, passwd = password, lang = lang, host = host, port = port)
       @connection.real_connect(db_name, auth_type)
     end
   
@@ -35,10 +35,20 @@
       end
       return @data
     end
+    
+    # Return true if there exists a "connection" object
+    def is_connected?
+      if @connection == nil
+        return false
+      else 
+        return true
+      end
+    end
   
     # Close an active connection
     def close()
       @connection.disconnect
+      @connection = nil
     end
   end
 #end

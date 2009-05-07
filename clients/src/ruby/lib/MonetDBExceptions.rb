@@ -23,3 +23,9 @@ class MonetDBSocketError < StandardError
     $stderr.puts e
   end
 end
+
+class MonetDBProtocolError < StandardError
+   def initialize(e)
+     $stderr.puts e
+   end  
+end
