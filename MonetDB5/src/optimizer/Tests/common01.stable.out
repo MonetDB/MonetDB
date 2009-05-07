@@ -26,8 +26,8 @@ function user.qry():void;
     X136 := remote.connect("localhost","monetdb","monetdb");
     X143 := remote.put(X136,0);
     X145 := remote.exec(X136,"sql","getVersion",X143);
-    X147 := X143;
-    X148 := X145;
+    X147 := remote.put(X136,0);
+    X148 := remote.exec(X136,"sql","getVersion",X143);
 end qry;
 
 # 23:28:22 >  

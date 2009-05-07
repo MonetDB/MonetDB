@@ -144,7 +144,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-#define DEBUG_OPT_OCTOPUS           /* show partial result */
+/* #define DEBUG_OPT_OCTOPUS           show partial result */
 
 @c
 #include "mal_config.h"
