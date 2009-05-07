@@ -84,6 +84,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include "pathfinder.h"
 
 #include <assert.h>

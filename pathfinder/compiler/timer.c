@@ -36,6 +36,7 @@
  */
 
 /* PFinfo() */
+#include "pf_config.h"
 #include "pathfinder.h"
 
 /* time functions() */

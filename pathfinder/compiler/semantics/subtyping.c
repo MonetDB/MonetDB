@@ -70,6 +70,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include "pathfinder.h"
 
 /* CHAR_BIT */

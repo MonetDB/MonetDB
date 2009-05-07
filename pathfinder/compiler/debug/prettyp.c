@@ -34,6 +34,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include "pathfinder.h"
 
 #include <stdarg.h>
