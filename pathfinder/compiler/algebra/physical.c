@@ -37,7 +37,8 @@
  * $Id$
  */
 
-/* always include pathfinder.h first */
+/* always include pf_config.h first */
+#include "pf_config.h"
 #include "pf_config.h"
 #include "pathfinder.h"
 
