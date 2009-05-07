@@ -446,7 +446,7 @@ PFxml2la_conv_2PFLA_fun_callkind(char* s)
 
     PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
     /* pacify picky compilers */
-    return node_kind_node;
+    return alg_fun_call_pf_documents;
 }
 
 PFalg_doc_t 
