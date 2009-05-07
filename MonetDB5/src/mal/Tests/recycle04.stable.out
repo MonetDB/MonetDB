@@ -92,14 +92,14 @@ function user.qry(low:int,hgh:int):bat[:oid,:int];#  0 qry:bat[:oid,:int] := use
     s1 := algebra.select(b,low,hgh);    #  3 s1:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], low:int, hgh:int) {GR}
     return qry := s1;                   #  4 qry:bat[:oid,:int] := s1:bat[:oid,:int] {G}
     recycle.epilogue();                 #  5 _10:void := RECYCLEepilogue() 
-end qry;                                #  6  {R}
+end qry;                                #  6  
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     recycle.prelude();                  #  1 _6:void := RECYCLEprelude() 
     user.qry(1,10);                     #  2 _1:bat[:oid,:int] := user.qry(_2:int, _3:int) {GR}
     user.qry(1,10);                     #  3 _4:bat[:oid,:int] := user.qry(_2:int, _3:int) {GR}
     user.qry(1,10);                     #  4 _5:bat[:oid,:int] := user.qry(_2:int, _3:int) {GR}
     recycle.epilogue();                 #  5 _7:void := RECYCLEepilogue() 
-end tst;                                #  6  {R}
+end tst;                                #  6  
 #Recycler  catalog
 #retain= 1 time =0 sze= 0 alpha= 0.500
 #reuse= 2
