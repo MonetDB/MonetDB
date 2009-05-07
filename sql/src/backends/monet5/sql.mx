@@ -4189,7 +4189,6 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *graph = NULL;
 	BAT *p, *s, *o;
 	bat *g;
-	sql_trans *tr;
 	sql_schema *sch;
 	sql_table *g_tbl;
 	sql_column *gname, *gid;
@@ -4207,7 +4206,6 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
-	tr = m->session->tr;
 	sch = mvc_bind_schema(m, "rdf");
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
