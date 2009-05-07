@@ -37,6 +37,7 @@
  */
 
 %{
+#include "pf_config.h"
 #include "pathfinder.h"
 
 #include "parser.h"

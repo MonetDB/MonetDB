@@ -35,6 +35,7 @@
  * $Id$
  */
 
+#include "pf_config.h"
 #include "pathfinder.h"
 
 #if !HAVE_GC

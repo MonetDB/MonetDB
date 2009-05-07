@@ -31,6 +31,7 @@
  */
 
 /* always include "pathfinder.h", first! */
+#include "pf_config.h"
 #include "pathfinder.h"
 
 #include "mil_opt.h"

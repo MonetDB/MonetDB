@@ -233,6 +233,7 @@
  * $Id$
  */ 
 
+#include "pf_config.h"
 #include "pathfinder.h"
 #include "normalize.h"
 #include <assert.h>
