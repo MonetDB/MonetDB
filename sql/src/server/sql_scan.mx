@@ -446,7 +446,7 @@ scanner_error(mvc *lc, int cur)
 		(void) sql_error(lc, 1, "unexpected end of input");
 		return -1;	/* EOF needs -1 result */
 	default:
-		(void) sql_error(lc, 1, "unexpected control character (%d)", cur);
+		(void) sql_error(lc, 1, "unexpected%s character (U+%04X)", iscntrl(cur) ? " control" : "", cur);
 	}
 	return LEX_ERROR;
 }
@@ -856,6 +856,7 @@ tokenize(mvc * c, int cur)
 		if (isspace(cur)) {
 			if ((cur = skip_white_space(lc)) == EOF)
 				return cur;
+			continue;  /* try again */
 		} else if (isdigit(cur)) {
 			return number(c, cur);
 		} else if (isalpha(cur) || cur == '_') {
@@ -868,8 +869,8 @@ tokenize(mvc * c, int cur)
 				return cur;
 			return scanner_error(c, cur);
 		}
-		if (iscntrl(cur))
-			return scanner_error(c, cur);
+		/* none of the above: error */
+		return scanner_error(c, cur);
 	}
 }
 
