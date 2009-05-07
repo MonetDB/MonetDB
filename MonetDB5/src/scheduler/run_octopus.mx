@@ -176,7 +176,7 @@ that all instructions registered are unique.
 static str
 OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 {
-	int i;
+	int i,ret;
 	str conn, fname, msg = MAL_SUCCEED;
 
 	fname = getVarConstant(mb,getArg(p,2)).val.sval;
@@ -186,6 +186,7 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 			stream_printf(cntxt->fdout,"!%s\n",msg);
 			GDKfree(msg);
 			msg = NULL;
+			(void) RMTdisconnect(&ret,&conn);
 			continue;
 		}
 		if( !OCTOPUSfind(sea[i], fname) ){
@@ -205,6 +206,7 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 				sea[i].nxt = r;
 			}
 		}
+		(void) RMTdisconnect(&ret,&conn);
 	}
 	GDKfree(conn);
 	return msg;
