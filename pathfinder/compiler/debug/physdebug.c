@@ -1070,7 +1070,7 @@ PFpa_dot (FILE *f, PFpa_op_t *root, char *prop_args)
             char *fmt = prop_args;
             while (*fmt) {
                 if (*fmt == '+') {
-                        PFprop_write_dom_rel_dot (dot, root->prop);
+                        PFprop_write_dom_rel_dot (dot, root->prop, 0);
                         break;
                 }
                 fmt++;

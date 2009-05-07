@@ -151,17 +151,17 @@ check_occurrence (PFarray_t *subdoms, unsigned int pos)
  * to in AT&T dot notation to character array @a f.
  */
 void
-PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop)
+PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop, int id)
 {
     dom_t *dom, *subdom;
 
     assert (prop);
     if (prop->subdoms) {
         PFarray_printf (f,
-                        "dr_header [label=\"domain -> "
+                        "dr_header%i [label=\"domain -> "
                         "subdomain\\nrelationships (# = %i)\"];\n"
-                        "node1 -> dr_header [dir=forward,style=invis];\n",
-                        PFarray_last (prop->subdoms));
+                        "node%i_1 -> dr_header%i [dir=forward,style=invis];\n",
+                        id, PFarray_last (prop->subdoms), id, id);
 
         for (unsigned int i = 0; i < PFarray_last (prop->subdoms); i++) {
             dom = ((subdom_t *) PFarray_at (prop->subdoms, i))->dom;
@@ -170,15 +170,15 @@ PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop)
             if (!check_occurrence (prop->subdoms, i))
                 PFarray_printf (
                     f,
-                    "dom_rel%i [label=\"%i\"];\n"
-                    "dr_header -> dom_rel%i [dir=forward];\n",
-                    dom->id, dom->id, dom->id);
+                    "dom_rel%i_%i [label=\"%i\"];\n"
+                    "dr_header%i -> dom_rel%i_%i [dir=forward];\n",
+                    id, dom->id, dom->id, id, id, dom->id);
 
             PFarray_printf (
                 f,
-                "dom_rel%i [label=\"%i\"];\n"
-                "dom_rel%i -> dom_rel%i [dir=forward];\n",
-                subdom->id, subdom->id, dom->id, subdom->id);
+                "dom_rel%i_%i [label=\"%i\"];\n"
+                "dom_rel%i_%i -> dom_rel%i_%i [dir=forward];\n",
+                id, subdom->id, subdom->id, id, dom->id, id, subdom->id);
         }
     }
 }

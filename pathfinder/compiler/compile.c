@@ -90,6 +90,7 @@
 #include "sql_opt.h"
 #include "sqlprint.h"
 #include "load_stats.h"  /* to create the guide list */
+#include "alg_cl_mnemonic.h"
 
 #include "xml2lalg.h" /* xml importer */
 
@@ -300,7 +301,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 {
     PFpnode_t *proot  = NULL;
     PFcnode_t *croot  = NULL;
-    PFla_op_t *laroot  = NULL;
+    /* We either have a plan bundle in @a lapb
+       or a logical query plan in @a laroot. */
+    PFla_pb_t *lapb   = NULL;
+    PFla_op_t *laroot = NULL;
     PFpa_op_t *paroot = NULL;
     PFmil_t   *mroot  = NULL;
     PFarray_t *mil_program = NULL;
@@ -352,7 +356,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
        /* e.g namespaceInit */
 
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
-        PFla_op_t       *rootOp;
 
         /* Initialize data structures in the Namespace department */
         PFns_init ();
@@ -376,8 +379,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
              * from the parser in case of validation errors (which makes
              * fixing/locating this validation-errors unneccessary hard)
              */
-            rootOp = PFxml2la_importXMLFromFile (ctx,
-                                                 status->import_xml_filename);
+            lapb = PFxml2la_importXMLFromFile (ctx,
+                                               status->import_xml_filename);
         }
         else {
             /**
@@ -392,10 +395,14 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
              */
             char *xml  = PFurlcache (url, 1);
             int   size = strlen(xml);
-            rootOp = PFxml2la_importXMLFromMemory (ctx, xml, size);
+            lapb = PFxml2la_importXMLFromMemory (ctx, xml, size);
         }
 
-        laroot = rootOp;
+        /* detect whether we have a plan bundle or only a single plan */
+        if (PFla_pb_size (lapb) == 1 && PFla_pb_id_at (lapb, 0) == -1) {
+           laroot = PFla_pb_op_at (lapb, 0);
+           lapb = NULL;
+        }
 
         goto AFTER_CORE2ALG;
     }
@@ -622,7 +629,17 @@ AFTER_CORE2ALG:
      */
     tm = PFtimer_start ();
 
-    laroot = PFalgopt (laroot, status->timing, guide_list, status->opt_alg);
+    if (laroot)
+        laroot = PFalgopt (laroot, status->timing, guide_list, status->opt_alg);
+    else {
+        /* we have a plan bundle */
+        assert (lapb);
+        for (unsigned int i = 0; i < PFla_pb_size(lapb); i++)
+            PFla_pb_op_at (lapb, i) = PFalgopt (PFla_pb_op_at (lapb, i),
+                                                status->timing,
+                                                guide_list,
+                                                status->opt_alg);
+    }
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -636,7 +653,14 @@ AFTER_CORE2ALG:
      */
     tm = PFtimer_start ();
 
-    laroot = PFla_cse (laroot);
+    if (laroot)
+        laroot = PFla_cse (laroot);
+    else {
+        /* we have a plan bundle */
+        assert (lapb);
+        for (unsigned int i = 0; i < PFla_pb_size(lapb); i++)
+            PFla_pb_op_at (lapb, i) = PFla_cse (PFla_pb_op_at (lapb, i));
+    }
 
     tm = PFtimer_stop (tm);
     if (status->timing)
@@ -649,35 +673,88 @@ AFTER_CORE2ALG:
     /* Split Point: SQL Code Generation */
     /************************************/
     if (status->output_format == PFoutput_format_sql) {
-        /* generate the SQL code */
-        tm = PFtimer_start ();
-        PFsql_t *sqlroot = PFlalg2sql(laroot);
-        tm = PFtimer_stop (tm);
-        if (status->timing)
-            PFlog ("Compilation to SQL:\t\t\t %s", PFtimer_str (tm));
+        unsigned int i = 0, c;
+        /* plan bundle emits SQL code wrapped in XML tags */ 
+        if (lapb)
+            fprintf (pfout, "<query_plan_bundle>\n");
+        /* If we have a plan bundle we have to generate
+           a SQL query for each query plan. */
+        do {
+            /* plan bundle emits SQL code wrapped in XML tags
+               with additional column and linking information */ 
+            if (lapb) {
+                laroot = PFla_pb_op_at (lapb, i);
+                assert (laroot->kind == la_serialize_rel);
 
-        STOP_POINT(19);
+                fprintf (pfout, "<query_plan id=\"%i\"",
+                         PFla_pb_id_at (lapb, i));
+                if (PFla_pb_idref_at (lapb, i) != -1)
+                    fprintf (pfout, " idref=\"%i\" colref=\"%i\"",
+                             PFla_pb_idref_at (lapb, i),
+                             PFla_pb_colref_at (lapb, i));
+                fprintf (pfout, ">\n");
+                fprintf (pfout,
+                         "<schema>\n"
+                         "  <column name=\"%s\" function=\"iter\"/>\n"
+                         "  <column name=\"%s\" function=\"pos\"/>\n",
+                         PFcol_str (laroot->sem.ser_rel.iter),
+                         PFcol_str (laroot->sem.ser_rel.pos));
+                for (c = 0; c < clsize (laroot->sem.ser_rel.items); c++)
+                    fprintf (pfout,
+                             "  <column name=\"%s\" new=\"false\""
+                                      " function=\"item\""
+                                      " position=\"%i\"/>\n",
+                             PFcol_str (clat (laroot->sem.ser_rel.items, c)),
+                             c);
+                fprintf (pfout, "</schema>\n"
+                                "<query>\n");
+                i++;
+            }
 
-        if (status->dead_code_el) {
-            /* optimize the SQL code */
+            /* generate the SQL code */
             tm = PFtimer_start ();
-            sqlroot = PFsql_opt (sqlroot);
+            PFsql_t *sqlroot = PFlalg2sql(laroot);
             tm = PFtimer_stop (tm);
             if (status->timing)
-                PFlog ("SQL dead code elimination:\t\t %s", PFtimer_str (tm));
-        }
+                PFlog ("Compilation to SQL:\t\t\t %s", PFtimer_str (tm));
 
-        STOP_POINT(20);
+            STOP_POINT(19);
 
-        /* serialize the internal SQL query tree */
-        tm = PFtimer_start ();
-        PFsql_print (pfout, sqlroot);
-        tm = PFtimer_stop (tm);
-        if (status->timing)
-            PFlog ("SQL Code generation:\t\t\t %s", PFtimer_str (tm));
+            if (status->dead_code_el) {
+                /* optimize the SQL code */
+                tm = PFtimer_start ();
+                sqlroot = PFsql_opt (sqlroot);
+                tm = PFtimer_stop (tm);
+                if (status->timing)
+                    PFlog ("SQL dead code elimination:\t\t %s", PFtimer_str (tm));
+            }
+
+            STOP_POINT(20);
+
+            /* serialize the internal SQL query tree */
+            tm = PFtimer_start ();
+            PFsql_print (pfout, sqlroot);
+            tm = PFtimer_stop (tm);
+            if (status->timing)
+                PFlog ("SQL Code generation:\t\t\t %s", PFtimer_str (tm));
+
+            /* plan bundle emits SQL code wrapped in XML tags */ 
+            if (lapb)
+                fprintf (pfout, "</query>\n"
+                                "</query_plan>\n");
+
+        /* iterate over the plans in the plan bundle */
+        } while (lapb && i < PFla_pb_size (lapb));
+
+        /* plan bundle emits SQL code wrapped in XML tags */ 
+        if (lapb)
+            fprintf (pfout, "</query_plan_bundle>\n");
 
         goto bailout;
     }
+
+    if (lapb)
+        PFoops (OOPS_FATAL, "unable to generate MIL code for a plan bundle");
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -811,6 +888,12 @@ AFTER_CORE2ALG:
                 PFla_dot (pfout, laroot, status->format);
             if (status->print_xml)
                 PFla_xml (pfout, laroot, status->format);
+        }
+        else if (lapb) {
+            if (status->print_dot)
+                PFla_dot_bundle (pfout, lapb, status->format);
+            if (status->print_xml)
+                PFla_xml_bundle (pfout, lapb, status->format);
         }
         else
             PFinfo (OOPS_NOTICE,

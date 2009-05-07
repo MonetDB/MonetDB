@@ -344,7 +344,7 @@
 /******************************************************************************/
 /******************************************************************************/
 
-PFla_op_t* 
+PFla_pb_t* 
 importXML(XML2LALGContext* ctx, xmlDocPtr doc);
 
 void 
@@ -386,7 +386,7 @@ PFla_op_t*
 getChildNode(XML2LALGContext* ctx, xmlNodePtr nodePtr, int pos);
 
 PFla_op_t* 
-getRootNode(XML2LALGContext* ctx); 
+getRootNode(XML2LALGContext* ctx, xmlNodePtr nodePtr); 
 
 /******************************************************************************/
 /******************************************************************************/
@@ -496,7 +496,7 @@ PFxml2la_xml2lalgContext(void)
 
 
 
-PFla_op_t* 
+PFla_pb_t* 
 PFxml2la_importXMLFromFile(XML2LALGContext* ctx, const char* filename)
 {
 
@@ -518,7 +518,7 @@ PFxml2la_importXMLFromFile(XML2LALGContext* ctx, const char* filename)
 
 
 
-PFla_op_t* 
+PFla_pb_t* 
 PFxml2la_importXMLFromMemory(XML2LALGContext* ctx, const char* xml, int size)
 {
 
@@ -548,34 +548,18 @@ PFxml2la_importXMLFromMemory(XML2LALGContext* ctx, const char* xml, int size)
   =============================================================================
 */
 
-
-
-PFla_op_t* 
-importXML(XML2LALGContext* ctx, xmlDocPtr doc)
+static PFla_op_t *
+importLogicalQueryPlan (XML2LALGContext* ctx, xmlNodePtr nodePtr)
 {
-
-        /* Create xpath evaluation context */
-    xmlXPathContextPtr docXPathCtx = xmlXPathNewContext(doc);
-    if (!docXPathCtx)
-    {
-        PFoops (OOPS_FATAL,  "unable to create a XPath context");
-    }
-
-
-    /**************************************************************************/
-    ctx->docXPathCtx = docXPathCtx;
-
     /**
      * dependent from the value of the unique_names-atrribute of the
      * logical_query_plan-element we chose the appropriate function
      * for converting strings to PF-Attribute-Names
      */
-    bool uniqueNames = 
-        PFxml2la_xpath_getBoolValue(
-            PFxml2la_xpath_getAttributeValueFromAttributeNode(
-                PFxml2la_xpath_getNthNode(
-                    PFxml2la_xpath_evalXPathFromDocCtx(
-                        docXPathCtx, "/logical_query_plan/@unique_names"), 0)));
+    bool uniqueNames = PFxml2la_xpath_getBoolValue(
+                           PFxml2la_xpath_getAttributeValueFromAttributeNode(
+                               PFxml2la_xpath_getNthNode(
+                                   XPATH("/@unique_names"), 0)));
     if (uniqueNames)
     {
         ctx->convert2PFLA_attributeName = PFxml2la_conv_2PFLA_attributeName_unq;
@@ -584,12 +568,15 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
     {
         ctx->convert2PFLA_attributeName = PFxml2la_conv_2PFLA_attributeName;
     }
+
+    /* reset node store */
+    PFarray_last (ctx->nodeStore) = 0;
+
     /**************************************************************************/
 
 
     /* fetch the serialized algebra nodes from xml */
-    xmlXPathObjectPtr xpathObjPtr = 
-        PFxml2la_xpath_evalXPathFromDocCtx(docXPathCtx, "//node");
+    xmlXPathObjectPtr xpathObjPtr = XPATH("//node"); 
 
     if (xpathObjPtr)
     {
@@ -612,29 +599,91 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
 
         }
 
-        PFla_op_t* rootNode = getRootNode(ctx);
-
-        /*
-        printf("Importing XML DONE\n");
-        */
-        
-        if(xpathObjPtr)
-            xmlXPathFreeObject(xpathObjPtr);
-        /*
-        if(nodeSetPtr) 
-            xmlXPathFreeNodeSet(nodeSetPtr);
-        */
-
-        if(docXPathCtx)
-            xmlXPathFreeContext(docXPathCtx);	
-
+        PFla_op_t* rootNode = getRootNode(ctx, nodePtr);
 
         return rootNode;
-
     }
 
     return NULL;
+}
 
+
+static void 
+importQueryPlanBundle (XML2LALGContext* ctx, xmlNodePtr nodePtr, PFla_pb_t *lapb)
+{
+    PFla_op_t *op;
+    int        id     = A2INT_O ("/@id", -1),
+               idref  = A2INT_O ("/@idref", -1),
+               colref = A2INT_O ("/@colref", -1);
+
+    if (id == -1)
+        PFoops (OOPS_FATAL,
+                "could not find query plan id in plan bundle");
+
+    op = importLogicalQueryPlan (
+            ctx, 
+            PFxml2la_xpath_getNthNode(
+                XPATH ("/logical_query_plan"), 0));
+
+    assert (op);
+
+    PFla_pb_add (lapb) = (PFla_pb_item_t) { .op     = op,
+                                            .id     = id,
+                                            .idref  = idref,
+                                            .colref = colref };
+}
+
+
+PFla_pb_t* 
+importXML(XML2LALGContext* ctx, xmlDocPtr doc)
+{
+    PFla_pb_t *lapb = PFla_pb (5);
+
+        /* Create xpath evaluation context */
+    xmlXPathContextPtr docXPathCtx = xmlXPathNewContext(doc);
+    if (!docXPathCtx)
+    {
+        PFoops (OOPS_FATAL,  "unable to create a XPath context");
+    }
+
+
+    /**************************************************************************/
+    ctx->docXPathCtx = docXPathCtx;
+
+    xmlXPathObjectPtr query_plans = PFxml2la_xpath_evalXPathFromDocCtx(
+                                        docXPathCtx,
+                                        "//query_plan");
+    if (query_plans) {
+        xmlNodeSetPtr nodeSetPtr = query_plans->nodesetval;
+        int nodeCount = (nodeSetPtr) ? nodeSetPtr->nodeNr : 0;
+        for (int i = 0; i < nodeCount; i++)
+        {
+            xmlNodePtr nodePtr = nodeSetPtr->nodeTab[i];   
+            /* pass the node to the plan bundle processing function */
+            importQueryPlanBundle (ctx, nodePtr, lapb);
+        }
+    }
+
+    if (PFla_pb_size (lapb) == 0) {
+        PFla_op_t *root = importLogicalQueryPlan (
+                             ctx, 
+                             PFxml2la_xpath_getNthNode(
+                                 PFxml2la_xpath_evalXPathFromDocCtx(
+                                     docXPathCtx, "/logical_query_plan"), 0));
+
+        assert (root);
+
+        PFla_pb_add (lapb) = (PFla_pb_item_t) { .op     = root,
+                                                .id     = -1,
+                                                .idref  = -1,
+                                                .colref = -1 };
+    }
+    if(query_plans)
+        xmlXPathFreeObject(query_plans);
+    if(docXPathCtx)
+        xmlXPathFreeContext(docXPathCtx);	
+
+    return lapb;
 }
 
 
@@ -2358,12 +2407,10 @@ getChildNode(XML2LALGContext* ctx, xmlNodePtr nodePtr, int pos)
 
 
 PFla_op_t* 
-getRootNode(XML2LALGContext* ctx) 
+getRootNode(XML2LALGContext* ctx, xmlNodePtr nodePtr) 
 {
 
-
-    xmlXPathObjectPtr xpathObjPtr = 
-        PFxml2la_xpath_evalXPathFromDocCtx(ctx->docXPathCtx, "//node");
+    xmlXPathObjectPtr xpathObjPtr = XPATH("//node"); 
 
     xmlNodeSetPtr nodeSetPtr =  xpathObjPtr->nodesetval;
     int nodeCount = nodeSetPtr->nodeNr;

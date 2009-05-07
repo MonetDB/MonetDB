@@ -392,7 +392,7 @@ comp_str (PFalg_comp_t comp) {
  */
 static void
 la_dot (PFarray_t *dot, PFarray_t *side_effects,
-        PFla_op_t *n, bool print_frag_info, char *prop_args)
+        PFla_op_t *n, bool print_frag_info, char *prop_args, int id)
 {
 #define DOT (n->bit_in ? dot : side_effects)
     unsigned int c;
@@ -482,7 +482,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
     };
 
     /* open up label */
-    PFarray_printf (DOT, "node%i [label=\"", n->node_id);
+    PFarray_printf (DOT, "node%i_%i [label=\"", id, n->node_id);
 
     /* the following line enables id printing to simplify comparison with
        generated XML plans */
@@ -1475,8 +1475,8 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             n->child[c]->child[0]->kind == la_nil)
             continue;
         PFarray_printf (n->bit_in || n->child[c]->bit_in ? dot : side_effects,
-                        "node%i -> node%i;\n",
-                        n->node_id, n->child[c]->node_id);
+                        "node%i_%i -> node%i_%i;\n",
+                        id, n->node_id, id, n->child[c]->node_id);
     }
 
     /* create soft links */
@@ -1485,32 +1485,36 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         case la_rec_arg:
             if (n->sem.rec_arg.base) {
                 PFarray_printf (DOT,
-                                "node%i -> node%i "
+                                "node%i_%i -> node%i_%i "
                                 "[style=dashed label=seed dir=back];\n",
+                                id,
                                 n->sem.rec_arg.base->node_id,
+                                id,
                                 n->child[0]->node_id);
                 PFarray_printf (DOT,
-                                "node%i -> node%i "
+                                "node%i_%i -> node%i_%i "
                                 "[style=dashed label=recurse];\n",
+                                id,
                                 n->child[1]->node_id,
+                                id,
                                 n->sem.rec_arg.base->node_id);
             }
             break;
 
         case la_proxy:
             if (n->sem.proxy.base1)
-                PFarray_printf (DOT, "node%i -> node%i [style=dashed];\n",
-                                n->node_id, n->sem.proxy.base1->node_id);
+                PFarray_printf (DOT, "node%i_%i -> node%i_%i [style=dashed];\n",
+                                id, n->node_id, id, n->sem.proxy.base1->node_id);
 
             if (n->sem.proxy.base2)
-                PFarray_printf (DOT, "node%i -> node%i [style=dashed];\n",
-                                n->node_id, n->sem.proxy.base2->node_id);
+                PFarray_printf (DOT, "node%i_%i -> node%i_%i [style=dashed];\n",
+                                id, n->node_id, id, n->sem.proxy.base2->node_id);
 
             if (n->sem.proxy.ref)
                 PFarray_printf (DOT,
-                                "node%i -> node%i "
+                                "node%i_%i -> node%i_%i "
                                 "[style=dashed label=ref];\n",
-                                n->node_id, n->sem.proxy.ref->node_id);
+                                id, n->node_id, id, n->sem.proxy.ref->node_id);
             break;
 
         default:
@@ -1545,7 +1549,12 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             n->child[c]->child[0]->kind == la_nil)
             continue;
         if (!n->child[c]->bit_dag)
-            la_dot (dot, side_effects, n->child[c], print_frag_info, prop_args);
+            la_dot (dot,
+                    side_effects,
+                    n->child[c],
+                    print_frag_info,
+                    prop_args,
+                    id);
     }
 }
 
@@ -2535,6 +2544,82 @@ reset_node_id (PFla_op_t *n)
 }
 
 /**
+ * Dump algebra tree initialization in AT&T dot format
+ */
+static void
+la_dot_init (FILE *f)
+{
+    fprintf (f, "digraph XQueryAlgebra {\n"
+                "ordering=out;\n"
+                "node [shape=box];\n"
+                "node [height=0.1];\n"
+                "node [width=0.2];\n"
+                "node [style=filled];\n"
+                "node [color=\"#C0C0C0\"];\n"
+                "node [fontsize=10];\n"
+                "edge [fontsize=9];\n"
+                "edge [dir=back];\n");
+}
+
+/**
+ * Worker for PFla_dot and PFla_dot_bundle
+ */
+static unsigned int
+la_dot_internal (FILE *f, PFla_op_t *root, char *prop_args, int id)
+{
+    /* initialize array to hold dot output */
+    PFarray_t *dot          = PFarray (sizeof (char), 32000),
+              *side_effects = PFarray (sizeof (char),  4000);
+    unsigned int root_id;
+
+    /* inside debugging we need to reset the dag bits first */
+    PFla_dag_reset (root);
+    create_node_id (root);
+    /* store root node id */
+    root_id = root->node_id;
+    mark_body (root);
+    la_dot (dot,
+            side_effects,
+            root,
+            getenv("PF_DEBUG_PRINT_FRAG") != NULL,
+            prop_args,
+            id);
+    PFla_dag_reset (root);
+    reset_node_id (root);
+
+    /* add domain subdomain relationships if required */
+    if (prop_args) {
+        char *fmt = prop_args;
+        while (*fmt) {
+            if (*fmt == '+' || *fmt == 'D') {
+                    PFprop_write_dom_rel_dot (dot, root->prop, id);
+                    break;
+            }
+            fmt++;
+        }
+    }
+
+    /* put content of array into file */
+    fprintf (f,
+             "subgraph clusterSideEffects%i {\n"
+             "label=\"SIDE EFFECTS\";\n"
+             "fontsize=10;\n"
+             "fontcolor=\"#808080\";\n"
+             "color=\"#C0C0C0\";\n"
+             "fillcolor=\"#F7F7F7\";\n"
+             "style=filled;\n"
+             "%s"
+             "}\n"
+             "%s"
+             "}\n", 
+             id,
+             (char *) side_effects->base,
+             (char *) dot->base);
+
+    return root_id;
+}
+
+/**
  * Dump algebra tree in AT&T dot format
  * (pipe the output through `dot -Tps' to produce a Postscript file).
  *
@@ -2544,64 +2629,106 @@ reset_node_id (PFla_op_t *n)
 void
 PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
 {
-    if (root) {
-        /* initialize array to hold dot output */
-        PFarray_t *dot          = PFarray (sizeof (char), 32000),
-                  *side_effects = PFarray (sizeof (char),  4000);
-
-        fprintf (f, "digraph XQueryAlgebra {\n"
-                    "ordering=out;\n"
-                    "node [shape=box];\n"
-                    "node [height=0.1];\n"
-                    "node [width=0.2];\n"
-                    "node [style=filled];\n"
-                    "node [color=\"#C0C0C0\"];\n"
-                    "node [fontsize=10];\n"
-                    "edge [fontsize=9];\n"
-                    "edge [dir=back];\n");
-
-        /* inside debugging we need to reset the dag bits first */
-        PFla_dag_reset (root);
-        create_node_id (root);
-        mark_body (root);
-        la_dot (dot,
-                side_effects,
-                root,
-                getenv("PF_DEBUG_PRINT_FRAG") != NULL,
-                prop_args);
-        PFla_dag_reset (root);
-        reset_node_id (root);
-
-        /* add domain subdomain relationships if required */
-        if (prop_args) {
-            char *fmt = prop_args;
-            while (*fmt) {
-                if (*fmt == '+' || *fmt == 'D') {
-                        PFprop_write_dom_rel_dot (dot, root->prop);
-                        break;
-                }
-                fmt++;
-            }
-        }
-
-        /* put content of array into file */
-        fprintf (f,
-                 "subgraph clusterSideEffects {\n"
-                 "label=\"SIDE EFFECTS\";\n"
-                 "fontsize=10;\n"
-                 "fontcolor=\"#808080\";\n"
-                 "color=\"#C0C0C0\";\n"
-                 "fillcolor=\"#F7F7F7\";\n"
-                 "style=filled;\n"
-                 "%s"
-                 "}\n"
-                 "%s"
-                 "}\n", 
-                 (char *) side_effects->base,
-                 (char *) dot->base);
-    }
+    assert (root);
+    la_dot_init (f);
+    la_dot_internal (f, root, prop_args, 0);
 }
 
+/**
+ * Dump algebra plan bundle in AT&T dot format
+ * (pipe the output through `dot -Tps' to produce a Postscript file).
+ *
+ * @param f file to dump into
+ * @param root root of abstract syntax tree
+ */
+void
+PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
+{
+    PFla_op_t *root;
+    int        id, idref, colref, root_id;
+    char      *color = "blue";
+
+    la_dot_init (f);
+
+    for (unsigned int i = 0; i < PFla_pb_size(lapb); i++) {
+        root   = PFla_pb_op_at (lapb, i);
+        id     = PFla_pb_id_at (lapb, i);
+        idref  = PFla_pb_idref_at (lapb, i);
+        colref = PFla_pb_colref_at (lapb, i);
+        
+        assert (root && root->kind == la_serialize_rel);
+
+        /* print header box */
+        fprintf (f, "planHeader%i [shape=record, style=solid, "
+                    "color=%s, fontsize=11, fontcolor=%s, "
+                    "label=\"{<q> Q%i} | {<iter%i> %s | %s | {",
+                id, color, color, id, id, 
+                PFcol_str (root->sem.ser_rel.iter),
+                PFcol_str (root->sem.ser_rel.pos));
+        for (unsigned int j = 0; j < clsize (root->sem.ser_rel.items); j++)
+            fprintf (f, "%s <item%i> %s ",
+                     j ? "|" : "",
+                     j,
+                     PFcol_str (clat (root->sem.ser_rel.items, j)));
+        fprintf (f, "}}}\"];\n"
+                    "subgraph clusterPlan%i {\n", id);
+
+        /* print query plan */
+        root_id = la_dot_internal (f, root, prop_args, id);
+
+        /* link header box to plan */
+        fprintf (f, "planHeader%i:q -> node%i_%i"
+                    " [color=%s];\n",
+                 id, id, root_id, color);
+
+        if (idref != -1) {
+            /* link header box to the surrogate column */
+            assert (colref != -1);
+            fprintf (f, "planHeader%i:item%i -> planHeader%i:iter%i"
+                    " [color=%s];\n",
+                     idref, colref, id, id, color);
+        }
+    }
+
+    fprintf (f, "}\n");
+}
+
+
+/**
+ * Worker for PFla_xml and PFla_xml_bundle
+ */
+static void
+la_xml_internal (FILE *f, PFla_op_t *root, char *prop_args)
+{
+    /* initialize array to hold dot output */
+    PFarray_t *xml = PFarray (sizeof (char), 64000);
+
+    PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
+                    PFcol_is_name_unq (root->schema.items[0].name)
+                    ? "true" : "false");
+
+    /* add domain subdomain relationships if required */
+    if (prop_args) {
+        char *fmt = prop_args;
+        while (*fmt) {
+            if (*fmt == '+' || *fmt == 'D') {
+                    PFprop_write_dom_rel_xml (xml, root->prop);
+                    break;
+            }
+            fmt++;
+        }
+    }
+
+    create_node_id (root);
+    la_xml (xml, root, prop_args);
+    PFla_dag_reset (root);
+    reset_node_id (root);
+    PFla_dag_reset (root);
+
+    PFarray_printf (xml, "</logical_query_plan>\n");
+    /* put content of array into file */
+    fprintf (f, "%s", (char *) xml->base);
+}
 
 /**
  * Dump algebra tree in XML format
@@ -2612,38 +2739,45 @@ PFla_dot (FILE *f, PFla_op_t *root, char *prop_args)
 void
 PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
 {
-    if (root) {
+    assert (root);
+    fprintf (f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    la_xml_internal (f, root, prop_args);
+}
 
-        /* initialize array to hold dot output */
-        PFarray_t *xml = PFarray (sizeof (char), 64000);
+/**
+ * Dump algebra plan bundle in XML format
+ *
+ * @param f file to dump into
+ * @param root root of logical algebra tree
+ */
+void
+PFla_xml_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
+{
+    PFla_op_t *root;
+    int        id, idref, colref;
 
-        PFarray_printf (xml, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        PFarray_printf (xml, "<logical_query_plan unique_names=\"%s\">\n",
-                        PFcol_is_name_unq (root->schema.items[0].name)
-                        ? "true" : "false");
+    fprintf (f, 
+             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+             "<query_plan_bundle>\n");
 
-        /* add domain subdomain relationships if required */
-        if (prop_args) {
-            char *fmt = prop_args;
-            while (*fmt) {
-                if (*fmt == '+' || *fmt == 'D') {
-                        PFprop_write_dom_rel_xml (xml, root->prop);
-                        break;
-                }
-                fmt++;
-            }
-        }
+    for (unsigned int i = 0; i < PFla_pb_size(lapb); i++) {
+        root   = PFla_pb_op_at (lapb, i);
+        id     = PFla_pb_id_at (lapb, i);
+        idref  = PFla_pb_idref_at (lapb, i);
+        colref = PFla_pb_colref_at (lapb, i);
+        
+        fprintf (f, "<query_plan id=\"%i\"", id);
+        if (idref != -1)
+            fprintf (f, " idref=\"%i\" colref=\"%i\"", idref, colref);
+        fprintf (f, ">\n");
 
-        create_node_id (root);
-        la_xml (xml, root, prop_args);
-        PFla_dag_reset (root);
-        reset_node_id (root);
-        PFla_dag_reset (root);
+        assert (root);
+        la_xml_internal (f, root, prop_args);
 
-        PFarray_printf (xml, "</logical_query_plan>\n");
-        /* put content of array into file */
-        fprintf (f, "%s", (char *) xml->base);
+        fprintf (f, "</query_plan>\n");
     }
+
+    fprintf (f, "</query_plan_bundle>\n");
 }
 
 /* vim:set shiftwidth=4 expandtab: */

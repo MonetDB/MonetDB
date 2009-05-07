@@ -4,7 +4,7 @@
  * @file
  * 
  * Declarations for logdebug.c; dump Algebra
- * tree in AY&T dot format.
+ * tree in AT&T dot or XML format.
  *
  *
  * Copyright Notice:
@@ -43,9 +43,14 @@
 #include <stdio.h>
 
 #include "logical.h"
+#include "plan_bundle.h"
 
 void PFla_dot (FILE *, PFla_op_t *, char *prop_args);
 void PFla_xml (FILE *, PFla_op_t *, char *prop_args);
+
+/* Declaration for debug printing of plan bundles */
+void PFla_dot_bundle (FILE *, PFla_pb_t *, char *prop_args);
+void PFla_xml_bundle (FILE *, PFla_pb_t *, char *prop_args);
 
 #endif  /* LOGDEBUG_H */
 

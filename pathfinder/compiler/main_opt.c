@@ -338,7 +338,7 @@ main (int argc, char *argv[])
         }           /* end of switch */
     }           /* end of while */
 
-    PFla_op_t  *laroot  = NULL;
+    PFla_pb_t  *lapb = NULL; /**< a plan bundle */
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -367,7 +367,7 @@ main (int argc, char *argv[])
          * from the parser in case of validation errors (which makes
          * fixing/locating this validation-errors unneccessary hard)
          */
-        laroot = PFxml2la_importXMLFromFile (ctx, argv[optind]);
+        lapb = PFxml2la_importXMLFromFile (ctx, argv[optind]);
     }
     else {
         /**
@@ -404,14 +404,21 @@ main (int argc, char *argv[])
         xml = (char*) buf->buffer->content;
         buf->buffer->content = NULL; /* otherwise it will be deleted */
         xmlFreeParserInputBuffer (buf);
-        laroot = PFxml2la_importXMLFromMemory (ctx, xml, strlen (xml));
+        lapb = PFxml2la_importXMLFromMemory (ctx, xml, strlen (xml));
     }
 
     /*
      * Rewrite/optimize algebra tree
      */
-    laroot = PFalgopt (laroot, false, NULL, opt_args);
-    PFla_xml (stdout, laroot, prop_args);
+    for (unsigned int i = 0; i < PFla_pb_size(lapb); i++)
+        PFla_pb_op_at (lapb, i) 
+            = PFalgopt (PFla_pb_op_at (lapb, i), false, NULL, opt_args);
+
+    /* detect whether we have a plan bundle or only a single plan */
+    if (PFla_pb_size (lapb) == 1 && PFla_pb_id_at (lapb, 0) == -1)
+        PFla_xml (stdout, PFla_pb_op_at (lapb, 0), prop_args);
+    else
+        PFla_xml_bundle (stdout, lapb, prop_args);
 
     PFmem_destroy ();
 

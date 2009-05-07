@@ -82,6 +82,7 @@ EXTRA_DIST = \
 	physical.h \
 	physical_mnemonic.h \
 	planner.h \
+        plan_bundle.h \
 	prettyp.h \
 	properties.h \
 	qname.h \

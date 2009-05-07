@@ -173,6 +173,7 @@ jmp_buf PFexitPoint;
 #include "lalg2sql.h"
 #include "sql_opt.h"
 #include "sqlprint.h"
+#include "alg_cl_mnemonic.h"
 
 
 #define MAIN_EXIT(rtrn) \
@@ -264,6 +265,9 @@ main (int argc, char *argv[])
         }           /* end of switch */
     }           /* end of while */
 
+    /* We either have a plan bundle in @a lapb
+       or a logical query plan in @a laroot. */
+    PFla_pb_t  *lapb    = NULL;
     PFla_op_t  *laroot  = NULL;
     PFsql_t    *sqlroot = NULL;
 
@@ -294,7 +298,7 @@ main (int argc, char *argv[])
          * from the parser in case of validation errors (which makes
          * fixing/locating this validation-errors unneccessary hard)
          */
-        laroot = PFxml2la_importXMLFromFile (ctx, argv[optind]);
+        lapb = PFxml2la_importXMLFromFile (ctx, argv[optind]);
     }
     else {
         /**
@@ -331,38 +335,94 @@ main (int argc, char *argv[])
         xml = (char*) buf->buffer->content;
         buf->buffer->content = NULL; /* otherwise it will be deleted */
         xmlFreeParserInputBuffer (buf);
-        laroot = PFxml2la_importXMLFromMemory (ctx, xml, strlen (xml));
+        lapb = PFxml2la_importXMLFromMemory (ctx, xml, strlen (xml));
     }
 
-    if (!PFcol_is_name_unq(laroot->schema.items[0].name))
-        laroot = PFmap_unq_names (laroot);
+    /* detect whether we have a plan bundle or only a single plan */
+    if (PFla_pb_size (lapb) == 1 && PFla_pb_id_at (lapb, 0) == -1) {
+       laroot = PFla_pb_op_at (lapb, 0);
+       lapb = NULL;
+    }
 
-    /* Infer properties required by the SQL Code Generation and
-       generate the SQL code. */
-    PFprop_infer (true  /* card */,
-                  true  /* const */,
-                  true  /* set */,
-                  true  /* dom */,
-                  true  /* lineage */,
-                  true  /* icol */,
-                  true  /* composite key */,
-                  true  /* key */,
-                  true  /* fd */,
-                  true  /* ocols */,
-                  true  /* req_node */,
-                  true  /* reqval */,
-                  true  /* level */,
-                  true  /* refctr */,
-                  true  /* guides */,
-    /* disable the following property as there might
-       be too many columns involved */
-                  false /* original names */,
-                  true  /* unique names */,
-                  laroot, NULL);
+    unsigned int i = 0, c;
+    /* plan bundle emits SQL code wrapped in XML tags */ 
+    if (lapb)
+        fprintf (stdout, "<query_plan_bundle>\n");
+    /* If we have a plan bundle we have to generate
+       a SQL query for each query plan. */
+    do {
+        /* plan bundle emits SQL code wrapped in XML tags
+           with additional column and linking information */ 
+        if (lapb) {
+            laroot = PFla_pb_op_at (lapb, i);
+            assert (laroot->kind == la_serialize_rel);
 
-    sqlroot = PFlalg2sql (laroot);
-    sqlroot = PFsql_opt (sqlroot);
-    PFsql_print (stdout, sqlroot);
+            fprintf (stdout, "<query_plan id=\"%i\"",
+                     PFla_pb_id_at (lapb, i));
+            if (PFla_pb_idref_at (lapb, i) != -1)
+                fprintf (stdout, " idref=\"%i\" colref=\"%i\"",
+                         PFla_pb_idref_at (lapb, i),
+                         PFla_pb_colref_at (lapb, i));
+            fprintf (stdout, ">\n");
+            fprintf (stdout,
+                     "<schema>\n"
+                     "  <column name=\"%s\" function=\"iter\"/>\n"
+                     "  <column name=\"%s\" function=\"pos\"/>\n",
+                     PFcol_str (laroot->sem.ser_rel.iter),
+                     PFcol_str (laroot->sem.ser_rel.pos));
+            for (c = 0; c < clsize (laroot->sem.ser_rel.items); c++)
+                fprintf (stdout,
+                         "  <column name=\"%s\" new=\"false\""
+                                  " function=\"item\""
+                                  " position=\"%i\"/>\n",
+                         PFcol_str (clat (laroot->sem.ser_rel.items, c)),
+                         c);
+            fprintf (stdout, "</schema>\n"
+                             "<query>\n");
+            i++;
+        }
+
+        if (!PFcol_is_name_unq(laroot->schema.items[0].name))
+            laroot = PFmap_unq_names (laroot);
+
+        /* Infer properties required by the SQL Code Generation and
+           generate the SQL code. */
+        PFprop_infer (true  /* card */,
+                      true  /* const */,
+                      true  /* set */,
+                      true  /* dom */,
+                      true  /* lineage */,
+                      true  /* icol */,
+                      true  /* composite key */,
+                      true  /* key */,
+                      true  /* fd */,
+                      true  /* ocols */,
+                      true  /* req_node */,
+                      true  /* reqval */,
+                      true  /* level */,
+                      true  /* refctr */,
+                      true  /* guides */,
+        /* disable the following property as there might
+           be too many columns involved */
+                      false /* original names */,
+                      true  /* unique names */,
+                      laroot, NULL);
+
+        sqlroot = PFlalg2sql (laroot);
+        sqlroot = PFsql_opt (sqlroot);
+        PFsql_print (stdout, sqlroot);
+
+        /* plan bundle emits SQL code wrapped in XML tags */ 
+        if (lapb)
+            fprintf (stdout, "</query>\n"
+                             "</query_plan>\n");
+
+    /* iterate over the plans in the plan bundle */
+    } while (lapb && i < PFla_pb_size (lapb));
+
+    /* plan bundle emits SQL code wrapped in XML tags */ 
+    if (lapb)
+        fprintf (stdout, "</query_plan_bundle>\n");
 
     PFmem_destroy ();
 
