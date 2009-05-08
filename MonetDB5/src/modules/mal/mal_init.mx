@@ -162,6 +162,7 @@ include tablet;
 include factories;
 include recycle;
 include remote;
+include trader; # experimental
 
 include mat; 	# experimental
 include bpm;	# experimental

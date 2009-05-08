@@ -1,0 +1,195 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@a M. Ivanova, M. Kersten
+@f trader
+@- This module contains primitives for bidding of (sub)-query execution 
+among mservers.
+
+trader.makeBid() is used to ask another server to make a bid for a mal function (sub-query) execution.
+
+Currently the bid estimate is made using only the recycle cashe.
+ToDo: use the info about server load
+FactFinder
+@{
+@-
+@mal
+module trader;
+
+command makeBid(fnname:str, maxcost:int):int
+address TRADERmakeBid
+comment "Estimate cost for execution of function octopus.<fnname> 
+assuming maximal cost maxcost";
+
+@h
+#ifndef _TRADER_
+#define _TRADER_
+
+#ifdef WIN32
+#ifndef LIBTRADER
+#define trader_export extern __declspec(dllimport)
+#else
+#define trader_export extern __declspec(dllexport)
+#endif
+#else
+#define trader_export extern
+#endif
+
+trader_export str TRADERmakeBid(lng *p, str *fnname, lng *maxcost);
+
+#endif
+
+@-
+Bidding described ...
+@c
+#include "mal_config.h"
+#include <mal.h>
+#include <mal_exception.h>
+#include <mal_instruction.h>
+#include <mal_module.h>
+#include <mal_recycle.h>
+#include "trader.h"
+
+/*
+static lng estimateSavings0(MalBlkPtr mb)
+{
+	(void) mb;
+	return (lng)100;
+}
+*/
+
+static lng estimateSavings(MalBlkPtr mb)
+{
+	MalStkPtr stk = NULL;
+	int i, j, k, pc;
+	lng savedCost;
+	ValPtr lhs, rhs;
+	InstrPtr p, q;
+	lng savedTicks = 0, savedIBytes = 0, savedOBytes = 0;
+
+	if( recycleBlk == 0 || reusePolicy == 0)
+		return 0;
+
+	/* Create a phony exec. stack */
+	newStack(stk,mb->vsize);
+	memset((char *) stk, 0, stackSize(mb->vtop));
+	stk->stktop = mb->vtop; 
+	stk->stksize = mb->vsize;
+	stk->blk = mb;
+
+	/* Init symbol table of the phony stack */	
+	for(i= 1; i< mb->vtop; i++) {
+		lhs = &stk->stk[i];
+		if( isVarConstant(mb,i) > 0 ){
+			assert(!isVarCleanup(mb,i));
+			if( !isVarDisabled(mb,i)){
+				rhs = &getVarConstant(mb,i);
+				*lhs = *rhs;
+				if (rhs->vtype == TYPE_str && rhs->val.sval != 0)
+					lhs->val.sval = GDKstrdup(rhs->val.sval);
+			}
+		} else{
+			lhs->vtype = getVarGDKType(mb,i);
+			lhs->val.pval = 0;
+			lhs->len = 0;
+		}
+	}
+
+	/* Match against the recycle pool */
+	for (k = 0; k < mb->stop; k++){
+		p = getInstrPtr(mb,k);
+		pc = -1;
+
+		for (i = 0; i < recycleBlk->stop; i++){
+			q = getInstrPtr(recycleBlk,i);
+
+			if ((getFunctionId(p) != getFunctionId(q)) ||
+		   	 (getModuleId(p) != getModuleId(q)))
+				continue;
+
+			switch(reusePolicy){
+	
+			case REUSE_COVER:
+				/* 1: reuse smallest range covering */
+				/* if (q->argc-1 > 3 && getFunctionId(p) == selectRef &&
+				    getVarConstant(recycleBlk, getArg(q,1)).val.bval == 
+						stk->stk[getArg(p,1)].val.bval &&
+					BATatoms[getArgType(recycleBlk,q,2)].linear )
+
+				{			
+					if (selectSubset(p,q,stk)){
+						pc = i;
+					}
+				}
+			*/
+			case REUSE_EXACT:
+				/* 2: exact covering */
+				if (p->argc > q->argc-1) continue;
+				for (j = p->retc; j < p->argc; j++)
+					if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
+						goto nomatch;
+
+				/* found an exact match - get the results on the stack */
+				for( j=0; j<p->retc; j++){
+					VALcopy(&stk->stk[getArg(p,j)],
+						&getVarConstant(recycleBlk,getArg(q,j)) );
+				}
+				savedTicks += recycleBlk->profiler[i].ticks;	
+				savedIBytes += recycleBlk->profiler[i].ibytes;
+				savedOBytes += recycleBlk->profiler[i].obytes;
+				goto nextinstr;
+
+				nomatch: 
+					continue;
+			}
+		} /* end loop over RP */
+		if ( pc >= 0 ){ /* instruction is subsumed */
+			savedTicks += recycleBlk->profiler[pc].ticks/2;	
+			savedIBytes += recycleBlk->profiler[pc].ibytes/2;
+			savedOBytes += recycleBlk->profiler[pc].obytes/2;
+		}
+		nextinstr:
+			continue;
+	}
+
+	savedCost = recycleAlpha * savedTicks/10.0 + (1-recycleAlpha)* (savedIBytes + savedOBytes)/1000.0;
+	freeStack(stk);
+	return  savedCost;
+
+}
+
+
+str TRADERmakeBid(lng *c, str *fnname, lng *maxcost)
+{
+	Symbol sym;
+	MalBlkPtr mb;
+	int s;
+
+    sym = findSymbol("octopus",*fnname);
+    if ( sym == NULL)
+        throw(MAL,"trader.makeBid","Function %s not found", *fnname);
+        
+    mb = sym->def;
+    s = estimateSavings(mb);
+
+    /* Correct according to the load*/
+    
+	*c = *maxcost - s;
+	return MAL_SUCCEED;
+}   
+
+@}
