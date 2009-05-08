@@ -1539,33 +1539,14 @@ join_pushdown (PFla_op_t *p, PFarray_t *clean_up_list)
     /* combine multiple projections */
     if (p->kind == la_project &&
         L(p)->kind == la_project) {
-        /* copy of code located in algebra/opt/opt_general.brg */
-        PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                           sizeof (PFalg_proj_t));
-
-        unsigned int i, j, count = 0;
-        for (i = 0; i < p->schema.count; i++)
-            for (j = 0; j < L(p)->schema.count; j++)
-                if (p->sem.proj.items[i].old ==
-                    L(p)->sem.proj.items[j].new) {
-                    proj[count++] = PFalg_proj (
-                                        p->sem.proj.items[i].new,
-                                        L(p)->sem.proj.items[j].old);
-                    break;
-                }
-
-        /* ensure that at least one column remains! */
-        if (!count)
-            for (j = 0; j < L(p)->schema.count; j++)
-                if (p->sem.proj.items[0].old ==
-                    L(p)->sem.proj.items[j].new) {
-                    proj[count++] = PFalg_proj (
-                                        p->sem.proj.items[0].new,
-                                        L(p)->sem.proj.items[j].old);
-                    break;
-                }
-
-        *p = *(PFla_project_ (LL(p), count, proj));
+        /* combine two projections */
+        *p = *PFla_project_ (LL(p),
+                             p->schema.count,
+                             PFalg_proj_merge (
+                                 p->sem.proj.items,
+                                 p->sem.proj.count,
+                                 L(p)->sem.proj.items,
+                                 L(p)->sem.proj.count));
 
         /* do not mark phase modified as this might
            result in an infinite loop */
