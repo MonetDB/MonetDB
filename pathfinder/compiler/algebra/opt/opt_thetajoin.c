@@ -1772,13 +1772,17 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             if (is_tj (L(p->sem.proxy.base1)) &&
                 p->sem.proxy.kind == 1 &&
                 /* check consistency */
+                /* PROJECTION IN PATTERN */
                 L(p)->kind == la_project &&
                 LL(p)->kind == la_eqjoin &&
+                /* PROJECTION IN PATTERN */
                 L(LL(p))->kind == la_project &&
+                /* PROJECTION IN PATTERN */
                 R(LL(p))->kind == la_project &&
                 RL(LL(p))->kind == la_eqjoin &&
                 LL(LL(p))->kind == la_rowid &&
                 L(LL(LL(p))) == p->sem.proxy.base1 &&
+                /* PROJECTION IN PATTERN */
                 p->sem.proxy.ref->kind == la_project &&
                 L(p->sem.proxy.ref) == LL(LL(p))) {
 

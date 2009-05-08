@@ -937,6 +937,7 @@ opt_complex (PFla_op_t *p)
             break;
 
         case la_project:
+            /* PROJECTION IN PATTERN */
             if (replace_pos_predicate (p))
                 modified = true;
             break;
@@ -1064,6 +1065,7 @@ opt_complex (PFla_op_t *p)
                                                 p->sem.eqjoin.col1),
                                PFprop_dom_right (p->prop,
                                                  p->sem.eqjoin.col2)) &&
+                /* PROJECTION IN PATTERN */
                 R(p)->kind == la_project &&
                 RL(p)->kind == la_disjunion) {
                 PFalg_proj_t *proj     = R(p)->sem.proj.items;
@@ -1094,6 +1096,7 @@ opt_complex (PFla_op_t *p)
                                                 p->sem.eqjoin.col2),
                                PFprop_dom_left (p->prop,
                                                  p->sem.eqjoin.col1)) &&
+                /* PROJECTION IN PATTERN */
                 L(p)->kind == la_project &&
                 LL(p)->kind == la_disjunion) {
                 PFalg_proj_t *proj     = L(p)->sem.proj.items;
@@ -1138,7 +1141,9 @@ opt_complex (PFla_op_t *p)
                                       p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
                                      p->sem.eqjoin.col1)) &&
+                /* PROJECTION IN PATTERN */
                 L(p)->kind == la_project &&
+                /* PROJECTION IN PATTERN */
                 R(p)->kind == la_project &&
                 LL(p) == RL(p)) {
                 left_arg_req  = false;
@@ -2070,6 +2075,7 @@ opt_complex (PFla_op_t *p)
 
             /* combine steps if they are of the form:
                ``/descandent-or-self::node()/child::element()'' */
+                /* PROJECTION IN PATTERN */
             if (R(p)->kind == la_project &&
                 RL(p)->kind == la_step_join &&
                 /* check for the different step combinations */

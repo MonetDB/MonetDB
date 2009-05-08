@@ -107,6 +107,7 @@ opt_monetxq (PFla_op_t *p)
                 p->sem.step.spec.kind != node_kind_node &&
                 p->sem.step.spec.kind != node_kind_doc &&
                 R(p)->schema.count == 1 &&
+                /* PROJECTION IN PATTERN */
                 R(p)->kind == la_project &&
                 R(p)->sem.proj.items[0].new == p->sem.step.item &&
                 R(p)->sem.proj.items[0].old == RL(p)->sem.step.item_res &&
@@ -215,6 +216,7 @@ opt_monetxq (PFla_op_t *p)
                is only consumed by the right side of a difference
                operator */
             if (p->schema.count == 1 &&
+                /* PROJECTION IN PATTERN */
                 R(p)->kind == la_project &&
                 RL(p)->kind == la_distinct)
                 RL(p) = RLL(p);

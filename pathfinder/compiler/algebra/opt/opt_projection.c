@@ -5,6 +5,18 @@
  * from the relational algebra expression DAG by pushing projections
  * up in the plan and merging adjacent projections.
  *
+ * 2009/05/09 (JR):
+ * This optimization is currently used to simplify the query 
+ * plans to detect more common subexpressions.
+ *
+ * It might affect rewrites in algebra/opt/opt_complex.c,
+ * algebra/opt/opt_monetxq.c, and algebra/opt/opt_thetajoin.c.
+ * The affected places are marked with 'PROJECTION IN PATTERN'.
+ *
+ * Note that algebra/opt/opt_thetajoin.c relies on the projection
+ * operators introduced by rewrite phase } (proxy introduction).
+ *
+ *
  * Copyright Notice:
  * -----------------
  *
