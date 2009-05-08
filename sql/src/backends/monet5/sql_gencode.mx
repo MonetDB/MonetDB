@@ -1997,6 +1997,11 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 		}
 	}
 
+@- 
+ROBERTO PATCH
+	newStmt(mb,sqlRef,putName("emptyset",8));
+@c
+
 	backend_dumpstmt(be, mb, s);
 	Toptimize = GDKusec();
 	m->Tparse = Toptimize - m->Tparse;

@@ -58,14 +58,14 @@ sql5_export str SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 str
 SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str likeRef = getName("like", 4);
-	str existRef = getName("exist", 5);
-	str uniqueRef = getName("unique", 6);
-	str suniqueRef = getName("sunique", 7);
-	str kuniqueRef = getName("kunique", 7);
-	str intersectRef = getName("intersect", 9);
-	str sintersectRef = getName("sintersect", 10);
-	str kintersectRef = getName("kintersect", 10);
+	str likeRef = putName("like", 4);
+	str existRef = putName("exist", 5);
+	str uniqueRef = putName("unique", 6);
+	str suniqueRef = putName("sunique", 7);
+	str kuniqueRef = putName("kunique", 7);
+	str intersectRef = putName("intersect", 9);
+	str sintersectRef = putName("sintersect", 10);
+	str kintersectRef = putName("kintersect", 10);
 	mvc *m = NULL;
 	int i, j, act, actions = 0, start= getPC(mb,pci);
 	char *empty;
