@@ -83,9 +83,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* locate the largest table */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
-		if (getModuleId(q)!= sqlRef || 
-				!(getFunctionId(q)==bindRef ||
-				  getFunctionId(q)==bindidxRef ))
+		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
 			continue;
 @-
 The SQL optimizer already collects the counts of the
