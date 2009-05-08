@@ -3201,15 +3201,6 @@ BBPbackup(BAT *b, bit subcommit)
 	strcpy(nme, ++s);
 	srcdir[s - srcdir] = 0;
 
-	if ((b->batDirty || b->batDirtydesc) && !file_exists(BAKDIR, nme, "desc")) {
-		/* file will be saved (is dirty), move the old image into backup */
-		ret |= file_move(srcdir, subcommit ? SUBDIR : BAKDIR, nme, "desc");
-	} else if (subcommit && (b->batDirty || b->batDirtydesc || file_exists(BAKDIR, nme, "desc"))) {
-		/* file is clean. move the backup into the subcommit dir (commit should eliminate backup) */
-		ret |= file_move(BAKDIR, SUBDIR, nme, "desc");
-	}
-	if (ret & 1)
-		return -1;
 @= backup
 	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
 		/* STORE_PRIV saves into X.new files. Two cases could happen.
