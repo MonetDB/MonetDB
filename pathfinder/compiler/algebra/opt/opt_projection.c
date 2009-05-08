@@ -1,11 +1,9 @@
 /**
  * @file
  *
- * Optimize relational algebra expression DAG
- * based on the required node properties.
- * (This requires no burg pattern matching as we
- *  apply optimizations in a peep-hole style on
- *  single nodes only.)
+ * This optimization phase removes as many projections as possible
+ * from the relational algebra expression DAG by pushing projections
+ * up in the plan and merging adjacent projections.
  *
  * Copyright Notice:
  * -----------------
@@ -57,194 +55,189 @@
 /* mnemonic column list accessors */
 #include "alg_cl_mnemonic.h"
 
-/* changes the column name back to the old
- * when swaping an an operator and a projection, it is sometimes 
- * necsesary to rename colums for the operator, because the 
- * projection can renames colums 
- * this method renames single colums */ 
+#define SEEN(p) ((p)->bit_dag)
+
+#define new_name(c) PFcol_new((c))
+
+/**
+ * Look up the column name before renaming.
+ */
 static PFalg_col_t
-re_rename_col (PFalg_col_t col, PFalg_proj_t *proj, unsigned int count) 
+get_old_name (PFla_op_t *op, PFalg_col_t col)
 {
-    for(unsigned int i = 0; i < count; i++ )
-        /* check only if current column in projectio has been renamed */
-        if (proj[i].new != proj[i].old && col == proj[i].new) 
-            return proj[i].old;
-            
+    assert (op->kind == la_project);
+
+    for (unsigned int i = 0; i < op->sem.proj.count; i++ )
+        /* return the 'old' name */
+        if (col == op->sem.proj.items[i].new)
+            return op->sem.proj.items[i].old;
+
+    assert (0);
     return col;
 }
 
-/* changes the column name back to the old
- * when swaping an an operator and a projection, it is sometimes 
- * necsesary to rename colums for the operator, because the 
- * projection can renames colums 
- * this method renames multiple colums in column lists */ 
-static PFalg_collist_t
-*re_rename_col_in_collist (PFalg_collist_t *collist, PFalg_proj_t *proj, 
-                          unsigned int count) 
+/**
+ * Create a new column list with 'old' column names.
+ */
+static PFalg_collist_t *
+rename_col_in_collist (PFla_op_t *op, PFalg_collist_t *collist)
 {
     PFalg_collist_t *cl = PFalg_collist_copy (collist);
-    
+
     /* check for each column in the columnlist */
-    for(unsigned int i = 0; i < count; i++)
-        for (unsigned int j = 0; j < clsize(cl); j++)
-            /* check only if current column in projectio has been renamed */
-            if(proj[i].new != proj[i].old && clat(cl, j) == proj[i].new) 
-                clat(cl, j) = proj[i].old;
-    
+    for (unsigned int i = 0; i < clsize(cl); i++)
+        clat (cl, i) = get_old_name (op, clat (cl, i));
+
     return cl;
 }
 
-/* changes the column name back to the old
- * when swaping an an operator and a projection, it is sometimes 
- * necsesary to rename colums for the operator, because the 
- * projection can renames colums 
- * this method renames multiple colums in ordering arrays */ 
+/**
+ * Create a new ordering list with 'old' column names.
+ */
 static PFord_ordering_t
-re_rename_col_in_ordering (PFord_ordering_t ord, PFalg_proj_t *proj, 
-                          unsigned int count) 
+rename_col_in_ordering (PFla_op_t *op, PFord_ordering_t ord)
 {
-    /* allocation new predicate array */
-    PFord_ordering_t order = PFarray_copy(ord);
-    
+    /* allocate new order list */
+    PFord_ordering_t order = PFarray_copy (ord);
+
     /* check for each column in the ordering */
-    for(unsigned int i = 0; i < count; i++)
-        for (unsigned int j = 0; j < PFord_count(ord); j++)
-            /* check only if current column in projectio has been renamed */
-            if (proj[i].new != proj[i].old 
-                && PFord_order_col_at (ord, j) == proj[i].new) 
-            {
-                 PFord_set_order_col_at (order, j, proj[i].old);
-            }
-                 
+    for (unsigned int i = 0; i < PFord_count(order); i++)
+        PFord_set_order_col_at (
+            order,
+            i,
+            get_old_name (op, PFord_order_col_at (order, i)));
+
     return order;
 }
 
-/* renames columns in predicates back to the old name 
- * when swaping an a join and a projection, it is sometimes 
- * necsesary to rename the predicate columns, because the 
- * projection might have renamed them 
- * this method renames multiple colums in join predicate lists */
-static PFalg_sel_t
-*re_rename_col_in_pred (PFalg_sel_t *pred, 
-                    PFalg_proj_t *left_proj, 
-                    PFalg_proj_t *right_proj, 
-                    unsigned int pred_count, 
-                    unsigned int left_proj_count,
-                    unsigned int right_proj_count,
-                    bool left,
-                    bool right) 
+/**
+ * Create a new predicate list with 'old' column names.
+ */
+static PFalg_sel_t *
+rename_col_in_pred (PFalg_sel_t *pred,
+                    unsigned int pred_count,
+                    PFla_op_t *lop,
+                    PFla_op_t *rop)
 {
-    /* allocation new predicate array */
+    /* allocate new predicate array */
     PFalg_sel_t *predicates = PFmalloc (pred_count * sizeof (PFalg_sel_t));
 
-    for(unsigned int i = 0; i < pred_count; i++) {
+    for (unsigned int i = 0; i < pred_count; i++) {
         /* duplicate predicate */
         predicates[i] = pred[i];
-        
-        /* left predicate check */
-        if(left) 
-            for (unsigned int j = 0; j < left_proj_count; j++)
-                /* check if the new name is used */
-                if(pred[i].left == left_proj[j].new) {
-                    /* change colume name to the old name */
-                    predicates[i].left = left_proj[j].old;
-                    break;
-                }
-                    
-        /* right predicate check */
-        if(right)
-            for (unsigned int j = 0; j < right_proj_count; j++)
-                /* check if the new name is used */
-                if(pred[i].right == right_proj[j].new) {
-                    /* change colume name to the old name */
-                    predicates[i].right = right_proj[j].old;
-                    break;
-                }
 
+        /* left predicate check */
+        if (lop)
+            predicates[i].left = get_old_name (lop, predicates[i].left);
+
+        /* right predicate check */
+        if (rop)
+            predicates[i].right = get_old_name (rop, predicates[i].right);
     }
-    
+
     return predicates;
 }
 
-/* check if a colum name has a unique name, if not, make a new unique name */
-static PFalg_col_t
-make_col_unq (PFalg_col_t col) 
+/**
+ * Extend a projection list with another column.
+ */
+static PFalg_proj_t *
+extend_proj1 (PFla_op_t *proj_op, PFalg_proj_t proj_item)
 {
-    if (!PFcol_is_name_unq(col))
-        return PFcol_new(col);
-    return col;
+    assert (proj_op->kind == la_project);
+
+    /* allocate new projection array */
+    PFalg_proj_t *proj = PFmalloc ((proj_op->sem.proj.count + 1) *
+                                   sizeof (PFalg_proj_t));
+
+    for (unsigned int i = 0; i < proj_op->sem.proj.count; i++)
+        proj[i] = proj_op->sem.proj.items[i];
+
+    proj[proj_op->sem.proj.count] = proj_item;
+
+    return proj;
 }
 
-/* add new colums to an existing projection
- * this is necessary when a projection moves over an join. 
- * if a projection of the left join subtree is moved over 
- * the join, the schema of the right subtree must be added
- * tho the projection 
+/**
+ * Extend a projection list with another list of columns
+ * (from a schema).
+ *
+ * This function is called when a projection is pushed through
+ * a join. To get the correct schema we need to add the columns
+ * of the unaffected join partner to the overall projection.
  */
-static PFalg_proj_t * 
-extend_proj (PFalg_proj_t *proj, unsigned int count, 
-                  PFalg_schema_t schema) 
+static PFalg_proj_t *
+extend_proj (PFla_op_t *op, PFalg_schema_t schema)
 {
+    assert (op->kind == la_project);
+
     /* allocate new projection array */
-    PFalg_proj_t *ex_proj = PFmalloc ((count + schema.count) * 
-                                                        sizeof (PFalg_proj_t));
-    
+    PFalg_proj_t *proj = PFmalloc ((op->sem.proj.count + schema.count) *
+                                   sizeof (PFalg_proj_t));
+
     /* copying old projections */
     unsigned int i;
-    for (i = 0; i < count; i++)
-        ex_proj[i] = proj[i];
-        
+    for (i = 0; i < op->sem.proj.count; i++)
+        proj[i] = op->sem.proj.items[i];
+
     /* adding new projections */
-    for (unsigned int j = 0; j < schema.count; j++, i++) {
-        ex_proj[i].old = schema.items[j].name;
-        ex_proj[i].new = schema.items[j].name;
+    for (unsigned int j = 0; j < schema.count; j++) {
+        proj[i+j].old = schema.items[j].name;
+        proj[i+j].new = schema.items[j].name;
     }
-    
-    return ex_proj;
+
+    return proj;
 }
 
-/* merging two projections with different schemas
- * this is necessary when a projection moves over an join. 
- * if a projection of the left join subtree is moved over 
- * the join and one of the right subtree, the schemas both
- * projections must be merged.
+/**
+ * Concatenate two projection lists.
+ *
+ * This function is called when two projections are pushed through
+ * a join (from both sides).
  */
-static PFalg_proj_t * 
-mergeProjection (PFalg_proj_t *left_proj,  unsigned int left_count, 
-                 PFalg_proj_t *right_proj, unsigned int right_count)
+static PFalg_proj_t *
+merge_projs (PFla_op_t *lop, PFla_op_t *rop)
 {
+    assert (lop->kind == la_project && rop->kind == la_project);
+
     /* allocate new projection array */
-    PFalg_proj_t *ex_proj = PFmalloc ((left_count + right_count) * 
-                                                        sizeof (PFalg_proj_t));
-    
+    PFalg_proj_t *proj = PFmalloc ((lop->sem.proj.count +
+                                    rop->sem.proj.count) *
+                                   sizeof (PFalg_proj_t));
+
     /* copying left projections */
     unsigned int i;
-    for (i = 0; i < left_count; i++)
-        ex_proj[i] = left_proj[i];
-    
+    for (i = 0; i < lop->sem.proj.count; i++)
+        proj[i] = lop->sem.proj.items[i];
+
     /* adding right projections */
-    for (unsigned int j = 0; j < right_count; j++, i++) {
-        ex_proj[i] = right_proj[j];
+    for (unsigned int j = 0; j < rop->sem.proj.count; j++) {
+        proj[i+j] = rop->sem.proj.items[j];
     }
-    
-    return ex_proj;
+
+    return proj;
 }
 
-/* worker for PFalgopt_projection */
-/* this optimization pushes projection up in the tree to minimize them. 
- * the goal is to simplify the tree for other optimizations
+/**
+ * Worker for PFalgopt_projection
  */
 static void
-opt_projection (PFla_op_t *p) 
+opt_projection (PFla_op_t *p)
 {
     assert(p);
-    
-    /* infer properties for children */
+
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    /* apply projection push up for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         opt_projection (p->child[i]);
-    
+
     /* action code */
-    
+
     /* swap projection and current roots operator p followed by a doc_tbl op
      *
      *      |                  |
@@ -254,805 +247,414 @@ opt_projection (PFla_op_t *p)
      *      |                  |
      *   project            doc_tbl
      *      |                  |
-     * 
+     *
      */
-    if(p->kind == la_roots
-        && L(p)->kind == la_doc_tbl
-        && LL(p)->kind == la_project)
-    {
-        /* add result column to projection 
-         * create new projection list */
-        unsigned int count = LL(p)->schema.count;
-        PFalg_proj_t *proj = PFmalloc ((count + 1) * sizeof (PFalg_proj_t));
-                           
-        /* copy projections */
-        for (unsigned int i = 0; i < count; i++)
-            proj[i] = LL(p)->sem.proj.items[i];
-                    
+    if (p->kind == la_roots &&
+        L(p)->kind == la_doc_tbl &&
+        LL(p)->kind == la_project) {
+        PFla_op_t *proj_op = LL(p);
+
         /* make column name unique */
-        PFalg_col_t res = make_col_unq(L(p)->sem.doc_tbl.res);
-                    
-        /* add result column to projection */
-        proj[count] = PFalg_proj (res, L(p)->sem.doc_tbl.res);
-    
+        PFalg_col_t res     = L(p)->sem.doc_tbl.res,
+                    old_res = new_name (L(p)->sem.doc_tbl.res);
+
+        /* we need to make sure that both FRAG and ROOTS see the same changes */
+        *L(p) = *doc_tbl (
+                     LLL(p),
+                     old_res,
+                     get_old_name (proj_op, L(p)->sem.doc_tbl.col),
+                     L(p)->sem.doc_tbl.kind);
+
         *p = *PFla_project_ (
-                PFla_roots ( 
-                    PFla_doc_tbl (
-                        LLL(p),
-                        L(p)->sem.doc_tbl.res, 
-                        re_rename_col (L(p)->sem.doc_tbl.col, 
-                            LL(p)->sem.proj.items,
-                            LL(p)->schema.count),
-                        L(p)->sem.doc_tbl.kind)),
-                (count+1),
-                proj);
+                roots (L(p)),
+                p->schema.count,
+                /* create a new projection list combining the entries
+                   of the old projection and the result column */
+                extend_proj1 (proj_op, PFalg_proj (res, old_res)));
     }
-    
-    /* generally:    
-     * swap an operator p followed by an projection
-     *    
-     *      |                    |
-     *     (p)                project
-     *      |          -->       |
-     *   project                (p)
-     *      |                    |    
+
+    /* Most of the rewrites swap projection and current operator p
+     *
+     *      |                  |
+     *     op (p)           project
+     *      |        -->       |
+     *   project              op (p)
+     *      |                  |
+     *
+     * if the projection renames columns, the columns have to
+     * be renamed before swapping the projection and operator p
      */
     if ((L(p) && L(p)->kind == la_project) ||
-        (R(p) && R(p)->kind == la_project))
-    {
-    
+        (R(p) && R(p)->kind == la_project)) {
         switch (p->kind) {
-        
+            case la_attach:
+            {
+               /* make column name unique */
+               PFalg_col_t res = new_name(p->sem.attach.res);
+
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         attach (LL(p), res, p->sem.attach.value),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p),
+                                       PFalg_proj (p->sem.attach.res, res)));
+            }   break;
+
+            case la_cross:
+            case la_eqjoin:
+            case la_thetajoin:
+            {
+                bool pi_l    = L(p)->kind == la_project,
+                     pi_r    = R(p)->kind == la_project,
+                     push_l  = true,
+                     push_r  = true,
+                     push_lr = true;
+
+                PFalg_col_t lcol, rcol;
+
+                /* check if column name conflicts arise */
+                if (pi_l && pi_r)
+                    for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
+                        lcol = L(p)->schema.items[i].name;
+                        for (unsigned int j = 0; j < RL(p)->schema.count; j++) {
+                            rcol = R(p)->schema.items[j].name;
+                            push_lr &= lcol != rcol;
+                        }
+                    }
+                if (pi_l)
+                    for (unsigned int i = 0; i < LL(p)->schema.count; i++)
+                        push_l &= !PFprop_ocol (R(p),
+                                                LL(p)->schema.items[i].name);
+                if (pi_r)
+                    for (unsigned int i = 0; i < RL(p)->schema.count; i++)
+                        push_r &= !PFprop_ocol (L(p),
+                                                RL(p)->schema.items[i].name);
+
+                /* if push_lr == true then the left and right
+                 * projection can pass through the join
+                 *
+                 *       |                      |
+                 *       X (p)             pi_r & pi_l
+                 *     /   \         -->        |
+                 *  pi_l    pi_r                X (p)
+                 *    |      |                /   \
+                 *
+                 */
+                if (pi_l && pi_r && push_lr) {
+                    switch (p->kind) {
+                        case la_cross:
+                            *p = *PFla_project_ (
+                                       cross (
+                                           LL(p),
+                                           RL(p)),
+                                       p->schema.count,
+                                       merge_projs (L(p), R(p)));
+                            break;
+                        case la_eqjoin:
+                            *p = *PFla_project_ (
+                                       eqjoin (
+                                           LL(p),
+                                           RL(p),
+                                           get_old_name (L(p),
+                                                         p->sem.eqjoin.col1),
+                                           get_old_name (R(p),
+                                                         p->sem.eqjoin.col2)),
+                                       p->schema.count,
+                                       merge_projs (L(p), R(p)));
+                            break;
+                        case la_thetajoin:
+                            *p = *PFla_project_ (
+                                       thetajoin (
+                                           LL(p),
+                                           RL(p),
+                                           p->sem.thetajoin.count,
+                                           rename_col_in_pred (
+                                               p->sem.thetajoin.pred,
+                                               p->sem.thetajoin.count,
+                                               L(p),
+                                               R(p))),
+                                       p->schema.count,
+                                       merge_projs (L(p), R(p)));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+
+                 /* if push_l == true then only the left
+                 * projection can pass through the join
+                 *
+                 *       |                      |
+                 *       X (p)                pi_l++
+                 *     /   \         -->        |
+                 *  pi_l    (*)                 X (p)
+                 *    |                       /   \
+                 *   (*)                    (*)    (*)
+                 *                                  |
+                 */
+                else if (pi_l && push_l) {
+                    switch (p->kind) {
+                        case la_cross:
+                            *p = *PFla_project_ (
+                                      cross (
+                                          LL(p),
+                                          R(p)),
+                                      p->schema.count,
+                                      extend_proj (L(p), R(p)->schema));
+                            break;
+                        case la_eqjoin:
+                            *p = *PFla_project_ (
+                                      eqjoin (
+                                          LL(p),
+                                          R(p),
+                                          get_old_name (L(p),
+                                                        p->sem.eqjoin.col1),
+                                          p->sem.eqjoin.col2),
+                                      p->schema.count,
+                                      extend_proj (L(p), R(p)->schema));
+                            break;
+                        case la_thetajoin:
+                            *p = *PFla_project_ (
+                                      thetajoin (
+                                          LL(p),
+                                          R(p),
+                                          p->sem.thetajoin.count,
+                                          rename_col_in_pred (
+                                              p->sem.thetajoin.pred,
+                                              p->sem.thetajoin.count,
+                                              L(p),
+                                              NULL)),
+                                      p->schema.count,
+                                      extend_proj (L(p), R(p)->schema));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+
+                /* if push_r == true then only the right
+                 * projection can pass through the join
+                 *
+                 *       |                      |
+                 *       X (p)                pi_r++
+                 *     /   \         -->        |
+                 *   (*)    pi_r                X (p)
+                 *           |                /   \
+                 *          (*)             (*)   (*)
+                 */
+                else if (pi_r && push_r) {
+                    switch (p->kind) {
+                        case la_cross:
+                            *p = *PFla_project_ (
+                                      cross (
+                                          L(p),
+                                          RL(p)),
+                                      p->schema.count,
+                                      extend_proj (R(p), L(p)->schema));
+                            break;
+                        case la_eqjoin:
+                            *p = *PFla_project_ (
+                                      eqjoin (
+                                          L(p),
+                                          RL(p),
+                                          p->sem.eqjoin.col1,
+                                          get_old_name (R(p),
+                                                        p->sem.eqjoin.col2)),
+                                      p->schema.count,
+                                      extend_proj (R(p), L(p)->schema));
+                            break;
+                        case la_thetajoin:
+                            *p = *PFla_project_ (
+                                      thetajoin (
+                                          L(p),
+                                          RL(p),
+                                          p->sem.thetajoin.count,
+                                          rename_col_in_pred (
+                                              p->sem.thetajoin.pred,
+                                              p->sem.thetajoin.count,
+                                              NULL,
+                                              R(p))),
+                                      p->schema.count,
+                                      extend_proj (R(p), L(p)->schema));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+            }   break;
+
             /* is a projection followed by a projection, then merge them
              *
-             *      |                 
+             *      |
              *   project (p)           |
              *      |        -->    project (p)
              *   project               |
-             *      |                 
+             *      |
              */
             case la_project:
                 /* merge adjacent projection operators */
                 *p = *PFla_project_ (
-                            LL(p),
-                            p->schema.count,
-                            PFalg_proj_merge (
-                                p->sem.proj.items,
-                                p->sem.proj.count,
-                                L(p)->sem.proj.items,
-                                L(p)->sem.proj.count)); 
+                           LL(p),
+                           p->schema.count,
+                           PFalg_proj_merge (
+                               p->sem.proj.items,
+                               p->sem.proj.count,
+                               L(p)->sem.proj.items,
+                               L(p)->sem.proj.count));
                 break;
-                
-            /* swap projection and current select p
-             *
-             *      |                  |
-             *   select (p)         project
-             *      |        -->       |
-             *   project            select (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */
+
             case la_select:
                 *p = *PFla_project_ (
-                        PFla_select (
-                            LL(p), 
-                            re_rename_col (p->sem.select.col, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        L(p)->schema.count,
-                        L(p)->sem.proj.items);
+                          select_ (
+                              LL(p),
+                              get_old_name (L(p), p->sem.select.col)),
+                          L(p)->schema.count,
+                          L(p)->sem.proj.items);
                 break;
-                
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   attach (p)         project
-             *      |        -->       |
-             *   project            attach (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */
-             case la_attach: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.attach.res);
-                    
-                /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, p->sem.attach.res);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_attach (
-                            LL(p), 
-                            p->sem.attach.res,
-                            p->sem.attach.value),
-                        (count+1),
-                        proj);
-                break;
-            }
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   pos_sel (p)         project
-             *      |        -->       |
-             *   project            pos_sel (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */
             case la_pos_select:
                 *p = *PFla_project_ (
-                        PFla_pos_select (
-                            LL(p), 
-                            p->sem.pos_sel.pos,
-                            re_rename_col_in_ordering (p->sem.pos_sel.sortby,
-                                                       L(p)->sem.proj.items,
-                                                       L(p)->sem.proj.count),
-                            re_rename_col (p->sem.pos_sel.part, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
+                          pos_select (
+                              LL(p),
+                              p->sem.pos_sel.pos,
+                              rename_col_in_ordering (L(p),
+                                                      p->sem.pos_sel.sortby),
+                              get_old_name (L(p), p->sem.pos_sel.part)),
                         L(p)->schema.count,
                         L(p)->sem.proj.items);
                 break;
-                
-            /* swap projection and current operatior 
-             *
-             *      |                  |
-             *    to (p)            project
-             *      |        -->       |
-             *   project             to (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_to: {
-                /* add rowrank column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.binary.res);
-                    
-                /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, p->sem.binary.res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_to (
-                            LL(p), 
-                            p->sem.binary.res, 
-                            re_rename_col (p->sem.binary.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.binary.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
 
-                        (count+1),
-                        proj);   
-                break;
-            }
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   rowrank (p)        project
-             *      |        -->       |
-             *   project            rowrank (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             *
-             * the new resulting column from operator p is added to 
-             * the projection 
-             */
-            case la_rowrank:  {
-            
-                /* add rowrank column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.sort.res);
-                    
-                /* add rowrank column to projection */
-                proj[count] = PFalg_proj (res, p->sem.sort.res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_rowrank (
-                            LL(p), 
-                            p->sem.sort.res, 
-                            re_rename_col_in_ordering (p->sem.sort.sortby,
-                                                       L(p)->sem.proj.items,
-                                                       L(p)->sem.proj.count)),
-                        (count + 1),
-                        proj);
-                break; 
-            } 
-                
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   rownum (p)         project
-             *      |        -->       |
-             *   project            rownum (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             *
-             * the new resulting column from operator p is added to 
-             * the projection 
-             */
-            case la_rownum: {
-                /* add rownum column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.sort.res);
-                    
-                /* add rownum column to projection */
-                proj[count] = PFalg_proj (res, p->sem.sort.res);
+            case la_fun_1to1:
+            {
+               /* make column name unique */
+               PFalg_col_t res = new_name(p->sem.fun_1to1.res);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_rownum (
-                            LL(p), 
-                            p->sem.sort.res,
-                            re_rename_col_in_ordering (p->sem.sort.sortby,
-                                                       L(p)->sem.proj.items,
-                                                       L(p)->sem.proj.count),
-                            re_rename_col (p->sem.sort.part, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj);
-                break; 
-            }
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   rank (p)           project
-             *      |        -->       |
-             *   project            rank (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             *
-             * the new resulting column from operator p is added to 
-             * the projection 
-             */
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         fun_1to1 (LL(p),
+                                   p->sem.fun_1to1.kind,
+                                   res,
+                                   rename_col_in_collist (
+                                       L(p),
+                                       p->sem.fun_1to1.refs)),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p),
+                                       PFalg_proj (p->sem.fun_1to1.res, res)));
+            }   break;
+
+            case la_num_eq:
+            case la_num_gt:
+            case la_bool_and:
+            case la_bool_or:
+            case la_to:
+            {
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.binary.res,
+                           old_res = new_name (p->sem.binary.res);
+
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.binary.res  = old_res;
+               p->sem.binary.col1 = get_old_name (L(p), p->sem.binary.col1);
+               p->sem.binary.col2 = get_old_name (L(p), p->sem.binary.col2);
+
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, LL(p), NULL),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p), PFalg_proj (res, old_res)));
+            }  break;
+
+            case la_bool_not:
+            {
+               /* make column name unique */
+               PFalg_col_t res = new_name(p->sem.unary.res);
+
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         not (LL(p),
+                              res,
+                              get_old_name (L(p), p->sem.unary.col)),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p),
+                                       PFalg_proj (p->sem.unary.res, res)));
+            }   break;
+
+            case la_rownum:
+            case la_rowrank:
             case la_rank:
             {
-                /* add rank column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.sort.res);
-                    
-                /* add rank column to projection */
-                proj[count] = PFalg_proj (res, p->sem.sort.res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_rank (
-                            LL(p), 
-                            p->sem.sort.res, 
-                            re_rename_col_in_ordering (p->sem.sort.sortby,
-                                                       L(p)->sem.proj.items,
-                                                       L(p)->sem.proj.count)),
-                        (count + 1),
-                        proj); 
-                break; 
-            } 
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   rowid (p)          project
-             *      |        -->       |
-             *   project            rowid (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             *
-             * the new resulting column from operator p is added to 
-             * the projection 
-             */
-            case la_rowid: {
-                /* add rowid column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.rowid.res);
-                    
-                /* add rowid column to projection */
-                proj[count] = PFalg_proj (res, p->sem.rowid.res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_rowid (
-                            LL(p), 
-                            p->sem.rowid.res),
-                        (count+1),
-                        proj);
-                break; 
-            }
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   type (p)           project
-             *      |        -->       |
-             *   project            type (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_type: {
-                /* add resulting column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.type.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.type.res);
-                
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_type (
-                            LL(p), 
-                            p->sem.type.res,
-                            re_rename_col (p->sem.type.col, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            p->sem.type.ty),
-                        (count+1),
-                        proj);
-                break;  
-            }
-              
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   cast (p)           project
-             *      |        -->       |
-             *   project            cast (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_cast: {
-                /* add resulting column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.type.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.type.res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_cast (
-                            LL(p), 
-                            p->sem.type.res,
-                            re_rename_col (p->sem.type.col, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            p->sem.type.ty),
-                        (count+1),
-                        proj);
-                break; 
-            } 
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   twig (p)           project
-             *      |        -->       |
-             *   project            twig (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_twig:
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_twig (
-                            LL(p), 
-                            re_rename_col (p->sem.iter_item.iter, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.iter_item.item, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        L(p)->schema.count,
-                        L(p)->sem.proj.items); 
-                break; 
-            
-            /* swap projection and current operatior p
-             *
-             *      |                  |
-             *   processi (p)       project
-             *      |        -->       |
-             *   project            processi (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_processi:
-                *p = *PFla_project_ (
-                        PFla_processi (
-                            LL(p), 
-                            re_rename_col (p->sem.iter_item1_item2.iter, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.iter_item1_item2.item1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.iter_item1_item2.item2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        L(p)->schema.count,
-                        L(p)->sem.proj.items);
-                break;
-                
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *    1to1 (p)          project
-             *      |        -->       |
-             *   project             1to1 (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_fun_1to1: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.fun_1to1.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.fun_1to1.res);
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.sort.res,
+                           old_res = new_name (p->sem.sort.res);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_fun_1to1 (
-                            LL(p), 
-                            p->sem.fun_1to1.kind,
-                            p->sem.fun_1to1.res,
-                            re_rename_col_in_collist (p->sem.fun_1to1.refs, 
-                                                      L(p)->sem.proj.items,
-                                                      L(p)->schema.count)),
-                        (count + 1),
-                        proj);
-                break; 
-            }
-            
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *   bool_or (p)         project
-             *      |        -->       |
-             *   project            bool_or (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_bool_or: {
-                /* add rowid column to projection */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                                                   
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.binary.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.binary.res);
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.sort.res    = old_res;
+               p->sem.sort.sortby = rename_col_in_ordering (
+                                        L(p),
+                                        p->sem.sort.sortby);
+               if (p->sem.sort.part)
+                   p->sem.sort.part = get_old_name (L(p), p->sem.sort.part);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_or (
-                            LL(p), 
-                            p->sem.binary.res,
-                            re_rename_col (p->sem.binary.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.binary.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj );
-                break; 
-            }
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, LL(p), NULL),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p), PFalg_proj (res, old_res)));
+            }  break;
 
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *   bool_and (p)       project
-             *      |        -->       |
-             *   project            bool_and (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_bool_and: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.binary.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.binary.res);
+            case la_rowid:
+            {
+               /* make column name unique */
+               PFalg_col_t res = new_name(p->sem.rowid.res);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_and (
-                            LL(p), 
-                            p->sem.binary.res,
-                            re_rename_col (p->sem.binary.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.binary.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj ); 
-                break; 
-            }
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         rowid (LL(p), res),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p),
+                                       PFalg_proj (p->sem.rowid.res, res)));
+            }   break;
 
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *   bool_not (p)       project
-             *      |        -->       |
-             *   project            bool_not (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_bool_not: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.unary.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.unary.res);
+            case la_type:
+            case la_type_assert:
+            case la_cast:
+            {
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.type.res,
+                           old_res = new_name (p->sem.type.res);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_not (
-                            LL(p), 
-                            p->sem.unary.res,
-                            re_rename_col (p->sem.unary.col, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj );  
-                break; 
-            }
-            
-             /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *    num_eq (p)        project
-             *      |        -->       |
-             *   project             num_eq (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_num_eq: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.binary.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.binary.res);
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.type.res = old_res;
+               p->sem.type.col = get_old_name (L(p), p->sem.type.col);
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_eq (
-                            LL(p), 
-                            p->sem.binary.res,
-                            re_rename_col (p->sem.binary.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.binary.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj ); 
-                break; 
-            }
-            
-             /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *    num_gt (p)        project
-             *      |        -->       |
-             *   project             num_gt (p)
-             *      |                  |
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */ 
-            case la_num_gt: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = L(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = L(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.binary.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.binary.res);
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, LL(p), NULL),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (L(p), PFalg_proj (res, old_res)));
+            }  break;
 
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_gt (
-                            LL(p), 
-                            p->sem.binary.res,
-                            re_rename_col (p->sem.binary.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.binary.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        (count+1),
-                        proj ); 
-                break; 
-            }
-            
-            /* swap projection and current operatior p
+            /* swap projection and current operator p
              *
              *      |                    |
              *   step_join (p)        project
@@ -1060,45 +662,33 @@ opt_projection (PFla_op_t *p)
              *    /   \               step_join (p)
              *   |     |      -->       / \
              *  doc  project           /   \
-             *   |     |             doc   LL(p) 
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_step_join: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = R(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = R(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.step.item_res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.step.item_res);
-            
-                *p = *PFla_project_ (
-                        PFla_step_join (
-                            L(p), 
-                            RL(p),
-                            p->sem.step.spec,
-                            p->sem.step.level,
-                            re_rename_col (p->sem.step.item, 
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count),
-                            p->sem.step.item_res),
-                        (count+1),
-                        proj );
-                break;
-            }
+             *   |     |             doc   RL(p)
+             *
+             * if the projection renames columns, the columns have to
+             * be renamed before swapping the projection and operator p
+             */
+            case la_step_join:
+            case la_guide_step_join:
+            {
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.step.item_res,
+                           old_res = new_name (p->sem.step.item_res);
 
-             /* swap projection and current operatior p
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.step.item_res = old_res;
+               p->sem.step.item     = get_old_name (R(p), p->sem.step.item);
+
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, L(p), RL(p)),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (R(p), PFalg_proj (res, old_res)));
+            }  break;
+
+            /* swap projection and current operator p
              *
              *      |                        |
              *  doc_indx_join (p)         project
@@ -1106,496 +696,80 @@ opt_projection (PFla_op_t *p)
              *    /   \                  doc_index_join (p)
              *   |     |        -->         / \
              *  doc  project               /   \
-             *   |     |                 doc   LL(p) 
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_doc_index_join: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = R(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                           
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = R(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.doc_join.item_res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.doc_join.item_res);
-            
-                *p = *PFla_project_ (
-                        PFla_doc_index_join (
-                            L(p), 
-                            RL(p),
-                            p->sem.doc_join.kind,
-                            p->sem.doc_join.item,
-                            p->sem.doc_join.item_res,
-                            re_rename_col (p->sem.doc_join.item_doc, 
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count)),
-                        (count+1),
-                        proj );
-                break;
-            }
-            
-            /* swap projection and current operatior p
+             *   |     |                 doc   RL(p)
+             *
+             * if the projection renames columns, the columns have to
+             * be renamed before swapping the projection and operator p
+             */
+            case la_doc_index_join:
+            {
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.doc_join.item_res,
+                           old_res = new_name (p->sem.doc_join.item_res);
+
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.doc_join.item_res = old_res;
+               p->sem.doc_join.item     = get_old_name (
+                                              R(p),
+                                              p->sem.doc_join.item);
+               p->sem.doc_join.item_doc = get_old_name (
+                                              R(p),
+                                              p->sem.doc_join.item_doc);
+
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, L(p), RL(p)),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (R(p), PFalg_proj (res, old_res)));
+            }  break;
+
+            /* swap projection and current operator p
              *
              *      |                        |
-             *  doc_indx_join (p)         project
+             *  doc_access (p)            project
              *     / \                       |
-             *    /   \                  doc_index_join (p)
+             *    /   \                  doc_access (p)
              *   |     |        -->         / \
              *  doc  project               /   \
-             *   |     |                 doc   LL(p) 
-             * 
-             * if the projection renames columns, the columns have to 
-             * be re-renamed before swaping the projection and the
-             * operator p
-             */    
-            case la_guide_step_join: {
-                 /* add rowid column to projection */
-                unsigned int count = R(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                                                   
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = R(p)->sem.proj.items[i];
-                    
-                 /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.step.item_res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, p->sem.step.item_res);
-            
-                *p = *PFla_project_ (
-                        PFla_guide_step_join (
-                            L(p), 
-                            RL(p),
-                            p->sem.step.spec,
-                            p->sem.step.guide_count,
-                            p->sem.step.guides,
-                            p->sem.step.level,
-                            re_rename_col (p->sem.step.item, 
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count),
-                            p->sem.step.item_res),
-                        (count+1),
-                        proj );
-                break;
-            }
-            
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             */    
-            case la_eqjoin: {
-                bool pi_r = false;
-                bool pi_l = false;
-            
-                /* check if one column used in the left projection is used
-                   in the eqjoin */
-                if (L(p)->kind == la_project) {
-                    pi_l = true;
-                    for(unsigned int i = 0; i < L(p)->schema.count; i++) 
-                        if ((L(p)->sem.proj.items[i].new != 
-                                                    L(p)->sem.proj.items[i].old)
-                          && (L(p)->sem.proj.items[i].new == p->sem.eqjoin.col1
-                          || L(p)->sem.proj.items[i].new == p->sem.eqjoin.col2)) 
-                        {
-                            pi_l = false;
-                            break;
-                        }
-                }
-                
-                /* check if one column used in the right projection is used
-                   in the eqjoin */
-                if (R(p)->kind == la_project) {
-                    pi_r = true;
-                    for(unsigned int i = 0; i < R(p)->schema.count; i++) 
-                        if ((R(p)->sem.proj.items[i].new != 
-                                                    R(p)->sem.proj.items[i].old)
-                          && (R(p)->sem.proj.items[i].new == p->sem.eqjoin.col1
-                          || R(p)->sem.proj.items[i].new == p->sem.eqjoin.col2)) 
-                        {
-                            pi_r = false;
-                            break;
-                        }
-                }
-                
-                /* check if one column used in the left projection has the 
-                   same name of an colum used in the right projection */
-                if (L(p)->kind == la_project
-                    && R(p)->kind == la_project) 
-                {
-                    for (unsigned int i = 0; i < L(p)->schema.count; i++) {
-                        for (unsigned int j = 0; j < R(p)->schema.count; j++) 
-                            if (R(p)->sem.proj.items[j].new == 
-                                                    L(p)->sem.proj.items[i].new)
-                            {
-                                pi_l = false;
-                                pi_r = false;
-                                break;
-                            }
-                        if (!pi_l && !pi_r)
-                            break;
-                    }
-                }
-                
-                /* if pi_l == true and pi_r == true then the left and right 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)             pi_r & pi_l
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *
-                 */ 
-                if (pi_l && pi_r) {
-                    unsigned int count = L(p)->sem.proj.count +
-                                                        R(p)->sem.proj.count;
-                
-                     *p = *PFla_project_ (
-                                PFla_eqjoin (
-                                    LL(p), 
-                                    RL(p),
-                                    re_rename_col (
-                                        re_rename_col (p->sem.eqjoin.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count), 
-                                        R(p)->sem.proj.items,
-                                        R(p)->schema.count),
-                                    re_rename_col (
-                                        re_rename_col (p->sem.eqjoin.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count), 
-                                        R(p)->sem.proj.items,
-                                        R(p)->schema.count)),
-                                count,
-                                mergeProjection (L(p)->sem.proj.items,
-                                    L(p)->sem.proj.count,
-                                    R(p)->sem.proj.items,
-                                    R(p)->sem.proj.count)); 
-                    break;
-                }
-                
-                 /* if pi_l == true and pi_r == false then only the left 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)              pi_l
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *   (*)    (*)             (*)   pi_r
-                 *                                  |
-                 */
-                if (pi_l) {
-                    unsigned int count = L(p)->schema.count + 
-                                                        R(p)->schema.count;
-                
-                    *p = *PFla_project_ (
-                        PFla_eqjoin (
-                            LL(p), 
-                            R(p),
-                            re_rename_col (p->sem.eqjoin.col1, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count),
-                            re_rename_col (p->sem.eqjoin.col2, 
-                                            L(p)->sem.proj.items,
-                                            L(p)->schema.count)),
-                        count,
-                        extend_proj(L(p)->sem.proj.items, 
-                                         L(p)->sem.proj.count,
-                                         R(p)->schema));
-                        
-                    break;
-                }
-                
-                /* if pi_l == false and pi_r == true then only the right 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)              pi_r
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *   (*)    (*)             pi_l  (*)
-                 *                           |
-                 */
-                if (pi_r) {
-                unsigned int count = R(p)->schema.count + 
-                                                        L(p)->schema.count;
-                
-                    *p = *PFla_project_ (
-                        PFla_eqjoin (
-                            L(p), 
-                            RL(p),
-                            re_rename_col (p->sem.eqjoin.col1, 
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count),
-                            re_rename_col (p->sem.eqjoin.col2, 
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count)),
-                        count,
-                        extend_proj(R(p)->sem.proj.items, 
-                                         R(p)->sem.proj.count,
-                                         L(p)->schema));
-                        
-                    break;
-                }
-                    
-                    
-                break;            
-            }
-            
-            /* theta join */
-            case la_thetajoin: {
-                bool pi_r = false;
-                bool pi_l = false;
-            
-                /* check if one column used in the left projection is used
-                   in the left thetajoin predicates */
-                if (L(p)->kind == la_project) {
-                    pi_l = true;
-                    for (unsigned int k = 0; k < p->sem.thetajoin.count; k++) {
-                        for (unsigned int i = 0; i < L(p)->schema.count; i++) 
-                            if (L(p)->sem.proj.items[i].new != 
-                                                    L(p)->sem.proj.items[i].old
-                                && L(p)->sem.proj.items[i].new == 
-                                                p->sem.thetajoin.pred[k].left) 
-                            {
-                                pi_l = false;
-                                break;
-                            }
-                        if (!pi_l)
-                            break;
-                    }
-                } 
-                
-                /* check if one column used in the right projection is used
-                   in the right thetajoin predicates */
-                if (R(p)->kind == la_project) {
-                    pi_r = true;
-                    for (unsigned int k = 0; k < p->sem.thetajoin.count; k++) {
-                        for (unsigned int i = 0; i < R(p)->schema.count; i++) 
-                            if (R(p)->sem.proj.items[i].new != 
-                                                    R(p)->sem.proj.items[i].old
-                                && R(p)->sem.proj.items[i].new == 
-                                                p->sem.thetajoin.pred[k].right) 
-                            {
-                                pi_r = false;
-                                break;
-                            }
-                        if (!pi_r)
-                            break;
-                    }
-                }
-                
-                /* check if one column used in the left projection has the 
-                   same name of an colum used in the right projection */
-                if (L(p)->kind == la_project
-                    && R(p)->kind == la_project) 
-                {
-                    for (unsigned int i = 0; i < L(p)->schema.count; i++) { 
-                        for (unsigned int j = 0; j < R(p)->schema.count; j++) 
-                            if (R(p)->sem.proj.items[j].new == 
-                                                    L(p)->sem.proj.items[i].new)
-                            {
-                                pi_l = false;
-                                pi_r = false;
-                                break;
-                            }
-                        if (!pi_l && !pi_r)
-                            break;
-                    }
-                }
-                
-                /* if pi_l == true and pi_r == true then the left and right 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)             pi_r & pi_l
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *
-                 */ 
-                if (pi_l && pi_r) {
-                    unsigned int count = L(p)->sem.proj.count +
-                                                        R(p)->sem.proj.count;
-                
-                    /* swap operators */
-                     *p = *PFla_project_ (
-                                PFla_thetajoin (
-                                    LL(p), 
-                                    RL(p),
-                                    p->sem.thetajoin.count,
-                                    re_rename_col_in_pred (
-                                                    p->sem.thetajoin.pred,
-                                                    L(p)->sem.proj.items,
-                                                    R(p)->sem.proj.items,
-                                                    p->sem.thetajoin.count,
-                                                    L(p)->schema.count,
-                                                    R(p)->schema.count,
-                                                    true, true)),
-                                count,
-                                mergeProjection (L(p)->sem.proj.items,
-                                    L(p)->sem.proj.count,
-                                    R(p)->sem.proj.items,
-                                    R(p)->sem.proj.count)); 
-                    break;
-                }
-                
-                 /* if pi_l == true and pi_r == false then only the left 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)              pi_l
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *   (*)    (*)             (*)   pi_r
-                 *                                  |
-                 */
-                if (pi_l) {
-                    unsigned int count = L(p)->schema.count + 
-                                                        R(p)->schema.count;
-                
-                    *p = *PFla_project_ (
-                        PFla_thetajoin (
-                            LL(p), 
-                            R(p),
-                            p->sem.thetajoin.count,
-                            re_rename_col_in_pred (p->sem.thetajoin.pred,
-                                            L(p)->sem.proj.items,
-                                            NULL,
-                                            p->sem.thetajoin.count,
-                                            L(p)->schema.count,
-                                            0,
-                                            true, false)),
-                        count,
-                        extend_proj(L(p)->sem.proj.items, 
-                                         L(p)->sem.proj.count,
-                                         R(p)->schema));
-                        
-                    break;
-                }
-                
-                /* if pi_l == false and pi_r == true then only the right 
-                 * projection can pass trought the join 
-                 *
-                 *       |                      |
-                 *    eqjoin (p)              pi_r
-                 *     /   \         -->        |
-                 *  pi_l    pi_r             eqjoin (p)
-                 *    |      |                /   \
-                 *   (*)    (*)             pi_l  (*)
-                 *                           |
-                 */
-                if (pi_r) {
-                    unsigned int count = L(p)->schema.count + 
-                                                        R(p)->schema.count;
-                
-                    *p = *PFla_project_ (
-                        PFla_thetajoin (
-                            L(p), 
-                            RL(p),
-                            p->sem.thetajoin.count,
-                            re_rename_col_in_pred (p->sem.thetajoin.pred,
-                                            NULL,
-                                            R(p)->sem.proj.items,
-                                            p->sem.thetajoin.count,
-                                            0,
-                                            R(p)->schema.count,
-                                            false, true)),
-                        count,
-                        extend_proj(R(p)->sem.proj.items, 
-                                         R(p)->sem.proj.count,
-                                         L(p)->schema));
-                        
-                    break;
-                }
-                    
-                    
-                break;            
-            }
-
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
+             *   |     |                 doc   RL(p)
              *
-             *       |                     |
-             *  doc_access (p)          project
-             *       |          -->        |
-             *    project             doc_access (p)
-             *       |                     |
-             */    
-            case la_doc_access: {
-                /* add result column to projection 
-                 * create new projection list */
-                unsigned int count = R(p)->schema.count;
-                PFalg_proj_t *proj = PFmalloc ((count + 1) *
-                                                   sizeof (PFalg_proj_t));
-                        
-                /* copy projections */
-                 for (unsigned int i = 0; i < count; i++)
-                    proj[i] = R(p)->sem.proj.items[i];
+             * if the projection renames columns, the columns have to
+             * be renamed before swapping the projection and operator p
+             */
+            case la_doc_access:
+            {
+               /* make column name unique */
+               PFalg_col_t res     = p->sem.doc_access.res,
+                           old_res = new_name (p->sem.doc_access.res);
 
-                /* make column name unique */
-                PFalg_col_t res = make_col_unq(p->sem.doc_access.res);
-                    
-                /* add result column to projection */
-                proj[count] = PFalg_proj (res, res);
-            
-                /* swap projection and current operatior */
-                *p = *PFla_project_ (
-                        PFla_doc_access (
-                            L(p),
-                            RL(p), 
-                            p->sem.doc_access.res,
-                            re_rename_col (p->sem.doc_access.col,
-                                            R(p)->sem.proj.items,
-                                            R(p)->schema.count),
-                            p->sem.doc_access.doc_col),
-                        (count+1),
-                        proj);
-                break; 
-            }
- 
+               /* patch the semantic information of p
+                  (as PFla_op_duplicate will use this information) */
+               p->sem.doc_access.res = old_res;
+               p->sem.doc_access.col = get_old_name (R(p),
+                                                     p->sem.doc_access.col);
 
-            /* pass the projection rigth thru and duplicate operator 
-             * swap projection and current operatior p
-             *
-             *      |                  |
-             *     (p)              project
-             *      |        -->       |
-             *   project              (p)
-             *      |                  |
-             */    
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         PFla_op_duplicate (p, L(p), RL(p)),
+                         p->schema.count,
+                         /* create a new projection list combining the entries
+                            of the old projection and the result column */
+                         extend_proj1 (R(p), PFalg_proj (res, old_res)));
+            }  break;
+
             case la_dummy:
-            case la_side_effects:
-            case la_fragment:
-            case la_frag_extract:
-            case la_roots:
-            case la_empty_frag:
-            case la_nil:
-            case la_rec_fix:
-            case la_rec_param:
-            case la_rec_arg:
-            case la_rec_base:
+            case la_proxy:
             case la_proxy_base:
-                /* swap projection and current operatior */
+                /* swap projection and current operator */
                 *p = *PFla_project_ (
                         PFla_op_duplicate (p, LL(p), R(p)),
-                        L(p)->schema.count,
+                        p->schema.count,
                         L(p)->sem.proj.items);
                 break;
-            
+
             /* do nothing */
             default:
                 break;
@@ -1603,17 +777,18 @@ opt_projection (PFla_op_t *p)
     }
 }
 
+/**
+ * Invoke projection push-up.
+ */
 PFla_op_t *
 PFalgopt_projection (PFla_op_t *root)
 {
-    /* Infer icol properties first */
-    PFprop_infer_icol (root);
-
     /* Optimize algebra tree */
     opt_projection (root);
+
+    PFla_dag_reset (root);
 
     return root;
 }
 
 /* vim:set shiftwidth=4 expandtab filetype=c: */
-
