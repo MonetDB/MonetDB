@@ -317,9 +317,9 @@ opt_projection (PFla_op_t *p)
                 /* check if column name conflicts arise */
                 if (pi_l && pi_r)
                     for (unsigned int i = 0; i < LL(p)->schema.count; i++) {
-                        lcol = L(p)->schema.items[i].name;
+                        lcol = LL(p)->schema.items[i].name;
                         for (unsigned int j = 0; j < RL(p)->schema.count; j++) {
-                            rcol = R(p)->schema.items[j].name;
+                            rcol = RL(p)->schema.items[j].name;
                             push_lr &= lcol != rcol;
                         }
                     }
