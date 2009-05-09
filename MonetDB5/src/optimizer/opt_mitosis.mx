@@ -69,22 +69,27 @@ static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, estimate=0, tpe, pieces=1;
-	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
-	InstrPtr q,*old;
+	InstrPtr q,*old, target= 0;
 	VarPtr v;
 	int *parts=0;
 
 	(void)cntxt;
 	(void) stk;
 	
-	/* locate the largest table */
+	/* locate the largest non-partitioned table */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
 		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
 			continue;
+		/* don't split insert or update BATs */
+		if (getVarConstant(mb, getArg(q,4)).val.ival != 0 )
+			continue;
+		if( q->argc >5 )
+			continue; /* already partitioned */
+		
 @-
 The SQL optimizer already collects the counts of the
 base table and passes them on as a row property.
@@ -97,13 +102,14 @@ base table and passes them on as a row property.
 		   )
 			r= (BUN) v->value.val.lval;
 			if (r >= rowcnt && r > PARTITION_THRESHOLD){
-				schema = getVarConstant(mb, getArg(q,1)).val.sval;
-				table = getVarConstant(mb, getArg(q,2)).val.sval;
 				rowcnt = r;
+				target = q;
 				estimate++;
 				r = 0;
 			}
 		}
+	if (target == 0)
+		return 0;
 @-
 The number of pieces should be based on the footprint of the queryplan,
 such that preferrably it can be handled without swapping intermediates.
@@ -118,12 +124,14 @@ spread evenly over the threads and the common type.
 	if (pieces >256)
 		pieces = 256; /* cut off potential plan explosion */
 
-	if (schema == 0 || (size_t) rowcnt < (size_t) pieces || pieces <=1)
+	if ( (size_t) rowcnt < (size_t) pieces || pieces <=1)
 		return 0;
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#opt_mitosis: target is %s.%s "
 			"on %d threads %d pieces\n",
-			schema,table,GDKnr_threads,pieces);
+				getVarConstant(mb, getArg(q,1)).val.sval,
+				getVarConstant(mb, getArg(q,2)).val.sval,
+				GDKnr_threads,pieces);
 #ifdef _DEBUG_OPT_MITOSIS
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
@@ -140,20 +148,7 @@ spread evenly over the threads and the common type.
 
 	for(i=0;i<limit;i++){
 		p= old[i];
-		if (getModuleId(p)!= sqlRef || 
-		  !(getFunctionId(p)==bindRef || getFunctionId(p)==bindidxRef)){
-			pushInstruction(mb,p);
-			continue;
-		}
-		/* don't split inserts or updates */
-		if (getVarConstant(mb, getArg(p,4)).val.ival == 1 ||
-		    getVarConstant(mb, getArg(p,4)).val.ival == 2) {
-			pushInstruction(mb,p);
-			continue;
-		}
-		
-		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
-		    strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval) ){
+		if ( p != target){
 			pushInstruction(mb,p);
 			continue;
 		}
