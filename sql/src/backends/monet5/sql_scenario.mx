@@ -709,6 +709,10 @@ SQLreader(Client c)
 	mvc *m = NULL;
 	int blocked = isa_block_stream(in->s);
 
+	if( SQLinitialized == FALSE){
+		c->mode = FINISHING;
+		return NULL;
+	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "SQL client finished\n");
