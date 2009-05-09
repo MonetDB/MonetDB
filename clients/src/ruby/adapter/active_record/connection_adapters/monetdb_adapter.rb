@@ -5,6 +5,7 @@
 # interface
 
 require 'active_record/connection_adapters/abstract_adapter'
+require 'MonetDB'
 
 module ActiveRecord
   class Base
@@ -39,15 +40,15 @@ module ActiveRecord
       end
      
       #mid = Mapi::mapi_mapi(host, port, username, password, lang, database)
-      dbh = Monetdb.new
+      dbh = MonetDB.new
       #mid = dbh.connect(username, password, lang, host, port, database)
       ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database], config)
     end
  end
-end
+
 
     
-module ConnectionAdapters
+ module ConnectionAdapters
   class MonetDBColumn < Column
     # Handles the case where column type is int but default
     # column value is the next value of a sequence(string).
@@ -159,16 +160,22 @@ module ConnectionAdapters
 
     # Check if the connection is active
     def active?
-      (MonetDB::is_connected(@connection) == 1)
+      if @connection != nil
+        @connection.is_connected?
+      end
+      
+      return false
     end
 
     # Close this connection and open a new one in its place.
     def reconnect!
-      return false
+      if @connection != nil
+        @connection.reconnect
+      end
     end
 
     def disconnect!
-      MonetDB::close(@connection)
+      @connection.close
     end
 
     # -------END OF CONNECTION MANAGEMENT----------------
@@ -218,7 +225,7 @@ module ConnectionAdapters
       else
         sql << quote(default)
       end
-
+      sql += ';'
       hdl = execute(sql) 
       #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
  	      #raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
@@ -226,9 +233,7 @@ module ConnectionAdapters
     end
 
     def remove_index(table_name, options = {})
-      #hdl = execute("DROP INDEX #{index_name(table_name, options)}")
-      
-      hdl = query("DROP INDEX #{index_name(table_name, options)}")
+      hdl = execute("DROP INDEX #{index_name(table_name, options)}")
       
       #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
  	#raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
@@ -254,7 +259,7 @@ module ConnectionAdapters
       table_name = table_name.to_s if table_name.is_a?(Symbol)
       table_name = table_name.split('.')[-1] unless table_name.nil?
 
-      hdl = query("	SELECT name, type, type_digits, type_scale, \"default\", \"null\" 
+      hdl = execute("	SELECT name, type, type_digits, type_scale, \"default\", \"null\" 
 			FROM _columns 
 			WHERE table_id in (SELECT id FROM _tables WHERE name = '#{table_name}')" ,name)
       
@@ -348,7 +353,7 @@ module ConnectionAdapters
 				i.type = 0 AND i.name not like '%pkey' 
 				AND i.id = k.id AND t.id = i.table_id 
 				AND t.name = '#{table_name.to_s}'
-	 		ORDER BY i.name, k.nr"
+	 		ORDER BY i.name, k.nr;"
       result = select_all(sql_query,name);
 
       cur_index = nil
@@ -409,52 +414,27 @@ module ConnectionAdapters
     end
 
     def execute(sql, name = nil)
-      log(sql, name) do
-	
-	    # This substitution is needed. 
+      # This substitution is needed. 
 	    sql =  sql.gsub('!=', '<>')
-
-        #puts "\n"+sql+"\n"
-
-        hdl = MonetDB::query(sql)
+      sql += ';'
         
-        #error_msg = Mapi::mapi_result_error(hdl).to_s
-
-        #if(error_msg.length > 0 )
-        #  raise ActiveRecord::StatementInvalid, "\n\n\t"+Mapi::mapi_result_error(hdl)+"\n\n"
-        #end
-
-	      # if( Mapi::mapi_error(@connection) != Mapi::MOK )
-        # raise StandardError, Mapi::mapi_error_str(@connection)
-        # end
-        
-        hdl
-      end
+      hdl = @connection.query(sql)  
     end 
 
     # Begins the transaction.
     def begin_db_transaction
       hdl = execute("START TRANSACTION")
-      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
- 	    #raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
-      #end 
     end
 
     # Commits the transaction.
     def commit_db_transaction
       hdl = execute("COMMIT")
-      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
- 	    #raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
-      #end 
     end
 
     # Rolls back the transaction. Must be
     # done if the transaction block raises an exception or returns false.
     def rollback_db_transaction
       hdl = execute("ROLLBACK")
-      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
- 	    #raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
-      #end 
     end
 
 
@@ -467,7 +447,7 @@ module ConnectionAdapters
 	    # Ensures that the auto-generated id  value will not violate the primary key constraint.
 	    # comment out for production code(?)
 	    #make_sure_pk_works(table_name, nil)
-      #  "INSERT INTO #{quote_table_name(table_name)}"
+      "INSERT INTO #{quote_table_name(table_name)}"
     end
    #=======END=OF=DATABASE=STATEMENTS=========#
 
@@ -476,44 +456,32 @@ module ConnectionAdapters
       # Returns an array of record hashes with the column names as keys and
       # column values as values.
       def select(sql, name = nil)
+        sql += ';'
         hdl = execute(sql,name) 
        
         fields = []
         result = []
 
         if( (num_rows = hdl.num_rows) > 0 )
-          num_fields = hdl.num_cols
-
           fields = hdl.name_fields
           
           # Must do a successful mapi_fetch_row first
-          
-          hdl.fetch do
+             
             row_hash={}
             fields.each_with_index do |f, i| 
               row_hash[f] = hdl.fetch_column_name(f)
             end
             result << row_hash
-          end
           
         end
         
-        #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK)
-        #  raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection)
-        #else
-          result
-        # end
+        result
       end
 
       # Executes the update statement and returns the number of rows affected.
       def update_sql(sql, name = nil)
 	      hdl = execute(sql,name)
-        affected_rows = Mapi::mapi_rows_affected(hdl)
-        #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK)
-        #  raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection)
-        #else
-        #  affected_rows
-        #end
+        # affected_rows = hdl.affected_rows
         return false
       end
       
@@ -525,14 +493,9 @@ module ConnectionAdapters
 	    # comment out for production code(?)
 	      table_name = extract_table_name_from_insertion_query(sql)
 	      # make_sure_pk_works(table_name,name)	
-	
+	      
         hdl = execute(sql, name)
         last_auto_generated_id = hdl.get_last_auto_generated_id
-        #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK)
-        #  raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection)
-        #else
-	        #id_value || last_auto_generated_id
-        #end
       end
       
       # Some tests insert some tuples with the id values set. In other words, the sequence
@@ -548,7 +511,7 @@ module ConnectionAdapters
 	    # Assume that table name has one primary key column named id that is associated with a sequence,
 	    # otherwise return
 	      hdl = nil
-	      sequence_name = extract_sequence_name( select_value("select \"default\" from _columns where table_id in (select id from _tables where name = '#{table_name}') and name='id'") )	
+	      sequence_name = extract_sequence_name( select_value("select \"default\" from _columns where table_id in (select id from _tables where name = '#{table_name}') and name='id';") )	
 
 	      return if sequence_name.blank?	
 
@@ -560,10 +523,6 @@ module ConnectionAdapters
 	      else
 	        hdl = execute("ALTER SEQUENCE #{sequence_name} RESTART WITH #{next_seq_val+1}",name)
 	      end
-
-	      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK)
-        #      raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection)
-	      #end
       end
 
       # Auxiliary function that extracts the table name from an insertion query
@@ -584,13 +543,10 @@ module ConnectionAdapters
 
     private
       def connect
-       if(@connection)
+        if(@connection)
           @connection.connect 
-       end
-       
-       #if(Mapi::mapi_error(@connection) != Mapi::MOK)
-       #   raise StandardError,  " #{Mapi::mapi_error_str(@connection)} "
-       #end
+        end
       end 
   end
+end
 end

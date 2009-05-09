@@ -74,6 +74,7 @@ class MonetDBData < MonetDBStatement
     header = Array.new
     first_rows = Array.new
     
+    
     # Fetch the row header and first recordset entry (requested by setting the reply size to 1)
     is_final, chunk_size = @connection.recv_decode_hdr()
     read_bytes = 0
@@ -117,6 +118,7 @@ class MonetDBData < MonetDBStatement
     row_index = @dataStartIndex + 1 # current row to retrieve (NOTE: one row as already been retrieved due to setting reply_size to 1)
     row_offset = @dataOffset # number of rows to retrieve per each block
     
+    if row_count > 1
     if @Q_TABLE_instance.query['type'] == Q_TABLE and @Q_TABLE_instance.query['id'] != ""
       @connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + row_index.to_s + " " +  row_offset.to_s)).each do |msg|
       #@connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + ((block * @dataCacheSize) + blockOffset).to_s + " " +  @dataCacheSize.to_s)).each do |msg|
@@ -130,7 +132,7 @@ class MonetDBData < MonetDBStatement
     #  data = @connection.socket.recv(chunk_size)
     #  puts data
     # for row in data do
-    while row_index <= row_count
+    while row_index < row_count
       
       if ( row_index % row_offset ) == 0
         if row_index + row_offset > row_count
@@ -155,7 +157,6 @@ class MonetDBData < MonetDBStatement
       # Process the records one line at a time, store them as string. Type conversion will be performed "on demand" by the user.
       row = @connection.socket.readline
       
-      # puts "IDX: " + row_index.to_s + "   " + row
       if row != ""
         if row[MONET_HEADER_OFFSET] == nil
           
@@ -175,11 +176,9 @@ class MonetDBData < MonetDBStatement
           row_index += 1
         end
       end
-     #  puts  row_index
-     # end
     end
+  end
     
-   
         
     # Make the data immutable
     @Q_TABLE_instance.record_set = record_set.freeze
@@ -198,15 +197,15 @@ class MonetDBData < MonetDBStatement
 
    def fetch_hash()
      index = @Q_TABLE_instance.index
-     if index > @Q_TABLE_instance.query['rows'].to_i 
+     if index >= @Q_TABLE_instance.query['rows'].to_i 
        return false
      else
        columns = {}
        @Q_TABLE_instance.header["columns_name"].each do |col_name|
          position = @Q_TABLE_instance.header["columns_order"].fetch(col_name)
-
-         columns[col_name] = @Q_TABLE_instance.record_set[index][position]
-
+         
+        columns[col_name] = @Q_TABLE_instance.record_set[index][position]
+         
        end
        @Q_TABLE_instance.index += 1
        return columns
@@ -363,24 +362,6 @@ class MonetDBData < MonetDBStatement
     return @Q_TABLE_instance.record_set[row.to_i]
   end
   
-  # MonetDB - Ruby types mapping
-  def native_database_types
-      {
-        :primary_key => "int NOT NULL auto_increment PRIMARY KEY",
-        :string      => { :name => "varchar", :limit => 255 },
-        :text        => { :name => "clob" },
-        :integer     => { :name => "int"},
-        :float       => { :name => "float" },
-        :decimal     => { :name => "decimal" },
-        :datetime    => { :name => "timestamp" },
-        :timestamp   => { :name => "timestamp" },
-        :time        => { :name => "time" },
-        :date        => { :name => "date" },
-        :binary      => { :name => "blob" },
-        :boolean     => { :name => "boolean" },
-        :bigint      => { :name => "bigint" }	
-      }
-  end
   
   # Converts the stored Q_TABLE fields into the actual data type specified in the schema
   # 
@@ -423,7 +404,27 @@ class MonetDBData < MonetDBStatement
     end
   end
   
+  # Get a field as string
   def monetdb2str(field)
   end
+  
+  # Get a field as int
+  def monetdb2int(field)
+  end
+
+  # Get a field as float
+  def monetdb2float(field)
+  end
+  
+
+  # Get a field as bool
+  def monetdb2bool(field)
+  end
+
+  # Get a field as nil
+  def monetdb2nil(field)
+  end
+  
+  
   
 end

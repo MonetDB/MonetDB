@@ -21,8 +21,16 @@
     # * port: server port (default is 50000)
     def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
       # TODO: handle pools of connections
-      @connection = MonetDBConnection.new(user = username, passwd = password, lang = lang, host = host, port = port)
-      @connection.real_connect(db_name, auth_type)
+      @username = username
+      @password = password
+      @lang = lang
+      @host = host
+      @port = port
+      @db_name = db_name
+      @auth_type = auth_type
+      
+      @connection = MonetDBConnection.new(user = @username, passwd = @password, lang = @lang, host = @host, port = @port)
+      @connection.real_connect(@db_name, @auth_type)
     end
   
     # Send a <b> user submitted </b> query to the server and store the response
@@ -42,6 +50,16 @@
         return false
       else 
         return true
+      end
+    end
+  
+    # Reconnect to the server
+    def reconnect
+      if @connection != nil
+        self.close
+        
+        @connection = MonetDBConnection.new(user = @username, passwd = @password, lang = @lang, host = @host, port = @port)
+        @connection.real_connect(@db_name, @auth_type)
       end
     end
   
