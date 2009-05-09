@@ -2666,8 +2666,8 @@ PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
                 PFcol_str (root->sem.ser_rel.iter),
                 PFcol_str (root->sem.ser_rel.pos));
         for (unsigned int j = 0; j < clsize (root->sem.ser_rel.items); j++)
-            fprintf (f, "%s <item%i> %s ",
-                     j ? "|" : "",
+            fprintf (f, "%s <item%u> %s ",
+                     (j ? "|" : ""),
                      j,
                      PFcol_str (clat (root->sem.ser_rel.items, j)));
         fprintf (f, "}}}\"];\n"
