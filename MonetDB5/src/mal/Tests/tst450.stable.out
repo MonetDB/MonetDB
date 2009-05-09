@@ -136,6 +136,7 @@ end main;
 [ "tablet",	  nil	  ]
 [ "timestamp",	  nil	  ]
 [ "timezone",	  nil	  ]
+[ "trader",		  nil	  ]
 [ "transaction",  nil	  ]
 [ "txtsim",	  nil	  ]
 [ "unix",	  nil	  ]
