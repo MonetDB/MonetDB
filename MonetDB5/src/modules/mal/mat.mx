@@ -19,14 +19,19 @@
 @a Martin Kersten
 @v 1
 @+ Multiple association tables
-A MAT is a convenient way to deal with scaleability. 
-It combines the definitions of several, type compatible
+A MAT is a convenient way to deal represent horizontal fragmented
+tables. It combines the definitions of several, type compatible
 BATs under a single name. 
-This view is only materialized when the operations
+It is produced by the mitosis optimizer and the operations
+are the target of the mergetable optimizer.
+
+The MAT is materialized when the operations
 can not deal with the components individually,
 or the incremental operation is not supported.
-
-The module is supported by the mal_mergetable optimizer.
+Normally all mat.new() operations are removed by the
+mergetable optimizer.
+In case a mat.new() is retained in the code, then it will
+behaves as a mat.pack();
 
 The primitives below are chosen to accomodate the SQL
 front-end to produce reasonable efficient code.
@@ -35,11 +40,12 @@ module mat;
 
 pattern new(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATnew
-comment "Define a Merge Association Table (MAT) ";
+comment "Define a Merge Association Table (MAT). Faal back to the pack operation
+when this is called ";
 
 pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
-comment "Materialize the MAT into the first BAT";
+comment "Materialize the MAT into a BAT";
 
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
@@ -95,8 +101,8 @@ Mal symbol table and environment analysis.
 str
 MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	(void) cntxt; (void) mb; (void) stk; (void) p;
-	return MAL_SUCCEED;
+	(void) cntxt; (void) mb; 
+	return MATpackInternal(stk,p,1);
 }
 str
 MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -133,9 +139,6 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 @-
 The pack operation could be quite expensive, because it
 may create a really large BAT.
-For the experiments we materialize the BAT in the first
-component.  It should be extended upfront to accomodate
-all elements.
 @c
 str
 MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
@@ -145,32 +148,34 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 	BUN cap=0;
 	oid seq=0;
 
-	bn= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
-	if (bn && (BAThrestricted(bn) || BATtrestricted(bn)) ){
-		b = BATcopy(bn, bn->htype, bn->ttype, TRUE);
-		BBPunfix(bn->batCacheid);
-		bn = b;
-		BATseqbase(bn,seq);
-		seq += (oid) BATcount(bn);
-	}
-	if( bn == NULL)
+	b= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
+	if( b == NULL)
 		throw(MAL, "mat.pack","Could not access BAT");
+	bn = BATcopy(b, b->htype, b->ttype, TRUE);
+	if( bn == NULL)
+		throw(MAL, "mat.pack","Could not create BAT");
+	BBPunfix(b->batCacheid);
+	BATseqbase(bn,seq);
+	seq += (oid) BATcount(bn);
+	cap = seq;
 
-	for(i=first; i<p->argc; i++){
+	for(i = first+1; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
 	bn = BATextend(bn, cap);
-	for(i=first+1; i<p->argc; i++){
+	for( i = first+1; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
-			throw(MAL, "mat.pack","Could not access component");
+			throw(MAL, "mat.pack","Could not access BAT");
 		if( BATcount(b) ){
-			/* use the right oid ranges */
+			/* use the right oid ranges, don't change the input */
+			oid o = b->hseqbase;
 			BATseqbase(b,seq);
 			BATins(bn,b,FALSE);
 			seq = (oid) BATcount(bn);
+			BATseqbase(b,o);
 		}
 		BBPunfix(b->batCacheid);
 	}
