@@ -428,7 +428,7 @@ PFxml2la_conv_2PFLA_nodekind(char* s)
 PFalg_fun_call_t 
 PFxml2la_conv_2PFLA_fun_callkind(char* s) 
 {
-    if (false) return node_kind_node; /* discard first case */
+    if (false) return alg_fun_call_pf_documents; /* discard first case */
 #define mapto_fun_call_kind(kind)                              \
     else if (strcmp (s, PFalg_fun_call_kind_str((kind))) == 0) \
         return (kind);
