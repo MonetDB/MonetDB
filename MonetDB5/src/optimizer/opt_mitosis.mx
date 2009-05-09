@@ -100,7 +100,7 @@ base table and passes them on as a row property.
 #endif
 		   )
 			r= (BUN) v->value.val.lval;
-			if (r >= rowcnt && r > PARTITION_THRESHOLD){
+			if (r > rowcnt && r > PARTITION_THRESHOLD){
 				rowcnt = r;
 				target = q;
 				estimate++;
