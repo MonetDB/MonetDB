@@ -137,6 +137,8 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 @-
+The pack is an ordinary multi BAT insert. Oid synchronistion
+between pieces should be ensured by the code generators.
 The pack operation could be quite expensive, because it
 may create a really large BAT.
 @c
@@ -146,7 +148,6 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 	int i,*ret;
 	BAT *b, *bn;
 	BUN cap=0;
-	oid seq=0;
 
 	b= BATdescriptor(stk->stk[getArg(p,first)].val.ival);
 	if( b == NULL)
@@ -155,11 +156,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 	if( bn == NULL)
 		throw(MAL, "mat.pack","Could not create BAT");
 	BBPunfix(b->batCacheid);
-	BATseqbase(bn,seq);
-	seq += (oid) BATcount(bn);
-	cap = seq;
 
-	for(i = first+1; i < p->argc; i++){
+	for(i = first; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
@@ -171,11 +169,7 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 			throw(MAL, "mat.pack","Could not access BAT");
 		if( BATcount(b) ){
 			/* use the right oid ranges, don't change the input */
-			oid o = b->hseqbase;
-			BATseqbase(b,seq);
 			BATins(bn,b,FALSE);
-			seq = (oid) BATcount(bn);
-			BATseqbase(b,o);
 		}
 		BBPunfix(b->batCacheid);
 	}
