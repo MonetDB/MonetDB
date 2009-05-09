@@ -205,8 +205,8 @@ main (int argc, char *argv[])
     static char *progname = 0;
 
     char *opt_args  = "OIKCG_VG_JISI_GECSVR_OK_N"
-                        "QU_}MT{JISI_GECSVR_"
-                        "QU_}MT{JISI_OK_GECSVR_"
+                        "QU_}MT{JISI_GYECSVR_"
+                        "QU_}MT{JISI_OK_GYECSVR_"
                         "QU_CGP",
          *prop_args = NULL;
 
