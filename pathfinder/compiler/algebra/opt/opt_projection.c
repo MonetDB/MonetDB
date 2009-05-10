@@ -536,7 +536,9 @@ opt_projection (PFla_op_t *p)
                               p->sem.pos_sel.pos,
                               rename_col_in_ordering (L(p),
                                                       p->sem.pos_sel.sortby),
-                              get_old_name (L(p), p->sem.pos_sel.part)),
+                              (p->sem.pos_sel.part == col_NULL)
+                              ? col_NULL
+                              : get_old_name (L(p), p->sem.pos_sel.part)),
                         L(p)->schema.count,
                         L(p)->sem.proj.items);
                 break;
