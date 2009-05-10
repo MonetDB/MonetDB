@@ -703,7 +703,7 @@ AFTER_CORE2ALG:
                     fprintf (pfout,
                              "  <column name=\"%s\" new=\"false\""
                                       " function=\"item\""
-                                      " position=\"%i\"/>\n",
+                                      " position=\"%u\"/>\n",
                              PFcol_str (clat (laroot->sem.ser_rel.items, c)),
                              c);
                 fprintf (pfout, "</schema>\n"
