@@ -1290,6 +1290,7 @@ end main;
 [ "take",			  "pattern",	  "const",	  "(name:str):any_1 ",															  "CSTtake;"						  ]
 [ "addScenario",		  "command",	  "clients",	  "(usr:str,sc:str):void ",														  "CLTaddScenario;"					  ]
 [ "addUser",			  "command",	  "clients",	  "(nme:str,pw:str,scen:bat[:str,:any_1]):oid ",											  "CLTaddUser;"						  ]
+[ "backendsum",			  "command",	  "clients",	  "(pw:str):str ",															  "CLTbackendsum;"				  ]
 [ "checkPermission",		  "command",	  "clients",	  "(usr:str,pw:str,sc:str):void ",													  "CLTcheckPermission;"					  ]
 [ "changePassword",		  "command",	  "clients",	  "(old:str,new:str):void ",														  "CLTchangePassword;"					  ]
 [ "changeUsername",		  "command",	  "clients",	  "(old:str,new:str):void ",														  "CLTchangeUsername;"					  ]

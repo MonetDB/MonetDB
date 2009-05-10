@@ -157,7 +157,7 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 		throw(MAL, "mat.pack","Could not create BAT");
 	BBPunfix(b->batCacheid);
 
-	for(i = first; i < p->argc; i++){
+	for(i = first+1; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		cap += BATcount(b);
 		BBPunfix(b->batCacheid);
@@ -167,10 +167,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack","Could not access BAT");
-		if( BATcount(b) ){
-			/* use the right oid ranges, don't change the input */
-			BATins(bn,b,FALSE);
-		}
+		/* use the right oid ranges, don't change the input */
+		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
 	ret= (int*) getArgReference(stk,p,0);
