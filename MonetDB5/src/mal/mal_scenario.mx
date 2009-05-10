@@ -264,9 +264,10 @@ initScenario(Client c, Scenario s)
 			msg = createException(MAL, buf, "Scenario not initialized"); 
 		}
 	}
-	/* does the return below unset the lock? */
-	if (msg)
+	if (msg) {
+		mal_unset_lock(mal_contextLock, "Scenario");
 		return msg;
+	}
 
 	if (s->exitSystem && s->exitSystemCmd == 0) 
 		s->exitSystemCmd = (MALfcn) getAddress(l, l, s->exitSystem,1);
@@ -502,8 +503,18 @@ setScenario(Client c, str nme)
 		c->state[i] = 0;
 
 	msg = initScenario(c, scen);
-	if (msg)
+	if (msg) {
+		/* error occurred, reset the scenario , assume default always works */
+		c->scenario = c->oldscenario;
+		for (i = 0; i < 7; i++) {
+			c->state[i] = c->oldstate[i];
+			c->phase[i] = c->oldphase[i];
+			c->oldstate[i] = NULL;
+			c->oldphase[i] = NULL;
+		}
+		c->oldscenario = NULL;
 		return msg;
+	}
 	return MAL_SUCCEED;
 }
 

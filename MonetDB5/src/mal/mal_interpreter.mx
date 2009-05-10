@@ -1949,24 +1949,34 @@ The policy is to require all C-functions to return a string-pointer.
 Upon a successfull call, it is a NULL string. Otherwise it contains an
 encoding of the exceptional state encountered. This message
 starts with the exception identifer, followed by contextual details.
-@{
-
-@= exceptionHndlr
-if(cntxt->errbuf && cntxt->errbuf[0] ) {
+@h
+mal_export str catchKernelException(Client cntxt, str ret);
+@c
+str catchKernelException(Client cntxt, str ret){
 	str z;
-	if (ret != MAL_SUCCEED){
-		z= (char*) GDKmalloc( strlen(ret)+strlen(cntxt->errbuf)+2);
-		strcpy(z,ret);
-		if (z[strlen(z)-1] != '\n') strcat(z,"\n");
-		strcat(z,cntxt->errbuf);
-		GDKfree(ret);
-		ret= z;
-	} else
-		/* trap hidden (GDK) exception */
-		ret= GDKstrdup(cntxt->errbuf);
-	exceptionVar= findVariable(mb,"GDKerror");
-	cntxt->errbuf[0] = '\0';
+	if(cntxt->errbuf && cntxt->errbuf[0] ) {
+		if (ret != MAL_SUCCEED){
+			z= (char*) GDKmalloc( strlen(ret)+strlen(cntxt->errbuf)+2);
+			strcpy(z,ret);
+			if (z[strlen(z)-1] != '\n') strcat(z,"\n");
+			strcat(z,cntxt->errbuf);
+			GDKfree(ret);
+			ret= z;
+		} else{
+			/* trap hidden (GDK) exception */
+			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
+			sprintf(z,"GDKerror:%s\n",ret);
+			ret= GDKstrdup(cntxt->errbuf);
+		}
+		cntxt->errbuf[0] = '\0';
+	} else z = ret;
+	return z;
 }
+@{
+@= exceptionHndlr
+if(cntxt->errbuf && cntxt->errbuf[0] ) 
+	ret = catchKernelException(cntxt, ret);
+
 if( ret != MAL_SUCCEED ) {
 	str msg = 0;
 
