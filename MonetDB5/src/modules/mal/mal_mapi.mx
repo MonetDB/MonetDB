@@ -440,16 +440,17 @@ doChallenge(str cmd, stream *in, stream *out) {
 		/* generate the challenge string */
 		challenge = alloca(sizeof(char) * (12 + 1));
 		generateChallenge(challenge, 8, 12);
-		if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
-		/* note that we claim to speak proto 9 here for SHA-1 passwords */
-		stream_printf(fdout, "%s:mserver:9:%s:%s",
+		assert(AUTHgetHashAlgorithms(&algos) == MAL_SUCCEED);
+		/* note that we claim to speak proto 9 here for hashed passwords */
+		stream_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 				challenge,
 				algos,
 #ifdef WORDS_BIGENDIAN
-				"BIG"
+				"BIG",
 #else
-				"LIT"
+				"LIT",
 #endif
+				MONETDB5_PASSWDHASH
 				);
 		GDKfree(algos);
 		stream_flush(fdout);

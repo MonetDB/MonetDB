@@ -58,6 +58,7 @@ mal_export str AUTHMD5Sum(str *ret, str *string, int *len);
 mal_export str AUTHSHA1Sum(str *ret, str *string, int *len);
 mal_export str AUTHRIPEMD160Sum(str *ret, str *string, int *len);
 mal_export str AUTHSHA2Sum(str *ret, str *string, int *len, int *number);
+mal_export str AUTHBackendSum(str *ret, str *string, int *len);
 
 @-
 Authorisation is based on a password.  The passwords are stored hashed
@@ -101,7 +102,7 @@ mal_export str AUTHgetHashAlgorithms(str *ret);
 static str AUTHdecypherValue(str *ret, str *value);
 static str AUTHcypherValue(str *ret, str *value);
 static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
-static str AUTHverifySHA1Password(int *ret, str *passwd);
+static str AUTHverifyPassword(int *ret, str *passwd);
 
 static BAT *user = NULL;
 static BAT *pass = NULL;
@@ -303,11 +304,14 @@ AUTHinitTables() {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
-		str pw = "4751fc28d9a64a043865922548ee7d623743bcad"; /* SHA-1: monetdb */
+		str pw; /* will become the right hash for "monetdb" */
+		int len = strlen(user);
 		bat b = bat_nil;
 		str tmp;
 		oid uid;
 
+		rethrow("initTables", tmp, AUTHBackendSum(&pw,
+					&user /* because user == pass */, &len));
 		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pw, &b));
 		if (uid != 0)
 			throw(MAL, "initTables", "authorisation BATs not empty, but they were just created !?!?!?");
@@ -448,7 +452,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		throw(ILLARG, "addUser", "username cannot be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "addUser", "password cannot be nil");
-	rethrow("addUser", tmp, AUTHverifySHA1Password(NULL, passwd));
+	rethrow("addUser", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
@@ -604,7 +608,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 		throw(ILLARG, "changePassword", "old password should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "changePassword", "password should not be nil");
-	rethrow("changePassword", tmp, AUTHverifySHA1Password(NULL, passwd));
+	rethrow("changePassword", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* check the old password */
 	id = MCgetClient()->user;
@@ -649,7 +653,7 @@ AUTHsetPassword(str *username, str *passwd) {
 		throw(ILLARG, "setPassword", "username should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throw(ILLARG, "setPassword", "password should not be nil");
-	rethrow("changePassword", tmp, AUTHverifySHA1Password(NULL, passwd));
+	rethrow("setPassword", tmp, AUTHverifyPassword(NULL, passwd));
 
 	id = MCgetClient()->user;
 	/* find the name of the administrator and see if it equals username */
@@ -1047,13 +1051,14 @@ AUTHcypherValue(str *ret, str *value) {
  */
 str
 AUTHgetHashAlgorithms(str *ret) {
-	/* Currently, two "hashes" are available, SHA-1 and MD5.  Previous
-	 * versions supported UNIX crypt and plain text login, but those
-	 * were removed when SHA-1 became mandatory for hashing the plain
-	 * password in wire protocol version 9.  Better/stronger/faster
-	 * algorithms can be added in the future upon desire.
+	/* Currently, four "hashes" are available, RIPEMD160, SHA-2, SHA-1
+	 * and MD5.  Previous versions supported UNIX crypt and plain text
+	 * login, but those were removed when SHA-1 became mandatory for
+	 * hashing the plain password in wire protocol version 9.
+	 * Better/stronger/faster algorithms can be added in the future upon
+	 * desire.
 	 */
-	*ret = GDKstrdup("SHA1,MD5");
+	*ret = GDKstrdup("RIPEMD160,SHA256,SHA1,MD5");
 	return(MAL_SUCCEED);
 }
 
@@ -1234,6 +1239,38 @@ AUTHRIPEMD160Sum(str *ret, str *string, int *len) {
 }
 
 /**
+ * Returns a GDKmalloced string representing the hex representation of
+ * the by the backend used hash of the given string.
+ */
+str
+AUTHBackendSum(str *ret, str *string, int *len) {
+	int bits;
+	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0) {
+		AUTHRIPEMD160Sum(ret, string, len);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0) {
+		bits = 512;
+		AUTHSHA2Sum(ret, string, len, &bits);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0) {
+		bits = 384;
+		AUTHSHA2Sum(ret, string, len, &bits);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0) {
+		bits = 256;
+		AUTHSHA2Sum(ret, string, len, &bits);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0) {
+		bits = 224;
+		AUTHSHA2Sum(ret, string, len, &bits);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0) {
+		AUTHSHA1Sum(ret, string, len);
+	} else if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0) {
+		AUTHMD5Sum(ret, string, len);
+	} else {
+		throw(MAL, "BackendSum", "Unknown backend hash algorithm: %s",
+				MONETDB5_PASSWDHASH);
+	}
+	return(MAL_SUCCEED);
+}
+
+/**
  * Returns the hash for the given password, challenge and algorithm.
  * The hash calculated using the given algorithm over the password
  * concatenated with the challenge.  The returned string is allocated
@@ -1242,57 +1279,95 @@ AUTHRIPEMD160Sum(str *ret, str *string, int *len) {
  */
 static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
-	if (strcmp(*algo, "SHA1") == 0) {
-		/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
-		 * use in a string, a hexadecimal representation of the bit
-		 * sequence is used.
-		 */
-		int len = strlen(*password) + strlen(*challenge);
-		str key = alloca(sizeof(char) * len);
-		key[0] = '\0';
-		strcpy(key, *password);
-		strncat(key, *challenge, strlen(*challenge));
-		AUTHSHA1Sum(ret, &key, &len);
-		return(MAL_SUCCEED);
+	str tmp;
+	int len = strlen(*password) + strlen(*challenge);
+	str key = alloca(sizeof(char) * len);
+	key[0] = '\0';
+	strcpy(key, *password);
+	strncat(key, *challenge, strlen(*challenge));
+
+	if (strcmp(*algo, "RIPEMD160") == 0) {
+		rethrow("hashPassword", tmp, AUTHRIPEMD160Sum(ret, &key, &len));
+	} else if (strcmp(*algo, "SHA512") == 0) {
+		int bits = 512;
+		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+	} else if (strcmp(*algo, "SHA384") == 0) {
+		int bits = 384;
+		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+	} else if (strcmp(*algo, "SHA256") == 0) {
+		int bits = 256;
+		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+	} else if (strcmp(*algo, "SHA224") == 0) {
+		int bits = 224;
+		rethrow("hashPassword", tmp, AUTHSHA2Sum(ret, &key, &len, &bits));
+	} else if (strcmp(*algo, "SHA1") == 0) {
+		rethrow("hashPassword", tmp, AUTHSHA1Sum(ret, &key, &len));
 	} else if (strcmp(*algo, "MD5") == 0) {
-		/* The MD5 hash algorithm is a 128 bit hash.  In order to
-		 * use in a string, a hexadecimal representation of the bit
-		 * sequence is used.
-		 */
-		int len = strlen(*password) + strlen(*challenge);
-		str key = alloca(sizeof(char) * len);
-		key[0] = '\0';
-		strcpy(key, *password);
-		strncat(key, *challenge, strlen(*challenge));
-		AUTHMD5Sum(ret, &key, &len);
-		return(MAL_SUCCEED);
+		rethrow("hashPassword", tmp, AUTHMD5Sum(ret, &key, &len));
 	} else {
 		throw(MAL, "hashPassword", "unsupported hash type: '%s'", *algo);
 	}
+
+	return(MAL_SUCCEED);
 }
 
 /**
- * Checks if the given string is a SHA-1 (hex represented) hash.  This
- * check allows to at least forbid storing trivial plain text passwords
- * by a simple check.
+ * Checks if the given string is a (hex represented) hash for the
+ * current backend.  This check allows to at least forbid storing
+ * trivial plain text passwords by a simple check.
  */
 static str
-AUTHverifySHA1Password(int *ret, str *passwd) {
+AUTHverifyPassword(int *ret, str *passwd) {
 	char *p = *passwd;
 	size_t len = strlen(p);
 
 	(void)ret;
 
-	if (len != 40)
-		throw(MAL, "verifySHA1Password",
-				"password is not 40 chars long, is it a hex "
-				"representation of a SHA-1 password hash?");
+	if (strcmp(MONETDB5_PASSWDHASH, "RIPEMD160") == 0) {
+		if (len != 20 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 40 chars long, is it a hex "
+					"representation of a RIPEMD160 password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA512") == 0) {
+		if (len != 64 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 128 chars long, is it a hex "
+					"representation of a SHA-2 512-bits password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA384") == 0) {
+		if (len != 48 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 96 chars long, is it a hex "
+					"representation of a SHA-2 384-bits password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA256") == 0) {
+		if (len != 32 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 64 chars long, is it a hex "
+					"representation of a SHA-2 256-bits password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA224") == 0) {
+		if (len != 28 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 56 chars long, is it a hex "
+					"representation of a SHA-2 224-bits password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "SHA1") == 0) {
+		if (len != 20 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 40 chars long, is it a hex "
+					"representation of a SHA-1 password hash?");
+	} else if (strcmp(MONETDB5_PASSWDHASH, "MD5") == 0) {
+		if (len != 16 * 2)
+			throw(MAL, "verifyPassword",
+					"password is not 32 chars long, is it a hex "
+					"representation of an MD5 password hash?");
+	} else {
+		throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
+				MONETDB5_PASSWDHASH);
+	}
 
 	while (*p != '\0') {
 		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
-			throw(MAL, "verifySHA1Password",
+			throw(MAL, "verifyPassword",
 					"password does contain invalid characters, is it a"
-					"lowercase hex representation of a SHA-1 password hash?");
+					"lowercase hex representation of a hash?");
 		p++;
 	}
 
