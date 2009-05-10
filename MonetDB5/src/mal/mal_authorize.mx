@@ -210,7 +210,7 @@ AUTHinitTables() {
 	assert(b);
 	user = b;
 
-	/* load old password BAT, upgrade to SHA-1, <monetdb-5.11 */
+	/* load old password BAT, upgrade to hash, <monetdb-5.11 */
 	bid = BBPindex("M5system_auth_passwd");
 	if (bid) {
 		BAT *n;
@@ -244,7 +244,7 @@ AUTHinitTables() {
 						AUTHdecypherValue(&pwd, &tmp));
 				len = strlen(pwd);
 				rethrow("initTables", tmp,
-						AUTHSHA1Sum(&sha1pwd, &pwd, &len));
+						AUTHBackendSum(&sha1pwd, &pwd, &len));
 				GDKfree(pwd);
 				rethrow("initTables", tmp,
 						AUTHcypherValue(&pwd, &sha1pwd));

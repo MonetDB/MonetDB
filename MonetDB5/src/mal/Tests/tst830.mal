@@ -5,7 +5,7 @@
 	bat.insert(scens, "mal", nil:oid);
 
 	# this should fail, the monetdb user is already there
-	pw := clients.sha1sum("Pmonetdb");
+	pw := clients.backendsum("Pmonetdb");
 	id := clients.addUser("monetdb", pw, scens);
 catch MALException:str;
 	io.printf("%s\n",MALException);
@@ -64,7 +64,7 @@ catch InvalidCredentialsException:str;
 exit InvalidCredentialsException;
 
 	# change our own password
-	mypw := clients.sha1sum("monetdb");
+	mypw := clients.backendsum("monetdb");
 	clients.changePassword(mypw, pw);
 	# try it again, should fail...
 	clients.changePassword(mypw, pw);
