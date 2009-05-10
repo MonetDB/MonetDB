@@ -146,7 +146,6 @@ clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
-clients_export str CLTsha1sum(str *ret, str *pw);
 clients_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
 clients_export str CLTremoveUser(int *ret, str *usr);
 clients_export str CLTchangePassword(int *ret, str *old, str *new);
@@ -456,6 +455,19 @@ These commands (except changePassword, changeUsername and
 checkPermission) can only be executed by the administrator.
 
 @mal
+command md5sum(pw:str):str
+address CLTmd5sum
+comment "Return hex string representation of the MD5 hash of the given string";
+@c
+str CLTmd5sum(str *ret, str *pw) {
+	str tmp;
+	int len = strlen(*pw);
+	
+	rethrow("md5sum", tmp, AUTHMD5Sum(ret, pw, &len));
+	return(MAL_SUCCEED);
+}
+
+@mal
 command sha1sum(pw:str):str
 address CLTsha1sum
 comment "Return hex string representation of the SHA-1 hash of the given string";
@@ -465,6 +477,32 @@ str CLTsha1sum(str *ret, str *pw) {
 	int len = strlen(*pw);
 	
 	rethrow("sha1sum", tmp, AUTHSHA1Sum(ret, pw, &len));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command ripemd160sum(pw:str):str
+address CLTripemd160sum
+comment "Return hex string representation of the RIPEMD160 hash of the given string";
+@c
+str CLTripemd160sum(str *ret, str *pw) {
+	str tmp;
+	int len = strlen(*pw);
+	
+	rethrow("ripemd160sum", tmp, AUTHRIPEMD160Sum(ret, pw, &len));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command sha2sum(pw:str, bits:int):str
+address CLTsha2sum
+comment "Return hex string representation of the SHA-2 hash with bits of the given string";
+@c
+str CLTsha2sum(str *ret, str *pw, int *bits) {
+	str tmp;
+	int len = strlen(*pw);
+	
+	rethrow("sha2sum", tmp, AUTHSHA2Sum(ret, pw, &len, bits));
 	return(MAL_SUCCEED);
 }
 
@@ -502,6 +540,18 @@ str CLTgetUsername(str *ret) {
 	str tmp;
 
 	rethrow("getUsername", tmp, AUTHgetUsername(ret));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command getPasswordHash(user:str):str
+address CLTgetPasswordHash
+comment "Return the password hash of the given user";
+@c
+str CLTgetPasswordHash(str *ret, str *user) {
+	str tmp;
+
+	rethrow("getPasswordHash", tmp, AUTHgetPasswordHash(ret, user));
 	return(MAL_SUCCEED);
 }
 
