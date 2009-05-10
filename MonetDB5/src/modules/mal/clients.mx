@@ -507,6 +507,19 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 }
 
 @mal
+command backendsum(pw:str):str
+address CLTbackendsum
+comment "Return hex string representation of the currently used hash of the given string";
+@c
+str CLTbackendsum(str *ret, str *pw) {
+	str tmp;
+	int len = strlen(*pw);
+	
+	rethrow("sha2sum", tmp, AUTHBackendSum(ret, pw, &len));
+	return(MAL_SUCCEED);
+}
+
+@mal
 command addUser(nme:str, pw:str, scen:bat[:str,:any_1]):oid
 address CLTaddUser
 comment "Allow user with password access to the given scenarios";
