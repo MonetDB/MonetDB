@@ -352,6 +352,7 @@ public final class MapiSocket {
 			String hash
 	) throws MCLParseException, MCLException, IOException {
 		String response;
+		String algo;
 
 		// parse the challenge string, split it on ':'
 		String[] chaltok = chalstr.split(":");
@@ -372,9 +373,28 @@ public final class MapiSocket {
 			default:
 				throw new MCLException("Unsupported protocol version: " + version);
 			case 9:
-				// proto 9 is like 8, but uses a SHA-1 password hash
+				/* NOTE: Java doesn't support RIPEMD160 :( */
+				if (chaltok[5].equals("SHA512")) {
+					algo = "SHA-512";
+				} else if (chaltok[5].equals("SHA384")) {
+					algo = "SHA-384";
+				} else if (chaltok[5].equals("SHA256")) {
+					algo = "SHA-256";
+				/* NOTE: Java doesn't support SHA-224 */
+				} else if (chaltok[5].equals("SHA1")) {
+					algo = "SHA-1";
+				} else if (chaltok[5].equals("MD5")) {
+					algo = "MD5";
+				} else {
+					throw new MCLException("Unsupported password hash: " +
+							chaltok[5]);
+				}
+
+				// proto 9 is like 8, but uses a hash instead of the
+				// plain password, the server tells us which hash in the
+				// challenge after the byteorder
 				try {
-					MessageDigest md = MessageDigest.getInstance("SHA-1");
+					MessageDigest md = MessageDigest.getInstance(algo);
 					md.update(password.getBytes("UTF-8"));
 					byte[] digest = md.digest();
 					password = toHex(digest);
@@ -401,34 +421,39 @@ public final class MapiSocket {
 					password = "merovingian";
 				}
 				String pwhash;
-				if (hashes.indexOf("SHA1") != -1) {
-					try {
-						MessageDigest md = MessageDigest.getInstance("SHA-1");
-						md.update(password.getBytes("UTF-8"));
-						md.update(challenge.getBytes("UTF-8"));
-						byte[] digest = md.digest();
-						pwhash = "{SHA1}" + toHex(digest);
-					} catch (NoSuchAlgorithmException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					} catch (UnsupportedEncodingException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					}
+				algo = null;
+				if (hashes.indexOf("SHA512") != -1) {
+					algo = "SHA-512";
+					pwhash = "{SHA512}";
+				} else if (hashes.indexOf("SHA384") != -1) {
+					algo = "SHA-384";
+					pwhash = "{SHA384}";
+				} else if (hashes.indexOf("SHA256") != -1) {
+					algo = "SHA-256";
+					pwhash = "{SHA256}";
+				} else if (hashes.indexOf("SHA1") != -1) {
+					algo = "SHA-1";
+					pwhash = "{SHA1}";
 				} else if (hashes.indexOf("MD5") != -1) {
-					try {
-						MessageDigest md = MessageDigest.getInstance("MD5");
-						md.update(password.getBytes("UTF-8"));
-						md.update(challenge.getBytes("UTF-8"));
-						byte[] digest = md.digest();
-						pwhash = "{MD5}" + toHex(digest);
-					} catch (NoSuchAlgorithmException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					} catch (UnsupportedEncodingException e) {
-						throw new AssertionError("internal error: " + e.toString());
-					}
+					algo = "MD5";
+					pwhash = "{MD5}";
 				} else if (version == 8 && hashes.indexOf("plain") != -1) {
 					pwhash = "{plain}" + password + challenge;
 				} else {
 					throw new MCLException("no supported password hashes in " + hashes);
+				}
+				if (algo != null) {
+					try {
+						MessageDigest md = MessageDigest.getInstance(algo);
+						md.update(password.getBytes("UTF-8"));
+						md.update(challenge.getBytes("UTF-8"));
+						byte[] digest = md.digest();
+						pwhash += toHex(digest);
+					} catch (NoSuchAlgorithmException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					} catch (UnsupportedEncodingException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					}
 				}
 				// TODO: some day when we need this, we should store
 				// this
