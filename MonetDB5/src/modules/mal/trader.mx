@@ -179,7 +179,7 @@ str TRADERmakeBid(lng *c, str *fnname, lng *maxcost)
 	MalBlkPtr mb;
 	int s;
 
-    sym = findSymbol("octopus",*fnname);
+    sym = findSymbol(putName("octopus",7),*fnname);
     if ( sym == NULL)
         throw(MAL,"trader.makeBid","Function %s not found", *fnname);
         
