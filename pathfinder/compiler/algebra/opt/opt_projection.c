@@ -647,7 +647,6 @@ opt_projection (PFla_op_t *p)
             }   break;
 
             case la_type:
-            case la_type_assert:
             case la_cast:
             {
                /* make column name unique */
@@ -667,6 +666,16 @@ opt_projection (PFla_op_t *p)
                             of the old projection and the result column */
                          extend_proj1 (L(p), PFalg_proj (res, old_res)));
             }  break;
+
+            case la_type_assert:
+               /* swap projection and current operator */
+               *p = *PFla_project_ (
+                         type_assert_pos (LL(p), 
+                                          get_old_name (L(p), p->sem.type.col),
+                                          p->sem.type.ty),
+                         p->schema.count,
+                         L(p)->sem.proj.items);
+               break;
 
             /* swap projection and current operator p
              *
