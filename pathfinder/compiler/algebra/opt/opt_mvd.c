@@ -80,6 +80,11 @@
 static unsigned int cross_changes;
 static unsigned int max_cross_changes;
 
+/* Keep track of proxy references to avoid accidental rewrites */
+static PFarray_t *refs;
+/* helper to check for a proxy reference */
+static bool is_ref (PFla_op_t *p);
+
 static bool
 is_cross (PFla_op_t *p)
 {
@@ -648,9 +653,12 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 PFla_op_t *lp,
                           *rp;
 
-                /* merge adjacent projections to detect more rewrites
-                   (e.g., for union operators */
-                if (LL(p)->kind == la_project)
+                /* Merge adjacent projections to detect more rewrites
+                   (e.g., for union operators). Be careful however
+                   to avoid destroying the proxy pattern as otherwise
+                   a subsequent thetajoin optimization may create
+                   inconsistencies. */
+                if (LL(p)->kind == la_project && !is_ref(LL(p)))
                     lp = PFla_project_ (LLL(p),
                                         count1,
                                         PFalg_proj_merge (
@@ -661,7 +669,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 else
                     lp = PFla_project_ (LL(p), count1, proj_list1);
 
-                if (LR(p)->kind == la_project)
+                if (LR(p)->kind == la_project && !is_ref(LR(p)))
                     rp = PFla_project_ (LRL(p),
                                         count2,
                                         PFalg_proj_merge (
@@ -1968,6 +1976,39 @@ rowid_removal (PFla_op_t *p)
 }
 
 /**
+ * Check if an operator is a proxy reference.
+ */
+static bool
+is_ref (PFla_op_t *p)
+{
+    assert (refs);
+    for (unsigned int i = 0; i < PFarray_last (refs); i++)
+        if (*(PFla_op_t **) PFarray_at (refs, i) == p)
+            return true;
+
+    return false;
+}
+
+/**
+ * Collect all proxy references.
+ */
+static void
+collect_refs (PFla_op_t *p)
+{
+    /* rewrite each node only once */
+    if (SEEN(p))
+        return;
+    else
+        SEEN(p) = true;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
+        collect_refs (p->child[i]);
+
+    if (p->kind == la_proxy)
+        *(PFla_op_t **) PFarray_add (refs) = p->sem.proxy.ref;
+}
+
+/**
  * Invoke algebra optimization.
  */
 PFla_op_t *
@@ -1982,6 +2023,12 @@ PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
     /* remove all common subexpressions to
        detect more patterns */
     PFla_cse (root);
+
+    /* create a new reference list ... */
+    refs = PFarray (sizeof (PFla_op_t *), 5);
+    /* ... and fill it */
+    collect_refs (root);
+    PFla_dag_reset (root);
 
     /* Keep track of the ineffective
        cross product - cross product
