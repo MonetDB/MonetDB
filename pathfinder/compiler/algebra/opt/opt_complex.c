@@ -1140,42 +1140,62 @@ opt_complex (PFla_op_t *p)
                     PFprop_dom_right (p->prop,
                                       p->sem.eqjoin.col2),
                     PFprop_dom_left (p->prop,
-                                     p->sem.eqjoin.col1)) &&
-                /* PROJECTION IN PATTERN */
-                L(p)->kind == la_project &&
-                /* PROJECTION IN PATTERN */
-                R(p)->kind == la_project &&
-                LL(p) == RL(p)) {
-                left_arg_req  = false;
-                right_arg_req = false;
-                for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                    if (p->sem.eqjoin.col1 != L(p)->schema.items[i].name)
-                        left_arg_req |= !PFprop_fd (
-                                             p->prop,
+                                     p->sem.eqjoin.col1))) {
+                unsigned int i,
+                             j,
+                             k = 0;
+                PFla_op_t   *lp = L(p),
+                            *rp = R(p),
+                            *op;
+                bool         fd;
+
+                if (lp->kind == la_project)
+                    lp = L(lp);
+                if (rp->kind == la_project)
+                    rp = L(rp);
+
+                /* check for the same operator */
+                while (lp == rp && k <= 1) {
+                    op = p->child[k];
+                    k++; /* switch from left child to right child */
+                    fd = true;
+
+                    /* check for the functional dependency */
+                    for (unsigned int i = 0; i < op->schema.count; i++)
+                        if (p->sem.eqjoin.col1 != op->schema.items[i].name &&
+                            PFprop_icol (p->prop, op->schema.items[i].name))
+                            fd &= PFprop_fd (p->prop,
                                              p->sem.eqjoin.col1,
-                                             L(p)->schema.items[i].name);
-                for (unsigned int i = 0; i < R(p)->schema.count; i++)
-                    if (p->sem.eqjoin.col2 != R(p)->schema.items[i].name)
-                        right_arg_req |= !PFprop_fd (
-                                              p->prop,
-                                              p->sem.eqjoin.col2,
-                                              R(p)->schema.items[i].name);
-                /* All columns in one join argument depend on the join
-                   column and thus can also be placed in the other argument. */
-                if (!left_arg_req || !right_arg_req) {
-                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
-                                                   sizeof (PFalg_proj_t));
-                    unsigned int count = 0;
-                    /* concatenate the two projection lists */
-                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                        proj[count++] = L(p)->sem.proj.items[i];
+                                             op->schema.items[i].name);
+                    if (fd) {
+                        /* All columns in one join argument depend on the join
+                           column and thus can also be placed in the other
+                           argument. */
+                        PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                       sizeof (PFalg_proj_t));
+                        /* concatenate the two projection lists */
+                        if (L(p)->kind == la_project)
+                            for (i = 0; i < L(p)->schema.count; i++)
+                                proj[i] = L(p)->sem.proj.items[i];
+                        else
+                            for (i = 0; i < L(p)->schema.count; i++)
+                                proj[i] = PFalg_proj (
+                                              L(p)->schema.items[i].name,
+                                              L(p)->schema.items[i].name);
 
-                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
-                        proj[count++] = R(p)->sem.proj.items[i];
+                        if (R(p)->kind == la_project)
+                            for (j = 0; j < R(p)->schema.count; j++)
+                                proj[i+j] = R(p)->sem.proj.items[j];
+                        else
+                            for (j = 0; j < L(p)->schema.count; j++)
+                                proj[i+j] = PFalg_proj (
+                                                L(p)->schema.items[j].name,
+                                                L(p)->schema.items[j].name);
 
-                    *p = *PFla_project_ (LL(p), count, proj);
-                    modified = true;
-                    break;
+                        *p = *PFla_project_ (lp, p->schema.count, proj);
+                        modified = true;
+                        break;
+                    }
                 }
             }
 
