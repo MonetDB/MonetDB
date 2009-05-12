@@ -2065,7 +2065,7 @@ schemas(mvc *sql, symbol *s)
 
 		ret = create_user(sql, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
-				  l->h->next->next->next->next->data.i_val, /* encrypted */
+				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
 				  l->h->next->next->next->data.sval);	/* dschema */
 		sql->type = Q_SCHEMA;
