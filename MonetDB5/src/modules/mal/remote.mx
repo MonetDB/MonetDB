@@ -1040,9 +1040,9 @@ remote_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
  * get fetches the object referenced by ident over connection conn.
  */
 str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn, ident, tmp,rt;
+	str conn, ident, tmp, rt;
 	connection c;
-	char qbuf[BUFSIZ+1];
+	char qbuf[BUFSIZ + 1];
 	MapiHdl mhdl;
 	int rtype;
 	ValPtr v;
@@ -1057,7 +1057,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (ident == 0 || isIdentifier(ident) < 0)
 		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
-	/* lookup conn, set mconn if valid */
+	/* lookup conn, set c if valid */
 	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
 
 	rtype = getArgType(mb, pci, 0);
@@ -1071,9 +1071,9 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
-	if ( strcmp(ident + strlen(ident) - strlen(rt), rt)){
-		throw(MAL,"remote.get","type of remote object does not match expected type");
-	}
+	if (strcmp(ident + strlen(ident) - strlen(rt), rt))
+		throw(MAL, "remote.get",
+				"type of remote object does not match expected type");
 	GDKfree(rt);
 
 	if (isaBatType(rtype)) {
@@ -1084,19 +1084,20 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
-		stream_printf(MCgetClient()->fdout,"#remote.get:%s\n",qbuf);
+		stream_printf(MCgetClient()->fdout, "#remote.get:%s\n", qbuf);
 #endif
 		/* this call should be a single transaction over the channel*/
-		mal_set_lock(c->lock,"remote.get"); 
+		mal_set_lock(c->lock, "remote.get"); 
 
 #ifdef _DEBUG_REMOTE
-		stream_printf(MCgetClient()->fdout,"#remote:%s:%s\n",c->name,qbuf);
+		stream_printf(MCgetClient()->fdout, "#remote:%s:%s\n", c->name, qbuf);
 #endif
 		if ((tmp = RMTquery(&mhdl, "remote.get", c->mconn, qbuf))
 				!= MAL_SUCCEED)
 		{
 #ifdef _DEBUG_REMOTE
-			stream_printf(MCgetClient()->fdout,"#REMOTE GET error: %s\n%s\n",qbuf,tmp);
+			stream_printf(MCgetClient()->fdout, "#REMOTE GET error: %s\n%s\n",
+					qbuf, tmp);
 #endif
 			mal_unset_lock(c->lock, "remote.get"); 
 			throw(MAL, "remote.get", tmp);
@@ -1105,7 +1106,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		t = getTailType(rtype);
 		b = BATnew(h, t, (BUN)BATTINY);
 
-		while( mapi_fetch_row(mhdl) ) {
+		while (mapi_fetch_row(mhdl)) {
 			val = mapi_fetch_field(mhdl, 0); /* should both be there */
 			var = mapi_fetch_field(mhdl, 1);
 			if (ATOMvarsized(h)) {
@@ -1142,11 +1143,12 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
-		stream_printf(MCgetClient()->fdout,"#remote:%s:%s\n",c->name,qbuf);
+		stream_printf(MCgetClient()->fdout, "#remote:%s:%s\n", c->name, qbuf);
 #endif
-		if ( (tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED ){
-				mal_unset_lock(c->lock,"remote.get"); 
-				return tmp;
+		if ((tmp=RMTquery(&mhdl, "remote.get", c->mconn, qbuf)) != MAL_SUCCEED)
+		{
+			mal_unset_lock(c->lock, "remote.get"); 
+			return tmp;
 		}
 		mapi_fetch_row(mhdl); /* should succeed */
 		val = mapi_fetch_field(mhdl, 0);
@@ -1160,7 +1162,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				if (ATOMextern(rtype) == 0)
 					GDKfree(p);
 			} else {
-				char tval[BUFSIZ+1];
+				char tval[BUFSIZ + 1];
 				snprintf(tval, BUFSIZ, "%s", val);
 				tval[BUFSIZ] = '\0';
 				mapi_close_handle(mhdl);
@@ -1225,7 +1227,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *head, *tail;
-		char qbuf[BUFSIZ+1]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
 		int bid;
 		BAT *b = NULL;
 		BUN p, q;
@@ -1242,11 +1244,13 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		qbuf[BUFSIZ] = '\0';
 		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
-				ident, head, tail, (bid==0?0:BATcount(b)));
+				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout,"#remote.put:%s:%s\n",c->name,qbuf);
+		stream_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
 #endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+				!= MAL_SUCCEED)
+		{
 			mal_unset_lock(c->lock, "remote.put");
 			return tmp;
 		}
@@ -1261,9 +1265,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				snprintf(qbuf, BUFSIZ, "bat.insert(%s, %s:%s, %s:%s);",
 						ident, headv, head, tailv, tail);
 #ifdef _DEBUG_REMOTE
-			stream_printf(MCgetClient()->fdout,"#remote.put:%s:%s\n",c->name,qbuf);
+				stream_printf(MCgetClient()->fdout,
+						"#remote.put:%s:%s\n", c->name, qbuf);
 #endif
-				if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
+				if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+						!= MAL_SUCCEED)
+				{
 					mal_unset_lock(c->lock, "remote.put"); 
 					return tmp;
 				}
@@ -1276,7 +1283,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 	} else {
 		str val = NULL;
-		char qbuf[BUFSIZ+1]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
 		if (ATOMvarsized(type)) {
 			ATOMformat(type, *(str *)value, &val);
 		} else {
@@ -1286,9 +1293,11 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[BUFSIZ] = '\0';
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
-		stream_printf(cntxt->fdout,"#remote.put:%s:%s\n",c->name,qbuf);
+		stream_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
 #endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf)) != MAL_SUCCEED) {
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+				!= MAL_SUCCEED)
+		{
 			mal_unset_lock(c->lock,"remote.put"); 
 			return tmp;
 		}
@@ -1297,7 +1306,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mal_unset_lock(c->lock, "remote.put"); 
 
 	/* return the identifier */
-	v = getArgReference(stk,pci,0);
+	v = getArgReference(stk, pci, 0);
 	v->vtype = TYPE_str;
 	v->val.sval = GDKstrdup(ident);
 	return(MAL_SUCCEED);
