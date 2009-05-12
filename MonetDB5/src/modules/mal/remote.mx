@@ -907,6 +907,8 @@ code for reconnecting if necessary
  * error if it does not exist.  Since this function is internal, it
  * doesn't check the argument conn, as it should have been checked
  * already.
+ * NOTE: this function acquires the mal_remoteLock before accessing
+ *       MCgetClient()->conn;
  */
 static INLINE str
 RMTfindconn(connection *ret, str conn) {
@@ -914,14 +916,17 @@ RMTfindconn(connection *ret, str conn) {
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
+	mal_set_lock(mal_remoteLock, "remote.<findconn>"); /* protect c */
 	c = MCgetClient()->conn;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			*ret = c;
+			mal_unset_lock(mal_remoteLock, "remote.<findconn>");
 			return(MAL_SUCCEED);
 		}
 		c = c->next;
 	}
+	mal_unset_lock(mal_remoteLock, "remote.<findconn>");
 	throw(MAL, "remote.<findconn>", "no such active connection '%s'", conn);
 }
 
