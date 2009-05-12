@@ -199,6 +199,16 @@ infer_functional_dependencies (PFla_op_t *n)
             bulk_add_fds (fds, L(n));
             bulk_add_fds (fds, R(n));
 
+            /* everything that functionally depends on a join column
+               also depends on the other join column */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (find_fd (fds, n->sem.eqjoin.col1, L(n)->schema.items[i].name))
+                    add_fd (fds, n->sem.eqjoin.col2, L(n)->schema.items[i].name);
+
+            for (unsigned int i = 0; i < R(n)->schema.count; i++)
+                if (find_fd (fds, n->sem.eqjoin.col2, R(n)->schema.items[i].name))
+                    add_fd (fds, n->sem.eqjoin.col1, R(n)->schema.items[i].name);
+
             /* build up transitive FDs for join columns */
             if (PFprop_key_left (n->prop, n->sem.eqjoin.col1)) {
                 for (unsigned int i = 0; i < PFarray_last (rfds); i++)
