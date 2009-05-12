@@ -105,45 +105,68 @@ opt_monetxq (PFla_op_t *p)
                 !PFprop_icol (p->prop, p->sem.step.item_res) &&
                 p->sem.step.spec.axis == alg_chld &&
                 p->sem.step.spec.kind != node_kind_node &&
-                p->sem.step.spec.kind != node_kind_doc &&
-                R(p)->schema.count == 1 &&
-                /* PROJECTION IN PATTERN */
-                R(p)->kind == la_project &&
-                R(p)->sem.proj.items[0].new == p->sem.step.item &&
-                R(p)->sem.proj.items[0].old == RL(p)->sem.step.item_res &&
-                /* check for a '//element(*)' step */
-                RL(p)->kind == la_step_join &&
-                (RL(p)->sem.step.spec.axis == alg_desc ||
-                 RL(p)->sem.step.spec.axis == alg_desc_s) &&
-                ((RL(p)->sem.step.spec.kind == node_kind_elem &&
-                  PFqname_ns_wildcard (RL(p)->sem.step.spec.qname) &&
-                  PFqname_loc_wildcard (RL(p)->sem.step.spec.qname)) ||
-                 RL(p)->sem.step.spec.kind == node_kind_node) &&
-                RLR(p)->kind == la_roots &&
-                RLRL(p)->kind == la_doc_tbl &&
-                RL(p)->sem.step.item == RLRL(p)->sem.doc_tbl.res) {
-                /* new name for the lower path step to avoid name conflicts */
-                PFalg_col_t col = PFcol_new (p->sem.step.item_res);
-                /* copy the step specification and change the axes */
-                PFalg_step_spec_t spec_desc = p->sem.step.spec,
-                                  spec_par  = RL(p)->sem.step.spec;
-                spec_desc.axis = alg_desc;
-                spec_par.axis  = alg_par;
+                p->sem.step.spec.kind != node_kind_doc) {
+                PFla_op_t  *op = R(p);
+                PFalg_col_t item = p->sem.step.item;
 
-                *p = *step_join (L(p),
-                                 project (
-                                     step_join (L(p),
-                                                RLR(p),
-                                                spec_desc,
-                                                p->sem.step.level,
-                                                RLRL(p)->sem.doc_tbl.res,
-                                                col),
-                                     proj (p->sem.step.item_res, col)),
-                                 spec_par,
-                                 RL(p)->sem.step.level,
-                                 p->sem.step.item_res,
-                                 p->sem.step.item);
-                break;
+                /* check for a possible projection in between */
+                if (op->kind == la_project &&
+                    op->schema.count == 1 &&
+                    op->sem.proj.items[0].new == item) {
+                    item = op->sem.proj.items[0].old;
+                    op = L(op);
+                }
+
+                /* check for a '//element(*)' step */
+                if (op->kind == la_step_join &&
+                    op->sem.step.item_res == item &&
+                    (op->sem.step.spec.axis == alg_desc ||
+                     op->sem.step.spec.axis == alg_desc_s) &&
+                    ((op->sem.step.spec.kind == node_kind_elem &&
+                      PFqname_ns_wildcard (op->sem.step.spec.qname) &&
+                      PFqname_loc_wildcard (op->sem.step.spec.qname)) ||
+                     op->sem.step.spec.kind == node_kind_node) &&
+                    R(op)->kind == la_roots &&
+                    RL(op)->kind == la_doc_tbl &&
+                    op->sem.step.item == RL(op)->sem.doc_tbl.res) {
+                    /* copy the step specification and change the axes */
+                    PFalg_step_spec_t spec_desc = p->sem.step.spec,
+                                      spec_par  = op->sem.step.spec;
+                    spec_desc.axis = alg_desc;
+                    spec_par.axis  = alg_par;
+
+                    if (R(p)->kind == la_project) {
+                        /* new name for the lower path step
+                           to avoid name conflicts */
+                        PFalg_col_t col = PFcol_new (p->sem.step.item_res);
+                        *p = *step_join (L(p),
+                                         project (
+                                             step_join (L(p),
+                                                        R(op),
+                                                        spec_desc,
+                                                        p->sem.step.level,
+                                                        RL(op)->sem.doc_tbl.res,
+                                                        col),
+                                             proj (p->sem.step.item_res, col)),
+                                         spec_par,
+                                         op->sem.step.level,
+                                         p->sem.step.item_res,
+                                         p->sem.step.item);
+                    }
+                    else
+                        *p = *step_join (L(p),
+                                         step_join (L(p),
+                                                    R(op),
+                                                    spec_desc,
+                                                    p->sem.step.level,
+                                                    RL(op)->sem.doc_tbl.res,
+                                                    p->sem.step.item_res),
+                                         spec_par,
+                                         op->sem.step.level,
+                                         p->sem.step.item_res,
+                                         p->sem.step.item);
+                    break;
+                }
             }
 
             /* only introduce a distinct on top of the path step
