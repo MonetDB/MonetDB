@@ -60,7 +60,7 @@ static char *a_id[]  = {
     , [la_side_effects]     = "SIDE EFFECTS"
     , [la_lit_tbl]          = "TBL"
     , [la_empty_tbl]        = "EMPTY_TBL"
-    , [la_ref_tbl ]         = "REF_TBL"
+    , [la_ref_tbl ]         = "table"
     , [la_attach]           = "Attach"
     , [la_cross]            = "Cross"
     , [la_eqjoin]           = "Join"
@@ -550,18 +550,16 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
             break;
 
         case la_ref_tbl :
-            PFarray_printf (DOT, "%s: ", a_id[n->kind]);
+            PFarray_printf (DOT, "%s %s: ",
+                            a_id[n->kind],
+                            n->sem.ref_tbl.name);
             for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (DOT, "%s%s", c ? " | " : "(",
-                                PFcol_str (n->schema.items[c].name));
-            PFarray_printf (DOT, ")\\ncolumn name ");
-            for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (DOT, "%s%s", c ? " | " : "(",
+                PFarray_printf (DOT, "%s%s%s:%s [%s]",
+                                c ? "," : "(",
+                                (c % 3) == 2 ? "\\n" : (c ? " " : ""),
+                                PFcol_str (n->schema.items[c].name),
                                 *((char**) PFarray_at (n->sem.ref_tbl.tcols,
-                                                       c)));
-            PFarray_printf (DOT, ")\\ntype ");
-            for (c = 0; c < n->schema.count;c++)
-                PFarray_printf (DOT, "%s%s", c ? " | " : "(",
+                                                       c)),
                                 PFalg_simple_type_str (
                                     n->schema.items[c].type));
             PFarray_printf (DOT, ")");
