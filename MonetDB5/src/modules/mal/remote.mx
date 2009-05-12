@@ -949,7 +949,7 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	char *var;
 	str rt;
 
-	assert (p->retc );
+	assert (p->retc);
 
 	var = getArgName(mb, p, arg);
 	f = getInstrPtr(mb, 0); /* top level function */
@@ -957,7 +957,7 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	if (mod == NULL)
 		mod = "user";
 	func = getFunctionId(f);
-	rt= getTypeIdentifier(getArgType(mb,p,arg));
+	rt = getTypeIdentifier(getArgType(mb,p,arg));
 
 	snprintf(buf, BUFSIZ, "rmt_%s_%s_%s_%s", mod, func, var, rt);
 
@@ -972,6 +972,7 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
  * another, an error is returned.  Since this function is internal, it
  * doesn't check the input arguments func, conn and query, as they
  * should have been checked already.
+ * NOTE: this function assumes a lock for conn is set
  */
 static INLINE str
 RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
@@ -1012,20 +1013,22 @@ str RMTepilogue(int *ret) {
 
 	(void)ret;
 
-	mal_set_lock(mal_remoteLock,"remote.epilogue"); /* nobody allowed here */
+	mal_set_lock(mal_remoteLock, "remote.epilogue"); /* nobody allowed here */
 	/* free connections list */
 	c = MCgetClient()->conn;
 	while (c != NULL) {
 		t = c;
 		c = c->next;
-		mal_set_lock(c->lock,"remote.epilogue");
+		mal_set_lock(t->lock, "remote.epilogue");
 		mapi_destroy(t->mconn);
-		mal_unset_lock(c->lock,"remote.epilogue");
+		mal_unset_lock(t->lock, "remote.epilogue");
+		MT_lock_destroy(&t->lock);
+		GDKfree(t->name);
 		GDKfree(t);
 	}
 	/* not sure, but better be safe than sorry */
 	MCgetClient()->conn = NULL;
-	mal_unset_lock(mal_remoteLock,"remote.epilogue"); 
+	mal_unset_lock(mal_remoteLock, "remote.epilogue"); 
 
 	return(MAL_SUCCEED);
 }
