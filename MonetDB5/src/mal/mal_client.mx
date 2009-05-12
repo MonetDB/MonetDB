@@ -382,6 +382,11 @@ because we maintain a 1-1 mapping between client and thread of control.
 Therefore, we don't need locks either.
 If the number of clients becomes too large, we have to change the 
 allocation and lookup scheme.
+
+Finding a client record is tricky when we are spawning threads 
+as co-workers. Then the processid is not the discriminator to
+find the client record. In addition, we use the output file
+descriptor also as discriminator.
 @c
 Client MCgetClient()
 {
@@ -391,6 +396,8 @@ Client MCgetClient()
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mypid == pid) return c;
+		else
+		if (c->fdout == GDKout) return c;
 
 	tid= THRget(THRgettid());
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
