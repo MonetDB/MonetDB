@@ -745,7 +745,7 @@ int
 MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	struct sockaddr_in server;
-	SOCKET sock = -1;
+	SOCKET sock = INVALID_SOCKET;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -1082,7 +1082,7 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 #ifdef HAVE_OPENSSL
 	struct sockaddr_in server;
-	SOCKET sock = -1;
+	SOCKET sock = INVALID_SOCKET;
 	socklen_t length = 0;
 	int on = 1;
 	SOCKET msgsock;
@@ -1285,7 +1285,7 @@ end_loop:;
 	close(sock);
 	return GDK_SUCCEED;
 fail:;
-	if (sock >= 0)
+	if (sock != INVALID_SOCKET)
 		close(sock);
 	if (ctx)
 		SSL_CTX_free(ctx);
