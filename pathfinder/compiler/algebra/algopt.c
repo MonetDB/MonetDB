@@ -120,17 +120,13 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
     bool unq_names = true;
     bool proxies_involved = false;
 
-    if (!PFcol_is_name_unq(root->schema.items[0].name))
-    {
-        tm = PFtimer_start ();
-
-        root = PFmap_unq_names (root);
-
-        tm = PFtimer_stop (tm);
-        if (timing)
-            PFlog ("   map to unique column names:\t    %s",
-                   PFtimer_str (tm));
-    }
+    /* make sure that we can rely on the 'correct' usage of column names */
+    tm = PFtimer_start ();
+    root = PFmap_unq_names (root);
+    tm = PFtimer_stop (tm);
+    if (timing)
+        PFlog ("   map to unique column names:\t    %s",
+               PFtimer_str (tm));
 
     if (debug_opt)
         fprintf (stderr, "-o");
