@@ -493,9 +493,19 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 /* if distinct works on a single column,
                    this column is key afterwards. */
                 union_ (n->prop->keys, n->schema.items[0].name);
-            else
+            else {
                 /* key columns stay the same */
                 copy (n->prop->keys, L(n)->prop->keys);
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    bool match = true;
+                    for (unsigned int j = 0; j < n->schema.count; j++)
+                        if (i != j) {
+                            match &= PFprop_fd (n->prop, n->schema.items[i].name, n->schema.items[j].name);
+                        }
+                    if (match)
+                        union_ (n->prop->keys, n->schema.items[i].name);
+                }
+            }
             break;
 
         case la_fun_1to1:
@@ -832,18 +842,31 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
     infer_key (n, with_guide_info);
 }
 
+/* recursion check */
+bool active = false;
+
 /**
  * Infer key property for a DAG rooted in root
  */
 void
 PFprop_infer_key (PFla_op_t *root)
 {
-    /* infer cardinalities to discover more key columns */
-    PFprop_infer_card (root);
-    /* use the cheaper domain inference that only infers
-       domains for columns of the native type */
-    PFprop_infer_nat_dom (root);
-    PFprop_infer_level (root);
+    /* check if we recursively infer the key properties */
+    if (!active) {
+        /* infer the functional dependencies
+           (which will internally infer the key properties) */
+        active = true;
+        PFprop_infer_functional_dependencies (root);
+        active = false;
+    }
+    else {
+        /* infer cardinalities to discover more key columns */
+        PFprop_infer_card (root);
+        /* use the cheaper domain inference that only infers
+           domains for columns of the native type */
+        PFprop_infer_nat_dom (root);
+        PFprop_infer_level (root);
+    }
 
     prop_infer (root, false);
     PFla_dag_reset (root);
