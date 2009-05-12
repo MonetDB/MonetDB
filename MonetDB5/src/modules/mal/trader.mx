@@ -166,7 +166,7 @@ static lng estimateSavings(MalBlkPtr mb)
 			continue;
 	}
 
-	savedCost = recycleAlpha * savedTicks/10.0 + (1-recycleAlpha)* (savedIBytes + savedOBytes)/1000.0;
+	savedCost = (lng) (recycleAlpha * savedTicks/10.0 + (1-recycleAlpha)* (savedIBytes + savedOBytes)/1000.0);
 	freeStack(stk);
 	return  savedCost;
 
@@ -177,7 +177,7 @@ str TRADERmakeBid(lng *c, str *fnname, lng *maxcost)
 {
 	Symbol sym;
 	MalBlkPtr mb;
-	int s;
+	lng s;
 
     sym = findSymbol(putName("octopus",7),*fnname);
     if ( sym == NULL)
