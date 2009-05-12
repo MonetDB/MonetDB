@@ -41,6 +41,7 @@
 #if !HAVE_GC
 /* we need a fallback solution in case
    we have no garbage collector */
+#define MEM_GC_C__INCLUDES__MEM_C
 #include "mem.c"
 
 #else
