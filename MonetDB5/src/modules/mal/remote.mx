@@ -911,13 +911,13 @@ code for reconnecting if necessary
  *       MCgetClient()->conn;
  */
 static INLINE str
-RMTfindconn(connection *ret, str conn) {
+RMTfindconn(Client cntxt, connection *ret, str conn) {
 	connection c;
 
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
 	mal_set_lock(mal_remoteLock, "remote.<findconn>"); /* protect c */
-	c = MCgetClient()->conn;
+	c = cntxt->conn;
 	while (c != NULL) {
 		if (strcmp(c->name, conn) == 0) {
 			*ret = c;
@@ -1058,7 +1058,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
 	/* lookup conn, set c if valid */
-	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.get", tmp, RMTfindconn(cntxt, &c, conn));
 
 	rtype = getArgType(mb, pci, 0);
 	v = getArgReference(stk, pci, 0);
@@ -1201,7 +1201,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(ILLARG, "remote.put", "connection name is NULL or nil");
 
 	/* lookup conn */
-	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.put", tmp, RMTfindconn(cntxt,&c, conn));
 
 	/* put the thing */
 	type = getArgType(mb, pci, 2);
@@ -1340,7 +1340,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(MAL, "remote.register", "function '%s.%s' not found", mod, fcn);
 
 	/* lookup conn */
-	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.put", tmp, RMTfindconn(cntxt, &c, conn));
 
 	/* this call should be a single transaction over the channel*/
 	mal_set_lock(c->lock, "remote.register"); 
@@ -1419,7 +1419,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(ILLARG, "remote.exec", "function name is NULL or nil");
 
 	/* lookup conn */
-	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));
+	rethrow("remote.exec", tmp, RMTfindconn(cntxt,  &c, conn));
 
 	/* this call should be a single transaction over the channel*/
 	mal_set_lock(c->lock,"remote.exec"); 
