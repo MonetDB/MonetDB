@@ -169,9 +169,8 @@ compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
-On Windows64 you can use either the 32-bit or 64-bit version of Python
-for creating the configuration files, but you will need the 64-bit
-version if you want to create the optional Python client modules.
+On Windows64 you can use either the 32-bit or 64-bit version of
+Python.
 
 __ http://www.python.org/
 
@@ -237,6 +236,50 @@ instead.  Extract the archive, and make sure that the folder is in
 your ``Path`` variable when you run the tests.
 
 __ http://www.microsoft.com/technet/sysinternals/default.mspx
+
+PCRE (Perl Compatible Regular Expressions)
+------------------------------------------
+
+The PCRE__ library is used to extend the string matching capabilities
+of MonetDB.  The PCRE library is required for the MonetDB5 component.
+
+Download the source from http://www.pcre.org/.  In order to build the
+library, you will need a program called ``cmake`` which you can
+download from http://www.cmake.org/.  Follow the Download link and get
+the Win32 Installer, install it, and run it.  It will come up with a
+window where you have to fill in the location of the source code and
+where to build the binaries.  Fill in where you extracted the PCRE
+sources, and some other directory (I used a ``build`` directory which
+I created within the PCRE source tree).  You need to configure some
+PCRE build options.  I chose to do build shared libs, and to do have
+UTF-8 support and support for Unicode properties.  When you're
+satisfied with the options, click on Configure, and then on OK.  Then
+in the build directory you've chosen, open the PCRE.sln file with
+Visual Studio, and build and install.  Make sure you set the Solution
+Configuration to Release if you want to build a releasable version of
+the MonetDB suite.  The library will be installed in ``C:\Program
+Files\PCRE``.
+
+For Windows64, select the correct compiler (``Visual Studio 8 2005
+Win64``) and proceed normally.  When building the 32 bit version on
+Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
+``CMAKE_INSTALL_PREFIX`` value.
+
+__ http://www.pcre.org/
+
+OpenSSL
+-------
+
+The OpenSSL__ library is used during authentication of a MonetDB
+client program with the MonetDB server.  It is also optionally used to
+secure communication between client and server.  The OpenSSL library
+is required for the MonetDB5 component.
+
+Download the source from http://www.openssl.org/.  We used the latest
+stable version (0.9.8k).  Follow the instructions in the file
+``INSTALL.W32`` or ``INSTALL.W64``.
+
+__ http://www.openssl.org/
 
 libxml2
 -------
@@ -438,36 +481,6 @@ had to be made to the sources:
 We have no support yet for Windows64.
 
 __ http://www.php.net/
-
-PCRE (Perl Compatible Regular Expressions)
-------------------------------------------
-
-The PCRE__ library is used to extend the string matching capabilities
-of MonetDB.
-
-Download the source from http://www.pcre.org/.  In order to build the
-library, you will need a program called ``cmake`` which you can
-download from http://www.cmake.org/.  Follow the Download link and get
-the Win32 Installer, install it, and run it.  It will come up with a
-window where you have to fill in the location of the source code and
-where to build the binaries.  Fill in where you extracted the PCRE
-sources, and some other directory (I used a ``build`` directory which
-I created within the PCRE source tree).  You need to configure some
-PCRE build options.  I chose to do build shared libs, and to do have
-UTF-8 support and support for Unicode properties.  When you're
-satisfied with the options, click on Configure, and then on OK.  Then
-in the build directory you've chosen, open the PCRE.sln file with
-Visual Studio, and build and install.  Make sure you set the Solution
-Configuration to Release if you want to build a releasable version of
-the MonetDB suite.  The library will be installed in ``C:\Program
-Files\PCRE``.
-
-For Windows64, select the correct compiler (``Visual Studio 8 2005
-Win64``) and proceed normally.  When building the 32 bit version on
-Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
-``CMAKE_INSTALL_PREFIX`` value.
-
-__ http://www.pcre.org/
 
 .. _SWIG:
 
