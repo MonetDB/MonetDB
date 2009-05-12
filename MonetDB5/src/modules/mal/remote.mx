@@ -120,7 +120,7 @@ comment "Destroy a previously user-defined connection to a server.";
 
 command getList()(list:bat[:oid,:str], kind:bat[:oid,:str])
 address RMTgetList
-comment "List available databases with their property for use with connect().";
+comment "List available databases for use with connect() and their kind (self, user, local, remote).";
 
 # session local connection instantiation functions
 
@@ -128,7 +128,7 @@ command connect(dbname:str, user:str, passwd:str):str
 address RMTconnect
 comment "Returns a newly created connection for dbname, user name and password.";
 command connect(dbname:str, user:str, passwd:str, scen:str):str
-address RMTconnect2
+address RMTconnectScen
 comment "Returns a newly created connection for dbname, user name, password
 and scenario.";
 
@@ -202,7 +202,7 @@ comment "Remotely executes <mod>.<func> using the argument list of remote object
 
 @-
 Technically, these methods need to be serialised per connection, 
-hence a scheduler that interleaves e.g.  multiple get calls, 
+hence a scheduler that interleaves e.g. multiple get calls, 
 simply violates this constraint.  If parallelism to the same site 
 is desired, a user could create a second connection.
 This is not always easy to generate at the proper place, e.g.
@@ -701,6 +701,10 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 
 	return(NULL);
 }
+
+/* for unique connection identifiers */
+static size_t connection_id = 0;
+
 /**
  * Returns a connection to the given dbname.  It always returns a newly
  * created connection.
@@ -712,11 +716,10 @@ static str RMTconnectInternal(
 		str *passwd,
 		str *scen)
 {
-	connection c,t;
+	connection c;
 	userconn cdef;
 	char conn[BUFSIZ];
 	char *s;
-	static int id=0;	/* for unique connection identifiers */
 	Client cntxt = MCgetClient();
 
 	/* just make sure the return isn't garbage */
@@ -739,27 +742,23 @@ static str RMTconnectInternal(
 			"unknown or unavailable connection: '%s'", *dbname);
 	} 
 	/* generate an unique connection name, they are only known
-	 * within one  mserver */
-	snprintf(conn, BUFSIZ, "%s_%s_%d", *dbname, *user, ++id);
-
-	/* prepend the connection to the list of known ones */
-	t = cntxt->conn;
-	c = GDKzalloc(sizeof(struct _connection));
-	if ( t != NULL )
-		c->next = t;
-	cntxt->conn= c;
-
-	/* make sure we protect the just added connection (small race) */
-	MT_lock_init(&c->lock, "remote connection lock");
-	mal_set_lock(c->lock, "remote.connect");
-
-	/* this can probably screw up the uniqueness, but we need it since
-	 * we will construct MAL identifiers using it */
+	 * within one mserver, id is primary key, the rest is super key */
+	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, *dbname, *user, connection_id++);
+	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
 		if (!isalpha((int)*s) && !isdigit((int)*s)) {
 			*s = '_';
 		}
 	}
+
+	/* prepend the connection to the client list of known ones */
+	c = GDKzalloc(sizeof(struct _connection));
+	c->next = cntxt->conn;
+	cntxt->conn = c;
+
+	MT_lock_init(&c->lock, "remote connection lock");
+	/* no need to lock c->lock, since noone can have c (as userconns is
+	 * locked */
 
 	c->name = GDKstrdup(conn);
 	c->nextid = 0;
@@ -770,21 +769,24 @@ static str RMTconnectInternal(
 	GDKfree(cdef->host);
 	GDKfree(cdef);
 
+	if (mapi_reconnect(c->mconn) != MOK) {
+		char *err = mapi_error_str(c->mconn);
 
-	if (mapi_reconnect(c->mconn) != MOK){
-		mal_unset_lock(c->lock, "remote.connect"); 
+		/* throw away connection? */
+		cntxt->conn = c->next;
+		MT_lock_destroy(&c->lock);
+		GDKfree(c);
+
 		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(IO, "remote.connect", "an error occurred during "
 				"connect of connection '%s': %s",
-				conn, mapi_error_str(c->mconn));
+				conn, err);
 	}
-	/* TODO: throw away connection? */
 
 #ifdef _DEBUG_MAPI_
-	mapi_trace(c->mconn,TRUE);
+	mapi_trace(c->mconn, TRUE);
 #endif
 
-	mal_unset_lock(c->lock, "remote.connect"); 
 	mal_unset_lock(mal_remoteLock, "remote.connect");
 
 	*ret = GDKstrdup(conn);
@@ -809,14 +811,14 @@ str RMTconnect(
 }
 
 @h
-remote_export str RMTconnect2(
+remote_export str RMTconnectScen(
 		str *ret,
 		str *dbname,
 		str *user,
 		str *passwd,
 		str *scen);
 @c
-str RMTconnect2(
+str RMTconnectScen(
 		str *ret,
 		str *dbname,
 		str *user,
