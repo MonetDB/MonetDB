@@ -873,7 +873,7 @@ str RMTdisconnect(int *ret, str *conn) {
 			mapi_disconnect(c->mconn);
 			mapi_destroy(c->mconn);
 			mal_unset_lock(c->lock, "remote.disconnect");
-			MT_lock_destroy(c->lock);
+			MT_lock_destroy(&c->lock);
 			GDKfree(c->name);
 			GDKfree(c);
 			mal_unset_lock(mal_remoteLock, "remote.disconnect");
@@ -923,24 +923,6 @@ RMTfindconn(connection *ret, str conn) {
 		c = c->next;
 	}
 	throw(MAL, "remote.<findconn>", "no such active connection '%s'", conn);
-}
-
-@h
-remote_export str RMTfindConnection(connection *ret, str conn);
-@c
-/**
- * Small wrapper around RMTfindconn just for the Octopus optimiser.
- * Martin likes to break open protection schemes just to get things to
- * work.  I doubt whether it is a good approach, but at least this way I
- * protect my own code.
- */
-remote_export str RMTfindConnection(connection *ret, str conn)
-{
-	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.<findconnection>",
-				"connection name is NULL or nil");
-
-	return(RMTfindconn(ret, conn));
 }
 
 /**
