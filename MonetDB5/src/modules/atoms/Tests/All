@@ -5,4 +5,4 @@ color
 time00
 
 strmax
-xml100
+HAVE_LIBXML2?xml100
