@@ -95,15 +95,9 @@ buffered stream.  Since
 cannot force other processes to flush their output, the time when
 .B merovingian
 receives the message need not to be (close) to the actual time the
-message was generated.  For this reason it makes not much sense to tag
-each line with the time it is logged by
-.B merovingian
-either to file or the console.  Instead,
-.B merovingian
-does a rough time indication by inserting TME records in the log output.
-The seconds interval in which.
-.B merovingian
-should print such TME record can be specified in the
+message was generated.  For this reason it is important to be aware that
+the timestamp merovingian logs for messages from started mserver5
+processes are not those when the message was emitted.
 .B mero_timeinterval
 option.  Note that an interval of 
 .B 0

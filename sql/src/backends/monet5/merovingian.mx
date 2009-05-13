@@ -156,15 +156,6 @@ logListener(void *x)
 	/* skip the first entry, we don't care about it in the normal loop */
 	d = d->next;
 
-#define PRINT_TIME(STREAM, CHAN) \
-	now = time(NULL); \
-	if (now - CHAN >= _timeInterval) { \
-		tmp = localtime(&now); \
-		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp); \
-		fprintf(STREAM, "TME %s\n", mytime); \
-		CHAN = now; \
-	}
-
 	lastout = 0;
 	lasterr = 0;
 	do {
@@ -199,17 +190,19 @@ logListener(void *x)
 		w = d;
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0) {
-				PRINT_TIME(fout, lastout);
 				writeident = 1;
 				do {
 					if ((len = read(w->out, buf, 8095)) <= 0)
 						break;
 					buf[len] = '\0';
 					q = buf;
+					now = time(NULL);
+					tmp = localtime(&now);
+					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 					while ((p = strchr(q, '\n')) != NULL) {
 						if (writeident == 1)
-							fprintf(fout, "MSG %s[" LLFMT "]: ",
-									w->dbname, (long long int)w->pid);
+							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
+									mytime, w->dbname, (long long int)w->pid);
 						*p = '\0';
 						fprintf(fout, "%s\n", q);
 						q = p + 1;
@@ -217,29 +210,27 @@ logListener(void *x)
 					}
 					if ((size_t)(q - buf) < len) {
 						if (writeident == 1)
-							fprintf(fout, "MSG %s[" LLFMT "]: ",
-									w->dbname, (long long int)w->pid);
+							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
+									mytime, w->dbname, (long long int)w->pid);
 						writeident = 0;
 						fprintf(fout, "%s", q);
 					}
 				} while (len == 8095);
 			}
 			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0) {
-				if (equalouterr == 1) {
-					PRINT_TIME(ferr, lastout);
-				} else {
-					PRINT_TIME(ferr, lasterr);
-				}
 				writeident = 1;
 				do {
 					if ((len = read(w->err, buf, 8095)) <= 0)
 						break;
 					buf[len] = '\0';
 					q = buf;
+					now = time(NULL);
+					tmp = localtime(&now);
+					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 					while ((p = strchr(q, '\n')) != NULL) {
 						if (writeident == 1)
-							fprintf(ferr, "ERR %s[" LLFMT "]: ",
-									w->dbname, (long long int)w->pid);
+							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
+									mytime, w->dbname, (long long int)w->pid);
 						*p = '\0';
 						fprintf(ferr, "%s\n", q);
 						q = p + 1;
@@ -247,8 +238,8 @@ logListener(void *x)
 					}
 					if ((size_t)(q - buf) < len) {
 						if (writeident == 1)
-							fprintf(ferr, "ERR %s[" LLFMT "]: ",
-									w->dbname, (long long int)w->pid);
+							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
+									mytime, w->dbname, (long long int)w->pid);
 						writeident = 0;
 						fprintf(ferr, "%s", q);
 					}
@@ -263,14 +254,17 @@ logListener(void *x)
 		if (equalouterr == 0)
 			fflush(ferr);
 	} while (_keepLogging != 0);
-	/* make sure we emit the current timestamp before we quit */
-	lastout = 0;
-	PRINT_TIME(fout, lastout);
+
+	now = time(NULL);
+	tmp = localtime(&now);
+	strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
+	fprintf(fout, "%s END logger closing stream\n", mytime);
 	fflush(fout);
+	fclose(fout);
 	if (equalouterr == 0) {
-		lasterr = 0;
-		PRINT_TIME(ferr, lasterr);
+		fprintf(ferr, "%s END logger closing stream\n", mytime);
 		fflush(ferr);
+		fclose(ferr);
 	}
 }
 

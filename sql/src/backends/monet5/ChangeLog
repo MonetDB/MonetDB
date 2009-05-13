@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  13 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
+  Implemented feature request #2782776. All logged messages are now prefixed
+  with a timestamp.
+
   21 Apr 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx, monetdb.1:
   Instead of sending SIGTERM and immediately returning, call the
   terminateProcess function such that we nicely wait for the process to have
