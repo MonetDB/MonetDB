@@ -2371,7 +2371,7 @@ mapi_start_talking(Mapi mid)
 			if (mid->password[0] != '\1') {
 				unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 				int n = strlen(mid->password);
-				char key[n];
+				char *key = alloca(n + 1);
 				int len;
 
 				key[0] = '\0';
@@ -2446,7 +2446,7 @@ mapi_start_talking(Mapi mid)
 			 */
 			unsigned char md[20];	/* should be RIPEMD160_DIGEST_LENGTH */
 			int n = strlen(mid->password) + strlen(chal);
-			char key[n];
+			char *key = alloca(n + 1);
 			key[0] = '\0';
 
 			if (pversion == 9) {
@@ -2471,7 +2471,7 @@ mapi_start_talking(Mapi mid)
 			 */
 			unsigned char md[20];	/* should be SHA_DIGEST_LENGTH */
 			int n = strlen(mid->password) + strlen(chal);
-			char key[n];
+			char *key = alloca(n + 1);
 			key[0] = '\0';
 
 			if (pversion == 9) {
@@ -2496,7 +2496,7 @@ mapi_start_talking(Mapi mid)
 			 */
 			unsigned char md[16];	/* should be MD5_DIGEST_LENGTH */
 			int n = strlen(mid->password) + strlen(chal);
-			char key[n];
+			char *key = alloca(n + 1);
 			key[0] = '\0';
 
 			if (pversion == 9) {
