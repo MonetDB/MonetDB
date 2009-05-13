@@ -777,7 +777,7 @@ procs();
 [ "ws_destroy(BAT[void,BAT]) : void"															  ]
 [ "ws_destroy(any) : void"																  ]
 [ "ws_docavailable(BAT[void,BAT], BAT[void,str]) : BAT[void,bit]"																					  ]
-[ "ws_docfilter(BAT[void,BAT], BAT[any::1,oid], oid) : BAT[any::1,oid]"											  ]
+[ "ws_docfilter(BAT[void,BAT], BAT[any::1,oid], oid, bit) : BAT[any::1,oid]"																		  ]
 [ "ws_docname(BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,int]) : BAT[oid,str]"																			  ]
 [ "ws_documents(BAT[void,BAT], BAT[any,str], bit) : BAT[oid,oid]"																	  ]
 [ "ws_documents(BAT[void,BAT], bit) : BAT[void,oid]"																			  ]
