@@ -52,3 +52,4 @@ dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
 dumping_tables.SF-2776908--optimizers
 name_clash_with_dump.SF-2780395
+temporary_table_leftover.SF-2779437
