@@ -22,18 +22,12 @@ Ready.
 
 Over..
 
-# 16:39:59 >  
-# 16:39:59 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=35124 
-# 16:39:59 >  
+# 20:40:27 >  
+# 20:40:27 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=37526 
+# 20:40:27 >  
 
-[ 1	]
-[ 1	]
-% tmp.pktable1841727 # table_name
-% ptest1 # name
-% int # type
-% 1 # length
 
-# 16:39:59 >  
-# 16:39:59 >  Done.
-# 16:39:59 >  
+# 20:40:27 >  
+# 20:40:27 >  Done.
+# 20:40:27 >  
 
