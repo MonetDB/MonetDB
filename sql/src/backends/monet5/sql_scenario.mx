@@ -40,7 +40,6 @@ sql5_export str SQLprelude(void);
 sql5_export str SQLepilogue(void);
 
 sql5_export str SQLexit(Client c);
-sql5_export str SQLinit(Client c);
 sql5_export str SQLexitClient(Client c);
 sql5_export str SQLinitClient(Client c);
 sql5_export str SQLreader(Client c);
@@ -135,6 +134,8 @@ SQLsession2(str *ret)
 	return msg;
 }
 
+static str SQLinit(void);
+
 str
 SQLprelude(void)
 {
@@ -146,7 +147,7 @@ SQLprelude(void)
 	sqlinit = GDKgetenv("sqlinit");
 	s->name = "sql";
 	s->language = "sql";
-	s->initSystem = "SQLinit";
+	s->initSystem = NULL;
 	s->exitSystem = "SQLexit";
 	s->initClient = "SQLinitClient";
 	s->exitClient = "SQLexitClient";
@@ -167,7 +168,7 @@ SQLprelude(void)
 
 	s->name = "msql";
 	s->language = "msql";
-	s->initSystem = "SQLinit";
+	s->initSystem = NULL;
 	s->exitSystem = "SQLexit";
 	s->initClient = "SQLinitClient";
 	s->exitClient = "SQLexitClient";
@@ -179,6 +180,9 @@ SQLprelude(void)
 	tmp = GDKgetenv("monet_welcome");
 	if (tmp != NULL && strcmp(tmp, "yes") == 0)
 		printf("# MonetDB/SQL module v" VERSION " loaded\n");
+	tmp = SQLinit();
+	if (tmp != MAL_SUCCEED)
+		return(tmp);
 	return SABAOTHmarchScenario(&res, &s->name);
 }
 
@@ -203,8 +207,8 @@ SQLepilogue(void)
 
 MT_Id sqllogthread;
 
-str
-SQLinit(Client c)
+static str
+SQLinit(void)
 {
 	char *debug_str = GDKgetenv("sql_debug");
 	int readonly  = GDKgetenv_isyes("gdk_readonly");
@@ -212,7 +216,6 @@ SQLinit(Client c)
 	char *gmt = "GMT";
 	tzone tz;
 
-	(void) c;		/* not used */
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinit Monet 5\n");
 #endif
@@ -355,7 +358,6 @@ handle_error(mvc *m, stream *out, int pstatus)
 str
 SQLinitClient(Client c)
 {
-	str msg;
 	mvc *m;
 	str schema;
 	backend *be;
@@ -364,9 +366,6 @@ SQLinitClient(Client c)
 	stream_printf(GDKout, "#SQLinitClient\n");
 #endif
 
-	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
-		return msg;
-	
 	if (sqlinit) { /* add sqlinit to the fdin stack */
 		buffer *b = (buffer*)GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
