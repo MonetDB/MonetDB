@@ -2618,6 +2618,21 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 {
 	int ok = LOG_OK;
 
+	/* did we make changes or is the global changed after we started */
+	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
+		fs->base.wtime = fs->base.rtime = 0;
+
+		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) NULL, (dupfunc) &type_dup);
+		if (ok == LOG_OK)
+			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) NULL, (dupfunc) &func_dup);
+
+		if (ok == LOG_OK)
+			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
+
+		if (ok == LOG_OK)
+			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
+	}
+
 	if (isTempSchema(fs)) {
 		if (fs->tables.set) {
 			node *n;
@@ -2636,21 +2651,6 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 			}
 		}
 		return ok;
-	}
-
-	/* did we make changes or is the global changed after we started */
-	if (fs->base.wtime || tr->stime < pfs->base.wtime) {
-		fs->base.wtime = fs->base.rtime = 0;
-
-		ok = reset_changeset(tr, &fs->types, &pfs->types, &fs->base, (resetf) NULL, (dupfunc) &type_dup);
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->funcs, &pfs->funcs, &fs->base, (resetf) NULL, (dupfunc) &func_dup);
-
-		if (ok == LOG_OK)
-			ok = reset_changeset(tr, &fs->seqs, &pfs->seqs, &fs->base, (resetf) &reset_seq, (dupfunc) &seq_dup);
-
-		if (ok == LOG_OK)
-			return reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
 	}
 	return ok;
 }
