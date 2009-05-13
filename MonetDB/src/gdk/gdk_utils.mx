@@ -2082,7 +2082,7 @@ Real errors should be saved in the lock file for post-crash inspection.
 		MT_exit_thread(1);
 		/* exit(1); */
 	} else {
-		GDKlog(message);
+		GDKlog("%s", message);
 #ifdef COREDUMP
 		abort();
 #else
