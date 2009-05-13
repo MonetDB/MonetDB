@@ -219,7 +219,6 @@ QueryClause_p		: PhraseQuery
 	     		  { c = tjcp_leaf (tjc_tree, p_nil); $$ = tjcp_wire2 (tjc_tree, p_and, $1, c); }
 	       		| QueryClause_s PhraseQuery
 			  { $$ = tjcp_wire2 (tjc_tree, p_and, $2, $1); }
-			;
 	       		| QueryClause_p PhraseQuery
 			  { $$ = tjcp_wire2 (tjc_tree, p_and, $2, $1); }
 			;

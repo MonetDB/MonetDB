@@ -120,7 +120,8 @@ int dbat_finalize(dbat* dbat, oid topidx) {
                 GDKerror("dbat_finalize: bad ttype\n");
                 return -1;
         }
-        BATsetcount(b, (((char*)top)-b->T->heap.base)/Tsize(b) - BUNfirst(b));
+        //BATsetcount(b, (((char*)top)-b->T->heap.base)/Tsize(b) - BUNfirst(b));
+        BATsetcount(b, topidx);
         b->tsorted  = 0;
 	b->batDirty = TRUE; /* VERY important this one */
 	/* */

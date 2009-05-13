@@ -374,11 +374,11 @@ PROC tj_get_ft_index(BAT[str,str] tj_options, bit chk_exists) : str
         res := tj_options.find("ft-index");
     }
     if ( chk_exists ) {
-      if ( not(view_bbp_name().reverse().exist("tj_collName")) ) {
+      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_size1")) ) {
         ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
       }
-      if ( not(bat("tj_collName").reverse().exist(res)) ) {
-    	ERROR("tj_get_ft_index, ft-index \"%s\" does not exist\n",res);
+      if ( not(view_bbp_name().reverse().exist("tj_" + res + "_TagSize")) ) {
+        ERROR("tj_get_ft_index, ft-index \"%s\" does not exist. create full text index using tijah:create-ft-index()\n",res);
       }
     }
     if ( verbose ) printf(HASH +"TJ:tj_get_ft_index() = %s.\n",res);
@@ -643,21 +643,20 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
           bat("tj_" + ftiName + "_concept_elem").delete();
           bat("tj_" + ftiName + "_concept_score").delete();
       } else {
-          new(void,str).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_name");
-          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_doc_firstpre");
+          new(void,str).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_doc_name");
+          new(void,oid).seqbase(0@0).persists(true). access(BAT_APPEND).bbpname("tj_" + ftiName + "_doc_firstpre");
           new(str,str).persists(true).bbpname("tj_" + ftiName + "_param");
           
-          new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_tid1");
-          new(void,int).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_size1");
+          new(void,oid).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_tid1");
+          new(void,int).seqbase(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_size1");
           # bat contains the start oid of every tid/size frag. Head is postfix
           # string to _tid/_size. Normally "", "2", "3"
-          new(void,oid).seqbase(1@0).persists(true).bbpname("tj_" + ftiName + "_fragments");
-          bat("tj_" + ftiName + "_fragments").append(1@0);
-          new(oid,oid).persists(true).bbpname("tj_" + ftiName + "_pfpre");
+          new(void,oid).seqbase(1@0).append(1@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_fragments");
+          new(oid,oid).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_pfpre");
           new(oid,str).persists(true).bbpname("tj_" + ftiName + "_conceptdict");
-          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_tid");
-          new(void,oid).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_elem");
-          new(void,dbl).seqbase(0@0).persists(true).bbpname("tj_" + ftiName + "_concept_score");
+          new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_concept_tid");
+          new(void,oid).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_concept_elem");
+          new(void,dbl).seqbase(0@0).persists(true).access(BAT_APPEND).bbpname("tj_" + ftiName + "_concept_score");
       }
          
       var parambat := bat("tj_" + ftiName + "_param");
@@ -685,8 +684,9 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 	      tokenizer := $t;
 	  } else if ( $h = "pf_collection" ) {
               bat("tj_" + ftiName + "_param").insert($h,$t);
-	  } else if ( $h = "fragmentSize" ) {
-	      fragsize := $t;
+          } else if ( $h = "fragmentSize" ) {
+	  #fragments are currently not supported
+	  #    fragsize := $t;
 	  } else if ( $h = "whitelist" ) {
               whitelist := $t;
 	  } else if ( $h = "blacklist" ) {
@@ -733,14 +733,18 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
 		_tj_safe_remove("tj_" + ftiName + "_TermIndex");
 		_tj_safe_remove("tj_" + ftiName + "_Terms");
 		_tj_safe_remove("tj_" + ftiName + "_TagIndex");
+		_tj_safe_remove("tj_" + ftiName + "_TagSize");
 		_tj_safe_remove("tj_" + ftiName + "_Tags");
+		_tj_safe_remove("tj_" + ftiName + "_ConceptIndex");
+		_tj_safe_remove("tj_" + ftiName + "_ConceptScore");
+		_tj_safe_remove("tj_" + ftiName + "_Concepts");
 	}
       }
     });
     if ( rebuild ) {
         subcommit(extra_del_bat);
     }
-    subcommit(_tj_collection_str(ftiName));
+    #subcommit(_tj_collection_str(ftiName));
    lock_unset(coll_lock);
     #
     if (not(isnil(err))) ERROR(err);
@@ -749,17 +753,17 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
       #
       # Now compute the list of existing docs which need to be added to the 
       # ft-index because of the associations.
-      # WARNING: this piece of code is not yet very safe but is requires
-      # a very close cooperation with Pathfinder locks to make it safe.
-      #
+      lock_set(pf_short);
+      var doclist, err := CATCH({
       if ( verbose ) printf(HASH +"TJ:tj_init_collection(\"%s\") checking collection to index.\n",ftiName);
-      var doclist;
       if ( v_pfc.uselect("*").count() > 0 ) {
          doclist := bat("doc_name").reverse().project(str(nil)).reverse();
       } else {
          doclist := bat("doc_name").reverse().join(bat("doc_collection").join(bat("collection_name").join(v_pfc.reverse())));
          doclist := doclist.project(str(nil)).reverse();
-      }
+      }});
+      lock_unset(pf_short);
+      if (not(isnil(err))) ERROR(err);
 
       if ( verbose ) printf(HASH +"TJ:tj_init_collection(\"%s\") indexing existing collections.\n",ftiName);
       tj_add2collection(ftiName,doclist,false);
@@ -785,7 +789,7 @@ PROC tj_extend_collection(str ftiName, BAT[void,str] v_pfc) : void
 	tj_add2collection(ftiName,doclist,false);
         if ( verbose ) printf(HASH +"TJ:tj_extend_collection(\"%s\") finish indexing existing collections.\n",ftiName);
     } else {
-        # be shure to commit extend bat changes when no docs are added
+        # be sure to commit extend bat changes when no docs are added
         subcommit(_tj_collection_str(ftiName));
     }
     if ( verbose ) printf(HASH +"TJ:tj_extend_collection(\"%s\") finished.\n",ftiName);
@@ -923,6 +927,9 @@ PROC tj_delete_collection(str ftiName, bit doAdmLock) : void
 		_tj_safe_remove("tj_" + ftiName + "_TagIndex");
 		_tj_safe_remove("tj_" + ftiName + "_TagSize");
 		_tj_safe_remove("tj_" + ftiName + "_Tags");
+		_tj_safe_remove("tj_" + ftiName + "_ConceptIndex");
+		_tj_safe_remove("tj_" + ftiName + "_ConceptScore");
+		_tj_safe_remove("tj_" + ftiName + "_Concepts");
 	}
         delete_pfc_fti(ftiName);
         subcommit(_tj_collection_str(ftiName));
@@ -960,9 +967,12 @@ PROC _tj_collection_str(str ftiName) : BAT[void,bat]
         if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
             tjCollBat.append("tj_" + ftiName + "_Terms");
             tjCollBat.append("tj_" + ftiName + "_Tags");
+            tjCollBat.append("tj_" + ftiName + "_Concepts");
             tjCollBat.append("tj_" + ftiName + "_TermIndex");
             tjCollBat.append("tj_" + ftiName + "_TagIndex");
+            tjCollBat.append("tj_" + ftiName + "_ConceptIndex");
             tjCollBat.append("tj_" + ftiName + "_TagSize");
+            tjCollBat.append("tj_" + ftiName + "_ConceptScore");
         }      
         return tjCollBat;
 }
@@ -1006,9 +1016,12 @@ PROC _tj_collection(str ftiName) : BAT[str, bat]
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) {
             tjCollBat.insert("_Terms", bat("tj_" + ftiName + "_Terms"));
 	    tjCollBat.insert("_Tags", bat("tj_" + ftiName + "_Tags"));
+	    tjCollBat.insert("_Concepts", bat("tj_" + ftiName + "_Tags"));
 	    tjCollBat.insert("_TermIndex", bat("tj_" + ftiName + "_TermIndex"));
 	    tjCollBat.insert("_TagIndex", bat("tj_" + ftiName + "_TagIndex"));
+	    tjCollBat.insert("_ConceptIndex", bat("tj_" + ftiName + "_TagIndex"));
 	    tjCollBat.insert("_TagSize", bat("tj_" + ftiName + "_TagSize"));
+	    tjCollBat.insert("_ConceptScore", bat("tj_" + ftiName + "_TagSize"));
 	}
 	tjCollBat.insert("submitBats", new(void,str).seqbase(0@0));
 	tjCollBat.insert("replaceBats", new(str,str));
@@ -1064,6 +1077,16 @@ PROC tj_add2collection(str ftiName, BAT[str,str] uri, bit shred) : void
     lock_set(coll_lock);
     var err := CATCH({
       var t_start := usec();
+      # set access back to BAT_APPEND
+      bat("tj_" + ftiName + "_doc_name").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_doc_firstpre").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_tid1").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_size1").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_fragments").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_pfpre").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_concept_tid").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_concept_elem").access(BAT_APPEND);
+      bat("tj_" + ftiName + "_concept_score").access(BAT_APPEND);
       bat(_tj_TermBat(ftiName)).access(BAT_APPEND);
       bat(_tj_TagBat(ftiName)).access(BAT_APPEND);
       bat(_tj_RTagBat(ftiName)).access(BAT_APPEND);
@@ -1151,6 +1174,18 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
 {
     var t_start := usec();
     if ( verbose ) printf(HASH +"TJ:_tj_finalize_collection(\"%s\") called.\n",ftiName);
+    
+    # set BATs to BAT_READ
+    bat("tj_" + ftiName + "_doc_name").access(BAT_READ);
+    bat("tj_" + ftiName + "_doc_firstpre").access(BAT_READ);
+    bat("tj_" + ftiName + "_tid1").access(BAT_READ);
+    bat("tj_" + ftiName + "_size1").access(BAT_READ);
+    bat("tj_" + ftiName + "_fragments").access(BAT_READ);
+    bat("tj_" + ftiName + "_pfpre").access(BAT_READ);
+    bat("tj_" + ftiName + "_concept_tid").access(BAT_READ);
+    bat("tj_" + ftiName + "_concept_elem").access(BAT_READ);
+    bat("tj_" + ftiName + "_concept_score").access(BAT_READ);
+    
     var parambat := bat("tj_" + ftiName + "_param");
     if ( not(fforce) ) {
         var delfin   := lng(parambat.find("delay_finalize"));
@@ -1171,16 +1206,9 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     # set all fragments except the last one to BAT_READ
     mod_frags@batloop()
     {
-        bat($t).access(BAT_READ);
 	bat($t).mmap(1);
 	collBat.find("submitBats").append($t);
     }
-    collBat.find("_size").access(BAT_APPEND).mmap(1);
-    collBat.find("_tid").access(BAT_APPEND).mmap(1);
-    collBat.find("_pfpre").access(BAT_APPEND).mmap(1);
-    var fpfx := str(collBat.find("_fragments").count());
-    collBat.find("submitBats").append("tj_" + ftiName + "_size" + fpfx);
-    collBat.find("submitBats").append("tj_" + ftiName + "_tid" + fpfx);
     collBat.find("submitBats").append("tj_" + ftiName + "_pfpre");
     collBat.find("submitBats").append("tj_" + ftiName + "_conceptdict");
     collBat.find("submitBats").append("tj_" + ftiName + "_concept_tid");
@@ -1197,24 +1225,6 @@ PROC _tj_finalize_collection(str ftiName, BAT[str,bat] collBat, bit fforce) : vo
     var lst_fpre := str(lng(parambat.find("_last_tijahPre")) - 1);
     _tj_set_parameter(collBat, "_last_finalizedPre", lst_fpre);
     #
-    if ( false ) {
-    	# we now do hash lookups and always ensure there's a hash table on the
-	# dictionarys when querying
-        var gterm_sort := bat(_tj_TermBat(ftiName)).reverse().sort().reverse();
-        gterm_sort.access(BAT_APPEND);
-        gterm_sort.mmap(1);
-        var gtag_sort := bat(_tj_TagBat(ftiName)).reverse().sort().reverse();
-        gtag_sort.access(BAT_APPEND);
-        gtag_sort.mmap(1);
-
-        collBat.replace("_globalTerms", gterm_sort);
-        collBat.replace("_globalTags", gtag_sort);
-        var replaceBats := collBat.find("replaceBats");
-        replaceBats.insert("_globalTerms", _tj_TermBat(ftiName));
-        replaceBats.insert("_globalTags", _tj_TagBat(ftiName));
-        replaceBats.insert("_globalTags", _tj_RTagBat(ftiName));
-    
-    }
     collBat.find("submitBats").append(_tj_TermBat(ftiName));
     collBat.find("submitBats").append(_tj_TagBat(ftiName));
     collBat.find("submitBats").append(_tj_RTagBat(ftiName));
@@ -4267,7 +4277,7 @@ PROC _tj_chk_modified_fragments(str ftiName, BAT[str,bat] collBat) : BAT[void,st
 	var frag_last := fragments.count();
 	
 	var mod_frags := new(void, str).seqbase(0@0);
-	while (frag_offset < frag_last)
+	while (frag_offset <= frag_last)
 	{
 		mod_frags.append("tj_" + ftiName + "_tid" + str(frag_offset));
 		mod_frags.append("tj_" + ftiName + "_size" + str(frag_offset));
@@ -4282,111 +4292,95 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
 	var offset := oid(lng(_tj_get_parameter(collBat, "_last_finalizedPre")) + 1);
         var fragments := collBat.find("_fragments");
 	var frag_offset := int(find_lower(fragments.reverse(), offset));
-	var frag_last := fragments.count();
+	#var frag_last := fragments.count();
 	
 	var pre_tid := bat("tj_" + ftiName + "_tid" + str(frag_offset));
 	var pre_size := bat("tj_" + ftiName + "_size" + str(frag_offset));
         var tids := pre_tid.slice(lng(offset) - lng(pre_tid.seqbase()), lng(pre_tid.count() - 1));
 	var sizes := pre_size.slice(lng(offset) - lng(pre_size.seqbase()), lng(pre_size.count() - 1));
-	tids.access(BAT_WRITE);
-	sizes.access(BAT_WRITE);
-	frag_offset :+= 1;
-	while (frag_offset <= frag_last)
-	{
-	    	tids.append(bat("tj_" + ftiName + "_tid" + str(frag_offset)));
-	    	sizes.append(bat("tj_" + ftiName + "_size" + str(frag_offset)));
-		frag_offset :+= 1;
-	}
-	tids.access(BAT_READ);
-	sizes.access(BAT_READ);
        
+    	var replaceBats := collBat.find("replaceBats");
+        var submitBats := collBat.find("submitBats");
+
 	# incremental index merge
 	if (isnil(CATCH(bat("tj_" + ftiName + "_TermIndex").count()))) 
         {
-    		var replaceBats := collBat.find("replaceBats");
-		var tmp := tids.kdiff(collBat.find("_pfpre"));
-                tmp := tmp.reverse().ssort();
-		var i := mergeindex(tmp, collBat.find("_TermIndex"),
-                                         collBat.find("_Terms"),
-                                         collBat.find("_globalTerms").count() + 1);       
-                collBat.replace("_TermIndex", i.fetch(0));
-                collBat.replace("_Terms", i.fetch(1));
-	        i := nil;
-		tmp := nil;
-		replaceBats.insert("_TermIndex", "tj_" + ftiName + "_TermIndex");
-                replaceBats.insert("_Terms", "tj_" + ftiName + "_Terms");
-	        collBat.find("_TermIndex").access(BAT_READ).mmap(1);
-	        collBat.find("_Terms").access(BAT_READ).mmap(1);
-		collBat.find("submitBats").append("tj_" + ftiName + "_TermIndex");
-		collBat.find("submitBats").append("tj_" + ftiName + "_Terms");
-	        
-	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
-                tmp := tmp.reverse().ssort();
+		# handle elements 
+	        var elements := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
+                var tmp := elements.reverse().ssort();
 		var tmpsize := tmp.leftfetchjoin(sizes);
-                i := mergeindex2(tmp, tmpsize,
+                var i := mergeindex2(tmp, tmpsize,
 		                 collBat.find("_TagIndex"),
                                  collBat.find("_Tags"),
                                  collBat.find("_TagSize"),
                                  collBat.find("_globalTags").count() + 1);
-                collBat.replace("_TagIndex", i.fetch(0));
-                collBat.replace("_Tags", i.fetch(1));
-                collBat.replace("_TagSize", i.fetch(2));
+                collBat.replace("_TagIndex", i.fetch(0).access(BAT_READ).mmap(1));
+                collBat.replace("_Tags", i.fetch(1).access(BAT_READ).mmap(1));
+                collBat.replace("_TagSize", i.fetch(2).access(BAT_READ).mmap(1));
 	        i := nil;
 		tmp := nil;
 		tmpsize := nil;
 		replaceBats.insert("_TagIndex", "tj_" + ftiName + "_TagIndex");
                 replaceBats.insert("_Tags", "tj_" + ftiName + "_Tags");
                 replaceBats.insert("_TagSize", "tj_" + ftiName + "_TagSize");
-	        collBat.find("_TagIndex").access(BAT_READ).mmap(1);
-	        collBat.find("_Tags").access(BAT_READ).mmap(1);
-	        collBat.find("_TagSize").access(BAT_READ).mmap(1);
-		collBat.find("submitBats").append("tj_" + ftiName + "_TagIndex");
-		collBat.find("submitBats").append("tj_" + ftiName + "_Tags");
-		collBat.find("submitBats").append("tj_" + ftiName + "_TagSize");
+		submitBats.append("tj_" + ftiName + "_TagIndex");
+		submitBats.append("tj_" + ftiName + "_Tags");
+		submitBats.append("tj_" + ftiName + "_TagSize");
+		
+                # handle terms
+                tmp := tids.kdiff(elements);
+                elements := nil;
+                tmp := tmp.reverse().ssort();
+		i := mergeindex(tmp, collBat.find("_TermIndex"),
+                                         collBat.find("_Terms"),
+                                         collBat.find("_globalTerms").count() + 1);       
+                collBat.replace("_TermIndex", i.fetch(0).access(BAT_READ).mmap(1));
+                collBat.replace("_Terms", i.fetch(1).access(BAT_READ).mmap(1));
+	        i := nil;
+		tmp := nil;
+		replaceBats.insert("_TermIndex", "tj_" + ftiName + "_TermIndex");
+                replaceBats.insert("_Terms", "tj_" + ftiName + "_Terms");
+		submitBats.append("tj_" + ftiName + "_TermIndex");
+		submitBats.append("tj_" + ftiName + "_Terms");
+	        
         }
         else # create new index
         {       
-	        var tmp := tids.kdiff(bat("tj_" + ftiName + "_pfpre"));
-                tmp := tmp.reverse().ssort();
-	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
-	        var terms := tmp.tmark(0@0);
-	        # create _TermIndex and _Terms here
-	        termindex.persists(true).bbpname("tj_" + ftiName + "_TermIndex");
-	        terms.persists(true).bbpname("tj_" + ftiName + "_Terms");
-	        tmp := nil;
-	        termindex.access(BAT_READ);
-	        termindex.mmap(1);
-	        terms.access(BAT_READ);
-	        terms.mmap(1);
-	        termindex := nil;
-		terms := nil;
-		collBat.find("submitBats").append("tj_" + ftiName + "_TermIndex");
-		collBat.find("submitBats").append("tj_" + ftiName + "_Terms");
-	        
-	        tmp := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
-                tmp := tmp.reverse().ssort();
+		# handle elements 
+	        var elements := tids.semijoin(bat("tj_" + ftiName + "_pfpre"));
+                var tmp := elements.reverse().ssort();
 	        var tagindex := tmp.hmark(1@0).offsetindex(bat(_tj_TagBat(ftiName)).count() + 1);
 	        var tags := tmp.tmark(1@0);
-	        # create _Tags and _Tagindex here
-	        tagindex.persists(true).bbpname("tj_" + ftiName + "_TagIndex");
-	        tags.persists(true).bbpname("tj_" + ftiName + "_Tags");
 	        tmp := nil;
-	        tagindex.access(BAT_READ);
-	        tagindex.mmap(1);
-	        tags.access(BAT_READ);
-	        tags.mmap(1);
+	        # create _Tags and _Tagindex here
+	        tagindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_TagIndex");
+	        tags.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_Tags");
 	        tagindex := nil;
 		var tagsize := tags.leftfetchjoin(sizes);
 		tags := nil;
-	        tagsize.persists(true).bbpname("tj_" + ftiName + "_TagSize");
-	        tagsize.access(BAT_READ);
-	        tagsize.mmap(1);
+	        tagsize.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_TagSize");
 		tagsize := nil;
-		collBat.find("submitBats").append("tj_" + ftiName + "_TagIndex");
-		collBat.find("submitBats").append("tj_" + ftiName + "_Tags");
-		collBat.find("submitBats").append("tj_" + ftiName + "_TagSize");
-        }
+		submitBats.append("tj_" + ftiName + "_TagIndex");
+		submitBats.append("tj_" + ftiName + "_Tags");
+		submitBats.append("tj_" + ftiName + "_TagSize");
 
+		# handle terms
+                tmp := tids.kdiff(elements);
+                elements := nil;
+                tmp := tmp.reverse().ssort();
+	        var termindex := tmp.hmark(0@0).offsetindex(bat(_tj_TermBat(ftiName)).count() + 1);
+	        var terms := tmp.tmark(0@0);
+	        tmp := nil;
+	        # create _TermIndex and _Terms here
+	        termindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_TermIndex");
+	        terms.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_Terms");
+	        termindex := nil;
+		terms := nil;
+		submitBats.append("tj_" + ftiName + "_TermIndex");
+		submitBats.append("tj_" + ftiName + "_Terms");
+        }
+        
+        # always create concept table from scratch
 	var c_cid := bat("tj_" + ftiName + "_concept_tid");
 	var c_pre := bat("tj_" + ftiName + "_concept_elem");
 	var c_scr := bat("tj_" + ftiName + "_concept_score");
@@ -4397,21 +4391,15 @@ PROC _buildIRindex(str ftiName, BAT[str,bat] collBat) : void
         tmp := nil;
 	var conceptindex := offsetindex(c_cid, bat("tj_" + ftiName + "_conceptdict").count() + 1);
 	# create _ConceptIndex and _Concepts here
-	conceptindex.persists(true).bbpname("tj_" + ftiName + "_ConceptIndex");
-	concepts.persists(true).bbpname("tj_" + ftiName + "_Concepts");
-	conceptscore.persists(true).bbpname("tj_" + ftiName + "_ConceptScore");
-	conceptindex.access(BAT_READ);
-	conceptindex.mmap(1);
-	concepts.access(BAT_READ);
-	concepts.mmap(1);
-	conceptscore.access(BAT_READ);
-	conceptscore.mmap(1);
+	conceptindex.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_ConceptIndex");
+	concepts.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_Concepts");
+	conceptscore.persists(true).access(BAT_READ).mmap(1).bbpname("tj_" + ftiName + "_ConceptScore");
 	conceptindex := nil;
         concepts := nil;
 	conceptscore := nil;
-	collBat.find("submitBats").append("tj_" + ftiName + "_ConceptIndex");
-	collBat.find("submitBats").append("tj_" + ftiName + "_Concepts");
-	collBat.find("submitBats").append("tj_" + ftiName + "_ConceptScore");
+	submitBats.append("tj_" + ftiName + "_ConceptIndex");
+	submitBats.append("tj_" + ftiName + "_Concepts");
+	submitBats.append("tj_" + ftiName + "_ConceptScore");
 }
 
 ######################################
