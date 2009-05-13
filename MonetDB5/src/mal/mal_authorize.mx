@@ -242,7 +242,7 @@ AUTHinitTables() {
 				tmp = (str)BUNtail(bi, p);
 				rethrow("initTables", tmp,
 						AUTHdecypherValue(&pwd, &tmp));
-				len = strlen(pwd);
+				len = (int) strlen(pwd);
 				rethrow("initTables", tmp,
 						AUTHBackendSum(&sha1pwd, &pwd, &len));
 				GDKfree(pwd);
@@ -305,7 +305,7 @@ AUTHinitTables() {
 		 * complete fresh and new auth tables system */
 		str user = "monetdb";
 		str pw; /* will become the right hash for "monetdb" */
-		int len = strlen(user);
+		int len = (int) strlen(user);
 		bat b = bat_nil;
 		str tmp;
 		oid uid;
@@ -1280,7 +1280,7 @@ AUTHBackendSum(str *ret, str *string, int *len) {
 static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 	str tmp;
-	int len = strlen(*password) + strlen(*challenge);
+	int len = (int) (strlen(*password) + strlen(*challenge));
 	str key = alloca(sizeof(char) * len);
 	key[0] = '\0';
 	strcpy(key, *password);
