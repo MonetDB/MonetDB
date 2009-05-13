@@ -360,8 +360,10 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 int
 CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 {
-	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
-	wrd *dst = (wrd *) BUNtloc(bni, BUNfirst(bn));
+	BAT* br = NULL;
+	BATiter bi = bat_iterator(b);
+	wrd *src = (wrd *) Tloc(bn, BUNfirst(bn));
+	wrd *dst = NULL;
 	int tpe = ATOMstorage(b->ttype);
 	int lbit = *rotate;
 	int rbit = (sizeof(wrd)*8) - *rotate;
@@ -382,32 +384,47 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
 		return GDK_FAIL;
-	} else if (tpe == TYPE_bte || tpe == TYPE_chr) {
+	}
+	
+	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
+	if (br == NULL) {
+#ifdef _DEBUG_MKEY_
+		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(bn));
+#endif
+		return GDK_FAIL;
+	}
+	BATseqbase(br, bn->hseqbase);
+	dst = (wrd *) Tloc(br, BUNfirst(br));
+
+	if (tpe == TYPE_bte || tpe == TYPE_chr) {
 		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));
 		bte *end = (bte *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ *cur;
 			cur++;
 			dst++;
+			src++;
 		}
 	} else if (tpe == TYPE_sht) {
 		sht *cur = (sht *) BUNtloc(bi, BUNfirst(b));
 		sht *end = (sht *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ *cur;
 			cur++;
 			dst++;
+			src++;
 		}
 	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
 		int *cur = (int *) BUNtloc(bi, BUNfirst(b));
 		int *end = (int *) BUNtloc(bi, BUNlast(b));
 
 		while (cur < end) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *cur;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ *cur;
 			cur++;
 			dst++;
+			src++;
 		}
 	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
 		lng *cur = (lng *) BUNtloc(bi, BUNfirst(b));
@@ -421,9 +438,10 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			wrd val = t[0] ^ t[1];
 #endif
 
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
 			cur++;
 			dst++;
+			src++;
 		}
 	} else if (tpe == TYPE_str) {	/* TYPE_str */
 		var_t *cur = (var_t *) BUNtloc(bi, BUNfirst(b));
@@ -431,21 +449,23 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		str base = b->theap->base;
 
 		while (cur < end) {
-                        str src = base + *cur;
+                        str val_p = base + *cur;
 			BUN h;
 			wrd val;
-			GDK_STRHASH(src, h);
+			GDK_STRHASH(val_p, h);
 			val = (wrd) h;
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
 			cur++;
 			dst++;
+			src++;
 		}
 	} else if (b->ttype == TYPE_void) {
 		BUN p, q;
 
 		BATloop(b, p, q) {
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ *(wrd *) BUNtail(bi, p);
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ *(wrd *) BUNtail(bi, p);
 			dst++;
+			src++;
 		}
 	} else {
 		BUN (*hash)(ptr) = BATatoms[b->ttype].atomHash;
@@ -453,16 +473,25 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 
 		BATloop(b, p, q) {
 			BUN val = (*hash)(BUNtail(bi, p));
-			*dst = GDK_ROTATE(*dst, lbit, rbit, mask) ^ val;
+			*dst = GDK_ROTATE(*src, lbit, rbit, mask) ^ val;
 			dst++;
+			src++;
 		}
 	}
-	/* we return an already existing parameter BAT, so we must fix it */
-	*res = bn;
-	bn->tsorted = 0;
-	if (bn->tkey)
-		BATkey(BATmirror(bn), FALSE);
-	BBPfix(bn->batCacheid);
+
+	BATsetcount(br, BATcount(bn));
+	br->tsorted = 0;
+	if (br->tkey)
+		BATkey(BATmirror(br), FALSE);
+	if (br->htype != bn->htype) {
+		*res = VIEWcreate(bn,br);
+
+		BBPreleaseref(br->batCacheid);
+		br = NULL;
+	} else {
+		*res = br;
+	}
+
 	return GDK_SUCCEED;
 }
 @+ MAL wrapper
