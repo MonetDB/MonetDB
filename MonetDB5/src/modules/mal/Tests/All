@@ -55,13 +55,13 @@ mapi07
 mapi01
 
 
-xml00
-xml01
-xml02
-xml03
-xml04
-xml05
-xml10
+HAVE_LIBXML2?xml00
+HAVE_LIBXML2?xml01
+HAVE_LIBXML2?xml02
+HAVE_LIBXML2?xml03
+HAVE_LIBXML2?xml04
+HAVE_LIBXML2?xml05
+HAVE_LIBXML2?xml10
 
 cluster00
 
