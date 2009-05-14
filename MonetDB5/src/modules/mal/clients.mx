@@ -461,7 +461,7 @@ comment "Return hex string representation of the MD5 hash of the given string";
 @c
 str CLTmd5sum(str *ret, str *pw) {
 	str tmp;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	
 	rethrow("md5sum", tmp, AUTHMD5Sum(ret, pw, &len));
 	return(MAL_SUCCEED);
@@ -474,7 +474,7 @@ comment "Return hex string representation of the SHA-1 hash of the given string"
 @c
 str CLTsha1sum(str *ret, str *pw) {
 	str tmp;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	
 	rethrow("sha1sum", tmp, AUTHSHA1Sum(ret, pw, &len));
 	return(MAL_SUCCEED);
@@ -487,7 +487,7 @@ comment "Return hex string representation of the RIPEMD160 hash of the given str
 @c
 str CLTripemd160sum(str *ret, str *pw) {
 	str tmp;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	
 	rethrow("ripemd160sum", tmp, AUTHRIPEMD160Sum(ret, pw, &len));
 	return(MAL_SUCCEED);
@@ -500,7 +500,7 @@ comment "Return hex string representation of the SHA-2 hash with bits of the giv
 @c
 str CLTsha2sum(str *ret, str *pw, int *bits) {
 	str tmp;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	
 	rethrow("sha2sum", tmp, AUTHSHA2Sum(ret, pw, &len, bits));
 	return(MAL_SUCCEED);
@@ -513,7 +513,7 @@ comment "Return hex string representation of the currently used hash of the give
 @c
 str CLTbackendsum(str *ret, str *pw) {
 	str tmp;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	
 	rethrow("sha2sum", tmp, AUTHBackendSum(ret, pw, &len));
 	return(MAL_SUCCEED);
@@ -618,7 +618,7 @@ str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc) {
 	str algo = "SHA1";
 	oid id;
 	str pwd;
-	int len = strlen(*pw);
+	int len = (int) strlen(*pw);
 	(void) ret;
 
 	rethrow("checkPermission", tmp,
