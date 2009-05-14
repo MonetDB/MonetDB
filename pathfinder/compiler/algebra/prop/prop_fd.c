@@ -176,6 +176,7 @@ infer_functional_dependencies (PFla_op_t *n)
             break;
 
         case la_attach:
+            bulk_add_fds (fds, L(n));
             /* add for all input columns a FD (col -> res) */
             for (unsigned int i = 0; i <  L(n)->schema.count; i++)
                 add_fd (fds, L(n)->schema.items[i].name, n->sem.attach.res);
@@ -245,11 +246,6 @@ infer_functional_dependencies (PFla_op_t *n)
         case la_difference:
         case la_distinct:
         case la_fun_1to1:
-        case la_num_eq:
-        case la_num_gt:
-        case la_bool_and:
-        case la_bool_or:
-        case la_to:
         case la_rowid:
         case la_type:
         case la_type_assert:
@@ -261,6 +257,27 @@ infer_functional_dependencies (PFla_op_t *n)
         case la_proxy_base:
         case la_dummy:
             bulk_add_fds (fds, L(n));
+            break;
+
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_to:
+            bulk_add_fds (fds, L(n));
+
+            /* if a column can describe the inputs
+               it can also describe the output */
+            for (unsigned int i = 0; i < L(n)->schema.count; i++)
+                if (find_fd (fds,
+                             L(n)->schema.items[i].name,
+                             n->sem.binary.col1) &&
+                    find_fd (fds,
+                             L(n)->schema.items[i].name,
+                             n->sem.binary.col2))
+                    add_fd (fds,
+                            L(n)->schema.items[i].name,
+                            n->sem.binary.res);
             break;
 
         case la_project:
