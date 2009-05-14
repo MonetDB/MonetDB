@@ -1013,6 +1013,20 @@ bm_subcommit(BAT *list, BAT *catalog, BAT *extra, int debug)
 	return res;
 }
 
+static void
+logger_fatal(const char *format, const char *arg1, const char *arg2, const char *arg3)
+{
+	char *buf;
+
+	GDKerror(format, arg1, arg2, arg3);
+	GDKlog(format, arg1, arg2, arg3);
+	if ((buf = GDKerrbuf) != NULL) {
+		fprintf(stderr, "%s", buf);
+		fflush(stderr);
+	}
+	GDKexit(1);
+}
+
 static logger *
 logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precommit_fptr phandler)
 {
@@ -1024,11 +1038,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	log_bid seqs = 0;
 	bat catalog;
 
-	snprintf(bak, BUFSIZ, "%s_catalog", fn);
-	catalog = BBPindex(bak);
-
 	if (lg == NULL)
 		return NULL;
+
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -1050,8 +1062,32 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	lg->end = 0;
 	lg->catalog = NULL;
 
+	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
+	snprintf(bak, BUFSIZ, "%s.bak", filename);
+
+	/* try to open logfile, or failing that, its backup
+	   we need to know whether this file exists when checking the
+	   database consistency later on */
+	if ((fp = fopen(filename, "r")) == NULL &&
+	    (fp = fopen(bak, "r")) != NULL) {
+		fclose(fp);
+		GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL);
+		fp = fopen(filename, "r");
+	}
+
+	snprintf(bak, BUFSIZ, "%s_catalog", fn);
+	catalog = BBPindex(bak);
+
 	if (catalog == 0) {
 		log_bid bid = 0;
+
+		/* catalog does not exist, so the log file also shouldn't exist */
+		if (fp != NULL) {
+			logger_fatal("logger_new: there is no logger catalog, but there is a log file.\n"
+				     "Are you sure you are using the correct combination of database\n"
+				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n", fn, 0, 0);
+			goto error;
+		}
 
 		lg->catalog = logbat_new(TYPE_int, TYPE_str, BATSIZE);
 		if (debug)
@@ -1064,8 +1100,25 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		BATmode(lg->catalog, PERSISTENT);
 		BBPrename(lg->catalog->batCacheid, bak);
 
-		if (bm_subcommit(lg->catalog, lg->catalog, NULL, lg->debug) != 0)
-			return NULL;
+		if (!GDKcreatedir(filename)) {
+			logger_fatal("logger_new: cannot create directory for log file %s\n", filename, 0, 0);
+			goto error;
+		}
+		if ((fp = fopen(filename, "w")) == NULL) {
+			logger_fatal("logger_new: cannot create log file %s\n", filename, 0, 0);
+			goto error;
+		}
+		fprintf(fp, "%06d\n\n", lg->version);
+		lg->id ++;
+		fprintf(fp, LLFMT "\n", lg->id);
+		fclose(fp);
+		fp = NULL;
+
+		if (bm_subcommit(lg->catalog, lg->catalog, NULL, lg->debug) != 0) {
+			/* cannot commit catalog, so remove log */
+			unlink(filename);
+			goto error;
+		}
 	} else {
 		/* find the persistent catalog. As non persistent bats
 		   require a logical reference we also add a logical 
@@ -1074,6 +1127,17 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 		BAT *b = BATdescriptor(catalog);
 		BATiter bi = bat_iterator(b);
 
+		/* the catalog exists, and so should the log file */
+		if (fp == NULL) {
+			logger_fatal("logger_new: there is a logger catalog, but no log file.\n"				 "Are you sure you are using the correct combination of database\n"
+				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n"
+				     "If you have done a recent update of the server, it may be that your\n"
+				     "logs are in an old location.  You should then either use\n"
+				     "--set %s_logdir=<path to old log directory> or move the old log\n"
+				     "directory to the new location (%s).\n",
+				     fn, fn, lg->dir);
+			goto error;
+		}
 		lg->catalog = b;
 		BATloop(b, p, q) {
 			bat bid = *(log_bid *) BUNhead(bi, p);
@@ -1113,46 +1177,23 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	snprintf(bak, BUFSIZ, "%s_freed", fn);
 	BBPrename(lg->freed->batCacheid, bak);
 
-	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
-
-	snprintf(bak, BUFSIZ, "%s.bak", filename);
-
-	if ((fp = fopen(filename, "r")) != NULL) {
-		if (check_version(lg, fp))
-			return NULL;
+	if (fp != NULL) {
+		if (check_version(lg, fp)) {
+			goto error;
+		}
 
 		lg->changes++;
 		logger_readlogs(lg, fp, filename);
-	} else if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
-		GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL);
-
-		if ((fp = fopen(filename, "r")) != NULL) {
-			if (check_version(lg, fp))
-				return NULL;
-
-			lg->changes++;
-			logger_readlogs(lg, fp, filename);
-		}
-	} else if ((fp = fopen(filename, "w")) == NULL) {
-		if (!GDKcreatedir(filename)) {
-			GDKerror("logger: could not create log directory %s\n", lg->dir);
-
-			return NULL;
-		} else if ((fp = fopen(filename, "w")) == NULL) {
-			GDKerror("logger: could not create file %s\n", filename);
-			return NULL;
-		}
-		fprintf(fp, "%06d\n\n", lg->version);
-		lg->id ++;
-		fprintf(fp, LLFMT "\n", lg->id);
-	} else {
-		fprintf(fp, "%06d\n\n", lg->version);
-		lg->id ++;
-		fprintf(fp, LLFMT "\n", lg->id);
+		fp = NULL;
 	}
-	fclose(fp);
 	return lg;
+  error:
+	if (fp)
+		fclose(fp);
+	if (lg)
+		GDKfree(lg);
+	return NULL;
 }
 
 logger *
