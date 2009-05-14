@@ -132,7 +132,7 @@ logListener(void *x)
 	char buf[8096];
 	char *p, *q;
 	char mytime[20];
-	time_t now, lastout, lasterr;
+	time_t now;
 	struct tm *tmp;
 	char equalouterr;
 	struct timeval tv;
@@ -156,8 +156,6 @@ logListener(void *x)
 	/* skip the first entry, we don't care about it in the normal loop */
 	d = d->next;
 
-	lastout = 0;
-	lasterr = 0;
 	do {
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
