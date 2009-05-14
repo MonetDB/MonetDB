@@ -464,6 +464,11 @@ PFalg_collist_t * PFprop_keys_to_collist (const PFprop_t *prop);
  */
 void PFprop_infer_key_with_guide (PFla_op_t *root);
 
+/**
+ * Infer key and functional dependency properties for a DAG rooted in root.
+ */
+void PFprop_infer_key_and_fd (PFla_op_t *root);
+
 /* ---------------- functional dependency property accessor ---------------- */
 
 /**

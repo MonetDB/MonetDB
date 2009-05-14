@@ -221,7 +221,7 @@ find_guide_max_rec (unsigned int count, PFguide_tree_t **guides,
  * Infer key property of a given node @a n; worker for prop_infer().
  */
 static void
-infer_key (PFla_op_t *n, bool with_guide_info)
+infer_key (PFla_op_t *n, bool with_guide_info, bool with_fd_info)
 {
     /* copy key properties of children into current node */
     if (L(n)) copy (n->prop->l_keys, L(n)->prop->keys);
@@ -493,12 +493,13 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                 /* if distinct works on a single column,
                    this column is key afterwards. */
                 union_ (n->prop->keys, n->schema.items[0].name);
-            else {
+            else
                 /* key columns stay the same */
                 copy (n->prop->keys, L(n)->prop->keys);
-#if 0
-                /* this property inference is disabled
-                   as long as the scenario is not active */
+
+            if (with_fd_info)
+                /* check if all columns can be described by a single
+                   column */
                 for (unsigned int i = 0; i < n->schema.count; i++) {
                     bool match = true;
                     for (unsigned int j = 0; j < n->schema.count; j++)
@@ -510,8 +511,6 @@ infer_key (PFla_op_t *n, bool with_guide_info)
                     if (match)
                         union_ (n->prop->keys, n->schema.items[i].name);
                 }
-#endif
-            }
             break;
 
         case la_fun_1to1:
@@ -808,7 +807,7 @@ infer_key (PFla_op_t *n, bool with_guide_info)
 
 /* worker for PFprop_infer_key */
 static void
-prop_infer (PFla_op_t *n, bool with_guide_info)
+prop_infer (PFla_op_t *n, bool with_guide_info, bool with_fd_info)
 {
     assert (n);
 
@@ -818,7 +817,7 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
 
     /* infer properties for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prop_infer (n->child[i], with_guide_info);
+        prop_infer (n->child[i], with_guide_info, with_fd_info);
 
     n->bit_dag = true;
 
@@ -845,7 +844,24 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
     }
 
     /* infer information on key columns */
-    infer_key (n, with_guide_info);
+    infer_key (n, with_guide_info, with_fd_info);
+}
+
+/**
+ * Worker for key property inference.
+ */
+static void
+prop_infer_key (PFla_op_t *root, bool guides, bool fds)
+{
+    /* infer cardinalities to discover more key columns */
+    PFprop_infer_card (root);
+    /* use the cheaper domain inference that only infers
+       domains for columns of the native type */
+    PFprop_infer_nat_dom (root);
+    PFprop_infer_level (root);
+
+    prop_infer (root, guides, fds);
+    PFla_dag_reset (root);
 }
 
 /**
@@ -854,32 +870,26 @@ prop_infer (PFla_op_t *n, bool with_guide_info)
 void
 PFprop_infer_key (PFla_op_t *root)
 {
-    /* infer cardinalities to discover more key columns */
-    PFprop_infer_card (root);
-    /* use the cheaper domain inference that only infers
-       domains for columns of the native type */
-    PFprop_infer_nat_dom (root);
-    PFprop_infer_level (root);
-
-    prop_infer (root, false);
-    PFla_dag_reset (root);
+    prop_infer_key (root, false, false);
 }
 
 /**
- * Infer key property for a DAG rooted in root
+ * Infer the key properties assuming that guides have been already inferred.
  */
 void
 PFprop_infer_key_with_guide (PFla_op_t *root)
 {
-    /* infer cardinalities to discover more key columns */
-    PFprop_infer_card (root);
-    /* use the cheaper domain inference that only infers
-       domains for columns of the native type */
-    PFprop_infer_nat_dom (root);
-    PFprop_infer_level (root);
+    prop_infer_key (root, true, false);
+}
 
-    prop_infer (root, true);
-    PFla_dag_reset (root);
+/**
+ * Infer key and functional dependency properties for a DAG rooted in root.
+ */
+void
+PFprop_infer_key_and_fd (PFla_op_t *root)
+{
+    PFprop_infer_functional_dependencies (root);
+    prop_infer_key (root, false, true);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

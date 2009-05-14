@@ -481,8 +481,8 @@ PFalgopt_join_graph (PFla_op_t *root, PFguide_list_t *guide_list)
     /* PHASE 1: Seed a distinct operator on top of the query plan
                 if possible to remove all other distinct operators. */
 
-    /* Infer key property first */
-    PFprop_infer_key (root);
+    /* Infer key and functional dependency properties first */
+    PFprop_infer_key_and_fd (root);
 
     /* Place a distinct operator on top if the query represents a join
        graph whose sort criterion is also the output (check for keyness
