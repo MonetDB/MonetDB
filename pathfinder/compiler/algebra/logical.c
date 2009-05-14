@@ -103,6 +103,7 @@ la_op_leaf (PFla_op_kind_t kind)
     ret->sql_ann       = NULL;
     ret->prop          = PFprop ();
     ret->node_id       = 0;
+    ret->refctr        = 0;
 
     /* bits required to allow DAG traversals */
     ret->bit_reset     = 0;
