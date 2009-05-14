@@ -260,7 +260,7 @@ modify_binary_op (PFla_op_t *p,
  * as far as possible.
  */
 static bool
-opt_rank (PFla_op_t *p)
+opt_rank (PFla_op_t *p, bool rowrank_check)
 {
     bool modified = false;
     assert (p);
@@ -273,7 +273,37 @@ opt_rank (PFla_op_t *p)
 
     /* apply optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        modified = opt_rank (p->child[i]) || modified;
+        modified = opt_rank (p->child[i], rowrank_check) || modified;
+
+    if (rowrank_check) {
+        /* In case we are trying to push up rowranks
+           we don't want to split them and thus allow
+           only pushing whenever no split may occur. */
+        if (L(p) && is_rr (L(p)) && PFprop_refctr (p) != 1)
+            return modified;
+        if (R(p) && is_rr (R(p)) && PFprop_refctr (p) != 1)
+            return modified;
+
+        /* For rowrank operators we are not allowed to push
+           the operator through a selection as missing rows
+           lead to a different numbering. */
+        switch (p->kind) {
+            case la_eqjoin:
+            case la_thetajoin:
+            case la_semijoin:
+            case la_select:
+            case la_pos_select:
+            case la_intersect:
+            case la_difference:
+            case la_step_join:
+            case la_guide_step_join:
+            case la_doc_index_join:
+                return modified;
+
+            default:
+                break;
+        }
+    }
 
     /**
      * In the following action code we try to propagate rank
@@ -1177,21 +1207,29 @@ opt_rank (PFla_op_t *p)
  * that is able to cope with invisible orderings.
  */
 static void
-intro_internal_rank (PFla_op_t *p)
+intro_internal_rank (PFla_op_t *p, PFla_op_kind_t rank_kind)
 {
     unsigned int i;
 
     /* rewrite each node only once */
     if (SEEN(p))
         return;
+    else
+        SEEN(p) = true;
 
     /* traverse children */
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        intro_internal_rank (p->child[i]);
+        intro_internal_rank (p->child[i], rank_kind);
+
+    /* In case we are trying to push up rowranks
+       we don't want to split them and thus allow
+       only pushing whenever no split may occur. */
+    if (p->kind == la_rowrank && PFprop_refctr(p) != 1)
+        return;
 
     /* replace original rank operators by the internal
        variant */
-    if (p->kind == la_rank) {
+    if (p->kind == rank_kind) {
         PFarray_t *sortby = PFarray (sizeof (sort_struct),
                                      PFord_count (p->sem.sort.sortby));
 
@@ -1205,8 +1243,6 @@ intro_internal_rank (PFla_op_t *p)
 
         *p = *rank_opt (L(p), p->sem.sort.res, sortby);
     }
-
-    SEEN(p) = true;
 }
 
 /**
@@ -1216,7 +1252,10 @@ intro_internal_rank (PFla_op_t *p)
  * expected column names are visible.
  */
 static void
-remove_internal_rank (PFla_op_t *p)
+remove_internal_rank (PFla_op_t *p,
+                      PFla_op_t * (*rank_op) (const PFla_op_t *,
+                                              PFalg_col_t,
+                                              PFord_ordering_t))
 {
     PFalg_col_t  cur_col;
     unsigned int i;
@@ -1227,7 +1266,7 @@ remove_internal_rank (PFla_op_t *p)
 
     /* traverse children */
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        remove_internal_rank (p->child[i]);
+        remove_internal_rank (p->child[i], rank_op);
 
     /* replace the intermediate representation of the rank */
     if (p->kind == la_internal_op) {
@@ -1249,7 +1288,7 @@ remove_internal_rank (PFla_op_t *p)
             proj[i] = PFalg_proj (cur_col, cur_col);
         }
 
-        *p = *PFla_project_ (rank (L(p), p->sem.rank_opt.res, sortby),
+        *p = *PFla_project_ (rank_op (L(p), p->sem.rank_opt.res, sortby),
                              p->schema.count,
                              proj);
     }
@@ -1264,21 +1303,46 @@ remove_internal_rank (PFla_op_t *p)
 PFla_op_t *
 PFalgopt_rank (PFla_op_t *root)
 {
+    /* rowrank */
+
+    /* collect the number of parent references
+       to avoid splitting up rowrank operators */
+    PFprop_infer_refctr (root);
+
+    /* Replace rowrank operator by the internal rank
+       representation needed for this optimization phase. */
+    intro_internal_rank (root, la_rowrank);
+    PFla_dag_reset (root);
+
+    /* Traverse the DAG bottom up and look for op-rowrank
+       operator pairs. As long as we find a rewrite we start
+       a new traversal. */
+    while (opt_rank (root, true))
+        PFla_dag_reset (root);
+    PFla_dag_reset (root);
+
+    /* Replace the internal rank representation by
+       normal rowranks. */
+    remove_internal_rank (root, PFla_rowrank);
+    PFla_dag_reset (root);
+
+    /* rank */
+
     /* Replace rank operator by the internal rank
        representation needed for this optimization phase. */
-    intro_internal_rank (root);
+    intro_internal_rank (root, la_rank);
     PFla_dag_reset (root);
 
     /* Traverse the DAG bottom up and look for op-rank
        operator pairs. As long as we find a rewrite we start
        a new traversal. */
-    while (opt_rank (root))
+    while (opt_rank (root, false))
         PFla_dag_reset (root);
     PFla_dag_reset (root);
 
     /* Replace the internal rank representation by
        normal ranks. */
-    remove_internal_rank (root);
+    remove_internal_rank (root, PFla_rank);
     PFla_dag_reset (root);
 
     return root;
