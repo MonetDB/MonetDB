@@ -817,6 +817,46 @@ shrink_order_list (PFla_op_t *p)
     return modified;
 }
 
+/**
+ * Check if two comparison operators work on the same input.
+ */
+static bool
+check_comp_semantics (PFla_op_t *op1, PFla_op_t *op2)
+{
+    assert (op1->kind == la_num_eq || op1->kind == la_num_gt);
+    assert (op2->kind == la_num_eq || op2->kind == la_num_gt);
+
+    if (op1->sem.binary.col1 != op2->sem.binary.col1) {
+        if (!PFprop_const (op1->prop, op1->sem.binary.col1) ||
+            !PFprop_const (op2->prop, op2->sem.binary.col1) ||
+            !PFalg_atom_comparable (
+                 PFprop_const_val (op1->prop, op1->sem.binary.col1),
+                 PFprop_const_val (op2->prop, op2->sem.binary.col1)) ||
+            PFalg_atom_cmp (
+                 PFprop_const_val (op1->prop, op1->sem.binary.col1),
+                 PFprop_const_val (op2->prop, op2->sem.binary.col1)))
+            return false;
+        /* else columns match */
+    }
+    /* else columns match */
+
+    if (op1->sem.binary.col2 != op2->sem.binary.col2) {
+        if (!PFprop_const (op1->prop, op1->sem.binary.col2) ||
+            !PFprop_const (op2->prop, op2->sem.binary.col2) ||
+            !PFalg_atom_comparable (
+                 PFprop_const_val (op1->prop, op1->sem.binary.col2),
+                 PFprop_const_val (op2->prop, op2->sem.binary.col2)) ||
+            PFalg_atom_cmp (
+                 PFprop_const_val (op1->prop, op1->sem.binary.col2),
+                 PFprop_const_val (op2->prop, op2->sem.binary.col2)))
+            return false;
+        /* else columns match */
+    }
+    /* else columns match */
+
+    return true;
+}
+
 /* worker for PFalgopt_complex */
 static bool
 opt_complex (PFla_op_t *p)
@@ -1664,6 +1704,39 @@ opt_complex (PFla_op_t *p)
             }
         }   break;
 
+        case la_num_eq:
+        case la_num_gt:
+            /* Merge adjacent identical comparison operators.
+               (These duplicate operators are a side-product
+                of pushing down equi-joins.) */
+            if (L(p)->kind == p->kind &&
+                check_comp_semantics (p, L(p))) {
+                PFalg_proj_t *proj = PFalg_proj_create (p->schema);
+                /* replace result column by the result column
+                   of the lower comparison operator */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (proj[i].new == p->sem.binary.res) {
+                        proj[i].old = L(p)->sem.binary.res;
+                        break;
+                    }
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+            }
+            else if ((L(p)->kind == la_select ||
+                      L(p)->kind == la_attach) &&
+                     LL(p)->kind == p->kind &&
+                     check_comp_semantics (p, LL(p))) {
+                PFalg_proj_t *proj = PFalg_proj_create (p->schema);
+                /* replace result column by the result column
+                   of the lower comparison operator */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (proj[i].new == p->sem.binary.res) {
+                        proj[i].old = LL(p)->sem.binary.res;
+                        break;
+                    }
+                *p = *PFla_project_ (L(p), p->schema.count, proj);
+            }
+            break;
+
         /* to get rid of the operator 'and' and to split up
            different conditions we can introduce additional
            select operators above comparisons whose required
@@ -1680,6 +1753,22 @@ opt_complex (PFla_op_t *p)
                           p->sem.binary.res,
                           PFalg_lit_bln (true));
                 modified = true;
+            }
+            break;
+
+        case la_min:
+        case la_max:
+        case la_avg:
+            /* In case the aggregated value is the same for all rows in a group
+               we can replace the aggregate by a duplicate elimination. */
+            if (p->sem.aggr.part &&
+                PFprop_fd (L(p)->prop, p->sem.aggr.part, p->sem.aggr.col)) {
+                *p = *distinct (
+                          project (
+                              L(p),
+                              PFalg_proj (p->sem.aggr.res, p->sem.aggr.col),
+                              PFalg_proj (p->sem.aggr.part, p->sem.aggr.part)));
+                break;
             }
             break;
 
