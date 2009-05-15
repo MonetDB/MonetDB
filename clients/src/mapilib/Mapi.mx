@@ -834,6 +834,16 @@ output returned from the server.
 _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 # endif
 #endif
+
+#if defined(HAVE_OPENSSL) && defined(_WIN64)
+/* OpenSSL has an interface bug in SSL_set_fd which affects 64 bit Windows */
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_NUMBER <= 0x10000002L
+/* the bug still exists in version 1.0.0-beta2 */
+#undef HAVE_OPENSSL
+#endif
+#endif
+
 #ifdef HAVE_OPENSSL
 # include <openssl/md5.h>
 # include <openssl/sha.h>
@@ -2200,7 +2210,7 @@ connect_to_server(Mapi mid)
 
 			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 			free(errstr);
-			close(s);
+			closesocket(s);
 			return mid->error;
 		}
 		if (!SSL_set_fd(ssl, s)) {
@@ -2209,7 +2219,7 @@ connect_to_server(Mapi mid)
 			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 			free(errstr);
 			SSL_free(ssl);
-			close(s);
+			closesocket(s);
 			return mid->error;
 		}
 		SSL_set_connect_state(ssl);
@@ -2234,7 +2244,7 @@ connect_to_server(Mapi mid)
 			default:
 				/* some error occurred */
 				SSL_free(ssl);
-				close(s);
+				closesocket(s);
 				errstr = ssl_error(err, ret);
 				mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
 				free(errstr);
