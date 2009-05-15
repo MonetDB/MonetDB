@@ -60,6 +60,7 @@ PFla_op_t * PFalgopt_req_node (PFla_op_t *root);
 PFla_op_t * PFalgopt_reqval (PFla_op_t *root);
 PFla_op_t * PFalgopt_rank (PFla_op_t *root);
 PFla_op_t * PFalgopt_set (PFla_op_t *root);
+PFla_op_t * PFalgopt_step_join (PFla_op_t *root);
 PFla_op_t * PFalgopt_thetajoin (PFla_op_t *root);
 
 #endif  /* ALGOPT_H */

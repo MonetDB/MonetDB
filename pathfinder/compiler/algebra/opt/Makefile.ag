@@ -52,5 +52,6 @@ lib_opt = {
                 opt_reqval.c \
                 opt_rank.c \
                 opt_set.c \
+                opt_step_join.c \
                 opt_thetajoin.c
 }

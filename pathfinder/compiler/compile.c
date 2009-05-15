@@ -154,13 +154,13 @@ PFstate_init (PFstate_t *status)
 
     status->standoff_axis_steps = false;
 
-    status->opt_alg             = "OIKCG_VG_JISI_GECSVR_OK_N"
-                                       "}MT{JISI_GYECSVR_"
-                                       "}MT{JISI_OK_GYECSVR_"
+    status->opt_alg             = "OIKCG_VG_JIS_I_GECSVR_OK_N"
+                                       "}MT{JISAI_GYECSVR_"
+                                       "}MT{JISAI_OK_GYECSVR_"
                                        "DC_GP";
-    status->opt_sql             = "OIKCG_VG_JISI_GECSVR_OK_N"
-                                    "QU_}MT{JISI_GYECSVR_"
-                                    "QU_}MT{JISI_OK_GYECSVR_"
+    status->opt_sql             = "OIKCG_VG_JIS_I_GECSVR_OK_N"
+                                    "QU_}MT{JISAI_GYECSVR_"
+                                    "QU_}MT{JISAI_OK_GYECSVR_"
                                     "QU_CGP";
 
     status->format              = NULL;

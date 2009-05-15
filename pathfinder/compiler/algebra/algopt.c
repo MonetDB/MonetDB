@@ -138,17 +138,15 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
             fputc (*opt_args, stderr);
 
         switch (*opt_args) {
-            case 'A': /* disabled */
-                /*
+            case 'A':
                 tm = PFtimer_start ();
 
-                root = PFalgopt_card (root);
+                root = PFalgopt_step_join (root);
 
                 tm = PFtimer_stop (tm);
                 if (timing)
-                    PFlog ("   cardinality optimization:\t    %s",
+                    PFlog ("   step-join push-down:\t\t    %s",
                            PFtimer_str (tm));
-                */
                 break;
 
             case 'C':
@@ -177,19 +175,6 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                            PFtimer_str (tm));
                 break;
                 
-            case 'Y':
-                /*REMOVE_PROXIES("MonetDB specific optimization")*/
-
-                tm = PFtimer_start ();
-
-                root = PFalgopt_projection (root);
-
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("   project optimizations:  %s",
-                           PFtimer_str (tm));
-                break;
-
             case 'E':
                 MAP_UNQ_NAMES("common subexpression elimination")
                 REMOVE_PROXIES("common subexpression elimination")
@@ -373,6 +358,19 @@ PFalgopt (PFla_op_t *root, bool timing, PFguide_list_t* guide_list,
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("   required value optimization:\t    %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'Y':
+                REMOVE_PROXIES("projection removal")
+
+                tm = PFtimer_start ();
+
+                root = PFalgopt_projection (root);
+
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("   projection removal:\t\t    %s",
                            PFtimer_str (tm));
                 break;
 
