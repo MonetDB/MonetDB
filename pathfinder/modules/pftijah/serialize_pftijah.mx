@@ -104,23 +104,9 @@ int dbat_init(const char* name, dbat* dbat, BAT* b) {
 
 
 int dbat_finalize(dbat* dbat, oid topidx) {
-        void* top;
         BAT* b = dbat->bat;
-        
-	topidx -= dbat->seqbase;
-        oid bottomTop = topidx;
-        switch( b->ttype ) {
-         case TYPE_int :
-                top = &dbat->cast.intCAST[bottomTop];
-                break;
-         case TYPE_oid:
-                top = &dbat->cast.oidCAST[bottomTop];
-                break;
-         default:
-                GDKerror("dbat_finalize: bad ttype\n");
-                return -1;
-        }
-        //BATsetcount(b, (((char*)top)-b->T->heap.base)/Tsize(b) - BUNfirst(b));
+	
+        topidx -= dbat->seqbase;
         BATsetcount(b, topidx);
         b->tsorted  = 0;
 	b->batDirty = TRUE; /* VERY important this one */
