@@ -4991,7 +4991,7 @@ int CMDpf2tijah_node(BAT** res, bit* preserve_head, BAT* doc_name, BAT* doc_firs
         return GDK_SUCCEED;
 }
 
-int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
+int CMDoffsetindex ( BAT** result, BAT* tid, wrd* res_size)
 {
 	char *name = "TJoffsetindex";
 	BAT *res = NULL;
@@ -5013,13 +5013,19 @@ int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size)
         	GDKerror("%s: index-bat must have a dense head.\n", name);
     		return GDK_FAIL;
 	}
-		
+
+	if (*res_size < 0 || *res_size > (wrd) BUN_MAX)
+	{
+        	GDKerror("%s: res_size out of range.\n", name);
+    		return GDK_FAIL;
+	}
+
 	/* ---------------------------- inits ---------------------------------- */
 
 	res = BATnew(TYPE_void, TYPE_oid, *res_size);
         if (res == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, *res_size);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, (BUN) *res_size);
             	return(GDK_FAIL);
         }
 	sdst = dst = (oid*)Tloc(res, BUNlast(res));
@@ -5069,7 +5075,7 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, wrd* 
 	BAT *res = NULL;
 	BAT *newindex = NULL;
 	BAT *newpre = NULL;
-	wrd i,j, ressize = 0;
+	BUN i,j, ressize = 0;
         BUN lst_tidpre, lst_oldindex, lst_copy, lst_res, cur_tidpre, cur_oldindex, cur_oldpre;
         oid *s_newindex, *lst_newindex, *s_newpre, *lst_newpre;
 	oid tid;
@@ -5086,13 +5092,19 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, wrd* 
     		return GDK_FAIL;
 	}
 
+	if (*indsize < 0 || *indsize > (wrd) BUN_MAX)
+	{
+        	GDKerror("%s: indsize out of range.\n", name);
+    		return GDK_FAIL;
+	}
+
 	/* ---------------------------- inits ---------------------------------- */
 
 	ressize = 2;
 	res = BATnew(TYPE_void, TYPE_bat, ressize);
         if (res == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	return(GDK_FAIL);
         }
 	
@@ -5100,7 +5112,7 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, wrd* 
 	newpre = BATnew(TYPE_void, TYPE_oid, ressize);
         if (newpre == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	BATfree(res);
                 return(GDK_FAIL);
         }
@@ -5109,7 +5121,7 @@ int CMDmergeindex ( BAT** result, BAT* tidpre, BAT* oldindex, BAT* oldpre, wrd* 
 	newindex = BATnew(TYPE_void, TYPE_oid, ressize);
         if (newindex == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	BATfree(res);
             	BATfree(newpre);
             	return(GDK_FAIL);
@@ -5206,7 +5218,7 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	BAT *newindex = NULL;
 	BAT *newpre = NULL;
 	BAT *newsize = NULL;
-	wrd i,j, ressize = 0;
+	BUN i,j, ressize = 0;
         BUN lst_tidpre, lst_oldindex, lst_copy, lst_res, cur_tidpre, cur_tidsize, cur_oldindex, cur_oldpre, cur_oldsize;
         BATiter tidprei, tidsizei, oldindexi, oldprei, oldsizei;
         oid *s_newindex, *lst_newindex, *s_newpre, *lst_newpre;
@@ -5227,13 +5239,19 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
     		return GDK_FAIL;
 	}
 
+if (*indsize < 0 || *indsize > (wrd) BUN_MAX)
+	{
+        	GDKerror("%s: indsize out of range.\n", name);
+    		return GDK_FAIL;
+	}
+
 	/* ---------------------------- inits ---------------------------------- */
 
 	ressize = 3;
 	res = BATnew(TYPE_void, TYPE_bat, ressize);
         if (res == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	return(GDK_FAIL);
         }
 	
@@ -5241,7 +5259,7 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	newpre = BATnew(TYPE_void, TYPE_oid, ressize);
         if (newpre == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	BATfree(res);
                 return(GDK_FAIL);
         }
@@ -5249,7 +5267,7 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	newsize = BATnew(TYPE_void, TYPE_int, ressize);
         if (newsize == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,int] of size "OIDFMT".\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,int] of size "BUNFMT".\n", name, ressize);
             	BATfree(res);
             	BATfree(newpre);
             	return(GDK_FAIL);
@@ -5259,7 +5277,7 @@ int CMDmergeindex2 ( BAT** result, BAT* tidpre, BAT* tidsize, BAT* oldindex, BAT
 	newindex = BATnew(TYPE_void, TYPE_oid, ressize);
         if (newindex == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "OIDFMT".\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[void,oid] of size "BUNFMT".\n", name, ressize);
             	BATfree(res);
             	BATfree(newpre);
             	BATfree(newsize);
@@ -5376,10 +5394,10 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	BAT *res = NULL;
         oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
 
-	int ressize = 0;
+	BUN ressize = 0;
 	oid t, *ind;
 	BUN p, q;
-        int j, i = 0;
+        BUN j, i = 0;
 	/* bit one_tid = FALSE; */
     
 	/* --------------------------- checks ---------------------------------- */
@@ -5401,7 +5419,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	ind = (oid*)GDKmalloc(sizeof(oid) * BATcount(tid) * 3);
         if (ind == NULL) 
         { 
-            	GDKerror("%s: could not allocate a offset stack of size %d.\n", name, BATcount(tid));
+            	GDKerror("%s: could not allocate a offset stack of size "BUNFMT".\n", name, BATcount(tid));
             	return(GDK_FAIL);
         }
 	
@@ -5417,7 +5435,7 @@ int CMDindexfetchjoin ( BAT** result, BAT* tid, BAT* index, BAT* pre )
 	res = BATnew(TYPE_oid, TYPE_oid, ressize);
         if (res == NULL) 
         { 
-            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size %d.\n", name, ressize);
+            	GDKerror("%s: could not allocate a result BAT[oid,oid] of size "BUNFMT".\n", name, ressize);
 	        GDKfree(ind);
             	return(GDK_FAIL);
         }
@@ -5952,7 +5970,7 @@ int CMDtreemergejoin_sort_unnested(BAT **result, BAT *Astart, BAT *nid_size, BAT
     BATiter Ai, Di;
     oid D_cur_pre;
     int *size;
-    int free;	
+    BUN free;	
     oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
@@ -6056,7 +6074,7 @@ int CMDtreemergejoin_unnested_nid(BAT **result, BAT *Astart, BAT *nid_size, BAT 
     BATiter Ai, Di;
     oid D_cur_pre;
     int *size;
-    int free;	
+    BUN free;	
     oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
@@ -6161,7 +6179,7 @@ int CMDtreemergejoin_unnested_pre(BAT **result, BAT *Astart, BAT *pre_size, BAT 
         A_cur, A_last;
     oid D_cur_pre;
     int *size;
-    int free;	
+    BUN free;	
     oid *sdst = NULL, *hdst = NULL, *tdst = NULL;
     
     /* ------------------------------- checks ---------------------------------------- */
