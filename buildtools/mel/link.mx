@@ -117,7 +117,7 @@ Link::gen_module(ostream &o, const Module &d)
 }
 
 static char *
-basename(char *filename)
+mybasename(char *filename)
 {
 	char *p, *sep, *dot;
 
@@ -181,7 +181,7 @@ ostream &
 Link::gen_dependency(ostream &o, const Dependency &d)
 {
 	d.Module ()->print(this, o);
-	char *bn = basename(d.filename());
+	char *bn = mybasename(d.filename());
 
 	if (monet_mod_path) {
 		char *ldir = NULL;
