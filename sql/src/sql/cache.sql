@@ -19,3 +19,6 @@
 create function query_cache () 
 	returns table (query string, count int) 
 	external name sql.dump_cache;
+
+--create function query_clear_cache()
+--	external name sql.clear_cache;
