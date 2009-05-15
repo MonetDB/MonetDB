@@ -143,12 +143,16 @@ PFprop_infer (bool card, bool const_, bool set,
         PFprop_infer_lineage (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
-    if (fds)
+    if (fds && !key)
         PFprop_infer_functional_dependencies (root);
     if (ckey)
         PFprop_infer_composite_key (root);
-    if (key)
-        PFprop_infer_key (root);
+    if (key) {
+        if (fds)
+            PFprop_infer_key_and_fd (root);
+        else
+            PFprop_infer_key (root);
+    }
     if (level)
         PFprop_infer_level (root);
     if (card)

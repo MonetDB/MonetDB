@@ -1237,6 +1237,25 @@ opt_complex (PFla_op_t *p)
                         break;
                     }
                 }
+                if (modified) break;
+            }
+            if (L(p)->kind == la_distinct &&
+                PFprop_ckey (p->prop, p->schema)) {
+                *p = *distinct (eqjoin (LL(p),
+                                        R(p),
+                                        p->sem.eqjoin.col1,
+                                        p->sem.eqjoin.col2));
+                modified = true;
+                break;
+            }
+            if (R(p)->kind == la_distinct &&
+                PFprop_ckey (p->prop, p->schema)) {
+                *p = *distinct (eqjoin (L(p),
+                                        RL(p),
+                                        p->sem.eqjoin.col1,
+                                        p->sem.eqjoin.col2));
+                modified = true;
+                break;
             }
 
 #if 0 /* disable join -> semijoin rewrites */
@@ -2671,12 +2690,11 @@ PFalgopt_complex (PFla_op_t *root)
         /* Infer key, const, icols, domain, reqval,
            and refctr properties first */
         PFprop_infer_lineage (root);
-        PFprop_infer_functional_dependencies (root);
-        /* card property inferred by key */
-        PFprop_infer_key (root);
-        PFprop_infer_const (root);
-        PFprop_infer_level (root);
         PFprop_infer_composite_key (root);
+        /* card property inferred by key */
+        /* level property inferred by key */
+        PFprop_infer_key_and_fd (root);
+        PFprop_infer_const (root);
         PFprop_infer_icol (root);
         /* Exploiting set information together with key information
            is only correct if we assure that the rewrite does not
