@@ -3311,8 +3311,8 @@ for determining which algebra commands set properties sub-optimally.
 @= hash_disprove
 	bvi = bat_iterator(bv);
 	for (r = BUNfirst(b); r < p; r++, yy++) {
-		ptr v;
-		HASHins@1(bv->H->hash, yy, v=BUNh@2(bvi, r));
+		ptr v = BUNh@2(bvi, r);
+		HASHins@1(bv->H->hash, yy, v);
 		if (disprove_nonil && ATOMcmp(b->htype, v, ATOMnilptr(b->htype)) == 0) {
 			disprove_nonil = FALSE;
 			b->H->nil = 1;
