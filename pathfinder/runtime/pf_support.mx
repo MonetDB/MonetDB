@@ -8607,16 +8607,16 @@ CMDdocsused(BAT** res, BAT* input, BAT* frag_root, BAT* nid_rid, BAT* map_pid, B
         /* skip all documents before cur */
         if (map_pid->ttype == TYPE_void) {
             for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
-                while (j+delta < m && cur > (docpre=root[j+delta]) + size[docpre])
+                while (j+delta < m && ((docpre = root[j+delta]), cur > docpre + size[docpre]))
                     j += delta;
-            while (j < m && cur > (docpre=root[j]) + size[docpre])
+            while (j < m && ((docpre = root[j]), cur > docpre + size[docpre]))
                 j++;
         } else {
             /* we need swizzling */
             for (delta = (m-j) >> 4; delta > 40; delta >>= 4)
-                while (j+delta < m && cur > (docpre=SWIZZLE(rid[root[j+delta]])) + size[docpre])
+                while (j+delta < m && ((docpre = SWIZZLE(rid[root[j+delta]])), cur > docpre + size[docpre]))
                     j += delta;
-            while (j < m && cur > (docpre=SWIZZLE(rid[root[j]])) + size[docpre])
+            while (j < m && ((docpre = SWIZZLE(rid[root[j]])), cur > docpre + size[docpre]))
                 j++;
         }
         assert(j < m);
