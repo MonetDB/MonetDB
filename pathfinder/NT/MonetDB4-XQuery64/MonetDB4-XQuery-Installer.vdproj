@@ -327,12 +327,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_55574CDD49564C3D9935EA17781555B6"
-        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_5AB2C8D80BA84419B8567670A9CCF6E7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -544,6 +538,12 @@
         "Entry"
         {
         "MsmKey" = "8:_A3FC18A79E104A969451D7031516ED30"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A5B193FEB93E4A678F17DBF0EA602E0E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -765,6 +765,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D55272312A164B3DB22410764B7B5D87"
+        "OwnerKey" = "8:_EA668A9692344C8396B4176458706382"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D6BF69AA984E4D25A4163FE26E98A5E9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -892,6 +898,12 @@
         "Entry"
         {
         "MsmKey" = "8:_FC5454B563024721949258E8FBA78DAF"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FC81E6A746D9408D8A2EDEE4DD48CD3B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2762,6 +2774,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A5B193FEB93E4A678F17DBF0EA602E0E"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\ssleay32.dll"
+            "TargetName" = "8:ssleay32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A7AC45E9F8ED494380F662841B539DE9"
             {
             "SourcePath" = "8:lib\\MonetDB4\\trans.mil"
@@ -3902,6 +3934,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FC81E6A746D9408D8A2EDEE4DD48CD3B"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\libeay32.dll"
+            "TargetName" = "8:libeay32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FC8238DC7B7A46ABA41FB212A44168D2"
             {
             "SourcePath" = "8:lib\\MonetDB4\\pcre.mil"
@@ -4167,14 +4219,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB4"
-        "ProductCode" = "8:{1C0EE6D0-7D4E-48DD-9923-69CE74B8570B}"
-        "PackageCode" = "8:{80E2028D-439C-4BDD-ADA3-A8F5A26C6BDD}"
+        "ProductCode" = "8:{FD53A917-2F7C-4928-8817-17A1B8176396}"
+        "PackageCode" = "8:{FFACFF40-300A-464B-9C27-D43175D7AF10}"
         "UpgradeCode" = "8:{AE963DBC-EE5D-4FCB-AAFD-37FED2302241}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:8.11.11"
+        "ProductVersion" = "8:9.5.15"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://monetdb.cwi.nl/"
@@ -4831,7 +4883,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_55574CDD49564C3D9935EA17781555B6"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D55272312A164B3DB22410764B7B5D87"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"

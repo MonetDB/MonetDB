@@ -27,8 +27,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_363406EEDFE540F39C577C11A5098F97"
-        "OwnerKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
+        "MsmKey" = "8:_43E49CA0EC774DEF94E2596DAC7364FB"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -39,7 +39,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_55A0B47B8A6940C089D7B219C7BFFA86"
+        "OwnerKey" = "8:_989E89C48F7D48F38F1878D6FD4F839F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_61B2E04FDCD84F34A63853B93B1DCD7B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_61BDF3C1EF544447820D9544098DD817"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -225,6 +237,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_43E49CA0EC774DEF94E2596DAC7364FB"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\libeay32.dll"
+            "TargetName" = "8:libeay32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5460D68002064BCB839AD357B5DDF75B"
             {
             "SourcePath" = "8:website.html"
@@ -249,6 +281,26 @@
             {
             "SourcePath" = "8:C:\\zlib-1.2.3.win64\\bin\\zlib1.dll"
             "TargetName" = "8:zlib1.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_61BDF3C1EF544447820D9544098DD817"
+            {
+            "SourcePath" = "8:C:\\openssl-0.9.8k.win64\\bin\\ssleay32.dll"
+            "TargetName" = "8:ssleay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_AC71646495814C55B03F69019B5070C2"
             "Condition" = "8:"
@@ -1232,7 +1284,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_363406EEDFE540F39C577C11A5098F97"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_55A0B47B8A6940C089D7B219C7BFFA86"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
