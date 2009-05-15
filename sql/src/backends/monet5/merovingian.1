@@ -87,22 +87,6 @@ instead.  It is legitimate to have both
 and
 .B mero_errlog
 pointing to the same file.
-.IP mero_timeinterval
-Log messages from started databases may not be instantly logged, because
-that database process that writes the message does not flush its
-buffered stream.  Since
-.B merovingian
-cannot force other processes to flush their output, the time when
-.B merovingian
-receives the message need not to be (close) to the actual time the
-message was generated.  For this reason it is important to be aware that
-the timestamp merovingian logs for messages from started mserver5
-processes are not those when the message was emitted.
-.B mero_timeinterval
-option.  Note that an interval of 
-.B 0
-makes Merovingian print a TME record for every log record, which is the
-default of this option when unset.
 .IP mero_pidfile
 Location pointing to the pidfile used by
 .B merovingian
@@ -169,6 +153,25 @@ they need to get refreshed.  The default is 10 minutes, which should
 keep traffic in your network fairly low.  If you add and/or remove
 databases often, you may want to use a low ttl.  The value of this
 option is expressed in seconds.
+.SH SIGNALS
+.B merovingian
+acts upon a number of signals as is common for a daemon.
+.IP "SIGINT, SIGTERM, SIGQUIT"
+Any of these signals make
+.B merovingian
+enter the shutdown sequence.  This sequence involves cleanly shutting
+down listener sockets, shutting down all started databases and finally
+terminating itself.
+.IP SIGHUP
+When this signal is received by
+.B merovingian
+it will reopen the logfiles as pointed to by
+.B mero_msglog
+and
+.B mero_errlog\.
+When these two are unset or point to a file attached to a terminal,
+.B merovingian
+will not reopen the associated filedescriptor.
 .SH "RETURN VALUE"
 .B merovingian
 returns exit code

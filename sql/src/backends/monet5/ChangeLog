@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  15 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
+  Implemented Feature Request #2705670.  Reopen logfiles when SIGHUP is received.
+
   13 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
   Implemented feature request #2782776. All logged messages are now prefixed
   with a timestamp.
