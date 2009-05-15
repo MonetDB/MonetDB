@@ -29,7 +29,6 @@ Source: http://downloads.sourceforge.net/monetdb/MonetDB4-server-%{version}.tar.
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
-BuildRequires: python
 BuildRequires: pcre-devel
 
 # when we want MonetDB to run as system daemon, we need this

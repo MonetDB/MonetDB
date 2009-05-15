@@ -29,7 +29,6 @@ Source: http://downloads.sourceforge.net/monetdb/MonetDB5-server-%{version}.tar.
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires(pre): shadow-utils
-BuildRequires: python
 BuildRequires: pcre-devel
 BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: libxml2-devel
@@ -41,8 +40,6 @@ BuildRequires: libxml2-devel
 # Requires(preun): /sbin/chkconfig
 # Requires(preun): /sbin/service
 # Requires(postun): /sbin/service
-
-%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 
 %define builddoc 0
 

@@ -32,13 +32,10 @@ Requires: MonetDB >= 1.29
 #                    ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-BuildRequires: python
 BuildRequires: readline-devel, openssl-devel
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
-%{!?_with_python: %{!?_without_python: %define _with_python --with-python}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
-%{!?_with_ruby: %{!?_without_ruby: %define _with_ruby --with-ruby}}
 %{!?_with_unixODBC: %{!?_without_unixODBC: %define _with_unixODBC --with-unixodbc}}
 
 %if !%{?buildsystem}
@@ -56,13 +53,9 @@ Requires: MonetDB-devel >= 1.29
 #                          ^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
-Requires: python
 Requires: readline-devel, openssl-devel
 %if %{?_with_php:1}%{!?_with_php:0}
 Requires: php, php-devel
-%endif
-%if %{?_with_python:1}%{!?_with_python:0}
-Requires: python-devel, swig
 %endif
 %if %{?_with_perl:1}%{!?_with_perl:0}
 Requires: perl, swig
@@ -71,10 +64,6 @@ Requires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 Requires: perl-devel
 %endif
-%endif
-%if %{?_with_ruby:1}%{!?_with_ruby:0}
-Requires: ruby, swig
-Requires: ruby-devel
 %endif
 %if %{?_with_unixODBC:1}%{!?_with_unixODBC:0}
 Requires: unixODBC, unixODBC-devel
@@ -100,19 +89,6 @@ BuildRequires: php, php-devel
 %endif
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
-%package python
-Summary: MonetDB python interface
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: python
-Requires: MonetDB-python
-%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
-%if !%{?buildsystem}
-BuildRequires: python-devel, swig
-%endif
-%endif
-
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %package perl
 Summary: MonetDB perl interface
@@ -127,19 +103,6 @@ BuildRequires: perl, swig
 # in Fedora 7 there is a perl-devel package which we need.
 BuildRequires: perl-devel
 %endif
-%endif
-%endif
-
-%if %{?_with_ruby:1}%{!?_with_ruby:0}
-%package ruby
-Summary: MonetDB ruby interface
-Group: Applications/Databases
-Requires: %{name} = %{version}-%{release}
-Requires: ruby
-%define ruby_libdir %(ruby_prefix="`ruby -e 'require "rbconfig.rb";include Config;print CONFIG["prefix"];'`"; ruby_libdir="`ruby -e 'require "rbconfig.rb";include Config;print CONFIG["sitearchdir"];'`"; echo $ruby_libdir | sed -e "s|^$ruby_prefix||g")
-%if !%{?buildsystem}
-BuildRequires: ruby, swig
-BuildRequires: ruby-devel
 %endif
 %endif
 
@@ -187,17 +150,6 @@ This package contains the files needed to use MonetDB from a PHP
 program.
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
-%description python
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to use MonetDB from a Python
-program.
-%endif
-
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %description perl
 MonetDB is a database management system that is developed from a
@@ -206,17 +158,6 @@ automatic index management, extensibility of data types and search
 accelerators, SQL- and XML- frontends.
 
 This package contains the files needed to use MonetDB from a Perl
-program.
-%endif
-
-%if %{?_with_ruby:1}%{!?_with_ruby:0}
-%description ruby
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators, SQL- and XML- frontends.
-
-This package contains the files needed to use MonetDB from a Ruby
 program.
 %endif
 
@@ -247,9 +188,7 @@ rm -rf $RPM_BUILD_ROOT
 	%{?oid32:--enable-oid32} \
 	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_php} %{?_without_php} \
-	%{?_with_python} %{?_without_python} \
 	%{?_with_perl} %{?_without_perl} \
-	%{?_with_ruby} %{?_without_ruby} \
 	%{?_with_unixODBC} %{?_without_unixODBC}
 
 make
@@ -303,29 +242,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_datadir}/MonetDB/php/*
 %endif
 
-%if %{?_with_python:1}%{!?_with_python:0}
-%files python
-%defattr(-,root,root)
-%{_bindir}/mclient.py
-%exclude %{_bindir}/mclient.pyc
-%exclude %{_bindir}/mclient.pyo
-%{python_sitearch}/MonetDB/*
-%dir %{python_sitearch}/MonetSQLdb
-%{python_sitearch}/MonetSQLdb/*
-%endif
-
 %if %{?_with_perl:1}%{!?_with_perl:0}
 %files perl
 %defattr(-,root,root)
 %{_prefix}/%{perl_libdir}/*
 %dir %{_datadir}/MonetDB/perl
 %{_datadir}/MonetDB/perl/*
-%endif
-
-%if %{?_with_ruby:1}%{!?_with_ruby:0}
-%files ruby
-%defattr(-,root,root)
-%{_prefix}/%{ruby_libdir}/*
 %endif
 
 %files tests

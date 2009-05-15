@@ -2,7 +2,7 @@ Source: monetdb-client
 Section: misc
 Priority: extra
 Maintainer: MonetDB BV <monet@cwi.nl>
-Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libreadline5-dev, ruby1.8-dev, ruby, python-dev, swig, cdbs, libssl-dev, perl, php5-dev, ruby-dev, unixodbc-dev, libperl-dev
+Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libreadline5-dev, swig, cdbs, libssl-dev, perl, php5-dev, unixodbc-dev, libperl-dev
 
 Package: monetdb-client
 Architecture: any
@@ -39,18 +39,6 @@ Description: MonetDB client header files
  .
  This package contains the files needed to develop with
  MonetDB-client.
-
-Package: python-monetdb-client
-Architecture: any 
-Depends: ${shlibs:Depends}, ${misc:Depends} ${python:Depends}, libmonetdb1, libmonetdb-client1, python-monetdb
-Provides: ${python:Provides} 
-Description: MonetDB client python modules
- MonetDB is a database management system that is developed from a 
- main-memory perspective with use of a fully decomposed storage model, 
- automatic index management, extensibility of data types and search 
- accelerators, SQL- and XML- frontends. 
- .
- This package contains Python support files.
 
 Package: libmonetdb-client-odbc1
 Architecture: any
@@ -96,18 +84,6 @@ Description: MonetDB perl client code
  accelerators, SQL- and XML- frontends.
  .
  This package contains the files needed to use MonetDB from a Perl
- program.
-
-Package: libmonetdb-client-ruby
-Architecture: any
-Depends: ${shlibs:Depends}, ruby1.8
-Description: MonetDB ruby client module
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators, SQL- and XML- frontends.
- .
- This package contains the files needed to use MonetDB from a Ruby
  program.
 
 Package: monetdb-client-testing
