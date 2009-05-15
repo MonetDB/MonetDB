@@ -61,9 +61,6 @@ struct MapiStruct {
 	char *mapiversion;	/* mapi version */
 	char *hostname;
 	int port;
-#ifdef HAVE_OPENSSL
-	int secure;
-#endif
 	char *username;
 	char *password;
 	char *language;

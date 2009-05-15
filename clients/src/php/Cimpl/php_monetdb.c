@@ -482,11 +482,6 @@ PHP_MINFO_FUNCTION(monetdb)
 	php_info_print_table_start();
 	php_info_print_table_header(2, "MonetDB Support", "enabled");
 	php_info_print_table_row(2, "Mapi Version", mapi_get_mapi_version(m));
-#ifdef HAVE_OPENSSL
-	php_info_print_table_row(2, "SSL support", "enabled");
-#else
-	php_info_print_table_row(2, "SSL support", "disabled");
-#endif
 	sprintf(buf, "%ld", MG(num_persistent));
 	php_info_print_table_row(2, "Active Persistent Links", buf);
 	sprintf(buf, "%ld", MG(num_links));

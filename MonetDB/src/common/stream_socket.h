@@ -18,7 +18,7 @@
  */
 
 /* This file contains the prototype declarations of the stream
- * functions that need special include files (sockets and SSL) */
+ * functions that need special include files (sockets) */
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -35,22 +35,3 @@ stream_export stream *socket_rstream(SOCKET socket, const char *name);
 stream_export stream *socket_wstream(SOCKET socket, const char *name);
 stream_export stream *socket_rastream(SOCKET socket, const char *name);
 stream_export stream *socket_wastream(SOCKET socket, const char *name);
-
-#if defined(HAVE_OPENSSL) && defined(_WIN64)
-/* OpenSSL has an interface bug in SSL_set_fd which affects 64 bit Windows */
-#include <openssl/opensslv.h>	/* check OpenSSL version number */
-#if OPENSSL_VERSION_NUMBER <= 0x10000002L
-/* the bug still exists in version 1.0.0-beta2 */
-#undef HAVE_OPENSSL
-#endif
-#endif
-
-#ifdef HAVE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-
-stream_export stream *ssl_rstream(SSL * ssl, const char *name);
-stream_export stream *ssl_wstream(SSL * ssl, const char *name);
-stream_export stream *ssl_rastream(SSL * ssl, const char *name);
-stream_export stream *ssl_wastream(SSL * ssl, const char *name);
-#endif

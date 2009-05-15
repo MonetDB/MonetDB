@@ -260,7 +260,6 @@ comment "Bind a remote variable to a local one.";
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
 #define FLEETPORT		50000
-#define FLEETSSLPORT		40000
 #define FLEETMAXUSERS 		5
 
 m_export str FLEETmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -309,7 +308,7 @@ static int sessionkey=0;
 /* #define MAPI_TEST*/
 
 str
-FLEETconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang, int ssl){
+FLEETconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang){
 	Mapi mid;
 	int i;
 
@@ -325,10 +324,7 @@ FLEETconnectAll(int *key, str *host, int *port, str *username, str *password, st
 	FLEETsessions[i].key= ++sessionkey;
 	mal_unset_lock(mal_contextLock,"FLEETconnect");
 
-	if (ssl)
-		mid = mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
-	else
-		mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
 
 	if (mapi_error(mid)) {
 		str err = mapi_error_str(mid);
@@ -392,11 +388,7 @@ FLEETdisconnectWithAlias(int *key, str *dbalias){
 
 str
 FLEETconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
-	return FLEETconnectAll(key,host,port,username,password,lang, FALSE);
-}
-str
-FLEETconnectssl(int *key, str *host, int *port, str *username, str *password, str *lang){
-	return FLEETconnectAll(key,host,port,username,password,lang, TRUE);
+	return FLEETconnectAll(key,host,port,username,password,lang);
 }
 
 
@@ -413,7 +405,7 @@ FLEETreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *usernam
 			return msg;
 	}
 
-	msg= FLEETconnectAll(key, host, port, username, password, lang, FALSE);
+	msg= FLEETconnectAll(key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = FLEETsetAlias(&i, key, dbalias);
 	return msg;
@@ -429,7 +421,7 @@ FLEETreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *pa
 			return msg;
 	}
 
-	msg= FLEETconnectAll(key, host, port, username, password, lang, FALSE);
+	msg= FLEETconnectAll(key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = FLEETsetAlias(&i, key, &nme);
 	return msg;

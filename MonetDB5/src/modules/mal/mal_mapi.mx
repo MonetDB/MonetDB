@@ -55,15 +55,6 @@ comment "Start the Mapi listener on <port> for <maxusers>.
 	For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out)
 	is called.If no <cmd> is specified a new client thread is forked.";
 
-command listen_ssl(port:int, maxusers:int,
-	keyfile:str,certfile:str, cmd:str):int
-address SERVERlistenSSL
-comment "Start the Mapi listener on <port> for <maxusers> using SSL. 
-	<keyfile> and <certfile> give the path names for files with the 
-	server key and certificates in PEM format. For a new client connection 
-	MAL procedure <cmd>(Stream s_in, Stream s_out) is called.
-	If no <cmd> is specified a new client thread is forked.";
-
 command stop():void
 address SERVERstop
 comment "Terminate connection listeners."; 
@@ -100,11 +91,6 @@ comment "Re-establish a connection.";
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
 comment "Establish connection with a remote mserver.";
-
-command connect_ssl(host:str, port:int, usr:str, passwd:str,lang:str):int
-address SERVERconnectssl
-comment "Establish connection with a remote mserver using the
-secure socket layer.";
 
 command disconnect(dbalias:str):int
 address SERVERdisconnectWithAlias
@@ -274,11 +260,7 @@ mapi.listen();
 
 #command send(key:int,nme:str, r:bat[:any_1,:any_2]):void
 #address SERVERsend
-#comment "Sent a bat to a remote site";
-command prelude()
-address SERVERprelude;
-command epilogue()
-address SERVERepilogue;
+#comment "Send a bat to a remote site";
 
 @h
 #ifndef SERVER_H
@@ -308,13 +290,9 @@ address SERVERepilogue;
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
 #define SERVERPORT		50000
-#define SERVERSSLPORT		40000
 #define SERVERMAXUSERS 		5
 
 mal_mapi_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
-mal_mapi_export bat * SERVERprelude(void);
-mal_mapi_export void SERVERepilogue(void);
-mal_mapi_export str SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
 mal_mapi_export str SERVERlisten_default(int *ret);
 mal_mapi_export str SERVERlisten2(int *ret, int *port, int *maxusers);
 mal_mapi_export str SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd);
@@ -329,7 +307,6 @@ mal_mapi_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);
 mal_mapi_export str SERVERdisconnectALL(int *ret);
 mal_mapi_export str SERVERreconnectAlias(int *ret, str *host, int *port, str *dbalias, str *username, str *password, str *lang);
 mal_mapi_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
-mal_mapi_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_mapi_export str SERVERtrace(int *ret, int *mid, int *flag);
 mal_mapi_export str SERVERdisconnect(int *ret, int *mid);
 mal_mapi_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
@@ -573,10 +550,10 @@ error:
  * hostname address is used, to make the info usable for servers outside
  * localhost.
  */
-void SERVERannounce(struct in_addr addr, int port, int ssl) {
+void SERVERannounce(struct in_addr addr, int port) {
 	str buf = alloca(sizeof(char) * 1024);
 	str host = NULL;
-	bit bssl = ssl != 0 ? 1 : 0;
+	int ret = 0;
 
 	if (addr.s_addr == INADDR_ANY) {
 		host = alloca(sizeof(char) * (90 + 1));
@@ -594,7 +571,7 @@ void SERVERannounce(struct in_addr addr, int port, int ssl) {
 				(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
 				(unsigned) (ntohl(addr.s_addr) & 0xff));
 	}
-	if ((buf = SABAOTHmarchConnection(&ssl, &host, &port, &bssl)) != MAL_SUCCEED)
+	if ((buf = SABAOTHmarchConnection(&ret, &host, &port)) != MAL_SUCCEED)
 		GDKfree(buf);
 }
 
@@ -748,305 +725,8 @@ errno == WSAEADDRINUSE &&
 	 * predictable... */
 	srand((int)time(NULL));
 
-	SERVERannounce(server.sin_addr, port, 0);
+	SERVERannounce(server.sin_addr, port);
 	return MAL_SUCCEED;
-}
-
-#ifdef HAVE_OPENSSL
-static char *
-ssl_error(const char *name, int err, int ret)
-{
-	char *errstr, *s;
-	char buf[120];
-	unsigned long e;
-
-	switch (err) {
-	case SSL_ERROR_ZERO_RETURN:
-		errstr = "TLS/SSL connection has been closed";
-		break;
-	case SSL_ERROR_WANT_READ:
-		errstr = "The operation did not complete (read)";
-		break;
-	case SSL_ERROR_WANT_WRITE:
-		errstr = "The operation did not complete (write)";
-		break;
-	case SSL_ERROR_WANT_X509_LOOKUP:
-		errstr = "The operation did not complete (X509 lookup)";
-		break;
-	case SSL_ERROR_WANT_CONNECT:
-		errstr = "The operation did not complete (connect)";
-		break;
-	case SSL_ERROR_SYSCALL:
-		e = ERR_get_error();
-		if (e == 0) {
-			if (ret == 0) {
-				errstr = "EOF occurred in violation of protocol";
-			} else if (ret == -1) {
-				/* the underlying BIO reported an I/O error */
-				errstr = "I/O error";
-			} else {	/* possible? */
-				errstr = "Some I/O error occurred";
-			}
-		} else {
-			errstr = ERR_error_string(e, buf);
-		}
-		break;
-	case SSL_ERROR_SSL:
-		e = ERR_get_error();
-		if (e != 0)
-			errstr = ERR_error_string(e, buf);
-		else {		/* possible? */
-			errstr = "A failure in the SSL library occurred";
-		}
-		break;
-	default:
-		errstr = "Invalid error code";
-	}
-	s = (char*) GDKmalloc(strlen(errstr) + strlen(name) + 4);
-	sprintf(s, "%s: %s\n", name, errstr);	/* we allocated enough, so it fits */
-	return s;
-}
-
-static MT_Lock *mutex_buf;
-
-static void
-locking_function(int mode, int n, const char *file, int line)
-{
-	(void) file;
-	(void) line;
-	if (mode & CRYPTO_LOCK){
-		MT_set_lock(mutex_buf[n], "locking_function");
-	} else {
-		MT_unset_lock(mutex_buf[n], "locking_function");
-	}
-}
-
-static unsigned long
-id_function(void)
-{
-	return (unsigned long) MT_getpid();
-}
-#endif /* HAVE_OPENSSL */
-
-bat *
-SERVERprelude(void)
-{
-#ifdef HAVE_OPENSSL
-	int i, nlocks;
-
-	nlocks = CRYPTO_num_locks();
-	mutex_buf = GDKmalloc(nlocks * sizeof(*mutex_buf));
-	if (mutex_buf == NULL) {
-		GDKsyserror("SERVERprelude: failed to allocate %d mutexes\n", nlocks);
-		return NULL;
-	}
-	for (i = 0; i < nlocks; i++)
-		MT_lock_init(&mutex_buf[i],"M5_mutex_lock");
-	CRYPTO_set_locking_callback(locking_function);
-	CRYPTO_set_id_callback(id_function);
-#endif
-	return NULL;
-}
-
-void
-SERVERepilogue(void)
-{
-#ifdef HAVE_OPENSSL
-	if (mutex_buf) {
-		int i, nlocks;
-
-		nlocks = CRYPTO_num_locks();
-		CRYPTO_set_id_callback(NULL);
-		CRYPTO_set_locking_callback(NULL);
-		for (i = 0; i < nlocks; i++)
-			MT_destroy_lock(mutex_buf[i]);
-		GDKfree(mutex_buf);
-		mutex_buf = NULL;
-	}
-	/* callString(mal_clients, "sabaoth.retreatConnection(...);", 0); */
-#endif /* HAVE_OPENSSL */
-	/* callString(mal_clients, "sabaoth.retreatConnection(...);", 0); */
-}
-
-str
-SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
-{
-#ifdef HAVE_OPENSSL
-	struct sockaddr_in server;
-	int sock = -1;
-	SOCKLEN length = 0;
-	int on = 1;
-	SOCKET msgsock;
-	int i = 0;
-
-	int port = *Port;
-	int maxusers = *Maxusers;
-	SSL_CTX *ctx = NULL;
-	SSL *ssl = NULL;
-	char *msg = NULL;
-#ifdef DEBUG_SERVER
-	Client cntxt= MCgetClient();
-#endif
-
-	if (!port)
-		port = SERVERSSLPORT;
-	if (!maxusers)
-		maxusers = SERVERMAXUSERS;
-
-	ctx = SSL_CTX_new(SSLv23_method());
-	if (ctx == NULL) {
-		msg = "creation of SSL context failed\n";
-		goto fail;
-	}
-	if (SSL_CTX_set_cipher_list(ctx, "ALL:!LOW") == 0) {
-		msg = "SSL_CTX_set_cipher_list failed\n";
-		goto fail;
-	}
-	if (keyfile && *keyfile && certfile && *certfile) {
-		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM) < 1) {
-			msg = "SSL_CTX_use_PrivateKey_file failed\n";
-			goto fail;
-		}
-		if (SSL_CTX_use_certificate_chain_file(ctx, certfile) < 1) {
-			msg = "SSL_CTX_use_certificate_chain_file failed\n";
-			goto fail;
-		}
-	}
-	if (keyfile)
-		GDKfree(keyfile);
-	if (certfile)
-		GDKfree(certfile);
-
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {
-		GDKsyserror("SERVERlistenSSL:creation of stream socket failed\n");
-		goto fail;
-	}
-@-
-Set server port and allow network connections from any workstation.
-Bind the socket to the server port.
-The port id should be obtained from the Homes file.
-@c
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-	for (i = 0; i < 8; i++)
-		server.sin_zero[i] = 0;
-
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
-
-	length = (SOCKLEN) sizeof(server);
-	if (bind(sock, (SOCKPTR) & server, length) < 0) {
-		GDKsyserror("SERVERlistenSSL:binding to stream socket (%d) failed\n", port);
-		goto fail;
-	}
-@-
-Get the new information for the server socket and start listening.
-@c
-	if (getsockname(sock, (SOCKPTR) & server, &length) < 0) {
-		msg = "getting socket name\n";
-		goto fail;
-	}
-	listen(sock, maxusers);
-
-#ifdef DEBUG_SERVER
-	THRprintf(cntxt->fdout, "#SERVERlistenSSL:Network started at %d\n", port);
-#endif
-	do {
-		int retval;
-		struct timeval tv;
-		fd_set fds;
-
-		FD_ZERO(&fds);
-		FD_SET(sock, &fds);
-		/* Wait up to 0.5 seconds. */
-		tv.tv_sec = 0;
-		tv.tv_usec = 500;
-
-		retval = select(sock + 1, &fds, &fds, &fds, &tv);
-		if (retval == 0) {
-			/* nothing interesting has happened */
-			continue;
-		}
-		if (retval < 0) {
-			GDKsyserror("SERVERlistenSSL:select failed\n");
-			goto fail;
-		}
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == INVALID_SOCKET) {
-			if (MT_geterrno() != EINTR) {
-				msg = "Accept failed";
-				goto fail;
-			}
-			continue;
-		}
-		if ((ssl = SSL_new(ctx)) == 0) {
-			msg = "SSL_new failed";
-			goto fail;
-		}
-
-		if (!SSL_set_fd(ssl, msgsock)) {
-			msg = "SSL_set_fd failed";
-			goto fail;
-		}
-
-		for (;;) {
-			int ret, err;
-			char *errstr;
-
-			ret = SSL_accept(ssl);
-			err = SSL_get_error(ssl, ret);
-			switch (err) {
-			case SSL_ERROR_WANT_READ:
-			case SSL_ERROR_WANT_WRITE:
-				/* try again */
-				continue;
-			case SSL_ERROR_NONE:
-				/* successful connect */
-				break;
-			case SSL_ERROR_WANT_CONNECT:
-			case SSL_ERROR_WANT_ACCEPT:
-			case SSL_ERROR_WANT_X509_LOOKUP:
-			default:
-				/* some error occurred */
-				errstr = ssl_error("SERVERlistenSSL", err, ret);
-				GDKsyserror(errstr);
-				GDKfree(errstr);
-				SSL_free(ssl);
-				close(msgsock);
-				goto end_loop;
-			}
-			break;
-		}
-
-		doChallenge(cmd, 
- 			ssl_rastream(ssl, "Server read"),
- 			ssl_wastream(SSL_dup(ssl), "Server write"));
-end_loop:;
-	} while (1);
-	SSL_CTX_free(ctx);
-	close(sock);
-	if (cmd)
-		GDKfree(cmd);
-	SERVERannounce(server.sin_addr, port, 1);
-	return MAL_SUCCEED;
-fail:;
-	if (sock >= 0)
-		close(sock);
-	if (ctx)
-		SSL_CTX_free(ctx);
-	if (cmd)
-		GDKfree(cmd);
-	throw(IO, "mapi.listenSSL", msg);
-#else
-	(void) Port;
-	(void) Maxusers;
-	(void) keyfile;
-	(void) certfile;
-	(void) cmd;
-	throw(MAL, "mapi.listenSSL", "No SSL support");
-#endif /* HAVE_OPENSSL */
 }
 
 @- Wrappers
@@ -1216,7 +896,7 @@ static int sessionkey=0;
 /* #define MAPI_TEST*/
 
 str
-SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang, int ssl){
+SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang){
 	Mapi mid;
 	int i;
 
@@ -1232,10 +912,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 	SERVERsessions[i].key= ++sessionkey;
 	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
-	if (ssl)
-		mid = mapi_connect_ssl(*host, *port, *username, *password, *lang, NULL);
-	else
-		mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
+	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
 
 	if (mapi_error(mid)) {
 		str err = mapi_error_str(mid);
@@ -1308,11 +985,7 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 
 str
 SERVERconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
-	return SERVERconnectAll(key,host,port,username,password,lang, FALSE);
-}
-str
-SERVERconnectssl(int *key, str *host, int *port, str *username, str *password, str *lang){
-	return SERVERconnectAll(key,host,port,username,password,lang, TRUE);
+	return SERVERconnectAll(key,host,port,username,password,lang);
 }
 
 
@@ -1329,7 +1002,7 @@ SERVERreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *userna
 			return msg;
 	}
 
-	msg= SERVERconnectAll(key, host, port, username, password, lang, FALSE);
+	msg= SERVERconnectAll(key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = SERVERsetAlias(&i, key, dbalias);
 	return msg;
@@ -1346,7 +1019,7 @@ SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *p
 			return msg;
 	}
 
-	msg= SERVERconnectAll(key, host, port, username, password, lang, FALSE);
+	msg= SERVERconnectAll(key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = SERVERsetAlias(&i, key, &nme);
 	return msg;

@@ -260,7 +260,6 @@ section.
 @item mapi_clear_params()	@tab Clear all parameter bindings
 @item mapi_close_handle()	@tab	Close query handle and free resources
 @item mapi_connect()	@tab	Connect to a Mserver 
-@item mapi_connect_ssl()	@tab Connect to a Mserver using Secure Socket Layer (SSL)
 @item mapi_destroy()	@tab	Free handle resources
 @item mapi_disconnect()	@tab Disconnect from server
 @item mapi_error()	@tab	Test for error occurrence
@@ -409,14 +408,6 @@ containing the Mapi code is used.  If password == NULL, the password
 is omitted.  The preferred query language is any of
 @verb{ { }sql,mil,mal,xquery @verb{ } }.  On success, the function returns a
 pointer to a structure with administration about the connection.
-
-@item Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
-
-Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
-with @emph{username} and @emph{password}. The connection is made using
-the Secure Socket Layer (SSL) and hence all data transfers to and from
-the server are encrypted. The parameters are the same as in
-@code{mapi_connect()}.
 
 @item MapiMsg mapi_disconnect(Mapi mid)
 
@@ -835,15 +826,6 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 # endif
 #endif
 
-#if defined(HAVE_OPENSSL) && defined(_WIN64)
-/* OpenSSL has an interface bug in SSL_set_fd which affects 64 bit Windows */
-#include <openssl/opensslv.h>
-#if OPENSSL_VERSION_NUMBER <= 0x10000002L
-/* the bug still exists in version 1.0.0-beta2 */
-#undef HAVE_OPENSSL
-#endif
-#endif
-
 #ifdef HAVE_OPENSSL
 # include <openssl/md5.h>
 # include <openssl/sha.h>
@@ -994,9 +976,6 @@ struct MapiStruct {
 	char *mapiversion;	/* mapi version */
 	char *hostname;
 	int port;
-#ifdef HAVE_OPENSSL
-	int secure;
-#endif
 	char *username;
 	char *password;
 	char *language;
@@ -1158,7 +1137,6 @@ mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, con
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
-mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
 #endif
@@ -1270,10 +1248,6 @@ static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
 static int unquote(const char *msg, char **start, const char **next, int endchar);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
-
-#ifdef HAVE_OPENSSL
-static SSL_CTX *mapi_ssl_ctx = 0;
-#endif
 
 static int mapi_initialized = 0;
 
@@ -2016,9 +1990,6 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 	mid->password = strdup(password);
 
 	mid->port = port;
-#ifdef HAVE_OPENSSL
-	mid->secure = 0;
-#endif
 
 	if (lang == NULL)
 		lang = "mil";
@@ -2078,60 +2049,6 @@ The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
 the initialization sequence.
 @c
-#ifdef HAVE_OPENSSL
-static char *
-ssl_error(int err, int ret)
-{
-	char *errstr;
-	char buf[120];
-	unsigned long e;
-
-	switch (err) {
-	case SSL_ERROR_ZERO_RETURN:
-		errstr = "TLS/SSL connection has been closed";
-		break;
-	case SSL_ERROR_WANT_READ:
-		errstr = "The operation did not complete (read)";
-		break;
-	case SSL_ERROR_WANT_WRITE:
-		errstr = "The operation did not complete (write)";
-		break;
-	case SSL_ERROR_WANT_X509_LOOKUP:
-		errstr = "The operation did not complete (X509 lookup)";
-		break;
-	case SSL_ERROR_WANT_CONNECT:
-		errstr = "The operation did not complete (connect)";
-		break;
-	case SSL_ERROR_SYSCALL:
-		e = ERR_get_error();
-		if (e == 0) {
-			if (ret == 0) {
-				errstr = "EOF occurred in violation of protocol";
-			} else if (ret == -1) {
-				/* the underlying BIO reported an I/O error */
-				errstr = "I/O error";
-			} else {	/* possible? */
-				errstr = "Some I/O error occurred";
-			}
-		} else {
-			errstr = ERR_error_string(e, buf);
-		}
-		break;
-	case SSL_ERROR_SSL:
-		e = ERR_get_error();
-		if (e != 0)
-			errstr = ERR_error_string(e, buf);
-		else {		/* possible? */
-			errstr = "A failure in the SSL library occurred";
-		}
-		break;
-	default:
-		errstr = "Invalid error code";
-	}
-	return strdup(errstr);
-}
-#endif /* HAVE_OPENSSL */
-
 /* (Re-)establish a connection with the server. */
 static MapiMsg
 connect_to_server(Mapi mid)
@@ -2145,19 +2062,11 @@ connect_to_server(Mapi mid)
 	socklen_t servsize;
 	SOCKET s;
 
-#ifdef HAVE_OPENSSL
-	SSL *ssl = NULL;
-#endif
-
 	if (mid->connected)
 		close_connection(mid);
 
 #ifdef HAVE_SYS_UN_H
-	if (
-#ifdef HAVE_OPENSSL
-		   !mid->secure &&
-#endif
-		   mid->hostname && mid->hostname[0] == '/') {
+	if (mid->hostname && mid->hostname[0] == '/') {
 		if (strlen(mid->hostname) >= sizeof(userver.sun_path)) {
 			return mapi_setError(mid, "path name too long", "mapi_reconnect", MERROR);
 		}
@@ -2182,19 +2091,6 @@ connect_to_server(Mapi mid)
 		servsize = sizeof(server);
 	}
 
-#ifdef HAVE_OPENSSL
-	if (mid->secure && mapi_ssl_ctx == NULL) {
-		mapi_ssl_ctx = SSL_CTX_new(SSLv23_method());
-		if (mapi_ssl_ctx == 0) {
-			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
-
-			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
-			free(errstr);
-			return mid->error;
-		}
-		SSL_CTX_set_verify(mapi_ssl_ctx, SSL_VERIFY_NONE, NULL);
-	}
-#endif
 	s = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
 	if (s == INVALID_SOCKET) {
 		return mapi_setError(mid, "Open socket failed", "mapi_reconnect", MERROR);
@@ -2203,68 +2099,10 @@ connect_to_server(Mapi mid)
 	if (connect(s, serv, servsize) < 0) {
 		return mapi_setError(mid, "Setup connection failed", "mapi_reconnect", MERROR);
 	}
-#ifdef HAVE_OPENSSL
-	if (mid->secure) {
-		if ((ssl = SSL_new(mapi_ssl_ctx)) == 0) {
-			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
-
-			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
-			free(errstr);
-			closesocket(s);
-			return mid->error;
-		}
-		if (!SSL_set_fd(ssl, s)) {
-			char *errstr = ssl_error(SSL_ERROR_SSL, 0);
-
-			mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
-			free(errstr);
-			SSL_free(ssl);
-			closesocket(s);
-			return mid->error;
-		}
-		SSL_set_connect_state(ssl);
-
-		for (;;) {
-			int ret, err;
-			char *errstr;
-
-			ret = SSL_connect(ssl);
-			err = SSL_get_error(ssl, ret);
-			switch (err) {
-			case SSL_ERROR_WANT_READ:
-			case SSL_ERROR_WANT_WRITE:
-				/* try again */
-				continue;
-			case SSL_ERROR_NONE:
-				/* successful connect */
-				break;
-			case SSL_ERROR_WANT_CONNECT:
-			case SSL_ERROR_WANT_ACCEPT:
-			case SSL_ERROR_WANT_X509_LOOKUP:
-			default:
-				/* some error occurred */
-				SSL_free(ssl);
-				closesocket(s);
-				errstr = ssl_error(err, ret);
-				mapi_setError(mid, errstr, "mapi_reconnect", MERROR);
-				free(errstr);
-				return mid->error;
-			}
-			break;
-		}
-
-		mid->to = ssl_wastream(ssl, "Mapi client write");
-		mapi_log_record(mid, "Mapi client write");
-		mid->from = ssl_rastream(ssl, "Mapi client read");
-		mapi_log_record(mid, "Mapi client read");
-	} else
-#endif
-	{
-		mid->to = socket_wastream(s, "Mapi client write");
-		mapi_log_record(mid, "Mapi client write");
-		mid->from = socket_rastream(s, "Mapi client read");
-		mapi_log_record(mid, "Mapi client read");
-	}
+	mid->to = socket_wastream(s, "Mapi client write");
+	mapi_log_record(mid, "Mapi client write");
+	mid->from = socket_rastream(s, "Mapi client read");
+	mapi_log_record(mid, "Mapi client read");
 	check_stream(mid, mid->to, "Cannot open socket for writing", "mapi_reconnect", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", "mapi_reconnect", mid->error);
 
@@ -2791,24 +2629,6 @@ mapi_connect(const char *host, int port, const char *username, const char *passw
 	mid = mapi_mapi(host, port, username, password, lang, dbname);
 	if (mid && mid->error == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
-	return mid;
-}
-
-/* Create a connection handle and connect to the server using the
-   specified parameters.  Use SSL (Secure Socket Layer) to encrypt all
-   data transfers with the server. */
-Mapi
-mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname)
-{
-	Mapi mid = mapi_mapi(host, port, username, password, lang, dbname);
-
-#ifdef HAVE_OPENSSL
-	mid->secure = 1;
-	if (mid && mid->error == MOK)
-		mapi_reconnect(mid);	/* actually, initial connect */
-#else
-	mapi_setError(mid, "SSL connections not supported", "mapi_connect_ssl", MERROR);
-#endif
 	return mid;
 }
 

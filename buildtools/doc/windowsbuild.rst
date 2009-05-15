@@ -271,9 +271,8 @@ OpenSSL
 -------
 
 The OpenSSL__ library is used during authentication of a MonetDB
-client program with the MonetDB server.  It is also optionally used to
-secure communication between client and server.  The OpenSSL library
-is required for the MonetDB5 component.
+client program with the MonetDB server.  The OpenSSL library is
+required for the MonetDB5 component.
 
 Download the source from http://www.openssl.org/.  We used the latest
 stable version (0.9.8k).  Follow the instructions in the file

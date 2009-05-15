@@ -243,7 +243,7 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 }
 
 @h
-mal_export str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl);
+mal_export str SABAOTHmarchConnection(int *ret, str *host, int *port);
 @c
 #define CONNECTIONFILE ".conn"
 /**
@@ -251,7 +251,7 @@ mal_export str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl);
  * If the file doesn't exist, it is created.  Multiple invocations of
  * this function for the same arguments are NOT ignored.
  */
-str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
+str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 	FILE *f;
 	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	str tmp;
@@ -263,13 +263,13 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port, bit *ssl) {
 			getDBPath(&path, PATHLENGTH, CONNECTIONFILE));
 	if ((f = fopen(path, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, "mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
+		fprintf(f, "mapi:monetdb://%s:%i/\n", *host, *port);
 		(void)fflush(f);
 		(void)fclose(f);
 		/* (some) people tend to like (very) noisy programs, hence to
 		 * please them, announce that we're now available from outside */
 		printf("# Listening for connection requests on "
-				"mapi%s:monetdb://%s:%i/\n", *ssl ? "s" : "", *host, *port);
+				"mapi:monetdb://%s:%i/\n", *host, *port);
 		/* emit a warning if we are in maintenance mode */
 		rethrow("sabaoth.getMyStatus", tmp,
 				SABAOTHgetMyStatus(&stats));
