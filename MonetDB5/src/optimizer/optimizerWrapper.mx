@@ -57,9 +57,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
 		) {
-			char buf[1024];
-			snprintf(buf,1024, "Optimizer requires constant string arguments\n");
-			throw(MAL, "optimizer.@1",buf);
+			throw(MAL, "optimizer.@1", ILLARG_CONSTANTS);
 		}
 		if( stk != 0){
 			modnme= *(str*)getArgReference(stk,p,1);
@@ -72,8 +70,8 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 		if( s == NULL) {
 			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-			throw(MAL, "optimizer.@1",buf);
+			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
+			throw(MAL, "optimizer.@1", RUNTIME_OBJECT_UNDEFINED, buf);
 		}
 #ifdef _DEBUG_OPTIMIZER_
 		stream_printf(cntxt->fdout,"@1 %s %s\n",modnme,fcnnme);

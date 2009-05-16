@@ -62,11 +62,11 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 
 	*rl = *rr = 0;
 	if( (bl= BATdescriptor(*l)) == NULL ){
-		throw(MAL, "algebra.prejoin", "Cannot access descriptor");
+		throw(MAL, "algebra.prejoin", INTERNAL_BAT_ACCESS);
 	}
 	if( (br= BATdescriptor(*r)) == NULL ){
 		BBPreleaseref(bl->batCacheid);
-		throw(MAL, "algebra.prejoin", "Cannot access descriptor");
+		throw(MAL, "algebra.prejoin", INTERNAL_BAT_ACCESS);
 	}
 	lpages= (BUN) ((bl->H->heap.size + bl->T->heap.size)/MT_pagesize());
 	rpages= (BUN) ((br->H->heap.size + br->T->heap.size)/MT_pagesize());

@@ -151,7 +151,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), fcnnme);
 	if (s == NULL)
-		throw(MAL, "optimizer.optimize", "operation not found\n");
+		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
 	return optimizeMALBlock(cntxt, s->def);
 }
@@ -180,8 +180,8 @@ QOTshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (s == NULL) {
 		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-		throw(MAL, "optimizer.showFlowGraph", buf);
+		snprintf(buf,1024, "%s.%s", modnme, fcnnme);
+		throw(MAL, "optimizer.showFlowGraph", RUNTIME_OBJECT_UNDEFINED, buf);
 	}
 	showFlowGraph(s->def, stk, fname);
 	return MAL_SUCCEED;
@@ -209,8 +209,8 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (s == NULL) {
 			char buf[1024];
-			snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-			throw(MAL, "optimizer.showPlan", buf);
+			snprintf(buf,1024, "%s.%s", modnme, fcnnme);
+			throw(MAL, "optimizer.showPlan", RUNTIME_OBJECT_UNDEFINED, buf);
 		}
 		mb= s->def;
 	}
@@ -271,7 +271,7 @@ str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 #endif
 	if( s== 0)
 		return throwException(MALEXCEPTION,"optimizer.@1optimizer",
-			"module '%s' not found\n",fcn);
+			RUNTIME_OBJECT_UNDEFINED, fcn);
 	if( s->subscope){
 		j = getSubScope(fcn); 
 		for(t= s->subscope[j];t!=NULL;t=t->peer)

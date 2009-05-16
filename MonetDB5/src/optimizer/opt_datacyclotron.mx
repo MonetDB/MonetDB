@@ -114,14 +114,14 @@ DCrequest(int *ret, str *sch, str *tab, str *col, int *kind){
 	(void) tab;
 	(void) col;
 	(void) kind;
-	throw(MAL,"datacyclotron.request","nyi");
+	throw(MAL,"datacyclotron.request",PROGRAM_NYI);
 }
 
 str
 DCpin(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
-	throw(MAL,"datacyclotron.pin","nyi");
+	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
 }
 
 
@@ -129,6 +129,6 @@ str
 DCunpin(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
-	throw(MAL,"datacyclotron.unpin","nyi");
+	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
 }
 

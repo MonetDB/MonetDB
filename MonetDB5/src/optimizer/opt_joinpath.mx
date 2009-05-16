@@ -484,7 +484,7 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for( --top; top>=0; top--)
 				BBPreleaseref(joins[top]->batCacheid);
 			GDKfree(joins);
-			throw(MAL, "algebra.joinPath", "Cannot access descriptor");
+			throw(MAL, "algebra.joinPath", INTERNAL_BAT_ACCESS);
 		}
 		joins[top++] = b;
 	}

@@ -192,10 +192,8 @@ QOTgetStatistics(int *ret, str *nme)
 	int idx;
 	QOTstatisticsInit();
 	idx= QOTindex(*nme);
-	if( idx <  0)
-		throw(MAL,"optimizer.getStatistics","Illegal property");
-	if( qotStat[idx] ==  0)
-		throw(MAL,"optimizer.getStatistics","Statistics table not valid");
+	if( idx <  0 || qotStat[idx] == 0 )
+		throw(ILLARG,"optimizer.getStatistics",RUNTIME_OBJECT_MISSING);
 	BBPincref(*ret= qotStat[idx]->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }

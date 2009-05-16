@@ -529,7 +529,7 @@ OPTremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 #else
 	(void) cntxt;
 #endif
-	throw(MAL,"opt.remap","no implementation present");
+	throw(MAL, "opt.remap", PROGRAM_NYI);
 }
 @include optimizerWrapper.mx
 @h

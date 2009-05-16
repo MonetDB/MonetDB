@@ -90,7 +90,7 @@ OPTtraceCall(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 		trace= fopen(defaultLog,"a");
 		if( trace == 0)
-			throw(MAL,"mdb.collect","Could not create trace file");
+			throw(MAL, "mdb.collect", RUNTIME_FILE_NOT_FOUND);
 		fprintf(trace,"#-------- \n");
 		fflush(trace);
 	}
