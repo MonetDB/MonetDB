@@ -197,7 +197,7 @@ Flow control statements may not be moved around
 Limit strength reduction to the type modules and the batcalc, batstr, batcolor
 and sql.bind.
 @c
-		if( !isNewSource(p) ) {
+		if(getModuleId(p) && !isNewSource(p) ) {
 			within[ik++] = p;
 			continue;
 		}
