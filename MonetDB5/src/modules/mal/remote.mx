@@ -904,6 +904,8 @@ static INLINE str
 RMTfindconn(connection *ret, str conn) {
 	connection c;
 
+	(void)cntxt;
+
 	/* just make sure the return isn't garbage */
 	*ret = NULL;
 	mal_set_lock(mal_remoteLock, "remote.<findconn>"); /* protect c */
