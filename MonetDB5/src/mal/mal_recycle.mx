@@ -501,15 +501,14 @@ RECYCLEgarbagecollect(MalBlkPtr mb, InstrPtr q, bte *used){
 	}
 }
 
-int chooseVictims(int *lvs, int ltop, lng wr)
+static
+int chooseVictims(Client cntxt, int *lvs, int ltop, lng wr)
 {
 	dbl *wcrd, maxwc, tmp, ci_crd, tot_crd;
 	int l, newtop, mpos, tmpl, ci = 0;
 	lng w, totmem = 0, targmem, smem;
 
-#ifdef _DEBUG_CACHE_
-        Client cntxt= MCgetClient();
-#endif
+	(void) cntxt;
 
 	wcrd = (dbl *)alloca(sizeof(dbl)*ltop);
 	memset(wcrd,0, sizeof(dbl)*ltop);
@@ -574,7 +573,7 @@ int chooseVictims(int *lvs, int ltop, lng wr)
 }
 
 
-static void RECYCLEcleanCache(lng wr0){
+static void RECYCLEcleanCache(Client cntxt, lng wr0){
 	int j,i,l,ltop,v,vtop;
 	InstrPtr p;
 	InstrPtr *old;
@@ -586,8 +585,6 @@ static void RECYCLEcleanCache(lng wr0){
 	dbl mincrd, crd;
 	bte maxcat, cat, *used;
 	lng memLimit = recycleMemory?recycleMemory:HARDLIMIT_MEM;
-	Client cntxt= MCgetClient();
-
 
 	if (!recycleBlk) 
 		return;
@@ -779,7 +776,7 @@ newpass:
 				continue with credit policy to choose the cheapest to evict */
 
 			case RCACHE_CREDIT:
-				vtop = chooseVictims(lvs, ltop, recyclerUsedMemory + wr - memLimit);
+				vtop = chooseVictims(cntxt,lvs, ltop, recyclerUsedMemory + wr - memLimit);
 				for (v = 0; v < vtop; v++){
 					vm[v] = lvs[v];
 					wr -= recycleBlk->profiler[lvs[v]].obytes;
@@ -1367,7 +1364,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 	if (recycleBlk){
 		if ( recyclerUsedMemory +  wr > memLimit ||
 	    		recycleSize >= cacheLimit )
-			RECYCLEcleanCache(wr);
+			RECYCLEcleanCache(cntxt, wr);
 	}
 	if ( RECYCLEinterest(p))
 	switch(retainPolicy) {
@@ -1397,7 +1394,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 		/* RETAIN_ADAPT: searching the cache may take too long? */
 		if ( RECYCLEfind(cntxt,mb,stk,p)< 0){
 			if (recycleSearchTime > recycleTime)
-				RECYCLEcleanCache(wr);
+				RECYCLEcleanCache(cntxt, wr);
 			RECYCLEnew(cntxt,mb, stk, p, rd, wr, ticks);
 		}
 	}

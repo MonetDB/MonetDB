@@ -72,7 +72,6 @@ typedef struct lifespan {
 /* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str mod, str nme,int kind);
-mal_export void     renameFunction(str oldmod, str oldfcn,str modnme, str new);
 mal_export void	    clearFcn(MalBlkPtr m);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
@@ -90,7 +89,6 @@ mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 
 #define newLifespan(M) (Lifespan)GDKmalloc(sizeof(LifespanRecord)*(M)->vsize)
 mal_export Lifespan setLifespan(MalBlkPtr mb);
-mal_export void debugLifespan(MalBlkPtr mb, Lifespan span);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
@@ -147,47 +145,6 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 		}
 	return 0;
 } 
-@-
-Remame all incarnations of a function.
-@c
-void renameFunction(str oldmod, str oldfcn, str modnme, str name){
-	Module root,scope;
-	Symbol s,prev;
-	InstrPtr p;
-	root= scope= MCgetClient()->nspace;
-	while( scope != NULL){
-		if( oldmod && strcmp(oldmod, scope->name) ){
-			scope= scope->outer;
-			continue;
-		}
-	    s= scope->subscope[(int)(*oldfcn)];
-	    prev= NULL;
-	    while(s != NULL){
-	        if( idcmp(s->name,oldfcn) == 0) break;
-	        prev= s;
-	        s= s->skip;
-	    }
-	    if( s) {
-	        if( prev == 0){
-	            scope->subscope[(int)(*oldfcn)]= s->skip;
-	        } else {
-	            prev->peer= s->skip;
-	        }
-	        while(s){
-	            prev= s->peer; 
-	            s->peer= NULL;
-	            s->name= GDKstrdup(name);
-	            p= getInstrPtr(s->def,0);
-	            setModuleId(p,putName(modnme,strlen(modnme)));
-	            setFunctionId(p,putName(name,strlen(name)));
-	            insertSymbol(root,s);
-	            s= prev;
-	        }
-	        return;
-	    }
-	    scope=scope->outer;
-	}
-}
 @- Flow of control
 The nesting of (BARRIER, CATCH) and EXIT statements with their associated
 flow of control primitives LEAVE, REDO and RAISE should form a valid
@@ -688,29 +645,6 @@ fall within a single block. This is handled by the chkflow already.
 The lifespan assumes that any potential conflict of variable
 declaration within blocks have been detected already by chkDeclarations().
 A variable may be introduced only once.
-@c
-void
-debugLifespan(MalBlkPtr mb, Lifespan span)
-{
-	int i;
-	char name[BUFSIZ];
-	Client cntxt= MCgetClient();
-
-	for (i = 0; i < mb->vtop; i++) {
-		if (isTmpVar(mb, i))
-			snprintf(name,BUFSIZ,"%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
-		else
-			snprintf(name,BUFSIZ,"%s ", getVar(mb,i)->name);
-		stream_printf(cntxt->fdout,"#%8s range %4d - %4d  ", 
-			name,
-			getBeginLifespan(span,i),
-			getEndLifespan(span,i));
-		if( getLastUpdate(span,i))
-			stream_printf(cntxt->fdout,"last update %d \n", getLastUpdate(span,i));
-		else
-			stream_printf(cntxt->fdout,"constant \n"); 
-	}
-}
 @-
 The scope of a variable should respect the guarded blocks.
 Variables defined outside, can not be freed insight the
@@ -766,7 +700,6 @@ At a block exit we can finalize all variables defined within that block.
 	if ( span[k].endLifespan == 0 )
 		span[k].endLifespan = pc-2;/* generate them before the end */
 	GDKfree(blk);
-	/* debugLifespan(mb); */
 	return span;
 }
 

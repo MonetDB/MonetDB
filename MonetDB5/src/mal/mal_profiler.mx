@@ -201,12 +201,12 @@ typedef struct RECSTAT {
 
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
-mal_export str openProfilerStream(void);
+mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
 mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-mal_export str setLogFile(Module cntxt, str fname);
+mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
@@ -615,7 +615,7 @@ The events may be sent for offline processing through a
 stream, including "stdout".
 @c
 str
-setLogFile(Module mod, str fname)
+setLogFile(stream *fd, Module mod, str fname)
 {
 	(void) mod;		/* still unused */
 #ifdef MALprofiler
@@ -628,7 +628,7 @@ setLogFile(Module mod, str fname)
 		eventstream = mal_clients[0].fdout;
 	else
 	if( strcmp(fname,"stdout")==0)
-		eventstream = MCgetClient()->fdout;
+		eventstream = fd;
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
@@ -666,10 +666,10 @@ setLogStream(Module cntxt, str host, int port)
 }
 
 str
-openProfilerStream()
+openProfilerStream( stream *fd)
 {
 	malProfileMode = TRUE;
-	eventstream = MCgetClient()->fdout;
+	eventstream = fd;
 	delayswitch = 1;	/* avoid an incomplete initial profile event */
 	return MAL_SUCCEED;
 }

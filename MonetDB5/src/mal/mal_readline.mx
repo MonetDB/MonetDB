@@ -72,7 +72,7 @@ features to assemble a command before it is being interpreted.
 
 #include "mal_client.h"
 mal_export int readConsole(Client cntxt);
-mal_export char * getConsoleInput(const char *prompt, int linemode, int exit_on_error);
+mal_export char * getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error);
 
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
@@ -213,7 +213,7 @@ mal_command_generator(const char *text, int state)
 			snprintf(cmd,BUFSIZ,"%s.*(",text);
 		else
 			snprintf(cmd,BUFSIZ,"%s(",text);
-		msg= getHelp(MCgetClient()->nspace,(str)cmd,1);
+		msg= getHelp(mal_clients->nspace,(str)cmd,1);
 		for(last=0; msg[last]; last++) 
 			;
 	}
@@ -270,7 +270,7 @@ continue_completion(rl_completion_func_t * func)
 void
 init_readline(void)
 {
-	str history = MCgetClient()->history;
+	str history = mal_clients->history; /* only console has history */
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
@@ -285,7 +285,7 @@ init_readline(void)
 void
 deinit_readline(void)
 {
-	str history = MCgetClient()->history;
+	str history = mal_clients->history;
 	if (history) {
 		write_history(history);
 	}
@@ -324,12 +324,11 @@ static int initReadline;
 #endif
 
 char *
-getConsoleInput(const char *prompt, int linemode, int exit_on_error)
+getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 {
 	char *line = NULL;
 	char *buf = NULL;
 	size_t length;
-	Client c;
 	(void) exit_on_error;
 	(void) linemode;
 
@@ -414,7 +413,6 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				if (line[length - 1] == '\r')
 					line[--length] = 0;
 
-				c = MCgetClient();
 				if (c->fdout && c->fdout != GDKout && c->fdout != GDKerr){
 					close_stream(c->fdout);
 					c->fdout= 0;
@@ -446,7 +444,6 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 #ifdef HAVE_LIBREADLINE
 			case '!':
 				{ char *nl;
-				  Client c= MCgetClient();
 				  int i;
 					if(line[1]=='\n') {
 						for(i=0; i< history_length; i++){
@@ -465,7 +462,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 #endif
 			case '?':
 				if( line[1] && line[1]!='\n'){
-					showHelp( MCgetClient()->nspace,line+1, MCgetClient()->fdout);
+					showHelp( c->nspace,line+1, c->fdout);
 				} else
 					showCommands();
 				line= NULL;
@@ -475,6 +472,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 	} while (line == NULL);
 	return line;
 }
+
 int 
 readConsole(Client cntxt)
 {
@@ -496,7 +494,7 @@ readConsole(Client cntxt)
 		initReadline =1 ;
 	}
 #endif
-	buf= getConsoleInput(cntxt->prompt, 0, 1);
+	buf= getConsoleInput(cntxt, cntxt->prompt, 0, 1);
 	if( buf) {
 		int len= (int) strlen(buf);
 		if( len >= (int) cntxt->fdin->size) {

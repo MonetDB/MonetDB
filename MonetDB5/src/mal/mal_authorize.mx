@@ -109,15 +109,17 @@ static BAT *pass = NULL;
 static BAT *scen = NULL;
 
 /**
- * Requires the current client to be the admin user.  If not the case,
+ * Requires the current client to be the admin user thread.  If not the case,
  * this function returns an InvalidCredentialsException.
  */
 str
 AUTHrequireAdmin() {
 	oid id;
-	if (MCgetClient() == NULL)
+	Client cntxt = MCgetClient();
+
+	if (cntxt == NULL)
 			return(MAL_SUCCEED);
-	id = MCgetClient()->user;
+	id = cntxt->user;
 
 	if (id != 0) {
 		char u[BUFSIZ] = "";

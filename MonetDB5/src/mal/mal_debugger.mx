@@ -483,7 +483,7 @@ mal_export void mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char
 mal_export void mdbClrBreakRequest(Client cntxt, str name);
 mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
-mal_export int mdbSetTrap(str modnme, str fcnnme, int flag);
+mal_export int mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag);
 mal_export str mdbGrab(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
 mal_export str mdbTrapClient(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
 mal_export str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
@@ -504,6 +504,7 @@ mal_export void printBBPinfo(stream *out);
 
 mal_export void optimizerDebug(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec);
 mal_export str debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
@@ -602,7 +603,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 		modnme= request;
 		*fcnnme= 0;
 		fcnnme++;
-		sym= findSymbol( modnme,fcnnme);
+		sym= findSymbol(cntxt->nspace, modnme,fcnnme);
 		mdb->brkBlock[mdb->brkTop] = sym? sym->def: mb;
 		mdb->brkPc[mdb->brkTop] = -1;
 		mdb->brkVar[mdb->brkTop] = -1;
@@ -713,9 +714,9 @@ mdbClrBreakRequest(Client cntxt, str request)
 }
 
 int
-mdbSetTrap(str modnme, str fcnnme, int flag){
+mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag){
 	Symbol s;
-	s = findSymbol( putName(modnme, strlen(modnme)),
+	s = findSymbol( cntxt->nspace, putName(modnme, strlen(modnme)),
 					putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		return -1;
@@ -986,7 +987,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 		case 's':	/* step */
 			if (strncmp("span", b, 4) == 0) {
 				Lifespan span= newLifespan(mb);
-				debugLifespan(mb,span);
+				debugLifespan(cntxt,mb,span);
 				GDKfree(span);
 				continue;
 			} else
@@ -2057,4 +2058,26 @@ debugOptimizers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@c
+void
+debugLifespan(Client cntxt, MalBlkPtr mb, Lifespan span)
+{
+	int i;
+	char name[BUFSIZ];
+
+	for (i = 0; i < mb->vtop; i++) {
+		if (isTmpVar(mb, i))
+			snprintf(name,BUFSIZ,"%c%d ", TMPMARKER, getVar(mb,i)->tmpindex); 
+		else
+			snprintf(name,BUFSIZ,"%s ", getVar(mb,i)->name);
+		stream_printf(cntxt->fdout,"#%8s range %4d - %4d  ", 
+			name,
+			getBeginLifespan(span,i),
+			getEndLifespan(span,i));
+		if( getLastUpdate(span,i))
+			stream_printf(cntxt->fdout,"last update %d \n", getLastUpdate(span,i));
+		else
+			stream_printf(cntxt->fdout,"constant \n"); 
+	}
+}
 @}

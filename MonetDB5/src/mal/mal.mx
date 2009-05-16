@@ -403,11 +403,7 @@ Before continuing we should make sure that all clients
 (except the console) have left the scene.
 @c
 	MCexitPending();
-	if( MCgetClient() != mal_clients){
-		stream_printf(mal_clients->fdout,"#MALexit: non-admin attempt\n");
-		return;
-	}
-	RECYCLEshutdown(MCgetClient()); /* remove any left over intermediates */
+	RECYCLEshutdown(mal_clients); /* remove any left over intermediates */
 #if 0
 {
 	int reruns=0, goon;
@@ -424,24 +420,24 @@ Before continuing we should make sure that all clients
 #if 0
 	/* skip this to solve random crashes, needs work */
 	freeBoxes();
-	freeModuleList(cntxt->nspace);
+	freeModuleList(mal_clients->nspace);
 
 	finishNamespace();
-	if( cntxt->prompt)
-		GDKfree(cntxt->prompt);
-	if( cntxt->errbuf)
-		GDKfree(cntxt->errbuf);
-	if( cntxt->bak)
-		GDKfree(cntxt->bak);
-	if( cntxt->fdin){
+	if( mal_clients->prompt)
+		GDKfree(mal_clients->prompt);
+	if( mal_clients->errbuf)
+		GDKfree(mal_clients->errbuf);
+	if( mal_clients->bak)
+		GDKfree(mal_clients->bak);
+	if( mal_clients->fdin){
 		/* missing protection against closing stdin stream */
-		(void) stream_close(cntxt->fdin->s);
-		(void) stream_destroy(cntxt->fdin->s);
-		(void) bstream_destroy(cntxt->fdin);
+		(void) stream_close(mal_clients->fdin->s);
+		(void) stream_destroy(mal_clients->fdin->s);
+		(void) bstream_destroy(mal_clients->fdin);
 	}
-	if( cntxt->fdout && cntxt->fdout != GDKstdout) {
-		(void) stream_close(cntxt->fdout);
-		(void) stream_destroy(cntxt->fdout);
+	if( mal_clients->fdout && mal_clients->fdout != GDKstdout) {
+		(void) stream_close(mal_clients->fdout);
+		(void) stream_destroy(mal_clients->fdout);
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */
