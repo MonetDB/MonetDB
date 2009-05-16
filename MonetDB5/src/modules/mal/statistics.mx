@@ -211,7 +211,7 @@ s_export str STATepilogue(int *ret);
 s_export str STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdepositStr(int *ret, str *nme);
+s_export str STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdeposit(int *ret, int *bid);
 s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATrelease(int *ret, int *bid);
@@ -526,7 +526,7 @@ The content of this box my only be changed by the Administrator.
 #include "mal_authorize.h"
 
 #define authorize(X)\
-{ str tmp = NULL; rethrow("statistics." X, tmp, AUTHrequireAdmin()); }
+{ str tmp = NULL; rethrow("statistics." X, tmp, AUTHrequireAdmin(&cntxt)); }
 
 @- Operator implementation
 @c
@@ -608,7 +608,7 @@ Access to a box calls for resolving the first parameter
 to a named box.
 @c
 str
-STATdepositStr(int *ret, str *nme)
+STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	Box box;
@@ -616,6 +616,9 @@ STATdepositStr(int *ret, str *nme)
 	int idx;
 	str bnme;
 	BUN p;
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
+	(void)mb;
 
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == NULL)
@@ -637,6 +640,7 @@ STATdeposit(int *ret, int *bid)
 	BAT *b;
 	Box box;
 	str msg;
+	Client cntxt = MCgetClient(); /* laziness hack */
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "statistics.deposit", "Cannot access descriptor");
@@ -670,6 +674,7 @@ STATrelease(int *ret, int *bid)
 {
 	BAT *b;
 	Box box;
+	Client cntxt = MCgetClient(); /* laziness hack */
 
 	(void) ret;
 	OpenBox("release");
@@ -736,6 +741,7 @@ STATdiscard2(int *ret, int *bid)
 	BAT *b;
 	Box box;
 	str msg;
+	Client cntxt = MCgetClient(); /* laziness hack */
 
 	(void) ret;
 	OpenBox("discard");
@@ -812,6 +818,7 @@ STATgetHotset(int *bid)
 {
 	BAT *b;
 	Box box;
+	Client cntxt = MCgetClient(); /* laziness hack */
 
 	OpenBox("getHotset");
 	b = BATjoin(STAT_id_inuse, STAT_id_nme, BATcount(STAT_id_nme));
@@ -837,6 +844,7 @@ STATget@1(lng *ret, str *nme)
 	Box box;
 	BUN p;
 	int i;
+	Client cntxt = MCgetClient(); /* laziness hack */
 	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if (p == BUN_NONE)
@@ -864,6 +872,7 @@ STATgetHistogram(int *ret, str *nme)
 	int i;
 	BAT *h;
 	Box box;
+	Client cntxt = MCgetClient(); /* laziness hack */
 
 	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);

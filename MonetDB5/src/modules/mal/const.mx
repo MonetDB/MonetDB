@@ -126,7 +126,7 @@ The content of this box my only be changed by the Administrator.
 @= authorize
 	{
 		str tmp = NULL;
-		rethrow("const.@1", tmp, AUTHrequireAdmin());
+		rethrow("const.@1", tmp, AUTHrequireAdmin(&cntxt));
 	}
 @-
 @= insertBox

@@ -134,7 +134,7 @@ The content of this box my only be changed by the Administrator.
 @= authorize
 	{
 		str tmp = NULL;
-		rethrow("urlBox.@1", tmp, AUTHrequireAdmin());
+		rethrow("urlBox.@1", tmp, AUTHrequireAdmin(&cntxt));
 	}
 @c
 #include "mal_config.h"

@@ -37,21 +37,21 @@ usernames, passwords and allowed scenarios for users of the server.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(oid *ret, str *user, str *passwd, str *challenge, str *algo, str *scenario);
-mal_export str AUTHaddUser(oid *ret, str *user, str *pass, bat *scenarios);
-mal_export str AUTHremoveUser(str *username);
-mal_export str AUTHchangeUsername(str *olduser, str *newuser);
-mal_export str AUTHchangePassword(str *oldpass, str *passwd);
-mal_export str AUTHsetPassword(str *username, str *passwd);
-mal_export str AUTHaddScenario(str *username, str *scenario);
-mal_export str AUTHremoveScenario(str *username, str *scenario);
+mal_export str AUTHcheckCredentials(oid *ret, Client *c, str *user, str *passwd, str *challenge, str *algo, str *scenario);
+mal_export str AUTHaddUser(oid *ret, Client *c, str *user, str *pass, bat *scenarios);
+mal_export str AUTHremoveUser(Client *c, str *username);
+mal_export str AUTHchangeUsername(Client *c, str *olduser, str *newuser);
+mal_export str AUTHchangePassword(Client *c, str *oldpass, str *passwd);
+mal_export str AUTHsetPassword(Client *c, str *username, str *passwd);
+mal_export str AUTHaddScenario(Client *c, str *username, str *scenario);
+mal_export str AUTHremoveScenario(Client *c, str *username, str *scenario);
 mal_export str AUTHresolveUser(str *ret, oid *uid);
-mal_export str AUTHgetUsername(str *ret);
-mal_export str AUTHgetUsers(BAT **ret, bat *scenarios);
-mal_export str AUTHgetPasswordHash(str *ret, str *username);
+mal_export str AUTHgetUsername(str *ret, Client *c);
+mal_export str AUTHgetUsers(BAT **ret, Client *c, bat *scenarios);
+mal_export str AUTHgetPasswordHash(str *ret, Client *c, str *username);
 
-mal_export str AUTHrequireAdmin(void);
-mal_export str AUTHrequirteAdminOrUser(str *username);
+mal_export str AUTHrequireAdmin(Client *c);
+mal_export str AUTHrequireAdminOrUser(Client *c, str *username);
 mal_export str AUTHinitTables(void);
 
 mal_export str AUTHMD5Sum(str *ret, str *string, int *len);
@@ -113,9 +113,9 @@ static BAT *scen = NULL;
  * this function returns an InvalidCredentialsException.
  */
 str
-AUTHrequireAdmin() {
+AUTHrequireAdmin(Client *c) {
 	oid id;
-	Client cntxt = MCgetClient();
+	Client cntxt = *c;
 
 	if (cntxt == NULL)
 			return(MAL_SUCCEED);
@@ -139,8 +139,8 @@ AUTHrequireAdmin() {
  * InvalidCredentialsException.
  */
 str
-AUTHrequireAdminOrUser(str *username) {
-	oid id = MCgetClient()->user;
+AUTHrequireAdminOrUser(Client *c, str *username) {
+	oid id = (*c)->user;
 	char u[BUFSIZ] = "";
 	str user = u;
 	str tmp = MAL_SUCCEED;
@@ -311,10 +311,11 @@ AUTHinitTables() {
 		bat b = bat_nil;
 		str tmp;
 		oid uid;
+		Client c = MCgetClient();
 
 		rethrow("initTables", tmp, AUTHBackendSum(&pw,
 					&user /* because user == pass */, &len));
-		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pw, &b));
+		rethrow("initTables", tmp, AUTHaddUser(&uid, &c, &user, &pw, &b));
 		if (uid != 0)
 			throw(MAL, "initTables", "authorisation BATs not empty, but they were just created !?!?!?");
 		AUTHcommit();
@@ -330,6 +331,7 @@ AUTHinitTables() {
 str
 AUTHcheckCredentials(
 		oid *uid,
+		Client *c,
 		str *username,
 		str *passwd,
 		str *challenge,
@@ -344,7 +346,7 @@ AUTHcheckCredentials(
 	oid *id;
 	BATiter useri, passi;
 
-	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(username));
+	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(c, username));
 	assert(user);
 	assert(pass);
 	assert(scen);
@@ -436,7 +438,7 @@ AUTHcheckCredentials(
  * function is the user id of the added user.
  */
 str
-AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
+AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	BUN p, q;
 	BAT *b;
 	oid *id;
@@ -444,7 +446,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	str hash;
 	BATiter useri;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin());
+	rethrow("addUser", tmp, AUTHrequireAdmin(c));
 	assert(user);
 	assert(pass);
 	assert(scen);
@@ -509,14 +511,14 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
  * any) and the password are removed as well.
  */
 str
-AUTHremoveUser(str *username) {
+AUTHremoveUser(Client *c, str *username) {
 	BUN p;
 	BAT *b;
 	oid id;
 	str tmp;
 	BATiter useri;
 
-	rethrow("removeUser", tmp, AUTHrequireAdmin());
+	rethrow("removeUser", tmp, AUTHrequireAdmin(c));
 	assert(user);
 	assert(pass);
 	assert(scen);
@@ -533,7 +535,7 @@ AUTHremoveUser(str *username) {
 	id = *(oid*)(BUNhead(useri, p));
 
 	/* find the name of the administrator and see if it equals username */
-	if (id == MCgetClient()->user)
+	if (id == (*c)->user)
 		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
@@ -558,14 +560,14 @@ AUTHremoveUser(str *username) {
  * is modified.
  */
 str
-AUTHchangeUsername(str *olduser, str *newuser) 
+AUTHchangeUsername(Client *c, str *olduser, str *newuser) 
 {
 	BUN p, q;
 	str tmp;
 	BATiter useri;
 	oid id;
 
-	rethrow("addUser", tmp, AUTHrequireAdminOrUser(olduser));
+	rethrow("addUser", tmp, AUTHrequireAdminOrUser(c, olduser));
 
 	/* precondition checks */
 	if (*olduser == NULL || strNil(*olduser))
@@ -597,7 +599,7 @@ AUTHchangeUsername(str *olduser, str *newuser)
  * set.
  */
 str
-AUTHchangePassword(str *oldpass, str *passwd) {
+AUTHchangePassword(Client *c, str *oldpass, str *passwd) {
 	BUN p;
 	str err;
 	str tmp;
@@ -613,7 +615,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	rethrow("changePassword", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* check the old password */
-	id = MCgetClient()->user;
+	id = (*c)->user;
 	p = BUNfnd(pass, &id);
 	assert(p != BUN_NONE);
 	passi = bat_iterator(pass);
@@ -641,14 +643,14 @@ AUTHchangePassword(str *oldpass, str *passwd) {
  * cannot use this function for obvious reasons.
  */
 str
-AUTHsetPassword(str *username, str *passwd) {
+AUTHsetPassword(Client *c, str *username, str *passwd) {
 	BUN p;
 	str tmp;
 	str hash;
 	oid id;
 	BATiter useri;
 
-	rethrow("setPassword", tmp, AUTHrequireAdmin());
+	rethrow("setPassword", tmp, AUTHrequireAdmin(c));
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
@@ -657,7 +659,7 @@ AUTHsetPassword(str *username, str *passwd) {
 		throw(ILLARG, "setPassword", "password should not be nil");
 	rethrow("setPassword", tmp, AUTHverifyPassword(NULL, passwd));
 
-	id = MCgetClient()->user;
+	id = (*c)->user;
 	/* find the name of the administrator and see if it equals username */
 	p = BUNfnd(user, &id);
 	assert (p != BUN_NONE);
@@ -692,14 +694,14 @@ AUTHsetPassword(str *username, str *passwd) {
  * all scenarios are permitted).
  */
 str
-AUTHaddScenario(str *username, str *scenario) {
+AUTHaddScenario(Client *c, str *username, str *scenario) {
 	BUN p;
 	str tmp;
 	oid *id;
 	BAT *b;
 	BATiter useri;
 
-	rethrow("addScenario", tmp, AUTHrequireAdmin());
+	rethrow("addScenario", tmp, AUTHrequireAdmin(c));
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
@@ -733,16 +735,16 @@ AUTHaddScenario(str *username, str *scenario) {
  * Removes the given scenario from the list of allowed scenarios for the
  * given user.  Note that removing the last allowed scenario results in
  * the opposite effect: it will allow any scenario to be used.
-		 */
+ */
 str
-AUTHremoveScenario(str *username, str *scenario) {
+AUTHremoveScenario(Client *c, str *username, str *scenario) {
 	BUN p;
 	BAT *b;
 	oid *id;
 	str tmp;
 	BATiter useri;
 
-	rethrow("removeScenario", tmp, AUTHrequireAdmin());
+	rethrow("removeScenario", tmp, AUTHrequireAdmin(c));
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
@@ -808,20 +810,18 @@ AUTHresolveUser(str *username, oid *uid)
 }
 
 /**
- * Returns the username of the current user.
+ * Returns the username of the given client.
  */
 str
-AUTHgetUsername(str *username) {
+AUTHgetUsername(str *username, Client *c) {
 	BUN p;
 	oid id;
 	BATiter useri;
 
-	id = MCgetClient()->user;
+	id = (*c)->user;
 	p = BUNfnd(user, &id);
-	if (p == BUN_NONE) {
-		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT,
-				MCgetClient()->user);
-	}
+	if (p == BUN_NONE)
+		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, id);
 
 	useri = bat_iterator(user);
 	*username = BUNtail(useri, p);
@@ -834,11 +834,11 @@ AUTHgetUsername(str *username) {
  * scenarios.
  */
 str
-AUTHgetUsers(BAT **ret, bat *scenarios) {
+AUTHgetUsers(BAT **ret, Client *c, bat *scenarios) {
 	BAT *b, *r;
 	str tmp;
 
-	rethrow("getUsers", tmp, AUTHrequireAdmin());
+	rethrow("getUsers", tmp, AUTHrequireAdmin(c));
 
 	if (*scenarios != bat_nil) {
 		b = BATdescriptor(*scenarios);
@@ -893,14 +893,14 @@ AUTHgetUsers(BAT **ret, bat *scenarios) {
  * username.  Throws an exception if called by a non-superuser.
  */
 str
-AUTHgetPasswordHash(str *ret, str *username) {
+AUTHgetPasswordHash(str *ret, Client *c, str *username) {
 	BUN p;
 	oid id;
 	BATiter i;
 	str tmp;
 	str passwd;
 
-	rethrow("getPasswordHash", tmp, AUTHrequireAdmin());
+	rethrow("getPasswordHash", tmp, AUTHrequireAdmin(c));
 
 	if (*username == NULL || strNil(*username))
 		throw(ILLARG, "getPasswordHash", "username should not be nil");
@@ -938,8 +938,9 @@ static str vaultKey = NULL;
 str
 AUTHunlockVault(str *password) {
 	str tmp;
+	Client c = MCgetClient(); /* this should only be run by id 0 on startup */
 
-	rethrow("unlockVault", tmp, AUTHrequireAdmin());
+	rethrow("unlockVault", tmp, AUTHrequireAdmin(&c));
 
 	if (password == NULL || strNil(*password))
 		throw(ILLARG, "unlockVault", "password should not be nil");
