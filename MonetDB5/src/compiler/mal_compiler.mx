@@ -105,7 +105,7 @@ pattern MALtoC(mod:str, fcn:str, alias:str):void
 address MCdynamicCompiler
 comment "MAL to C compiler for functions";
 
-command load(mod:str, fcn:str, fname:str):void
+pattern load(mod:str, fcn:str, fname:str):void
 address MCloadFunction
 comment "Load a separately compiled function";
 
@@ -132,8 +132,8 @@ comment "Compile the mal file");
 #define mal_compiler_export extern
 #endif
 
-mal_compiler_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_compiler_export str MCloadFunction(int *ret, str *mod, str *fcn, str *fname);
+mal_compiler_export str MCdynamicCompiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_compiler_export str MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif /* _MAL_COMPILER_H_ */
 @-
@@ -571,7 +571,7 @@ mccInstruction(stream *f, MalBlkPtr mb, InstrPtr p, int i, int *catch, int *ctop
 Multiplex script calls are expanded to their code base.
 @c
 void
-mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
+mccMultiplex(Client cntxt, stream *f, MalBlkPtr mb, InstrPtr p)
 {
 	int pc = getPC(mb, p);
 	InstrPtr pn;
@@ -584,7 +584,7 @@ mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
 	setModuleId(pn, NULL);
 	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
-	typeChecker(MCgetClient()->nspace, mb, pn, TRUE);
+	typeChecker(cntxt->nspace, mb, pn, TRUE);
 
 	stream_printf(f, "{\tlng mloop;\n\tptr h,t;\n");
 	stream_printf(f, "init todo\n");
@@ -652,7 +652,7 @@ mccBATnew(stream *f, MalBlkPtr mb, InstrPtr p, int *catch, int *ctop){
 }
 
 void
-mccBody(stream *f, MalBlkPtr mb)
+mccBody(Client cntxt, stream *f, MalBlkPtr mb)
 {
 	int i;
 	InstrPtr p;
@@ -680,7 +680,7 @@ functions.
 			if (getModuleId(p) && getFunctionId(p) && 
 				idcmp(getModuleId(p), "multiplex") == 0 && 
 				idcmp(getFunctionId(p), "script") == 0) {
-				mccMultiplex(f, mb, p);
+				mccMultiplex(cntxt,f, mb, p);
 				continue;
 			}
 			if (getModuleId(p) && getFunctionId(p) && 
@@ -710,7 +710,7 @@ functions.
 		errors += mccInstruction(f, mb, p, i, catch, &ctop);
 	}
 	if (errors)
-		showErrors(MCgetClient());
+		showErrors(cntxt);
 }
 
 void
@@ -756,7 +756,7 @@ the routine be expanded and the designated file.
 static char *codefile;
 
 str
-mccGenerate(MalBlkPtr mb, str alias)
+mccGenerate(Client cntxt, MalBlkPtr mb, str alias)
 {
 	char buf[1024];
 	stream *f;
@@ -768,7 +768,7 @@ mccGenerate(MalBlkPtr mb, str alias)
 	mccInit(f, mb);
 	mccVariables(f, mb);
 	mccInitUse(f, mb);
-	mccBody(f, mb);
+	mccBody(cntxt, f, mb);
 	mccExit(f,mb);
 	codefile= strdup(buf);
 	return MAL_SUCCEED;
@@ -799,7 +799,7 @@ and function name,
 The dynamic version takes variables from the runtime stack.
 @c
 str
-MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+MCdynamicCompiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Symbol t;
 	str alias;
@@ -815,10 +815,10 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	printf("MCdynamicCompiler: %s.%s\n", nme, fcn);
 #endif
 
-	t= findSymbol(putName(nme,strlen(nme)),fcn);
+	t= findSymbol(cntxt->nspace, putName(nme,strlen(nme)),fcn);
 	if(t== 0)
 		throw(MAL,"compiler.MALtoC","Could not find function");
-	msg= mccGenerate(t->def,alias);
+	msg= mccGenerate(cntxt,t->def,alias);
 #ifdef DEBUG_MAL_COMPILER
 	mccDump();
 #endif
@@ -826,12 +826,18 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str 
-MCloadFunction(int *ret, str *mod, str *fcn, str *fname){
+MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
+	str *fname = (str*) getArgReference(stk,pci,3);
 	Symbol t;
 	InstrPtr sig;
 	char buf[1024];
+	(void)mb;
 
-	t= findSymbol(putName(*mod, strlen(*mod)), *fcn);
+	t= findSymbol(cntxt->nspace, putName(*mod, strlen(*mod)), *fcn);
 	if(t== 0)
 		throw(MAL,"compiler.load","Could not find function");
 	loadLibrary(*fname,FALSE);
@@ -843,6 +849,7 @@ MCloadFunction(int *ret, str *mod, str *fcn, str *fname){
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
 str 
 MCmcc(int *ret, str *fname){
 	char buf[1024];

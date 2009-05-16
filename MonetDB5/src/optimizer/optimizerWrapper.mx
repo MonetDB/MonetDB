@@ -62,13 +62,13 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			throw(MAL, "optimizer.@1",buf);
 		}
 		if( stk != 0){
-			modnme= (str)getArgValue(stk,p,1);
-			fcnnme= (str)getArgValue(stk,p,2);
+			modnme= *(str*)getArgReference(stk,p,1);
+			fcnnme= *(str*)getArgReference(stk,p,2);
 		} else {
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);
 		}
-		s= findSymbol(putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
 
 		if( s == NULL) {
 			char buf[1024];

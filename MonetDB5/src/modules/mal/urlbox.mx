@@ -360,7 +360,7 @@ URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	@:OpenBox(deposit)@
-	url = (str) getArgValue(stk, pci, 1);
+	url = *(str*) getArgReference(stk, pci, 1);
 	if( strlen(url) <2048)
 		strcpy(tuple,url);
 	else throw(MAL, "urlbox.deposit","url too long");
@@ -375,7 +375,7 @@ URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	@:OpenBox(take)@
-	url = (str) getArgValue(stk, pci, 1);
+	url = *(str*) getArgReference(stk, pci, 1);
 	url = GDKstrdup(url);
 	URLBOXchop(url, parts);
 	GDKfree(url);
@@ -393,7 +393,7 @@ URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "urlbox.release", "failed to release object from box");
 	return MAL_SUCCEED;
@@ -408,7 +408,7 @@ URLBOXreleaseOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "urlbox.release", "failed to release object from box");
 	return MAL_SUCCEED;
@@ -437,7 +437,7 @@ URLBOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
@@ -451,7 +451,7 @@ URLBOXdiscardOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
@@ -465,7 +465,7 @@ URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
@@ -482,7 +482,7 @@ URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(toString)@
-	nme = (str) getArgValue(stk, pci, 1);
+	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
 		throw(MAL, "urlbox.toString", "failed to take object from box");
@@ -508,7 +508,7 @@ URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
@@ -524,7 +524,7 @@ URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor=  (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;

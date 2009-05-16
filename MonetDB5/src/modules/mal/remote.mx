@@ -1050,10 +1050,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	(void)cntxt;
 	(void)mb;
 
-	conn = (str)getArgValue(stk, pci, 1);
+	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.get", "connection name is NULL or nil");
-	ident = (str)getArgValue(stk, pci, 2);
+	ident = *(str*) getArgReference(stk, pci, 2);
 	if (ident == 0 || isIdentifier(ident) < 0)
 		throw(ILLARG, "remote.get", "identifier expected, got '%s'", ident);
 
@@ -1196,7 +1196,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)cntxt;
 
-	conn = (str)getArgValue(stk, pci, 1);
+	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.put", "connection name is NULL or nil");
 
@@ -1335,7 +1335,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", "connection name is NULL or nil");
 
 	/* find local definition */
-	sym = findSymbol(putName(mod, strlen(mod)), putName(fcn, strlen(fcn)));
+	sym = findSymbol(cntxt->nspace, putName(mod, strlen(mod)), putName(fcn, strlen(fcn)));
 	if (sym == NULL)
 		throw(MAL, "remote.register", "function '%s.%s' not found", mod, fcn);
 
@@ -1377,9 +1377,9 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 remote_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	str conn = (str)getArgValue(stk, pci, 1);
-	str mod = (str)getArgValue(stk, pci, 2);
-	str fcn = (str)getArgValue(stk, pci, 3);
+	str conn = *(str*) getArgReference(stk, pci, 1);
+	str mod = *(str*) getArgReference(stk, pci, 2);
+	str fcn = *(str*) getArgReference(stk, pci, 3);
 	(void)mb;
 	return RMTregisterInternal(cntxt, conn, mod, fcn);
 }
@@ -1408,13 +1408,13 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	i = pci->retc;
 
-	conn = (str)getArgValue(stk, pci, i++);
+	conn = *(str*) getArgReference(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "connection name is NULL or nil");
-	mod = (str)getArgValue(stk, pci, i++);
+	mod = *(str*) getArgReference(stk, pci, i++);
 	if (mod == NULL || strcmp(mod, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "module name is NULL or nil");
-	func = (str)getArgValue(stk, pci, i++);
+	func = *(str*) getArgReference(stk, pci, i++);
 	if (func == NULL || strcmp(func, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", "function name is NULL or nil");
 
@@ -1431,7 +1431,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[len++] = '(';
 	for (i = 0; i < pci->retc; i++) 
 		len += snprintf(&qbuf[len], BUFSIZ - len, "%s%s",
-				(i > 0 ? ", " : ""), (str) getArgValue(stk,pci,i));
+				(i > 0 ? ", " : ""), *(str *) getArgReference(stk,pci,i));
 	
 	if (pci->retc > 1 && len < BUFSIZ)
 		qbuf[len++] = ')';

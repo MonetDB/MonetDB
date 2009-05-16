@@ -330,7 +330,7 @@ CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 
 	OpenBox("deposit");
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (isIdentifier(name) < 0 )
 		throw(MAL, "bbp.deposit", "identifier expected");
 	v = getArgReference(stk,pci,2); 
@@ -351,8 +351,8 @@ CMDbbpbindDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("bind");
-	name = (str) getArgValue(stk, pci, 1);
-	loc = (str) getArgValue(stk, pci, 2);
+	name = *(str*) getArgReference(stk, pci, 1);
+	loc = *(str*) getArgReference(stk, pci, 2);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", "identifier expected");
 	if (bindBAT(box, name, loc))
@@ -373,7 +373,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	lhs = getArgReference(stk,pci,0); 
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (isIdentifier(name) < 0)
 		throw(MAL, "bbp.bind", "identifier expected");
 	box = findBox("bbp");
@@ -425,8 +425,8 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 CMDbbpbind2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *ret= (int*) getArgReference(stk,pci,0);
-	str hnme = (str) getArgValue(stk, pci, 1);
-	str tnme = (str) getArgValue(stk, pci, 2);
+	str hnme = *(str*) getArgReference(stk, pci, 1);
+	str tnme = *(str*) getArgReference(stk, pci, 2);
 	int i,ht,tt;
 
 	(void) cntxt;
@@ -508,7 +508,7 @@ CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("take");
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (isIdentifier(name)< 0)
 		throw(MAL, "bbp.take", "identifier expected");
 	if (strstr(name, "M5system_auth") == name)
@@ -540,7 +540,7 @@ CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;		/* fool compiler */
 	(void) mb;		/* fool compiler */
 	OpenBox("release");
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	releaseBox(box, name);
 	/* merge the updates of this BAT with the master copy */
 	/* printf("bbp.release not yet fully implemented\n"); */
@@ -560,7 +560,7 @@ CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	OpenBox("release");
-	bid = (int *) getArgValue(stk, pci, 1);
+	bid = (int *) getArgReference(stk, pci, 1);
 	BBPdecref(*bid, TRUE);
 	releaseBAT(mb, stk, *bid);
 	*bid = 0;
@@ -584,7 +584,7 @@ CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	OpenBox("release");
-	bid = (int *) getArgValue(stk, pci, 1);
+	bid = (int *) getArgReference(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.garbage", "Cannot access descriptor");
 	}
@@ -623,14 +623,14 @@ CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 
 	(void) cntxt;
-	bid = (int *) getArgValue(stk, pci, 1);
-	immediate = (bit *) getArgValue(stk, pci, 2);
+	bid = (int *) getArgReference(stk, pci, 1);
+	immediate = (bit *) getArgReference(stk, pci, 2);
 	msg = CMDbbpreleaseBAT(cntxt,mb, stk, pci);
 	if( *immediate) 
 		msg = BKCdestroyImmediate(&ret, bid);
 	else 
 		msg = BKCdestroy(&ret, bid);
-	*(int *) getArgValue(stk, pci, 1)  = 0;
+	*(int *) getArgReference(stk, pci, 1)  = 0;
 	return msg;
 }
 
@@ -642,8 +642,8 @@ CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	bid = (int *) getArgValue(stk, pci, 1);
-	*(int *) getArgValue(stk, pci, 1)  = 0;
+	bid = (int *) getArgReference(stk, pci, 1);
+	*(int *) getArgReference(stk, pci, 1)  = 0;
 	return BKCdestroyImmediate(&ret, bid);
 }
 
@@ -672,7 +672,7 @@ CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("discard");
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name))
 		throw(MAL, "bbp.discard", "failed to discard object ");
 	/*printf("bbp.discard not yet fully implemented\n"); */
@@ -690,7 +690,7 @@ CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("toString");
-	nme = (str) getArgValue(stk, pci, 1);
+	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
 		throw(MAL, "bbp.toString", "failed to take value from box");
@@ -712,7 +712,7 @@ CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if (nextBoxElement(box, cursor, v))
 		throw(MAL, "bbp.iterator", "failed");

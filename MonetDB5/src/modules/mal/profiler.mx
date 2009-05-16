@@ -317,7 +317,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	(void) mb;
 	(void) stk;
 	(void) pc;
-	return openProfilerStream();
+	return openProfilerStream(cntxt->fdout);
 }
 str
 CMDcloseProfilerStream(int *res)
@@ -357,7 +357,7 @@ CMDsetProfilerFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *fnme = (str*) getArgReference(stk,pci,1);
 	(void) mb;		/* fool compiler */
 	checkProfiler("setProfiler");
-	setLogFile(cntxt->nspace, *fnme);
+	setLogFile(cntxt->fdout,cntxt->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 

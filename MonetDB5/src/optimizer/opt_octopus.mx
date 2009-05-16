@@ -355,7 +355,6 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	if ( tentacle == NULL)
 		return 0;
-#define DEBUG_OPT_OCTOPUS
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "#Octopus optimizer called\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);

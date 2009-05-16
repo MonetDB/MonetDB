@@ -576,7 +576,41 @@ IOprintf_(str *res, str format, ...)
 	return MAL_SUCCEED;
 }
 
-#define G(X) ,getArgValue(stk,pci,X), getArgType(mb,pci,X)
+static ptr
+getArgValue(MalStkPtr stk, InstrPtr pci, int k){
+	int j=0;
+	ValRecord *v;
+	ptr val = NULL;
+	int tpe ;
+
+	j = pci->argv[k];
+	v= &stk->stk[j];
+	tpe = v->vtype;
+tstagain:
+	switch(tpe){
+	/* switch(ATOMstorage(v->vtype)) */
+	case TYPE_void: val= (ptr) & v->val.ival; break;
+	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_sht: val= (ptr) & v->val.shval; break;
+	case TYPE_bat: val= (ptr) & v->val.bval; break;
+	case TYPE_int: val= (ptr) & v->val.ival; break;
+	case TYPE_wrd: val= (ptr) & v->val.wval; break;
+	case TYPE_bte: val= (ptr) & v->val.btval; break;
+	case TYPE_oid: val= (ptr) & v->val.oval; break;
+	case TYPE_ptr: val= (ptr) v->val.pval; break;/*!!*/
+	case TYPE_flt: val= (ptr) & v->val.fval; break;
+	case TYPE_dbl: val= (ptr) & v->val.dval; break;
+	case TYPE_lng: val= (ptr) & v->val.lval; break;
+	case TYPE_str: val= (ptr) v->val.sval; break;/*!!*/
+	default:
+		tpe= ATOMstorage(tpe);
+		goto tstagain;
+	}
+	return val;
+} 
+#define G(X) , getArgValue(stk,pci,X), getArgType(mb,pci,X)
+
 str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -615,7 +649,7 @@ str
 IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *fmt = (str*) getArgReference(stk,pci,2);
 	str fmt2;
-	stream *f= (stream*) getArgValue(stk,pci,1);
+	stream *f= (stream*) getArgReference(stk,pci,1);
 	str msg= MAL_SUCCEED;
 
 	(void) cntxt;

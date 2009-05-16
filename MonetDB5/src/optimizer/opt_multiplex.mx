@@ -305,7 +305,10 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	OPTDEBUG
 		stream_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (%d K)\n",mb->stop,mb->vtop,
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
-	return actions;
+	if (mb->errors){
+		/* rollback */
+	}
+	return mb->errors? 0: actions;
 }
 @include optimizerWrapper.mx
 @h

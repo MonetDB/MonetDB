@@ -108,7 +108,7 @@ BOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str *) getArgReference(stk, pci, 1);
 	if (openBox(name) != 0)
 		return MAL_SUCCEED;
 	throw(MAL, "box.open", "failed to open box");
@@ -121,7 +121,7 @@ BOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str *) getArgReference(stk, pci, 1);
 	if (closeBox(name, FALSE) == 0)
 		return MAL_SUCCEED;
 	throw(MAL, "box.close", "failed to close box");
@@ -145,7 +145,7 @@ BOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Access to a box calls for resolving the first parameter
 to a named box.
 @= OpenBox
-	name = (str) getArgValue(stk,pci,1);
+	name = *(str *) getArgReference(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
 	throw(MAL, "box.@1","box is not open");
@@ -161,7 +161,7 @@ BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	@:OpenBox(deposit)@
-	name = (str) getArgValue(stk, pci, 2);
+	name = *(str *) getArgReference(stk, pci, 2);
 	v = getArgReference(stk,pci,3); 
 	if (depositBox(box, name, v))
 		throw(MAL, "box.deposit", "failed to deposit into box");
@@ -177,7 +177,7 @@ BOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	@:OpenBox(take)@
-	name = (str) getArgValue(stk, pci, 2);
+	name = *(str *) getArgReference(stk, pci, 2);
 	v = getArgReference(stk,pci,0); 
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
 		throw(MAL, "box.take", "failed to take object from box");
@@ -194,7 +194,7 @@ BOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk, pci, 2);
+	name = *(str *) getArgReference(stk, pci, 2);
 	releaseBox(box, name);
 	return MAL_SUCCEED;
 }
@@ -221,7 +221,7 @@ BOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk, pci, 2);
+	name = *(str *) getArgReference(stk, pci, 2);
 	if (discardBox(box, name))
 		throw(MAL, "box.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
@@ -257,7 +257,7 @@ BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,2); 
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;

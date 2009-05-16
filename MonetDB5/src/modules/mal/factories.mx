@@ -44,7 +44,7 @@ command getDeparture():bat[:oid,:timestamp]
 address FCTgetDeparture
 comment "Retrieve the time stamp the last answer was returned.";
 
-command shutdown(m:str, f:str):void
+pattern shutdown(m:str, f:str):void
 address FCTshutdown
 comment "Close a factory.";
 @-
@@ -76,7 +76,7 @@ factories_export str FCTgetArrival(int *ret);
 factories_export str FCTgetDeparture(int *ret);
 factories_export str FCTsetLocation(int *ret, str *loc);
 factories_export str FCTgetLocations(int *ret);
-factories_export str FCTshutdown(int *ret, str *mod, str *fcn);
+factories_export str FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _FACTORIES_H */
 @c
 #include "mal_config.h"
@@ -169,11 +169,14 @@ FCTgetLocations(int *ret)
 }
 
 str
-FCTshutdown(int *ret, str *mod, str *fcn)
+FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str mod = *(str*) getArgReference(stk, pci, 1);
+	str fcn = *(str*) getArgReference(stk, pci, 2);
 	Symbol s;
-	(void) ret;
-	s = findSymbol(putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	(void) mb;
+
+	s = findSymbol(cntxt->nspace, putName(mod,strlen(mod)), putName(fcn, strlen(fcn)));
 	if (s == NULL)
 		throw(MAL, "factories.shutdown", "Factory not found");
 	shutdownFactory(s->def, TRUE);

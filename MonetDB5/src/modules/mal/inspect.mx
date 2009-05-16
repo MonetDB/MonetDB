@@ -36,19 +36,19 @@ command getWelcome():str
 address INSPECTgetWelcome
 comment "Return the server message of the day string";
 
-command getDefinition(mod:str,fcn:str) :bat[:str,:str] 
+pattern getDefinition(mod:str,fcn:str) :bat[:str,:str] 
 address INSPECTgetDefinition
 comment "Returns a string representation of a specific function.";
-command getSignature(mod:str,fcn:str) :bat[:str,:str] 
+pattern getSignature(mod:str,fcn:str) :bat[:str,:str] 
 address INSPECTgetSignature
 comment "Returns the function signature(s).";
-command getAddress(mod:str,fcn:str) :bat[:str,:str] 
+pattern getAddress(mod:str,fcn:str) :bat[:str,:str] 
 address INSPECTgetAddress
 comment "Returns the function signature(s).";
-command getComment(mod:str,fcn:str) :bat[:str,:str]
+pattern getComment(mod:str,fcn:str) :bat[:str,:str]
 address INSPECTgetComment
 comment "Returns the function help information.";
-command getSource(mod:str,fcn:str):str
+pattern getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function.";
 
@@ -75,7 +75,7 @@ comment "Return the storage size for the current function (in bytes).";
 pattern getSize(mod:str):bat[:str,:lng]
 address INSPECTgetModuleSize
 comment "Return the storage size for a module (in bytes).";
-command getSize(mod:str,fcn:str):lng
+pattern getSize(mod:str,fcn:str):lng
 address INSPECTgetFunctionSize
 comment "Return the storage size for a function (in bytes).";
 
@@ -150,16 +150,16 @@ inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr
 inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
-inspect_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetAddress(int *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetComment(int *ret, str *mod, str *fcn);
-inspect_export str INSPECTgetSource(str *ret, str *mod, str *fcn);
+inspect_export str INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 inspect_export str INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
+inspect_export str INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTgetEnvironment(int *ret);
-inspect_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
+inspect_export str INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 inspect_export str INSPECTatom_names(int *ret);
 inspect_export str INSPECTatom_sup_names(int *ret);
 inspect_export str INSPECTatom_sizes(int *ret);
@@ -359,13 +359,17 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetDefinition(int *ret, str *mod, str *fcn)
+INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	char buf[BUFSIZ];
 	BAT *b;
+	(void)mb;
 
-	s = findSymbol(putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", 
 				"failed to find <module>.<function>");
@@ -393,14 +397,18 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 }
 
 str
-INSPECTgetSignature(int *ret, str *mod, str *fcn)
+INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	char buf[BUFSIZ];
 	str ps, tail;
 	BAT *b;
+	(void) mb;
 
-	s = findSymbol(getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", 
 				"failed to find <module>.<function>");
@@ -432,15 +440,20 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 	@:Pseudo(view,input,result)@
 	return MAL_SUCCEED;
 }
+
 str
-INSPECTgetAddress(int *ret, str *mod, str *fcn)
+INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	char buf[BUFSIZ];
 	str ps, tail;
 	BAT *b;
+	(void) mb;
 
-	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", "failed to find <module>.<function>");
 	b = BATnew(TYPE_str, TYPE_str, 12);
@@ -474,13 +487,17 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 	return MAL_SUCCEED;
 }
 str
-INSPECTgetComment(int *ret, str *mod, str *fcn)
+INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	char buf[BUFSIZ];
 	BAT *b;
+	(void) mb;
 
-	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", "failed to find <module>.<function>");
 	b = BATnew(TYPE_str, TYPE_str, 12);
@@ -499,14 +516,19 @@ INSPECTgetComment(int *ret, str *mod, str *fcn)
 	@:Pseudo(view,input,result)@
 	return MAL_SUCCEED;
 }
+
 str
-INSPECTgetSource(str *ret, str *mod, str *fcn)
+INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *ret = (str*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	char *buf;
 	size_t len,lim;
+	(void) mb;
 
-	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSource", 
 			"Failed to find <module>.<function>");
@@ -545,12 +567,16 @@ INSPECTgetSource(str *ret, str *mod, str *fcn)
 }
 
 str
-INSPECTsymbolType(int *ret, str *mod, str *fcn)
+INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
 	BAT *b;
+	(void) mb;
 
-	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", 
 			"failed to find <module>.<function>");
@@ -706,11 +732,15 @@ INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
+INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	lng *ret = (lng*) getArgReference(stk,pci,0);
+	str *mod = (str*) getArgReference(stk,pci,1);
+	str *fcn = (str*) getArgReference(stk,pci,2);
 	Symbol s;
+	(void) mb;
 
-	s = findSymbol( getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", 
 			"failed to find <module>.<function>");
@@ -734,7 +764,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace,getName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL){
 		char buf[BUFSIZ];

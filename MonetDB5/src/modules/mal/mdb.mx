@@ -548,14 +548,14 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (stk != 0) {
-		modnme = (str) getArgValue(stk, p, 1);
-		fcnnme = (str) getArgValue(stk, p, 2);
+		modnme = *(str*) getArgReference(stk, p, 1);
+		fcnnme = *(str*) getArgReference(stk, p, 2);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
 	}
 
-	s = findSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", "Could not find function");
@@ -684,21 +684,21 @@ MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (stk != 0) {
-		modnme = (str) getArgValue(stk, p, 1);
-		fcnnme = (str) getArgValue(stk, p, 2);
+		modnme = *(str*) getArgReference(stk, p, 1);
+		fcnnme = *(str*) getArgReference(stk, p, 2);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
 	}
 
-	s = findSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", "Could not find function");
 	span = setLifespan(s->def);
 	if( span == NULL)
 		throw(MAL,"mdb.inspect","could not allocate space");
-	debugLifespan(s->def,span);
+	debugLifespan(cntxt, s->def, span);
 	GDKfree(span);
 	(void) p;
 	(void) stk;
@@ -726,11 +726,11 @@ MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = (str) getArgValue(stk, p, 1);
-	str fcnnme = (str) getArgValue(stk, p, 2);
+	str modnme = *(str*) getArgReference(stk, p, 1);
+	str fcnnme = *(str*) getArgReference(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -751,11 +751,11 @@ MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = (str) getArgValue(stk, p, 1);
-	str fcnnme = (str) getArgValue(stk, p, 2);
+	str modnme = *(str*) getArgReference(stk, p, 1);
+	str fcnnme = *(str*) getArgReference(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -776,11 +776,11 @@ MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str modnme = (str) getArgValue(stk, p, 1);
-	str fcnnme = (str) getArgValue(stk, p, 2);
+	str modnme = *(str*) getArgReference(stk, p, 1);
+	str fcnnme = *(str*) getArgReference(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
 		showException(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	else
@@ -875,16 +875,16 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void)cntxt;
 	if (stk != 0) {
-		modnme = (str) getArgValue(stk, p, 1);
-		fcnnme = (str) getArgValue(stk, p, 2);
-		fname = (str) getArgValue(stk, p, 3);
+		modnme = *(str*) getArgReference(stk, p, 1);
+		fcnnme = *(str*) getArgReference(stk, p, 2);
+		fname = *(str*) getArgReference(stk, p, 3);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
 		fname = getArgDefault(mb, p, 3);
 	}
 
-	s = findSymbol(putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL) {
 		char buf[1024];
@@ -908,12 +908,12 @@ str MDBdummy(int *ret){
 str
 MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str modnme = (str) getArgValue(stk, pci, 1);
-	str fcnnme = (str) getArgValue(stk, pci, 2);
-	bit b=  *(bit*) getArgValue(stk,pci,3);
+	str modnme = *(str*) getArgReference(stk, pci, 1);
+	str fcnnme = *(str*) getArgReference(stk, pci, 2);
+	bit b=  *(bit*) getArgReference(stk,pci,3);
 	(void) cntxt;
 	(void) mb;
-	if ( mdbSetTrap(modnme,fcnnme,b) )
+	if ( mdbSetTrap(cntxt,modnme,fcnnme,b) )
 		throw(MAL,"mdb.trap","Function not found");
 	return MAL_SUCCEED;
 }

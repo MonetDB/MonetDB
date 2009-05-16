@@ -560,7 +560,7 @@ OPT@1Implementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else {
 		mod= getArgDefault(mb,p,1);
 		fcn= getArgDefault(mb,p,2);
-		t= findSymbol(putName(mod, strlen(mod)), fcn);
+		t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
 		if( t == 0)
 			return 0;
 		target= t->def;
@@ -617,7 +617,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		mod= getArgDefault(mb,p,3);
 		fcn= getArgDefault(mb,p,4);
 	}
-	t= findSymbol(putName(mod, strlen(mod)), fcn);
+	t= findSymbol(cntxt->nspace, putName(mod, strlen(mod)), fcn);
 	if( t == 0)
 		return 0;
 

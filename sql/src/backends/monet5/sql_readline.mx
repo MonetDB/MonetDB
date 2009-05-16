@@ -176,7 +176,7 @@ SQLreadConsole(Client cntxt){
 		stifle_history(1000);
 		initsqlReadline =1 ;
 	}
-	buf= getConsoleInput(cntxt->prompt, 0, 1);
+	buf= getConsoleInput(cntxt, cntxt->prompt, 0, 1);
 	if( buf) {
 		size_t len = strlen(buf);
 		if( len >= cntxt->fdin->size) {

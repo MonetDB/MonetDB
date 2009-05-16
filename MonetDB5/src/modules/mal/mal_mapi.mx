@@ -76,11 +76,11 @@ command trace(mid:int,flag:int):void
 address SERVERtrace
 comment "Toggle the Mapi library debug tracer.";
 
-command reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
+pattern reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectWithoutAlias
 comment "Re-establish connection with a remote mserver.";
 
-command reconnect(host:str, port:int, db_alias:str, usr:str, passwd:str,lang:str):int
+pattern reconnect(host:str, port:int, db_alias:str, usr:str, passwd:str,lang:str):int
 address SERVERreconnectAlias
 comment "Re-establish connection with a remote mserver.";
 
@@ -88,7 +88,7 @@ command reconnect(mid:int):void
 address SERVERreconnect
 comment "Re-establish a connection.";
 
-command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
+pattern connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
 comment "Establish connection with a remote mserver.";
 
@@ -302,11 +302,11 @@ mal_mapi_export str SERVERsuspend(int *ret);
 mal_mapi_export str SERVERresume(int *ret);
 mal_mapi_export void SERVERexit(void);
 
-mal_mapi_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_mapi_export str SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 mal_mapi_export str SERVERdisconnectWithAlias(int *ret, str *db_alias);
 mal_mapi_export str SERVERdisconnectALL(int *ret);
-mal_mapi_export str SERVERreconnectAlias(int *ret, str *host, int *port, str *dbalias, str *username, str *password, str *lang);
-mal_mapi_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_mapi_export str SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+mal_mapi_export str SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 mal_mapi_export str SERVERtrace(int *ret, int *mid, int *flag);
 mal_mapi_export str SERVERdisconnect(int *ret, int *mid);
 mal_mapi_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
@@ -396,7 +396,7 @@ static void generateChallenge(str buf, int min, int max) {
 static void 
 doChallenge(str cmd, stream *in, stream *out) {
 #ifdef DEBUG_SERVER
-	Client cntxt= MCgetClient();
+	Client cntxt= mal_clients;
 #endif
 	if (cmd == NULL) {
 		char *buf = (char *) GDKmalloc(BLOCK + 1);
@@ -593,7 +593,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
 #ifdef DEBUG_SERVER
-	Client cntxt= MCgetClient();
+	Client cntxt= mal_clients;
 #endif
 
 
@@ -896,7 +896,8 @@ static int sessionkey=0;
 /* #define MAPI_TEST*/
 
 str
-SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang){
+SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, str *password, str *lang)
+{
 	Mapi mid;
 	int i;
 
@@ -908,7 +909,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
 		throw(IO, "mapi.connect", "Too many sessions");
 	}
-	SERVERsessions[i].c= MCgetClient();
+	SERVERsessions[i].c= cntxt;
 	SERVERsessions[i].key= ++sessionkey;
 	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
@@ -984,15 +985,33 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 }
 
 str
-SERVERconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
-	return SERVERconnectAll(key,host,port,username,password,lang);
+SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *key =(int*) getArgReference(stk,pci,0);
+	str *host = (str*) getArgReference(stk,pci,1);
+	int *port = (int*) getArgReference(stk,pci,2);
+	str *username = (str*) getArgReference(stk,pci,3);
+	str *password= (str*) getArgReference(stk,pci,4);
+	str *lang = (str*) getArgReference(stk,pci,5);
+
+	(void) mb;
+	return SERVERconnectAll(cntxt, key,host,port,username,password,lang);
 }
 
 
 str
-SERVERreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *username, str *password, str *lang){
+SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *key =(int*) getArgReference(stk,pci,0);
+	str *host = (str*) getArgReference(stk,pci,1);
+	int *port = (int*) getArgReference(stk,pci,2);
+	str *dbalias = (str*) getArgReference(stk,pci,3);
+	str *username = (str*) getArgReference(stk,pci,4);
+	str *password= (str*) getArgReference(stk,pci,5);
+	str *lang = (str*) getArgReference(stk,pci,6);
 	int i;
 	str msg=MAL_SUCCEED;
+
+	(void) mb;
 
 	for(i=0; i<MAXSESSIONS; i++)
 	 if( SERVERsessions[i].key && 
@@ -1002,16 +1021,24 @@ SERVERreconnectAlias(int *key, str *host, int *port, str  * dbalias, str *userna
 			return msg;
 	}
 
-	msg= SERVERconnectAll(key, host, port, username, password, lang);
+	msg= SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = SERVERsetAlias(&i, key, dbalias);
 	return msg;
 }
 
 str
-SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *password, str *lang){
+SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int *key =(int*) getArgReference(stk,pci,0);
+	str *host = (str*) getArgReference(stk,pci,1);
+	int *port = (int*) getArgReference(stk,pci,2);
+	str *username = (str*) getArgReference(stk,pci,4);
+	str *password= (str*) getArgReference(stk,pci,5);
+	str *lang = (str*) getArgReference(stk,pci,6);
 	int i;
 	str msg=MAL_SUCCEED, nme= "anonymous";
+
+	(void) mb;
 
 	for(i=0; i<MAXSESSIONS; i++)
 	 if( SERVERsessions[i].key ){
@@ -1019,7 +1046,7 @@ SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *p
 			return msg;
 	}
 
-	msg= SERVERconnectAll(key, host, port, username, password, lang);
+	msg= SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if( msg == MAL_SUCCEED)
 		msg = SERVERsetAlias(&i, key, &nme);
 	return msg;

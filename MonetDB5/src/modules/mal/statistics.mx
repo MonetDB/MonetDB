@@ -720,14 +720,14 @@ STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str name;
+	str *name;
 	Box box;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("discard");
-	name = (str) getArgValue(stk, pci, 1);
-	return STATdrop(name);
+	name = (str*) getArgReference(stk, pci, 1);
+	return STATdrop(*name);
 }
 
 str
@@ -754,13 +754,13 @@ STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Box box;
 	int i, len = 0;
 	ValPtr v;
-	str nme, s = 0;
+	str *nme, s = 0;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("toString");
-	nme = (str) getArgValue(stk, pci, 1);
-	i = findVariable(box->sym, nme);
+	nme = (str*) getArgReference(stk, pci, 1);
+	i = findVariable(box->sym, *nme);
 	if (i < 0)
 		throw(MAL, "statistics.toString", "Failed to take object from box");
 
@@ -785,7 +785,7 @@ STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
@@ -801,7 +801,7 @@ STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;

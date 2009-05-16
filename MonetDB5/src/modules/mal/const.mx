@@ -237,7 +237,7 @@ CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	@:OpenBox(deposit)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,2);
 	if (depositBox(box, name, v))
 		throw(MAL, "const.deposit", "failed to deposit into box");
@@ -254,7 +254,7 @@ CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	@:OpenBox(take)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,0);
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
 		throw(MAL, "const.take", "failed to take object from box");
@@ -272,7 +272,7 @@ CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "const.release", "failed to release object from box");
 	return MAL_SUCCEED;
@@ -301,7 +301,7 @@ CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk, pci, 1);
+	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "const.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
@@ -318,7 +318,7 @@ CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(toString)@
-	nme = (str) getArgValue(stk, pci, 1);
+	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
 		throw(MAL, "const.toString", "failed to take object from box");
@@ -344,7 +344,7 @@ CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
@@ -360,7 +360,7 @@ CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;

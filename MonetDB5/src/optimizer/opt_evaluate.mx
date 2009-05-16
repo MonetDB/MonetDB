@@ -191,7 +191,10 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if (msg == MAL_SUCCEED){
 				ValRecord cst;
 				VALcopy(&cst,&env->stk[getArg(p,0)]);
-				/* create a new constant assignment */
+@-
+You may not overwrite constants. They may be used by other
+instructions 
+@c
 				getArg(p,1)= defConstant(mb, getArgType(mb,p,0), &cst);
 				/* update the stack frame for next evaluations */
 				if ( getArgType(mb,p,1) == TYPE_str)

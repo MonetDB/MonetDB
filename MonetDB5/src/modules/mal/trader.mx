@@ -30,7 +30,7 @@ FactFinder
 @mal
 module trader;
 
-command makeBid(fnname:str, maxcost:int):int
+pattern makeBid(fnname:str, maxcost:int):int
 address TRADERmakeBid
 comment "Estimate cost for execution of function octopus.<fnname> 
 assuming maximal cost maxcost";
@@ -38,6 +38,10 @@ assuming maximal cost maxcost";
 @h
 #ifndef _TRADER_
 #define _TRADER_
+
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_client.h"
 
 #ifdef WIN32
 #ifndef LIBTRADER
@@ -49,7 +53,7 @@ assuming maximal cost maxcost";
 #define trader_export extern
 #endif
 
-trader_export str TRADERmakeBid(lng *p, str *fnname, lng *maxcost);
+trader_export str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 
@@ -173,15 +177,17 @@ static lng estimateSavings(MalBlkPtr mb)
 }
 
 
-str TRADERmakeBid(lng *c, str *fnname, lng *maxcost)
+str TRADERmakeBid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	lng *c = (lng *) getArgReference(stk,pci,0);
+	str fnname = *(str *) getArgReference(stk,pci,1);
+	lng *maxcost = (lng *) getArgReference(stk,pci,2);
 	Symbol sym;
-	MalBlkPtr mb;
 	lng s;
 
-    sym = findSymbol(putName("octopus",7),*fnname);
+    sym = findSymbol(cntxt->nspace, putName("octopus",7), fnname);
     if ( sym == NULL)
-        throw(MAL,"trader.makeBid","Function %s not found", *fnname);
+        throw(MAL,"trader.makeBid","Function %s not found", fnname);
         
     mb = sym->def;
     s = estimateSavings(mb);
