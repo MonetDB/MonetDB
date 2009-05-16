@@ -127,7 +127,7 @@ AUTHrequireAdmin(Client *c) {
 		str tmp;
 		
 		rethrow("requireAdmin", tmp, AUTHresolveUser(&user, &id));
-		throw(INVCRED, "requireAdmin", "Access denied for user '%s'", user);
+		throw(INVCRED, "requireAdmin", INVCRED_ACCESS_DENIED, user);
 	}
 
 	return(MAL_SUCCEED);
@@ -151,7 +151,7 @@ AUTHrequireAdminOrUser(Client *c, str *username) {
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, &id));
 	if (username == NULL || *username == NULL || strcmp(*username, user) != 0) {
-		throw(INVCRED, "requireAdminOrUser", "Access denied for user '%s'", user);
+		throw(INVCRED, "requireAdminOrUser", INVCRED_ACCESS_DENIED, user);
 	}
 
 	return(MAL_SUCCEED);
@@ -200,7 +200,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throw(MAL, "initTables", "could not allocate user table");
+			throw(MAL, "initTables.user", MAL_MALLOC_FAIL);
 
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_user");
@@ -226,7 +226,7 @@ AUTHinitTables() {
 		/* create new bat */
 		n = BATnew(TYPE_oid, TYPE_str, 256);
 		if (n == NULL)
-			throw(MAL, "initTables", "could not allocate password table");
+			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL);
 
 		BBPrename(BBPcacheid(n), "M5system_auth_passwd_v2");
 		BATmode(n, PERSISTENT);
@@ -274,7 +274,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throw(MAL, "initTables", "could not allocate password table");
+			throw(MAL, "initTables.passwd", MAL_MALLOC_FAIL);
 
 		BBPrename(BBPcacheid(b), "M5system_auth_passwd_v2");
 		BATmode(b, PERSISTENT);
@@ -290,7 +290,7 @@ AUTHinitTables() {
 	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			throw(MAL, "initTables", "could not allocate scenario table");
+			throw(MAL, "initTables.scen", MAL_MALLOC_FAIL);
 
 		BATkey(b, TRUE);
 		BBPrename(BBPcacheid(b), "M5system_auth_scen");
@@ -317,7 +317,7 @@ AUTHinitTables() {
 					&user /* because user == pass */, &len));
 		rethrow("initTables", tmp, AUTHaddUser(&uid, &c, &user, &pw, &b));
 		if (uid != 0)
-			throw(MAL, "initTables", "authorisation BATs not empty, but they were just created !?!?!?");
+				throw(MAL, "initTables", INTERNAL_AUTHORIZATION);
 		AUTHcommit();
 	}
 
@@ -352,13 +352,12 @@ AUTHcheckCredentials(
 	assert(scen);
 
 	if (*username == NULL || strNil(*username))
-		throw(INVCRED, "checkCredentials", "Invalid credentials for unknown user");
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER, "");
 
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == BUN_NONE) {
 		/* DO NOT reveal that the user doesn't exist here! */
-		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
-				*username);
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER, *username);
 	}
 	useri = bat_iterator(user);
 	id = (oid*)(BUNhead(useri, p));
@@ -368,8 +367,7 @@ AUTHcheckCredentials(
 	 */
 	if (*passwd == NULL || strNil(*passwd)) {
 		/* DO NOT reveal that the password is NULL here! */
-		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
-				*username);
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER, *username);
 	}
 
 	/* find the corresponding password to the user */
@@ -387,8 +385,7 @@ AUTHcheckCredentials(
 	if (strcmp(*passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */
 		GDKfree(hash);
-		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
-				*username);
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER, *username);
 	}
 	GDKfree(hash);
 
@@ -402,8 +399,7 @@ AUTHcheckCredentials(
 		if (*scenario == NULL || strNil(*scenario)) {
 			BBPunfix(b->batCacheid);
 			/* of course we DO NOT tell the exact reason here again */
-			throw(INVCRED, "checkCredentials",
-					"Invalid credentials for user '%s'", *username);
+			throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER,*username);
 		}
 
 		/* ok, there are some tuples that we have to consider */
@@ -420,8 +416,7 @@ AUTHcheckCredentials(
 
 		BBPunfix(b->batCacheid);
 		/* uh oh... that we made it till here means it's wrong */
-		throw(INVCRED, "checkCredentials", "Invalid credentials for user '%s'",
-				*username);
+		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER,  *username);
 	} else {
 		/* no scenario restriction applies, so everything is good */
 		if (b) 
@@ -453,15 +448,15 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "addUser", "username cannot be nil");
+		throw(ILLARG, "addUser", "username" ILLARG_NOTNIL);
 	if (*passwd == NULL || strNil(*passwd))
-		throw(ILLARG, "addUser", "password cannot be nil");
+		throw(ILLARG, "addUser", "password" ILLARG_NOTNIL);
 	rethrow("addUser", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p != BUN_NONE)
-		throw(MAL, "addUser", "user '%s' already exists", *username);
+		throw(INVCRED, "addUser", INVCRED_USER_TWICE, *username);
 	
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
@@ -480,12 +475,12 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 		if (b == NULL) {
 			BATundo(user);
 			BATundo(pass);
-			throw(ILLARG, "addUser", "invalid BAT!");
+			throw(ILLARG, "addUser", INTERNAL_BAT_ACCESS);
 		}
 		if (b->htype != TYPE_str) {
 			BATundo(user);
 			BATundo(pass);
-			throw(ILLARG, "addUser", "BAT should have str head");
+			throw(ILLARG, "addUser", INTERNAL_BAT_HEAD);
 		}
 
 		/* associate scenarios given in the BAT with the user */
@@ -525,18 +520,18 @@ AUTHremoveUser(Client *c, str *username) {
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "removeUser", "username cannot be nil");
+		throw(ILLARG, "removeUser", "username" ILLARG_NOTNIL);
 
 	/* ensure that the username exists */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == BUN_NONE)
-		throw(MAL, "removeUser", "no such user: '%s'", *username);
+		throw(MAL, "removeUser", INVCRED_UNKNOWN_USER, *username);
 	useri = bat_iterator(user);
 	id = *(oid*)(BUNhead(useri, p));
 
 	/* find the name of the administrator and see if it equals username */
 	if (id == (*c)->user)
-		throw(MAL, "removeUser", "cannot remove yourself");
+		throw(MAL, "removeUser", INVCRED_REMOVE_USER "yourself");
 
 	/* now, we got the oid, start removing the related tuples */
 	b = BATmirror(BATselect(BATmirror(user), &id, &id));

@@ -338,7 +338,7 @@ The counters can be set individually.
 	    profileCounter[i].status = @1 ;
 	    return 0;
 	}
-	throw(MAL, "@2", "profile counter '%s' undefined",name);
+	throw(MAL, "@2", RUNTIME_OBJECT_UNDEFINED, name);
 @c
 str
 activateCounter(str name)
@@ -632,7 +632,7 @@ setLogFile(stream *fd, Module mod, str fname)
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
-		throw(IO, "mal.profiler", "Could not create event stream file");
+		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	mal_unset_lock(profileLock, "profileLock");
 #else
@@ -653,7 +653,7 @@ setLogStream(Module cntxt, str host, int port)
 	}
 	mal_set_lock(profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
-		throw(IO, "mal.profiler", "Could not create event stream");
+		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	if (eventstream)
 		eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(profileLock, "profileLock");

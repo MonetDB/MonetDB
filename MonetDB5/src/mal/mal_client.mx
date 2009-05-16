@@ -762,15 +762,16 @@ MCexitPending()
 str
 MCsuspendClient(int id, unsigned int timeout){
 	if( id<0 || id>MAL_MAXCLIENTS)
-		throw(MAL,"mal.clients","illegal client id");
+		throw(INVCRED,"mal.clients", INVCRED_WRONG_ID);
 	mal_clients[id].itrace='S';
 	mal_clients[id].delay=timeout;
 	return MAL_SUCCEED;
 }
+
 str
 MCawakeClient(int id){
 	if( id<0 || id>MAL_MAXCLIENTS)
-		throw(MAL,"mal.clients","illegal client id");
+		throw(INVCRED,"mal.clients", INVCRED_WRONG_ID);
 	mal_clients[id].itrace=0;
 	return MAL_SUCCEED;
 }

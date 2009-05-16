@@ -251,7 +251,7 @@ Use the search path provided in the configuration file
 
 	if (fullname == NULL) {
 		if( flag)
-			throw(LOADER, "loadLibrary", "%s: file not found", filename);
+			throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND, filename);
 		return MAL_SUCCEED;
 	}
 
@@ -266,7 +266,7 @@ Use the search path provided in the configuration file
 		if (!errmsg) 
 			errmsg = "(no error from dlerror())";
 		GDKfree(fullname);
-		throw(LOADER, "loadLibrary", "%s: loader error %s", filename, errmsg);
+		throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR, errmsg, filename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");

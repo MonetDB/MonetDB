@@ -490,7 +490,7 @@ setScenario(Client c, str nme)
 
 	scen = findScenario(nme);
 	if (scen == NULL)
-		throw(MAL, "setScenario", "Scenario '%s' not initialized", nme);
+		throw(MAL, "setScenario", SCENARIO_NOT_FOUND " '%s'", nme);
 
 	if (c->scenario) {
 		c->oldscenario = c->scenario;

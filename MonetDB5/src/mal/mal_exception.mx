@@ -164,6 +164,62 @@ mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
 mal_export str	exceptionToString(enum malexception);
 
+@-
+The error strings are collected here as predefined constants.
+The style policy is to start with a description of the erro characteristics.
+It is optionally followed by an advice how to proceed.
+
+Getting all exception strings in one place improves consistency
+and maintenance.
+
+At a later stage we could introduce internationalization support, i.e.
+use a translation table where needed.
+@h
+#define MANUAL_HELP "See documentation for details"
+
+#define PROGRAM_GENERAL "Program contains errors."
+
+#define SYNTAX_GENERAL	"Syntax error detected."
+#define SYNTAX_SIGNATURE "Function signature missing."
+
+#define SEMANTIC_GENERAL "Semantic errors detected"
+#define SEMANTIC_PROGRAM_ERRORS "Program contains semantic errors."
+#define SEMANTIC_SIGNATURE_MISSING "Function signature missing."
+
+#define INTERNAL_BAT_ACCESS "Internal error, can not access BAT."
+#define INTERNAL_BAT_HEAD "BAT has wrong head type"
+#define INTERNAL_AUTHORIZATION "Autorization BATs not empty"
+#define INTERNAL_SQL_ENTRY_MISSING "SQL entry '%s' missing"
+
+#define MAL_MALLOC_FAIL	"Could not allocate space."
+#define MAL_STACK_FAIL	"Running out of stack space."
+
+#define INVCRED_ACCESS_DENIED "Access denied for user '%s'."
+#define INVCRED_INVALID_USER "Invalide credentials for user '%'"
+#define INVCRED_USER_TWICE "User defined twice '%s'"
+#define INVCRED_REMOVE_USER "Can not remove user '%s'"
+#define INVCRED_UNKNOWN_USER "No such user named '%s' "
+#define INVCRED_WRONG_ID "Illegal client id"
+
+#define ILLARG_NOTNIL " cannot be NIL"
+
+#define RUNTIME_IO_EOF "Attempt to read beyond end-of-file"
+#define RUNTIME_FILE_NOT_FOUND "File not found '%s'"
+#define RUNTIME_DIR_ERROR "Unable to open directory"
+#define RUNTIME_STREAM_FAILED "Could not create stream"
+#define RUNTIME_STREAM_WRITE "Could not write to stream"
+#define RUNTIME_STREAM_INPUT "Could not read from stream"
+
+#define RUNTIME_LOAD_ERROR "Loading '%s' from '%s' failed"
+#define RUNTIME_OBJECT_MISSING "Object not found"
+#define RUNTIME_OBJECT_UNDEFINED "Object '%s' not found"
+#define RUNTIME_UNKNOWN_INSTRUCTION "Instruction type not supported"
+
+#define SABAOTH_NOT_INITIALIZED "Sabaoth not initialized"
+#define SABAOTH_USE_RESTRICTION "Cannot use it when no database is active"
+#define SABAOTH_SEARCH_FAILED "Could not find a database for "
+
+#define SCENARIO_NOT_FOUND "Scenario not initialized"
 #endif /*  _MAL_EXCEPTION_H*/
 
 @-

@@ -569,7 +569,7 @@ MALreader(Client c)
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
 	else
-		throw(MAL, "MAL.reader", "Attempt to read beyond end of file");
+		throw(MAL, "mal.reader", RUNTIME_IO_EOF);
 	return MAL_SUCCEED;
 }
 
@@ -592,7 +592,7 @@ MALparser(Client c)
 		/* now the parsing is done we should advance the stream */
 		c->fdin->pos += c->yycur;
 		c->yycur = 0;
-		throw(SYNTAX, "MAL.parser", "Syntax errors detected");
+		throw(SYNTAX, "mal.parser", SYNTAX_GENERAL MANUAL_HELP);
 	}
 
 	/* now the parsing is done we should advance the stream */
@@ -609,14 +609,14 @@ MALparser(Client c)
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
 		@:restoreState@
-		throw(MAL, "MAL.parser", "Function signature missing");
+			throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		@:restoreState@
-		throw(MAL, "MAL.parser", "Semantic errors detected");
+		throw(MAL, "MAL.parser", SEMANTIC_GENERAL);
 	}
 	return MAL_SUCCEED;
 }
@@ -644,14 +644,14 @@ MALengine(Client c)
 		return MAL_SUCCEED;
 	prg = c->curprg;
 	if (prg == NULL)
-		throw(MAL, "MAL.engine", "Main MAL function missing");
+		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
 
 	if (prg->def->errors > 0) {
 		showErrors(c);
 		if (c->listing )
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		@:restoreState@
-		throw(MAL, "MAL.engine", "Program contains errors");
+		throw(MAL, "mal.engine", PROGRAM_GENERAL);
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;	/* empty block */

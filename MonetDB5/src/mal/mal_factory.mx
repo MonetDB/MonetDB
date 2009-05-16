@@ -353,7 +353,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		/* initialize a new plant using the owner policy */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.new", "No factory space left");
+			throw(MAL, "factory.new", MAL_MALLOC_FAIL);
 	}
 @-
 We have found a factory to process the request.
@@ -385,7 +385,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 			BBPincref(lhs->val.bval, TRUE);
 	}
 	if (mb->errors)
-		throw(MAL, "factory.call", "Factory contains errors");
+		throw(MAL, "factory.call", PROGRAM_GENERAL);
 	if (firstcall ){
 		/* initialize the stack */
 		for(i= psig->argc; i< mb->vtop; i++) {
@@ -432,7 +432,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		/* first call? prepare the factory */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			throw(MAL, "factory.call", "No factory space left");
+			throw(MAL, "factory.call", MAL_MALLOC_FAIL);
 		/* remember context, which does not exist. */
 		pl->client = cntxt;
 		pl->caller = 0;
@@ -563,7 +563,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "factory.yield", "No factory found");
+	throw(MAL, "factory.yield", RUNTIME_OBJECT_MISSING);
 }
 
 @-
@@ -619,7 +619,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			s = findSymbolInModule(m, nme );
 			if (s == NULL){
 				throw(MAL, "factory.remove", 
-					"Internal error, sql_cache entry '%s' missing",
+					INTERNAL_SQL_ENTRY_MISSING,
 					putName(nme, strlen(nme)));
 			}
 			stk = pl->stk;

@@ -59,7 +59,7 @@ str _sabaoth_internal_dbname = NULL;
 
 static str getFarmPath(str *ret, size_t size, str extra) {
 	if (_sabaoth_internal_dbfarm == NULL)
-		throw(MAL, "sabaoth.assert", "Sabaoth was not initialised!");
+		throw(MAL, "sabaoth.assert", SABAOTH_NOT_INITIALIZED);
 
 	if (extra == NULL) {
 		snprintf(*ret, size, "%s", _sabaoth_internal_dbfarm);
@@ -72,9 +72,9 @@ static str getFarmPath(str *ret, size_t size, str extra) {
 
 static str getDBPath(str *ret, size_t size, str extra) {
 	if (_sabaoth_internal_dbfarm == NULL)
-		throw(MAL, "sabaoth.assert", "Sabaoth was not initialised!");
+		throw(MAL, "sabaoth.assert", SABAOTH_NOT_INITIALIZED);
 	if (_sabaoth_internal_dbname == NULL)
-		throw(MAL, "sabaoth.assert", "Cannot use this function when no database is active");
+		throw(MAL, "sabaoth.assert", SABAOTH_USE_RESTRICTION);
 
 	if (extra == NULL) {
 		snprintf(*ret, size, "%s%c%s",
@@ -171,7 +171,7 @@ str SABAOTHmarchScenario(int *ret, str *lang) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.marchScenario", "unable to open file %s", path);
+	throw(IO, "sabaoth.marchScenario", RUNTIME_FILE_NOT_FOUND, path);
 }
 
 @h
@@ -218,7 +218,7 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 				rewind(tmp);
 				len = fread(buf, 1, 256, tmp);
 				if (fwrite(buf, 1, len, f) < len)
-					throw(IO, "sabaoth.retreatScenario", "error while writing");
+					throw(IO, "sabaoth.retreatScenario", RUNTIME_STREAM_WRITE);
 				fflush(f);
 				fclose(f);
 				fclose(tmp); /* this should remove it automagically */
@@ -235,11 +235,10 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 		} else { /* some error */
 			str err = strerror(errno);
 			(void)fclose(f);
-			throw(IO, "sabaoth.retreatScenario",
-					"error while reading from file: %s", err);
+			throw(IO, "sabaoth.retreatScenario", RUNTIME_STREAM_WRITE " %s",err);
 		}
 	}
-	throw(IO, "sabaoth.retreatScenario", "unable to open file %s", path);
+	throw(IO, "sabaoth.retreatScenario", RUNTIME_FILE_NOT_FOUND, path);
 }
 
 @h
@@ -279,8 +278,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 		SABAOTHfreeStatus(&stats);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.marchConnection",
-			"unable to open file %s", path);
+	throw(IO, "sabaoth.marchConnection", RUNTIME_FILE_NOT_FOUND, path);
 }
 
 @h
@@ -369,7 +367,7 @@ str SABAOTHregisterStart(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.registerStart", "unable to open file %s", path);
+	throw(IO, "sabaoth.registerStart", RUNTIME_FILE_NOT_FOUND, path);
 }
 
 @h
@@ -401,7 +399,7 @@ str SABAOTHregisterStop(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.registerStop", "unable to open file %s", path);
+	throw(IO, "sabaoth.registerStop", RUNTIME_FILE_NOT_FOUND, path);
 }
 
 @h
@@ -438,12 +436,12 @@ mal_export str SABAOTHgetMyStatus(sabdb** ret);
 str SABAOTHgetMyStatus(sabdb** ret) {
 	str err;
 	if (_sabaoth_internal_dbname == NULL)
-		throw(MAL, "sabaoth.assert", "Cannot use this function when no database is active");
+		throw(MAL, "sabaoth.assert", SABAOTH_USE_RESTRICTION);
 	err = SABAOTHgetStatus(ret, _sabaoth_internal_dbname);
 	if (err != NULL)
 		return(err);
 	if (*ret == NULL)
-		throw(MAL, "sabaoth.assert", "SABAOTHgetMyStatus couldn't find a database for %s!", _sabaoth_internal_dbname);
+		throw(MAL, "sabaoth.assert", SABAOTH_SEARCH_FAILED "%s", _sabaoth_internal_dbname);
 	return(MAL_SUCCEED);
 }
 
@@ -485,7 +483,7 @@ str SABAOTHgetStatus(sabdb** ret, str dbname) {
 			getFarmPath(&path, PATHLENGTH, NULL));
 	d = opendir(path);
 	if (d == NULL)
-		throw(IO, "sabaoth.getStatus", "unable to open directory %s: %s",
+		throw(IO, "sabaoth.getStatus", RUNTIME_DIR_ERROR " %s: %s",
 				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
 		if (dbname != NULL && strcmp(e->d_name, dbname) != 0)
@@ -705,7 +703,7 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 			getFarmPath(&path, PATHLENGTH, NULL));
 	d = opendir(path);
 	if (d == NULL)
-		throw(IO, "sabaoth.getUplogInfo", "unable to open directory %s: %s",
+		throw(IO, "sabaoth.getUplogInfo", RUNTIME_DIR_ERROR " %s: %s",
 				path, strerror(errno));
 	while ((e = readdir(d)) != NULL) {
 		if (strcmp(e->d_name, db->dbname) != 0)
@@ -779,7 +777,7 @@ str SABAOTHgetUplogInfo(sabuplog *ret, sabdb *db) {
 			(void)fclose(f);
 		} else {
 			(void)closedir(d);
-			throw(IO, "sabaoth.getUplogInfo", "unable to open file %s: %s",
+			throw(IO, "sabaoth.getUplogInfo", RUNTIME_FILE_NOT_FOUND " %s: %s",
 					log, strerror(errno));
 		}
 
