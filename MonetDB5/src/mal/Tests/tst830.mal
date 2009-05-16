@@ -11,7 +11,7 @@ catch MALException:str;
 	io.printf("%s\n",MALException);
 exit MALException;
 
-	# should print 0@1 or something
+	# should print 1@0 or something
 	id := clients.addUser("test", pw, scens);
 	io.print(id);
 
