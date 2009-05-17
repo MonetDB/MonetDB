@@ -71,7 +71,7 @@ comment "Take a variable out of the statistics box";
 pattern deposit(name:str) :void
 address STATdepositStr
 comment "Enter a new BAT into the statistics box";
-command deposit(name:bat[:any_1,:any_2]) :void
+pattern deposit(name:bat[:any_1,:any_2]) :void
 address STATdeposit
 comment "Enter a new BAT into the statistics box";
 
@@ -212,7 +212,7 @@ s_export str STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdeposit(int *ret, int *bid);
+s_export str STATdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATrelease(int *ret, int *bid);
 s_export str STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -638,12 +638,15 @@ STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATdeposit(int *ret, int *bid)
+STATdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	int *bid = (int *)getArgReference(stk, pci, 1);
 	BAT *b;
 	Box box;
 	str msg;
-	Client cntxt = MCgetClient(); /* laziness hack */
+
+	(void) mb;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "statistics.deposit", RUNTIME_OBJECT_MISSING);

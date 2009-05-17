@@ -896,7 +896,7 @@ end main;
 [ "dump",			  "pattern",	  "statistics",	  "():void ",																  "STATdump;"						  ]
 [ "discard",			  "command",	  "statistics",	  "(name:bat[:any_1,:any_2]):void ",													  "STATdiscard2;"					  ]
 [ "discard",			  "pattern",	  "statistics",	  "(name:str):void ",															  "STATdiscard;"					  ]
-[ "deposit",			  "command",	  "statistics",	  "(name:bat[:any_1,:any_2]):void ",													  "STATdeposit;"					  ]
+[ "deposit",				  "pattern",	  "statistics",		  "(name:bat[:any_1,:any_2]):void ",											  "STATdeposit;"				  ]
 [ "deposit",			  "pattern",	  "statistics",	  "(name:str):void ",															  "STATdepositStr;"				  ]
 [ "destroy",			  "pattern",	  "statistics",	  "():void ",																  "STATdestroy;"					  ]
 [ "epilogue",			  "command",	  "statistics",	  "():void ",																  "STATepilogue;"					  ]
