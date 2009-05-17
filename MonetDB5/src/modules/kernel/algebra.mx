@@ -2536,7 +2536,7 @@ ALGthetaselect(int *result, int *bid, ptr val, str *OP)
 			lin = (op[1] == '=');
 		} else {
 			BBPreleaseref(b->batCacheid);
-			throw(MAL, "algebra.thetaselect", ILLEGAL_ARGUMENT "Unknown operator");
+			throw(MAL, "algebra.thetaselect", ILLEGAL_ARGUMENT " Unknown operator");
 		}
 		CMDselect_(&bn, b, low, high, &lin, &rin);
 	}
@@ -2651,7 +2651,7 @@ ALGthetauselect(int *result, int *bid, ptr val, str *OP)
 			lin = (op[1] == '=');
 		} else {
 			BBPreleaseref(b->batCacheid);
-			throw(MAL, "algebra.thetauselect", ILLEGAL_ARGUMENT "Unknown operator");
+			throw(MAL, "algebra.thetauselect", ILLEGAL_ARGUMENT " Unknown operator");
 		}
 		CMDuselect_(&bn, b, low, high, &lin, &rin);
 	}
@@ -2790,7 +2790,7 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 		/* The NE case is not supported in the kernel */
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
-		throw(MAL, "algebra.thetajoin", ILLEGAL_ARGUMENT "theta <> not yet supported");
+		throw(MAL, "algebra.thetajoin", ILLEGAL_ARGUMENT " Theta comparison <> not yet supported");
 	} 
 	CMDthetajoin(&bn, left, right, opc, estimate);
 	BBPreleaseref(left->batCacheid);
@@ -3537,7 +3537,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	BATiter bi = bat_iterator(b);
 
 	if ((i < 0) || (i >= (lng) BATcount(b)))
-		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " idx out of range\n");
+		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
 	i += BUNfirst(b);
 	
 	assert(i <= (lng) BUN_MAX);
@@ -3723,10 +3723,10 @@ ALGmergejoin(int *result, int *lid, int *rid)
 		throw(MAL, "algebra.mergejoin", RUNTIME_OBJECT_MISSING);
 	}
 	if (!((BATtordered(left) & 1) || (BAThordered(right) & 1)))
-		throw(MAL, "algebra.mergejoin", ILLEGAL_ARGUMENT "neither left nor right bat is ordered.\n");
+		throw(MAL, "algebra.mergejoin", ILLEGAL_ARGUMENT " Neither left nor right bat is ordered.\n");
 
 	if ((left->ttype == TYPE_void) || (right->htype == TYPE_void))
-		throw(MAL, "algebra.mergejoin", ILLEGAL_ARGUMENT "Cannot perform mergejoin on void fields.\n");
+		throw(MAL, "algebra.mergejoin", ILLEGAL_ARGUMENT " Cannot perform mergejoin on void fields.\n");
 	bn = BATmergejoin(left, right, BUN_NONE);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);

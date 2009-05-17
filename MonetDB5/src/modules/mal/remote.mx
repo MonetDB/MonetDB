@@ -242,11 +242,11 @@ remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 	*ret = 0;
 
 	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT "database name is NULL or nil");
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Database name is NULL or nil");
 	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT "hostname is NULL or nil");
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Hostname is NULL or nil");
 	if (port == NULL || *port <= 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT "port is NULL or <= 0");
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Port is NULL or <= 0");
 
 	mal_set_lock(mal_remoteLock, "remote.create"); /* global userconns */
 	/* find a free slot, start with special case of connections not
@@ -293,7 +293,7 @@ str RMTdestroy(int *ret, str *dbname) {
 	userconn c, t;
 
 	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.destroy", ILLEGAL_ARGUMENT "connection name is NULL or nil");
+		throw(ILLARG, "remote.destroy", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -718,11 +718,11 @@ static str RMTconnectInternal(
 	*ret = 0;
 
 	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT "database name is NULL or nil");
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Database name is NULL or nil");
 	if (user == NULL || *user == NULL || strcmp(*user, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT "username is NULL or nil");
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Username is NULL or nil");
 	if (passwd == NULL || *passwd == NULL || strcmp(*passwd, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT "password is NULL or nil");
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Password is NULL or nil");
 
 
 	mal_set_lock(mal_remoteLock, "remote.connect");
@@ -833,7 +833,7 @@ str RMTdisconnect(int *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.disconnect", ILLEGAL_ARGUMENT "connection name is NULL or nil");
+		throw(ILLARG, "remote.disconnect", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 
 
 	/* just make sure the return isn't garbage */
@@ -1041,10 +1041,10 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT "connection name is NULL or nil");
+		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 	ident = *(str*) getArgReference(stk, pci, 2);
 	if (ident == 0 || isIdentifier(ident) < 0)
-		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT "identifier expected, got '%s'", ident);
+		throw(ILLARG, "remote.get", ILLEGAL_ARGUMENT " Identifier expected, got '%s'", ident);
 
 	/* lookup conn, set c if valid */
 	rethrow("remote.get", tmp, RMTfindconn(&c, conn));
@@ -1053,7 +1053,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	v = getArgReference(stk, pci, 0);
 
 	if (rtype == TYPE_any || isAnyExpression(rtype)) {
-		throw(MAL, "remote.get", ILLEGAL_ARGUMENT "cannot deal with any (%s) type",
+		throw(MAL, "remote.get", ILLEGAL_ARGUMENT " Cannot deal with any (%s) type",
 				getTypeName(rtype));
 	}
 	/* check if the remote type complies with what we expect.
@@ -1062,7 +1062,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	rt = getTypeIdentifier(rtype);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt))
 		throw(MAL, "remote.get", ILLEGAL_ARGUMENT 
-			"type of remote object does not match expected type");
+			" Type of remote object does not match expected type");
 	GDKfree(rt);
 
 	if (isaBatType(rtype)) {
@@ -1189,7 +1189,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	conn = *(str*) getArgReference(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.put", ILLEGAL_ARGUMENT "Connection name is NULL or nil");
+		throw(ILLARG, "remote.put", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 
 	/* lookup conn */
 	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
@@ -1323,12 +1323,12 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	(void)cntxt;
 
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT "connection name is NULL or nil");
+		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 
 	/* find local definition */
 	sym = findSymbol(cntxt->nspace, putName(mod, strlen(mod)), putName(fcn, strlen(fcn)));
 	if (sym == NULL)
-		throw(MAL, "remote.register", ILLEGAL_ARGUMENT "function '%s.%s' not found", mod, fcn);
+		throw(MAL, "remote.register", ILLEGAL_ARGUMENT " Function '%s.%s' not found", mod, fcn);
 
 	/* lookup conn */
 	rethrow("remote.put", tmp, RMTfindconn(&c, conn));
@@ -1400,13 +1400,13 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	conn = *(str*) getArgReference(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT "connection name is NULL or nil");
+		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
 	mod = *(str*) getArgReference(stk, pci, i++);
 	if (mod == NULL || strcmp(mod, (str)str_nil) == 0)
-		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT "module name is NULL or nil");
+		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT " Module name is NULL or nil");
 	func = *(str*) getArgReference(stk, pci, i++);
 	if (func == NULL || strcmp(func, (str)str_nil) == 0)
-		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT "function name is NULL or nil");
+		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT " Function name is NULL or nil");
 
 	/* lookup conn */
 	rethrow("remote.exec", tmp, RMTfindconn(&c, conn));

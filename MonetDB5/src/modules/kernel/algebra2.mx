@@ -460,10 +460,10 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) 
 		return throwMessage("AL2ord_@1select", ILLEGAL_ARGUMENT
-			"flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
+			" Flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) 
 		return throwMessage("AL2ord_@1select", ILLEGAL_ARGUMENT
-			"flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
+			" Flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 	bn = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)

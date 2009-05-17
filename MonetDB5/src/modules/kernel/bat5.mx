@@ -3470,11 +3470,11 @@ BKCsetRole(int *r, int *bid, char **hname, char **tname)
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "head name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "tail name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
@@ -3493,7 +3493,7 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT "column name missing");
+		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
 	}
 	/* watch out, hident is freed first */
 	dummy= GDKstrdup(b->hident);
@@ -3514,11 +3514,11 @@ BKCsetColumns(int *r, int *bid, str *hname, str *tname)
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "head name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "tail name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT " Tail name missing");
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
@@ -3585,7 +3585,7 @@ BKCload(int *res, str *input)
 		BBPincref(bid,TRUE);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.unload", ILLEGAL_ARGUMENT " file name missing");
+	throw(MAL, "bat.unload", ILLEGAL_ARGUMENT " File name missing");
 }
 
 str

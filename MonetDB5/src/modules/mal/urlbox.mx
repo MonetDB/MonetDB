@@ -362,7 +362,7 @@ URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	url = *(str*) getArgReference(stk, pci, 1);
 	if( strlen(url) <2048)
 		strcpy(tuple,url);
-	else throw(MAL, "urlbox.deposit", ILLEGAL_ARGUMENT "url too long");
+	else throw(MAL, "urlbox.deposit", ILLEGAL_ARGUMENT " URL too long");
 	return URLBOXinsert(url);
 }
 

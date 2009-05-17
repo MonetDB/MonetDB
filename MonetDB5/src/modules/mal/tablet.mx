@@ -614,7 +614,7 @@ TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TABheader(cntxt, mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isBATVector(t))
-		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT "Only aligned BATs expected");
+		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT " Only aligned BATs expected");
 	else {
 		t->pageLimit = 20;
 		t->firstrow = t->lastrow = 0;
@@ -632,7 +632,7 @@ TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TABheader(cntxt, mb, stk, pci);
 	t = tableReports[rnr];
 	if (!isScalarVector(t))
-		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT "Only scalars expected");
+		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT " Only scalars expected");
 	else
 		TABshowRow(t);
 	if (t->tbotbrk == 0) {
@@ -655,7 +655,7 @@ TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else
 		stream_write(t->fd, t->ttopbrk, 1, strlen(t->ttopbrk));
 	if (!isBATVector(t))
-		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT "Only aligned BATs expected");
+		throw(MAL, "tablet.print", ILLEGAL_ARGUMENT " Only aligned BATs expected");
 	else {
 		t->pageLimit = 20;
 		t->firstrow = t->lastrow = 0;
@@ -672,7 +672,7 @@ TABsetProperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		throw(MAL, "tablet.properties", ILLEGAL_ARGUMENT "Format definition missing");
+		throw(MAL, "tablet.properties", ILLEGAL_ARGUMENT " Format definition missing");
 	CLEAR(tableReports[rnr]->properties);
 	tableReports[rnr]->properties = !strNil(*prop) ? GDKstrdup(*prop) : 0;
 	return MAL_SUCCEED;
@@ -697,7 +697,7 @@ TABfinishReport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	if (tableReports[rnr] == 0)
-		throw(MAL, "tablet.finish", ILLEGAL_ARGUMENT "Header information missing");
+		throw(MAL, "tablet.finish", ILLEGAL_ARGUMENT " Header information missing");
 	clearTable(tableReports[rnr]);
 	GDKfree(tableReports[rnr]);
 	tableReports[rnr] = 0;
@@ -713,7 +713,7 @@ TABsetStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	if (tableReports[rnr] == 0)
-		throw(MAL, "tablet.setStream", ILLEGAL_ARGUMENT "Header information missing");
+		throw(MAL, "tablet.setStream", ILLEGAL_ARGUMENT " Header information missing");
 	tableReports[rnr]->fd = *s;
 	return MAL_SUCCEED;
 }
@@ -892,7 +892,7 @@ TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	if (*prec > *scale)
-		throw(MAL, "tablet.setColumnDecimal", ILLEGAL_ARGUMENT "Illegal range");
+		throw(MAL, "tablet.setColumnDecimal", ILLEGAL_ARGUMENT " Illegal range");
 	tableReports[rnr]->columns[*idx].precision = *prec;
 	tableReports[rnr]->columns[*idx].scale = *scale;
 	return MAL_SUCCEED;

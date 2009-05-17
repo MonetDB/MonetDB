@@ -525,7 +525,7 @@ AUTHremoveUser(Client *c, str *username) {
 	/* ensure that the username exists */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == BUN_NONE)
-		throw(MAL, "removeUser", ILLEGAL_ARGUMENT "unknown user %s", *username);
+		throw(MAL, "removeUser", ILLEGAL_ARGUMENT " Unknown user %s", *username);
 	useri = bat_iterator(user);
 	id = *(oid*)(BUNhead(useri, p));
 

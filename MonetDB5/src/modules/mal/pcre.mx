@@ -593,7 +593,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			compile_options |= PCRE_EXTENDED;
 		} else {
 			throw(MAL,"pcre_replace_bat", ILLEGAL_ARGUMENT
-				"\"flags\" contains invalid character '%c'\n", flags[i]);
+				" \"flags\" contains invalid character '%c'\n", flags[i]);
 		}
 	}
 
@@ -713,7 +713,7 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 		} else if (flags[i] == 'x') {
 			options |= PCRE_EXTENDED;
 		} else {
-			throw(MAL, "pcre_match", ILLEGAL_ARGUMENT "unsupported flag character '%c'\n", flags[i]);
+			throw(MAL, "pcre_match", ILLEGAL_ARGUMENT " Unsupported flag character '%c'\n", flags[i]);
 		}
 	}
 
