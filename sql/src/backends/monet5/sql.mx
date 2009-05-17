@@ -403,7 +403,7 @@ pattern sql_variables():bat[:str,:bat]
 address sql_variables
 comment "return the table with session variables";
 
-command db_users() :bat[:str,:bat]
+pattern db_users() :bat[:str,:bat]
 address db_users_wrap
 comment "return table of users with sql scenario";
 

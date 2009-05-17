@@ -30,7 +30,7 @@ system authorisation.
 sql5_export void monet5_user_init(backend_functions *be_funcs);
 sql5_export str  monet5_user_get_def_schema(mvc *m, oid user);
 
-sql5_export str db_users_wrap(int *r);
+sql5_export str db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_USER_H_ */
 
@@ -74,8 +74,9 @@ monet5_drop_user(ptr _mvc, str user)
 	sql_table *users;
 	sql_column *users_name;
 	str err;
+	Client c = &mal_clients[m->clientid];
 
-	err = AUTHremoveUser(&user);
+	err = AUTHremoveUser(&c, &user);
 	if (err != MAL_SUCCEED) {
 		(void)sql_error(m, 02, "DROP USER: %s", err);
 		_DELETE(err);
@@ -110,6 +111,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
+	Client c = &mal_clients[m->clientid];
 
 	/* prepare the scens BAT: it should contain the sql scenario */
 	scens = BATnew(TYPE_str, TYPE_void, 1);
@@ -125,7 +127,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	if ((ret = AUTHaddUser(&uid, &user, &pwd, &bid)) != MAL_SUCCEED) {
+	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd, &bid)) != MAL_SUCCEED) {
 		BBPunfix(bid); 
 		return ret;
 	}
@@ -142,7 +144,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 }
 
 static BAT *
-db_users() 
+db_users(Client c) 
 {
 	BAT *b;
 	str tmp;
@@ -151,7 +153,7 @@ db_users()
 	BAT *scens = BATnew(TYPE_str, TYPE_void, 1);
 
 	BUNins(scens, "sql", 0, FALSE);
-	if ((tmp = AUTHgetUsers(&b, &scens->batCacheid)) != MAL_SUCCEED) {
+	if ((tmp = AUTHgetUsers(&b, &c, &scens->batCacheid)) != MAL_SUCCEED) {
 		BBPunfix(scens->batCacheid); 
 		GDKfree(tmp);
 		return(NULL);
@@ -165,9 +167,10 @@ monet5_find_user(ptr mp, str user)
 {
 	BAT *users;
 	BUN p;
-	(void)mp;	/* we don't need mvc, as we do a M5 backend call */
+	mvc *m = (mvc *)mp;
+	Client c = &mal_clients[m->clientid];
 	
-	users = db_users();
+	users = db_users(c);
 	if (!users)
 		return -1; 
 	p = BUNfnd(BATmirror(users), user);
@@ -178,10 +181,12 @@ monet5_find_user(ptr mp, str user)
 }
 
 str
-db_users_wrap(int *r)
+db_users_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b = db_users();
+	bat *r = (bat *)getArgReference(stk, pci, 0);
+	BAT *b = db_users(cntxt);
 	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
+	(void)mb;
 
 	BUNins(t, "name", &b->batCacheid, FALSE);
 	BBPunfix(b->batCacheid);
@@ -260,9 +265,10 @@ static int
 monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
 {
 	mvc *m = (mvc *)_mvc;
+	Client c = &mal_clients[m->clientid];
 
 	if (passwd != NULL) {
-		str err = AUTHsetPassword(&user, &passwd);
+		str err = AUTHsetPassword(&c, &user, &passwd);
 		if (err != MAL_SUCCEED) {
 			(void)sql_error(m, 02, "%s", err);
 			return(FALSE);
