@@ -1,6 +1,9 @@
-DROP USER monet_test;
+ALTER USER "monet_test" SET SCHEMA "sys";
 
 DROP SCHEMA test;
+
+DROP USER monet_test;
+
 
 DROP SCHEMA test_2;
 
