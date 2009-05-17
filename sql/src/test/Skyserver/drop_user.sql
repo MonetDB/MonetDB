@@ -1,6 +1,7 @@
 START TRANSACTION;
 
-DROP USER skyserver;
+ALTER USER "skyserver" SET SCHEMA "sys";
 DROP SCHEMA skyserver;
+DROP USER skyserver;
 
 COMMIT;
