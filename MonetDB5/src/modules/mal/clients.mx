@@ -694,7 +694,7 @@ address CLTgetUsers
 comment "return a BAT with user id and name available in the system with access to the given scenario(s)";
 @c
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	oid *ret = (oid *)getArgReference(stk, pci, 0);
+	bat *ret = (bat *)getArgReference(stk, pci, 0);
 	bat *scens = (bat *)getArgReference(stk, pci, 1);
 	BAT *r = NULL;
 	str tmp;
