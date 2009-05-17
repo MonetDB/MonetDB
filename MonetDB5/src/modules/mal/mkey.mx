@@ -594,7 +594,7 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
         throw(MAL, "mkey.bulk_rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
     }
 
-	if( (msg= CMDbulk_rotate_xor_hash(&bn,hn,nbits,b)) == MAL_SUCCEED){
+	if( (msg= CMDbulk_rotate_xor_hash(&bn,hn,nbits,b)) != MAL_SUCCEED){
 		BBPreleaseref(hn->batCacheid);
 		BBPreleaseref(b->batCacheid);
         throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED);
