@@ -81,7 +81,7 @@ comment "Release all variables in the box";
 pattern release(name:str) :void
 address STATreleaseStr
 comment "Release a single BAT from the  box";
-command release(name:bat[:any_1,:any_2]):void
+pattern release(name:bat[:any_1,:any_2]):void
 address STATrelease
 comment "Release a single BAT from the  box";
 pattern toString(name:any_1):str
@@ -90,7 +90,7 @@ comment "Get the string representation of an element in the box";
 pattern discard(name:str) :void
 address STATdiscard
 comment "Release a BAT by name from the box";
-command discard(name:bat[:any_1,:any_2]) :void
+pattern discard(name:bat[:any_1,:any_2]) :void
 address STATdiscard2
 comment "Release a BAT variable from the box";
 pattern newIterator()(:lng,:str)
@@ -128,28 +128,28 @@ command getObjects():bat[:int,:str]
 address STATgetObjects
 comment "Return a table with BAT names managed";
 
-command getHotset():bat[:int,:str]
+pattern getHotset():bat[:int,:str]
 address STATgetHotset
 comment "Return a table with BAT names that have been touched
 since the start of the session";
 
-command getCount(nme:str):lng
+pattern getCount(nme:str):lng
 address STATgetCount
 comment "Return latest stored count information";
 
-command getSize(nme:str):lng
+pattern getSize(nme:str):lng
 address STATgetSize
 comment "Return latest stored count information";
 
-command getMin(nme:str):lng
+pattern getMin(nme:str):lng
 address STATgetMin
 comment "Return latest stored minimum information";
 
-command getMax(nme:str):lng
+pattern getMax(nme:str):lng
 address STATgetMax
 comment "Return latest stored maximum information";
 
-command getHistogram(nme:str):bat[:any_1,:any_2]
+pattern getHistogram(nme:str):bat[:any_1,:any_2]
 address STATgetHistogram
 comment "Return the latest histogram");
 @{
@@ -214,17 +214,17 @@ s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 s_export str STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATrelease(int *ret, int *bid);
+s_export str STATrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard2(int *ret, int *bid);
+s_export str STATdiscard2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATgetHotset(int *bid);
+s_export str STATgetHotset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 s_export str STATgetObjects(int *bid);
-s_export str STATgetHistogram(int *ret, str *nme);
+s_export str STATgetHistogram (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 
 BAT *STAT_id_inuse;		/* BATs information taken from the box */
@@ -399,7 +399,10 @@ STATupdateAll(int *ret, int forced)
 			b = BATdescriptor(i);
 			if (b == 0) {
 				/* BAT disappeared */
-				STATdiscard2(ret, &i);
+				if ((b = BATdescriptor(i)) == NULL) {
+					throw(MAL, "statistics.discard", RUNTIME_OBJECT_MISSING);
+				}
+				BBPunfix(b->batCacheid);
 				continue;
 			}
 			/* check the modification time with histogram */
@@ -676,13 +679,13 @@ STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATrelease(int *ret, int *bid)
+STATrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *bid = (int *)getArgReference(stk, pci, 1);
 	BAT *b;
 	Box box;
-	Client cntxt = MCgetClient(); /* laziness hack */
 
-	(void) ret;
+	(void) mb;
 	OpenBox("release");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "statistics.release", RUNTIME_OBJECT_MISSING);
@@ -742,14 +745,14 @@ STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATdiscard2(int *ret, int *bid)
+STATdiscard2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *bid = (int *)getArgReference(stk, pci, 1);
 	BAT *b;
 	Box box;
 	str msg;
-	Client cntxt = MCgetClient(); /* laziness hack */
 
-	(void) ret;
+	(void) mb;
 	OpenBox("discard");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "statistics.discard", RUNTIME_OBJECT_MISSING);
@@ -820,12 +823,15 @@ STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATgetHotset(int *bid)
+STATgetHotset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *bid = (int *)getArgReference(stk, pci, 0);
 	BAT *b;
 	Box box;
-	Client cntxt = MCgetClient(); /* laziness hack */
 
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	OpenBox("getHotset");
 	b = BATjoin(STAT_id_inuse, STAT_id_nme, BATcount(STAT_id_nme));
 	BBPincref(*bid = b->batCacheid, TRUE);
@@ -842,15 +848,20 @@ STATgetObjects(int *bid)
 
 @-
 @= stat
-s_export str STATget@1(lng *ret, str *nme);
+s_export str STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
-STATget@1(lng *ret, str *nme)
+STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
 	BATiter STAT_id_nmei;
 	Box box;
 	BUN p;
 	int i;
-	Client cntxt = MCgetClient(); /* laziness hack */
+	
+	(void) mb;
+	(void) pci;
+
 	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if (p == BUN_NONE)
@@ -871,14 +882,17 @@ STATget@1(lng *ret, str *nme)
 
 
 str
-STATgetHistogram(int *ret, str *nme)
+STATgetHistogram(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
 	BATiter STAT_id_nmei, STAT_id_histogrami;
 	BUN p;
 	int i;
 	BAT *h;
 	Box box;
-	Client cntxt = MCgetClient(); /* laziness hack */
+
+	(void) mb;
 
 	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
