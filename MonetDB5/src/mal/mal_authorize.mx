@@ -932,8 +932,6 @@ static str vaultKey = NULL;
  */
 str
 AUTHunlockVault(str *password) {
-	str tmp;
-
 	if (password == NULL || strNil(*password))
 		throw(ILLARG, "unlockVault", "password should not be nil");
 
