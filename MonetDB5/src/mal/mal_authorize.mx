@@ -311,7 +311,7 @@ AUTHinitTables() {
 		bat b = bat_nil;
 		str tmp;
 		oid uid;
-		Client c = MCgetClient();
+		Client c = &mal_clients[0];
 
 		rethrow("initTables", tmp, AUTHBackendSum(&pw,
 					&user /* because user == pass */, &len));
