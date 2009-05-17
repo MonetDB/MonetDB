@@ -171,7 +171,7 @@ str SABAOTHmarchScenario(int *ret, str *lang) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.marchScenario", RUNTIME_FILE_NOT_FOUND, path);
+	throw(IO, "sabaoth.marchScenario", RUNTIME_FILE_NOT_FOUND ":%s", path);
 }
 
 @h
@@ -238,7 +238,7 @@ str SABAOTHretreatScenario(int *ret, str *lang) {
 			throw(IO, "sabaoth.retreatScenario", RUNTIME_STREAM_WRITE " %s",err);
 		}
 	}
-	throw(IO, "sabaoth.retreatScenario", RUNTIME_FILE_NOT_FOUND, path);
+	throw(IO, "sabaoth.retreatScenario", RUNTIME_FILE_NOT_FOUND ":%s", path);
 }
 
 @h
@@ -278,7 +278,7 @@ str SABAOTHmarchConnection(int *ret, str *host, int *port) {
 		SABAOTHfreeStatus(&stats);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.marchConnection", RUNTIME_FILE_NOT_FOUND, path);
+	throw(IO, "sabaoth.marchConnection", RUNTIME_FILE_NOT_FOUND ":%s", path);
 }
 
 @h
@@ -367,7 +367,7 @@ str SABAOTHregisterStart(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.registerStart", RUNTIME_FILE_NOT_FOUND, path);
+	throw(IO, "sabaoth.registerStart", RUNTIME_FILE_NOT_FOUND ":%s", path);
 }
 
 @h
@@ -399,7 +399,7 @@ str SABAOTHregisterStop(int *ret) {
 		(void)fclose(f);
 		return(MAL_SUCCEED);
 	}
-	throw(IO, "sabaoth.registerStop", RUNTIME_FILE_NOT_FOUND, path);
+	throw(IO, "sabaoth.registerStop", RUNTIME_FILE_NOT_FOUND ":%s", path);
 }
 
 @h

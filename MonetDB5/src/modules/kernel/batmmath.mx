@@ -23,7 +23,7 @@ in mathematical functions.
 @{
 @= tstBat
 if( bn== NULL) {*ret= 0;
-	throw(MAL, "batcalc.@1", "can not create bat");}
+	throw(MAL, "batcalc.@1", MAL_MALLOC_FAIL);}
 
 @+ Scientific routines
 The mmath functions are also overloaded to provide for

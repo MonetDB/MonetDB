@@ -607,7 +607,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		usockfile = GDKstrdup(*Usockfile);
 #else
 		usockfile = NULL;
-		throw(IO, "mal_mapi.listen", "Unix domain sockets are not supported");
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED " Unix domain sockets are not supported");
 #endif
 	}
 	maxusers = *Maxusers;
@@ -616,13 +616,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port < 0 && usockfile == NULL)
-		throw(IO, "mal_mapi.listen", "No port or socket file specified");
+		throw(IO, "mal_mapi.listen", OPERATION_FAILED " No port or socket file specified");
 
 	if (port >= 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock == INVALID_SOCKET)
 			throw(IO, "mal_mapi.listen",
-					"Creation of stream socket failed: %s",
+					OPERATION_FAILED " Creation of stream socket failed: %s",
 					strerror(errno));
 
 		/* In auto-sensing mode, start at the default */
@@ -663,7 +663,7 @@ errno == WSAEADDRINUSE &&
 					continue;
 				}
 				throw(IO, "mal_mapi.listen",
-						"Binding to stream socket port %d failed: %s",
+						OPERATION_FAILED " Binding to stream socket port %d failed: %s",
 						port, strerror(errno));
 			} else {
 				break;
@@ -672,7 +672,7 @@ errno == WSAEADDRINUSE &&
 
 		if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
 			throw(IO, "mal_mapi.listen",
-					"Failed getting socket name: %s",
+					OPERATION_FAILED " Failed getting socket name: %s",
 					strerror(errno));
 		listen(sock, maxusers);
 	}
@@ -682,7 +682,7 @@ errno == WSAEADDRINUSE &&
 		if (usock == INVALID_SOCKET ) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
-					"Creation of Unix socket failed: %s",
+					OPERATION_FAILED " Creation of Unix socket failed: %s",
 					strerror(errno));
 		}
 		userver.sun_family = AF_UNIX;
@@ -692,7 +692,7 @@ errno == WSAEADDRINUSE &&
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
-					"Binding to Unix socket file %s failed: %s",
+					OPERATION_FAILED " Binding to Unix socket file %s failed: %s",
 					usockfile, strerror(errno));
 		}
 		listen(usock, maxusers);
@@ -708,7 +708,7 @@ errno == WSAEADDRINUSE &&
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
 		GDKfree(Sock);
-		throw(MAL, "mal_mapi.listen", "Starting thread failed");
+		throw(MAL, "mal_mapi.listen", OPERATION_FAILED " Starting thread failed");
 	} 
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
@@ -878,7 +878,7 @@ then a starting !. They are all stripped here.
 				l--;
 			}
 		*f=0;
-		throw(MAL, "@1", "remote error: %s", newerr);
+		throw(MAL, "@1", OPERATION_FAILED " Remote error: %s", newerr);
 	}
 }
 @c
@@ -907,7 +907,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 
 	if( i==MAXSESSIONS){
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
-		throw(IO, "mapi.connect", "Too many sessions");
+		throw(IO, "mapi.connect", OPERATION_FAILED " Too many sessions");
 	}
 	SERVERsessions[i].c= cntxt;
 	SERVERsessions[i].key= ++sessionkey;

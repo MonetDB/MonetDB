@@ -85,7 +85,7 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	throw(MAL, "batcalc.@3", "requires bats of identical size");
+	throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT "requires bats of identical size");
 @= wrapup
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
     *ret= bn->batCacheid;

@@ -142,9 +142,6 @@ typedef struct {
 
 typedef FILE *fstream;
 
-#define fileCheck(fp) if (!fp) \
-	throw(MAL,  "io.@1","Incorrect file pointer");
-
 #ifdef WIN32
 #ifndef LIBMAL_IO
 #define io_export extern __declspec(dllimport)
@@ -260,7 +257,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		}
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
-			throw(MAL, "io.print", "Could not access descriptor");
+			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
@@ -354,12 +351,12 @@ for using vfsprintf proved to be too compiler-dependent (OLD approach).
 	}
 #endif /* HAVE_SNPRINTF */
 @c
-static char toofew_error[80] = "at least %d parameters expected.\n";
-static char format_error[80] = "error in format before param %d.\n";
-static char type_error[80] = "illegal type in param %d.\n";
+static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
+static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
+static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
 
 #define return_error(x)\
-	GDKfree(buf); throw(MAL,"io.printf",x,argc);
+	GDKfree(buf); throw(MAL,"io.printf", x,argc);
 
 static char niltext[4] = "nil";
 
@@ -377,7 +374,7 @@ IOprintf_(str *res, str format, ...)
 	char *p;
 
 	if (format == NULL) {
-		throw(MAL,"io.printf", "NULL pointer passed as format.\n");
+		throw(MAL,"io.printf", ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
 		return MAL_SUCCEED;
@@ -697,12 +694,12 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 		tpe = getArgType(mb, pci, i);
 		val = (ptr) getArgReference(stk, pci, i);
 		if (!isaBatType(tpe))
-			throw(MAL, "io.table", "BAT expected");
+			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
 			for (k = 0; k < nbats; k++)
 				BBPunfix(piv[k]->batCacheid);
-			throw(MAL, "io.table", "Could not access descriptor");
+			throw(MAL, "io.table", MAL_MALLOC_FAIL);
 		}
 		piv[nbats++] = b;
 	}
@@ -782,7 +779,7 @@ IOdatafile(str *ret, str *fnme){
 	stream *s = open_rstream(*fnme);
 	if (s == NULL || stream_errnr(s)) {
 		*ret = 0;
-		throw(MAL, "io.export", "Could not open file");
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	*ret= GDKstrdup(*fnme);
 	stream_close(s);
@@ -797,11 +794,11 @@ IOexport(bit *ret, int *bid, str *fnme)
 	stream *s = open_wastream(*fnme);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "io.export", "Cannot access descriptor");
+		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
 	}
 	if (s == NULL || stream_errnr(s)) {
 		*ret = FALSE;
-		throw(MAL, "io.export", "Could not open file");
+		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", fnme);
 	}
 	BATprintf(s, b);
 	stream_close(s);
@@ -829,7 +826,7 @@ IOimport(int *ret, int *bid, str *fnme)
 	FILE *fp = fopen(*fnme, "r");
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "io.import", "Cannot access descriptor");
+		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
 	}
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
@@ -838,30 +835,30 @@ Open the file. Memory map it to minimize buffering problems.
 @c
 	if (fp == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "io.import", "Could not open file");
+		throw(MAL, "io.import", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	} else {
 		int fn;
 		struct stat st;
 
 		if ((fn = fileno(fp)) <= 0) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "io.import", "Fileno fails");
+			throw(MAL, "io.import", OPERATION_FAILED " fileno()");
 		}
 		if (fstat(fn, &st) != 0) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "io.imports", "Fstat fails");
+			throw(MAL, "io.imports", OPERATION_FAILED "fstat()");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "io.imports", "File is empty or fstat broken");
+			throw(MAL, "io.imports", OPERATION_FAILED "Empty file or fstat broken");
 		}
 		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size);
 		end = cur + st.st_size;
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "io.mport", "MT_mmap failed");
+			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");
 		}
 
 	}

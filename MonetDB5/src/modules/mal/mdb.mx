@@ -321,7 +321,7 @@ MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* debug running process */
 		pid = *(int *) getArgReference(stk, p, 1);
 		if( pid< 0 || pid > MAL_MAXCLIENTS || mal_clients[pid].mode <= FINISHING)
-			throw(MAL, "mdb.start", "Illegal process id");
+			throw(MAL, "mdb.start", ILLEGAL_ARGUMENT "Illegal process id");
 		c= mal_clients+pid;
 		/* make client aware of being debugged */
 		cntxt= c;
@@ -341,7 +341,7 @@ MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-		throw(MAL, "mdb.start", "Debugging factory not yet available");
+		throw(MAL, "mdb.start", PROGRAM_NYI);
 }
 
 str
@@ -558,7 +558,7 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
-		throw(MAL, "mdb.inspect", "Could not find function");
+		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
 	return runMALDebugger(cntxt, s);
 }
 
@@ -614,7 +614,7 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	if (b == 0)
-		throw(MAL, "mdb.getStackFrame", "Failed to create BAT");
+		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, cntxt, m, s, 0);
 }
@@ -627,7 +627,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	n = *(int *) getArgReference(s, p, 1);
 	if (n < 0 || n >= getStkDepth(s))
-		throw(MAL, "mdb.getStackFrame", "Illegal depth.");
+		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, cntxt, m, s, n);
 }
@@ -694,10 +694,10 @@ MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	s = findSymbol(cntxt->nspace, putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
-		throw(MAL, "mdb.inspect", "Could not find function");
+		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
 	span = setLifespan(s->def);
 	if( span == NULL)
-		throw(MAL,"mdb.inspect","could not allocate space");
+		throw(MAL,"mdb.inspect", MAL_MALLOC_FAIL);
 	debugLifespan(cntxt, s->def, span);
 	GDKfree(span);
 	(void) p;
@@ -802,7 +802,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	if (b == 0)
-		throw(MAL, "mdb.getDefinition", "Failed to create BAT");
+		throw(MAL, "mdb.getDefinition",  MAL_MALLOC_FAIL);
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
@@ -822,7 +822,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		throw(MAL, "mdb.getExceptionVariable", "Could not find it");
+		throw(MAL, "mdb.getExceptionVariable", OPERATION_FAILED " ':'<name> missing");
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
@@ -837,10 +837,10 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		throw(MAL, "mdb.getExceptionContext", "Could not find it");
+		throw(MAL, "mdb.getExceptionContext", OPERATION_FAILED " ':'<name> missing");
 	tail2 = strchr(tail + 1, ':');
 	if (tail2 == 0)
-		throw(MAL, "mdb.getExceptionContext", "Could not find it");
+		throw(MAL, "mdb.getExceptionContext", OPERATION_FAILED " <name> missing");
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
@@ -855,10 +855,10 @@ MDBgetExceptionReason(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		throw(MAL, "mdb.getExceptionReason", "Could not find it");
+		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " '::' missing");
 	tail = strchr(tail + 1, ':');
 	if (tail == 0)
-		throw(MAL, "mdb.getExceptionReason", "Could not find it");
+		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
 	*ret = GDKstrdup(tail + 1);
 	return MAL_SUCCEED;
@@ -902,7 +902,7 @@ str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 str MDBdummy(int *ret){
 	(void) ret;
-	throw(MAL, "mdb.dummy", "Dummy routine called");
+	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
 str
@@ -914,7 +914,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( mdbSetTrap(cntxt,modnme,fcnnme,b) )
-		throw(MAL,"mdb.trap","Function not found");
+		throw(MAL,"mdb.trap", RUNTIME_SIGNATURE_MISSING);
 	return MAL_SUCCEED;
 }
 	

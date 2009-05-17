@@ -3179,7 +3179,7 @@ counters_export str CNTRSstart(int *ret, int *ev1, int *ev2);
 str
 CNTRSstart(int *ret, int *ev1, int *ev2){
 	if( ctop== 32)
-		throw(MAL, "counters.start","Out of counter slots");
+		throw(MAL, "counters.start", ILLEGAL_ARGUMENT "Out of counter slots");
 	start_count(cntrs + ctop, ev1, ev2);
 	*ret = ctop++;
 	return MAL_SUCCEED;
@@ -3188,7 +3188,7 @@ counters_export str CNTRSreset(int *ret, int *idx, int *ev1, int *ev2);
 str
 CNTRSreset(int *ret, int *idx, int *ev1, int *ev2){
 	if( *idx <0 || *idx>= 32)
-		throw(MAL, "counters.start","Counter handle out of range");
+		throw(MAL, "counters.start", ILLEGAL_ARGUMENT "Counter handle out of range");
 	start_count(cntrs + *idx, ev1, ev2);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -3198,7 +3198,7 @@ str
 CNTRSstop(int *ret, int *idx){
 	(void) ret;
 	if( *idx <0 || *idx>= 32)
-		throw(MAL, "counters.start","Counter handle out of range");
+		throw(MAL, "counters.start", ILLEGAL_ARGUMENT "Counter handle out of range");
 	stop_count(cntrs + *idx, cntrs + *idx);
 	return MAL_SUCCEED;
 }
@@ -3208,12 +3208,12 @@ str
 CNTRScounter2bat(int *bid, int *idx){
 	BAT *bn=NULL;
 	if( *idx <0 || *idx>= 32)
-		throw(MAL, "counters.bat","Counter handle out of range");
+		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT "Counter handle out of range");
 	if (cntrs[*idx].status != 2) 
-		throw(MAL, "counters.bat","Counter not yet stopped ");
+		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT "Counter not yet stopped ");
 	counter2bat(&bn, cntrs + *idx);
 	if( bn == NULL)
-		throw(MAL, "counters.bat","Could not create object");
+		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT "Could not create object");
 	*bid= bn->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -3230,7 +3230,7 @@ CNTRScounter2str(str *ret, int *idx){
 	counter *c;
 #endif
 	if( *idx <0 || *idx>= 32)
-		throw(MAL, "counters.bat","Counter handle out of range");
+		throw(MAL, "counters.bat", ILLEGAL_ARGUMENT "Counter handle out of range");
 
 #if defined(HWCOUNTERS)
 	c= cntrs+ *idx;
@@ -3254,7 +3254,7 @@ CNTRSnativeEvents(int *ret){
 	BAT *bn=0;
 	show_native_events(&bn);
 	if( bn == NULL)
-		throw(MAL, "counters.nativeEvents","Could not create object");
+		throw(MAL, "counters.nativeEvents", MAL_MALLOC_FAIL);
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -3266,7 +3266,7 @@ CNTRSunifiedEvents(int *ret){
 	BAT *bn=0;
 	show_unified_events(&bn);
 	if( bn == NULL)
-		throw(MAL, "counters.unifiedEvents","Could not create object");
+		throw(MAL, "counters.unifiedEvents", MAL_MALLOC_FAIL);
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

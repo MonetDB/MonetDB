@@ -69,11 +69,11 @@ comment "Designate a BAT as garbage.";
 
 pattern bat.partition(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]...
 address CMDbatpartition
-comment "Create a series of cheap slices over the first argument";
+comment "Create a series of cheap slices over the first argument. The BUNs are distributed evenly.";
 
 pattern bat.partition(b:bat[:any_1,:any_2],pieces:int,part:int):bat[:any_1,:any_2]
 address CMDbatpartition2
-comment "Create a series of cheap slices over the first argument";
+comment "Create a series of cheap slices over the first argument. The BUNs are distributed evenly.";
 
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
@@ -136,7 +136,7 @@ to a named box. The bbp box is automatically opened.
 	if(box == 0 )\
 		box= openBox("bbp");\
 	if( box ==0) \
-		throw(MAL, "bbp." X,"box is not open");
+		throw(MAL, "bbp." X, BOX_CLOSED);
 
 
 @- Operator implementation
@@ -156,7 +156,7 @@ CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	bid = (int *) getArgReference(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "bbp.setGarbage", "Cannot access descriptor");
+		throw(MAL, "bat.setGarbage", INTERNAL_BAT_ACCESS);
 
 	b->batDirty= FALSE;
 	BBPunfix(b->batCacheid);
@@ -172,7 +172,7 @@ CMDBATflush(int *ret, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "bbp.flush", "Cannot access descriptor");
+		throw(MAL, "bat.flush", INTERNAL_BAT_ACCESS);
 
 	/* use memory advice to release the BAT */
 	/* TO BE PROVIDED */
@@ -190,7 +190,7 @@ CMDBATreduce(int *ret, int *bid)
 	int old= GDKdebug;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "bbp.reduce", "Cannot access descriptor");
+		throw(MAL, "bat.reduce", INTERNAL_BAT_ACCESS);
 
 	/* reduce memory footprint by dropping hashes 
 	of non-persistent bats */
@@ -226,7 +226,7 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bid = *(int *) getArgReference(s, p, 3);
 	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.new", "Cannot access descriptor");
+		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	}
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
@@ -239,7 +239,7 @@ Cloning should include copying of the properties.
 	bn= BATnew(ht,tt,cap);
 	if( bn == NULL){
 		BBPunfix(b->batCacheid);
-		throw(MAL,"bat.new","Cannot create BAT");
+		throw(MAL,"bat.new", INTERNAL_OBJ_CREATE);
 	}
 	if( b->hseqbase)
 		BATseqbase(bn, b->hseqbase);
@@ -265,14 +265,14 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (p->argc > 3) {
 		lng lcap = *(lng*) getArgReference(s, p, 3);
 		if (lcap < 0)
-			throw(MAL, "bbp.new", "requested BAT size must not be negative");
+			throw(MAL, "bat.new", POSITIVE_EXPECTED);
 		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bbp.new", "requested BAT exceeds limit");
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
 		cap = (BUN) lcap;
 	}
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		throw(MAL, "bbp.new", "Explicit type required");
+		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))
@@ -295,7 +295,7 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	res = (int *) getArgReference(s, p, 0);
 	bid = *(int *) getArgReference(s, p, 1);
 	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.new", "Cannot access descriptor");
+		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	}
 
 	if (bid > 0) {
@@ -309,9 +309,9 @@ CMDBATnewDerived(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	if (p->argc > 2) {
 		lng lcap = *(lng *) getArgReference(s, p, 2);
 		if (lcap < 0)
-			throw(MAL, "bbp.new", "requested BAT size must not be negative");
+			throw(MAL, "bat.new", POSITIVE_EXPECTED);
 		if (lcap > (lng) BUN_MAX)
-			throw(MAL, "bbp.new", "requested BAT exceeds limit");
+			throw(MAL, "bat.new", ILLEGAL_ARGUMENT " Capacity too large");
 		cap = (BUN) lcap;
 	}
 	else
@@ -338,7 +338,7 @@ CMDBATderivedByName(int *ret, str *nme)
 
 	bid = BBPindex(*nme);
 	if (bid <= 0 || (bn = BATdescriptor(bid)) == 0)
-		throw(MAL, "bbp.new", "Referenced BAT not found");
+		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
@@ -357,7 +357,7 @@ CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	tt = getArgType(m, p, 2);
 	icap = *(int *) getArgReference(s, p, 3);
 	if (icap < 0)
-		throw(MAL, "bbp.new", "requested BAT size must not be negative");
+		throw(MAL, "bat.new", POSITIVE_EXPECTED);
 	cap = (BUN) icap;
 	res = (int *) getArgReference(s, p, 0);
 
@@ -377,7 +377,7 @@ CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = (ptr *) getArgReference(stk, pci, 2);
 	tt = getArgType(mb, pci, 2);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bbp.project", "Cannot access descriptor");
+		throw(MAL, "bat.project", INTERNAL_BAT_ACCESS);
 	}
 
 	if (tt >= TYPE_str) {
@@ -393,7 +393,7 @@ CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bat.project", INTERNAL_OBJ_CREATE);
 }
 
 str
@@ -402,7 +402,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bbp.project", "Cannot access descriptor");
+		throw(MAL, "bat.project", INTERNAL_BAT_ACCESS);
 	}
 
 	bn = BATconst(b, TYPE_void, (ptr) &int_nil);
@@ -412,7 +412,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bat.project", INTERNAL_OBJ_CREATE);
 }
 
 str
@@ -427,7 +427,7 @@ CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *(int *) getArgReference(stk, pci, 2);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.unpack", "Cannot access descriptor");
+		throw(MAL, "bat.unpack", INTERNAL_BAT_ACCESS);
 	}
 
 	head =  getArgReference(stk,pci,0); 
@@ -458,9 +458,9 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *(int *) getArgReference(stk, pci, pci->retc);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.partition", "Cannot access descriptor");
+		throw(MAL, "bat.partition", INTERNAL_BAT_ACCESS);
 	}
-	step = BATcount(b) / pci->retc;
+	step = BATcount(b) / pci->retc + 1;
 
 	/* create the slices slightly overshoot to make sure it all is taken*/
 	for(i=0; i<pci->retc; i++){
@@ -477,11 +477,11 @@ CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (i == pci->retc-1)
 			hval = BATcount(b);
 		bn =  BATslice(b, lval,hval);
-		BATseqbase(bn, lval);
 		if (bn== NULL){
 			BBPunfix(b->batCacheid);
-			throw(MAL, "bbp.partition", "Partition slice not created");
+			throw(MAL, "bat.partition", MAL_MALLOC_FAIL);
 		}
+		BATseqbase(bn, lval);
 		stk->stk[getArg(pci,i)].val.bval = bn->batCacheid;
 		ret= (int *) getArgReference(stk,pci,i);
 		BBPkeepref(*ret = bn->batCacheid);
@@ -502,16 +502,16 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 	if ( pieces <=0 )
-		throw(MAL, "bbp.partition", "Positive number of pieces expected");
+		throw(MAL, "bat.partition", POSITIVE_EXPECTED);
 	if ( idx >= pieces || idx <0 )
-		throw(MAL, "bbp.partition", "Illegal BAT partition number");
+		throw(MAL, "bat.partition", ILLEGAL_ARGUMENT " Illegal piece index");
 		
 	bid = *(int *) getArgReference(stk, pci, pci->retc);
 
 	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bbp.partition", "Cannot access descriptor");
+		throw(MAL, "bat.partition", INTERNAL_BAT_ACCESS);
 	}
-	step = BATcount(b) / pieces;
+	step = BATcount(b) / pieces + 1;
 
 	lval = idx * step;
 	if ( idx == pieces-1)
@@ -522,7 +522,7 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(bn, lval);
 	if (bn== NULL){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bbp.partition", "Partition slice not created");
+		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
 	stk->stk[getArg(pci,0)].val.bval = bn->batCacheid;
 	ret= (int *) getArgReference(stk,pci,0);
@@ -545,7 +545,7 @@ CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (int *) getArgReference(stk, pci, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		throw(MAL, "bbp.new", "Explicit type required");
+		throw(MAL, "bat.pack", SEMANTIC_TYPE_ERROR);
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))
@@ -570,7 +570,7 @@ CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i= pci->retc; i < pci->argc; i++){
 		b= BATdescriptor(*(int*) getArgReference(stk,pci,i));
 		if( b == NULL)
-			throw(MAL,"bat.setBase","Can not access BAT");
+			throw(MAL,"bat.setBase",INTERNAL_BAT_ACCESS);
 		BATseqbase(b,o);
 		o= o + (oid) BATcount(b);
 		BBPunfix(b->batCacheid);

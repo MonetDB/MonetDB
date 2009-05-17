@@ -208,7 +208,7 @@ RUNchoice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		nme= *(str*) getArgReference(stk,p,1);
 		/* should be generalized to allow an arbitrary user defined function */
 		if( strcmp(nme,"getVolume")!= 0)
-			throw(MAL,"scheduler.choice","Illegal cost function");
+			throw(MAL,"scheduler.choice",ILLEGAL_ARGUMENT "Illegal cost function");
 
 		mincost= -1;
 		for(j=2;j<p->argc; j++){
@@ -267,7 +267,7 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BBPincref(lhs->val.bval, TRUE);
 			return MAL_SUCCEED;
 		}
-	throw(MAL,"scheduler.pick","No result available");
+	throw(MAL,"scheduler.pick", OPERATION_FAILED "No result available");
 }
 @-
 The routine below calculates a cost based on the BAT volume in bytes.

@@ -68,7 +68,7 @@ ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bbp.project", "Cannot access descriptor");
+		throw(MAL, "bbp.project", INTERNAL_BAT_ACCESS);
 	}
 
 	if (ATOMvarsized(tt)) {
@@ -84,7 +84,7 @@ ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bbp.project", "Cannot create the constant BAT");
+	throw(MAL, "bbp.project", INTERNAL_OBJ_CREATE);
 }
 
 str

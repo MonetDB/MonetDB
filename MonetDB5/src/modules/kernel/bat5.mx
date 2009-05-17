@@ -2321,7 +2321,7 @@ BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
 		BBPkeepref(*res);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.new", "GDKerror in BAT construction");
+	throw(MAL, "bat.new", GDK_EXCEPTION);
 }
 
 str
@@ -2334,7 +2334,7 @@ BKCattach(int *ret, int *tt, str *heapfile)
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.attach", "GDKerror");
+	throw(MAL, "bat.attach", GDK_EXCEPTION);
 }
 
 str
@@ -2347,7 +2347,7 @@ BKCdensebat(int *ret, wrd *size)
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.densebat", "GDKerror");
+	throw(MAL, "bat.densebat", GDK_EXCEPTION);
 }
 
 str
@@ -2356,7 +2356,7 @@ BKCreverse(int *ret, int *bid)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.reverse", "Cannot access descriptor");
+		throw(MAL, "bat.reverse", RUNTIME_OBJECT_MISSING);
 	}
 
 	CMDreverse(&bn, b);
@@ -2366,7 +2366,7 @@ BKCreverse(int *ret, int *bid)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.reverse", "GDKerror");
+	throw(MAL, "bat.reverse", GDK_EXCEPTION);
 }
 
 str
@@ -2375,7 +2375,7 @@ BKCmirror(int *ret, int *bid)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.mirror", "Cannot access descriptor");
+		throw(MAL, "bat.mirror", RUNTIME_OBJECT_MISSING);
 	}
 	if (CMDmirror(&bn, b) == GDK_SUCCEED) {
 		*ret = bn->batCacheid;
@@ -2385,7 +2385,7 @@ BKCmirror(int *ret, int *bid)
 	}
 	*ret = 0;
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.mirror", "GDKerror");
+	throw(MAL, "bat.mirror", GDK_EXCEPTION);
 }
 
 str
@@ -2394,12 +2394,12 @@ BKCrevert(int *ret, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.revert", "Cannot access descriptor");
+		throw(MAL, "bat.revert", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATrevert(b);
 	if(bn==NULL ){
 		BBPkeepref(*ret= b->batCacheid);
-		throw(MAL, "bat.revert", "Error occurred");
+		throw(MAL, "bat.revert", GDK_EXCEPTION);
 	}
 	BBPkeepref(*ret= bn->batCacheid);
 	return MAL_SUCCEED;
@@ -2411,12 +2411,12 @@ BKCorder(int *ret, int *bid)
 	BAT *b,*bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.order", "Cannot access descriptor");
+		throw(MAL, "bat.order", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATorder(b);
 	if(bn==NULL ){
 		BBPkeepref(*ret= b->batCacheid);
-		throw(MAL, "bat.order", "Error occurred");
+		throw(MAL, "bat.order", GDK_EXCEPTION);
 	}
 	BBPkeepref(*ret= b->batCacheid);
 	return MAL_SUCCEED;
@@ -2429,12 +2429,12 @@ BKCorder_rev(int *ret, int *bid)
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.order_rev", "Cannot access descriptor");
+		throw(MAL, "bat.order_rev", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATorder_rev(b);
 	if(bn==NULL ){
 		BBPkeepref(*ret= b->batCacheid);
-		throw(MAL, "bat.order_rev", "Error occurred");
+		throw(MAL, "bat.order_rev", GDK_EXCEPTION);
 	}
 	BBPkeepref(*ret= b->batCacheid);
 	return MAL_SUCCEED;
@@ -2450,7 +2450,7 @@ if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
 {
 printf("val " OIDFMT " seqbase " OIDFMT " pos " BUNFMT "\n", *(oid*)@1,
 	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
-      throw(MAL, "bat.insert", " insert non-nil values in a void column.");
+      throw(MAL, "bat.insert", OPERATION_FAILED " Insert non-nil values in a void column.");
 }
 @c
 
@@ -2462,7 +2462,7 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	(void) r;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	@:derefStr(b,h,h)@
@@ -2481,7 +2481,7 @@ BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	(void) r;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	@:derefStr(b,h,h)@
@@ -2499,18 +2499,18 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 	int param=0;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	if (BATins(b, s,FALSE) == NULL) {
 		BBPkeepref(*r=b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", "Failed");
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	}
 	BBPreleaseref(s->batCacheid);
 	BBPkeepref(*r=b->batCacheid);
@@ -2525,18 +2525,18 @@ BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 	int param=0;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", "Cannot access descriptor");
+		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	if (BATins(b, s, *force) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", "Failed");
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(s->batCacheid);
@@ -2552,14 +2552,14 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	int param=0;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	if (BUNreplace(b, h, t, 0) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.replace", "BUNreplaceFailed");
+		throw(MAL, "bat.replace", GDK_EXCEPTION);
 	}
 	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(i->batCacheid);
@@ -2573,11 +2573,11 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 	int param=0;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	bn=BATreplace(b, s, 0);
@@ -2587,7 +2587,7 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		if( bn)
 			BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.replace", "GDKerror, different BAT returned");
+		throw(MAL, "bat.replace", OPERATION_FAILED "Different BAT returned");
 	}
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(i->batCacheid);
@@ -2602,14 +2602,14 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	bn= BUNreplace(b, h, t, *force);
 	BBPreleaseref(b->batCacheid);
 	if(bn && bn->batCacheid != b->batCacheid)
-		throw(MAL, "bat.replace", "GDKerror, different BAT returned");
+		throw(MAL, "bat.replace", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2620,17 +2620,17 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 	BAT *b, *bn, *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.replace", "Cannot access descriptor");
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATreplace(b, s, *force);
 	BBPreleaseref(s->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	if(bn && bn->batCacheid != b->batCacheid)
-		throw(MAL, "bat.replace_bat", "GDKerror, different BAT returned");
+		throw(MAL, "bat.replace_bat", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2641,13 +2641,13 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	bn= BUNdel(b, h, t,FALSE);
 	if(bn && bn->batCacheid != b->batCacheid)
-		throw(MAL, "bat.delete_bun", "GDKerror, different BAT returned");
+		throw(MAL, "bat.delete_bun", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2659,12 +2659,12 @@ BKCdelete(int *r, int *bid, ptr h)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,h,h)@
 	bn= BUNdelHead(b, h,FALSE);
 	if(bn && bn->batCacheid != b->batCacheid)
-		throw(MAL, "bat.delete", "GDKerror, different BAT returned");
+		throw(MAL, "bat.delete", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2676,12 +2676,12 @@ BKCdelete_all(int *r, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	bn=BATclear(b);
 	if(bn && bn->batCacheid != b->batCacheid){
 		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.delete_all", "GDKerror, different BAT returned");
+		throw(MAL, "bat.delete_all", OPERATION_FAILED "Different BAT returned");
 	}
 	BBPkeepref(*r=b->batCacheid);
 	return MAL_SUCCEED;
@@ -2695,17 +2695,17 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 	if( *bid == *sid)
 		return BKCdelete_all(r,bid);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn=BATdel(b, s,FALSE);
 	BBPreleaseref(s->batCacheid);
 	if(bn && bn->batCacheid != b->batCacheid)
-		throw(MAL, "bat.delete_bat_buns", "GDKerror, different BAT returned");
+		throw(MAL, "bat.delete_bat_buns", OPERATION_FAILED "Different BAT returned");
 	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2718,11 +2718,11 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 	int param=0;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.delete", "Cannot access descriptor");
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
 	if (BATdelHead(b, s,FALSE) != NULL) {
@@ -2750,7 +2750,7 @@ BKCdestroyImmediate(signed char*r, int *bid)
 	char buf[512];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.destroy", "Cannot access descriptor");
+		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
 	}
 	BBPlogical(b->batCacheid, buf);
 	BBPreleaseref(b->batCacheid);
@@ -2765,7 +2765,7 @@ BKCdestroy(signed char *r, int *bid)
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.destroy", "Cannot access descriptor");
+		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
 	}
 	*bid = 0;
 	BATmode(b, TRANSIENT);
@@ -2838,11 +2838,11 @@ BKCappend_wrap(int *r, int *bid, int *uid)
 	int param=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&i,b,&param);
 	BATappend(i, u,FALSE);
@@ -2859,7 +2859,7 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 	int param=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:derefStr(b,t,u)@
@@ -2876,7 +2876,7 @@ BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
 	int param=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 
 	CMDsetaccess(&i,b,&param);
@@ -2894,11 +2894,11 @@ BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 	int param=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&i,b,&param);
 	BATappend(i, u, *force);
@@ -2915,7 +2915,7 @@ BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
 	int param=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.append", "Cannot access descriptor");
+		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 
 	CMDsetaccess(&i,b,&param);
@@ -2933,7 +2933,7 @@ BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 
 	(void) r;
 	if ((o = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_inplace5(o, *id, t,FALSE);
 	BBPreleaseref(o->batCacheid);
@@ -2947,7 +2947,7 @@ BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
 
 	(void) r;
 	if ((o = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_inplace5(o, *id, t, *force);
 	BBPreleaseref(o->batCacheid);
@@ -2961,11 +2961,11 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 
 	(void) r;
 	if ((o = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((d = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(o->batCacheid);
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_replace_bat5(o, d,FALSE);
 	BBPreleaseref(o->batCacheid);
@@ -2980,11 +2980,11 @@ BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 
 	(void) r;
 	if ((o = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((d = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(o->batCacheid);
-		throw(MAL, "bat.inplace", "Cannot access descriptor");
+		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	void_replace_bat5(o, d, *force);
 	BBPreleaseref(o->batCacheid);
@@ -3000,7 +3000,7 @@ BKCgetAlpha(int *r, int *bid)
 	BAT *b, *c;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getInserted", "Cannot access descriptor");
+		throw(MAL, "bat.getInserted", RUNTIME_OBJECT_MISSING);
 	}
 	c = BATalpha(b);
 	*r = c->batCacheid;
@@ -3015,7 +3015,7 @@ BKCgetDelta(int *r, int *bid)
 	BAT *b, *c;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDeleted", "Cannot access descriptor");
+		throw(MAL, "bat.getDeleted", RUNTIME_OBJECT_MISSING);
 	}
 	c = BATdelta(b);
 	*r = c->batCacheid;
@@ -3051,7 +3051,7 @@ BKCgetRole(str *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getType", "Cannot access descriptor");
+		throw(MAL, "bat.getType", RUNTIME_OBJECT_MISSING);
 	}
 	*res = GDKstrdup((*bid > 0) ? b->hident : b->tident);
 	BBPreleaseref(b->batCacheid);
@@ -3064,7 +3064,7 @@ BKCsetkey(int *res, int *bid, bit *param)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setKey", "Cannot access descriptor");
+		throw(MAL, "bat.setKey", RUNTIME_OBJECT_MISSING);
 	}
 	BATkey(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
@@ -3078,7 +3078,7 @@ BKCsetSet(int *res, int *bid, bit *param)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSet", "Cannot access descriptor");
+		throw(MAL, "bat.setSet", RUNTIME_OBJECT_MISSING);
 	}
 	BATset(b, *param ? BOUND2BTRUE :FALSE);
 	*res = b->batCacheid;
@@ -3092,7 +3092,7 @@ BKCisaSet(int *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isaSet", "Cannot access descriptor");
+		throw(MAL, "bat.isaSet", RUNTIME_OBJECT_MISSING);
 	}
 	*res = b->batSet;
 	BBPreleaseref(b->batCacheid);
@@ -3105,7 +3105,7 @@ BKCsetSorted(bit *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isSorted", "Cannot access descriptor");
+		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
 	CMDordered(res, b);
 	*res = BATordered(b) ? 1 : 0;
@@ -3119,7 +3119,7 @@ BKCisSorted(bit *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isSorted", "Cannot access descriptor");
+		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
 	*res = BATordered(b) ? 1 : 0;
 	BBPreleaseref(b->batCacheid);
@@ -3132,7 +3132,7 @@ BKCisSortedReverse(bit *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isSorted", "Cannot access descriptor");
+		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
 	*res = BATordered_rev(b) ? 1 : 0;
 	BBPreleaseref(b->batCacheid);
@@ -3151,7 +3151,7 @@ BKCgetKey(bit *ret, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setPersistence", "Cannot access descriptor");
+		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
 	CMDgetkey(ret, b);
 	BBPreleaseref(b->batCacheid);
@@ -3164,7 +3164,7 @@ BKCpersists(int *r, int *bid, bit *flg)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setPersistence", "Cannot access descriptor");
+		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
 	BATmode(b, (*flg == TRUE) ? PERSISTENT : (*flg ==FALSE) ? TRANSIENT : SESSION);
 	BBPreleaseref(b->batCacheid);
@@ -3185,7 +3185,7 @@ BKCisPersistent(bit *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setPersistence", "Cannot access descriptor");
+		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
 	*res = (b->batPersistence == PERSISTENT) ? TRUE :FALSE;
 	BBPreleaseref(b->batCacheid);
@@ -3198,7 +3198,7 @@ BKCsetTransient(int *r, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setTransient", "Cannot access descriptor");
+		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
 	}
 	BATmode(b, TRANSIENT);
 	*r = 0;
@@ -3212,7 +3212,7 @@ BKCisTransient(bit *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setTransient", "Cannot access descriptor");
+		throw(MAL, "bat.setTransient", RUNTIME_OBJECT_MISSING);
 	}
 	*res = b->batPersistence == TRANSIENT;
 	BBPreleaseref(b->batCacheid);
@@ -3228,7 +3228,7 @@ str BKCset@1(int *res, int *bid) {
 	BAT *b, *bn = NULL;
 	int param=@2;
     if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.set@1", "Cannot access descriptor");
+        throw(MAL, "bat.set@1", RUNTIME_OBJECT_MISSING);
     }
 	CMDsetaccess(&bn,b,&param);
 	BBPkeepref(*res=bn->batCacheid);
@@ -3238,7 +3238,7 @@ str BKCset@1(int *res, int *bid) {
 str BKChas@1(bit *res, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.set@1", "Cannot access descriptor");
+        throw(MAL, "bat.set@1", RUNTIME_OBJECT_MISSING);
     }
 	*res = BATgetaccess(b)=='@3';
 	BBPreleaseref(b->batCacheid);
@@ -3260,7 +3260,7 @@ BKCaccess(int *res, int *bid, int *m)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setAccess", "Cannot access descriptor");
+		throw(MAL, "bat.setAccess", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&bn, b, m);
 	*res = bn->batCacheid;
@@ -3277,7 +3277,7 @@ BKCsetAccess(int *res, int *bid, str *param)
 	int oldid;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setAccess", "Cannot access descriptor");
+		throw(MAL, "bat.setAccess", RUNTIME_OBJECT_MISSING);
 	}
 	switch (*param[0]) {
 	case 'r':
@@ -3291,7 +3291,7 @@ BKCsetAccess(int *res, int *bid, str *param)
 		break;
 	default:
 		*res = 0;
-		throw(MAL, "bat.setAccess", " illegal access mode");
+		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT" Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
 	/* CMDsetaccess(&bn, b, &m);*/
 
@@ -3314,7 +3314,7 @@ BKCgetAccess(str *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getAccess", "Cannot access descriptor");
+		throw(MAL, "bat.getAccess", RUNTIME_OBJECT_MISSING);
 	}
 	switch (BATgetaccess(b)) {
 	case 1:
@@ -3342,7 +3342,7 @@ BKCinfo(int *retval, int *bid)
 	BAT *bn = NULL, *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getInfo", "Cannot access descriptor");
+		throw(MAL, "bat.getInfo", RUNTIME_OBJECT_MISSING);
 	}
 	if (CMDinfo(&bn, b) == GDK_SUCCEED) {
 		*retval = bn->batCacheid;
@@ -3352,14 +3352,14 @@ BKCinfo(int *retval, int *bid)
 	}
 	BBPreleaseref(*bid);
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "BKCinfo", "GDKerror");
+	throw(MAL, "BKCinfo", GDK_EXCEPTION);
 }
 
 str
 BKCbatdisksize(lng *tot, int *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	}
 	CMDbatdisksize(tot,b);
 	BBPreleaseref(*bid);
@@ -3370,7 +3370,7 @@ str
 BKCbatvmsize(lng *tot, int *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	}
 	CMDbatvmsize(tot,b);
 	BBPreleaseref(*bid);
@@ -3381,7 +3381,7 @@ str
 BKCbatsize(lng *tot, int *bid){
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getDiskSize", "Cannot access descriptor");
+		throw(MAL, "bat.getDiskSize", RUNTIME_OBJECT_MISSING);
 	}
 	CMDbatsize(tot,b, FALSE);
 	BBPreleaseref(*bid);
@@ -3394,7 +3394,7 @@ BKCgetStorageSize(lng *tot, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getStorageSize", "Cannot access descriptor");
+		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
 	CMDbatsize(tot,b,TRUE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -3406,7 +3406,7 @@ BKCgetSpaceUsed(lng *tot, int *bid)
 	size_t size = sizeof(BATstore);
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.getSpaceUsed", "Cannot access descriptor");
+		throw(MAL, "bat.getSpaceUsed", RUNTIME_OBJECT_MISSING);
 
 	if (!isVIEW(b)) {
 		BUN cnt = BATcount(b);
@@ -3434,7 +3434,7 @@ BKCgetStorageSize_str(lng *tot, str batname)
 	int bid = BBPindex(batname);
 
 	if (bid == 0) 
-		throw(MAL, "bat.getStorageSize", "no such bat.\n");
+		throw(MAL, "bat.getStorageSize", RUNTIME_OBJECT_MISSING);
 	return BKCgetStorageSize(tot, &bid);
 }
 
@@ -3446,11 +3446,11 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
 	BAT *b1, *b2;
 
 	if ((b1 = BATdescriptor(*bid1)) == NULL) {
-		throw(MAL, "bat.isSynced", "Cannot access descriptor");
+		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
 	if ((b2 = BATdescriptor(*bid2)) == NULL) {
 		BBPreleaseref(b1->batCacheid);
-		throw(MAL, "bat.isSynced", "Cannot access descriptor");
+		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsynced(ret, b1, b2);
 	BBPreleaseref(b1->batCacheid);
@@ -3466,15 +3466,15 @@ BKCsetRole(int *r, int *bid, char **hname, char **tname)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setRole", "Cannot access descriptor");
+		throw(MAL, "bat.setRole", RUNTIME_OBJECT_MISSING);
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", "head name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", "tail name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "tail name missing");
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
@@ -3489,11 +3489,11 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	str dummy;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setColumn", "Cannot access descriptor");
+		throw(MAL, "bat.setColumn", RUNTIME_OBJECT_MISSING);
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setColumn", "column name missing");
+		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT "column name missing");
 	}
 	/* watch out, hident is freed first */
 	dummy= GDKstrdup(b->hident);
@@ -3510,15 +3510,15 @@ BKCsetColumns(int *r, int *bid, str *hname, str *tname)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setColumns", "Cannot access descriptor");
+		throw(MAL, "bat.setColumns", RUNTIME_OBJECT_MISSING);
 	}
 	if (hname == 0 || *hname == 0 || **hname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", "head name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "head name missing");
 	}
 	if (tname == 0 || *tname == 0 || **tname == 0){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.setRole", "tail name missing");
+		throw(MAL, "bat.setRole", ILLEGAL_ARGUMENT "tail name missing");
 	}
 	BATroles(b, *hname, *tname);
 	BBPreleaseref(b->batCacheid);
@@ -3534,7 +3534,7 @@ BKCsetName(int *r, int *bid, str *s)
 	bit res, *rp = &res;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setName", "Cannot access descriptor");
+		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 	}
 	CMDrename(rp, b, *s);
 	BBPreleaseref(b->batCacheid);
@@ -3548,7 +3548,7 @@ BKCgetBBPname(str *ret, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.getName", "Cannot access descriptor");
+		throw(MAL, "bat.getName", RUNTIME_OBJECT_MISSING);
 	}
 	*ret = GDKstrdup(BBPname(b->batCacheid));
 	BBPreleaseref(b->batCacheid);
@@ -3568,11 +3568,11 @@ BKCisCached(int *res, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", "Cannot access descriptor");
+		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
 	*res = 0;
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.isCached", "not yet implemented");
+	throw(MAL, "bat.isCached", PROGRAM_NYI);
 }
 
 str
@@ -3585,7 +3585,7 @@ BKCload(int *res, str *input)
 		BBPincref(bid,TRUE);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "bat.unload", " file name missing");
+	throw(MAL, "bat.unload", ILLEGAL_ARGUMENT " file name missing");
 }
 
 str
@@ -3612,7 +3612,7 @@ BKCcoldBAT(int *res, int *bid)
 	(void) res;
 	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", "Cannot access descriptor");
+		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
 	BBPcold(b->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -3627,7 +3627,7 @@ BKCheat(int *res, str *input)
 	if (bid) {
 		*res = BBP_lastused(bid) & 0x7fffffff;
 	}
-	throw(MAL, "bat", "heat not yet implemented\n");
+	throw(MAL, "bat", PROGRAM_NYI);
 }
 
 str
@@ -3638,7 +3638,7 @@ BKChotBAT(int *res, int *bid)
 	(void) res;
 	(void) bid;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isCached", "Cannot access descriptor");
+		throw(MAL, "bat.isCached", RUNTIME_OBJECT_MISSING);
 	}
 	BBPhot(b->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -3658,7 +3658,7 @@ BKCsave2(int *r, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.save", "Cannot access descriptor");
+		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
 
 	if (b && BATdirty(b))
@@ -3675,7 +3675,7 @@ BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.mmap", "Cannot access descriptor");
+		throw(MAL, "bat.mmap", RUNTIME_OBJECT_MISSING);
 	}
 	if (CMDmmap(&bn, b, hbns, tbns, hhp, thp) == GDK_SUCCEED) {
 		*res = TRUE;
@@ -3685,7 +3685,7 @@ BKCmmap(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 	}
 	*res =FALSE;
 	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.mmap", " failed");
+	throw(MAL, "bat.mmap", GDK_EXCEPTION);
 }
 
 str
@@ -3700,12 +3700,12 @@ BKCmadvise(int *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.madvice", "Cannot access descriptor");
+		throw(MAL, "bat.madvice", RUNTIME_OBJECT_MISSING);
 	}
 	*res = BATmadvise(b, (*hbns == int_nil) ? -1 : *hbns, (*tbns == int_nil) ? -1 : *tbns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp);
 	BBPreleaseref(b->batCacheid);
 	if (*res)
-		throw(MAL, "bat.madvise", " failed");
+		throw(MAL, "bat.madvise", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -3724,7 +3724,7 @@ BKCaccbuild(int *ret, int *bid, str *acc, ptr *param)
 	(void) acc;
 	(void) param;
 	*ret = TRUE;
-	throw(MAL, "Accelerator", "Obsolete functionality");
+	throw(MAL, "Accelerator", PROGRAM_NYI);
 }
 
 str
@@ -3733,7 +3733,7 @@ BKCaccbuild_std(int *ret, int *bid, int *acc)
 	(void) bid;
 	(void) acc;
 	*ret = TRUE;
-	throw(MAL, "Accelerator", "Obsolete functionality");
+	throw(MAL, "Accelerator", PROGRAM_NYI);
 }
 
 
@@ -3745,7 +3745,7 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 	(void) ret;
 	(void) prop;		/* fool compiler */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setHash", "Cannot access descriptor");
+		throw(MAL, "bat.setHash", RUNTIME_OBJECT_MISSING);
 	}
 	BAThash(b, 0);
 	BBPreleaseref(b->batCacheid);
@@ -3758,7 +3758,7 @@ BKCsetSequenceBase(int *r, int *bid, oid *o)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSequenceBase", "Cannot access descriptor");
+		throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
 	}
 	BATseqbase(b, *o);
 	*r = b->batCacheid;
@@ -3781,7 +3781,7 @@ BKCgetSequenceBase(oid *r, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSequenceBase", "Cannot access descriptor");
+		throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
 	}
 	*r = b->hseqbase;
 	BBPreleaseref(b->batCacheid);

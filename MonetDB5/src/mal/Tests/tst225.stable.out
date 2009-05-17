@@ -38,7 +38,8 @@ end main;
 # int	int	  # type
 #-----------------#
 [ 1@0,	  2	  ]
-!MALException:batcalc.+:cannot access descriptor
+!MALException:batcalc.+:Object not found
+
 
 # 08:58:54 >  
 # 08:58:54 >  Done.

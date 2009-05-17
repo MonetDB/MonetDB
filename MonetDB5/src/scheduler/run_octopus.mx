@@ -123,11 +123,11 @@ OCTOPUSdiscover(Client cntxt){
 		return msg;
 	l1 = BATdescriptor(b1);
 	if ( l1 == NULL)
-		throw(MAL,"octopus.discover","No database list available");
+		throw(MAL,"octopus.discover",OPERATION_FAILED "No database list available");
 	l2 = BATdescriptor(b2);
 	if ( l2 == NULL){
 		BBPreleaseref(b1);
-		throw(MAL,"octopus.discover","No database list available");
+		throw(MAL,"octopus.discover",OPERATION_FAILED "No database list available");
 	}
 	/* add the databases to the working set */
 	bi= bat_iterator(l1);

@@ -393,10 +393,9 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-	throw(MAL, "batcalc.@3", "requires bats of identical size");
+	throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT "Requires bats of identical size");
 @= tstBat
-if( bn== NULL) {*ret= 0; 
-	throw(MAL, "batcalc.@1", "can not create bat");}
+if( bn== NULL) {*ret= 0; throw(MAL, "batcalc.@1", MAL_MALLOC_FAIL);}
 @-
 The code block below heavily uses the MX code expansion involved,
 but in essence the structure is relatively simple.
@@ -867,7 +866,7 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
 	case TYPE_wrd: @:accumCst(wrd,@2,wrd,wrd)@ break;
 	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", "unexpected type");
+	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT "expected {oid,bte,sht,int,wrd,lng}");
 	}
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
@@ -892,7 +891,7 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
 	case TYPE_wrd: @:accumCstLeft(wrd,@2,wrd,wrd)@ break;
 	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
-	default : throw(MAL, "batcalc.@1", "unexpected type");
+	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT "expected {oid,bte,sht,int,wrd,lng}");
 	}
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -1032,7 +1031,7 @@ str CMDunary@1(int *ret, int *bid)
 	case TYPE_lng: @:accumUnary(lng,@2)@ break;
 	case TYPE_flt: @:accumUnary(flt,@2)@ break;
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
-	default: throw(MAL, "batcalc.@1", "unexpected type");
+	default : throw(MAL, "batcalc.@1", ILLEGAL_ARGUMENT "expected {bte,sht,int,wrd,lng,flt,dbl}");
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
@@ -1103,7 +1102,7 @@ str CMDunaryISNIL(int *ret, int *bid)
 					o++;
 				}
 		} break;
-	default: throw(MAL, "batcalc.isnil", "unexpected type");
+	default : throw(MAL, "batcalc.isnil", ILLEGAL_ARGUMENT "expected {oid,chr,bit,bte,sht,int,wrd,lng,flt,dbl,str}");
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;

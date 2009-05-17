@@ -182,13 +182,13 @@ batxml_export str BATXMLgroup(int *ret, int *bid);
 
 #define prepareOperand(X,Y,Z)								\
     if (((X) = BATdescriptor(*(Y))) == NULL )				\
-        throw(MAL, "xml." Z, "Cannot access descriptor");
+        throw(MAL, "xml." Z, INTERNAL_BAT_ACCESS);
 
 #define prepareResult(X,Y,tpe,Z)					\
     (X) = BATnew((Y)->htype, (tpe), BATcount(Y));	\
     if ((X) == NULL) {								\
         BBPreleaseref((Y)->batCacheid);				\
-        throw(MAL, "xml." Z, "no space available"); \
+        throw(MAL, "xml." Z, MAL_MALLOC_FAIL); \
     }												\
     if ((Y)->htype == TYPE_void)					\
         BATseqbase((X), (Y)->hseqbase);				\
@@ -231,7 +231,7 @@ BATXMLxml2str(int *ret, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.str", "bunins failed");
+	throw(MAL, "xml.str", OPERATION_FAILED " During bulk coercion");
 }
 
 str
@@ -314,11 +314,11 @@ BATXMLxmltext(int *ret, int *bid)
 		xmlFreeDoc(doc);
 	if (content != NULL)
 		GDKfree(content);
-	throw(MAL, "xml.text", "bunins failed");
+	throw(MAL, "xml.text", OPERATION_FAILED " During bulk text coercion");
 #else
 	(void) ret;
 	(void) bid;
-	throw(MAL, "xml.text", "not available as required version of libxml2 was not found by configure.\n");
+	throw(MAL, "xml.content", XML_MISSING);
 #endif
 }
 
@@ -374,7 +374,7 @@ BATXMLstr2xml(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.xml", "bunins failed");
+	throw(MAL, "xml.xml", OPERATION_FAILED "During bulk xml coercion");
 }
 
 str
@@ -407,7 +407,7 @@ BATXMLdocument(int *ret, int *bid)
 		if (doc == NULL) {
 			BBPreleaseref(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			throw(MAL, "xml.document", "document parse error");
+			throw(MAL, "xml.document", OPERATION_FAILED XML_PARSE_ERROR);
 		}
 		xmlDocDumpMemory(doc, &s, &len);
 		xmlFreeDoc(doc);
@@ -427,11 +427,11 @@ BATXMLdocument(int *ret, int *bid)
 	GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document", "bunins failed");
+	throw(MAL, "xml.document", OPERATION_FAILED "During bulk processing");
 #else
 	(void) ret;
 	(void) bid;
-	throw(MAL, "xml.document", "not available as required version of libxml2 was not found by configure.\n");
+	throw(MAL, "xml.content", XML_MISSING);
 #endif
 }
 
@@ -474,7 +474,7 @@ BATXMLcontent(int *ret, int *bid)
 			xmlFreeDoc(doc);
 			BBPreleaseref(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			throw(MAL, "xml.content", "content parse error");
+			throw(MAL, "xml.content", XML_PARSE_ERROR);
 		}
 		xmlNodeDump(xbuf, doc, elem, 0, 0);
 		s = xmlBufferContent(xbuf);
@@ -501,11 +501,11 @@ BATXMLcontent(int *ret, int *bid)
 	GDKfree(buf);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.document", "bunins failed");
+	throw(MAL, "xml.document", OPERATION_FAILED " During bulk processing");
 #else
 	(void) ret;
 	(void) bid;
-	throw(MAL, "xml.content", "not available as required version of libxml2 was not found by configure.\n");
+	throw(MAL, "xml.content", XML_MISSING);
 #endif
 }
 
@@ -545,11 +545,11 @@ BATXMLisdocument(int *ret, int *bid)
   bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "xml.isdocument", "bunins failed");
+	throw(MAL, "xml.isdocument", OPERATION_FAILED " During bulk processing");
 #else
 	(void) ret;
 	(void) bid;
-	throw(MAL, "xml.isdocument", "not available as required version of libxml2 was not found by configure.\n");
+	throw(MAL, "xml.isdocument", XML_MISSING);
 #endif
 }
 
@@ -588,7 +588,7 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 		snprintf(buf, size, "nil");
 	else
 		/*if( strcmp(*options,"niloncontent")==0) */
-		throw(MAL, "xml.options", "Not yet implemented");
+		throw(MAL, "xml.options", PROGRAM_NYI);
 
 	snprintf(val, size, "<%s>", *name);
 	bi = bat_iterator(b);
@@ -610,11 +610,11 @@ BATXMLoptions(int *ret, str *name, str *options, int *bid)
 	GDKfree(buf);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "batxml.options", "bunins failed");
+	throw(MAL, "batxml.options", OPERATION_FAILED " During bulk options analysis");
 }
 
 str
@@ -642,7 +642,7 @@ BATXMLcomment(int *ret, int *bid)
 		if (strstr(t, "--") != NULL) {
 			BBPreleaseref(b->batCacheid);
 			BBPunfix(bn->batCacheid);
-			throw(MAL, "xml.comment", "comment may not contain `--'");
+			throw(MAL, "xml.comment", XML_COMMENT_ERROR);
 		}
 		len = strlen(t);
 		if (len + 9 >= size) {
@@ -662,7 +662,7 @@ BATXMLcomment(int *ret, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.comment", "bunins failed");
+	throw(MAL, "xml.comment", OPERATION_FAILED " During bulk comment processing");
 }
 
 str
@@ -673,7 +673,7 @@ BATXMLparse(int *ret, str *doccont, int *bid, str *option)
 		return BATXMLcontent(ret, bid);
 	if (strcmp(*doccont, "document") == 0)
 		return BATXMLdocument(ret, bid);
-	throw(MAL, "xml.parse", "invalid parameter");
+	throw(MAL, "xml.parse", ILLEGAL_ARGUMENT " <document> or <content> expected");
 }
 
 str
@@ -687,7 +687,7 @@ BATXMLpi(int *ret, str *target, int *bid)
 	size_t tgtlen;
 
 	if (strNil(*target))
-		throw(MAL, "xml.pi", "no processing instruction target specified");
+		throw(MAL, "xml.pi", XML_PI_ERROR);
 
 	tgtlen = strlen(*target) + 6;
 	prepareOperand(b, bid, "pi");
@@ -724,7 +724,7 @@ BATXMLpi(int *ret, str *target, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.comment", "bunins failed");
+	throw(MAL, "xml.pi", OPERATION_FAILED " During bulk processing");
 }
 
 str
@@ -740,12 +740,12 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	hdrlen = 8;
 	if (!strNil(*version) && **version) {
 		if (strcmp(*version, "1.0") != 0 && strcmp(*version, "1.1") != 0)
-			throw(MAL, "xml.root", "illegal XML version");
+			throw(MAL, "xml.root", XML_VERSION_ERROR);
 		hdrlen += 11 + strlen(*version);  /* strlen(" version=\"\"") */
 	}
 	if (!strNil(*standalone) && **standalone) {
 		if (strcmp(*standalone, "yes") != 0 && strcmp(*standalone, "no") != 0)
-			throw(MAL, "xml.root", "illegal XML standalone value");
+			throw(MAL, "xml.root", XML_STANDALONE_ERROR "illegal XML standalone value");
 		hdrlen += 14 + strlen(*standalone);  /* strlen(" standalone=\"\"") */
 	}
 	prepareOperand(b, bid, "pi");
@@ -785,7 +785,7 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 				BBPreleaseref(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				GDKfree(buf);
-				throw(MAL, "xml.root", "resulting document not well-formed");
+				throw(MAL, "xml.root", XML_NOT_WELL_FORMED);
 			}
 		}
 		bunfastins(bn, h, buf);
@@ -797,7 +797,7 @@ BATXMLroot(int *ret, int *bid, str *version, str *standalone)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.root", "bunins failed");
+	throw(MAL, "xml.root", OPERATION_FAILED " During bulk processing");
 }
 
 str
@@ -811,11 +811,11 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	size_t attrlen;
 
 	if (strNil(*name))
-		throw(MAL, "xml.attribute", "no attribute name specified");
+		throw(MAL, "xml.attribute", XML_ATTRIBUTE_ERROR);
 
 #ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
-		throw(MAL, "xml.attribute", "invalid attribute name");
+		throw(MAL, "xml.attribute", XML_ATTRIBUTE_INVALID);
 #endif
 	attrlen = strlen(*name) + 5;
 	prepareOperand(b, bid, "attribute");
@@ -853,7 +853,7 @@ BATXMLattribute(int *ret, str *name, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.attribute", "bunins failed");
+	throw(MAL, "xml.attribute", OPERATION_FAILED " During bulk processing");
 }
 
 str
@@ -867,23 +867,23 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 	size_t elemlen, namelen;
 
 	if (strNil(*name))
-		throw(MAL, "xml.element", "no element name specified");
+		throw(MAL, "xml.element", XML_NO_ELEMENT);
 #ifdef HAVE_LIBXML2
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
-		throw(MAL, "xml.element", "invalid element name");
+		throw(MAL, "xml.element", XML_ATTRIBUTE_INVALID);
 #endif
 	if (nspace && !strNil(*nspace) && **nspace)
-		throw(MAL, "xml.element", "namespace support not yet implemented");
+		throw(MAL, "xml.element", XML_NO_NAMESPACE);
 	namelen = strlen(*name);
 	elemlen = namelen + 5;
 	if (nspace && !strNil(*nspace)) {
 		if (**nspace != 'A')
-			throw(MAL, "xml.element", "illegal namespace");
+			throw(MAL, "xml.element", XML_ILLEGAL_NAMESPACE);
 		elemlen += strlen(*nspace);	/* " " + nspace (nspace contains initial 'A' which is replaced by space) */
 	}
 	if (attr && !strNil(*attr)) {
 		if (**attr != 'A')
-			throw(MAL, "xml.element", "illegal attribute");
+			throw(MAL, "xml.element", XML_ILLEGAL_ATTRIBUTE);
 		elemlen += strlen(*attr);	/* " " + attr (attr contains initial 'A' which is replaced by space) */
 	}
 	prepareOperand(b, bid, "element");
@@ -900,7 +900,7 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 				BBPreleaseref(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				GDKfree(buf);
-				throw(MAL, "xml.element", "illegal content");
+				throw(MAL, "xml.element", XML_ILLEGAL_CONTENT);
 			}
 			len += strlen(t + 1) + namelen + 2;  /* extra "<", ">", and name ("/" already counted) */
 		}
@@ -934,7 +934,7 @@ BATXMLelement(int *ret, str *name, xml *nspace, xml *attr, int *bid)
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
-	throw(MAL, "xml.element", "bunins failed");
+	throw(MAL, "xml.element", OPERATION_FAILED " During bulk processing");
 }
 
 str
@@ -973,7 +973,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i--; i >= pci->retc; i--)
 			if (bi[i].b)
 				BBPunfix(bi[i].b->batCacheid);
-		throw(MAL, "xml.forest", "Can not access BAT");
+		throw(MAL, "xml.forest", INTERNAL_BAT_ACCESS);
 	}
 
 	prepareResult(bn, bi[pci->retc].b, TYPE_xml, "forest");
@@ -1046,7 +1046,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 		rp = BUNfirst(r);
 	}
 	if (r == 0)
-		throw(MAL, "xml.concat", "Can not access BAT");
+		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 
 	/* collect the admin for the xml elements */
 	if ((b = BATdescriptor(*bid))) {
@@ -1056,7 +1056,7 @@ BATXMLconcat(int *ret, int *bid, int *rid)
 	if (b == NULL) {
 		if (r)
 			BBPunfix(r->batCacheid);
-		throw(MAL, "xml.concat", "Can not access BAT");
+		throw(MAL, "xml.concat", INTERNAL_BAT_ACCESS);
 	}
 
 	prepareResult(bn, b, TYPE_xml, "concat");
@@ -1133,7 +1133,7 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
 		BBPunfix(e->batCacheid);
-		throw(MAL, "xml.agg", "Could not create BAT");
+		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
 
@@ -1233,7 +1233,7 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
-		throw(MAL, "xml.agg", "Could not create BAT");
+		throw(MAL, "xml.agg", INTERNAL_OBJ_CREATE);
 	}
 	bn->T->nonil = 1;
 
@@ -1340,7 +1340,7 @@ BATXMLxquery(int *ret, int *bid, str *expr)
 	(void) bid;
 	(void) expr;
 	/* use external library to solve this */
-	throw(MAL, "xml.xquery", "Not yet implemented");
+	throw(MAL, "xml.xquery", PROGRAM_NYI);
 }
 
 @}

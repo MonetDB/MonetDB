@@ -23,7 +23,8 @@ function user.main():void;
     bat.setPersistent(b,false);
     transaction.commit();
 end main;
-!MALException:bbp.bind:failed to locate object in box
+!MALException:bbp.bind:Object not found
+
 
 # 09:12:52 >  
 # 09:12:52 >  Done.

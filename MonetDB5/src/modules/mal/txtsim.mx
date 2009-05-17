@@ -1000,7 +1000,7 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	return MAL_SUCCEED;
       bunins_failed:
 	BBPreclaim(bn);
-	throw(MAL, "txtsim.qgramselfjoin", "could not realloc\n");
+	throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 }
 
 @-

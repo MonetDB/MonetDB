@@ -23,6 +23,7 @@ barrier j := calc.<(i,lim);
 exit j;
     return welcome := i;
 end welcome;
+!MALException:optimizer.MACROvalidate:RETURN statement is not the last one
 
 
 # 20:03:29 >  

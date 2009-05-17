@@ -349,8 +349,8 @@ pcre_compile_wrap(pcre ** res, str pattern)
 	int errpos = 0;
 
 	if ((r = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre.compile",
-			"failed with\n'%s'\nat %d in\n'%s'.\n",
+		throw(MAL,"pcre.compile", OPERATION_FAILED
+			" with\n'%s'\nat %d in\n'%s'.\n",
 				err_p, errpos, pattern);
 	}
 	*(pcre **) res = p2m(r);
@@ -365,7 +365,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 		return MAL_SUCCEED;
 	} 
 	*res = FALSE;
-	throw(MAL, "pcre.exec","failed to execute pattern match");
+	throw(MAL, "pcre.exec", OPERATION_FAILED);
 }
 
 str
@@ -395,7 +395,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_select", "pcre compile of pattern (%s) failed at %d with\n'%s'.",
+		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}
 	BATloop(strs, p, q) {
@@ -427,13 +427,13 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8 | PCRE_MULTILINE, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_uselect", "pcre compile of pattern (%s) failed at %d with\n'%s'.",
+		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}
 	err_p = NULL;
 	pe = pcre_study( re, 0, &err_p);
 	if (err_p) 
-		throw(MAL, "pcre_uselect", "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
+		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
 
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
@@ -487,12 +487,12 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		} else if (flags[i] == 'x') {
 			compile_options |= PCRE_EXTENDED;
 		} else {
-			throw(MAL,"pcre_replace","unsupported flag character '%c'\n", flags[i]);
+			throw(MAL,"pcre_replace",OPERATION_FAILED "unsupported flag character '%c'\n", flags[i]);
 		}
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre_replace","pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+		throw(MAL,"pcre_replace",OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
 	}
 
 	/* Since the compiled pattern is going to be used several times, it is
@@ -504,7 +504,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
 		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace","not enough memory\n");
+		throw(MAL, "pcre_replace",MAL_MALLOC_FAIL);
 	}
 	
 	i = 0;
@@ -526,7 +526,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 		if (!tmpres) {
 			my_pcre_free(pcre_code);
 			GDKfree(ovector);
-			throw(MAL, "pcre_replace","not enough memory\n");
+			throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
 		}
 
 		j = k = 0;
@@ -592,13 +592,13 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 		} else if (flags[i] == 'x') {
 			compile_options |= PCRE_EXTENDED;
 		} else {
-			throw(MAL,"pcre_replace_bat",
+			throw(MAL,"pcre_replace_bat", ILLEGAL_ARGUMENT
 				"\"flags\" contains invalid character '%c'\n", flags[i]);
 		}
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre_replace_bat",
+		throw(MAL,"pcre_replace_bat", OPERATION_FAILED
 			"pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
 	}
 
@@ -610,7 +610,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
 		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace_bat","not enough memory");
+		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 	
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
@@ -636,7 +636,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			if (!replaced_str) {
 				my_pcre_free(pcre_code);
 				GDKfree(ovector);
-				throw(MAL, "pcre_replace_bat","not enough memory\n");
+				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 			}
 
 			j = k = 0;
@@ -713,12 +713,12 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 		} else if (flags[i] == 'x') {
 			options |= PCRE_EXTENDED;
 		} else {
-			throw(MAL, "pcre_match", "unsupported flag character '%c'\n", flags[i]);
+			throw(MAL, "pcre_match", ILLEGAL_ARGUMENT "unsupported flag character '%c'\n", flags[i]);
 		}
 	}
 
 	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_match", "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
+		throw(MAL, "pcre_match", OPERATION_FAILED "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
 	}
 	*ret = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
 	my_pcre_free(re);
@@ -739,7 +739,7 @@ pcre_match(bit *ret, str val, str pat)
 	else if (errpos == -1)
 		*ret = FALSE;
 	else 
-		throw(MAL, "pcre_match", "Matching of regular expression (%s) failed with %d", pat, errpos);
+		throw(MAL, "pcre_match", OPERATION_FAILED "Matching of regular expression (%s) failed with %d", pat, errpos);
 	return msg;
 }
 
@@ -965,7 +965,7 @@ PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
 	BAT *b,*bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "pcre.replace", "Cannot access descriptor");
+		throw(MAL, "pcre.replace", RUNTIME_OBJECT_MISSING);
 
 	msg = pcre_replace_bat(&bn,b,*pat,*repl,*flags);
 	if( msg == MAL_SUCCEED){
@@ -995,7 +995,7 @@ PCREselect(int *res, str *pattern, int *bid)
 	str msg;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "pcre.select", "Cannot access descriptor");
+		throw(MAL, "pcre.select", RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((msg = pcre_select(&bn, *pattern, strs)) != MAL_SUCCEED) {
@@ -1016,7 +1016,7 @@ PCREuselect(int *res, str *pattern, int *bid)
 	str msg;
 
 	if ((strs = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "pcre.select", "Cannot access descriptor");
+		throw(MAL, "pcre.select", RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((msg = pcre_uselect(&bn, *pattern, strs)) != MAL_SUCCEED) {
@@ -1050,7 +1050,7 @@ PCREpatindex(int *ret, str *pat, str *val)
 	char *ppat, *msg;
 	
 	if (pat2pcre(&ppat, *pat) <0)
-		throw(MAL, "pcre.sql2pcre", "Pattern convert failed");
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	if ((msg = pcre_compile_wrap(&re, ppat)) != NULL)
 		return msg;
 	GDKfree(ppat);
@@ -1063,7 +1063,7 @@ str
 PCREquote(str *ret, str *val)
 {
 	if (pcre_quote(ret, *val) <0)
-		throw(MAL, "pcre.quote", "Quote failed");
+		throw(MAL, "pcre.quote", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -1072,7 +1072,7 @@ str
 PCREsql2pcre(str *ret, str *pat, str *esc)
 {
 	if (sql2pcre(ret, *pat, *esc) <0)
-		throw(MAL, "pcre.sql2pcre", "Pattern convert failed");
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	return MAL_SUCCEED;
 } 
 

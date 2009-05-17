@@ -241,7 +241,7 @@ schedulerMALBlock(Client cntxt, MalBlkPtr mb)
 	}
 #endif
 	if (cnt >= 64)
-		throw(MAL, "scheduler.MALpipeline", "too many optimization cycles\n");
+		throw(MAL, "scheduler.MALpipeline", OPERATION_FAILED "too many optimization cycles\n");
 	return MAL_SUCCEED;
 }
 

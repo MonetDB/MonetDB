@@ -49,7 +49,7 @@ end main;
 # int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
-!MALException:algebra.find:can not find element
+!MALException:algebra.find:GDK reported error.can not find element
 
 # 14:58:46 >  
 # 14:58:46 >  Done.

@@ -345,7 +345,7 @@ end main;
 [ 1@0 ]
 [ 4@0 ]
 [ nil ]
-[ "MALException:algebra.find:can not find element" ]
+[ "MALException:algebra.find:GDK reported error.can not find element" ]
 #-------------------------#
 # h		tmp_4	  # name
 # str		int	  # type

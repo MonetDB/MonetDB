@@ -92,13 +92,13 @@ FCTgetPlants(int *ret, int *ret2)
 
 	bmod = BATnew(TYPE_oid, TYPE_str, 256);
 	if( bmod == NULL)
-		throw(MAL, "factories.getPlants", "Failed to create BAT");
+		throw(MAL, "factories.getPlants", MAL_MALLOC_FAIL);
 	if (!(bmod->batDirty&2)) bmod = BATsetaccess(bmod, BAT_READ);
     BBPkeepref(*ret= bmod->batCacheid);
 
 	bfcn = BATnew(TYPE_oid, TYPE_str, 256);
 	if( bfcn == NULL)
-		throw(MAL, "factories.getPlants", "Failed to create BAT");
+		throw(MAL, "factories.getPlants", MAL_MALLOC_FAIL);
 	if (!(bfcn->batDirty&2)) bfcn = BATsetaccess(bfcn, BAT_READ);
     BBPkeepref(*ret2= bfcn->batCacheid);
 	return MAL_SUCCEED;
@@ -108,7 +108,7 @@ str
 FCTgetCaller(int *ret)
 {
 	(void) ret;
-	throw(MAL, "factories.getCaller", "not yet implemented");
+	throw(MAL, "factories.getCaller", PROGRAM_NYI);
 }
 
 str
@@ -121,7 +121,7 @@ FCTgetOwners(int *ret)
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
     *ret = b->batCacheid;
     BBPkeepref(*ret);
-	throw(MAL, "factories.getOwner", "not yet implemented");
+	throw(MAL, "factories.getOwner", PROGRAM_NYI);
 }
 
 str
@@ -133,7 +133,7 @@ FCTgetArrival(int *ret)
 	b = BATnew(TYPE_oid, TYPE_str, 256);
     *ret = b->batCacheid;
     BBPkeepref(*ret);
-	throw(MAL, "factories.getArrival", "not yet implemented");
+	throw(MAL, "factories.getArrival", PROGRAM_NYI);
 }
 
 str
@@ -145,7 +145,7 @@ FCTgetDeparture(int *ret)
 	b = BATnew(TYPE_oid, TYPE_str, 256);
     *ret = b->batCacheid;
     BBPkeepref(*ret);
-	throw(MAL, "factories.getDeparture", "not yet implemented");
+	throw(MAL, "factories.getDeparture", PROGRAM_NYI);
 }
 
 str
@@ -153,7 +153,7 @@ FCTsetLocation(int *ret, str *loc)
 {
 	(void) ret;
 	(void) loc;
-	throw(MAL, "factories.setLocation", "not yet implemented");
+	throw(MAL, "factories.setLocation", PROGRAM_NYI);
 }
 
 str
@@ -165,7 +165,7 @@ FCTgetLocations(int *ret)
 	b = BATnew(TYPE_int, TYPE_str, 256);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factories,plantid,location)@
-	throw(MAL, "factories.getLocations", "not yet implemented");
+	throw(MAL, "factories.getLocations", PROGRAM_NYI);
 }
 
 str
@@ -178,7 +178,7 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, putName(mod,strlen(mod)), putName(fcn, strlen(fcn)));
 	if (s == NULL)
-		throw(MAL, "factories.shutdown", "Factory not found");
+		throw(MAL, "factories.shutdown", RUNTIME_OBJECT_MISSING);
 	shutdownFactory(s->def, TRUE);
 	return MAL_SUCCEED;
 }

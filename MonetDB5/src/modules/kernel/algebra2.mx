@@ -342,18 +342,18 @@ algebra_export str AL2@1join(int *ret, int *lid, int *rid );
 str AL2@1join(int *ret, int *lid, int *rid ){
 	BAT *bn,*left, *right;
 	if( (left= BATdescriptor(*lid)) == NULL ){
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( (right= BATdescriptor(*rid)) == NULL ){
 		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
   	bn = (BAT*) BATmal@1join(left, right);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	if( bn == NULL)
-		return throwMessage("@1join","failed");
+		return throwMessage("@1join",GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -376,18 +376,18 @@ AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode)
 	BAT *bn, *l, *r;
 
 	if ((l = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(l->batCacheid);
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATleftthetajoin(l, r, *mode, MIN(BATcount(l), BATcount(r)));
 	BBPreleaseref(l->batCacheid);
 	BBPreleaseref(r->batCacheid);
 
 	if (bn == NULL)
-		return throwMessage("algebra2.leftthetajoin", "failed");
+		return throwMessage("algebra2.leftthetajoin", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -400,17 +400,17 @@ AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 	BAT *bn, *l, *r;
 
 	if ((l = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(l->batCacheid);
-		return throwMessage("algebra.@1join", "Cannot access descriptor");
+		return throwMessage("algebra.@1join", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATnlthetajoin(l, r, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= BUN_MAX ? BUN_MAX : (BUN) *estimate));
 	BBPreleaseref(l->batCacheid);
 	BBPreleaseref(r->batCacheid);
 	if (bn == NULL)
-		return throwMessage("algebra2.thetajoin", "failed");
+		return throwMessage("algebra2.thetajoin", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -421,13 +421,13 @@ algebra_export str AL2ord_@1select1(int *ret, int * bid, ptr *value);
 str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	BAT *bn, *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra2.select", "Cannot access descriptor");
+		 return throwMessage("algebra2.select", RUNTIME_OBJECT_MISSING);
 	}
 
 	bn = BAT_select_(b, *value, 0, TRUE, TRUE, @2, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
-		return throwMessage("ord_@1select","failed");
+		return throwMessage("ord_@1select",GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -436,12 +436,12 @@ algebra_export str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high);
 str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 	BAT *bn, *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra2.@1select", "Cannot access descriptor");
+		 return throwMessage("algebra2.@1select", RUNTIME_OBJECT_MISSING);
 	}
 	bn = BAT_select_(b, *low, *high, TRUE, TRUE, @2, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
-		return throwMessage("ord_@1select","failed");
+		return throwMessage("ord_@1select",GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -453,21 +453,21 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 	ptr nil ;
 	BAT *bn, *b;
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("algebra2.@1select", "Cannot access descriptor");
+		 return throwMessage("algebra2.@1select", RUNTIME_OBJECT_MISSING);
 	}
 	tt = b->ttype;
 	nil = ATOMnilptr(tt);
 
 	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) 
-		return throwMessage("AL2ord_@1select",
+		return throwMessage("AL2ord_@1select", ILLEGAL_ARGUMENT
 			"flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) 
-		return throwMessage("AL2ord_@1select",
+		return throwMessage("AL2ord_@1select", ILLEGAL_ARGUMENT
 			"flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 	bn = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
-		return throwMessage("ord_@1select","failed");
+		return throwMessage("ord_@1select",GDK_EXCEPTION);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

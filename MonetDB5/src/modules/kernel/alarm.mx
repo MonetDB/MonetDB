@@ -419,14 +419,14 @@ ALARMsetalarm(int *res, int *secs, str *action)
 	(void) res;
 	(void) secs;
 	(void) action;		/* foolc compiler */
-	throw(MAL, "alarm.setalarm", "Not yet implemented");
+	throw(MAL, "alarm.setalarm", PROGRAM_NYI);
 }
 
 str
 ALARMtimers(int *res)
 {
 	(void) res;		/* fool compiler */
-	throw(MAL, "alarm.timers", "Not yet implemented");
+	throw(MAL, "alarm.timers", PROGRAM_NYI);
 }
 
 str

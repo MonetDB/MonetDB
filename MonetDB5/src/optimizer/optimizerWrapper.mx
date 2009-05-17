@@ -71,7 +71,7 @@ str OPT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		if( s == NULL) {
 			char buf[1024];
 			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
-			throw(MAL, "optimizer.@1", RUNTIME_OBJECT_UNDEFINED, buf);
+			throw(MAL, "optimizer.@1", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
 		}
 #ifdef _DEBUG_OPTIMIZER_
 		stream_printf(cntxt->fdout,"@1 %s %s\n",modnme,fcnnme);

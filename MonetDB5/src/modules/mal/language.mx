@@ -225,7 +225,7 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
-	throw(MAL, "mal.assert","Command not yet available");
+	throw(MAL, "mal.assert", PROGRAM_NYI);
 }
 
 @+ Printing
@@ -305,7 +305,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	if (s == 0) 
-		throw(MAL, "mal.evalFile", "File name missing\n");
+		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
 
 	if (*s != '/') {
 		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
@@ -330,7 +330,7 @@ CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	throw(MAL, "mal.call", "Not yet implemented");
+	throw(MAL, "mal.call", PROGRAM_NYI);
 }
 
 str
@@ -340,7 +340,7 @@ CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	throw(MAL, "mal.include", "Not yet implemented");
+	throw(MAL, "mal.include", PROGRAM_NYI);
 }
 
 str

@@ -210,7 +210,7 @@ ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 	BAT *bn;
 
 	if (grid_@1(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
-		throw(MAL, "array.grid", "Failed to create the grid");
+		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref((int)*ret);
@@ -223,7 +223,7 @@ ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offse
 	BAT *bn;
 
 	if (gridShift_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		throw(MAL, "array.grid", "Failed to create the grid");
+		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref((int)*ret);
@@ -237,11 +237,11 @@ ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1
 	@1 shift = 1;
 
 	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
-		throw(MAL, "array.grid", "Cannot access descriptor");
+		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
 
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
-		throw(MAL, "array.grid", "Failed to create the grid");
+		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref((int)*ret);
@@ -254,10 +254,10 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 	BAT *bn;
 
 	if ((bn = BATdescriptor((bat) *bid)) == NULL) {
-		throw(MAL, "array.grid", "Cannot access descriptor");
+		throw(MAL, "array.grid", RUNTIME_OBJECT_MISSING);
 	}
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		throw(MAL, "array.grid", "Failed to create the grid");
+		throw(MAL, "array.grid", MAL_MALLOC_FAIL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref((int)*ret);
@@ -279,11 +279,11 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	BATiter bi, ri;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "array.*", "Cannot access descriptor");
+		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);
 	}
 	if( (r= BATdescriptor(*rid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		 throw(MAL, "array.*", "Cannot access descriptor");
+		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(TYPE_void, TYPE_@2, BATcount(b)*BATcount(r));
 	BATseqbase(bn,0);
@@ -319,11 +319,11 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	BATiter bi, ri;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "array.product", "Cannot access descriptor");
+		throw(MAL, "array.product", RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "array.product", "Cannot access descriptor");
+		throw(MAL, "array.product", RUNTIME_OBJECT_MISSING);
 	}
 	if (BATcount(b) > BATcount(r) || (BATcount(b) % BATcount(r)) != BATcount(b)) {
 		BBPreleaseref(b->batCacheid);
@@ -361,11 +361,11 @@ ARRAYproject(int *ret, int *bid, int *cst)
 	BUN i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "array.project", "Cannot access descriptor");
+		throw(MAL, "array.project", RUNTIME_OBJECT_MISSING);
 	}
 	new_int_bat(bn, BATcount(b));
 	if (bn == 0)
-		throw(MAL, "array.project", "failed to create array\n");
+		throw(MAL, "array.project", MAL_MALLOC_FAIL);
 	i = BATcount(b);
 	add_ints(bn, i); 
 	ptr = get_int_ptr(bn);

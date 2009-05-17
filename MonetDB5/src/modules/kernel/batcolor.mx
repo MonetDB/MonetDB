@@ -127,13 +127,13 @@ comment	"Extracts Cb(blue color) component from a color atom";
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "batstr." Z, "Cannot access descriptor");
+		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING);
 #define prepareOperand2(X,Y,A,B,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "batstr." Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr." Z, RUNTIME_OBJECT_MISSING); \
 	if( (A= BATdescriptor(*B)) == NULL ){\
 		BBPreleaseref(X->batCacheid); \
-		throw(MAL, "batstr."Z, "Cannot access descriptor"); \
+		throw(MAL, "batstr."Z, RUNTIME_OBJECT_MISSING); \
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -141,7 +141,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		BATseqbase(X, Y->hseqbase); \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
-		throw(MAL, "batstr." Z, "no space available "); \
+		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL); \
 	} \
 	X->hsorted=Y->hsorted; \
 	X->tsorted=0; 
@@ -181,7 +181,7 @@ str CLRbat@1(int *ret, int *l)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
-	throw(MAL, "batstr.==", "bunins failed");
+	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
 }
 
 @c
@@ -220,10 +220,10 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 	prepareOperand(b,l,"@1");
 	b2= BATdescriptor(*bid2);
 	if(b2== NULL) 
-		throw(MAL, "batcolor.@1","can not access BAT");
+		throw(MAL, "batcolor.@1",RUNTIME_OBJECT_MISSING);
 	b3= BATdescriptor(*bid3);
 	if(b3== NULL) 
-		throw(MAL, "batcolor.@1","can not access BAT");
+		throw(MAL, "batcolor.@1",RUNTIME_OBJECT_MISSING);
 	prepareResult(bn,b,getTypeIndex("@4",-1,TYPE_int),"@1");
 
 	bi = bat_iterator(b);
@@ -254,7 +254,7 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(bn->batCacheid);
-	throw(MAL, "batstr.==", "bunins failed");
+	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
 }
 @c
 @:BATwalk3(Hsv,CLRhsv,flt,color)@

@@ -21,7 +21,7 @@ access the BAT descriptor.
 
 @= getBATdescriptor
 	if( (@3= BATdescriptor(*@2)) == NULL ){ *@1 = 0;
-		 return throwMessage("@4", "cannot access descriptor @2");
+		 return throwMessage("@4", RUNTIME_OBJECT_MISSING);
    }
 @= Pseudo
 	if (BBPindex("@1_@2_@3") <= 0)

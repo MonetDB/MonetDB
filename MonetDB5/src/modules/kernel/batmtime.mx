@@ -91,7 +91,7 @@ head column. This is not checked and may be mis-used to deploy the
 implementation for shifted window arithmetic as well.
 @= chkSize
 	if( BATcount(@1) != BATcount(@2) )
-		throw(MAL, "batcalc.@3", "requires bats of identical size");
+		throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 @= implDef
 batmtime_export str MTIMEbat_@1_@2(int *ret, int *l, int *r);

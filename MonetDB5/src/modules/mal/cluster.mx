@@ -238,12 +238,12 @@ CLUSTER_key( bat *M, bat *B){
 	BAT *map, *b;
 
 	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.key", "Cannot access descriptor");
+		throw(MAL, "cluster.key", INTERNAL_BAT_ACCESS);
 	(void) BATprepareHash(BATmirror(b)); /* only produce the hash structure! */
 
 	if ((map = BATnew(TYPE_void, TYPE_oid, BATcount(b)+1)) == NULL) {
 		BBPunfix(*B);
-		throw(MAL, "cluster.key", "Cannot create hash map");
+		throw(MAL, "cluster.key", MAL_MALLOC_FAIL);
 	}
 	map->tsorted= FALSE;
 	map->tdense= FALSE;
@@ -264,7 +264,7 @@ CLUSTER_key( bat *M, bat *B){
 		case TYPE_dbl: CLUSTER_key_dbl(map,b); break;
 		case TYPE_str: CLUSTER_key_str(map,b); break;
 		default:
-			throw(MAL, "cluster.key", "Cannot recluster on this type");
+			throw(MAL, "cluster.key", MAL_MALLOC_FAIL);
 		
 	}
 	BATsave(map);	/* dump dirty pages from memory */
@@ -298,11 +298,11 @@ CLUSTER_map(bat *RB, bat *B)
 	(void) RB;
 
 	if ( (b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", "Cannot access descriptor");
+		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
 
 	if ((map = BATnew(TYPE_void, TYPE_oid, BATcount(b)+1)) == NULL) {
 		BBPunfix(*B);
-		throw(MAL, "cluster.new", "Cannot create hash map");
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
 	map->hsorted= TRUE;
 	map->hdense= TRUE;
@@ -339,7 +339,7 @@ diskblock.
 #endif
 	basket = (Basket*) alloca((N+1) * sizeof(Basket));
 	if (basket==NULL)
-		throw(MAL, "cluster.new", "Not enough space");
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 
 	/* prepare buffers */
 	basket[0].base = 0;
@@ -440,10 +440,10 @@ CLUSTER_column( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( (cmap = BATdescriptor(*CMAP)) == NULL )
-		throw(MAL, "cluster.column", "Cannot access  descriptor");
+		throw(MAL, "cluster.column", INTERNAL_BAT_ACCESS);
 	if ( (b = BATdescriptor(*B)) == NULL ){
 		BBPunfix(*CMAP);
-		throw(MAL, "cluster.column", "Cannot access  descriptor");
+		throw(MAL, "cluster.column", INTERNAL_BAT_ACCESS);
 	}
 
 	msg = CLUSTER_apply(res, b,cmap);
@@ -471,13 +471,13 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	map = BATdescriptor(mid);
 	if (map== NULL)
-		throw(MAL,"cluster.table","Can not access descriptor");
+		throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
 
 	for ( i=pci->retc; i<pci->argc; i++){
 		bid = (int*) getArgReference(stk,pci,i);
 		b = BATdescriptor(*bid);
 		if ( b== NULL)
-			throw(MAL,"cluster.table","Can not access descriptor");
+			throw(MAL,"cluster.table",INTERNAL_BAT_ACCESS);
 		msg = CLUSTER_apply(res, b,map);
 		BBPunfix(b->batCacheid);
 	}
@@ -499,15 +499,15 @@ CLS_create( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits)
 	wrd *bt, *be, *cnt, *pos, sum, *m;
 
 	if (*bits >= sizeof(int)*8)
-		throw(MAL, "cluster.new", "To many bits used for clustering");
+		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
 	mask = (1<<*bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
-		throw(MAL, "cluster.new", "Cannot access descriptor");
+		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
 
 	if ((psum = BATnew(TYPE_void, TYPE_wrd, mask+1)) == NULL) {
 		BBPunfix(*B);
-		throw(MAL, "cluster.new", "Cannot create prefix sum bat");
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(psum,0);
 	BATsetcount(psum, mask+1);
@@ -538,7 +538,7 @@ CLS_create( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits)
 	if ((cmap = BATnew(TYPE_void, TYPE_wrd, BATcount(b))) == NULL) {
 		BBPunfix(*B);
 		BBPunfix(psum->batCacheid);
-		throw(MAL, "cluster.new", "Cannot create cluster map bat");
+		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(cmap, b->H->seq);
 	BATsetcount(cmap, BATcount(b));
@@ -600,19 +600,19 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	    (b = BATdescriptor(*B)) == NULL) {
 		if (cmap) 
 			BBPunfix(*CMAP);
-		throw(MAL, "cluster.map", "Cannot access descriptor");
+		throw(MAL, "cluster.map", INTERNAL_BAT_ACCESS);
 	}
 	if (BATcount(cmap) != BATcount(b) ||
 	    cmap->H->seq != b->H->seq) {
 		BBPunfix(*CMAP);
 		BBPunfix(*B);
-		throw(MAL, "cluster.map", "Cluster map and attribute bat are not aligned");
+			throw(MAL, "cluster.map", OPERATION_FAILED " Counts of operands do not match");
 	}
 
 	if ((rb = BATnew(TYPE_void, b->ttype, BATcount(b))) == NULL) {
 		BBPunfix(*CMAP);
 		BBPunfix(*B);
-		throw(MAL, "cluster.map", "Cannot create result bat");
+		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
 	} 
 	BATseqbase(rb, b->H->seq);
 	BATsetcount(rb, BATcount(b));

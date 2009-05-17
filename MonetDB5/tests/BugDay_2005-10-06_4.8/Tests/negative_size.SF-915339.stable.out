@@ -16,7 +16,7 @@ function user.main():void;
     c := bat.new(:int,:int,-5000);
     io.print(c);
 end main;
-!MALException:bbp.new:requested BAT size must not be negative
+!MALException:bat.new:Argument must be positive
 
 
 # 13:48:42 >  

@@ -51,33 +51,21 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     io.print(b2);                       # 13 _22:void := IOprint_val(b2:bat[:oid,:int]) 
     b3 := bat.partition(b);             # 14 b3:bat[:oid,:int] := CMDbatpartition(b:bat[:oid,:int]) {G}
     io.print(b3);                       # 15 _24:void := IOprint_val(b3:bat[:oid,:int]) 
-    e := bat.partition(b,2,-1);         # 16 e:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _26:int) {G}
-    io.print(e);                        # 17 _27:void := IOprint_val(e:bat[:oid,:int]) 
-end tst;                                # 18  
+# an error should be produced 
+    e := bat.partition(b,2,-1);         # 17 e:bat[:oid,:int] := CMDbatpartition2(b:bat[:oid,:int], _7:int, _27:int) {G}
+    io.print(e);                        # 18 _28:void := IOprint_val(e:bat[:oid,:int]) 
+end tst;                                # 19  
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
 [ 2@0,	  3	  ]
-[ 3@0,	  4	  ]
-[ 4@0,	  5	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-#-----------------#
-# h	t	  # name
-# void	int	  # type
-#-----------------#
-[ 2@0,	  3	  ]
 [ 3@0,	  4	  ]
 [ 4@0,	  5	  ]
 #-----------------#
@@ -87,9 +75,25 @@ end tst;                                # 18
 [ 0@0,	  1	  ]
 [ 1@0,	  2	  ]
 [ 2@0,	  3	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
 [ 3@0,	  4	  ]
 [ 4@0,	  5	  ]
-!MALException:bbp.partition:Illegal BAT partition number
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+[ 4@0,	  5	  ]
+!MALException:bat.partition:Illegal argument Illegal piece index
+
+
+
 
 # 16:35:42 >  
 # 16:35:42 >  Done.

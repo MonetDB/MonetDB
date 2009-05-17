@@ -46,7 +46,8 @@ function user.main():void;
 # k:= "whatever"; {k.blah:=true;k.freeze:=true;} 
 # n:= bat.new(int,int);{n.cost:=12;} 
 end main;
-!MALException:bbp.take:failed to take object from box
+!MALException:bbp.take:Object not found
+
 
 # 08:59:03 >  
 # 08:59:03 >  Done.

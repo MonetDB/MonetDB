@@ -17,6 +17,7 @@ io.print(b2);
 b3:= bat.partition(b);
 io.print(b3);
 
+# an error should be produced
 e:= bat.partition(b,2,-1);
 io.print(e);
 end tst;

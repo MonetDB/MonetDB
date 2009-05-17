@@ -66,7 +66,7 @@ exit MALException:str ;
     io.print(x);
     bbp.close();
 end main;
-MALException:bbp.bind:failed to locate object in box
+MALException:bbp.bind:Object not found
 [ "v" ]
 [ nil ]
 [ "getObjects" ]

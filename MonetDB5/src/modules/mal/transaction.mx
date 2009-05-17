@@ -124,7 +124,7 @@ TRNsubcommit(bit *ret, int *bid)
 	BAT *b;
 	b= BATdescriptor(*bid);
 	if( b == NULL)
-		throw(MAL, "transaction.subcommit","BAT with commit list missing");
+		throw(MAL, "transaction.subcommit", RUNTIME_OBJECT_MISSING);
 	*ret = TMsubcommit(b)?FALSE:TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -141,13 +141,10 @@ TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.commit", "Cannot access descriptor");
+			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}
 
-		if (b)
-			BATfakeCommit(b);
-		else
-			throw(MAL, "trans_commit", "BAT not accessible");
+		BATfakeCommit(b);
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -164,12 +161,9 @@ TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.abort", "Cannot access descriptor");
+			throw(MAL, "transaction.abort",  RUNTIME_OBJECT_MISSING);
 		}
-		if (b)
-			BATundo(b);
-		else
-			throw(MAL, "transaction.abort", "BAT not accessible");
+		BATundo(b);
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -186,12 +180,9 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = (int *) getArgReference(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.commit", "Cannot access descriptor");
+			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
 		}
-		if (b)
-			BATcommit(b);
-		else
-			throw(MAL, "transaction.commit", "BAT not accessible");
+		BATcommit(b);
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -203,7 +194,7 @@ TRNtrans_prev(int *ret, int *bid)
 	BAT *b,*bn= NULL;
 	b= BATdescriptor(*bid);
 	if (b  == NULL) 
-		throw(MAL, "transaction.prev", "Cannot access descriptor");
+		throw(MAL, "transaction.prev", RUNTIME_OBJECT_MISSING);
 	bn = BATprev(b);
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);

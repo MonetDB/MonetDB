@@ -619,7 +619,7 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 			s = findSymbolInModule(m, nme );
 			if (s == NULL){
 				throw(MAL, "factory.remove", 
-					INTERNAL_SQL_ENTRY_MISSING,
+					OPERATION_FAILED " SQL entry '%s' not found",
 					putName(nme, strlen(nme)));
 			}
 			stk = pl->stk;

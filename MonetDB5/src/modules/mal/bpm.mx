@@ -818,7 +818,7 @@ materializePartition(Partition p){
 	bn= BATselect_(b, VALptr(&p->tlow),VALptr(&p->thgh), TRUE, FALSE);
 	BBPunfix(b->batCacheid);
 	if( bn== NULL)
-		throw(MAL,"bpm.materialize","Could not create BAT");
+		throw(MAL,"bpm.materialize", INTERNAL_OBJ_CREATE);
 	BBPkeepref(bn->batCacheid);
 	p->bid= bn->batCacheid;
 	p->delayed = 0;
@@ -842,7 +842,7 @@ of BATs.
 @= loadBPMbat
 	idx= BBPindex("bpm_@1");
 	if ((b = BATdescriptor(idx)) == NULL) 
-		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
+		throw(MAL, "bpm.loadCatalog", INTERNAL_BAT_ACCESS);
 	BATloop(b, p, q) {
 		i = *(int *)Hloc(b,p);
 		k = *(@2 *) Tloc(b,p);
@@ -854,7 +854,7 @@ of BATs.
 @= openBPMbat
 	idx= BBPindex("bpm_@2");
         if ((@1 = BATdescriptor(idx)) == NULL) 
-                throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
+                throw(MAL, "bpm.loadCatalog", INTERNAL_BAT_ACCESS);
 	@1i = bat_iterator(@1);
 
 @= BPMunfix
@@ -903,7 +903,7 @@ BPMloadCatalog(){
 	assureSpace();
 	idx= BBPindex("bpm_name");
 	if ((b = BATdescriptor(idx)) == NULL) 
-		throw(MAL, "bpm.loadCatalog", "Cannot access descriptor");
+		throw(MAL, "bpm.loadCatalog", INTERNAL_BAT_ACCESS);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		i = *(int *)BUNhead(bi,p);
@@ -930,7 +930,7 @@ BPMloadCatalog(){
 	if( bpmcat[i] ){
 		if ((pb = BATdescriptor(bpmcat[i]->bid)) == NULL) {
 			@:BPMunfix@
-			throw(MAL, "bpm.loadCatalog", "Broken partition scheme:bid");
+			throw(MAL, "bpm.loadCatalog", OPERATION_FAILED);
 		}
 
 	
@@ -941,7 +941,7 @@ BPMloadCatalog(){
 			bpmcat[i]->@1= *(int *) BUNtail(@1i,r);
 		else {	
 			@:BPMunfix@
-			throw(MAL, "bpm.loadCatalog", "Broken partition scheme:@1");
+			throw(MAL, "bpm.loadCatalog", OPERATION_FAILED);
 		}
 @c
 		@:getPartitionField(prv)@
@@ -993,7 +993,7 @@ BPMclose(int *ret)
 	mal_set_lock(mal_contextLock, "bpm");
 	/* save the partition table structure */
 	mal_unset_lock(mal_contextLock, "bpm");
-	throw(MAL, "bpm.close","NYI");
+	throw(MAL, "bpm.close", PROGRAM_NYI);
 }
 
 str
@@ -1003,7 +1003,7 @@ BPMdestroy(int *ret)
 	mal_set_lock(mal_contextLock, "bpm");
 	/* remove a partition table */
 	mal_unset_lock(mal_contextLock, "bpm");
-	throw(MAL, "bpm.destroy","NYI");
+	throw(MAL, "bpm.destroy", PROGRAM_NYI);
 }
 @-
 Before you enter a BAT for partitioning
@@ -1019,7 +1019,7 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 
 	/* test for duplicate names */
 	if(nme && getByName(*nme) )
-		throw(MAL,"bpm.deposit","Duplicate named partitioned BAT");
+		throw(MAL,"bpm.deposit", DUPLICATE_DEFINITION);
 	/* get target bat */
 	@:getBATdescriptor(src,b,"bpm.deposit")@
 
@@ -1029,14 +1029,14 @@ BPMdeposit(bat *ret, str *nme, bat *src)
 		BPMprintPartition(GDKout, p);
 #endif
 		BBPunfix(b->batCacheid);
-		throw(MAL,"bpm.deposit","Duplicate partitioned BAT");
+		throw(MAL,"bpm.deposit", DUPLICATE_DEFINITION);
 	}
 	/* we can enter a new partition */
 	/* create the ring alias bat first*/
 	ba= BATnew( b->htype,b->ttype,BATTINY); 
 	if( ba == 0){
 		BBPunfix(b->batCacheid);
-		throw(MAL,"bpm.deposit","Can not create partitioned BAT");
+		throw(MAL,"bpm.deposit", MAL_MALLOC_FAIL);
 	}
 	pa = newPartition(ba->batCacheid);
 	pa->type = newBatType(ba->htype,ba->ttype);
@@ -1099,7 +1099,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 	BPMopen();
 
 	if( (ps= bpmcat[ i=*bid]) == 0)
-		throw(MAL,"bpm.split","Partitioned BAT not found");
+		throw(MAL,"bpm.split", RUNTIME_OBJECT_MISSING);
 	@:getBATdescriptor(bid,b,"bpm.splitPartition");
 	/* get the comparison function */
 	cmp= BATatoms[b->ttype].atomCmp;
@@ -1142,7 +1142,7 @@ BPMsplitpartition(bat *ret, bat *bid, ptr val)
 
 		if( bn == 0){
 			BBPunfix(b->batCacheid);
-			throw(MAL,"bpm.split","Can not create new partition");
+			throw(MAL,"bpm.split", MAL_MALLOC_FAIL);
 		}
 		BBPkeepref(bn->batCacheid);
 		p= newPartition(bn->batCacheid);
@@ -1198,7 +1198,7 @@ BPMrange(bat *ret, bat *bid, ptr low, ptr hgh){
 	BPMopen();
 
 	if( getAlias(*bid) == NULL)
-		throw(MAL, "bpm.range","Partition not known");
+		throw(MAL, "bpm.range", RUNTIME_OBJECT_MISSING);
 	BPMsplitpartition(ret,bid,low);
 	BPMsplitpartition(ret,bid,hgh);
 	return MAL_SUCCEED;
@@ -1217,12 +1217,12 @@ BPMrangeVector(bat *ret, bat *bid, bat *pv)
 	BPMopen();
 
 	if( bpmcat[*bid] == 0)
-		throw(MAL,"bpm.rangeVector","Partitioned BAT not found");
+		throw(MAL,"bpm.rangeVector", RUNTIME_OBJECT_MISSING);
 	@:getBATdescriptor(bid,b,"bpm.rangeVector");
 	@:getBATdescriptor(pv,bpv,"bpm.range")@
 	if( bpv == 0){
 		BBPunfix(b->batCacheid);
-		throw(MAL,"bpm.range","Cannot access BAT");
+		throw(MAL,"bpm.range", INTERNAL_BAT_ACCESS);
 	}
 	bpvi = bat_iterator(bpv);
 	BATloop(bpv,cur,q){
@@ -1244,7 +1244,7 @@ BPMsortPartitions(int *ret, bat *bid)
 
 	BPMopen();
 	if( (a= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.sort","Can not alias BAT");
+		throw(MAL,"bpm.sort", RUNTIME_OBJECT_MISSING);
 	/* replace each partition with its sorted version */
 	for(i= a->nxt ; i!= a->alias; i= nx){
 		if( (msg=materializePartition(bpmcat[i])) )
@@ -1293,16 +1293,16 @@ BPMhashPartitions(int *ret, bat *bid)
 
 	BPMopen();
 	if( (a= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.hash","Can not alias BAT");
+		throw(MAL,"bpm.hash", RUNTIME_OBJECT_MISSING);
 	for(i= a->nxt; i!= a->alias; i= bpmcat[i]->nxt) {
 		if( (msg=materializePartition(bpmcat[i])) )
 			return msg; 
 				
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.hashPartitions");
 		if (b == NULL) {
-                	throw(MAL, "bat.setHash", "Cannot access descriptor");
-        	}
-	        BAThash(b, 0);
+				throw(MAL, "bat.setHash", INTERNAL_BAT_ACCESS);
+		}
+		BAThash(b, 0);
 		BBPunfix(b->batCacheid);
 	}
 	*ret=0;
@@ -1370,7 +1370,7 @@ BPMemptySet(int *ret, bat *bid)
 	if( (ps= getAlias(*bid)) == 0){
 		b= BATdescriptor(*bid);
 		if(b==0)
-			throw(MAL,"bpm.emptySet","Can not access BAT");
+			throw(MAL,"bpm.emptySet", INTERNAL_BAT_ACCESS);
 		cnt = BATcount(b);
 		BBPunfix(b->batCacheid);
 		if (cnt)
@@ -1405,7 +1405,7 @@ BPMsortTail(int *ret, bat *bid)
 	str msg;
 
 	if( getAlias(*bid) == 0)
-		throw(MAL,"bpm.emptySet","Partitioned BAT not found");
+		throw(MAL,"bpm.emptySet", RUNTIME_OBJECT_MISSING);
 	if( (msg= BPMfold(ret,bid)) )
 		return msg;
 	b= BATdescriptor(*ret);
@@ -1477,14 +1477,14 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 
 	assureSpace();
 	if( (pa= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.addPartition","Alias not found");
+		throw(MAL,"bpm.addPartition",RUNTIME_OBJECT_MISSING);
 	ba= BATdescriptor(pa->bid);
 	if( ba== NULL)
-		throw(MAL,"bpm.addPartition","Alias BAT not found");
+		throw(MAL,"bpm.addPartition",INTERNAL_BAT_ACCESS);
 	b= BATdescriptor(*src);
 	if( b== NULL) {
 		BBPunfix(ba->batCacheid); 
-		throw(MAL,"bpm.addPartition","Partial partition BAT not found");
+		throw(MAL,"bpm.addPartition",INTERNAL_BAT_ACCESS);
 	}
 	if(bpmcat[*src] ){
 		BAT *bb;
@@ -1504,7 +1504,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 #endif
 		BBPunfix(ba->batCacheid); 
 		BBPunfix(b->batCacheid); 
-		throw(MAL,"bpm.addPartition","Uncompatible BAT types");
+		throw(MAL,"bpm.addPartition",SEMANTIC_TYPE_MISMATCH);
 	}
 
 	BBPunfix(ba->batCacheid); 
@@ -1533,7 +1533,7 @@ BPMaddPartition(int *ret, bat *bid, bat *src){
 		/* add the content to the acceptor segment */
 		bn= BATdescriptor(px->bid);
 		if( bn== NULL)
-			throw(MAL,"bpm.addPartition","Partition BAT not found");
+			throw(MAL,"bpm.addPartition", RUNTIME_OBJECT_MISSING);
 		bn= BATappend(bn,b,TRUE);
 		assert(bn!=NULL);
 		px ->cnt += BATcount(b);
@@ -1560,7 +1560,7 @@ BPMhash(bat *ret, bat *bid, int *bits)
 	(void) b;
 	(void) bits;
 	*ret= 0;
-	throw(MAL, "bpm.hash","NYI");
+	throw(MAL, "bpm.hash",PROGRAM_NYI);
 }
 
 str
@@ -1573,7 +1573,7 @@ BPMderived(bat *ret, bat *bid, bat *src)
 	(void) b;
 	(void) src;
 	*ret= 0;
-	throw(MAL, "bpm.derived","NYI");
+	throw(MAL, "bpm.derived",PROGRAM_NYI);
 }
 
 @-
@@ -1799,7 +1799,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	BPMopen();
 
 	if( (ps = getByNumber(*bid)) == 0)
-		throw(MAL,"bpm.split","BAT is not a segment: To Do");
+		throw(MAL,"bpm.split",ILLEGAL_ARGUMENT);
 	@:getBATdescriptor(bid,b,"bpm.adapt");
 
 	tpe = rngType(b->ttype);
@@ -1939,7 +1939,7 @@ BPMoracleImpl(int *ret, bat *bid, ptr low, ptr hgh, bat *rs, int delayed)
 	BPMopen();
 
 	if( (ps = getByNumber(*bid)) == 0)
-		throw(MAL,"bpm.oracle","BAT is not a segment: To Do");
+		throw(MAL,"bpm.oracle", ILLEGAL_ARGUMENT);
 	@:getBATdescriptor(bid,b,"bpm.oracle");
 	/* get the comparison function */
 	cmp= BATatoms[b->ttype].atomCmp;
@@ -1984,7 +1984,7 @@ reversed. Let's prepare this partition and add it.
 	if( bs1 == 0){
 		BBPunfix(bs->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL,"bpm.adapt","Can not create new segment");
+		throw(MAL,"bpm.adapt", MAL_MALLOC_FAIL"Can not create new segment");
 	}
 	BBPkeepref(bs1->batCacheid);
 
@@ -2105,21 +2105,23 @@ BPMtakeIndexed(bat *ret, int *nme)
 {
 	BAT *b= BATdescriptor(*nme);
 	if( b==0 )
-		throw(MAL,"bpm.take","BAT partition  does not exist");
+		throw(MAL,"bpm.take", RUNTIME_OBJECT_MISSING);
 	BBPkeepref(*ret= b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
 BPMtake(bat *ret, str *nme)
 {
 	Partition p;
 	BPMopen();
 	if( (p=getByName(*nme)) == 0)
-		throw(MAL,"bpm.take","Partitioned BAT does not exist");
+		throw(MAL,"bpm.take", RUNTIME_OBJECT_MISSING);
 	*ret = p->alias;
 	BBPincref(p->alias,TRUE);
 	return MAL_SUCCEED;
 }
+
 str
 BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 {
@@ -2129,7 +2131,7 @@ BPMtakePartition(bat *ret, str *nme, ptr *hl, ptr *hh, ptr *tl, ptr *th)
 	BPMopen();
 	p= getByName(*nme);
 	if( p== 0)
-		throw(MAL,"bpm.take","Partitioned BAT does not exist");
+		throw(MAL,"bpm.take", RUNTIME_OBJECT_MISSING);
 	return BPMtakePartitionIndexed(ret,&p->alias, &index,hl,hh,tl,th);
 }
 
@@ -2139,7 +2141,7 @@ BPMtakePartitionIndexed(bat *ret, int *bid, int *idx, ptr *hl, ptr *hh, ptr *tl,
 	/* for the time being assume that the index is correct */
 	BAT *b= BATdescriptor(*bid);
 	if( b== NULL)
-		throw(MAL,"bpm.take","Could not access partition");
+		throw(MAL,"bpm.take", INTERNAL_BAT_ACCESS);
 	(void) idx;
 	(void) hl;
 	(void) hh;
@@ -2390,7 +2392,7 @@ BPMgetNames(bat *ret)
 	BPMopen();
 	b = BATnew(TYPE_int, TYPE_str, BBPlimit);
 	if (b == 0)
-		throw(MAL, "catalog.bbpNames", "failed to create BAT");
+		throw(MAL, "catalog.bbpNames", MAL_MALLOC_FAIL);
 	
 	for(i=1; i<bpmcatsize; i++)
 	if (bpmcat[i] && bpmcat[i]->name){
@@ -2414,7 +2416,7 @@ BPMdiscard(int *ret, bat *bid)
 
 	BPMopen();
 	if( (p= getAlias(*bid)) == 0)
-		throw(MAL,"bpm.discard","Can not alias BAT");
+		throw(MAL,"bpm.discard", RUNTIME_OBJECT_MISSING);
 	/* discard the content */
 	for(i= p->nxt ;
 		i!= p->alias && msg== MAL_SUCCEED; 
@@ -2484,7 +2486,7 @@ BPMnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bn= BATnew(ht,tt,0);
 	if( bn == 0)
-		throw(MAL,"bpm.new","Can not create BAT");
+		throw(MAL,"bpm.new", MAL_MALLOC_FAIL);
 	
 	pa = newPartition(bn->batCacheid);
 	pa->type= newBatType(bn->htype,bn->ttype);
@@ -2518,7 +2520,7 @@ BPMnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	if( (p= getAlias(*bid)) == 0){
 		mdbDump(cntxt,mb,stk,pci);
-		throw(MAL,"bpm.newIterator","Can not access alias BAT");
+		throw(MAL,"bpm.newIterator", RUNTIME_OBJECT_MISSING);
 	}
 
 	if( emptyRing(p)){
@@ -2599,7 +2601,7 @@ BPMnewIteratorRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	if( (p= getAlias(*bid)) == 0){
 		mdbDump(cntxt,mb,stk,pci);
-		throw(MAL,"bpm.newIterator","Can not access alias BAT");
+		throw(MAL,"bpm.newIterator", RUNTIME_OBJECT_MISSING);
 	}
 	@:getBATdescriptor(&p->bid,b,"bpm.newIterator")@
 
@@ -2641,7 +2643,7 @@ BPMnewIteratorRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	throw(MAL, "bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator", PROGRAM_NYI);
 }
 
 @-
@@ -2664,10 +2666,10 @@ BPMhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BPMopen();
 	if( (p= getAlias(bid)) == 0){
 		mdbDump(cntxt,mb,stk,pci);
-		throw(MAL,"bpm.hasMoreElements","Can not access alias BAT");
+		throw(MAL,"bpm.hasMoreElements", RUNTIME_OBJECT_MISSING);
 	}
 	if( bpmcat[idx] == 0)
-		throw(MAL,"bpm.hasMoreElements","Can not access BAT");
+		throw(MAL,"bpm.hasMoreElements", INTERNAL_BAT_ACCESS);
 	if( bpmcat[idx]->nxt == p->alias)
 		*ret= 0;	/* end of sequence */
 	else {
@@ -2704,7 +2706,7 @@ BPMhasMoreElementsRng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* get last partition returned */
 	if( (p=bpmcat[*bid]) == 0 )
-		throw(MAL,"bpm.hasMoreElements","Not a partitioned BAT");
+		throw(MAL,"bpm.hasMoreElements", RUNTIME_OBJECT_MISSING);
 
 	@:getBATdescriptor(&p->bid,b,"bpm.hasMoreElementsRng")@
 
@@ -2748,7 +2750,7 @@ BPMhasMoreElementsRng4(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	throw(MAL, "bpm.newIterator","NYI");
+	throw(MAL, "bpm.newIterator",PROGRAM_NYI);
 }
 
 str
@@ -2759,7 +2761,7 @@ BPMgetDimension(ptr *first, ptr *last, ptr *vlow, ptr *vhgh, int *bid)
 	(void) vlow;
 	(void) vhgh;
 	(void) bid;
-	throw(MAL, "bpm.getDimension","NYI");
+	throw(MAL, "bpm.getDimension", PROGRAM_NYI);
 }
 
 str
@@ -2809,7 +2811,7 @@ BPMdumpAlias(int *ret, bat *bid)
 {
 	Partition p;
 	if( (p=getAlias(*bid)) == 0)
-		throw(MAL,"bpm.dump", "Partitioned BAT does not exist");
+		throw(MAL,"bpm.dump", RUNTIME_OBJECT_MISSING);
 	BPMprintRing(GDKout,p);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -2819,7 +2821,7 @@ BPMdumpAlias(int *ret, bat *bid)
 if (idx == 0) {
 	b = BATnew(TYPE_int, TYPE_@2, bpmcatsize);
 	if (b == 0)
-	throw(MAL, "bpm.map@1", "failed to create BAT");
+		throw(MAL, "bpm.map@1",MAL_MALLOC_FAIL);
 	idx= b->batCacheid;
 	msg= BKCsetName(&r,(int *)&idx, &nm);
 	if( msg != MAL_SUCCEED) return msg;
@@ -2828,7 +2830,7 @@ if (idx == 0) {
 	BKCdelete_all(&r,&idx);
 	b = BATdescriptor(idx);
 	if (b == 0)
-	throw(MAL, "bpm.map@1", "failed to get bpm_@1 BAT");
+		throw(MAL, "bpm.map@1", MAL_MALLOC_FAIL);
 }
 @c
 str
@@ -3014,7 +3016,7 @@ BPMsaveCatalog(int *r)
 				if( msg != MAL_SUCCEED) return msg;
 			} else {
 				if (bt!=idx)
-				throw(MAL, "bpm.saveCatalog", "Inconsistency in partition names");
+					throw(MAL, "bpm.saveCatalog", DUPLICATE_DEFINITION);
 			}
 	
 			msg= BKCsetPersistent(r, (int *)&bt);
@@ -3110,7 +3112,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	BPMopen();
 
 	if( (ps= bpmcat[ i= *bid]) == 0)
-		throw(MAL,"bpm.split","Partitioned BAT not found");
+		throw(MAL,"bpm.split", RUNTIME_OBJECT_MISSING);
 	@:getBATdescriptor(bid,b,"bpm.splitPartition");
 	/* get the comparison function */
 	tpe = rngType(b->ttype);

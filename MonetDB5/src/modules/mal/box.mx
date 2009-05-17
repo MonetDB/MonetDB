@@ -111,7 +111,7 @@ BOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str *) getArgReference(stk, pci, 1);
 	if (openBox(name) != 0)
 		return MAL_SUCCEED;
-	throw(MAL, "box.open", "failed to open box");
+	throw(MAL, "box.open", BOX_CLOSED);
 }
 
 str
@@ -124,7 +124,7 @@ BOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str *) getArgReference(stk, pci, 1);
 	if (closeBox(name, FALSE) == 0)
 		return MAL_SUCCEED;
-	throw(MAL, "box.close", "failed to close box");
+	throw(MAL, "box.close", BOX_CLOSED);
 }
 
 str
@@ -148,7 +148,7 @@ to a named box.
 	name = *(str *) getArgReference(stk,pci,1);
 	box= findBox(name);
 	if( box ==0) 
-	throw(MAL, "box.@1","box is not open");
+	throw(MAL, "box.@1",BOX_CLOSED);
 @-
 @c
 str
@@ -164,7 +164,7 @@ BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str *) getArgReference(stk, pci, 2);
 	v = getArgReference(stk,pci,3); 
 	if (depositBox(box, name, v))
-		throw(MAL, "box.deposit", "failed to deposit into box");
+		throw(MAL, "box.deposit", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -180,7 +180,7 @@ BOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str *) getArgReference(stk, pci, 2);
 	v = getArgReference(stk,pci,0); 
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		throw(MAL, "box.take", "failed to take object from box");
+		throw(MAL, "box.take", OPERATION_FAILED);
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -223,7 +223,7 @@ BOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = *(str *) getArgReference(stk, pci, 2);
 	if (discardBox(box, name))
-		throw(MAL, "box.discard", "failed to discard object from box");
+		throw(MAL, "box.discard", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 

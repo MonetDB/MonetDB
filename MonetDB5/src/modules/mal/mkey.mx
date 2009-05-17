@@ -357,7 +357,7 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-int
+static str
 CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 {
 	BAT* br = NULL;
@@ -373,17 +373,17 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 #ifdef _DEBUG_MKEY_
 		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): not synced on head.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
-		return GDK_FAIL;
+		return " Operands not synced on head";
 	} else if (isVIEW(bn) || bn->batRestricted) {
 #ifdef _DEBUG_MKEY_
 		stream_printf(GDKout,"#CMDbulk_rotate_xor_hash: (%s,%d,%s): left operand not writeable.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
-		return GDK_FAIL;
+		return " Left operand not writeable";
 	} else if (*rotate < 0 || *rotate >= (int)(sizeof(wrd)*8)) {
 #ifdef _DEBUG_MKEY_
 		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: (%s,%d,%s): illegal number of rotate bits.\n", BATgetId(bn), *rotate, BATgetId(b));
 #endif
-		return GDK_FAIL;
+		return " Illegal number of rotate bits";
 	}
 	
 	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
@@ -391,7 +391,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 #ifdef _DEBUG_MKEY_
 		stream_printf(GDKout,"CMDbulk_rotate_xor_hash: fail to allocate result BAT[void,wrd] of "SZFMT" tuples.\n", BATcount(bn));
 #endif
-		return GDK_FAIL;
+		return MAL_MALLOC_FAIL;
 	}
 	BATseqbase(br, bn->hseqbase);
 	dst = (wrd *) Tloc(br, BUNfirst(br));
@@ -492,7 +492,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		*res = br;
 	}
 
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @+ MAL wrapper
 The remainder contains the wrapping needed for M5
@@ -584,20 +584,20 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str
 MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	BAT *hn, *b, *bn=0;
+	str msg= MAL_SUCCEED;
+
 	if ((hn = BATdescriptor(*hid)) == NULL) {
-        throw(MAL, "mkey.bulk_rotate_xor_hash", 
-		"Cannot access descriptor");
+        throw(MAL, "mkey.bulk_rotate_xor_hash", RUNTIME_OBJECT_MISSING);
     }
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(hn->batCacheid);
-        throw(MAL, "mkey.bulk_rotate_xor_hash", 
-		"Cannot access descriptor");
+        throw(MAL, "mkey.bulk_rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
     }
 
-	if( CMDbulk_rotate_xor_hash(&bn,hn,nbits,b) == GDK_FAIL){
+	if( (msg= CMDbulk_rotate_xor_hash(&bn,hn,nbits,b)) == MAL_SUCCEED){
 		BBPreleaseref(hn->batCacheid);
 		BBPreleaseref(b->batCacheid);
-        throw(MAL, "mkey.bulk_rotate_xor_hash", "command failed");
+        throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED "%s",msg);
 	}
 	BBPreleaseref(hn->batCacheid);
 	BBPreleaseref(b->batCacheid);

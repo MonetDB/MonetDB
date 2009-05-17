@@ -51,8 +51,7 @@ end main;
 [ "mTests_src_modules_mal_monetdb_0" ]
 !MALException:remote.get:'b1_str' may not be used before being initialized
 
-!MALException:remote.create:connection with name 'mTests_src_modules_mal' already exists
-!MALException:remote.disconnect:no such connection with name 'mTests_src_modules_mal_monetdb_0'
+
 
 
 # 10:57:19 >  

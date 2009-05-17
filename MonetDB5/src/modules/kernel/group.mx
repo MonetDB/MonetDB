@@ -1226,7 +1226,7 @@ Recall that we only support void- and oid- typed heads.
 This is captured as a runtime check in the implementation.
 @= chkHeader
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
-		throw(MAL, "group.@2", "(v)oid head required\n");
+		throw(MAL, "group.@2", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 @c
 group_export str GRPprelude(void);
 str
@@ -1244,12 +1244,12 @@ GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 	BAT *result, *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.new", "Cannot access descriptor");
+		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
 	}
 
 	result = BATgroup(b, *start, *incr, *grpsize);
 	if (result == 0)
-		throw(MAL, "group.new", "Failed to group");
+		throw(MAL, "group.new", OPERATION_FAILED " Failed to group");
 	*ret = result->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1334,7 +1334,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.new", "Cannot access descriptor");
+		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
 	}
 	if (!b->tkey && BATcount(b) > 1 &&
 	    BATtordered(b)&1 && 
@@ -1354,10 +1354,10 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 			histo = CTgroup_lng_ordered(b, &bn);
 			break;
 		default:
-			throw(MAL, "group.new", "Impossible type");
+			throw(MAL, "group.new", SEMANTIC_TYPE_ERROR " expected {bte,sht,int,lng}");
 		}
 		if (!histo)
-			throw(MAL, "group.new", "ordered group failed");
+			throw(MAL, "group.new", OPERATION_FAILED);
 		BBPkeepref(*rethisto = histo->batCacheid);
 		BBPkeepref(*retbid = bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
@@ -1392,7 +1392,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	@:chkHeader(b,GRPgroup)@
 	if (CTgroup(&bn, &histo, b) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.new","CTgroup failed");
+		throw(MAL, "group.new",OPERATION_FAILED);
 	}
 	BBPkeepref(bn->batCacheid);
 	BBPkeepref(histo->batCacheid);
@@ -1408,12 +1408,12 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	BAT *histo = 0, *b, *bn = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.new", "Cannot access descriptor");
+		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPgroup)@
 	if (CTgroup_custom(&bn, &histo, b, N, rng) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.new","CTgroup_custom failed");
+		throw(MAL, "group.new",OPERATION_FAILED);
 	}
 	BBPkeepref(bn->batCacheid);
 	BBPkeepref(histo->batCacheid);
@@ -1431,18 +1431,18 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	BAT *bn = NULL, *histo = NULL;
 
 	if ((ct_map = BATdescriptor(*ct_mapid)) == NULL) {
-		throw(MAL, "group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(ct_map,GRPderive)@
 	if ((ct_histo = BATdescriptor(*ct_histoid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
-		throw(MAL, "group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(ct_histo,GRPderive)@
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
 		BBPreleaseref(ct_histo->batCacheid);
-		throw(MAL, "group.derive", "Cannot access descriptor");
+		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPderive)@
 	if( derive(&histo, &bn, ct_histo, ct_map, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
@@ -1470,21 +1470,21 @@ GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 	BAT *bn;
 
 	if ((sel = BATdescriptor(*selid)) == NULL) {
-		throw(MAL, "group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
 	}
 	if ((grp = BATdescriptor(*grpid)) == NULL) {
 		BBPreleaseref(sel->batCacheid);
-		throw(MAL, "group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(grp,GRPsubhisto)@
 	if ((dom = BATdescriptor(*domid)) == NULL) {
-		throw(MAL, "group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((dom = BATdescriptor(*domid)) == NULL) {
 		BBPreleaseref(sel->batCacheid);
 		BBPreleaseref(grp->batCacheid);
-		throw(MAL, "group.subhisto", "Cannot access descriptor");
+		throw(MAL, "group.subhisto", RUNTIME_OBJECT_MISSING);
 	}
 	CTsubhisto(&bn, sel, grp, dom);
 	*retid = bn->batCacheid;
@@ -1503,12 +1503,12 @@ GRPrefine(int *retid, int *bid, int *aid)
 	BAT *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPrefine)@
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(a,GRPrefine)@
 
@@ -1516,7 +1516,7 @@ GRPrefine(int *retid, int *bid, int *aid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	if (!bn)
-		throw(MAL, "group.refine", "Failed");
+		throw(MAL, "group.refine", OPERATION_FAILED);
 	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1529,12 +1529,12 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	BAT *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPrefine_rev)@
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.refine", "Cannot access descriptor");
+		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(a,GRPrefine_rev)@
 
@@ -1542,7 +1542,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(a->batCacheid);
 	if (!bn)
-		throw(MAL, "group.refine", "Failed");
+		throw(MAL, "group.refine", OPERATION_FAILED);
 	BBPkeepref(*retid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1565,7 +1565,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @= large_aggr_sum
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
-		throw(MAL, "group.sum", "Cannot prepare hash");
+		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -1611,7 +1611,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 @= large_aggr_prod
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
-		throw(MAL, "group.prod", "Cannot prepare hash");
+		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -1660,7 +1660,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	if (BATprepareHash(bn)) {
 		GDKfree(cnt);
 		BBPreclaim(bn);
-		throw(MAL, "group.@1", "Cannot prepare hash");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -1738,17 +1738,17 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	oid i, range, min, max;
 
 	if (bn == NULL)
-		throw(MAL, "group.sum", "Cannot create descriptor");
+		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 
 	(void) ignore_nils; /* fool compiler */
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.sum", "Cannot access descriptor");
+		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPsum_@1_@3)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.sum", "Cannot access descriptor");
+		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRPsum_@1_@3)@
 	/* init: set all sums to zero */
@@ -1764,7 +1764,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.sum", "Cannot insert zero");
+				throw(MAL, "group.sum", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
@@ -1773,7 +1773,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.sum", "Cannot insert zero");
+				throw(MAL, "group.sum", OPERATION_FAILED " Cannot insert zero");
 			}
 			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
@@ -1809,17 +1809,17 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 
 	(void) ignore_nils; /* fool compiler */
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.prod", "Cannot access descriptor");
+		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPprod_@1_@3)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.prod", "Cannot access descriptor");
+		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
 	}
  	bn = BATnew(e->htype, TYPE_@3, BATcount(e));
 	if (bn == NULL)
-		throw(MAL, "group.prod", "Cannot create descriptor");
+		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 
 	@:chkHeader(e,GRPprod_@1_@3)@
 	/* init: set all prods to one */
@@ -1835,7 +1835,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.prod", "Cannot insert one");
+				throw(MAL, "group.prod", OPERATION_FAILED " Cannot insert one");
 			}
 		}
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
@@ -1844,7 +1844,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &one) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.prod", "Cannot insert one");
+				throw(MAL, "group.prod", OPERATION_FAILED " Cannot insert one");
 			}
 			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
@@ -1903,17 +1903,17 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	BUN p, q, r;
 
 	if ((b = BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPavg_@1)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRPavg_@1)@
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
 	if (bn == NULL)
-		throw(MAL, "group.@1", "Cannot create descriptor");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
@@ -1929,7 +1929,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.@1", "Cannot insert zero");
+				throw(MAL, "group.@1", OPERATION_FAILED " Cannot insert zero");
 			}
 		}
 		max = *(oid*)BUNhead(ei, BUNlast(e)-1);
@@ -1938,7 +1938,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei,p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.@1", "Cannot insert zero");
+				throw(MAL, "group.@1", OPERATION_FAILED " Cannot insert zero");
 			}
 			i = *(oid*)BUNhead(ei, p);
 			if (i < min)
@@ -1990,17 +1990,17 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	oid previousOid = oid_nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPavg_@1)@
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRPavg_@1)@
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
 	if (bn == NULL)
-		throw(MAL, "group.@1", "Cannot create descriptor");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	nElements = BATcount(e);
 
 	off = BUNfirst(e);
@@ -2013,20 +2013,20 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	cnt = (int*) GDKmalloc(nElements*sizeof(int));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
-		throw(MAL, "group.@1", "Cannot alloc space ");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 	sum = (dbl*) GDKmalloc(nElements*sizeof(dbl));
 	if (sum == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
-		throw(MAL, "group.@1", "Cannot alloc space ");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 	sumsquares = (dbl*) GDKmalloc(nElements*sizeof(dbl));
 	if (sumsquares == NULL) {
 		BBPreclaim(bn);
 		GDKfree(cnt);
 		GDKfree(sum);
-		throw(MAL, "group.@1", "Cannot alloc space ");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 
 	/* scan b, adding sums, and incrementing counts */
@@ -2035,7 +2035,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		GDKfree(cnt);
 		GDKfree(sum);
 		GDKfree(sumsquares);
-		throw(MAL, "group.@1", "Cannot alloc space ");
+		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 
 	/* init sums and counts to zero */
@@ -2213,12 +2213,12 @@ GRP@1(int *retval, int *bid, int *eid)
 	int res = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRP@1)@
 	if ((e = BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRP@1)@
 
@@ -2230,7 +2230,7 @@ GRP@1(int *retval, int *bid, int *eid)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(e->batCacheid);
 	if (!res)
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	BBPkeepref(*retval = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2253,13 +2253,13 @@ str GRP@1_oid_@2(int *retval, int *bid)
 	BUN p, q;
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.@1", "Cannot access descriptor");
+		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
 	/* use expensive operation when the BAT is not ordered on the head */
 	if( !(b->hsorted&1) ){
 		/* determine groups first */
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group","not yet implemented");
+		throw(MAL, "group", PROGRAM_NYI);
 	}
 
 	@:chkHeader(b,GRP@1_oid_@2)@
@@ -2308,7 +2308,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
 @= large_aggr_count
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
-		throw(MAL, "group.count", "Cannot prepare hash");
+		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -2362,19 +2362,19 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	ptr bt_nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.count", "Cannot access descriptor");
+		throw(MAL, "group.count", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPaggr_count)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.count", "Cannot access descriptor");
+		throw(MAL, "group.count", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRPaggr_count)@
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	if (bn == NULL)
-		throw(MAL, "group.count", "Cannot create descriptor");
+		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	btt = b->ttype;
 	bt_nil = ATOMnilptr(b->ttype);
 
@@ -2390,7 +2390,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.count", "Insert Failed");
+				throw(MAL, "group.count", OPERATION_FAILED );
 			}
 		}
 		max = *(oid *) BUNhead(ei, BUNlast(e) - 1);
@@ -2399,7 +2399,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 				BBPreclaim(bn);
-				throw(MAL, "group.count", "Insert Failed");
+				throw(MAL, "group.count", OPERATION_FAILED);
 			}
 			i = *(oid *) BUNhead(ei, p);
 			if (i < min)
@@ -2448,19 +2448,19 @@ GRPsize(int *retval, int *bid, int *eid)
 	BUN p, q, r;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "group.size", "Cannot access descriptor");
+		throw(MAL, "group.size", RUNTIME_OBJECT_MISSING);
 	}
 
 	@:chkHeader(b,GRPsize)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "group.size", "Cannot access descriptor");
+		throw(MAL, "group.size", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(e,GRPsize)@
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	if (bn == NULL)
-		throw(MAL, "group.size", "Cannot create descriptor");
+		throw(MAL, "group.size", MAL_MALLOC_FAIL);
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	bn->T->nonil = 1;
@@ -2471,13 +2471,13 @@ GRPsize(int *retval, int *bid, int *eid)
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
-			throw(MAL, "group.count", "Insert Failed");
+			throw(MAL, "group.count", OPERATION_FAILED);
 		}
 	}
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		BBPreclaim(bn);
-		throw(MAL, "group.count", "Cannot prepare hash");
+		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
@@ -2511,11 +2511,11 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	int i;
 
 	if( *shift <=0){
-		throw(MAL, "group.sum", "Illegal shift value");
+		throw(MAL, "group.sum", ILLEGAL_ARGUMENT " Illegal shift value");
 	}
 		
 	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "group.sum", "Cannot access descriptor");
+		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 	@:chkHeader(b,GRPwindowsum_@1)@
 

@@ -36,7 +36,7 @@ catch MALException:str ;
     io.printf("%s\n",MALException);
 exit MALException:str ;
 end main;
-MALException:bbp.take:failed to take object from box
+MALException:bbp.take:Object not found
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

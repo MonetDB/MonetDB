@@ -68,7 +68,7 @@ comment "Destroy the statistics box";
 pattern take(name:any_1):any_2
 address STATtake
 comment "Take a variable out of the statistics box";
-command deposit(name:str) :void
+pattern deposit(name:str) :void
 address STATdepositStr
 comment "Enter a new BAT into the statistics box";
 command deposit(name:bat[:any_1,:any_2]) :void
@@ -610,26 +610,29 @@ to a named box.
 str
 STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b;
+	BAT *b = 0;
 	Box box;
 	ValRecord val;
 	int idx;
 	str bnme;
 	BUN p;
 	int *ret = (int *)getArgReference(stk, pci, 0);
-	str *nme = (str *)getArgReference(stk, pci, 1);
+	str *nme = (str*)getArgReference(stk, pci, 1);
 	(void)mb;
+	(void)cntxt;
 
-	b = BATdescriptor(idx = BBPindex(*nme));
+	idx = BBPindex(*nme);
+	if (idx) 
+		b = BATdescriptor(idx);
 	if (b == NULL)
-		throw(MAL, "statistics.deposit", "BAT unknown");
+		throw(MAL, "statistics.deposit", RUNTIME_OBJECT_MISSING);
 	OpenBox("deposit");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if (p != BUN_NONE) return MAL_SUCCEED;
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))
-		throw(MAL, "statistics.deposit", "Failed to deposit object  into box");
+		throw(MAL, "statistics.deposit", OPERATION_FAILED);
 	bnme = BATgetId(b);
 	return STATenroll(ret, &bnme);
 }
@@ -643,7 +646,7 @@ STATdeposit(int *ret, int *bid)
 	Client cntxt = MCgetClient(); /* laziness hack */
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "statistics.deposit", "Cannot access descriptor");
+		throw(MAL, "statistics.deposit", RUNTIME_OBJECT_MISSING);
 	}
 
 	OpenBox("deposit");
@@ -665,7 +668,7 @@ STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgName(mb, pci, 1);
 	v = getArgReference(stk,pci,0);
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		throw(MAL, "statistics.take", "Failed to take object from box");
+		throw(MAL, "statistics.take", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -679,7 +682,7 @@ STATrelease(int *ret, int *bid)
 	(void) ret;
 	OpenBox("release");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "statistics.release", "Cannot access descriptor");
+		throw(MAL, "statistics.release", RUNTIME_OBJECT_MISSING);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -697,7 +700,7 @@ STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("release");
 	name = (str) getArgName(mb, pci, 1);
 	if (releaseBox(box, name))
-		throw(MAL, "statistics.release", "Failed to release object from box");
+		throw(MAL, "statistics.release", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -746,7 +749,7 @@ STATdiscard2(int *ret, int *bid)
 	(void) ret;
 	OpenBox("discard");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "statistics.discard", "Cannot access descriptor");
+		throw(MAL, "statistics.discard", RUNTIME_OBJECT_MISSING);
 	}
 
 	msg = STATdrop(BATgetId(b));
@@ -768,7 +771,7 @@ STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, *nme);
 	if (i < 0)
-		throw(MAL, "statistics.toString", "Failed to take object from box");
+		throw(MAL, "statistics.toString", OPERATION_FAILED);
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
@@ -776,7 +779,7 @@ STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		throw(MAL, "statistics.toString", "Illegal value");
+		throw(MAL, "statistics.toString", OPERATION_FAILED);
 	VALset(getArgReference(stk,pci,0),TYPE_str, s);
 	return MAL_SUCCEED;
 }
@@ -848,12 +851,12 @@ STATget@1(lng *ret, str *nme)
 	OpenBox("get@1");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.get@1","Object not known");
+		throw(MAL, "statistics.get@1", RUNTIME_OBJECT_MISSING "%s", *nme);
 	STAT_id_nmei = bat_iterator(STAT_id_nme);
 	i= *(int*) BUNhead(STAT_id_nmei,p);
 	p= BUNfnd(STAT_id_@2, &i );
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.get@1","Not known");
+		throw(MAL, "statistics.get@1", RUNTIME_OBJECT_MISSING);
 	*ret = *(lng*)Tloc(STAT_id_@2,p);
 	return MAL_SUCCEED;
 }
@@ -877,16 +880,16 @@ STATgetHistogram(int *ret, str *nme)
 	OpenBox("getHistogram");
 	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.getHistogram", "BAT not known");
+		throw(MAL, "statistics.getHistogram", RUNTIME_OBJECT_MISSING "%s", *nme);
 	STAT_id_nmei = bat_iterator(STAT_id_nme);
 	STAT_id_histogrami = bat_iterator(STAT_id_histogram);
 	i= *(int*) BUNhead(STAT_id_nmei,p);
 	p = BUNfnd(STAT_id_histogram, &i);
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.getHistogram", "Histogram not known");
+		throw(MAL, "statistics.getHistogram", RUNTIME_OBJECT_MISSING);
 	i = BBPindex((str) BUNtail(STAT_id_histogrami, p));
 	if (i == 0)
-		throw(MAL, "statistics.getHistogram", "Histogram disappeared");
+		throw(MAL, "statistics.getHistogram", RUNTIME_OBJECT_MISSING);
 	h = BATdescriptor(i);
 	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;

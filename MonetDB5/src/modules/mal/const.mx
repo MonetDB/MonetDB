@@ -150,7 +150,7 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(prelude)@
 	box = openBox("const");
 	if (box == 0)
-		throw(MAL, "const.prelude", "failed to open box");
+		throw(MAL, "const.prelude", BOX_CLOSED);
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
 		char u[24 + 1];
@@ -188,7 +188,7 @@ CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(open)@
 	if (openBox("const") != 0)
 		return MAL_SUCCEED;
-	throw(MAL, "const.open", "failed to open box");
+	throw(MAL, "const.open", BOX_CLOSED);
 }
 
 str
@@ -201,7 +201,7 @@ CSTclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:authorize(close)@
 	if (closeBox("const", TRUE) == 0)
 		return MAL_SUCCEED;
-	throw(MAL, "const.close", "failed to close box");
+	throw(MAL, "const.close", BOX_CLOSED);
 }
 
 str
@@ -225,7 +225,7 @@ to a named box.
 	@:authorize(@1)@
 	box= findBox("const");
 	if( box ==0) 
-	throw(MAL, "const.@1","box is not open");
+	throw(MAL, "const.@1", BOX_CLOSED);
 @-
 @c
 str
@@ -240,7 +240,7 @@ CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,2);
 	if (depositBox(box, name, v))
-		throw(MAL, "const.deposit", "failed to deposit into box");
+		throw(MAL, "const.deposit", OPERATION_FAILED);
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -257,7 +257,7 @@ CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,0);
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		throw(MAL, "const.take", "failed to take object from box");
+		throw(MAL, "const.take", OPERATION_FAILED);
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -274,7 +274,7 @@ CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(release)@
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
-		throw(MAL, "const.release", "failed to release object from box");
+		throw(MAL, "const.release", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -303,7 +303,7 @@ CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		throw(MAL, "const.discard", "failed to discard object from box");
+		throw(MAL, "const.discard", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -321,7 +321,7 @@ CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		throw(MAL, "const.toString", "failed to take object from box");
+		throw(MAL, "const.toString", OPERATION_FAILED);
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
@@ -329,7 +329,7 @@ CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		throw(MAL, "const.toString", "illegal value");
+		throw(MAL, "const.toString", ILLEGAL_ARGUMENT " Attempt to coerce NULL string" );
 	VALset( getArgReference(stk,pci,0), TYPE_str, s);
 	return MAL_SUCCEED;
 }

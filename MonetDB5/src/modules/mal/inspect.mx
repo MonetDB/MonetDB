@@ -196,7 +196,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getgetFunctionId", "failed to create BAT");
+		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL );
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -229,7 +229,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getmodule", "failed to create BAT");
+		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -262,7 +262,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get@1", "failed to create BAT");
+		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -299,7 +299,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get@1", "failed to create BAT");
+		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -334,7 +334,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get@1", "failed to create BAT");
+		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -371,12 +371,11 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, putName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getDefinition", 
-				"failed to find <module>.<function>");
+		throw(MAL, "inspect.getDefinition", RUNTIME_SIGNATURE_MISSING);
 
 	b = BATnew(TYPE_str, TYPE_str, 256);
 	if (b == 0)
-		throw(MAL, "inspect.getDefinition", "failed to create BAT");
+		throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s) {
@@ -410,11 +409,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getSignature", 
-				"failed to find <module>.<function>");
+		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
 	b = BATnew(TYPE_str, TYPE_str, 12);
 	if (b == 0)
-		throw(MAL, "inspect.getSignature", "failed to create BAT");
+		throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -455,10 +453,10 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getAddress", "failed to find <module>.<function>");
+		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
 	b = BATnew(TYPE_str, TYPE_str, 12);
 	if (b == 0)
-		throw(MAL, "inspect.getAddress", "failed to create BAT");
+		throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -499,10 +497,10 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getComment", "failed to find <module>.<function>");
+		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
 	b = BATnew(TYPE_str, TYPE_str, 12);
 	if (b == 0)
-		throw(MAL, "inspect.getSignature", "failed to create BAT");
+		throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
 
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
@@ -530,8 +528,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getSource", 
-			"Failed to find <module>.<function>");
+		throw(MAL, "inspect.getSource", RUNTIME_SIGNATURE_MISSING);
 
 	buf= (char*) GDKmalloc(BUFSIZ);
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
@@ -578,11 +575,10 @@ INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol( cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getSignature", 
-			"failed to find <module>.<function>");
+		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
 	b = BATnew(TYPE_str, TYPE_str, 256);
 	if (b == 0)
-		throw(MAL, "inspect.getType", "failed to create BAT");
+		throw(MAL, "inspect.getType", MAL_MALLOC_FAIL);
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
 			str t = getTypeName(getDestType(s->def, getSignature(s)));
@@ -604,7 +600,7 @@ INSPECTatom_names(int *ret)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomNames", "failed to create BAT");
+		throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++)
 		BUNins(b, &i, ATOMname(i), FALSE);
@@ -621,7 +617,7 @@ INSPECTgetEnvironment(int *ret)
 
 	b= GDKenv;
 	if (b == 0)
-		throw(MAL, "inspect.getEnvironment", "failed to create BAT");
+		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
 
 	BBPfix(*ret = b->batCacheid);
 	return MAL_SUCCEED;
@@ -634,7 +630,7 @@ INSPECTatom_sup_names(int *ret)
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSuper", "failed to create BAT");
+		throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)
@@ -656,7 +652,7 @@ INSPECTatom_sizes(int *ret)
 	BAT *b = BATnew(TYPE_int, TYPE_int, 256);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSizes", "failed to create BAT");
+		throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
@@ -708,12 +704,11 @@ INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getSize", "failed to create BAT");
+		throw(MAL, "inspect.getSize", MAL_MALLOC_FAIL);
 
 	m = findModule(cntxt->nspace, putName(*mod, strlen(*mod)));
 	if (m == 0)
-		throw(MAL, "inspect.getSize", 
-				"failed to find <module>.<function>");
+		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 
 	for( i=0; i<MAXSCOPE; i++){
 		s= m->subscope[i];
@@ -742,8 +737,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->nspace, getName(*mod,strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	if (s == 0)
-		throw(MAL, "inspect.getSize", 
-			"failed to find <module>.<function>");
+		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 	*ret= INSPECTcalcSize(s->def);
 	return MAL_SUCCEED;
 }
@@ -768,8 +762,8 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (s == NULL){
 		char buf[BUFSIZ];
-		snprintf(buf,BUFSIZ,"Could not find %s.%s\n", modnme, fcnnme);
-		throw(MAL, "inspect.showSource",buf);
+		snprintf(buf,BUFSIZ,"%s.%s", modnme, fcnnme);
+		throw(MAL, "inspect.showSource",RUNTIME_SIGNATURE_MISSING "%s",buf);
 	} else
 		printFunction(cntxt->fdout, s->def, stk, LIST_INPUT);
 	return MAL_SUCCEED;
