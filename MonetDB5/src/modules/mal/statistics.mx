@@ -852,7 +852,7 @@ s_export str STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	lng *ret = (int *)getArgReference(stk, pci, 0);
+	lng *ret = (lng *)getArgReference(stk, pci, 0);
 	str *nme = (str *)getArgReference(stk, pci, 1);
 	BATiter STAT_id_nmei;
 	Box box;
