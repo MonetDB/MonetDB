@@ -1,6 +1,12 @@
 
 from monetdb.sql import cursors
-from monetdb import mapi
+
+try:
+    from monetdb import mapi
+except SyntaxError:
+    # python 2.5 support
+    from monetdb import mapi25 as mapi
+
 from monetdb.monetdb_exceptions import *
 
 
@@ -42,8 +48,10 @@ class Connection:
         implement this method with void functionality.
         """
 
-        self.__mapi_check()
-        return self.execute('COMMIT')
+        # TODO: implement
+        return False
+        #self.__mapi_check()
+        #return self.execute('COMMIT')
 
 
 
@@ -58,8 +66,11 @@ class Connection:
         committing the changes first will cause an implicit
         rollback to be performed.
         """
-        self.__mapi_check()
-        return self.execute('ROLLBACK')
+        # TODO: implement
+        return False
+        #self.__mapi_check()
+        #return self.execute('ROLLBACK')
+
 
 
     def cursor(self):

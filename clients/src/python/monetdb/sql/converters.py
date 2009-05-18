@@ -89,8 +89,6 @@ class Monetizer:
             complex: self.__string,
             int: self.__string,
             str: self.__escape,
-            bytes: self.__bytes,
-            bytearray: self.__string, # TODO: check this
             list: self.__string, # TODO: check this
             tuple: self.__string, # TODO: check this
             range: self.__string, # TODO: check this
@@ -99,6 +97,12 @@ class Monetizer:
             dict: self.__string, # TODO: check this
             Ellipsis: self.__string, # TODO: check this
         }
+
+        if hasattr(__builtins__, 'bytes'):
+            # python2.5 and older doesn't support these types
+            self.mapping[bytes] = self.__bytes
+            self.mapping[bytearray] = self.__string # TODO: check this
+
 
     def convert(self, data):
         return self.mapping[type(data)](data)

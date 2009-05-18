@@ -262,15 +262,27 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, sqlid schema_id)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id)
 {
 	mvc *m = (mvc *)_mvc;
 	Client c = &mal_clients[m->clientid];
+	str err;
 
 	if (passwd != NULL) {
-		str err = AUTHsetPassword(&c, &user, &passwd);
-		if (err != MAL_SUCCEED) {
+		str pwd = NULL;
+		if (!enc) {
+			int len = (int) strlen(passwd);
+			if ((err = AUTHBackendSum(&pwd, &passwd, &len)) != MAL_SUCCEED) {
+				(void)sql_error(m, 02, "%s", err);
+				GDKfree(err);
+				return FALSE;
+			}
+		} else {
+			pwd = passwd;
+		}
+		if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
 			(void)sql_error(m, 02, "%s", err);
+			GDKfree(err);
 			return(FALSE);
 		}
 	}
@@ -320,13 +332,13 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 void
 monet5_user_init(backend_functions *be_funcs)
 {
-	be_funcs->fcuser		= &monet5_create_user;
-	be_funcs->fduser		= &monet5_drop_user;
-	be_funcs->ffuser		= &monet5_find_user;
-	be_funcs->fcrpriv		= &monet5_create_privileges;
-	be_funcs->fshuser		= &monet5_schema_has_user;
-	be_funcs->fauser		= &monet5_alter_user;
-	be_funcs->fschuserdep		= &monet5_schema_user_dependencies;
+	be_funcs->fcuser        = &monet5_create_user;
+	be_funcs->fduser        = &monet5_drop_user;
+	be_funcs->ffuser        = &monet5_find_user;
+	be_funcs->fcrpriv       = &monet5_create_privileges;
+	be_funcs->fshuser       = &monet5_schema_has_user;
+	be_funcs->fauser        = &monet5_alter_user;
+	be_funcs->fschuserdep   = &monet5_schema_user_dependencies;
 }
 
 str

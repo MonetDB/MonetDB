@@ -2402,6 +2402,19 @@ if test "x$have_openssl" != xno; then
 fi
 if test "x$have_openssl" != xno; then
 	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
+	dnl SHA-2 is implemented starting from version 0.9.8
+	req_openssl_ver=0x0090800f
+	AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
+	AC_TRY_COMPILE([#include <openssl/opensslv.h>],[
+#if !defined(OPENSSL_VERSION_NUMBER)
+#error "Hmmm no OpenSSL version?"
+#endif
+#if (OPENSSL_VERSION_NUMBER < ${req_openssl_ver}L)
+#error "Need more recent version than " OPENSSL_VERSION_TEXT
+#endif],
+      [AC_MSG_RESULT(OK)],
+      [AC_MSG_ERROR([not sufficient])]
+	)
 else
 	OPENSSL_LIBS=""
 	OPENSSL_INCS=""
