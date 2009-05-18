@@ -2,7 +2,7 @@ Source: monetdb5-server
 Section: misc
 Priority: extra
 Maintainer: MonetDB BV <monet@cwi.nl>
-Build-Depends: debhelper (>= 5), autotools-dev, libmonetdb-dev, libmonetdb-client-dev, cdbs
+Build-Depends: debhelper (>= 5), autotools-dev, libpcre3-dev, libssl-dev, libmonetdb-dev, libmonetdb-client-dev, cdbs
 
 Standards-Version: 3.8.0
 Package: monetdb5-server
