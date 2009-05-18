@@ -101,12 +101,12 @@ qc_create(int clientid)
 }
 
 static void
-cq_delete(cq *q)
+cq_delete(int clientid, cq *q)
 {
 	if (q->code)
-		backend_freecode(q->code, q->stk, q->id, q->name);
+		backend_freecode(clientid, q->code, q->stk, q->id, q->name);
 	if (q->stk)
-		backend_freestack(q->stk);
+		backend_freestack(clientid, q->stk);
 	if (q->codestring)
 		_DELETE(q->codestring);
 
@@ -128,7 +128,7 @@ qc_delete(qc *cache, cq *q)
 			} else {
 				cache->q = q->next;
 			}
-			cq_delete(q);
+			cq_delete(cache->clientid, q);
 			break;
 		}
 	}
@@ -142,7 +142,7 @@ qc_destroy(qc *cache)
 	for (q = cache->q; q; q = n) {
 		n = q->next;
 
-		cq_delete(q);
+		cq_delete(cache->clientid, q);
 	}
 	_DELETE(cache);
 }

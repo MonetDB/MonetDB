@@ -90,10 +90,11 @@ static int SQLdebug = 0;
 static char *sqlinit = NULL;
 
 static void
-monet5_freestack(backend_stack stk)
+monet5_freestack(int clientid, backend_stack stk)
 {
 	MalStkPtr p = (ptr)stk;
 
+	(void)clientid;
 	if (p != NULL)
 		GDKfree(p);
 #ifdef _SQL_SCENARIO_DEBUG
@@ -102,12 +103,13 @@ monet5_freestack(backend_stack stk)
 }
 
 static void
-monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
+monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name)
 {
 	(void) code;
 	(void) stk;
 	(void) nr;
-	SQLCacheRemove(MCgetClient(), name);
+	(void)clientid;
+	SQLCacheRemove(mal_clients+clientid, name);
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#monet5_free:%d\n", nr);

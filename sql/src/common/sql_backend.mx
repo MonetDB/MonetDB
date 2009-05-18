@@ -40,9 +40,9 @@ for the duration of a session.
 #include "sql_catalog.h"
 #include "sql_types.h"
 
-typedef void (*freestack_fptr) (backend_stack stk);
-typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
-typedef void (*interpret_fptr) (backend_stack stk, char *code);
+typedef void (*freestack_fptr) (int clientid, backend_stack stk);
+typedef void (*freecode_fptr) (int clientid, backend_code code, backend_stack stk, int nr, char *name);
+typedef void (*interpret_fptr) (int clientid, backend_stack stk, char *code);
 
 typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
@@ -65,8 +65,8 @@ typedef struct _backend_functions {
 	schema_user_dependencies fschuserdep;
 } backend_functions;
 
-extern void backend_freestack(backend_stack stk);
-extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
+extern void backend_freestack(int clientid, backend_stack stk);
+extern void backend_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name);
 
 extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);
@@ -87,17 +87,17 @@ extern backend_functions be_funcs;
 backend_functions be_funcs;
 
 void
-backend_freestack(backend_stack stk)
+backend_freestack(int clientid, backend_stack stk)
 {
 	if (be_funcs.fstack != NULL)
-		be_funcs.fstack(stk);
+		be_funcs.fstack(clientid, stk);
 }
 
 void
-backend_freecode(backend_code code, backend_stack stk, int nr, char *name)
+backend_freecode(int clientid, backend_code code, backend_stack stk, int nr, char *name)
 {
 	if (be_funcs.fcode != NULL)
-		be_funcs.fcode(code, stk, nr, name);
+		be_funcs.fcode(clientid, code, stk, nr, name);
 }
 
 char *
