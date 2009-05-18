@@ -62,7 +62,7 @@ void tjcerror(char *err) /* 'yyerror()' called by yyparse in error */
 {
   char* b = &tjc_c_GLOBAL->errBUFF[0];
   *b = '\0';
-  sprintf(b,err);
+  sprintf(b,"%s",err);
 }
 
 %}

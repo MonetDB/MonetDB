@@ -1540,7 +1540,7 @@ print_type (PFmil_t *n)
                             "MIL printer screwed up.");
     }
 
-    milprintf (types[n->sem.t]);
+    milprintf ("%s", types[n->sem.t]);
 }
 
 /**
