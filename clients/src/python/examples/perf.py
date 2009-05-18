@@ -9,17 +9,20 @@ try:
     import monetdb.sql
 except ImportError:
     # running examples from development tree
-    import sys, os
+    import sys
+    import os
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)
     import monetdb.sql
 
-def query():
+for i in (10, 100, 1000, 10000):
+    t = time.time()
     x = monetdb.sql.connect()
     c = x.cursor()
-    c.arraysize=1000
-    c.execute('select * from tables, tables, tables')
+    c.arraysize=i
+    c.execute('select * from tables, tables, tables, tables')
     results = c.fetchall()
+    print i, time.time() - t
 
-import cProfile
-cProfile.run('query()')
+#import cProfile
+#cProfile.run('query()')

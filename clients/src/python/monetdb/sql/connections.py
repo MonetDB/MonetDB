@@ -8,9 +8,11 @@ class Connection:
     """MonetDB Connection Object"""
     default_cursor = cursors.Cursor
 
+
     def __init__(self, username="monetdb", password="monetdb", hostname="localhost", port=50000, database="demo"):
         self.mapi = mapi.Server()
         self.mapi.connect(hostname, port, username, password, database, language="sql")
+
 
     def close(self):
         """ Close the connection now (rather than whenever __del__ is
@@ -41,7 +43,9 @@ class Connection:
         """
 
         self.__mapi_check()
-        # TODO: implement
+        return self.execute('COMMIT')
+
+
 
     def rollback(self):
         """
@@ -54,8 +58,9 @@ class Connection:
         committing the changes first will cause an implicit
         rollback to be performed.
         """
-        pass
-        # TODO: implement
+        self.__mapi_check()
+        return self.execute('ROLLBACK')
+
 
     def cursor(self):
         """
@@ -66,14 +71,17 @@ class Connection:
         """
         return cursors.Cursor(self)
 
+
     def execute(self, query):
         """ use this for executing SQL queries """
         return self.command('s' + query + ';')
+
 
     def command(self, command):
         """ use this to send mapi commands """
         self.__mapi_check()
         return self.mapi.cmd(command)
+
 
     def __mapi_check(self):
         if not self.mapi:

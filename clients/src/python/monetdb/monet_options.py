@@ -15,7 +15,11 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-import sys, os, getopt, string, re
+import sys
+import os
+import getopt
+import string
+import re
 
 try:
     True
