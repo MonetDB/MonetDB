@@ -1094,18 +1094,21 @@ alter_statement:
   ;
 
 passwd_schema:
-  	WITH PASSWORD string	{ dlist * l = L();
-				  append_string(l, $3);
+  	WITH opt_encrypted PASSWORD string	{ dlist * l = L();
+				  append_string(l, $4);
 				  append_string(l, NULL);
+				  append_int(l, $2);
 				  $$ = l; }
   |	SET SCHEMA ident	{ dlist * l = L();
 				  append_string(l, NULL);
 				  append_string(l, $3);
+				  append_int(l, 0);
 				  $$ = l; }
-  |	WITH PASSWORD string SET SCHEMA ident	
+  |	WITH opt_encrypted PASSWORD string SET SCHEMA ident	
 				{ dlist * l = L();
-				  append_string(l, $3);
-				  append_string(l, $6);
+				  append_string(l, $4);
+				  append_string(l, $7);
+				  append_int(l, $2);
 				  $$ = l; }
   ;
 

@@ -948,7 +948,7 @@ drop_user(mvc *sql, char *user)
 }
 
 static stmt *
-alter_user(mvc *sql, char *user, char *passwd, char *schema)
+alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema)
 {
 	sqlid schema_id = 0;
 	if (backend_find_user(sql, user) < 0)
@@ -959,7 +959,7 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "ALTER USER: no such schema '%s'", schema);
 	}
-	sql_alter_user(sql, user, passwd, schema_id);
+	sql_alter_user(sql, user, passwd, enc, schema_id);
 
 	return stmt_none();
 }
@@ -2081,6 +2081,7 @@ schemas(mvc *sql, symbol *s)
 
 		ret = alter_user(sql, l->h->data.sval,	/* user */
 				 l->h->next->data.lval->h->data.sval,	/* passwd */
+				 l->h->next->data.lval->h->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				 l->h->next->data.lval->h->next->data.sval	/* schema */
 		    );
 		sql->type = Q_SCHEMA;
