@@ -1,6 +1,5 @@
 
 import datetime
-import types
 import time
 
 from monetdb.sql import type_codes
@@ -36,22 +35,11 @@ class Pythonizer:
             type_codes.LONGINT: int,
             type_codes.FLOAT: float,
 
-            # Mil Support  TODO: do we need this?
-            "str": str,
-            "bte": int,
-            "sht": int,
-            "int": int,
-            "lng": int,
-            "wrd": int,
-            "bit": bool,
-            "chr": str,
-            "flt": float,
-            "dbl": float,
-            "oid": str
         }
 
     def __string(self, data):
         """ returns a python string, chops of quotes """
+        # TODO: FIX THIS
         #str = str.replace("\\\\", "\\")
         #str = str.replace("\\'", "'")
         #str = str.replace('\\"', '"')

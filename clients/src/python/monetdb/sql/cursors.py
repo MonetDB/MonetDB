@@ -3,7 +3,7 @@ import logging
 
 from monetdb import mapi
 from monetdb.sql import converters
-from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, Error
+from monetdb.monetdb_exceptions import ProgrammingError, Error
 
 
 class Cursor:
@@ -302,7 +302,6 @@ class Cursor:
         result = self.__rows[self.rownumber-self.__offset:end-self.__offset]
         self.rownumber = min(end, len(self.__rows)+self.__offset)
 
-        # TODO: i'm not sure if this is 100% correct...
         while (end > self.rownumber) and self.nextset():
                 result += self.__rows[self.rownumber-self.__offset:end-self.__offset]
                 self.rownumber = min(end, len(self.__rows)+self.__offset)
@@ -415,7 +414,6 @@ class Cursor:
 
     def __store_result(self, block):
         """ parses the mapi result into a resultset"""
-        # TODO: clean up this method
 
         lines = block.split("\n")
         firstline = lines[0]
@@ -454,13 +452,12 @@ class Cursor:
                     elif identity == "name":
                         column_name = values
                     elif identity == "type":
-                        #type = [types.translate_type(v) for v in values]
                         type = values
                     elif identity == "length":
-                        #TODO: is length internal sizes or display sizes or something else?
-                        internal_size = internal_size = [int(x) for x in values]
+                        internal_size = [int(x) for x in values]
+                        display_size = internal_size
                     else:
-                        raise ProgrammingError("unknown header field")
+                        raise InterfaceError("unknown header field")
 
                     self.description = list(zip(column_name, type, display_size, internal_size, precision, scale, null_ok))
 
@@ -488,7 +485,6 @@ class Cursor:
                     self.__rows = rows
                     return
 
-        # TODO: check if this is okay
         elif firstline.startswith(mapi.MSG_QSCHEMA):
            if lines[1] == mapi.MSG_PROMPT:
                 self.__rows = []
@@ -498,8 +494,6 @@ class Cursor:
                 logging.debug("II schema finished")
                 return
 
-
-        # TODO: check if this is okay
         elif firstline.startswith(mapi.MSG_QUPDATE):
            if lines[1] == mapi.MSG_PROMPT:
                 self.__rows = []
@@ -509,11 +503,11 @@ class Cursor:
                 logging.debug("II update finished")
                 return
 
-
         elif firstline.startswith(mapi.MSG_ERROR):
-            raise DatabaseError(firstline[1:] + "\n" + self.query)
+            raise ProgrammingError(firstline[1:])
 
-        raise ProgrammingError(block)
+        # you are not supposed to be here
+        raise InterfaceError("Unknown state, %s" % block)
 
 
     def __parse_tuple(self, line):
@@ -523,20 +517,14 @@ class Cursor:
         # if the length of the tuple doesn't match, we do a manual split
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
-            #return [converters.monet2python(element.strip(), description[1]) for
-            #        (element, description) in zip(elements, self.description)]
             return [self.__pythonizer.convert(element.strip(), description[1]) for
                     (element, description) in zip(elements, self.description)]
 
-
-
+        # Ok, that didn't work. Manual split then...
+        # TODO: this will FAIL in case of " [ \",\"] " (comma in a substring in a substring)
         elements = []
         sub_str = False
         buff = ""
-
-        # since a string can contain , we can't split with ,
-        # TODO: maybe this can be MUCH faster using some other method...
-        # TODO: this will FAIL in case of " [ \",\"] " (comma in a substring in a substring)
         for char in line[1:-1]:
             if char == '"':
                 sub_str = not sub_str
@@ -548,12 +536,10 @@ class Cursor:
                 buff = buff + char
         elements.append(buff.strip())
 
-        if len(elements) != len(self.description):
-            raise ProgrammingError("length of data (%s) is not equal to length of description (%s)" % (len(elements), len(self.description)))
-
         #convert values to python types
         return [self.__pythonizer.convert(element, description[1]) for
                 (element, description) in zip(elements, self.description)]
+
 
         def scroll(self, value, mode='relative'):
             """Scroll the cursor in the result set to a new position according
@@ -572,5 +558,19 @@ class Cursor:
             scrollable cursors. The method may raise NotSupportedErrors to
             signal that a specific operation is not supported by the
             database (e.g. backward scrolling)."""
-            #TODO: implement
-            pass
+
+            self.__check_executed()
+            # TODO: finish this, megre with nextset()
+
+            if mode not in ['relative', 'absolute']:
+                raise ProgrammingError("unknown mode '%s'" % mode)
+
+            if mode == 'relative':
+                value = self.rownumber + value
+
+            if value > self.rowcount:
+                raise IndexError("value beyond length of resultset")
+
+
+
+

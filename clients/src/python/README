@@ -1,7 +1,7 @@
 
-These are the new native MonetDB python drivers. These drivers don't depend on
-any libraries, so you can run them out of the box. This driver is 100% python
-DBAPI complete.
+This is the native MonetDB python driver. These drivers don't depend on
+any libraries, so you can run them out of the box on any platform that supports
+python. This driver is 100% python DBAPI 2.0 complete.
 
 run:
 
@@ -10,7 +10,5 @@ run:
 to install this module. Check out the examples folder for an example how to use
 this module.
 
-Currently only 2.6 is supported, 3.0 is a work in progress. 2.5 support will be
-added if possible.
-
+Only python 2.6 and python 3.0 are supported.
 
