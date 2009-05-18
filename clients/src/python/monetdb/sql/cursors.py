@@ -1,7 +1,12 @@
 
 import logging
 
-from monetdb import mapi
+try:
+    from monetdb import mapi
+except SyntaxError:
+    # python 2.5 support
+    from monetdb import mapi25 as mapi
+
 from monetdb.sql import converters
 from monetdb.monetdb_exceptions import ProgrammingError, Error
 
