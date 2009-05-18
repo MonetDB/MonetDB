@@ -249,7 +249,6 @@ the next one.
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 mal_export int MCdefault;
 
-mal_export Client  MCgetClient   (void);
 mal_export Client  MCfindClient(oid user, str scen, bstream *fin, stream *fout);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
 mal_export void    MCinitClientThread(Client c);
@@ -383,33 +382,8 @@ If the number of clients becomes too large, we have to change the
 allocation and lookup scheme.
 
 Finding a client record is tricky when we are spawning threads 
-as co-workers. Then the processid is not the discriminator to
-find the client record. In addition, we use the output file
-descriptor also as discriminator.
+as co-workers. It is currently passed as an argument.
 @c
-Client MCgetClient()
-{
-	Client c;
-	MT_Id pid= MT_getpid();
-	Thread tid;
-
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->mypid == pid) return c;
-		else
-		if (c->fdout == GDKout) return c;
-
-	tid= THRget(THRgettid());
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->mythread == tid) return c;
-
-#ifdef MAL_CLIENT_DEBUG
-	/* we did not find the client record */
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->mythread) stream_printf(c->fdout,"client %d\n",c->mythread);
-#endif
-	return NULL;
-}
-
 
 Client MCfindClient(oid user, str scen, bstream *fin, stream *fout) 
 {
