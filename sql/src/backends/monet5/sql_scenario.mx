@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f sql_scenario
-@t SQL catalog management
+@t SQL catwalk management
 @a N. Nes, M.L. Kersten
 @+ SQL scenario
 The SQL scenario implementation is a derivative of the MAL session scenario.
@@ -34,8 +34,8 @@ phase of the scenario.
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG */
 
-sql5_export str SQLsession(str *ret);
-sql5_export str SQLsession2(str *ret);
+sql5_export str SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLprelude(void);
 sql5_export str SQLepilogue(void);
 
@@ -50,10 +50,9 @@ sql5_export str SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 sql5_export str SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str SQLinitEnvironment(int *ret);
-sql5_export str SQLstatement(int *ret, str *expr);
-sql5_export str SQLstatementOut(int *ret, str *expr, bit *output);
-sql5_export str SQLcompile(str *ret, str *expr);
+sql5_export str SQLinitEnvironment(Client cntxt);
+sql5_export str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLtrace(int *ret);
 sql5_export str SQLCacheRemove(Client c, str nme);
 
@@ -117,21 +116,25 @@ monet5_freecode(int clientid, backend_code code, backend_stack stk, int nr, char
 }
 
 str
-SQLsession(str *ret)
+SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *ret = (str*) getArgReference(stk, pci, 0);
 	str msg = MAL_SUCCEED;
 
-	msg = setScenario(MCgetClient(), "sql");
+	(void)mb;
+	msg = setScenario(cntxt, "sql");
 	*ret = 0;
 	return msg;
 }
 
 str
-SQLsession2(str *ret)
+SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *ret = (str*) getArgReference(stk, pci, 0);
 	str msg = MAL_SUCCEED;
 
-	msg = setScenario(MCgetClient(), "msql");
+	(void)mb;
+	msg = setScenario(cntxt, "msql");
 	*ret = 0;
 	return msg;
 }
@@ -442,10 +445,9 @@ A statement received internally is simply appended for
 execution
 @c
 str
-SQLinitEnvironment(int *ret)
+SQLinitEnvironment(Client cntxt)
 {
-	(void) ret;
-	return SQLinitClient(MCgetClient());
+	return SQLinitClient(cntxt);
 }
 @-
 The cache with plans should be regularly be refreshed.
@@ -496,7 +498,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 static str
-SQLstatementIntern(str *expr, str nme, int execute, bit output)
+SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 {
 	int err = 0;
 	mvc *o, *m;
@@ -505,7 +507,6 @@ SQLstatementIntern(str *expr, str nme, int execute, bit output)
 	buffer *b;
 	char *n;
 	str msg = MAL_SUCCEED;
-	Client c= MCgetClient();
 	backend *sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	size_t len = strlen(*expr);
 
@@ -513,7 +514,7 @@ SQLstatementIntern(str *expr, str nme, int execute, bit output)
 	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	if (!sql) {
-		msg = SQLinitEnvironment(&err);
+		msg = SQLinitEnvironment(c);
 		sql = ((backend *) c->state[MAL_SCENARIO_PARSER]);
 	}
 	if (msg)
@@ -649,25 +650,28 @@ endofcompile:
 }
 
 str
-SQLstatement(int *ret, str *expr)
+SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)ret;
-	return SQLstatementIntern(expr, "SQLstatement", TRUE, TRUE);
+	str *expr = (str*) getArgReference(stk, pci, 1);
+	bit output = TRUE;
+
+	(void)mb;
+	if (pci->argc == 3)
+ 		output = *(bit*) getArgReference(stk, pci, 2);
+
+	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output);
 }
 
 str
-SQLstatementOut(int *ret, str *expr, bit *output)
+SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)ret;
-	return SQLstatementIntern(expr, "SQLstatement", TRUE, *output);
-}
-
-str
-SQLcompile(str *ret, str *expr){
+	str *ret = (str*) getArgReference(stk, pci, 0);
+	str *expr = (str*) getArgReference(stk, pci, 1);
 	str msg;
 
+	(void)mb;
 	*ret = NULL;
-	msg = SQLstatementIntern(expr, "SQLcompile", FALSE, FALSE);
+	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
 		*ret= _strdup("SQLcompile");
 	return msg;

@@ -28,15 +28,15 @@ from the Version 4 code base.
 module batsql;
 module sql;
 
-command start():void 
+pattern start():void 
 address SQLsession
 comment "Switch to processing SQL statements";
 
-command start2():void
+pattern start2():void
 address SQLsession2
 comment "Switch to processing precompiled sql statements";
 
-command init():void
+pattern init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
@@ -45,12 +45,12 @@ address SQLcommit;
 pattern rollback():void
 address SQLrollback;
 
-command eval(cmd:str):void 
+pattern eval(cmd:str):void 
 address SQLstatement
 comment "Compile and execute a single sql statement";
 
-command eval(cmd:str, output:bit):void 
-address SQLstatementOut
+pattern eval(cmd:str, output:bit):void 
+address SQLstatement
 comment "Compile and execute a single sql statement (and optionaly send output on the output stream)";
 
 pattern assert{unsafe}(b:bit,msg:str):void
