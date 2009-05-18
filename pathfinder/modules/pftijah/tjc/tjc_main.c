@@ -196,7 +196,7 @@ int save2file(char* name, char *content) {
 	    stream_printf(GDKerr,"#! WARNING: cannot open output file: %s.\n",name);
 	    return 0;
 	}
-	fprintf(f,content);
+	fprintf(f,"%s",content);
 	fclose(f);
 	return 1;
 }

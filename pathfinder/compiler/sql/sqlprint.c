@@ -167,9 +167,9 @@ print_schema_information (FILE *f, PFsql_t *n)
     switch (L(n)->kind) {
         case sql_ser_type:
             fprintf (f, "-- ");
-            fprintf (f, L(L(n))->sem.atom.val.s);
+            fprintf (f, "%s", L(L(n))->sem.atom.val.s);
             fprintf (f, ": ");
-            fprintf (f, R(L(n))->sem.atom.val.s);
+            fprintf (f, "%s", R(L(n))->sem.atom.val.s);
             break;
         case sql_ser_comment:
             fprintf (f, "-- !! %s !!", L(n)->sem.comment.str);

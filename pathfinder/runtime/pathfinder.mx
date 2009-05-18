@@ -5060,7 +5060,7 @@ xquery_function_call(xquery_client *ctx,
             if (ret > 0) cur += ret;
 
             /* destroy working set */
-            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL(fun->sig->update));
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), "%s", PFstopMIL(fun->sig->update));
             mil[XQUERY_BUFSIZE - 1] = 0;
             if (ret > 0) cur += ret;
 

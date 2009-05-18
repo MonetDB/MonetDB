@@ -151,7 +151,7 @@ static unsigned no;
 static char     label[32];
 
 /** Print node with no content */
-#define L0(t)           snprintf (label, sizeof(label), (t))
+#define L0(t)           snprintf (label, sizeof(label), "%s", (t))
 /** Print node with single content */
 #define L2(l1, l2)     snprintf (label, sizeof(label), "%s [%s]",    (l1), (l2))
 /** Print node with two content parts */
