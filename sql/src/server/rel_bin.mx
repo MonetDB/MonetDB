@@ -2365,7 +2365,7 @@ table_update_array(sql_table *t, int *Len)
 	return updates;
 }
 
-static list * sql_update(mvc *sql, sql_table *t, stmt **updates);
+static list * sql_update(mvc *sql, sql_table *t, stmt **updates, int len);
 
 static stmt *
 update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int updcol)
@@ -2655,7 +2655,7 @@ sql_delete_set_Fkeys(mvc *sql, sql_key *k, stmt *rows, int action)
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 	
-	if ((l = sql_update(sql, t, new_updates)) == NULL) 
+	if ((l = sql_update(sql, t, new_updates, len)) == NULL) 
 		return NULL;
 	return stmt_list(l);
 }
@@ -2720,7 +2720,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_key *k, int updcol, stmt **updates, int a
 	stmt_destroy(ts);
 	stmt_destroy(fts);
 	
-	if ((l = sql_update(sql, t, new_updates)) == NULL) 
+	if ((l = sql_update(sql, t, new_updates, len)) == NULL) 
 		return NULL;
 	return stmt_list(l);
 }
@@ -2846,7 +2846,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 static stmt *
 join_idx_update(sql_idx * i, stmt **updates, int updcol)
 {
-	int nulls = 0, len;
+	int nulls = 0, len, j;
 	node *m, *o;
 	sql_idx *ri = ((sql_fkey *) i->key)->rkey->k.idx;
 	stmt *s = NULL, *rts = stmt_basetable(ri->t, ri->t->base.name), *ts;
@@ -2891,7 +2891,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 	for (m = i->columns->h, o = ri->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		stmt *upd = new_updates[c->c->colnr];
+		stmt *upd = stmt_dup(new_updates[c->c->colnr]);
 
 		if (nulls) /* remove nulls */
 			upd = stmt_semijoin(upd, stmt_dup(nnull)); 
@@ -2903,6 +2903,10 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 
 	stmt_destroy(ts);
 	stmt_destroy(rts);
+	for (j = 0; j < len; j++) 
+		if (new_updates[j])
+			stmt_destroy(new_updates[j]);
+	_DELETE(new_updates);
 	return s;
 }
 
@@ -2997,7 +3001,7 @@ sql_update_triggers(mvc *sql, sql_table *t, list *l, int time )
 
 
 static list *
-sql_update(mvc *sql, sql_table *t, stmt **updates)
+sql_update(mvc *sql, sql_table *t, stmt **updates, int len)
 {
 	node *n;
 	sql_subaggr *cnt;
@@ -3062,6 +3066,10 @@ sql_update(mvc *sql, sql_table *t, stmt **updates)
 /* cascade */
 	list_merge(l, cascades, (fdup)&stmt_dup);
 	list_destroy(cascades);
+	for (i = 0; i < len; i++) 
+		if (updates[i])
+			stmt_destroy(updates[i]);
+	_DELETE(updates);
 	return l;
 }
 
@@ -3093,7 +3101,7 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 		s = stmt_join(stmt_reverse(stmt_dup(tid)), stmt_dup(s), cmp_equal);
 		updates[c->colnr] = stmt_update_col( c, s);
 	}
-	l = sql_update(sql, t, updates);
+	l = sql_update(sql, t, updates, len);
 
 	s = stmt_aggr(stmt_dup(tid), NULL, sql_bind_aggr(sql->session->schema, "count", NULL), 1);
 	list_append(l, stmt_affected_rows(s));

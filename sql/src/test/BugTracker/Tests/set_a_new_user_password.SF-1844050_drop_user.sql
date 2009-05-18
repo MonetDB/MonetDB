@@ -1,6 +1,4 @@
-START TRANSACTION;
-
-DROP USER "voc2";
 DROP SCHEMA "voc2";
-
-commit;
+ALTER user "voc2" SET SCHEMA "sys";
+DROP SCHEMA "voc2";
+DROP USER "voc2";
