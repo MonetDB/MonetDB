@@ -644,11 +644,9 @@ end_element (void *ctx,
 /* Enable the following lines if your code generation produces
    code that collapses path steps and directly following text
    value lookups into a single path step. */
-#if 0
     /* copy the text value of a text node if it is the only child */
     if (buf[0] && pre == stack[level].pre)
         stack[level].value = xmlStrndup (buf, text_size);
-#endif
 
     flush_buffer ();
 
