@@ -1999,9 +1999,9 @@ childhandler(int sig, siginfo_t *si, void *unused)
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
-			/* wait a little (we're not in a hurry anyway, are we?) such
-			 * that the logger catches the messages (if any). */
-			MT_sleep_ms(400);
+			/* log everything that's still in the pipes */
+			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _streamout);
+			logFD(p->err, "ERR", p->dbname, (long long int)p->pid, _streamerr);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
