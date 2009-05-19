@@ -15,4 +15,10 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = mapilib mapiclient odbc HAVE_PERL?perl HAVE_PHP?php examples python
+MTSAFE
+
+headers_py = {
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/monetdb/sql
+	HEADERS = py
+	SOURCES = __init__.py connections.py converters.py cursors.py type_codes.py
+}
