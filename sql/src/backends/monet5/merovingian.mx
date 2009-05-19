@@ -695,7 +695,7 @@ forkMserver(str database, sabdb** stats, int force)
 			pthread_mutex_lock(&topdplock);
 			dp = NULL;
 			pdp = topdp;
-			while (pdp != NULL && pdp->next->pid != pid)
+			while (pdp != NULL && pdp->next != NULL && pdp->next->pid != pid)
 				pdp = pdp->next;
 
 			/* pdp is NULL when the database terminated somehow while
