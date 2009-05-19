@@ -451,7 +451,7 @@ str defaultPlan=
 	/* "crack," */
 	/* "selcrack," */
 	/* "sidcrack," */
-	/*"mergetable," */
+	"mergetable,"
 	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
 	/* "octopus,"*/

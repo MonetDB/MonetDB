@@ -407,6 +407,10 @@ pattern db_users() :bat[:str,:bat]
 address db_users_wrap
 comment "return table of users with sql scenario";
 
+pattern password(user:str) :str
+address db_password_wrap
+comment "return password hash of user";
+
 pattern dump_cache() :bat[:str,:bat]
 address dump_cache
 comment "dump the content of the query cache";
