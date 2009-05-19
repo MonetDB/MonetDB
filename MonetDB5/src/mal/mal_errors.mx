@@ -49,7 +49,7 @@ and maintenance.
 At a later stage we could introduce internationalization support, i.e.
 use a translation table where needed.
 @h
-#ifndef _MAL_ERRORS_
+#ifndef MAL_ERRORS
 #define MAL_ERRORS
 
 #define MANUAL_HELP "See documentation for details"
@@ -64,7 +64,7 @@ use a translation table where needed.
 #define SEMANTIC_PROGRAM_ERRORS "Program contains semantic errors."
 #define SEMANTIC_SIGNATURE_MISSING "Function signature missing."
 #define SEMANTIC_OPERATION_MISSING "Operation not found."
-#define SEMANTIC_TYPE_ERROR "Exlicit type required"
+#define SEMANTIC_TYPE_ERROR "Explicit type required"
 #define SEMANTIC_TYPE_MISMATCH "Type mismatch"
 
 #define INTERNAL_BAT_ACCESS "Internal error, can not access BAT."
@@ -137,5 +137,5 @@ use a translation table where needed.
 #define XML_ILLEGAL_CONTENT "Illegal content"
 
 #define GDK_EXCEPTION "GDK reported error."
-#endif /* _MAL_ERRORS */
+#endif /* MAL_ERRORS */
 @}
