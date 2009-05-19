@@ -93,7 +93,7 @@ char *
 LEXNAME(int Y)
 {
 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
-		return lexname[Y-TOK_ITERTEMP];
+		return lexname[(size_t)Y-TOK_ITERTEMP];
 	} else {
 		return "char";
 	}
