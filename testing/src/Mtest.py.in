@@ -2866,8 +2866,8 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"   #"GetMonetConfig(par['PACKAGE'],'--modpath')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
-        dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
-        dft['setXQUERY_LOGDIR']  = "'--set \"xquery_logdir='+env['XQUERY_LOGDIR']+'\"'"
+        dft['setSQL_LOGDIR']     = "''"
+        dft['setXQUERY_LOGDIR']  = "''"
         dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
@@ -3521,7 +3521,7 @@ def main(argv) :
 
         is_sql = par['PACKAGE'] == 'monetdb-sql'
         if not is_sql:
-            # for back-ward compatibility when par['PACKAGE'] is forced back to monetdb(|4|5)
+            # for backward compatibility when par['PACKAGE'] is forced back to monetdb(|4|5)
             # with packages that do not provide a <package>-config script, yet.
             am_init_sql = re.compile('AM_INIT_AUTOMAKE\("sql",.*,.*\)', re.MULTILINE)
             configure_ag = os.path.join(env['TSTSRCBASE'],"configure.ag")
