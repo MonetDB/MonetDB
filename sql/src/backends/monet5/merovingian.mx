@@ -160,16 +160,13 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 }
 
 static int _keepLogging = 1;
-static int _reopenLogfiles = 0;
+static FILE *_streamout = NULL;
+static FILE *_streamerr = NULL;
 static void
 logListener(void *x)
 {
 	dpair d = topdp;
 	dpair w;
-	FILE *fout, *ferr;
-	time_t now;
-	struct tm *tmp;
-	char mytime[20];
 	char equalouterr;
 	struct timeval tv;
 	fd_set readfds;
@@ -177,46 +174,16 @@ logListener(void *x)
 
 	(void)x;
 
-	/* the first entry in the list of d is where our output should go to */
-	fout = fdopen(d->out, "a");
-	if (d->out == d->err) {
-		ferr = fout;
+	equalouterr = 0;
+	if (_streamout == _streamerr)
 		equalouterr = 1;
-	} else {
-		ferr = fdopen(d->err, "a");
-		equalouterr = 0;
-	}
 
-	/* skip the first entry, we don't care about it in the normal loop */
+	/* the first entry in the list of d is where our output should go to
+	 * but we only use the streams, so we don't care about it in the
+	 * normal loop */
 	d = d->next;
 
 	do {
-		if (_reopenLogfiles == 1) {
-			_reopenLogfiles = 0;
-			/* close and reopen */
-			fprintf(fout, "%s END logger reopening stream\n", mytime);
-			fflush(fout);
-			fclose(fout);
-			if (equalouterr == 0) {
-				fprintf(ferr, "%s END logger reopening stream\n", mytime);
-				fflush(ferr);
-				fclose(ferr);
-			}
-			fout = fdopen(topdp->out, "a");
-			if (topdp->out == topdp->err) {
-				ferr = fout;
-				equalouterr = 1;
-			} else {
-				ferr = fdopen(topdp->err, "a");
-				equalouterr = 0;
-			}
-			fprintf(fout, "%s BEG logger reopening stream\n", mytime);
-			fflush(fout);
-			if (equalouterr == 0) {
-				fprintf(ferr, "%s BEG logger reopening stream\n", mytime);
-				fflush(ferr);
-			}
-		}
 		/* wait max 1 second, tradeoff between performance and being
 		 * able to catch up new logger streams */
 		tv.tv_sec = 1;
@@ -248,30 +215,20 @@ logListener(void *x)
 		w = d;
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0)
-				logFD(w->out, "MSG", w->dbname, (long long int)w->pid, fout);
+				logFD(w->out, "MSG", w->dbname,
+						(long long int)w->pid, _streamout);
 			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
-				logFD(w->err, "ERR", w->dbname, (long long int)w->pid, ferr);
+				logFD(w->err, "ERR", w->dbname,
+						(long long int)w->pid, _streamerr);
 			w = w->next;
 		}
 
 		pthread_mutex_unlock(&topdplock);
 
-		fflush(fout);
+		fflush(_streamout);
 		if (equalouterr == 0)
-			fflush(ferr);
+			fflush(_streamerr);
 	} while (_keepLogging != 0);
-
-	now = time(NULL);
-	tmp = localtime(&now);
-	strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-	fprintf(fout, "%s END logger closing stream\n", mytime);
-	fflush(fout);
-	fclose(fout);
-	if (equalouterr == 0) {
-		fprintf(ferr, "%s END logger closing stream\n", mytime);
-		fflush(ferr);
-		fclose(ferr);
-	}
 }
 
 int timeout = 0;
@@ -1944,16 +1901,34 @@ huphandler(int sig)
 
 	if (!isatty(topdp->out) || !isatty(topdp->err)) {
 		int t;
-		merlog("caught SIGHUP, reopening logfiles ...");
+		time_t now = time(NULL);
+		struct tm *tmp = localtime(&now);
+		char mytime[20];
+
+		/* have to make sure the logger is not logging anything */
+		pthread_mutex_lock(&topdplock);
+
+		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
+
 		if (msglog != NULL) {
 			/* reopen original file */
 			t = open(msglog, O_WRONLY | O_APPEND | O_CREAT,
 					S_IRUSR | S_IWUSR);
 			if (t == -1) {
-				fprintf(stderr, "unable to open '%s': %s\n",
-						msglog, strerror(errno));
+				fprintf(stderr, "forced to ignore SIGHUP: "
+						"unable to open '%s': %s\n", msglog, strerror(errno));
 			} else {
+				fprintf(_streamout, "%s END merovingian[" LLFMT "]: "
+						"caught SIGHUP, closing logfile\n",
+						mytime, (long long int)topdp->next->pid);
+				fflush(_streamout);
+				fclose(_streamout);
 				topdp->out = t;
+				_streamout = fdopen(topdp->out, "a");
+				fprintf(_streamout, "%s BEG merovingian[" LLFMT "]: "
+						"reopening logfile\n",
+						mytime, (long long int)topdp->next->pid);
+				fflush(_streamout);
 			}
 		}
 		if (errlog != NULL) {
@@ -1964,14 +1939,27 @@ huphandler(int sig)
 				t = open(errlog, O_WRONLY | O_APPEND | O_CREAT,
 						S_IRUSR | S_IWUSR);
 				if (t == -1) {
-					fprintf(stderr, "unable to open '%s': %s\n",
+					fprintf(stderr, "forced to ignore SIGHUP: "
+							"unable to open '%s': %s\n",
 							errlog, strerror(errno));
 				} else {
+					fprintf(_streamerr, "%s END merovingian[" LLFMT "]: "
+							"caught SIGHUP, closing logfile\n",
+							mytime, (long long int)topdp->next->pid);
+					fflush(_streamerr);
+					fclose(_streamerr);
 					topdp->err = t;
+					_streamerr = fdopen(topdp->err, "a");
+					fprintf(_streamerr, "%s BEG merovingian[" LLFMT "]: "
+							"reopening logfile\n",
+							mytime, (long long int)topdp->next->pid);
+					fflush(_streamerr);
 				}
 			}
 		}
-		_reopenLogfiles = 1;
+
+		/* logger go ahead! */
+		pthread_mutex_unlock(&topdplock);
 	} else {
 		merlog("caught SIGHUP, ignoring signal (logging to terminal)");
 	}
@@ -2317,6 +2305,13 @@ main(int argc, char *argv[])
 				return(1);
 			}
 		}
+	}
+
+	_streamout = fdopen(topdp->out, "a");
+	if (topdp->out == topdp->err) {
+		_streamerr = _streamout;
+	} else {
+		_streamerr = fdopen(topdp->err, "a");
 	}
 
 	d = topdp->next = alloca(sizeof(struct _dpair));
