@@ -707,15 +707,20 @@ forkMserver(str database, sabdb** stats, int force)
 						/* right, it's not there, but it's running */
 						return(newErr(
 									"database '%s' has inconsistent state "
-									"(running but dead)", database));
+									"(running but dead), review merovingian's "
+									"logfile for any peculiarities", database));
 					case SABdbCrashed:
 						return(newErr(
 									"database '%s' has crashed after starting, "
-									"manual intervention needed", database));
+									"manual intervention needed, "
+									"check merovingian's logfile for details",
+									database));
 					case SABdbInactive:
 						return(newErr(
 									"database '%s' appears to shut "
-									"itself down after starting", database));
+									"itself down after starting, "
+									"check merovingian's logfile for possible "
+									"hints", database));
 					default:
 						return(newErr("unknown state: %d", (int)(*stats)->state));
 				}
@@ -736,7 +741,9 @@ forkMserver(str database, sabdb** stats, int force)
 				case SABdbCrashed:
 					return(newErr(
 								"database '%s' has crashed after starting, "
-								"manual intervention needed", database));
+								"manual intervention needed, "
+								"check merovingian's logfile for details",
+								database));
 				case SABdbInactive:
 					/* due to GDK only locking once it has loaded all
 					 * its stuff, Sabaoth cannot "see" if a database is
@@ -747,7 +754,9 @@ forkMserver(str database, sabdb** stats, int force)
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
-								"itself down after starting", database));
+								"itself down after starting, "
+								"review merovingian's logfile for any "
+								"peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}
