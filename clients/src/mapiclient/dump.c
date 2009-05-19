@@ -832,9 +832,17 @@ int
 dump_tables(Mapi mid, stream *toConsole, int describe)
 {
 	const char *start = "START TRANSACTION";
-	const char *end = "COMMIT";
+	const char *end = "ROLLBACK";
+	const char *chkhash = "SELECT \"id\" "
+		"FROM \"sys\".\"functions\" "
+		"WHERE \"name\" = 'password_hash'";
+	const char *createhash = "CREATE FUNCTION \"password_hash\" (\"username\" STRING) "
+		"RETURNS STRING "
+		"EXTERNAL NAME \"sql\".\"password\"";
+	const char *drophash = "DROP FUNCTION \"password_hash\"";
 	const char *users1 = "SELECT \"name\", "
-		     "\"fullname\" "
+		     "\"fullname\", "
+		     "\"password_hash\"(\"name\") "
 		"FROM \"sys\".\"db_user_info\" "
 		"WHERE \"name\" <> 'monetdb' "
 		"ORDER BY \"name\"";
@@ -933,7 +941,9 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		") "
 		"SELECT * FROM \"tf_xYzzY\" ORDER BY \"tf_xYzzY\".\"id\"";
 	char *sname;
+	char *curschema = NULL;
 	MapiHdl hdl;
+	int create_hash_func = 0;
 	int rc = 0;
 
 	/* start a transaction for the dump */
@@ -983,6 +993,29 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 
 
 		/* dump users, part 1 */
+		/* first make sure the password_hash function exists */
+		if ((hdl = mapi_query(mid, chkhash)) == NULL || mapi_error(mid)) {
+			if (hdl) {
+				mapi_explain_query(hdl, stderr);
+				mapi_close_handle(hdl);
+			} else
+				mapi_explain(mid, stderr);
+			return 1;
+		}
+		create_hash_func = mapi_rows_affected(hdl) == 0;
+		mapi_close_handle(hdl);
+		if (create_hash_func) {
+			if ((hdl = mapi_query(mid, createhash)) == NULL || mapi_error(mid)) {
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+				} else
+					mapi_explain(mid, stderr);
+				return 1;
+			}
+			mapi_close_handle(hdl);
+		}
+
 		if ((hdl = mapi_query(mid, users1)) == NULL || mapi_error(mid)) {
 			if (hdl) {
 				mapi_explain_query(hdl, stderr);
@@ -995,10 +1028,11 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		while (mapi_fetch_row(hdl) != 0) {
 			char *uname = mapi_fetch_field(hdl, 0);
 			char *fullname = mapi_fetch_field(hdl, 1);
+			char *pwhash = mapi_fetch_field(hdl, 2);
 
 			stream_printf(toConsole, "CREATE USER ");
 			quoted_print(toConsole, uname);
-			stream_printf(toConsole, " WITH PASSWORD '<cannot be dumped>' NAME '%s' SCHEMA \"sys\";\n", fullname);
+			stream_printf(toConsole, " WITH ENCRYPTED PASSWORD '%s' NAME '%s' SCHEMA \"sys\";\n", pwhash, fullname);
 		}
 		if (mapi_error(mid)) {
 			mapi_explain_query(hdl, stderr);
@@ -1006,6 +1040,19 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			return 1;
 		}
 		mapi_close_handle(hdl);
+
+		/* clean up -- not strictly necessary due to ROLLBACK */
+		if (create_hash_func) {
+			if ((hdl = mapi_query(mid, drophash)) == NULL || mapi_error(mid)) {
+				if (hdl) {
+					mapi_explain_query(hdl, stderr);
+					mapi_close_handle(hdl);
+				} else
+					mapi_explain(mid, stderr);
+				return 1;
+			}
+			mapi_close_handle(hdl);
+		}
 
 		/* dump schemas */
 		if ((hdl = mapi_query(mid, schemas)) == NULL || mapi_error(mid)) {
@@ -1090,8 +1137,10 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		mapi_close_handle(hdl);
 	} else {
-		stream_printf(toConsole, "CREATE SCHEMA %s;\n", sname);
-		stream_printf(toConsole, "SET SCHEMA %s;\n", sname);
+		stream_printf(toConsole, "SET SCHEMA ");
+		quoted_print(toConsole, sname);
+		stream_printf(toConsole, ";\n");
+		curschema = strdup(sname);
 	}
 
 	/* dump sequences, part 1 */
@@ -1145,10 +1194,27 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 		}
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
+		if (curschema == NULL || strcmp(schema, curschema) != 0) {
+			if (curschema)
+				free(curschema);
+			curschema = strdup(schema);
+			stream_printf(toConsole, "SET SCHEMA ");
+			quoted_print(toConsole, curschema);
+			stream_printf(toConsole, ";\n");
+		}
 		if (func == NULL)
 			rc += dump_table(mid, schema, tname, toConsole, describe, describe);
 		else
 			stream_printf(toConsole, "%s\n", func);
+	}
+	if (curschema) {
+		if (sname == NULL || strcmp(sname, curschema) != 0) {
+			stream_printf(toConsole, "SET SCHEMA ");
+			quoted_print(toConsole, sname ? sname : "sys");
+			stream_printf(toConsole, ";\n");
+		}
+		free(curschema);
+		curschema = NULL;
 	}
 	if (mapi_error(mid)) {
 		mapi_explain_query(hdl, stderr);
