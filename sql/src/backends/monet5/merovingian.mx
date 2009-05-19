@@ -51,7 +51,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.9"
+#define MEROV_VERSION   "1.0"
 #define MEROV_PORT      50000
 
 @c
@@ -655,7 +655,7 @@ forkMserver(str database, sabdb** stats, int force)
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
 			/* give the database a break */
 			MT_sleep_ms(500);
-			/* stats cannot be NULL, as we don't allow starting not
+			/* stats cannot be NULL, as we don't allow starting non
 			 * existing databases, note that we need to run this loop at
 			 * least once not to leak */
 			SABAOTHfreeStatus(stats);
