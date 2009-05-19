@@ -121,6 +121,44 @@ typedef struct _threadlist {
 	struct _threadlist* next;
 }* threadlist;
 
+inline static void
+logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
+{
+	time_t now;
+	char buf[8096];
+	size_t len;
+	char *p, *q;
+	struct tm *tmp;
+	char mytime[20];
+	char writeident = 1;
+
+	do {
+		if ((len = read(fd, buf, 8095)) <= 0)
+			break;
+		buf[len] = '\0';
+		q = buf;
+		now = time(NULL);
+		tmp = localtime(&now);
+		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
+		while ((p = strchr(q, '\n')) != NULL) {
+			if (writeident == 1)
+				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+						mytime, type, dbname, pid);
+			*p = '\0';
+			fprintf(stream, "%s\n", q);
+			q = p + 1;
+			writeident = 1;
+		}
+		if ((size_t)(q - buf) < len) {
+			if (writeident == 1)
+				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+						mytime, type, dbname, pid);
+			writeident = 0;
+			fprintf(stream, "%s", q);
+		}
+	} while (len == 8095);
+}
+
 static int _keepLogging = 1;
 static int _reopenLogfiles = 0;
 static void
@@ -129,17 +167,13 @@ logListener(void *x)
 	dpair d = topdp;
 	dpair w;
 	FILE *fout, *ferr;
-	char buf[8096];
-	char *p, *q;
-	char mytime[20];
 	time_t now;
 	struct tm *tmp;
+	char mytime[20];
 	char equalouterr;
 	struct timeval tv;
 	fd_set readfds;
 	int nfds;
-	size_t len;
-	char writeident;
 
 	(void)x;
 
@@ -213,62 +247,10 @@ logListener(void *x)
 
 		w = d;
 		while (w != NULL) {
-			if (FD_ISSET(w->out, &readfds) != 0) {
-				writeident = 1;
-				do {
-					if ((len = read(w->out, buf, 8095)) <= 0)
-						break;
-					buf[len] = '\0';
-					q = buf;
-					now = time(NULL);
-					tmp = localtime(&now);
-					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-					while ((p = strchr(q, '\n')) != NULL) {
-						if (writeident == 1)
-							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						*p = '\0';
-						fprintf(fout, "%s\n", q);
-						q = p + 1;
-						writeident = 1;
-					}
-					if ((size_t)(q - buf) < len) {
-						if (writeident == 1)
-							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						writeident = 0;
-						fprintf(fout, "%s", q);
-					}
-				} while (len == 8095);
-			}
-			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0) {
-				writeident = 1;
-				do {
-					if ((len = read(w->err, buf, 8095)) <= 0)
-						break;
-					buf[len] = '\0';
-					q = buf;
-					now = time(NULL);
-					tmp = localtime(&now);
-					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-					while ((p = strchr(q, '\n')) != NULL) {
-						if (writeident == 1)
-							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						*p = '\0';
-						fprintf(ferr, "%s\n", q);
-						q = p + 1;
-						writeident = 1;
-					}
-					if ((size_t)(q - buf) < len) {
-						if (writeident == 1)
-							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						writeident = 0;
-						fprintf(ferr, "%s", q);
-					}
-				} while (len == 8095);
-			}
+			if (FD_ISSET(w->out, &readfds) != 0)
+				logFD(w->out, "MSG", w->dbname, (long long int)w->pid, fout);
+			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
+				logFD(w->err, "ERR", w->dbname, (long long int)w->pid, ferr);
 			w = w->next;
 		}
 
