@@ -93,7 +93,10 @@ char *
 LEXNAME(int Y)
 {
 	if (Y >= TOK_ITERTEMP && Y <= TOK_ANYNUM) {
-		return lexname[Y-TOK_ITERTEMP];
+		/* the cast shouldn't be necessary, but is there to
+		   avoid a spurious warning from gcc 4.3.2 on Fedora
+		   10 (at least) */
+		return lexname[(size_t)Y-TOK_ITERTEMP];
 	} else {
 		return "char";
 	}

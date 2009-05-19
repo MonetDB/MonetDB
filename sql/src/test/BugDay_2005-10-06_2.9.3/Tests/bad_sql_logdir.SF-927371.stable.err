@@ -10,7 +10,9 @@ stderr of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 # 23:25:50 >  echo sql.start(); clients.quit(); | mserver5 --set monet_prompt= --set sql_logdir=/xyz --dbinit=include sql;
 # 23:25:50 >  
 
-!mvc_init: unable to create system tables
+#warning: please don't forget to set your vault key!
+#(see /ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf)
+!ERROR: logger_new: cannot create directory for log file /xyz/demo/sql/log
 
 # 23:25:50 >  
 # 23:25:50 >  Done.

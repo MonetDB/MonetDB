@@ -51,7 +51,7 @@ as error to the connecting client.
 FIXME: actually implement that
 
 @h
-#define MEROV_VERSION   "0.9"
+#define MEROV_VERSION   "1.0"
 #define MEROV_PORT      50000
 
 @c
@@ -121,6 +121,44 @@ typedef struct _threadlist {
 	struct _threadlist* next;
 }* threadlist;
 
+inline static void
+logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
+{
+	time_t now;
+	char buf[8096];
+	size_t len;
+	char *p, *q;
+	struct tm *tmp;
+	char mytime[20];
+	char writeident = 1;
+
+	do {
+		if ((len = read(fd, buf, 8095)) <= 0)
+			break;
+		buf[len] = '\0';
+		q = buf;
+		now = time(NULL);
+		tmp = localtime(&now);
+		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
+		while ((p = strchr(q, '\n')) != NULL) {
+			if (writeident == 1)
+				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+						mytime, type, dbname, pid);
+			*p = '\0';
+			fprintf(stream, "%s\n", q);
+			q = p + 1;
+			writeident = 1;
+		}
+		if ((size_t)(q - buf) < len) {
+			if (writeident == 1)
+				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+						mytime, type, dbname, pid);
+			writeident = 0;
+			fprintf(stream, "%s", q);
+		}
+	} while (len == 8095);
+}
+
 static int _keepLogging = 1;
 static int _reopenLogfiles = 0;
 static void
@@ -129,17 +167,13 @@ logListener(void *x)
 	dpair d = topdp;
 	dpair w;
 	FILE *fout, *ferr;
-	char buf[8096];
-	char *p, *q;
-	char mytime[20];
 	time_t now;
 	struct tm *tmp;
+	char mytime[20];
 	char equalouterr;
 	struct timeval tv;
 	fd_set readfds;
 	int nfds;
-	size_t len;
-	char writeident;
 
 	(void)x;
 
@@ -213,62 +247,10 @@ logListener(void *x)
 
 		w = d;
 		while (w != NULL) {
-			if (FD_ISSET(w->out, &readfds) != 0) {
-				writeident = 1;
-				do {
-					if ((len = read(w->out, buf, 8095)) <= 0)
-						break;
-					buf[len] = '\0';
-					q = buf;
-					now = time(NULL);
-					tmp = localtime(&now);
-					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-					while ((p = strchr(q, '\n')) != NULL) {
-						if (writeident == 1)
-							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						*p = '\0';
-						fprintf(fout, "%s\n", q);
-						q = p + 1;
-						writeident = 1;
-					}
-					if ((size_t)(q - buf) < len) {
-						if (writeident == 1)
-							fprintf(fout, "%s MSG %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						writeident = 0;
-						fprintf(fout, "%s", q);
-					}
-				} while (len == 8095);
-			}
-			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0) {
-				writeident = 1;
-				do {
-					if ((len = read(w->err, buf, 8095)) <= 0)
-						break;
-					buf[len] = '\0';
-					q = buf;
-					now = time(NULL);
-					tmp = localtime(&now);
-					strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
-					while ((p = strchr(q, '\n')) != NULL) {
-						if (writeident == 1)
-							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						*p = '\0';
-						fprintf(ferr, "%s\n", q);
-						q = p + 1;
-						writeident = 1;
-					}
-					if ((size_t)(q - buf) < len) {
-						if (writeident == 1)
-							fprintf(ferr, "%s ERR %s[" LLFMT "]: ",
-									mytime, w->dbname, (long long int)w->pid);
-						writeident = 0;
-						fprintf(ferr, "%s", q);
-					}
-				} while (len == 8095);
-			}
+			if (FD_ISSET(w->out, &readfds) != 0)
+				logFD(w->out, "MSG", w->dbname, (long long int)w->pid, fout);
+			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
+				logFD(w->err, "ERR", w->dbname, (long long int)w->pid, ferr);
 			w = w->next;
 		}
 
@@ -655,7 +637,7 @@ forkMserver(str database, sabdb** stats, int force)
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
 			/* give the database a break */
 			MT_sleep_ms(500);
-			/* stats cannot be NULL, as we don't allow starting not
+			/* stats cannot be NULL, as we don't allow starting non
 			 * existing databases, note that we need to run this loop at
 			 * least once not to leak */
 			SABAOTHfreeStatus(stats);
@@ -695,7 +677,7 @@ forkMserver(str database, sabdb** stats, int force)
 			pthread_mutex_lock(&topdplock);
 			dp = NULL;
 			pdp = topdp;
-			while (pdp != NULL && pdp->next->pid != pid)
+			while (pdp != NULL && pdp->next != NULL && pdp->next->pid != pid)
 				pdp = pdp->next;
 
 			/* pdp is NULL when the database terminated somehow while
@@ -707,15 +689,20 @@ forkMserver(str database, sabdb** stats, int force)
 						/* right, it's not there, but it's running */
 						return(newErr(
 									"database '%s' has inconsistent state "
-									"(running but dead)", database));
+									"(running but dead), review merovingian's "
+									"logfile for any peculiarities", database));
 					case SABdbCrashed:
 						return(newErr(
 									"database '%s' has crashed after starting, "
-									"manual intervention needed", database));
+									"manual intervention needed, "
+									"check merovingian's logfile for details",
+									database));
 					case SABdbInactive:
 						return(newErr(
 									"database '%s' appears to shut "
-									"itself down after starting", database));
+									"itself down after starting, "
+									"check merovingian's logfile for possible "
+									"hints", database));
 					default:
 						return(newErr("unknown state: %d", (int)(*stats)->state));
 				}
@@ -736,7 +723,9 @@ forkMserver(str database, sabdb** stats, int force)
 				case SABdbCrashed:
 					return(newErr(
 								"database '%s' has crashed after starting, "
-								"manual intervention needed", database));
+								"manual intervention needed, "
+								"check merovingian's logfile for details",
+								database));
 				case SABdbInactive:
 					/* due to GDK only locking once it has loaded all
 					 * its stuff, Sabaoth cannot "see" if a database is
@@ -747,7 +736,9 @@ forkMserver(str database, sabdb** stats, int force)
 					return(newErr(
 								"database '%s' either needs a longer timeout "
 								"to start up, or appears to shut "
-								"itself down after starting", database));
+								"itself down after starting, "
+								"review merovingian's logfile for any "
+								"peculiarities", database));
 				default:
 					return(newErr("unknown state: %d", (int)(*stats)->state));
 			}

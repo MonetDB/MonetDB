@@ -202,8 +202,8 @@ OCTexitcode(MalBlkPtr mb, int conn,int varid){
 
 static MalBlkPtr 
 OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v2){
-	MalBlkPtr tm= NULL;
-	InstrPtr p, q,anchor=NULL;
+	MalBlkPtr tm = NULL;
+	InstrPtr p = NULL, q, anchor = NULL;
 	int varid= pci->argv[idx],i,j,top=0, fnd,tbd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
@@ -238,7 +238,12 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v
 			}
 	}
 foundit:
-	assert(fnd >= 0);
+	if ( p == NULL) {
+		if ( list ) GDKfree(list);
+		if ( needed) GDKfree(needed);
+		if ( alias) GDKfree(alias);
+		return 0;	/* bail out, internal error */
+	}
 
 	for (j = 0; j < p->argc; j++)
 		needed[getArg(p,j)]= 1;

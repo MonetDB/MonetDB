@@ -584,7 +584,7 @@ MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str
 MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	BAT *hn, *b, *bn=0;
-	str msg= MAL_SUCCEED;
+	str msg;
 
 	if ((hn = BATdescriptor(*hid)) == NULL) {
         throw(MAL, "mkey.bulk_rotate_xor_hash", RUNTIME_OBJECT_MISSING);
@@ -597,7 +597,7 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	if( (msg= CMDbulk_rotate_xor_hash(&bn,hn,nbits,b)) != MAL_SUCCEED){
 		BBPreleaseref(hn->batCacheid);
 		BBPreleaseref(b->batCacheid);
-        throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED);
+        throw(MAL, "mkey.bulk_rotate_xor_hash", OPERATION_FAILED "%s" msg);
 	}
 	BBPreleaseref(hn->batCacheid);
 	BBPreleaseref(b->batCacheid);
