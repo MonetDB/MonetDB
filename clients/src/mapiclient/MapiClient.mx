@@ -1101,6 +1101,7 @@ format_result(MapiHdl hdl)
 #ifdef HAVE_POPEN
 	if (saveFD) {
 		stream_close(toConsole);
+		stream_destroy(toConsole);
 		toConsole = saveFD;
 		toConsole_raw = saveFD_raw;
 	}
@@ -1553,16 +1554,20 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 						line[--length] = 0;
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
-					if (toConsole != stdout_stream && toConsole != stderr_stream)
+					if (toConsole != stdout_stream && toConsole != stderr_stream) {
 						stream_close(toConsole);
+						stream_destroy(toConsole);
+					}
 					if (*line == 0 || strcmp(line, "stdout") == 0)
 						toConsole = stdout_stream;
 					else if (strcmp(line, "stderr") == 0)
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
 						 stream_errnr(toConsole)) {
-						if (toConsole != NULL)
+						if (toConsole != NULL) {
 							stream_close(toConsole);
+							stream_destroy(toConsole);
+						}
 						toConsole = stdout_stream;
 						fprintf(stderr, "Cannot open %s\n", line);
 					}
@@ -2005,8 +2010,10 @@ main(int argc, char **argv)
 		toConsole = iconv_wstream(toConsole, encoding, "stdout");
 		if (toConsole == NULL || stream_errnr(toConsole)) {
 			fprintf(stderr, "%s: warning: cannot convert local character set %s to UTF-8\n", argv[0], encoding);
-			if (toConsole != NULL)
+			if (toConsole != NULL) {
 				stream_close(toConsole);
+				stream_destroy(toConsole);
+			}
 			toConsole = toConsole_raw;
 		}
 		stdout_stream = toConsole;
@@ -2135,7 +2142,9 @@ main(int argc, char **argv)
 		}
 #endif
 	}
-	mapi_disconnect(mid);
+	mapi_destroy(mid);
+	stream_destroy(stdout_stream);
+	stream_destroy(stderr_stream);
 	return c;
 }
 
