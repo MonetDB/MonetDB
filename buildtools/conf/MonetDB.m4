@@ -2412,8 +2412,17 @@ if test "x$have_openssl" != xno; then
 #if (OPENSSL_VERSION_NUMBER < ${req_openssl_ver}L)
 #error "Need more recent version than " OPENSSL_VERSION_TEXT
 #endif],
-      [AC_MSG_RESULT(OK)],
-      [AC_MSG_ERROR([not sufficient])]
+      [AC_MSG_RESULT([yes])],
+      [
+	  if test "x$have_openssl" = "xyes" ; then
+		  AC_MSG_ERROR([no, you need a more recent version of OpenSSL])
+	  else
+		  AC_MSG_RESULT([no])
+		  have_openssl=no
+		  OPENSSL_LIBS=""
+		  OPENSSL_INCS=""
+	  fi
+	  ]
 	)
 else
 	OPENSSL_LIBS=""
