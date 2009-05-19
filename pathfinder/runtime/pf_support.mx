@@ -8884,14 +8884,21 @@ CMDfn_deep_eq(BAT** resbat, BAT* ws, BAT* litem, BAT* lkind, BAT* ritem, BAT* rk
 @mil
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
-    # load all requested documents into the working set
-    var r := ws_opendoc(ws, item);
+    var ret_item := bat(void,oid).seqbase(0@0);
+    var ret_cont := bat(void,oid).seqbase(0@0);
 
-    # pick the according cont value for each document requested
-    var ret_cont := r.tmark(0@0);
-
-    # pick the according root-pre value for each document requested
-    var ret_item := r.hmark(0@0);
+    item@batloop() { # try to open the documents now so there are no atomicity issues
+        var res;
+        CATCH({res := ws_opendoc(ws,bat(void,str).append($t));});
+        if (not(isnil (res))) {
+            ret_item.append(res.reverse().fetch(0));
+            ret_cont.append(res.fetch(0));
+        }
+        # We discard the unavailable document entries.
+        #
+        # Without the compile time handling this properly
+        # the query generation might invalid execution plans.
+    }
 
     # return result as a BAT of BATs
     return new (void, BAT).append(ws)

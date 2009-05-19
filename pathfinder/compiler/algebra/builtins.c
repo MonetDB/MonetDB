@@ -5540,6 +5540,23 @@ PFbui_fn_doc (const PFla_op_t *loop,
 
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_doc);
 
+    *side_effects = error (
+                        *side_effects,
+                        attach (
+                            select_ (
+                                not (
+                                    fun_1to1 (
+                                        args[0].rel,
+                                        alg_fun_fn_doc_available,
+                                        col_res,
+                                        collist (col_item)),
+                                    col_item2,
+                                    col_res),
+                                col_item2),
+                            col_item3,
+                            lit_str ("err:FODC0005: Invalid argument to fn:doc")),
+                        col_item3);
+
     return (struct PFla_pair_t) {
         .rel  = project (roots (doc),
                          proj (col_iter, col_iter),
