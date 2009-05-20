@@ -28,5 +28,5 @@ scripts_py = {
 headers_py = {
 	DIR = $(prefix)/$(PYTHON_LIBDIR)/monetdb
 	HEADERS = py
-	SOURCES = __init__.py mapi.py mapi25.py monet_options.py monetdb_exceptions.py
+	SOURCES = __init__.py mapi.py mapi25.py monetdb_exceptions.py
 }
