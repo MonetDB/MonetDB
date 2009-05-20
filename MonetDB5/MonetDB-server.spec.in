@@ -28,9 +28,13 @@ URL: http://monetdb.cwi.nl/
 Source: http://downloads.sourceforge.net/monetdb/MonetDB5-server-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
+%{!?_with_raptor: %{!?_without_raptor: %define _with_raptor --with-raptor}}
+
 Requires(pre): shadow-utils
 BuildRequires: pcre-devel
+%if %{?_with_raptor:1}%{!?_with_raptor:0}
 BuildRequires: raptor-devel >= 1.4.16
+%endif
 BuildRequires: libxml2-devel
 
 # when we want MonetDB to run as system daemon, we need this
@@ -99,7 +103,8 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize=yes \
 	--enable-bits=%{bits} \
 	%{?oid32:--enable-oid32} \
-	%{?comp_cc:CC="%{comp_cc}"}
+	%{?comp_cc:CC="%{comp_cc}"} \
+	%{?_with_raptor} %{?_without_raptor}
 
 make
 

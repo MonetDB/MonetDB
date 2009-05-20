@@ -23,7 +23,6 @@ INCLUDES = -I../../atoms -I../../kernel \
 MTSAFE
 
 lib__rdf = {
-	COND = HAVE_RAPTOR
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.mx rdf_shredder.mx
 	LIBS = ../../../mal/libmonetdb5 $(MONETDB_LIBS) -lbat -lstream \
@@ -34,14 +33,12 @@ lib__rdf = {
 }
 
 headers_rdf = {
-	COND = HAVE_RAPTOR
 	DIR = includedir/MonetDB5/rdf
 	SOURCES = rdf.mx rdf_shredder.mx
 	HEADERS = h
 }
 
 headers_mal = {
-	COND = HAVE_RAPTOR
 	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = rdf.mx
