@@ -83,15 +83,16 @@ def main(argv) :
     #fi = fileinput.FileInput()
     fi = sys.stdin
 
-    sys.stdout.write(s.prompt.encode('utf-8'))
+    prompt = '%s>' % language
+
+    sys.stdout.write(prompt.encode('utf-8'))
     line = fi.readline()
-    prompt = s.prompt
     if encoding != 'utf-8':
         prompt = unicode(prompt, 'utf-8').encode(encoding, 'replace')
     while line and line != "\q\n":
         if encoding != 'utf-8':
             line = unicode(line, encoding).encode('utf-8')
-        res = s.cmd(line)
+        res = s.cmd('s' + line)
         if encoding != 'utf-8':
             res = unicode(res, 'utf-8').encode(encoding, 'replace')
         print res
