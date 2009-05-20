@@ -421,12 +421,14 @@ AC_DEFUN([AM_MONETDB5],
 dnl check for monetdb5
 have_monetdb5=auto
 have_monetdb5_rdf=""
+have_monetdb5_xml=""
 MONETDB5_CFLAGS=""
 MONETDB5_LIBS=""
 MONETDB5_MODS=""
 MONETDB5_MOD_PATH=""
 MONETDB5_PREFIX="."
 MONETDB5_RDF_LIB=""
+MONETDB5_XML_LIB=""
 if test "x$1" = "x"; then
   MONETDB5_REQUIRED_VERSION="5.11.0"
   #                          ^^^^^
@@ -463,6 +465,16 @@ if test "x$have_monetdb5" != xno; then
         ;;
       esac
       AC_MSG_RESULT($have_monetdb5_rdf: $MONETDB5_CONFIG --conds  says  $have_monetdb5_raptor)
+      AC_MSG_CHECKING(whether MonetDB5 was compiled with lib xml2 available, and hence provides XML support)
+      have_monetdb5_libxml2="`$MONETDB5_CONFIG --conds | grep '^HAVE_LIBXML2='`"
+      case "$have_monetdb5_libxml2" in
+      'HAVE_LIBXML2=#')
+        have_monetdb5_xml=yes
+        AC_DEFINE(HAVE_MONETDB5_XML, 1, [Define if MonetDB5 was compiled with lib xml2 available, and hence provides XML support (i.e., module xml)])
+        MONETDB5_XML_LIB="-l_xml"
+        ;;
+      esac
+      AC_MSG_RESULT($have_monetdb5_xml: $MONETDB5_CONFIG --conds  says  $have_monetdb5_libxml2)
     else
       have_monetdb5=no
       AC_MSG_RESULT($have_monetdb5: found only version $MONETDB5_VERSION)
@@ -512,8 +524,10 @@ AC_SUBST(MONETDB5_MOD_PATH)
 AC_SUBST(MONETDB5_PREFIX)
 AC_SUBST(MONETDB5_VERSION)
 AC_SUBST(MONETDB5_RDF_LIB)
+AC_SUBST(MONETDB5_XML_LIB)
 AM_CONDITIONAL(HAVE_MONETDB5,test x$have_monetdb5 = xyes)
 AM_CONDITIONAL(HAVE_MONETDB5_RDF,test x$have_monetdb5_rdf = xyes)
+AM_CONDITIONAL(HAVE_MONETDB5_XML,test x$have_monetdb5_xml = xyes)
 ]) dnl AC_DEFUN AM_MONETDB5
 
 AC_DEFUN([AM_MONETDB_LINUX_DIST],

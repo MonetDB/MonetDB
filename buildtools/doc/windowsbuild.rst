@@ -726,6 +726,9 @@ available.  The following parameters are possible:
   and installed;
 - ``HAVE_MONETDB5=1`` - for sql and pathfinder: MonetDB5 was compiled
   and installed;
+- ``HAVE_MONETDB5_XML=1`` - for sql and pathfinder: MonetDB5 was compiled
+  with the xml2 library available (HAVE_LIBXML2=1), and hence provides XML
+  support (i.e., module xml);
 - ``HAVE_MONETDB5_RDF=1`` - for sql and pathfinder: MonetDB5 was compiled
   with the raptor library available (HAVE_RAPTOR=1), and hence provides RDF
   support (i.e., module rdf);
