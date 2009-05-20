@@ -88,14 +88,30 @@ class MonetDBConnection
       @protocol = server_challenge.split(':')[2].to_i
       @supported_auth_types = server_challenge.split(':')[3].split(',')
       @server_endianness = server_challenge.split(':')[4]
-      reply = build_auth_string(@auth_type, salt, @database)
+      if @protocol == 9
+        @pwhash = server_challenge.split(':')[5]
+      end
     end
+    
+    # The server supports only RIPMED168 or crypt as an authentication hash function, but the driver does not.
+    if @supported_auth_types.length == 1
+      auth = @supported_auth_types[0]
+      if auth.upcase == "RIPEMD160" or auth.upcase == "CRYPT"
+        raise MonetDBConnectionError, auth.upcase + " " + ": algorithm not supported by ruby-monetdb."
+      end
+    end
+    
     
     # If the server protocol version is not 8: abort and notify the user.
     if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
       raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
+    
+    elsif mapi_proto_v8?
+      reply = build_auth_string_v8(@auth_type, salt, @database)
+    elsif mapi_proto_v9?
+      reply = build_auth_string_v9(@auth_type, salt, @database)
     end
-       
+             
     if @socket != nil
       @connection_established = true
 
@@ -175,18 +191,61 @@ class MonetDBConnection
   end
   
   #
-  # Builds and authentication string given the parameters submitted by the user.
+  # Builds and authentication string given the parameters submitted by the user (MAPI protocol v8).
   # 
-  def build_auth_string(auth_type, salt, db_name)
-    
+  def build_auth_string_v8(auth_type, salt, db_name)
     # seed = password + salt
     if (auth_type.upcase == "MD5" or auth_type.upcase == "SHA1") and @supported_auth_types.include?(auth_type.upcase)
       auth_type = auth_type.upcase
-      digest = Hasher.new(auth_type, @user+salt)
+      digest = Hasher.new(auth_type, @passwd+salt)
       hashsum = digest.hashsum
     elsif auth_type.downcase == "plain" or not  @supported_auth_types.include?(auth_type.upcase)
       auth_type = 'plain'
-      hashsum = @user + salt
+      hashsum = @passwd + salt
+    elsif auth_type.downcase == "crypt"
+      auth_type =  @supported_auth_types[@supported_auth_types.index(auth_type)+1]
+      $stderr.print "The selected hashing algorithm is not supported by the Ruby driver. #{auth_type} will be used instead."
+      digest = Hasher.new(auth_type, @passwd+salt)
+      hashsum = digest.hashsum
+    else
+      # The user selected an auth type not supported by the server.
+      raise MonetDBConnectionError, "#{auth_type} not supported by the server. Please choose one from #{@supported_auth_types}"
+      
+    end    
+    # Build the reply message with header
+    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name 
+  end
+
+  #
+  # Builds and authentication string given the parameters submitted by the user (MAPI protocol v9).
+  # 
+  def build_auth_string_v9(auth_type, salt, db_name)
+    # seed = password + salt
+    if (auth_type.upcase == "MD5" or auth_type.upcase == "SHA1") and @supported_auth_types.include?(auth_type.upcase)
+      auth_type = auth_type.upcase
+      # Hash the password
+      pwhash = Hasher.new(@pwhash, @passwd)
+      
+      digest = Hasher.new(auth_type, pwhash.hashsum + salt)
+      hashsum = digest.hashsum
+        
+    elsif auth_type.downcase == "plain" or not  @supported_auth_types.include?(auth_type.upcase)
+      # Keep it for compatibility with merovingian
+      auth_type = 'plain'
+      hashsum = @passwd + salt
+    elsif @supported_auth_types.include?(auth_type.upcase)
+      if auth_type.upcase == "RIPEMD160"
+        auth_type =  @supported_auth_types[@supported_auth_types.index(auth_type)+1]
+        $stderr.print "The selected hashing algorithm is not supported by the Ruby driver. #{auth_type} will be used instead."
+      end
+      # Hash the password
+      pwhash = Hasher.new(@pwhash, @passwd)
+        
+      digest = Hasher.new(auth_type, pwhash.hashsum + salt)
+      hashsum = digest.hashsum  
+    else
+      # The user selected an auth type not supported by the server.
+      raise MonetDBConnectionError, "#{auth_type} not supported by the server. Please choose one from #{@supported_auth_types}"
     end    
     # Build the reply message with header
     reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name 
@@ -348,40 +407,57 @@ class MonetDBConnection
     end
   end
   
+  # Check which protocol is spoken by the server
+  def mapi_proto_v8?
+    if @protocol == 8
+      true
+    else
+      false
+    end
+  end
+  
+  def mapi_proto_v9?
+    if @protocol == 9
+      true
+    else
+      false
+    end
+  end
+  
 end
 
 
 # TOD: Handle the authentication procedure for protocols 8 and 9.
-class MonetDBAuthentication
+#class MonetDBAuthentication
   
-  attr_reader :server_challenge, :challenge_reply
+#  attr_reader :server_challenge, :challenge_reply
   
-  def initialize(proto = 8) :nodoc
-    @proto = proto
-  end
+#  def initialize(proto = 8) :nodoc
+#    @proto = proto
+#  end
   
   # Takes as input a server challenge and credentials and returns 
   # a response to autenticat to the mserver
-  def login(challenge = '', account = [])
-    @server_challenge = challenge
-    
-    if proto == 8
-      build_challenge_reply8(account)
-    elsif proto == 9
-      build_challenge_reply9(account)
-    end
-  end
+#  def login(challenge = '', account = [])
+#     @server_challenge = challenge
+#    
+#    if proto == 8
+#      build_challenge_reply8(account)
+#    elsif proto == 9
+#      build_challenge_reply9(account)
+#    end
+#  end
 
-  private
+#  private
   # Takes as imput a server challenge and credentials and returns 
   # a response to autenticat to mserver with MAPI protocol 8
-  def build_challenge_reply8(account = [])
-    @challenge_reply = ''
-  end
+#  def build_challenge_reply8(account = [])
+#    @challenge_reply = ''
+#  end
   
   # Takes as imput a server challenge and credentials and returns 
   # a response to autenticat to mserver with MAPI protocol 9
-  def build_challenge_reply9(account = [])
-    @challenge_reply = ''
-  end
-end
+#  def build_challenge_reply9(account = [])
+#    @challenge_reply = ''
+#  end
+#end

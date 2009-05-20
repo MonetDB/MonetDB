@@ -32,7 +32,7 @@ except ImportError:
     import monetdb.sql
 
 
-x = monetdb.sql.connect(database='python')
+x = monetdb.sql.connect(database='ruby')
 c = x.cursor()
 
 # some basic query

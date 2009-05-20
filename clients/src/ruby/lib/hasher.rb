@@ -17,6 +17,7 @@
 
 require 'digest/md5'
 require 'digest/sha1'
+require 'digest/sha2' 
 
 class Hasher
 	# Constructor
@@ -25,8 +26,12 @@ class Hasher
 	def initialize(method, pwd)
 		if (method.upcase == "SHA1")
 			@hashfunc = Digest::SHA1.new
-			@hashname = "SHA1"
+			@hashname = method.upcase
+		elsif (method.upcase == "SHA256" or method.upcase == "SHA384" or method.upcase == "SHA512")
+		  @hashfunc = Digest::SHA2.new
+		  @hashname = method.upcase
 		else
+		  # default to MD5
 			@hashfunc = Digest::MD5.new
 			@hashname = "MD5"
 		end
