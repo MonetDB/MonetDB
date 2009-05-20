@@ -10,9 +10,10 @@ stderr of test 'unuseable_doc-available.SF-2791704` in directory 'tests/BugTrack
 # 20:29:58 >  mclient -lxquery -fxml -umonetdb -Pmonetdb --host=join --port=36696 unuseable_doc-available.SF-2791704.xq
 # 20:29:58 >  
 
-MAPI  = monetdb@join:36696
+MAPI  = monetdb@join:34500
 QUERY = if (doc-available("auctionG.xml")) then exists(doc("not-existent.xml")) else 42
-ERROR = !ERROR: err:FODC0005: Invalid argument to fn:doc
+ERROR = !ERROR: err:FODC0002, Error retrieving resource (no such document "not-existent.xml").
+
 
 # 20:29:58 >  
 # 20:29:58 >  Done.

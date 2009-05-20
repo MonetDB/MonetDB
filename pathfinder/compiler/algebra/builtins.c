@@ -5536,26 +5536,49 @@ PFbui_fn_doc (const PFla_op_t *loop,
               PFla_op_t **side_effects,
               struct PFla_pair_t *args)
 {
-    (void) loop; (void) ordering; (void) side_effects;
+    (void) loop; (void) ordering;
 
     PFla_op_t *doc = doc_tbl (args[0].rel, col_res, col_item, alg_dt_doc);
 
+    /* Check if all documents are available and trigger an error otherwise. */
+
+    /* check for the existence of the document ... */
+    PFla_op_t *error = project (
+                           select_ (
+                               not (
+                                   fun_1to1 (
+                                       args[0].rel,
+                                       alg_fun_fn_doc_available,
+                                       col_res,
+                                       collist (col_item)),
+                                   col_item2,
+                                   col_res),
+                               col_item2),
+                           proj (col_item, col_item));
+
+    /* ... stitch together a meaningful error message ... */
+    error = fun_1to1 (
+                fun_1to1 (
+                    attach (
+                        attach (
+                            error,
+                            col_item2,
+                            lit_str ("err:FODC0002, Error retrieving resource"
+                                     " (no such document \"")),
+                        col_item3,
+                        lit_str ("\").")),
+                    alg_fun_fn_concat,
+                    col_res,
+                    collist (col_item2, col_item)),
+                alg_fun_fn_concat,
+                col_res1,
+                collist (col_res, col_item3));
+
+    /* ... and add an error check to the list of side effects */
     *side_effects = error (
                         *side_effects,
-                        attach (
-                            select_ (
-                                not (
-                                    fun_1to1 (
-                                        args[0].rel,
-                                        alg_fun_fn_doc_available,
-                                        col_res,
-                                        collist (col_item)),
-                                    col_item2,
-                                    col_res),
-                                col_item2),
-                            col_item3,
-                            lit_str ("err:FODC0005: Invalid argument to fn:doc")),
-                        col_item3);
+                        error,
+                        col_res1);
 
     return (struct PFla_pair_t) {
         .rel  = project (roots (doc),
