@@ -2401,7 +2401,6 @@ if test "x$have_openssl" != xno; then
 		CPPFLAGS="$save_CPPFLAGS"])
 fi
 if test "x$have_openssl" != xno; then
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 	dnl SHA-2 is implemented starting from version 0.9.8
 	req_openssl_ver=0x0090800f
 	AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
@@ -2418,12 +2417,13 @@ if test "x$have_openssl" != xno; then
 		  AC_MSG_ERROR([no, you need a more recent version of OpenSSL])
 	  else
 		  AC_MSG_RESULT([no])
-		  have_openssl=no
-		  OPENSSL_LIBS=""
-		  OPENSSL_INCS=""
 	  fi
+	  have_openssl=no
 	 ]
 	)
+fi
+if test "x$have_openssl" != xno; then
+	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 else
 	OPENSSL_LIBS=""
 	OPENSSL_INCS=""
