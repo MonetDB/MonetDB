@@ -267,7 +267,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int j, start, stop, threadcnt=0;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
-	*res = 1;	/* execute the block */
+	*res = 0;	/* execute the block */
 	*version = 0;
 
 	msg= OCTOPUSdiscover(cntxt);
@@ -281,7 +281,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		if (nrsea > 1) {
 			msg= OCTOPUSregister(cntxt,mb,p);
-			if ( msg && strstr(msg,"Function already defined remotely")==0 )
+			if ( msg && strstr(msg,"already defined on the remote site")==0 )
 				return msg;
 			threadcnt++;
 		}
@@ -292,6 +292,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( msg )
 		return msg;
 
+	*res =1;
 	/* if necessary increase the worker set */
 	/* DFLOWworkers(threadcnt); */
 	(void) threadcnt;
