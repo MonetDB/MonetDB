@@ -18,6 +18,6 @@ tid_pre.insert(1@0,8@0);
 tid_pre.insert(2@0,5@0);
 tid_pre.insert(3@0,10@0);
 
-var x := mergeindex(tid_pre, index, pre, 5);
+var x := mergeindex(tid_pre, index, pre, wrd(5));
 x.fetch(0).print();
 x.fetch(1).print();
