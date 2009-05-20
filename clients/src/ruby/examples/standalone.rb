@@ -7,9 +7,6 @@ db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1",
 # set type_cast=true to enable MonetDB to Ruby type mapping
 res = db.query("select * from tables;");
 
-
-#puts res.debug_columns_type
-
 puts "Number of rows returned: " + res.num_rows.to_s
 puts "Number of fields: " + res.num_fields.to_s
 
