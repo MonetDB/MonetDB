@@ -2449,7 +2449,7 @@ PROC _getTermDocCnt_@1_pre(BAT[oid,any] e_pre, BAT[void,int] e_size, BAT[oid,oid
 # where dLH(t) = likelihood of term t in doc d
 #
 
-PROC _score_LM(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
+PROC _score_LM(dbl q_tCnt, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
     e_tScores.left_div(e_size);
     e_tScores := [log](e_tScores);
@@ -2468,7 +2468,7 @@ PROC _score_LM(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 
-PROC _score_LMs(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
+PROC _score_LMs(dbl q_tCnt, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
     var tmp1 := c_lambda * c_tCnt / dbl(cSize);
     var tmp2 := dbl(1) - c_lambda;
     
@@ -2493,7 +2493,7 @@ PROC _score_LMs(dbl q_tCnt, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 
-PROC _score_NLLR(dbl q_tCnt, dbl qSize, int c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
+PROC _score_NLLR(dbl q_tCnt, dbl qSize, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size) : bat[oid,dbl] {
     var collFac := ((dbl(1) - c_lambda) / c_lambda) * cSize / dbl(c_tCnt);
     var q_tLH := q_tCnt / qSize;
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
@@ -2518,7 +2518,7 @@ PROC _score_NLLR(dbl q_tCnt, dbl qSize, int c_tCnt, int cSize, BAT[oid,int] e_tC
 # where cB       = tuning parameter b
 #
 
-PROC _score_OKAPI(dbl q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, int cNdoc, dbl cAvgDL) : bat[oid,dbl] {
+PROC _score_OKAPI(dbl q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, wrd cNdoc, dbl cAvgDL) : bat[oid,dbl] {
     
     # cIDF contains Robertson/Sparck-Jones relevance weight
     var cIDF := e_tCnt.count_wrd(); # df
@@ -3572,7 +3572,7 @@ PROC _getTermDocCnt(oid tid, BAT[oid,oid] e_pre, BAT[void,int] e_size, BAT[oid,s
 # documents if one or more terms have zero frequency in background-col
 # which should not happen
 
-PROC _score_LM(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
+PROC _score_LM(int q_tCnt, wrd qSize, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
     e_tScores.left_div(e_size);
     var tmp := e_tScores;
@@ -3593,7 +3593,7 @@ PROC _score_LM(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tCnt
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 
-PROC _score_LMs(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
+PROC _score_LMs(int q_tCnt, wrd qSize, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
     var tmp1 := cLambda * c_tCnt / dbl(cSize);
     var tmp2 := dbl(1) - cLambda;
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
@@ -3618,7 +3618,7 @@ PROC _score_LMs(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tCn
 # where cLH(t) = likelihood of term t in (background) collection c
 #
 
-PROC _score_NLLR(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
+PROC _score_NLLR(int q_tCnt, wrd qSize, wrd c_tCnt, wrd cSize, BAT[oid,int] e_tCnt, BAT[void,int] e_size, dbl cLambda) : bat[oid,dbl] {
     var collFac := ((dbl(1) - cLambda) / cLambda) * cSize / dbl(c_tCnt);
     var q_tLH := dbl(q_tCnt) / dbl(qSize);
     var e_tScores := e_tCnt.[dbl]().access(BAT_WRITE);
@@ -3643,7 +3643,7 @@ PROC _score_NLLR(int q_tCnt, wrd qSize, wrd c_tCnt, int cSize, BAT[oid,int] e_tC
 # where cB       = tuning parameter b
 #
 
-PROC _score_OKAPI(int q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, int cNdoc, dbl cAvgDL, dbl cK1, dbl cB) : bat[oid,dbl] {
+PROC _score_OKAPI(int q_tCnt, BAT[oid,int] e_tCnt, BAT[void,int] e_size, wrd cNdoc, dbl cAvgDL, dbl cK1, dbl cB) : bat[oid,dbl] {
     
     # cIDF contains Robertson/Sparck-Jones relevance weight
     var cIDF := e_tCnt.count_wrd(); # df
