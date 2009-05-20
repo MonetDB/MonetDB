@@ -2414,7 +2414,7 @@ if test "x$have_openssl" != xno; then
 #endif],
 	 [AC_MSG_RESULT([yes])],
 	 [
-	  if test "x$have_openssl" = "xyes" ; then
+	  if test "x$have_openssl" != "xauto" ; then
 		  AC_MSG_ERROR([no, you need a more recent version of OpenSSL])
 	  else
 		  AC_MSG_RESULT([no])
