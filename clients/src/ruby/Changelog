@@ -1,3 +1,13 @@
+* Mon 18 May 2009 15:22:31 CEST
+Fixed bugs that prevented the correct working of activerecords' migration;
+The activerecord connector now supports insertion, update and alter table operations;
+Type casting is working in activerecord;
+Added a rubygem and rakefile for activerecord-monetdb-adapter;
+Added a new usage example for activerecord to the README file;
+Added an example directory to the cvs tree;
+The driver now correctly works with merovingian.
+
+
 * Sat  9 May 2009 15:58:36 CEST
 Fixed bugs with the query processing in the standalone driver;
 Added INSERT and UPDATE methods in the activerecord connector.

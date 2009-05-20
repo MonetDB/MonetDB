@@ -18,10 +18,11 @@
 require 'MonetDB'
 
 db = MonetDB.new
-db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
+
+db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "ruby", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
-res = db.query("SELECT * from test;", type_cast = false)
+res = db.query("SELECT * FROM tables;")
 
 #puts res.debug_columns_type
 
@@ -37,9 +38,9 @@ puts "Number of fields: " + res.num_fields.to_s
 
 # Iterate over the record set and retrieve on row at a time
 #puts res.fetch
-#while row = res.fetch do
-#  printf "%s \n", row
-#end
+while row = res.fetch do
+  printf "%s \n", row
+end
 
 
 ###### Get all records and hash them by column name

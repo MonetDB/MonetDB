@@ -30,6 +30,7 @@ class MonetDBData < MonetDBStatement
 
   MONET_HEADER_OFFSET   = 2
 
+
   @@DEBUG               = false
  
   def initialize(connection, type_cast)
@@ -75,8 +76,9 @@ class MonetDBData < MonetDBStatement
     
     # server response to command
     is_final, chunk_size = @connection.recv_decode_hdr()
+    
     if chunk_size > 0
-      raise MonetDBCommandError
+        raise MonetDBCommandError, @connection.socket.recv(chunk_size)
     end
   
     bc = 0
@@ -117,7 +119,7 @@ class MonetDBData < MonetDBStatement
             
           end
         end
-      end
+     # end
     end
     
     # Store infromation regarding a table
@@ -125,6 +127,7 @@ class MonetDBData < MonetDBStatement
     first_rows.each do
       record_set << parse_tuples(row)
     end
+  end
       
     
     #reutrn the actual data
@@ -136,9 +139,9 @@ class MonetDBData < MonetDBStatement
     row_offset = @dataOffset # number of rows to retrieve per each block
     
     if row_count > 1
-    if @Q_TABLE_instance.query['type'] == Q_TABLE and @Q_TABLE_instance.query['id'] != ""
-      @connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + row_index.to_s + " " +  row_offset.to_s)).each do |msg|
-      #@connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + ((block * @dataCacheSize) + blockOffset).to_s + " " +  @dataCacheSize.to_s)).each do |msg|
+      if @Q_TABLE_instance.query['type'] == Q_TABLE and @Q_TABLE_instance.query['id'] != ""
+        @connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + row_index.to_s + " " +  row_offset.to_s)).each do |msg|
+          #@connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + ((block * @dataCacheSize) + blockOffset).to_s + " " +  @dataCacheSize.to_s)).each do |msg|
         @connection.socket.write(msg)
       end
     end
@@ -311,7 +314,7 @@ class MonetDBData < MonetDBStatement
         end
       end
       
-      processed_row << field
+      processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
       position += 1
     end
     return processed_row
