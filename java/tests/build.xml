@@ -103,6 +103,7 @@ All Rights Reserved.
     <antcall target="Test_Cautocommit" />
     <antcall target="Test_Clargequery" />
     <antcall target="Test_Cmanycon" />
+    <antcall target="Test_Cforkbomb" />
     <antcall target="Test_Creplysize" />
     <antcall target="Test_Csavepoints" />
     <antcall target="Test_Ctransaction" />
@@ -154,6 +155,12 @@ All Rights Reserved.
   <target name="Test_Cmanycon">
     <antcall target="test_class">
       <param name="test.class" value="Test_Cmanycon" />
+    </antcall>
+  </target>
+
+  <target name="Test_Cforkbomb">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Cforkbomb" />
     </antcall>
   </target>
 
