@@ -44,7 +44,7 @@ BuildRequires: MonetDB-devel >= 1.29
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
 %endif
 
-%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -105,12 +105,12 @@ rm -fr $RPM_BUILD_ROOT
 %{_bindir}/MkillUsers
 %{_bindir}/Mlog
 %{_bindir}/Mtimeout
-%dir %{python_sitearch}/MonetDBtesting
-%exclude %{python_sitearch}/MonetDBtesting/*.pyc
-%exclude %{python_sitearch}/MonetDBtesting/*.pyo
-%{python_sitearch}/MonetDBtesting/__init__.py
-%{python_sitearch}/MonetDBtesting/subprocess26.py
-%{python_sitearch}/MonetDBtesting/trace.py
+%dir %{python_sitelib}/MonetDBtesting
+%exclude %{python_sitelib}/MonetDBtesting/*.pyc
+%exclude %{python_sitelib}/MonetDBtesting/*.pyo
+%{python_sitelib}/MonetDBtesting/__init__.py
+%{python_sitelib}/MonetDBtesting/subprocess26.py
+%{python_sitelib}/MonetDBtesting/trace.py
 
 %changelog
 * Mon Jun 25 2007 Sjoerd Mullender <sjoerd@acm.org> - @VERSION@-1%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
