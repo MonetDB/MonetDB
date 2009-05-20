@@ -21,9 +21,9 @@ import struct
 from io import BytesIO
 
 try:
-  from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
+    from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 except ImportError:
-  from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
+    from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
 MAX_PACKAGE_LENGTH = 0xffff >> 1
 
@@ -147,29 +147,54 @@ class Server:
 
     def __challenge_response(self, challenge):
         """ generate a response to a mapi login challenge """
-        salt, identity, protocol, hashes, endian = challenge.split(':')
+        challenges = challenge.split(':')
+        salt, identity, protocol, hashes, endian = challenges[:5]
 
-        if protocol != "8":
-            raise NotSupportedError("We only speak protocol v8")
+        password = self.password
+
+        if protocol == '9':
+            algo = challenges[5]
+            if algo == 'SHA512':
+                import hashlib
+                password = hashlib.sha512(password).hexdigest()
+            elif algo == 'SHA384':
+                import hashlib
+                password = hashlib.sha384(password).hexdigest()
+            elif algo == 'SHA256':
+                import hashlib
+                password = hashlib.sha256(password).hexdigest()
+            elif algo == 'SHA224':
+                import hashlib
+                password = hashlib.sha224(password).hexdigest()
+            elif algo == 'SHA1':
+                import hashlib
+                password = hashlib.sha1(password).hexdigest()
+            elif algo == 'MD5':
+                import hashlib
+                password = hashlib.md5(password).hexdigest()
+            else:
+                raise NotSupportedError("The %s hash algorithm is not supported" % algo)
+        elif protocol != "8":
+            raise NotSupportedError("We only speak protocol v8 and v9")
 
         h = hashes.split(",")
         if "SHA1" in h:
             import hashlib
             s = hashlib.sha1()
-            s.update(self.password.encode())
+            s.update(password.encode())
             s.update(salt.encode())
             pwhash = "{SHA1}" + s.hexdigest()
         elif "MD5" in h:
             import hashlib
             m = hashlib.md5()
-            m.update(self.password)
+            m.update(password)
             m.update(salt)
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
             import crypt
-            pwhash = "{crypt}" + crypt.crypt((self.password+salt)[:8], salt[-2:])
+            pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
-            pwhash = "{plain}" + self.password + salt
+            pwhash = "{plain}" + password + salt
 
         return ":".join(["BIG", self.username, pwhash, self.language, self.database])
 
