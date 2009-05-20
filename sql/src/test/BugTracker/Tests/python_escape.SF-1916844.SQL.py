@@ -1,8 +1,8 @@
-import MonetSQLdb
+import monetdb.sql
 import os
 
-dbh = MonetSQLdb.Connection(dbname = os.environ['TSTDB'],
-                            port = int(os.environ['MAPIPORT']))
+dbh = monetdb.sql.Connection(database = os.environ['TSTDB'],
+                             port = int(os.environ['MAPIPORT']))
 
 cursor = dbh.cursor()
 

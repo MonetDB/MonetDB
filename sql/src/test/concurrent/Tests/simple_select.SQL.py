@@ -1,4 +1,4 @@
-import MonetSQLdb, sys, threading, os
+import monetdb.sql, sys, threading, os
 
 query = 'select 1,2;'
 
@@ -7,7 +7,7 @@ class Client(threading.Thread):
     def __init__(self, client):
         threading.Thread.__init__ (self)
         self.client = client
-        self.dbh = MonetSQLdb.Connection(port=int(os.getenv('MAPIPORT')),dbname=os.getenv('TSTDB'))
+        self.dbh = monetdb.sql.Connection(port=int(os.getenv('MAPIPORT')),database=os.getenv('TSTDB'))
 
     def run(self):
         cursor = self.dbh.cursor();
