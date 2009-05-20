@@ -36,6 +36,7 @@ class Pythonizer:
             type_codes.DECIMAL: int,
             type_codes.SMALLINT: int,
             type_codes.INT: int,
+            type_codes.WRD: int,
             type_codes.BIGINT: int,
             type_codes.SERIAL: int,
             type_codes.REAL: int,
@@ -45,6 +46,8 @@ class Pythonizer:
             type_codes.TIME: self.__time,
             type_codes.TIMESTAMP: self.__timestamp,
             type_codes.INTERVAL: self.__string, # TODO: check this
+            type_codes.MONTH_INTERVAL: self.__string, # TODO: check this
+            type_codes.SEC_INTERVAL: self.__string, # TODO: check this
             type_codes.TINYINT: int,
             type_codes.SHORTINT: int,
             type_codes.MEDIUMINT: int,

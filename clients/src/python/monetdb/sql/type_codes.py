@@ -37,6 +37,10 @@ TIME = 'time'                       # (T) time of day
 TIMESTAMP = 'timestamp'                  # (T) date concatenated with unique time
 INTERVAL = 'interval'                   # (Q) a temporal interval
 
+MONTH_INTERVAL = 'month_interval'
+SEC_INTERVAL = 'sec_interval'
+WRD = 'wrd'
+
 # Not on the website:
 TINYINT = 'tinyint'
 SHORTINT = 'shortint'
