@@ -38,6 +38,8 @@ BuildRequires: readline-devel, openssl-devel
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
 %{!?_with_unixODBC: %{!?_without_unixODBC: %define _with_unixODBC --with-unixodbc}}
 
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.29
 #                               ^^^^
@@ -65,6 +67,7 @@ Requires: perl, swig
 Requires: perl-devel
 %endif
 %endif
+Requires: python
 %if %{?_with_unixODBC:1}%{!?_with_unixODBC:0}
 Requires: unixODBC, unixODBC-devel
 %endif
@@ -105,6 +108,13 @@ BuildRequires: perl-devel
 %endif
 %endif
 %endif
+
+%package python
+Summary: MonetDB python interface
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: python
+BuildRequires: python
 
 %package tests
 Summary: MonetDB Client tests package
@@ -161,6 +171,15 @@ This package contains the files needed to use MonetDB from a Perl
 program.
 %endif
 
+%description python
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the files needed to use MonetDB from a Python
+program.
+
 %description tests
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -197,6 +216,10 @@ make
 rm -rf $RPM_BUILD_ROOT
 
 make install DESTDIR=$RPM_BUILD_ROOT
+if [ -d $RPM_BUILD_ROOT/usr/lib64 ]; then
+    mkdir -p $RPM_BUILD_ROOT/usr/lib
+    mv $RPM_BUILD_ROOT/usr/lib64/python* $RPM_BUILD_ROOT/usr/lib
+fi
 
 # cleanup stuff we don't want to install
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
@@ -249,6 +272,16 @@ rm -fr $RPM_BUILD_ROOT
 %dir %{_datadir}/MonetDB/perl
 %{_datadir}/MonetDB/perl/*
 %endif
+
+%files python
+%dir %{python_sitelib}/monetdb
+%{python_sitelib}/monetdb/*.py
+%{python_sitelib}/monetdb/*.pyc
+%{python_sitelib}/monetdb/*.pyo
+%dir %{python_sitelib}/monetdb/sql
+%{python_sitelib}/monetdb/sql/*.py
+%{python_sitelib}/monetdb/sql/*.pyc
+%{python_sitelib}/monetdb/sql/*.pyo
 
 %files tests
 %{_libdir}/MonetDB/Tests/*
