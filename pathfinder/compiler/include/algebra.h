@@ -82,24 +82,9 @@
 #define aat_qname       0x00000180 /**< algebra simple atomic type QName  */
 
 #ifdef HAVE_GEOXML
+/* geo xml type */
 #define aat_wkb         0x00000200 /**< algebra simple atomic type wkb  */
 #endif
-/*
-#define aat_unused1     0x00000200
-#define aat_unused2     0x00000400
-#define aat_unused3     0x00000800
-#define aat_unused4     0x00001000
-#define aat_unused5     0x00002000
-#define aat_unused6     0x00004000
-#define aat_unused7     0x00008000
-#define aat_unused8     0x00010000
-#define aat_unused9     0x00020000
-#define aat_unused10    0x00040000
-#define aat_unused11    0x00080000
-#define aat_unused12    0x01000000 */
-#define aat_unused13    0x02000000
-#define aat_unused14    0x04000000
-#define aat_unused15    0x08000000
 
 /* date time types */
 #define aat_dtime       0x00000400 /**< dateTime                    */
@@ -113,6 +98,10 @@
 #define aat_duration    0x00040000 /**< duration                    */
 #define aat_ymduration  0x00080000 /**< yearMonthDuration           */
 #define aat_dtduration  0x01000000 /**< dayTimeDuration             */
+
+#define aat_unused13    0x02000000
+#define aat_unused14    0x04000000
+#define aat_unused15    0x08000000
 
 /* node representation in MIL and SQL */
 #define aat_frag        0x00100000 /**< node fragment */
