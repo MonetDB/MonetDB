@@ -45,9 +45,8 @@
       @port = port
       @db_name = db_name
       @auth_type = auth_type
-      
       @connection = MonetDBConnection.new(user = @username, passwd = @password, lang = @lang, host = @host, port = @port)
-      @connection.real_connect(@db_name, @auth_type)
+      @connection.connect(@db_name, @auth_type)
     end
   
     # Send a <b> user submitted </b> query to the server and store the response

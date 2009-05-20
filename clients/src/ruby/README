@@ -2,7 +2,6 @@
 This directory contains the a ruby interface to monetdb5 
 written in pure ruby.
 
-
 lib/MonetDB.rb
 lib/MonetDBConnection.rb
 lib/MonetDBStatements.rb
@@ -16,54 +15,8 @@ ruby-monetdb-sql-0.1.gem: actual gem; enables to install the driver and the docu
 
 doc/: rubydoc in HTML format
 
-== ActiveRecord adapter ==
-Active Record connects business objects and database tables to create a persistable domain model where logic and data are presented in one wrapping. It‘s an implementation of the object-relational mapping (ORM) pattern.
-
-Required files:
-adapter/lib/active_record/monetdb_adapter.rb
-
-At the moment connection and SELECT queries are supported.
-
-Usage example follows:
-
-
-require 'active_record'  
-
-ActiveRecord::Base.establish_connection(  
-        :adapter => "monetdb",  
-        :host => "localhost",  
-        :database => "demo"  
-)
-
-# map the tables schema to a class
-class Tables < ActiveRecord::Base
-end
-
-# return the first result of the query SELECT * from tables
-puts Tables.find(:first)
-  
-
-
-
-== Rubygem ==
-
-The standalone ruby driver can be distributed as a ruby gem.
-A gem file is already available; however, it can be generated 
-starting from the ruby-monetdb-sql-0.1.gemspec file:
-
-$ gem build ruby-monetdb-sql-0.1.gemspec
-
-To install the file run the command:
-
-$ gem install ruby-monetdb-sql-0.1.gem
-
-Documentation in ri and html format will be generated and installed as well
-
 == Usage ==
-To use the driver import the 'MonetDB' class and 'rubygems' (in case you installed it using gems).
-
-
-* Processing Statements that Return a Result Set
+To use the standalone driver import the 'MonetDB' class and 'rubygems' (in case you installed it using gems).
 
 A typical sequence of events is as follows:
 Invoke query using the database handle to send the statement to the server and get back a result set object.
@@ -104,3 +57,85 @@ res.free
 db.close
 
 See lib/demo.rb and the MonetDBDatar class documentation for more examples.
+
+
+
+== ActiveRecord connector adapter ==
+Active Record connects business objects and database tables to create a persistable domain model where logic and data are presented in one wrapping. It‘s an implementation of the object-relational mapping (ORM) pattern.
+
+Required files:
+
+adapter/lib/active_record/monetdb_adapter.rb
+
+Usage example follows:
+require 'active_record'
+
+ActiveRecord::Base.logger = Logger.new(STDERR)
+ActiveRecord::Base.colorize_logging = true
+
+ActiveRecord::Base.establish_connection(
+        :adapter => "monetdb",
+        :host => "localhost",
+        :database => "demo"
+)
+
+# Create a new table
+class AddTests < ActiveRecord::Migration
+  def self.up
+    create_table :tests do |table|
+        table.column :name, :string
+        table.column :surname, :string
+    end
+  end
+
+  def self.down
+   drop_table :tests
+  end
+
+end
+
+AddTests.up
+
+# Migration: add a column name with a default value
+class AddAge < ActiveRecord::Migration 
+  def self.up
+    add_column :tests, :age, :smallint, :default => 18
+  end
+
+  def self.down
+    remove_column :tests, :age
+  end
+
+end
+
+class Test < ActiveRecord::Base
+end
+
+# Insert an entry in the table
+Test.create(:name => 'X', :surname => 'Y')
+
+# add a column
+AddAge.up
+
+# return the first result of the query SELECT * from tables
+row = Test.find(:first)
+printf "SELECT * from tests LIMIT 1:\n"
+printf "Name: %s, Surname: %s, Age: %s\n", row.name, row.surname, row.age
+
+# Drop the table
+AddTests.down
+
+== Rubygem ==
+
+The standalone ruby driver can be distributed as a ruby gem.
+A gem file is already available; however, it can be generated 
+starting from the ruby-monetdb-sql-0.1.gemspec file:
+
+$ gem build ruby-monetdb-sql-0.1.gemspec
+
+To install the file run the command:
+
+$ gem install ruby-monetdb-sql-0.1.gem
+
+Documentation in ri and html format will be generated and installed as well
+

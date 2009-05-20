@@ -1,5 +1,15 @@
+* implement PROTOCOL 9 login changes
+
 * improve activerecord driver
+
 * profiling and performance tuning
+
 * improve type conversion (do conversion "on demand" as in jdbc driver)
+
 * improve tests
+
 * code and documentation cleanup
+
+* fix syntax errors with ruby 1.9
+
+* OSM on rails demo

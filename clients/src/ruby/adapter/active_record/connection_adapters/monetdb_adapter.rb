@@ -26,15 +26,15 @@ require 'MonetDB'
 
 module ActiveRecord
   class Base
-      
     # Establishes a connection to the database that's used by all Active Record objects
     def self.monetdb_connection(config) 
     
       # include Mapi library
-      unless defined?(::MonetDB)
-        require 'MonetDB'
-      end	
-    
+      #unless defined?(::MonetDB)
+      #  require 'monetdb'
+      #end	
+      require_library_or_gem('MonetDB')
+      
       # extract connection parameters
       config 	= config.symbolize_keys
       host 	= config[:host] || "localhost"
@@ -56,9 +56,7 @@ module ActiveRecord
         database = ""
       end
      
-      #mid = Mapi::mapi_mapi(host, port, username, password, lang, database)
       dbh = MonetDB.new
-      #mid = dbh.connect(username, password, lang, host, port, database)
       ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database], config)
     end
  end
@@ -129,11 +127,9 @@ module ActiveRecord
   end
 
   class MonetDBAdapter < AbstractAdapter
-
     def initialize(connection, logger,   connection_options, config)
       super(connection, logger)
       @connection_options, @config = connection_options, config
-
       connect
     end
  
@@ -144,7 +140,7 @@ module ActiveRecord
     # Functions like rename_table, rename_column and 
     # change_column cannot be implemented in MonetDB.
     def supports_migrations?
-      true
+      false
     end
 
     # not sure yet about bigint
@@ -242,19 +238,11 @@ module ActiveRecord
       else
         sql << quote(default)
       end
-      sql += ';'
       hdl = execute(sql) 
-      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
- 	      #raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
-      #end 
     end
 
     def remove_index(table_name, options = {})
       hdl = execute("DROP INDEX #{index_name(table_name, options)}")
-      
-      #if( Mapi::mapi_close_handle(hdl) != Mapi::MOK) 
- 	#raise StandardError, "Unable to close query handle! "+Mapi::mapi_error_str(@connection) 
-  #    end 
     end
 
     # MonetDB does not support limits on certain data types
@@ -334,7 +322,8 @@ module ActiveRecord
         result << MonetDBColumn.new(col_name, col_default, col_type, col_nullable)
 
       end
-      # check that free has been correctly performed
+      
+      #  check that free has been correctly performed
       hdl.free
       
       return result
@@ -432,10 +421,11 @@ module ActiveRecord
 
     def execute(sql, name = nil)
       # This substitution is needed. 
-	    sql =  sql.gsub('!=', '<>')
+      sql =  sql.gsub('!=', '<>')
       sql += ';'
-        
-      hdl = @connection.query(sql)  
+      #log(sql, name) do
+         hdl = @connection.query(sql) 
+      #end
     end 
 
     # Begins the transaction.
@@ -464,7 +454,7 @@ module ActiveRecord
 	    # Ensures that the auto-generated id  value will not violate the primary key constraint.
 	    # comment out for production code(?)
 	    #make_sure_pk_works(table_name, nil)
-      "INSERT INTO #{quote_table_name(table_name)}"
+      #"INSERT INTO #{quote_table_name(table_name)}"
     end
    #=======END=OF=DATABASE=STATEMENTS=========#
 
@@ -473,7 +463,6 @@ module ActiveRecord
       # Returns an array of record hashes with the column names as keys and
       # column values as values.
       def select(sql, name = nil)
-        sql += ';'
         hdl = execute(sql,name) 
        
         fields = []
@@ -508,11 +497,11 @@ module ActiveRecord
 	    # primary key constraint. Read the comments of make_sure_pk_works
 	    # and documentation for further information.
 	    # comment out for production code(?)
-	      table_name = extract_table_name_from_insertion_query(sql)
+	      # table_name = extract_table_name_from_insertion_query(sql)
 	      # make_sure_pk_works(table_name,name)	
-	      
+	      puts sql
         hdl = execute(sql, name)
-        last_auto_generated_id = hdl.get_last_auto_generated_id
+        # last_auto_generated_id = hdl.get_last_auto_generated_id
       end
       
       # Some tests insert some tuples with the id values set. In other words, the sequence
