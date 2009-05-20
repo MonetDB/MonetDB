@@ -50,7 +50,7 @@ lib_algebra = {
                 algopt.c \
                 builtins.c \
                 core2alg.brg \
-                intro_rec_border.c \
+                intro_borders.c \
                 load_stats.c \
                 logical.c \
                 ordering.c \

@@ -78,7 +78,7 @@
 #include "algebra_cse.h"
 #include "planner.h"
 #include "physdebug.h"
-#include "intro_rec_border.h"
+#include "intro_borders.h"
 #include "milgen.h"       /* MIL command tree generation */
 #include "mil_dce.h"      /* dead MIL code elimination */
 #include "milprint.h"     /* create string representation of MIL tree */
@@ -126,7 +126,7 @@ static char *phases[] = {
     [17]  = "after the logical algebra tree has been rewritten/optimized",
     [18]  = "after the CSE on the logical algebra tree",
     [19]  = "after compiling logical algebra into the physical algebra (or SQL)",
-    [20]  = "after introducing recursion boundaries",
+    [20]  = "after introducing boundary operators",
     [21]  = "after compiling the physical algebra into MIL code",
     [22]  = "after the MIL program has been serialized"
 };
@@ -766,14 +766,14 @@ AFTER_CORE2ALG:
 
     STOP_POINT(19);
 
-    /* Extend the physical algebra with recursion boundaries
-       whenever a recursion occurs */
+    /* Extend the physical algebra with recursion and branch
+       boundaries whenever a recursion or branch occurs */
     tm = PFtimer_start ();
-    paroot = PFpa_intro_rec_borders (paroot);
+    paroot = PFpa_intro_borders (paroot);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("introduction of recursion boundaries:\t %s", PFtimer_str (tm));
+        PFlog ("introduction of boundary operators:\t %s", PFtimer_str (tm));
 
     STOP_POINT(20);
 

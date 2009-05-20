@@ -53,7 +53,7 @@ EXTRA_DIST = \
 	functions.h \
 	heuristic.h \
 	import.h \
-        intro_rec_border.h \
+        intro_borders.h \
 	la_proxy.h \
 	la_thetajoin.h \
 	logdebug.h \

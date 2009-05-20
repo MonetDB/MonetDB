@@ -49,6 +49,11 @@
 /** cartesian product */
 #define cross(a,b)           PFpa_cross ((a),(b))
 
+/** dependent cross product */
+#define dep_cross(a,b)       PFpa_dep_cross ((a),(b))
+/** dependent border indicator */
+#define dep_border(a)        PFpa_dep_border ((a))
+
 /** join that preserves the order of the first argument */
 #define leftjoin(a,b,c,d)    PFpa_leftjoin ((a), (b), (c), (d))
 

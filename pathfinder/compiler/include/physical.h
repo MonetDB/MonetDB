@@ -53,7 +53,9 @@ enum PFpa_op_kind_t {
     , pa_empty_tbl      =   3 /**< empty literal table */
     , pa_attach         =   4 /**< ColumnAttach */
     , pa_cross          =  10 /**< Cross */
-    , pa_leftjoin       =  11 /**< LeftJoin */
+    , pa_dep_cross      =  11 /**< dependent Cross product */
+    , pa_dep_border     =  12 /**< border of a dependent plan fragment */
+    , pa_leftjoin       =  13 /**< LeftJoin */
     , pa_eqjoin         =  14 /**< Generic join implementation */
     , pa_semijoin       =  15 /**< Semijoin implementation */
     , pa_thetajoin      =  16 /**< Thetajoin implementation */
@@ -463,6 +465,19 @@ PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
  * That is, the left operand is in the *outer* loop.
  */
 PFpa_op_t * PFpa_cross (const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * Cross product (Cartesian product) of two relations
+ * where the second argument is only evaluated if the first argument
+ * produces at least one tuple.
+ */
+PFpa_op_t * PFpa_dep_cross (const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * Border for dependent operator describing which operators
+ * lie in-/outside.
+ */
+PFpa_op_t * PFpa_dep_border (const PFpa_op_t *n);
 
 /**
  * LeftJoin: Equi-Join on two relations, preserving the ordering

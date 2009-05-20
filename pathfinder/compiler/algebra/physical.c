@@ -519,6 +519,36 @@ PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
 }
 
 /**
+ * Cross product (Cartesian product) of two relations
+ * where the second argument is only evaluated if the first argument
+ * produces at least one tuple.
+ */
+PFpa_op_t *
+PFpa_dep_cross (const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    /* the operator behaves like a cross product */
+    PFpa_op_t *ret = PFpa_cross (n1, n2);
+    ret->kind = pa_dep_cross;
+    ret->cost -= 2 * JOIN_COST;
+
+    return ret;
+}
+
+/**
+ * Border for dependent operator describing which operators
+ * lie in-/outside.
+ */
+PFpa_op_t *
+PFpa_dep_border (const PFpa_op_t *n)
+{
+    /* the operator behaves like a recursion border */
+    PFpa_op_t *ret = PFpa_rec_border (n);
+    ret->kind = pa_dep_border;
+
+    return ret;
+}
+
+/**
  * LeftJoin: Equi-Join of two relations. Preserves the ordering
  *           of the left operand.
  */

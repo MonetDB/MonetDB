@@ -347,6 +347,8 @@ static PFplanlist_t *
 plan_cross (const PFla_op_t *n)
 {
     PFplanlist_t  *ret  = new_planlist ();
+    bool           l_indep = true,
+                   r_indep = true;
 
     assert (n); assert (n->kind == la_cross);
     assert (L(n)); assert (L(n)->plans);
@@ -361,6 +363,31 @@ plan_cross (const PFla_op_t *n)
                                *(plan_t **) PFarray_at (L(n)->plans, r));
         }
 
+    /* check if the output is independent of the left side */
+    for (unsigned int i = 0; i < L(n)->schema.count; i++)
+        l_indep &= !PFprop_icol (n->prop, L(n)->schema.items[i].name);
+    /* check if the output is independent of the right side */
+    for (unsigned int i = 0; i < R(n)->schema.count; i++)
+        r_indep &= !PFprop_icol (n->prop, R(n)->schema.items[i].name);
+    
+    /* add plans with dependent cross products */
+    if (l_indep ||
+        L(n)->kind == la_distinct ||
+        L(n)->kind == la_rowid)
+        for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
+            for (unsigned int r = 0; r < PFarray_last (R(n)->plans); r++)
+                add_plan (ret,
+                          dep_cross (*(plan_t **) PFarray_at (L(n)->plans, l),
+                                     *(plan_t **) PFarray_at (R(n)->plans, r)));
+
+    if (r_indep ||
+        R(n)->kind == la_distinct ||
+        R(n)->kind == la_rowid)
+        for (unsigned int l = 0; l < PFarray_last (L(n)->plans); l++)
+            for (unsigned int r = 0; r < PFarray_last (R(n)->plans); r++)
+                add_plan (ret,
+                          dep_cross (*(plan_t **) PFarray_at (R(n)->plans, r),
+                                     *(plan_t **) PFarray_at (L(n)->plans, l)));
     return ret;
 }
 

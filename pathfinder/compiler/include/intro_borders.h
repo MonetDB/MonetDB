@@ -1,9 +1,9 @@
 /**
  * @file
  *
- * Introduce the borders of recursion bodies.
+ * Introduce the borders of recursion and branch bodies..
  * (This enables the MIL generation to detect expressions
- *  that are invariant to the recursion body.)
+ *  that are invariant to the recursion or branch body.)
  *
  * Copyright Notice:
  * -----------------
@@ -34,18 +34,16 @@
  * $Id$
  */
 
-#ifndef INTRO_REC_BORDER_H
-#define INTRO_REC_BORDER_H
+#ifndef INTRO_BORDERS_H
+#define INTRO_BORDERS_H
 
 #include "physical.h"
 
 /**
- * Introduce boundary operators for every recursion
- * such that the MIL generation detects expressions
- * that are invariant to the recursion body.
+ * Introduce boundary operators.
  */
-PFpa_op_t * PFpa_intro_rec_borders (PFpa_op_t *n);
+PFpa_op_t * PFpa_intro_borders (PFpa_op_t *n);
 
-#endif  /* INTRO_REC_BORDER_H */
+#endif  /* INTRO_BORDERS_H */
 
 /* vim:set shiftwidth=4 expandtab: */

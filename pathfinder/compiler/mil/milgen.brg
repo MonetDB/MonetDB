@@ -146,7 +146,9 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term empty_tbl      =   3
 %term attach         =   4
 %term cross          =  10
-%term leftjoin       =  11
+%term dep_cross      =  11
+%term dep_border     =  12
+%term leftjoin       =  13
 %term eqjoin         =  14
 %term semijoin       =  15
 %term thetajoin      =  16
@@ -226,10 +228,12 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 Query:    serialize (Side, Rel)                                    =   1 (10);
 Query:    serialize (Side, empty_tbl)                              =   2 (10);
 
-Rel:      lit_tbl                                                  =  10 (10);
-Rel:      empty_tbl                                                =  11 (10);
-Rel:      attach (Rel)                                             =  12 (10);
-Rel:      cross (Rel, Rel)                                         =  13 (10);
+Rel:      lit_tbl                                                  =   8 (10);
+Rel:      empty_tbl                                                =   9 (10);
+Rel:      attach (Rel)                                             =  10 (10);
+Rel:      cross (Rel, Rel)                                         =  11 (10);
+Rel:      dep_cross (Rel, Rel)                                     =  12 (10);
+Rel:      dep_border (Rel)                                         =  13 (10);
 Rel:      leftjoin (Rel, Rel)                                      =  14 (10);
 Rel:      eqjoin (Rel, Rel)                                        =  15 (10);
 Rel:      semijoin (Rel, Rel)                                      =  16 (10);
@@ -1806,6 +1810,53 @@ aggr_function (PFmil_t * (*op) (const PFmil_t *),
      }
 } /* fold) */
 
+/**
+ * @brief Translation of the cross product.
+ *
+ * @param p   The physical algebra tree node that we are to translate.
+ *            This function will actually fill @a p's environment
+ *            <code>p->env</code>.
+ */
+static void
+cross_worker (PFpa_op_t *p)
+{ /* fold( */
+    mvar_t *v  = new_var (1);
+    mvar_t *v1 = new_var (1);
+    mvar_t *v2 = new_var (1);
+
+    if (!env_count (L(p)->env) || !env_count (R(p)->env))
+        PFoops (OOPS_FATAL, "Cross does not cope with empty schemas");
+
+    /* The cross product of two relations with cardinality 1
+       requires no MIL code. */
+    if (PFprop_card (L(p)->prop) == 1 &&
+        PFprop_card (R(p)->prop) == 1) {
+        env_copy (p, L(p)->env);
+        env_copy (p, R(p)->env);
+    }
+    else {
+        /* evaluate the cross product and create two map relations */
+        execute (
+            assgn (var (v->name),
+                   cross (
+                       project (ANY_VAR(L(p)->env), nil ()),
+                       reverse (project (ANY_VAR(R(p)->env), nil ())))),
+            assgn (var (v1->name),
+                   reverse (mark (var (v->name), lit_oid (0)))),
+            assgn (var (v2->name),
+                   reverse (mark (reverse (var (v->name)),
+                                  lit_oid (0)))));
+
+        /* map all columns from the left and the right argument */
+        env_map (p, L(p)->env, v1);
+        env_map (p, R(p)->env, v2);
+    }
+
+    unpin (v, 1);
+    unpin (v1, 1);
+    unpin (v2, 1);
+} /* fold) */
+
 #define llscj(p)     llscj_worker ((p), false)
 #define llscj_dup(p) llscj_worker ((p), true)
 /**
@@ -2022,7 +2073,7 @@ llscj_worker (PFpa_op_t *p, bool duplicates)
 
 } /* fold) */
 
-#ifdef HAVE_PFTIJAH
+#ifdef HAVE_PFTIJAH /* fold( */
 
 /* PFTIJAH helper functions */
 
@@ -2118,7 +2169,7 @@ pft_unpack_pfop(PFpa_op_t* dest, mvar_t *pack,
 	}
 }
 
-#endif
+#endif /* fold) */
 
 /***********************************/
 /* fold) end reduce helper functions */
@@ -2576,6 +2627,60 @@ reduce3 (PFpa_op_t * p, int goalnt)
 } /* fold) */
 /* fold) */
 
+/* fold( reduce_dep_border() function implementing the dep_border operator */
+/*
+ * Alternative reducer function. Introduces code that is also used
+ * outside the branch before the conditional part is translated.
+ */
+static void
+reduce_dep_border (PFpa_op_t * p, int goalnt)
+{ /* fold( */
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpa_op_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+
+    assert (p);
+
+    /* determine rule that matches for this non-terminal */
+    rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
+
+    /* guard against too deep recursion */
+    PFrecursion_fence();
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert(rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFmilgen_nts[rule];
+    PFmilgen_kids (p, rule, kids);
+
+    /* skip the compilation for all operators until we reach
+       the dep_border operator */
+    switch (rule) {
+        /* Rel:      dep_border (Rel) */
+        case 13:
+            if (!p->env) {
+                /* translate sub-DAG starting at the border */
+                reduce (p, goalnt);
+                assert (p->env);
+            }
+            break;
+
+        default:
+            for (unsigned short i = 0; nts[i]; i++)
+                reduce_dep_border (kids[i], nts[i]);
+    }
+} /* fold) */
+/* fold) */
+
 /**
  * @brief Reducer function.
  *
@@ -2624,6 +2729,8 @@ reduce (PFpa_op_t * p, int goalnt)
         case 1:
         /* Query:    serialize (Side, empty_tbl) */
         case 2:
+        /* Rel:      dep_cross (Rel, Rel) */
+        case 12:
         /* Rel:      twig (Twig) */
         case 102:
         /* Fcns:     fcns (Twig, Fcns) */
@@ -4138,7 +4245,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
         } break; /* fold) */
 
         /* Rel:      lit_tbl */
-        case 10: /* fold( */
+        case 8: /* fold( */
             /* iterate over table columns */
             for (unsigned int col = 0; col < p->schema.count; col++)
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -4169,14 +4276,14 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             break; /* fold) */
 
         /* Rel:     empty_tbl */
-        case 11: /* fold( */
+        case 9: /* fold( */
             PFoops (OOPS_FATAL,
                     "empty sequence should never occur in MIL generation."
                     " (optimizations disabled?)");
             break; /* fold) */
 
         /* Rel:      attach (Rel) */
-        case 12: /* fold( */
+        case 10: /* fold( */
             /* copy all the existing variables */
             env_copy (p, L(p)->env);
 
@@ -4212,44 +4319,91 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             break; /* fold) */
 
         /* Rel:      cross (Rel, Rel) */
-        case 13: /* fold( */
+        case 11: /* fold( */
+            cross_worker (p);
+            break; /* fold) */
+
+        /* Rel:      dep_cross (Rel, Rel) */
+        case 12: /* fold( */
         {
-            mvar_t *v1 = new_var (1);
-            mvar_t *v2 = new_var (1);
+            PFmil_t *oldmilprog, *then_milprog, *else_milprog;
 
-            v = new_var (1);
-            if (!env_count (L(p)->env) || !env_count (R(p)->env))
-                PFoops (OOPS_FATAL, "Cross does not cope with empty schemas");
+            /* Generate code for left side (and the operators of the right
+               side that are also referenced outside the branch. */
+            execute (comment ("Evaluate left side of dep_cross."));
+            reduce (kids[0], nts[0]);
 
-            /* The cross product of two relations with cardinality 1
-               requires no MIL code. */
-            if (PFprop_card (L(p)->prop) == 1 &&
-                PFprop_card (R(p)->prop) == 1) {
-                env_copy (p, L(p)->env);
-                env_copy (p, R(p)->env);
+            execute (comment ("Evaluate the portion of the right side of "
+                              "dep_cross that is referenced multiple times."));
+            reduce_dep_border (kids[1], nts[1]);
+
+            /* save the current mil program */
+            oldmilprog = milprog;
+
+            /* create a new empty milprog for the then-branch */
+            milprog = nop ();
+
+            /* translate the independent body expression */
+            execute (comment ("Evaluate the independent portion"
+                              " of the right side of dep_cross."));
+            reduce (kids[1], nts[1]);
+
+            /* generate the code for the cross product */
+            execute (comment (" "), comment ("Build the cross product."));
+            cross_worker (p);
+
+            /* store the code for the then-branch */
+            then_milprog = milprog;
+
+            /* create a new empty milprog for the else-branch */
+            milprog = nop ();
+
+            /* For every variable binding the cross product generates
+               we also produce an alternative 'empty. translation. */
+            execute (comment ("Provide the empty result for all BATs."));
+            for (unsigned int col = 0; col < p->schema.count; col++) {
+                PFalg_simple_type_t ty = TYPE_MASK(p->schema.items[col].type);
+                for (PFalg_simple_type_t t = 1; t; t <<= 1) {
+                    if (t & ty) {
+                        /* find the variable name used in the then-branch */
+                        mvar_t *tmp  = env_mvar (p->env,
+                                                 p->schema.items[col].name,
+                                                 t & ty);
+
+                        /* assign an empty BAT to the variable */
+                        execute (
+                            assgn (var (tmp->name),
+                                   seqbase (new (type (mty_void),
+                                                 implty (t, ty)),
+                                            lit_oid (0))));
+                    }
+                }
             }
-            else {
-                /* evaluate the cross product and create two map relations */
-                execute (
-                    assgn (var (v->name),
-                           cross (
-                               project (ANY_VAR(L(p)->env), nil ()),
-                               reverse (project (ANY_VAR(R(p)->env), nil ())))),
-                    assgn (var (v1->name),
-                           reverse (mark (var (v->name), lit_oid (0)))),
-                    assgn (var (v2->name),
-                           reverse (mark (reverse (var (v->name)),
-                                          lit_oid (0)))));
 
-                /* map all columns from the left and the right argument */
-                env_map (p, L(p)->env, v1);
-                env_map (p, R(p)->env, v2);
-            }
+            /* store the code for the else-branch */
+            else_milprog = milprog;
 
-            unpin (v, 1);
-            unpin (v1, 1);
-            unpin (v2, 1);
+            /* make the old mil program the active one again */
+            milprog = oldmilprog;
+
+            /* Apply the check if the left side of the cross product
+               provides a row. */
+            execute (
+                comment (" "),
+                comment ("Don't evaluate the right side of dep_cross"),
+                comment ("if the left side already provides the empty"),
+                comment ("result."),
+                if_ (gt (count (ANY_VAR (L(p)->env)), lit_int (0)),
+                     then_milprog,
+                     else_milprog));
+
         }   break; /* fold) */
+
+        /* Rel:      dep_border (Rel) */
+        case 13: /* fold( */
+            /* copy the complete environment of the argument */
+            env_copy (p, L(p)->env);
+            break; /* fold) */
 
         /* Rel:      leftjoin (Rel, Rel) */
         case 14:
@@ -5480,7 +5634,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                op (VAR (L(p)->env, col1, aat_dec),
                                    VAR (L(p)->env, col2, aat_dec))));
                 }   break; /* fold) */
-                case alg_fun_geo_distance: /* fold( */
+                case alg_fun_geo_distance:
                 case alg_fun_geo_intersection: /* fold( */
                 {
                     PFalg_col_t col1, col2;

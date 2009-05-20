@@ -64,6 +64,8 @@ static char *a_id[]  = {
        * around the cross symbol.
        */
     , [pa_cross]           = "CROSS"            /* \"#00FFFF\" */
+    , [pa_dep_cross]       = "DEP CROSS"        /* \"#00FFFF\" */
+    , [pa_dep_border]      = "dep border"
     , [pa_leftjoin]        = "LEFTJOIN"         /* \"#00FF00\" */
     , [pa_eqjoin]          = "EQJOIN"           /* \"#00FF00\" */
     , [pa_semijoin]        = "SEMIJOIN"         /* \"#00FF00\" */
@@ -213,6 +215,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_empty_tbl]       = "\"#C0C0C0\""
         , [pa_attach]          = "\"#EEEEEE\""
         , [pa_cross]           = "\"#990000\""
+        , [pa_dep_cross]       = "\"#990000\""
+        , [pa_dep_border]      = "\"#990000\""
         , [pa_leftjoin]        = "\"#00FF00\""
         , [pa_eqjoin]          = "\"#00FF00\""
         , [pa_semijoin]        = "\"#00FF00\""
@@ -657,6 +661,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
 
         case pa_serialize:
         case pa_cross:
+        case pa_dep_cross:
+        case pa_dep_border:
         case pa_append_union:
         case pa_intersect:
         case pa_difference:

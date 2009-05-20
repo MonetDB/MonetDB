@@ -1,9 +1,9 @@
 /**
  * @file
  *
- * Introduce the borders of recursion bodies.
+ * Introduce the borders of recursion and branch bodies..
  * (This enables the MIL generation to detect expressions
- *  that are invariant to the recursion body.)
+ *  that are invariant to the recursion or branch body.)
  *
  * Copyright Notice:
  * -----------------
@@ -38,7 +38,7 @@
 #include "pf_config.h"
 #include "pathfinder.h"
 
-#include "intro_rec_border.h"
+#include "intro_borders.h"
 #include "alg_dag.h"
 
 #include <assert.h>
@@ -179,6 +179,10 @@ in_reset (PFpa_op_t *n)
 }
 
 /**
+ * Introduce boundary operators for every recursion
+ * such that the MIL generation detects expressions
+ * that are invariant to the recursion body.
+ *
  * Walk down the DAG and for each recursion operator
  * introduce border operators.
  *
@@ -253,14 +257,115 @@ introduce_rec_borders (PFpa_op_t *n)
 }
 
 /**
- * Introduce boundary operators for every recursion
- * such that the MIL generation detects expressions
- * that are invariant to the recursion body.
+ * Traverse the complete plan and annotate all operators
+ * except for the operators we want to evaluate in dependence.
+ */
+static void
+mark_plan (PFpa_op_t *n, PFpa_op_t *dep_op)
+{
+    if (pfIN(n))
+        return;
+    else
+        pfIN(n) = true;
+
+    if (n == dep_op) {
+        assert (n->kind == pa_dep_cross);
+
+        mark_plan (L(n), dep_op);
+
+        /* don't mark the right side */
+    }
+    else
+        for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
+            mark_plan (n->child[i], dep_op);
+}
+
+/**
+ * Worker for introduce_dep_borders.
+ */ 
+static void
+introduce_dep_borders_worker (PFpa_op_t *n)
+{
+    /* We mark only the independent operators as SEEN as we stop
+       as soon as we reach a boundary to an dependent operator. */
+    if (SEEN(n))
+        return;
+    else
+        SEEN(n) = true;
+
+    for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
+        if (!pfIN(n) && pfIN(n->child[i]) &&
+            n->child[i]->kind != pa_nil)
+            /* Introduce a border if a boundary is reached
+               and stop the traversal. */
+            n->child[i] = PFpa_dep_border (n->child[i]);
+        else
+            /* Recursively traverse the plan otherwise. */
+            introduce_dep_borders_worker (n->child[i]);
+
+    /* Rewrite dependent cross products that are nested in
+       the right side of another dependent cross into normal
+       cross products again. */
+    if (n->kind == pa_dep_cross)
+        /* we can replace the kind as the two cross
+           product operators behave exactly the same */
+        n->kind = pa_cross;
+}
+
+/**
+ * Traverse the query plan and find operators that
+ * introduce dependencies.
+ */
+static void
+introduce_dep_borders (PFpa_op_t *n, PFpa_op_t *root)
+{
+    if (SEEN(n))
+        return;
+    else
+        SEEN(n) = true;
+
+    /* Detect borders for this operator. */
+    if (n->kind == pa_dep_cross) {
+        /* Traverse the query plan for the left argument */
+        introduce_dep_borders (L(n), root);
+
+        /* Mark all operators that are reachable from the
+           root (except for the right side of n) to detect
+           which operators are referenced from both in-/outside. */
+        mark_plan (root, n);
+
+        /* Dependent cross products that have no operators
+           that can be evaluated in dependence are rewritten
+           into normal cross products again. */
+        if (pfIN(R(n)))
+            /* we can replace the kind as the two cross
+               product operators behave exactly the same */
+            n->kind = pa_cross;
+        else
+            /* Introduce the borders for this operator. */
+            introduce_dep_borders_worker (R(n));
+        in_reset (root);
+    }
+    else
+        for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
+            introduce_dep_borders (n->child[i], root);
+}
+
+/**
+ * Introduce boundary operators.
  */
 PFpa_op_t *
-PFpa_intro_rec_borders (PFpa_op_t *n)
+PFpa_intro_borders (PFpa_op_t *n)
 {
+    /* Introduce border operators
+       for recursions. */
     introduce_rec_borders (n);
     PFpa_dag_reset (n);
+
+    /* Introduce border operators
+       for dependency generating operators */
+    introduce_dep_borders (n, n);
+    PFpa_dag_reset (n);
+
     return n;
 }
