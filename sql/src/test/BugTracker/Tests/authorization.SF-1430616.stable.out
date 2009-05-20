@@ -29,8 +29,12 @@ Over..
 # 10:24:37 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.3.jar -h localhost -p 32887 -bmTests_src_test_BugTracker -f ../../../../../../..//scratch1/niels/sql/src/test/BugTracker/Tests/authorization.SF-1430616.sql
 # 10:24:37 >  
 
+CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA "sys";
 Operation successful
 
+SELECT users.name, users.fullname, schemas.name
+	FROM users, schemas
+	WHERE users.default_schema = schemas.id;
 +---------+---------------+--------+
 | name    | fullname      | name |
 +=========+===============+========+
@@ -39,10 +43,15 @@ Operation successful
 +---------+---------------+--------+
 2 rows
 
+CREATE SCHEMA "voc" AUTHORIZATION "voc";
 Operation successful
 
+ALTER USER "voc" SET SCHEMA "voc";
 Operation successful
 
+SELECT users.name, users.fullname, schemas.name
+	FROM sys.users, sys.schemas
+	WHERE users.default_schema = schemas.id;
 +---------+---------------+--------+
 | name    | fullname      | name |
 +=========+===============+========+
@@ -62,14 +71,17 @@ voc->
 # 15:18:12 >  Mtimeout -timeout 60  mjclient -h alf -p 30558 -d mTests_src_test_BugTracker -f "../../../../../../../../scratch1/niels/rc/sql/src/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
 # 15:18:12 >  
 
+START TRANSACTION;
 Operation successful
 
+
+ALTER USER "voc" SET SCHEMA "sys";
 Operation successful
 
-Operation successful
+DROP USER "voc";
+DROP SCHEMA "voc";
 
-Operation successful
-
+COMMIT;
 
 # 15:18:12 >  
 # 15:18:12 >  Done.

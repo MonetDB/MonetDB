@@ -1520,7 +1520,7 @@ if test "x$have_python" != xno; then
 		darwin9*-*2.5.1)
 			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,1,"")' 2>/dev/null`/site-packages";;
 		*)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`";;
+			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
 		esac
 		;;
 	no)	;;
@@ -2401,7 +2401,6 @@ if test "x$have_openssl" != xno; then
 		CPPFLAGS="$save_CPPFLAGS"])
 fi
 if test "x$have_openssl" != xno; then
-	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 	dnl SHA-2 is implemented starting from version 0.9.8
 	req_openssl_ver=0x0090800f
 	AC_MSG_CHECKING([for OpenSSL >= $req_openssl_ver])
@@ -2412,18 +2411,19 @@ if test "x$have_openssl" != xno; then
 #if (OPENSSL_VERSION_NUMBER < ${req_openssl_ver}L)
 #error "Need more recent version than " OPENSSL_VERSION_TEXT
 #endif],
-      [AC_MSG_RESULT([yes])],
-      [
-	  if test "x$have_openssl" = "xyes" ; then
+	 [AC_MSG_RESULT([yes])],
+	 [
+	  if test "x$have_openssl" != "xauto" ; then
 		  AC_MSG_ERROR([no, you need a more recent version of OpenSSL])
 	  else
 		  AC_MSG_RESULT([no])
-		  have_openssl=no
-		  OPENSSL_LIBS=""
-		  OPENSSL_INCS=""
 	  fi
-	  ]
+	  have_openssl=no
+	 ]
 	)
+fi
+if test "x$have_openssl" != xno; then
+	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 else
 	OPENSSL_LIBS=""
 	OPENSSL_INCS=""

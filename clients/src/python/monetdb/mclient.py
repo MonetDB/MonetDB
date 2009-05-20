@@ -19,39 +19,51 @@
 
 #
 
-# TODO: cleanup, do we need monet_options.py?
-
 import sys
+import getopt
 
 try:
-    from monetdb import monet_options
-    from monetdb.mapi import Server
+    try:
+        from monetdb.mapi import Server
+    except SyntaxError:
+        from monetdb.mapi25 import Server
 except ImportError:
-    # if running from the build directory Mapi is not in MonetDB module
-    import monet_options
-    from mapi import Server
+    # if running from the build directory mapi is not in monetdb module
+    try:
+        from mapi import Server
+    except SyntaxError:
+        from mapi25 import Server
 
 
 def main(argv) :
 
-    cmd_options = [
-        ('host',None,'host','hostname','host to connect to (default: localhost)'),
-        ('port',None,'mapi_port','port','port to connect to (default: 50000)'),
-        ('user',None,'user','user','login as user (default: monetdb)'),
-        ('passwd',None,'passwd','passwd','password (default: monetdb)'),
-        ('language',None,'language','language','language (default: sql)'),
-        ('database',None,'database','database','database (default: "")'),
-        ('mapi_trace',None,'mapi_trace', None, 'mapi_trace'),
-        ('encoding',None,'encoding','encoding','character encoding'),
-        ]
+    hostname = 'localhost'
+    port = '50000'
+    username = 'monetdb'
+    password = 'monetdb'
+    language = 'sql'
+    database = ''
+    encoding = None
 
-    try:
-        opt, args = monet_options.parse_options(argv[1:], cmd_options)
-    except monet_options.Error:
-        # error parsing options
-        sys.exit(1)
+    opts, args = getopt.getopt(argv[1:], '',
+                               ['host=', 'port=', 'user=', 'passwd=',
+                                'language=', 'database=', 'encoding='])
+    for o, a in opts:
+        if o == '--host':
+            hostname = a
+        elif o == '--port':
+            port = a
+        elif o == '--user':
+            username = a
+        elif o == '--passwd':
+            password = a
+        elif o == '--language':
+            language = a
+        elif o == '--database':
+            database = a
+        elif o == '--encoding':
+            encoding = a
 
-    encoding = opt.get("encoding", None)
     if encoding is None:
         import locale
         encoding = locale.getlocale()[1]
@@ -60,29 +72,27 @@ def main(argv) :
 
     s = Server()
 
-    s.connect(hostname = opt.get("host", "localhost"),
-              port = int(opt.get("mapi_port", 50000)),
-              username = opt.get("user", "monetdb"),
-              password = opt.get("passwd", "monetdb"),
-              language = opt.get("language", "sql"),
-              database = opt.get("database", ""))
-    print "#mclient (python) connected to %s:%d as %s" % \
-          (opt.get("host", "localhost"),
-           int(opt.get("mapi_port", 50000)),
-           opt.get("user", "monetdb"))
+    s.connect(hostname = hostname,
+              port = int(port),
+              username = username,
+              password = password,
+              language = language,
+              database = database)
+    print "#mclient (python) connected to %s:%d as %s" % (hostname, int(port), username)
 
     #fi = fileinput.FileInput()
     fi = sys.stdin
 
-    sys.stdout.write(s.prompt.encode('utf-8'))
+    prompt = '%s>' % language
+
+    sys.stdout.write(prompt.encode('utf-8'))
     line = fi.readline()
-    prompt = s.prompt
     if encoding != 'utf-8':
         prompt = unicode(prompt, 'utf-8').encode(encoding, 'replace')
     while line and line != "\q\n":
         if encoding != 'utf-8':
             line = unicode(line, encoding).encode('utf-8')
-        res = s.cmd(line)
+        res = s.cmd('s' + line)
         if encoding != 'utf-8':
             res = unicode(res, 'utf-8').encode(encoding, 'replace')
         print res
@@ -95,14 +105,4 @@ def main(argv) :
 
 
 if __name__ == "__main__":
-    if '--trace' in sys.argv:
-        sys.argv.remove('--trace')
-        try:
-            from MonetDBtesting import trace
-        except ImportError:
-            # if running from the build directory trace is not in MonetDB module
-            import trace
-        t = trace.Trace(trace=1, count=0)
-        t.runfunc(main, sys.argv)
-    else:
-        main(sys.argv)
+    main(sys.argv)

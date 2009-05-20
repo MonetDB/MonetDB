@@ -1,27 +1,99 @@
 stderr of test 'authorization.SF-1430616` in directory 'src/test/BugTracker` itself:
 
 
-# 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 420 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=32887 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 10:24:37 >  
+# 11:28:15 >  
+# 11:28:15 >   mserver5 "--config=/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/dbfarm" --set "sql_logdir=/export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/sqllog" --set "xquery_logdir=/export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/xquerylog"  --set mapi_open=true --set xrpc_open=true --set mapi_port=32408 --set xrpc_port=41265 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 11:28:15 >  
+
+# builtin opt 	gdk_arch = 64bitx86_64-pc-solaris2.11
+# builtin opt 	gdk_version = 1.30.0
+# builtin opt 	prefix = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_logdir = sql_logs
+# builtin opt 	xquery_logdir = xquery_logs
+# builtin opt 	standoff_ns = http://monetdb.cwi.nl/standoff
+# builtin opt 	standoff_start = start
+# builtin opt 	standoff_end = end
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc
+# config opt 	config = ${prefix}/etc/monetdb5.conf
+# config opt 	prefix = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/bin
+# config opt 	monet_daemon = no
+# config opt 	monet_welcome = yes
+# config opt 	mero_msglog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_errlog = ${prefix}/var/log/MonetDB/merovingian.log
+# config opt 	mero_pidfile = ${prefix}/var/run/MonetDB/merovingian.pid
+# config opt 	mero_exittimeout = 7
+# config opt 	mero_doproxy = yes
+# config opt 	mero_discoveryttl = 600
+# config opt 	mal_init = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/mal_init.mal
+# config opt 	mal_listing = 2
+# config opt 	mapi_port = 50000
+# config opt 	mapi_open = false
+# config opt 	sql_logdir = sql_logs
+# cmdline opt 	config = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/etc/monetdb5.conf
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	monet_mod_path = /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/lib:/export/scratch/stripe/fabian/monetdb/stable/program-i86pc/lib/MonetDB5/bin
+# cmdline opt 	gdk_dbfarm = /export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/dbfarm
+# cmdline opt 	sql_logdir = /export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/sqllog
+# cmdline opt 	xquery_logdir = /export/scratch/stripe/fabian/monetdb/stable/mtest-pegasus.ins.cwi.nl/sql/xquerylog
+# cmdline opt 	mapi_open = true
+# cmdline opt 	xrpc_open = true
+# cmdline opt 	mapi_port = 32408
+# cmdline opt 	xrpc_port = 41265
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_src_test_BugTracker
+# cmdline opt 	mal_listing = 0
+#warning: please don't forget to set your vault key!
+#(see /export/scratch/stripe/fabian/monetdb/stable/program-i86pc/etc/monetdb5.conf)
+
+# 11:28:16 >  
+# 11:28:16 >  ./authorization.SF-1430616.SQL.sh authorization.SF-1430616 
+# 11:28:16 >  
 
 
-# 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 300 ./authorization.SF-1430616.SQL authorization.SF-1430616 
-# 10:24:37 >  
+# 11:28:16 >  
+# 11:28:16 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h pegasus -p 32408 -d mTests_src_test_BugTracker -f "../../../../../../../../../../mirror/fabian/monetdb/stable/sql/src/test/BugTracker/Tests/authorization.SF-1430616-data.sql"
+# 11:28:16 >  
 
 
-# 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.3.jar -h localhost -p 32887 -bmTests_src_test_BugTracker -f ../../../../../../..//scratch1/niels/sql/src/test/BugTracker/Tests/authorization.SF-1430616.sql
-# 10:24:37 >  
+# 11:28:17 >  
+# 11:28:17 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h pegasus -p 32408 -d mTests_src_test_BugTracker -q
+# 11:28:17 >  
 
 
-# 10:24:37 >  
-# 10:24:37 >  Mtimeout -timeout 60 java -jar /net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/jdbcclient-1.3.jar -h localhost -p 32887 -bmTests_src_test_BugTracker
-# 10:24:37 >  
+# 11:28:17 >  
+# 11:28:17 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -e -h pegasus -p 32408 -d mTests_src_test_BugTracker -f "../../../../../../../../../../mirror/fabian/monetdb/stable/sql/src/test/BugTracker/Tests/authorization.SF-1430616-drop_user.sql"
+# 11:28:17 >  
 
+Error on line 4: DROP USER: 'voc' owns a schema
+Error on line 5: current transaction is aborted (please ROLLBACK)
+Error on line 7: COMMIT: failed
+ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
 
-# 10:24:37 >  
-# 10:24:37 >  Done.
-# 10:24:37 >  
+# 11:28:18 >  
+# 11:28:18 >  Done.
+# 11:28:18 >  
 
