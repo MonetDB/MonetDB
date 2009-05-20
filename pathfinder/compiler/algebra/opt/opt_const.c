@@ -723,6 +723,30 @@ opt_const (PFla_op_t *p)
                                    PFalg_lit_bln (false));
                 break;
             }
+            /* concatenate two constant strings */
+            if (p->sem.fun_1to1.kind == alg_fun_fn_concat &&
+                PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, 0)) &&
+                PFprop_const (p->prop, clat (p->sem.fun_1to1.refs, 1))) {
+                char *str0 = PFprop_const_val (
+                                 p->prop,
+                                 clat (p->sem.fun_1to1.refs, 0)).val.str,
+                     *str1 = PFprop_const_val (
+                                 p->prop,
+                                 clat (p->sem.fun_1to1.refs, 1)).val.str,
+                     *s;
+                unsigned int count = strlen (str0) + strlen (str1) + 1;
+
+                /* try to avoid constructing two long strings */
+                if (count < 2048) {
+                    s = (char *) PFmalloc (count);
+               
+                    strcat (strcpy (s, str0), str1);
+
+                    *p = *PFla_attach (L(p), p->sem.fun_1to1.res,
+                                       PFalg_lit_str (s));
+                    break;
+                }
+            }
             break;
 
         case la_num_eq:

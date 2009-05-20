@@ -22,16 +22,9 @@ Over..
 # 18:02:55 >  
 
 <?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>false false false false<e/><f/><c foo2="bar"/><book year="2000">
-        <title>Data on the Web</title>
-        <author><last>Abiteboul</last><first>Serge</first></author>
-        <author><last>Buneman</last><first>Peter</first></author>
-        <author><last>Suciu</last><first>Dan</first></author>
-        <publisher>Morgan Kaufmann Publishers</publisher>
-        <price>39.95</price>
-    </book></XQueryResult>
+<XQueryResult>false false false false<e/><f/><c foo2="bar"/>false</XQueryResult>
 
-# 23:35:13 >  
-# 23:35:13 >  Done.
-# 23:35:13 >  
+# 16:16:19 >  
+# 16:16:19 >  Done.
+# 16:16:19 >  
 

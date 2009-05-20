@@ -141,29 +141,20 @@ internal_op_to_cross (PFla_op_t *p)
             PFprop_card (p->prop) == 1)
             return dummy (R(p));
         else {
-            PFalg_proj_t *proj_list2;
-            proj_list2 = PFmalloc ((R(p)->schema.count - 1)
-                                   * sizeof (*(proj_list)));
-            count = 0;
-            /* split up the columns such that they do not conflict
-               anymore */
-            assert (R(p)->schema.count > 1);
-            /* throw out the first column of the left child
-               from the right child */
-            for (j = 0; j < R(p)->schema.count; j++)
-                if (L(p)->schema.items[0].name !=
-                    R(p)->schema.items[j].name) {
-                    proj_list2[count++] =
-                        proj (R(p)->schema.items[j].name,
-                              R(p)->schema.items[j].name);
-                }
-            /* keep only the first column of the left child */
-            proj_list[0] = proj (L(p)->schema.items[0].name,
-                                 L(p)->schema.items[0].name);
+            /* The left side does not add anything to the result
+               (except for the cardinality). */
 
-            /* apply project operator on both childs */
-            return cross (PFla_project_ (L(p), 1, proj_list),
-                          PFla_project_ (R(p), count, proj_list2));
+            /* new dummy column */
+            PFalg_col_t dummy = PFcol_new (col_iter);
+
+            return PFla_project_ (
+                       cross (
+                           project (
+                               attach (L(p), dummy, lit_nat (42)), 
+                               proj (dummy, dummy)),
+                           R(p)),
+                       p->schema.count,
+                       PFalg_proj_create (p->schema));
         }
     }
     else {
