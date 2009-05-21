@@ -352,7 +352,7 @@ AUTHcheckCredentials(
 	assert(scen);
 
 	if (*username == NULL || strNil(*username))
-		throw(INVCRED, "checkCredentials", INVCRED_INVALID_USER);
+		throw(ILLARG, "checkCredentials", "username should not be nil");
 
 	p = BUNfnd(BATmirror(user), *username);
 	if (p == BUN_NONE) {
@@ -448,9 +448,9 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "addUser", "username" ILLARG_NOTNIL);
+		throw(ILLARG, "addUser", "username should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
-		throw(ILLARG, "addUser", "password" ILLARG_NOTNIL);
+		throw(ILLARG, "addUser", "password should not be nil");
 	rethrow("addUser", tmp, AUTHverifyPassword(NULL, passwd));
 
 	/* ensure that the username is not already there */
@@ -520,7 +520,7 @@ AUTHremoveUser(Client *c, str *username) {
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
-		throw(ILLARG, "removeUser", "username" ILLEGAL_ARGUMENT " NULL not allowed");
+		throw(ILLARG, "removeUser", "username should not be nil");
 
 	/* ensure that the username exists */
 	p = BUNfnd(BATmirror(user), *username);
