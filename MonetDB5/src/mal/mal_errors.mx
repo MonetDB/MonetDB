@@ -70,13 +70,13 @@ use a translation table where needed.
 #define INTERNAL_BAT_ACCESS "Internal error, can not access BAT."
 #define INTERNAL_BAT_HEAD "BAT has wrong head type"
 #define INTERNAL_OBJ_CREATE "Can not create object"
-#define INTERNAL_AUTHORIZATION "Autorization BATs not empty"
+#define INTERNAL_AUTHORIZATION "autorization BATs not empty"
 
-#define MAL_MALLOC_FAIL	"Could not allocate space for object."
+#define MAL_MALLOC_FAIL	"could not allocate space for"
 #define MAL_STACK_FAIL	"Running out of stack space."
 
-#define INVCRED_ACCESS_DENIED "Access denied for user"
-#define INVCRED_INVALID_USER "Invalid user credentials"
+#define INVCRED_ACCESS_DENIED "access denied for user"
+#define INVCRED_INVALID_USER "invalid credentials for user"
 #define INVCRED_REMOVE_USER "Can not remove user"
 #define INVCRED_WRONG_ID "Undefined client id"
 
