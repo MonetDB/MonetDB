@@ -2400,10 +2400,12 @@ if test "x$have_openssl" != xno; then
 	LIBS="$LIBS $OPENSSL_LIBS"
 	AC_CHECK_LIB(ssl, SSL_read,
 		OPENSSL_LIBS="$OPENSSL_LIBS -lssl",
-		[ if test "x$have_openssl" != xauto; then AC_MSG_ERROR([OpenSSL library not found]); fi; have_openssl=no ])
+		[ why_no_openssl="OpenSSL library not found"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
 	dnl on some systems, -lcrypto needs to be passed as well
 	AC_CHECK_LIB(crypto, ERR_get_error, OPENSSL_LIBS="$OPENSSL_LIBS -lcrypto")
 	LIBS="$save_LIBS"
+else
+	why_no_openssl="configure called with --with-openssl=no"
 fi
 if test "x$have_openssl" != xno; then
 	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
@@ -2411,7 +2413,7 @@ if test "x$have_openssl" != xno; then
 		CPPFLAGS="$CPPFLAGS -DOPENSSL_NO_KRB5"
 		AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]),
 			AC_DEFINE(OPENSSL_NO_KRB5, 1, [Define if OpenSSL should not use Kerberos 5]),
-			[ if test "x$have_openssl" != xauto; then AC_MSG_ERROR([OpenSSL library not usable]); fi; have_openssl=no ])
+			[ why_no_openssl="OpenSSL library not usable"; if test "x$have_openssl" != xauto; then AC_MSG_ERROR([$why_no_openssl]); fi; have_openssl=no ])
 		CPPFLAGS="$save_CPPFLAGS"])
 fi
 if test "x$have_openssl" != xno; then
@@ -2427,8 +2429,9 @@ if test "x$have_openssl" != xno; then
 #endif],
 	 [AC_MSG_RESULT([yes])],
 	 [
+	  why_no_openssl="you need a more recent version of OpenSSL"
 	  if test "x$have_openssl" != "xauto" ; then
-		  AC_MSG_ERROR([no, you need a more recent version of OpenSSL])
+		  AC_MSG_ERROR([no, $why_no_openssl])
 	  else
 		  AC_MSG_RESULT([no])
 	  fi
@@ -2798,6 +2801,7 @@ AC_SUBST(PCL_LIBS)
 
 dnl check for the Perl-compatible regular expressions library 
 have_pcre=auto
+why_no_pcre=""
 PCRE_CFLAGS=""
 PCRE_LIBS=""
 PCRE_CONFIG=""
@@ -2826,7 +2830,8 @@ if test "x$have_pcre" != xno; then
     AC_MSG_CHECKING(for pcre >= $req_pcre_ver)
     if test "x$PCRE_CONFIG" = x; then
     	have_pcre=no
-    	AC_MSG_RESULT($have_pcre (without pcre-config to query the pcre version, we assume it's < $req_pcre_ver))
+    	why_no_pcre="(without pcre-config to query the pcre version, we assume it's < $req_pcre_ver)"
+    	AC_MSG_RESULT($have_pcre $why_no_pcre)
     else
     	pcre_ver="`$PCRE_CONFIG --version 2>/dev/null`"
     	if test MONETDB_VERSION_TO_NUMBER(echo $pcre_ver) -ge MONETDB_VERSION_TO_NUMBER(echo "$req_pcre_ver"); then
@@ -2834,7 +2839,8 @@ if test "x$have_pcre" != xno; then
       		AC_MSG_RESULT($have_pcre (found $pcre_ver))
     	else
       		have_pcre=no
-      		AC_MSG_RESULT($have_pcre (found only $pcre_ver))
+      		why_no_pcre="(found only $pcre_ver)"
+      		AC_MSG_RESULT($have_pcre $why_no_pcre)
     	fi
     fi
 
@@ -2843,27 +2849,29 @@ if test "x$have_pcre" != xno; then
         AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
         if test "x$PCRETEST" = x; then
             have_pcre=no
-            AC_MSG_RESULT($have_pcre (could not find pcretest to check it))
+            why_no_pcre="(could not find pcretest to check it)"
+            AC_MSG_RESULT($have_pcre $why_no_pcre)
         else
             pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
             if test "x$pcre_utf8" != "xUTF-8 support"; then
                 have_pcre=no
             fi
-            AC_MSG_RESULT($have_pcre (pcretest says "$pcre_utf8"))
+            why_no_pcre="(pcretest says '$pcre_utf8')"
+            AC_MSG_RESULT($have_pcre $why_no_pcre)
         fi
     fi
 
     if test "x$have_pcre" = xyes; then
     	save_CPPFLAGS="$CPPFLAGS"
     	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
-    	AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no)
+    	AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no; why_no_pcre="(no usable pcre.h found)")
     	CPPFLAGS="$save_CPPFLAGS"
     fi
 
     if test "x$have_pcre" = xyes; then
     	save_LIBS="$LIBS"
     	LIBS="$LIBS $PCRE_LIBS"
-    	AC_CHECK_LIB(pcre, pcre_compile, have_pcre=yes, have_pcre=no)
+    	AC_CHECK_LIB(pcre, pcre_compile, have_pcre=yes, have_pcre=no; why_no_pcre="(pcre_compile not found in libpcre)")
     	LIBS="$save_LIBS"
     fi
 
@@ -2873,6 +2881,8 @@ if test "x$have_pcre" != xno; then
     	PCRE_CFLAGS=""
     	PCRE_LIBS=""
     fi
+else
+    why_no_pcre="(configure called with --with-pcre=no)"
 fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
