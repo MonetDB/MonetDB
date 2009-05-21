@@ -456,7 +456,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd, bat *scenarios) {
 	/* ensure that the username is not already there */
 	p = BUNfnd(BATmirror(user), *username);
 	if (p != BUN_NONE)
-		throw(INVCRED, "addUser", DUPLICATE_DEFINITION ":%s", *username);
+		throw(MAL, "addUser", "user '%s' already exists", *username);
 	
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
