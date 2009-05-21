@@ -288,7 +288,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		if (!enc) {
 			int len = (int) strlen(passwd);
 			if ((err = AUTHBackendSum(&pwd, &passwd, &len)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "%s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
 				GDKfree(err);
 				return FALSE;
 			}
@@ -297,7 +297,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 				if ((err = AUTHBackendSum(&opwd, &oldpasswd, &len))
 						!= MAL_SUCCEED)
 				{
-					(void)sql_error(m, 02, "%s", err);
+					(void)sql_error(m, 02, "ALTER USER: %s", err);
 					GDKfree(err);
 					return FALSE;
 				}
@@ -308,13 +308,27 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		}
 		if (user == NULL) {
 			if ((err = AUTHchangePassword(&c, &opwd, &pwd)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "%s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
 				GDKfree(err);
 				return(FALSE);
 			}
 		} else {
+			str username = NULL;
+			if ((err = AUTHresolveUser(&username, &c->user)) != MAL_SUCCEED) {
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				GDKfree(err);
+				return(FALSE);
+			}
+			if (strcmp(username, user) == 0) {
+				/* avoid message about changePassword (from MAL level) */
+				(void)sql_error(m, 02, "ALTER USER: "
+						"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
+						"USING OLD PASSWORD yyy' "
+						"when changing your own password");
+				return(FALSE);
+			}
 			if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "%s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
 				GDKfree(err);
 				return(FALSE);
 			}
