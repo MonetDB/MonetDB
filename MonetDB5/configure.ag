@@ -94,7 +94,7 @@ AM_MONETDB_UTILS()
 if test "x$have_pcre" = xno; then
 	AC_MSG_ERROR([MonetDB 5 requires PCRE >= $req_pcre_ver with UTF-8 support $why_no_pcre])
 fi
-if test "xhave_openssl" = xno; then
+if test "x$have_openssl" = xno; then
 	AC_MSG_ERROR([MonetDB 5 requires OpenSSL ($why_no_openssl)])
 fi
 
