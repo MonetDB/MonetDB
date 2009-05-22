@@ -18,7 +18,7 @@ catch MALException:str;
 exit MALException;
 
 # should raise an exception because making duplicates makes no sense
-i := remote.create(d, h, p);
+remote.create(d, h, p);
 catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;
@@ -30,6 +30,5 @@ remote.disconnect(conn);
 # this should fail now
 remote.disconnect(conn);
 catch MALException:str;
-	# make it a comment, the connection name is always different
 	io.printf("!%s\n",MALException);
 exit MALException;

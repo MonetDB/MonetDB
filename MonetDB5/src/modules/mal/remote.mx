@@ -262,7 +262,7 @@ remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 			 * already exists */
 			if (strcmp(c->dbname, *dbname) == 0) {
 				mal_unset_lock(mal_remoteLock, "remote.create"); /* global userconns */
-				throw(MAL, "remote.create", OPERATION_FAILED " Connection with name "
+				throw(MAL, "remote.create", OPERATION_FAILED ": connection with name "
 						"'%s' already exists", *dbname);
 			}
 			t = c;
@@ -731,7 +731,7 @@ static str RMTconnectInternal(
 	if (cdef == NULL) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(MAL, "remote.connect", OPERATION_FAILED
-			" Unknown or unavailable connection: '%s'", *dbname);
+			": unknown or unavailable connection: '%s'", *dbname);
 	} 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
@@ -771,8 +771,8 @@ static str RMTconnectInternal(
 		GDKfree(c);
 
 		mal_unset_lock(mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", OPERATION_FAILED " An error occurred during "
-				"connect of connection '%s': %s",
+		throw(IO, "remote.connect", OPERATION_FAILED ": cannot connect "
+				"connection '%s': %s",
 				conn, err);
 	}
 

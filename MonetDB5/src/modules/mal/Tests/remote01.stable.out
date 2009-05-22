@@ -34,7 +34,7 @@ catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
 # should raise an exception because making duplicates makes no sense 
-    i := remote.create(d,h,p);
+    remote.create(d,h,p);
 catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
@@ -50,6 +50,10 @@ exit MALException:str ;
 end main;
 [ "mTests_src_modules_mal_monetdb_0" ]
 !MALException:remote.get:'b1_str' may not be used before being initialized
+
+!MALException:remote.create:Operation failed: connection with name 'mTests_src_modules_mal' already exists
+!MALException:remote.disconnect:Operation failed No such connection with name 'mTests_src_modules_mal_monetdb_0'
+
 
 
 
