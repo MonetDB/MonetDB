@@ -48,7 +48,7 @@ extern int sql_create_role(mvc *m, str auth, int grantor);
 extern int sql_drop_role(mvc *m, str auth);
 extern int sql_grant_role(mvc *m, str grantee, str auth);
 extern int sql_revoke_role(mvc *m, str grantee, str auth);
-extern int sql_alter_user(mvc *m, str user, str passwd, char enc, sqlid schema_id);
+extern int sql_alter_user(mvc *m, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
 extern int sql_drop_user(mvc *m, str user);
 extern int sql_create_privileges(mvc *m, sql_schema *s);
 extern int sql_schema_has_user(mvc *m, sql_schema *s);
@@ -223,9 +223,10 @@ sql_schema_has_user(mvc *m, sql_schema *s)
 }
 
 int
-sql_alter_user(mvc *m, str user, str passwd, char enc, sqlid schema_id)
+sql_alter_user(mvc *m, str user, str passwd, char enc,
+		sqlid schema_id, str oldpasswd)
 {
-	return(backend_alter_user(m, user, passwd, enc, schema_id));
+	return(backend_alter_user(m, user, passwd, enc, schema_id, oldpasswd));
 }
 
 int

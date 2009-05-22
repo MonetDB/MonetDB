@@ -275,7 +275,8 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
+		sqlid schema_id, str oldpasswd)
 {
 	mvc *m = (mvc *)_mvc;
 	Client c = &mal_clients[m->clientid];
@@ -283,20 +284,54 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id)
 
 	if (passwd != NULL) {
 		str pwd = NULL;
+		str opwd = NULL;
 		if (!enc) {
 			int len = (int) strlen(passwd);
 			if ((err = AUTHBackendSum(&pwd, &passwd, &len)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "%s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
 				GDKfree(err);
 				return FALSE;
 			}
+			if (oldpasswd != NULL) {
+				len = (int)strlen(oldpasswd);
+				if ((err = AUTHBackendSum(&opwd, &oldpasswd, &len))
+						!= MAL_SUCCEED)
+				{
+					(void)sql_error(m, 02, "ALTER USER: %s", err);
+					GDKfree(err);
+					return FALSE;
+				}
+			}
 		} else {
 			pwd = passwd;
+			opwd = oldpasswd;
 		}
-		if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
-			(void)sql_error(m, 02, "%s", err);
-			GDKfree(err);
-			return(FALSE);
+		if (user == NULL) {
+			if ((err = AUTHchangePassword(&c, &opwd, &pwd)) != MAL_SUCCEED) {
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				GDKfree(err);
+				return(FALSE);
+			}
+		} else {
+			str username = NULL;
+			if ((err = AUTHresolveUser(&username, &c->user)) != MAL_SUCCEED) {
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				GDKfree(err);
+				return(FALSE);
+			}
+			if (strcmp(username, user) == 0) {
+				/* avoid message about changePassword (from MAL level) */
+				(void)sql_error(m, 02, "ALTER USER: "
+						"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
+						"USING OLD PASSWORD yyy' "
+						"when changing your own password");
+				return(FALSE);
+			}
+			if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
+				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				GDKfree(err);
+				return(FALSE);
+			}
 		}
 	}
 

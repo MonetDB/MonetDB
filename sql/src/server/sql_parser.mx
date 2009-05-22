@@ -1091,6 +1091,16 @@ alter_statement:
 	  append_string(l, $3);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER USER SET opt_encrypted PASSWORD string USING OLD PASSWORD string
+	{ dlist *l = L();
+	  dlist *p = L();
+	  append_string(l, NULL);
+	  append_string(p, $6);
+	  append_string(p, NULL);
+	  append_int(p, $4);
+	  append_string(p, $10);
+	  append_list(l, p);
+	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
   ;
 
 passwd_schema:
@@ -1098,17 +1108,20 @@ passwd_schema:
 				  append_string(l, $4);
 				  append_string(l, NULL);
 				  append_int(l, $2);
+				  append_string(l, NULL);
 				  $$ = l; }
   |	SET SCHEMA ident	{ dlist * l = L();
 				  append_string(l, NULL);
 				  append_string(l, $3);
 				  append_int(l, 0);
+				  append_string(l, NULL);
 				  $$ = l; }
   |	WITH opt_encrypted PASSWORD string SET SCHEMA ident	
 				{ dlist * l = L();
 				  append_string(l, $4);
 				  append_string(l, $7);
 				  append_int(l, $2);
+				  append_string(l, NULL);
 				  $$ = l; }
   ;
 

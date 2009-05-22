@@ -1022,13 +1022,14 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                         #TODO:
                         # add "something" to HTML output
                         return td, elem
-                try:
-                    os.makedirs(LogDBdir)
-                except:
-                    Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-                    #TODO:
-                    # add "something" to HTML output
-                    return td, elem
+                if os.path.isabs(LogDBdir):
+                    try:
+                        os.makedirs(LogDBdir)
+                    except:
+                        Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
+                        #TODO:
+                        # add "something" to HTML output
+                        return td, elem
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -3465,11 +3466,11 @@ def main(argv) :
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
         if env.has_key('SQL_LOGDIR'):
-            if not os.path.exists(env['SQL_LOGDIR']):
+            if not os.path.exists(env['SQL_LOGDIR']) and os.path.isabs(env['SQL_LOGDIR']):
                 #TODO: set mode to umask
                 os.makedirs(env['SQL_LOGDIR'])
         if env.has_key('XQUERY_LOGDIR'):
-            if not os.path.exists(env['XQUERY_LOGDIR']):
+            if not os.path.exists(env['XQUERY_LOGDIR']) and os.path.isabs(env['XQUERY_LOGDIR']):
                 #TODO: set mode to umask
                 os.makedirs(env['XQUERY_LOGDIR'])
         if env.has_key('XRPC_DOCROOT'):
