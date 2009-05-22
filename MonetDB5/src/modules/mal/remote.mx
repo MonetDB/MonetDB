@@ -981,10 +981,10 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 		}
 	} else {
 		if (mapi_error(conn) != MOK) {
-			throw(IO, func, OPERATION_FAILED " An error occurred on connection: %s",
+			throw(IO, func, OPERATION_FAILED ": an error occurred on connection: %s",
 					mapi_error_str(conn));
 		} else {
-			throw(MAL, func, OPERATION_FAILED " Remote function invocation didn't return a result");
+			throw(MAL, func, OPERATION_FAILED ": remote function invocation didn't return a result");
 		}
 	}
 
@@ -1224,13 +1224,13 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		BUN p, q;
 		str headv, tailv;
 
-		head= ATOMname(getHeadType(type));
-		tail= ATOMname(getTailType(type));
+		head = ATOMname(getHeadType(type));
+		tail = ATOMname(getTailType(type));
 
 		bid = *(int *)value;
 		if (bid != 0 && (b = BATdescriptor(bid)) == NULL){
 			mal_unset_lock(c->lock, "remote.put"); 
-			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING );
+			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
 
 		qbuf[BUFSIZ] = '\0';
@@ -1247,6 +1247,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		mapi_close_handle(mhdl);
 
+		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
 			headv = tailv = NULL;
 			bi = bat_iterator(b);
