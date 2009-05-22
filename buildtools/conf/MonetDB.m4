@@ -1532,7 +1532,7 @@ if test "x$have_python" != xno; then
 		fi
 		case "$host_os-`"$PYTHON" -V 2>&1`" in
 		darwin9*-*2.5.1)
-			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,1,"")' 2>/dev/null`/site-packages";;
+			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
 		*)
 			PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
 		esac
