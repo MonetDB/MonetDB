@@ -16,7 +16,7 @@ j:str := remote.put(conn, b);
 k:str := remote.put(conn, c);
 l:str := remote.put(conn, d);
 
-# retrieve the value
+# retrieve the values
 r:str := remote.get(conn, i);
 s:flt := remote.get(conn, j);
 t:int := remote.get(conn, k);
