@@ -42,7 +42,7 @@ to be passed by a handle.
 @h
 
 /*#define DEBUG_MAL_INTERPRETER*/
-/* #define DEBUG_FLOW */
+/*#define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
 
@@ -737,7 +737,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 	pci = getInstrPtr(flow->mb, stkpc);
 #ifdef DEBUG_FLOW
 	stream_printf(cntxt->fdout,"#execute thread %d \n", tid);
-	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_ALL);
+	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT);
 #endif
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
 	if (stk->cmd || mb->trap) {
@@ -827,9 +827,6 @@ runDFLOWworker(void *t)
 	int oldpc;
 /*	int hour=0; */
 
-#ifdef DEBUG_FLOW
-	stream_printf(GDKstdout, "start parallel interpreter thread\n");
-#endif
 	while(task) {
 		fs = (FlowStep)q_dequeue(work);
 		oldpc= fs->pc;
@@ -898,7 +895,7 @@ DFLOWreassign(DataFlow flow, FlowStep fs, int oa)
 				}
 				flow->inuse[a] = use;
 #ifdef DEBUG_FLOW
-	printf("%d [ %1d %2d %3d ]\n", a, 
+	printf("%s [ %1d %2d %3d ]\n", getVarName(flow->mb,a), 
 		flow->blocked[a],
 		flow->inuse[a],
 		flow->reassign[a]);
@@ -959,8 +956,9 @@ DFLOWinit(DataFlow flow, FlowStep fs)
 		}
 	}
 #ifdef DEBUG_FLOW
-for (i=0; i < flow->mb->vtop; i++) {
-	printf("%d [ %1d %2d %3d ]\n", i, 
+for (i=0; i < flow->mb->vtop; i++) 
+if ( flow->blocked[i] || flow->inuse[i] || flow->reassign[i] ){
+	printf("%s [ %1d %2d %3d ]\n", getVarName(flow->mb,i), 
 		flow->blocked[i],
 		flow->inuse[i],
 		flow->reassign[i]);
@@ -1020,8 +1018,16 @@ DFLOWexecute( DataFlow flow )
 					   this is a reassign statement*/
 					if (!flow->blocked[oa] ||
 					   (flow->reassign[oa] &&
-					    flow->reassign[oa] <= fs[i].pc)) 
-						blocked++;
+					    flow->reassign[oa] <= fs[i].pc)) {
+							blocked++;
+#ifdef DEBUG_FLOW
+						printf("oa fail enqueue %d %s [ %1d %2d %3d ]", fs[i].pc, 
+							getVarName(flow->mb,oa),
+							flow->blocked[oa], 
+							flow->inuse[oa], flow->reassign[oa]);
+						printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
+#endif
+					}
 				}
 				
 				/* check if input args aren't blocked */
@@ -1033,28 +1039,25 @@ DFLOWexecute( DataFlow flow )
 					    flow->blocked[ia]) || 
 					   (!isOutputArg(p,ia) &&
 					    flow->reassign[ia] &&
-					    flow->reassign[ia] <= fs[i].pc)) 
-						blocked++;
+					    flow->reassign[ia] <= fs[i].pc)) {
+							blocked++;
+#ifdef DEBUG_FLOW
+						printf("ia fail enqueue %d  %s[ %1d %2d %3d ]", fs[i].pc, 
+							getVarName(flow->mb,ia),
+							flow->blocked[ia], 
+							flow->inuse[ia], flow->reassign[ia]);
+						printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
+#endif
+						}
 				}
 
-#ifdef DEBUG_FLOW
-if (blocked) {
-	int oa = getArg(p,0);
-	printf("cannot enqueue %d [ %1d %2d %3d ]\n", fs[i].pc, flow->blocked[getArg(p,0)], flow->inuse[oa], flow->reassign[oa]);
-	if (oa != getArg(p,1)) {
-		oa = getArg(p,1);
-		printf("cannot enqueue in [ %1d %2d %3d ]\n", flow->blocked[getArg(p,0)], flow->inuse[oa], flow->reassign[oa]);
-	}
-	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
-}
-#endif
 				if (!blocked) { 
 					queued++;
 					fs[i].status = DFLOWrunning;
 
 #ifdef DEBUG_FLOW
-	printf("enqueue %d\n", fs[i].pc);
-	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
+	printf("enqueue %d", fs[i].pc);
+	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 #endif
 					q_enqueue(work, fs+i);
 				}
@@ -1063,11 +1066,15 @@ if (blocked) {
 		assert(queued || pc == limit); 
 		/* we cannot enqueue, lets wait for the results */ 
 		while(queued) {
-			FlowStep f = q_dequeue(flow->done);
+			FlowStep f;
+#ifdef DEBUG_FLOW
+			printf("waiting for results %d queued %d\n", fs[i].pc,queued);
+#endif
 
+			f = q_dequeue(flow->done);
 			f->status = DFLOWwrapup;
 			if (f->pc < 0) {
-				/* dequeue the remainders */
+				/* dequeue the remainders in case of an error */
 				while(--queued) 
 					(void)q_dequeue(flow->done);
 				pc = limit + 1;
@@ -1077,7 +1084,7 @@ if (blocked) {
 
 #ifdef DEBUG_FLOW
 	printf("done %d\n", f->pc);
-	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_ALL);
+	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 #endif
 				/* deblock the output args */
 				for(j=0; j<p->retc; j++) {
