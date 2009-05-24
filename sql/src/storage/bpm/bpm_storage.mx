@@ -109,10 +109,8 @@ extend_part( sql_bpm *p, BAT *b, BAT *i, bat u)
 		BATseqbase(i, nr * BPM_SPLIT);
 	}*/
 	bat = p->parts+nr;
-	if (!bat->uname) 
-		bat->uname = sql_message("U_%s_%d", p->name);
 	if (!bat->name) 
-		bat->name = bat->uname+2;
+		bat->name = sql_message("%s_%d", p->name);
 	create_delta( bat, b, i, u);
 	p -> nr++;
 	return nr;
@@ -468,15 +466,12 @@ load_bpm (sql_bpm *p)
 	nr = *(int*)Tloc(part_nr, r);
 
 	for(i = 0; i<nr; i++) {
-		char *uname = sql_message("U_%s_%d", p->name, i);
-		char *name = uname + 2;
+		char *name = sql_message("%s_%d", p->name, i);
 		int bid = logger_find_bat(bat_logger, name);
-		int ubid = logger_find_bat(bat_logger, uname);
 
 		use_part(p);
 		p->parts[i].name = name;
-		p->parts[i].uname = uname;
-		load_delta( &p->parts[i], bid, ubid, p->type);
+		load_delta( &p->parts[i], bid, p->type);
 		p -> nr++;
 	}
 	p->created = p->nr;
