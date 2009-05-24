@@ -2407,6 +2407,8 @@ if test "x$have_openssl" != xno; then
 else
 	why_no_openssl="configure called with --with-openssl=no"
 fi
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $OPENSSL_INCS"
 if test "x$have_openssl" != xno; then
 	AC_COMPILE_IFELSE(AC_LANG_PROGRAM([#include <openssl/ssl.h>],[]), , [
 		save_CPPFLAGS="$CPPFLAGS"
@@ -2439,6 +2441,7 @@ if test "x$have_openssl" != xno; then
 	 ]
 	)
 fi
+CFLAGS="$save_CFLAGS"
 if test "x$have_openssl" != xno; then
 	AC_DEFINE(HAVE_OPENSSL, 1, [Define if you have the OpenSSL library])
 else
