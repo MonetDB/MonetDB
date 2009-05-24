@@ -42,7 +42,7 @@ to be passed by a handle.
 @h
 
 /*#define DEBUG_MAL_INTERPRETER*/
-/*#define DEBUG_FLOW */
+#define DEBUG_FLOW 
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
 
@@ -549,6 +549,14 @@ typedef struct queue {
 	MT_Sema s;	/* threads wait on empty queues */
 } queue;
 
+
+typedef struct {
+	MT_Id tid;
+	int id;
+	queue *todo;		/* pending actions for this client */
+    lng clk;
+} FlowTask;
+
 typedef struct {
 	Client cntxt;		/* for debugging and client resolution */
 	MalBlkPtr mb;		/* carry the context */
@@ -558,7 +566,9 @@ typedef struct {
 	char *blocked;		/* blocked, should be created first */
 	int *inuse;		/* inuse reference count */
 	int *reassign;
-	queue *done;
+	queue *done;		/* work finished */
+	queue *todo;		/* pending actions for this client */
+	FlowTask *worker;	/* worker threads for the client */
 } *DataFlow, DataFlowRec;
 
 typedef struct {
@@ -618,12 +628,6 @@ Within the block there are multiple flows, which, in principle,
 can be executed in parallel.
 @c
 int nway = 2;
-
-typedef struct {
-	MT_Id tid;
-	int id;
-    lng clk;
-} FlowTask;
 
 static queue*
 q_create( int sz )
@@ -736,7 +740,7 @@ DFLOWstep(FlowTask *t, FlowStep fs)
 
 	pci = getInstrPtr(flow->mb, stkpc);
 #ifdef DEBUG_FLOW
-	stream_printf(cntxt->fdout,"#execute thread %d \n", tid);
+	printf("#EXECUTE THREAD %d \n", tid);
 	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT);
 #endif
 	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);	/* where to leave errors */
@@ -798,8 +802,8 @@ We don't allow sequential flow control here.
 	return ret;
 }
 
-static FlowTask *worker = NULL;
-static queue *work = NULL;
+/*static FlowTask *worker = NULL;
+static queue *work = NULL; */
 
 @-
 A consequence of multiple threads is that they may claim more
@@ -828,7 +832,7 @@ runDFLOWworker(void *t)
 /*	int hour=0; */
 
 	while(task) {
-		fs = (FlowStep)q_dequeue(work);
+		fs = (FlowStep)q_dequeue(task->todo);
 		oldpc= fs->pc;
 		while (oldpc > 0 && (fs->error = DFLOWstep(task, fs)) && 
 				(err=strstr(fs->error,"GDKmallocmax: failed")) != NULL){
@@ -851,24 +855,26 @@ runDFLOWworker(void *t)
 }
 
 static void 
-DFLOWcreate(void)
+DFLOWcreate( DataFlowRec *flow)
 {
 	int i;
 
+	(void) flow;
 	mal_set_lock(mal_contextLock, "DFLOWcreate");
-	if ( work != NULL){
+	if ( flow->todo != NULL){
 		mal_unset_lock(mal_contextLock, "DFLOWcreate");
 		return;
 	}
 
-	work = q_create(256); /* seems enough for the time being */
+	flow->todo = q_create(256); /* seems enough for the time being */
 
 	nway = GDKnr_threads;
-	worker = (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
+	flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
 	for(i=0; i<nway; i++) {
-		worker[i].id = i;
+		flow->worker[i].id = i;
+		flow->worker[i].todo = flow->todo;
 		/* create the thread and let it wait */
-		MT_create_thread(&worker[i].tid, runDFLOWworker, worker+i);
+		MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);
 	}
 	mal_unset_lock(mal_contextLock, "DFLOWcreate");
 }
@@ -1059,7 +1065,7 @@ DFLOWexecute( DataFlow flow )
 	printf("enqueue %d", fs[i].pc);
 	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 #endif
-					q_enqueue(work, fs+i);
+					q_enqueue(flow->todo, fs+i);
 				}
 			}
 		}
@@ -1074,6 +1080,9 @@ DFLOWexecute( DataFlow flow )
 			f = q_dequeue(flow->done);
 			f->status = DFLOWwrapup;
 			if (f->pc < 0) {
+#ifdef DEBUG_FLOW
+			printf("errors encountered %d \n", fs[i].pc);
+#endif
 				/* dequeue the remainders in case of an error */
 				while(--queued) 
 					(void)q_dequeue(flow->done);
@@ -1083,7 +1092,7 @@ DFLOWexecute( DataFlow flow )
 				InstrPtr p = getInstrPtr(flow->mb, f->pc);
 
 #ifdef DEBUG_FLOW
-	printf("done %d\n", f->pc);
+	printf("done %d", f->pc);
 	printInstruction(GDKstdout, flow->mb, 0, p, LIST_MAL_STMT);
 #endif
 				/* deblock the output args */
@@ -1145,7 +1154,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKstdout, "runMALdataflow for block %d - %d\n", startpc,stoppc);
-	printFunction(GDKstdout, mb, stk, 0);
+	printFunction(GDKstdout, mb, 0, LIST_MAL_STMT);
 #endif
 
 	(void)env;
@@ -1167,9 +1176,10 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	flow.inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	flow.reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
 	flow.done = q_create(256);
+	flow.todo = NULL;
+	flow.worker = NULL;
 
-	if (!worker) 
-		DFLOWcreate();
+	DFLOWcreate(&flow);
 
 	ret = DFLOWexecute(&flow);
 	q_destroy(flow.done);
