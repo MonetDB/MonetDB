@@ -42,7 +42,7 @@ to be passed by a handle.
 @h
 
 /*#define DEBUG_MAL_INTERPRETER*/
-#define DEBUG_FLOW 
+/* #define DEBUG_FLOW */
 /* #define DEBUG_FLOW2 */
 /*#define STACKTRACE*/
 
@@ -557,7 +557,7 @@ typedef struct {
     lng clk;
 } FlowTask;
 
-typedef struct {
+typedef struct DataFlow {
 	Client cntxt;		/* for debugging and client resolution */
 	MalBlkPtr mb;		/* carry the context */
 	MalStkPtr stk;
@@ -568,7 +568,9 @@ typedef struct {
 	int *reassign;
 	queue *done;		/* work finished */
 	queue *todo;		/* pending actions for this client */
+	int    nway;		/* number of workers */
 	FlowTask *worker;	/* worker threads for the client */
+	struct DataFlow *free;	/* free list */
 } *DataFlow, DataFlowRec;
 
 typedef struct {
@@ -627,7 +629,6 @@ The dataflow execution is confined to a barrier block.
 Within the block there are multiple flows, which, in principle,
 can be executed in parallel.
 @c
-int nway = 2;
 
 static queue*
 q_create( int sz )
@@ -644,12 +645,14 @@ q_create( int sz )
 	return q;
 }
 
+/*
 static void
 q_destroy( queue *q )
 {
 	GDKfree(q->data);
 	GDKfree(q);
 }
+*/
 
 static void
 q_enqueue(queue *q, void *d)
@@ -802,9 +805,6 @@ We don't allow sequential flow control here.
 	return ret;
 }
 
-/*static FlowTask *worker = NULL;
-static queue *work = NULL; */
-
 @-
 A consequence of multiple threads is that they may claim more
 space then available. This will cause GDKmalloc to fail.
@@ -852,31 +852,6 @@ runDFLOWworker(void *t)
 		}
 		q_enqueue(fs->flow->done, fs);
 	}
-}
-
-static void 
-DFLOWcreate( DataFlowRec *flow)
-{
-	int i;
-
-	(void) flow;
-	mal_set_lock(mal_contextLock, "DFLOWcreate");
-	if ( flow->todo != NULL){
-		mal_unset_lock(mal_contextLock, "DFLOWcreate");
-		return;
-	}
-
-	flow->todo = q_create(256); /* seems enough for the time being */
-
-	nway = GDKnr_threads;
-	flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*nway);
-	for(i=0; i<nway; i++) {
-		flow->worker[i].id = i;
-		flow->worker[i].todo = flow->todo;
-		/* create the thread and let it wait */
-		MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);
-	}
-	mal_unset_lock(mal_contextLock, "DFLOWcreate");
 }
 
 static void
@@ -1008,7 +983,7 @@ DFLOWexecute( DataFlow flow )
 		flow->cntxt->timer = GDKusec();
 	
 	while(pc < limit) {
-		for(i = pc; i < limit && queued < (nway<<1); i++) {
+		for(i = pc; i < limit && queued < (flow->nway<<1); i++) {
 			if (fs[i].status == DFLOWwrapup) 
 				if (pc == i)
 					pc++;
@@ -1146,10 +1121,13 @@ DFLOWexecute( DataFlow flow )
 	return ret;
 }
 
+
+static DataFlow flows = NULL;
+
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {   
-	DataFlowRec flow;
+	DataFlow flow = NULL;
 	str ret = MAL_SUCCEED;
 
 #ifdef DEBUG_FLOW
@@ -1166,27 +1144,51 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	assert(stoppc > startpc);
-	flow.cntxt = cntxt;
-	flow.start = startpc+1;
-	flow.stop = stoppc;
-	flow.mb = mb;
-	flow.stk = stk;
-	flow.status = (char*) GDKzalloc((stoppc-startpc+1));
-	flow.blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
-	flow.inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
-	flow.reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
-	flow.done = q_create(256);
-	flow.todo = NULL;
-	flow.worker = NULL;
+	mal_set_lock(mal_contextLock, "runMALdataflow");
+	flow = flows;
 
-	DFLOWcreate(&flow);
+	if (flow) {
+	 	flows = flow->free;
+	} else {
+		int i;
 
-	ret = DFLOWexecute(&flow);
-	q_destroy(flow.done);
-	GDKfree(flow.status);
-	GDKfree(flow.blocked);
-	GDKfree(flow.inuse);
-	GDKfree(flow.reassign);
+		flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
+
+		/* seems enough for the time being */
+		flow->done = q_create(256);
+		flow->todo = q_create(256); 
+
+		flow->worker = NULL;
+		flow->nway = GDKnr_threads;
+		flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*flow->nway);
+		for(i=0; i<flow->nway; i++) {
+			flow->worker[i].id = i;
+			flow->worker[i].todo = flow->todo;
+			/* create the thread and let it wait */
+			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);
+		}
+	}
+	flow->cntxt = cntxt;
+	flow->start = startpc+1;
+	flow->stop = stoppc;
+	flow->mb = mb;
+	flow->stk = stk;
+
+	flow->status = (char*) GDKzalloc((stoppc-startpc+1));
+	flow->blocked = (char*) GDKzalloc(sizeof(char)*mb->vtop);
+	flow->inuse = (int*) GDKzalloc(sizeof(int)*mb->vtop);
+	flow->reassign = (int*) GDKzalloc(sizeof(int)*mb->vtop);
+	mal_unset_lock(mal_contextLock, "runMALdataflow");
+
+	ret = DFLOWexecute(flow);
+	GDKfree(flow->status);
+	GDKfree(flow->blocked);
+	GDKfree(flow->inuse);
+	GDKfree(flow->reassign);
+	mal_set_lock(mal_contextLock, "runMALdataflow");
+	flow->free = flows;
+	flows = flow;
+	mal_unset_lock(mal_contextLock, "runMALdataflow");
 	return ret; 
 }
 @+ Independent threads
