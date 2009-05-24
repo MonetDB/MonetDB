@@ -77,24 +77,6 @@ comment "Produces the wordcompletion table.";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-#ifdef WIN32
-#ifndef LIBMANUAL
-#define manual_export extern __declspec(dllimport)
-#else
-#define manual_export extern __declspec(dllexport)
-#endif
-#else
-#define manual_export extern
-#endif
-
-manual_export str MANUALcreateSection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreate1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreate0(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALsearch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALhelp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreateIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcreateSummary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-manual_export str MANUALcompletion(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.

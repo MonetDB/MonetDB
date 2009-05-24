@@ -197,34 +197,7 @@ this interface.
 #include "statistics.h"
 #include "algebra.h"
 
-s_export str STATforceUpdateAll(int *ret);
-s_export str STATdrop(str nme);
-s_export str STATforceUpdateAll(int *ret);
-s_export str STATenroll(int *ret, str *nme);
-s_export str STATenrollHistogram(int *ret, str *nme);
-s_export str STATupdateAll(int *ret, int forced);
-s_export str STATupdate(int *ret);
-s_export str STATforceUpdate(int *ret, str *nme);
-s_export str STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATprelude(int *ret);
-s_export str STATepilogue(int *ret);
-s_export str STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATgetHotset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATgetObjects(int *bid);
-s_export str STATgetHistogram (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+str STATforceUpdate(int *ret, str *nme);
 
 
 BAT *STAT_id_inuse;		/* BATs information taken from the box */
@@ -848,7 +821,6 @@ STATgetObjects(int *bid)
 
 @-
 @= stat
-s_export str STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

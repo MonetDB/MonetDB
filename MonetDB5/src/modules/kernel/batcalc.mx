@@ -489,7 +489,6 @@ The similar code base is produced for dealing with a constant argument.
 	}
 }
 @= arithmeticImpl
-batcalc_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -520,7 +519,6 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -544,7 +542,6 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	
 	BAT *bn, *b;
@@ -586,7 +583,6 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r);
 str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 {	
 	BAT *bn, *b;
@@ -624,7 +620,6 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 	return res;
 }
 
-batcalc_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	
 	BAT *bn, *b;
@@ -673,7 +668,6 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	BBPreleaseref(b->batCacheid);
 	return res;
 }
-batcalc_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
 str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 {	
 	BAT *bn, *b;
@@ -793,7 +787,6 @@ define here the necessary implementations separately by copying
 the arithmeticImpl block and removing elements not required.
 @c
 @= numeric_funcs
-batcalc_export str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right);
 str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
 {	
 	@:accum(@3,@2,@4,@5)@
@@ -804,7 +797,6 @@ str bataccum@1_@3_@4_@5(BAT *bn, BAT *b, BAT *right)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
 str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -831,7 +823,6 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	return msg;
 }
 
-batcalc_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
 str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -850,7 +841,6 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 	BBPreleaseref(right->batCacheid);
 	return msg;
 }
-batcalc_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
 str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	
 	BAT *bn, *b;
@@ -875,7 +865,6 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
 str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	
 	BAT *bn, *b;
@@ -901,7 +890,6 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	
 	BAT *bn, *b;
@@ -936,7 +924,6 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	return res;
 }
 
-batcalc_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	
 	BAT *bn, *b;
@@ -1015,7 +1002,6 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 Unary accummulators are only called indirectly. They cannot
 always be defined without signature clashes, eg. -(batA,batC).
 @= unary_impl
-batcalc_export str CMDunary@1(int *ret, int *bid);
 str CMDunary@1(int *ret, int *bid)
 {
 	BAT *b,*bn;
@@ -1067,7 +1053,6 @@ str CMDunary@1(int *ret, int *bid)
 			*o = (*p == @1_nil);
 }
 @c
-batcalc_export str CMDunaryISNIL(int *ret, int *bid);
 str CMDunaryISNIL(int *ret, int *bid)
 {
 	BAT *b,*bn;
@@ -1124,7 +1109,6 @@ str CMDunaryISNIL(int *ret, int *bid)
 @- Comparison operator implementation
 The structure of this code is copied from the arithmetic scheme.
 @= baselineCode
-batcalc_export str CMD_@1_@3(int *ret, int *l, int *r);
 str CMD_@1_@3(int *ret, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -1185,7 +1169,6 @@ str CMD_@1_@3(int *ret, int *l, int *r)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r);
 str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 {	
 	BAT *bn, *b, *right;
@@ -1239,7 +1222,6 @@ str CMDaccum_@1_@3(int *ret, int *d, int *l, int *r)
 	return MAL_SUCCEED;
 }
 @= baselineCstCode
-batcalc_export str CMD_@1_@3_cst(int *ret, int *l, @3 *cst);
 str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 {	
 	BAT *bn, *b;
@@ -1284,13 +1266,11 @@ str CMD_@1_@3_cst(int *ret, int *l, @3 *cst)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batcalc_export str CMD_@4_cst_@3(int *ret, @3 *cst, int *l);
 str CMD_@4_cst_@3(int *ret, @3 *cst, int *l) 
 {
 	return CMD_@1_@3_cst(ret,l,cst);
 }
 
-batcalc_export str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst);
 str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 {	
 	BAT *bn, *b;
@@ -1327,7 +1307,6 @@ str CMDaccum_@1_@3_cst(int *ret, int *r, int *l, @3 *cst)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-batcalc_export str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l);
 str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 {
 	return CMDaccum_@1_@3_cst(ret, r, l, cst);
@@ -1373,7 +1352,6 @@ str CMDaccum_@4_cst_@3(int *ret, int *r, @3 *cst, int *l)
 @:operatorCstImpl(AND,&&,AND)@
 @:operatorCstImpl(OR,||,OR)@
 
-batcalc_export str CMDbitbataccumNOT(int *ret, int *d, int *l);
 str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
 {
@@ -1407,7 +1385,6 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbitbatNOT(int *ret, int *bid);
 str
 CMDbitbatNOT(int *ret, int *bid)
 {

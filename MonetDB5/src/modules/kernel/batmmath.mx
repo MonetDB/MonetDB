@@ -81,19 +81,9 @@ module batmmath;
 #include "mal_exception.h"
 #include "batmmath.h"
 
-#ifdef WIN32
-#ifndef LIBBATMMATH
-#define batmmath_export extern __declspec(dllimport)
-#else
-#define batmmath_export extern __declspec(dllexport)
-#endif
-#else
-#define batmmath_export extern
-#endif
 
 @-
 @= scienceFcnImpl
-batmmath_export str CMDscience_bat_@2_@1(int *ret, int *bid);
 str CMDscience_bat_@2_@1(int *ret, int *bid)
 {
 	BAT *b,*bn;
@@ -130,7 +120,6 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
-batmmath_export str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d);
 str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 {
 	BAT *b,*bn;

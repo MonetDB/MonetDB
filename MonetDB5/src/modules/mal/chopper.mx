@@ -94,22 +94,6 @@ comment "return the BUN tail value using the cursor.";
 #include "mal.h"
 #include "mal_interpreter.h"
 
-#ifdef WIN32
-#ifndef LIBCHOPPER
-#define chopper_export extern __declspec(dllimport)
-#else
-#define chopper_export extern __declspec(dllexport)
-#endif
-#else
-#define chopper_export extern
-#endif
-
-chopper_export str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule);
-chopper_export str CHPhasMoreElements(lng *res, int *vid, int *bid, lng *granule);
-chopper_export str CHPbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPbunHasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-chopper_export str CHPgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 We start with the large chunk iterator.

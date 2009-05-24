@@ -220,7 +220,6 @@ QOTshowPlan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 @-
 @= macroOptimizer
-opt_export str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;
@@ -254,7 +253,6 @@ str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	chkDeclarations(mb);
 	return msg;
 }
-opt_export str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;
@@ -286,7 +284,6 @@ str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	chkDeclarations(mb);
 	return msg;
 }
-opt_export str QOT@1optimizer( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizer( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module s;
 	Symbol t;

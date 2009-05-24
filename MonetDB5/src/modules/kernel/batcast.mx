@@ -149,7 +149,6 @@ for a more expensive operation based on the conversion
 routines in the GDK kernel.
 
 @= Idempotent
-batcast_export str CMDconvert_@1(int *ret, int *bid);
 str CMDconvert_@1(int *ret, int *bid)
 {
 	BAT *b, *bn;
@@ -177,7 +176,6 @@ str CMDconvert_@1(int *ret, int *bid)
 	return MAL_SUCCEED;
 @-
 @= GeneralFixed
-batcast_export str CMDconvert_@1_@2(int *ret, int *bid);
 str CMDconvert_@1_@2(int *ret, int *bid)
 {
 	BAT *b,*bn;
@@ -209,7 +207,6 @@ str CMDconvert_@1_@2(int *ret, int *bid)
 	@:wrapup@
 }
 @= GeneralStr
-batcast_export str CMDconvert_@1_str(int *ret, int *bid);
 str CMDconvert_@1_str(int *ret, int *bid)
 {
 	BATiter bi;
@@ -238,7 +235,6 @@ bunins_failed:
 	@:wrapup@
 }
 
-batcast_export str CMDconvert_str_@1(int *ret, int *bid);
 str CMDconvert_str_@1(int *ret, int *bid)
 {
 	BAT *b,*bn;

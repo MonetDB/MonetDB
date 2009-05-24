@@ -46,15 +46,6 @@ comment "Destroy a semaphore";
 typedef ptr sema;
 typedef ptr monet_sema;
 
-#ifdef WIN32
-#ifndef LIBSEMA
-#define sema_export extern __declspec(dllimport)
-#else
-#define sema_export extern __declspec(dllexport)
-#endif
-#else
-#define sema_export extern
-#endif
 
 int
 create_sema(monet_sema *s, int *init)
@@ -94,7 +85,6 @@ destroy_sema(monet_sema *s)
 The old code base is wrapped to ease update propagation.
 @c
 #include "mal.h"
-sema_export str SEMAcreate(monet_sema *res, int *init);
 str
 SEMAcreate(monet_sema *res, int *init)
 {
@@ -102,7 +92,6 @@ SEMAcreate(monet_sema *res, int *init)
 	return MAL_SUCCEED;
 }
 
-sema_export str SEMAup(int *res, monet_sema *s);
 str
 SEMAup(int *res, monet_sema *s)
 {
@@ -111,7 +100,6 @@ SEMAup(int *res, monet_sema *s)
 	return MAL_SUCCEED;
 }
 
-sema_export str SEMAdown(int *res, monet_sema *s);
 str
 SEMAdown(int *res, monet_sema *s)
 {
@@ -120,7 +108,6 @@ SEMAdown(int *res, monet_sema *s)
 	return MAL_SUCCEED;
 }
 
-sema_export str SEMAdestroy(int *res, monet_sema *s);
 str
 SEMAdestroy(int *res, monet_sema *s)
 {

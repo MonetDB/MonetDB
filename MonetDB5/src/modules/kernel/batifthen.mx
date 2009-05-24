@@ -113,7 +113,6 @@ String arguments call for an extra type casting. In combination
 with type resolution and runtime checks it provides a dense
 definitoin.
 @= ifthenImpl
-batifthen_export str CMDifThen_@1(int *ret, int *bid, int *tid);
 str
 CMDifThen_@1(int *ret, int *bid, int *tid) 
 {
@@ -147,7 +146,6 @@ CMDifThen_@1(int *ret, int *bid, int *tid)
 	@:wrapup@
 }
 
-batifthen_export str CMDifThenCst_@1(int *ret, int *bid, @1 *tid);
 str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 {
 	BATiter bi;
@@ -174,7 +172,6 @@ str CMDifThenCst_@1(int *ret, int *bid, @1 *tid)
 }
 
 @= ifthenelseImpl
-batifthen_export str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid);
 str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 {
 	BAT *b, *bn;
@@ -204,7 +201,6 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	@:void_wrapup@
 }
 
-batifthen_export str CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid);
 str
 CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 {
@@ -243,7 +239,6 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:void_wrapup@
 }
 
-batifthen_export str CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid);
 str
 CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 {
@@ -278,7 +273,6 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:void_wrapup@
 }
 
-batifthen_export str CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val);
 str
 CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 {
@@ -327,7 +321,6 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 @:ifthenelseImpl(dbl)@
 
 @= ifthenelseDefault
-batifthen_export str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid);
 str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 {
 	BATiter bi;
@@ -362,7 +355,6 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	@:wrapup@
 }
 
-batifthen_export str CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid);
 str
 CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 {
@@ -405,7 +397,6 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:wrapup@
 }
 
-batifthen_export str CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid);
 str
 CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 {
@@ -445,7 +436,6 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:wrapup@
 }
 
-batifthen_export str CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val);
 str
 CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 {

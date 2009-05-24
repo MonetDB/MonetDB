@@ -236,7 +236,7 @@ remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port);
  * Stores a new connection in the global state.  The connection is not
  * validated.
  */
-remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
+str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 	userconn c;
 
 	*ret = 0;
@@ -340,7 +340,7 @@ remote_export str RMTgetList(int *ret, int *ret2);
  * grouped in that order.  If merovingian is not running, only running
  * local databases are returned.
  */
-remote_export str RMTgetList(int *ret, int *ret2) {
+str RMTgetList(int *ret, int *ret2) {
 	BAT *list, *kind;
 	str type;
 	userconn c;
