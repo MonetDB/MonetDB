@@ -84,7 +84,7 @@ stderr of test 'mapi_connect_errors_vanish.SF-1432134` in directory 'src/test/Bu
 # 19:33:09 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470  -uinvalid -Pinvalid
 # 19:33:09 >  
 
-!InvalidCredentialsException:checkCredentials:Invalid user credentials:invalid
+!InvalidCredentialsException:checkCredentials:invalid credentials for user 'invalid'
 
 
 # 19:33:09 >  
