@@ -713,6 +713,7 @@ static str RMTconnectInternal(
 	userconn cdef;
 	char conn[BUFSIZ];
 	char *s;
+	Mapi m;
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -743,38 +744,31 @@ static str RMTconnectInternal(
 		}
 	}
 
-	/* prepend the connection to the client list of known ones */
-	c = GDKzalloc(sizeof(struct _connection));
-	c->next = conns;
-	conns = c;
-
-	MT_lock_init(&c->lock, "remote connection lock");
-	/* no need to lock c->lock, since noone can have c (as conns is
-	 * locked */
-
-	c->name = GDKstrdup(conn);
-	c->nextid = 0;
-	c->mconn = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen,
+	m = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen,
 			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
 
 	GDKfree(cdef->dbname);
 	GDKfree(cdef->host);
 	GDKfree(cdef);
 
-	if (mapi_reconnect(c->mconn) != MOK) {
-		char *err = mapi_error_str(c->mconn);
-
-		/* throw away connection? */
-		conns = c->next;
-		MT_lock_destroy(&c->lock);
-		GDKfree(c->name);
-		GDKfree(c);
-
+	if (mapi_reconnect(m) != MOK) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", OPERATION_FAILED ": cannot connect "
-				"connection '%s': %s",
-				conn, err);
+		throw(IO, "remote.connect", OPERATION_FAILED " An error occurred during "
+				"connect of connection '%s': %s",
+				conn, mapi_error(m));
 	}
+
+	/* connection established */
+	
+	c = GDKzalloc(sizeof(struct _connection));
+	c->mconn = m;
+	c->next = conns;
+	conns = c;
+
+	c->name = GDKstrdup(conn);
+	c->nextid = 0;
+
+	MT_lock_init(&c->lock, "remote connection lock");
 
 #ifdef _DEBUG_MAPI_
 	mapi_trace(c->mconn, TRUE);
@@ -931,8 +925,7 @@ RMTfindconn(connection *ret, str conn) {
  * The encoding of the type allows for ease of type checking later on.
  */
 static INLINE str
-RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
-	char buf[BUFSIZ];
+RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
 	char *mod;
 	char *func;
@@ -952,7 +945,6 @@ RMTgetId(str *ret, MalBlkPtr mb, InstrPtr p, int arg) {
 	snprintf(buf, BUFSIZ, "rmt_%s_%s_%s_%s", mod, func, var, rt);
 
 	GDKfree(rt);
-	*ret = GDKstrdup(buf);
 	return(MAL_SUCCEED);
 }
 
@@ -1178,7 +1170,7 @@ remote_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
  */
 str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str conn, tmp;
-	str ident;
+	char ident[BUFSIZ];
 	connection c;
 	ValPtr v;
 	int type;
@@ -1202,11 +1194,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	mal_set_lock(c->lock, "remote.put"); 
 
 	/* get a free, typed identifier for the remote host */
-	RMTgetId(&tmp, mb, pci, 2);
-	/* allocate on the stack as not to leak when we error lateron */
-	ident = alloca(sizeof(char) * (strlen(tmp) + 1));
-	memcpy(ident, tmp, strlen(tmp) + 1);
-	GDKfree(tmp); /* FIXME, this is inefficient... */
+	RMTgetId(ident, mb, pci, 2);
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
@@ -1233,7 +1221,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
 		}
 
-		qbuf[BUFSIZ] = '\0';
+		qbuf[BUFSIZ] = '\0'; /* ensure a terminated string */
 		snprintf(qbuf, BUFSIZ, "%s := bat.new(:%s, :%s, " BUNFMT ");",
 				ident, head, tail, (bid == 0 ? 0 : BATcount(b)));
 #ifdef _DEBUG_REMOTE
