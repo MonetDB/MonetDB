@@ -1911,7 +1911,10 @@ static void TABLETload_chunk(void *data){
 #endif
 }
 
-static int nway = 0;
+/* set nway to 1 since parallel import *cannot* work with the current
+   implementation: there is an inherent bug when the number of records
+   to be imported is smaller than what is available in the file. */
+static int nway = 1;
 
 BUN
 TABLETload_file(Tablet * as, bstream *b, stream *out)
