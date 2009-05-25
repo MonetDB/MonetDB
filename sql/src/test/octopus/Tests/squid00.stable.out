@@ -21,33 +21,22 @@ Ready.
 
 Over..
 
-# 23:29:58 >  
-# 23:29:58 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=33938 
-# 23:29:58 >  
+# 23:14:19 >  
+# 23:14:19 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=36919 
+# 23:14:19 >  
 
 function user.s1_1():void;
-barrier _34 := language.dataflow();
-    _1:bat[:oid,:int]  := sql.bind("sys","squida","bid",0);
-    _6:bat[:oid,:int]  := sql.bind("sys","squida","bid",2);
-    _8 := algebra.kdifference(_1,_6);
-    _1:bat[:oid,:int]  := nil;
-    _9 := algebra.kunion(_8,_6);
-    _8 := nil;
-    _6:bat[:oid,:int]  := nil;
-    _10:bat[:oid,:int]  := sql.bind("sys","squida","bid",1);
-    _12 := algebra.kunion(_9,_10);
-    _9 := nil;
-    _10:bat[:oid,:int]  := nil;
-    _13:bat[:oid,:oid]  := sql.bind_dbat("sys","squida",1);
-    _14 := bat.reverse(_13);
-    _13:bat[:oid,:oid]  := nil;
-    _15 := algebra.kdifference(_12,_14);
-    _12 := nil;
-    _14 := nil;
-exit _34;
+    _15 := nil:bat[:oid,:int];
+barrier (_74,version) := scheduler.octopus(10);
+    _77 := octopus.exec_s1_1("tbd","tentacle_s1_1_67",version);
+    _80 := octopus.exec_s1_1("tbd","tentacle_s1_1_68",version);
+    _82 := octopus.exec_s1_1("tbd","tentacle_s1_1_69",version);
+    _84 := octopus.exec_s1_1("tbd","tentacle_s1_1_70",version);
+    _86 := octopus.exec_s1_1("tbd","tentacle_s1_1_71",version);
+    _15 := mat.pack(_77,_80,_82,_84,_86);
+exit (_74,version);
     _16 := sql.resultSet(1,1,_15);
     sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
-    _15 := nil;
     _21 := io.stdout();
     sql.exportResult(_21,_16);
 end s1_1;
