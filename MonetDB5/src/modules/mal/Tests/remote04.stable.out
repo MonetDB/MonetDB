@@ -41,9 +41,9 @@ function user.main():void;
     remote.disconnect(conn);
 end main;
 [ "mTests_src_modules_mal_monetdb_0" ]
-[ "rmt_user_main_b_bat__str__int_" ]
-[ "rmt_user_main__18_int" ]
-[ "rmt_user_main__30_int" ]
+[ "rmt0_b_bat_str_int" ]
+[ "rmt1__18_int" ]
+[ "rmt2__30_int" ]
 #-----------------#
 # h	t	  # name
 # str	int	  # type

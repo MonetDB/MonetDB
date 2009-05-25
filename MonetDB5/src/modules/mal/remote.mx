@@ -162,8 +162,8 @@ comment "Remotely executes <mod>.<func> using the argument list of remote object
 #define _REMOTE_DEF
 
 
-/* #define _DEBUG_REMOTE_	   trace the interaction */
-/* #define _DEBUG_MAPI_		   trace mapi interaction */
+/* #define _DEBUG_REMOTE_	    trace the interaction */
+/* #define _DEBUG_MAPI_		    trace mapi interaction */
 
 #ifdef WIN32
 #ifndef LIBREMOTE
@@ -918,10 +918,10 @@ RMTfindconn(connection *ret, str conn) {
  * Little helper function that returns a GDKmalloced string containing a
  * valid identifier that is supposed to be unique in the connection's
  * remote context.  The generated string depends on the module and
- * function the caller is in.  It is off-hand predictable what id it
- * will generate, in the form of rmt_<mod>_<func>_<retvar>_<type>.  This
- * alligns the remote variable stack with the local one, and allows for
- * reassigning with a different value.
+ * function the caller is in. But also the runtime context is important.
+ * The format is rmt<id>_<retvar>_<type>.  Every RMTgetId uses a fresh id,
+ * to distinguish amongst different (parallel) execution context.
+ * Re-use of this remote identifier should be done with care.
  * The encoding of the type allows for ease of type checking later on.
  */
 static INLINE str
@@ -931,6 +931,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	char *func;
 	char *var;
 	str rt;
+	static int idtag=0;
 
 	assert (p->retc);
 
@@ -942,7 +943,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	func = getFunctionId(f);
 	rt = getTypeIdentifier(getArgType(mb,p,arg));
 
-	snprintf(buf, BUFSIZ, "rmt_%s_%s_%s_%s", mod, func, var, rt);
+	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
 
 	GDKfree(rt);
 	return(MAL_SUCCEED);

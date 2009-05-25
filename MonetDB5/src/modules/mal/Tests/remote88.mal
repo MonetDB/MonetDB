@@ -1,8 +1,6 @@
 # test octopus framework
 include sql;
 # The script occassionally shows parallism errors.
-# !MALException:remote.get:MALException:remote.get:'io.peephole' undefined in: _3:any := io.peephole(rmt_octopus_exec__9_bat__oid__int_:bat[:oid,:int])
-#
 #profiler.activate("statement");
 #profiler.setFilter("*","*");
 #profiler.openStream("console");

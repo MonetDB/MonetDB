@@ -1,0 +1,24 @@
+# test octopus framework
+# The script aims at creating concurreny problems during connections
+
+include sql;
+dbname := const.take("dbname");
+
+barrier (k,v):= language.newRange(0:int);
+barrier go:= language.dataflow();
+	c1 := remote.connect(dbname, "monetdb", "monetdb","msql");
+	l1:= remote.exec(c1,"inspect","getAtomNames");
+	c2 := remote.connect(dbname, "monetdb", "monetdb","msql");
+	l2:= remote.exec(c1,"inspect","getAtomNames");
+	c3 := remote.connect(dbname, "monetdb", "monetdb","msql");
+	l3:= remote.exec(c1,"inspect","getAtomNames");
+	c4 := remote.connect(dbname, "monetdb", "monetdb","msql");
+	l4:= remote.exec(c1,"inspect","getAtomNames");
+exit go;
+	remote.disconnect(c1);
+	remote.disconnect(c2);
+	remote.disconnect(c3);
+	remote.disconnect(c4);
+	redo (k,v) := language.nextElement(1:int,50:int);
+exit (k,v);
+io.print("survived the attack");
