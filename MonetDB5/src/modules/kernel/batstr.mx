@@ -177,6 +177,15 @@ comment "Insert a string into another";
 #include <iconv.h>
 #endif
 
+#ifdef WIN32
+#ifndef LIBBATSTR
+#define batstr_export extern __declspec(dllimport)
+#else
+#define batstr_export extern __declspec(dllexport)
+#endif
+#else
+#define batstr_export extern
+#endif
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
@@ -216,6 +225,7 @@ comment "Insert a string into another";
 	BBPreleaseref(Z->batCacheid);
 
 @= BATint
+batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   
 	BATiter bi;
@@ -252,6 +262,7 @@ bunins_failed:
 @:BATint(Bytes,strBytes,str)@
 
 @= BATstr
+batstr_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   
 	BATiter bi;
@@ -293,6 +304,7 @@ bunins_failed:
 @-
 @c
 @= STRbatcstcmp
+batstr_export str STRbat@2Cst(int *ret, int *l, str *cst);
 str
 STRbat@2Cst(int *ret, int *l, str *cst)
 {
@@ -342,6 +354,7 @@ implementation for shifted window arithmetic as well.
 	throw(MAL, "batstr.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
 @c
 @= STRbatcmp
+batstr_export str STRbat@2(int *ret, int *l, int *r);
 str
 STRbat@2(int *ret, int *l, int *r)
 {
@@ -383,6 +396,7 @@ bunins_failed:
 @:STRbatcmp(!=,NotEqual,GDK_SORTED)@
 
 @= binarySTR
+batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;
@@ -417,6 +431,7 @@ bunins_failed:
 	throw(MAL, "batstr." @5, OPERATION_FAILED " During bulk operation");
 }
 
+batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   
 	BATiter lefti;
@@ -446,6 +461,7 @@ bunins_failed:
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
 }
 @= binarySTRstr
+batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;
@@ -480,6 +496,7 @@ bunins_failed:
 	throw(MAL, "batstr." @5, OPERATION_FAILED " During bulk operation");
 }
 
+batstr_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   
 	BATiter lefti;
@@ -509,6 +526,7 @@ bunins_failed:
 	throw(MAL, "batstr"@5, OPERATION_FAILED " During bulk operation");
 }
 
+batstr_export str STRcst@1bat(int *ret, @3 *cst, int *r);
 str STRcst@1bat(int *ret, @3 *cst, int *r)
 {   
 	BATiter righti;
@@ -547,6 +565,7 @@ bunins_failed:
 @:binarySTR(WChrAt,int,int,strWChrAt,"chrAt",vp,)@
 @:binarySTR(ChrAt,chr,int,strChrAt,"chrAt",vp,)@
 
+batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str
 STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 {
@@ -585,6 +604,7 @@ The pattern matching routine is optimized for SQL pattern structures.
 @c
 #define percent "\001"
 #define underscore "\002"
+batstr_export str STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc);
 str
 STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 {
@@ -617,6 +637,7 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+batstr_export str STRbatlike_uselect2(int *ret, int *bid, str *pat);
 str
 STRbatlike_uselect2(int *ret, int *bid, str *pat)
 {
@@ -626,6 +647,7 @@ STRbatlike_uselect2(int *ret, int *bid, str *pat)
 @-
 The substring functions require slightly different arguments
 @c
+batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);
 str
 STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 {
@@ -662,6 +684,7 @@ bunins_failed:
 	return msg;
 }
 
+batstr_export str STRbatsubstring(int *ret, int *l, int *r, int *t);
 str STRbatsubstring(int *ret, int *l, int *r, int *t)
 {   
 	BATiter lefti, starti, lengthi;
@@ -720,6 +743,7 @@ bunins_failed:
 	throw(MAL, "batstr.substring", OPERATION_FAILED " During bulk operation");
 }
 
+batstr_export str STRbatreplace(int *ret, int *l, str *pat, str *s2);
 str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 {   
 	BATiter li;

@@ -207,6 +207,7 @@ status_export int set_mem_maxsize(lng *num);
 #endif
 
 extern lng GDKcur_cursize(void);
+status_export str SYSgetmem_cursize(lng *num);
 str
 SYSgetmem_cursize(lng *num)
 {
@@ -214,6 +215,7 @@ SYSgetmem_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+status_export str SYSgetmem_maxsize(lng *num);
 str
 SYSgetmem_maxsize(lng *num)
 {
@@ -222,6 +224,7 @@ SYSgetmem_maxsize(lng *num)
 }
 
 
+status_export str SYSgetvm_cursize(lng *num);
 str
 SYSgetvm_cursize(lng *num)
 {
@@ -229,6 +232,7 @@ SYSgetvm_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+status_export str SYSgetvm_maxsize(lng *num);
 str
 SYSgetvm_maxsize(lng *num)
 {
@@ -236,6 +240,7 @@ SYSgetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+status_export str SYSsetvm_maxsize(lng *num);
 str
 SYSsetvm_maxsize(lng *num)
 {
@@ -267,6 +272,7 @@ static time_t clk = 0;
 static struct tms state;
 #endif
 
+status_export str SYScpuStatistics(int *ret);
 str
 SYScpuStatistics(int *ret)
 {
@@ -326,6 +332,7 @@ SYScpuStatistics(int *ret)
 Same observations as to SYScpuStatistics()
 @c
 static char *memincr = NULL;
+status_export str SYSmemStatistics(int *ret);
 str
 SYSmemStatistics(int *ret)
 {
@@ -465,6 +472,7 @@ set_vm_maxsize(lng *num)
 	}
 @c
 
+status_export str SYSmem_usage(int *ret, lng *minsize);
 str
 SYSmem_usage(int *ret, lng *minsize)
 {
@@ -561,6 +569,7 @@ SYSmem_usage(int *ret, lng *minsize)
 }
 
 
+status_export str SYSvm_usage(int *ret, lng *minsize);
 str
 SYSvm_usage(int *ret, lng *minsize)
 {
@@ -659,6 +668,7 @@ The BAT grows. It should be compacted.
 # include <sys/resource.h>
 #endif
 
+status_export str SYSioStatistics(int *ret);
 str
 SYSioStatistics(int *ret)
 {
@@ -710,6 +720,7 @@ SYSioStatistics(int *ret)
 	return MAL_SUCCEED;
 }
 
+status_export str SYSgdkEnv(int *ret);
 str
 SYSgdkEnv(int *ret)
 {
@@ -749,6 +760,7 @@ SYSgdkEnv(int *ret)
 	return MAL_SUCCEED;
 }
 
+status_export str SYSgdkThread(int *ret);
 str
 SYSgdkThread(int *ret)
 {

@@ -1211,6 +1211,15 @@ Wrapping the version 4 xtables code base
 #include "mal_exception.h"
 #include "mal_atom.h"
 
+#ifdef WIN32
+#ifndef LIBGROUP
+#define group_export extern __declspec(dllimport)
+#else
+#define group_export extern __declspec(dllexport)
+#endif
+#else
+#define group_export extern
+#endif
 
 @-
 Recall that we only support void- and oid- typed heads.
@@ -1219,6 +1228,7 @@ This is captured as a runtime check in the implementation.
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
 		throw(MAL, "group.@2", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 @c
+group_export str GRPprelude(void);
 str
 GRPprelude(void)
 {
@@ -1227,6 +1237,7 @@ GRPprelude(void)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize);
 str
 GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 {
@@ -1315,7 +1326,8 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 @:group_ordered(int)@
 @:group_ordered(lng)@
 
-str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
+group_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
+group_export str GRPgroup(int *rethisto, int *retbid, int *bid);
 str
 GRPgroup(int *rethisto, int *retbid, int *bid)
 {
@@ -1411,6 +1423,7 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid);
 str
 GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 {
@@ -1449,6 +1462,7 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid);
 str
 GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 {
@@ -1481,6 +1495,7 @@ GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPrefine(int *retid, int *bid, int *aid);
 str
 GRPrefine(int *retid, int *bid, int *aid)
 {
@@ -1506,6 +1521,7 @@ GRPrefine(int *retid, int *bid, int *aid)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
 str
 GRPrefine_rev(int *retid, int *bid, int *aid)
 {
@@ -1711,6 +1727,7 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 	GDKfree(cnt);
 
 @= arithsumprod
+group_export str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils);
 str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 {
 	BAT *b = NULL, *e = NULL;
@@ -1781,6 +1798,7 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils);
 str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 {
 	BAT *bn, *b, *e;
@@ -1872,6 +1890,7 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 @:arithsumprod(dbl,tloc,dbl)@
 
 @= arithavg
+group_export str GRPavg_@1(int *ret, int *bid, int *eid);
 str GRPavg_@1(int *ret, int *bid, int *eid)
 {
 	BAT *b = NULL, *e = NULL;
@@ -1954,6 +1973,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 @:arithavg(dbl,tloc)@
 
 @= arithvar
+group_export str GRPvar_@1(int *ret, int *bid, int *eid);
 str GRPvar_@1(int *ret, int *bid, int *eid)
 {
 	int err = 0;
@@ -2185,6 +2205,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 @= extreme_
 @:extreme(@1,@2,oid,@3)@
 @:extreme(@1,@2,ptr,@3)@
+group_export str GRP@1(int *retval, int *bid, int *eid);
 str
 GRP@1(int *retval, int *bid, int *eid)
 {
@@ -2221,6 +2242,7 @@ GRP@1(int *retval, int *bid, int *eid)
 The simple extreme operations exploit the grouping and order
 properties to speed up the process.
 @= xqMinMaxImpl
+group_export str GRP@1_oid_@2(int *retval, int *bid);
 str GRP@1_oid_@2(int *retval, int *bid)
 {
 	BATiter bi, bni;
@@ -2323,6 +2345,7 @@ str GRP@1_oid_@2(int *retval, int *bid)
         GDKfree(cnt);
 @c
 
+group_export str GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils);
 str
 GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 {
@@ -2415,6 +2438,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 	return MAL_SUCCEED;
 }
 
+group_export str GRPsize(int *retval, int *bid, int *eid);
 str
 GRPsize(int *retval, int *bid, int *eid)
 {
@@ -2476,6 +2500,7 @@ GRPsize(int *retval, int *bid, int *eid)
 @-
 The window aggregate functions
 @= windowsum
+group_export str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift);
 str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 {
 	BATiter bi;
@@ -2522,6 +2547,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+group_export str GRPwindowsum_@1(int *retval, int *bid, int  *size);
 str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }

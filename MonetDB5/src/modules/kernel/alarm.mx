@@ -85,6 +85,25 @@ typedef struct {
 #include "alarm.h"
 #include <time.h>
 
+#ifdef WIN32
+#ifndef LIBALARM
+#define alarm_export extern __declspec(dllimport)
+#else
+#define alarm_export extern __declspec(dllexport)
+#endif
+#else
+#define alarm_export extern
+#endif
+
+alarm_export str ALARMprelude(void);
+alarm_export str ALARMepilogue(void);
+alarm_export str ALARMusec(lng *ret);
+alarm_export str ALARMsleep(int *res, int *secs);
+alarm_export str ALARMsetalarm(int *res, int *secs, str *action);
+alarm_export str ALARMtimers(int *res);
+alarm_export str ALARMctime(str *res);
+alarm_export str ALARMepoch(int *res);
+alarm_export str ALARMtime(int *res);
 
 static monet_timer_t timer[MAXtimer];
 static int timerTop = 0;

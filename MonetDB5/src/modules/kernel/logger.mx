@@ -82,8 +82,18 @@ comment "Free the resources used by the logger.";
 #include "mal.h"
 #include "mal_exception.h"
 
+#ifdef WIN32
+#ifndef LIBLOGGER
+#define logger_export extern __declspec(dllimport)
+#else
+#define logger_export extern __declspec(dllexport)
+#endif
+#else
+#define logger_export extern
+#endif
 
 /* the wrappers */
+logger_export str logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, int *version); 
 
 str
 logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, int *version) 
@@ -98,6 +108,7 @@ logger_create_wrap( logger *L, int *debug, str *fn, str *dirname, str *dbname, i
 		*dirname, *dbname, *version);
 }
 
+logger_export str logger_destroy_wrap( logger *L ) ;
 
 str
 logger_destroy_wrap( logger *L ) 
@@ -110,6 +121,7 @@ logger_destroy_wrap( logger *L )
 	throw(MAL, "logger.destroy", OPERATION_FAILED);
 }
 
+logger_export int logger_exit_wrap(logger *L );
 
 int 
 logger_exit_wrap(logger *L )
@@ -120,6 +132,7 @@ logger_exit_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int logger_restart_wrap(logger *L );
 
 int 
 logger_restart_wrap(logger *L )
@@ -130,6 +143,7 @@ logger_restart_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int logger_cleanup_wrap(logger *L );
 
 int 
 logger_cleanup_wrap(logger *L )
@@ -140,6 +154,7 @@ logger_cleanup_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int logger_changes_wrap(int *r, logger *L );
 
 int 
 logger_changes_wrap(int *r, logger *L )
@@ -153,6 +168,7 @@ logger_changes_wrap(int *r, logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int log_tstart_wrap(logger *L );
 
 int 
 log_tstart_wrap(logger *L )
@@ -163,6 +179,7 @@ log_tstart_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int log_tend_wrap(logger *L );
 
 int 
 log_tend_wrap(logger *L )
@@ -173,6 +190,7 @@ log_tend_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int log_abort_wrap(logger *L );
 
 int 
 log_abort_wrap(logger *L )
@@ -183,6 +201,7 @@ log_abort_wrap(logger *L )
 	return GDK_FAIL;
 }
 
+logger_export int log_delta_wrap(logger *L, BAT *b, str nme );
 
 int 
 log_delta_wrap(logger *L, BAT *b, str nme )
@@ -193,6 +212,7 @@ log_delta_wrap(logger *L, BAT *b, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int log_bat_wrap(logger *L, BAT *b, str nme );
 
 int 
 log_bat_wrap(logger *L, BAT *b, str nme )
@@ -203,6 +223,7 @@ log_bat_wrap(logger *L, BAT *b, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int log_bat_clear_wrap(logger *L, str nme );
 
 int 
 log_bat_clear_wrap(logger *L, str nme )
@@ -213,6 +234,7 @@ log_bat_clear_wrap(logger *L, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int log_bat_persists_wrap(logger *L, BAT *b, str nme );
 
 int 
 log_bat_persists_wrap(logger *L, BAT *b, str nme )
@@ -223,6 +245,7 @@ log_bat_persists_wrap(logger *L, BAT *b, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int log_bat_transient_wrap(logger *L, str nme );
 
 int 
 log_bat_transient_wrap(logger *L, str nme )
@@ -233,6 +256,7 @@ log_bat_transient_wrap(logger *L, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int logger_add_bat_wrap( int *bid, logger *L, BAT *b, str nme );
 
 int
 logger_add_bat_wrap( int *bid, logger *L, BAT *b, str nme ) 
@@ -245,6 +269,7 @@ logger_add_bat_wrap( int *bid, logger *L, BAT *b, str nme )
 	return GDK_FAIL;
 }
 
+logger_export int logger_del_bat_wrap( logger *L, int *bid );
 
 int
 logger_del_bat_wrap( logger *L, int *bid ) 
@@ -257,6 +282,7 @@ logger_del_bat_wrap( logger *L, int *bid )
 	return GDK_FAIL;
 }
 
+logger_export int logger_find_bat_wrap( int *bid, logger *L, str nme );
 
 int
 logger_find_bat_wrap( int *bid, logger *L, str nme ) 

@@ -132,6 +132,44 @@ comment "Collect the environment variables.";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
+#ifdef WIN32
+#ifndef LIBINSPECT
+#define inspect_export extern __declspec(dllimport)
+#else
+#define inspect_export extern __declspec(dllexport)
+#endif
+#else
+#define inspect_export extern
+#endif
+
+inspect_export str INSPECTgetWelcome(str *ret);
+inspect_export str INSPECTgetFunction(int *ret);
+inspect_export str INSPECTgetModule(int *ret);
+inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTgetEnvironment(int *ret);
+inspect_export str INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTatom_names(int *ret);
+inspect_export str INSPECTatom_sup_names(int *ret);
+inspect_export str INSPECTatom_sizes(int *ret);
+inspect_export str INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+inspect_export str INSPECTtypename(str *ret, int *tpe);
+inspect_export str INSPECTtype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+inspect_export str INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.

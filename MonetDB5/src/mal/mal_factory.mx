@@ -301,7 +301,7 @@ static PlantRecord plants[MAXPLANTS];
 static int lastPlant;
 static int plantId = 1;
 
-Plant newPlant(MalBlkPtr mb);
+mal_export Plant newPlant(MalBlkPtr mb);
 
 int
 factoryHasFreeSpace(){

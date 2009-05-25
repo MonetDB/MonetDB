@@ -121,6 +121,15 @@ typedef struct {
 #include "counters.h"
 #include "errno.h"
 
+#ifdef WIN32
+#ifndef LIBCOUNTERS
+#define counters_export extern __declspec(dllimport)
+#else
+#define counters_export extern __declspec(dllexport)
+#endif
+#else
+#define counters_export extern
+#endif
 
 int NumEvents = 0, NoEvent = 0;
 
@@ -3166,6 +3175,7 @@ CNTRSinit(int *ret){
 	init_counters();
 	return MAL_SUCCEED;
 }
+counters_export str CNTRSstart(int *ret, int *ev1, int *ev2);
 str
 CNTRSstart(int *ret, int *ev1, int *ev2){
 	if( ctop== 32)
@@ -3174,6 +3184,7 @@ CNTRSstart(int *ret, int *ev1, int *ev2){
 	*ret = ctop++;
 	return MAL_SUCCEED;
 }
+counters_export str CNTRSreset(int *ret, int *idx, int *ev1, int *ev2);
 str
 CNTRSreset(int *ret, int *idx, int *ev1, int *ev2){
 	if( *idx <0 || *idx>= 32)
@@ -3182,6 +3193,7 @@ CNTRSreset(int *ret, int *idx, int *ev1, int *ev2){
 	(void) ret;
 	return MAL_SUCCEED;
 }
+counters_export str CNTRSstop(int *ret, int *idx);
 str
 CNTRSstop(int *ret, int *idx){
 	(void) ret;
@@ -3191,6 +3203,7 @@ CNTRSstop(int *ret, int *idx){
 	return MAL_SUCCEED;
 }
 
+counters_export str CNTRScounter2bat(int *bid, int *idx);
 str
 CNTRScounter2bat(int *bid, int *idx){
 	BAT *bn=NULL;
@@ -3206,6 +3219,7 @@ CNTRScounter2bat(int *bid, int *idx){
 	return MAL_SUCCEED;
 }
 
+counters_export str CNTRScounter2str(str *ret, int *idx);
 str
 CNTRScounter2str(str *ret, int *idx){
 	char buf[1024]="";
@@ -3234,6 +3248,7 @@ CNTRScounter2str(str *ret, int *idx){
 	throw(MAL, "counters.bat","NYI");
 }
 
+counters_export str CNTRSnativeEvents(int *ret);
 str
 CNTRSnativeEvents(int *ret){
 	BAT *bn=0;
@@ -3245,6 +3260,7 @@ CNTRSnativeEvents(int *ret){
 	return MAL_SUCCEED;
 }
 
+counters_export str CNTRSunifiedEvents(int *ret);
 str
 CNTRSunifiedEvents(int *ret){
 	BAT *bn=0;
@@ -3256,6 +3272,7 @@ CNTRSunifiedEvents(int *ret){
 	return MAL_SUCCEED;
 }
 
+counters_export str CNTRSeventNumber(int *ret, str *nme);
 str
 CNTRSeventNumber(int *ret, str *nme){
 #if defined(HWCOUNTERS)
@@ -3278,6 +3295,7 @@ CNTRSeventNumber(int *ret, str *nme){
 	(void) nme;
 	return MAL_SUCCEED;
 }
+counters_export str CNTRSeventName(str *ret, int *nr);
 str
 CNTRSeventName(str *ret, int *nr){
 	(void) nr;

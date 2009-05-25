@@ -130,9 +130,48 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 #include "mal_exception.h"
 
 
+#ifdef WIN32
+#ifndef LIBPCRE
+#define pcre_export extern __declspec(dllimport)
+#else
+#define pcre_export extern __declspec(dllexport)
+#endif
+#else
+#define pcre_export extern
+#endif
 
 #include <pcre.h>
 
+pcre_export str PCREquote(str *r, str *v);
+pcre_export str PCREselect(int *res, str *pattern, int *bid);
+pcre_export str PCREuselect(int *res, str *pattern, int *bid);
+pcre_export str PCREmatch(bit *ret, str *val, str *pat);
+pcre_export str PCREindex(int *ret, pcre *pat, str *val);
+pcre_export str PCREpatindex(int *ret, str *pat, str *val);
+pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
+
+pcre_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
+pcre_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
+
+pcre_export str PCREcompile_wrap(pcre ** res, str *pattern);
+pcre_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+pcre_export int pcre_tostr(str *tostr, int *l, pcre * p);
+pcre_export int pcre_fromstr(str instr, int *l, pcre ** val);
+pcre_export int pcre_nequal(pcre * l, pcre * r);
+pcre_export BUN pcre_hash(pcre * b);
+pcre_export pcre * pcre_null(void);
+pcre_export void pcre_del(Heap *h, var_t *index);
+pcre_export int pcre_length(pcre * p);
+pcre_export void pcre_heap(Heap *heap, size_t capacity);
+pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
+pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
+pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
+pcre_export str PCRElike2(bit *ret, str *s, str *pat);
+pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
+pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
+pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str pcre_init(void);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {

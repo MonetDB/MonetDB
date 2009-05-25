@@ -626,6 +626,7 @@ PQinit(int *ret, int *bid, wrd *maxsize){
 }
 @-
 @= PQimpl1
+pqueue_export str PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el);
 str
 PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
@@ -636,6 +637,7 @@ PQenqueue_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	return MAL_SUCCEED;
 }
 
+pqueue_export str PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el);
 str
 PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 	BAT *b;
@@ -647,6 +649,7 @@ PQtopreplace_@1@2(int *ret, int *bid, oid *idx, @1 *el){
 }
 
 @= PQimpl2
+pqueue_export str PQmovedowntop_@1@2(int *ret, int *bid);
 str
 PQmovedowntop_@1@2(int *ret, int *bid){
 	BAT *b;
@@ -657,6 +660,7 @@ PQmovedowntop_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
+pqueue_export str PQdequeue_@1@2(int *ret, int *bid);
 str
 PQdequeue_@1@2(int *ret, int *bid){
 	BAT *b;
@@ -668,6 +672,7 @@ PQdequeue_@1@2(int *ret, int *bid){
 	return MAL_SUCCEED;
 }
 
+pqueue_export str PQtopn_void@1@2(int *ret, int *bid, int *N);
 str
 PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
@@ -686,6 +691,7 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "pqueue.topN", MAL_MALLOC_FAIL);
 }
+pqueue_export str PQtopn_@1@2(int *ret, int *bid, int *N);
 str
 PQtopn_@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
@@ -729,6 +735,7 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 
 @= PQany
 /* int PQenqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)*/
+pqueue_export str PQenqueue_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str  PQenqueue_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;
@@ -754,6 +761,7 @@ str  PQenqueue_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /* int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe) */
+pqueue_export str PQtopreplace_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str  PQtopreplace_any@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int tpe;

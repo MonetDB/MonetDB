@@ -100,8 +100,24 @@ comment "Fill an array representation with constants ";
 
 /*----------------------------------------------------------------------------*/
 
+#ifdef WIN32
+#ifndef LIBARRAY
+#define array_export extern __declspec(dllimport)
+#else
+#define array_export extern __declspec(dllexport)
+#endif
+#else
+#define array_export extern
+#endif
+
+array_export str ARRAYproduct(int *ret, int *bid, int *rid);
+array_export str ARRAYproject(int *ret, int *bid, int *cst);
 
 @= grid_impl
+array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+array_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+array_export str ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+array_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
 
 int
 fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
@@ -253,6 +269,7 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 
 @-
 @= arraymultiply
+array_export str ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid);
 str
 ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	BAT *bn, *b, *r;

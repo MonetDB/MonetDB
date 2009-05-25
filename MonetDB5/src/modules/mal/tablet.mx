@@ -496,8 +496,44 @@ tablet_export int has_whitespace(char *sep);
 #define getcwd _getcwd
 #endif
 
-void TABshowHeader(Tablet * t);
-void TABshowRow(Tablet * t);
+tablet_export str TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdisplayRow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetProperties(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABfinishReport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetPivot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetComplaints(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetDelimiter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTableBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetRowBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnBracket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnNull(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnWidth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnPosition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetColumnDecimal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABsetTryAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+tablet_export str TABfirstPage(int *ret);
+tablet_export str TABlastPage(int *ret);
+tablet_export str TABnextPage(int *ret);
+tablet_export str TABprevPage(int *ret);
+tablet_export str TABgetPage(int *ret, int *pnr);
+tablet_export str TABgetPageCnt(int *ret);
+tablet_export str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr);
+tablet_export str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str
+*filename, int *nr);
+tablet_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
+tablet_export str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s);
+tablet_export void TABshowHeader(Tablet * t);
+tablet_export void TABshowRow(Tablet * t);
+tablet_export void TABshowRange(Tablet * t, lng first, lng last);
 
 static void makeTableSpace(int rnr, unsigned int acnt);
 static str bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k);
