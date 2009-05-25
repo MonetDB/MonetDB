@@ -79,7 +79,7 @@ stderr of test 'unknown_user` in directory 'src/test/Users` itself:
 # 20:38:25 >  /usr/bin/python unknown_user.SQL.py unknown_user 
 # 20:38:25 >  
 
-!InvalidCredentialsException:checkCredentials:Invalid user credentials:this_user_does_not_exist
+!InvalidCredentialsException:checkCredentials:invalid credentials for user 'this_user_does_not_exist'
 
 
 # 20:38:25 >  
