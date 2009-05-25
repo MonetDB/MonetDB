@@ -904,6 +904,35 @@ def am_libs(fd, var, libsmap, am):
     am_find_ins(am, libsmap)
     am_deps(fd, libsmap['DEPS'], ".lo", am)
 
+def am_gem(fd, var, gem, am):
+    rd = 'RUBY_DIR'
+    if gem.has_key('DIR'):
+        rd = gem['DIR'][0]
+    rd = am_translate_dir(rd, am)
+    fd.write('if HAVE_RUBYGEM\n')
+    fd.write('all-local-%s:' % var)
+    am['ALL'].append(var)
+    for f in gem['FILES']:
+        fd.write(' %s' % f[:-4])
+    fd.write('\n')
+    for f in gem['FILES']:
+        sf = f.replace('.', '_')
+        am['INSTALL'].append(sf)
+        am['UNINSTALL'].append(sf)
+        fd.write('%s: %s\n' % (f[:-4], f))
+        fd.write('\td=$(dir $<); [ "$$d" -ef . ] || tar cf - -C "$$d" %s `sed -n \'/.*\.files *= *\[ */{s///;s/ *\].*//;s/"//g;s/ *, */ /g;p;}\' "$$d/%s"` | tar xf -\n' % (f, f))
+        fd.write('\tgem build %s\n' % f)
+        fd.write('install-exec-local-%s: %s\n' % (sf, f[:-4]))
+        fd.write('\tgem install --local --install-dir $(DESTDIR)%s --force --rdoc %s\n' % (rd, f[:-4]))
+        fd.write('uninstall-exec-local-%s: %s\n' % (sf, f[:-4]))
+        fd.write('\tgem uninstall --install-dir $(DESTDIR)%s %s\n' % (rd, f[:-4]))
+    fd.write('else\n')
+    for f in gem['FILES']:
+        sf = f.replace('.', '_')
+        fd.write('install-exec-local-%s:\n' % sf)
+        fd.write('uninstall-exec-local-%s:\n' % sf)
+    fd.write('endif\n')
+
 def am_ant(fd, var, ant, am):
 
     target = var[4:]                    # the ant target to call
@@ -1032,6 +1061,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
+                'GEM': am_gem,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):
