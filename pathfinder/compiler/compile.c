@@ -1057,6 +1057,9 @@ PFcompile_MonetDB (char *xquery, char* url,
         laroot = PFla_cse (laroot);
         /* compile logical into a physical plan */
         paroot = PFplan (laroot);
+        /* add border operators to the physical plan */
+        paroot = PFpa_intro_borders (paroot);
+
         /* generate internal MIL representation */
         mroot = PFmilgen (paroot, genType);
 
