@@ -1123,6 +1123,7 @@ DFLOWexecute( DataFlow flow )
 
 
 static DataFlow flows = NULL;
+static int workerid;
 
 str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc, 
 		int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
@@ -1162,7 +1163,7 @@ str runMALdataflow( Client cntxt, MalBlkPtr mb, int startpc,
 		flow->nway = GDKnr_threads;
 		flow->worker= (FlowTask *) GDKzalloc(sizeof(FlowTask)*flow->nway);
 		for(i=0; i<flow->nway; i++) {
-			flow->worker[i].id = i;
+			flow->worker[i].id = workerid++;
 			flow->worker[i].todo = flow->todo;
 			/* create the thread and let it wait */
 			MT_create_thread(&flow->worker[i].tid, runDFLOWworker, flow->worker+i);

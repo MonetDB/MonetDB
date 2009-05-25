@@ -159,11 +159,18 @@ string for ease of comparison later.
 @c
 str
 getTypeIdentifier(malType tpe){
-	str s,t;
+	str s,t,v;
 	s= getTypeName(tpe);
 	for ( t=s; *t; t++)
 		if ( !isalnum((int) *t) )
 			*t='_';
+	t--;
+	if (*t == '_') *t = 0;
+	for (v=s, t=s+1; *t; t++){
+		if (  !(*t == '_' && *v == '_' ) )
+			*++v = *t;
+	}
+	*++v =0;
 	return s;
 }
 
