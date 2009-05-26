@@ -29,8 +29,6 @@ rpmmacros = `rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(rpmtopdir)/rpm
 @HAVE_PERL_SWIG_TRUE@perl=--with perl
 @HAVE_PYTHON_SWIG_FALSE@python=--without python
 @HAVE_PYTHON_SWIG_TRUE@python=--with python
-@HAVE_RUBY_SWIG_FALSE@ruby=--without ruby
-@HAVE_RUBY_SWIG_TRUE@ruby=--with ruby
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
