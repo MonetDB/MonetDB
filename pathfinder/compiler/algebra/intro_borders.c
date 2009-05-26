@@ -295,10 +295,12 @@ introduce_dep_borders_worker (PFpa_op_t *n)
 
     for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         if (!pfIN(n) && pfIN(n->child[i]) &&
-            n->child[i]->kind != pa_nil)
+            n->child[i]->kind != pa_nil) {
             /* Introduce a border if a boundary is reached
                and stop the traversal. */
             n->child[i] = PFpa_dep_border (n->child[i]);
+            n->child[i]->prop = L(n->child[i])->prop;
+        }
         else
             /* Recursively traverse the plan otherwise. */
             introduce_dep_borders_worker (n->child[i]);
