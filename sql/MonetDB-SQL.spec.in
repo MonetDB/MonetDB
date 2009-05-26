@@ -1,6 +1,6 @@
 %define name MonetDB-SQL
 %define version @VERSION@
-%define buildno $(date +%Y%m%d)
+%define buildno %(date +%Y%m%d)
 %define release %{buildno}%{?dist}%{?oid32:.oid32}%{!?oid32:.oid%{bits}}
 
 # groups of related archs
