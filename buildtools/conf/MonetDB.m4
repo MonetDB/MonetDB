@@ -710,7 +710,7 @@ yes-*-*)
 		dnl  the "sa_handler" member of the "sigaction" struct,
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
-		CFLAGS="$CFLAGS -std=gnu99"
+		CPPFLAGS="$CPPFLAGS -std=gnu99"
 		;;
 	4.2.*-*)
 		dnl gcc 4.2 has a warning on inline functions in C99 mode being
@@ -718,25 +718,25 @@ yes-*-*)
 		dnl want to get away for a little while with GNU89 inlining
 		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
 		dnl I think
-		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
+		CPPFLAGS="$CPPFLAGS -std=c99 -fgnu89-inline"
 		;;
 	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
-		CFLAGS="$CFLAGS -std=c99"
+		CPPFLAGS="$CPPFLAGS -std=c99"
 		;;
 	esac
 	;;
 -*icc*-linux*|-*ecc*-linux*)
       	case "$host-$icc_ver" in
-        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-        *-*-*-11.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-      	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
+        *-*-*-10.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
+        *-*-*-11.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
+      	*-*-*-*)    	CPPFLAGS="$CPPFLAGS -c99" 		;;
       	esac   
 	;;
 -*pgcc*-linux*)
-	CFLAGS="$CFLAGS -c9x"
+	CPPFLAGS="$CPPFLAGS -c9x"
 	;;
 -*-solaris*)
-	CFLAGS="$CFLAGS -xc99"
+	CPPFLAGS="$CPPFLAGS -xc99"
 	;;
 esac
 
