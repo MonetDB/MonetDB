@@ -37,27 +37,20 @@ module ActiveRecord
       
       # extract connection parameters
       config 	= config.symbolize_keys
-      host 	= config[:host] || "localhost"
-      port 	= config[:port] || 50000
-      username 	= config[:username].to_s || "monetdb"
-      password	= config[:password].to_s || "monetdb"
+
+      host = config[:host] || "127.0.0.1"
+      port = config[:port] || 50000
+      username 	= config[:username] || "monetdb"
+      password	= config[:password] || "monetdb"
     
       # Use "sql" as default language if none is specified
-      if config.has_key?(:lang)
-        lang = config[:lang]
-      else
-        lang = "sql"
-      end
-
+      lang = config[:lang] || "sql"
+      
       # use empty string as database name if none is specified
-      if config.has_key?(:database)
-        database = config[:database]
-      else
-        database = ""
-      end
-     
+      database = config[:database] || ""
+      
       dbh = MonetDB.new
-      ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database], config)
+      ConnectionAdapters::MonetDBAdapter.new(dbh, logger, [host, port, username, password, database, lang], config)
     end
  end
 
@@ -183,7 +176,8 @@ module ActiveRecord
     # Close this connection and open a new one in its place.
     def reconnect!
       if @connection != nil
-        @connection.reconnect
+        #@connection.reconnect
+        false
       end
     end
 
@@ -550,7 +544,8 @@ module ActiveRecord
     private
       def connect
         if(@connection)
-          @connection.connect 
+          #@connection.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "ruby", auth_type = "SHA1")
+          @connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")
         end
       end 
   end

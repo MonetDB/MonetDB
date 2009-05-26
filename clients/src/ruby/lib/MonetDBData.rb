@@ -27,6 +27,8 @@ class MonetDBData < MonetDBStatement
   Q_TABLE               = "1" # SELECT operation
   Q_UPDATE              = "2" # INSERT/UPDATE operations
   Q_CREATE              = "3" # CREATE/DROP TABLE operations
+  Q_BLOCK               = "6" # QBLOCK message
+  
 
   MONET_HEADER_OFFSET   = 2
 
@@ -39,6 +41,7 @@ class MonetDBData < MonetDBStatement
     # Structure containing the header+results set for a fired Q_TABLE query
     @Q_TABLE_instance = OpenStruct.new
     @Q_TABLE_instance.query = {}
+    @Q_TABLE_instance.block_query = {}
     @Q_TABLE_instance.header = {}
     @Q_TABLE_instance.record_set = []
     @Q_TABLE_instance.index = 0 # Position of the last returned record
@@ -153,7 +156,6 @@ class MonetDBData < MonetDBStatement
     #  puts data
     # for row in data do
     while row_index < row_count
-      
       if ( row_index % row_offset ) == 0
         if row_index + row_offset > row_count
           row_offset = row_count - row_index
@@ -176,23 +178,34 @@ class MonetDBData < MonetDBStatement
       
       # Process the records one line at a time, store them as string. Type conversion will be performed "on demand" by the user.
       row = @connection.socket.readline
-      
+     
       if row != ""
         if row[MONET_HEADER_OFFSET] == nil
+          # Empty line - no more data to come
+          break
+        elsif row[MONET_HEADER_OFFSET...MONET_HEADER_OFFSET+2] == "&6" 
+          # Processing a new block of rows - the data has already been buffered, continue and process tuples
+          next
           
-        elsif row[MONET_HEADER_OFFSET].chr == "%"
-         # puts "HEADER"
-         # puts row
-         # process header data
-         # header << row
-          
-        elsif row[MONET_HEADER_OFFSET].chr == "&" 
-          # puts "HEADER"
-          # puts row
-          # @Q_TABLE_instance.query = parse_header_query(row[2...row.length])
-        else 
+          #@Q_TABLE_instance.block_query = parse_header_query(row[MONET_HEADER_OFFSET...row.length])
+          #block_record_set = Array.new
+      
+          #0.upto(@Q_TABLE_instance.block_query['rows'].to_i - 1) do
+            #row = @connection.socket.readline 
+            #puts row
+            #if row[0].chr == '['
+            #  block_record_set << parse_header_query(row[MONET_HEADER_OFFSET...row.length])
+            #  row_index += 1
+            #else
+            #  record_set << block_record_set
+          #  end
+          #end
+        elsif row[MONET_HEADER_OFFSET...MONET_HEADER_OFFSET+2] == "&4"
+          # Transaction/Rollback - skip for now
+          next
+        else
           # process tuples, store the actual data in an array (each tuple is an array itself)
-          record_set << parse_tuples(row[MONET_HEADER_OFFSET...row.length])
+          record_set << parse_tuples(row)
           row_index += 1
         end
       end
@@ -323,7 +336,7 @@ class MonetDBData < MonetDBStatement
   # Parses a query header and returns information about the query.
   def parse_header_query(row)
     type = row[1].chr
-    if type == Q_TABLE
+    if type == Q_TABLE or type == Q_BLOCK
       # Performing a SELECT: store informations about the table size, query id, total number of records and returned.
       rows = row.split(' ')[2]
       columns = row.split(' ')[3]
