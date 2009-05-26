@@ -928,7 +928,6 @@ static INLINE str
 RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
 	char *mod;
-	char *func;
 	char *var;
 	str rt;
 	static int idtag=0;
@@ -940,7 +939,6 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	mod = getModuleId(f);
 	if (mod == NULL)
 		mod = "user";
-	func = getFunctionId(f);
 	rt = getTypeIdentifier(getArgType(mb,p,arg));
 
 	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
