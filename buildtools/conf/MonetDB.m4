@@ -710,7 +710,7 @@ yes-*-*)
 		dnl  the "sa_handler" member of the "sigaction" struct,
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
-		CFLAGS="$CFLAGS -std=gnu99"
+		CPPFLAGS="$CPPFLAGS -std=gnu99"
 		;;
 	4.2.*-*)
 		dnl gcc 4.2 has a warning on inline functions in C99 mode being
@@ -718,25 +718,25 @@ yes-*-*)
 		dnl want to get away for a little while with GNU89 inlining
 		dnl semantics, until gcc 4.3 is within reach to get real ISO C99
 		dnl I think
-		CFLAGS="$CFLAGS -std=c99 -fgnu89-inline"
+		CPPFLAGS="$CPPFLAGS -std=c99 -fgnu89-inline"
 		;;
 	*-freebsd*|*-irix*|*-darwin*|*-solaris*|[[34]].*-*)
-		CFLAGS="$CFLAGS -std=c99"
+		CPPFLAGS="$CPPFLAGS -std=c99"
 		;;
 	esac
 	;;
 -*icc*-linux*|-*ecc*-linux*)
       	case "$host-$icc_ver" in
-        *-*-*-10.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-        *-*-*-11.*)   	CFLAGS="$CFLAGS -std=c99"	;;
-      	*-*-*-*)    	CFLAGS="$CFLAGS -c99" 		;;
+        *-*-*-10.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
+        *-*-*-11.*)   	CPPFLAGS="$CPPFLAGS -std=c99"	;;
+      	*-*-*-*)    	CPPFLAGS="$CPPFLAGS -c99" 		;;
       	esac   
 	;;
 -*pgcc*-linux*)
-	CFLAGS="$CFLAGS -c9x"
+	CPPFLAGS="$CPPFLAGS -c9x"
 	;;
 -*-solaris*)
-	CFLAGS="$CFLAGS -xc99"
+	CPPFLAGS="$CPPFLAGS -xc99"
 	;;
 esac
 
@@ -1710,131 +1710,65 @@ else
 	AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$have_perl_incdir" != xno -a "x$have_perl_libdir" != xno)
 fi
 
-have_ruby=auto
 RUBY=ruby
-RUBY_INCS=
-RUBY_LIBS=
-AC_ARG_WITH(ruby,
-	AC_HELP_STRING([--with-ruby=FILE], [ruby is installed as FILE]),
-	have_ruby="$withval")
-case "$have_ruby" in
+have_rubygem_dir=auto
+AC_ARG_WITH(rubygem-dir,
+	AC_HELP_STRING([--with-rubygem-dir=DIR], [Ruby gems are installed in DIR]),
+	have_rubygem_dir="$withval")
+case "$have_rubygem_dir" in
 yes|no|auto)
 	;;
 *)
-	RUBY="$have_ruby"
-	have_ruby=yes
+	RUBY_DIR="$have_rubygem_dir"
 	;;
 esac
-if test "x$have_ruby" != xno; then
-	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
-		if test "x$RUBY" = xno; then
-			if test "x$have_ruby" != xauto; then
-				AC_MSG_ERROR([No Ruby executable found])
-			fi
-			have_ruby=no
+case "$have_rubygem_dir" in
+yes|auto)
+	AC_PATH_PROG(RUBY,$RUBY,no,$PATH)
+	if test "x$RUBY" = xno; then
+		if test "x$have_rubygem_dir" != xauto; then
+			AC_MSG_ERROR([No Ruby executable found, specify --with-rubygem-dir explicitly])
 		fi
+		have_rubygem_dir=no
+	else
+		d=`which "$RUBY"`
+		d=`dirname "$d"`
+		d=`dirname "$d"`
+		RUBY_DIR=`$RUBY -rubygems -e 'puts Gem::dir' 2>/dev/null | sed "s|^$d/||"`
+	fi
+	;;
+no)
+	;;
+*)
+	RUBY_DIR=$have_rubygem_dir
+	;;
+esac
+AC_SUBST(RUBY_DIR)
+
+RUBYGEM=gem
+have_rubygem=auto
+AC_ARG_WITH(rubygem,
+	AC_HELP_STRING([--with-rubygem=FILE], [ruby gem is installed as FILE]),
+	have_rubygem="$withval")
+case "$have_rubygem" in
+yes|no|auto)
+	;;
+*)
+	RUBYGEM="$have_rubygem"
+	have_rubygem=yes
+	;;
+esac
+if test "x$have_rubygem" != xno; then
+	AC_PATH_PROG(RUBYGEM,$RUBYGEM,no,$PATH)
+	if test "x$RUBYGEM" = xno; then
+		if test "x$have_rubygem" != xauto; then
+			AC_MSG_ERROR([No Ruby gem executable found])
+		fi
+		have_rubygem=no
 	fi
 fi
-if test "x$have_ruby" != xno; then
-	have_ruby_incdir=auto
-	AC_ARG_WITH(ruby-incdir,
-		AC_HELP_STRING([--with-ruby-incdir=DIR],
-			[Ruby include directory]),
-		have_ruby_incdir="$withval")
-	case "$have_ruby_incdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
-		fi
-		RUBY_INCS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["archdir"]];' 2>/dev/null`
-		;;
-	no)	;;
-	*)	RUBY_INCS="$have_ruby_incdir"
-		echo "2 $RUBY_INCS"
-		have_ruby_incdir=yes
-		;;
-	esac
-	if test "x$have_ruby_incdir" != xno; then
-		RUBY_INCS="-I$RUBY_INCS"
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $RUBY_INCS"
-		AC_CHECK_HEADER(ruby.h, :, [
-			if test "x$have_ruby_incdir" = xyes; then
-				AC_MSG_ERROR([No ruby.h found, is Ruby installed properly?]);
-			fi;
-			have_ruby_incdir=no
-		])
-        	CPPFLAGS="$save_CPPFLAGS"
-        fi
-
-	have_ruby_library=auto
-	AC_ARG_WITH(ruby-library,
-		AC_HELP_STRING([--with-ruby-library=DIR],
-			[Ruby library directory (where -lruby can be found)]),
-		have_ruby_library="$withval")
-	case "$have_ruby_library" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
-		fi
-		RUBY_LIBS=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["libdir"]];' 2>/dev/null`
-		;;
-	no)	;;
-	*)	RUBY_LIBS="$have_ruby_library"
-		have_ruby_library=yes
-		;;
-	esac
-	if test "x$have_ruby_library" != xno; then
-		RUBY_LIBS="-L$RUBY_LIBS `"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["LIBRUBYARG"]];'`"
-	fi
-
-	have_ruby_libdir=auto
-	AC_ARG_WITH(ruby-libdir,
-		AC_HELP_STRING([--with-ruby-libdir=DIR],
-			[relative path for Ruby library directory (where Ruby modules should be installed)]),
-		have_ruby_libdir="$withval")
-	case "$have_ruby_libdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-ruby-incdir --with-ruby-libdir --with-ruby-library when cross compiling])
-		fi
-		ruby_prefix=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["prefix"]];' 2>/dev/null`
-		ruby_libdir=`"$RUBY" -e 'require "rbconfig.rb";include Config;print CONFIG[["sitearchdir"]];' 2>/dev/null`
-		RUBY_LIBDIR=`echo $ruby_libdir | sed -e "s|$ruby_prefix||g"`
-		;;
-	no)	;;
-	*)	RUBY_LIBDIR="$have_ruby_libdir"
-		have_ruby_libdir=yes
-		;;
-	esac
-else
-	# no Ruby implies no Ruby includes or libraries
-	have_ruby_incdir=no
-	have_ruby_libdir=no
-fi
-if test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LIBS="$LIBS"
-	CPPFLAGS="$CPPFLAGS $RUBY_INCS"
-	LIBS="$LIBS $RUBY_LIBS"
-	AC_MSG_CHECKING([whether we can compile with Ruby])
-	AC_TRY_LINK([#include <ruby.h>], [], [AC_MSG_RESULT(yes)],
-		[ AC_MSG_RESULT(no); if test "x$have_ruby_incdir" != xauto -o "x$have_ruby_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Ruby]); fi; have_ruby_incdir=no have_ruby_libdir=no ])
-	CPPFLAGS="$save_CPPFLAGS"
-	LIBS="$save_LIBS"
-fi
-AC_SUBST(RUBY)
-AM_CONDITIONAL(HAVE_RUBY, test x"$have_ruby" != xno)
-AC_SUBST(RUBY_INCS)
-AC_SUBST(RUBY_LIBS)
-AC_SUBST(RUBY_LIBDIR)
-AM_CONDITIONAL(HAVE_RUBY_DEVEL, test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno)
-if test -f "$srcdir"/vertoo.data; then
-	AM_CONDITIONAL(HAVE_RUBY_SWIG,  test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno -a x"$SWIG" != xno)
-else
-	AM_CONDITIONAL(HAVE_RUBY_SWIG,  test "x$have_ruby_incdir" != xno -a "x$have_ruby_libdir" != xno)
-fi
+AC_SUBST(RUBYGEM)
+AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
 
 dnl to shut up automake (.m files are used for mel not for objc)
