@@ -1,3 +1,4 @@
+
 Gem::Specification.new do |s|
    s.required_ruby_version = '>= 1.8.0'
    s.name = %q{ruby-monetdb-sql}
@@ -8,7 +9,11 @@ Gem::Specification.new do |s|
    s.summary = %q{Pure Ruby database driver for monetdb5/sql}
    s.homepage = %q{http://monetdb.cwi.nl/}
    s.description = %q{Pure Ruby database driver for monetdb5/sql}
-   s.files = [ "README", "lib/hasher.rb", "lib/MonetDB.rb", "lib/MonetDBConnection.rb", "lib/MonetDBData.rb", "lib/MonetDBExceptions.rb", "lib/MonetDBStatement.rb"]
+   s.files = Dir["README"] + Dir['lib/MonetDB.rb'] + Dir['lib/MonetDBConnection.rb'] + Dir['lib/MonetDBData.rb'] + Dir['lib/MonetDBExceptions.rb'] + Dir['lib/hasher.rb']
    s.has_rdoc = true
-   s.require_path = './lib'
+   s.require_path = Dir['./lib']
 end
+
+$MY_FILE_PATH = File.expand_path(File.dirname(__FILE__))
+
+puts $MY_FILE_PATH

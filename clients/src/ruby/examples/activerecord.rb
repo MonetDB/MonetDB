@@ -4,8 +4,8 @@ ActiveRecord::Base.logger = Logger.new(STDERR)
 ActiveRecord::Base.colorize_logging = true
 
 ActiveRecord::Base.establish_connection(
-        :adapter => "monetdb",
-        :host => "localhost",
+        :adapter  => "monetdb",
+        :host     => "localhost",
         :database => "demo"
 )
 

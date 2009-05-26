@@ -1,3 +1,11 @@
+* Mon 25 May 2009 17:52:01 CEST
+Imported last week changes (protocol 9 support, parametrized the connection options in the activerecord adapter, fixed a bug in the auth protocol v8).
+Fixed a bug in the mapi protocol that resulted in data loss (wrong handling of TRANSACTIONS).
+Began to port the activerecord test suite to monetdb (not all test cases can be performed).
+Removed an unneeded file ('lib/MonetDBStatement.rb') from the gemspec of the standalone driver (the feature will be moved to HEAD).
+Began to port the driver to ruby 1.9.
+Removed *.gem files from cvs.
+
 * Mon 18 May 2009 15:22:31 CEST
 Fixed bugs that prevented the correct working of activerecords' migration;
 The activerecord connector now supports insertion, update and alter table operations;

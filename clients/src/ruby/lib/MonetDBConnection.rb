@@ -25,8 +25,9 @@ require 'MonetDBExceptions'
 
 class MonetDBConnection
   MSG_REDIRECT          = '^' # redirect through merovingian
+  MSG_INFO              = '!'
   
-  MAX_AUTH_ITERATION        = 10  # maximum number of atuh iterations (thorough merovingian) allowed
+  MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
   
   # enable debug output
   @@DEBUG               = false
@@ -73,7 +74,6 @@ class MonetDBConnection
   def connect(db_name = 'demo', auth_type = 'SHA1')
     @database = db_name
     @auth_type = auth_type
-    
     @socket = TCPSocket.new(@host, @port)  
     real_connect
   end
@@ -81,7 +81,7 @@ class MonetDBConnection
   
   def real_connect
     server_challenge = retrieve_server_challenge()
-       
+#    puts @database
     if server_challenge != ""
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
@@ -126,7 +126,8 @@ class MonetDBConnection
         set_timezone
       else
         block = @socket.recv(monetdb_auth)
-        if block[0].chr == '^'
+#         puts "Block:" + block
+        if block[0].chr == MSG_REDIRECT
         #redirection
           if merovingian?
             if @auth_iteration <= 10
@@ -143,7 +144,7 @@ class MonetDBConnection
             @connection_established = false
             raise MonetDBQueryError, @socket.recv(monetdb_auth)
           end
-        elsif block[0].chr == '!'
+        elsif block[0].chr == MSG_INFO
           raise MonetDBConnectionError, block
         end
       end
@@ -202,6 +203,7 @@ class MonetDBConnection
     elsif auth_type.downcase == "plain" or not  @supported_auth_types.include?(auth_type.upcase)
       auth_type = 'plain'
       hashsum = @passwd + salt
+      
     elsif auth_type.downcase == "crypt"
       auth_type =  @supported_auth_types[@supported_auth_types.index(auth_type)+1]
       $stderr.print "The selected hashing algorithm is not supported by the Ruby driver. #{auth_type} will be used instead."
@@ -220,7 +222,6 @@ class MonetDBConnection
   # Builds and authentication string given the parameters submitted by the user (MAPI protocol v9).
   # 
   def build_auth_string_v9(auth_type, salt, db_name)
-    # seed = password + salt
     if (auth_type.upcase == "MD5" or auth_type.upcase == "SHA1") and @supported_auth_types.include?(auth_type.upcase)
       auth_type = auth_type.upcase
       # Hash the password
@@ -229,7 +230,7 @@ class MonetDBConnection
       digest = Hasher.new(auth_type, pwhash.hashsum + salt)
       hashsum = digest.hashsum
         
-    elsif auth_type.downcase == "plain" or not  @supported_auth_types.include?(auth_type.upcase)
+    elsif auth_type.downcase == "plain" # or not  @supported_auth_types.include?(auth_type.upcase)
       # Keep it for compatibility with merovingian
       auth_type = 'plain'
       hashsum = @passwd + salt

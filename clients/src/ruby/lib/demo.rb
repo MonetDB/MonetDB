@@ -22,7 +22,7 @@ db = MonetDB.new
 db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
-res = db.query("SELECT * FROM tables;")
+res = db.query("SELECT * FROM tables,tables,tables;")
 
 puts "Number of rows returned: " + res.num_rows.to_s
 puts "Number of fields: " + res.num_fields.to_s
@@ -31,7 +31,7 @@ puts "Number of fields: " + res.num_fields.to_s
 #col_names = res.name_fields
 
 ###### Fetch all rows and store them
-puts res.fetch_all
+# puts res.fetch_all
 
 
 # Iterate over the record set and retrieve on row at a time
