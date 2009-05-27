@@ -1,62 +1,56 @@
-@' The contents of this file are subject to the MonetDB Public License
-@' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License. You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-@'
-@' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@' License for the specific language governing rights and limitations
-@' under the License.
-@'
-@' The Original Code is the MonetDB Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008-2009 MonetDB B.V.
-@' All Rights Reserved.
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2009 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-@f merovingian
-@a Fabian Groffen
-@v 1.0
-@* The MonetDB keeper
-The role of the Merovingian within the MonetDB suite is to act as a
-smart proxy, with capabilities to start Mservers when necessary.
+/**
+ * Merovingian
+ * Fabian Groffen
+ * The MonetDB keeper
+ *
+ * The role of Merovingian within the MonetDB suite is to act as a smart
+ * proxy, with capabilities to start mserver5s when necessary.
+ * 
+ * Since some people appear to have trouble pronouncing or remembering
+ * its name, one can also refer to Merovingian as Mero.  In any case,
+ * people having difficulties here should watch The Matrix once more.
+ * 
+ * Most of Merovingian's decisions are based on information provided by
+ * Sabaoth.  Sabaoth is a file-system based administration shared
+ * between all mserver5s in the same farm on a local machine.  It keeps
+ * track of how mserver5s can be reached, with which scenarios, and what
+ * the crashcounter of each server is.
+ * 
+ * Merovingian will fork off an mserver5 whenever a client requests a
+ * database which is not running yet.  Sabaoth will assure Merovingian
+ * can find already running or previously forked mserver5s.
+ * 
+ * While Merovingian currently just starts a database on the fly when a
+ * client asks for it, in the future, Merovingian can decide to only
+ * start a database if the crashlog information maintained by Sabaoth
+ * shows that the mserver5 doesn't behave badly.  For example 
+ * Merovingian can refuse to start an database if it has crashed a
+ * number of times over a recent period.
+ */
 
-Since some people appear to have troubles pronouncing or remembering its
-name, one can also refer to the Merovingian, as Mero, Merov or Nebula.
-While the latter one has nothing to do with the former, it is provided
-as convenience for those who keep on having technical problems with
-pronouncing the former.  In any case, people having difficulties here
-should watch the Matrix once more.
+#define MERO_VERSION   "1.0"
+#define MERO_PORT      50000
 
-Most of the Merovingian's decisions are based on information provided by
-Sabaoth.  Sabaoth is a file-system based administration shared between
-all Mservers in the same farm on a local machine.  It keeps track of how
-Mservers can be reached, with which scenarios, and what the crashcounter
-of each server is.
-
-The Merovingian will fork off an Mserver whenever a client requests a
-database which is not running yet.  The forked Mserver is detached from
-the Merovingian, such that the Mserver can live on, even if the
-Merovingian is restarted (or dies).  Sabaoth will deal with the
-Merovingian finding the Mservers already running, or forked.
-
-Forking off an Mserver isn't done unconditionally.  The crashlog
-information maintained by Sabaoth for a given database is consulted
-before each fork.  While Sabaoth itself will make sure that the Mserver
-logs a warning upon restart after a crash, Merovingian will refuse to
-start an Mserver if it has crashed a number of times during a recent
-period.  The Merovingian will log such refusals as well as return this
-as error to the connecting client.
-FIXME: actually implement that
-
-@h
-#define MEROV_VERSION   "1.0"
-#define MEROV_PORT      50000
-
-@c
 #include "sql_config.h"
-#include "merovingian.h"
 #include "mal_sabaoth.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
@@ -925,7 +919,7 @@ handleMySQLClient(int sock)
 	/* Handshake Initialization Packet */
 	p = buf + 4;   /* skip bytes for package header */
 	*p++ = 0x10;   /* protocol_version */
-	p += sprintf(p, MEROV_VERSION "-merovingian") + 1; /* server_version\0 */
+	p += sprintf(p, MERO_VERSION "-merovingian") + 1; /* server_version\0 */
 	le_int(p, 0);  /* thread_number */
 	p += sprintf(p, "voidvoid"); /* scramble_buff */
 	*p++ = 0x00;   /* filler */
@@ -1884,7 +1878,7 @@ handler(int sig)
 		default:
 			assert(0);
 	}
-	merlog("caught %s, Merovingian %s stopping ...", signame, MEROV_VERSION);
+	merlog("caught %s, Merovingian %s stopping ...", signame, MERO_VERSION);
 	_keepListening = 0;
 }
 
@@ -2054,7 +2048,7 @@ main(int argc, char *argv[])
 	int unsock = -1;
 	struct stat sb;
 	FILE *oerr = NULL;
-	unsigned short port = MEROV_PORT;
+	unsigned short port = MERO_PORT;
 	pthread_mutexattr_t mta;
 
 	/* fork into the background immediately
@@ -2408,7 +2402,7 @@ main(int argc, char *argv[])
 		return(1);
 	}
 
-	merlog("Merovingian %s starting ...", MEROV_VERSION);
+	merlog("Merovingian %s starting ...", MERO_VERSION);
 	merlog("monitoring dbfarm %s", dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
@@ -2527,7 +2521,7 @@ main(int argc, char *argv[])
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	merlog("Merovingian %s stopped", MEROV_VERSION);
+	merlog("Merovingian %s stopped", MERO_VERSION);
 
 	_keepLogging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {

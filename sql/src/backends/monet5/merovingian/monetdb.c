@@ -1,36 +1,38 @@
-@' The contents of this file are subject to the MonetDB Public License
-@' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License. You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-@'
-@' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@' License for the specific language governing rights and limitations
-@' under the License.
-@'
-@' The Original Code is the MonetDB Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-@' Copyright August 2008-2009 MonetDB B.V.
-@' All Rights Reserved.
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2009 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-@f monetdb
-@a Fabian Groffen
-@v 1.0
-@* MonetDB Database Administrator's Toolkit
-A group of MonetDB servers in a dbfarm are under control of the
-Merovingian, which by itself does not allow any user interaction.
-The monetdb utility is designed to be the interface for the DBA to the
-dbfarm.  Creating or deleting databases next to retrieving status
-information about them are the primary goals of this tool.
-@{
-@h
+/**
+ * monetdb
+ * Fabian Groffen
+ * MonetDB Database Administrator's Toolkit
+ *
+ * A group of MonetDB servers in a dbfarm can be under control of
+ * Merovingian, a daemon which by itself does not allow any user
+ * interaction.  The monetdb utility is designed to be the interface for
+ * the DBA to the dbfarm.  Creating or deleting databases next to
+ * retrieving status information about them are the primary goals of
+ * this tool.
+ */
+
 #define TOOLKIT_VERSION   "0.4"
 
-@c
 #include "sql_config.h"
-#include "monetdb.h"
 #include "mal_sabaoth.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
@@ -1392,5 +1394,4 @@ main(int argc, char *argv[])
 	return(0);
 }
 
-@}
 /* vim:set ts=4 sw=4 noexpandtab: */

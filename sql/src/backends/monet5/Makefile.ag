@@ -15,12 +15,10 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-man_MANS = monetdb.1 merovingian.1
+SUBDIRS = NOT_WIN32?merovingian
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 	$(MONETDB5_INCS) $(CLIENTS_INCS) $(MONETDB_INCS) $(READLINE_INCS)
-
-EXTRA_DIST = $(man_MANS)
 
 lib__sql = {
 	DIR = libdir/MonetDB5
@@ -64,21 +62,6 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/MonetDB5
 	SOURCES = sql.mx sql_bpm.mx sql_emptyset.mx
-}
-
-bin_merovingian = {
-	COND = NOT_WIN32
-	SOURCES = merovingian.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lstream \
-		   $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-		   $(MALLOC_LIBS)
-}
-
-bin_monetdb = {
-	COND = NOT_WIN32
-	SOURCES = monetdb.mx
-	LIBS = $(MONETDB5_LIBS) -lmonetdb5 @SHARED_LIBS@ $(MONETDB_LIBS) -lbat \
-	       $(MALLOC_LIBS)
 }
 
 EXTRA_DIST_DIR = Tests
