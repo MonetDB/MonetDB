@@ -601,6 +601,11 @@ importLogicalQueryPlan (XML2LALGContext* ctx, xmlNodePtr nodePtr)
 
         PFla_op_t* rootNode = getRootNode(ctx, nodePtr);
 
+		assert(rootNode);
+
+		assert(rootNode->kind == la_serialize_seq 
+			|| rootNode->kind == la_serialize_rel);
+
         return rootNode;
     }
 
