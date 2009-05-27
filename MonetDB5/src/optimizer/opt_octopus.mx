@@ -497,12 +497,6 @@ when scheduled correctly, would not lead to duplicate work.
 			setVarType(sm,l, getArgType(sm,getInstrPtr(sm,0),0));
 			setVarUDFtype(sm,l);
 
-			/* catch any error first */
-			newCatchStmt(sm, "RMTexception");
-			p= newStmt(sm,ioRef,printRef);
-			pushArgument(sm,p,findVariable(sm,"RMTexception"));
-			newExitStmt(sm, "RMTexception");
-
 			/* close connection */
 			p = newStmt(sm, remoteRef,disconnectRef);
 			pushArgument(sm,p,conn);

@@ -148,7 +148,10 @@ comment "Resolve the multi-table definitions";
 typedef enum mat_type {
 	mat_none = 0,
 	mat_grp = 1,
-	mat_ext = 2
+	mat_ext = 2,
+	mat_sum = 3,
+	mat_max = 4,
+	mat_min = 5
 } mat_type;
 
 typedef struct mat {
@@ -363,10 +366,19 @@ mat_pack_mat(MalBlkPtr mb, InstrPtr r, mat_t *mat, int m, int *mtop)
 static InstrPtr
 mat_pack_group(MalBlkPtr mb, mat_t *mat, int g, int ext);
 
+static void
+MATshift(mat_t *mat, int m, int *mtop)
+{
+	int j;
+
+	for(j=m; j < *mtop-1; j++)
+		mat[j] = mat[j+1];
+	*mtop = *mtop-1; 
+}
+
 static InstrPtr 
 MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
-	int j;
 	InstrPtr r = NULL;
 
 #ifdef DEBUG_OPT_MERGETABLE
@@ -384,16 +396,13 @@ MATpackAll(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 		getArg(r, 0) = mat[m].mv;
 		getArg(r, 1) = mat[m].mv1;
 	}
-	for(j=m; j < *mtop-1; j++)
-		mat[j] = mat[j+1];
-	*mtop = *mtop-1; 
+	MATshift(mat,m,mtop);
 	return r;
 }
 
 static InstrPtr
 MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 {
-	int j;
 	InstrPtr r = NULL;
 
 #ifdef DEBUG_OPT_MERGETABLE
@@ -403,9 +412,7 @@ MATpackAll2(MalBlkPtr mb, InstrPtr mi, mat_t *mat, int m, int *mtop)
 	if (mat[m].type == mat_none) {
 		r = mat_pack_mat(mb, mi, mat, m, mtop);
 		pushInstruction(mb,r);
-		for(j=m; j < *mtop-1; j++)
-			mat[j] = mat[j+1];
-		*mtop = *mtop-1; 
+		MATshift(mat,m,mtop);
 	} else if (mat[m].type == mat_ext) {
 		assert(mat[m].mm);
 		getArg(mat[m].mm, 0) = mat[m].mv;
