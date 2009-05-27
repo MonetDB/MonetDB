@@ -183,11 +183,20 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
-
-        case la_ref_tbl:
-
-            return  (strcmp(a->sem.ref_tbl.name, b->sem.ref_tbl.name) == 0);
-            break;
+		case la_ref_tbl:
+        
+		    if (strcmp(a->sem.ref_tbl.name, b->sem.ref_tbl.name) != 0)
+				return false;
+        
+			if (a->schema.count != b->schema.count)
+		           return false;
+        
+		    for (unsigned int i = 0; i < a->schema.count; i++)
+		        if (a->schema.items[i].name != b->schema.items[i].name ||
+		            a->schema.items[i].type != b->schema.items[i].type)
+		            return false;
+        	return true;
+			break;
 
         case la_attach:
             return (a->sem.attach.res == b->sem.attach.res &&
