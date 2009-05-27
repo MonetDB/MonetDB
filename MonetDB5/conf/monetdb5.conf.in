@@ -26,9 +26,6 @@
 # but such client side configurations are better packed in their
 # own structure.
 
-# It can also reside in the local directory
-# where mserver is called, or the home directory of the MonetDB user.
-
 # Absolute path where MonetDB is installed
 prefix=@prefix@
 exec_prefix=@exec_prefix@
@@ -219,6 +216,8 @@ mapi_open=false     # should be set to 'true' to allow for
 # sql_debug=0
 
 # Place to store transaction logs
-# The logs are typically stored on a different storage medium
+# The logs are best stored on a different storage medium
 # to protect the database against accidental hardware loss.
+# Non-absolute path arguments here are relative to the
+# ${gdk_dbfarm}@DIRSEP@${gdk_dbname} directory.
 sql_logdir=sql_logs
