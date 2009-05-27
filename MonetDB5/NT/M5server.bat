@@ -29,7 +29,7 @@ rem the SQL log directory used to be in %MONETDBDIR%, but we now
 rem prefer it inside the dbfarm, so move it there
 
 if exist "%MONETDBDIR%\sql_logs" (
-for /d %i in ("%MONETDBDIR%"\sql_logs\*) do move "%i" "%MONETDBDIR%\dbfarm"\%~ni\sql_logs
+for /d %%i in ("%MONETDBDIR%"\sql_logs\*) do move "%%i" "%MONETDBDIR%\dbfarm"\%%~ni\sql_logs
 rmdir "%MONETDBDIR%\sql_logs"
 )
 

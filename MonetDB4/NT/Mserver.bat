@@ -29,7 +29,7 @@ rem the XQuery log directory used to be in %MONETDBDIR%, but we now
 rem prefer it inside the dbfarm, so move it there
 
 if exist "%MONETDBDIR%\xquery_logs" (
-for /d %i in ("%MONETDBDIR%"\xquery_logs\*) do move "%i" "%MONETDBDIR%\dbfarm"\%~ni\xquery_logs
+for /d %%i in ("%MONETDBDIR%"\xquery_logs\*) do move "%%i" "%MONETDBDIR%\dbfarm"\%%~ni\xquery_logs
 rmdir "%MONETDBDIR%\xquery_logs"
 )
 
