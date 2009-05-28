@@ -19,11 +19,11 @@
 
 require 'time'
 require 'ostruct'
-require 'MonetDBStatement'
+
 
 require "bigdecimal"
 
-class MonetDBData < MonetDBStatement
+class MonetDBData 
   Q_TABLE               = "1" # SELECT operation
   Q_UPDATE              = "2" # INSERT/UPDATE operations
   Q_CREATE              = "3" # CREATE/DROP TABLE operations
@@ -296,6 +296,20 @@ class MonetDBData < MonetDBStatement
    end
   
   private
+  
+  # Formats a query <i>string</i> so that it can be parsed by the server
+  def format_query(q)
+    if @lang == @@LANG_SQL
+        return "s" + q + ";\n"
+    else
+      raise LanguageNotSupported
+    end
+  end
+  
+  # Formats a <i>command</i> string so that it can be parsed by the server
+  def format_command(x)
+    return "X" + x + "\nX"
+  end
   
   # Parses the data returned by the server and stores the content of header and record set 
   # for a Q_TABLE query in two (immutable) arrays. The Q_TABLE instance is then reperesented
