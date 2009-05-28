@@ -52,6 +52,7 @@
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"
+#include "utils.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -1837,26 +1838,6 @@ discoveryRunner(void *d)
 	close(bcs);
 }
 
-static str
-replacePrefix(str s, str prefix)
-{
-	str p;
-	str buf;
-
-	/* unfortunately we have to replace occurences of ${prefix}, which
-	 * is medieval in this language */
-	p = strstr(s, "${prefix}");
-	if (p != NULL) {
-		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(prefix) + 1));
-		memcpy(buf, s, p - s);
-		memcpy(buf + (p - s), prefix, strlen(prefix));
-		memcpy(buf + (p - s) + strlen(prefix), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
-		return(buf);
-	} else {
-		return(GDKstrdup(s));
-	}
-}
-
 /**
  * Handler for SIGINT, SIGTERM and SIGQUIT.  This starts a graceful
  * shutdown of merovingian.
@@ -2050,6 +2031,7 @@ main(int argc, char *argv[])
 	FILE *oerr = NULL;
 	unsigned short port = MERO_PORT;
 	pthread_mutexattr_t mta;
+	confkeyval *ckv;
 
 	/* fork into the background immediately
 	 * By doing this our child can simply do everything it needs to do
@@ -2108,71 +2090,71 @@ main(int argc, char *argv[])
 	/* store this conffile for later use in forkMserver */
 	_merovingian_conffile = p;
 
-	prefix = GDKstrdup(MONETDB5_PREFIX);
-	dbfarm = NULL;
-	msglog = NULL;
-	errlog = NULL;
-	timeout = 0;
-	pidfilename = NULL;
-	doproxy = 0;
-	discoveryttl = 600;
-	while (fgets(buf, 1024, cnf) != NULL) {
-		/* eliminate fgets' newline */
-		buf[strlen(buf) - 1] = '\0';
-		if (*buf && strncmp(buf, "prefix=", 7) == 0) {
-			/* this should always come before it's used, so it's safe
-			 * this way */
-			p = strchr(buf, '=');
-			GDKfree(prefix);
-			prefix = GDKstrdup(++p);
-		} else if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
-			p = strchr(buf, '=');
-			dbfarm = replacePrefix(++p, prefix);
-		} else if (*buf && strncmp(buf, "mero_msglog=", 12) == 0) {
-			p = strchr(buf, '=');
-			msglog = replacePrefix(++p, prefix);
-		} else if (*buf && strncmp(buf, "mero_errlog=", 12) == 0) {
-			p = strchr(buf, '=');
-			errlog = replacePrefix(++p, prefix);
-		} else if (*buf && strncmp(buf, "mero_exittimeout=", 17) == 0) {
-			p = strchr(buf, '=');
-			timeout = atoi(++p);
-		} else if (*buf && strncmp(buf, "mero_pidfile=", 13) == 0) {
-			p = strchr(buf, '=');
-			pidfilename = replacePrefix(++p, prefix);
-		} else if (*buf && strncmp(buf, "mero_port=", 10) == 0) {
-			p = strchr(buf, '=');
-			/* temporarily misuse ret */
-			ret = atoi(++p);
-			if (ret <= 0 || ret > 65535) {
-				fprintf(stderr, "invalid port number: %s\n", p);
-				fflush(stderr);
-			}
-			port = (unsigned short)ret;
-		} else if (*buf && strncmp(buf, "mero_doproxy=", 13) == 0) {
-			p = strchr(buf, '=') + 1;
-			if (strcmp(p, "yes") == 0 ||
-					strcmp(p, "true") == 0 ||
-					strcmp(p, "1") == 0)
-			{
-				doproxy = 1;
-			} else {
-				doproxy = 0;
-			}
-		} else if (*buf && strncmp(buf, "mero_discoveryttl=", 18) == 0) {
-			p = strchr(buf, '=');
-			discoveryttl = atoi(++p);
-		}
-	}
-
-	fclose(cnf);
-
 #define MERO_EXIT(status) \
 	buf[0] = status; \
 	if (write(retfd, &buf, 1) != 1 || close(retfd) != 0) { \
 		fprintf(stderr, "could not write to parent\n"); \
 		fflush(stderr); \
+	} \
+	if (status != 0) \
+		return(status);
+
+	timeout = 0;
+	doproxy = 0;
+	discoveryttl = 600;
+
+	ckv = alloca(sizeof(confkeyval) * 10);
+	ckv[0].key = "prefix";
+	ckv[0].val = GDKstrdup(MONETDB5_PREFIX);
+	ckv[1].key = "gdk_dbfarm";
+	ckv[1].val = NULL;
+	ckv[2].key = "mero_msglog";
+	ckv[2].val = NULL;
+	ckv[3].key = "mero_errlog";
+	ckv[3].val = NULL;
+	ckv[4].key = "mero_exittimeout";
+	ckv[4].val = NULL;
+	ckv[5].key = "mero_pidfile";
+	ckv[5].val = NULL;
+	ckv[6].key = "mero_port";
+	ckv[6].val = NULL;
+	ckv[7].key = "mero_doproxy";
+	ckv[7].val = NULL;
+	ckv[8].key = "mero_discoveryttl";
+	ckv[8].val = NULL;
+	ckv[9].key = NULL;
+
+	readConfFile(ckv, cnf);
+	fclose(cnf);
+
+	prefix = ckv[0].val;
+	dbfarm = replacePrefix(ckv[1].val, prefix);
+	msglog = replacePrefix(ckv[2].val, prefix);
+	errlog = replacePrefix(ckv[3].val, prefix);
+	if (ckv[4].val != NULL)
+		timeout = atoi(ckv[4].val);
+	pidfilename = replacePrefix(ckv[5].val, prefix);
+	if (ckv[6].val != NULL) {
+		ret = atoi(ckv[4].val);
+		if (ret <= 0 || ret > 65535) {
+			fprintf(stderr, "invalid port number: %s\n", ckv[6].val);
+			fflush(stderr);
+			MERO_EXIT(1);
+		}
+		port = (unsigned short)ret;
 	}
+	if (ckv[7].val != NULL) {
+		if (strcmp(ckv[7].val, "yes") == 0 ||
+				strcmp(ckv[7].val, "true") == 0 ||
+				strcmp(ckv[7].val, "1") == 0)
+		{
+			doproxy = 1;
+		} else {
+			doproxy = 0;
+		}
+	}
+	if (ckv[8].val != NULL)
+		discoveryttl = atoi(ckv[8].val);
 
 	/* where is the mserver5 binary we fork on demand? */
 	snprintf(buf, 1023, "%s/bin/mserver5", prefix);
@@ -2185,7 +2167,6 @@ main(int argc, char *argv[])
 		fflush(stderr);
 
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	/* we no longer need prefix */
@@ -2197,7 +2178,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "cannot find dbfarm via config file\n");
 		fflush(stderr);
 		MERO_EXIT(1);
-		return(1);
 	} else {
 		/* check if dbfarm actually exists */
 		struct stat statbuf;
@@ -2211,7 +2191,6 @@ main(int argc, char *argv[])
 							dbfarm, strerror(errno));
 					fflush(stderr);
 					MERO_EXIT(1);
-					return(1);
 				}
 				*p = '/';
 			}
@@ -2220,7 +2199,6 @@ main(int argc, char *argv[])
 						dbfarm, strerror(errno));
 				fflush(stderr);
 				MERO_EXIT(1);
-				return(1);
 			}
 		}
 	}
@@ -2231,7 +2209,6 @@ main(int argc, char *argv[])
 				dbfarm, strerror(errno));
 		fflush(stderr);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	/* we need a pidfile */
@@ -2239,7 +2216,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "cannot find pidfilename via config file\n");
 		fflush(stderr);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	snprintf(lockfile, 512, "%s/.merovingian_lock", dbfarm);
@@ -2249,14 +2225,12 @@ main(int argc, char *argv[])
 		fprintf(stderr, "another merovingian is already running\n");
 		fflush(stderr);
 		MERO_EXIT(1);
-		return(1);
 	} else if (ret == -2) {
 		/* directory or something doesn't exist */
 		fprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
 				dbfarm, strerror(errno));
 		fflush(stderr);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	topdp = alloca(sizeof(struct _dpair));
@@ -2276,7 +2250,6 @@ main(int argc, char *argv[])
 			fprintf(stderr, "unable to open '%s': %s\n",
 					msglog, strerror(errno));
 			MERO_EXIT(1);
-			return(1);
 		}
 	}
 
@@ -2296,7 +2269,6 @@ main(int argc, char *argv[])
 				fprintf(stderr, "unable to open '%s': %s\n",
 						errlog, strerror(errno));
 				MERO_EXIT(1);
-				return(1);
 			}
 		}
 	}
@@ -2315,7 +2287,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "unable to open '%s' for writing: %s\n",
 				pidfilename, strerror(errno));
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	/* redirect stdout */
@@ -2323,7 +2294,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
-		return(1);
 	}
 	d->out = pfd[0];
 	dup2(pfd[1], 1);
@@ -2334,7 +2304,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
-		return(1);
 	}
 	/* before it is too late, save original stderr */
 	oerr = fdopen(dup(2), "w");
@@ -2359,7 +2328,6 @@ main(int argc, char *argv[])
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
 		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	sigemptyset(&sa.sa_mask);
@@ -2372,7 +2340,6 @@ main(int argc, char *argv[])
 	{
 		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	sigemptyset(&sa.sa_mask);
@@ -2381,7 +2348,6 @@ main(int argc, char *argv[])
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
 		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	sigemptyset(&sa.sa_mask);
@@ -2390,7 +2356,6 @@ main(int argc, char *argv[])
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	sa.sa_flags = SA_SIGINFO;
@@ -2399,7 +2364,6 @@ main(int argc, char *argv[])
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
 		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
-		return(1);
 	}
 
 	merlog("Merovingian %s starting ...", MERO_VERSION);

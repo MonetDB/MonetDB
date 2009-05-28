@@ -25,9 +25,15 @@ INCLUDES = \
 
 EXTRA_DIST = $(man_MANS)
 
+lib_meroutil = {
+	NOINST
+	SOURCES = utils.c
+}
+
 bin_merovingian = {
 	SOURCES = merovingian.c
 	LIBS = \
+		libmeroutil \
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \
@@ -37,6 +43,7 @@ bin_merovingian = {
 bin_monetdb = {
 	SOURCES = monetdb.c
 	LIBS = \
+		libmeroutil \
 		$(MONETDB5_LIBS) -lmonetdb5 \
 		$(MONETDB_LIBS) -lbat -lstream \
 		$(SOCKET_LIBS) \

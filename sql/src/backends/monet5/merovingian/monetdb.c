@@ -34,6 +34,7 @@
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"
+#include "utils.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -61,26 +62,6 @@ typedef char* err;
 static str dbfarm = NULL;
 static str logdir = NULL;
 static int mero_running = 0;
-
-static str
-replacePrefix(str s, str prefix)
-{
-	str p;
-	str buf;
-
-	/* unfortunately we have to replace occurences of ${prefix}, which
-	 * is medieval in this language */
-	p = strstr(s, "${prefix}");
-	if (p != NULL) {
-		buf = GDKmalloc(sizeof(char) * (strlen(s) + strlen(prefix) + 1));
-		memcpy(buf, s, p - s);
-		memcpy(buf + (p - s), prefix, strlen(prefix));
-		memcpy(buf + (p - s) + strlen(prefix), s + (p - s) + 9, strlen(s) - 9 - (p - s) + 1);
-		return(buf);
-	} else {
-		return(GDKstrdup(s));
-	}
-}
 
 static void
 command_help(int argc, char *argv[])
@@ -168,53 +149,6 @@ static void
 command_version()
 {
 	printf("MonetDB Database Server Toolkit v%s\n", TOOLKIT_VERSION);
-}
-
-static void
-secondsToString(char *buf, time_t t, int longness)
-{
-	time_t p;
-	size_t i = 0;
-
-	p = 1 * 60 * 60 * 24 * 7;
-	if (t > p) {
-		i += sprintf(buf, "%dw", (int)(t / p));
-		t -= (t / p) * p;
-		if (--longness == 0)
-			return;
-		buf[i++] = ' ';
-	}
-	p /= 7;
-	if (t > p) {
-		i += sprintf(buf, "%dd", (int)(t / p));
-		t -= (t / p) * p;
-		if (--longness == 0)
-			return;
-		buf[i++] = ' ';
-	}
-	p /= 24;
-	if (t > p) {
-		i += sprintf(buf + i, "%dh", (int)(t / p));
-		t -= (t / p) * p;
-		if (--longness == 0)
-			return;
-		buf[i++] = ' ';
-	}
-	p /= 60;
-	if (t > p) {
-		i += sprintf(buf + i, "%dm", (int)(t / p));
-		t -= (t / p) * p;
-		if (--longness == 0)
-			return;
-		buf[i++] = ' ';
-	}
-
-	/* t must be < 60 */
-	if (--longness == 0 || !(i > 0 && t == 0)) {
-		sprintf(buf + i, "%ds", (int)(t));
-	} else {
-		buf[--i] = '\0';
-	}
 }
 
 static void
@@ -1289,6 +1223,7 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	int fd;
+	confkeyval *ckv;
 
 	/* seed the randomiser for when we create a database */
 	srand(time(NULL));
@@ -1309,25 +1244,21 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	prefix = MONETDB5_PREFIX;
-	while (fgets(buf, 1024, cnf) != NULL) {
-		/* eliminate fgets' newline */
-		buf[strlen(buf) - 1] = '\0';
-		if (*buf && strncmp(buf, "prefix=", 7) == 0) {
-			/* this should always come before it's used, so it's safe
-			 * this way */
-			p = strchr(buf, '=');
-			prefix = GDKstrdup(++p);
-		} else if (*buf && strncmp(buf, "gdk_dbfarm=", 11) == 0) {
-			p = strchr(buf, '=');
-			dbfarm = replacePrefix(++p, prefix);
-		} else if (*buf && strncmp(buf, "sql_logdir=", 11) == 0) {
-			p = strchr(buf, '=');
-			logdir = replacePrefix(++p, prefix);
-		}
-	}
+	ckv = alloca(sizeof(confkeyval) * 4);
+	ckv[0].key = "prefix";
+	ckv[0].val = GDKstrdup(MONETDB5_PREFIX);
+	ckv[1].key = "gdk_dbfarm";
+	ckv[1].val = NULL;
+	ckv[2].key = "sql_logdir";
+	ckv[2].val = NULL;
+	ckv[3].key = NULL;
 
+	readConfFile(ckv, cnf);
 	fclose(cnf);
+
+	prefix = ckv[0].val;
+	dbfarm = replacePrefix(ckv[1].val, prefix);
+	logdir = replacePrefix(ckv[2].val, prefix);
 
 	if (dbfarm == NULL) {
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
