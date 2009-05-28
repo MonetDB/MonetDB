@@ -1179,11 +1179,6 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             break;
 
         case la_rownum:
-            /* the following rewrite is incorrect as the thetajoin arguments
-               filter out some rows from the cross product -- Not every
-               iteration has the same number of rows anymore and thus row-
-               numbering needs to take the result of the thetajoin into account. */
-#if 0
             /* An expression that does not contain any sorting column
                required by the rownum operator, but contains the partitioning
                column is independent of the rownum. The translation thus
@@ -1195,6 +1190,25 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                      rpart = false;
                 unsigned int lsortby = 0,
                              rsortby = 0;
+
+                /******************** thetajoin check ************************/
+
+                unsigned int count = 0;
+                PFarray_t   *pred = p->sem.thetajoin_opt.pred;
+                
+                /* The following rewrite is incorrect if we have a real
+                   thetajoin as the thetajoin arguments filter out some
+                   rows from the cross product -- Not every iteration
+                   has the same number of rows anymore and thus row-numbering
+                   needs to take the result of the thetajoin into account. */
+
+                /* Check if we have a cross product without selection. */
+                for (i = 0; i < PFarray_last (pred); i++)
+                    if (PERS_AT(pred, i)) count++;
+                /* skip rewrite (see explanation above) */
+                if (count) break;
+
+                /******************** thetajoin check ************************/
 
                 /* first check for the required columns
                    in the left thetajoin input */
@@ -1255,7 +1269,6 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                     break;
                 }
             }
-#endif
             break;
 
         case la_rowrank:
