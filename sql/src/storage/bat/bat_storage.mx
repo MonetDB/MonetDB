@@ -216,7 +216,7 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 			bat_destroy(updins);
  			updcur = BATsemijoin(upd, b);
 			void_replace_bat(b, updcur, TRUE);
-			bat_destroy(updins);
+			bat_destroy(updcur);
 		} else {
 			b = temp_descriptor(bat->bid);
 			void_replace_bat(b, upd, TRUE);
