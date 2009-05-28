@@ -461,18 +461,6 @@ forkMserver(str database, sabdb** stats, int force)
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
-			t = localtime(&info.laststart);
-			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
-			secondsToString(upmin, info.minuptime, 1);
-			secondsToString(upavg, info.avguptime, 1);
-			secondsToString(upmax, info.maxuptime, 1);
-			merlog("database '%s' already running since %s, "
-					"up min/avg/max: %s/%s/%s, "
-					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
-					database, tstr,
-					upmin, upavg, upmax,
-					info.crashavg1, info.crashavg10, info.crashavg30,
-					info.startcntr, info.stopcntr, info.crashcntr);
 			return(NO_ERR);
 		break;
 		case SABdbCrashed:
