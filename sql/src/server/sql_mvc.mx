@@ -52,6 +52,8 @@
 #define m_explain 4 
 #define m_plan 5 
 
+#define QUERY_MODE(m) (m==m_normal || m==m_inplace)
+
 /* special modes for function/procedure and view instantiation and
    dependency generation */
 #define m_instantiate 6

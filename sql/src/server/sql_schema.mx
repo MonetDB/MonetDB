@@ -1976,10 +1976,8 @@ schemas(mvc *sql, symbol *s)
 	stmt *ret = NULL;
 
 	/* TODO everything should be done via the backend language */ 
-/*
 	if (!QUERY_MODE(sql->emode))
 		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
-*/
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
