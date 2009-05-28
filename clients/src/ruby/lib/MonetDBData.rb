@@ -155,6 +155,7 @@ class MonetDBData
     #  data = @connection.socket.recv(chunk_size)
     #  puts data
     # for row in data do
+    
     while row_index < row_count
       if ( row_index % row_offset ) == 0
         if row_index + row_offset > row_count
@@ -178,11 +179,12 @@ class MonetDBData
       
       # Process the records one line at a time, store them as string. Type conversion will be performed "on demand" by the user.
       row = @connection.socket.readline
-     
+      
       if row != ""
         if row[MONET_HEADER_OFFSET] == nil
-          # Empty line - no more data to come
-          break
+          # Empty line - step forward
+          next
+          
         elsif row[MONET_HEADER_OFFSET...MONET_HEADER_OFFSET+2] == "&6" 
           # Processing a new block of rows - the data has already been buffered, continue and process tuples
           next
