@@ -24,19 +24,26 @@ class Hasher
 	# method = "SHA1" or "MD5"
 	# pwd = Password
 	def initialize(method, pwd)
-		if (method.upcase == "SHA1")
-			@hashfunc = Digest::SHA1.new
-			@hashname = method.upcase
-		elsif (method.upcase == "SHA256" or method.upcase == "SHA384" or method.upcase == "SHA512")
-		  @hashfunc = Digest::SHA2.new
-		  @hashname = method.upcase
-		else
-		  # default to MD5
-			@hashfunc = Digest::MD5.new
-			@hashname = "MD5"
-		end
-		@pwd = pwd
-	end
+          if (method.upcase == "SHA1")
+                  @hashfunc = Digest::SHA1.new
+                  @hashname = method.upcase
+          elsif (method.upcase == "SHA256") 
+            @hashfunc = Digest::SHA256.new
+            @hashname = method.upcase
+          elsif (method.upcase == "SHA384")
+            @hashfunc = Digest::SHA384.new
+            @hashname = method.upcase
+          elsif (method.upcase == "SHA512")
+            @hashfunc = Digest::SHA512.new
+            @hashname = method.upcase
+          else
+            # default to MD5
+                  @hashfunc = Digest::MD5.new
+                  @hashname = "MD5"
+          end
+          @pwd = pwd
+  end
+  
 
 	def hashname
 		@hashname

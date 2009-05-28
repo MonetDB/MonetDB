@@ -44,7 +44,7 @@ class MonetDBConnection
   @@CLIENT_ENDIANNESS   = "BIG"
   
   # MAPI protocols supported by the driver
-  @@SUPPORTED_PROTOCOLS = [ 8 ]
+  @@SUPPORTED_PROTOCOLS = [ 8, 9 ]
   
   attr_reader :socket
   
