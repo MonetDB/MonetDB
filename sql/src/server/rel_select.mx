@@ -2838,6 +2838,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		re = exp_atom_bool(1);
+		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) {
+			exp_destroy(le);
+			exp_destroy(re);
+			return NULL;
+		}
 		le = exp_compare( le, re, cmp_equal);
 		return rel_select(rel, le);
 	}
