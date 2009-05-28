@@ -1,0 +1,16 @@
+Gem::Specification.new do |s|
+   s.required_ruby_version = '>= 1.8.0'
+   s.name = %q{activerecord-monetdb-adapter}
+   s.version = "0.1"
+   s.date = %q{2009-05-18}
+   s.authors = ["G Modena"]
+   s.email = %q{gm@cwi.nl}
+   s.summary = %q{ActiveRecord Connector for MonetDB}
+   s.homepage = %q{http://monetdb.cwi.nl/}
+   s.description = %q{ActiveRecord Connector for MonetDB built on top of the pure Ruby database driver}
+   s.files = [ "lib/active_record/connection_adapters/monetdb_adapter.rb" ]
+   s.has_rdoc = true
+   s.require_path = 'lib'
+   s.add_dependency(%q<activerecord>, [">= 2.3.2"])
+   s.add_dependency(%q<ruby-monetdb-sql>, [">= 0.1"])
+end

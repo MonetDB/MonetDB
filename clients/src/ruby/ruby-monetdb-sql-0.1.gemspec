@@ -13,7 +13,3 @@ Gem::Specification.new do |s|
    s.has_rdoc = true
    s.require_path = Dir['./lib']
 end
-
-$MY_FILE_PATH = File.expand_path(File.dirname(__FILE__))
-
-puts $MY_FILE_PATH
