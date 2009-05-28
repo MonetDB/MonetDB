@@ -184,20 +184,59 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
 		case la_ref_tbl:
-        
-		    if (strcmp(a->sem.ref_tbl.name, b->sem.ref_tbl.name) != 0)
+        {
+		    /* comparison of the names of the tables */
+			if (strcmp (a->sem.ref_tbl.name, b->sem.ref_tbl.name) != 0)
 				return false;
         
+			/* comparison of the schemas */
 			if (a->schema.count != b->schema.count)
 		           return false;
-        
-		    for (unsigned int i = 0; i < a->schema.count; i++)
+            for (unsigned int i = 0; i < a->schema.count; i++)
 		        if (a->schema.items[i].name != b->schema.items[i].name ||
 		            a->schema.items[i].type != b->schema.items[i].type)
 		            return false;
-        	return true;
+        
+			/* comparison of the tcols */
+			unsigned int tcols_count = PFarray_last (a->sem.ref_tbl.tcols);
+			for (unsigned int i = 0; i < tcols_count; i++)
+			{	
+				char* tcol1 = *(char**) PFarray_at (a->sem.ref_tbl.tcols, i);
+				char* tcol2 = *(char**) PFarray_at (b->sem.ref_tbl.tcols, i);
+				
+				if (strcmp (tcol1, tcol2) != 0)
+					return false;
+			}
+			
+			/* comparison of the keys */
+			unsigned int key_count1 = PFarray_last (a->sem.ref_tbl.keys);
+			unsigned int key_count2 = PFarray_last (b->sem.ref_tbl.keys);
+			if (key_count1 != key_count2)
+				return false;
+		    for (unsigned int k = 0; k < key_count1; k++)
+		    {
+		            PFarray_t * keyPositions1 = 
+						*((PFarray_t**) PFarray_at (a->sem.ref_tbl.keys, k));
+					PFarray_t * keyPositions2 = 
+						*((PFarray_t**) PFarray_at (b->sem.ref_tbl.keys, k));
+		            
+					unsigned int position_count1 = PFarray_last (keyPositions1);
+					unsigned int position_count2 = PFarray_last (keyPositions2);
+					if (position_count1 != position_count2)
+						return false;
+					for (unsigned int p = 0; p < position_count1; p++)
+				    {
+						int pos1 = *((int*) PFarray_at (keyPositions1, p));
+						int pos2 = *((int*) PFarray_at (keyPositions2, p));
+						if (pos1 != pos2)
+							return false;						
+					}
+			}
+			
+			return true;
+		}
 			break;
-
+		
         case la_attach:
             return (a->sem.attach.res == b->sem.attach.res &&
                     PFalg_atom_comparable (a->sem.attach.value,
