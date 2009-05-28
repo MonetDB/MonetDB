@@ -394,6 +394,9 @@ forkMserver(str database, sabdb** stats, int force)
 	dpair dp;
 	str vaultkey = NULL;
 	struct stat statbuf;
+	char upmin[8];
+	char upavg[8];
+	char upmax[8];
 
 	er = SABAOTHgetStatus(stats, database);
 	if (er != MAL_SUCCEED) {
@@ -460,11 +463,14 @@ forkMserver(str database, sabdb** stats, int force)
 		case SABdbRunning:
 			t = localtime(&info.laststart);
 			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
+			secondsToString(upmin, info.minuptime, 1);
+			secondsToString(upavg, info.avguptime, 1);
+			secondsToString(upmax, info.maxuptime, 1);
 			merlog("database '%s' already running since %s, "
-					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database, tstr,
-					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
 			return(NO_ERR);
@@ -472,21 +478,27 @@ forkMserver(str database, sabdb** stats, int force)
 		case SABdbCrashed:
 			t = localtime(&info.lastcrash);
 			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
+			secondsToString(upmin, info.minuptime, 1);
+			secondsToString(upavg, info.avguptime, 1);
+			secondsToString(upmax, info.maxuptime, 1);
 			merlog("database '%s' has crashed after start on %s, "
 					"attempting restart, "
-					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database, tstr,
-					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 		case SABdbInactive:
+			secondsToString(upmin, info.minuptime, 1);
+			secondsToString(upavg, info.avguptime, 1);
+			secondsToString(upmax, info.maxuptime, 1);
 			merlog("starting database '%s', "
-					"up min/avg/max: " LLFMT "/" LLFMT "/" LLFMT ", "
+					"up min/avg/max: %s/%s/%s, "
 					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
 					database,
-					(lng)info.minuptime, (lng)info.avguptime, (lng)info.maxuptime,
+					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
 					info.startcntr, info.stopcntr, info.crashcntr);
 		break;
