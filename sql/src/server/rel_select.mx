@@ -3653,6 +3653,8 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 
 	assert(is_project(r->op));
 	r = r->l;
+	if (!r)
+		return e;
 	set_processed(r);
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
@@ -3686,6 +3688,9 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r)
 	/* TODO rewrite relation !!! */
 	assert(is_project(r->op));
 	r = r->l;
+	
+	if (!r)
+		return e;
 
 	if (!is_project(r->op)) {
 		r = rel_project(r, rel_projections(sql, r, NULL, 1, 1));
