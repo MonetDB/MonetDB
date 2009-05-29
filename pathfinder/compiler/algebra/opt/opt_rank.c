@@ -971,7 +971,8 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                                   sortby),
                               L(p)->sem.rank_opt.res,
                               lsortby));
-                    modified = true;
+
+                    /* don't mark plan as modified to avoid endless loops */
                     break;
                 }
                 else {
@@ -1030,7 +1031,8 @@ opt_rank (PFla_op_t *p, unsigned char mode)
                                lrank,
                                p->sem.rank_opt.res,
                                new_sortby));
-                    modified = true;
+
+                    /* don't mark plan as modified to avoid endless loops */
                     break;
                 }
             }
