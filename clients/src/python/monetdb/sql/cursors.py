@@ -17,6 +17,7 @@
 
 import logging
 
+# TODO: add a nice check for python version
 try:
     from monetdb import mapi
 except SyntaxError:
@@ -62,11 +63,7 @@ class Cursor:
 
         The attribute is -1 in case no .execute*() has been
         performed on the cursor or the rowcount of the last
-        operation is cannot be determined by the interface. [7]
-
-        Note: Future versions of the DB API specification could
-        redefine the latter case to have the object return None
-        instead of -1."""
+        operation is cannot be determined by the interface."""
         self.rowcount = -1
 
         """This read-only attribute is a sequence of 7-item
@@ -83,20 +80,12 @@ class Cursor:
            scale,
            null_ok)
 
-        The first two items (name and type_code) are mandatory,
-        the other five are optional and are set to None if no
-        meaningful values can be provided.
-
         This attribute will be None for operations that
         do not return rows or if the cursor has not had an
-        operation invoked via the .execute*() method yet.
-
-        The type_code can be interpreted by comparing it to the
-        Type Objects specified in the section below."""
+        operation invoked via the .execute*() method yet."""
         self.description = None
 
-        """This read-only attribute indicates at which row
-        we currently are"""
+        # This read-only attribute indicates at which row we currently are
         self.rownumber = -1
 
         self.__executed = None

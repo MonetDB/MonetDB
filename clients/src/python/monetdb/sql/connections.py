@@ -17,6 +17,7 @@
 
 from monetdb.sql import cursors
 
+# TODO: replace this with a nice check
 try:
     from monetdb import mapi
 except SyntaxError:
@@ -27,13 +28,27 @@ from monetdb.monetdb_exceptions import *
 
 
 class Connection:
-    """MonetDB Connection Object"""
+    """This represents a MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
 
 
-    def __init__(self, username="monetdb", password="monetdb", hostname="localhost", port=50000, database="demo"):
+    def __init__(self, username="monetdb", password="monetdb", hostname="localhost", port=50000, database="demo", autocommit=False):
+        """ Set up a connection to a MonetDB SQL database.
+
+        username -- username for connection (default: monetdb)
+        password -- password for connection (default: monetdb)
+        hostname -- hostname to connect to (default: localhost)
+        port -- port to connect to (default: 50000)
+        database -- name of the database (default: demo)
+        autocommit -- enable/disable auto commit (default: False, required by DBAPI)
+
+        """
+
         self.mapi = mapi.Server()
-        self.mapi.connect(hostname, port, username, password, database, language="sql")
+        self.autocommit = False
+        self.mapi.connect(hostname=hostname, port=int(port), username=username,
+            password=password, database=database, language="sql")
+        self.set_autocommit(self.autocommit)
 
 
     def close(self):
@@ -46,11 +61,23 @@ class Connection:
         committing the changes first will cause an implicit
         rollback to be performed.
         """
+
         if self.mapi:
+            if not self.autocommit:
+                self.rollback()
             self.mapi.disconnect()
             self.mapi = None
         else:
             raise Error("already closed")
+
+
+    def set_autocommit(self, autocommit):
+        """
+        Set auto commit on or off. 'autocommit' must be a boolean
+        """
+        self.command("Xauto_commit %s" % int(autocommit))
+        self.autocommit = autocommit
+
 
 
     def commit(self):
@@ -64,10 +91,8 @@ class Connection:
         implement this method with void functionality.
         """
 
-        # TODO: implement
-        return False
-        #self.__mapi_check()
-        #return self.execute('COMMIT')
+        self.__mapi_check()
+        return self.execute('COMMIT')
 
 
 
@@ -82,10 +107,9 @@ class Connection:
         committing the changes first will cause an implicit
         rollback to be performed.
         """
-        # TODO: implement
-        return False
-        #self.__mapi_check()
-        #return self.execute('ROLLBACK')
+
+        self.__mapi_check()
+        return self.execute('ROLLBACK')
 
 
 
@@ -105,16 +129,19 @@ class Connection:
 
 
     def command(self, command):
-        """ use this to send mapi commands """
+        """ use this function to send low level mapi commands """
         self.__mapi_check()
         return self.mapi.cmd(command)
 
 
     def __mapi_check(self):
+        """ check if there is a connection with a server """
         if not self.mapi:
             raise Error("connection closed")
+        return True
 
 
+    # these are required by the python DBAPI
     Warning = Warning
     Error = Error
     InterfaceError = InterfaceError

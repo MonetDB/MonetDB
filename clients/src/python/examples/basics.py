@@ -32,7 +32,7 @@ except ImportError:
     import monetdb.sql
 
 
-x = monetdb.sql.connect(database='ruby')
+x = monetdb.sql.connect(username="monetdb", password="monetdb", hostname="localhost", database="demo")
 c = x.cursor()
 
 # some basic query

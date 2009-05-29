@@ -191,8 +191,8 @@ class Server:
         elif "MD5" in h:
             import hashlib
             m = hashlib.md5()
-            m.update(password)
-            m.update(salt)
+            m.update(password.encode())
+            m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
         elif "crypt" in h:
             import crypt
@@ -200,7 +200,7 @@ class Server:
         else:
             pwhash = "{plain}" + password + salt
 
-        return ":".join(["BIG", self.username, pwhash, self.language, self.database])
+        return ":".join(["BIG", self.username, pwhash, self.language, self.database]) + ":"
 
 
     def __getblock(self):
