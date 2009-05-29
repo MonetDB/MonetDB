@@ -22,6 +22,11 @@ import unittest
 import warnings
 
 
+#import logging
+#logging.getLogger().setLevel(logging.DEBUG)
+
+
+
 try:
     import monetdb.sql
 except ImportError:
@@ -37,7 +42,7 @@ class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
 
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database='demo')
+    connect_kwargs = dict(database='demo', autocommit=True)
     leak_test = False
 
     def test_TIME(self):
