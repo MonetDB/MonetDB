@@ -23,8 +23,8 @@
  * Shared utility functions between merovingian and monetdb
  */
 
-#include "utils.h"
 #include "sql_config.h"
+#include "utils.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 #include <gdk.h> /* GDKmalloc */
