@@ -981,7 +981,7 @@ handleClient(int sock)
 	/* note that we claim to speak proto 8 here */
 	stream_printf(fout, "%s:merovingian:8:%s:%s",
 			"void",  /* some bs */
-			"plain", /* FIXME: don't do difficult things for now */
+			"md5,plain", /* we actually don't look at the password */
 #ifdef WORDS_BIGENDIAN
 			"BIG"
 #else
@@ -989,6 +989,7 @@ handleClient(int sock)
 #endif
 			);
 	stream_flush(fout);
+
 	/* get response */
 	if (stream_read_block(fdin, buf, 8095, 1) < 0) {
 		/* we didn't get a terminated block :/ */
@@ -999,6 +1000,7 @@ handleClient(int sock)
 		close_stream(fdin);
 		return(e);
 	}
+	buf[8095] = '\0';
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
 
@@ -1073,10 +1075,17 @@ handleClient(int sock)
 	if (s) {
 		*s = 0;
 		database = s + 1;
-		/* we can have stuff following, make it void */
+		/* since we don't know where the string ends, we need to look
+		 * for another : */
 		s = strchr(database, ':');
-		if (s)
-			*s = 0;
+		if (s == NULL) {
+			e = newErr("client challenge error: %s", buf);
+			stream_printf(fout, "!merovingian: incomplete challenge, missing trailing colon\n");
+			stream_flush(fout);
+			close_stream(fout);
+			close_stream(fdin);
+			return(e);
+		}
 	}
 
 	if (*database == '\0') {
