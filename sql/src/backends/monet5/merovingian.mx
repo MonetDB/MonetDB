@@ -1085,6 +1085,8 @@ handleClient(int sock)
 			close_stream(fout);
 			close_stream(fdin);
 			return(e);
+		} else {
+			*s = '\0';
 		}
 	}
 
