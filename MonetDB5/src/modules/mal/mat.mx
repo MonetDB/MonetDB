@@ -47,6 +47,10 @@ pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
 address MATpack
 comment "Materialize the MAT into a BAT";
 
+pattern pack(:any_2...):bat[:void,:any_2]
+address MATpackValues
+comment "Materialize the MAT (of values) into a BAT";
+
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
@@ -86,6 +90,7 @@ comment "retrieve the definition from the partition catalogue";
 mat_export str MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATpackInternal(MalStkPtr stk, InstrPtr p,int first);
+mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mat_export str MATdummy(int *ret, str *grp);
@@ -177,10 +182,30 @@ MATpackInternal(MalStkPtr stk, InstrPtr p,int first)
 }
 
 str
-MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	(void) cntxt;
 	(void) mb;
 	return MATpackInternal(stk,p,1);
+}
+
+str
+MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,*ret, type, first = 1;
+	BAT *bn;
+
+	(void) cntxt;
+	type = getArgType(mb,p,first);
+	bn = BATnew(TYPE_void, type, p->argc);
+	if( bn == NULL)
+		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+
+	for(i = first; i < p->argc; i++)
+		BUNappend(bn, getArgReference(stk, p, i), TRUE);
+	ret= (int*) getArgReference(stk,p,0);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
