@@ -200,7 +200,7 @@ class Server:
         else:
             pwhash = "{plain}" + password + salt
 
-        return ":".join(["BIG", self.username, pwhash, self.language, self.database])
+        return ":".join(["BIG", self.username, pwhash, self.language, self.database]) + ":"
 
 
     def __getblock(self):
