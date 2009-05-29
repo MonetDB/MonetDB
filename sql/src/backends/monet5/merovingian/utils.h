@@ -20,7 +20,6 @@
 #ifndef _SEEN_UTILS_H
 #define _SEEN_UTILS_H 1
 
-#include "sql_config.h"
 #include <stdio.h>  /* FILE* */
 #include <sys/types.h>   /* time_t */
 

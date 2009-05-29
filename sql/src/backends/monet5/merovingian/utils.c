@@ -24,6 +24,7 @@
  */
 
 #include "utils.h"
+#include "sql_config.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 #include <gdk.h> /* GDKmalloc */
