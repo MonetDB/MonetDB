@@ -1,0 +1,8 @@
+i:= mat.count(1,2,3);
+io.print(i);
+i:= mat.count(2);
+io.print(i);
+i:= mat.count();
+io.print(i);
+j:= mat.min(1,2,3);
+io.print(j);

@@ -65,6 +65,28 @@ comment "Find the next element in the merge table";
 command info(g:str, e:str):bat[:any_1,:any_2]
 address MATinfo
 comment "retrieve the definition from the partition catalogue";
+
+@-
+The aggregates do not include the -nonil variant, because this
+should be handled by aggregation over the partitions before.
+@= mataggr
+command count(b:@1...):@1
+address MATcount
+comment "Sum the result of a partitioned count check for NULL";
+command min(b:@1...):@1
+address MATmin
+comment "Get the minimum from the MAT list";
+command max(b:@1...):@1
+address MATmax
+comment "Get the maximum from the MAT list";
+@mal
+@:mataggr(bte)@
+@:mataggr(wrd)@
+@:mataggr(int)@
+@:mataggr(lng)@
+@:mataggr(flt)@
+@:mataggr(dbl)@
+
 @-
 @{
 @+ Implementation
@@ -96,6 +118,9 @@ mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 mat_export str MATdummy(int *ret, str *grp);
 mat_export str MATinfo(int *ret, str *grp, str *elm);
 mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mat_export str MATmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #endif /* _INSPECT_H */
 @- 
 Mal symbol table and environment analysis.
@@ -225,4 +250,76 @@ MATinfo(int *ret, str *grp, str *elm){
 	(void) grp; (void) elm; (void) ret;
 	return MAL_SUCCEED;
 }
+
+@= MATcount
+{
+	@1 a@1 = 0;
+	for( i = p->retc; i<p->argc; i++)
+	if ( ATOMcmp(t, ATOMnilptr(t), (@1*)getArgReference(stk,p,i)) == 0){
+		* (@1 *) getArgReference(stk,p,0) = @1_nil;
+		return MAL_SUCCEED;
+	} else
+		a@1 += *(@1*) getArgReference(stk,p,i);
+	* (@1 *) getArgReference(stk,p,0) = a@1;
+}
+@c
+str
+MATcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,t;
+	(void) cntxt;
+
+	t = getArgType(mb,p,0);
+	switch(ATOMstorage(t)) {
+	case TYPE_chr: @:MATcount(chr)@ break;
+	case TYPE_bte: @:MATcount(bte)@ break;
+	case TYPE_sht: @:MATcount(sht)@ break;
+	case TYPE_int: @:MATcount(int)@ break;
+	case TYPE_flt: @:MATcount(flt)@ break;
+	case TYPE_dbl: @:MATcount(dbl)@ break;
+	case TYPE_lng: @:MATcount(lng)@ break;
+	default:
+		throw(MAL, "mat.sum", PROGRAM_NYI);
+	}
+	return MAL_SUCCEED;
+}
+
+@= MATaggr
+{
+	int (*cmp)(ptr,ptr) = BATatoms[t].atomCmp;
+	@1 a@1 = * (@1 *) getArgReference(stk,p,1);
+
+	for( i = p->retc+1; i<p->argc; i++)
+	if ( ATOMcmp(t, ATOMnilptr(t), (@1*)getArgReference(stk,p,i)) == 0){
+		* (@1 *) getArgReference(stk,p,0) = @1_nil;
+		return MAL_SUCCEED;
+	} else
+		a@1 = ((*cmp)(&a@1, (@1*)getArgReference(stk,p,i)) @2 0)? 
+			a@a: *(@1*)getArgReference(stk,p,i);
+	* (@1 *) getArgReference(stk,p,0) = a@1;
+}
+@= MATaggrBody
+str
+MAT@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,t;
+	(void) cntxt;
+
+	t = getArgType(mb,p,0);
+	switch(ATOMstorage(t)) {
+	case TYPE_chr: @:MATaggr(chr,@2)@ break;
+	case TYPE_bte: @:MATaggr(bte,@2)@ break;
+	case TYPE_sht: @:MATaggr(sht,@2)@ break;
+	case TYPE_int: @:MATaggr(int,@2)@ break;
+	case TYPE_flt: @:MATaggr(flt,@2)@ break;
+	case TYPE_dbl: @:MATaggr(dbl,@2)@ break;
+	case TYPE_lng: @:MATaggr(lng,@2)@ break;
+	default:
+		throw(MAL, "mat.@1", PROGRAM_NYI);
+	}
+	return MAL_SUCCEED;
+}
+@:MATaggrBody(min,<=)@
+@:MATaggrBody(max,>)@
+
 @}
