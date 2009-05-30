@@ -1034,45 +1034,47 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k;
-	InstrPtr r = NULL;
+	int v = newTmpVariable(mb, newBatType(TYPE_void,tp));
+	InstrPtr r = NULL, s = NULL, q = NULL;
 
 #ifdef DEBUG_OPT_MERGETABLE
 	stream_printf(GDKout,"MAT optimizer, mat_aggr\n");
 	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
 #endif
-	for(k=1; k< mat[m].mi->argc; k++){
-		int v = newTmpVariable(mb, tp);
-		InstrPtr q = newInstruction(mb,ASSIGNsymbol);
-
+	/* we pack the partitial result */
+	r = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(r, matRef);
+	setFunctionId(r, packRef);
+	getArg(r,0) = v;
+	for(k=1; k< mat[m].mi->argc; k++) {
+		q = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(q,aggrRef);
 		setFunctionId(q,getFunctionId(p));
-		getArg(q,0) = v;
+		getArg(q,0) = newTmpVariable(mb, tp);
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
 		pushInstruction(mb,q);
-		if (r) {
-			int v = newTmpVariable(mb, tp);
-			InstrPtr s = newInstruction(mb,ASSIGNsymbol);
-
-			setModuleId(s,calcRef);
-			if (getFunctionId(p) == minRef)
-				setFunctionId(s, min_no_nilRef);
-			else if (getFunctionId(p) == maxRef)
-				setFunctionId(s, max_no_nilRef);
-			else if (getFunctionId(p) == sumRef)	
-				/* sum(empty) == 0 semantics */
-				setFunctionId(s, sqlplusRef);
-			else 	
-				setFunctionId(s, plusRef);
-			getArg(s,0) = v;
-			s = pushArgument(mb, s, getArg(q,0));
-			s = pushArgument(mb, s, getArg(r,0));
-			pushInstruction(mb, s);
-			r = s;
-		} else {
-			r = q;
-		}
+		
+		r = pushArgument(mb,r,getArg(q,0));
 	}
-	getArg(r,0) = getArg(p,0);
+	pushInstruction(mb,r);
+
+	s = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(s, algebraRef);
+	setFunctionId(s, selectNotNilRef);
+	getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_void,tp));
+	s = pushArgument(mb, s, getArg(r,0));
+	pushInstruction(mb, s);
+	r = s;
+
+	s = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(s,aggrRef);
+	if (getFunctionId(p) == minRef || getFunctionId(p) == maxRef)
+		setFunctionId(s, getFunctionId(p));
+	else 	
+		setFunctionId(s, sumRef);
+	getArg(s,0) = getArg(p,0);
+	s = pushArgument(mb, s, getArg(r,0));
+	pushInstruction(mb, s);
 }
 
 static int

@@ -226,8 +226,13 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 
-	for(i = first; i < p->argc; i++)
-		BUNappend(bn, getArgReference(stk, p, i), TRUE);
+	if (ATOMvarsized(type)) {
+		for(i = first; i < p->argc; i++)
+			BUNappend(bn, stk->stk[getArg(p,i)].val.sval, TRUE);
+	} else {
+		for(i = first; i < p->argc; i++)
+			BUNappend(bn, getArgReference(stk, p, i), TRUE);
+	}
 	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
