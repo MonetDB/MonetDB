@@ -14,14 +14,18 @@ set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\MonetDB5;%PATH%
 
 rem prepare the arguments to mserver5 to tell it where to put the dbfarm
 
+rem do this in two if statements because of weird command interpreter
 if "%APPDATA%" == "" (
 rem if the APPDATA variable does not exist, put the database in the
 rem installation folder (i.e. default location, so no command line argument)
 set MONETDBDIR=%MONETDB%\var\MonetDB5
-set MONETDBFARM=
 ) else (
 rem if the APPDATA variable does exist, put the database there
 set MONETDBDIR=%APPDATA%\MonetDB5
+)
+if "%APPDATA%" == "" (
+set MONETDBFARM=
+) else (
 set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
 )
 
