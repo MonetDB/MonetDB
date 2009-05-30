@@ -158,8 +158,6 @@ SQLprelude(void)
 	s->exitClient = "SQLexitClient";
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
-	/* s->optimizer = "SQLoptimizer";
-	 * s->tactics = .. */
 	s->engine = "SQLengine";
 	if (GDKembedded)
 		return MAL_SUCCEED;
@@ -285,6 +283,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
+	str optimizer;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -295,7 +294,13 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_schema", schema);
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
-	SQLglobal("optimizer", defaultPlan);
+	optimizer= GDKgetenv("sql_optimizer");
+	if (optimizer == NULL)
+		optimizer= defaultPlan;
+	else 
+		optimizer = SQLvalidateOptimizer(optimizer);
+	setOptimizers(optimizer);
+	SQLglobal("optimizer", optimizer);
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, 0, 0);

@@ -136,6 +136,8 @@ Organized by module:
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
+sql5_export str SQLvalidateOptimizer(str optimizer);
+sql5_export void setOptimizers(str optimizer);
 sql5_export str defaultPlan;
 
 #endif /* _SQL_OPTIMIZER_H_ */
@@ -445,7 +447,7 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	/*"mitosis," */
+	"mitosis,"
 /*	"cluster,"*/
 	"aliases,"
 	/* "crack," */
@@ -454,7 +456,7 @@ str defaultPlan=
 	"mergetable,"
 	"deadcode,"	/* mergetable leaves dead code behind */
 #ifndef WIN32
-	/* "octopus,"*/
+	/*"octopus,"*/
 #endif
 	"constants,"
 	"commonTerms,"
@@ -471,20 +473,67 @@ str defaultPlan=
 	"history,"
 	"multiplex";
 static str minimalPlan=
-	"history,"
+	"inline,"
+	"remap,"
 	"multiplex";
-	
 
-static void
-addOptimizers(Client c,MalBlkPtr mb, str optimizer)
+static str optimizers[256];	/* the optimizer pipeline */
+static str optimizerpipeline;		/* reference to last pipeline string */
+	
+str
+SQLvalidateOptimizer(str optimizer){
+	int error= 0;
+	int mitosis= FALSE, deadcode= FALSE;
+	int i;
+
+	if ( strcmp(optimizers[0],"inline") ){
+		showException(SQL,"optimizer"," 'inline' should be the first\n");
+		error++;
+	}
+	/* deadcode should be used */
+	for ( i=0; optimizers[i]; i++)
+		if (strcmp(optimizers[i],"deadcode") == 0)
+			deadcode= TRUE;
+		else
+		if (strcmp(optimizers[i],"mitosis") == 0)
+			mitosis= TRUE;
+		else
+		if (strcmp(optimizers[i],"mergetable") == 0 && mitosis == FALSE) {
+			showException(SQL,"optimizer"," 'mergetable' needs 'mitosis'\n");
+			error++;
+		}
+
+	if ( --i >= 0 && strcmp(optimizers[i],"multiplex") ){
+		showException(SQL,"optimizer"," 'multiplex' should be the last\n");
+		error++;
+	}
+	if (deadcode == FALSE ){
+		showException(SQL,"optimizer"," 'deadcode' should be used at least once\n");
+		error++;
+	}
+
+	if (error)
+		return defaultPlan;
+
+	return optimizer;
+}
+
+void
+setOptimizers(str optimizer)
 {
 	/* the optimizer control is a semicolon separated list of names */
 	/* the predefined 'default' injects the default plan upon need */
-	str optimizers[256];
-	str oldbase = optimizer;
 	int top=0,i;
-	char *nxt, *nme;
+	char *base,  *nxt, *nme;
+	
+	if (optimizerpipeline == optimizer)
+		return;
+	optimizerpipeline= optimizer;
+	base= GDKstrdup(optimizer);
 
+	for ( i = 0; i < 256; i++)
+		optimizers[i] = NULL;
+	optimizer=  base;
 	while (optimizer && *optimizer ) {
 		nxt = strchr(optimizer,',');
 		if (nxt){
@@ -493,27 +542,27 @@ addOptimizers(Client c,MalBlkPtr mb, str optimizer)
 		}
 		if (strcmp(optimizer,"default")==0){
 			str base= GDKstrdup(defaultPlan? defaultPlan:minimalPlan);
-			addOptimizers(c,mb,base);
-		} else if ((nme = putName(optimizer,strlen(optimizer))) == 0) {
+			setOptimizers(base);
+		} else if ((nme = putName(optimizer,strlen(optimizer))) == 0)
 			showException(SQL,"optimizer"," '%s' does not exist\n",optimizer);
-			mb->errors++;
-		} else if (top<256)
+		else if (top<255)
 			optimizers[top++] = nme; 
 		optimizer = nxt;
 	} 
-	if (top == 256){
+	if (top == 256)
 		showException(SQL,"optimizer","Too many optimizer steps\n");
-		mb->errors++;
-	}
+}
+
+static void
+addOptimizers(Client c,MalBlkPtr mb)
+{
+	int i;
 
 	/* add the optimizers to the query plan */
-	for (i=0; i<top; i++) {
+	for (i = 0; optimizers[i]; i++) {
 		InstrPtr p = newFcnCall(mb, "optimizer", optimizers[i]);
-
 		typeChecker(c->nspace, mb, p, TRUE);
 	}
-	if (oldbase)
-		GDKfree(oldbase);
 }
 
 void
@@ -550,6 +599,7 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
+		optimizer = SQLvalidateOptimizer(optimizer);
 	if (optimizer == 0) 
 		optimizer = defaultPlan? defaultPlan:minimalPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
@@ -569,7 +619,8 @@ care of.
 
 		stack_set_var(be->mvc, "optimizer", 
 			VALset(&src, TYPE_str, defaultPlan? defaultPlan:minimalPlan));
-		addOptimizers(c,mb, base);
+		setOptimizers(base);
+		addOptimizers(c,mb);
 		optimizeMALBlock(c,mb);
 	} else
 	if( strcmp(optimizer,"off")==0 ){ 
@@ -578,12 +629,12 @@ care of.
 		stack_set_var(be->mvc, "optimizer", 
 			VALset(&src, TYPE_str, minimalPlan));
 		/* no real optimization needed */
-		addOptimizers(c,mb, base);
+		setOptimizers(base);
+		addOptimizers(c,mb);
 		optimizeMALBlock(c,mb);
 	} else {
-		str base = GDKstrdup(optimizer);
-
-		addOptimizers(c,mb,base);
+		setOptimizers(optimizer);
+		addOptimizers(c,mb);
 
 		/* time to execute the optimizers */
 		if( c->debug)
