@@ -98,3 +98,4 @@ alter_table_add_column
 create_index
 select_from_values
 or_in_crash
+crash_order_by

@@ -15,10 +15,10 @@
 -- All Rights Reserved.
 
 create function curdate( ) returns date
-	external name mtime."current_data";
+	external name mtime."current_date";
 
 create function "current_date"( ) returns date;
-	external name mtime."current_data";
+	external name mtime."current_date";
 
 create function curtime( ) returns TIMETZ
 	external name mtime."current_time";

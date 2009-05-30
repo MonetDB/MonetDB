@@ -44,7 +44,7 @@ class MonetDBConnection
   @@CLIENT_ENDIANNESS   = "BIG"
   
   # MAPI protocols supported by the driver
-  @@SUPPORTED_PROTOCOLS = [ 8 ]
+  @@SUPPORTED_PROTOCOLS = [ 8, 9 ]
   
   attr_reader :socket
   
@@ -215,7 +215,7 @@ class MonetDBConnection
       
     end    
     # Build the reply message with header
-    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name 
+    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name + ":"
   end
 
   #
@@ -249,7 +249,7 @@ class MonetDBConnection
       raise MonetDBConnectionError, "#{auth_type} not supported by the server. Please choose one from #{@supported_auth_types}"
     end    
     # Build the reply message with header
-    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name 
+    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name + ":"
   end
 
 

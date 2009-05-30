@@ -36,9 +36,9 @@ puts "Number of fields: " + res.num_fields.to_s
 
 # Iterate over the record set and retrieve on row at a time
 #puts res.fetch
-#while row = res.fetch do
-#  printf "%s \n", row
-#end
+while row = res.fetch do
+  printf "%s \n", row
+end
 
 
 ###### Get all records and hash them by column name
