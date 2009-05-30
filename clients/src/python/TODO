@@ -1,18 +1,19 @@
 
-* Write better documentation
+The Python API is already usable, but some things need some more attention:
 
 * Improve exception types and messages
-
 * Improve type conversion (for example string, can't handle substrings well)
-
 * Speed tests / profiling
-
 * Get the capabilities tests working
-
 * Configure the logging module correctly
+* Code cleanup (fix all TODO's in the source)
+* Add unit tests for unicode and invalid query
+* Add unit tests for MAPI
+* Add transaction support (set default autocommit off, make set_autocommit)
+* Add more cursor types (dict cursor)
+* Modify XQuery API to use native MAPI
+* Add a central exception handler
 
-* Code cleanup
 
-* Mapi v9 support
 
 

@@ -18,10 +18,11 @@
 # All Rights Reserved.
 
 import unittest
-#import subprocess
 
 #import logging
 #logging.getLogger().setLevel(logging.DEBUG)
+
+import dbapi20
 
 try:
     import monetdb.sql
@@ -32,7 +33,31 @@ except ImportError:
     import monetdb.sql
 
 
-import dbapi20
+class TextTestRunnerNoTime(unittest.TextTestRunner):
+    """A test runner class that displays results in textual form, but without time """
+    def run(self, test):
+        "Run the given test case or test suite."
+        result = self._makeResult()
+        test(result)
+        result.printErrors()
+        self.stream.writeln(result.separator2)
+        run = result.testsRun
+        self.stream.writeln("Ran %d test%s" % (run, run != 1 and "s" or ""))
+        self.stream.writeln()
+        if not result.wasSuccessful():
+            self.stream.write("FAILED (")
+            failed, errored = map(len, (result.failures, result.errors))
+            if failed:
+                self.stream.write("failures=%d" % failed)
+            if errored:
+                if failed: self.stream.write(", ")
+                self.stream.write("errors=%d" % errored)
+            self.stream.writeln(")")
+        else:
+            self.stream.writeln("OK")
+        return result
+
+
 class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
     driver = monetdb.sql
     connect_args = ()
@@ -70,9 +95,11 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
         finally:
             con.close()
 
+    def test_nextset(self):
+        pass
 
-    def test_nextset(self): pass
-    def test_setoutputsize(self): pass
+    def test_setoutputsize(self):
+        pass
 
     def test_Exceptions(self):
         # we override this since StandardError is depricated in python 3
@@ -102,4 +129,6 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(Test_Monetdb_Sql)
+    TextTestRunnerNoTime(verbosity=3).run(suite)
