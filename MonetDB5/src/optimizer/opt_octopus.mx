@@ -409,7 +409,7 @@ when scheduled correctly, would not lead to duplicate work.
 			s2= newFunction(octopusRef, putName(buf,strlen(buf)), FUNCTIONsymbol);
 			sm= s2->def;
 			q= getInstrPtr(sm,0);
-			setArgType(sm,q,0,getArgType(mb,p,0));
+			setArgType(sm,q,0,getArgType(mb,p,1));
 			dbvar= newVariable(sm,GDKstrdup("dbname"),TYPE_str);
 			qvar = newVariable(sm,GDKstrdup("query"),TYPE_str);
 			version= newVariable(sm,GDKstrdup("version"),TYPE_int);

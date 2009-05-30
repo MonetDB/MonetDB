@@ -1029,6 +1029,13 @@ is simplified when you retain information on the origin of the MAL code
 produced as long as possible. For example,
 the snippet @code{ sql.insert(col, 12@@0, "hello")} can be the target
 of simple SQL rewrites using the module name as the discriminator.
+
+Pipeline validation. The pipelines used to optimize MAL programs contain
+dependencies. For example, it does not make much sense to call the deadcode
+optimizer too early in the pipeline, although it is not an error.
+Moreover, some optimizers are merely examples of the direction to take,
+others are critical for proper functioning for e.g. SQL.
+
 @menu
 * Access Mode::
 * Accumulators::
