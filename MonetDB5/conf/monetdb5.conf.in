@@ -215,6 +215,13 @@ mapi_open=false     # should be set to 'true' to allow for
 # The SQL debug level (should be disabled for normal use)
 # sql_debug=0
 
+# The default SQL optimizer pipeline is set per server. 
+# During SQL initialization, the optimizer pipeline is checked
+# against the dependency information maintained in the optimizer
+# library to ensure there are no conflicts and at least
+# the pre-requisite optimizers are used. 
+sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+
 # Place to store transaction logs
 # The logs are best stored on a different storage medium
 # to protect the database against accidental hardware loss.
