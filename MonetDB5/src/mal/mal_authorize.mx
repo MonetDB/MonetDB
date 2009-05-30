@@ -1274,10 +1274,8 @@ static str
 AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 	str tmp;
 	int len = (int) (strlen(*password) + strlen(*challenge));
-	str key = alloca(sizeof(char) * len);
-	key[0] = '\0';
-	strcpy(key, *password);
-	strncat(key, *challenge, strlen(*challenge));
+	str key = alloca(sizeof(char) * (len + 1));
+	snprintf(key, len + 1, "%s%s", *password, *challenge);
 
 	if (strcmp(*algo, "RIPEMD160") == 0) {
 		rethrow("hashPassword", tmp, AUTHRIPEMD160Sum(ret, &key, &len));

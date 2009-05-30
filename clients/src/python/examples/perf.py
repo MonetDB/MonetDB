@@ -33,7 +33,7 @@ except ImportError:
 
 for i in (10, 100, 1000, 10000):
     t = time.time()
-    x = monetdb.sql.connect()
+    x = monetdb.sql.connect(database="demo")
     c = x.cursor()
     c.arraysize=i
     c.execute('select * from tables, tables, tables, tables')
