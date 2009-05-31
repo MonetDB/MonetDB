@@ -136,7 +136,7 @@ Organized by module:
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
-sql5_export str SQLvalidateOptimizer(str optimizer);
+sql5_export int SQLvalidatePipeline();
 sql5_export void setOptimizers(str optimizer);
 sql5_export str defaultPlan;
 
@@ -479,9 +479,10 @@ static str minimalPlan=
 
 static str optimizers[256];	/* the optimizer pipeline */
 static str optimizerpipeline;		/* reference to last pipeline string */
+static int pipelineOverruled;
 	
-str
-SQLvalidateOptimizer(str optimizer){
+int
+SQLvalidatePipeline(){
 	int error= 0;
 	int mitosis= FALSE, deadcode= FALSE;
 	int i;
@@ -511,11 +512,7 @@ SQLvalidateOptimizer(str optimizer){
 		showException(SQL,"optimizer"," 'deadcode' should be used at least once\n");
 		error++;
 	}
-
-	if (error)
-		return defaultPlan;
-
-	return optimizer;
+	return error;
 }
 
 void
@@ -526,7 +523,7 @@ setOptimizers(str optimizer)
 	int top=0,i;
 	char *base,  *nxt, *nme;
 	
-	if (optimizerpipeline == optimizer)
+	if (optimizerpipeline == optimizer || pipelineOverruled)
 		return;
 	optimizerpipeline= optimizer;
 	base= GDKstrdup(optimizer);
@@ -551,6 +548,14 @@ setOptimizers(str optimizer)
 	} 
 	if (top == 256)
 		showException(SQL,"optimizer","Too many optimizer steps\n");
+	if (SQLvalidatePipeline() ) {
+		if (optimizerpipeline == defaultPlan)
+			setOptimizers(minimalPlan);
+		else
+			setOptimizers(defaultPlan);
+		pipelineOverruled= TRUE;
+		showException(SQL,"optimizer"," pipeline set to '%s'",optimizerpipeline);
+	}
 }
 
 static void
@@ -599,7 +604,6 @@ to allow inspection.
 		return;
 	}
 	optimizer = stack_get_string(be->mvc, "optimizer");
-		optimizer = SQLvalidateOptimizer(optimizer);
 	if (optimizer == 0) 
 		optimizer = defaultPlan? defaultPlan:minimalPlan;
 #ifdef _SQL_OPTIMIZER_DEBUG
