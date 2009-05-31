@@ -144,7 +144,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define DEBUG_OPT_OCTOPUS           show partial result */
+/* #define DEBUG_OPT_OCTOPUS            show partial result */
 
 @c
 #include "mal_config.h"
@@ -525,8 +525,12 @@ when scheduled correctly, would not lead to duplicate work.
 	}
 	
 @-
-The tentacle code should be optimized by the remaining optimizers.
+Keep the remaining optimizers in the main program.
+The tentacle code should be optimized by the remaining optimizers too.
 @c
+	for (j=last+1; j< limit; j++)
+		pushInstruction(mb,old[j]);
+
 	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
 		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));

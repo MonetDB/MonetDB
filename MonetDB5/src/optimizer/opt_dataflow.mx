@@ -81,7 +81,6 @@ The statemens are all checked for being eligible for dataflow.
 		actions++;
 	}
 @c
-@c
 #include "mal_config.h"
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
@@ -139,6 +138,8 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p == NULL)
 			continue;
+		if (p->token == ENDsymbol)
+			break;
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)
 		   || blockCntrl(p) || (!dumbcopy && blockExit(p))){
 			@:flowblock@
@@ -177,6 +178,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
+	/* take the remainder as is */
+	for (; i<limit; i++) 
+	if (old[i])
+		pushInstruction(mb,old[i]);
 	GDKfree(old);
 	GDKfree(span);
 #ifdef DEBUG_DATAFLOW_OPT
