@@ -16,7 +16,3 @@
 # All Rights Reserved.
 
 SUBDIRS = monet5
-
-# The server emebedded into a Python process is not currently supported.
-# HAVE_PYTHON_SWIG?python
-EXTRA_DIST_DIR = python
