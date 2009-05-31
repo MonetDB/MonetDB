@@ -39,10 +39,17 @@ except ImportError:
 warnings.filterwarnings('error')
 
 class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
+    MAPIPORT = 50000
+    TSTDB = 'demo'
+    import os
+    if os.environ.has_key('MAPIPORT'):
+        MAPIPORT = int(os.environ['MAPIPORT'])
+    if os.environ.has_key('TSTDB'):
+        TSTDB = os.environ['TSTDB']
 
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database='demo', autocommit=True)
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=True)
     leak_test = False
 
     def test_TIME(self):
