@@ -160,7 +160,7 @@ OPTkeepVariable(MalBlkPtr mb, InstrPtr p, int idx)
 static int
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, limit,done;
+	int i, j, k, limit, vlimit, done;
 	InstrPtr p, q, *old;
 	int actions = 0;
 	Lifespan span;
@@ -177,6 +177,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	old= mb->stmt;
 	limit = mb->stop;
+	vlimit = mb->vtop;
 	newMalBlkStmt(mb,mb->ssize);
 
 	for (i = 0; i < limit; i++) {
@@ -205,7 +206,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			} 
 		}
 		if (blockExit(p) ){
-			for (k = 0; k < mb->vtop; k++)
+			for (k = 0; k < vlimit; k++)
 			if (getEndLifespan(span,k) == i &&
 				isaBatType(getVarType(mb,k)) &&
 				varGetProp(mb, k, keepProp) == NULL){
