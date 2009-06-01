@@ -3891,9 +3891,9 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				if (is_project((*rel)->op) && (*rel)->l) {
 					p = rel_dup((*rel)->l);
 					rel_destroy(*rel);
+					*rel = NULL;
 				} 
-				/* TODO cleanup this messss */
-				if (is_project((*rel)->op) && !(*rel)->l) {
+				if (*rel && is_project((*rel)->op) && !(*rel)->l) {
 					list *l = (*rel)->exps;
 					int need_preproj = 0;
 
