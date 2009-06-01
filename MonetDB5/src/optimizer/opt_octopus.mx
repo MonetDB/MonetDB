@@ -179,15 +179,18 @@ OCTinitcode(Client cntxt, MalBlkPtr mb){
 @-
 Be prepared to catch errors from the remote site.
 You should catch them, otherwise the session is not closed.
+Beware, exceptions should be catched and thrown after the
+connection has been closed.
 @c
 static void
 OCTexitcode(MalBlkPtr mb, int conn,int varid){
 	InstrPtr p;
 
-	newCatchStmt(mb, "RMTexception");
-	p= newStmt(mb,ioRef,printRef);
-	pushArgument(mb,p,findVariable(mb,"RMTexception"));
-	newExitStmt(mb, "RMTexception");
+	newCatchStmt(mb, "ANYexception");
+	p = newStmt(mb, remoteRef,disconnectRef);
+    pushArgument(mb,p,conn);
+	newRaiseStmt(mb,"ANYexception");
+	newExitStmt(mb, "ANYexception");
 
 	p = newStmt(mb, remoteRef,disconnectRef);
     pushArgument(mb,p,conn);
@@ -497,9 +500,16 @@ when scheduled correctly, would not lead to duplicate work.
 			setVarType(sm,l, getArgType(sm,getInstrPtr(sm,0),0));
 			setVarUDFtype(sm,l);
 
+			/* catch and propagate errors */
+			newCatchStmt(sm, "ANYexception");
+			q = newStmt(sm, remoteRef,disconnectRef);
+			pushArgument(sm,q,conn);
+			newRaiseStmt(sm,"ANYexception");
+			newExitStmt(sm, "ANYexception");
+
 			/* close connection */
-			p = newStmt(sm, remoteRef,disconnectRef);
-			pushArgument(sm,p,conn);
+			q = newStmt(sm, remoteRef,disconnectRef);
+			pushArgument(sm,q,conn);
 
 			/* return exec_qry:= l; */
 			q= newAssignment(sm);
@@ -516,9 +526,6 @@ when scheduled correctly, would not lead to duplicate work.
 		} 
 		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
-			/* the octopus leaves a lot of deadcode, which we don't
-			   want to optimize */
-			(void) newStmt(mb,optimizerRef,putName("deadcode",8));
 			last= i;
 			break;
 		}
@@ -529,10 +536,12 @@ Keep the remaining optimizers in the main program.
 The tentacle code should be optimized by the remaining optimizers too.
 @c
 	for (j=last+1; j< limit; j++)
-		pushInstruction(mb,old[j]);
+	if (old[j] )
+		pushInstruction(mb, old[j]);
 
 	for (j=last+1; j< limit; j++)
 	for (i=0; i<tn; i++)
+	if ( old[j] && old[j]->token != REMsymbol)
 		newStmt(tentacle[i], getModuleId(old[j]),getFunctionId(old[j]));
 	
 	for (i=0; i<tn; i++){
