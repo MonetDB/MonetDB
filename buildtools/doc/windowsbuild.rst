@@ -742,9 +742,7 @@ available.  The following parameters are possible:
 - ``HAVE_PHP=1`` - PHP is available;
 - ``HAVE_PROBXML=1`` - compile in support for probabilistic XML (an
   experimental extension to the pathfinder component);
-- ``HAVE_PYTHON=1`` - Python is available;
-- ``HAVE_PYTHON_SWIG=1`` - Python and SWIG are both available (also
-  need ``HAVE_PYTHON=1``).
+- ``HAVE_PYTHON=1`` - Python is available.
 
 In addition, you can add a parameter which points to a file with extra
 definitions for ``nmake``.  This is very convenient to define where

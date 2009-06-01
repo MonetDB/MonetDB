@@ -15,4 +15,4 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = monetdb
+SUBDIRS = monetdb test

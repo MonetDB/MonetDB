@@ -59,9 +59,17 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
 
 
 class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
+    MAPIPORT = 50000
+    TSTDB = 'demo'
+    import os
+    if os.environ.has_key('MAPIPORT'):
+        MAPIPORT = int(os.environ['MAPIPORT'])
+    if os.environ.has_key('TSTDB'):
+        TSTDB = os.environ['TSTDB']
+
     driver = monetdb.sql
     connect_args = ()
-    connect_kw_args = {'database': 'demo'}
+    connect_kw_args = {'database': TSTDB, 'port': MAPIPORT}
 
     lower_func = 'lower' # For stored procedure test
 

@@ -1446,9 +1446,6 @@ fi
 
 have_python=auto
 PYTHON=python
-PYTHON_INCS=
-PYTHON_LIBS=
-PYTHON_VERSION=
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
 	have_python="$withval")
@@ -1472,54 +1469,6 @@ if test "x$have_python" != xno; then
 	fi
 fi
 if test "x$have_python" != xno; then
-	have_python_incdir=auto
-	AC_ARG_WITH(python-incdir,
-		AC_HELP_STRING([--with-python-incdir=DIR],
-			[Python include directory]),
-		have_python_incdir="$withval")
-	case "$have_python_incdir" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
-		fi
-		PYTHON_INCS=`"$PYTHON" -c 'from distutils.sysconfig import get_python_inc; print get_python_inc()' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PYTHON_INCS="$have_python_incdir"
-		have_python_incdir=yes
-		;;
-	esac
-	if test "x$have_python_incdir" != xno; then
-		PYTHON_INCS="-I$PYTHON_INCS"
-		save_CPPFLAGS="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
-		AC_CHECK_HEADER(Python.h, :, [
-			if test "x$have_python_incdir" = xyes; then
-				AC_MSG_ERROR([No Python.h found, is Python installed properly?]);
-			fi;
-			have_python_incdir=no
-		])
-        	CPPFLAGS="$save_CPPFLAGS"
-        fi
-
-	have_python_library=auto
-	AC_ARG_WITH(python-library,
-		AC_HELP_STRING([--with-python-library=DIR],
-			[Python library directory (where -lpython can be found)]),
-		have_python_library="$withval")
-	case "$have_python_library" in
-	yes|auto)
-		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
-		fi
-		PYTHON_LIBS=`"$PYTHON" -c 'import distutils.sysconfig, os, sys; print "-L%s -lpython%s" % (os.path.dirname(distutils.sysconfig.get_makefile_filename()), sys.version[[:3]])' 2>/dev/null`
-		;;
-	no)	;;
-	*)	PYTHON_LIBS="$have_python_library"
-		have_python_library=yes
-		;;
-	esac
-
 	have_python_libdir=auto
 	AC_ARG_WITH(python-libdir,
 		AC_HELP_STRING([--with-python-libdir=DIR],
@@ -1528,7 +1477,7 @@ if test "x$have_python" != xno; then
 	case "$have_python_libdir" in
 	yes|auto)
 		if test x$cross_compiling = xyes; then
-			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+			AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
 		fi
 		case "$host_os-`"$PYTHON" -V 2>&1`" in
 		darwin9*-*2.5.1)
@@ -1546,45 +1495,13 @@ if test "x$have_python" != xno; then
 		have_python_libdir=yes
 		;;
 	esac
-
-	if test x$cross_compiling = xyes; then
-		case "$PYTHON_LIBS" in
-		*/python2.[0-9]/*)
-			PYTHON_VERSION=`expr "$PYTHON_LIBS" : '.*/python\(2\.[0-9]\)/.*'`
-			;;
-		*)
-			AC_MSG_ERROR([Cannot determine Python version])
-			;;
-		esac
-	else
-		PYTHON_VERSION=`"$PYTHON" -c 'import sys; print sys.version[[:3]]'`
-	fi
 else
-	# no Python implies no Python includes or libraries
-	have_python_incdir=no
+	# no Python implies no Python libraries
 	have_python_libdir=no
-fi
-if test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno; then
-	save_CPPFLAGS="$CPPFLAGS"
-	dnl fabian: we should just use python-config --cflags
-	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
-	AC_MSG_CHECKING([whether we can compile with Python])
-	AC_TRY_COMPILE([#include <Python.h>], [], [AC_MSG_RESULT(yes)],
-		[ AC_MSG_RESULT(no); if test "x$have_python_incdir" != xauto -o "x$have_python_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python_incdir=no have_python_libdir=no ])
-	CPPFLAGS="$save_CPPFLAGS"
 fi
 AC_SUBST(PYTHON)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
-AC_SUBST(PYTHON_INCS)
-AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
-AC_SUBST(PYTHON_VERSION)
-AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
-if test -f "$srcdir"/vertoo.data; then
-	AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
-else
-	AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
-fi
 
 have_perl=auto
 PERL=perl

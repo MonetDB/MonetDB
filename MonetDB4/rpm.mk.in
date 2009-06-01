@@ -27,8 +27,8 @@ rpmmacros = `rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(rpmtopdir)/rpm
 @HAVE_PHP_TRUE@php=--with php
 @HAVE_PERL_SWIG_FALSE@perl=--without perl
 @HAVE_PERL_SWIG_TRUE@perl=--with perl
-@HAVE_PYTHON_SWIG_FALSE@python=--without python
-@HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_PYTHON_FALSE@python=--without python
+@HAVE_PYTHON_TRUE@python=--with python
 @HAVE_NETCDF_FALSE@netcdf=--without netcdf
 @HAVE_NETCDF_TRUE@netcdf=--with netcdf
 

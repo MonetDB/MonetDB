@@ -23,8 +23,8 @@ rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpmbuild
 
 rpmmacros = `rpmbuild --showrc | sed -n 's/macrofiles *: *//p'`:$(rpmtopdir)/rpmmacros
 
-@HAVE_PYTHON_SWIG_FALSE@python=--without python
-@HAVE_PYTHON_SWIG_TRUE@python=--with python
+@HAVE_PYTHON_FALSE@python=--without python
+@HAVE_PYTHON_TRUE@python=--with python
 
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
