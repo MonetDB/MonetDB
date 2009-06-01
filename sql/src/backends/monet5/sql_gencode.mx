@@ -886,10 +886,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				cmd = bandjoinRef;
 			}
 
-			if (!rs) {
-				r1 = _dumpstmt(sql, mb, s->op2.stval);
-				r2 = _dumpstmt(sql, mb, s->op3.stval);
-			}
 			if (s->op2.stval->type == st_atom &&
 			    s->op3.stval->type == st_atom &&
 			    atom_null(s->op2.stval->op1.aval) &&
@@ -899,6 +895,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, l);
 				s->nr = getDestVar(q);
 				break;
+			}
+			if (!rs) {
+				r1 = _dumpstmt(sql, mb, s->op2.stval);
+				r2 = _dumpstmt(sql, mb, s->op3.stval);
 			}
 			q = newStmt2(mb, algebraRef, cmd);
 			q = pushArgument(mb, q, l);
