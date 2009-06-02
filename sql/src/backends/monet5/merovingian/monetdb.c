@@ -30,7 +30,7 @@
  * this tool.
  */
 
-#define TOOLKIT_VERSION   "0.4"
+#define TOOLKIT_VERSION   "0.5"
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"
