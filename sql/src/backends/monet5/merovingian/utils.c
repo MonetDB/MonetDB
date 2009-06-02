@@ -84,8 +84,10 @@ readConfFile(confkeyval *list, FILE *cnf) {
 inline void
 freeConfFile(confkeyval *list) {
 	while (list->key != NULL) {
-		if (list->val != NULL)
+		if (list->val != NULL) {
 			GDKfree(list->val);
+			list->val = NULL;
+		}
 		list++;
 	}
 }
