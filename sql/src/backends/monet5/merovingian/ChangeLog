@@ -3,8 +3,9 @@
 
   02 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented dynamic width of monetdb status output. If a database name is
-  wider than 14 chars, the name column is made wider as long as the allows it.
-  If a wider column is no longer possible, it is abbreviated as before.
+  wider than 14 chars, the name column is made wider as long as the
+  terminal window allows.  If a column cannot be made any wider this
+  way, it is abbreviated as before.
 
   15 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
   Implemented Feature Request #2705670.  Reopen logfiles when SIGHUP is received.
