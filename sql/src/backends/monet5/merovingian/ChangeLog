@@ -7,6 +7,8 @@
   terminal window allows.  If a column cannot be made any wider this
   way, it is abbreviated as before.
 
+*May2009
+
   15 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
   Implemented Feature Request #2705670.  Reopen logfiles when SIGHUP is received.
 
