@@ -1296,6 +1296,8 @@ main(int argc, char *argv[])
 	dbfarm = replacePrefix(ckv[1].val, prefix);
 	logdir = replacePrefix(ckv[2].val, prefix);
 
+	freeConfFile(ckv);
+
 	if (dbfarm == NULL) {
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
 		exit(2);
