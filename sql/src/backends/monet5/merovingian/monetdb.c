@@ -822,7 +822,7 @@ static void
 command_create(int argc, char *argv[])
 {
 	int i;
-	int maintenance = 0;  /* create locked databases */
+	int maintenance = 0;  /* create locked database */
 	int state = 0;        /* return status */
 	int hadwork = 0;      /* if we actually did something */
 
@@ -914,7 +914,18 @@ command_create(int argc, char *argv[])
 			if (fwrite(buf, 1, 48, f) < 48)
 				fprintf(stderr, "create: failure in writing vaultkey file\n");
 			fclose(f);
-			/* without an .uplog file, Merovingian won't work */
+			/* write initial property: the sql_logdir at the time of
+			 * creation, should remain constant afterwards (or moved
+			 * correctly by monetdb itself) */
+			snprintf(path, 8095, "%s/%s/.merovingian_properties",
+					dbfarm, dbname);
+			f = fopen(path, "w");
+			if (fprintf(f, "sql_logdir=%s\n", logdir) <= 0)
+				fprintf(stderr, "create: failure in writing properties file\n");
+			fclose(f);
+
+			/* without an .uplog file, Merovingian won't work, this
+			 * needs to be last to avoid race conditions */
 			snprintf(path, 8095, "%s/%s/.uplog", dbfarm, dbname);
 			fclose(fopen(path, "w"));
 
