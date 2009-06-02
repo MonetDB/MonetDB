@@ -856,7 +856,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_join2:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			stmt *base, *low = NULL, *high = NULL;
-			int r1, r2;
+			int r1 = -1, r2 = -1;
 			int rs = 0;
 
 			char *cmd = 

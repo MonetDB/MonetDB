@@ -880,7 +880,7 @@ valid_ident(char *s, char *dst)
 	int escaped = 0;
 	int p = 0;
 	
-	if (*s != '_' && !isalnum((int) *s) && *s != ' ' &&
+	if (*s != '_' && !(isascii((int) *s) && isalnum((int) *s)) && *s != ' ' &&
 	    *s != '(' && *s != ')') 
 		return 0;
 	/* do unescaping in the loop */
@@ -893,7 +893,7 @@ valid_ident(char *s, char *dst)
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
 			dst[p++] = *s;
-		} else if (*s != '_' && !isalnum((int) *s) && *s != ' ' &&
+		} else if (*s != '_' && !(isascii((int) *s) && isalnum((int) *s)) && *s != ' ' &&
 			   *s != '(' && *s != ')') {
 			return 0;
 		} else {
