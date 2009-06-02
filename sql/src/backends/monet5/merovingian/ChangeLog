@@ -3,11 +3,11 @@
 
   02 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
   monetdb now copies the sql_logdir setting at the time of a create as a
-  property for merovingian. This way, databases under merovingian's control
-  are safe from sql_logdir changes in the monetdb5.conf file. This is a good
-  thing, since any change will lead to a database that cannot and won't
-  startup. In the future it can become possible to change the logdir location
-  via monetdb.
+  property for merovingian.  This way, databases under merovingian's
+  control are safe from sql_logdir changes in the monetdb5.conf file.
+  This is a good thing, since any change will lead to a database that
+  cannot and won't startup.  In the future it can become possible to
+  change the logdir location via monetdb.
 
   02 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented dynamic width of monetdb status output. If a database name is
@@ -18,7 +18,8 @@
 *May2009
 
   15 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
-  Implemented Feature Request #2705670.  Reopen logfiles when SIGHUP is received.
+  Implemented Feature Request #2705670.  Reopen logfiles when SIGHUP is
+  received.
 
   13 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
   Implemented feature request #2782776. All logged messages are now prefixed
