@@ -27,7 +27,7 @@ EXTRA_DIST = $(man_MANS)
 
 lib_meroutil = {
 	NOINST
-	SOURCES = utils.c
+	SOURCES = utils.c properties.c
 }
 
 bin_merovingian = {

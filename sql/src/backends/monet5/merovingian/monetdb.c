@@ -35,6 +35,7 @@
 #include "sql_config.h"
 #include "mal_sabaoth.h"
 #include "utils.h"
+#include "properties.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -856,6 +857,7 @@ command_create(int argc, char *argv[])
 			FILE *f;
 			int i, size;
 			char buf[48];
+			confkeyval ckv[2];
 
 			/* Sabaoth doesn't know, green light for us! */
 			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
@@ -901,12 +903,11 @@ command_create(int argc, char *argv[])
 			/* write initial property: the sql_logdir at the time of
 			 * creation, should remain constant afterwards (or moved
 			 * correctly by monetdb itself) */
-			snprintf(path, 8095, "%s/%s/.merovingian_properties",
-					dbfarm, dbname);
-			f = fopen(path, "w");
-			if (fprintf(f, "logdir=%s\n", logdir) <= 0)
-				fprintf(stderr, "create: failure in writing properties file\n");
-			fclose(f);
+			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
+			ckv[0].key = "logdir";
+			ckv[0].val = logdir;
+			ckv[1].key = NULL;
+			writeProps(ckv, path);
 
 			/* without an .uplog file, Merovingian won't work, this
 			 * needs to be last to avoid race conditions */

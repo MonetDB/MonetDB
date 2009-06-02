@@ -47,12 +47,13 @@
  * number of times over a recent period.
  */
 
-#define MERO_VERSION   "1.0"
+#define MERO_VERSION   "1.1"
 #define MERO_PORT      50000
 
 #include "sql_config.h"
 #include "mal_sabaoth.h"
 #include "utils.h"
+#include "properties.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -392,9 +393,9 @@ forkMserver(str database, sabdb** stats, int force)
 	int pfdo[2];
 	int pfde[2];
 	dpair dp;
-	FILE *props;
 	str vaultkey = NULL;
 	str logdir = NULL;
+	confkeyval ckv[2];
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
@@ -511,25 +512,17 @@ forkMserver(str database, sabdb** stats, int force)
 					database, database));
 	}
 
-	logdir = alloca(sizeof(char) * 512);
-	snprintf(logdir, 511, "%s/.merovingian_properties", (*stats)->path);
-	props = fopen(logdir, "r");
-	if (props != NULL) {
-		confkeyval *ckv = alloca(sizeof(confkeyval) * 2);
-		ckv[0].key = "logdir";
-		ckv[0].val = NULL;
-		ckv[1].key = NULL;
-		readConfFile(ckv, props);
-		fclose(props);
-		if (ckv[0].val != NULL) {
-			snprintf(logdir, 511, "sql_logdir=%s", ckv[0].val);
-		} else {
-			logdir = NULL;
-		}
-		freeConfFile(ckv);
+	ckv[0].key = "logdir";
+	ckv[0].val = NULL;
+	ckv[1].key = NULL;
+	readProps(ckv, (*stats)->path);
+	if (ckv[0].val != NULL) {
+		logdir = alloca(sizeof(char) * 512);
+		snprintf(logdir, 512, "sql_logdir=%s", ckv[0].val);
 	} else {
 		logdir = NULL;
 	}
+	freeConfFile(ckv);
 
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
