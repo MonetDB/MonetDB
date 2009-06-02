@@ -41,6 +41,7 @@ mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newAssignmentId(MalBlkPtr mb, str nme);
 mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
 mal_export InstrPtr newCatchStmt(MalBlkPtr mb, str nme);
+mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
@@ -166,6 +167,18 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	int i= findVariable(mb,nme);
 
 	q->barrier = CATCHsymbol;
+	if ( i< 0)
+		getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str);
+	else getArg(q,0) = i;
+	return q;
+}
+InstrPtr
+newRaiseStmt(MalBlkPtr mb, str nme)
+{
+	InstrPtr q = newAssignment(mb);
+	int i= findVariable(mb,nme);
+
+	q->barrier = RAISEsymbol;
 	if ( i< 0)
 		getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str);
 	else getArg(q,0) = i;
