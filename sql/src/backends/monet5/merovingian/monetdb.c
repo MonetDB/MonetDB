@@ -42,10 +42,18 @@
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <dirent.h> /* readdir */
-#include <unistd.h> /* stat, rmdir, unlink */
+#include <unistd.h> /* stat, rmdir, unlink, ioctl */
 #include <time.h> /* strftime */
 #include <sys/socket.h> /* socket */
+#ifdef HAVE_SYS_UN_H
 #include <sys/un.h> /* sockaddr_un */
+#endif
+#ifdef HAVE_STROPTS_H
+#include <stropts.h> /* ioctl */
+#endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
+#endif
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
@@ -152,7 +160,7 @@ command_version()
 }
 
 static void
-printStatus(sabdb *stats, int mode)
+printStatus(sabdb *stats, int mode, int twidth)
 {
 	sabuplog uplog;
 	str e;
@@ -200,22 +208,26 @@ printStatus(sabdb *stats, int mode)
 		}
 
 		if (stats->state != SABdbRunning) {
-			uptime[0]= '\0';
+			uptime[0] = '\0';
 		} else {
 			secondsToString(uptime, time(NULL) - uplog.laststart, 3);
 		}
 
 		/* cut too long database names */
-		if ((len = strlen(stats->dbname)) > 14) {
-			dbname = alloca(sizeof(char) * (14 + 1));
-			stats->dbname[6] = '\0';
-			snprintf(dbname, 15, "%s...%s", stats->dbname, stats->dbname + len - 5);
+		if ((len = strlen(stats->dbname)) > twidth) {
+			dbname = alloca(sizeof(char) * (twidth + 1));
+			/* position abbreviation dots in the middle (Mac style, iso
+			 * Windos style) */
+			stats->dbname[(twidth / 2) - 2] = '\0';
+			snprintf(dbname, twidth + 1, "%s...%s",
+					stats->dbname,
+					stats->dbname + len - (twidth - ((twidth / 2) - 2) - 3));
 		} else {
 			dbname = stats->dbname;
 		}
-		/* demo | state | uptime | health */
+		/* dbname | state | uptime | health */
 		secondsToString(avg, uplog.avguptime, 1);
-			printf("%-14s  %s %12s",
+			printf("%-*s  %s %12s", twidth,
 					dbname, state, uptime);
 		if (uplog.startcntr)
 			printf("  %3d%%, %3s  %s",
@@ -352,6 +364,15 @@ command_status(int argc, char *argv[])
 	str e;
 	sabdb *stats;
 	sabdb *orig;
+	int t;
+	int dbwidth = 0;
+	int twidth = 80;  /* default to classic terminal width */
+#ifdef TIOCGWINSZ
+	struct winsize ws;
+
+	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		twidth = ws.ws_col;
+#endif
 
 	if (argc == 0) {
 		exit(2);
@@ -424,6 +445,10 @@ command_status(int argc, char *argv[])
 			GDKfree(e);
 			exit(2);
 		}
+		for (stats = orig; stats != NULL; stats = stats->next) {
+			if ((t = strlen(stats->dbname)) > dbwidth)
+				dbwidth = t;
+		}
 	} else {
 		sabdb *w = NULL;
 		orig = NULL;
@@ -445,15 +470,26 @@ command_status(int argc, char *argv[])
 					} else {
 						w = w->next = stats;
 					}
+					if ((t = strlen(w->dbname)) > dbwidth)
+						dbwidth = t;
 				}
 			}
 		}
 	}
 
 	if (mode == 1) {
-		/* print header for short mode */
-		/* demo | state uptime | crash lastcrash */
-		printf("      name       state     uptime       health       last crash\n");
+		/* print header for short mode, state -- last crash = 54 chars */
+		twidth -= 54;
+		if (twidth < 6)
+			twidth = 6;
+		if (dbwidth < 14)
+			dbwidth = 14;
+		if (dbwidth < twidth)
+			twidth = dbwidth;
+		printf("%*sname%*s  ",
+				twidth - 4 /* name */ - ((twidth - 4) / 2), "",
+				(twidth - 4) / 2, "");
+		printf(" state     uptime       health       last crash\n");
 	}
 
 	for (p = state; *p != '\0'; p++) {
@@ -478,7 +514,7 @@ command_status(int argc, char *argv[])
 			if (stats->locked == curLock &&
 					(curLock == 1 || 
 					 (curLock == 0 && stats->state == curMode)))
-				printStatus(stats, mode);
+				printStatus(stats, mode, twidth);
 			stats = stats->next;
 		}
 	}
