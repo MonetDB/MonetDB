@@ -392,7 +392,9 @@ forkMserver(str database, sabdb** stats, int force)
 	int pfdo[2];
 	int pfde[2];
 	dpair dp;
+	FILE *props;
 	str vaultkey = NULL;
+	str logdir = NULL;
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
@@ -509,6 +511,26 @@ forkMserver(str database, sabdb** stats, int force)
 					database, database));
 	}
 
+	logdir = alloca(sizeof(char) * 512);
+	snprintf(logdir, 511, "%s/.merovingian_properties", (*stats)->path);
+	props = fopen(logdir, "r");
+	if (props != NULL) {
+		confkeyval *ckv = alloca(sizeof(confkeyval) * 2);
+		ckv[0].key = "logdir";
+		ckv[0].val = NULL;
+		ckv[1].key = NULL;
+		readConfFile(ckv, props);
+		fclose(props);
+		if (ckv[0].val != NULL) {
+			snprintf(logdir, 511, "sql_logdir=%s", ckv[0].val);
+		} else {
+			logdir = NULL;
+		}
+		freeConfFile(ckv);
+	} else {
+		logdir = NULL;
+	}
+
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
@@ -526,7 +548,7 @@ forkMserver(str database, sabdb** stats, int force)
 	if (pid == 0) {
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
-		str argv[13];	/* for the exec arguments */
+		str argv[15];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -555,6 +577,9 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
 		argv[c++] = "--set"; argv[c++] = vaultkey;
+		if (logdir != NULL) {
+			argv[c++] = "--set"; argv[c++] = logdir;
+		}
 		argv[c++] = NULL;
 
 		merlog("executing '%s' for database '%s'",

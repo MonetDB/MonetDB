@@ -1,6 +1,14 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  02 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
+  monetdb now copies the sql_logdir setting at the time of a create as a
+  property for merovingian. This way, databases under merovingian's control
+  are safe from sql_logdir changes in the monetdb5.conf file. This is a good
+  thing, since any change will lead to a database that cannot and won't
+  startup. In the future it can become possible to change the logdir location
+  via monetdb.
+
   02 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Implemented dynamic width of monetdb status output. If a database name is
   wider than 14 chars, the name column is made wider as long as the

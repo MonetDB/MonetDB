@@ -920,7 +920,7 @@ command_create(int argc, char *argv[])
 			snprintf(path, 8095, "%s/%s/.merovingian_properties",
 					dbfarm, dbname);
 			f = fopen(path, "w");
-			if (fprintf(f, "sql_logdir=%s\n", logdir) <= 0)
+			if (fprintf(f, "logdir=%s\n", logdir) <= 0)
 				fprintf(stderr, "create: failure in writing properties file\n");
 			fclose(f);
 
