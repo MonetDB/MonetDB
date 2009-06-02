@@ -70,6 +70,7 @@ typedef char* err;
 static str dbfarm = NULL;
 static str logdir = NULL;
 static int mero_running = 0;
+static int TERMWIDTH = 80;  /* default to classic terminal width */
 
 static void
 command_help(int argc, char *argv[])
@@ -178,7 +179,6 @@ printStatus(sabdb *stats, int mode, int twidth)
 		char avg[8];
 		char *crash;
 		char *dbname;
-		int len;
 
 		switch (stats->state) {
 			case SABdbRunning:
@@ -214,17 +214,8 @@ printStatus(sabdb *stats, int mode, int twidth)
 		}
 
 		/* cut too long database names */
-		if ((len = strlen(stats->dbname)) > twidth) {
-			dbname = alloca(sizeof(char) * (twidth + 1));
-			/* position abbreviation dots in the middle (Mac style, iso
-			 * Windos style) */
-			stats->dbname[(twidth / 2) - 2] = '\0';
-			snprintf(dbname, twidth + 1, "%s...%s",
-					stats->dbname,
-					stats->dbname + len - (twidth - ((twidth / 2) - 2) - 3));
-		} else {
-			dbname = stats->dbname;
-		}
+		dbname = alloca(sizeof(char) * (twidth + 1));
+		abbreviateString(dbname, stats->dbname, twidth);
 		/* dbname | state | uptime | health */
 		secondsToString(avg, uplog.avguptime, 1);
 			printf("%-*s  %s %12s", twidth,
@@ -366,13 +357,7 @@ command_status(int argc, char *argv[])
 	sabdb *orig;
 	int t;
 	int dbwidth = 0;
-	int twidth = 80;  /* default to classic terminal width */
-#ifdef TIOCGWINSZ
-	struct winsize ws;
-
-	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
-		twidth = ws.ws_col;
-#endif
+	int twidth = TERMWIDTH;
 
 	if (argc == 0) {
 		exit(2);
@@ -533,8 +518,9 @@ command_discover(int argc, char *argv[])
 	char *p, *q;
 	int len;
 	int pos;
-	char dbname[15];
-	int buflen;
+	int twidth = TERMWIDTH - 50 - 2 /* for location */;
+	char dbname[twidth + 1];
+	char location[50 + 1];
 
 	(void)argc;
 	(void)argv;
@@ -562,7 +548,9 @@ command_discover(int argc, char *argv[])
 		exit(2);
 	}
 
-	printf("      name                location\n");
+	printf("%*sname%*s                       location\n",
+			twidth - 4 /* name */ - ((twidth - 4) / 2), "",
+			(twidth - 4) / 2, "");
  	/* Send the pass phrase to unlock the information available in
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
@@ -606,15 +594,11 @@ command_discover(int argc, char *argv[])
 		}
 		*q++ = '\0';
 
-		/* cut too long database names */
-		if ((buflen = strlen(buf)) > 14) {
-			buf[6] = '\0';
-			snprintf(dbname, 15, "%s...%s", buf, buf + buflen - 5);
-		} else {
-			snprintf(dbname, 15, "%s", buf);
-		}
+		/* cut too long database and location names */
+		abbreviateString(dbname, buf, twidth);
+		abbreviateString(location, q, 50);
 		/* show what we found */
-		printf("%-14s  %s\n", dbname, q);
+		printf("%-*s  %s\n", twidth, dbname, location);
 
 		/* move it away */
 		len -= p - buf;
@@ -1271,6 +1255,12 @@ main(int argc, char *argv[])
 	char buf[1024];
 	int fd;
 	confkeyval *ckv;
+#ifdef TIOCGWINSZ
+	struct winsize ws;
+
+	if (ioctl(fileno(stdin), TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0)
+		TERMWIDTH = ws.ws_col;
+#endif
 
 	/* seed the randomiser for when we create a database */
 	srand(time(NULL));

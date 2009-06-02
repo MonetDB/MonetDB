@@ -142,4 +142,24 @@ secondsToString(char *buf, time_t t, int longness)
 	}
 }
 
+/**
+ * Fills the array pointed to by ret, with the string from in,
+ * abbreviating it when it is longer than width chars long.
+ */
+inline void
+abbreviateString(char *ret, char *in, int width)
+{
+	int len;
+
+	if ((len = strlen(in)) > width) {
+		/* position abbreviation dots in the middle (Mac style, iso
+		 * Windos style) */
+		in[(width / 2) - 2] = '\0';
+		snprintf(ret, width + 1, "%s...%s",
+				in, in + len - (width - ((width / 2) - 2) - 3));
+	} else {
+		sprintf(ret, "%s", in);
+	}
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */
