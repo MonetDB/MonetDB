@@ -30,6 +30,7 @@ typedef struct _confkeyval {
 
 char *replacePrefix(char *s, char *prefix);
 void readConfFile(confkeyval *list, FILE *cnf);
+void freeConfFile(confkeyval *list);
 void secondsToString(char *buf, time_t t, int longness);
 
 #endif

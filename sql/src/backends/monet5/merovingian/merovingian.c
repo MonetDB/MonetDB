@@ -2181,7 +2181,7 @@ main(int argc, char *argv[])
 	}
 
 	/* we no longer need prefix */
-	GDKfree(prefix);
+	freeConfFile(ckv);
 	prefix = NULL;
 
 	/* we need a dbfarm */

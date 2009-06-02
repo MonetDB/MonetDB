@@ -79,6 +79,18 @@ readConfFile(confkeyval *list, FILE *cnf) {
 }
 
 /**
+ * Frees the values allocated by readConfFile().
+ */
+inline void
+freeConfFile(confkeyval *list) {
+	while (list->key != NULL) {
+		if (list->val != NULL)
+			GDKfree(list->val);
+		list++;
+	}
+}
+
+/**
  * Fills the array pointed to by buf with a human representation of t.
  * The argument longness represents the number of units to print
  * starting from the biggest unit that has a non-zero value for t.
