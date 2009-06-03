@@ -2436,6 +2436,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if MkillUsersAT:
                 ATJOB2 = StartAt(MkillUsersAT)
             CollectIt(pSrvr.stdout, SrvrOut)
+            pSrvr.wait()
             pSrvrTimer.cancel()
             pSrvrTimer = None
             killed = killed or pSrvr.killed
