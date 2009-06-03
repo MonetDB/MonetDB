@@ -1435,7 +1435,7 @@ int
 cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 {
 	if ( isVarConstant(mb,x))
-		return defConstant(tm,getVarType(mb,x), &getVarConstant(mb,x));
+		return cpyConstant(tm, getVar(mb,x));
 	if ( isTmpVar(mb,x))
 		return  newTmpVariable(tm, getVarType(mb,x));
 	return newVariable(tm,getVarName(mb,x), getVarType(mb,x));

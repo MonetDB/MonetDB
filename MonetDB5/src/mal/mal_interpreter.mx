@@ -1872,10 +1872,13 @@ reaching end of function block.
 	for( ; stkpc<mb->stop; stkpc++){
 		InstrPtr l= getInstrPtr(mb,stkpc);
 		if( l->barrier == CATCHsymbol ){
-			int j= -1;
+			int j;
 			for(j=0;j<l->retc; j++)
 				if( getArg(l,j) == @1) break;
-			if(j>=0) break;
+			else if ( getArgName(mb,l,j)  ||
+				strcmp(getArgName(mb,l,j), "ANYexception") == 0)
+					break;
+			if(j < l->retc) break;
 		}
 	}
 	if( stkpc== mb->stop) {

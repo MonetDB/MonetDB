@@ -220,10 +220,10 @@ MALException:removeScenario:scenario 'mal' not found for user 'test'
 MALException:addScenario:scenario 'mal' already exists for user 'test'
 InvalidCredentialsException:setPassword:The administrator cannot set its own password, use changePassword instead
 InvalidCredentialsException:changePassword:Access denied
-InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:Invalid credentials for user 'monetdb'
-InvalidCredentialsException:checkCredentials:Invalid credentials for user 'x'
+InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+InvalidCredentialsException:checkCredentials:invalid credentials for user 'monetdb'
+InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
 
 # 23:18:00 >  
 # 23:18:00 >  Done.
