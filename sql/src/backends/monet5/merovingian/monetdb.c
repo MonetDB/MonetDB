@@ -1255,7 +1255,13 @@ main(int argc, char *argv[])
 	FILE *cnf = NULL;
 	char buf[1024];
 	int fd;
-	confkeyval *ckv;
+	confkeyval ckv[] = {
+		{"prefix",     GDKstrdup(MONETDB5_PREFIX)},
+		{"gdk_dbfarm", NULL},
+		{"sql_logdir", NULL},
+		{ NULL,        NULL}
+	};
+	confkeyval *kv;
 #ifdef TIOCGWINSZ
 	struct winsize ws;
 
@@ -1282,21 +1288,15 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 
-	ckv = alloca(sizeof(confkeyval) * 4);
-	ckv[0].key = "prefix";
-	ckv[0].val = GDKstrdup(MONETDB5_PREFIX);
-	ckv[1].key = "gdk_dbfarm";
-	ckv[1].val = NULL;
-	ckv[2].key = "sql_logdir";
-	ckv[2].val = NULL;
-	ckv[3].key = NULL;
-
 	readConfFile(ckv, cnf);
 	fclose(cnf);
 
-	prefix = ckv[0].val;
-	dbfarm = replacePrefix(ckv[1].val, prefix);
-	logdir = replacePrefix(ckv[2].val, prefix);
+	kv = findConfKey(ckv, "prefix");
+	prefix = kv->val;
+	kv = findConfKey(ckv, "gdk_dbfarm");
+	dbfarm = replacePrefix(kv->val, prefix);
+	kv = findConfKey(ckv, "sql_logdir");
+	logdir = replacePrefix(kv->val, prefix);
 
 	freeConfFile(ckv);
 

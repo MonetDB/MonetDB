@@ -93,6 +93,20 @@ freeConfFile(confkeyval *list) {
 }
 
 /**
+ * Returns a pointer to the key-value that has a matching key with the
+ * given key, or NULL if no key was found.
+ */
+inline confkeyval *
+findConfKey(confkeyval *list, char *key) {
+	while (list->key != NULL) {
+		if (strcmp(list->key, key) == 0)
+			return(list);
+		list++;
+	}
+	return(NULL);
+}
+
+/**
  * Fills the array pointed to by buf with a human representation of t.
  * The argument longness represents the number of units to print
  * starting from the biggest unit that has a non-zero value for t.
