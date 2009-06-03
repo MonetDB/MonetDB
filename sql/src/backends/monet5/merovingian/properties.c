@@ -36,7 +36,6 @@
 
 static confkeyval _internal_prop_keys[] = {
 	{"logdir",  NULL},
-	{"forward", NULL},
 	{"shared",  NULL},
 	{ NULL,     NULL}
 };
