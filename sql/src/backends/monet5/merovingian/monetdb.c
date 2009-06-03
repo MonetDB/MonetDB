@@ -52,6 +52,9 @@
 #ifdef HAVE_STROPTS_H
 #include <stropts.h> /* ioctl */
 #endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif

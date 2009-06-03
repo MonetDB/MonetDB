@@ -114,10 +114,9 @@ AC_DEFINE_UNQUOTED(SQL_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data
 
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
-AC_CHECK_HEADERS([stropts.h sys/ioctl.h sys/un.h termios.h])
 
 dnl  stuff required for merovingian and monetdb
-AC_CHECK_HEADERS(fcntl.h)
+AC_CHECK_HEADERS([fcntl.h stropts.h sys/ioctl.h sys/un.h termios.h])
 
 dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
