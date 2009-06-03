@@ -24,7 +24,7 @@
 
 #define MEROPROPFILE ".merovingian_properties"
 
-confkeyval *getDefaultProps();
+confkeyval *getDefaultProps(void);
 void writeProps(confkeyval *ckv, char *path);
 void readProps(confkeyval *ckv, char *path);
 

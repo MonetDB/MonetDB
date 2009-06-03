@@ -49,7 +49,7 @@ static confkeyval _internal_prop_keys[] = {
  * is enough.
  */
 confkeyval *
-getDefaultProps()
+getDefaultProps(void)
 {
 	confkeyval *ret = GDKmalloc(sizeof(_internal_prop_keys));
 	memcpy(ret, _internal_prop_keys, sizeof(_internal_prop_keys));
