@@ -283,6 +283,7 @@ foundit:
 
 	q= newFcnCall(mb,octopusRef, name2);
 	setArgType(mb,q,0,getVarType(mb,varid));
+	setVarUDFtype(mb,getArg(q,0));
 	cst.vtype = TYPE_str;
 	cst.val.sval= GDKstrdup("tbd");
 	cst.len= (int) strlen(cst.val.sval);
@@ -297,6 +298,7 @@ foundit:
 	/* create the tentacle procedure */
 	s= newFunction(octopusRef,name,FUNCTIONsymbol);
 	tm= s->def;
+	tm->keephistory= mb->keephistory;
 	p= getInstrPtr(tm,0);
 	for(i=anchor->retc+2; i<anchor->argc; i++){
 		j= cloneVariable(tm,mb,getArg(anchor,i));
