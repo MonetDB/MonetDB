@@ -37,9 +37,15 @@ BuildRequires: readline-devel, openssl-devel
 
 %{!?_with_php: %{!?_without_php: %define _with_php --with-php}}
 %{!?_with_perl: %{!?_without_perl: %define _with_perl --with-perl}}
+%{!?_with_rubygem: %{!?_without_rubygem: %define _with_rubygem --with-rubygem}}
 %{!?_with_unixODBC: %{!?_without_unixODBC: %define _with_unixODBC --with-unixodbc}}
 
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+%{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig -e 'puts Config::CONFIG["sitelibdir"] ')}
+%define gemdir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)
+%endif
 
 %if !%{?buildsystem}
 BuildRequires: MonetDB-devel >= 1.29
@@ -69,6 +75,9 @@ Requires: perl-devel
 %endif
 %endif
 Requires: python
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+Requires: rubygems, ruby
+%endif
 %if %{?_with_unixODBC:1}%{!?_with_unixODBC:0}
 Requires: unixODBC, unixODBC-devel
 %endif
@@ -116,6 +125,22 @@ Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: python
 BuildRequires: python
+BuildArch: noarch
+
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+%package ruby
+Summary: MonetDB ruby interface
+Group: Applications/Databases
+Requires: %{name} = %{version}-%{release}
+Requires: ruby(abi) = 1.8
+%if !%{?buildsystem}
+BuildRequires: ruby
+BuildRequires: rubygems
+%endif
+BuildArch: noarch
+Provides: rubygem(ruby-monetdb-sql) = 0.1
+Provides: rubygem(activerecord-monetdb-adapter) = 0.1
+%endif
 
 %package tests
 Summary: MonetDB Client tests package
@@ -181,6 +206,17 @@ accelerators, SQL- and XML- frontends.
 This package contains the files needed to use MonetDB from a Python
 program.
 
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+%description ruby
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators, SQL- and XML- frontends.
+
+This package contains the files needed to use MonetDB from a Ruby
+program.
+%endif
+
 %description tests
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -209,9 +245,18 @@ rm -rf $RPM_BUILD_ROOT
 	%{?comp_cc:CC="%{comp_cc}"} \
 	%{?_with_php} %{?_without_php} \
 	%{?_with_perl} %{?_without_perl} \
+	%{?_with_rubygem} %{?_without_rubygem} \
 	%{?_with_unixODBC} %{?_without_unixODBC}
 
 make
+
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+cd src/ruby
+gem build ruby-monetdb-sql-0.1.gemspec
+cd adapter
+gem build activerecord-monetdb-adapter-0.1.gemspec
+cd ../../..
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -220,6 +265,17 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 # cleanup stuff we don't want to install
 find $RPM_BUILD_ROOT -name .incs.in -print -o -name \*.la -print | xargs rm -f
+
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+cd src/ruby
+mkdir -p $RPM_BUILD_ROOT/%{gemdir}
+gem install --local --install-dir %{buildroot}%{gemdir} \
+            --force --rdoc ruby-monetdb-sql-0.1.gem
+cd adapter
+gem install --local --install-dir %{buildroot}%{gemdir} \
+            --force --rdoc activerecord-monetdb-adapter-0.1.gem
+cd ../../..
+%endif
 
 %post -p /sbin/ldconfig
 
@@ -279,6 +335,19 @@ rm -fr $RPM_BUILD_ROOT
 %{python_sitelib}/monetdb/sql/*.py
 %{python_sitelib}/monetdb/sql/*.pyc
 %{python_sitelib}/monetdb/sql/*.pyo
+
+%if %{?_with_rubygem:1}%{!?_with_rubygem:0}
+%files ruby
+%defattr(-,root,root)
+%{gemdir}/gems/ruby-monetdb-sql-0.1/
+%doc %{gemdir}/doc/ruby-monetdb-sql-0.1
+%{gemdir}/cache/ruby-monetdb-sql-0.1.gem
+%{gemdir}/specifications/ruby-monetdb-sql-0.1.gemspec
+%{gemdir}/gems/activerecord-monetdb-adapter-0.1/
+%doc %{gemdir}/doc/activerecord-monetdb-adapter-0.1
+%{gemdir}/cache/activerecord-monetdb-adapter-0.1.gem
+%{gemdir}/specifications/activerecord-monetdb-adapter-0.1.gemspec
+%endif
 
 %files tests
 %{_libdir}/MonetDB/Tests/*
