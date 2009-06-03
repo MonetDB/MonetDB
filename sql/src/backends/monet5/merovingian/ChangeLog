@@ -25,6 +25,8 @@
   Implemented feature request #2782776. All logged messages are now prefixed
   with a timestamp.
 
+*Feb2009-SP2
+
   21 Apr 2009; Fabian Groffen <fabian@cwi.nl> merovingian.mx, monetdb.1:
   Instead of sending SIGTERM and immediately returning, call the
   terminateProcess function such that we nicely wait for the process to have
