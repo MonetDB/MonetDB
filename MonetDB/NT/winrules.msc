@@ -128,11 +128,7 @@ ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !IFNDEF LIBZLIB
 LIBZLIB = C:\zlib-1.2.3.win$(bits)
 !ENDIF
-!IF $(bits) == 32
-Z_LIBS = "$(LIBZLIB)\lib\zdll$(DEBUGLIB).lib"
-!ELSE
 Z_LIBS = "$(LIBZLIB)\lib\zlib1$(DEBUGLIB).lib"
-!ENDIF
 Z_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 # !ENDIF
 
