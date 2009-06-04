@@ -1825,8 +1825,6 @@ discoveryRunner(void *d)
 							rdb->ttl = time(NULL) + atoi(ttl);
 						}
 						rdb = prv;
-						merlog("refresh from %s for database %s",
-								host, dbname);
 						break; /* skip duplicate entries */
 					}
 					prv = rdb;
