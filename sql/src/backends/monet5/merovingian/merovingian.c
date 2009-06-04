@@ -2147,8 +2147,8 @@ main(int argc, char *argv[])
 	if (status != 0) \
 		return(status);
 
-	timeout = 0;
-	doproxy = 0;
+	timeout = 7;
+	doproxy = 1;
 	discoveryttl = 600;
 
 	ckv = alloca(sizeof(confkeyval) * 11);
