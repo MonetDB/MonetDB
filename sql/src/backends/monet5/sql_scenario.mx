@@ -297,6 +297,8 @@ global_variables(mvc *sql, char *user, char *schema)
 	optimizer= GDKgetenv("sql_optimizer");
 	if (optimizer == NULL)
 		optimizer= defaultPlan;
+	else
+		defaultPlan= optimizer;
 	setOptimizers(optimizer);
 	SQLglobal("optimizer", optimizer);
 

@@ -438,44 +438,10 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 The optimizers applied are taken from a list managed with
 the SQL set optimizer statement. The default list has been
 tested extensively and should provide overall good performance.
+Additional pipelines are defined in the monetdb.conf file.
 @c
-str defaultPlan=
-	"inline,"
-	"remap,"
-	"evaluate," 
-	"costModel,"
-	"coercions,"
-	"emptySet,"
-	/* "joinselect," */
-	"mitosis,"
-/*	"cluster,"*/
-	"aliases,"
-	/* "crack," */
-	/* "selcrack," */
-	/* "sidcrack," */
-	"mergetable,"
-	"deadcode,"	/* mergetable leaves dead code behind */
-#ifndef WIN32
-	/*"octopus,"*/
-#endif
-	"constants,"
-	"commonTerms,"
-/*	"replicator," */
-	/*"reorder,"*/
-	"joinPath,"
-	/*"accumulators," clashes with the mergetable */
-	"deadcode,"
-	/*"recycle,"*/
-	"reduce,"
-	"garbageCollector,"
-	"dataflow,"
-	/*"prejoin,"		   sort large operands */
-	"history,"
-	"multiplex";
-static str minimalPlan=
-	"inline,"
-	"remap,"
-	"multiplex";
+str minimalPlan= "inline,remap,deadcode,multiplex";
+str defaultPlan; 
 
 static str optimizers[256];	/* the optimizer pipeline */
 static str optimizerpipeline;		/* reference to last pipeline string */
@@ -487,7 +453,7 @@ SQLvalidatePipeline(void){
 	int mitosis= FALSE, deadcode= FALSE;
 	int i;
 
-	if ( strcmp(optimizers[0],"inline") ){
+	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
 		showException(SQL,"optimizer"," 'inline' should be the first\n");
 		error++;
 	}
@@ -502,9 +468,16 @@ SQLvalidatePipeline(void){
 		if (strcmp(optimizers[i],"mergetable") == 0 && mitosis == FALSE) {
 			showException(SQL,"optimizer"," 'mergetable' needs 'mitosis'\n");
 			error++;
+		} 
+#ifdef WIN32
+		else
+		if (strcmp(optimizers[i],"octopus") == 0){
+			showException(SQL,"optimizer"," 'octopus' needs Linux\n");
+			error++;
 		}
+#endif
 
-	if ( --i >= 0 && strcmp(optimizers[i],"multiplex") ){
+	if ( --i >= 0 && optimizers[i] && strcmp(optimizers[i],"multiplex") ){
 		showException(SQL,"optimizer"," 'multiplex' should be the last\n");
 		error++;
 	}
