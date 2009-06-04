@@ -36,6 +36,7 @@
 
 static confkeyval _internal_prop_keys[] = {
 	{"logdir",  NULL},
+	{"forward", NULL},
 	{"shared",  NULL},
 	{ NULL,     NULL}
 };
@@ -89,11 +90,10 @@ readProps(confkeyval *ckv, char *path)
 	FILE *cnf;
 
 	snprintf(file, 1024, "%s/" MEROPROPFILE, path);
-	cnf = fopen(file, "r");
-
-	readConfFile(ckv, cnf);
-
-	fclose(cnf);
+	if ((cnf = fopen(file, "r")) != NULL) {
+		readConfFile(ckv, cnf);
+		fclose(cnf);
+	}
 }
 
 /* vim:set ts=4 sw=4 noexpandtab: */
