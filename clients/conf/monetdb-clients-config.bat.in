@@ -25,7 +25,7 @@ set pkgincludedir=%includedir%\MonetDB
 set perllibdir=%prefix%\@PERL_LIBDIR@   
 set pythonlibdir=%prefix%\@PYTHON_LIBDIR@   
 set phpextensiondir=%prefix%\@PHP_EXTENSIONDIR@   
-set rubylibdir=%prefix%\@RUBY_LIBDIR@   
+set rubydir=%prefix%\@RUBY_DIR@   
 
 if "%1" == ""	goto usage
 
@@ -58,7 +58,7 @@ if "%1" == "--pkgincludedir"	echo %pkgincludedir%&	goto shift
 if "%1" == "--perllibdir"	echo %perllibdir%&	goto shift
 if "%1" == "--pythonlibdir"	echo %pythonlibdir%&	goto shift
 if "%1" == "--phpextensiondir"	echo %phpextensiondir%&	goto shift
-if "%1" == "--rubylibdir"	echo %rubylibdir%&	goto shift
+if "%1" == "--rubydir"		echo %rubydir%&		goto shift
 if "%1" == "--internal"					goto shift
 if not "%1" == "--conds"	goto usage
 
@@ -100,6 +100,6 @@ goto shift
 	echo   --prefix  --exec-prefix  --bindir  --libexecdir  --datadir
 	echo   --sysconfdir  --localstatedir  --libdir  --infodir
 	echo   --mandir  --includedir --pkgdatadir --pkglibdir --pkgincludedir
-	echo   --perllibdir --pythonlibdir --phpextensiondir --rubylibdir
+	echo   --perllibdir --pythonlibdir --phpextensiondir --rubydir
 	echo.
 
