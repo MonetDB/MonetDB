@@ -27,7 +27,7 @@ Over..
 % sys. # table_name
 % avg_yearly # name
 % decimal # type
-% 19 # length
+% 20 # length
 [ NULL	]
 % .stats,	.stats # table_name
 % rewrite,	count # name

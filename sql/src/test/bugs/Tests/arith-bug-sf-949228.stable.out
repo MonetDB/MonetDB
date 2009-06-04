@@ -43,8 +43,8 @@ Over..
 % . # table_name
 % sql_div_single_value # name
 % decimal # type
-% 3 # length
-[ 10	]
+% 7 # length
+[ 10.000	]
 % . # table_name
 % sql_mul_single_value # name
 % int # type

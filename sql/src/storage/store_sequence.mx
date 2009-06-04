@@ -132,7 +132,7 @@ int seq_restart(sql_sequence *seq, lng start)
 	{
 		/* we're out of numbers */
 		store_unlock();
-		return(0);
+		return 0;
 	}
 	sql_update_sequence_cache(seq, s->cached);
 	store_unlock(); 
@@ -177,7 +177,7 @@ seq_next_value(sql_sequence *seq, lng *val)
 			save = 1;
 		} else { /* we're out of numbers */
 			store_unlock();
-			return(0);
+			return 0;
 		}
 	}
 	s->called = 1;
@@ -217,6 +217,7 @@ seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
 		s = sql_create_sequence(seq);
 		if (!s) {
 			_DELETE(sb);
+			store_unlock();
 			return NULL;
 		}
 		list_append(sql_seqs, s);
@@ -229,7 +230,6 @@ seqbulk *seqbulk_create(sql_sequence *seq, BUN cnt)
 
 void seqbulk_destroy(seqbulk *sb)
 {
-
 	if (sb->save) {
 		sql_sequence *seq = sb->seq;
 		store_sequence *s = sb->internal_seq;
@@ -258,7 +258,7 @@ int seqbulk_next_value(seqbulk *sb, lng *val)
 			s->cur = seq->minvalue;
 			sb->save = 1;
 		} else { /* we're out of numbers */
-			return(0);
+			return 0;
 		}
 	}
 	s->called = 1;
@@ -308,7 +308,7 @@ seq_get_value(sql_sequence *seq, lng *val)
 			*val = seq->minvalue;
 		} else { /* we're out of numbers */
 			store_unlock();
-			return(0);
+			return 0;
 		}
 	}
 	store_unlock();

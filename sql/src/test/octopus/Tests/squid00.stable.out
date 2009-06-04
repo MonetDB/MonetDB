@@ -26,19 +26,26 @@ Over..
 # 23:14:19 >  
 
 function user.s1_1():void;
-    _15 := nil:bat[:oid,:int];
-barrier (_74,version) := scheduler.octopus(10);
-    _77 := octopus.exec_s1_1("tbd","tentacle_s1_1_67",version);
-    _80 := octopus.exec_s1_1("tbd","tentacle_s1_1_68",version);
-    _82 := octopus.exec_s1_1("tbd","tentacle_s1_1_69",version);
-    _84 := octopus.exec_s1_1("tbd","tentacle_s1_1_70",version);
-    _86 := octopus.exec_s1_1("tbd","tentacle_s1_1_71",version);
-    _15 := mat.pack(_77,_80,_82,_84,_86);
-exit (_74,version);
-    _16 := sql.resultSet(1,1,_15);
-    sql.rsColumn(_16,"sys.squida","bid","int",32,0,_15);
-    _21 := io.stdout();
-    sql.exportResult(_21,_16);
+    _4 := nil:bat[:oid,:int];
+    _24:bat[:oid,:int]  := nil:BAT;
+barrier (_25,version) := scheduler.octopus(10);
+    _28:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_67",version);
+    _31:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_68",version);
+    _33:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_69",version);
+    _35:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_70",version);
+    _37:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_71",version);
+    _4 := mat.pack(_28,_31,_33,_35,_37);
+    _28:bat[:oid,:int]  := nil:BAT;
+    _31:bat[:oid,:int]  := nil:BAT;
+    _33:bat[:oid,:int]  := nil:BAT;
+    _35:bat[:oid,:int]  := nil:BAT;
+    _37:bat[:oid,:int]  := nil:BAT;
+exit (_25,version);
+    _5 := sql.resultSet(1,1,_4);
+    sql.rsColumn(_5,"sys.squida","bid","int",32,0,_4);
+    _4 := nil:BAT;
+    _10 := io.stdout();
+    sql.exportResult(_10,_5);
 end s1_1;
 % sys.squida # table_name
 % bid # name

@@ -1820,16 +1820,6 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 				sql_subaggr *a = e->f;
 				
 				if (strcmp(a->aggr->base.name, "avg") == 0) {
-					list *exps = e->l;
-					sql_exp *ae = exps->h->data;
-
-					/* 
-					   FOR NOW ESCAPE ON AVG ON DECIMALS,
-					   we need a rewrite or DEC's in 
-					   the optimizer to solve this problem
-					*/
-					if (exp_subtype(ae)->type->eclass == EC_DEC)
-						return rel;
 					append(avgs, e);
 					continue; 
 				}

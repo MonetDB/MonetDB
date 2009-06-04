@@ -71,53 +71,53 @@ Over..
 % decimal # type
 % 2 # length
 [ 278	]
-% sys.aircraft # table_name
+% sys. # table_name
 % L5 # name
 % double # type
 % 22 # length
 [ 2.0592592592592593	]
-% sys.aircraft # table_name
-% L6 # name
+% sys. # table_name
+% L10 # name
 % double # type
 % 22 # length
 [ 2.3760683760683761	]
 % sys.aircraft,	sys.aircraft,	sys.aircraft # table_name
-% L7,	L10,	L11 # name
+% L13,	L14,	L15 # name
 % wrd,	int,	int # type
 % 2,	3,	6 # length
 [ 94,	240,	165710	]
 % sys.flight,	sys.flight # table_name
-% L12,	L13 # name
+% L16,	L17 # name
 % int,	int # type
 % 6,	6 # length
 [ 101908,	101908	]
 % sys.flight,	sys.flight # table_name
-% L14,	L15 # name
+% L20,	L21 # name
 % char,	char # type
 % 3,	3 # length
 [ "ATL",	"ATL"	]
 % sys.aircraft # table_name
-% L16 # name
+% L22 # name
 % wrd # type
 % 2 # length
 [ 50	]
 % sys.aircraft # table_name
-% L17 # name
+% L23 # name
 % wrd # type
 % 2 # length
 [ 94	]
 % sys.flight # table_name
-% L20 # name
+% L24 # name
 % wrd # type
 % 3 # length
 [ 279	]
-% sys.flight,	sys.flight,	sys.flight # table_name
-% from_airport,	to_airport,	L21 # name
+% sys.flight,	sys.flight,	sys. # table_name
+% from_airport,	to_airport,	L25 # name
 % char,	char,	double # type
 % 3,	3,	22 # length
 [ "ATL",	"BOS",	154.36842105263159	]
 % sys.ground_service,	sys. # table_name
-% city_code,	L22 # name
+% city_code,	L30 # name
 % char,	double # type
 % 4,	22 # length
 [ "MATL",	9	]
@@ -132,7 +132,7 @@ Over..
 [ "WWAS",	12	]
 [ "BBWI",	5	]
 % sys.ground_service,	sys.ground_service # table_name
-% L25,	city_code # name
+% L33,	city_code # name
 % wrd,	char # type
 % 1,	4 # length
 [ 3,	"MATL"	]
@@ -155,7 +155,7 @@ Over..
 [ "PROPELLER",	16	]
 [ "TURBOPROP",	32	]
 % sys.aircraft,	sys.aircraft # table_name
-% category,	L30 # name
+% category,	L36 # name
 % char,	wrd # type
 % 10,	2 # length
 [ "JET",	15	]

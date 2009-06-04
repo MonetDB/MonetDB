@@ -42,7 +42,6 @@ for the duration of a session.
 
 typedef void (*freestack_fptr) (int clientid, backend_stack stk);
 typedef void (*freecode_fptr) (int clientid, backend_code code, backend_stack stk, int nr, char *name);
-typedef void (*interpret_fptr) (int clientid, backend_stack stk, char *code);
 
 typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);

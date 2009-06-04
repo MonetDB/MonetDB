@@ -100,6 +100,7 @@ extern sql_arg *arg_dup(sql_arg *a);
 extern void arg_destroy(sql_arg *a);
 
 extern sql_subaggr *sql_bind_aggr(sql_schema *s, char *name, sql_subtype *type);
+extern sql_subaggr *sql_find_aggr(sql_schema *s, char *name);
 extern sql_func *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
 extern sql_subaggr *sql_dup_aggr(sql_subaggr *a);
 extern void sql_subaggr_destroy(sql_subaggr *f);
@@ -576,6 +577,63 @@ sql_bind_aggr(sql_schema *s, char *sqlaname, sql_subtype *type)
 					sql_init_subtype(&ares->res, type->type, digits, scale);
 				else
 					sql_init_subtype(&ares->res, a->res.type, digits, scale);
+				return ares;
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_subaggr *
+sql_find_aggr(sql_schema *s, char *sqlaname)
+{
+	node *n = aggrs->h;
+
+	(void)s;
+	while (n) {
+		sql_func *a = n->data;
+		sql_arg *arg = NULL;
+
+		if (a->ops->h)
+			arg = a->ops->h->data;
+
+		if (strcmp(a->base.name, sqlaname) == 0) {
+			int scale = 0;
+			int digits = 0;
+			sql_subaggr *ares = NEW(sql_subaggr);
+
+			sql_ref_init(&(ares->ref));
+			ares->aggr = a;
+			digits = a->res.digits;
+			scale = a->res.scale;
+			sql_init_subtype(&ares->res, a->res.type, digits, scale);
+			return ares;
+		}
+		n = n->next;
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *a = n->data;
+			sql_arg *arg = NULL;
+
+			if ((a->is_func && !a->res.type) || !a->aggr)
+				continue;
+
+			if (a->ops->h)
+				arg = a->ops->h->data;
+
+			if (strcmp(a->base.name, sqlaname) == 0) {
+				int scale = 0;
+				int digits = 0;
+				sql_subaggr *ares = NEW(sql_subaggr);
+		
+				sql_ref_init(&(ares->ref));
+				ares->aggr = a;
+				digits = a->res.digits;
+				scale = a->res.scale;
+				sql_init_subtype(&ares->res, a->res.type, digits, scale);
 				return ares;
 			}
 		}
@@ -1366,18 +1424,15 @@ sqltypeinit(void)
 	t++; /* LNG */
 	sql_create_aggr("prod", "aggr", "product", *(t), *(t));
 
-	for (t = numerical; t < floats; t++) {
-		sql_create_aggr("avg", "aggr", "avg", *(t), DBL);
+	for (t = numerical; t < floats; t++) 
 		sql_create_func("mod", "calc", "%", *t, *t, *t, SCALE_FIX);
-	}
 
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr("sum", "aggr", "sum", *t, *t);
 		sql_create_aggr("prod", "aggr", "product", *t, *t);
-		sql_create_aggr("avg", "aggr", "avg", *t, DBL);
-
 		sql_create_func("mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
 	}
+	sql_create_aggr("avg", "aggr", "avg", DBL, DBL);
 
 	sql_create_aggr("count_no_nil", "aggr", "count_no_nil", NULL, WRD);
 	sql_create_aggr("count", "aggr", "count", NULL, WRD);
@@ -1405,8 +1460,8 @@ sqltypeinit(void)
 
 		sql_create_func("sql_sub", "calc", "-", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_add", "calc", "+", *t, *t, *t, SCALE_FIX);
-		sql_create_func("sql_mul", "calc", "*", *t, *t, *t, SCALE_ADD);
-		sql_create_func("sql_div", "calc", "/", *t, *t, *t, SCALE_SUB);
+		sql_create_func("sql_mul", "calc", "*", *t, *t, *t, SCALE_MUL);
+		sql_create_func("sql_div", "calc", "/", *t, *t, *t, SCALE_DIV);
 		sql_create_func("bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
 		sql_create_func("bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
 		sql_create_func("bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
@@ -1424,12 +1479,12 @@ sqltypeinit(void)
 		if (*t != MONINT && *t != SECINT){
 			sql_create_func("sql_sub", "calc", "-", MONINT, *t, MONINT, SCALE_FIX);
 			sql_create_func("sql_add", "calc", "+", MONINT, *t, MONINT, SCALE_FIX);
-			sql_create_func("sql_mul", "calc", "*", MONINT, *t, MONINT, SCALE_ADD);
-			sql_create_func("sql_div", "calc", "/", MONINT, *t, MONINT, SCALE_SUB);
+			sql_create_func("sql_mul", "calc", "*", MONINT, *t, MONINT, SCALE_MUL);
+			sql_create_func("sql_div", "calc", "/", MONINT, *t, MONINT, SCALE_DIV);
 			sql_create_func("sql_sub", "calc", "-", SECINT, *t, SECINT, SCALE_FIX);
 			sql_create_func("sql_add", "calc", "+", SECINT, *t, SECINT, SCALE_FIX);
-			sql_create_func("sql_mul", "calc", "*", SECINT, *t, SECINT, SCALE_ADD);
-			sql_create_func("sql_div", "calc", "/", SECINT, *t, SECINT, SCALE_SUB);
+			sql_create_func("sql_mul", "calc", "*", SECINT, *t, SECINT, SCALE_MUL);
+			sql_create_func("sql_div", "calc", "/", SECINT, *t, SECINT, SCALE_DIV);
 		}
 	}
 	for (t = decimals, t++; t != floats; t++) {
@@ -1438,8 +1493,8 @@ sqltypeinit(void)
 			if (*u == OID)
 				continue;
 			if ((*t)->localtype >  (*u)->localtype) {
-				sql_create_func("sql_mul", "calc", "*", *t, *u, *t, SCALE_ADD);
-				sql_create_func("sql_mul", "calc", "*", *u, *t, *t, SCALE_ADD);
+				sql_create_func("sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
+				sql_create_func("sql_mul", "calc", "*", *u, *t, *t, SCALE_MUL);
 			}
 		}
 	}

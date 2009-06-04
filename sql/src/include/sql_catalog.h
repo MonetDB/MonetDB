@@ -76,8 +76,8 @@
 #define SCALE_FIX	1	/* many numerical functions require equal
                            scales/precision for all their inputs */
 #define SCALE_NOFIX	2
-#define SCALE_ADD	3	/* multiplication gives the sum of scales */
-#define SCALE_SUB	4	/* on the other hand reduces the scales */ 
+#define SCALE_MUL	3	/* multiplication gives the sum of scales */
+#define SCALE_DIV	4	/* div on the other hand reduces the scales */ 
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 

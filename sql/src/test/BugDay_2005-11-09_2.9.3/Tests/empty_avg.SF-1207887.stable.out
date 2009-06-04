@@ -27,7 +27,7 @@ Over..
 # 11:50:58 >  
 
 % sys. # table_name
-% scale_down_L1 # name
+% L1 # name
 % double # type
 % 22 # length
 [ NULL	]

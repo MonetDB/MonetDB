@@ -1670,11 +1670,13 @@ exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		f->res.scale = lt->scale + rt->scale;
 		f->res.digits = lt->digits + rt->digits;
+
 		/* HACK alert: digits should be less then max */
 		if (f->res.type->radix == 10 && f->res.digits > 19)
 			f->res.digits = 19;
 		if (f->res.type->radix == 2 && f->res.digits > 53)
 			f->res.digits = 53;
+
 		/* sum of digits may mean we need a bigger result type 
 		 * as the function don't support this we need to
 		 * make bigger input types!
@@ -1707,23 +1709,17 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	/*
-	 * Decimals are mapped on plain integers. This has impact on the
-	 * implemantion of division. First the 'dividend' should be large 
-	 * enough to prevent rounding errors. This is solved by a 
-	 * multiplication with the 'scale' of the divisor.
-	 * Second the result type of the division should be equal to the 
-	 * 'dividend', with the maximum scale of the dividend and divisor.
-	 *
-	 * Example      1.0/0.1 mapped (int 1 dec(1,0) and int 1 dec(2,1))
-	 *                              1 * 10 = 10 (scale of divisor)
-	 *                              10/1 = 1 dec(1)
-	 */
-
 	if (lt->type->scale == SCALE_FIX && rt->scale && 
 		strcmp(f->func->imp, "/") == 0) {
-		int digits = rt->scale + lt->digits;
+		int scale, digits, digL, scaleL;
 		sql_subtype nlt;
+
+		/* scale fixing may require a larger type ! */
+		scaleL = (lt->scale < 3) ? 3 : lt->scale;
+		scale = scaleL;
+		scaleL += rt->scale;
+		digL = lt->digits + (scaleL - lt->scale);
+		digits = (digL > (int)rt->digits) ? digL : (int)rt->digits;
 
 		/* HACK alert: digits should be less then max */
 		if (f->res.type->radix == 10 && digits > 19)
@@ -1731,14 +1727,10 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
 
-		/* scale fixing may require a larger type ! */
-		sql_find_subtype(&nlt, lt->type->sqlname, digits, lt->scale+rt->scale);
-		f->res.digits = digits;
-		f->res.scale = lt->scale;
-		
+		sql_find_subtype(&nlt, lt->type->sqlname, digL, scaleL);
 		l = rel_check_type( sql, &nlt, l, type_equal );
 
-		sql_find_subtype(&f->res, lt->type->sqlname, f->res.digits, f->res.scale);
+		sql_find_subtype(&f->res, lt->type->sqlname, digits, scale);
 	}
 	return l;
 }
@@ -2955,9 +2947,9 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int tab
 		if (f->func->fix_scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
 			r = exp_fix_scale(sql, t1, r, 0, 0);
-		} else if (f->func->fix_scale == SCALE_SUB) {
+		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, l, r);
-		} else if (f->func->fix_scale == SCALE_ADD) {
+		} else if (f->func->fix_scale == SCALE_MUL) {
 			l = exp_sum_scales(sql, f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = t1->digits + t2->digits;
@@ -3006,9 +2998,9 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int tab
 				if (f->func->fix_scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
 					r = exp_fix_scale(sql, t1, r, 0, 0);
-				} else if (f->func->fix_scale == SCALE_SUB) {
+				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, l, r);
-				} else if (f->func->fix_scale == SCALE_ADD) {
+				} else if (f->func->fix_scale == SCALE_MUL) {
 					l = exp_sum_scales(sql, f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
 					f->res.digits = digits;
@@ -3272,6 +3264,17 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (!e)
 		return NULL;
 	a = sql_bind_aggr(sql->session->schema, aggrstr, exp_subtype(e));
+	if (!a) { /* find aggr + convert */
+
+		a = sql_find_aggr(sql->session->schema, aggrstr);
+		if (a) {
+			sql_arg *arg = a->aggr->ops->h->data;
+
+			e = rel_check_type(sql, &arg->type, e, type_equal);
+			if (!e)
+				a = NULL;
+		}
+	}
 	if (a) {
 		/* type may have changed, ie. need to fix_scale */
 		sql_subtype *t = exp_subtype(e);

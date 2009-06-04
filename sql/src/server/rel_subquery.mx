@@ -117,9 +117,9 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 		if (f->func->fix_scale == SCALE_FIX) {
 			ls = fix_scale(sql, t2, ls, 0, 0);
 			rs = fix_scale(sql, t1, rs, 0, 0);
-		} else if (f->func->fix_scale == SCALE_SUB) {
+		} else if (f->func->fix_scale == SCALE_DIV) {
 			ls = scale_algebra(sql, f, ls, rs);
-		} else if (f->func->fix_scale == SCALE_ADD) {
+		} else if (f->func->fix_scale == SCALE_MUL) {
 			ls = sum_scales(sql, f, ls, rs);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			f->res.digits = t1->digits + t2->digits;
@@ -167,9 +167,9 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 				if (f->func->fix_scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
 					rs = fix_scale(sql, t1, rs, 0, 0);
-				} else if (f->func->fix_scale == SCALE_SUB) {
+				} else if (f->func->fix_scale == SCALE_DIV) {
 					ls = scale_algebra(sql, f, ls, rs);
-				} else if (f->func->fix_scale == SCALE_ADD) {
+				} else if (f->func->fix_scale == SCALE_MUL) {
 					ls = sum_scales(sql, f, ls, rs);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
 					f->res.digits = digits;

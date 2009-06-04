@@ -68,6 +68,7 @@ Over..
 [ "mero_doproxy"	]
 [ "mero_discoveryttl"	]
 [ "mal_init"	]
+[ "sql_optimizer"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
 [ "monet_pid"	]
