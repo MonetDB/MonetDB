@@ -1257,6 +1257,12 @@ openConnectionUDP(int *ret, unsigned short port)
 	char sport[10];
 	char host[512];
 
+	if (port == 0) {
+		merlog("neighbour discovery service disabled by configuration");
+		*ret = -1;
+		return(NO_ERR);
+	}
+
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;      /* Allow IPv4 only (broadcasting) */
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
@@ -1902,7 +1908,7 @@ handler(int sig)
 		default:
 			assert(0);
 	}
-	merlog("caught %s, Merovingian %s stopping ...", signame, MERO_VERSION);
+	merlog("caught %s, starting shutdown sequence", signame);
 	_keepListening = 0;
 }
 
@@ -2073,6 +2079,7 @@ main(int argc, char *argv[])
 	struct stat sb;
 	FILE *oerr = NULL;
 	unsigned short port = MERO_PORT;
+	unsigned short discoveryport;
 	pthread_mutexattr_t mta;
 	confkeyval *ckv;
 
@@ -2146,7 +2153,7 @@ main(int argc, char *argv[])
 	doproxy = 0;
 	discoveryttl = 600;
 
-	ckv = alloca(sizeof(confkeyval) * 10);
+	ckv = alloca(sizeof(confkeyval) * 11);
 	ckv[0].key = "prefix";
 	ckv[0].val = GDKstrdup(MONETDB5_PREFIX);
 	ckv[1].key = "gdk_dbfarm";
@@ -2165,7 +2172,9 @@ main(int argc, char *argv[])
 	ckv[7].val = NULL;
 	ckv[8].key = "mero_discoveryttl";
 	ckv[8].val = NULL;
-	ckv[9].key = NULL;
+	ckv[9].key = "mero_discoveryport";
+	ckv[9].val = NULL;
+	ckv[10].key = NULL;
 
 	readConfFile(ckv, cnf);
 	fclose(cnf);
@@ -2180,7 +2189,7 @@ main(int argc, char *argv[])
 	if (ckv[6].val != NULL) {
 		ret = atoi(ckv[4].val);
 		if (ret <= 0 || ret > 65535) {
-			fprintf(stderr, "invalid port number: %s\n", ckv[6].val);
+			fprintf(stderr, "invalid port number: %s\n", ckv[4].val);
 			fflush(stderr);
 			MERO_EXIT(1);
 		}
@@ -2198,6 +2207,16 @@ main(int argc, char *argv[])
 	}
 	if (ckv[8].val != NULL)
 		discoveryttl = atoi(ckv[8].val);
+	discoveryport = port;  /* defaults to same port as mero_port */
+	if (ckv[9].val != NULL) {
+		ret = atoi(ckv[9].val);
+		if (ret < 0 || ret > 65535) {
+			fprintf(stderr, "invalid port number: %s\n", ckv[9].val);
+			fflush(stderr);
+			MERO_EXIT(1);
+		}
+		discoveryport = (unsigned short)ret;
+	}
 
 	/* where is the mserver5 binary we fork on demand? */
 	snprintf(buf, 1023, "%s/bin/mserver5", prefix);
@@ -2409,8 +2428,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	merlog("Merovingian %s starting ...", MERO_VERSION);
-	merlog("monitoring dbfarm %s", dbfarm);
+	merlog("starting Merovingian %s for dbfarm %s", MERO_VERSION, dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
 
@@ -2422,7 +2440,7 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if (
 			(e = openConnectionTCP(&sock, port)) == NO_ERR &&
-			(e = openConnectionUDP(&usock, port)) == NO_ERR &&
+			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR)
 	{
 		pthread_t ctid = 0;
@@ -2452,8 +2470,8 @@ main(int argc, char *argv[])
 		}
 
 		/* start neighbour discovery and notification thread */ 
-		if (pthread_create(&dtid, NULL, (void *(*)(void *))discoveryRunner,
-					(void *)&usock) < 0)
+		if (usock >= 0 && pthread_create(&dtid, NULL,
+					(void *(*)(void *))discoveryRunner, (void *)&usock) < 0)
 		{
 			fprintf(stderr, "unable to start neighbour discovery thread\n");
 			dtid = 0;
@@ -2463,13 +2481,15 @@ main(int argc, char *argv[])
 		e = acceptConnections(sock);
 
 		/* wait for the control runner and discovery thread to have
-		 * finished announcing it's going down */
+		 * finished announcing they're going down */
 		close(unsock);
 		if (ctid != 0)
 			pthread_join(ctid, NULL);
-		close(usock);
-		if (dtid != 0)
-			pthread_join(dtid, NULL);
+		if (usock >= 0) {
+			close(usock);
+			if (dtid != 0)
+				pthread_join(dtid, NULL);
+		}
 	}
 
 	/* control channel is already closed at this point */

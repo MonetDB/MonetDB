@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "MAY 2008" Application "MonetDB Applications"
+.TH MEROVINGIAN 1 "JUNE 2009" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -153,6 +153,14 @@ they need to get refreshed.  The default is 10 minutes, which should
 keep traffic in your network fairly low.  If you add and/or remove
 databases often, you may want to use a low ttl.  The value of this
 option is expressed in seconds.
+.IP mero_discoveryport
+The neighbour discovery service uses UDP broadcasting to announce
+itself.  For this
+.B merovingian
+listens to the given port, which defaults to the setting of
+.B mero_port.
+If the port is set to 0, the neighbour discovery service is disabled and
+hence no announcements will be made, nor received.
 .SH SIGNALS
 .B merovingian
 acts upon a number of signals as is common for a daemon.

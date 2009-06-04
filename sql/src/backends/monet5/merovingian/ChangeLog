@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  04 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.c:
+  Implemented a configurable port for the neighbour discovery service. This
+  also allows to entirely disable neighbour discovery by setting
+  mero_discoveryport to 0.  Feature request #2800964
+
   02 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
   monetdb now copies the sql_logdir setting at the time of a create as a
   property for merovingian.  This way, databases under merovingian's
