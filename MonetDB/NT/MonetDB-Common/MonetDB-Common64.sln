@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "MonetDB-Common64", "MonetDB-Common64.vdproj", "{930B53DC-571F-4A98-A50C-E68C02CA848D}"
 EndProject
 Global
