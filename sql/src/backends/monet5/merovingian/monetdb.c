@@ -84,6 +84,7 @@ command_help(int argc, char *argv[])
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
 		printf("    status, start, stop, kill\n");
+		printf("    set, get, inherit\n");
 		printf("    discover, help, version\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
@@ -143,6 +144,21 @@ command_help(int argc, char *argv[])
 		printf("  killed may end up with data loss.\n");
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
+	} else if (strcmp(argv[1], "set") == 0) {
+		printf("Usage: monetdb set [-a] property=value database [database ...]\n");
+		printf("  sets property to value for the given database\n");
+		printf("Options:\n");
+		printf("  -a  apply all known databases\n");
+	} else if (strcmp(argv[1], "get") == 0) {
+		printf("Usage: monetdb get <\"all\" | property,...> [database ...]\n");
+		printf("  gets value for property for the given database, or\n");
+		printf("  retrieves all known properties for the given database\n");
+	} else if (strcmp(argv[1], "inherit") == 0) {
+		printf("Usage: monetdb inherit [-a] property database [database ...]\n");
+		printf("  unsets property, reverting to its inherited value from\n");
+		printf("  the default configuration for the given database\n");
+		printf("Options:\n");
+		printf("  -a  apply all known databases\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
 		printf("Usage: monetdb discover\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
@@ -721,13 +737,13 @@ command_merocom(int argc, char *argv[], merocom mode)
 		for (i = 1; i < argc; i++) {
 			if (argv[i] != NULL) {
 				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-					fprintf(stderr, "status: internal error: %s\n", e);
+					fprintf(stderr, "%s: internal error: %s\n", type, e);
 					GDKfree(e);
 					exit(2);
 				}
 
 				if (stats == NULL) {
-					fprintf(stderr, "status: no such database: %s\n", argv[i]);
+					fprintf(stderr, "%s: no such database: %s\n", type, argv[i]);
 					argv[i] = NULL;
 				} else {
 					if (orig == NULL) {
@@ -798,6 +814,158 @@ command_merocom(int argc, char *argv[], merocom mode)
 		SABAOTHfreeStatus(&orig);
 
 	exit(ret);
+}
+
+typedef enum {
+	SET = 0,
+	INHERIT
+} meroset;
+
+static void
+command_set(int argc, char *argv[], meroset type)
+{
+	(void)type;
+	printf("too much work for %d, %s\n", argc, argv[0]);
+}
+
+static void
+command_get(int argc, char *argv[], confkeyval *defprops)
+{
+	char doall = 1;
+	char *p;
+	char *property = NULL;
+	err e;
+	int i;
+	sabdb *orig, *stats;
+	int twidth = TERMWIDTH;
+	char *source, *value;
+	confkeyval *kv, *props = getDefaultProps();
+
+	if (argc == 1) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 0) {
+		exit(2);
+	}
+
+	/* time to collect some option flags */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			for (p = argv[i] + 1; *p != '\0'; p++) {
+				switch (*p) {
+					case '-':
+						if (p[1] == '\0') {
+							if (argc - 1 > i) 
+								doall = 0;
+							i = argc;
+							break;
+						}
+					default:
+						fprintf(stderr, "get: unknown option: -%c\n", *p);
+						command_help(2, &argv[-1]);
+						exit(1);
+					break;
+				}
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		} else if (property == NULL) {
+			/* first non-option is property, rest is database */
+			property = argv[i];
+			argv[i] = NULL;
+			if (strcmp(property, "all") == 0) {
+				/* die hard leak */
+				property = GDKstrdup("name,logdir,forward,shared");
+			}
+		} else {
+			doall = 0;
+		}
+	}
+
+	if (property == NULL) {
+		fprintf(stderr, "get: need a property argument\n");
+		command_help(2, &argv[-1]);
+		exit(1);
+	}
+
+	if (doall == 1) {
+		/* don't even look at the arguments, because we are instructed
+		 * to list all known databases */
+		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+			fprintf(stderr, "get: internal error: %s\n", e);
+			GDKfree(e);
+			exit(2);
+		}
+	} else {
+		sabdb *w = NULL;
+		orig = NULL;
+		for (i = 1; i < argc; i++) {
+			if (argv[i] != NULL) {
+				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+					fprintf(stderr, "get: internal error: %s\n", e);
+					GDKfree(e);
+					exit(2);
+				}
+
+				if (stats == NULL) {
+					fprintf(stderr, "get: no such database: %s\n", argv[i]);
+					argv[i] = NULL;
+				} else {
+					if (orig == NULL) {
+						orig = stats;
+						w = stats;
+					} else {
+						w = w->next = stats;
+					}
+				}
+			}
+		}
+	}
+
+	/* name = 15 */
+	/* prop = 7 */
+	/* source = 7 */
+	twidth -= 15 - 2 - 7 - 2 - 7 - 2;
+	if (twidth < 6)
+		twidth = 6;
+	printf("     name         prop     source           value\n");
+	while ((p = strtok(property, ",")) != NULL) {
+		property = NULL;
+		stats = orig;
+		while (stats != NULL) {
+			/* special virtual case */
+			if (strcmp(p, "name") == 0) {
+				source = "-";
+				value = stats->dbname;
+			} else {
+				readProps(props, stats->path);
+				kv = findConfKey(props, p);
+				if (kv == NULL) {
+					fprintf(stderr, "get: no such property: %s\n", p);
+					stats = NULL;
+					continue;
+				}
+				if (kv->val == NULL) {
+					kv = findConfKey(defprops, p);
+					source = "default";
+					value = kv->val != NULL ? kv->val : "<unknown>";
+				} else {
+					source = "local";
+					value = kv->val;
+				}
+			}
+			printf("%-15s  %-7s  %-7s  %s\n",
+					stats->dbname, p, source, value);
+			freeConfFile(props);
+			stats = stats->next;
+		}
+	}
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+	GDKfree(props);
 }
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -1259,10 +1427,12 @@ main(int argc, char *argv[])
 	char buf[1024];
 	int fd;
 	confkeyval ckv[] = {
-		{"prefix",     GDKstrdup(MONETDB5_PREFIX)},
-		{"gdk_dbfarm", NULL},
-		{"sql_logdir", NULL},
-		{ NULL,        NULL}
+		{"prefix",             GDKstrdup(MONETDB5_PREFIX)},
+		{"gdk_dbfarm",         NULL},
+		{"sql_logdir",         NULL},
+		{"mero_doproxy",       GDKstrdup("yes")},
+		{"mero_discoveryport", NULL},
+		{ NULL,                NULL}
 	};
 	confkeyval *kv;
 #ifdef TIOCGWINSZ
@@ -1300,8 +1470,6 @@ main(int argc, char *argv[])
 	dbfarm = replacePrefix(kv->val, prefix);
 	kv = findConfKey(ckv, "sql_logdir");
 	logdir = replacePrefix(kv->val, prefix);
-
-	freeConfFile(ckv);
 
 	if (dbfarm == NULL) {
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
@@ -1354,6 +1522,38 @@ main(int argc, char *argv[])
 		command_merocom(argc - 1, &argv[1], STOP);
 	} else if (strcmp(argv[1], "kill") == 0) {
 		command_merocom(argc - 1, &argv[1], KILL);
+	} else if (strcmp(argv[1], "set") == 0) {
+		command_set(argc - 1, &argv[1], SET);
+	} else if (strcmp(argv[1], "get") == 0) {
+		/* change the keys to our names */
+		kv = findConfKey(ckv, "sql_logdir");
+		kv->key = "logdir";
+		kv = findConfKey(ckv, "mero_doproxy");
+		kv->key = "forward";
+		if (strcmp(kv->val, "yes") == 0 ||
+				strcmp(kv->val, "true") == 0 ||
+				strcmp(kv->val, "1") == 0)
+		{
+			GDKfree(kv->val);
+			kv->val = GDKstrdup("proxy");
+		} else {
+			GDKfree(kv->val);
+			kv->val = GDKstrdup("redirect");
+		}
+		kv = findConfKey(ckv, "mero_discoveryport");
+		kv->key = "shared";
+		if (kv->val == NULL) {
+			kv->val = GDKstrdup("yes");
+		} else if (strcmp(kv->val, "0") == 0) {
+			GDKfree(kv->val);
+			kv->val = GDKstrdup("no");
+		} else {
+			GDKfree(kv->val);
+			kv->val = GDKstrdup("yes");
+		}
+		command_get(argc - 1, &argv[1], ckv);
+	} else if (strcmp(argv[1], "inherit") == 0) {
+		command_set(argc - 1, &argv[1], INHERIT);
 	} else if (strcmp(argv[1], "discover") == 0) {
 		command_discover(argc - 1, &argv[1]);
 	} else if (strcmp(argv[1], "help") == 0 || strcmp(argv[1], "-h") == 0) {
@@ -1364,6 +1564,8 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: unknown command: %s\n", argv[0], argv[1]);
 		command_help(0, NULL);
 	}
+
+	freeConfFile(ckv);
 
 	return(0);
 }

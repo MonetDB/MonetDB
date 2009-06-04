@@ -97,15 +97,15 @@ typedef struct _dpair {
 	int out;          /* where to read stdout messages from */
 	int err;          /* where to read stderr messages from */
 	pid_t pid;        /* this process' id */
-	char* dbname;     /* the database that this server serves */
+	str dbname;       /* the database that this server serves */
 	struct _dpair* next;
 }* dpair;
 static dpair topdp = NULL;
 static pthread_mutex_t topdplock;
 
 typedef struct _remotedb {
-	char* dbname;
-	char* conn;
+	str dbname;
+	str conn;
 	int ttl;
 	struct _remotedb* next;
 }* remotedb;
@@ -395,7 +395,8 @@ forkMserver(str database, sabdb** stats, int force)
 	dpair dp;
 	str vaultkey = NULL;
 	str logdir = NULL;
-	confkeyval ckv[2];
+	char mydoproxy;
+	confkeyval *ckv, *kv;
 	struct stat statbuf;
 	char upmin[8];
 	char upavg[8];
@@ -512,17 +513,22 @@ forkMserver(str database, sabdb** stats, int force)
 					database, database));
 	}
 
-	ckv[0].key = "logdir";
-	ckv[0].val = NULL;
-	ckv[1].key = NULL;
+	ckv = getDefaultProps();
 	readProps(ckv, (*stats)->path);
-	if (ckv[0].val != NULL) {
+	/* NOTE: we rely on existence of these keys (not if they're set) */
+	kv = findConfKey(ckv, "logdir");
+	if (kv->val != NULL) {
 		logdir = alloca(sizeof(char) * 512);
-		snprintf(logdir, 512, "sql_logdir=%s", ckv[0].val);
+		snprintf(logdir, 512, "sql_logdir=%s", kv->val);
 	} else {
 		logdir = NULL;
 	}
+	kv = findConfKey(ckv, "forward");
+	mydoproxy = doproxy;
+	if (kv->val != NULL)
+		mydoproxy = strcmp(kv->val, "proxy") == 0;
 	freeConfFile(ckv);
+	GDKfree(ckv); /* can make ckv static and reuse it all the time */
 
 	/* create the pipes (filedescriptors) now, such that we and the
 	 * child have the same descriptor set */
@@ -563,7 +569,7 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-		if (doproxy == 0) {
+		if (mydoproxy == 0) {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
@@ -575,8 +581,6 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		argv[c++] = NULL;
 
-		merlog("executing '%s' for database '%s'",
-				_merovingian_mserver, database);
 		execv(_merovingian_mserver, argv);
 		/* if the exec returns, it is because of a failure */
 		fprintf(stderr, "executing failed: %s\n", strerror(errno));
@@ -978,6 +982,8 @@ handleClient(int sock)
 	struct sockaddr_in saddr;
 	socklen_t saddrlen = sizeof(struct sockaddr_in);
 	err e;
+	confkeyval *ckv, *kv;
+	char mydoproxy;
 
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
 	if (fdin == 0)
@@ -1154,9 +1160,17 @@ handleClient(int sock)
 				(int)ntohs(saddr.sin_port));
 	}
 
-	/* need to send a redirect, either we are going to proxy, or we send
+	/* need to send a response, either we are going to proxy, or we send
 	 * a redirect */
-	if (doproxy == 0) {
+	ckv = getDefaultProps();
+	readProps(ckv, stat->path);
+	kv = findConfKey(ckv, "forward");
+	mydoproxy = doproxy;
+	if (kv->val != NULL)
+		mydoproxy = strcmp(kv->val, "proxy") == 0;
+	freeConfFile(ckv);
+	GDKfree(ckv);
+	if (mydoproxy == 0) {
 		merlog("redirecting client %s for database '%s' to %s",
 				host, stat->dbname, stat->conns->val);
 		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
