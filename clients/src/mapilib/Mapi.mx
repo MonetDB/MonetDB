@@ -3405,7 +3405,15 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 {
 	int incr, newsize, oldsize = result->cache.limit, i;
 
+	/* if there are read entries, delete them */
+	if (result->cache.reader >= 0) {
+		mapi_cache_freeup_internal(result, result->cache.reader + 1);
+		/* since we've made space, we can return */
+		return;
+	}
+
 	/* extend row cache */
+  retry:;
 	if (oldsize == 0)
 		incr = 100;
 	else
@@ -3417,16 +3425,9 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 		newsize = result->cache.rowlimit;
 		incr = newsize - oldsize;
 		if (incr <= 0) {
-			if (result->cache.reader >= 0) {
-				/* flush all read entries */
-				mapi_cache_freeup_internal(result, result->cache.reader + 1);
-				/* since we've made space, we can return */
-				return;
-			}
-			/* not enough space, so increase limit */
+			/* not enough space, so increase limit and try again */
 			result->cache.rowlimit += 100;
-			mapi_extend_cache(result, cacheall); /* try again */
-			return;
+			goto retry;
 		}
 	}
 
