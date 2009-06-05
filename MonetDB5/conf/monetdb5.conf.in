@@ -194,7 +194,8 @@ mero_pidfile=@localstatedir@@DIRSEP@run@DIRSEP@MonetDB@DIRSEP@merovingian.pid
 #
 # Neighbour discovery is done using UDP broadcasts on the port set by
 # mero_discoveryport.  It's value defaults to the value of mero_port,
-# which usually is 50000.
+# which usually is 50000.  Setting this value to 0 disables the
+# neighbour discovery service entirely.
 #mero_discoveryport=50000
 
 
