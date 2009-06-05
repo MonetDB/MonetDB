@@ -64,9 +64,9 @@ class Connection:
         implement this method with void functionality.
         """
 
-        # TODO: implement
+        self.__mapi_check()
         return False
-        #self.__mapi_check()
+        # TODO: implement
         #return self.execute('COMMIT')
 
 
