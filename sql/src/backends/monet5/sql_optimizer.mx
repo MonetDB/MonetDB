@@ -450,7 +450,7 @@ static int pipelineOverruled;
 int
 SQLvalidatePipeline(void){
 	int error= 0;
-	int mitosis= FALSE, deadcode= FALSE;
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE;
 	int i;
 
 	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ){
@@ -465,10 +465,9 @@ SQLvalidatePipeline(void){
 		if (strcmp(optimizers[i],"mitosis") == 0)
 			mitosis= TRUE;
 		else
-		if (strcmp(optimizers[i],"mergetable") == 0 && mitosis == FALSE) {
-			showException(SQL,"optimizer"," 'mergetable' needs 'mitosis'\n");
-			error++;
-		} 
+		if (strcmp(optimizers[i],"mergetable") == 0)
+			mergetable= TRUE;
+
 #ifdef WIN32
 		else
 		if (strcmp(optimizers[i],"octopus") == 0){
@@ -476,6 +475,10 @@ SQLvalidatePipeline(void){
 			error++;
 		}
 #endif
+	if (mitosis == TRUE && mergetable == FALSE) {
+		showException(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
+		error++;
+	}
 
 	if ( --i >= 0 && optimizers[i] && strcmp(optimizers[i],"multiplex") ){
 		showException(SQL,"optimizer"," 'multiplex' should be the last\n");
