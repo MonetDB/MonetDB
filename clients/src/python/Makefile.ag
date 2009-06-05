@@ -17,5 +17,5 @@
 
 SUBDIRS = monetdb test
 
-EXTRA_DIST = setup.py COPYRIGHT README TODO
+EXTRA_DIST = setup.py COPYRIGHT README.rst TODO
 EXTRA_DIST_DIR = examples debian
