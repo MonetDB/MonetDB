@@ -298,7 +298,7 @@ scanner_init_keywords(void)
 	keywords_insert("LEVEL", LEVEL);
 	keywords_insert("UNCOMMITTED", UNCOMMITTED);
 	keywords_insert("COMMITTED", COMMITTED);
-	keywords_insert("REPEATABLE", REPEATABLE);
+	keywords_insert("REPEATABLE", sqlREPEATABLE);
 	keywords_insert("SERIALIZABLE", SERIALIZABLE);
 	keywords_insert("DIAGNOSTICS", DIAGNOSTICS);
 	keywords_insert("SIZE", sqlSIZE);
