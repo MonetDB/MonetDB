@@ -104,8 +104,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void) cntxt;
 #endif
 
-	clrDeclarations(mb);
-	chkDeclarations(mb);
 	limit= mb->stop;
 	slimit = mb->ssize;
 	newMalBlkStmt(mb, mb->ssize); /* a new statement stack */
@@ -134,28 +132,30 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			freeInstruction(p);
 			actions++;
 		} else
-		if (se || hasSideEffects(p, FALSE) || !isLinearFlow(p) || isProcedure(mb,p) )
+		if (se || hasSideEffects(p, FALSE) || !isLinearFlow(p) || 
+				isProcedure(mb,p)  || 
+				p->barrier /* ==side-effect */)
 			pushInstruction(mb,p);
 		else {
 			freeInstruction(p);
 			actions++;
 		}
 	}
-	/* we may have uncovered new use-less operations */
-	if (actions) 
-		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
+	for(; i<slimit; i++)
+		if( old[i])
+			freeInstruction(old[i]);
 	OPTDEBUG
 	if ( actions)
 		stream_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n",
 			actions);
+	GDKfree(old);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
 	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
 #endif
-	for(; i<slimit; i++)
-		if( old[i])
-			freeInstruction(old[i]);
-	GDKfree(old);
+	/* we may have uncovered new use-less operations */
+	if (actions) 
+		actions += OPTdeadcodeImplementation(cntxt,mb, stk, pci);
 	return actions;
 }
 @include optimizerWrapper.mx

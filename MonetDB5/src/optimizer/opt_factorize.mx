@@ -231,8 +231,8 @@ OPTfactorizeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* finalize the factory */
 	if (returnseen == 0) {
-		p = newInstruction(NULL,YIELDsymbol);
 		p= pushReturn(mb, p, findVariable(mb, getFcnName(mb)));
+		p->barrier = YIELDsymbol;
 		mb->stmt[k++] = p;
 	}
 	p = newInstruction(NULL,REDOsymbol);

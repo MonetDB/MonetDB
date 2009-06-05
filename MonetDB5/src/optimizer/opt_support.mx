@@ -659,6 +659,9 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	optimizerInit();
 	/* assume the type and flow have been checked already */
 	do {
+		/* any errors should abort the optimizer */
+		if (mb->errors)
+			break;
 		qot = 0;
 		for (pc = 0; pc < mb->stop ; pc++) {
 			p = getInstrPtr(mb, pc);
