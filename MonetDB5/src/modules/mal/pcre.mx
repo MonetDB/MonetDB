@@ -1112,10 +1112,17 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 
 	if (!res) {
 		BAT *strs = BATdescriptor(*bid);
-		BATiter strsi = bat_iterator(strs);
-		BAT *r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
-		bit *br = (bit*)Tloc(r, BUNfirst(r));
+		BATiter strsi;
+		BAT *r;
+		bit *br;
 		BUN p, q, i = 0;
+
+		if ( strs == NULL)
+			throw(MAL,"pcre.like", OPERATION_FAILED);
+
+		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
+		br = (bit*)Tloc(r, BUNfirst(r));
+		strsi = bat_iterator(strs);
 
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BATloop(strs, p, q) {
@@ -1191,7 +1198,7 @@ str
 PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 {
 	char *ppat = NULL;
-	str r; 
+	str r = MAL_SUCCEED;
 	int nr;
 
 	/* no escape, try if a simple list of keywords works */
@@ -1201,6 +1208,8 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 		BAT *bp = BATdescriptor(*b);
 		BAT *res = NULL;
 
+		if ( bp == NULL)
+			throw(MAL,"pcre.like", OPERATION_FAILED);
 		if (us) res = re_uselect(re, bp);
 		else res =  re_select(re, bp);
 			
@@ -1218,6 +1227,8 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 			BAT *bp = BATdescriptor(*b);
 			BAT *res = NULL;
 			
+			if ( bp == NULL)
+				throw(MAL,"pcre.like", OPERATION_FAILED);
 			if (us) res = BATuselect(bp, *pat, *pat);
 			else res = BATselect(bp, *pat, *pat);
 			
