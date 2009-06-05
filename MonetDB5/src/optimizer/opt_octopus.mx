@@ -204,9 +204,9 @@ OCTexitcode(MalBlkPtr mb, int conn,int varid){
 }
 
 static MalBlkPtr 
-OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr pci, int start, int idx, int v2){
+OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr sig, InstrPtr pci, int start, int idx, int v2){
 	MalBlkPtr tm = NULL;
-	InstrPtr p = NULL, q, anchor = NULL;
+	InstrPtr p = NULL, q;
 	int varid= pci->argv[idx],i,j,top=0, fnd,tbd;
 	char buf[BUFSIZ];
 	InstrPtr *list = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->ssize);
@@ -292,7 +292,8 @@ foundit:
 	q= pushStr(mb,q,name);
 	q= pushArgument(mb,q,v2);
 	needed[varid]= 1;
-	anchor = q;
+	for (j= sig->retc; j <  sig->argc; j++)
+		q = pushArgument(mb,q,getArg(sig, j));
 	getArg(pci,idx) = getArg(q,0);
 
 	/* create the tentacle procedure */
@@ -300,9 +301,9 @@ foundit:
 	tm= s->def;
 	tm->keephistory= mb->keephistory;
 	p= getInstrPtr(tm,0);
-	for(i=anchor->retc+2; i<anchor->argc; i++){
-		j= cloneVariable(tm,mb,getArg(anchor,i));
-		p= pushArgument(tm,p,j);
+	for(i=q->retc+2; i<q->argc; i++){
+		alias[getArg(q,i)] = cloneVariable(tm,mb,getArg(q,i));
+		p= pushArgument(tm,p, alias[getArg(q,i)]);
 	}
 	setVarType(tm,getArg(p,0),getVarType(mb,varid));
 
@@ -352,8 +353,8 @@ foundit:
 static int
 OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr q, p, *old;
-	int last=0, i, j, limit, actions=0;
+	InstrPtr q, p, sig, *old;
+	int last=0, i, j, limit, actions=0, arg[1024];
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
 	Symbol s2;
@@ -397,6 +398,7 @@ when scheduled correctly, would not lead to duplicate work.
 			target = i;
 	}
 
+	sig= old[0];
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 		if ( p == pci){
@@ -421,6 +423,11 @@ when scheduled correctly, would not lead to duplicate work.
 			q= pushArgument(sm,q,dbvar);
 			q= pushArgument(sm,q,qvar);
 			q= pushArgument(sm,q,version);
+			/* just add all arguments for the moment */
+			for (j=sig->retc; j < sig->argc; j++){
+				int aj= cloneVariable(sm,mb,getArg(sig,j));
+				q = pushArgument(sm,q,aj);
+			}
 
 			/* create the tentacle, modifying the current plan */
 			/* initialize the result variables */
@@ -438,7 +445,7 @@ when scheduled correctly, would not lead to duplicate work.
 			q->barrier = BARRIERsymbol;
 
 			for ( j= p->retc; j<p->argc; j++)
-				tentacle[tn++] =  OPTtentacle(cntxt,mb,p,mb->stop-1,j,v2);
+				tentacle[tn++] =  OPTtentacle(cntxt,mb,sig,p,mb->stop-1,j,v2);
 
 			pushInstruction(mb,p);
 
@@ -465,17 +472,13 @@ when scheduled correctly, would not lead to duplicate work.
 			version= getArg(q,0);
 
 			/* get addition arguments needed in a tentacle */
-			p= getInstrPtr(tentacle[0],0);
-			for (j=p->retc+1; j< p->argc; j++){
-				snprintf(buf,BUFSIZ,"a_%d",j);
-				k= newVariable(sm, GDKstrdup(buf),getArgType(mb,p,j));
-				pushArgument(sm,getInstrPtr(sm,0),k);
-				l= newTmpVariable(sm,getArgType(mb,p,j));
+			assert(sig->argc <1024);
+			for (j= sig->retc; j<  sig->argc; j++){
+				l= newTmpVariable(sm,TYPE_str);
 				q= newFcnCall(sm,remoteRef,putRef);
-				getArg(q,0)= l;
-				pushArgument(sm,q, getArg(getInstrPtr(sm,0),1));
-				pushArgument(sm,q,k);
-				setVarUDFtype(sm,k);
+				arg[j]= getArg(q,0)= l;
+				pushArgument(sm,q, conn);
+				pushArgument(sm,q,findVariable(sm,getArgName(mb,sig,j)));
 			}
 
 			/* k:= remote.put(conn,kvar) */
@@ -493,6 +496,9 @@ when scheduled correctly, would not lead to duplicate work.
 			q= pushArgument(sm,q,qvar);
 			q= pushArgument(sm,q,version);
 			/* deal with all arguments !*/
+			for (j=sig->retc; j < sig->argc; j++)
+				q = pushArgument(sm,q,arg[j]);
+
 
 			/* l:=remote.get(conn,k) */
 			q= newFcnCall(sm,remoteRef,getRef);
