@@ -800,6 +800,23 @@ function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int):b
 	return bind:= b;
 end octopus.bind_dbat;
 
+function octopus.bind_idxbat(sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:any_1];
+	b := sql.bind_idxbat(sch,tab,index,access);
+	return bind:= b;
+end octopus.bind_idxbat;
+
+function octopus.bind_idxbat(conn:str,sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
+	s := remote.put(conn,sch);
+	t := remote.put(conn,tab);
+	i := remote.put(conn,index);
+	a := remote.put(conn,access);
+	bh:= remote.put(conn,bind_idxbat);
+	bh:= remote.exec(conn,"sql","bind_idxbat",s,t,i,a);
+	b:bat[:oid,:oid]:= remote.get(conn,bh);
+	
+	return bind:= b;
+end octopus.bind_idxbat;
+
 pattern rdfshred (location:str, gname:str)
 address SQLrdfShred
 comment "Procedure that wraps around the shredder of the rdf module in MAL. 
