@@ -36,14 +36,14 @@ process, started on the fly when necessary.
 When started,
 .B merovingian
 runs in the background, sending log messages to
-.I /var/log/merovingian.log
-, until being sent a stop, terminate or interrupt signal.  All arguments
+.IR /var/log/merovingian.log ,
+until being sent a stop, terminate or interrupt signal.  All arguments
 given when starting
 .B merovingian
 are considered to be databases to be pre-started.  Pre-started databases
 are started as part of the startup of
-.B merovingian
-, which means their startup is not delayed until the first client
+.BR merovingian ,
+which means their startup is not delayed until the first client
 requests for them.
 .P
 .B merovingian
@@ -130,7 +130,7 @@ default.
 has two ways in which it can "attach" a connecting client to the target
 database.  The first method uses a redirect to the responsible mserver
 process, the second method proxies the client to the mserver over
-.B merovingian.
+.BR merovingian .
 While the first is more efficient, it requires the connecting client
 to be able to connect to the mserver.  In many settings this may be
 undesirable or even impossible, since a wide range of open ports are
@@ -158,9 +158,40 @@ The neighbour discovery service uses UDP broadcasting to announce
 itself.  For this
 .B merovingian
 listens to the given port, which defaults to the setting of
-.B mero_port.
+.BR mero_port .
 If the port is set to 0, the neighbour discovery service is disabled and
 hence no announcements will be made, nor received.
+.SH "REMOTE DATABASES"
+The neighbour discovery capabilities of
+.B merovingian
+allow a user to contact a remote database transparently, as if it were a
+local database.  By default, all local databases are announced in the
+network, such that neighbours can pick them up to make them available
+for their local users.  This feature can be disabled globally, or on
+database level.  For the latter, the
+.BR monetdb (1)
+utility can be used to change the share property of a database.
+.P
+While neighbour discovery in itself is sufficient to locate a database
+in a cluster, it is limited in expressiveness.  For instance, database
+names are assumed to be unique throughout the entire system.  This means
+local databases overshadow remote ones, and duplicate remote entries
+cannot be distinguished.  To compensate for this,
+.B merovingian
+adds a
+.I tag
+to each database that is being shared.  This tag is sent in addition to
+the database name, and only understood by other
+.BR merovingian s.
+.\".P
+.\"Tags are arbitrary ASCII-strings that follow the rules of the path
+.\"component in an URI.  The / character is hence a separator that can be
+.\"used to structure a tag which is useful given that
+.\".B merovingian
+.\"allows common path globbing using * on these tags.
+.\".P
+.\"dbname/octopus/nl/cwi
+.\"
 .SH SIGNALS
 .B merovingian
 acts upon a number of signals as is common for a daemon.
@@ -176,7 +207,7 @@ When this signal is received by
 it will reopen the logfiles as pointed to by
 .B mero_msglog
 and
-.B mero_errlog\.
+.BR mero_errlog .
 When these two are unset or point to a file attached to a terminal,
 .B merovingian
 will not reopen the associated filedescriptor.
