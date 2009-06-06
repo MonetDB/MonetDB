@@ -89,9 +89,6 @@ public class JdbcClient {
 				"none given.");
 
 		// extended options
-		copts.addOption(null, "Xblksize", CmdLineOpts.CAR_ONE, null,
-				"Specifies the blocksize when using block mode, given " +
-				"in bytes.");
 		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null,
 				"The output mode when dumping.  Default is sql, xml may " +
 				"be used for an experimental XML output.");
@@ -224,10 +221,7 @@ copts.produceHelpMessage()
 
 		// build the extra arguments of the JDBC connect string
 		String attr = "?";
-		CmdLineOpts.OptionContainer oc = copts.getOption("Xblksize");
-		if (oc.isPresent())
-			attr += "blockmode_blocksize=" + oc.getArgument() + "&";
-		oc = copts.getOption("language");
+		CmdLineOpts.OptionContainer oc = copts.getOption("language");
 		String lang = oc.getArgument();
 		if (oc.isPresent())
 			attr += "language=" + lang + "&";
