@@ -1592,6 +1592,8 @@ discoveryRunner(void *d)
 	int forceannc = 0;
 	sabdb *orig;
 	sabdb *stats;
+	confkeyval *ckv;
+	confkeyval *kv;
 	err e;
 	remotedb rdb;
 	remotedb prv;
@@ -1638,6 +1640,8 @@ discoveryRunner(void *d)
 		fprintf(stderr, "HELO message: error while sending "
 				"message: %s\n", strerror(errno));
 
+	ckv = getDefaultProps();
+
 	/* main loop */
 	while (_keepListening == 1) {
 		now = time(NULL);
@@ -1656,22 +1660,24 @@ discoveryRunner(void *d)
 				return;
 			}
 
-			orig = stats;
-			while (stats != NULL) {
-				/* craft ANNC messages for each db */
-				snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
-						stats->dbname,
-						lhost,
-						ntohs(((struct sockaddr_in *)&local)->sin_port),
-						discoveryttl + 60);
+			for (orig = stats; stats != NULL; stats = stats->next) {
+				readProps(ckv, stats->path);
+				kv = findConfKey(ckv, "shared");
+				if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
+					/* craft ANNC messages for each db */
+					snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
+							stats->dbname,
+							lhost,
+							ntohs(((struct sockaddr_in *)&local)->sin_port),
+							discoveryttl + 60);
 
-				c = strlen(buf) + 1;
-				if (sendto(bcs, buf, c, 0,
-							(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-					fprintf(stderr, "ANNC message: error while sending "
-							"message: %s\n", strerror(errno));
-
-				stats = stats->next;
+					c = strlen(buf) + 1;
+					if (sendto(bcs, buf, c, 0,
+								(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
+						fprintf(stderr, "ANNC message: error while sending "
+								"message: %s\n", strerror(errno));
+				}
+				freeConfFile(ckv);
 			}
 
 			if (orig != NULL)
@@ -1882,6 +1888,7 @@ discoveryRunner(void *d)
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
 
+	GDKfree(ckv); /* can make ckv static and reuse it all the time */
 	close(bcs);
 }
 
