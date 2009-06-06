@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "SEPTEMBER 2008" Application "MonetDB Applications"
+.TH MONETDB 1 "JUNE 2009" Application "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -51,8 +51,8 @@ maintenance can only be connected to by an administrator account
 .I monetdb
 account).  A database which is under maintenance is not started
 automatically by
-.BR merovingian (1)
-, the MonetDB Database Server, when clients request for it.  Use the
+.BR merovingian (1),
+the MonetDB Database Server, when clients request for it.  Use the
 .B release
 command to bring the database back for normal usage.  To start a
 database which is under maintenance for administrator access, the
@@ -136,6 +136,37 @@ the return code of
 .BR monetdb (1)
 indicates failure if one of the databases had a failure, even though
 other databases were successful.
+.IP "get <all | property[,property]> [database ...]"
+Prints the requested properties, or all known properties, for the given
+databases.  For each property its source and value are printed.  Source
+indicates where the current value comes from, e.g. the configuration
+file, or a local override.
+.IP "set property=value database [database ...]"
+Sets property to value for the given databases.  For a list of
+properties, run
+.BR "monetdb get all" .
+Most properties require the database to be stopped when set.  The
+following properties have special values.
+.IP "forward=<redirect|proxy>"
+When set to redirect, merovingian tells each connecting client to make a
+new connection directly to the database the client looks for.  This
+requires that the separate mserver5 processes are reachable by the ports
+they use.  Since this may not be the case due to a firewall, when set to
+proxy, merovingian tunnels the client to the right database.
+.IP "share=<yes|no|tag>"
+Defines if the database is being announced to other merovingians or not.
+If not set to
+.I "yes"
+or
+.I "no
+it is assumed the database can be announced, using the given string as
+.IR tag .
+For information about the tag format, see section REMOTE DATABASES in the
+.BR merovingian (1)
+manpage.
+.IP "inherit property database [database ...]"
+Like set, but unsets the database-local value, and reverts to inherit
+from the default again.
 .IP discover
 Returns a list of remote databases that were discovered by
 .BR merovingian (1).
@@ -157,7 +188,7 @@ utility returns exit code
 .B 0
 if it successfully performed the requested command.  An error caused by
 user input or database state is indicated by exit code
-.B 1.
+.BR 1 .
 If an internal error in the utility occurs, exit code
 .B 2
 is returned.
