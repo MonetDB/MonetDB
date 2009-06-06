@@ -1,4 +1,3 @@
-start transaction;
 -- some dumb table
 create table lim_prob(dir varchar(30), test varchar(30));
 -- some stupid values
@@ -14,4 +13,4 @@ select test from lim_prob order by dir limit 10;
 select dir from lim_prob order by test limit 10;
 select dir from lim_prob order by dir, test limit 10;
 -- clean up
-rollback;
+drop table lim_prob;
