@@ -130,6 +130,14 @@ re-execution of the bind().
 The tentacles received from the octopus should be ensured
 not to clash with those already known. Therefore, we simply
 tag them by orginating site.
+
+[Caveats]
+Updates on the persistent tables are not handled yet. They should
+lead to an upcall to the head for inclusion. Any update invalidates
+the request to distributed processing.
+In the same line, multi-statement SQL transactions including
+updates should be ignored. Perhaps we should limit it to
+autocommit situations only. [todo]
 @{
 @mal
 module octopus; 
@@ -358,7 +366,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
 	Symbol s2;
-	int target=0;
+	int target=0, update=0;
 	int version,v2;
 	int k,l;
 	char buf[BUFSIZ];
@@ -389,14 +397,21 @@ when scheduled correctly, would not lead to duplicate work.
 	limit = mb->stop;
 	old = mb->stmt;
 
-	newMalBlkStmt(mb, mb->ssize);
-	pushInstruction(mb, old[0]);
-
 	for (i = 1; i < limit; i++){
 		p = old[i];
 		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) )
 			target = i;
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)== appendRef) )
+			update = 1;
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)== deleteRef) )
+			update = 1;
 	}
+	/* we do not  support yet update operations in the octopus */
+	if ( update )
+		return 0;
+
+	newMalBlkStmt(mb, mb->ssize);
+	pushInstruction(mb, old[0]);
 
 	sig= old[0];
 	for (i = 1; i < limit; i++) {
