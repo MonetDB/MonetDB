@@ -43,8 +43,8 @@ Over..
 [ 1	]
 [ 1	]
 #-- see if everything is in the table
-#SELECT * FROM like_test;
-% sys.like_test # table_name
+#SELECT * FROM liketable;
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 18 # length
@@ -60,48 +60,48 @@ Over..
 [ "123456123456"	]
 [ "123454321"	]
 #-- check for a string that starts with a 't' and is two chars long
-#SELECT * FROM like_test WHERE str LIKE 't_';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE 't_';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 2 # length
 [ "ts"	]
 #-- simple, this should only match the first interesting value
-#SELECT * FROM like_test WHERE str LIKE '%math%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%math%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 17 # length
 [ "a math assignment"	]
 #-- more complicated; find values that match the given patterns
-#SELECT * FROM like_test WHERE str LIKE 'a%math%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE 'a%math%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 17 # length
 [ "a math assignment"	]
-#SELECT * FROM like_test WHERE str LIKE 'a_math%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE 'a_math%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 17 # length
 [ "a math assignment"	]
-#SELECT * FROM like_test WHERE str LIKE '%m_th_a%t';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%m_th_a%t';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 17 # length
 [ "a math assignment"	]
-#SELECT * FROM like_test WHERE str LIKE '%at%_!';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%at%_!';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 18 # length
 [ "pathfinder is fun!"	]
 #-- exhaustive?
 #-- head match
-#SELECT * FROM like_test WHERE str LIKE '1%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '1%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -110,20 +110,20 @@ Over..
 [ "199993456123"	]
 [ "123456123456"	]
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '3%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '3%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- tail match
-#SELECT * FROM like_test WHERE str LIKE '%1';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%1';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 9 # length
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '%3';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%3';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -131,33 +131,33 @@ Over..
 [ "123123456123"	]
 [ "199993456123"	]
 #-- head/tail match
-#SELECT * FROM like_test WHERE str LIKE '1%1';	
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '1%1';	
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 9 # length
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '1%3';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '1%3';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
 [ "123123123"	]
 [ "123123456123"	]
 [ "199993456123"	]
-#SELECT * FROM like_test WHERE str LIKE '3%1';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '3%1';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
-#SELECT * FROM like_test WHERE str LIKE '3%3';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '3%3';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- body match
-#SELECT * FROM like_test WHERE str LIKE '%1%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%1%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -166,8 +166,8 @@ Over..
 [ "199993456123"	]
 [ "123456123456"	]
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '%12%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%12%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -176,20 +176,20 @@ Over..
 [ "199993456123"	]
 [ "123456123456"	]
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '%13%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%13%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
-#SELECT * FROM like_test WHERE str LIKE '%454%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%454%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 9 # length
 [ "123454321"	]
 #-- float match
-#SELECT * FROM like_test WHERE str LIKE '%2%2%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%2%2%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -198,20 +198,20 @@ Over..
 [ "123456123456"	]
 [ "123454321"	]
 #-- deeper insights, fairly specific matches
-#SELECT * FROM like_test WHERE str LIKE '_2_3%123';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '_2_3%123';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
-#SELECT * FROM like_test WHERE str LIKE '_123%3';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '_123%3';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- attention: this one should match on 123123456123, it is tricky because
 #--            if you match the first 1, it won't match...
-#SELECT * FROM like_test WHERE str LIKE '%1_3456%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%1_3456%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -219,14 +219,14 @@ Over..
 [ "123456123456"	]
 #-- attention: this one shows why the above like expression returns the
 #--            correct answer... the _ is treated as {1,*} not {1}
-#SELECT * FROM like_test WHERE str LIKE '_3456%';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '_3456%';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- another simple way to give the like processor a hard time
-#SELECT * FROM like_test WHERE str LIKE '%23';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%23';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 12 # length
@@ -234,8 +234,8 @@ Over..
 [ "123123456123"	]
 [ "199993456123"	]
 #-- test the ESCAPE statement
-#SELECT * FROM like_test WHERE str LIKE '%' ESCAPE '?';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '%' ESCAPE '?';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 18 # length
@@ -250,25 +250,25 @@ Over..
 [ "199993456123"	]
 [ "123456123456"	]
 [ "123454321"	]
-#SELECT * FROM like_test WHERE str LIKE '?%' ESCAPE '?';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '?%' ESCAPE '?';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- test with an ESCAPE character that has a special meaning in a reg exp
-#SELECT * FROM like_test WHERE str LIKE '.%' ESCAPE '.';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '.%' ESCAPE '.';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
-#SELECT * FROM like_test WHERE str LIKE '..' ESCAPE '.';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE '..' ESCAPE '.';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 0 # length
 #-- test whether escaping the ESCAPE character actually works
-#SELECT * FROM like_test WHERE str LIKE 'tt' ESCAPE 't';
-% sys.like_test # table_name
+#SELECT * FROM liketable WHERE str LIKE 'tt' ESCAPE 't';
+% sys.liketable # table_name
 % str # name
 % varchar # type
 % 1 # length
