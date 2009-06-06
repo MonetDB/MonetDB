@@ -21,32 +21,10 @@ Ready.
 
 Over..
 
-# 23:14:19 >  
-# 23:14:19 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=36919 
-# 23:14:19 >  
+# 18:11:26 >  
+# 18:11:26 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34642 
+# 18:11:26 >  
 
-function user.s1_1():void;
-    _4 := nil:bat[:oid,:int];
-    _24:bat[:oid,:int]  := nil:BAT;
-barrier (_25,version) := scheduler.octopus(10);
-    _28:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_67",version);
-    _31:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_68",version);
-    _33:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_69",version);
-    _35:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_70",version);
-    _37:bat[:oid,:int]  := octopus.exec_s1_1("tbd","tentacle_s1_1_71",version);
-    _4 := mat.pack(_28,_31,_33,_35,_37);
-    _28:bat[:oid,:int]  := nil:BAT;
-    _31:bat[:oid,:int]  := nil:BAT;
-    _33:bat[:oid,:int]  := nil:BAT;
-    _35:bat[:oid,:int]  := nil:BAT;
-    _37:bat[:oid,:int]  := nil:BAT;
-exit (_25,version);
-    _5 := sql.resultSet(1,1,_4);
-    sql.rsColumn(_5,"sys.squida","bid","int",32,0,_4);
-    _4 := nil:BAT;
-    _10 := io.stdout();
-    sql.exportResult(_10,_5);
-end s1_1;
 % sys.squida # table_name
 % bid # name
 % int # type
