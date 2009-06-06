@@ -145,20 +145,16 @@ command_help(int argc, char *argv[])
 		printf("Options:\n");
 		printf("  -a  kill all known databases\n");
 	} else if (strcmp(argv[1], "set") == 0) {
-		printf("Usage: monetdb set [-a] property=value database [database ...]\n");
+		printf("Usage: monetdb set property=value database [database ...]\n");
 		printf("  sets property to value for the given database\n");
-		printf("Options:\n");
-		printf("  -a  apply all known databases\n");
 	} else if (strcmp(argv[1], "get") == 0) {
 		printf("Usage: monetdb get <\"all\" | property,...> [database ...]\n");
 		printf("  gets value for property for the given database, or\n");
 		printf("  retrieves all known properties for the given database\n");
 	} else if (strcmp(argv[1], "inherit") == 0) {
-		printf("Usage: monetdb inherit [-a] property database [database ...]\n");
+		printf("Usage: monetdb inherit property database [database ...]\n");
 		printf("  unsets property, reverting to its inherited value from\n");
 		printf("  the default configuration for the given database\n");
-		printf("Options:\n");
-		printf("  -a  apply all known databases\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
 		printf("Usage: monetdb discover\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
@@ -824,8 +820,137 @@ typedef enum {
 static void
 command_set(int argc, char *argv[], meroset type)
 {
-	(void)type;
-	printf("too much work for %d, %s\n", argc, argv[0]);
+	char *p;
+	char *property = NULL, *value = NULL;
+	err e;
+	int i;
+	int state = 0;
+	sabdb *orig, *stats, *w;
+	confkeyval *kv, *props = getDefaultProps();
+
+	if (argc >= 1 && argc <= 2) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 0) {
+		exit(2);
+	}
+
+	/* time to collect some option flags */
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] == '-') {
+			for (p = argv[i] + 1; *p != '\0'; p++) {
+				switch (*p) {
+					case '-':
+						if (p[1] == '\0') {
+							i = argc;
+							break;
+						}
+					default:
+						fprintf(stderr, "%s: unknown option: -%c\n",
+								argv[0], *p);
+						command_help(2, &argv[-1]);
+						exit(1);
+					break;
+				}
+			}
+			/* make this option no longer available, for easy use
+			 * lateron */
+			argv[i] = NULL;
+		} else if (property == NULL) {
+			/* first non-option is property, rest is database */
+			property = argv[i];
+			argv[i] = NULL;
+			if (type == SET) {
+				if ((p = strchr(property, '=')) == NULL) {
+					fprintf(stderr, "set: need property=value\n");
+					command_help(2, &argv[-1]);
+					exit(1);
+				}
+				*p++ = '\0';
+				value = p;
+			}
+		}
+	}
+
+	if (property == NULL) {
+		fprintf(stderr, "%s: need a property argument\n", argv[0]);
+		command_help(2, &argv[0]);
+		exit(1);
+	}
+
+	w = NULL;
+	orig = NULL;
+	for (i = 1; i < argc; i++) {
+		if (argv[i] != NULL) {
+			if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
+				fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
+				GDKfree(e);
+				exit(2);
+			}
+
+			if (stats == NULL) {
+				fprintf(stderr, "%s: no such database: %s\n",
+						argv[0], argv[i]);
+				argv[i] = NULL;
+			} else {
+				if (stats->state == SABdbRunning) {
+					fprintf(stderr, "%s: database '%s' is still running, "
+							"stop database first\n", argv[0], stats->dbname);
+					SABAOTHfreeStatus(&stats);
+					state |= 1;
+					continue;
+				}
+				if (orig == NULL) {
+					orig = stats;
+					w = stats;
+				} else {
+					w = w->next = stats;
+				}
+			}
+		}
+	}
+
+	for (stats = orig; stats != NULL; stats = stats->next) {
+		/* special virtual case */
+		if (strcmp(property, "name") == 0) {
+			if (type == INHERIT) {
+				fprintf(stderr, "inherit: cannot default to a database name\n");
+				state |= 1;
+				continue;
+			}
+			fprintf(stderr, "set: renaming a database is not yet implemented, sorry\n");
+			state |= 1;
+			continue;
+		} else if (strcmp(property, "logdir") == 0) {
+			fprintf(stderr, "%s: changing the logdir location is not yet implemented, sorry\n", argv[0]);
+			state |= 1;
+			continue;
+		} else {
+			readProps(props, stats->path);
+			kv = findConfKey(props, property);
+			if (kv == NULL) {
+				fprintf(stderr, "%s: no such property: %s\n", argv[0], property);
+				state |= 1;
+				continue;
+			}
+			if (kv->val != NULL)
+				GDKfree(kv->val);
+			if (type == SET) {
+				kv->val = GDKstrdup(value);
+			} else /* INHERIT */ {
+				kv->val = NULL;
+			}
+
+			writeProps(props, stats->path);
+			freeConfFile(props);
+		}
+	}
+
+	if (orig != NULL)
+		SABAOTHfreeStatus(&orig);
+	GDKfree(props);
+	exit(state);
 }
 
 static void
@@ -876,7 +1001,8 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 			property = argv[i];
 			argv[i] = NULL;
 			if (strcmp(property, "all") == 0) {
-				/* die hard leak */
+				/* die hard leak (can't use constant, strtok modifies
+				 * (and hence crashes)) */
 				property = GDKstrdup("name,logdir,forward,shared");
 			}
 		} else {
