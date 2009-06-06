@@ -2206,8 +2206,11 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		break;
 
 	case op_topn: 
-		if (proj)
+		if (proj) {
 			rel = rel ->l;
+			rel_mark_used(sql, rel, proj);
+			break;
+		}
 	case op_project:
 	case op_groupby: 
 		if (proj && rel->l) {
