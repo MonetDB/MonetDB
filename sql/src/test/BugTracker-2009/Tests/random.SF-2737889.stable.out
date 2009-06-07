@@ -1,0 +1,70 @@
+stdout of test 'random.SF-2737889` in directory 'src/test/BugTracker-2009` itself:
+
+
+# 21:56:54 >  
+# 21:56:54 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=38363 --set xrpc_port=43594 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 21:56:54 >  
+
+# MonetDB server v5.13.0, based on kernel v1.31.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38363/
+# MonetDB/SQL module v2.31.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 21:56:54 >  
+# 21:56:54 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38363 
+# 21:56:54 >  
+
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+% sys.nr,	. # table_name
+% nr,	rand_single_value # name
+% int,	int # type
+% 2,	10 # length
+[ 1,	890795300	]
+[ 2,	1724091078	]
+[ 3,	1482601294	]
+[ 4,	406279626	]
+[ 5,	1411656454	]
+[ 6,	1394184644	]
+[ 7,	1929686496	]
+[ 8,	1648390206	]
+[ 9,	1763793162	]
+[ 10,	2145984103	]
+% sys.nr,	. # table_name
+% nr,	rnd # name
+% int,	int # type
+% 2,	10 # length
+[ 1,	1860954849	]
+[ 2,	318673894	]
+[ 3,	637459372	]
+[ 4,	1939875934	]
+[ 5,	1992484581	]
+[ 6,	900558103	]
+[ 7,	92365852	]
+[ 8,	1775114318	]
+[ 9,	1134428123	]
+[ 10,	2074403859	]
+
+# 21:56:54 >  
+# 21:56:54 >  Done.
+# 21:56:54 >  
+
