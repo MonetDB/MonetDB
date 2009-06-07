@@ -10,10 +10,6 @@ stderr of test 'setoptimizer` in directory 'src/test` itself:
 # 00:41:14 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=koala --port=33505 
 # 00:41:14 >  
 
-MAPI  = monetdb@alf:33209
-QUERY = select optimizer;
-ERROR = !SQLException:optimizer: 'deadcode' should be used at least once
-        !SQLException:optimizer: pipeline set to 'inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex'
 
 # 00:41:15 >  
 # 00:41:15 >  Done.
