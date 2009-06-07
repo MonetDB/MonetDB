@@ -475,7 +475,7 @@ SQLvalidatePipeline(void){
 			error++;
 		}
 #endif
-	if (mitosis == TRUE && mergetable == FALSE) {
+	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
 		showException(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
 		error++;
 	}
@@ -484,7 +484,7 @@ SQLvalidatePipeline(void){
 		showException(SQL,"optimizer"," 'multiplex' should be the last\n");
 		error++;
 	}
-	if (deadcode == FALSE ){
+	if (optimizers[0] && deadcode == FALSE ){
 		showException(SQL,"optimizer"," 'deadcode' should be used at least once\n");
 		error++;
 	}

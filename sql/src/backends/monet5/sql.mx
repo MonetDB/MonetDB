@@ -68,16 +68,6 @@ comment "Generate an exception when b!=0";
 pattern assert{unsafe}(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
-@-
-@{
-command startQuery(s:str):void
-address SQLstartQuery
-comment "Initialize tracing query performance";
-
-command exitQuery(s:str):void
-address SQLexitQuery
-comment "Finalize tracing query performance";
-@}
 @- The SQL multi-version catalog
 This module also contains the definitions for managing an SQL database schema in
 version 5.  It is an adaptation of the original V4.3 code base. 
@@ -190,7 +180,6 @@ comment "Bind the column bat into the focus ";
 
 @-
 The Monet 5 code generator uses several SQL specific wrapper functions.
-They are not present in V4
 @mal
 pattern resultSet{unsafe}( nr_cols:int, sep:str, rsep:str, ssep:str, ns:str, order:any_1 ) :int 
 address mvc_result_file_wrap
@@ -283,9 +272,9 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
-pattern sql.emptyset()
-address SQLemptyset
-comment "Symbolic evaluation of empty BAT expressions";
+pattern autoCommit{unsafe}()
+address SQLautoCommitFlag
+comment "Identifies autocommit transaction policy applies";
 
 function times(elaps:int,inblock:lng, oublock:lng):void;
 	io.printf("#times %d ms",elaps);
@@ -914,6 +903,7 @@ extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int a
 
 sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLautoCommitFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1290,6 +1280,17 @@ SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	*ret = 0;
 	mvc_rollback(m, 0, NULL); /* keep the changes */
+	return MAL_SUCCEED;
+}
+
+str
+SQLautoCommitFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	/* just a marker for the optimizers */
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	return MAL_SUCCEED;
 }
 

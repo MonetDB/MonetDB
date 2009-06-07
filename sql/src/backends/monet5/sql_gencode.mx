@@ -1869,6 +1869,9 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	mvc *c = be->mvc;
 	InstrPtr q;
 
+	/* announce the transaction mode */
+	if ( c->session->auto_commit)
+		newFcnCall(mb,"sql","autoCommit");
 	(void)_dumpstmt(be, mb, s);
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
@@ -2136,6 +2139,9 @@ backend_create_func(backend *be, sql_func *f)
 			setVarUDFtype(curBlk,varid);
 		}
 	}
+	/* announce the transaction mode */
+	if ( m->session->auto_commit)
+		newFcnCall(curBlk,"sql","autoCommit");
 	backend_dumpstmt(be, curBlk, s);
 	stmt_destroy(s);
 	addQueryToCache(c);
