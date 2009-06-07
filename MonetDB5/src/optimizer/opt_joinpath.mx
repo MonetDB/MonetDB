@@ -409,6 +409,23 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 	BAT *b;
 	BUN estimate, e;
 	int i, j;
+	int voidvoid=0;
+
+	for (i = 0; i<top-1; i++)
+		voidvoid |= (joins[i]->ttype == TYPE_void && joins[i+1]->htype == TYPE_void);
+	if (voidvoid){
+		/* keep the original order */
+		for (j = 0; j<top-1; j++){
+			b = BATjoin(joins[j], joins[j + 1], BUN_NONE);
+			if (b==NULL)
+				return NULL;
+			BBPdecref(joins[j]->batCacheid, FALSE);
+			BBPdecref(joins[j+1]->batCacheid, FALSE);
+			joins[j+1] = b;
+		}
+		if (b && !(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+		return b;
+	} 
 
 	/* solve the join by pairing the smallest first */
 	while (top > 2) {

@@ -211,10 +211,13 @@ instructions
 					getArg(p,0), getArg(p,1), getTypeName(getArgType(mb,p,1)));
 #endif
 			} else {
+			/* if there is an error, we should postpone message handling,
+				as the actual error (eg. division by zero ) may not happen) */
 #ifdef DEBUG_OPT_CX
 				stream_printf(cntxt->fdout,"Evaluated %s\n",msg);
 #endif
 				GDKfree(msg);
+				mb->errors= 0;
 			}
 		} 
 	}
