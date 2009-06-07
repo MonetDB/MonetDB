@@ -366,7 +366,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
 	Symbol s2;
-	int target=0, update=0;
+	int target=0, update=0, autocommit=0;
 	int version,v2;
 	int k,l;
 	char buf[BUFSIZ];
@@ -399,15 +399,16 @@ when scheduled correctly, would not lead to duplicate work.
 
 	for (i = 1; i < limit; i++){
 		p = old[i];
-		if( (getModuleId(p)== matRef && getFunctionId(p)== packRef) )
+		
+		if( getModuleId(p)== matRef && getFunctionId(p)== packRef)
 			target = i;
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)== appendRef) )
-			update = 1;
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)== deleteRef) )
-			update = 1;
+		if( getModuleId(p)== sqlRef ){
+			update |= getFunctionId(p)== appendRef || getFunctionId(p)== deleteRef;
+			autocommit |=strcmp(getFunctionId(p),"autoCommit")==0;
+		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( update )
+	if ( update || autocommit==0 )
 		return 0;
 
 	newMalBlkStmt(mb, mb->ssize);
