@@ -52,7 +52,6 @@ Over..
 % wrd,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]
-[ 2,	NULL,	3	]
 [ 2,	5,	NULL	]
 
 # 08:02:34 >  
