@@ -28,7 +28,7 @@ Over..
 % .env # table_name
 % name # name
 % varchar # type
-% 17 # length
+% 16 # length
 [ "gdk_arch"	]
 [ "gdk_version"	]
 [ "prefix"	]
@@ -64,9 +64,6 @@ Over..
 [ "mero_msglog"	]
 [ "mero_errlog"	]
 [ "mero_pidfile"	]
-[ "mero_exittimeout"	]
-[ "mero_doproxy"	]
-[ "mero_discoveryttl"	]
 [ "mal_init"	]
 [ "sql_optimizer"	]
 [ "gdk_mem_pagebits"	]
