@@ -53,6 +53,19 @@ Over..
 % 1,	1,	1 # length
 [ 2,	1,	1	]
 [ 2,	5,	NULL	]
+% sys.way_nds,	sys.way_nds,	sys.way_nds # table_name
+% L6,	way,	idx # name
+% wrd,	int,	int # type
+% 1,	1,	1 # length
+[ 2,	1,	1	]
+[ 2,	NULL,	3	]
+% sys.way_nds,	sys.way_nds,	sys.way_nds # table_name
+% L10,	way,	idx # name
+% wrd,	int,	int # type
+% 1,	1,	1 # length
+[ 2,	1,	1	]
+[ 2,	NULL,	3	]
+[ 2,	5,	NULL	]
 
 # 08:02:34 >  
 # 08:02:34 >  Done.

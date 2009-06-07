@@ -17,6 +17,7 @@ insert into way_nds values(5,null,'abc');
 ALTER TABLE way_nds ADD CONSTRAINT pk_way_nds PRIMARY KEY (way, idx);
 
 select way,idx from way_nds;
-select count(way), way, idx from way_nds group by way, idx having
-count(way) > 1;
+select count(way), way, idx from way_nds group by way, idx having count(way) > 1;
+select count(idx), way, idx from way_nds group by way, idx having count(idx) > 1;
+select count(*), way, idx from way_nds group by way, idx having count(*) > 1;
 drop table way_nds;
