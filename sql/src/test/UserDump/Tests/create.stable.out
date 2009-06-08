@@ -60,6 +60,36 @@ create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);
 SET SCHEMA "sys";
 COMMIT;
+START TRANSACTION;
+SET SCHEMA "voc";
+CREATE TABLE "voc"."foo" (
+	"id" int NOT NULL,
+	"v" int,
+	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
+);
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
+CREATE TABLE "voc"."a" (
+	"id" int
+);
+create trigger a after insert on foo insert into a values (1);
+COMMIT;
+START TRANSACTION;
+SET SCHEMA "test";
+CREATE TABLE "test"."foo" (
+	"id" int NOT NULL,
+	"v" int,
+	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
+);
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
+CREATE TABLE "test"."a" (
+	"id" int
+);
+create trigger a after insert on foo insert into a values (1);
+create trigger test.x after insert on foo insert into a values (1);
+create trigger "test"."z" after insert on "foo" insert into a values (1);
+COMMIT;
 
 # 13:57:13 >  
 # 13:57:13 >  Done.
