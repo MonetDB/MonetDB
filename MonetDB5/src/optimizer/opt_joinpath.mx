@@ -408,7 +408,9 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 {
 	BAT *b;
 	BUN estimate, e;
-	int i, j;
+	int i, j, k;
+	int *postpone= (int*) GDKzalloc(sizeof(int) *top);
+	int postponed=0;
 
 	/* solve the join by pairing the smallest first */
 	while (top > 2) {
@@ -426,7 +428,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 		stream_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d\n", joins[i]->batCacheid, 
 			joins[i+1]->batCacheid,(int)e);
 #endif
-			if (e < estimate) {
+			if (e < estimate &&  ( !(postpone[i] && postpone[i+1]) || postponed==top-1)) {
 				estimate = e;
 				j = i;
 			}
@@ -434,10 +436,28 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins)
 @-
 BEWARE. you may not use a size estimation, because it
 may fire a BATproperty check in a few cases.
+In case a join fails, we may try another order first before 
+abandoning the task.
 @c
 		b = BATjoin(joins[j], joins[j + 1], BUN_NONE);
-		if (b==NULL)
-			return NULL;	/* something seriously went wrong */
+		if (b==NULL){
+			if ( postpone[j]){
+				GDKfree(postpone);
+				return NULL;
+			}
+			/* clear the GDKerrors */
+			if( cntxt->errbuf )
+				cntxt->errbuf[0]=0;
+			postpone[j] = TRUE;
+			postpone[j+1] = TRUE;
+			postponed++;
+			continue;
+		} else {
+			/* reset the postponed joins */
+			for( k=0; k<top; k++)
+				postpone[k]=FALSE;
+			postponed = 0;
+		}
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
@@ -450,6 +470,7 @@ may fire a BATproperty check in a few cases.
 		for (i = j + 1; i < top; i++)
 			joins[i] = joins[i + 1];
 	}
+	GDKfree(postpone);
 #ifdef DEBUG_OPT_JOINPATH
 	stream_printf(cntxt->fdout, "#joinPath final join %d and %d\n", joins[0]->batCacheid, joins[1]->batCacheid);
 #endif
