@@ -1327,6 +1327,23 @@ command_destroy(int argc, char *argv[])
 		}
 	}
 
+	if (force == 0) {
+		char answ;
+		printf("you are about to remove database%s ", argc > 2 ? "s" : "");
+		for (i = 1; i < argc; i++)
+			printf("%s'%s'", i > 1 ? ", " : "", argv[i]);
+		printf("\nALL data in %s will get lost, are you sure? [y/N] ",
+				argc > 2 ? "these databases" : "this database");
+		if (scanf("%c", &answ) >= 1 &&
+				(answ == 'y' || answ == 'Y'))
+		{
+			/* do it! */
+		} else {
+			printf("aborted\n");
+			exit(0);
+		}
+	}
+
 	/* do for each listed database */
 	for (i = 1; i < argc; i++) {
 		sabdb *stats;
@@ -1361,21 +1378,6 @@ command_destroy(int argc, char *argv[])
 				SABAOTHfreeStatus(&stats);
 				state |= 1;
 				continue;
-			}
-
-			if (force == 0) {
-				char answ;
-				printf("you are about to remove database '%s'\n", dbname);
-				printf("ALL data in this database will get lost, "
-						"are you sure? [y/N] ");
-				if (scanf("%c", &answ) >= 1 &&
-						(answ == 'y' || answ == 'Y'))
-				{
-					/* do it! */
-				} else {
-					printf("aborted\n");
-					exit(0);
-				}
 			}
 
 			/* annoyingly we have to delete file by file, and
