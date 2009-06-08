@@ -1,19 +1,23 @@
 stdout of test 'except-union-intersect-bug-sf-1146079` in directory 'src/test/bugs` itself:
 
 
-# 20:14:43 >  
-# 20:14:43 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=36933 --set sql_port=44855 --set xquery_port=59461 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 20:14:43 >  
+# 23:24:12 >  
+# 23:24:12 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=33052 --set xrpc_port=43474 --set monet_prompt= --trace  "--dbname=mTests_src_test_bugs" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 23:24:12 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.13.0, based on kernel v1.31.0
+# Serving database 'mTests_src_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33052/
+# MonetDB/SQL module v2.31.0 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -206,14 +210,14 @@ START TRANSACTION;
 Operation successful
 
 SELECT class FROM a EXCEPT SELECT 16; -- all but 16
-+--------+
++-------+
 | class |
-+========+
++=======+
 |    17 |
 |     2 |
 |    11 |
 |    18 |
-+--------+
++-------+
 4 rows
 
 SELECT class FROM a UNION SELECT 16; -- all with 16 (distinct so invisible)
@@ -229,11 +233,11 @@ SELECT class FROM a UNION SELECT 16; -- all with 16 (distinct so invisible)
 5 rows
 
 SELECT class FROM a INTERSECT SELECT 16; -- just 16
-+--------+
++-------+
 | class |
-+========+
++=======+
 |    16 |
-+--------+
++-------+
 1 row
 
 ROLLBACK;
@@ -245,9 +249,9 @@ START TRANSACTION;
 Operation successful
 
 SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
-+----------+--------+
++----------+-------+
 | property | class |
-+==========+========+
++==========+=======+
 |       29 |    16 |
 |       12 |    16 |
 |       13 |    11 |
@@ -256,7 +260,7 @@ SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
 |       23 |    18 |
 |       24 |    18 |
 |       15 |    16 |
-+----------+--------+
++----------+-------+
 8 rows
 
 SELECT * FROM a UNION SELECT * FROM b; -- should be a + last 50% of b
@@ -290,9 +294,9 @@ SELECT * FROM a UNION SELECT * FROM b; -- should be a + last 50% of b
 23 rows
 
 SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
-+----------+--------+
++----------+-------+
 | property | class |
-+==========+========+
++==========+=======+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -301,7 +305,7 @@ SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
-+----------+--------+
++----------+-------+
 8 rows
 
 ROLLBACK;
@@ -314,14 +318,17 @@ START TRANSACTION;
 Operation successful
 
 SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in output!)
-+--------+
++-------+
 | class |
-+========+
++=======+
 |    17 |
 |    17 |
 |    17 |
 |    17 |
 |     2 |
+|    11 |
+|    18 |
+|    18 |
 |    16 |
 |    16 |
 |    16 |
@@ -329,10 +336,7 @@ SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in out
 |    16 |
 |    16 |
 |    16 |
-|     11 |
-|     18 |
-|     18 |
-+--------+
++-------+
 15 rows
 
 SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
@@ -360,11 +364,11 @@ SELECT class FROM a UNION ALL SELECT 16; -- all plus 16
 17 rows
 
 SELECT class FROM a INTERSECT ALL SELECT 16; -- just one 16 (!)
-+--------+
++-------+
 | class |
-+========+
++=======+
 |    16 |
-+--------+
++-------+
 1 row
 
 ROLLBACK;
@@ -378,9 +382,9 @@ START TRANSACTION;
 Operation successful
 
 SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
-+----------+--------+
++----------+-------+
 | property | class |
-+==========+========+
++==========+=======+
 |       29 |    16 |
 |       12 |    16 |
 |       13 |    11 |
@@ -389,22 +393,22 @@ SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
 |       23 |    18 |
 |       24 |    18 |
 |       15 |    16 |
-+----------+--------+
++----------+-------+
 8 rows
 
 SELECT class FROM a EXCEPT ALL SELECT class FROM b; -- a minus the elements from b that are in a (if count(x) in a > count(x) in b, x will appear in output)
-+--------+
++-------+
 | class |
-+========+
++=======+
+|    11 |
+|    18 |
+|    18 |
 |    16 |
 |    16 |
 |    16 |
 |    16 |
 |    16 |
-|     11 |
-|     18 |
-|     18 |
-+--------+
++-------+
 8 rows
 
 SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
@@ -446,9 +450,9 @@ SELECT * FROM a UNION ALL SELECT * FROM b; -- a + b
 31 rows
 
 SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
-+----------+--------+
++----------+-------+
 | property | class |
-+==========+========+
++==========+=======+
 |        1 |    17 |
 |       21 |    17 |
 |       22 |    17 |
@@ -457,13 +461,13 @@ SELECT * FROM a INTERSECT ALL SELECT * FROM b; -- first 50% of a
 |        4 |    16 |
 |        5 |    16 |
 |        6 |    16 |
-+----------+--------+
++----------+-------+
 8 rows
 
 SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are both in a and b (min(count(a, x), count(b, x)) !!!
-+--------+
++-------+
 | class |
-+========+
++=======+
 |    17 |
 |    17 |
 |    17 |
@@ -472,7 +476,7 @@ SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are bo
 |    16 |
 |    16 |
 |    16 |
-+--------+
++-------+
 8 rows
 
 ROLLBACK;

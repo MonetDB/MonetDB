@@ -2196,8 +2196,11 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		break;
 
 	case op_topn: 
-		if (proj)
+		if (proj) {
 			rel = rel ->l;
+			rel_mark_used(sql, rel, proj);
+			break;
+		}
 	case op_project:
 	case op_groupby: 
 		if (proj && rel->l) {
@@ -2596,9 +2599,8 @@ exp_merge(list *exps)
 				/*sql_exp *lf = f->l;*/
 				sql_exp *rf = f->r;
 
-				assert(f->type == e_cmp && e->flag != cmp_or);
-				if (rf->card == CARD_ATOM && e->flag < cmp_equal) {
-					/*printf("possible candidate\n");*/
+				if (rf->card == CARD_ATOM && f->flag < cmp_equal) {
+					printf("possible candidate\n");
 				}
 			}
 		}
@@ -2618,6 +2620,119 @@ rel_select_order(int *changes, mvc *sql, sql_rel *rel)
 		list_destroy(rel->exps);
 		rel->exps = exp_merge(exps);
 	}
+	return rel;
+}
+
+static list *
+exp_merge_range(list *exps)
+{
+	node *n, *m;
+	for (n=exps->h; n && n->next; n = n->next) {
+		sql_exp *e = n->data;
+		sql_exp *le = e->l;
+		sql_exp *re = e->r;
+
+		/* only look for gt, gte, lte, lt */
+		if (e->type == e_cmp && e->flag < cmp_equal && 
+		    re->card == CARD_ATOM) {
+			for (m=n->next; m; m = m->next) {
+				sql_exp *f = m->data;
+				sql_exp *lf = f->l;
+				sql_exp *rf = f->r;
+
+				if (f->type == e_cmp && f->flag < cmp_equal && 
+				    rf->card == CARD_ATOM && 
+				    exp_match_exp(le, lf)) {
+					sql_exp *ne;
+					int swap = 0, lt = 0, gt = 0;
+					/* for now only   c1 <[=] x <[=] c2 */ 
+
+					swap = lt = (e->flag == cmp_lt || e->flag == cmp_lte);
+					gt = !lt;
+
+					if (gt && 
+					   (f->flag == cmp_gt ||
+					    f->flag == cmp_gte)) 
+						continue;
+					if (lt && 
+					   (f->flag == cmp_lt ||
+					    f->flag == cmp_lte)) 
+						continue;
+					if (!swap) 
+						ne = exp_compare2(exp_dup(le), exp_dup(re), exp_dup(rf), compare2range(e->flag, f->flag));
+					else
+						ne = exp_compare2(exp_dup(le), exp_dup(rf), exp_dup(re), compare2range(f->flag, e->flag));
+
+					list_remove_data(exps, e);
+					list_remove_data(exps, f);
+					list_append(exps, ne);
+					return exp_merge_range(exps);
+				}
+			}
+		} else if (e->type == e_cmp && e->flag < cmp_equal && 
+		    	   re->card > CARD_ATOM) {
+			for (m=n->next; m; m = m->next) {
+				sql_exp *f = m->data;
+				sql_exp *lf = f->l;
+				sql_exp *rf = f->r;
+
+				if (f->type == e_cmp && f->flag < cmp_equal && 
+				    rf->card > CARD_ATOM) {
+					sql_exp *ne;
+					int swap = 0, lt = 0, gt = 0;
+					int ef = e->flag, ff = f->flag;
+				
+					/* is left swapped ? */
+				     	if (exp_match_exp(re, lf)) {
+						sql_exp *t = re; 
+
+						re = le;
+						le = t;
+						ef = swap_compare(ef);
+					}
+					/* is right swapped ? */
+				     	if (exp_match_exp(le, rf)) {
+						sql_exp *t = rf; 
+
+						rf = lf;
+						lf = t;
+						ff = swap_compare(ff);
+					}
+
+				    	if (!exp_match_exp(le, lf))
+						continue;
+
+					/* for now only   c1 <[=] x <[=] c2 */ 
+					swap = lt = (ef == cmp_lt || ef == cmp_lte);
+					gt = !lt;
+
+					if (gt && (ff == cmp_gt || ff == cmp_gte)) 
+						continue;
+					if (lt && (ff == cmp_lt || ff == cmp_lte)) 
+						continue;
+					if (!swap) 
+						ne = exp_compare2(exp_dup(le), exp_dup(re), exp_dup(rf), compare2range(ef, ff));
+					else
+						ne = exp_compare2(exp_dup(le), exp_dup(rf), exp_dup(re), compare2range(ff, ef));
+
+					list_remove_data(exps, e);
+					list_remove_data(exps, f);
+					list_append(exps, ne);
+					return exp_merge_range(exps);
+				}
+			}
+		}
+	}
+	return exps;
+}
+
+static sql_rel *
+rel_find_range(int *changes, mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	*changes = 0; 
+	if ((is_join(rel->op) || rel->op == op_select) && rel->exps && list_length(rel->exps)>1) 
+		rel->exps = exp_merge_range(rel->exps);
 	return rel;
 }
 
@@ -2814,10 +2929,13 @@ rel_optimizer(mvc *sql, sql_rel *rel)
 	if (gp.cnt[op_join] || gp.cnt[op_left])
 		rel = rewrite(sql, rel, &rel_join_order); 
 
-	/* Todo rel_find_range_exps (and then remove from later code) */
-
-	if (gp.cnt[op_select])
+	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_order); 
+
+	if (gp.cnt[op_join] || 
+	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
+	    gp.cnt[op_select]) 
+		rel = rewrite(sql, rel, &rel_find_range);
 
 	if (gp.cnt[op_select])
 		rel = rewrite(sql, rel, &rel_select_use_index); 

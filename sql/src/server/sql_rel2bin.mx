@@ -552,8 +552,8 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			/* pairwise (re-)combine single-sided range selects to double-sided range selects */
 			/*
 			 *      0) a> x && a< y  =>  x< a< y
-			 *      1) a> x && a<=y  =>  x< a<=y
-			 *      2) a>=x && a< y  =>  x<=a< y
+			 *      1) a>=x && a< y  =>  x<=a< y
+			 *      2) a> x && a<=y  =>  x< a<=y
 			 *      3) a>=x && a<=y  =>  x<=a<=y
 			 */
 			for (flg = 0; flg <= 3; flg++) {
@@ -565,12 +565,12 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 					cr = cmp_lt;
 					break;
 				case 1:
-					cl = cmp_gt;
-					cr = cmp_lte;
-					break;
-				case 2:
 					cl = cmp_gte;
 					cr = cmp_lt;
+					break;
+				case 2:
+					cl = cmp_gt;
+					cr = cmp_lte;
 					break;
 				case 3:
 					cl = cmp_gte;

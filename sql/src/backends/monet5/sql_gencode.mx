@@ -913,12 +913,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushBit(mb, q, FALSE);
 				break;
 			case 1:
-				q = pushBit(mb, q, FALSE);
 				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, FALSE);
 				break;
 			case 2:
-				q = pushBit(mb, q, TRUE);
 				q = pushBit(mb, q, FALSE);
+				q = pushBit(mb, q, TRUE);
 				break;
 			case 3:
 				q = pushBit(mb, q, TRUE);

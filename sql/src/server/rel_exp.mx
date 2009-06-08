@@ -262,7 +262,8 @@ exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_
 	return e;
 }
 
-sql_exp * exp_atom( atom *a) 
+sql_exp * 
+exp_atom( atom *a) 
 {
 	sql_exp *e = exp_create(e_atom);
 	e->card = CARD_ATOM;

@@ -592,10 +592,6 @@ sql_find_aggr(sql_schema *s, char *sqlaname)
 	(void)s;
 	while (n) {
 		sql_func *a = n->data;
-		sql_arg *arg = NULL;
-
-		if (a->ops->h)
-			arg = a->ops->h->data;
 
 		if (strcmp(a->base.name, sqlaname) == 0) {
 			int scale = 0;
@@ -616,13 +612,9 @@ sql_find_aggr(sql_schema *s, char *sqlaname)
 
 		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
 			sql_func *a = n->data;
-			sql_arg *arg = NULL;
 
 			if ((a->is_func && !a->res.type) || !a->aggr)
 				continue;
-
-			if (a->ops->h)
-				arg = a->ops->h->data;
 
 			if (strcmp(a->base.name, sqlaname) == 0) {
 				int scale = 0;

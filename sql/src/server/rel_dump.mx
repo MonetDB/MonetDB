@@ -145,16 +145,23 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			exps_print(sql, fout, e->l, depth, alias, 1);
 			cmp_print(sql, fout, e->flag );
 			exps_print(sql, fout, e->r, depth, alias, 1);
+		} else if (e->f) {
+			exp_print(sql, fout, e->r, depth+1, 0, 0);
+			if (is_anti(e))
+				stream_printf(fout, " ! ");
+			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)) );
+			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			if (is_anti(e))
+				stream_printf(fout, " ! ");
+			cmp_print(sql, fout, range2rcompare(e->flag) );
+			exp_print(sql, fout, e->f, depth+1, 0, 0);
 		} else {
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))
 				stream_printf(fout, " ! ");
 			cmp_print(sql, fout, e->flag );
+
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
-			if (e->f) {
-				stream_printf(fout, ", ");
-				exp_print(sql, fout, e->f, depth+1, 0, 0);
-			}
 		}
 	 	break;
 	default:
