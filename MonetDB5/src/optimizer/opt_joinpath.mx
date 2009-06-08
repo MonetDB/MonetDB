@@ -437,7 +437,7 @@ may fire a BATproperty check in a few cases.
 @c
 		b = BATjoin(joins[j], joins[j + 1], BUN_NONE);
 		if (b==NULL)
-			return NULL;
+			return NULL;	/* something seriously went wrong */
 #ifdef DEBUG_OPT_JOINPATH
 		stream_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 			b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
@@ -489,9 +489,11 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	b= ALGjoinPathBody(cntxt,top,joins);
+	GDKfree(joins);
 	if ( b)
 		BBPkeepref( *r = b->batCacheid);
-	GDKfree(joins);
+	else
+		throw(MAL, "algebra.joinPath", INTERNAL_OBJ_CREATE);
 	return MAL_SUCCEED;
 }
 @}
