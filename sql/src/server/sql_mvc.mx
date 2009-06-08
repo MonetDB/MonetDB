@@ -152,7 +152,7 @@ extern int mvc_type(mvc *c);
  * Rollbacks can be either full or until a given savepoint. 
  * The special mvc_release can be used to release savepoints. 
  */
-extern int mvc_trans(mvc *c);
+extern void mvc_trans(mvc *c);
 extern int mvc_commit(mvc *c, int chain, char *name);
 extern int mvc_rollback(mvc *c, int chain, char *name);
 extern int mvc_release(mvc *c, char *name);
@@ -362,7 +362,7 @@ mvc_type(mvc *m)
 	return res;
 }
 
-int
+void
 mvc_trans(mvc *m)
 {
 	int schema_changed = 0;
@@ -370,10 +370,14 @@ mvc_trans(mvc *m)
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
+	if (m->cache && (schema_changed || m->qc->id > 10000)){
+		if (m->qc)
+			qc_destroy(m->qc);
+		m->qc = qc_create(m->clientid);
+	}
 	if (m->session->active) 
 		m->type = Q_TRANS;
 	store_unlock();
-	return schema_changed;
 }
 
 int

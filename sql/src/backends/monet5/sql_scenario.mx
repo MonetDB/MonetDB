@@ -452,16 +452,11 @@ SQLinitEnvironment(Client cntxt)
 @-
 The cache with plans should be regularly be refreshed.
 @c
-void
-SQLcacheRefresh(mvc *m){
-	if (m && !m->session->active) {
-		int schema_changed = mvc_trans(m);
-		if (m->cache && (schema_changed || m->qc->id > 10000)){
-			if (m->qc)
-				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid);
-		}
-	}
+static void
+SQLcacheRefresh(mvc *m)
+{
+	if (m && !m->session->active) 
+		mvc_trans(m);
 }
 @-
 The SQLcompile operation can be used by separate
