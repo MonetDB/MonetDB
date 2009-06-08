@@ -372,19 +372,28 @@ fixed-sized types.
 	@3 c  = *(@3*)cst;
 	@4 *p = (@4*)Tloc(b, BUNfirst(b));
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
+	int zero= strcmp("@2","/")==0;
 
 	if (c == 0)
 		res = createException(ARITH, "batcalc.@1", "Division by zero");
 	else 
 	if (b->T->nonil)
-		for (; p<q; o++, p++)
-			*o = c @2 *p;
+		for (; p<q; o++, p++){
+			if ( *p == 0 && zero)
+				res = createException(ARITH, "batcalc.@1", "Division by zero");
+			else
+				*o = c @2 *p;
+		}
 	else
 		for (; p<q; o++, p++) {
 			if (*p == @4_nil)
 				*o = @1_nil;
-			else 
-				*o = c @2 *p;
+			else {
+				if ( *p == 0 && zero)
+					res = createException(ARITH, "batcalc.@1", "Division by zero");
+				else
+					*o = c @2 *p;
+			}
 		}
 }
 @-
