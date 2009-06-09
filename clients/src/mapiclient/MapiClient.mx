@@ -18,7 +18,7 @@
 @a Sjoerd Mullender, M. Kersten, Peter Boncz, Niels Nes
 @v 6
 @f MapiClient
-@* The Mapi Client Interface 
+@* The Mapi Client Interface
 A textual interface to the Monet server using the Mapi library,
 providing command-line access for its users. It is the preferred
 interface for non-DBAs.
@@ -1118,9 +1118,8 @@ doRequest(Mapi mid, const char *buf, int interactive)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) == NULL || mapi_error(mid) || mapi_result_error(hdl)) {
-		mapi_explain_result(hdl, stderr);
-		mapi_close_handle(hdl);
+	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		mapi_explain(mid, stderr);
 		errseen = 1;
 		return 1;
 	}
