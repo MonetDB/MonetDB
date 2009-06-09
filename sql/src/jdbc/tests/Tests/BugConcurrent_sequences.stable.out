@@ -44,8 +44,8 @@ passed :)
 4, client2
 passed :)
 2.2. check table status with client 2...
-1, client2
-3, client2
+1, client1
+3, client1
 4, client2
 passed :)
 3.1. drop table t1 using client 1... passed :)

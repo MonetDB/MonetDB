@@ -39,25 +39,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_2A0119FBC01F41D9B94EEE098A135685"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_2C71E3014D464BD985340E7241AA541B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3002E77ABCF442B5A92DE519E07F6D47"
-        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4297E13CE14242038ED0B0EBF79EE977"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -99,6 +81,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_9D216440C0EC49B28059B475331A032B"
+        "OwnerKey" = "8:_F68A02B385C64980A45DD72D196AC354"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B3D1BED489C34E2B85AA911052AFF215"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -118,12 +106,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C455797FC66F47729CE65BC402A1C322"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_D06581EDF9BF488FB4933C65204BE4F0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -341,26 +323,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2A0119FBC01F41D9B94EEE098A135685"
-            {
-            "SourcePath" = "8:share\\MonetDB\\php\\php.ini"
-            "TargetName" = "8:php.ini"
-            "Tag" = "8:"
-            "Folder" = "8:_5A618A402A9846CF9F2F96CF68308F5A"
-            "Condition" = "8:INSTALLPHP"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2C71E3014D464BD985340E7241AA541B"
             {
             "SourcePath" = "8:Lib\\libMonetODBCs.dll"
@@ -368,26 +330,6 @@
             "Tag" = "8:"
             "Folder" = "8:_A4F7A2760EEA44B6B986B2E69EB8C988"
             "Condition" = "8:INSTALLODBC"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4297E13CE14242038ED0B0EBF79EE977"
-            {
-            "SourcePath" = "8:share\\MonetDB\\php\\monetdb_query_demo.php"
-            "TargetName" = "8:monetdb_query_demo.php"
-            "Tag" = "8:"
-            "Folder" = "8:_5A618A402A9846CF9F2F96CF68308F5A"
-            "Condition" = "8:INSTALLPHP"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"
@@ -601,26 +543,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D06581EDF9BF488FB4933C65204BE4F0"
-            {
-            "SourcePath" = "8:Lib\\php5\\php_monetdb.dll"
-            "TargetName" = "8:php_monetdb.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_C7F8BD3644844DC68721ABE149CC0A50"
-            "Condition" = "8:INSTALLPHP"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DC4B78BE13E445B289DE0E6D4BF130B6"
             {
             "SourcePath" = "8:banner.bmp"
@@ -749,17 +671,6 @@
                             "Property" = "8:_B90F07FB7D0749BFA663E287555F3A5F"
                                 "Folders"
                                 {
-                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_5A618A402A9846CF9F2F96CF68308F5A"
-                                    {
-                                    "Name" = "8:php"
-                                    "AlwaysCreate" = "11:FALSE"
-                                    "Condition" = "8:"
-                                    "Transitive" = "11:FALSE"
-                                    "Property" = "8:_1854BE8C3B384057A29D22799311AF3F"
-                                        "Folders"
-                                        {
-                                        }
-                                    }
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_ED24BDB93EAA443BAD558F124FE5E513"
                                     {
                                     "Name" = "8:perl"
@@ -828,17 +739,6 @@
                     "Property" = "8:_5D6E32F3573F4AA0ABE6DC8FE88B4B1C"
                         "Folders"
                         {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_C7F8BD3644844DC68721ABE149CC0A50"
-                            {
-                            "Name" = "8:php5"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_0B7709E1D2284ACFADE97EF241832D29"
-                                "Folders"
-                                {
-                                }
-                            }
                         }
                     }
                 }
@@ -905,6 +805,7 @@
         "MsiBootstrapper"
         {
         "LangId" = "3:1033"
+        "RequiresElevation" = "11:FALSE"
         }
         "Product"
         {
@@ -1808,7 +1709,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3002E77ABCF442B5A92DE519E07F6D47"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_9D216440C0EC49B28059B475331A032B"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -1838,9 +1739,6 @@
             }
         }
         "ProjectOutput"
-        {
-        }
-        "VJSharpPlugin"
         {
         }
     }

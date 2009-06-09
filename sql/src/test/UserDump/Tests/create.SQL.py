@@ -57,5 +57,7 @@ create trigger test.x after insert on foo insert into a values (1);
 create trigger "test"."z" after insert on "foo" insert into a values (1);
 ''')
     client(os.getenv('SQLDUMP'))
+    client('%s -uvoc -Pvoc' % os.getenv('SQLDUMP'))
+    client('%s -utest -Ptest' % os.getenv('SQLDUMP'))
 
 main()

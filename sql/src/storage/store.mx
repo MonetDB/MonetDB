@@ -1844,7 +1844,7 @@ trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 	if (ot != gtrans)
 		t->schema_updates = ot->schema_updates;
 
-	t->previous_schema_nr = t->schema_number = store_schema_number();
+	t->schema_number = store_schema_number();
 	t->parent = ot;
 	t->stk = stk;
 
@@ -2764,7 +2764,6 @@ sql_trans_commit(sql_trans *tr)
 		prev_oid = store_oid;
 		if (ok == LOG_OK)
 			ok = logger_funcs.log_tend();
-		tr->previous_schema_nr = tr->schema_number;
 		tr->schema_number = store_schema_number();
 	}
 	if (ok == LOG_OK) {
@@ -4120,7 +4119,6 @@ int
 sql_trans_begin(sql_session *s)
 {
 	sql_trans *tr = s->tr;
-	int psnr = tr->previous_schema_nr;
 	int snr = tr->schema_number;
 
 	if (tr->stime < gtrans->stime || tr->wtime || 
@@ -4132,7 +4130,7 @@ sql_trans_begin(sql_session *s)
 	s->tr = tr;
 	store_nr_active ++;
 	s->status = 0;
-	return psnr != tr->schema_number;
+	return snr != tr->schema_number;
 }
 
 void

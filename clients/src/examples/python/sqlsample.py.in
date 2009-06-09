@@ -36,7 +36,7 @@ print cursor.fetchone()
 # deliberately executing a wrong SQL statement:
 try:
     cursor.execute('( xyz 1);')
-except (RuntimeError), e:
+except monetdb.sql.OperationalError, e:
     print e
 
 cursor.execute('create table python_table (i smallint,s string);');
