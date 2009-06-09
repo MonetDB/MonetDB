@@ -9,6 +9,8 @@ insert into nr values (7);
 insert into nr values (8);
 insert into nr values (9);
 insert into nr values (10);
-SELECT nr, RAND() FROM nr;
-SELECT nr, RAND() AS rnd FROM nr;
+select count(distinct nr) from
+(SELECT nr, RAND() FROM nr) as x;
+select count(distinct rnd) from
+(SELECT nr, RAND() AS rnd FROM nr) as x;
 drop table nr;
