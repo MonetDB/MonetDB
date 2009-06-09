@@ -948,16 +948,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			if (s->type == st_outerjoin) {
 				jt = "outerjoin";
-			/* handle fetchjoins differently 
-			} else if (s->flag == cmp_equal && s->h && !s->t) { 
-				q = newStmt(mb, "algebra2", "fetchjoin");
-
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, r);
-
-				s->nr = getDestVar(q);
-				break;
-			*/
 			}
 
 			switch (s->flag) {
@@ -1032,6 +1022,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				break;
 			}
+			case cmp_project: 
+				/* projections, ie left is void headed */
+				q = newStmt1(mb, algebraRef, "leftjoin");
+
+				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, r);
+				q = pushNil(mb, q, TYPE_lng);
+				break;
 			default:
 				showException(SQL,"sql","SQL2MAL: error impossible\n");
 			}

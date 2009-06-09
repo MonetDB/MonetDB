@@ -445,7 +445,7 @@ str defaultPlan=
 	"coercions,"
 	"emptySet,"
 	/* "joinselect," */
-	/*"mitosis," */
+	/* "mitosis," */
 /*	"cluster,"*/
 	"aliases,"
 	/* "crack," */

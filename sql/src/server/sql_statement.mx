@@ -136,7 +136,8 @@ typedef enum comp_type {
 	cmp_notlike = 6,
 	cmp_like = 7,
 	cmp_all = 8,
-	cmp_or = 9
+	cmp_or = 9,
+	cmp_project = 10
 } comp_type;
 
 /* flag to indicate anti join/select */
@@ -242,6 +243,7 @@ extern stmt *stmt_releqjoin1(list *joins);
 extern stmt *stmt_releqjoin2(list *l1, list *l2);
 extern stmt *stmt_join(stmt *op1, stmt *op2, comp_type cmptype);
 extern stmt *stmt_join2(stmt *l, stmt *ra, stmt *rb, int cmp);
+extern stmt *stmt_project(stmt *op1, stmt *op2);
 extern stmt *stmt_outerjoin(stmt *op1, stmt *op2, comp_type cmptype);
 extern stmt *stmt_reljoin(stmt *op1, list *neqjoins);
 
@@ -1696,6 +1698,12 @@ stmt_join(stmt *op1, stmt *op2, comp_type cmptype)
 	s->h = stmt_dup(op1->h);
 	s->t = stmt_dup(op2->t);
 	return s;
+}
+
+stmt *
+stmt_project(stmt *op1, stmt *op2)
+{
+	return stmt_join(op1, op2, cmp_project);
 }
 
 stmt *
