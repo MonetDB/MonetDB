@@ -63,3 +63,4 @@ insert_type_exception.SF-2789976
 explain_gives_crash.SF-2741829
 primekeyconstraint.SF-2783425
 alter_table_drop_constraint.SF-2803477
+mclient-lsql-D
