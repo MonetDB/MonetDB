@@ -707,7 +707,8 @@ AFTER_CORE2ALG:
                              PFcol_str (clat (laroot->sem.ser_rel.items, c)),
                              c);
                 fprintf (pfout, "</schema>\n"
-                                "<query>\n");
+                                "<query>"
+                                "<![CDATA[\n");
                 i++;
             }
 
@@ -740,7 +741,8 @@ AFTER_CORE2ALG:
 
             /* plan bundle emits SQL code wrapped in XML tags */ 
             if (lapb)
-                fprintf (pfout, "</query>\n"
+                fprintf (pfout, "]]>"
+                                "</query>\n"
                                 "</query_plan>\n");
 
         /* iterate over the plans in the plan bundle */

@@ -378,7 +378,8 @@ main (int argc, char *argv[])
                          PFcol_str (clat (laroot->sem.ser_rel.items, c)),
                          c);
             fprintf (stdout, "</schema>\n"
-                             "<query>\n");
+                             "<query>"
+                             "<![CDATA[\n");
             i++;
         }
 
@@ -414,7 +415,8 @@ main (int argc, char *argv[])
 
         /* plan bundle emits SQL code wrapped in XML tags */ 
         if (lapb)
-            fprintf (stdout, "</query>\n"
+            fprintf (stdout, "]]>"
+                             "</query>\n"
                              "</query_plan>\n");
 
     /* iterate over the plans in the plan bundle */
