@@ -230,7 +230,9 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 		s = stmt_append(s, i);
 	}
 	c = exp_bin(sql, ce, left, right, grp, NULL);
-	s = stmt_mark_tail(stmt_reverse(stmt_semijoin(stmt_reverse(c), stmt_reverse(s))), 0);
+//	s = stmt_mark_tail(stmt_reverse(stmt_semijoin(stmt_reverse(c), stmt_reverse(s))), 0);
+	/* not really a projection join !! */
+	s = stmt_project(c, stmt_reverse(s));
 
 	list_destroy(nl);
 	return s;
@@ -848,7 +850,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		stmt *s = stmt_join(stmt_dup(jl), column(c), cmp_equal);
+		//stmt *s = stmt_join(stmt_dup(jl), column(c), cmp_equal);
+		stmt *s = stmt_project(stmt_dup(jl), column(c) );
 
 		/* as append isn't save, we append to a new copy */
 		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
@@ -867,7 +870,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		stmt *s = stmt_join(stmt_dup(jr), column(c), cmp_equal);
+		//stmt *s = stmt_join(stmt_dup(jr), column(c), cmp_equal);
+		stmt *s = stmt_project(stmt_dup(jr), column(c) );
 
 		/* as append isn't save, we append to a new copy */
 		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
@@ -972,7 +976,8 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
-		stmt *s = stmt_join(stmt_dup(join), column(c), cmp_equal);
+		//stmt *s = stmt_join(stmt_dup(join), column(c), cmp_equal);
+		stmt *s = stmt_project(stmt_dup(join), column(c));
 
 		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
@@ -1594,7 +1599,8 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 			if (col->nrcols == 0) /* constant */
 				col = stmt_const(sel, col);
 			else
-				col = stmt_join(sel, col, cmp_equal);
+				//col = stmt_join(sel, col, cmp_equal);
+				col = stmt_project(sel, col);
 			list_append(l, col);
 		}
 	} else if (sub && predicate) {

@@ -680,7 +680,7 @@ join_hash_key( mvc *sql, list *l )
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
 				stmt_dup(bits)), 
-				stmt_join(stmt_dup(o), s, cmp_equal))), 
+				stmt_project(stmt_dup(o), s ))), 
 				xor);
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->session->schema, "hash", tail_type(s), NULL, wrd);
@@ -713,8 +713,8 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 	for (n1 = l1->h, n2 = l2->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
 		stmt *ld = stmt_dup(n1->data);
 		stmt *rd = stmt_dup(n2->data);
-		stmt *le = stmt_join(l, ld, cmp_equal);
-		stmt *re = stmt_join(r, rd, cmp_equal);
+		stmt *le = stmt_project(l, ld );
+		stmt *re = stmt_project(r, rd );
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
 		sql_subfunc *f=sql_bind_func(sql->session->schema, "=", tail_type(le), tail_type(le));
@@ -728,6 +728,7 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 
 		cmp = stmt_uselect(cmp, stmt_bool(1), cmp_equal);
 
+		/* TODO the semijoin may break the order!! */
 		l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
 		r = stmt_semijoin(stmt_dup(r), cmp);
 	}
@@ -760,8 +761,8 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 		stmt *ld = stmt_dup(j->op1.stval);
 		stmt *o2 = stmt_dup(j->op2.stval);
 		stmt *rd = (j->type != st_join2)?stmt_reverse(o2):o2;
-		stmt *le = stmt_join(l, ld, cmp_equal);
-		stmt *re = stmt_join(r, rd, cmp_equal);
+		stmt *le = stmt_project(l, ld );
+		stmt *re = stmt_project(r, rd );
 
 		if (j->type == st_join2) {
 			comp_type c1 = j->flag&2 ? cmp_gte : cmp_gt;
@@ -771,11 +772,14 @@ reljoin( mvc *sql, stmt *rj, list *l2 )
 			stmt *cmp2 = stmt_uselect(stmt_dup(le), r2, c2);
 
 			stmt *cmp = stmt_semijoin(cmp1, cmp2);
+
+			/* TODO semijoin may break order */
 			l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
 			r = stmt_semijoin(stmt_dup(r), cmp);
 		} else {
 			stmt *cmp = stmt_uselect(le, re, (comp_type)j->flag);
 
+			/* TODO semijoin may break order */
 			l = stmt_semijoin(stmt_dup(l), stmt_dup(cmp));
 			r = stmt_semijoin(stmt_dup(r), cmp);
 		}

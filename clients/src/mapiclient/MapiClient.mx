@@ -993,15 +993,13 @@ setWidth(void)
 	}
 }
 
-static int
-format_result(MapiHdl hdl)
+#ifdef HAVE_POPEN
+static void
+start_pager(stream **saveFD, stream **saveFD_raw)
 {
-#ifdef HAVE_POPEN
-	stream *saveFD = NULL, *saveFD_raw = NULL; /* for external paging */
-#endif
-	MapiMsg rc;
+	*saveFD = NULL;
+	*saveFD_raw = NULL;
 
-#ifdef HAVE_POPEN
 	if (pager) {
 		FILE *p;
 
@@ -1009,8 +1007,8 @@ format_result(MapiHdl hdl)
 		if (p == NULL)
 			fprintf(stderr, "Starting '%s' failed\n", pager);
 		else {
-			saveFD = toConsole;
-			saveFD_raw = toConsole_raw;
+			*saveFD = toConsole;
+			*saveFD_raw = toConsole_raw;
 			/* put | in name to indicate that file should be closed with pclose */
 			toConsole = file_wastream(p, "|pager");
 			toConsole_raw = toConsole;
@@ -1020,6 +1018,28 @@ format_result(MapiHdl hdl)
 #endif
 		}
 	}
+}
+
+static void
+end_pager(stream *saveFD, stream *saveFD_raw)
+{
+	if (saveFD) {
+		stream_close(toConsole);
+		stream_destroy(toConsole);
+		toConsole = saveFD;
+		toConsole_raw = saveFD_raw;
+	}
+}
+#endif
+
+static int
+format_result(MapiHdl hdl)
+{
+	MapiMsg rc;
+#ifdef HAVE_POPEN
+	stream *saveFD, *saveFD_raw;
+
+	start_pager(&saveFD, &saveFD_raw);
 #endif
 
 	setWidth();
@@ -1099,12 +1119,7 @@ format_result(MapiHdl hdl)
 	}
 
 #ifdef HAVE_POPEN
-	if (saveFD) {
-		stream_close(toConsole);
-		stream_destroy(toConsole);
-		toConsole = saveFD;
-		toConsole_raw = saveFD_raw;
-	}
+	end_pager(saveFD, saveFD_raw);
 #endif
 
 	return rc;
@@ -1508,7 +1523,15 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
 					if (*line) {
+#ifdef HAVE_POPEN
+						stream *saveFD, *saveFD_raw;
+
+						start_pager(&saveFD, &saveFD_raw);
+#endif
 						dump_table(mid, NULL, line, toConsole, 1, 1);
+#ifdef HAVE_POPEN
+						end_pager(saveFD, saveFD_raw);
+#endif
 					} else {
 						/* get all table names in current schema */
 						if ((hdl = mapi_query(mid,
@@ -1525,20 +1548,31 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 					}
 					continue;
 
-				case 'D':
+				case 'D': {
+#ifdef HAVE_POPEN
+					stream *saveFD, *saveFD_raw;
+#endif
+
 					if (mode != SQL)
 						break;
 					while (isspace((int) line[length - 1]))
 						line[--length] = 0;
 					for (line += 2; *line && isspace((int) *line); line++)
 						;
+#ifdef HAVE_POPEN
+					start_pager(&saveFD, &saveFD_raw);
+#endif
 					if (*line) {
 						stream_printf(toConsole, "START TRANSACTION;\n");
 						dump_table(mid, NULL, line, toConsole, 0, 1);
 						stream_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_tables(mid, toConsole, 0);
+#ifdef HAVE_POPEN
+					end_pager(saveFD, saveFD_raw);
+#endif
 					continue;
+				}
 				case '<':
 					/* read commands from file */
 					while (isspace((int) line[length - 1]))
