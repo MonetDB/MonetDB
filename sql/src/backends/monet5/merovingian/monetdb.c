@@ -1332,7 +1332,7 @@ command_destroy(int argc, char *argv[])
 		printf("you are about to remove database%s ", argc > 2 ? "s" : "");
 		for (i = 1; i < argc; i++)
 			printf("%s'%s'", i > 1 ? ", " : "", argv[i]);
-		printf("\nALL data in %s will get lost, are you sure? [y/N] ",
+		printf("\nALL data in %s will be lost, are you sure? [y/N] ",
 				argc > 2 ? "these databases" : "this database");
 		if (scanf("%c", &answ) >= 1 &&
 				(answ == 'y' || answ == 'Y'))
