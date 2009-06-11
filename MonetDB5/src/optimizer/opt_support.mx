@@ -1228,6 +1228,7 @@ int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef && 
                 (getFunctionId(p) == joinRef || 
 //               getFunctionId(p) == antijoinRef || is not mat save
+                 getFunctionId(p) == leftjoinRef ||
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef));
 }
