@@ -54,6 +54,9 @@ Todo: check DESCsetmodes/HEAPcheckmode (gdk_storage.mx).
 #include "monetdb_config.h"
 #include "gdk.h"
 
+static int HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc);
+static int HEAPsave_intern(Heap *h, str nme, str ext, str suffix);
+
 static char *
 decompose_filename(str nme)
 {
@@ -166,13 +169,13 @@ HEAPextend(Heap *h, size_t size)
 	if (size <= h->size)
 		return 0;
 
-	if (h->storage & STORE_MMAP) {
+	if (h->storage != STORE_MEM) {
 		/* memory mapped files extend: save and remap */
-		if (HEAPsave(h, nme, ext) < 0)
+		if (HEAPsave_intern(h, nme, ext, ".tmp") < 0)
 			return -1;
 		HEAPfree(h);
 		h->maxsize = h->size = size;
-		if (HEAPload(h, nme, ext, FALSE) >= 0)
+		if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0)
 			return 0;
 	} else {
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
@@ -208,8 +211,10 @@ HEAPextend(Heap *h, size_t size)
 			h->filename = NULL;
 			if (fp != NULL) {
 				fclose(fp);
-				if (h->storage == STORE_MEM)
-					h->newstorage = h->storage = STORE_MMAP;
+				if (h->storage == STORE_MEM) {
+					int newmode = (h->newstorage != STORE_MMAP)?h->newstorage:STORE_PRIV;
+					h->newstorage = h->storage = newmode;
+				}
 				h->base = NULL;
 				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
@@ -219,7 +224,7 @@ HEAPextend(Heap *h, size_t size)
 					return 0;
 				}
 				/* couldn't allocate, now first save data to file */
-				if (HEAPsave(&bak, nme, ext) < 0) {
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
 					*h = bak;
 					return -1;
 				}
@@ -227,7 +232,7 @@ HEAPextend(Heap *h, size_t size)
 				HEAPfree(&bak);
 				of = NULL; /* file name is freed by HEAPfree */
 				/* and load heap back in via memory-mapped file */
-				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
 					return 0;
 				}
@@ -301,8 +306,8 @@ This routine initializes the h->filename without deallocating
 its previous contents.
 @{
 @c
-int
-HEAPload(Heap *h, str nme, str ext, int trunc)
+static int
+HEAPload_intern(Heap *h, str nme, str ext, str suffix, int trunc)
 {
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
@@ -321,7 +326,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	sprintf(h->filename, "%s.%s", nme, ext);
 
 	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually 512KB) segments */
-	if ((h->storage & STORE_MMAP) && (minsize != h->size)) {
+	if ((h->storage != STORE_MEM) && (minsize != h->size)) {
 		h->size = minsize;
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
@@ -353,7 +358,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	GDKfilepath(dstpath, BATDIR, nme, ext);
 	for (p = srcpath; *p; p++)
 		;
-	strcpy(p, ".new");
+	strcpy(p, suffix);
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
 		int t0;
@@ -378,6 +383,12 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	return desc_status;
 }
 
+int
+HEAPload(Heap *h, str nme, str ext, int trunc)
+{
+	return HEAPload_intern(h, nme, ext, ".new", trunc);
+}
+
 @}
 @- HEAPsave
 
@@ -391,8 +402,8 @@ Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
 After GDKsave returns successfully (>=0), we assume the heaps are safe on stable storage.
 @{
 @c
-int
-HEAPsave(Heap *h, str nme, str ext)
+static int
+HEAPsave_intern(Heap *h, str nme, str ext, str suffix)
 {
 	int store = h->newstorage;
         long_str extension;
@@ -404,7 +415,7 @@ HEAPsave(Heap *h, str nme, str ext)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		strcpy(extension,ext);
-		strcat(extension,".new");
+		strcat(extension,suffix);
                 ext = extension;
 	} else if (store != STORE_MEM) { 
 		store = h->storage;
@@ -416,6 +427,11 @@ HEAPsave(Heap *h, str nme, str ext)
 	return GDKsave(nme, ext, h->base, h->free, store);
 }
 
+int
+HEAPsave(Heap *h, str nme, str ext)
+{
+	return HEAPsave_intern(h, nme, ext, ".new");
+}
 @}
 @- HEAPload
 Delete any saved heap file. For memory mapped files, also try to remove any remaining X.new
@@ -431,7 +447,7 @@ HEAPdelete(Heap *h, str o, str ext)
 		return 0;
 	}
 	if (h->base) {
-		if (h->copied == 0 && h->storage & STORE_MMAP) {
+		if (h->copied == 0 && h->storage == STORE_MMAP) {
 			/* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
 			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
 			IODEBUG THRprintf(GDKout, "#HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
@@ -457,7 +473,7 @@ HEAPwarm(Heap *h)
 {
 	int bogus_result = 0;
 
-	if (h->storage & STORE_MMAP) {
+	if (h->storage != STORE_MEM) {
 		/* touch the heap sequentially */
 		int *cur = (int *) h->base;
 		int *lim = (int *) (h->base + h->free) - 4096;

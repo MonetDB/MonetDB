@@ -1471,6 +1471,10 @@ GDKvmtrim(void *limit)
 				highload_name[highload], *(size_t *) limit, GDK_mmap_minsize);
 		}
 		highload = MT_mmap_trim(*(size_t *) limit, fp);
+		if (highload >= 4) {
+			/* in extreme load, push out VM until the rss limit */
+			BBPtrim(*(size_t *) limit,*(size_t *) limit);
+		}
 		if (highload) { /* memcrunch distress varies from 1 to 4 */
 			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
  			if (!bak_mmap_minsize) bak_mmap_minsize = GDK_mmap_minsize;
