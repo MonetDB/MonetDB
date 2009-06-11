@@ -3258,7 +3258,7 @@ mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 	if (mid->languageId != LANG_XQUERY)
 		mapi_setError(mid, "only allowed in XQuery mode", "mapi_stream_into", MERROR);
 
-	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? " " : "", colname ? colname : "");
+	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? "," : "", colname ? colname : "");
 	if (i < 0)
 		return MERROR;
 	rc = mapi_Xcommand(mid, "copy", buf);
