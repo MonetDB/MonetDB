@@ -1962,7 +1962,7 @@ if test "x$enable_optim" = xyes; then
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                    -unroll                             ";;
 #     x86_64-*-*-10.*) CFLAGS="$CFLAGS                                                -axWPT  ";;
 
-      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -axWPT	";; 
+      x86_64-*-*-11.*) CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll -axWPT -axSSE4.2	";; 
 
       i*86-*-*-8.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
       i*86-*-*-9.*)    CFLAGS="$CFLAGS -mp1 -O3 -restrict -unroll               -tpp6 -axKWNPB";;
