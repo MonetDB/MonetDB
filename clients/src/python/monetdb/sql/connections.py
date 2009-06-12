@@ -16,26 +16,28 @@
 # All Rights Reserved.
 
 import sys
+import logging
 
 from monetdb.sql import cursors
+from monetdb.monetdb_exceptions import *
 
-# a ugly hack to support python < 2.6
+
+logger = logging.getLogger("monetdb")
+
+# a ugly hack to support python 2 and 3 at the same time
 (major, minor, micro, level, serial)  = sys.version_info
-#if (major == 3) or (major == 2 and minor == 6):
 if (major == 3):
     from monetdb import mapi
 else:
     from monetdb import mapi25 as mapi
-
-from monetdb.monetdb_exceptions import *
-
 
 class Connection:
     """This represents a MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
 
 
-    def __init__(self, username="monetdb", password="monetdb", hostname="localhost", port=50000, database="demo", autocommit=False):
+    def __init__(self, username="monetdb", password="monetdb",
+        hostname="localhost", port=50000, database="demo", autocommit=False):
         """ Set up a connection to a MonetDB SQL database.
 
         username -- username for connection (default: monetdb)

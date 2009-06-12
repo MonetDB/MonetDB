@@ -21,9 +21,10 @@ import sys
 from monetdb.sql import converters
 from monetdb.monetdb_exceptions import ProgrammingError, Error
 
-# a ugly hack to support python < 2.6
+logger = logging.getLogger("monetdb")
+
+# a ugly hack to support python 2 and 3 at the same time
 (major, minor, micro, level, serial)  = sys.version_info
-#if (major == 3) or (major == 2 and minor == 6):
 if (major == 3):
     from monetdb import mapi
 else:
@@ -244,7 +245,7 @@ class Cursor:
     def fetchone(self):
         """Fetch the next row of a query result set, returning a
         single sequence, or None when no more data is available."""
-        logging.debug("II executing fetch one")
+        logger.debug("II executing fetch one")
 
         self.__check_executed()
 
@@ -253,12 +254,12 @@ class Cursor:
             raise Error("query didn't result in a resultset")
 
         if self.rownumber >= (self.rowcount):
-            logging.debug("rownumber >= rowcount")
+            logger.debug("rownumber >= rowcount")
             return None
 
-        logging.debug("rownumber: %s" % self.rownumber)
-        logging.debug("offset: %s" % self.__offset)
-        logging.debug("lenrows: %s" % len(self.__rows))
+        logger.debug("rownumber: %s" % self.rownumber)
+        logger.debug("offset: %s" % self.__offset)
+        logger.debug("lenrows: %s" % len(self.__rows))
 
 
         if self.rownumber >= (self.__offset + len(self.__rows)):
@@ -292,7 +293,7 @@ class Cursor:
         parameter is used, then it is best for it to retain the
         same value from one .fetchmany() call to the next."""
 
-        logging.debug("II executing fetchmany")
+        logger.debug("II executing fetchmany")
         self.__check_executed()
 
         if self.rownumber >= (self.rowcount):
@@ -301,7 +302,7 @@ class Cursor:
         end = self.rownumber + (size or self.arraysize)
         end = min(end, self.rowcount)
 
-        logging.debug("end: %s" % end)
+        logger.debug("end: %s" % end)
 
         result = self.__rows[self.rownumber-self.__offset:end-self.__offset]
         self.rownumber = min(end, len(self.__rows)+self.__offset)
@@ -354,7 +355,7 @@ class Cursor:
         call to .execute*() did not produce any result set or no
         call was issued yet."""
 
-        logging.debug("retreiving next set")
+        logger.debug("retreiving next set")
 
         self.__check_executed()
 
@@ -423,7 +424,7 @@ class Cursor:
         firstline = lines[0]
 
         while firstline.startswith(mapi.MSG_INFO):
-            logging.info(firstline[1:])
+            logger.info(firstline[1:])
             lines = lines[1:]
             firstline = lines[0]
 
@@ -475,7 +476,7 @@ class Cursor:
                     self.__offset = 0
 
                     self.rowcount = rowcount
-                    logging.debug("II store result finished")
+                    logger.debug("II store result finished")
                     return
 
         elif firstline.startswith(mapi.MSG_QBLOCK):
@@ -485,7 +486,7 @@ class Cursor:
                     values = self.__parse_tuple(line)
                     rows.append(values)
                 elif line == mapi.MSG_PROMPT:
-                    logging.debug("II store result finished")
+                    logger.debug("II store result finished")
                     self.__rows = rows
                     return
 
@@ -495,7 +496,7 @@ class Cursor:
                 self.__offset = 0
                 self.description = None
                 self.rowcount = -1
-                logging.debug("II schema finished")
+                logger.debug("II schema finished")
                 return
 
         elif firstline.startswith(mapi.MSG_QUPDATE):
@@ -504,7 +505,7 @@ class Cursor:
                 self.__offset = 0
                 self.description = None
                 self.rowcount = -1
-                logging.debug("II update finished")
+                logger.debug("II update finished")
                 return
 
         elif firstline.startswith(mapi.MSG_ERROR):

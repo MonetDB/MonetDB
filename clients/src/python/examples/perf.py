@@ -19,7 +19,9 @@ import logging
 import time
 
 #configure the logger, so we can see what is happening
-#logging.getLogger().setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+#logger = logging.getLogger('monetdb')
+
 
 try:
     import monetdb.sql
@@ -36,7 +38,7 @@ for i in (10, 100, 1000, 10000):
     x = monetdb.sql.connect(database="demo")
     c = x.cursor()
     c.arraysize=i
-    c.execute('select * from tables, tables, tables, tables')
+    c.execute('select * from tables, tables, tables')
     results = c.fetchall()
     print i, time.time() - t
 

@@ -20,10 +20,10 @@ import logging
 import struct
 from io import BytesIO
 
-try:
-    from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
-except ImportError:
-    from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
+from monetdb.monetdb_exceptions import *
+
+
+logger = logging.getLogger("monetdb")
 
 MAX_PACKAGE_LENGTH = 0xffff >> 1
 
@@ -46,13 +46,16 @@ STATE_READY = 1
 
 
 class Server:
+    """ A connection to a MonetDB database server. This is a native driver
+        implementation that uses only python code """
+
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
         self.timeout = 5
 
     def connect(self, hostname, port, username, password, database, language):
-        """ connect to a MonetDB database using the mapi protocol"""
+        """ connect to a MonetDB database"""
 
         self.hostname = hostname
         self.port = port
@@ -82,22 +85,22 @@ class Server:
         response = self.__challenge_response(challenge)
         self.__putblock(response)
         prompt = self.__getblock().strip()
-        logging.debug(prompt)
+        logger.debug(prompt)
 
         if len(prompt) == 0:
             # Empty response, server is happy
             pass
         elif prompt.startswith(MSG_INFO):
-            logging.info("II %s" % prompt[1:])
+            logger.info("II %s" % prompt[1:])
 
         elif prompt.startswith(MSG_ERROR):
-            logging.error(prompt[1:])
+            logger.error(prompt[1:])
             raise DatabaseError(prompt[1:])
 
         elif prompt.startswith(MSG_REDIRECT):
             response = prompt[1:].split(':')
             if response[1] == "merovingian":
-                logging.debug("II: merovingian proxy, restarting authenticatiton")
+                logger.debug("II: merovingian proxy, restarting authenticatiton")
                 if iteration <= 10:
                     self.__login(iteration=iteration+1)
                 else:
@@ -107,16 +110,16 @@ class Server:
                 self.hostname = response[2][2:]
                 self.port, self.database = response[3].split('/')
                 self.port = int(self.port)
-                logging.info("II: merovingian redirect to monetdb://%s:%s/%s" % (self.hostname, self.port, self.database))
+                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" % (self.hostname, self.port, self.database))
                 self.socket.close()
                 self.connect(self.hostname, self.port, self.username, self.password, self.database, self.language)
 
             else:
-                logging.error('!' + prompt[0])
+                logger.error('!' + prompt[0])
                 raise ProgrammingError("unknown redirect: %s" % prompt)
 
         else:
-            logging.error('!' + prompt[0])
+            logger.error('!' + prompt[0])
             raise ProgrammingError("unknown state: %s" % prompt)
 
         self.state = STATE_READY
@@ -131,7 +134,7 @@ class Server:
 
     def cmd(self, operation):
         """ put a mapi command on the line"""
-        logging.debug("II: executing command %s" % operation)
+        logger.debug("II: executing command %s" % operation)
 
         if self.state != STATE_READY:
             raise ProgrammingError("Not connected")
@@ -207,12 +210,12 @@ class Server:
             unpacked = struct.unpack('<H', flag)[0] # unpack (little endian short)
             length = unpacked >> 1
             last = unpacked & 1
-            logging.debug("II: reading %i bytes" % length)
+            logger.debug("II: reading %i bytes" % length)
             if length > 0:
                 result_bytes.write(self.__getbytes(length))
 
         result = result_bytes.getvalue()
-        logging.debug("RX: %s" % result)
+        logger.debug("RX: %s" % result)
         return result.decode()
 
 
@@ -228,7 +231,7 @@ class Server:
         """ wrap the line in mapi format and put it into the socket """
         pos = 0
         last = 0
-        logging.debug("TX: %s" % block)
+        logger.debug("TX: %s" % block)
         while not last:
             data = block[pos:MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
@@ -238,7 +241,8 @@ class Server:
             self.socket.send(data)
             pos += len(data)
 
+
     def settimeout(self, timeout):
-        """ set the connection timeout (in seconds) """
+        """ set the connection timeout (in seconds). Set to 0 for no timeout """
         self.timeout = timeout
         self.socket.settimeout(timeout)

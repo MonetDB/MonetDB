@@ -18,11 +18,11 @@
 import datetime
 import time
 import sys
+import logging
 
 from monetdb.sql import type_codes
 
-
-
+logger = logging.getLogger("monetdb")
 
 
 class Pythonizer:
@@ -158,7 +158,7 @@ class Monetizer:
 
 
 
-# required by DB API
+# everything below is kind of pointless but required by DB API
 Date = datetime.date
 Time = datetime.time
 Timestamp = datetime.datetime

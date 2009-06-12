@@ -24,10 +24,10 @@ import socket
 import logging
 import struct
 
-try:
-    from monetdb.monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
-except ImportError:
-    from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
+from monetdb.monetdb_exceptions import *
+
+
+logger = logging.getLogger("monetdb")
 
 MAX_PACKAGE_LENGTH = 0xffff >> 1
 
@@ -88,16 +88,16 @@ class Server:
             # Empty response, server is happy
             pass
         elif prompt.startswith(MSG_INFO):
-            logging.info("II %s" % prompt[1:])
+            logger.info("II %s" % prompt[1:])
 
         elif prompt.startswith(MSG_ERROR):
-            logging.error(prompt[1:])
+            logger.error(prompt[1:])
             raise DatabaseError(prompt[1:])
 
         elif prompt.startswith(MSG_REDIRECT):
             response = prompt[1:].split(':')
             if response[1] == "merovingian":
-                logging.debug("II: merovingian proxy, restarting authenticatiton")
+                logger.debug("II: merovingian proxy, restarting authenticatiton")
                 if iteration <= 10:
                     self.__login(iteration=iteration+1)
                 else:
@@ -107,16 +107,16 @@ class Server:
                 self.hostname = response[2][2:]
                 self.port, self.database = response[3].split('/')
                 self.port = int(self.port)
-                logging.info("II: merovingian redirect to monetdb://%s:%s/%s" % (self.hostname, self.port, self.database))
+                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" % (self.hostname, self.port, self.database))
                 self.socket.close()
                 self.connect(self.hostname, self.port, self.username, self.password, self.database, self.language)
 
             else:
-                logging.error('!' + prompt[0])
+                logger.error('!' + prompt[0])
                 raise ProgrammingError("unknown redirect: %s" % prompt)
 
         else:
-            logging.error('!' + prompt[0])
+            logger.error('!' + prompt[0])
             raise ProgrammingError("unknown state: %s" % prompt)
 
         self.state = STATE_READY
@@ -131,7 +131,7 @@ class Server:
 
     def cmd(self, operation):
         """ put a mapi command on the line"""
-        logging.debug("II: executing command %s" % operation)
+        logger.debug("II: executing command %s" % operation)
 
         if self.state != STATE_READY:
             raise(ProgrammingError, "Not connected")
@@ -212,12 +212,12 @@ class Server:
             unpacked = struct.unpack('<H', flag)[0] # unpack (little endian short)
             length = unpacked >> 1
             last = unpacked & 1
-            logging.debug("II: reading %i bytes" % length)
+            logger.debug("II: reading %i bytes" % length)
             if length > 0:
                 result.append(self.__getbytes(length))
 
         result_str = "".join(result)
-        logging.debug("RX: %s" % result_str)
+        logger.debug("RX: %s" % result_str)
         return result_str
 
 
