@@ -937,8 +937,7 @@ AUTHunlockVault(str *password) {
 
 	/* even though I think this function should be called only once, it
 	 * is not of real extra efforts to avoid a mem-leak if it is used
-	 * multiple times
-	 */
+	 * multiple times */
 	if (vaultKey != NULL)
 		GDKfree(vaultKey);
 
