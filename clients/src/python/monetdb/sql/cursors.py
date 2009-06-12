@@ -16,15 +16,19 @@
 # All Rights Reserved.
 
 import logging
-
-try:
-    from monetdb import mapi
-except SyntaxError:
-    # python 2.5 support
-    from monetdb import mapi25 as mapi
+import sys
 
 from monetdb.sql import converters
 from monetdb.monetdb_exceptions import ProgrammingError, Error
+
+# a ugly hack to support python < 2.6
+(major, minor, micro, level, serial)  = sys.version_info
+#if (major == 3) or (major == 2 and minor == 6):
+if (major == 3):
+    from monetdb import mapi
+else:
+    from monetdb import mapi25 as mapi
+
 
 
 class Cursor:
