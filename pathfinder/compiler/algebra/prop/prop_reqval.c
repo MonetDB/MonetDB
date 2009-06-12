@@ -510,14 +510,7 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
     if (MAP_LIST(n) &&
         (MULTIPLE_INPUT_EDGES(n) ||
          n->kind == la_pos_select ||
-         n->kind == la_avg ||
-         n->kind == la_max ||
-         n->kind == la_min ||
-         n->kind == la_sum ||
-         n->kind == la_prod ||
-         n->kind == la_count ||
-         n->kind == la_seqty1 ||
-         n->kind == la_all ||
+         n->kind == la_aggr ||
          n->kind == la_rownum ||
          n->kind == la_rowrank ||
          n->kind == la_twig ||
@@ -855,16 +848,9 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 adjust_value (n->sem.unary.col);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
         {
-            PFarray_t *lmap = PFarray (sizeof (req_val_t), 2);
+            PFarray_t *lmap = PFarray (sizeof (req_val_t), n->schema.count);
             if (n->sem.aggr.part) {
                 /* keep properties */
                 req_val_t *map  = find_map (MAP_LIST(n), n->sem.aggr.part);
@@ -872,10 +858,11 @@ prop_infer_reqvals (PFla_op_t *n, PFarray_t *reqvals)
                 /* we only have to provide the same groups */
                 adjust_part_ (lmap, n->sem.aggr.part);
             }
-            if (n->sem.aggr.col)
-                /* to make up for the schema change
-                   we add the input columns by hand */
-                adjust_value_ (lmap, n->sem.aggr.col);
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (n->sem.aggr.aggr[i].col)
+                    /* to make up for the schema change
+                       we add the input columns by hand */
+                    adjust_value_ (lmap, n->sem.aggr.aggr[i].col);
 
             prop_infer_reqvals (L(n), lmap);
         }   return; /* only infer once */

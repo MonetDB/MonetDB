@@ -2278,114 +2278,53 @@ PFpa_count_ext (const PFpa_op_t *n1, const PFpa_op_t *n2,
 }
 
 /**
- * Count: Count function operator. Does neither benefit from
- * any existing ordering, nor does it provide/preserve any input
- * ordering.
- */
-PFpa_op_t *
-PFpa_count (const PFpa_op_t *n, PFalg_col_t res, PFalg_col_t part)
-{
-    PFpa_op_t *ret = wire1 (pa_count, n);
-
-    ret->sem.count.res  = res;
-    ret->sem.count.part = part;
-    ret->sem.count.loop = col_NULL;
-
-    /* allocate memory for the result schema */
-    ret->schema.count = part ? 2 : 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    if (part) {
-        unsigned int i;
-        for (i = 0; i < n->schema.count; i++)
-
-            if (n->schema.items[i].name == part) {
-                ret->schema.items[0] = n->schema.items[i];
-                break;
-            }
-
-#ifndef NDEBUG
-        if (i == n->schema.count)
-            PFoops (OOPS_FATAL,
-                    "HashCount: unable to find partitioning column `%s'",
-                    PFcol_str (part));
-#endif
-    }
-
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_int };
-
-    /* ---- HashCount: orderings ---- */
-    /* HashCount does not provide any orderings. */
-
-    /* ---- HashCount: costs ---- */
-    ret->cost = AGGR_COST + n->cost;
-
-    return ret;
-}
-
-/**
  * Aggr: Aggregation function operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
 PFpa_op_t *
-PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n,
-           PFalg_col_t res, PFalg_col_t col, PFalg_col_t part)
+PFpa_aggr (const PFpa_op_t *n, PFalg_col_t part,
+           unsigned int count, PFalg_aggr_t *aggr)
 {
-    PFpa_op_t *ret = wire1 (kind, n);
+    PFpa_op_t    *ret = wire1 (pa_aggr, n);
     unsigned int  i;
-#ifndef NDEBUG
-    bool          c1 = false;
-    bool          c2 = false;
-#endif
-
-    ret->sem.aggr.res  = res;
-    ret->sem.aggr.col = col;
-    ret->sem.aggr.part = part;
 
     /* set number of schema items in the result schema
-     * (partitioning column plus result column)
+     * (result columns plus partitioning column)
      */
-    ret->schema.count = part ? 2 : 1;
+    ret->schema.count = count + (part ? 1 : 0);
 
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    ret->schema.items = PFmalloc (ret->schema.count *
+                                  sizeof (*(ret->schema.items)));
 
-    /* verify that columns 'col' and 'part' are columns of n
-     * and include them into the result schema
-     */
-    for (i = 0; i < n->schema.count; i++) {
-        if (col == n->schema.items[i].name) {
-            ret->schema.items[0] = n->schema.items[i];
-            ret->schema.items[0].name = res;
-#ifndef NDEBUG
-            c1 = true;
-#endif
+    /* insert semantic value (aggregates) into the result */
+    ret->sem.aggr.part  = part;
+    ret->sem.aggr.count = count;
+    ret->sem.aggr.aggr  = PFmalloc (count * sizeof (PFalg_aggr_t));
+
+    for (i = 0; i < count; i++) {
+        PFalg_col_t col = aggr[i].col;
+        if (col) {
+            if (!check_col (n, col))
+                PFoops (OOPS_FATAL,
+                        "column `%s' referenced in aggregate not found",
+                        PFcol_str (col));
+            ret->schema.items[i].type = type_of (n, col);
         }
-        if (part && part == n->schema.items[i].name) {
-            ret->schema.items[1] = n->schema.items[i];
-#ifndef NDEBUG
-            c2 = true;
-#endif
+        else {
+            ret->schema.items[i].type = aat_int;
         }
+        ret->sem.aggr.aggr[i] = aggr[i];
+        ret->schema.items[i].name = aggr[i].res;
     }
-
-#ifndef NDEBUG
-    /* did we find column 'col'? */
-    if (!c1)
-        PFoops (OOPS_FATAL,
-                "column `%s' referenced in aggregation function not found",
-                PFcol_str (col));
-
-    /* did we find column 'part'? */
-    if (part && !c2)
-        PFoops (OOPS_FATAL,
-                "partitioning column `%s' referenced in aggregation "
-                "function not found",
-                PFcol_str (part));
-#endif
+    if (part) {
+        if (!check_col (n, part))
+            PFoops (OOPS_FATAL,
+                    "column `%s' referenced in aggregate not found",
+                    PFcol_str (part));
+        ret->schema.items[count].name = part;
+        ret->schema.items[count].type = type_of (n, part);
+    }
 
     /* ---- Aggr: orderings ---- */
     /* Aggr does not provide any orderings. */

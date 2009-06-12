@@ -151,14 +151,6 @@ infer_level (PFla_op_t *n)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
         case la_fcns:
         case la_docnode:
         case la_element:
@@ -254,6 +246,17 @@ infer_level (PFla_op_t *n)
                             mark_level (n->prop, col, l_level);
                         break;
                     }
+            break;
+
+        case la_aggr:
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (n->sem.aggr.aggr[i].kind == alg_aggr_dist &&
+                    LEVEL_KNOWN (PFprop_level (L(n)->prop,
+                                               n->sem.aggr.aggr[i].col)))
+                    mark_level (n->prop,
+                                n->sem.aggr.aggr[i].res,
+                                PFprop_level (L(n)->prop,
+                                              n->sem.aggr.aggr[i].col));
             break;
 
         case la_step_join:

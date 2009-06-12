@@ -56,6 +56,8 @@ PFalg_atom_t PFxml2la_conv_2PFLA_atom (PFalg_simple_type_t,
 
 PFalg_comp_t PFxml2la_conv_2PFLA_comparisonType (char* s);
 
+PFalg_aggr_kind_t PFxml2la_conv_2PFLA_aggregateType (char* s);
+
 PFalg_fun_t PFxml2la_conv_2PFLA_functionType (char* s);
 
 bool PFxml2la_conv_2PFLA_orderingDirection (char* s); 

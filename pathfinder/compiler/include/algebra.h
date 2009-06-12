@@ -457,6 +457,29 @@ enum PFalg_doc_tbl_kind_t {
 };
 typedef enum PFalg_doc_tbl_kind_t PFalg_doc_tbl_kind_t;
 
+/* ................ aggregate specification ................. */
+
+enum PFalg_aggr_kind_t {
+      alg_aggr_dist   /**< aggregate of a column that functionally
+                           depends on the partitioning column */
+    , alg_aggr_count  /**< count aggregate */
+    , alg_aggr_min    /**< minimum aggregate */
+    , alg_aggr_max    /**< maximum aggregate */
+    , alg_aggr_avg    /**< average aggregate */
+    , alg_aggr_sum    /**< sum aggregate */
+    , alg_aggr_seqty1 /**< sequence type matching for `1' occurrence */
+    , alg_aggr_all    /**< all existential quantifier */
+    , alg_aggr_prod   /**< product aggregate */
+};
+typedef enum PFalg_aggr_kind_t PFalg_aggr_kind_t;
+
+struct PFalg_aggr_t {
+    PFalg_aggr_kind_t kind; /**< aggregate kind */
+    PFalg_col_t       res;  /**< result column */
+    PFalg_col_t       col;  /**< input column */
+};
+typedef struct PFalg_aggr_t PFalg_aggr_t;
+
 /* ............. document fields specification .............. */
 
 enum PFalg_doc_t {
@@ -638,6 +661,18 @@ char * PFalg_fun_call_kind_str (PFalg_fun_call_t kind);
  * Print function name
  */
 char * PFalg_fun_str (PFalg_fun_t fun);
+
+/**
+ * Print aggregate kind
+ */
+char * PFalg_aggr_kind_str (PFalg_aggr_kind_t kind);
+
+/**
+ * Construct an aggregate entry.
+ */
+PFalg_aggr_t PFalg_aggr (PFalg_aggr_kind_t kind,
+                         PFalg_col_t       res,
+                         PFalg_col_t       col);
 
 /**
  * Construct a predicate.

@@ -538,20 +538,25 @@ infer_const (PFla_op_t *n)
                     PFprop_const_val (L(n)->prop, n->sem.binary.col1));
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-            /* if column 'col' is constant the result 'res' will be as well */
-            if (PFprop_const (L(n)->prop, n->sem.aggr.col))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.aggr.res,
-                        PFprop_const_val (L(n)->prop, n->sem.aggr.col));
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (PFprop_const (L(n)->prop, n->sem.aggr.aggr[i].col))
+                    switch (n->sem.aggr.aggr[i].kind) {
+                        case alg_aggr_dist:
+                        case alg_aggr_min:
+                        case alg_aggr_max:
+                        case alg_aggr_avg:
+                        case alg_aggr_all:
+                            PFprop_mark_const (
+                                    n->prop,
+                                    n->sem.aggr.aggr[i].res,
+                                    PFprop_const_val (L(n)->prop,
+                                                      n->sem.aggr.aggr[i].col));
+                            break;
+
+                        default:
+                            break;
+                    }
             if (n->sem.aggr.part &&
                 PFprop_const (L(n)->prop, n->sem.aggr.part))
                 PFprop_mark_const (

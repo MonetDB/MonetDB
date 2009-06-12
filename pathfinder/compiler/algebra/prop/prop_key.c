@@ -553,21 +553,15 @@ infer_key (PFla_op_t *n, bool with_guide_info, bool with_fd_info)
                 union_ (n->prop->keys, n->sem.binary.res);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             /* either the partition is key or if not
                present the aggregated result as it
                contains only one tuple */
             if (n->sem.aggr.part)
                 union_ (n->prop->keys, n->sem.aggr.part);
             else
-                union_ (n->prop->keys, n->sem.aggr.res);
+                for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                    union_ (n->prop->keys, n->sem.aggr.aggr[i].res);
             break;
 
         case la_rownum:

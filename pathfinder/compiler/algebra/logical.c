@@ -2157,118 +2157,72 @@ PFla_to (const PFla_op_t *n, PFalg_col_t res,
 
 
 /**
- * Constructor for operators forming the application of a
- * (partitioned) aggregation function (sum, min, max and avg) on a column.
+ * Constructor for aggregate operator that builds @a count number
+ * of aggregates in parallel (based on the same partitioning column
+ * @a part). Every attribute is of the kind count, sum, min, max, avg,
+ * seqty1, all, prod, or dist.
  *
- * The values of column @a col are used by the aggregation functaion.
- * The partitioning (group by) column is represented by @a part.
- * The result is stored in column @a res.
+ *
+ * The `seqty1' aggregate is particularly crafted to test the occurrence
+ * indicator ``exactly one'' (`1'). It groups its argument according
+ * to the column @a part. For each partition it will look at the
+ * value column @a col. If there is exactly one tuple for the
+ * partition, and if the value of @a col is @c true for this tuple,
+ * the result for this partition will be @c true. In all other cases
+ * (There is more than one tuple, or the single tuple contains @c false
+ * in @a col.) the result for this partition will be @c false.
+ *
+ * The `all' aggregate looks into a group of tuples (by partitioning
+ * column @a part), and returns @c true for this group iff all
+ * values in column @a col for this group are @c true.
+ *
+ * The `dist' aggregate can be used only for columns that functionally
+ * dependent on the partitioning column (and could be replaced by min or max).
  */
 PFla_op_t *
-PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_col_t res,
-           PFalg_col_t col, PFalg_col_t part)
+PFla_aggr (const PFla_op_t *n, PFalg_col_t part,
+           unsigned int count, PFalg_aggr_t *aggr)
 {
-    /* build a new aggr node */
-    PFla_op_t    *ret = la_op_wire1 (kind, n);
+    /* build a new aggregate node */
+    PFla_op_t    *ret = la_op_wire1 (la_aggr, n);
     unsigned int  i;
-    bool          c1 = false;
-    bool          c2 = false;
 
     /* set number of schema items in the result schema
-     * (partitioning column plus result column)
+     * (result columns plus partitioning column)
      */
-    ret->schema.count = part ? 2 : 1;
+    ret->schema.count = count + (part ? 1 : 0);
 
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    ret->schema.items = PFmalloc (ret->schema.count *
+                                  sizeof (*(ret->schema.items)));
 
+    /* insert semantic value (aggregates) into the result */
+    ret->sem.aggr.part  = part;
+    ret->sem.aggr.count = count;
+    ret->sem.aggr.aggr  = PFmalloc (count * sizeof (PFalg_aggr_t));
 
-    /* verify that columns 'col' and 'part' are columns of n
-     * and include them into the result schema
-     */
-    for (i = 0; i < n->schema.count; i++) {
-        if (col == n->schema.items[i].name) {
-            ret->schema.items[0] = n->schema.items[i];
-            ret->schema.items[0].name = res;
-            c1 = true;
+    for (i = 0; i < count; i++) {
+        PFalg_col_t col = aggr[i].col;
+        if (col) {
+            if (!PFprop_ocol (n, col))
+                PFoops (OOPS_FATAL,
+                        "column `%s' referenced in aggregate not found",
+                        PFcol_str (col));
+            ret->schema.items[i].type = PFprop_type_of (n, col);
         }
-        if (part && part == n->schema.items[i].name) {
-            ret->schema.items[1] = n->schema.items[i];
-            c2 = true;
+        else {
+            ret->schema.items[i].type = aat_int;
         }
+        ret->sem.aggr.aggr[i] = aggr[i];
+        ret->schema.items[i].name = aggr[i].res;
     }
-
-    /* did we find column 'col'? */
-    if (!c1)
-        PFoops (OOPS_FATAL,
-                "column `%s' referenced in aggregation function not found",
-                PFcol_str (col));
-
-    /* did we find column 'part'? */
-    if (part && !c2)
-        PFoops (OOPS_FATAL,
-                "partitioning column `%s' referenced in aggregation "
-                "function not found",
-                PFcol_str (part));
-
-    /* insert semantic value (result (aggregated) column, partitioning
-     * column(s), and result column) into the result
-     */
-    ret->sem.aggr.col = col;
-    ret->sem.aggr.part = part;
-    ret->sem.aggr.res = res;
-
-    return ret;
-}
-
-
-/**
- * Constructor for (partitioned) row counting operators.
- *
- * Counts all rows with identical values in column @a part (which holds
- * the partitioning or group by column). The result is stored in
- * column @a res.
- */
-PFla_op_t *
-PFla_count (const PFla_op_t *n, PFalg_col_t res, PFalg_col_t part)
-{
-    PFla_op_t    *ret = la_op_wire1 (la_count, n);
-    unsigned int  i;
-
-    /* set number of schema items in the result schema
-     * (partitioning column plus result column)
-     */
-    ret->schema.count = part ? 2 : 1;
-
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy the partitioning column */
     if (part) {
-        for (i = 0; i < n->schema.count; i++)
-            if (n->schema.items[i].name == part) {
-                ret->schema.items[1] = n->schema.items[i];
-                break;
-            }
-
-        /* did we find column 'part'? */
-        if (i >= n->schema.count)
+        if (!PFprop_ocol (n, part))
             PFoops (OOPS_FATAL,
-                    "partitioning column %s referenced in count operator "
-                    "not found", PFcol_str (part));
+                    "column `%s' referenced in aggregate not found",
+                    PFcol_str (part));
+        ret->schema.items[count].name = part;
+        ret->schema.items[count].type = PFprop_type_of (n, part);
     }
-
-    /* insert result column into schema */
-    ret->schema.items[0].name = res;
-    ret->schema.items[0].type = aat_int;
-
-    /* insert semantic value (partitioning and result column) into
-     * the result
-     */
-    ret->sem.aggr.part = part;
-    ret->sem.aggr.res  = res;
-    ret->sem.aggr.col  = col_NULL; /* don't use col field */
-
 
     return ret;
 }
@@ -2634,46 +2588,6 @@ PFla_cast (const PFla_op_t *n, PFalg_col_t res,
 
     return ret;
 }
-
-/**
- * Constructor for algebra `seqty1' operator.
- *
- * This operator is particularly crafted to test the occurrence
- * indicator ``exactly one'' (`1'). It groups its argument according
- * to the column @a part. For each partition it will look at the
- * value column @a col. If there is exactly one tuple for the
- * partition, and if the value of @a col is @c true for this tuple,
- * the result for this partition will be @c true. In all other cases
- * (There is more than one tuple, or the single tuple contains @c false
- * in @a col.) the result for this partition will be @c false.
- */
-PFla_op_t *
-PFla_seqty1 (const PFla_op_t *n,
-             PFalg_col_t res, PFalg_col_t col, PFalg_col_t part)
-{
-    assert (PFprop_type_of (n, col) == aat_bln);
-    return PFla_aggr (la_seqty1, n, res, col, part);
-}
-
-
-/**
- * Construction operator for algebra `all' operator.
- *
- * The `all' operator looks into a group of tuples (by partitioning
- * column @a part), and returns @c true for this group iff all
- * values in column @a col for this group are @c true.
- *
- * This operator is used, e.g., to back the occurence indicators `+'
- * and `*'.
- */
-PFla_op_t *
-PFla_all (const PFla_op_t *n,
-          PFalg_col_t res, PFalg_col_t col, PFalg_col_t part)
-{
-    assert (PFprop_type_of (n, col) == aat_bln);
-    return PFla_aggr (la_all, n, res, col, part);
-}
-
 
 /**
  * Path step operator.
@@ -4363,20 +4277,11 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                             n->sem.binary.col1,
                             n->sem.binary.col2);
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-            return PFla_aggr (n->kind, left,
-                              n->sem.aggr.res,
-                              n->sem.aggr.col,
-                              n->sem.aggr.part);
-
-        case la_count:
-            return PFla_count (left,
-                               n->sem.aggr.res,
-                               n->sem.aggr.part);
+        case la_aggr:
+            return PFla_aggr (left,
+                              n->sem.aggr.part,
+                              n->sem.aggr.count,
+                              n->sem.aggr.aggr);
 
         case la_rownum:
             return PFla_rownum (left,
@@ -4415,18 +4320,6 @@ PFla_op_duplicate (PFla_op_t *n, PFla_op_t *left, PFla_op_t *right)
                               n->sem.type.res,
                               n->sem.type.col,
                               n->sem.type.ty);
-
-        case la_seqty1:
-            return PFla_seqty1 (left,
-                                n->sem.aggr.res,
-                                n->sem.aggr.col,
-                                n->sem.aggr.part);
-
-        case la_all:
-            return PFla_all (left,
-                             n->sem.aggr.res,
-                             n->sem.aggr.col,
-                             n->sem.aggr.part);
 
         case la_step:
             return PFla_step (left, right,

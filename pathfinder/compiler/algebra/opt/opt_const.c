@@ -196,19 +196,7 @@ opt_const_attach (PFla_op_t *p)
             }
             break;
 
-        case la_sum:
-        case la_prod:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                L(p) = add_attach (L(p), p->sem.aggr.col,
-                                   PFprop_const_val_left (p->prop,
-                                                          p->sem.aggr.col));
-            }
-            /* fall through */
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_count:
+        case la_aggr:
             /* introduce attach if necessary */
             if (p->sem.aggr.part &&
                 PFprop_const_left (p->prop, p->sem.aggr.part)) {
@@ -216,6 +204,15 @@ opt_const_attach (PFla_op_t *p)
                                    PFprop_const_val_left (p->prop,
                                                           p->sem.aggr.part));
             }
+            /* introduce attach if necessary */
+            for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                if (p->sem.aggr.aggr[i].col &&
+                    PFprop_const_left (p->prop, p->sem.aggr.aggr[i].col))
+                    L(p) = add_attach (L(p),
+                                       p->sem.aggr.aggr[i].col,
+                                       PFprop_const_val_left (
+                                           p->prop,
+                                           p->sem.aggr.aggr[i].col));
             break;
 
         case la_type:
@@ -226,33 +223,6 @@ opt_const_attach (PFla_op_t *p)
                                    PFprop_const_val_left (
                                        p->prop,
                                        p->sem.type.col));
-            }
-            break;
-
-        case la_all:
-            if (p->sem.aggr.part &&
-                PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                PFla_op_t *op, *ret;
-                
-                op = distinct (
-                         project (L(p),
-                                  proj (p->sem.aggr.part,
-                                        p->sem.aggr.part)));
-
-                ret = add_attach (op, p->sem.aggr.col,
-                                  PFprop_const_val_left (
-                                      p->prop,
-                                      p->sem.aggr.col));
-                *p = *ret;
-                SEEN(p) = true;
-            }
-            /* fall through */
-        case la_seqty1:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                L(p) = add_attach (L(p), p->sem.aggr.col,
-                                   PFprop_const_val_left (p->prop,
-                                                          p->sem.aggr.col));
             }
             break;
 
@@ -543,9 +513,12 @@ opt_const (PFla_op_t *p)
                and replace it by an unpartitioned count */
             if (p->schema.count == 1 &&
                 L(p)->kind == la_project &&
-                LL(p)->kind == la_count &&
+                LL(p)->kind == la_aggr &&
+                LL(p)->sem.aggr.count == 1 &&
+                LL(p)->sem.aggr.aggr[0].kind == alg_aggr_count &&
+                LL(p)->sem.aggr.part &&
                 PFprop_const (LL(p)->prop, LL(p)->sem.aggr.part) &&
-                L(p)->sem.proj.items[0].old == LL(p)->sem.aggr.res &&
+                L(p)->sem.proj.items[0].old == LL(p)->sem.aggr.aggr[0].res &&
                 R(p)->kind == la_project &&
                 RL(p)->kind == la_attach &&
                 R(p)->sem.proj.items[0].old == RL(p)->sem.attach.res &&
@@ -557,6 +530,9 @@ opt_const (PFla_op_t *p)
                 RLLR(p)->sem.proj.items[0].old ==
                 LL(p)->sem.aggr.part &&
                 L(RLLR(p)) == LL(p)) {
+                PFalg_aggr_t aggr = PFalg_aggr (alg_aggr_count,
+                                                R(p)->sem.proj.items[0].old,
+                                                col_NULL);
 
                 /* check that the values in the loop are constant
                    and provide the same value */
@@ -578,9 +554,10 @@ opt_const (PFla_op_t *p)
                    of 0) we have to make sure that we take the cardinality
                    of the loop relation into account. */
                 *p = *project (cross (RLLL(p), /* loop */
-                                      PFla_count (LLL(p),
-                                                  R(p)->sem.proj.items[0].old,
-                                                  col_NULL)),
+                                      PFla_aggr (LLL(p),
+                                                 col_NULL,
+                                                 1,
+                                                 &aggr)),
                                proj (R(p)->sem.proj.items[0].new,
                                      R(p)->sem.proj.items[0].old));
                 break;
@@ -764,100 +741,21 @@ opt_const (PFla_op_t *p)
             }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-            /* some optimization opportunities for
-               aggregate operators arise if 'col' is constant */
-            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
+        case la_aggr:
+            for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                if (PFprop_const_left (p->prop, p->sem.aggr.aggr[i].col))
+                    switch (p->sem.aggr.aggr[i].kind) {
+                        case alg_aggr_avg:
+                        case alg_aggr_max:
+                        case alg_aggr_min:
+                        case alg_aggr_all:
+                            p->sem.aggr.aggr[i].kind = alg_aggr_dist;
+                            break;
 
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
-         
-                /* if partitioning column is constant as well
-                   replace aggregate by a new literal table
-                   with one row containing 'col' and 'part' */
-                if (p->sem.aggr.part &&
-                    PFprop_const_left (p->prop, p->sem.aggr.part))
-                    *p = *PFla_lit_tbl (
-                              collist (p->sem.aggr.res,
-                                       p->sem.aggr.part),
-                              PFalg_tuple (PFprop_const_val_left (
-                                               p->prop,
-                                               p->sem.aggr.col),
-                                           PFprop_const_val_left (
-                                               p->prop,
-                                               p->sem.aggr.part)));
-                /* if the partitioning column is present but not
-                   constant we can replace the aggregate by a
-                   distinct operator (value in 'col' stays the same). */
-                else if (p->sem.aggr.part)
-#endif
-                    *p = *PFla_distinct (
-                              PFla_project (
-                                  L(p),
-                                  PFalg_proj (p->sem.aggr.res,
-                                              p->sem.aggr.col),
-                                  PFalg_proj (p->sem.aggr.part,
-                                              p->sem.aggr.part)));
-#if 0
-                /* replace aggregate by a new literal table
-                   containining a single record with the result of
-                   aggregate operator. */
-                else
-                    *p = *PFla_lit_tbl (collist (p->sem.aggr.res),
-                                        PFalg_tuple (
-                                            PFprop_const_val_left (
-                                                p->prop,
-                                                p->sem.aggr.col)));
-#endif
-            }
+                        default:
+                            break;
+                    }
             break;
-
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
-         
-        case la_sum:
-        case la_prod:
-            /* if partitiong column is constant remove it
-               and attach it after the operator */
-            if (p->sem.aggr.part &&
-                PFprop_const_left (p->prop, p->sem.aggr.part)) {
-                PFla_op_t *sum = PFla_aggr (p->kind,
-                                           L(p),
-                                           p->sem.aggr.res,
-                                           p->sem.aggr.col,
-                                           p->sem.aggr.part);
-                PFla_op_t *ret = add_attach (sum, p->sem.aggr.part,
-                                             PFprop_const_val_left (
-                                                 p->prop,
-                                                 p->sem.aggr.part));
-                sum->sem.aggr.part = col_NULL;
-                *p = *ret;
-                SEEN(p) = true;
-            }
-            break;
-
-        case la_count:
-            /* if partitiong column is constant remove it
-               and attach it after the operator */
-            if (p->sem.aggr.part &&
-                PFprop_const_left (p->prop, p->sem.aggr.part)) {
-                PFla_op_t *count = PFla_count (L(p),
-                                               p->sem.aggr.res,
-                                               p->sem.aggr.part);
-                PFla_op_t *ret = add_attach (count, p->sem.aggr.part,
-                                             PFprop_const_val_left (
-                                                 p->prop,
-                                                 p->sem.aggr.part));
-                count->sem.aggr.part = col_NULL;
-                *p = *ret;
-                SEEN(p) = true;
-            }
-            break;
-#endif
 
         case la_rownum:
         {
@@ -915,77 +813,6 @@ opt_const (PFla_op_t *p)
             if (PFord_count (sortby) == 0)
                 *p = *PFla_attach (L(p), p->sem.sort.res, PFalg_lit_int (1));
         }   break;
-
-#if 0 /* We are not allowed to create an unpartitioned aggregate
-         as an empty loop relation might result in a single line
-         result otherwise. */
-
-        case la_all:
-            if (p->sem.aggr.part &&
-                PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                PFla_op_t *op, *ret;
-                
-                if (PFprop_const_left (p->prop, p->sem.aggr.part)) {
-                    op = lit_tbl (collist (p->sem.aggr.part),
-                                  tuple (PFprop_const_val_left (
-                                             p->prop,
-                                             p->sem.aggr.part)));
-                } else {
-                    op = distinct (
-                             project (L(p),
-                                      proj (p->sem.aggr.part,
-                                            p->sem.aggr.part)));
-                }
-
-                ret = add_attach (op, p->sem.aggr.col,
-                                  PFprop_const_val_left (
-                                      p->prop,
-                                      p->sem.aggr.col));
-                *p = *ret;
-                SEEN(p) = true;
-            }
-
-            else if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                PFla_op_t *ret = lit_tbl (collist (p->sem.aggr.col),
-                                          tuple (PFprop_const_val_left (
-                                                     p->prop,
-                                                     p->sem.aggr.col)));
-                *p = *ret;
-                SEEN(p) = true;
-            }
-            /* fall through */
-        case la_seqty1:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.aggr.col)) {
-                L(p) = add_attach (L(p), p->sem.aggr.col,
-                                   PFprop_const_val_left (p->prop,
-                                                          p->sem.aggr.col));
-            }
-
-            /* if partitiong column is constant remove it
-               and attach it after the operator */
-            if (p->sem.aggr.part &&
-                PFprop_const_left (p->prop, p->sem.aggr.part)) {
-                PFla_op_t *op = p->kind == la_all
-                                ? PFla_all (L(p),
-                                            p->sem.aggr.res,
-                                            p->sem.aggr.col,
-                                            p->sem.aggr.part)
-                                : PFla_seqty1 (L(p),
-                                               p->sem.aggr.res,
-                                               p->sem.aggr.col,
-                                               p->sem.aggr.part);
-
-                PFla_op_t *ret = add_attach (op, p->sem.aggr.part,
-                                             PFprop_const_val_left (
-                                                 p->prop,
-                                                 p->sem.aggr.part));
-                op->sem.aggr.part = col_NULL;
-                *p = *ret;
-                SEEN(p) = true;
-            }
-            break;
-#endif
 
         default:
             break;

@@ -370,22 +370,16 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.unary.res == b->sem.unary.res);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            if (a->sem.aggr.col != b->sem.aggr.col
-                || a->sem.aggr.res != b->sem.aggr.res)
+        case la_aggr:
+            if (a->sem.aggr.count != b->sem.aggr.count ||
+                a->sem.aggr.part  != b->sem.aggr.part)
                 return false;
 
-            /* either both aggregates are partitioned or none */
-            /* partitioning column must be equal (if available) */
-            if (a->sem.aggr.part != b->sem.aggr.part)
-                return false;
+            for (unsigned int i = 0; i < a->sem.aggr.count; i++)
+                if (a->sem.aggr.aggr[i].kind != b->sem.aggr.aggr[i].kind ||
+                    a->sem.aggr.aggr[i].res  != b->sem.aggr.aggr[i].res  ||
+                    a->sem.aggr.aggr[i].col  != b->sem.aggr.aggr[i].col)
+                    return false;
 
             return true;
 

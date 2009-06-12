@@ -415,6 +415,59 @@ copy_disunion (PFla_op_t  *n)
 }
 
 /**
+ * @brief Copy the guide mappings with respect
+ *        to the aggregate operator semantics.
+ */
+static void
+copy_aggregate (PFla_op_t *n)
+{
+    PFguide_mapping_t *mapping      = NULL;
+    PFarray_t         *map_list     = MAPPING_LIST(L(n)),
+                      *new_map_list = PFarray (sizeof (PFguide_mapping_t *),
+                                               n->sem.proj.count);
+    PFalg_col_t        new,
+                       old;
+
+    if (map_list == NULL) {
+        MAPPING_LIST(n) = NULL;
+        return;
+    }
+
+    /* iterate over all columns */
+    for (unsigned int i = 0; i < n->sem.aggr.count; i++) {
+        /* only collect the guides for distinct aggregates */
+        if (n->sem.aggr.aggr[i].kind != alg_aggr_dist)
+            continue;
+
+        /* get new and old column name */
+        new = n->sem.aggr.aggr[i].res;
+        old = n->sem.aggr.aggr[i].col;
+
+        /* get guide mapping from list */
+        mapping = get_guide_mapping (map_list, old);
+
+        if (mapping == NULL)
+            continue;
+
+        /* create a copy */
+        mapping = copy_guide_mapping (mapping);
+
+        /* set new column name */
+        mapping->column = new;
+
+        /* assign guide mapping to the list */
+        GUIDE_MAP_ADD(new_map_list) = mapping;
+    }
+
+    /* only keep the guide mapping list
+       if we have a mapping */
+    if (PFarray_last (new_map_list))
+        MAPPING_LIST(n) = new_map_list;
+    else
+        MAPPING_LIST(n) = NULL;
+}
+
+/**
  * @brief Apply kind and name test for path steps.
  *
  * @param return_attr ensures that attribute nodes are allowed/discarded,
@@ -773,14 +826,6 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         case la_lit_tbl:
         case la_empty_tbl:
         case la_ref_tbl:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
         case la_twig:
         case la_fcns:
         case la_element:
@@ -843,6 +888,10 @@ infer_guide (PFla_op_t *n, PFguide_list_t *guides)
         /* intersect */
         case la_intersect:
             copy_intersect (n);
+            break;
+
+        case la_aggr:
+            copy_aggregate (n);
             break;
 
         /* step */

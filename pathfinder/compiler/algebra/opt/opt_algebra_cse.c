@@ -92,12 +92,7 @@ static char *ID[] = {
     , [la_bool_or]         = "la_bool_or"
     , [la_bool_not]        = "la_bool_not"
     , [la_to]              = "la_to"
-    , [la_avg]             = "la_avg"
-    , [la_max]             = "la_max"
-    , [la_min]             = "la_min"
-    , [la_sum]             = "la_sum"
-    , [la_prod]            = "la_prod"
-    , [la_count]           = "la_count"
+    , [la_aggr]            = "la_aggr"
     , [la_rownum]          = "la_rownum"
     , [la_rowrank]         = "la_rowrank"
     , [la_rank]            = "la_rank"
@@ -105,8 +100,6 @@ static char *ID[] = {
     , [la_type]            = "la_type"
     , [la_type_assert]     = "la_type_assert"
     , [la_cast]            = "la_cast"
-    , [la_seqty1]          = "la_seqty1"
-    , [la_all]             = "la_all"
     , [la_step]            = "la_step"
     , [la_step_join]       = "la_step_join"
     , [la_guide_step]      = "la_guide_step"
@@ -995,12 +988,27 @@ match (PFla_op_t *a, PFla_op_t *b)
 
             return false;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
+        case la_aggr:
+        {
+            unsigned int i = 0;
+            unsigned int j = 0;
+            for (i = 0; i < a->sem.aggr.count; i++) {
+                 for (j = 0; j < b->sem.aggr.count; j++) {
+                     if ((IS_NULL (a->sem.aggr.aggr[i].col)
+                          ? col_NULL
+                          : ACTCOL (L(a), a->sem.aggr.aggr[i].col) ==
+                          IS_NULL (b->sem.aggr.aggr[j].col)
+                          ? col_NULL
+                          : ACTCOL (L(b), b->sem.aggr.aggr[j].col)) &&
+                         (a->sem.aggr.aggr[i].kind ==
+                          b->sem.aggr.aggr[j].kind))
+                         break;
+                 }
+
+                 if (j >= b->sem.aggr.count)
+                     return false;
+            }
+
             /* partition column is not necesserily set */
             if (IS_NULL(a->sem.aggr.part)?col_NULL:
                     ACTCOL (L(a), a->sem.aggr.part) !=
@@ -1008,15 +1016,7 @@ match (PFla_op_t *a, PFla_op_t *b)
                     ACTCOL (L(b), b->sem.aggr.part))
                 return false;
 
-
-            /* even col is not necesserily set */
-            if (IS_NULL(a->sem.aggr.col)?col_NULL:
-                    ACTCOL (L(a), a->sem.aggr.col) !=
-                IS_NULL(b->sem.aggr.col)?col_NULL:
-                    ACTCOL (L(b), b->sem.aggr.col))
-                return false;
-
-            return true;
+        }   return true;
 
         case la_rownum:
         case la_rowrank:
@@ -1059,24 +1059,6 @@ match (PFla_op_t *a, PFla_op_t *b)
                 return true;
 
             return false;
-
-        case la_seqty1:
-        case la_all:
-            /* partition column is not necesserily set */
-            if (IS_NULL(a->sem.aggr.part)?col_NULL:
-                    ACTCOL (L(a), a->sem.aggr.part) !=
-                IS_NULL(b->sem.aggr.part)?col_NULL:
-                    ACTCOL (L(b), b->sem.aggr.part))
-                return false;
-
-            /* even col is not necesserily set */
-            if (IS_NULL(a->sem.aggr.col)?col_NULL:
-                    ACTCOL (L(a), a->sem.aggr.col) !=
-                IS_NULL(b->sem.aggr.col)?col_NULL:
-                    ACTCOL (L(b), b->sem.aggr.col))
-                return false;
-
-            return true;
 
         case la_step:
             if (!((ACTCOL (R(a), a->sem.step.iter) ==
@@ -1717,26 +1699,29 @@ new_operator (PFla_op_t *n)
                                               n->sem.unary.res),
                              ACTCOL (L(n), n->sem.unary.col));
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-            return PFla_aggr (n->kind, CSE(L(n)),
-                              create_unq_name (CSE(L(n))->schema,
-                                               n->sem.aggr.res),
-                              ACTCOL (L(n), n->sem.aggr.col),
-                              (n->sem.aggr.part == col_NULL)?
-                              col_NULL:
-                              ACTCOL (L(n), n->sem.aggr.part));
+        case la_aggr:
+        {
+            PFalg_aggr_t *aggr = PFmalloc (n->sem.aggr.count *
+                                           sizeof (PFalg_aggr_t));
+            /* copy aggr_list */
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                aggr[i] = PFalg_aggr (
+                              n->sem.aggr.aggr[i].kind,
+                              create_unq_name (
+                                  CSE(L(n))->schema,
+                                  n->sem.aggr.aggr[i].res),
+                              IS_NULL (n->sem.aggr.aggr[i].col)
+                              ? col_NULL
+                              : ACTCOL (L(n), n->sem.aggr.aggr[i].col));
 
-        case la_count:
-            return PFla_count (CSE(L(n)),
-                               create_unq_name (CSE(L(n))->schema,
-                                                n->sem.aggr.res),
-                               (n->sem.aggr.part == col_NULL)?
-                               col_NULL:
-                               ACTCOL (L(n), n->sem.aggr.part));
+             return PFla_aggr (CSE(L(n)),
+                               IS_NULL (n->sem.aggr.part)
+                               ? col_NULL
+                               : ACTCOL (L(n), n->sem.aggr.part),
+                               n->sem.aggr.count,
+                               aggr);
+        }
+
         case la_rownum:
         case la_rowrank:
         case la_rank:
@@ -1804,24 +1789,6 @@ new_operator (PFla_op_t *n)
                                                n->sem.type.res),
                               ACTCOL (L(n), n->sem.type.col),
                               n->sem.type.ty);
-
-        case la_seqty1:
-            return PFla_seqty1 (CSE(L(n)),
-                                create_unq_name (CSE(L(n))->schema,
-                                                 n->sem.aggr.res),
-                                ACTCOL (L(n), n->sem.aggr.col),
-                                (n->sem.aggr.part == col_NULL)?
-                                col_NULL:
-                                ACTCOL (L(n), n->sem.aggr.part));
-
-        case la_all:
-            return PFla_all (CSE(L(n)),
-                             create_unq_name (CSE(L(n))->schema,
-                                              n->sem.aggr.res),
-                             ACTCOL (L(n), n->sem.aggr.col),
-                             (n->sem.aggr.part == col_NULL)?
-                             col_NULL:
-                             ACTCOL (L(n), n->sem.aggr.part));
 
         case la_step:
             return PFla_step (CSE(L(n)), CSE(R(n)),
@@ -2322,15 +2289,13 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
                      actcol (cse->sem.unary.res, ori->sem.unary.res));
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
+        case la_aggr:
             actmap = create_actcol_map ();
-            INACTCOL (actmap,
-                      actcol (cse->sem.aggr.res, ori->sem.aggr.res),
-                      actcol (cse->sem.aggr.col, ori->sem.aggr.col));
+
+            for (unsigned int i = 0; i < cse->sem.aggr.count; i++)
+                INACTCOL (actmap,
+                          actcol (cse->sem.aggr.aggr[i].res,
+                                  ori->sem.aggr.aggr[i].res));
 
             assert ((cse->sem.aggr.part == col_NULL &&
                      ori->sem.aggr.part == col_NULL) ||
@@ -2340,26 +2305,9 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             /* if grouping is performed on the same attribute as the
                aggregate function is applied don't add this item to
                the mapping structure */
-            if ((cse->sem.aggr.part != col_NULL) && 
-                (ori->sem.aggr.part != ori->sem.aggr.col))
+            if ((cse->sem.aggr.part != col_NULL))
                 INACTCOL (actmap,
                           actcol (cse->sem.aggr.part, ori->sem.aggr.part));
-
-            break;
-
-        case la_count:
-            actmap = create_actcol_map ();
-            INACTCOL (actmap,
-                      actcol (cse->sem.aggr.res, ori->sem.aggr.res));
-
-            assert ((cse->sem.aggr.part == col_NULL &&
-                     ori->sem.aggr.part == col_NULL) ||
-                    (cse->sem.aggr.part != col_NULL &&
-                     ori->sem.aggr.part != col_NULL));
-
-            if (ori->sem.aggr.part != col_NULL)
-                INACTCOL (actmap,
-                           actcol (cse->sem.aggr.part, ori->sem.aggr.part));
             break;
 
         case la_rownum:
@@ -2390,23 +2338,6 @@ adjust_operator (PFla_op_t *ori, PFla_op_t *cse)
             actmap = actcol_map_copy (ACT(L(ori)));
             INACTCOL (actmap,
                       actcol (cse->sem.type.res, ori->sem.type.res));
-            break;
-
-        case la_seqty1:
-        case la_all:
-            actmap = create_actcol_map ();
-            INACTCOL (actmap,
-                      actcol (cse->sem.aggr.res, ori->sem.aggr.res));
-
-            assert ((cse->sem.aggr.part == col_NULL &&
-                     ori->sem.aggr.part == col_NULL) ||
-                    (cse->sem.aggr.part != col_NULL &&
-                     ori->sem.aggr.part != col_NULL));
-
-            if (cse->sem.aggr.part != col_NULL)
-                INACTCOL (actmap,
-                    actcol (cse->sem.aggr.part, ori->sem.aggr.part));
-
             break;
 
         case la_step:

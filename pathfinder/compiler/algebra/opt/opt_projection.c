@@ -605,6 +605,48 @@ opt_projection (PFla_op_t *p)
                                        PFalg_proj (p->sem.unary.res, res)));
             }   break;
 
+            case la_aggr:
+                /* integrate all column renaming in the aggregate inputs */
+                for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                    if (p->sem.aggr.aggr[i].col)
+                        for (unsigned int j = 0; j < L(p)->sem.proj.count; j++)
+                            if (p->sem.aggr.aggr[i].col ==
+                                L(p)->sem.proj.items[j].new) {
+                                p->sem.aggr.aggr[i].col = 
+                                    L(p)->sem.proj.items[j].old;
+                                break;
+                            }
+                /* If partition column is renamed add a renaming projection
+                   on top of it that adjusts the partition column. */
+                if (p->sem.aggr.part) {
+                    PFalg_col_t old_part = col_NULL;
+                    for (unsigned int i = 0; i < L(p)->sem.proj.count; i++)
+                        if (p->sem.aggr.part == L(p)->sem.proj.items[i].new) {
+                            old_part = L(p)->sem.proj.items[i].old;
+                            break;
+                        }
+                    if (p->sem.aggr.part != old_part) {
+                        PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                       sizeof (PFalg_proj_t));
+                        for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                            proj[i] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                                  p->sem.aggr.aggr[i].res);
+                        proj[p->sem.aggr.count] = PFalg_proj (p->sem.aggr.part,
+                                                              old_part);
+
+                        *p = *PFla_project_ (aggr (LL(p),
+                                                   old_part,
+                                                   p->sem.aggr.count,
+                                                   p->sem.aggr.aggr),
+                                             p->schema.count,
+                                             proj);
+                        break;
+                    }
+                }
+                /* remove the projection */
+                L(p) = LL(p);
+                break;
+
             case la_rownum:
             case la_rowrank:
             case la_rank:

@@ -280,6 +280,13 @@
 #define PFLA_PREDICATES(xpath) \
                     getPFLA_Predicates(ctx, nodePtr, xpath)
 
+/**              
+ * Macro return-type:  PFalg_sel_t* 
+ * XPath return-type:  element(comparison)+
+ */
+#define PFLA_AGGREGATES(xpath) \
+                    getPFLA_Aggregates(ctx, nodePtr, xpath)
+
 
 /**              
  * Macro return-type:  int 
@@ -438,6 +445,12 @@ getPFLA_Tuples(
 
 PFalg_sel_t* 
 getPFLA_Predicates(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression);
+
+PFalg_aggr_t* 
+getPFLA_Aggregates(
     XML2LALGContext* ctx, 
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
@@ -692,6 +705,65 @@ importXML(XML2LALGContext* ctx, xmlDocPtr doc)
 }
 
 
+
+/**
+ * Legacy XML code import for old aggregate representations.
+ */
+static PFla_op_t *
+aggregate_legacy_detect (XML2LALGContext* ctx, xmlNodePtr nodePtr)
+{
+    PFalg_aggr_t      aggr;
+    PFalg_aggr_kind_t kind = alg_aggr_count;
+    char             *kind_str;
+   
+    /* fetch the node kind string from xml */
+    kind_str = PFxml2la_xpath_getAttributeValueFromAttributeNode (
+                   PFxml2la_xpath_getNthNode(XPATH("/@kind"), 0));
+
+    /* standard case */
+    if (!strcmp ("aggr", kind_str))
+        return NULL;
+    /* legacy code */
+    else if (!strcmp ("count", kind_str))
+        kind = alg_aggr_count;
+    else if (!strcmp ("sum", kind_str))
+        kind = alg_aggr_sum;
+    else if (!strcmp ("min", kind_str))
+        kind = alg_aggr_min;
+    else if (!strcmp ("max", kind_str))
+        kind = alg_aggr_max;
+    else if (!strcmp ("avg", kind_str))
+        kind = alg_aggr_avg;
+    else if (!strcmp ("prod", kind_str))
+        kind = alg_aggr_prod;
+    else if (!strcmp ("seqty1", kind_str))
+        kind = alg_aggr_seqty1;
+    else if (!strcmp ("all", kind_str))
+        kind = alg_aggr_all;
+    else
+        PFoops (OOPS_FATAL,
+                "could not recognize aggregate kind (%s)",
+                kind_str);
+
+    /*
+    <content>
+       <column name="COLNAME" new="true"/>
+       <column name="COLNAME" new="false" function="item"/>
+      (<column name="COLNAME" function="partition" new="false"/>)?
+    </content>
+    */
+
+    aggr = PFalg_aggr (kind,
+                       PFLA_ATT("/content/column[@new='true']/@name"), 
+                       PFLA_ATT_O("/content/column[@function='item']/@name",
+                                  col_NULL));
+
+    return PFla_aggr (CHILDNODE(0),
+                      PFLA_ATT_O("/content/column[@function='partition']/@name",
+                                 col_NULL),
+                      1,
+                      &aggr);
+}
 
 /* 
   =============================================================================
@@ -1268,54 +1340,33 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
 /******************************************************************************/
 /******************************************************************************/
 
-    case la_avg                  : 
-    case la_max                  :
-    case la_min                  :
-    case la_sum                  :
-    case la_prod                 :
+    case la_aggr                 : 
         {
-            /*
-           <content>
-              <column name="COLNAME" new="true"/>
-              <column name="COLNAME" new="false" function="item"/>
-             (<column name="COLNAME" function="partition" new="false"/>)?
-           </content>
-           */
+            /* check for legacy aggregate representations */
+            if ((newAlgNode = aggregate_legacy_detect (ctx, nodePtr)))
+                break;
 
-            newAlgNode = PFla_aggr 
+            /*
+              <content>
+               (<column name="COLNAME" function="partition" new="false"/>)?
+               (<aggregate kind="KIND">
+                  <column name="COLNAME" new="true"/>
+                  <column name="COLNAME" new="false"/>
+                </aggregate>)+
+             </content>             
+            */       
+            
+            newAlgNode = PFla_aggr
              (
-             algOpKindID, 
-             CHILDNODE(0), 
-             PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT("/content/column[@function='item']/@name"), 
+             CHILDNODE(0),
              PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        col_NULL)
+                        col_NULL),
+             NODECOUNT("/content/aggregate"), 
+             PFLA_AGGREGATES("/content/aggregate")
              );
+
         }  
         break;                       
-
-/******************************************************************************/
-/******************************************************************************/
-
-    case la_count                : 
-
-        {
-            /*
-            <content>
-               <column name="COLNAME" new="true"/>
-              (<column name="COLNAME" function="partition" new="false"/>)?
-            </content>
-            */
-
-            newAlgNode = PFla_count
-             (
-             CHILDNODE(0), 
-             PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        col_NULL)
-             );
-        }  
-        break;
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1476,57 +1527,6 @@ void createAndStoreAlgOpNode(XML2LALGContext* ctx, xmlNodePtr nodePtr)
              PFLA_ATT("/content/column[@new='true']/@name"), 
              PFLA_ATT("/content/column[@new='false']/@name"), 
              PFLA_ATMTY("/content/type/@name")
-             );
-        }  
-        break;
-
-/******************************************************************************/
-/******************************************************************************/
-
-    case la_seqty1               : 
-
-        {
-
-            /*
-            <content>
-               <column name="COLNAME" new="true"/>
-               <column name="COLNAME" new="false" function="item"/>
-              (<column name="COLNAME" function="partition" new="false"/>)?
-            </content>
-            */
-
-            newAlgNode = PFla_seqty1 
-             (
-             CHILDNODE(0), 
-             PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        col_NULL)
-             );
-        }  
-        break;
-
-/******************************************************************************/
-/******************************************************************************/
-
-    case la_all                  : 
-
-        {
-            /*
-            <content>
-               <column name="COLNAME" new="true"/>
-               <column name="COLNAME" new="false" function="item"/>
-              (<column name="COLNAME" function="partition" new="false"/>)?
-            </content>
-            */
-
-            newAlgNode = PFla_all 
-             (
-             CHILDNODE(0), 
-             PFLA_ATT("/content/column[@new='true']/@name"), 
-             PFLA_ATT("/content/column[@function='item']/@name"), 
-             PFLA_ATT_O("/content/column[@function='partition']/@name",
-                        col_NULL)
              );
         }  
         break;
@@ -2864,6 +2864,65 @@ getPFLA_Projection(
 
 
 
+PFalg_aggr_t *
+getPFLA_Aggregates(
+    XML2LALGContext* ctx, 
+    xmlNodePtr nodePtr, 
+    const char* xpathExpression)
+{
+    /*
+     <content>
+      (<aggregate kind="KIND">
+         <column name="COLNAME" new="true"/>
+         <column name="COLNAME" new="false"/>
+       </aggregate>)*
+    </content>             
+     */
+
+
+
+    /* fetch the aggregates (and indirectly the predicate count) from xml */
+    xmlXPathObjectPtr aggregates_xml =  XPATH(xpathExpression);
+
+    /* how many aggregates do we have? */
+    int aggregateCount =  PFxml2la_xpath_getNodeCount(aggregates_xml);
+
+    /*
+    ******************************************************************
+    ******************************************************************
+    * construct the Predicate List
+    ******************************************************************
+    ******************************************************************
+    */
+
+    /* allocate the aggregate list*/
+    PFalg_aggr_t* aggregates =  
+        (PFalg_aggr_t*) PFmalloc (aggregateCount * sizeof (PFalg_aggr_t));
+    /* fetch and relate the aggregates from xml to 
+    the corresponding pf aggregates */
+    for (int p = 0; p < aggregateCount; p++)
+    {
+        xmlNodePtr aggregate_xml = 
+            PFxml2la_xpath_getNthNode(aggregates_xml, p);
+
+
+        aggregates[p].kind = PFxml2la_conv_2PFLA_aggregateType(
+            PFxml2la_xpath_getAttributeValueFromElementNode(
+                aggregate_xml, "kind"));
+
+        /* PFLA_ATT & PFLA_ATT_O macros use variable nodePtr
+           as starting point for XPath expression */
+        nodePtr = aggregate_xml;
+        aggregates[p].res = PFLA_ATT ("/column[@new='true']/@name");
+        aggregates[p].col = PFLA_ATT_O ("/column[@new='false']/@name", col_NULL);
+    }
+
+    if(aggregates_xml)
+        xmlXPathFreeObject(aggregates_xml);
+
+    return aggregates;
+
+}
 
 
 /* todo: check order... */

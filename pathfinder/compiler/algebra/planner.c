@@ -1517,26 +1517,23 @@ plan_to (const PFla_op_t *n)
 }
 
 /**
- * Generate physical plan for logical aggregation operators
- * (avg, max, min, sum).
+ * Generate physical plan for logical aggregation operators.
  */
 static PFplanlist_t *
-plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
+plan_aggr (const PFla_op_t *n)
 {
     PFplanlist_t  *ret  = new_planlist ();
 
     assert (n);
-    assert (n->kind == la_avg || n->kind == la_max
-            || n->kind == la_min || n->kind == la_sum || n->kind == la_prod
-            || n->kind == la_seqty1 || n->kind == la_all);
     assert (L(n)); assert (L(n)->plans);
 
     /* consider each plan in n */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
-                  aggr (kind,
-                        *(plan_t **) PFarray_at (L(n)->plans, i),
-                        n->sem.aggr.res, n->sem.aggr.col, n->sem.aggr.part));
+                  aggr (*(plan_t **) PFarray_at (L(n)->plans, i),
+                        n->sem.aggr.part,
+                        n->sem.aggr.count,
+                        n->sem.aggr.aggr));
 
     return ret;
 }
@@ -1566,10 +1563,12 @@ plan_count_ext (const PFla_op_t *n)
     op = L(n);
 
     if (op->kind == la_project &&
-        L(op)->kind == la_count &&
+        L(op)->kind == la_aggr &&
+        L(op)->sem.aggr.count == 1 &&
+        L(op)->sem.aggr.aggr[0].kind == alg_aggr_count &&
         L(op)->sem.aggr.part) {
         part_col = L(op)->sem.aggr.part;
-        res_col  = L(op)->sem.aggr.res;
+        res_col  = L(op)->sem.aggr.aggr[0].res;
         if (part_col == op->sem.proj.items[0].old &&
             res_col  == op->sem.proj.items[1].old) {
             new_part_col = op->sem.proj.items[0].new;
@@ -1583,12 +1582,14 @@ plan_count_ext (const PFla_op_t *n)
         }
         count_op = L(op);
     }
-    else if (op->kind == la_count &&
+    else if (op->kind == la_aggr &&
+             op->sem.aggr.count == 1 &&
+             op->sem.aggr.aggr[0].kind == alg_aggr_count &&
              op->sem.aggr.part) {
         part_col     = L(op)->sem.aggr.part;
-        res_col      = L(op)->sem.aggr.res;
+        res_col      = L(op)->sem.aggr.aggr[0].res;
         new_part_col = L(op)->sem.aggr.part;
-        new_res_col  = L(op)->sem.aggr.res;
+        new_res_col  = L(op)->sem.aggr.aggr[0].res;
         count_op = op;
     }
     else
@@ -1620,7 +1621,7 @@ plan_count_ext (const PFla_op_t *n)
 
     if (op->kind != la_difference ||
         R(op)->kind != la_project ||
-        RL(op)->kind != la_count ||
+        RL(op)->kind != la_aggr ||
         count_op != RL(op) ||
         op->schema.count != 1 ||
         R(op)->sem.proj.items[0].old != part_col)
@@ -1648,32 +1649,6 @@ plan_count_ext (const PFla_op_t *n)
                           2,
                           proj));
 
-    return ret;
-}
-
-/**
- * Generate physical plan for the logical `Count' operator.
- *
- * Currently we only provide HashCount, which neither benefits from
- * any input ordering, nor does it guarantee any output ordering.
- *
- * FIXME:
- *   Is there a means to implement an order-aware Count operator
- *   in MonetDB?
- */
-static PFplanlist_t *
-plan_count (const PFla_op_t *n)
-{
-    PFplanlist_t  *ret  = new_planlist ();
-
-    assert (n); assert (n->kind == la_count);
-    assert (L(n)); assert (L(n)->plans);
-
-    /* consider each plan in n */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plan (ret,
-                  count (*(plan_t **) PFarray_at (L(n)->plans, i),
-                         n->sem.aggr.res, n->sem.aggr.part));
     return ret;
 }
 
@@ -3623,12 +3598,7 @@ plan_subexpression (PFla_op_t *n)
         case la_bool_not:
                                 plans = plan_unary (n);           break;
         case la_to:             plans = plan_to (n);              break;
-        case la_count:          plans = plan_count (n);           break;
-        case la_avg:            plans = plan_aggr (pa_avg, n);    break;
-        case la_max:            plans = plan_aggr (pa_max, n);    break;
-        case la_min:            plans = plan_aggr (pa_min, n);    break;
-        case la_sum:            plans = plan_aggr (pa_sum, n);    break;
-        case la_prod:           plans = plan_aggr (pa_prod, n);   break;
+        case la_aggr:           plans = plan_aggr (n);            break;
 
         case la_rownum:         plans = plan_rownum (n);          break;
         case la_rowrank:
@@ -3641,8 +3611,6 @@ plan_subexpression (PFla_op_t *n)
         case la_type:           plans = plan_type (n);            break;
         case la_type_assert:    plans = plan_type_assert (n);     break;
         case la_cast:           plans = plan_cast (n);            break;
-        case la_seqty1:         plans = plan_aggr (pa_seqty1, n); break;
-        case la_all:            plans = plan_aggr (pa_all, n);    break;
 
         case la_step:           plans = plan_step (n);            break;
         case la_step_join:      plans = plan_step_join (n);       break;

@@ -166,14 +166,7 @@ infer_card (PFla_op_t *n)
             n->prop->card = 0;
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             /* if part is not present the
                aggregation yields only one tuple */
             n->prop->card = n->sem.aggr.part ? 0 : 1;

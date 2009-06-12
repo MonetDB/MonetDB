@@ -96,9 +96,8 @@
 
 #define to(a,b,c,d)          PFpa_to ((a), (b), (c), (d))
 
-#define count(a,b,c)         PFpa_count ((a), (b), (c))
 #define ecount(a,b,c,d,e)    PFpa_count_ext ((a), (b), (c), (d), (e))
-#define aggr(a,b,c,d,e)      PFpa_aggr ((a), (b), (c), (d), (e))
+#define aggr(a,b,c,d)        PFpa_aggr ((a), (b), (c), (d))
 
 /** a sort specification list is just another attribute list */
 #define sortby(...)          PFord_order_intro (__VA_ARGS__)

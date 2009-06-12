@@ -300,34 +300,35 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
+        {
+            unsigned int  count = 0;
+            PFalg_aggr_t *aggr = PFmalloc (p->sem.aggr.count *
+                                           sizeof (PFalg_aggr_t));
+
+            for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                if (PFprop_icol (p->prop, p->sem.aggr.aggr[i].res))
+                    aggr[count++] = p->sem.aggr.aggr[i];
+
             /* replace aggregate function if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.aggr.res)) {
-                PFla_op_t *ret;
+            if (!count) {
                 /* as an aggregate is required we either
                    (a) evaluate a distinct on the partition (if present) or
                    (b) create a one tuple literal table with a bogus value
                        (as it is never referenced) */
-                if (p->sem.aggr.part) {
-                    PFalg_proj_t *proj = PFmalloc (sizeof (PFalg_proj_t));
-                    proj[0] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
-                    ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
-                } else {
-                    ret = PFla_lit_tbl (collist (p->sem.aggr.res),
-                                        PFalg_tuple (PFalg_lit_nat (42)));
-                }
-                *p = *ret;
-                SEEN(p) = true;
-                break;
+                if (p->sem.aggr.part)
+                    *p = *distinct (project (L(p), proj (p->sem.aggr.part,
+                                                         p->sem.aggr.part)));
+                else
+                    *p = *lit_tbl (collist (p->sem.aggr.aggr[0].res),
+                                   tuple (lit_nat (42)));
             }
-            break;
+            else if (count < p->sem.aggr.count) {
+                p->sem.aggr.count = count;
+                p->sem.aggr.aggr  = aggr;
+            }
+            SEEN(p) = true;
+        }   break;
 
         case la_rownum:
         case la_rowrank:

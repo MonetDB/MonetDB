@@ -54,6 +54,8 @@ find_fd (PFarray_t *fds, PFalg_col_t col1, PFalg_col_t col2)
 {
     if (!fds) return false;
 
+    if (col1 == col2) return true;
+
     for (unsigned int i = 0; i < PFarray_last (fds); i++)
         if (col1 == ((fd_t *) PFarray_at (fds, i))->col1 &&
             col2 == ((fd_t *) PFarray_at (fds, i))->col2)
@@ -136,15 +138,7 @@ infer_functional_dependencies (PFla_op_t *n)
         case la_empty_tbl:
         case la_ref_tbl:
         case la_disjunion:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
         case la_rownum:
-        case la_seqty1:
-        case la_all:
         case la_step:
         case la_guide_step:
         case la_twig:
@@ -257,6 +251,12 @@ infer_functional_dependencies (PFla_op_t *n)
         case la_proxy_base:
         case la_dummy:
             bulk_add_fds (fds, L(n));
+            break;
+
+        case la_aggr:
+            if (n->sem.aggr.part)
+                for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                    add_fd (fds, n->sem.aggr.part, n->sem.aggr.aggr[i].col);
             break;
 
         case la_num_eq:

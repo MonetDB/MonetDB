@@ -626,21 +626,15 @@ infer_ckey (PFla_op_t *n)
             }
         }   break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             /* either the partition is key or if not
                present the aggregated result as it
                contains only one tuple */
             if (n->sem.aggr.part)
                 union_ (CKEYS, collist (n->sem.aggr.part));
             else
-                union_ (CKEYS, collist (n->sem.aggr.res));
+                for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                    union_ (CKEYS, collist (n->sem.aggr.aggr[i].res));
             break;
 
         case la_rownum:

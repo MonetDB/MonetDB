@@ -46,6 +46,7 @@
 
 #include "lalg2sql.h"
 #include "alg_dag.h"
+#include "string_utils.h"
 #include "mem.h"
 #include "oops.h"             /* PFoops() */
 
@@ -117,11 +118,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term bool_or         = 29 /**< boolean OR operator */
 %term bool_not        = 30 /**< boolean NOT operator */
 %term to              = 31 /**< op:to operator */
-%term avg             = 32 /**< operator for (partitioned) avg of a column */
-%term max_            = 33 /**< operator for (partitioned) max of a column */
-%term min_            = 34 /**< operator for (partitioned) min of a column */
-%term sum             = 35 /**< operator for (partitioned) sum of a column */
-%term count           = 36 /**< (partitioned) row counting operator */
+%term aggr            = 32 /**< operator for (partitioned) aggregate */
 %term rownum          = 37 /**< consecutive number generation (DENSE_RANK) */
 %term rowrank         = 38 /**< consecutive number generation (ROW_NUMBER) */
 %term rank            = 39 /**< arbitrary but ordered number generation */
@@ -130,9 +127,6 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
                                 certain type */
 %term type_assert     = 42 /**< restricts the type of a relation */
 %term cast            = 43 /**< type cast of an attribute */
-%term seqty1          = 44 /**< test for exactly one type occurrence in one
-                                iteration (Pathfinder extension) */
-%term all             = 45 /**< test if all items in an iteration are true */
 %term step            = 50 /**< XPath location step */
 %term step_join       = 51 /**< duplicate generating path step */
 %term guide_step      = 52 /**< XPath location step
@@ -243,19 +237,13 @@ Rel:    type (Rel)                                   =  31 (10);
 Rel:    type_assert (Rel)                            =  32 (10);
 Rel:    cast (Rel)                                   =  33 (10);
 
-Rel:    avg (Rel)                                    =  35 (10);
-Rel:    max_ (Rel)                                   =  36 (10);
-Rel:    min_ (Rel)                                   =  37 (10);
-Rel:    sum (Rel)                                    =  38 (10);
-Rel:    count (Rel)                                  =  39 (10);
+Rel:    aggr (Rel)                                   =  35 (10);
+Rel:    aggr (rank (Rel))                            =  36 (10);
 Rel:    disjunion (
-            count (Rel),
+            aggr (Rel),
             attach (difference (
                         Rel,
-                        project (count (Rel)))))     =  40  (5);
-
-Rel:    seqty1 (Rel)                                 =  41 (10);
-Rel:    all (Rel)                                    =  42 (10);
+                        project (aggr (Rel)))))      =  40  (5);
 
 Rel:    string_join (Rel, Rel)                       =  43 (10);
 
@@ -1745,12 +1733,7 @@ rec_allowed (PFla_op_t *p)
             return true;
         case la_to:
             return false;
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_count:
-        case la_all:
+        case la_aggr:
             return (!p->sem.aggr.part);
         case la_rownum:
         case la_rowrank:
@@ -1759,7 +1742,6 @@ rec_allowed (PFla_op_t *p)
             return false;
         case la_type:
         case la_type_assert:
-        case la_seqty1:
             /* FIXME */
             assert (!"not yet implemented");
             break;
@@ -3628,6 +3610,10 @@ reduce (PFla_op_t * p, int goalnt)
                     res_expr = str_upper (expr[0]); break;
                 case alg_fun_fn_lower_case:
                     res_expr = str_lower (expr[0]); break;
+                case alg_fun_fn_doc_available:
+                    PFoops (OOPS_FATAL,
+                            "Document availability check not implemented.");
+
                 case alg_fun_fn_translate:
                 case alg_fun_fn_substring_before:
                 case alg_fun_fn_substring_after:
@@ -3649,17 +3635,10 @@ reduce (PFla_op_t * p, int goalnt)
                  * a comment a text node, or a namespace binding) the functions
                  * returns the zero length string.
                  */
-                {
-                    
-                } break;
                 case alg_fun_fn_local_name:
-                {
-                    
-                } break;
                 case alg_fun_fn_namespace_uri:
 
                 case alg_fun_fn_qname:
-                case alg_fun_fn_doc_available:
                 case alg_fun_pf_fragment:
                 case alg_fun_pf_supernode:
 
@@ -3890,43 +3869,64 @@ reduce (PFla_op_t * p, int goalnt)
             }
         }   break;
 
-        /* Rel:    avg (Rel) */
-        case 35:
-        /* Rel:    max_ (Rel) */
-        case 36:
-        /* Rel:    min_ (Rel) */
-        case 37:
-        /* Rel:    sum (Rel) */
-        case 38:
-        /* Rel:    count (Rel) */
-        case 39:
-        /* Rel:    all (Rel) */
-        case 42:
+        /* Rel:    aggr (rank (Rel)) */
+        case 36: /* reference to this rule also appears below */
+        {
+            PFord_ordering_t sortby = L(p)->sem.sort.sortby;
+
+            if (!p->sem.aggr.part ||
+                p->sem.aggr.part != L(p)->sem.sort.res ||
+                PFprop_icol (p->prop, p->sem.aggr.part))
+                PFoops (OOPS_FATAL,
+                        "missing implementation for `aggr (rank (Rel))' "
+                        "pattern -- partition and result columns are "
+                        "unrelated");
+
+            for (unsigned int i = 0; i < PFord_count (sortby); i++) {
+                PFalg_col_t  col  = PFord_order_col_at (sortby, i);
+                PFsql_kind_t kind = col_env_lookup (
+                                        COLMAP(LL(p)),
+                                        col,
+                                        type_of (L(p), col))->kind;
+                if (kind != sql_column_name &&
+                    kind != sql_ref_column_name) {
+#ifndef NDEBUG
+                    if (!BOUND(LL(p)))
+                        execute (comment ("bind as a column reference "
+                                          "is needed in the following "
+                                          "aggregate"));
+#endif
+                    bind_operator (LL(p), false);
+                    break;
+                }
+            }
+        }
+            /* fall through */
+
+        /* Rel:    aggr (Rel) */
+        case 35: /* reference to this rule also appears below */
+            
             /* Bind the input of the aggregate if the group by
                criterion is not a column reference. */
             if (p->sem.aggr.part &&
-                (col_env_lookup (
-                     COLMAP(L(p)),
-                     p->sem.aggr.part,
-                     type_of (p, p->sem.aggr.part)))->kind != sql_column_name) {
+                rule == 35) {
+                PFsql_kind_t kind = col_env_lookup (
+                                        COLMAP(L(p)),
+                                        p->sem.aggr.part,
+                                        type_of (L(p), p->sem.aggr.part))->kind;
+                if (kind != sql_column_name &&
+                    kind != sql_ref_column_name) {
 #ifndef NDEBUG
-                if (!BOUND(L(p)))
-                    execute (comment ("bind as a column reference "
-                                      "is needed in the following aggregate"));
+                    if (!BOUND(L(p)))
+                        execute (comment ("bind as a column reference "
+                                          "is needed in the following "
+                                          "aggregate"));
 #endif
-                bind_operator (L(p), false);
+                    bind_operator (L(p), false);
+                }
             }
         {
-            PFalg_col_t col = p->sem.aggr.col,
-                        part = p->sem.aggr.part,
-                        res = p->sem.aggr.res;
-            PFalg_simple_type_t part_ty,
-                                ty = 0 /* dummy type */,
-                                res_ty = type_of (p, res);
-            PFsql_t *expr = NULL,
-                    *part_expr;
-            PFsql_col_t *part_col,
-                        *res_col = new_col (res, res_ty);
+            PFla_op_t *in_op = (rule == 35) ? L(p) : LL(p);
 
             PFsql_t *selectlist = NULL;
             PFsql_t *columnlist = NULL;
@@ -3941,73 +3941,112 @@ reduce (PFla_op_t * p, int goalnt)
                            table_name (newtable),
                            alias (newalias));
 
-            if (col) /* cope with missing col column in case of count */ {
-                ty = type_of (L(p), col);
-                expr = col_env_lookup (COLMAP(L(p)), col, ty);
-            }
-
             /* add the partition criterion to all lists and environments */
-            if (part) {
-                part_ty = type_of (L(p), part);
-                part_col = new_col (part, part_ty);
-                part_expr = col_env_lookup (COLMAP(L(p)), part, part_ty);
-
+            if (p->sem.aggr.part && rule == 35) {
+                PFalg_col_t         part      = p->sem.aggr.part;
+                PFalg_simple_type_t part_ty   = type_of (L(p), part);
+                PFsql_col_t        *part_col  = new_col (part, part_ty);
+                PFsql_t            *part_expr = col_env_lookup (COLMAP(L(p)),
+                                                                part,
+                                                                part_ty);
+                /* provide the column information for the result
+                   (after binding) */
                 col_env_add (COLMAP(p), part, part_ty,
                              ext_column_name (newalias, part_col));
 
-                /* create columnlist for the table name */
+                /* create columnlist for the table name
+                   (used during binding) */
                 columnlist = column_list (columnlist,
                                           column_name (part_col));
 
-                /* create selectlist for the table name */
+                /* create selectlist for group by query */
                 selectlist = select_list (selectlist,
                                           transform_expression (
                                               part_expr,
                                               column_name (part_col)));
 
+                /* extend group by list */
                 groupbylist = column_list (groupbylist, part_expr);
             }
+            else if (p->sem.aggr.part && rule == 36) {
+                PFord_ordering_t    sortby = L(p)->sem.sort.sortby;
+                PFalg_col_t         ord;
+                PFalg_simple_type_t ord_ty;
 
-            /* generate the aggregation */
-            switch (p->kind) {
-                case la_avg:   expr = avg (expr);      break;
-                case la_max:   expr = max_ (expr);     break;
-                case la_min:   expr = min_ (expr);     break;
-                /* with la_all we have to ensure that each
-                 * column col is true for all rows within
-                 * a group, since we express boolean values
-                 * as literal integers, MIN does the job */ 
-                case la_all:   assert (ty == aat_bln);
-                               expr = min_ (((expr)->kind == sql_column_name)?
-                                           expr:
-                                           case_(
-                                              when (expr,
-                                                    lit_int(1)),
-                                              else_ (lit_int (0))));
-                             break;
-                case la_sum:   expr = sum (expr);      break;
-                case la_count: expr = count (star ()); break;
-                default: assert (0); break;
+                for (unsigned int i = 0; i < PFord_count (sortby); i++) {
+                    ord    = PFord_order_col_at (sortby, i);
+                    ord_ty = type_of (L(p), ord);
+
+                    /* extend group by list */
+                    groupbylist = column_list (groupbylist,
+                                               col_env_lookup (COLMAP(LL(p)),
+                                                               ord,
+                                                               ord_ty));
+                }
             }
 
-            col_env_add (COLMAP(p), res, res_ty,
-                         ext_column_name (newalias, res_col));
+            /* add the aggregates to all lists and environments */
+            for (unsigned int i = 0; i < p->sem.aggr.count; i++) {
+                PFalg_col_t         col     = p->sem.aggr.aggr[i].col,
+                                    res     = p->sem.aggr.aggr[i].res;
+                PFalg_simple_type_t res_ty  = type_of (p, res);
+                PFsql_t            *expr    = NULL;
+                PFsql_col_t        *res_col = new_col (res, res_ty);
 
-            columnlist = column_list (columnlist, column_name (res_col));
+                /* provide the column information for the result
+                   (after binding) */
+                col_env_add (COLMAP(p), res, res_ty,
+                             ext_column_name (newalias, res_col));
 
-            /* add the aggregation to the selection list */
-            selectlist = select_list (selectlist,
-                                      transform_expression (
-                                          expr,
-                                          column_name (res_col)));
+                /* create columnlist for the table name
+                   (used during binding) */
+                columnlist = column_list (columnlist, column_name (res_col));
+
+                /* cope with missing col column in case of count */
+                if (col)
+                    expr = col_env_lookup (COLMAP(in_op),
+                                           col,
+                                           type_of (in_op, col));
+                
+                /* generate the aggregation */
+                switch (p->sem.aggr.aggr[i].kind) {
+                    case alg_aggr_dist:
+                        /* extend group by list */
+                        groupbylist = column_list (groupbylist, expr);
+                        break;
+                    case alg_aggr_min:   expr = min_ (expr);     break;
+                    case alg_aggr_max:   expr = max_ (expr);     break;
+                    case alg_aggr_all: 
+                        expr = min_ (((expr)->kind == sql_column_name)?
+                                    expr:
+                                    case_(
+                                       when (expr,
+                                             lit_int(1)),
+                                       else_ (lit_int (0))));
+                        break;
+                    case alg_aggr_count: expr = count (star ()); break;
+                    case alg_aggr_avg:   expr = avg (expr);      break;
+                    case alg_aggr_sum:   expr = sum (expr);      break;
+                    case alg_aggr_seqty1:
+                    case alg_aggr_prod: 
+                        PFoops (OOPS_FATAL, "Unsupported aggregate.");
+                        break;
+                }
+
+                /* add the aggregation to the selection list */
+                selectlist = select_list (selectlist,
+                                          transform_expression (
+                                              expr,
+                                              column_name (res_col)));
+            }
 
             /* dump the operator binding */
             execute (comment ("binding due to aggregate"));
             execute (bind (table_def (newtable, columnlist),
                            PFsql_select (false,
                                          selectlist,
-                                         transform_frommap (L(p)),
-                                         transform_wheremap (L(p)),
+                                         transform_frommap (in_op),
+                                         transform_wheremap (in_op),
                                          NULL,
                                          groupbylist)));
 
@@ -4016,10 +4055,10 @@ reduce (PFla_op_t * p, int goalnt)
         }   break;
 
         /* Rel:    disjunion (
-                       count (Rel),
+                       aggr (Rel),
                        attach (difference (
                                    Rel,
-                                   project (count (Rel))))) */
+                                   project (aggr (Rel))))) */
         case 40:
             /**
              * ensure the following pattern:
@@ -4040,7 +4079,9 @@ reduce (PFla_op_t * p, int goalnt)
              *      count
              */
             if (!(L(p) == RLRL(p) &&
-                  R(p)->sem.attach.res == L(p)->sem.aggr.res &&
+                  L(p)->sem.aggr.count == 1 &&
+                  L(p)->sem.aggr.aggr[0].kind == alg_aggr_count &&
+                  R(p)->sem.attach.res == L(p)->sem.aggr.aggr[0].res &&
                   R(p)->sem.attach.value.type == aat_int &&
                   R(p)->sem.attach.value.val.int_ == 0 &&
                   RLL(p)->schema.count == 1 &&
@@ -4063,7 +4104,7 @@ reduce (PFla_op_t * p, int goalnt)
             PFsql_aident_t newalias;
 
             part      = L(p)->sem.aggr.part;
-            res       = L(p)->sem.aggr.res;
+            res       = L(p)->sem.aggr.aggr[0].res;
             part_ty   = type_of (p, part);
             res_ty    = type_of (p, res);
 
@@ -4158,12 +4199,6 @@ reduce (PFla_op_t * p, int goalnt)
             /* mark node p as bound */
             BOUND(p) = true;
         }   break;
-
-        /* Rel:    seqty1 (Rel) */
-        case 41:
-            /* FIXME: implementation is missing */
-            assert (!"missing");
-            break;
 
         /* Rel:    string_join (Rel, Rel) */
         case 43:
@@ -5328,13 +5363,16 @@ reduce (PFla_op_t * p, int goalnt)
             /* copy all existing side effect information */
             from_list_copy (FROMLIST(p), FROMLIST(L(p)));
 
-            reduce (kids[1], nts[1]);
-
             if (PFprop_const (p->prop, p->sem.err.col)) {
                 msg = (PFprop_const_val (p->prop, p->sem.err.col)).val.str;
+                if (PFstrUtils_beginsWith(msg, "err:FODC0002"))
+                    /* discard document availability check */
+                    break;
             }
             else
                 msg = "error in query evaluation";
+
+            reduce (kids[1], nts[1]);
 
             err = case_ (when (gt (count (star ()), lit_int (0)),
                                raise_error (lit_str (ERR_SQLSTATE),

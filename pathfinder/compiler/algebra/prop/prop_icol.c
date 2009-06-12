@@ -449,37 +449,14 @@ prop_infer_icols (PFla_op_t *n, PFalg_collist_t *icols)
             union_ (n->prop->l_icols, n->sem.unary.col);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
-            copy (n->prop->l_icols, n->prop->icols);
-
-            /* do not infer input columns if operator is not required */
-            if (!in (n->prop->icols, n->sem.aggr.res))
-                break;
-
-            diff (n->prop->l_icols, n->sem.aggr.res);
-            union_ (n->prop->l_icols, n->sem.aggr.col);
-            /* only infer part if available */
-            if (n->sem.aggr.part != col_NULL)
+        case la_aggr:
+            if (n->sem.aggr.part)
                 union_ (n->prop->l_icols, n->sem.aggr.part);
-            break;
-
-        case la_count:
-            copy (n->prop->l_icols, n->prop->icols);
-
-            /* do not infer input columns if operator is not required */
-            if (!in (n->prop->icols, n->sem.aggr.res))
-                break;
-
-            diff (n->prop->l_icols, n->sem.aggr.res);
-            /* only infer part if available */
-            if (n->sem.aggr.part != col_NULL)
-                union_ (n->prop->l_icols, n->sem.aggr.part);
+            /* only infer the columns that are necessary for the output */
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (n->sem.aggr.aggr[i].kind != alg_aggr_count &&
+                    in (n->prop->icols, n->sem.aggr.aggr[i].res))
+                    union_ (n->prop->l_icols, n->sem.aggr.aggr[i].col);
             break;
 
         case la_rownum:

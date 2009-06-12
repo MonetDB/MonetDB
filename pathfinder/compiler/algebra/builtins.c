@@ -344,6 +344,24 @@ un_op (PFalg_simple_type_t t,
         .frag = PFla_empty_set () };
 }
 
+/* ----------------------------------------------- */
+/* Helper Function to Translate Simple Aggregates  */
+/* ----------------------------------------------- */
+
+/**
+ * Construct a simple aggregate.
+ */
+static PFla_op_t *
+simple_aggr (const PFla_op_t *n,
+             PFalg_col_t part,
+             PFalg_aggr_kind_t kind,
+             PFalg_col_t res,
+             PFalg_col_t col)
+{
+    PFalg_aggr_t aggr = PFalg_aggr (kind, res, col);
+    return PFla_aggr (n, part, 1, &aggr);
+}
+
 /* ------------ */
 /* 2. ACCESSORS */
 /* ------------ */
@@ -4814,10 +4832,13 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop,
 {
     PFla_op_t *count = select_ (
                            not (eq (attach (
-                                        count (
+                                        simple_aggr (
                                             project (args[0].rel,
                                                      proj (col_iter, col_iter)),
-                                            col_item, col_iter),
+                                            col_iter,
+                                            alg_aggr_count,
+                                            col_item,
+                                            col_NULL),
                                         col_item1, lit_int (1)),
                                     col_item2, col_item1, col_item),
                                 col_res, col_item2),
@@ -4851,9 +4872,13 @@ PFbui_fn_exactly_one (const PFla_op_t *loop,
                       PFla_op_t **side_effects,
                       struct PFla_pair_t *args)
 {
-    PFla_op_t *count = count (project (args[0].rel,
-                                       proj (col_iter, col_iter)),
-                              col_item, col_iter);
+    PFla_op_t *count = simple_aggr (
+                           project (args[0].rel,
+                                    proj (col_iter, col_iter)),
+                           alg_aggr_count,
+                           col_iter,
+                           col_item,
+                           col_NULL);
 
     char *err_string = "err:FORG0003, fn:exactly-one called with "
                        "a sequence containing more than one item.";
@@ -5041,9 +5066,13 @@ PFbui_fn_count (const PFla_op_t *loop,
 {
     (void) ordering; (void) side_effects;
 
-    PFla_op_t *count = count (project (args[0].rel,
-                                       proj (col_iter, col_iter)),
-                              col_item, col_iter);
+    PFla_op_t *count = simple_aggr (
+                           project (args[0].rel,
+                                    proj (col_iter, col_iter)),
+                           col_iter,
+                           alg_aggr_count,
+                           col_item,
+                           col_NULL);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -5071,7 +5100,7 @@ PFbui_fn_count (const PFla_op_t *loop,
  *                                ()
  */
 static struct PFla_pair_t
-fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind,
+fn_aggr (PFalg_simple_type_t t, PFalg_aggr_kind_t kind,
          const PFla_op_t *loop,
          bool ordering,
          PFla_op_t **side_effects,
@@ -5080,11 +5109,14 @@ fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind,
     (void) loop; (void) ordering; (void) side_effects;
 
     return (struct PFla_pair_t) {
-        .rel = attach(aggr (kind,
-                            project (cast(args[0].rel, col_cast, col_item, t),
-                                     proj (col_iter, col_iter),
-                                     proj (col_item, col_cast)),
-                            col_item, col_item, col_iter),
+        .rel = attach(simple_aggr (
+                          project (cast(args[0].rel, col_cast, col_item, t),
+                                   proj (col_iter, col_iter),
+                                   proj (col_item, col_cast)),
+                          col_iter,
+                          kind,
+                          col_item,
+                          col_item),
                       col_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
@@ -5098,7 +5130,7 @@ PFbui_fn_avg (const PFla_op_t *loop,
               PFla_op_t **side_effects,
               struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_avg, loop, ordering, side_effects, args);
+    return fn_aggr(aat_dbl, alg_aggr_avg, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5110,7 +5142,7 @@ PFbui_fn_max_str (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_str, la_max, loop, ordering, side_effects, args);
+    return fn_aggr(aat_str, alg_aggr_max, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5122,7 +5154,7 @@ PFbui_fn_max_int (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_int, la_max, loop, ordering, side_effects, args);
+    return fn_aggr(aat_int, alg_aggr_max, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5134,7 +5166,7 @@ PFbui_fn_max_dec (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dec, la_max, loop, ordering, side_effects, args);
+    return fn_aggr(aat_dec, alg_aggr_max, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5146,7 +5178,7 @@ PFbui_fn_max_dbl (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_max, loop, ordering, side_effects, args);
+    return fn_aggr(aat_dbl, alg_aggr_max, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5158,7 +5190,7 @@ PFbui_fn_min_str (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_str, la_min, loop, ordering, side_effects, args);
+    return fn_aggr(aat_str, alg_aggr_min, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5170,7 +5202,7 @@ PFbui_fn_min_int (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_int, la_min, loop, ordering, side_effects, args);
+    return fn_aggr(aat_int, alg_aggr_min, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5182,7 +5214,7 @@ PFbui_fn_min_dec (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dec, la_min, loop, ordering, side_effects, args);
+    return fn_aggr(aat_dec, alg_aggr_min, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5194,7 +5226,7 @@ PFbui_fn_min_dbl (const PFla_op_t *loop,
                   PFla_op_t **side_effects,
                   struct PFla_pair_t *args)
 {
-    return fn_aggr(aat_dbl, la_min, loop, ordering, side_effects, args);
+    return fn_aggr(aat_dbl, alg_aggr_min, loop, ordering, side_effects, args);
 }
 
 /**
@@ -5221,11 +5253,14 @@ fn_sum (PFalg_simple_type_t t,
 {
     (void) ordering; (void) side_effects;
 
-    PFla_op_t *sum = aggr (la_sum,
-                           project (cast(args[0].rel, col_cast, col_item, t),
-                                   proj (col_iter, col_iter),
-                                   proj (col_item, col_cast)),
-                           col_item, col_item, col_iter);
+    PFla_op_t *sum = simple_aggr (
+                         project (cast(args[0].rel, col_cast, col_item, t),
+                                 proj (col_iter, col_iter),
+                                 proj (col_item, col_cast)),
+                         col_iter,
+                         alg_aggr_sum,
+                         col_item,
+                         col_item);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -5249,11 +5284,14 @@ fn_prod (PFalg_simple_type_t t,
 {
     (void) ordering; (void) side_effects;
 
-    PFla_op_t *prod = aggr (la_prod,
-                           project (cast(args[0].rel, col_cast, col_item, t),
-                                   proj (col_iter, col_iter),
-                                   proj (col_item, col_cast)),
-                           col_item, col_item, col_iter);
+    PFla_op_t *prod = simple_aggr (
+                          project (cast(args[0].rel, col_cast, col_item, t),
+                                  proj (col_iter, col_iter),
+                                  proj (col_item, col_cast)),
+                          col_iter,
+                          alg_aggr_prod,
+                          col_item,
+                          col_item);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -5345,11 +5383,14 @@ fn_sum_zero (PFalg_simple_type_t t,
 {
     (void) ordering; (void) side_effects;
 
-    PFla_op_t *sum = aggr (la_sum,
-                           project (cast (args[0].rel, col_cast, col_item, t),
-                                    proj (col_iter, col_iter),
-                                    proj (col_item, col_cast)),
-                           col_item, col_item, col_iter);
+    PFla_op_t *sum = simple_aggr (
+                         project (cast (args[0].rel, col_cast, col_item, t),
+                                  proj (col_iter, col_iter),
+                                  proj (col_item, col_cast)),
+                         col_iter,
+                         alg_aggr_sum,
+                         col_item,
+                         col_item);
 
     return (struct PFla_pair_t) {
         .rel = attach (

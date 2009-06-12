@@ -231,6 +231,7 @@ find_join_worker (PFla_op_t       *n,
         case la_side_effects:
             /* a thetajoin cannot be pushed through
                a side effect list operator */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -316,6 +317,7 @@ find_join_worker (PFla_op_t       *n,
         }   break;
 
         case la_pos_select:
+            BOOL_COLS(n) = NULL;
             LEFT_COLS(n) = NULL;
             break;
 
@@ -420,27 +422,11 @@ find_join_worker (PFla_op_t       *n,
             }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
-            diff (BOOL_COLS(n),  n->sem.aggr.res);
-
-            if (in (LEFT_COLS(n), n->sem.aggr.res))
-                union_ (LEFT_COLS(n), n->sem.aggr.col);
-            if (in (RIGHT_COLS(n), n->sem.aggr.res))
-                union_ (RIGHT_COLS(n), n->sem.aggr.col);
-            diff (LEFT_COLS(n),  n->sem.aggr.res);
-            diff (RIGHT_COLS(n), n->sem.aggr.res);
-
-        case la_count:
-            /* keep partition columns for LEFT_COLS and RIGHT_COLS */
-
-            /* BOOL_COLS can never occur as partitioning as there
-               are no boolean partition criteria */
+        case la_aggr:
+            /* a theta-join cannot be pushed through an aggregate */
+            BOOL_COLS(n)  = NULL;
+            LEFT_COLS(n)  = NULL;
+            RIGHT_COLS(n) = NULL;
             break;
 
         case la_rownum:
@@ -558,6 +544,7 @@ find_join_worker (PFla_op_t       *n,
         case la_content:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a constructor */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -565,6 +552,7 @@ find_join_worker (PFla_op_t       *n,
         case la_merge_adjacent:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through an element constructor */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -579,6 +567,7 @@ find_join_worker (PFla_op_t       *n,
             /* for the fragment information we do not need to introduce
                column names as the thetajoin can never be moved along
                its edges. */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -589,6 +578,7 @@ find_join_worker (PFla_op_t       *n,
         case la_trace_msg:
         case la_trace_map:
             /* a theta-join cannot be pushed through */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -599,6 +589,7 @@ find_join_worker (PFla_op_t       *n,
         case la_rec_fix:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a recursion operator */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;
@@ -613,6 +604,7 @@ find_join_worker (PFla_op_t       *n,
         case la_fun_frag_param:
             /* FIXME: for now we assume that a theta-join
                cannot be pushed through a function application */
+            BOOL_COLS(n)  = NULL;
             LEFT_COLS(n)  = NULL;
             RIGHT_COLS(n) = NULL;
             break;

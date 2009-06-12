@@ -235,17 +235,17 @@ infer_lineage (PFla_op_t *n)
             add_new_lineage (n->sem.unary.res);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             if (n->sem.aggr.part)
                 map_lineage (n->sem.aggr.part, L(n), n->sem.aggr.part);
-            add_new_lineage (n->sem.aggr.res);
+
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (n->sem.aggr.aggr[i].kind == alg_aggr_dist)
+                    map_lineage (n->sem.aggr.aggr[i].res,
+                                 L(n),
+                                 n->sem.aggr.aggr[i].col);
+                else
+                    add_new_lineage (n->sem.aggr.aggr[i].res);
             break;
 
         case la_rownum:

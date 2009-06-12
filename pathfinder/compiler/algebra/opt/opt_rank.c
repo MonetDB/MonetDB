@@ -761,14 +761,88 @@ opt_rank (PFla_op_t *p, unsigned char mode)
             modified = modify_binary_op (p, PFla_to);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
+            if (is_rr (L(p)) &&
+                p->sem.aggr.part == L(p)->sem.rank_opt.res) {
+                /* Split up the ranking operator into an operator that
+                   can be evaluated after the aggregate and a rank operator
+                   that provides the correct partitions for the aggregate. */
+
+                PFarray_t       *lsortby    = L(p)->sem.rank_opt.sortby,
+                                *new_sortby;
+                PFord_ordering_t old_sortby = PFordering ();
+                unsigned int     lcount     = PFarray_last (lsortby),
+                                 count      = 0,
+                                 i,
+                                 j;
+                PFalg_col_t      col;
+                bool             vis,
+                                 dir;
+                PFalg_aggr_t    *aggr;
+                PFalg_proj_t    *proj;
+
+                aggr       = PFmalloc ((lcount + p->sem.aggr.count) *
+                                       sizeof (PFalg_aggr_t));
+                new_sortby = PFarray (sizeof (sort_struct), lcount);
+
+                /* copy all aggregates */
+                for (i = 0; i < p->sem.aggr.count; i++)
+                    aggr[count++] = p->sem.aggr.aggr[i];
+
+                /* Extend aggregate list in case we miss some order columns. */
+                for (i = 0; i < PFarray_last (lsortby); i++) {
+                    col = COL_AT (lsortby, i);
+                    dir = DIR_AT (lsortby, i);
+                    vis = false;
+
+                    /* Add order column to the lower rank operator. */
+                    old_sortby = PFord_refine (old_sortby, col, dir);
+
+                    /* Try to find the order criterion in the aggregate list. */
+                    for (j = 0; j < count; j++)
+                        if (aggr[j].col == col &&
+                            aggr[j].kind == alg_aggr_dist) {
+                            /* We found a matching aggregate and change the
+                               name and visibility of the ordering entry. */
+                            col = aggr[j].res;
+                            vis = true;
+                            break;
+                        }
+
+                    /* We haven't found a matching aggregate and generate
+                       a new one. */
+                    if (j == count)
+                        aggr[count++] = PFalg_aggr (alg_aggr_dist, col, col);
+
+                    /* Add order column to the upper rank operator. */
+                    *(sort_struct *) PFarray_add (new_sortby) =
+                        (sort_struct) { .col = col, .dir = dir, .vis = vis };
+
+                }
+
+                /* we need to prune away the partition (aka result) column */
+                proj = PFmalloc (count * sizeof (PFalg_proj_t));
+                for (i = 0; i < count; i++)
+                    proj[i] = PFalg_proj (aggr[i].res, aggr[i].res);
+
+                *p = *(rank_opt (
+                           PFla_project_ (
+                               aggr (
+                                   rank (
+                                       LL(p),
+                                       p->sem.aggr.part,
+                                       old_sortby),
+                                   p->sem.aggr.part,
+                                   count,
+                                   aggr),
+                               count,
+                               proj),
+                           p->sem.aggr.part,
+                           new_sortby));
+
+                modified = true;
+                break;
+            }
             break;
 
         case la_rownum:

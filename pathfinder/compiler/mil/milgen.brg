@@ -173,20 +173,13 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term bool_or        =  47
 %term to             =  50
 %term count_ext      =  54
-%term count          =  55
-%term avg            =  56
-%term max_           =  57
-%term min_           =  58
-%term sum            =  59
+%term aggr           =  55
 %term mark           =  60
 %term rank           =  61
 %term mark_grp       =  62
 %term type           =  63
 %term type_assert    =  64
 %term cast           =  65
-%term seqty1         =  66
-%term all            =  67
-%term prod           =  68
 %term llscjoin       = 100
 %term llscjoin_dup   = 101
 %term doc_tbl        = 120
@@ -261,11 +254,7 @@ Rel:      bool_and (Rel)                                           =  61 (10);
 Rel:      bool_or (Rel)                                            =  62 (10);
 Rel:      to (Rel)                                                 =  64 (10);
 Rel:      count_ext (Rel, Rel)                                     =  65 (10);
-Rel:      count (Rel)                                              =  66 (10);
-Rel:      avg (Rel)                                                =  67 (10);
-Rel:      max_ (Rel)                                               =  68 (10);
-Rel:      min_ (Rel)                                               =  69 (10);
-Rel:      sum (Rel)                                                =  70 (10);
+Rel:      aggr (Rel)                                               =  66 (10);
 Rel:      mark (Rel)                                               =  71 (10);
 Rel:      rank (Rel)                                               =  72 (10);
 Rel:      rank (std_sort (Rel))                                    =  73 (10);
@@ -274,9 +263,6 @@ Rel:      mark_grp (Rel)                                           =  75 (10);
 Rel:      type (Rel)                                               =  76 (10);
 Rel:      type_assert (Rel)                                        =  77 (10);
 Rel:      cast (Rel)                                               =  78 (10);
-Rel:      seqty1 (Rel)                                             =  79 (10);
-Rel:      all (Rel)                                                =  80 (10);
-Rel:      prod (Rel)                                               =  81 (10);
 
 Rel:      llscjoin (Rel)                                           =  90 (10);
 Rel:      llscjoin_dup (Rel)                                       =  91 (10);
@@ -1740,74 +1726,6 @@ copy_QName (mvar_t *in_qn_id, mvar_t *in_qn_cont, mvar_t *qn_id)
     unpin (uri, 1);
     unpin (local, 1);
     unpin (mu_res, 1);
-} /* fold) */
-
-/**
- * @brief Generic handling of aggregation functions (avg, max, min and sum).
- *
- * @param op  A MIL operation that implements the function
- *            of interest (as a function pointer to the
- *            constructor function).
- * @param gop A MIL operation that implements the function
- *            of interest (as a function pointer to the
- *            constructor function), grouped version.
- * @param p   The physical algebra tree node that we are to translate.
- *            This function will actually fill @a p's environment
- *            <code>p->env</code>.
- */
-static void
-aggr_function (PFmil_t * (*op) (const PFmil_t *),
-               PFmil_t * (*gop) (const PFmil_t *),
-               PFpa_op_t *p)
-{ /* fold( */
-     PFalg_col_t         part    = p->sem.aggr.part,
-                         col     = p->sem.aggr.col,
-                         res     = p->sem.aggr.res;
-     PFalg_simple_type_t part_ty,
-                         col_ty  = type_of (L(p), col),
-                         res_ty  = type_of (p, res);
-
-     assert (col_ty == res_ty);
-
-     if (part != col_NULL) {
-         mvar_t *v    = new_var (1);
-         mvar_t *res_var  = new_var (p->refctr);
-         mvar_t *part_var = new_var (p->refctr);
-
-         part_ty = type_of (L(p), part);
-
-         execute (
-              /* v :=
-                 {gop}(col.reverse().join(part).reverse()) */
-              assgn (var (v->name),
-                     gop (reverse (
-                              join (reverse (VAR (L(p)->env, col, col_ty)),
-                                    VAR (L(p)->env, part, part_ty))))),
-              /* res := v.reverse ().mark (0@0).reverse (); */
-              assgn (var (res_var->name),
-                     reverse (mark (reverse (var (v->name)), lit_oid (0)))),
-              /* part := v.mark (0@0).reverse (); */
-              assgn (var (part_var->name),
-                     reverse (mark (var (v->name), lit_oid (0)))));
-
-         env_add (p->env, res, res_ty, res_var);
-         env_add (p->env, part, part_ty, part_var);
-
-         unpin (v, 1);
-     }
-     else {
-          mvar_t *v = new_var (p->refctr);
-          execute (
-               assgn (var (v->name),
-                      op (VAR (L(p)->env, col, col_ty))),
-               assgn (var (v->name),
-                      append (
-                           seqbase (
-                                new (type (mty_void), implty_ (res_ty)),
-                                lit_oid (0)),
-                           var (v->name))));
-          env_add (p->env, res, res_ty, v);
-     }
 } /* fold) */
 
 /**
@@ -6767,90 +6685,270 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
             unpin (v, 1);
         }   break; /* fold) */
 
-        /* Rel:      count (Rel) */
+        /* Rel:      aggr (Rel) */
         case 66: /* fold( */
-            if (p->sem.count.part != col_NULL) {
-                mvar_t *res            = new_var (p->refctr);
-                mvar_t *part           = new_var (p->refctr);
-                PFalg_simple_type_t ty = type_of (L(p), p->sem.count.part);
+            /**
+             * We have two completely different implementations:
+             *  - a partitioned aggregate (that returns for every group a row
+             *    and an empty result for an empty input), and
+             *  - an unpartitioned aggregate (that always return a single row).
+             */
+        
+            /* reserve temporary variable */
+            v = new_var (1);
 
-                v = new_var (1);
+            /* Handle partitioned aggregate. */
+            if (p->sem.aggr.part != col_NULL) {
+                PFalg_col_t         part      = p->sem.aggr.part;
+                PFalg_simple_type_t part_ty   = type_of (L(p), part);
+                mvar_t             *part_var  = new_var (p->refctr);
+                PFmil_t            *PART_VAR  = VAR (L(p)->env, part, part_ty);
+                bool                dist      = false;
 
-                if (!type_bit_check (ty))
+                if (!type_bit_check (part_ty))
                     PFoops (OOPS_FATAL,
-                            "HashCount not implemented for polymorphic groups");
+                            "Aggregates not implemented "
+                            "for polymorphic columns");
 
+                /* add the part MIL variable to the environment */
+                env_add (p->env, part, part_ty, part_var);
+
+                /* 1st run: cope with all non-distinct aggregates */
+                for (unsigned int i = 0; i < p->sem.aggr.count; i++) {
+                    PFalg_aggr_kind_t   kind    = p->sem.aggr.aggr[i].kind;
+                    PFalg_col_t         res     = p->sem.aggr.aggr[i].res,
+                                        col     = p->sem.aggr.aggr[i].col;
+                    PFalg_simple_type_t col_ty  = type_of (p, res);
+                    mvar_t             *res_var;
+                    
+                    /* skip distinct aggregate for now */
+                    if (kind == alg_aggr_dist) {
+                        dist = true;
+                        continue;
+                    }
+                   
+                    if (!type_bit_check (col_ty))
+                        PFoops (OOPS_FATAL,
+                                "Aggregates not implemented "
+                                "for polymorphic columns");
+
+                    /* create a new result MIL variable
+                       and add it to the environment */
+                    res_var = new_var (p->refctr);
+                    env_add (p->env, res, col_ty, res_var);
+
+                    /* prepare the input for the aggregate */
+                    if (col) {
+                        assert (type_of (L(p), col) == col_ty);
+                        execute (assgn (var (v->name),
+                                        leftfetchjoin (
+                                            reverse (PART_VAR),
+                                            VAR (L(p)->env, col, col_ty))));
+                    }
+                    else
+                        execute (assgn (var (v->name),
+                                        reverse (PART_VAR)));
+
+                    switch (kind) {
+                        case alg_aggr_dist:
+                            assert (0);
+                            break;
+                        case alg_aggr_min:
+                            execute (assgn (var (v->name),
+                                            PFmil_gmin (var (v->name))));
+                            break;
+                        case alg_aggr_max:
+                            execute (assgn (var (v->name),
+                                            PFmil_gmax (var (v->name))));
+                            break;
+                        case alg_aggr_all:
+                            /* v := [=]({sum}(v),{count}(v)); */
+                            execute (assgn (var (v->name),
+                                            meq (PFmil_gsum (
+                                                     mcast (type (mty_int),
+                                                            var (v->name))),
+                                                 gcount (var (v->name)))));
+                            break;
+                        case alg_aggr_count:
+                            /* align with integer representation (lng) */
+                            execute (assgn (var (v->name),
+                                     mcast (type (mty_lng),
+                                            gcount (var (v->name)))));
+                            break;
+                        case alg_aggr_avg:
+                            execute (assgn (var (v->name),
+                                            PFmil_gavg (var (v->name))));
+                            break;
+                        case alg_aggr_sum:
+                            execute (assgn (var (v->name),
+                                            PFmil_gsum (var (v->name))));
+                            break;
+                        case alg_aggr_seqty1:
+                            /* v := [and]([=](1,{sum}(v)),[=](1,{count}(v))); */
+                            execute (assgn (var (v->name),
+                                            PFmil_mand (
+                                                meq (lit_int (1),
+                                                     PFmil_gsum (
+                                                         mcast (
+                                                             type (mty_int),
+                                                             var (v->name)))),
+                                                meq (lit_int (1),
+                                                     gcount (var (v->name))))));
+                            break;
+                        case alg_aggr_prod:
+                            execute (assgn (var (v->name),
+                                            PFmil_gprod (var (v->name))));
+                            break;
+                    }
+                    /* bind the aggregate result to the result MIL variable */
+                    execute (
+                        assgn (var (res_var->name),
+                               tmark (var (v->name), lit_oid (0))));
+                }
+
+                /* generate a relation that can be used to adjust the
+                   distinct aggregate values */
+                if (dist)
+                    execute (assgn (var (v->name),
+                                    PFmil_gmin (reverse (PART_VAR))));
+
+                /* bind the result partition to the partition MIL variable */
                 execute (
-                    /* v := {count}(p_in.reverse ()) */
-                    assgn (
-                        var (v->name),
-                        gcount (
-                            reverse (VAR (L(p)->env,
-                                          p->sem.count.part, ty)))),
-                    /* align with integer representation (lng) */
-                    assgn (var (v->name),
-                           mcast (type (mty_lng), var (v->name))),
-                    /* res := v.reverse ().mark (0@0).reverse (); */
-                    assgn (
-                        var (res->name),
-                        reverse (
-                            mark (
-                                reverse (var (v->name)),
-                                lit_oid (0)))),
-                    /* part := v.mark (0@0).reverse (); */
-                    assgn (
-                        var (part->name),
-                        reverse (
-                            mark (var (v->name), lit_oid (0)))));
+                    assgn (var (part_var->name),
+                           hmark (var (v->name), lit_oid (0))));
 
-                env_add (p->env, p->sem.count.res, aat_int, res);
-                env_add (p->env, p->sem.count.part, ty, part);
+                /* 2nd run: cope with all distinct aggregates */
+                for (unsigned int i = 0; i < p->sem.aggr.count; i++) {
+                    PFalg_aggr_kind_t   kind    = p->sem.aggr.aggr[i].kind;
+                    PFalg_col_t         res     = p->sem.aggr.aggr[i].res,
+                                        col     = p->sem.aggr.aggr[i].col;
+                    PFalg_simple_type_t ty;
+                    mvar_t             *col_var,
+                                       *res_var;
+                    
+                    /* only treat distinct aggregate */
+                    if (kind != alg_aggr_dist)
+                        continue;
+                   
+                    /* map all variables related with this column */
+                    for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                        if (env_at (L(p)->env, i).col == col) {
+                            ty      = env_at (L(p)->env, i).ty;
+                            col_var = env_at (L(p)->env, i).mvar;
+                            res_var = new_var (p->refctr);
 
-                unpin (v, 1);
+                            /* map variables */
+                            execute (assgn (var (res_var->name),
+                                            tmark (
+                                                leftjoin (var (v->name),
+                                                          var (col_var->name)),
+                                                lit_oid (0))));
+
+                            env_add (p->env, res, ty, res_var);
+                        }
+                }
             }
+            /* Handle unpartitioned aggregate.
+
+               NOTE: The current implementation only generates unpartitioned
+               count aggregates. In case other aggregates are also used
+               the result for empty input sequences (namely the value nil)
+               requires additional care. */
             else {
-                v = new_var (p->refctr);
-                execute (
-                    assgn (var (v->name),
-                           count (var (env_at (L(p)->env, 0).mvar->name))),
-                    /* align with integer representation (lng) */
-                    assgn (var (v->name),
-                           cast (type (mty_lng), var (v->name))),
-                    assgn (var (v->name),
-                           append (
-                               seqbase (
-                                   new (type (mty_void), type (mty_lng)),
-                                   lit_oid (0)),
-                               var (v->name))));
-                env_add (p->env, p->sem.count.res, aat_int, v);
+
+                for (unsigned int i = 0; i < p->sem.aggr.count; i++) {
+                    PFalg_aggr_kind_t   kind    = p->sem.aggr.aggr[i].kind;
+                    PFalg_col_t         res     = p->sem.aggr.aggr[i].res,
+                                        col     = p->sem.aggr.aggr[i].col;
+                    PFalg_simple_type_t col_ty  = type_of (p, res);
+                    mvar_t             *res_var;
+                    
+                    if (!type_bit_check (col_ty))
+                        PFoops (OOPS_FATAL,
+                                "Aggregates not implemented "
+                                "for polymorphic columns");
+
+                    /* create a new result MIL variable
+                       and add it to the environment */
+                    res_var = new_var (p->refctr);
+                    env_add (p->env, res, col_ty, res_var);
+
+                    /* prepare the input for the aggregate */
+                    if (col) {
+                        assert (type_of (L(p), col) == col_ty);
+                        execute (assgn (var (v->name), 
+                                        VAR (L(p)->env, col, col_ty)));
+                    }
+                    else
+                        execute (assgn (var (v->name), 
+                                        ANY_VAR (L(p)->env)));
+
+                    switch (kind) {
+                        case alg_aggr_dist:
+                            /* This case doesn't make sense -- so we bail out */
+                            PFoops (OOPS_FATAL,
+                                    "Unpartitioned distinct aggregate"
+                                    " is not implemented");
+                            break;
+                        case alg_aggr_min:
+                            execute (assgn (var (v->name),
+                                            PFmil_min (var (v->name))));
+                            break;
+                        case alg_aggr_max:
+                            execute (assgn (var (v->name),
+                                            PFmil_max (var (v->name))));
+                            break;
+                        case alg_aggr_all:
+                            execute (assgn (var (v->name),
+                                            eq (PFmil_sum (
+                                                    mcast (type (mty_int),
+                                                           var (v->name))),
+                                                count (var (v->name)))));
+                            break;
+                        case alg_aggr_count:
+                            /* align with integer representation (lng) */
+                            execute (assgn (var (v->name),
+                                     cast (type (mty_lng),
+                                           count (var (v->name)))));
+                            break;
+                        case alg_aggr_avg:
+                            execute (assgn (var (v->name),
+                                            PFmil_avg (var (v->name))));
+                            break;
+                        case alg_aggr_sum:
+                            execute (assgn (var (v->name),
+                                            PFmil_sum (var (v->name))));
+                            break;
+                        case alg_aggr_seqty1:
+                            execute (assgn (var (v->name),
+                                            PFmil_and (
+                                                eq (lit_int (1),
+                                                    PFmil_sum (
+                                                        mcast (
+                                                            type (mty_int),
+                                                            var (v->name)))),
+                                                eq (lit_int (1),
+                                                    count (var (v->name))))));
+                            break;
+                        case alg_aggr_prod:
+                            execute (assgn (var (v->name),
+                                            PFmil_prod (var (v->name))));
+                            break;
+                    }
+                    /* bind the aggregate result to the result MIL variable */
+                    execute (
+                        assgn (var (res_var->name),
+                               append (
+                                   seqbase (
+                                       new (type (mty_void), implty_ (col_ty)),
+                                       lit_oid (0)),
+                                   var (v->name))));
+                }
             }
+            /* release temporary variable */
+            unpin (v, 1);
             break; /* fold) */
 
-        /* Rel:      avg (Rel) */
-        case 67:
-             aggr_function (PFmil_avg, PFmil_gavg, p);
-             break;
-
-        /* Rel:      max_ (Rel) */
-        case 68:
-             aggr_function (PFmil_max, PFmil_gmax, p);
-             break;
-
-        /* Rel:      min_ (Rel) */
-        case 69:
-             aggr_function (PFmil_min, PFmil_gmin, p);
-             break;
-
-        /* Rel:      sum (Rel) */
-        case 70:
-             aggr_function (PFmil_sum, PFmil_gsum, p);
-             break;
-
-        /* Rel:      prod (Rel) */
-        case 81:
-             aggr_function (PFmil_prod, PFmil_gprod, p);
-             break;
-      
         /* Rel:      mark (Rel) */
         case 71: /* fold( */
         {
@@ -7288,133 +7386,6 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                         "cast to polymorphic type not allowed.");
         }   break; /* fold) */
 
-        /* Rel:      seqty1 (Rel) */
-        case 79: /* fold( */
-        {
-             PFalg_col_t         part    = p->sem.aggr.part,
-                                 col     = p->sem.aggr.col,
-                                 res     = p->sem.aggr.res;
-             PFalg_simple_type_t part_ty;
-
-             assert (type_of (L(p), col) == aat_bln &&
-                     type_of (p, res) == aat_bln);
-
-             if (part != col_NULL) {
-                 mvar_t *res_var  = new_var (p->refctr);
-                 mvar_t *part_var = new_var (p->refctr);
-
-                 v = new_var (1);
-
-                 part_ty = type_of (L(p), part);
-
-                 execute (
-                      /* v :=
-                         (col.reverse().join(part).reverse()) */
-                      assgn (var (v->name),
-                             reverse (
-                                 join (reverse (VAR (L(p)->env, col, aat_bln)),
-                                       VAR (L(p)->env, part, part_ty)))),
-                      /* v := [and]([=](1,{sum}(v)),[=](1,{count}(v))); */
-                      assgn (var (v->name),
-                             PFmil_mand (
-                                 meq (lit_int (1),
-                                      PFmil_gsum (mcast (type (mty_int),
-                                                         var (v->name)))),
-                                 meq (lit_int (1), gcount (var (v->name))))),
-                      /* res := v.reverse ().mark (0@0).reverse (); */
-                      assgn (var (res_var->name),
-                             reverse (mark (reverse (var (v->name)), lit_oid (0)))),
-                      /* part := v.mark (0@0).reverse (); */
-                      assgn (var (part_var->name),
-                             reverse (mark (var (v->name), lit_oid (0)))));
-
-                 env_add (p->env, res, aat_bln, res_var);
-                 env_add (p->env, part, part_ty, part_var);
-
-                 unpin (v, 1);
-             }
-             else {
-                  v = new_var (p->refctr);
-                  execute (
-                      assgn (var (v->name), VAR (L(p)->env, col, aat_bln)),
-                      assgn (var (v->name),
-                             PFmil_and (
-                                 eq (lit_int (1),
-                                     PFmil_sum (mcast (type (mty_int),
-                                                       var (v->name)))),
-                                 eq (lit_int (1), count (var (v->name))))),
-                      assgn (var (v->name),
-                             append (
-                                  seqbase (
-                                       new (type (mty_void), implty_ (aat_bln)),
-                                       lit_oid (0)),
-                                  var (v->name))));
-                  env_add (p->env, res, aat_bln, v);
-             }
-        }    break; /* fold) */
-
-        /* Rel:      all (Rel) */
-        case 80: /* fold( */
-        {
-             PFalg_col_t         part    = p->sem.aggr.part,
-                                 col     = p->sem.aggr.col,
-                                 res     = p->sem.aggr.res;
-             PFalg_simple_type_t part_ty;
-
-             assert (type_of (L(p), col) == aat_bln &&
-                     type_of (p, res) == aat_bln);
-
-             if (part != col_NULL) {
-                 mvar_t *res_var  = new_var (p->refctr);
-                 mvar_t *part_var = new_var (p->refctr);
-
-                 v = new_var (1);
-
-                 part_ty = type_of (L(p), part);
-
-                 execute (
-                      /* v :=
-                         (col.reverse().join(part).reverse()) */
-                      assgn (var (v->name),
-                             reverse (
-                                 join (reverse (VAR (L(p)->env, col, aat_bln)),
-                                       VAR (L(p)->env, part, part_ty)))),
-                      /* v := [=]({sum}(v),{count}(v)); */
-                      assgn (var (v->name),
-                             meq (PFmil_gsum (mcast (type (mty_int),
-                                                     var (v->name))),
-                                  gcount (var (v->name)))),
-                      /* res := v.reverse ().mark (0@0).reverse (); */
-                      assgn (var (res_var->name),
-                             reverse (mark (reverse (var (v->name)),
-                                            lit_oid (0)))),
-                      /* part := v.mark (0@0).reverse (); */
-                      assgn (var (part_var->name),
-                             reverse (mark (var (v->name), lit_oid (0)))));
-
-                 env_add (p->env, res, aat_bln, res_var);
-                 env_add (p->env, part, part_ty, part_var);
-
-                 unpin (v, 1);
-             }
-             else {
-                  v = new_var (p->refctr);
-                  execute (
-                      assgn (var (v->name), VAR (L(p)->env, col, aat_bln)),
-                      assgn (var (v->name),
-                             eq (PFmil_sum (mcast (type (mty_int),
-                                                   var (v->name))),
-                                 count (var (v->name)))),
-                      assgn (var (v->name),
-                             append (
-                                  seqbase (
-                                       new (type (mty_void), implty_ (aat_bln)),
-                                       lit_oid (0)),
-                                  var (v->name))));
-                  env_add (p->env, res, aat_bln, v);
-             }
-        }    break; /* fold) */
-            
         /* Rel:      llscjoin (Rel) */
         case 90: /* fold( */
             llscj (p);

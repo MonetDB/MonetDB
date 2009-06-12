@@ -89,11 +89,7 @@ enum PFla_op_kind_t {
     , la_bool_or         = 29 /**< boolean OR operator */
     , la_bool_not        = 30 /**< boolean NOT operator */
     , la_to              = 31 /**< op:to operator */
-    , la_avg             = 32 /**< operator for (partitioned) avg of a column */
-    , la_max             = 33 /**< operator for (partitioned) max of a column */
-    , la_min             = 34 /**< operator for (partitioned) min of a column */
-    , la_sum             = 35 /**< operator for (partitioned) sum of a column */
-    , la_count           = 36 /**< (partitioned) row counting operator */
+    , la_aggr            = 32 /**< (partitioned) aggregate operator */
     /* Semantics of la_row_num, la_rowrank, la_rank, and la_rowid:
        - la_rownum behaves exactly like SQLs ROW_NUMBER. It is used to generate
          position values.
@@ -118,9 +114,6 @@ enum PFla_op_kind_t {
                                    certain type */
     , la_type_assert     = 42 /**< restricts the type of a relation */
     , la_cast            = 43 /**< type cast of a column */
-    , la_seqty1          = 44 /**< test for exactly one type occurrence in one
-                                   iteration (Pathfinder extension) */
-    , la_all             = 45 /**< test if all items in an iteration are true */
     , la_step            = 50 /**< XPath location step */
     , la_step_join       = 51 /**< duplicate generating path step */
     , la_guide_step      = 52 /**< XPath location step
@@ -179,10 +172,7 @@ enum PFla_op_kind_t {
     /* builtin support for XQuery functions */
     , la_string_join     =102 /**< fn:string-join */
     
-    , la_prod		 =110 /**< pf:product should be after la_sum */
-
     , la_dummy           =120 /**< dummy operator that does nothing */
-
 
 };
 /** algebra operator kinds */
@@ -312,15 +302,12 @@ union PFla_op_sem_t {
 
     /*
      * semantic content for operators applying a
-     * (partitioned) aggregation function (count, sum, min, max and avg)
-     * on a column
-     * or a boolean grouping function (seqty1, all,...)
+     * (partitioned) aggregation function
      */
     struct {
-        PFalg_col_t     col;      /**< column to be used for the agg. func. */
-                                    /* Note that 'col' is ignored by la_count */
         PFalg_col_t     part;     /**< partitioning column */
-        PFalg_col_t     res;      /**< column to hold the result */
+        unsigned int    count;    /**< length of the aggregate list */
+        PFalg_aggr_t   *aggr;     /**< aggregate list */
     } aggr;
 
     /* semantic content for rownumber, rowrank, and rank operator */
@@ -817,10 +804,10 @@ PFla_op_t * PFla_to (const PFla_op_t *n,
 
 /**
  * Constructor for operators forming the application of a
- * (partitioned) aggregation function (sum, min, max and avg) on a column.
+ * (partitioned) aggregation function.
  */
-PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n,
-                       PFalg_col_t res, PFalg_col_t col, PFalg_col_t part);
+PFla_op_t * PFla_aggr (const PFla_op_t *n, PFalg_col_t part,
+                       unsigned int count, PFalg_aggr_t *aggr);
 
 /** Constructor for (partitioned) row counting operators. */
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_col_t res,
@@ -868,18 +855,6 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_col_t col,
  */
 PFla_op_t * PFla_cast (const PFla_op_t *n, PFalg_col_t res, PFalg_col_t col,
                        PFalg_simple_type_t ty);
-
-/** Constructor for sequence type matching operator for `1' occurrence */
-PFla_op_t * PFla_seqty1 (const PFla_op_t *n,
-                         PFalg_col_t res, PFalg_col_t col, PFalg_col_t part);
-
-/**
- * Constructor for `all' test.
- * (Do all tuples in partition @a part carry the value true in
- * column @a item ?)
- */
-PFla_op_t * PFla_all (const PFla_op_t *n, PFalg_col_t res,
-                      PFalg_col_t col, PFalg_col_t part);
 
 /**
  * Constructor for XPath step evaluation.

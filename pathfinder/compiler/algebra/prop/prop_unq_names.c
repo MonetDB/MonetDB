@@ -415,15 +415,9 @@ infer_unq_names (PFla_op_t *n)
             new_name_pair (np_list, n->sem.unary.res);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            new_name_pair (np_list, n->sem.aggr.res);
+        case la_aggr:
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                new_name_pair (np_list, n->sem.aggr.aggr[i].res);
             if (n->sem.aggr.part)
                 add_name_pair (np_list,
                                n->sem.aggr.part,

@@ -1168,14 +1168,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             break;
 
         case la_rownum:

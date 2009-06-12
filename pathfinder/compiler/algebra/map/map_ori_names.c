@@ -494,23 +494,44 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
         case la_to:
             res = binary_op (PFla_to, p, map);
             break;
+            
+        case la_aggr:
+        {
+            PFla_op_t *left;
+            PFalg_aggr_t *aggr = PFmalloc (p->sem.aggr.count *
+                                           sizeof (PFalg_aggr_t));
+            PFalg_col_t  col;
+            unsigned int count = 0;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-            res = aggr (p->kind, PROJ(LEFT, p),
-                        ONAME(p, p->sem.aggr.res),
-                        ONAME(p, p->sem.aggr.col),
-                        p->sem.aggr.part?ONAME(p, p->sem.aggr.part):col_NULL);
-            break;
+            left = O(L(p));
 
-        case la_count:
-            res = count (PROJ(LEFT, p),
-                         ONAME(p, p->sem.aggr.res),
-                         p->sem.aggr.part?ONAME(p, p->sem.aggr.part):col_NULL);
-            break;
+            for (unsigned int i = 0; i < left->schema.count; i++) {
+                col = left->schema.items[i].name;
+                for (unsigned int j = 0; j < p->sem.aggr.count; j++)
+                    /* we may get multiple hits */
+                    if (col == PFprop_ori_name_left (
+                                   p->prop,
+                                   p->sem.aggr.aggr[j].col)) {
+                        aggr[count++] = PFalg_aggr (
+                                            p->sem.aggr.aggr[j].kind,
+                                            ONAME(p, p->sem.aggr.aggr[j].res),
+                                            col);
+                    }
+            }
+            for (unsigned int j = 0; j < p->sem.aggr.count; j++)
+                if (p->sem.aggr.aggr[j].kind == alg_aggr_count)
+                    aggr[count++] = PFalg_aggr (
+                                        p->sem.aggr.aggr[j].kind,
+                                        ONAME(p, p->sem.aggr.aggr[j].res),
+                                        col_NULL);
+
+            assert (count == p->sem.aggr.count);
+
+            res = aggr (left,
+                        p->sem.aggr.part?ONAME(p, p->sem.aggr.part):col_NULL,
+                        p->sem.aggr.count,
+                        aggr);
+        }   break;
 
         case la_rownum:
         case la_rowrank:
@@ -566,20 +587,6 @@ do_map_ori_names (PFla_op_t *p, PFarray_t *map)
                         ONAME(p, p->sem.type.res),
                         ONAME(p, p->sem.type.col),
                         p->sem.type.ty);
-            break;
-
-        case la_seqty1:
-            res = seqty1 (PROJ(LEFT, p),
-                          ONAME(p, p->sem.aggr.res),
-                          ONAME(p, p->sem.aggr.col),
-                          p->sem.aggr.part?ONAME(p, p->sem.aggr.part):col_NULL);
-            break;
-
-        case la_all:
-            res = all (PROJ(LEFT, p),
-                       ONAME(p, p->sem.aggr.res),
-                       ONAME(p, p->sem.aggr.col),
-                       p->sem.aggr.part?ONAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_step:

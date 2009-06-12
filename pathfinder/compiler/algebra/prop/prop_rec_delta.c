@@ -226,14 +226,7 @@ check_op (PFla_op_t *n, bool op_used)
             }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             /* check for a reference to iter */
             if (n->sem.aggr.part &&
                 ITER(L(n)) & n->sem.aggr.part)

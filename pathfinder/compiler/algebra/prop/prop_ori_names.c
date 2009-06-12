@@ -362,30 +362,17 @@ infer_ori_names (PFla_op_t *n, PFarray_t *par_np_list)
             diff_np (n->prop->l_name_pairs, np_list, n->sem.unary.res);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            /* operators introducing a completely new set of names
-               for its operands (aggregates, steps, doc_tbl, element,
-               merge_adjacent, and string_join) store these columns
-               both in the name pair list of the child and in the current
-               name pair list to support correct renaming if the proposed
-               column name was modified. */
-            unq = n->sem.aggr.res;
-            ori = find_ori_name (np_list, unq);
-            /* use the result name also as column name
-               of the input value column */
-            if (n->kind != la_count) {
-                unq = n->sem.aggr.col;
-                add_name_pair (np_list, ori, unq);
-                add_name_pair (n->prop->l_name_pairs, ori, unq);
-            }
-
+        case la_aggr:
+            /* Infer only columns that are used in the aggregates.
+               Renamings do not have to be mapped. Conflicting names
+               are patched by the function patch_ori_names(). */
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                if (n->sem.aggr.aggr[i].kind != alg_aggr_count) {
+                    ori = find_ori_name (np_list, n->sem.aggr.aggr[i].res);
+                    add_name_pair (n->prop->l_name_pairs,
+                                   ori,
+                                   n->sem.aggr.aggr[i].col);
+                }
             if (n->sem.aggr.part) {
                 unq = n->sem.aggr.part;
                 ori = find_ori_name (np_list, unq);

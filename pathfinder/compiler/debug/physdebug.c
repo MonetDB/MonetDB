@@ -90,21 +90,14 @@ static char *a_id[]  = {
     , [pa_bool_or]         = "OR"
     , [pa_bool_not]        = "NOT"
     , [pa_to]              = "op:to"
-    , [pa_avg]             = "AVG"
-    , [pa_min]             = "MAX"
-    , [pa_max]             = "MIN"
-    , [pa_sum]             = "SUM"
-    , [pa_prod]            = "PRODUCT"
+    , [pa_aggr]            = "AGGR"
     , [pa_count_ext]       = "{COUNT}"
-    , [pa_count]           = "COUNT"
     , [pa_mark]            = "mark"
     , [pa_rank]            = "rank"
     , [pa_mark_grp]        = "mark_grp"
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "CAST"
-    , [pa_seqty1]          = "SEQTY1"
-    , [pa_all]             = "ALL"
     , [pa_llscjoin]        = "//|"
     , [pa_llscjoin_dup]    = "//|+"
     , [pa_doc_tbl]         = "DOC"
@@ -241,21 +234,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
         , [pa_bool_and]        = "\"#C0C0C0\""
         , [pa_bool_or]         = "\"#C0C0C0\""
         , [pa_to]              = "\"#C0C0C0\""
-        , [pa_avg]             = "\"#A0A0A0\""
-        , [pa_max]             = "\"#A0A0A0\""
-        , [pa_min]             = "\"#A0A0A0\""
-        , [pa_sum]             = "\"#A0A0A0\""
-        , [pa_prod]            = "\"#A0A0A0\""
+        , [pa_aggr]            = "\"#A0A0A0\""
         , [pa_count_ext]       = "\"#A0A0A0\""
-        , [pa_count]           = "\"#A0A0A0\""
         , [pa_mark]            = "\"#FFBBBB\""
         , [pa_rank]            = "\"#FFBBBB\""
         , [pa_mark_grp]        = "\"#FFBBBB\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
-        , [pa_seqty1]          = "\"#A0A0A0\""
-        , [pa_all]             = "\"#A0A0A0\""
         , [pa_llscjoin]        = "\"#1E90FF\""
         , [pa_llscjoin_dup]    = "\"#1E9099\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
@@ -466,7 +452,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
             break;
 
         case pa_count_ext:
-        case pa_count:
             if (n->sem.count.part == col_NULL)
                 PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                                 PFcol_str (n->sem.count.res));
@@ -479,22 +464,21 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, unsigned int node_id, char *prop_args)
                                 PFcol_str (n->sem.count.loop));
             break;
 
-        case pa_avg:
-        case pa_max:
-        case pa_min:
-        case pa_sum:
-        case pa_prod:
-        case pa_seqty1:
-        case pa_all:
-            if (n->sem.aggr.part == col_NULL)
-                PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res),
-                                PFcol_str (n->sem.aggr.col));
-            else
-                PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res),
-                                PFcol_str (n->sem.aggr.col),
+        case pa_aggr:
+            /* overwrite standard node layout */
+            PFarray_printf (dot, "\", shape=polygon peripheries=2, label=\"");
+
+            PFarray_printf (dot, "%s", a_id[n->kind]);
+            if (n->sem.aggr.part != col_NULL)
+                PFarray_printf (dot, " / %s",
                                 PFcol_str (n->sem.aggr.part));
+
+            for (c = 0; c < n->sem.aggr.count; c++)
+                PFarray_printf (dot, "\\n%s = %s (%s)",
+                                PFcol_str (n->sem.aggr.aggr[c].res),
+                                PFalg_aggr_kind_str (n->sem.aggr.aggr[c].kind),
+                                n->sem.aggr.aggr[c].col
+                                ? PFcol_str (n->sem.aggr.aggr[c].col) : "");
             break;
 
         case pa_mark:

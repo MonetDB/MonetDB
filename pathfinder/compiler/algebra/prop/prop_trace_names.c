@@ -281,15 +281,9 @@ map_names (PFla_op_t *n, PFla_op_t *goal, PFarray_t *par_np_list,
             diff_np (np_list, n->sem.unary.res);
             break;
 
-        case la_count:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
-            diff_np (np_list, n->sem.aggr.res);
+        case la_aggr:
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                diff_np (np_list, n->sem.aggr.aggr[i].res);
             break;
 
         case la_rownum:

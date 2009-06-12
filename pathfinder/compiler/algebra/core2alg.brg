@@ -3514,7 +3514,9 @@ enventry (PFvar_t *var, PFla_op_t *rel, PFla_op_t *map, PFarray_t *doc)
 static PFla_op_t *
 type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
 {
-    PFla_op_t *itemty;
+    PFalg_aggr_t aggr_item;
+    PFla_op_t   *itemty,
+                *aggr;
 
     /*
      * Collect algebra expression with schema (iter,pos,itemty)
@@ -3653,6 +3655,10 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
      * Second part is the test for the occurence indicator.
      */
 
+    /* build a seqty1 aggregate */
+    aggr_item = PFalg_aggr (alg_aggr_seqty1, col_subty, col_itemty);
+    aggr      = aggr (itemty, col_iter, 1, &aggr_item);
+
     /*
      * Ocurrence indicator `1' (exactly one item).
      *
@@ -3673,7 +3679,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_item ()))
         return
             disjunion (
-                seqty1 (itemty, col_subty, col_itemty, col_iter),
+                aggr,
                 attach (
                     difference (
                         loop,
@@ -3694,12 +3700,15 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_opt (PFty_item ())))
         return
             disjunion (
-                seqty1 (itemty, col_subty, col_itemty, col_iter),
+                aggr,
                 attach (
                     difference (
                         loop,
                         project (itemty, proj (col_iter, col_iter))),
                     col_subty, lit_bln (true)));
+
+    /* turn the seqty1 aggregate into an all aggregate */
+    aggr->sem.aggr.aggr[0].kind = alg_aggr_all;
 
     /*
      * Ocurrence indicator `+' (one or more items).
@@ -3721,7 +3730,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_plus (PFty_item ())))
         return
             disjunion (
-                all (itemty, col_subty, col_itemty, col_iter),
+                aggr,
                 attach (
                     difference (
                         loop,
@@ -3742,7 +3751,7 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_star (PFty_item ())))
         return
             disjunion (
-                all (itemty, col_subty, col_itemty, col_iter),
+                aggr,
                 attach (
                     difference (
                         loop,

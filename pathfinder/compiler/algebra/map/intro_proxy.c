@@ -142,18 +142,11 @@ plan_copy (PFla_op_t *p)
         case la_bool_or:
         case la_bool_not:
         case la_to:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
+        case la_aggr:
         case la_rank:
         case la_type:
         case la_type_assert:
         case la_cast:
-        case la_seqty1:
-        case la_all:
         case la_doc_tbl:
         case la_roots:
         case la_dummy:

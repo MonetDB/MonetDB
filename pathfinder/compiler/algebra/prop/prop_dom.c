@@ -936,21 +936,29 @@ infer_dom (PFla_op_t *n)
             add_new_dom (n->sem.unary.res);
             break;
 
-        case la_avg:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            add_new_dom (n->sem.aggr.res);
-            if (n->sem.aggr.part)
-                add_dom (n->sem.aggr.part,
-                         PFprop_dom (L(n)->prop, n->sem.aggr.part));
-            break;
-
-        case la_max:
-        case la_min:
-            filter_dom_ (L(n), n->sem.aggr.col, n->sem.aggr.res);
+        case la_aggr:
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                switch (n->sem.aggr.aggr[i].kind) {
+                    case alg_aggr_dist:
+                        add_dom (n->sem.aggr.aggr[i].res,
+                                 PFprop_dom (L(n)->prop,
+                                             n->sem.aggr.aggr[i].col));
+                        break;
+                    case alg_aggr_min:
+                    case alg_aggr_max:
+                    case alg_aggr_all:
+                        filter_dom_ (L(n),
+                                     n->sem.aggr.aggr[i].col,
+                                     n->sem.aggr.aggr[i].res);
+                        break;
+                    case alg_aggr_count:
+                    case alg_aggr_avg:
+                    case alg_aggr_sum:
+                    case alg_aggr_seqty1:
+                    case alg_aggr_prod:
+                        add_new_dom (n->sem.aggr.aggr[i].res);
+                        break;
+                }
             if (n->sem.aggr.part)
                 add_dom (n->sem.aggr.part,
                          PFprop_dom (L(n)->prop, n->sem.aggr.part));

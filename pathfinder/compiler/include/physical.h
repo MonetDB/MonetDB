@@ -85,11 +85,7 @@ enum PFpa_op_kind_t {
     , pa_to             =  50 /**< op:to operator */
     , pa_count_ext      =  54 /**< Count operator with loop backup
                                    for empty values*/
-    , pa_count          =  55 /**< Count operator */
-    , pa_avg            =  56 /**< Avg operator */
-    , pa_max            =  57 /**< Max operator */
-    , pa_min            =  58 /**< Min operator */    
-    , pa_sum            =  59 /**< Sum operator */
+    , pa_aggr           =  55 /**< aggregate operator */
     , pa_mark           =  60 /**< consecutive numbering operator 
                                    (starting from 1) */
     , pa_rank           =  61 /**< ranking operator */
@@ -99,10 +95,6 @@ enum PFpa_op_kind_t {
                                    certain type */
     , pa_type_assert    =  64 /**< restriction of the type of a given column */
     , pa_cast           =  65 /**< cast a table to a given type */
-    , pa_seqty1          = 66 /**< test for exactly one type occurrence in one
-                                   iteration (Pathfinder extension) */
-    , pa_all            = 67 /**< test if all items in an iteration are true */
-    , pa_prod		= 68  /**< product aggregate, should be after pa_sum */
     , pa_llscjoin       = 100 /**< Loop-Lifted StaircaseJoin */
     , pa_llscjoin_dup   = 101 /**< Loop-Lifted StaircaseJoin with duplicates */
     , pa_doc_tbl        = 120 /**< Access to persistent document relation */
@@ -249,13 +241,13 @@ union PFpa_op_sem_t {
     } count;
 
     /*
-     * semantic content for operators applying a 
-     * (partitioned) aggregation function (sum, min, max and avg) on a column
+     * semantic content for operators applying a
+     * (partitioned) aggregation function
      */
     struct {
-        PFalg_col_t     col;  /**< column to be used for the agg. func. */
-        PFalg_col_t     part; /**< partitioning column */
-        PFalg_col_t     res;  /**< column to hold the result */
+        PFalg_col_t     part;     /**< partitioning column */
+        unsigned int    count;    /**< length of the aggregate list */
+        PFalg_aggr_t   *aggr;     /**< aggregate list */
     } aggr;
 
     /* semantic content for mark operators */
@@ -653,20 +645,12 @@ PFpa_op_t *PFpa_count_ext (const PFpa_op_t *, const PFpa_op_t *,
                            PFalg_col_t, PFalg_col_t, PFalg_col_t);
 
 /**
- * Count: Count function operator. Does neither benefit from
- * any existing ordering, nor does it provide/preserve any input
- * ordering.
- */
-PFpa_op_t *PFpa_count (const PFpa_op_t *,
-                       PFalg_col_t, PFalg_col_t);
-
-/**
  * Aggr: Aggregation function operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_col_t res, 
-		     PFalg_col_t col, PFalg_col_t part);
+PFpa_op_t * PFpa_aggr (const PFpa_op_t *n, PFalg_col_t part,
+                       unsigned int count, PFalg_aggr_t *aggr);
 
 /****************************************************************/
 

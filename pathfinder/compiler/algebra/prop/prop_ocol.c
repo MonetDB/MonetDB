@@ -709,52 +709,42 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
+        case la_aggr:
             /* set number of schema items in the result schema:
-             * result column plus partitioning column
+             * result columns plus partitioning column
              * (if available -- constant optimizations may
              *  have removed it).
              */
-            new_ocols (n, n->sem.aggr.part ? 2 : 1);
+            new_ocols (n, n->sem.aggr.count + (n->sem.aggr.part ? 1 : 0));
 
             /* verify that columns 'col' and 'part' are columns of n
              * and include them into the result schema
              */
-            for (unsigned int i = 0; i < ocols_count (L(n)); i++) {
-                if (n->sem.aggr.col == ocol_at (L(n), i).name) {
-                    ocol_at (n, 0) = ocol_at (L(n), i);
-                    ocol_at (n, 0).name = n->sem.aggr.res;
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++) {
+                PFalg_col_t col = n->sem.aggr.aggr[i].col;
+                if (col) {
+                    if (!PFprop_ocol (L(n), col))
+                        PFoops (OOPS_FATAL,
+                                "column `%s' referenced in aggregate not found",
+                                PFcol_str (col));
+                    ocol_at (n, i).type = PFprop_type_of (L(n), col);
                 }
-                if (n->sem.aggr.part &&
-                    n->sem.aggr.part == ocol_at (L(n), i).name) {
-                    ocol_at (n, 1) = ocol_at (L(n), i);
-                }
+                else
+                    ocol_at (n, i).type = aat_int;
+
+                ocol_at (n, i).name = n->sem.aggr.aggr[i].res;
             }
-            break;
+            if (n->sem.aggr.part) {
+                unsigned int i    = n->sem.aggr.count;
+                PFalg_col_t  part = n->sem.aggr.part;
+                if (!PFprop_ocol (L(n), part))
+                    PFoops (OOPS_FATAL,
+                            "column `%s' referenced in aggregate not found",
+                            PFcol_str (part));
 
-        case la_count:
-            /* set number of schema items in the result schema:
-             * result column plus partitioning column
-             * (if available -- constant optimizations may
-             *  have removed it).
-             */
-            new_ocols (n, n->sem.aggr.part ? 2 : 1);
-
-            /* insert result column into schema */
-            ocol_at (n, 0).name = n->sem.aggr.res;
-            ocol_at (n, 0).type = aat_int;
-
-            /* copy the partitioning column */
-            if (n->sem.aggr.part)
-                for (unsigned int i = 0; i < ocols_count (L(n)); i++)
-                    if (ocol_at (L(n), i).name == n->sem.aggr.part) {
-                        ocol_at (n, 1) = ocol_at (L(n), i);
-                        break;
-                    }
+                ocol_at (n, i).type = PFprop_type_of (L(n), part);
+                ocol_at (n, i).name = part;
+            }
             break;
 
         case la_rownum:
@@ -801,18 +791,6 @@ infer_ocol (PFla_op_t *n)
             ocol_at (n, ocols_count (n)).name = n->sem.type.res;
             ocol_at (n, ocols_count (n)).type = n->sem.type.ty;
             ocols_count (n)++;
-            break;
-
-        case la_seqty1:
-        case la_all:
-            new_ocols (n, n->sem.aggr.part ? 2 : 1);
-
-            ocol_at (n, 0).name = n->sem.aggr.res;
-            ocol_at (n, 0).type = aat_bln;
-            if (n->sem.aggr.part) {
-                ocol_at (n, 1).name = n->sem.aggr.part;
-                ocol_at (n, 1).type = PFprop_type_of (L(n), n->sem.aggr.part);
-            }
             break;
 
         case la_step:

@@ -83,11 +83,13 @@ PFxml2la_conv_2PFLA_OpKind (const char* s)
     mapto (la_bool_or ,        "or")
     mapto (la_bool_not,        "not")
     mapto (la_to,              "op:to")
-    mapto (la_avg,             "avg")
-    mapto (la_max,             "max")
-    mapto (la_min,             "min")
-    mapto (la_sum,             "sum")
-    mapto (la_count,           "count")
+    mapto (la_aggr,            "aggr")
+    mapto (la_aggr,            "avg")
+    mapto (la_aggr,            "max")
+    mapto (la_aggr,            "min")
+    mapto (la_aggr,            "sum")
+    mapto (la_aggr,            "count")
+    mapto (la_aggr,            "prod")
     mapto (la_rownum,          "rownum")
     mapto (la_rowrank,         "rowrank")
     mapto (la_rank,            "rank")
@@ -95,8 +97,8 @@ PFxml2la_conv_2PFLA_OpKind (const char* s)
     mapto (la_type,            "type")
     mapto (la_type_assert,     "type assertion")
     mapto (la_cast,            "cast")
-    mapto (la_seqty1,          "seqty1")
-    mapto (la_all,             "all")
+    mapto (la_aggr,            "seqty1")
+    mapto (la_aggr,            "all")
     mapto (la_step,            "XPath step")
     mapto (la_step_join,       "path step join")
     mapto (la_guide_step,      "XPath step (with guide information)")
@@ -206,6 +208,8 @@ PFxml2la_conv_2PFLA_attributeName_unq (const char* s)
         ori = col_score1;
         length = strlen("score");
     }
+    else if (!strcmp (s, "(NULL)"))
+        return col_NULL;
     else
         PFoops (OOPS_FATAL, "don't know what to do with (%s)", s);
 
@@ -284,6 +288,30 @@ PFxml2la_conv_2PFLA_comparisonType (char* s)
     PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
     /* pacify picky compilers */
     return alg_comp_eq; 
+}
+
+PFalg_aggr_kind_t 
+PFxml2la_conv_2PFLA_aggregateType (char* s)
+{
+    if (false) return alg_aggr_count; /* discard first case */
+#define mapto_aggr_kind(kind)                              \
+    else if (strcmp (s, PFalg_aggr_kind_str((kind))) == 0) \
+        return (kind);
+    /* the kind was copied from algebra.c:PFalg_axis_str()
+       (and should stay aligned) */
+    mapto_aggr_kind (alg_aggr_dist)
+    mapto_aggr_kind (alg_aggr_count)
+    mapto_aggr_kind (alg_aggr_min)
+    mapto_aggr_kind (alg_aggr_max)
+    mapto_aggr_kind (alg_aggr_avg)
+    mapto_aggr_kind (alg_aggr_sum)
+    mapto_aggr_kind (alg_aggr_seqty1)
+    mapto_aggr_kind (alg_aggr_all)
+    mapto_aggr_kind (alg_aggr_prod)
+
+    PFoops (OOPS_FATAL, "don't know what to do (%s)", s);
+    /* pacify picky compilers */
+    return alg_aggr_count;
 }
 
 PFalg_fun_t 

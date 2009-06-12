@@ -109,11 +109,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  bool_or         =  29
 %term  bool_not        =  30
 %term  to              =  31
-%term  avg             =  32
-%term  max_            =  33
-%term  min_            =  34
-%term  sum             =  35
-%term  count           =  36
+%term  aggr            =  32
 %term  rownum          =  37
 %term  rowrank         =  38
 %term  rank            =  39
@@ -121,8 +117,6 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  type            =  41
 %term  type_assert     =  42
 %term  cast            =  43
-%term  seqty1          =  44
-%term  all             =  45
 %term  step            =  50
 %term  step_join       =  51
 %term  guide_step      =  52
@@ -159,7 +153,6 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  fun_param       =  91
 %term  fun_frag_param  =  92
 %term  string_join     = 102
-%term  prod            = 110
 %term  dummy           = 120
 
 %%
@@ -203,11 +196,7 @@ Rel:    bool_and (Rel)                            =  37 (10);
 Rel:    bool_or (Rel)                             =  38 (10);
 Rel:    bool_not (Rel)                            =  39 (10);
 Rel:    to (Rel)                                  =  40 (10);
-Rel:    avg (Rel)                                 =  41 (10);
-Rel:    max_ (Rel)                                =  42 (10);
-Rel:    min_ (Rel)                                =  43 (10);
-Rel:    sum (Rel)                                 =  44 (10);
-Rel:    count (Rel)                               =  45 (10);
+Rel:    aggr (Rel)                                =  45 (10);
 Rel:    rownum (Rel)                              =  47 (10);
 Rel:    rownum (lit_tbl)                          =  48 (10);
 Rel:    rowrank (Rel)                             =  49 (10);
@@ -221,8 +210,6 @@ Rel:    cast (cast (Rel))                         =  56 (10);
 Rel:    cast (project (cast (Rel)))               =  57 (10);
 Rel:    cast (lit_tbl)                            =  58 (10);
 Rel:    cast (Rel)                                =  59 (10);
-Rel:    seqty1 (Rel)                              =  60 (10);
-Rel:    all (Rel)                                 =  61 (10);
 Rel:    ScjRel                                    =  62 (10);
 ScjRel: step (Frag, Rel)                          =  63 (10);
 ScjRel: step (Frag, ScjRel)                       =  64 (10);
@@ -313,11 +300,7 @@ EmptyRel:    bool_and (EmptyRel)                  = 147  (0);
 EmptyRel:    bool_or (EmptyRel)                   = 148  (0);
 EmptyRel:    bool_not (EmptyRel)                  = 149  (0);
 EmptyRel:    to (EmptyRel)                        = 150  (0);
-EmptyRel:    avg (EmptyRel)                       = 151  (0);
-EmptyRel:    max_ (EmptyRel)                      = 152  (0);
-EmptyRel:    min_ (EmptyRel)                      = 153  (0);
-EmptyRel:    sum (EmptyRel)                       = 154  (0);
-EmptyRel:    count (EmptyRel)                     = 155  (0);
+EmptyRel:    aggr (EmptyRel)                      = 155  (0);
 EmptyRel:    rownum (EmptyRel)                    = 158  (0);
 EmptyRel:    rowrank (EmptyRel)                   = 159  (0);
 EmptyRel:    rank (EmptyRel)                      = 160  (0);
@@ -325,8 +308,6 @@ EmptyRel:    rowid (EmptyRel)                     = 161  (0);
 EmptyRel:    type (EmptyRel)                      = 162  (0);
 EmptyRel:    type_assert (EmptyRel)               = 163  (0);
 EmptyRel:    cast (EmptyRel)                      = 164  (0);
-EmptyRel:    seqty1 (EmptyRel)                    = 165  (0);
-EmptyRel:    all (EmptyRel)                       = 166  (0);
 EmptyRel:    step (Frag, EmptyRel)                = 170  (0);
 EmptyRel:    step_join (Frag, EmptyRel)           = 171  (0);
 EmptyRel:    guide_step (Frag, EmptyRel)          = 172  (0);
@@ -365,9 +346,6 @@ Rel:    rec_fix (side_effects (
                     error (Side, EmptyRel),
                     Rec),
                 Rel)                              = 197  (0);
-
-Rel:    prod (Rel)                                = 198 (10);
-EmptyRel:    prod (EmptyRel)                      = 199  (0);
 
 %%
 
@@ -1059,6 +1037,33 @@ reduce (PFla_op_t *p, int goalnt)
                 relabel (p, kids);
             }
             break;
+
+        /* Rel:    aggr (Rel) */
+        case 45:
+        {
+            unsigned int i = 0;
+            for (i = 0; i < p->sem.aggr.count; i++)
+                if (p->sem.aggr.aggr[i].kind != alg_aggr_dist)
+                    break;
+
+            /* Turn an aggregate into a simple distinct operator
+               if all aggregates are 'distinct' operations. */
+            if (p->sem.aggr.part &&
+                i == p->sem.aggr.count) {
+                PFalg_proj_t *proj;
+                proj = PFmalloc (p->schema.count * sizeof (PFalg_proj_t));
+                for (i = 0; i < p->sem.aggr.count; i++)
+                    proj[i] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                          p->sem.aggr.aggr[i].col);
+                proj[i] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
+
+                *p = *PFla_distinct (
+                          PFla_project_ (L(p), p->schema.count, proj));
+                SEEN(p) = false;
+                relabel (p, kids);
+                break;
+            }
+        }   break;
 
         /* Rel:    rownum (Rel) */
         case 47:

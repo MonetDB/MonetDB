@@ -105,14 +105,11 @@
 /* op:to operator */
 #define to(a,b,c,d)       PFla_to ((a),(b),(c),(d))
 
-/* operator applying a (partitioned) aggregation function on a column */
-#define aggr(a,b,c,d,e)   PFla_aggr ((a),(b),(c),(d),(e))
-
-/* (partitioned) row counting operator */
-#define count(a,b,c)      PFla_count ((a),(b),(c))
+/* operator applying a (partitioned) aggregation function */
+#define aggr(a,b,c,d)     PFla_aggr ((a),(b),(c),(d))
 
 /** rownumber operator */
-#define rownum(a,b,c,d)  PFla_rownum ((a),(b),(c),(d))
+#define rownum(a,b,c,d)   PFla_rownum ((a),(b),(c),(d))
 
 /** rowrank operator */
 #define rowrank(a,b,c)    PFla_rowrank ((a),(b),(c))
@@ -132,12 +129,6 @@
 
 /* type cast operator */
 #define cast(a,b,c,d)     PFla_cast ((a),(b),(c),(d))
-
-/* algebra seqty1 operator (see PFla_seqty1()) */
-#define seqty1(a,b,c,d)   PFla_seqty1((a), (b), (c), (d))
-
-/* all operator (see PFla_all()) */
-#define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
 /* path step */
 #define step(a,b,c,d,e,f,g) PFla_step ((a),(b),(c),(d),(e),(f),(g))

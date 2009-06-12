@@ -469,17 +469,30 @@ prop_infer_req_node_vals (PFla_op_t *n, PFarray_t *req_node_vals)
             assert ((type_of (n, n->sem.unary.col) & aat_node) == 0);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
-            /* the output cannot be of type node */
-            if (!n->sem.aggr.part) {
-                prop_infer_req_node_vals (L(n), NULL);
+        case la_aggr:
+            /* dist aggregates or the partition column can be of type node */
+            if (MAP_LIST(n) != NULL && PFarray_last (MAP_LIST(n)) > 0) {
+                PFarray_t *new_map = PFarray (sizeof (req_node_t),
+                                              PFarray_last (MAP_LIST(n)));
+
+                for (unsigned int i = 0; i < n->sem.aggr.count; i++) {
+                    map = find_map (MAP_LIST(n), n->sem.aggr.aggr[i].res);
+                    if (map) {
+                        req_node_t map_item = *map;
+                        map_item.col = n->sem.aggr.aggr[i].col;
+                        ADD(new_map, map_item);
+                    }
+                }
+                if (n->sem.aggr.part) {
+                    map = find_map (MAP_LIST(n), n->sem.aggr.part);
+                    if (map) {
+                        req_node_t map_item = *map;
+                        map_item.col = n->sem.aggr.part;
+                        ADD(new_map, map_item);
+                    }
+                }
+
+                prop_infer_req_node_vals (L(n), new_map);
                 return; /* only infer once */
             }
             break;

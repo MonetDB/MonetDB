@@ -483,23 +483,23 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
             res = binary_op (PFla_to, p, map);
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-            res = aggr (p->kind, U(L(p)),
-                        UNAME(p, p->sem.aggr.res),
-                        /* column col is stored only in child operator */
-                        UNAME(L(p), p->sem.aggr.col),
-                        p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
-            break;
+        case la_aggr:
+        {
+            PFalg_aggr_t *aggr = PFmalloc (p->sem.aggr.count *
+                                           sizeof (PFalg_aggr_t));
 
-        case la_count:
-            res = count (U(L(p)),
-                         UNAME(p, p->sem.aggr.res),
-                         p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
-            break;
+            for (unsigned int i = 0; i < p->sem.aggr.count; i++)
+                aggr[i] = PFalg_aggr (p->sem.aggr.aggr[i].kind,
+                                      UNAME(p, p->sem.aggr.aggr[i].res),
+                                      p->sem.aggr.aggr[i].col
+                                      ? UNAME(L(p), p->sem.aggr.aggr[i].col)
+                                      : col_NULL);
+
+            res = aggr (U(L(p)),
+                        p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL,
+                        p->sem.aggr.count,
+                        aggr);
+        }   break;
 
         case la_rownum:
         case la_rowrank:
@@ -554,22 +554,6 @@ map_unq_names (PFla_op_t *p, PFarray_t *map)
                         UNAME(p, p->sem.type.res),
                         UNAME(p, p->sem.type.col),
                         p->sem.type.ty);
-            break;
-
-        case la_seqty1:
-            res = seqty1 (U(L(p)),
-                          UNAME(p, p->sem.aggr.res),
-                          /* column col is stored only in child operator */
-                          UNAME(L(p), p->sem.aggr.col),
-                          p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
-            break;
-
-        case la_all:
-            res = all (U(L(p)),
-                       UNAME(p, p->sem.aggr.res),
-                       /* column col is stored only in child operator */
-                       UNAME(L(p), p->sem.aggr.col),
-                       p->sem.aggr.part?UNAME(p, p->sem.aggr.part):col_NULL);
             break;
 
         case la_step:

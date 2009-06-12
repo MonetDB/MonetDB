@@ -1257,6 +1257,36 @@ PFalg_fun_str (PFalg_fun_t fun)
 }
 
 /**
+ * Print aggregate kind
+ */
+char *
+PFalg_aggr_kind_str (PFalg_aggr_kind_t kind)
+{
+    switch (kind) {
+        case alg_aggr_dist:    return "distinct";
+        case alg_aggr_count:   return "count";
+        case alg_aggr_min:     return "min";
+        case alg_aggr_max:     return "max";
+        case alg_aggr_avg:     return "avg";
+        case alg_aggr_sum:     return "sum";
+        case alg_aggr_seqty1:  return "seqty1";
+        case alg_aggr_all:     return "all";
+        case alg_aggr_prod:    return "prod";
+    }
+    PFoops (OOPS_FATAL, "unknown aggregate kind (%i)", kind);
+    return NULL;
+}
+
+/**
+ * Construct an aggregate entry.
+ */
+PFalg_aggr_t
+PFalg_aggr (PFalg_aggr_kind_t kind, PFalg_col_t res, PFalg_col_t col)
+{
+    return (PFalg_aggr_t) { .kind = kind, .res = res, .col = col };
+}
+
+/**
  * Construct a predicate.
  */
 PFalg_sel_t PFalg_sel (PFalg_comp_t comp,

@@ -78,37 +78,31 @@ opt_key (PFla_op_t *p)
                 }
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
             /* if part is key we already have our aggregate */
             if (p->sem.aggr.part &&
                 PFprop_key_left (p->prop, p->sem.aggr.part)) {
-                *p = *PFla_project (
-                          L(p),
-                          PFalg_proj (p->sem.aggr.res,
-                                      p->sem.aggr.col),
-                          PFalg_proj (p->sem.aggr.part,
-                                      p->sem.aggr.part));
-                SEEN(p) = true;
-            }
-            break;
+                PFalg_col_t   count_col = PFcol_new (col_item);
+                unsigned int  i         = 0;
+                PFalg_proj_t *proj      = PFmalloc (p->schema.count *
+                                                    sizeof (PFalg_proj_t));
 
-        case la_count:
-            /* if part is key we already have our aggregate */
-            if (p->sem.aggr.part &&
-                PFprop_key_left (p->prop, p->sem.aggr.part)) {
-                *p = *PFla_attach (
-                          PFla_project (
-                              L(p),
-                              PFalg_proj (p->sem.aggr.part,
-                                          p->sem.aggr.part)),
-                          p->sem.aggr.res,
-                          PFalg_lit_int (1));
+                /* Replace aggregates by projection list. (Count aggregates
+                   refer to a new column that contains the value 1.) */
+                for (i = 0; i < p->sem.aggr.count; i++)
+                    if (p->sem.aggr.aggr[i].kind == alg_aggr_count)
+                        proj[i] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                              count_col);
+                    else
+                        proj[i] = PFalg_proj (p->sem.aggr.aggr[i].res,
+                                              p->sem.aggr.aggr[i].col);
+
+                proj[i] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
+
+                *p = *PFla_project_ (
+                          PFla_attach (L(p), count_col, PFalg_lit_int (1)),
+                          p->schema.count,
+                          proj);
                 SEEN(p) = true;
             }
             break;

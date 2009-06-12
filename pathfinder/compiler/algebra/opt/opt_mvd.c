@@ -258,10 +258,11 @@ modify_unary_op (PFla_op_t *p,
 
 /* worker for aggregate operators */
 static bool
-modify_aggr (PFla_op_t *p,
-             PFla_op_kind_t kind)
+modify_aggr (PFla_op_t *p)
 {
     bool modified = false;
+
+    assert (p->kind == la_aggr);
 
     /* An expression that contains the partitioning column is
        independent of the aggregate. The translation thus moves the
@@ -269,27 +270,69 @@ modify_aggr (PFla_op_t *p,
        column. */
     if (is_cross (L(p)) &&
         p->sem.aggr.part) {
+        PFla_op_t *lp        = NULL,
+                  *rp        = NULL;
+        bool       all_left  = true,
+                   all_right = true;
+
+        /* check if all aggregate columns reside in one cross product
+           argument */
+        for (unsigned int i = 0; i < p->sem.aggr.count; i++) {
+            /* Some aggregates (such as count, sum, ...) are affected
+               by the cardinality of the input. For these aggregates
+               we would need to ensure the keyness of the part column.
+               As we don't have that information at hand we skip the
+               rewrite. */
+            switch (p->sem.aggr.aggr[i].kind) {
+                case alg_aggr_min:
+                case alg_aggr_max:
+                case alg_aggr_avg:
+                case alg_aggr_all:
+                    break;
+                default:
+                    return modified;
+            }
+
+            if (p->sem.aggr.aggr[i].kind != alg_aggr_count) {
+                if (!col_present (LL(p), p->sem.aggr.aggr[i].col))
+                    all_left &= false;
+                else if (!col_present (LR(p), p->sem.aggr.aggr[i].col))
+                    all_right &= false;
+            }
+        }
+
         if (col_present (LL(p), p->sem.aggr.part) &&
-            !col_present (LL(p), p->sem.aggr.col)) {
-            *p = *(cross_can (
-                      LL(p),
-                      aggr (kind,
-                            LR(p),
-                            p->sem.aggr.res,
-                            p->sem.aggr.col,
-                            col_NULL)));
-            modified = true;
+            !col_present (LR(p), p->sem.aggr.part) &&
+            all_right) {
+            lp = LL(p);
+            rp = LR(p);
         }
         /* if not present check the right operand */
         else if (col_present (LR(p), p->sem.aggr.part) &&
-                 !col_present (LR(p), p->sem.aggr.col)) {
-            *p = *(cross_can (
-                      LR(p),
-                      aggr (kind,
-                            LL(p),
-                            p->sem.aggr.res,
-                            p->sem.aggr.col,
-                            col_NULL)));
+                 !col_present (LL(p), p->sem.aggr.part) &&
+                 all_left) {
+            lp = LR(p);
+            rp = LL(p);
+        }
+
+        if (lp && rp) {
+            /* Invent a new constant partition column as we need
+               to ensure that aggregates on empty inputs return
+               an empty input. (The unpartitioned aggregate will
+               *always* return a single row.) */
+            PFalg_col_t const_part = PFcol_new (col_iter);
+
+            *p = *PFla_project_ (
+                      cross_can (
+                          distinct (
+                              project (lp, proj (p->sem.aggr.part,
+                                                 p->sem.aggr.part))),
+                          aggr (attach (rp, const_part, lit_nat (21)),
+                                const_part,
+                                p->sem.aggr.count,
+                                p->sem.aggr.aggr)),
+                      p->schema.count,
+                      PFalg_proj_create (p->schema));
             modified = true;
         }
     }
@@ -1035,46 +1078,8 @@ do_opt_mvd (PFla_op_t *p, bool modified)
         }
         break;
 
-    case la_avg:
-        modified = modify_aggr (p, la_avg) || modified;
-        break;
-    case la_max:
-        modified = modify_aggr (p, la_max) || modified;
-        break;
-    case la_min:
-        modified = modify_aggr (p, la_min) || modified;
-        break;
-    case la_sum:
-        modified = modify_aggr (p, la_sum) || modified;
-        break;
-    case la_prod:
-        modified = modify_aggr (p, la_prod) || modified;
-        break;
-    case la_count:
-        /* An expression that contains the partitioning column is
-           independent of the aggregate. The translation thus moves the
-           expression above the aggregate operator and removes its partitioning
-           column. */
-        if (is_cross (L(p)) &&
-            p->sem.aggr.part) {
-            if (col_present (LL(p), p->sem.aggr.part)) {
-                *p = *(cross_can (
-                          LL(p),
-                          count (LR(p),
-                                 p->sem.aggr.res,
-                                 col_NULL)));
-                modified = true;
-            }
-            /* if not present it has to be in the right operand */
-            else {
-                *p = *(cross_can (
-                          LR(p),
-                          count (LL(p),
-                                 p->sem.aggr.res,
-                                 col_NULL)));
-                modified = true;
-            }
-        }
+    case la_aggr:
+        modified = modify_aggr (p) || modified;
         break;
 
     case la_rownum:
@@ -1317,64 +1322,6 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                                         p->sem.type.res,
                                         p->sem.type.col,
                                         p->sem.type.ty)));
-                modified = true;
-            }
-        }
-        break;
-
-    case la_seqty1:
-        if (is_cross (L(p)) &&
-            p->sem.aggr.part) {
-            if (col_present (LL(p), p->sem.aggr.part) &&
-                !col_present (LL(p), p->sem.aggr.col)) {
-                *p = *(cross_can (
-                          LL(p),
-                          seqty1 (
-                              LR(p),
-                              p->sem.aggr.res,
-                              p->sem.aggr.col,
-                              col_NULL)));
-                modified = true;
-            }
-            /* if not present check the right operand */
-            else if (col_present (LR(p), p->sem.aggr.part) &&
-                     !col_present (LR(p), p->sem.aggr.col)) {
-                *p = *(cross_can (
-                          LR(p),
-                          seqty1 (
-                              LL(p),
-                              p->sem.aggr.res,
-                              p->sem.aggr.col,
-                              col_NULL)));
-                modified = true;
-            }
-        }
-        break;
-
-    case la_all:
-        if (is_cross (L(p)) &&
-            p->sem.aggr.part) {
-            if (col_present (LL(p), p->sem.aggr.part) &&
-                !col_present (LL(p), p->sem.aggr.col)) {
-                *p = *(cross_can (
-                          LL(p),
-                          all (
-                              LR(p),
-                              p->sem.aggr.res,
-                              p->sem.aggr.col,
-                              col_NULL)));
-                modified = true;
-            }
-            /* if not present check the right operand */
-            else if (col_present (LR(p), p->sem.aggr.part) &&
-                     !col_present (LR(p), p->sem.aggr.col)) {
-                *p = *(cross_can (
-                          LR(p),
-                          all (
-                              LL(p),
-                              p->sem.aggr.res,
-                              p->sem.aggr.col,
-                              col_NULL)));
                 modified = true;
             }
         }

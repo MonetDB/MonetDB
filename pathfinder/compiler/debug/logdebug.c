@@ -80,12 +80,7 @@ static char *a_id[]  = {
     , [la_bool_or ]         = "OR"
     , [la_bool_not]         = "NOT"
     , [la_to]               = "op:to"
-    , [la_avg]              = "AVG"
-    , [la_max]              = "MAX"
-    , [la_min]              = "MIN"
-    , [la_sum]              = "SUM"
-    , [la_prod]             = "PROD"
-    , [la_count]            = "COUNT"
+    , [la_aggr]             = "AGGR"
     , [la_rownum]           = "ROWNUM"
     , [la_rowrank]          = "ROWRANK"
     , [la_rank]             = "RANK"
@@ -93,8 +88,6 @@ static char *a_id[]  = {
     , [la_type]             = "TYPE"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "CAST"
-    , [la_seqty1]           = "SEQTY1"
-    , [la_all]              = "ALL"
     , [la_step]             = "/|"
     , [la_step_join]        = "/|+"
     , [la_guide_step]       = "/| (guide)"
@@ -164,12 +157,7 @@ static char *xml_id[]  = {
     , [la_bool_or ]         = "or"
     , [la_bool_not]         = "not"
     , [la_to]               = "op:to"
-    , [la_avg]              = "avg"
-    , [la_max]              = "max"
-    , [la_min]              = "min"
-    , [la_sum]              = "sum"
-    , [la_prod]             = "prod"
-    , [la_count]            = "count"
+    , [la_aggr]             = "aggr"
     , [la_rownum]           = "rownum"
     , [la_rowrank]          = "rowrank"
     , [la_rank]             = "rank"
@@ -177,8 +165,6 @@ static char *xml_id[]  = {
     , [la_type]             = "type"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "cast"
-    , [la_seqty1]           = "seqty1"
-    , [la_all]              = "all"
     , [la_step]             = "XPath step"
     , [la_step_join]        = "path step join"
     , [la_guide_step]       = "XPath step (with guide information)"
@@ -424,12 +410,7 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         , [la_bool_or ]        = "#C0C0C0"
         , [la_bool_not]        = "#C0C0C0"
         , [la_to]              = "#C0C0C0"
-        , [la_avg]             = "#A0A0A0"
-        , [la_max]             = "#A0A0A0"
-        , [la_min]             = "#A0A0A0"
-        , [la_sum]             = "#A0A0A0"
-        , [la_prod]            = "#A0A0A0"
-        , [la_count]           = "#A0A0A0"
+        , [la_aggr]            = "#A0A0A0"
         , [la_rownum]          = "#FF0000"
         , [la_rowrank]         = "#FF0000"
         , [la_rank]            = "#FF3333"
@@ -437,8 +418,6 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
         , [la_type]            = "#C0C0C0"
         , [la_type_assert]     = "#C0C0C0"
         , [la_cast]            = "#C0C0C0"
-        , [la_seqty1]          = "#C0C0C0"
-        , [la_all]             = "#C0C0C0"
         , [la_step]            = "#1E90FF"
         , [la_step_join]       = "#1E9099"
         , [la_guide_step]      = "#007AE0"
@@ -729,32 +708,21 @@ la_dot (PFarray_t *dot, PFarray_t *side_effects,
                             PFcol_str (n->sem.unary.col));
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
-            if (n->sem.aggr.part == col_NULL)
-                PFarray_printf (DOT, "%s (%s:<%s>)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res),
-                                PFcol_str (n->sem.aggr.col));
-            else
-                PFarray_printf (DOT, "%s (%s:<%s>/%s)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res),
-                                PFcol_str (n->sem.aggr.col),
-                                PFcol_str (n->sem.aggr.part));
-            break;
+        case la_aggr:
+            /* overwrite standard node layout */
+            PFarray_printf (DOT, "\", shape=polygon peripheries=2, label=\"");
 
-        case la_count:
-            if (n->sem.aggr.part == col_NULL)
-                PFarray_printf (DOT, "%s (%s)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res));
-            else
-                PFarray_printf (DOT, "%s (%s:/%s)", a_id[n->kind],
-                                PFcol_str (n->sem.aggr.res),
+            PFarray_printf (DOT, "%s", a_id[n->kind]);
+            if (n->sem.aggr.part != col_NULL)
+                PFarray_printf (DOT, " / %s",
                                 PFcol_str (n->sem.aggr.part));
+
+            for (c = 0; c < n->sem.aggr.count; c++)
+                PFarray_printf (DOT, "\\n%s = %s (%s)",
+                                PFcol_str (n->sem.aggr.aggr[c].res),
+                                PFalg_aggr_kind_str (n->sem.aggr.aggr[c].kind),
+                                n->sem.aggr.aggr[c].col
+                                ? PFcol_str (n->sem.aggr.aggr[c].col) : "");
             break;
 
         case la_rownum:
@@ -2028,39 +1996,26 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *prop_args)
                             PFcol_str (n->sem.unary.col));
             break;
 
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_seqty1:
-        case la_all:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n"
-                            "      <column name=\"%s\" new=\"false\""
-                                         " function=\"item\"/>\n",
-                            PFcol_str (n->sem.aggr.res),
-                            PFcol_str (n->sem.aggr.col));
+        case la_aggr:
+            PFarray_printf (xml, "    <content>\n");
             if (n->sem.aggr.part != col_NULL)
                 PFarray_printf (xml,
                             "      <column name=\"%s\" function=\"partition\""
                                     " new=\"false\"/>\n",
                             PFcol_str (n->sem.aggr.part));
-            PFarray_printf (xml, "    </content>\n");
-
-            break;
-
-        case la_count:
-            PFarray_printf (xml,
-                            "    <content>\n"
-                            "      <column name=\"%s\" new=\"true\"/>\n",
-                            PFcol_str (n->sem.aggr.res));
-            if (n->sem.aggr.part != col_NULL)
+            for (c = 0; c < n->sem.aggr.count; c++) {
                 PFarray_printf (xml,
-                            "      <column name=\"%s\" function=\"partition\""
-                                    " new=\"false\"/>\n",
-                            PFcol_str (n->sem.aggr.part));
+                                "      <aggregate kind=\"%s\">\n"
+                                "        <column name=\"%s\" new=\"true\"/>\n",
+                                PFalg_aggr_kind_str (n->sem.aggr.aggr[c].kind),
+                                PFcol_str (n->sem.aggr.aggr[c].res));
+                if (n->sem.aggr.aggr[c].col)
+                    PFarray_printf (xml,
+                                    "        <column name=\"%s\" new=\"false\""
+                                                   " function=\"item\"/>\n",
+                                    PFcol_str (n->sem.aggr.aggr[c].col));
+                PFarray_printf (xml, "      </aggregate>\n");
+            }
             PFarray_printf (xml, "    </content>\n");
             break;
 

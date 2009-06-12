@@ -99,10 +99,6 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_pos_select:
-        case la_avg:
-        case la_sum:
-        case la_prod:
-        case la_count:
         case la_rownum:
         case la_rowid:
         case la_twig:
@@ -155,11 +151,27 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_distinct:
-        case la_max:
-        case la_min:
-        case la_seqty1:
-        case la_all:
             l_set = true;
+            break;
+
+        case la_aggr:
+            l_set = true;
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++)
+                switch (n->sem.aggr.aggr[i].kind) {
+                    case alg_aggr_dist:
+                    case alg_aggr_min:
+                    case alg_aggr_max:
+                    case alg_aggr_all:
+                        break;
+
+                    case alg_aggr_count:
+                    case alg_aggr_avg:
+                    case alg_aggr_sum:
+                    case alg_aggr_seqty1:
+                    case alg_aggr_prod:
+                        l_set = false;
+                        break;
+                }
             break;
 
         case la_step:
@@ -402,31 +414,48 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
             break;
 
         case la_distinct:
-        case la_max:
-        case la_min:
-        case la_seqty1:
-        case la_all:
             /* allow duplicates for the argument */
             l_col = col_NULL;
             l_set = true;
             break;
 
-        case la_avg:
-        case la_sum:
-        case la_prod:
-        case la_count:
-            /* Switch the set property from TRUE to MAYBE (TRUE+col)
-               if there is a partition column col and keep the MAYBE
-               information if it stores the same column name. */
-            if (n->prop->set && n->sem.aggr.part) {
-                if ((n->prop->set_col && n->prop->set_col == n->sem.aggr.part) ||
-                    !n->prop->set_col) {
-                    l_col = n->sem.aggr.part;
-                    l_set = true;
+        case la_aggr:
+            l_col = col_NULL;
+            l_set = true;
+
+            for (unsigned int i = 0; i < n->sem.aggr.count; i++) {
+                switch (n->sem.aggr.aggr[i].kind) {
+                    case alg_aggr_dist:
+                    case alg_aggr_min:
+                    case alg_aggr_max:
+                    case alg_aggr_all:
+                        break;
+
+                    case alg_aggr_count:
+                    case alg_aggr_avg:
+                    case alg_aggr_sum:
+                    case alg_aggr_seqty1:
+                    case alg_aggr_prod:
+                        /* Switch the set property from TRUE to MAYBE (TRUE+col)
+                           if there is a partition column col and keep the MAYBE
+                           information if it stores the same column name. */
+                        if (n->prop->set &&
+                            n->sem.aggr.part &&
+                            ((n->prop->set_col &&
+                              n->prop->set_col == n->sem.aggr.part) ||
+                             !n->prop->set_col)) {
+                            l_col = n->sem.aggr.part;
+                        }
+                        else {
+                            l_set = false;
+                        }
+                        break;
+                }
+                if (!l_set) {
+                    l_col = col_NULL;
                     break;
                 }
             }
-            l_set = false;
             break;
 
         case la_rowid:

@@ -289,14 +289,7 @@ join_pushdown_worker (PFla_op_t *p, PFarray_t *clean_up_list)
             case la_ref_tbl:
             case la_intersect:
             case la_difference:
-            case la_avg:
-            case la_max:
-            case la_min:
-            case la_sum:
-            case la_prod:
-            case la_count:
-            case la_seqty1:
-            case la_all:
+            case la_aggr:
             case la_step:
             case la_guide_step:
             case la_doc_tbl:
@@ -1235,14 +1228,7 @@ map_name (PFla_op_t *p, PFalg_col_t col)
         case la_difference:
         case la_distinct:
         case la_to:
-        case la_avg:
-        case la_max:
-        case la_min:
-        case la_sum:
-        case la_prod:
-        case la_count:
-        case la_seqty1:
-        case la_all:
+        case la_aggr:
         case la_step:
         case la_guide_step:
         case la_twig:
