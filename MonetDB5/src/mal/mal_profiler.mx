@@ -593,12 +593,15 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
+		str stmtq;
 		stmt = call2str(mb, stk, getPC(mb, pci),1);
 		c = stmt;
 
 		while (c && *c && isspace((int) *c))
 			c++;
-		log(" \"%s\"", c);
+		stmtq= mal_quote(c,strlen(c));
+		log(" \"%s\"", stmtq);
+		GDKfree(stmtq);
 		GDKfree(stmt);
 	}
 	if (profileCounter[PROFthread].status) {
