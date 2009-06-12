@@ -32,8 +32,8 @@ class Pythonizer:
         self.mapping = {
             type_codes.CHAR: self.__string,
             type_codes.VARCHAR: self.__string,
-            type_codes.CLOB: self.__string, # TODO: check this
-            type_codes.BLOB: self.__blob, # TODO: check this
+            type_codes.CLOB: self.__string,
+            type_codes.BLOB: self.__string,
             type_codes.DECIMAL: int,
             type_codes.SMALLINT: int,
             type_codes.INT: int,

@@ -15,10 +15,11 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-import logging
+
 import time
 
 #configure the logger, so we can see what is happening
+#import logging
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger('monetdb')
 

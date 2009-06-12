@@ -202,8 +202,14 @@ class Cursor:
         if parameters:
             if isinstance(parameters, dict):
                 query = operation % dict([(k, self.__monetizer.convert(v)) for (k,v) in parameters.items()])
+            elif type(parameters) == list:
+                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+            elif type(parameters) == tuple:
+                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+            elif isinstance(parameters, str):
+                query = operation % parameters
             else:
-                raise ValueError("Parameters should be empty or a dictionary")
+                raise ValueError("Parameters should be empty or a dictionary, now it is %s" % type(parameters))
         else:
            query = operation
 

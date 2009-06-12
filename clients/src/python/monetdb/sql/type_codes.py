@@ -17,8 +17,6 @@
 
 # definition of types, for more info:
 # http://monetdb.cwi.nl/projects/monetdb/SQL/Documentation/Data-Types.html
-#
-# TODO: check if this list is complete
 
 CHAR = 'char'                        # (L) character string with length L
 VARCHAR = 'varchar'                     # (L) string with atmost length L
