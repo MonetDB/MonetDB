@@ -184,10 +184,8 @@ class Cursor:
 
     def execute(self, operation, parameters=None):
         """Prepare and execute a database operation (query or
-        command).  Parameters may be provided as sequence or
-        mapping and will be bound to variables in the operation.
-        Variables are specified in a database-specific notation
-        (see the module's paramstyle attribute for details). [5]
+        command).  Parameters may be provided as mapping and
+        will be bound to variables in the operation.
 
         A reference to the operation will be retained by the
         cursor.  If the same operation object is passed in again,
@@ -200,38 +198,38 @@ class Cursor:
         parameter types and sizes ahead of time.  It is legal for
         a parameter to not match the predefined information; the
         implementation should compensate, possibly with a loss of
-        efficiency.
-
-        The parameters may also be specified as list of tuples to
-        e.g. insert multiple rows in a single operation, but this
-        kind of usage is deprecated: .executemany() should be used
-        instead.
-
-        Return values are not defined."""
+        efficiency."""
 
 
-        # TODO: check if this belongs here
         # set the number of rows to fetch
         self.connection.command('Xreply_size %s' % self.arraysize)
 
         if operation == self.operation:
-            #TODO: same operation, reuse?
+            #TODO: same operation, DBAPI mentioned something about reuse?
             pass
         else:
             self.operation = operation
 
         if parameters:
-            #parameters = dict([(k, types.format(v)) for (k,v) in parameters.items()])
-            #self.query = operation % converters.escape(parameters)
-            self.query = operation % dict([(k, self.__monetizer.convert(v)) for (k,v) in parameters.items()])
+            if isinstance(parameters, dict):
+                query = operation % dict([(k, self.__monetizer.convert(v)) for (k,v) in parameters.items()])
+            elif type(parameters) == list:
+                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+            elif type(parameters) == tuple:
+                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+            elif isinstance(parameters, str):
+                query = operation % parameters
+            else:
+                raise ValueError("Parameters should be empty or a dictionary, now it is %s" % type(parameters))
         else:
-            self.query = operation
+           query = operation
 
-        block = self.connection.execute(self.query)
+        block = self.connection.execute(query)
         self.__store_result(block)
         self.rownumber = 0
         self.__executed = operation
         return self.rowcount
+
 
 
 
