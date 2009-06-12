@@ -1315,7 +1315,7 @@ HASHinfo(BAT *bn, Hash *h, str s)
 
 	for (i = 0; i <= COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNins(bn, pre(s, local_itoa((ssize_t) (i?(1<<(i-1)):0))), local_utoa((size_t) cnt[i]), FALSE);
+			BUNins(bn, pre(s, local_itoa((ssize_t) (i?(((ssize_t)1)<<(i-1)):0))), local_utoa((size_t) cnt[i]), FALSE);
 		}
 }
 
