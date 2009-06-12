@@ -1890,8 +1890,9 @@ typedef struct rank_map_t rank_map_t;
  * Reduce function. This is the core of this source file, containing
  * the actions that should be executed whenever a burg-pattern matches.
  */
+#define reduce(p,g) reduce_ ((p), (g), 0)
 static void
-reduce (PFla_op_t * p, int goalnt)
+reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 {
     int        rule;            /* rule number that matches this node */
     short     *nts;
@@ -1908,11 +1909,14 @@ reduce (PFla_op_t * p, int goalnt)
     if (SEEN(p)) {
         substitute_aliases (p);
         return;
-    } else
-        SEEN(p) = true;
+    }
 
-    /* determine rule that matches for this non-terminal */
-    rule = PFlalg2sql_rule (STATE_LABEL(p), goalnt);
+    if (fallback_rule)
+        /* we have to clean up the translation for an incomplete pattern */
+        rule = fallback_rule;
+    else
+        /* determine rule that matches for this non-terminal */
+        rule = PFlalg2sql_rule (STATE_LABEL(p), goalnt);
 
     /* error if a rule with value zero is determined */
     assert (rule);
@@ -3876,11 +3880,14 @@ reduce (PFla_op_t * p, int goalnt)
 
             if (!p->sem.aggr.part ||
                 p->sem.aggr.part != L(p)->sem.sort.res ||
-                PFprop_icol (p->prop, p->sem.aggr.part))
-                PFoops (OOPS_FATAL,
-                        "missing implementation for `aggr (rank (Rel))' "
-                        "pattern -- partition and result columns are "
-                        "unrelated");
+                PFprop_icol (p->prop, p->sem.aggr.part)) {
+                /* Our pattern does not match anymore we have to make sure
+                   to counteract correctly. We do that by triggering the
+                   compilation with the standard aggr rule. */
+
+                reduce_ (p, goalnt, /* BE AWARE -- a hard-coded rule: */ 35);
+                return;
+            }
 
             for (unsigned int i = 0; i < PFord_count (sortby); i++) {
                 PFalg_col_t  col  = PFord_order_col_at (sortby, i);
@@ -4087,8 +4094,14 @@ reduce (PFla_op_t * p, int goalnt)
                   RLL(p)->schema.count == 1 &&
                   RLR(p)->schema.count == 1 &&
                   L(p)->sem.aggr.part != col_NULL &&
-                  L(p)->sem.aggr.part == RLR(p)->schema.items[0].name))
-                PFoops (OOPS_FATAL, "error in count translation");
+                  L(p)->sem.aggr.part == RLR(p)->schema.items[0].name)) {
+                /* Our pattern does not match anymore we have to make sure
+                   to counteract correctly. We do that by triggering the
+                   compilation with the standard union rule. */
+
+                reduce_ (p, goalnt, /* BE AWARE -- a hard-coded rule: */ 20);
+                return;
+            }
 
         {
             PFalg_col_t part, res;
@@ -5689,6 +5702,7 @@ reduce (PFla_op_t * p, int goalnt)
         execute (comment ("binding due to multiple references"));
         bind_operator (p, distinct);
     }
+    SEEN(p) = true;
 }
 
 /* Attach node labels in a DAG walk bottom-up */
