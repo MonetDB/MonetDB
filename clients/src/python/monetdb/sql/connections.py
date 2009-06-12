@@ -15,13 +15,16 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
+import sys
+
 from monetdb.sql import cursors
 
-# TODO: replace this with a nice check
-try:
+# a ugly hack to support python < 2.6
+(major, minor, micro, level, serial)  = sys.version_info
+#if (major == 3) or (major == 2 and minor == 6):
+if (major == 3):
     from monetdb import mapi
-except SyntaxError:
-    # python 2.5 support
+else:
     from monetdb import mapi25 as mapi
 
 from monetdb.monetdb_exceptions import *
@@ -45,7 +48,7 @@ class Connection:
         """
 
         self.mapi = mapi.Server()
-        self.autocommit = False
+        self.autocommit = autocommit
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
             password=password, database=database, language="sql")
         self.set_autocommit(self.autocommit)

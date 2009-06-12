@@ -17,6 +17,7 @@
 
 import datetime
 import time
+import sys
 
 from monetdb.sql import type_codes
 
@@ -117,11 +118,16 @@ class Monetizer:
             Ellipsis: self.__string, # TODO: check this
         }
 
-        if hasattr(__builtins__, 'bytes'):
-            # python2.5 and older doesn't support these types
+
+        (major, minor, micro, level, serial)  = sys.version_info
+
+        if (major == 3) or (major == 2 and minor == 6):
+            # bytes type is only supported by python 2.6 and higher
             self.mapping[bytes] = self.__bytes
             self.mapping[bytearray] = self.__string # TODO: check this
 
+        if (major != 3):
+            self.mapping[unicode] = self.__unicode
 
     def convert(self, data):
         return self.mapping[type(data)](data)
@@ -144,7 +150,10 @@ class Monetizer:
         return str(data)
 
     def __bytes(self, data):
-        return self.__escape(data.encode())
+        return self.__escape(data)
+
+    def __unicode(self, data):
+        return data.encode('utf-8')
 
 
 

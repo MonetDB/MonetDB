@@ -4,6 +4,7 @@ The Python API is already usable, but some things need some more attention:
 * Improve exception types and messages
 * Improve type conversion (for example string, can't handle substrings well)
 * Speed tests / profiling
+* Fix unicode / UTF-8 support
 * Get the capabilities tests working
 * Configure the logging module correctly
 * Code cleanup (fix all TODO's in the source)
@@ -13,6 +14,7 @@ The Python API is already usable, but some things need some more attention:
 * Add more cursor types (dict cursor)
 * Modify XQuery API to use native MAPI
 * Add a central exception handler
+* RST format documentation
 
 
 

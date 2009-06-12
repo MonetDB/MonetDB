@@ -49,6 +49,7 @@ class Server:
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
+        self.timeout = 5
 
     def connect(self, hostname, port, username, password, database, language):
         """ connect to a MonetDB database using the mapi protocol"""
@@ -61,6 +62,8 @@ class Server:
         self.language = language
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.settimeout(self.timeout)
 
         try:
             self.socket.connect((hostname, port))
@@ -79,6 +82,7 @@ class Server:
         response = self.__challenge_response(challenge)
         self.__putblock(response)
         prompt = self.__getblock().strip()
+        logging.debug(prompt)
 
         if len(prompt) == 0:
             # Empty response, server is happy
@@ -154,24 +158,19 @@ class Server:
 
         if protocol == '9':
             algo = challenges[5]
+            import hashlib
             if algo == 'SHA512':
-                import hashlib
-                password = hashlib.sha512(password).hexdigest()
+                password = hashlib.sha512(password.encode()).hexdigest()
             elif algo == 'SHA384':
-                import hashlib
-                password = hashlib.sha384(password).hexdigest()
+                password = hashlib.sha384(password.encode()).hexdigest()
             elif algo == 'SHA256':
-                import hashlib
-                password = hashlib.sha256(password).hexdigest()
+                password = hashlib.sha256(password.encode()).hexdigest()
             elif algo == 'SHA224':
-                import hashlib
-                password = hashlib.sha224(password).hexdigest()
+                password = hashlib.sha224(password.encode()).hexdigest()
             elif algo == 'SHA1':
-                import hashlib
-                password = hashlib.sha1(password).hexdigest()
+                password = hashlib.sha1(password.encode()).hexdigest()
             elif algo == 'MD5':
-                import hashlib
-                password = hashlib.md5(password).hexdigest()
+                password = hashlib.md5(password.encode()).hexdigest()
             else:
                 raise NotSupportedError("The %s hash algorithm is not supported" % algo)
         elif protocol != "8":
@@ -212,17 +211,17 @@ class Server:
             if length > 0:
                 result_bytes.write(self.__getbytes(length))
 
-        result = result_bytes.getvalue().decode()
+        result = result_bytes.getvalue()
         logging.debug("RX: %s" % result)
-        return result
+        return result.decode()
 
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
         try:
             return self.socket.recv(bytes)
-        except socket.error(errorStr):
-            raise OperationalError(errorStr[1])
+        except socket.error as error_str:
+            raise OperationalError(error_str)
 
 
     def __putblock(self, block):
@@ -231,10 +230,15 @@ class Server:
         last = 0
         logging.debug("TX: %s" % block)
         while not last:
-            data = block[pos:MAX_PACKAGE_LENGTH]
+            data = block[pos:MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<h', ( len(data) << 1 ) + last )
             self.socket.send(flag)
-            self.socket.send(bytes(data.encode()))
+            self.socket.send(data)
             pos += len(data)
+
+    def settimeout(self, timeout):
+        """ set the connection timeout (in seconds) """
+        self.timeout = timeout
+        self.socket.settimeout(timeout)

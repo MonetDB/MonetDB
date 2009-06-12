@@ -36,11 +36,11 @@ x = monetdb.sql.connect(username="monetdb", password="monetdb", hostname="localh
 c = x.cursor()
 
 # some basic query
-#c.arraysize=1
+c.arraysize=100
 c.execute('select * from tables')
 results = c.fetchall()
 x.commit()
-print results
+print(results)
 #c.arraysize=3
 #results = c.fetchmany()
 
