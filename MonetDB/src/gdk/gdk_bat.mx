@@ -2443,13 +2443,13 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 
 @- BATmadvise
 @= madvise
-	if (@1 >= 0 && (@2) && (@2)->base && ((@2)->storage & STORE_MMAP) &&
+	if (@1 >= 0 && (@2) && (@2)->base && ((@2)->storage != STORE_MEM) &&
 	    MT_madvise((@2)->base, (@2)->free, @1)) {
 		GDKsyserror("madvise on @2 @1 failed.\n");
 		return -1;
 	}
 @= pin
-	if ((@2) && (@2)->base && ((@2)->storage & STORE_MMAP)) {
+	if ((@2) && (@2)->base && ((@2)->storage != STORE_MEM)) {
 		MT_mmap_@1((@2)->base, (@2)->maxsize);
 	}
 @c
@@ -2624,9 +2624,11 @@ backup_new(Heap *hp, int lockbat) {
         if (batret == 0 && bakret) {
             /* no backup yet, so move the existing X.new there out of the way */
             ret = rename(batpath, bakpath);
+	    IODEBUG THRprintf(GDKout, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
         } else if (batret == 0) {
             /* there is a backup already; just remove the X.new */
             ret = unlink(batpath);
+            IODEBUG THRprintf(GDKout, "#unlink(%s) = %d\n", batpath, ret);
 	}
         for (xx = lockbat; xx >= 0; xx--)
             gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");

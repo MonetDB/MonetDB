@@ -717,14 +717,14 @@ BATdelete(BAT *b)
 		HASHdestroy(b);
 	}
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
-	if (b->batCopiedtodisk || (b->H->heap.storage & STORE_MMAP)) {
+	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {
 		if (b->htype != TYPE_void && HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKout,"#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
 		HEAPfree(&b->H->heap);
 	}
-	if (b->batCopiedtodisk || (b->T->heap.storage & STORE_MMAP)) {
+	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void && HEAPdelete(&b->T->heap, o, "tail") &&
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKout,"#BATdelete(%s): bun heap\n", BATgetId(b));
@@ -732,7 +732,7 @@ BATdelete(BAT *b)
 		HEAPfree(&b->T->heap);
 	}
 	if (b->hheap) {
-		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
+		if (b->batCopiedtodisk || (b->hheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout,"#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
@@ -740,7 +740,7 @@ BATdelete(BAT *b)
 		}
 	}
 	if (b->theap) {
-		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
+		if (b->batCopiedtodisk || (b->theap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKout,"#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {

@@ -1226,6 +1226,7 @@ CMDsetaccess(BAT **r, BAT *input, int *param)
 	bat oldCacheid = input->batCacheid;
 
 	*r = BATsetaccess(input, *param);
+  	if (*r == NULL) return GDK_FAIL;
 	if ((*r)->batCacheid == oldCacheid) {
 		BBPfix(oldCacheid);
 	}

@@ -1503,7 +1503,8 @@ Otherwise we have to decide on either packing them or replacement.
 				if (getFunctionId(p) == markHRef|| 
 				    getFunctionId(p) == markTRef) {
 					propagateMarkProp(mb, p, getArg(p,1), 0, oid_nil);
-				} else if (getFunctionId(p) == joinRef|| 
+				} else if (getFunctionId(p) == leftjoinRef|| 
+					   getFunctionId(p) == joinRef|| 
 				           getFunctionId(p) == kunionRef) {
 					propagateBinProp(mb, p, getArg(p,1), getArg(p,2));
 				} else {
