@@ -680,6 +680,8 @@ openProfilerStream( stream *fd)
 str
 closeProfilerStream(void)
 {
+	if ( eventstream)
+		(void) stream_close(eventstream);
 	eventstream = NULL;
 	malProfileMode = FALSE;
 	return MAL_SUCCEED;
