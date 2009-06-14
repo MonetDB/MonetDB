@@ -4875,8 +4875,8 @@ PFbui_fn_exactly_one (const PFla_op_t *loop,
     PFla_op_t *count = simple_aggr (
                            project (args[0].rel,
                                     proj (col_iter, col_iter)),
-                           alg_aggr_count,
                            col_iter,
+                           alg_aggr_count,
                            col_item,
                            col_NULL);
 
