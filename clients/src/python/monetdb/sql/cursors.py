@@ -540,8 +540,8 @@ class Cursor:
         # if the length of the tuple doesn't match, we do a manual split
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
-            return [self.__pythonizer.convert(element.strip(), description[1]) for
-                    (element, description) in zip(elements, self.description)]
+            return tuple([self.__pythonizer.convert(element.strip(), description[1]) for
+                    (element, description) in zip(elements, self.description)])
 
         # Ok, that didn't work. Manual split then...
         # TODO: this will FAIL in case of " [ \",\"] " (comma in a substring in a substring)
@@ -560,8 +560,8 @@ class Cursor:
         elements.append(buff.strip())
 
         #convert values to python types
-        return [self.__pythonizer.convert(element, description[1]) for
-                (element, description) in zip(elements, self.description)]
+        return tuple([self.__pythonizer.convert(element, description[1]) for
+                (element, description) in zip(elements, self.description)])
 
 
         def scroll(self, value, mode='relative'):
