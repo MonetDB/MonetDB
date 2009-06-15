@@ -1068,12 +1068,11 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	/* try to open logfile, or failing that, its backup
 	   we need to know whether this file exists when checking the
 	   database consistency later on */
-	if ((fp = fopen(filename, "r")) == NULL &&
-	    (fp = fopen(bak, "r")) != NULL) {
+	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL);
-		fp = fopen(filename, "r");
-	}
+	} 
+	fp = fopen(filename, "r");
 
 	snprintf(bak, BUFSIZ, "%s_catalog", fn);
 	catalog = BBPindex(bak);
