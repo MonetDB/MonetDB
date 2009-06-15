@@ -19,7 +19,7 @@ import logging
 import sys
 
 from monetdb.sql import converters
-from monetdb.monetdb_exceptions import ProgrammingError, Error
+from monetdb.monetdb_exceptions import *
 
 logger = logging.getLogger("monetdb")
 
@@ -426,6 +426,9 @@ class Cursor:
     def __store_result(self, block):
         """ parses the mapi result into a resultset"""
 
+        if not block:
+            return
+
         lines = block.split("\n")
         firstline = lines[0]
 
@@ -516,6 +519,15 @@ class Cursor:
 
         elif firstline.startswith(mapi.MSG_ERROR):
             raise ProgrammingError(firstline[1:])
+
+        elif firstline.startswith(mapi.MSG_QTRANS):
+           if lines[1] == mapi.MSG_PROMPT:
+                self.__rows = []
+                self.__offset = 0
+                self.description = None
+                self.rowcount = -1
+                logger.debug("II transaction finished")
+                return
 
         # you are not supposed to be here
         raise InterfaceError("Unknown state, %s" % block)

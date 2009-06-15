@@ -49,7 +49,7 @@ class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
 
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=True)
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
     leak_test = False
 
     def test_TIME(self):

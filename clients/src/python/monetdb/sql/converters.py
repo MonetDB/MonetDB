@@ -19,8 +19,10 @@ import datetime
 import time
 import sys
 import logging
+import decimal
 
 from monetdb.sql import type_codes
+from monetdb.monetdb_exceptions import *
 
 logger = logging.getLogger("monetdb")
 
@@ -102,20 +104,24 @@ class Monetizer:
 
     def __init__(self):
         self.mapping = {
-            None: self.__none,
+            type(None): self.__none,
             bool: self.__bool,
             int: self.__string,
             float: self.__string,
             complex: self.__string,
             int: self.__string,
             str: self.__escape,
-            list: self.__string, # TODO: check this
-            tuple: self.__string, # TODO: check this
-            range: self.__string, # TODO: check this
-            set: self.__string, # TODO: check this
-            frozenset: self.__string, # TODO: check this
-            dict: self.__string, # TODO: check this
-            Ellipsis: self.__string, # TODO: check this
+            datetime.datetime: self.__string,
+            decimal.Decimal: self.__string,
+            datetime.timedelta: self.__string,
+            datetime.date: self.__string,
+            #list: self.__string, # TODO: check this
+            #tuple: self.__string, # TODO: check this
+            #range: self.__string, # TODO: check this
+            #set: self.__string, # TODO: check this
+            #frozenset: self.__string, # TODO: check this
+            #dict: self.__string, # TODO: check this
+            #Ellipsis: self.__string, # TODO: check this
         }
 
 
@@ -130,7 +136,10 @@ class Monetizer:
             self.mapping[unicode] = self.__unicode
 
     def convert(self, data):
-        return self.mapping[type(data)](data)
+        try:
+            return self.mapping[type(data)](data)
+        except KeyError:
+            raise ProgrammingError("type %s not supported as value" % type(data))
 
     def __none(self, data):
         return "NULL"

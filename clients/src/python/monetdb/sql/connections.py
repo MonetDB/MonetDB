@@ -97,7 +97,8 @@ class Connection:
         """
 
         self.__mapi_check()
-        return self.execute('COMMIT')
+        return self.cursor().execute('COMMIT')
+        #return self.execute('COMMIT')
 
 
 
@@ -114,7 +115,8 @@ class Connection:
         """
 
         self.__mapi_check()
-        return self.execute('ROLLBACK')
+        return self.cursor().execute('ROLLBACK')
+        #return self.execute('ROLLBACK')
 
 
 
