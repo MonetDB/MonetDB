@@ -300,8 +300,11 @@ atom_destroy(atom *a)
 char *
 atom2string(atom *a)
 {
-	char buf[BUFSIZ];
+	char buf[BUFSIZ], *p = NULL;
+	void *v;
 
+	if (a->isnull)
+		return _strdup("NULL");
 	switch (a->data.vtype) { 
 	case TYPE_lng:
 		sprintf(buf, LLFMT, a->data.val.lval);
@@ -334,8 +337,14 @@ atom2string(atom *a)
 		else
 			sprintf(buf, "NULL");
 		break;
-        default:
-                snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
+        default:  
+		v = &a->data.val.ival;
+		if (ATOMvarsized(a->data.vtype))
+			v = a->data.val.pval;
+		if (ATOMformat(a->data.vtype, v, &p) < 0)
+                	snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
+		else
+			return p;
 	}
 	return _strdup(buf);
 }
