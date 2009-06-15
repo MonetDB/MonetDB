@@ -19,6 +19,7 @@
 # All Rights Reserved.
 
 import unittest
+import os
 
 #import logging
 #logging.getLogger().setLevel(logging.DEBUG)
@@ -28,7 +29,7 @@ import dbapi20
 try:
     import monetdb.sql
 except ImportError:
-    import sys, os
+    import sys
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)
     import monetdb.sql
