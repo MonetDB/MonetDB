@@ -9,15 +9,15 @@ cursor = dbh.cursor()
 try:
     cursor.execute('create table python_table (i smallint,s string)')
 
-    s = (0, 'row1')
+    s = [0, 'row2']
     try:
         x = cursor.execute("insert into python_table VALUES (%s, %s)", s)
     except:
-        print 'execute failed with tuple'
+        print 'execute failed with list'
     else:
         print x
-
     s = [1, 'row2']
+
     try:
         x = cursor.execute("insert into python_table VALUES (%s, %s)", s)
     except:
@@ -25,7 +25,15 @@ try:
     else:
         print x
 
-    s = ((2, 'row3'), (3, 'row4'))
+    s = {'i': 2, 's': 'row1'}
+    try:
+        x = cursor.execute("insert into python_table VALUES (%(i)s, %(s)s)", s)
+    except:
+        print 'execute failed with dictionary'
+    else:
+        print x
+
+    s = ((3, 'row3'), (4, 'row4'))
     try:
         x = cursor.executemany("insert into python_table VALUES (%s, %s)", s)
     except:
@@ -33,7 +41,7 @@ try:
     else:
         print x
 
-    s = [(4, 'row5'), (5, 'row6')]
+    s = [(5, 'row5'), (6, 'row6')]
     try:
         x = cursor.executemany("insert into python_table VALUES (%s, %s)", s)
     except:
@@ -41,7 +49,7 @@ try:
     else:
         print x
 
-    s = ([6, 'row7'], [7, 'row8'])
+    s = ([7, 'row7'], [8, 'row8'])
     try:
         x = cursor.executemany("insert into python_table VALUES (%s, %s)", s)
     except:
@@ -49,12 +57,20 @@ try:
     else:
         print x
 
-    s = [[8, 'row9'], [9, 'row10']]
+    s = [[9, 'row9'], [10, 'row10']]
     try:
         x = cursor.executemany("insert into python_table VALUES (%s, %s)", s)
     except:
         print 'executemany failed with list in list'
     else:
         print x
+
+    s = [{'i': 9, 's':'row9'}, {'i': 10, 's': 'row10'}]
+    try:
+        x = cursor.executemany("insert into python_table VALUES (%(i)s, %(s)s)", s)
+    except:
+        print 'executemany failed with dict in list'
+    else:
+       print x
 finally:
     cursor.execute('drop table python_table')

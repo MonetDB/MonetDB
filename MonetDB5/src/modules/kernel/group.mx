@@ -542,7 +542,7 @@ tailtype(BAT *b, int str_trick)
 	@1 =
 @c
 #define declare_mask_STANDARD	/* fixed */
-#define declare_mask_CUSTOM	BUN mask = (1 << *N) - 1;
+#define declare_mask_CUSTOM	BUN mask = (((BUN)1) << *N) - 1;
 
 int
 CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
@@ -691,10 +691,10 @@ derive_mask( BAT *ct_map, BAT *ct_histo, BAT *b)
 		if (r == 0)
 			r = BATcount(ct_histo);
 		if (bits(r) > *N)
-			return (1<<bits(r))-1;
+			return (((BUN)1)<<bits(r))-1;
 	}
 	/* default to */
-	return (1<<*N) - 1;
+	return (((BUN)1)<<*N) - 1;
 }
 
 @= derive

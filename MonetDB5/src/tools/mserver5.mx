@@ -566,7 +566,12 @@ faster system start.
 			len = fread(secret, 1, 1023, secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
-			if (len < 5) {
+			if (len == 0) {
+				snprintf(secret, 1023, "vault key has zero-length!");
+				/* don't show this as a crash */
+				SABAOTHregisterStop(&i);
+				GDKfatal(secret);
+			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 						"(" SZFMT "), enlarge your vault key!\n",
 						len); /* penis */
