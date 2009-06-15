@@ -519,11 +519,12 @@ class Cursor:
 
         elif firstline.startswith(mapi.MSG_QUPDATE):
            if lines[1] == mapi.MSG_PROMPT:
+                (affected, identiy) = firstline[2:].split()
                 self.__rows = []
                 self.__offset = 0
                 self.description = None
-                self.rowcount = -1
-                logging.debug("II update finished")
+                self.rowcount = int(affected)
+                logger.debug("II update finished")
                 return
 
         elif firstline.startswith(mapi.MSG_ERROR):
