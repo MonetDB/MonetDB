@@ -4058,18 +4058,20 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 switch (p->sem.aggr.aggr[i].kind) {
                     case alg_aggr_dist:
                     {
-                        PFsql_t *collist = groupbylist;
-                        /* Try to find the expression @a expr
-                           in the column list. */
-                        while (collist) {
-                            if (R(collist) == expr)
-                                break;
-                            else
-                                collist = L(collist);
+                        bool found = false;
+                        /* Try to find the column col in the rank order list. */
+                        if (rule == 36) {
+                            PFord_ordering_t sortby = L(p)->sem.sort.sortby;
+                            unsigned int     i;
+                            for (i = 0; i < PFord_count (sortby); i++)
+                                if (PFord_order_col_at (sortby, i) == col) {
+                                    found = true;
+                                    break;
+                                }
                         }
-                        /* In case the expression did not exist in
+                        /* In case the column did not exist in
                            the column list already ... */
-                        if (!collist)
+                        if (!found)
                             /* ... extend the group by list. */
                             groupbylist = column_list (groupbylist, expr);
                     }   break;
