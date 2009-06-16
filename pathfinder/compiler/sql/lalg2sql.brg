@@ -4057,9 +4057,23 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 /* generate the aggregation */
                 switch (p->sem.aggr.aggr[i].kind) {
                     case alg_aggr_dist:
-                        /* extend group by list */
-                        groupbylist = column_list (groupbylist, expr);
-                        break;
+                    {
+                        PFsql_t *collist = groupbylist;
+                        /* Try to find the expression @a expr
+                           in the column list. */
+                        while (collist) {
+                            if (R(collist) == expr)
+                                break;
+                            else
+                                collist = L(collist);
+                        }
+                        /* In case the expression did not exist in
+                           the column list already ... */
+                        if (!collist)
+                            /* ... extend the group by list. */
+                            groupbylist = column_list (groupbylist, expr);
+                    }   break;
+
                     case alg_aggr_min:   expr = min_ (expr);     break;
                     case alg_aggr_max:   expr = max_ (expr);     break;
                     case alg_aggr_all: 
