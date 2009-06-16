@@ -383,7 +383,6 @@ static PFsql_t *max_pre_frag;
 #define TLEVEL(p)     ((p)->sql_ann->twig_level)
 /* serialization report */
 #define SER_REPORT(p) ((p)->sql_ann->ser_report)
-#define RANK_MAP(p)   ((p)->sql_ann->rank_map)
 
 /* check if sql_statement is a literal */
 #define IS_LITERAL(s) (s->kind == sql_lit_int \
@@ -936,8 +935,7 @@ sql_alg_ann_new (void)
     ret->content_size = NULL;
     ret->ser_report   = ser_no;
     ret->ser_list1    = NULL;
-    ret->ser_list2    = NULL;
-    ret->rank_map     = NULL;
+    ret->bind         = true;
 
     return ret;
 }
@@ -1874,17 +1872,19 @@ cast_ (PFsql_t * expr, PFalg_simple_type_t ty, PFalg_simple_type_t res_ty)
 }
 
 /**
- * The rank mapping stores the order of a rank operator
- * associated with its result name. (Rank operators that are
- * recorded in this structure occur between a twig node
- * and the serialize node and are collected for the special
- * serialization report (SER_REPORT).
+ * Check if a column @a b appears in list @a a.
  */
-struct rank_map_t {
-    PFalg_col_t name;
-    PFarray_t  *sort_list;
-};
-typedef struct rank_map_t rank_map_t;
+static bool
+clin (PFalg_collist_t *a, PFalg_col_t b)
+{
+    if (!a) return false;
+
+    for (unsigned int i = 0; i < clsize (a); i++)
+        if (b == clat (a, i))
+            return true;
+
+    return false;
+}
 
 /**
  * Reduce function. This is the core of this source file, containing
@@ -2057,8 +2057,23 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             /* The order criterion consists of the column pos. */
             if (rule == 1 || rule == 2) {
                 orderby = col_env_lookup (COLMAP(query), pos, pos_ty);
-                orderby = IS_LITERAL(orderby)
-                          ? NULL : sortkey_list (sortkey_item (orderby, true));
+
+                /* transform the order by statement into a sortkey list */
+
+                /* unfold the sorting criteria of a numbering operator */
+                if (orderby->kind == sql_over &&
+                    R(orderby)->kind == sql_wnd_clause &&
+                    RR(orderby)->kind == sql_order_by) {
+                    assert (L(orderby)->kind == sql_row_number ||
+                            L(orderby)->kind == sql_dense_rank);
+                    assert (!RL(orderby));
+                    /* orderby may become an empty list (aka. NULL) */
+                    orderby = RRL(orderby);
+                } 
+                else if (IS_LITERAL(orderby))
+                    orderby = NULL;
+                else
+                    orderby = sortkey_list (sortkey_item (orderby, true));
             }
             /* The order is represented by the order list of a rank operator.
                Transform the list of order columns into a SQL ORDER BY list. */
@@ -2196,28 +2211,6 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
 
                     assert (twig != PF_SQL_ALIAS_UNBOUND);
 
-                    if (RANK_MAP(query) &&
-                        PFarray_last (RANK_MAP(query)) >= 1) {
-                        PFarray_t *list;
-                        PFsql_t *sort_item;
-                        rank_map_t *rank_map;
-                        /* ignore dummy orderby */
-                        orderby = NULL;
-
-                        rank_map = *(rank_map_t **)
-                                       PFarray_at (RANK_MAP(query), 0);
-
-                        assert (rank_map->name == p->sem.ser_seq.pos);
-                        assert (rank_map->sort_list);
-
-                        list = rank_map->sort_list;
-                        for (int i = PFarray_last (list) - 1;
-                             i >= 0;
-                             i--) {
-                            sort_item = *(PFsql_t **) PFarray_at (list, i);
-                            orderby = sortkey_list (sort_item, orderby);
-                        }
-                    }
                     /* add minor ordering to ensure that subtrees
                        of the twig nodes are ordered correctly */
                     orderby = sortkey_list (PRE(twig), orderby);
@@ -2489,36 +2482,82 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         /* Query:  serialize_rel (nil, Rel) */
         case 7:
         {
-            PFla_op_t          *query      = R(p);
+            PFla_op_t          *query       = R(p);
+                                            
+            PFalg_col_t         iter        = p->sem.ser_rel.iter,
+                                pos         = p->sem.ser_rel.pos;
+            PFalg_simple_type_t iter_ty     = type_of (p, iter),
+                                pos_ty      = type_of (p, pos);
+            PFsql_t            *orderby,
+                               *orderbyITER,
+                               *orderbyPOS,
+                               *selectlist = NULL;
+            
+            /* transform the ITER order by statement into a sortkey list */
+            orderby = col_env_lookup (COLMAP(query), iter, iter_ty),
 
-            PFalg_col_t         iter       = p->sem.ser_rel.iter;
-            PFalg_simple_type_t iter_ty    = type_of (p, p->sem.ser_rel.iter);
+            /* unfold the sorting criteria of a numbering operator */
+            if (orderby->kind == sql_over &&
+                R(orderby)->kind == sql_wnd_clause &&
+                RR(orderby)->kind == sql_order_by) {
+                assert (L(orderby)->kind == sql_row_number ||
+                        L(orderby)->kind == sql_dense_rank);
+                assert (!RL(orderby));
+                /* orderby may become an empty list (aka. NULL) */
+                orderby = RRL(orderby);
+            } 
+            else if (IS_LITERAL(orderby))
+                orderby = NULL;
+            else
+                orderby = sortkey_list (sortkey_item (orderby, true));
 
-            PFalg_col_t         pos        = p->sem.ser_rel.pos;
-            PFalg_simple_type_t pos_ty     = type_of (p, p->sem.ser_rel.pos);
+            orderbyITER = orderby;
 
-            PFsql_t* orderbyITER = col_env_lookup (COLMAP(query),
-                                                   iter, iter_ty);
-            PFsql_t* orderbyPOS  = col_env_lookup (COLMAP(query), pos, pos_ty);
+            /* transform the POS order by statement into a sortkey list */
+            orderby = col_env_lookup (COLMAP(query), pos, pos_ty);
 
-            /* check if pos and iter column are literals */
-            orderbyITER = IS_LITERAL(orderbyITER)?NULL:orderbyITER;  
-            orderbyPOS = IS_LITERAL(orderbyPOS)?NULL:orderbyPOS;  
+            /* unfold the sorting criteria of a numbering operator */
+            if (orderby->kind == sql_over &&
+                R(orderby)->kind == sql_wnd_clause &&
+                RR(orderby)->kind == sql_order_by) {
+                assert (L(orderby)->kind == sql_row_number ||
+                        L(orderby)->kind == sql_dense_rank);
+                assert (!RL(orderby));
+                /* orderby may become an empty list (aka. NULL) */
+                orderby = RRL(orderby);
+            } 
+            else if (IS_LITERAL(orderby))
+                orderby = NULL;
+            else
+                orderby = sortkey_list (sortkey_item (orderby, true));
 
-            PFsql_t* orderby = NULL;
+            orderbyPOS = orderby;
 
-            /* we don't have to use literals in our order by criterion */
-            if(orderbyITER && orderbyPOS)
-                orderby = sortkey_list (sortkey_item (orderbyITER, true),
-                                        sortkey_item (orderbyPOS, true));
+            orderby = NULL;
+            /* combine ITER and POS orders */
+            if (orderbyITER && orderbyPOS)
+                orderby = sortkey_list (orderbyITER, orderbyPOS);
             else if(orderbyPOS) 
-                orderby = sortkey_list (sortkey_item (orderbyPOS, true));
+                orderby = orderbyPOS;
             else if(orderbyITER) 
-                orderby = sortkey_list (sortkey_item (orderbyITER, true));
+                orderby = orderbyITER;
     
+            /* Only include iter and item information in the result. */
+            for (unsigned int i = 0; i < PFarray_last (COLMAP(query)); i++) {
+                sql_column_env_t entry = col_env_at (COLMAP(query), i);
+                if (clin (p->sem.ser_rel.items, entry.col) ||
+                    p->sem.ser_rel.iter == entry.col)
+                    /* add the sql operation to the select list */
+                    selectlist = select_list (
+                                     transform_expression (
+                                         entry.expression,
+                                         COLUMN_NAME (entry.col, entry.type)),
+                                     selectlist);
+            }
+
             /* call a helper function that does the 'real' job */
             PFsql_t* final_query = PFsql_select (false,
-                                       transform_selectlist (COLMAP(query)),
+                                       selectlist,
                                        transform_frommap (query),
                                        transform_wheremap (query),
                                        orderby,
@@ -4417,6 +4456,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                             eq (COL (strjoin_alias, txt_pos),
                                 COL (interm_alias, txt_pos)));
         }   break;
+
         /* Rel:    rownum (Rel) */
         case 50:
         {
@@ -4462,8 +4502,12 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                    partlist,
                                    orderby)));
 
-            bind = true;
-            execute (comment ("binding due to rownum operator"));
+            /* Use the information collected in decide_numbering_bind()
+               to decide whether we need to bind the numbering operator. */
+            if (p->sql_ann->bind) {
+                bind = true;
+                execute (comment ("binding due to rownum operator"));
+            }
         }   break;
 
         /* Rel:    rowrank (Rel) */
@@ -4473,54 +4517,27 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
-           if (SER_REPORT(p) == ser_yes) {
-                /* Ignore the result of the rank operator in the normal
-                   translation process and only add it to the special
-                   rank map environment. */
-                PFord_ordering_t sortby = p->sem.sort.sortby;
-                
-                unsigned int     i, j, k;
-                PFalg_col_t      ord;
-                PFarray_t       *srtbylist = PFarray (sizeof (PFsql_t *), 10);
-                bool             asc, cols_added;
-                rank_map_t      *rank_map;
+            /* Normal translation of rank operator (using a DENSE_RANK
+               operator). */
+            PFord_ordering_t sortby = p->sem.sort.sortby;
+            PFsql_t *srtbylist = NULL;
+            PFalg_col_t ord;
+            bool asc;
+            PFsql_t* expr = NULL;
+            PFalg_simple_type_t expr_ty;
 
-                
-                
-                PFsql_t *expr;
-                PFalg_simple_type_t expr_ty;
-                
+            /* collect all sorting criteria */
+            for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
+                ord = PFord_order_col_at (sortby, i);
+                asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
 
-                for (i = 0; i < PFord_count (sortby); i++) {
-                    ord = PFord_order_col_at (sortby, i);                   
-                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
+                expr_ty = type_of (L(p), ord);
+                expr = col_env_lookup (COLMAP(L(p)),
+                                       ord,
+                                       expr_ty);
 
-                    expr_ty = type_of (L(p), ord);
-                    expr = col_env_lookup (COLMAP(L(p)),
-                                           ord,
-                                           expr_ty);
-
-                    cols_added = false;
-                    if (RANK_MAP(L(p)))
-                        for (j = 0; j < PFarray_last (RANK_MAP(L(p))); j++) {
-                            rank_map = *(rank_map_t **)
-                                           PFarray_at (RANK_MAP(L(p)), j);
-                            if (rank_map->name == ord) {
-                                /* copy all sort criteria of the rank mapping */
-                                for (k = 0;
-                                     k < PFarray_last(rank_map->sort_list);
-                                     k++)
-                                    *(PFsql_t **) PFarray_add (srtbylist)
-                                        = *(PFsql_t **) PFarray_at (
-                                                            rank_map->sort_list,
-                                                            k);
-                                cols_added = true;
-                                break;
-                            }
-                        }
-                    if (!cols_added)
-                        *(PFsql_t **) PFarray_add (srtbylist)
-                            = sortkey_item (
+                srtbylist = sortkey_list (
+                                sortkey_item (
                                     /* different handling of boolean
                                        types as search criterion */
                                     (expr->kind == sql_column_name ||
@@ -4528,64 +4545,19 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                      expr_ty    != aat_bln)
                                          ? expr
                                          : case_ (when (expr, TRUE_INT),
-                                                        else_ (FALSE_INT)),
-                                  asc);
-                }
+                                                  else_ (FALSE_INT)),
+                                    asc),
+                                srtbylist);
+            }
+            col_env_add (COLMAP(p),
+                         p->sem.sort.res,
+                         aat_nat,
+                         over (dense_rank (),
+                               window_clause (NULL, order_by (srtbylist))));
 
-                /* initialize rankmap */
-                if (!RANK_MAP(p))
-                    RANK_MAP(p) = PFarray (sizeof (rank_map_t *), 2);
-
-                /* add new entry to the rank map */
-                rank_map = PFmalloc (sizeof (rank_map_t));
-                *rank_map = (rank_map_t) { .name = p->sem.sort.res,
-                                           .sort_list = srtbylist };
-                *(rank_map_t **) PFarray_add (RANK_MAP(p)) = rank_map;
-
-                /* add a dummy for the rank operator */
-                col_env_add (COLMAP(p),
-                             p->sem.sort.res,
-                             aat_nat,
-                             lit_int(0));
-            } else {
-                /* Normal translation of rank operator (using a DENSE_RANK
-                   operator). */
-                PFord_ordering_t sortby = p->sem.sort.sortby;
-                PFsql_t *srtbylist = NULL;
-                PFalg_col_t ord;
-                bool asc;
-                PFsql_t* expr = NULL;
-                PFalg_simple_type_t expr_ty;
-
-                /* collect all sorting criteria */
-                for (int i = PFord_count (sortby) - 1; i >= 0; i--) {
-                    ord = PFord_order_col_at (sortby, i);
-                    asc = PFord_order_dir_at (sortby, i) == DIR_ASC;
-
-                    expr_ty = type_of (L(p), ord);
-                    expr = col_env_lookup (COLMAP(L(p)),
-                                           ord,
-                                           expr_ty);
-
-                    srtbylist = sortkey_list (
-                                    sortkey_item (
-                                        /* different handling of boolean
-                                           types as search criterion */
-                                        (expr->kind == sql_column_name ||
-                                         expr->kind == sql_lit_int     ||
-                                         expr_ty    != aat_bln)
-                                             ? expr
-                                             : case_ (when (expr, TRUE_INT),
-                                                      else_ (FALSE_INT)),
-                                        asc),
-                                    srtbylist);
-                }
-                col_env_add (COLMAP(p),
-                             p->sem.sort.res,
-                             aat_nat,
-                             over (dense_rank (),
-                                   window_clause (NULL, order_by (srtbylist))));
-
+            /* Use the information collected in decide_numbering_bind()
+               to decide whether we need to bind the numbering operator. */
+            if (p->sql_ann->bind) {
                 bind = true;
                 execute (comment ("binding due to rank operator"));
             }
@@ -4602,8 +4574,12 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                          over (row_number (),
                                window_clause (NULL, NULL)));
 
-            bind = true;
-            execute (comment ("binding due to rowid operator"));
+            /* Use the information collected in decide_numbering_bind()
+               to decide whether we need to bind the numbering operator. */
+            if (p->sql_ann->bind) {
+                bind = true;
+                execute (comment ("binding due to rowid operator"));
+            }
             break;
 
         /* Rel:    step (Frag, Rel) */
@@ -5627,71 +5603,6 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
             break;
     }
 
-    /* Just copy the rankmaps to another operator */
-#define COPY_RANK_MAP(dest,src)                                               \
-            do {                                                              \
-                unsigned int i;                                               \
-                if (RANK_MAP(src)) {                                          \
-                    if (!RANK_MAP(dest))                                      \
-                        RANK_MAP(dest) = PFarray (                            \
-                                             sizeof (rank_map_t *),           \
-                                             PFarray_last (RANK_MAP(src)));   \
-                    for (i = 0; i < PFarray_last (RANK_MAP(src)); i++)        \
-                        *(rank_map_t **) PFarray_add (RANK_MAP(dest))         \
-                            = *(rank_map_t **) PFarray_at (RANK_MAP(src), i); \
-                }                                                             \
-            } while (0)
-
-    /* propagate the special rank mapping information */
-    switch (p->kind) {
-        case la_project:
-        {
-            unsigned int i, j;
-
-            COPY_RANK_MAP(p, L(p));
-
-            if (RANK_MAP(p))
-                /* Adjust the names and remove a rank mapping
-                   if it is not referenced anymore. */
-                for (i = 0; i < PFarray_last (RANK_MAP(p)); i++) {
-                    for (j = 0; j < p->sem.proj.count; j++)
-                        if ((*(rank_map_t **) PFarray_at (RANK_MAP(p), i))->name
-                                == p->sem.proj.items[j].old) {
-                            (*(rank_map_t **) PFarray_at (RANK_MAP(p), i))->name
-                                = p->sem.proj.items[j].new;
-                            break;
-                        }
-
-                    if (j == p->sem.proj.count) {
-                        *(rank_map_t **) PFarray_at (RANK_MAP(p), i)
-                            = *(rank_map_t **) PFarray_top (RANK_MAP(p));
-                        PFarray_del (RANK_MAP(p));
-                        i--;
-                    }
-                }
-        }   break;
-
-        case la_attach:
-        case la_rank:
-            COPY_RANK_MAP(p, L(p));
-            break;
-
-        case la_step_join:
-        case la_guide_step_join:
-        case la_doc_access:
-            COPY_RANK_MAP(p, R(p));
-            break;
-
-        case la_eqjoin:
-        case la_thetajoin:
-            COPY_RANK_MAP(p, L(p));
-            COPY_RANK_MAP(p, R(p));
-            break;
-
-        default:
-           break;
-    }
-
     /* BINDING: execute the statement at the end
        if the node is dirty, and bind it to a new SQL variable.
        The strategy behind this late binding is to merge
@@ -5745,6 +5656,183 @@ label (PFla_op_t *p)
     p->sql_ann = sql_alg_ann_new ();
 
     assert (STATE_LABEL(p));
+}
+
+/**
+ * Check if a column name is used by an operator.
+ */
+static bool
+col_used (PFla_op_t * p, PFalg_col_t col)
+{
+    switch (p->kind) {
+        case la_attach:
+        case la_project:
+        case la_rowid:
+            return false;
+
+        case la_fun_1to1:
+            for (unsigned int i = 0; i < clsize (p->sem.fun_1to1.refs); i++)
+                if (clat (p->sem.fun_1to1.refs, i) == col)
+                    return true;
+
+            return false;
+
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+            return col == p->sem.binary.col1 || col == p->sem.binary.col2;
+
+        case la_bool_not:
+            return col == p->sem.unary.col;
+
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+            if (p->sem.sort.part &&
+                p->sem.sort.part == col)
+                return true;
+
+            for (unsigned int i = 0; i < PFord_count (p->sem.sort.sortby); i++)
+                if (PFord_order_col_at (p->sem.sort.sortby, i) == col)
+                    return true;
+
+            return false;
+
+        case la_type:
+        case la_cast:
+            return col == p->sem.type.col;
+
+        default:
+            break;
+    }
+    return true;
+}
+
+/* mapping structure that records the numbering operator
+   together with its (possibly update) column name */
+struct num_map_t
+{
+    PFalg_col_t         col;
+    PFla_op_t          *op;
+};
+typedef struct num_map_t num_map_t;
+
+/**
+ * Worker for decide_numbering_bind adding numbering operators
+ * to the operator list @a num_map. Furthermore all numbering
+ * operators that are used in an operator are removed from the
+ * list again.
+ */
+static void
+collect_numberings (PFla_op_t *p, PFarray_t *num_map)
+{
+    /* avoid inconsistencies */
+    if (REFCTR (p) > 1)
+        return;
+
+    /* only analyze operators that don't change the cardinality */
+    switch (p->kind) {
+        case la_project:
+        case la_attach:
+        case la_fun_1to1:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
+        case la_bool_not:
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+        case la_rowid:
+        case la_type:
+        case la_cast:
+            break;
+
+        default:
+            return;
+    }
+
+    /* collect the numbering operators in the subplan */
+    collect_numberings (L(p), num_map);
+
+    switch (p->kind) {
+        case la_project:
+            /* update the column names of the numbering operators */
+            for (unsigned int i = 0; i < PFarray_last (num_map); i++)
+                for (unsigned int j = 0; j < p->sem.proj.count; j++)
+                    if ((*(num_map_t *) PFarray_at (num_map, i)).col
+                            == p->sem.proj.items[j].old) {
+                        (*(num_map_t *) PFarray_at (num_map, i)).col
+                            = p->sem.proj.items[j].new;
+                        break;
+                    }
+            break;
+
+        case la_rowid:
+            /* Add the numbering operator. */
+            *(num_map_t *) PFarray_add (num_map) 
+                = (num_map_t) { .col = p->sem.rowid.res, .op = p };
+            break;
+
+        case la_rownum:
+        case la_rowrank:
+        case la_rank:
+            /* Add the numbering operators.
+               Avoid partitioned variants as we don't know how to
+               fix the order by list for partitioned operators. */ 
+            if (!p->sem.sort.part)
+                *(num_map_t *) PFarray_add (num_map) 
+                    = (num_map_t) { .col = p->sem.sort.res, .op = p };
+            /* fall through */
+
+        default:
+        {
+            /* remove numbering operators whose output is used anywhere */
+            PFalg_col_t  col;
+            unsigned int i = 0;
+            while (i < PFarray_last (num_map)) {
+                col = (*(num_map_t *) PFarray_at (num_map, i)).col;
+                if (col_used (p, col)) {
+                    *(num_map_t *) PFarray_at (num_map, i)
+                        = *(num_map_t *) PFarray_top (num_map);
+                    PFarray_del (num_map);
+                }
+                else
+                    i++;
+            }
+        }   break;
+    }
+}
+
+/**
+ * Change the default behavior to always bind numbering
+ * operators.
+ *
+ * This is done by analysing whether numbering operators are
+ * used before the serialization or not. In case they
+ * are unused we can avoid the binding and cope with it
+ * in the serialization operators.
+ */
+static void
+decide_numbering_bind (PFla_op_t *p)
+{
+    PFarray_t       *num_map;
+
+    assert (p->kind == la_serialize_seq ||
+            p->kind == la_serialize_rel);
+
+    num_map = PFarray (sizeof (num_map_t), 3);
+
+    /* Collect all numbering operators that are
+       only used by the serialize operators. */
+    collect_numberings (R(p), num_map);
+
+    /* All numbering operators that are in the list are not used
+       before the serialization operator and thus don't need to be
+       bound immediately. */
+    for (unsigned int i = 0; i < PFarray_last (num_map); i++)
+        (*(num_map_t *) PFarray_at (num_map, i)).op->sql_ann->bind = false;
 }
 
 /**
@@ -5813,26 +5901,9 @@ collect_twigs (PFla_op_t * p, PFarray_t *frags)
                           || ((p)->kind == la_thetajoin))
 /* item list */
 #define ITEM_LIST(p)  ((p)->sql_ann->ser_list1)
-/* rank list */
-#define RANK_LIST(p)  ((p)->sql_ann->ser_list2)
-
-/**
- * Check if a column @a b appears in list @a a.
- */
-static bool
-clin (PFalg_collist_t *a, PFalg_col_t b)
-{
-    if (!a) return false;
-
-    for (unsigned int i = 0; i < clsize (a); i++)
-        if (b == clat (a, i))
-            return true;
-
-    return false;
-}
 
 static void
-ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
+ser_info_worker (PFla_op_t *p, PFarray_t *twigs)
 {
     assert (p);
     assert (twigs);
@@ -5869,7 +5940,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 
     /* DAG walk */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++) {
-         ser_info_worker (p->child[i], twigs, ranks);
+         ser_info_worker (p->child[i], twigs);
          status = MIN(status, SER_REPORT(p->child[i]));
     }
 
@@ -5900,47 +5971,35 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
             assert (!"Serialization report status unknown");
     }
 
-    /* maintain item and rank information */
+    /* maintain item information */
     switch (p->kind) {
         case la_project:
         {
             PFalg_col_t old, new;
             if (ITEM_LIST(L(p)))
                 ITEM_LIST(p) = PFalg_collist (clsize (ITEM_LIST(L(p))));
-            if (RANK_LIST(L(p)))
-                RANK_LIST(p) = PFalg_collist (clsize (RANK_LIST(L(p))));
             /* projection has the ability to omit and change names */
             for (unsigned int i = 0; i < p->sem.proj.count; i++) {
                 old = p->sem.proj.items[i].old;
                 new = p->sem.proj.items[i].new;
 
                 if (clin (ITEM_LIST(L(p)), old)) cladd (ITEM_LIST(p)) = new;
-                if (clin (RANK_LIST(L(p)), old)) cladd (RANK_LIST(p)) = new;
             }
         }   break;
 
         case la_rank:
             ITEM_LIST(p) = ITEM_LIST(L(p));
-
-            if (RANK_LIST(L(p)))
-                RANK_LIST(p) = PFalg_collist_copy (RANK_LIST(L(p)));
-            else
-                RANK_LIST(p) = PFalg_collist (1);
-
-            cladd (RANK_LIST(p)) = p->sem.sort.res;
             break;
 
         case la_roots:
         case la_attach:
             ITEM_LIST(p) = ITEM_LIST(L(p));
-            RANK_LIST(p) = RANK_LIST(L(p));
             break;
 
         case la_step_join:
         case la_guide_step_join:
         case la_doc_access:
             ITEM_LIST(p) = ITEM_LIST(R(p));
-            RANK_LIST(p) = RANK_LIST(R(p));
             break;
 
         case la_eqjoin:
@@ -5953,15 +6012,6 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
                 ITEM_LIST(p) = ITEM_LIST(L(p));
             else
                 ITEM_LIST(p) = ITEM_LIST(R(p));
-
-            if (RANK_LIST(L(p)) && RANK_LIST(R(p)))
-                RANK_LIST(p) = PFalg_collist_concat (
-                                   PFalg_collist_copy (RANK_LIST(L(p))),
-                                   RANK_LIST(R(p)));
-            else if (RANK_LIST(L(p)))
-                RANK_LIST(p) = RANK_LIST(L(p));
-            else
-                RANK_LIST(p) = RANK_LIST(R(p));
             break;
 
         default:
@@ -5982,8 +6032,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         case la_step_join:
         case la_guide_step:
         case la_guide_step_join:
-            if (clin (ITEM_LIST(p), p->sem.step.item) ||
-                clin (RANK_LIST(p), p->sem.step.item)) {
+            if (clin (ITEM_LIST(p), p->sem.step.item)) {
                 SER_REPORT(p) = ser_no;
                 return;
             }
@@ -5991,8 +6040,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
             break;
 
         case la_doc_access:
-            if (clin (ITEM_LIST(p), p->sem.doc_access.col) ||
-                clin (RANK_LIST(p), p->sem.doc_access.col)) {
+            if (clin (ITEM_LIST(p), p->sem.doc_access.col)) {
                SER_REPORT(p) = ser_no;
                return;
              }
@@ -6014,17 +6062,13 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
                 }
             }
 
-            /* add the rank to the ranks list */
-            *(PFla_op_t **) PFarray_add (ranks) = p;
-
-            SER_REPORT(p) = ser_tc;
+            /* check if we bind the rank operator or not */
+            SER_REPORT(p) = p->sql_ann->bind ? ser_no: ser_tc;
         }   break;
 
         case la_eqjoin:
             if (clin (ITEM_LIST(p), p->sem.eqjoin.col1) ||
-                clin (ITEM_LIST(p), p->sem.eqjoin.col2) ||
-                clin (RANK_LIST(p), p->sem.eqjoin.col1) ||
-                clin (RANK_LIST(p), p->sem.eqjoin.col2)) {
+                clin (ITEM_LIST(p), p->sem.eqjoin.col2)) {
                 SER_REPORT(p) = ser_no;
                 return;
             }
@@ -6034,9 +6078,7 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
         case la_thetajoin:
             for (unsigned int i = 0; i < p->sem.thetajoin.count; i++)
                 if (clin (ITEM_LIST(p), p->sem.thetajoin.pred[i].left)  ||
-                    clin (ITEM_LIST(p), p->sem.thetajoin.pred[i].right) ||
-                    clin (RANK_LIST(p), p->sem.thetajoin.pred[i].left)  ||
-                    clin (RANK_LIST(p), p->sem.thetajoin.pred[i].right)) {
+                    clin (ITEM_LIST(p), p->sem.thetajoin.pred[i].right)) {
                     SER_REPORT(p) = ser_no;
                     return;
                 }
@@ -6054,9 +6096,8 @@ ser_info_worker (PFla_op_t *p, PFarray_t *twigs, PFarray_t *ranks)
 static void
 infer_ser_info (PFla_op_t * p)
 {
-    PFarray_t *twigs = PFarray (sizeof (PFla_op_t*), 2),
-              *ranks;
-    bool twig_only = false;
+    PFarray_t *twigs     = PFarray (sizeof (PFla_op_t*), 2);
+    bool       twig_only = false;
 
     assert (p->kind == la_serialize_seq);
 
@@ -6066,11 +6107,8 @@ infer_ser_info (PFla_op_t * p)
     if (!twig_only)
         return;
 
-    /* prepare a list for the rank operators */
-    ranks = PFarray (sizeof(PFla_op_t*), 2);
-
     /* infer the serialization info */
-    ser_info_worker (R(p), twigs, ranks);
+    ser_info_worker (R(p), twigs);
 
     /* the serialize operator either contains yes or no */
     SER_REPORT(p) = (SER_REPORT(R(p)) != ser_no) ? ser_yes : ser_no;
@@ -6085,16 +6123,6 @@ infer_ser_info (PFla_op_t * p)
          assert (twig);
          assert (twig->kind == la_twig);
          SER_REPORT(twig) = ser_yes;
-    }
-
-    /* in a second step assign to all collected rank operators
-       ser_yes to store its result in a special rank mapping
-       environment. */
-    for (unsigned int i = 0; i < PFarray_last (ranks); i++) {
-         PFla_op_t *rank = *(PFla_op_t **) PFarray_at (ranks, i);
-         assert (rank);
-         assert (rank->kind == la_rank);
-         SER_REPORT(rank) = ser_yes;
     }
 }
 
@@ -6204,14 +6232,22 @@ PFlalg2sql (PFla_op_t * n)
     label (n);
     PFla_dag_reset (n);
  
-    /* check if serialize returns a node* */
-    PFalg_simple_type_t ser_ty = PFprop_type_of (n, n->sem.ser_seq.item);
-    /* check if ser_ty has no other type */
-    if ((ser_ty & aat_node) && !(ser_ty & ~aat_node)) {
-        /* infer the serialization information */
-        infer_ser_info (n);
- 
-        PFla_dag_reset (n);
+    /* Decide for all numbering operators (rownum, rank, rowrank, rowid)
+       whether they need to be bound immediately or at the next binding. */
+    decide_numbering_bind (n);
+
+    /* The following checks introduce additional annotations that allow the SQL
+       code generation to generate more efficient code for queries that result
+       in new XML fragments. */
+    if (n->kind == la_serialize_seq) {
+        /* check if serialize returns a node* */
+        PFalg_simple_type_t ser_ty = PFprop_type_of (n, n->sem.ser_seq.item);
+        /* check if ser_ty has no other type */
+        if ((ser_ty & aat_node) && !(ser_ty & ~aat_node)) {
+            /* infer the serialization information */
+            infer_ser_info (n);
+            PFla_dag_reset (n);
+        }
     }
  
     /* Assign the delta-pre, level, and size value for node constructors */

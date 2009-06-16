@@ -341,10 +341,8 @@ struct PFsql_alg_ann_t {
     ser_report_t     ser_report;   /**< serialization report */
     PFalg_collist_t *ser_list1;    /**< a list of columns to check further
                                         constraints */
-    PFalg_collist_t *ser_list2;    /**< a list of columns to check further
-                                        constraints */
-    PFarray_t       *rank_map;     /**< an internal representation of all
-                                        ignored rank operators. */
+    bool             bind;         /**< a boolean indicating if a numbering
+                                        operator needs to be bound */
 };                                 
                                    
 /* .......... General .......... */
