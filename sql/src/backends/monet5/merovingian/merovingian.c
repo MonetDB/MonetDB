@@ -90,8 +90,8 @@ typedef char* err;
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
-static str _merovingian_mserver = NULL;
-static str _merovingian_conffile = NULL;
+
+/* private structs */
 
 typedef struct _dpair {
 	int out;          /* where to read stdout messages from */
@@ -100,22 +100,68 @@ typedef struct _dpair {
 	str dbname;       /* the database that this server serves */
 	struct _dpair* next;
 }* dpair;
-static dpair topdp = NULL;
-static pthread_mutex_t topdplock;
 
 typedef struct _remotedb {
-	str dbname;
-	str conn;
-	int ttl;
+	str dbname;       /* remote database name */
+	str tag;          /* database tag, if any, default = "" */
+	str conn;         /* remote connection, use in redirect */
+	int ttl;          /* time-to-live in seconds */
 	struct _remotedb* next;
 }* remotedb;
-static remotedb _merovingian_remotedbs = NULL;
-static pthread_mutex_t remotedblock = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct _threadlist {
-	pthread_t tid;
+	pthread_t tid;    /* thread id */
 	struct _threadlist* next;
 }* threadlist;
+
+
+/* globals */
+
+/* full path to the mserver5 binary */
+static str _mero_mserver = NULL;
+/* full path to the monetdb5 config file */
+static str _mero_conffile = NULL;
+/* list of databases that we have started */
+static dpair _mero_topdp = NULL;
+/* lock to _mero_topdp, initialised as recursive lateron */
+static pthread_mutex_t _mero_topdp_lock;
+/* list of remote databases as discovered */
+static remotedb _mero_remotedbs = NULL;
+/* lock to _mero_remotedbs */
+static pthread_mutex_t _mero_remotedb_lock = PTHREAD_MUTEX_INITIALIZER;
+/* for the logger, when set to 0, the logger terminates */
+static int _mero_keep_logging = 1;
+/* for accepting connections, when set to 0, listening socket terminates */
+static int _mero_keep_listening = 1;
+/* stream to the stdout output device (tty or file) */
+static FILE *_mero_streamout = NULL;
+/* stream to the stderr output device (tty or file) */
+static FILE *_mero_streamerr = NULL;
+/* timeout when waiting for a database to shutdown (seconds) */
+static int _mero_exit_timeout = 7;
+/* whether or not to proxy a client (instead of redirecting) */
+static int _mero_doproxy = 1;
+/* the port merovingian listens on for client connections */
+static unsigned short _mero_port = MERO_PORT;
+/* the time-to-live to announce for each shared database (seconds) */
+static int _mero_discoveryttl = 600;
+/* stream to the stdout for the neighbour discovery service */
+static FILE *_mero_discout = NULL;
+/* stream to the stderr for the neighbour discovery service */
+static FILE *_mero_discerr = NULL;
+/* broadcast socket for announcements */
+static int _mero_broadcastsock;
+/* broadcast address/port */
+static struct sockaddr_in _mero_broadcastaddr;
+/* hostname of this machine */
+static char _mero_hostname[128];
+/* full path to logfile for stdout messages, or NULL if tty */
+static str _mero_msglogfile = NULL;
+/* full path to logfile for stderr messages, or NULL if tty */
+static str _mero_errlogfile = NULL;
+
+
+/* funcs */
 
 inline static void
 logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
@@ -155,13 +201,10 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 	} while (len == 8095);
 }
 
-static int _keepLogging = 1;
-static FILE *_streamout = NULL;
-static FILE *_streamerr = NULL;
 static void
 logListener(void *x)
 {
-	dpair d = topdp;
+	dpair d = _mero_topdp;
 	dpair w;
 	char equalouterr;
 	struct timeval tv;
@@ -171,7 +214,7 @@ logListener(void *x)
 	(void)x;
 
 	equalouterr = 0;
-	if (_streamout == _streamerr)
+	if (_mero_streamout == _mero_streamerr)
 		equalouterr = 1;
 
 	/* the first entry in the list of d is where our output should go to
@@ -188,7 +231,7 @@ logListener(void *x)
 		nfds = 0;
 
 		/* make sure noone is killing or adding entries here */
-		pthread_mutex_lock(&topdplock);
+		pthread_mutex_lock(&_mero_topdp_lock);
 
 		w = d;
 		while (w != NULL) {
@@ -201,33 +244,32 @@ logListener(void *x)
 			w = w->next;
 		}
 
-		pthread_mutex_unlock(&topdplock);
+		pthread_mutex_unlock(&_mero_topdp_lock);
 		
 		if (select(nfds + 1, &readfds, NULL, NULL, &tv) <= 0)
 			continue;
 
-		pthread_mutex_lock(&topdplock);
+		pthread_mutex_lock(&_mero_topdp_lock);
 
 		w = d;
 		while (w != NULL) {
 			if (FD_ISSET(w->out, &readfds) != 0)
 				logFD(w->out, "MSG", w->dbname,
-						(long long int)w->pid, _streamout);
+						(long long int)w->pid, _mero_streamout);
 			if (w->err != w->out && FD_ISSET(w->err, &readfds) != 0)
 				logFD(w->err, "ERR", w->dbname,
-						(long long int)w->pid, _streamerr);
+						(long long int)w->pid, _mero_streamerr);
 			w = w->next;
 		}
 
-		pthread_mutex_unlock(&topdplock);
+		pthread_mutex_unlock(&_mero_topdp_lock);
 
-		fflush(_streamout);
+		fflush(_mero_streamout);
 		if (equalouterr == 0)
-			fflush(_streamerr);
-	} while (_keepLogging != 0);
+			fflush(_mero_streamerr);
+	} while (_mero_keep_logging != 0);
 }
 
-int timeout = 0;
 /**
  * The terminateProcess function tries to let the given mserver process
  * shut down gracefully within a given time-out.  If that fails, it
@@ -286,7 +328,7 @@ terminateProcess(void *p)
 			"TERM signal\n", (long long int)pid, dbname);
 	fflush(stdout);
 	kill(pid, SIGTERM);
-	for (i = 0; i < timeout * 2; i++) {
+	for (i = 0; i < _mero_exit_timeout * 2; i++) {
 		if (stats != NULL)
 			SABAOTHfreeStatus(&stats);
 		MT_sleep_ms(500);
@@ -321,7 +363,7 @@ terminateProcess(void *p)
 	}
 	fprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
 			" (database '%s') the KILL signal\n",
-			timeout, (long long int)pid, dbname);
+			_mero_exit_timeout, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
 	return;
 }
@@ -376,7 +418,6 @@ newErr(str fmt, ...)
 	return(ret);
 }
 
-static int doproxy;
 /**
  * Fork an Mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
@@ -413,9 +454,9 @@ forkMserver(str database, sabdb** stats, int force)
 		remotedb rdb;
 
 		/* check the remote databases */
-		pthread_mutex_lock(&remotedblock);
+		pthread_mutex_lock(&_mero_remotedb_lock);
 
-		rdb = _merovingian_remotedbs;
+		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
 			if (strcmp(rdb->dbname, database) == 0) {
 				/* take first match, create a fake sabdb struct */
@@ -431,13 +472,13 @@ forkMserver(str database, sabdb** stats, int force)
 				(*stats)->conns->val = GDKstrdup(rdb->conn);
 				(*stats)->conns->next = NULL;
 				(*stats)->next = NULL;
-				pthread_mutex_unlock(&remotedblock);
+				pthread_mutex_unlock(&_mero_remotedb_lock);
 				return(NO_ERR);
 			}
 			rdb = rdb->next;
 		}
 
-		pthread_mutex_unlock(&remotedblock);
+		pthread_mutex_unlock(&_mero_remotedb_lock);
 
 		return(newErr("no such database: %s", database));
 	}
@@ -524,7 +565,7 @@ forkMserver(str database, sabdb** stats, int force)
 		logdir = NULL;
 	}
 	kv = findConfKey(ckv, "forward");
-	mydoproxy = doproxy;
+	mydoproxy = _mero_doproxy;
 	if (kv->val != NULL)
 		mydoproxy = strcmp(kv->val, "proxy") == 0;
 	freeConfFile(ckv);
@@ -561,10 +602,10 @@ forkMserver(str database, sabdb** stats, int force)
 		close(pfde[1]);
 
 		/* ok, now exec that mserver we want */
-		snprintf(conffile, 511, "--config=%s", _merovingian_conffile);
+		snprintf(conffile, 511, "--config=%s", _mero_conffile);
 		snprintf(dbname, 511, "--dbname=%s", database);
 		snprintf(vaultkey, 511, "monet_vault_key=%s/.vaultkey", (*stats)->path);
-		argv[c++] = _merovingian_mserver;
+		argv[c++] = _mero_mserver;
 		argv[c++] = conffile;
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
@@ -581,7 +622,7 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		argv[c++] = NULL;
 
-		execv(_merovingian_mserver, argv);
+		execv(_mero_mserver, argv);
 		/* if the exec returns, it is because of a failure */
 		fprintf(stderr, "executing failed: %s\n", strerror(errno));
 		exit(1);
@@ -590,10 +631,10 @@ forkMserver(str database, sabdb** stats, int force)
 
 		/* make sure no entries are shot while adding and that we
 		 * deliver a consistent state */
-		pthread_mutex_lock(&topdplock);
+		pthread_mutex_lock(&_mero_topdp_lock);
 
 		/* parent: fine, let's add the pipes for this child */
-		dp = topdp;
+		dp = _mero_topdp;
 		while (dp->next != NULL)
 			dp = dp->next;
 		dp = dp->next = GDKmalloc(sizeof(struct _dpair));
@@ -605,7 +646,7 @@ forkMserver(str database, sabdb** stats, int force)
 		dp->pid = pid;
 		dp->dbname = GDKstrdup(database);
 
-		pthread_mutex_unlock(&topdplock);
+		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		/* wait for the child to open up a communication channel */
 		for (i = 0; i < 20; i++) {	/* wait up to 10 seconds */
@@ -648,16 +689,16 @@ forkMserver(str database, sabdb** stats, int force)
 
 			/* in the meanwhile the list may have changed so refetch the
 			 * parent and self */
-			pthread_mutex_lock(&topdplock);
+			pthread_mutex_lock(&_mero_topdp_lock);
 			dp = NULL;
-			pdp = topdp;
+			pdp = _mero_topdp;
 			while (pdp != NULL && pdp->next != NULL && pdp->next->pid != pid)
 				pdp = pdp->next;
 
 			/* pdp is NULL when the database terminated somehow while
 			 * starting */
 			if (pdp != NULL) {
-				pthread_mutex_unlock(&topdplock);
+				pthread_mutex_unlock(&_mero_topdp_lock);
 				switch (state) {
 					case SABdbRunning:
 						/* right, it's not there, but it's running */
@@ -686,7 +727,7 @@ forkMserver(str database, sabdb** stats, int force)
 			 * we don't want */
 			dp = pdp->next;
 			terminateProcess(dp);
-			pthread_mutex_unlock(&topdplock);
+			pthread_mutex_unlock(&_mero_topdp_lock);
 
 			switch (state) {
 				case SABdbRunning:
@@ -1165,7 +1206,7 @@ handleClient(int sock)
 	ckv = getDefaultProps();
 	readProps(ckv, stat->path);
 	kv = findConfKey(ckv, "forward");
-	mydoproxy = doproxy;
+	mydoproxy = _mero_doproxy;
 	if (kv->val != NULL)
 		mydoproxy = strcmp(kv->val, "proxy") == 0;
 	freeConfFile(ckv);
@@ -1329,7 +1370,6 @@ openConnectionUNIX(int *ret, char *path)
 	return(NO_ERR);
 }
 
-static int _keepListening = 1;
 static str
 acceptConnections(int sock)
 {
@@ -1350,7 +1390,7 @@ acceptConnections(int sock)
 			continue;
 		}
 		if (retval < 0) {
-			if (_keepListening == 0)
+			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
 				msg = strerror(errno);
@@ -1360,7 +1400,7 @@ acceptConnections(int sock)
 		}
 		if (FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
-				if (_keepListening == 0)
+				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
 					msg = strerror(errno);
@@ -1375,16 +1415,27 @@ acceptConnections(int sock)
 			fprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);
 		}
-	} while (_keepListening);
+	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	return(NO_ERR);
 
 error:
-	_keepListening = 0;
+	_mero_keep_listening = 0;
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	return(newErr("accept connection: %s", msg));
+}
+
+static void
+broadcast(char *msg)
+{
+	int len = strlen(msg) + 1;
+	if (sendto(_mero_broadcastsock, msg, len, 0,
+				(struct sockaddr *)&_mero_broadcastaddr,
+				sizeof(_mero_broadcastaddr)) != len)
+		fprintf(_mero_discerr, "error while sending broadcast "
+				"message: %s\n", strerror(errno));
 }
 
 static void
@@ -1404,7 +1455,6 @@ controlRunner(void *d)
 	err e;
 
 	do {
-		/* handle socket connections */
 		FD_ZERO(&fds);
 		FD_SET(sock, &fds);
 
@@ -1417,7 +1467,7 @@ controlRunner(void *d)
 			continue;
 		}
 		if (retval < 0) {
-			if (_keepListening == 0)
+			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
 				e = newErr("control runner: error during select: %s",
@@ -1428,7 +1478,7 @@ controlRunner(void *d)
 		}
 		if (FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) < 0) {
-				if (_keepListening == 0)
+				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
 					e = newErr("control runner: error during accept: %s",
@@ -1440,7 +1490,7 @@ controlRunner(void *d)
 		} else
 			continue;
 
-		while (_keepListening) {
+		while (_mero_keep_listening) {
 			if (pos == 0) {
 				if ((pos = recv(msgsock, buf, sizeof(buf), 0)) == 0) {
 					/* EOF */
@@ -1504,8 +1554,8 @@ controlRunner(void *d)
 					dpair dp;
 					/* we need to find the right dpair, that is we
 					 * sort of assume the control signal is right */
-					pthread_mutex_lock(&topdplock);
-					dp = topdp->next; /* don't need the console/log */
+					pthread_mutex_lock(&_mero_topdp_lock);
+					dp = _mero_topdp->next; /* don't need the console/log */
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
@@ -1531,16 +1581,84 @@ controlRunner(void *d)
 								"'%s' is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
-					pthread_mutex_unlock(&topdplock);
+					pthread_mutex_unlock(&_mero_topdp_lock);
+				} else if (strncmp(p, "share=", strlen("share=")) == 0) {
+					sabdb *stats;
+					sabdb *topdb;
+					err e;
+					
+					if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
+						len = snprintf(buf2, sizeof(buf2),
+								"internal error, please review the logs\n");
+						send(msgsock, buf2, len, 0);
+						fprintf(stderr, "share: SABAOTHgetStatus: %s\n", e);
+						freeErr(e);
+						continue;
+					}
+
+					topdb = stats;
+					while (stats != NULL) {
+						if (strcmp(q, stats->dbname) == 0) {
+							confkeyval *kv, *props = getDefaultProps();
+							readProps(props, stats->path);
+							kv = findConfKey(props, "shared");
+							/* leave and reannounce */
+							if (kv->val != NULL &&
+									strcmp(kv->val, "no") != 0)
+							{
+								/* we can leave without tag, will remove all */
+								snprintf(buf2, sizeof(buf2),
+										"LEAV %s mapi:monetdb://%s:%hu/",
+										stats->dbname, _mero_hostname, _mero_port);
+								broadcast(buf);
+							}
+							p += strlen("share=");
+							/* the prophecy:
+							 * <empty> inherit
+							 * yes     share with empty tag
+							 * no      don't share
+							 * *       share with * as tag
+							 */
+							if (*p == '\0') {
+								/* empty, inherit (e.g. remove local opt) */
+								break;
+							} else if (strcmp(p, "yes") == 0) {
+								/* make this share an empty tag */
+								*p = '\0';
+							} else if (strcmp(p, "no") == 0) {
+								/* do not share (any more) */
+								break;
+							}
+
+							/* share as tag (can be empty), inject . */
+							*--p = '.';
+							snprintf(buf2, sizeof(buf2),
+									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
+									stats->dbname, p, _mero_hostname, _mero_port,
+									_mero_discoveryttl + 60);
+							broadcast(buf);
+							break;
+						}
+						stats = stats->next;
+					}
+					if (stats == NULL) {
+						fprintf(stderr, "received control share signal for "
+								"database not under merovingian control: %s\n",
+								q);
+						len = snprintf(buf2, sizeof(buf2),
+								"'%s' is not controlled by merovingian\n", q);
+						send(msgsock, buf2, len, 0);
+					}
+					SABAOTHfreeStatus(&topdb);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
 					/* return a list of remote databases from our Aranita */
 					remotedb rdb;
 
-					pthread_mutex_lock(&remotedblock);
+					pthread_mutex_lock(&_mero_remotedb_lock);
 
-					rdb = _merovingian_remotedbs;
+					rdb = _mero_remotedbs;
 					while (rdb != NULL) {
 						len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
 								rdb->dbname, rdb->conn);
@@ -1548,7 +1666,7 @@ controlRunner(void *d)
 						rdb = rdb->next;
 					}
 
-					pthread_mutex_unlock(&remotedblock);
+					pthread_mutex_unlock(&_mero_remotedb_lock);
 
 					/* because this command is multi line, you can't
 					 * combine it, disconnect the client */
@@ -1566,26 +1684,21 @@ controlRunner(void *d)
 
 error:
 		fprintf(stderr, "%s\n", e);
-	} while (_keepListening);
+	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	merlog("control channel closed");
 }
 
-static int discoveryttl;
 static void
 discoveryRunner(void *d)
 {
 	int sock = *(int *)d;
 	int s = -1;
-	struct sockaddr local;
-	socklen_t addrlen;
 	struct sockaddr_storage peer_addr;
 	socklen_t peer_addr_len;
 	fd_set fds;
 	struct timeval tv;
-	int bcs;
-	struct sockaddr_in brdcst;
 	int c;
 	time_t deadline = 0;
 	time_t now = 0;
@@ -1601,61 +1714,32 @@ discoveryRunner(void *d)
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
 	char host[128];
-	char lhost[128];
 	char service[8];
 
 	/* seed random number generation for random delay in HELO response */
 	srand(time(NULL));
 
-	gethostname(lhost, 128);
-
-	addrlen = sizeof(local);
-	if (getsockname(sock, &local, &addrlen) < 0) {
-		fprintf(stderr, "neighbour discovery: cannot get own hostname, "
-				"discovery services disabled\n");
-		return;
-	}
-
-	bcs = socket(AF_INET, SOCK_DGRAM, 0);
-
-	s = 1;
-	if ((setsockopt(bcs, SOL_SOCKET, SO_BROADCAST, &s, sizeof(s))) == -1) {
-		fprintf(stderr, "neighbour discovery: cannot broadcast, "
-				"discovery services disabled\n");
-		return;
-	}
-
-	brdcst.sin_family = AF_INET;
-	brdcst.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	/* the target port is our configured port, not elegant, but how
-	 * else can we do it? can't broadcast to all ports or something */
-	brdcst.sin_port = ((struct sockaddr_in *)&local)->sin_port;
-
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
-	snprintf(buf, 512, "HELO %s", lhost);
-	c = strlen(buf) + 1;
-	if (sendto(bcs, buf, c, 0,
-				(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-		fprintf(stderr, "HELO message: error while sending "
-				"message: %s\n", strerror(errno));
+	snprintf(buf, 512, "HELO %s", _mero_hostname);
+	broadcast(buf);
 
 	ckv = getDefaultProps();
 
 	/* main loop */
-	while (_keepListening == 1) {
+	while (_mero_keep_listening == 1) {
 		now = time(NULL);
 		/* do a round of announcements, we're ahead of the ttl because
 		 * when we announce, we add 60 seconds to avoid a "gap" */
 		if (forceannc == 1 || deadline <= now) {
 			/* set new deadline */
-			deadline = now + discoveryttl;
+			deadline = now + _mero_discoveryttl;
 			forceannc = 0;
 
 			/* list all known databases */
 			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-				fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
-						"%s, discovery services disabled\n", e);
+				fprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+						"discovery services disabled\n", e);
 				GDKfree(e);
 				return;
 			}
@@ -1666,16 +1750,8 @@ discoveryRunner(void *d)
 				if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
 					/* craft ANNC messages for each db */
 					snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
-							stats->dbname,
-							lhost,
-							ntohs(((struct sockaddr_in *)&local)->sin_port),
-							discoveryttl + 60);
-
-					c = strlen(buf) + 1;
-					if (sendto(bcs, buf, c, 0,
-								(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-						fprintf(stderr, "ANNC message: error while sending "
-								"message: %s\n", strerror(errno));
+							stats->dbname, _mero_hostname, _mero_port, _mero_discoveryttl + 60);
+					broadcast(buf);
 				}
 				freeConfFile(ckv);
 			}
@@ -1686,19 +1762,19 @@ discoveryRunner(void *d)
 
 		/* do a round to see if we have to cleanup anything (expired
 		 * ttl) */
-		pthread_mutex_lock(&remotedblock);
+		pthread_mutex_lock(&_mero_remotedb_lock);
 
 		prv = NULL;
-		rdb = _merovingian_remotedbs;
+		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
 			if (rdb->ttl <= now) {
 				/* expired, let's remove */
 				if (prv == NULL) {
-					_merovingian_remotedbs = rdb->next;
+					_mero_remotedbs = rdb->next;
 				} else {
 					prv->next = rdb->next;
 				}
-				merlog("neighbour database %s at %s has expired",
+				fprintf(_mero_discout, "neighbour database %s at %s has expired\n",
 						rdb->dbname, rdb->conn);
 				free(rdb->dbname);
 				free(rdb->conn);
@@ -1709,7 +1785,7 @@ discoveryRunner(void *d)
 			rdb = rdb->next;
 		}
 
-		pthread_mutex_unlock(&remotedblock);
+		pthread_mutex_unlock(&_mero_remotedb_lock);
 
 		peer_addr_len = sizeof(struct sockaddr_storage);
 		FD_ZERO(&fds);
@@ -1734,20 +1810,20 @@ discoveryRunner(void *d)
 				peer_addr_len, host, 128,
 				service, 8, NI_NUMERICSERV);
 		if (s != 0) {
-			fprintf(stderr, "neighbour discovery: cannot retrieve "
-					"name info: %s\n", gai_strerror(s));
+			fprintf(_mero_discerr, "cannot retrieve name info: %s\n",
+					gai_strerror(s));
 			continue; /* skip this message */
 		}
 
 		/* ignore messages from self: FIXME make this more robust */
-		if (strcmp(host, lhost) == 0
+		if (strcmp(host, _mero_hostname) == 0
 				|| strcmp(host, "localhost") == 0
 				|| strcmp(host, "0.0.0.0") == 0)
 			continue;
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			merlog("discovered neighbour %s", host);
+			fprintf(_mero_discout, "discovered neighbour %s\n", host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
@@ -1776,24 +1852,25 @@ discoveryRunner(void *d)
 			 * that only the original registrant can unregister a
 			 * database, however... do we really care that much? */
 
-			pthread_mutex_lock(&remotedblock);
+			pthread_mutex_lock(&_mero_remotedb_lock);
 
 			prv = NULL;
-			rdb = _merovingian_remotedbs;
+			rdb = _mero_remotedbs;
 			while (rdb != NULL) {
 				if (strcmp(dbname, rdb->dbname) == 0 &&
 						strcmp(conn, rdb->conn) == 0)
 				{
 					/* found, let's remove */
 					if (prv == NULL) {
-						_merovingian_remotedbs = rdb->next;
+						_mero_remotedbs = rdb->next;
 					} else {
 						prv->next = rdb->next;
 					}
 					free(rdb->dbname);
 					free(rdb->conn);
 					free(rdb);
-					merlog("removed neighbour database %s at %s (%s)",
+					fprintf(_mero_discout,
+							"removed neighbour database %s at %s (%s)\n",
 							dbname, conn, host);
 					break;
 				}
@@ -1801,7 +1878,7 @@ discoveryRunner(void *d)
 				rdb = rdb->next;
 			}
 
-			pthread_mutex_unlock(&remotedblock);
+			pthread_mutex_unlock(&_mero_remotedb_lock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
@@ -1817,13 +1894,13 @@ discoveryRunner(void *d)
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
 
-			pthread_mutex_lock(&remotedblock);
+			pthread_mutex_lock(&_mero_remotedb_lock);
 
-			if (_merovingian_remotedbs == NULL) {
-				rdb = _merovingian_remotedbs = malloc(sizeof(struct _remotedb));
+			if (_mero_remotedbs == NULL) {
+				rdb = _mero_remotedbs = malloc(sizeof(struct _remotedb));
 			} else {
 				prv = NULL;
-				rdb = _merovingian_remotedbs;
+				rdb = _mero_remotedbs;
 				while (rdb != NULL) {
 					if (strcmp(dbname, rdb->dbname) == 0) {
 						if (strcmp(conn, rdb->conn) == 0) {
@@ -1837,7 +1914,7 @@ discoveryRunner(void *d)
 					rdb = rdb->next;
 				}
 				if (rdb == prv) {
-					pthread_mutex_unlock(&remotedblock);
+					pthread_mutex_unlock(&_mero_remotedb_lock);
 					continue;
 				}
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
@@ -1847,14 +1924,14 @@ discoveryRunner(void *d)
 			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
 
-			pthread_mutex_unlock(&remotedblock);
+			pthread_mutex_unlock(&_mero_remotedb_lock);
 
-			merlog("discovered neighbour database %s at %s "
-					"(refresh from %s in %s seconds)",
+			fprintf(_mero_discout, "discovered neighbour database %s at %s "
+					"(refresh from %s in %s seconds)\n",
 					dbname, conn, host, ttl);
 		} else {
-			merlog("neighbour discovery: ignoring unknown message "
-					"from %s:%s: '%s'", host, service, buf);
+			fprintf(_mero_discout, "ignoring unknown message from %s:%s: '%s'\n",
+					host, service, buf);
 		}
 	}
 
@@ -1862,8 +1939,8 @@ discoveryRunner(void *d)
 
 	/* list all known databases */
 	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-		fprintf(stderr, "neighbour discovery: SABAOTHgetStatus error: "
-				"%s, discovery services disabled\n", e);
+		fprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+				"discovery services disabled\n", e);
 		GDKfree(e);
 		return;
 	}
@@ -1872,15 +1949,8 @@ discoveryRunner(void *d)
 	while (stats != NULL) {
 		/* craft LEAV messages for each db */
 		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
-				stats->dbname,
-				lhost,
-				ntohs(((struct sockaddr_in *)&local)->sin_port));
-
-		c = strlen(buf) + 1;
-		if (sendto(bcs, buf, c, 0,
-					(struct sockaddr *)&brdcst, sizeof(brdcst)) != c)
-			fprintf(stderr, "LEAV message: error while sending "
-					"message: %s\n", strerror(errno));
+				stats->dbname, _mero_hostname, _mero_port);
+		broadcast(buf);
 
 		stats = stats->next;
 	}
@@ -1889,7 +1959,6 @@ discoveryRunner(void *d)
 		SABAOTHfreeStatus(&orig);
 
 	GDKfree(ckv); /* can make ckv static and reuse it all the time */
-	close(bcs);
 }
 
 /**
@@ -1914,11 +1983,9 @@ handler(int sig)
 			assert(0);
 	}
 	merlog("caught %s, starting shutdown sequence", signame);
-	_keepListening = 0;
+	_mero_keep_listening = 0;
 }
 
-static str msglog = NULL;
-static str errlog = NULL;
 /**
  * Handler for SIGHUP, causes logfiles to be reopened, if not attached
  * to a terminal.
@@ -1928,67 +1995,67 @@ huphandler(int sig)
 {
 	(void)sig;
 
-	if (!isatty(topdp->out) || !isatty(topdp->err)) {
+	if (!isatty(_mero_topdp->out) || !isatty(_mero_topdp->err)) {
 		int t;
 		time_t now = time(NULL);
 		struct tm *tmp = localtime(&now);
 		char mytime[20];
 
 		/* have to make sure the logger is not logging anything */
-		pthread_mutex_lock(&topdplock);
+		pthread_mutex_lock(&_mero_topdp_lock);
 
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 
-		if (msglog != NULL) {
+		if (_mero_msglogfile != NULL) {
 			/* reopen original file */
-			t = open(msglog, O_WRONLY | O_APPEND | O_CREAT,
+			t = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
 					S_IRUSR | S_IWUSR);
 			if (t == -1) {
 				fprintf(stderr, "forced to ignore SIGHUP: "
-						"unable to open '%s': %s\n", msglog, strerror(errno));
+						"unable to open '%s': %s\n", _mero_msglogfile, strerror(errno));
 			} else {
-				fprintf(_streamout, "%s END merovingian[" LLFMT "]: "
+				fprintf(_mero_streamout, "%s END merovingian[" LLFMT "]: "
 						"caught SIGHUP, closing logfile\n",
-						mytime, (long long int)topdp->next->pid);
-				fflush(_streamout);
-				fclose(_streamout);
-				topdp->out = t;
-				_streamout = fdopen(topdp->out, "a");
-				fprintf(_streamout, "%s BEG merovingian[" LLFMT "]: "
+						mytime, (long long int)_mero_topdp->next->pid);
+				fflush(_mero_streamout);
+				fclose(_mero_streamout);
+				_mero_topdp->out = t;
+				_mero_streamout = fdopen(_mero_topdp->out, "a");
+				fprintf(_mero_streamout, "%s BEG merovingian[" LLFMT "]: "
 						"reopening logfile\n",
-						mytime, (long long int)topdp->next->pid);
-				fflush(_streamout);
+						mytime, (long long int)_mero_topdp->next->pid);
+				fflush(_mero_streamout);
 			}
 		}
-		if (errlog != NULL) {
+		if (_mero_errlogfile != NULL) {
 			/* reopen original file */
-			if (strcmp(msglog, errlog) == 0) {
-				topdp->err = topdp->out;
+			if (strcmp(_mero_msglogfile, _mero_errlogfile) == 0) {
+				_mero_topdp->err = _mero_topdp->out;
 			} else {
-				t = open(errlog, O_WRONLY | O_APPEND | O_CREAT,
+				t = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
 						S_IRUSR | S_IWUSR);
 				if (t == -1) {
 					fprintf(stderr, "forced to ignore SIGHUP: "
 							"unable to open '%s': %s\n",
-							errlog, strerror(errno));
+							_mero_errlogfile, strerror(errno));
 				} else {
-					fprintf(_streamerr, "%s END merovingian[" LLFMT "]: "
+					fprintf(_mero_streamerr, "%s END merovingian[" LLFMT "]: "
 							"caught SIGHUP, closing logfile\n",
-							mytime, (long long int)topdp->next->pid);
-					fflush(_streamerr);
-					fclose(_streamerr);
-					topdp->err = t;
-					_streamerr = fdopen(topdp->err, "a");
-					fprintf(_streamerr, "%s BEG merovingian[" LLFMT "]: "
+							mytime, (long long int)_mero_topdp->next->pid);
+					fflush(_mero_streamerr);
+					fclose(_mero_streamerr);
+					_mero_topdp->err = t;
+					_mero_streamerr = fdopen(_mero_topdp->err, "a");
+					fprintf(_mero_streamerr, "%s BEG merovingian[" LLFMT "]: "
 							"reopening logfile\n",
-							mytime, (long long int)topdp->next->pid);
-					fflush(_streamerr);
+							mytime, (long long int)_mero_topdp->next->pid);
+					fflush(_mero_streamerr);
 				}
 			}
 		}
 
 		/* logger go ahead! */
-		pthread_mutex_unlock(&topdplock);
+		pthread_mutex_unlock(&_mero_topdp_lock);
 	} else {
 		merlog("caught SIGHUP, ignoring signal (logging to terminal)");
 	}
@@ -1997,8 +2064,8 @@ huphandler(int sig)
 /**
  * Handles SIGCHLD signals, that is, signals that a parent recieves
  * about its children.  This handler deals with terminated children, by
- * deregistering them from the internal administration (topdp) with the
- * necessary cleanup.
+ * deregistering them from the internal administration (_mero_topdp)
+ * with the necessary cleanup.
  */
 static void
 childhandler(int sig, siginfo_t *si, void *unused)
@@ -2021,16 +2088,16 @@ childhandler(int sig, siginfo_t *si, void *unused)
 		return;
 	}
 
-	pthread_mutex_lock(&topdplock);
+	pthread_mutex_lock(&_mero_topdp_lock);
 
 	/* get the pid from the former child, and locate it in our list */
-	q = topdp->next;
+	q = _mero_topdp->next;
 	p = q->next;
 	while (p != NULL) {
 		if (p->pid == si->si_pid) {
 			/* log everything that's still in the pipes */
-			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _streamout);
-			logFD(p->err, "ERR", p->dbname, (long long int)p->pid, _streamerr);
+			logFD(p->out, "MSG", p->dbname, (long long int)p->pid, _mero_streamout);
+			logFD(p->err, "ERR", p->dbname, (long long int)p->pid, _mero_streamerr);
 			/* remove from the list */
 			q->next = p->next;
 			/* close the descriptors */
@@ -2049,14 +2116,14 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			if (p->dbname)
 				GDKfree(p->dbname);
 			GDKfree(p);
-			pthread_mutex_unlock(&topdplock);
+			pthread_mutex_unlock(&_mero_topdp_lock);
 			return;
 		}
 		q = p;
 		p = q->next;
 	}
 
-	pthread_mutex_unlock(&topdplock);
+	pthread_mutex_unlock(&_mero_topdp_lock);
 
 	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
 }
@@ -2081,15 +2148,14 @@ main(int argc, char *argv[])
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
+	unsigned short discoveryport;
 	struct stat sb;
 	FILE *oerr = NULL;
-	unsigned short port = MERO_PORT;
-	unsigned short discoveryport;
 	pthread_mutexattr_t mta;
 	confkeyval *ckv;
 
 	/* fork into the background immediately
-	 * By doing this our child can simply do everything it needs to do
+ 	 * By doing this our child can simply do everything it needs to do
 	 * itself.  Via a pipe it will tell us if it is happy or not. */
 	if (pipe(pfd) == -1) {
 		fprintf(stderr, "unable to create pipe: %s\n",
@@ -2143,7 +2209,7 @@ main(int argc, char *argv[])
 		return(1);
 	}
 	/* store this conffile for later use in forkMserver */
-	_merovingian_conffile = p;
+	_mero_conffile = p;
 
 #define MERO_EXIT(status) \
 	buf[0] = status; \
@@ -2153,10 +2219,6 @@ main(int argc, char *argv[])
 	} \
 	if (status != 0) \
 		return(status);
-
-	timeout = 7;
-	doproxy = 1;
-	discoveryttl = 600;
 
 	ckv = alloca(sizeof(confkeyval) * 11);
 	ckv[0].key = "prefix";
@@ -2186,10 +2248,10 @@ main(int argc, char *argv[])
 
 	prefix = ckv[0].val;
 	dbfarm = replacePrefix(ckv[1].val, prefix);
-	msglog = replacePrefix(ckv[2].val, prefix);
-	errlog = replacePrefix(ckv[3].val, prefix);
+	_mero_msglogfile = replacePrefix(ckv[2].val, prefix);
+	_mero_errlogfile = replacePrefix(ckv[3].val, prefix);
 	if (ckv[4].val != NULL)
-		timeout = atoi(ckv[4].val);
+		_mero_exit_timeout = atoi(ckv[4].val);
 	pidfilename = replacePrefix(ckv[5].val, prefix);
 	if (ckv[6].val != NULL) {
 		ret = atoi(ckv[4].val);
@@ -2198,21 +2260,21 @@ main(int argc, char *argv[])
 			fflush(stderr);
 			MERO_EXIT(1);
 		}
-		port = (unsigned short)ret;
+		_mero_port = (unsigned short)ret;
 	}
 	if (ckv[7].val != NULL) {
 		if (strcmp(ckv[7].val, "yes") == 0 ||
 				strcmp(ckv[7].val, "true") == 0 ||
 				strcmp(ckv[7].val, "1") == 0)
 		{
-			doproxy = 1;
+			_mero_doproxy = 1;
 		} else {
-			doproxy = 0;
+			_mero_doproxy = 0;
 		}
 	}
 	if (ckv[8].val != NULL)
-		discoveryttl = atoi(ckv[8].val);
-	discoveryport = port;  /* defaults to same port as mero_port */
+		_mero_discoveryttl = atoi(ckv[8].val);
+	discoveryport = _mero_port;  /* defaults to same port as mero_port */
 	if (ckv[9].val != NULL) {
 		ret = atoi(ckv[9].val);
 		if (ret < 0 || ret > 65535) {
@@ -2225,12 +2287,12 @@ main(int argc, char *argv[])
 
 	/* where is the mserver5 binary we fork on demand? */
 	snprintf(buf, 1023, "%s/bin/mserver5", prefix);
-	_merovingian_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
-	memcpy(_merovingian_mserver, buf, strlen(buf) + 1);
+	_mero_mserver = alloca(sizeof(char) * (strlen(buf) + 1));
+	memcpy(_mero_mserver, buf, strlen(buf) + 1);
 	/* exit early if this is not going to work well */
-	if (stat(_merovingian_mserver, &sb) == -1) {
+	if (stat(_mero_mserver, &sb) == -1) {
 		fprintf(stderr, "cannot stat %s executable: %s\n",
-				_merovingian_mserver, strerror(errno));
+				_mero_mserver, strerror(errno));
 		fflush(stderr);
 
 		MERO_EXIT(1);
@@ -2300,54 +2362,54 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	topdp = alloca(sizeof(struct _dpair));
-	topdp->pid = 0;
-	topdp->dbname = NULL;
+	_mero_topdp = alloca(sizeof(struct _dpair));
+	_mero_topdp->pid = 0;
+	_mero_topdp->dbname = NULL;
 
 	/* where should our msg output go to? */
-	if (msglog == NULL) {
+	if (_mero_msglogfile == NULL) {
 		/* stdout, save it */
 		argp = dup(1);
-		topdp->out = argp;
+		_mero_topdp->out = argp;
 	} else {
 		/* write to the given file */
-		topdp->out = open(msglog, O_WRONLY | O_APPEND | O_CREAT,
+		_mero_topdp->out = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
 				S_IRUSR | S_IWUSR);
-		if (topdp->out == -1) {
+		if (_mero_topdp->out == -1) {
 			fprintf(stderr, "unable to open '%s': %s\n",
-					msglog, strerror(errno));
+					_mero_msglogfile, strerror(errno));
 			MERO_EXIT(1);
 		}
 	}
 
 	/* where should our err output go to? */
-	if (errlog == NULL) {
+	if (_mero_errlogfile == NULL) {
 		/* stderr, save it */
 		argp = dup(2);
-		topdp->err = argp;
+		_mero_topdp->err = argp;
 	} else {
 		/* write to the given file */
-		if (strcmp(msglog, errlog) == 0) {
-			topdp->err = topdp->out;
+		if (strcmp(_mero_msglogfile, _mero_errlogfile) == 0) {
+			_mero_topdp->err = _mero_topdp->out;
 		} else {
-			topdp->err = open(errlog, O_WRONLY | O_APPEND | O_CREAT,
+			_mero_topdp->err = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
 					S_IRUSR | S_IWUSR);
-			if (topdp->err == -1) {
+			if (_mero_topdp->err == -1) {
 				fprintf(stderr, "unable to open '%s': %s\n",
-						errlog, strerror(errno));
+						_mero_errlogfile, strerror(errno));
 				MERO_EXIT(1);
 			}
 		}
 	}
 
-	_streamout = fdopen(topdp->out, "a");
-	if (topdp->out == topdp->err) {
-		_streamerr = _streamout;
+	_mero_streamout = fdopen(_mero_topdp->out, "a");
+	if (_mero_topdp->out == _mero_topdp->err) {
+		_mero_streamerr = _mero_streamout;
 	} else {
-		_streamerr = fdopen(topdp->err, "a");
+		_mero_streamerr = fdopen(_mero_topdp->err, "a");
 	}
 
-	d = topdp->next = alloca(sizeof(struct _dpair));
+	d = _mero_topdp->next = alloca(sizeof(struct _dpair));
 
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
@@ -2378,9 +2440,31 @@ main(int argc, char *argv[])
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
-	d->next = NULL;
 	d->pid = getpid();
 	d->dbname = "merovingian";
+	d = d->next = alloca(sizeof(struct _dpair));
+
+	/* separate entry for the neighbour discovery service */
+	if (pipe(pfd) == -1) {
+		fprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
+		MERO_EXIT(1);
+	}
+	d->out = pfd[0];
+	_mero_discout = fdopen(pfd[1], "a");
+	if (pipe(pfd) == -1) {
+		fprintf(stderr, "unable to create pipe: %s\n",
+				strerror(errno));
+		MERO_EXIT(1);
+	}
+	d->err = pfd[0];
+	_mero_discerr = fdopen(pfd[1], "a");
+	d->pid = getpid();
+	d->dbname = "discovery";
+	d->next = NULL;
+
+	/* figure out our hostname */
+	gethostname(_mero_hostname, 128);
 
 	/* write out the pid */
 	fprintf(pidfile, "%d\n", (int)d->pid);
@@ -2390,7 +2474,7 @@ main(int argc, char *argv[])
 	/* allow a thread to relock this mutex */
 	pthread_mutexattr_init(&mta);
 	pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&topdplock, &mta);
+	pthread_mutex_init(&_mero_topdp_lock, &mta);
 
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
 		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
@@ -2444,12 +2528,29 @@ main(int argc, char *argv[])
 
 	/* open up connections */
 	if (
-			(e = openConnectionTCP(&sock, port)) == NO_ERR &&
+			(e = openConnectionTCP(&sock, _mero_port)) == NO_ERR &&
 			(e = openConnectionUDP(&usock, discoveryport)) == NO_ERR &&
 			(e = openConnectionUNIX(&unsock, buf)) == NO_ERR)
 	{
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
+
+		_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
+		ret = 1;
+		if ((setsockopt(_mero_broadcastsock,
+						SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
+		{
+			fprintf(stderr, "cannot create broadcast package, "
+					"discovery services disabled\n");
+			close(usock);
+			usock = -1;
+		}
+
+		_mero_broadcastaddr.sin_family = AF_INET;
+		_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+		/* the target port is our configured port, not elegant, but how
+		 * else can we do it? can't broadcast to all ports or something */
+		_mero_broadcastaddr.sin_port = htons(discoveryport);
 
 		/* From this point merovingian considers itself to be in position to
 		 * start running, so flag the parent we will have fun. */
@@ -2512,11 +2613,11 @@ main(int argc, char *argv[])
 	d = d->next;
 
 	/* stop started mservers */
-	if (timeout > 0) {
+	if (_mero_exit_timeout > 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 
-		pthread_mutex_lock(&topdplock);
+		pthread_mutex_lock(&_mero_topdp_lock);
 		t = d;
 		while (t != NULL) {
 			if (tl == NULL) {
@@ -2536,7 +2637,7 @@ main(int argc, char *argv[])
 
 			t = t->next;
 		}
-		pthread_mutex_unlock(&topdplock);
+		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		/* wait for all processes to be terminated */
 		tlw = tl;
@@ -2555,17 +2656,17 @@ main(int argc, char *argv[])
 	 * next thing */
 	merlog("Merovingian %s stopped", MERO_VERSION);
 
-	_keepLogging = 0;
+	_mero_keep_logging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
 		fprintf(oerr, "failed to wait for logging thread: %s\n", strerror(argp));
 	}
 
-	close(topdp->out);
-	if (topdp->out != topdp->err)
-		close(topdp->err);
+	close(_mero_topdp->out);
+	if (_mero_topdp->out != _mero_topdp->err)
+		close(_mero_topdp->err);
 
-	GDKfree(msglog);
-	GDKfree(errlog);
+	GDKfree(_mero_msglogfile);
+	GDKfree(_mero_errlogfile);
 
 	/* remove files that suggest our existence */
 	unlink(lockfile);
