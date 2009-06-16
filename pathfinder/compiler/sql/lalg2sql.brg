@@ -2494,7 +2494,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                                *selectlist = NULL;
             
             /* transform the ITER order by statement into a sortkey list */
-            orderby = col_env_lookup (COLMAP(query), iter, iter_ty),
+            orderby = col_env_lookup (COLMAP(query), iter, iter_ty);
 
             /* unfold the sorting criteria of a numbering operator */
             if (orderby->kind == sql_over &&
