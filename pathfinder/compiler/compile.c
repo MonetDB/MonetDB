@@ -695,10 +695,8 @@ AFTER_CORE2ALG:
                 fprintf (pfout, ">\n");
                 fprintf (pfout,
                          "<schema>\n"
-                         "  <column name=\"%s\" function=\"iter\"/>\n"
-                         "  <column name=\"%s\" function=\"pos\"/>\n",
-                         PFcol_str (laroot->sem.ser_rel.iter),
-                         PFcol_str (laroot->sem.ser_rel.pos));
+                         "  <column name=\"%s\" function=\"iter\"/>\n",
+                         PFcol_str (laroot->sem.ser_rel.iter));
                 for (c = 0; c < clsize (laroot->sem.ser_rel.items); c++)
                     fprintf (pfout,
                              "  <column name=\"%s\" new=\"false\""
