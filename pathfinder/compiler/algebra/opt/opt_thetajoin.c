@@ -1265,14 +1265,28 @@ do_opt_mvd (PFla_op_t *p, bool modified)
             break;
 
         case la_rowrank:
-            /* the following rewrite is incorrect as the thetajoin arguments
-               filter out some rows from the cross product -- Not every
-               iteration has the same number of rows anymore and thus row-
-               ranking needs to take the result of the thetajoin into account. */
-            break;
-#if 0
+            if (is_tj (L(p))) {
+                /******************** thetajoin check ************************/
+
+                unsigned int count = 0;
+                PFarray_t   *pred = p->sem.thetajoin_opt.pred;
+                
+                /* The following rewrite is incorrect if we have a real
+                   thetajoin as the thetajoin arguments filter out some
+                   rows from the cross product -- Not every group exists
+                   anymore and thus row-ranking needs to take the result
+                   of the thetajoin into account. */
+
+                /* Check if we have a cross product without selection. */
+                for (i = 0; i < PFarray_last (pred); i++)
+                    if (PERS_AT(pred, i)) count++;
+                /* skip rewrite (see explanation above) */
+                if (count) break;
+
+                /******************** thetajoin check ************************/
+            }
             /* fall through */
-#endif
+
         case la_rank:
             /* An expression that does not contain any sorting column
                required by the rank operator is independent of the rank.
