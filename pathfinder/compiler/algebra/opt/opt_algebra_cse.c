@@ -996,8 +996,8 @@ match (PFla_op_t *a, PFla_op_t *b)
                  for (j = 0; j < b->sem.aggr.count; j++) {
                      if ((IS_NULL (a->sem.aggr.aggr[i].col)
                           ? col_NULL
-                          : ACTCOL (L(a), a->sem.aggr.aggr[i].col) ==
-                          IS_NULL (b->sem.aggr.aggr[j].col)
+                          : ACTCOL (L(a), a->sem.aggr.aggr[i].col)) ==
+                         (IS_NULL (b->sem.aggr.aggr[j].col)
                           ? col_NULL
                           : ACTCOL (L(b), b->sem.aggr.aggr[j].col)) &&
                          (a->sem.aggr.aggr[i].kind ==
