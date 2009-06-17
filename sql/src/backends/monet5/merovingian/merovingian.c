@@ -164,6 +164,8 @@ static char _mero_hostname[128];
 static str _mero_msglogfile = NULL;
 /* full path to logfile for stderr messages, or NULL if tty */
 static str _mero_errlogfile = NULL;
+/* default options read from config file */
+static confkeyval *_mero_props = NULL;
 
 
 /* funcs */
@@ -2139,6 +2141,7 @@ main(int argc, char *argv[])
 	confkeyval ckv[] = {
 		{"prefix",             GDKstrdup(MONETDB5_PREFIX)},
 		{"gdk_dbfarm",         NULL},
+		{"gdk_nr_threads",     NULL},
 		{"sql_logdir",         NULL},
 		{"mero_msglog",        NULL},
 		{"mero_errlog",        NULL},
@@ -2151,9 +2154,9 @@ main(int argc, char *argv[])
 	};
 	confkeyval *kv;
 
-	/* fork into the background immediately
- 	 * By doing this our child can simply do everything it needs to do
-	 * itself.  Via a pipe it will tell us if it is happy or not. */
+	/* Fork into the background immediately.  By doing this our child
+	 * can simply do everything it needs to do itself.  Via a pipe it
+	 * will tell us if it is happy or not. */
 	if (pipe(pfd) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
 		return(1);
@@ -2276,6 +2279,26 @@ main(int argc, char *argv[])
 
 		MERO_EXIT(1);
 	}
+
+	/* setup default properties */
+	_mero_props = getDefaultProps();
+	/* not yet necessary
+	kv = findConfKey(_mero_props, "logdir");
+	kv->val = ...;
+	*/
+	kv = findConfKey(_mero_props, "forward");
+	kv->val = GDKstrdup(_mero_doproxy == 1 ? "proxy" : "redirect");
+	kv = findConfKey(_mero_props, "shared");
+	kv->val = GDKstrdup(discoveryport == 0 ? "no" : "yes");
+	/* not yet necessary
+	kv = findConfKey(ckv, "gdk_nr_threads");
+	if (kv->val != NULL) {
+		ret = atoi(kv->val);
+		kv = findConfKey(_mero_props, "nthreads");
+		snprintf(buf, sizeof(buf), "%d", ret);
+		kv->val = GDKstrdup(buf);
+	}
+	*/
 
 	/* we no longer need prefix */
 	freeConfFile(ckv);
