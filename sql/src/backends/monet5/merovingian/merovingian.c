@@ -1616,7 +1616,7 @@ controlRunner(void *d)
 							}
 							/* the prophecy:
 							 * <empty> inherit (bit useless)
-							 * yes     share with empty tag
+							 * yes     share without tag
 							 * no      don't share
 							 * *       share with * as tag
 							 */
@@ -1636,12 +1636,12 @@ controlRunner(void *d)
 								writeProps(props, stats->path);
 								break;
 							} else {
-								/* tag */
+								/* tag, include . for easy life
+								 * afterwards */
+								*--p = '.';
 								kv->val = GDKstrdup(p);
 							}
 
-							/* share as tag (can be empty), inject . */
-							*--p = '.';
 							snprintf(buf2, sizeof(buf2),
 									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
 									stats->dbname, p, _mero_hostname,
@@ -1761,9 +1761,13 @@ discoveryRunner(void *d)
 				readProps(ckv, stats->path);
 				kv = findConfKey(ckv, "shared");
 				if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
-					/* craft ANNC messages for each db */
-					snprintf(buf, 512, "ANNC %s mapi:monetdb://%s:%hu/ %d",
-							stats->dbname, _mero_hostname, _mero_port, _mero_discoveryttl + 60);
+					/* craft ANNC message for this db */
+					snprintf(buf, 512, "ANNC %s%s mapi:monetdb://%s:%hu/ %d",
+							stats->dbname,
+							/* share the "old" thing (just db) if no tag set */
+							kv->val[0] == '.' ? kv->val : "",
+							_mero_hostname, _mero_port,
+							_mero_discoveryttl + 60);
 					broadcast(buf);
 				}
 				freeConfFile(ckv);
