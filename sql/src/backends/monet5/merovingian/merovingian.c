@@ -1660,6 +1660,8 @@ controlRunner(void *d)
 								"'%s' is not controlled by merovingian\n", q);
 						send(msgsock, buf2, len, 0);
 					}
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send(msgsock, buf2, len, 0);
 					SABAOTHfreeStatus(&topdb);
 					freeConfFile(props);
 					GDKfree(props);
@@ -1685,7 +1687,7 @@ controlRunner(void *d)
 					 * combine it, disconnect the client */
 					break;
 				} else {
-					Mfprintf(stderr, "unknown control command: %s", p);
+					Mfprintf(stderr, "unknown control command: %s\n", p);
 					len = snprintf(buf2, sizeof(buf2),
 							"unknown command: %s\n", p);
 					send(msgsock, buf2, len, 0);
@@ -1765,7 +1767,7 @@ discoveryRunner(void *d)
 					snprintf(buf, 512, "ANNC %s%s mapi:monetdb://%s:%hu/ %d",
 							stats->dbname,
 							/* share the "old" thing (just db) if no tag set */
-							kv->val[0] == '.' ? kv->val : "",
+							kv->val && kv->val[0] == '.' ? kv->val : "",
 							_mero_hostname, _mero_port,
 							_mero_discoveryttl + 60);
 					broadcast(buf);

@@ -627,7 +627,8 @@ command_discover(int argc, char *argv[])
 typedef enum {
 	START = 0,
 	STOP,
-	KILL
+	KILL,
+	SHARE
 } merocom;
 
 static void
@@ -659,6 +660,9 @@ command_merocom(int argc, char *argv[], merocom mode)
 		break;
 		case KILL:
 			type = "kill";
+		break;
+		case SHARE:
+			type = "share";
 		break;
 	}
 
@@ -730,7 +734,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 	} else {
 		sabdb *w = NULL;
 		orig = NULL;
-		for (i = 1; i < argc; i++) {
+		for (i = mode == SHARE ? 2 : 1; i < argc; i++) {
 			if (argv[i] != NULL) {
 				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
 					fprintf(stderr, "%s: internal error: %s\n", type, e);
@@ -779,7 +783,7 @@ command_merocom(int argc, char *argv[], merocom mode)
 			}
 		} else if (mode == START) {
 			if (stats->state != SABdbRunning) {
-				printf("%sing database '%s'... ", type, stats->dbname);
+				printf("starting database '%s'... ", stats->dbname);
 				fflush(stdout);
 				len = snprintf(buf, sizeof(buf),
 						"%s %s\n", stats->dbname, type);
@@ -799,6 +803,23 @@ command_merocom(int argc, char *argv[], merocom mode)
 			} else if (doall != 1 && stats->state == SABdbRunning) {
 				printf("%s: database is already running: %s\n",
 						type, stats->dbname);
+			}
+		} else if (mode == SHARE) {
+			char *value = argv[1];
+
+			/* stay quiet, we're part of monetdb set property=value */
+			len = snprintf(buf, sizeof(buf),
+					"%s share=%s\n", stats->dbname, value);
+			send(sock, buf, len, 0);
+			if ((len = recv(sock, buf, sizeof(buf), 0)) <= 0) {
+				fprintf(stderr, "\n%s: no response from merovingian\n",
+						type);
+				exit(2);
+			}
+			buf[len] = '\0';
+			if (strcmp(buf, "OK\n") != 0) {
+				printf("FAILED:\n%s", buf);
+				ret = 1;
 			}
 		}
 		stats = stats->next;
@@ -879,6 +900,18 @@ command_set(int argc, char *argv[], meroset type)
 		exit(1);
 	}
 
+	if (strcmp(property, "shared") == 0) {
+		/* mess around with first argument (property) to become value
+		 * only, such that can see if it had an argument or not lateron */
+		if (type == INHERIT) {
+			argv[1] = property;
+			property[0] = '\0';
+		} else {
+			argv[1] = value;
+		}
+		return(command_merocom(argc, &argv[0], SHARE));
+	}
+
 	w = NULL;
 	orig = NULL;
 	for (i = 1; i < argc; i++) {
@@ -912,8 +945,8 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
-		/* special virtual case */
 		if (strcmp(property, "name") == 0) {
+			/* special virtual case */
 			if (type == INHERIT) {
 				fprintf(stderr, "inherit: cannot default to a database name\n");
 				state |= 1;
@@ -923,6 +956,7 @@ command_set(int argc, char *argv[], meroset type)
 			state |= 1;
 			continue;
 		} else if (strcmp(property, "logdir") == 0) {
+			/* FIXME */
 			fprintf(stderr, "%s: changing the logdir location is not yet implemented, sorry\n", argv[0]);
 			state |= 1;
 			continue;
@@ -1003,7 +1037,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 			if (strcmp(property, "all") == 0) {
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				property = GDKstrdup("name,logdir,forward,shared");
+				property = GDKstrdup("name,logdir,forward,shared,nthreads");
 			}
 		} else {
 			doall = 0;
@@ -1051,12 +1085,12 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 	}
 
 	/* name = 15 */
-	/* prop = 7 */
+	/* prop = 8 */
 	/* source = 7 */
-	twidth -= 15 - 2 - 7 - 2 - 7 - 2;
+	twidth -= 15 - 2 - 8 - 2 - 7 - 2;
 	if (twidth < 6)
 		twidth = 6;
-	printf("     name         prop     source           value\n");
+	printf("     name          prop     source           value\n");
 	while ((p = strtok(property, ",")) != NULL) {
 		property = NULL;
 		stats = orig;
@@ -1082,7 +1116,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 					value = kv->val;
 				}
 			}
-			printf("%-15s  %-7s  %-7s  %s\n",
+			printf("%-15s  %-8s  %-7s  %s\n",
 					stats->dbname, p, source, value);
 			freeConfFile(props);
 			stats = stats->next;
@@ -1557,6 +1591,7 @@ main(int argc, char *argv[])
 	confkeyval ckv[] = {
 		{"prefix",             GDKstrdup(MONETDB5_PREFIX)},
 		{"gdk_dbfarm",         NULL},
+		{"gdk_nr_threads",     NULL},
 		{"sql_logdir",         NULL},
 		{"mero_doproxy",       GDKstrdup("yes")},
 		{"mero_discoveryport", NULL},
@@ -1679,6 +1714,8 @@ main(int argc, char *argv[])
 			GDKfree(kv->val);
 			kv->val = GDKstrdup("yes");
 		}
+		kv = findConfKey(ckv, "gdk_nr_threads");
+		kv->key = "nthreads";
 		command_get(argc - 1, &argv[1], ckv);
 	} else if (strcmp(argv[1], "inherit") == 0) {
 		command_set(argc - 1, &argv[1], INHERIT);
