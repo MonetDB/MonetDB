@@ -144,8 +144,6 @@ static FILE *_mero_streamout = NULL;
 static FILE *_mero_streamerr = NULL;
 /* timeout when waiting for a database to shutdown (seconds) */
 static int _mero_exit_timeout = 7;
-/* whether or not to proxy a client (instead of redirecting) */
-static int _mero_doproxy = 1;
 /* the port merovingian listens on for client connections */
 static unsigned short _mero_port = MERO_PORT;
 /* the time-to-live to announce for each shared database (seconds) */
@@ -546,9 +544,9 @@ forkMserver(str database, sabdb** stats, int force)
 		logdir = NULL;
 	}
 	kv = findConfKey(ckv, "forward");
-	mydoproxy = _mero_doproxy;
-	if (kv->val != NULL)
-		mydoproxy = strcmp(kv->val, "proxy") == 0;
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_props, "forward");
+	mydoproxy = strcmp(kv->val, "proxy") == 0;
 	freeConfFile(ckv);
 	GDKfree(ckv); /* can make ckv static and reuse it all the time */
 
@@ -1190,9 +1188,9 @@ handleClient(int sock)
 	ckv = getDefaultProps();
 	readProps(ckv, stat->path);
 	kv = findConfKey(ckv, "forward");
-	mydoproxy = _mero_doproxy;
-	if (kv->val != NULL)
-		mydoproxy = strcmp(kv->val, "proxy") == 0;
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_props, "forward");
+	mydoproxy = strcmp(kv->val, "proxy") == 0;
 	freeConfFile(ckv);
 	GDKfree(ckv);
 	if (mydoproxy == 0) {
@@ -2134,6 +2132,7 @@ main(int argc, char *argv[])
 	int sock = -1;
 	int usock = -1;
 	int unsock = -1;
+	char doproxy = 1;
 	unsigned short discoveryport;
 	struct stat sb;
 	FILE *oerr = NULL;
@@ -2249,9 +2248,9 @@ main(int argc, char *argv[])
 				strcmp(kv->val, "true") == 0 ||
 				strcmp(kv->val, "1") == 0)
 		{
-			_mero_doproxy = 1;
+			doproxy = 1;
 		} else {
-			_mero_doproxy = 0;
+			doproxy = 0;
 		}
 	}
 	kv = findConfKey(ckv, "mero_discoveryttl");
@@ -2287,7 +2286,7 @@ main(int argc, char *argv[])
 	kv->val = ...;
 	*/
 	kv = findConfKey(_mero_props, "forward");
-	kv->val = GDKstrdup(_mero_doproxy == 1 ? "proxy" : "redirect");
+	kv->val = GDKstrdup(doproxy == 1 ? "proxy" : "redirect");
 	kv = findConfKey(_mero_props, "shared");
 	kv->val = GDKstrdup(discoveryport == 0 ? "no" : "yes");
 	/* not yet necessary
@@ -2668,6 +2667,10 @@ main(int argc, char *argv[])
 	unlink(lockfile);
 	unlink(pidfilename);
 	GDKfree(pidfilename);
+
+	/* mostly for valgrind... */
+	freeConfFile(_mero_props);
+	GDKfree(_mero_props);
 
 	/* the child's return code at this point doesn't matter, as noone
 	 * will see it */
