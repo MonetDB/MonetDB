@@ -1571,7 +1571,21 @@ controlRunner(void *d)
 					sabdb *stats;
 					sabdb *topdb;
 					err e;
-					
+					confkeyval *kv, *props = getDefaultProps();
+
+					kv = findConfKey(_mero_props, "shared");
+					if (strcmp(kv->val, "no") == 0) {
+						/* can't do much */
+						len = snprintf(buf2, sizeof(buf2),
+								"discovery service is globally disabled, "
+								"enable it first\n");
+						send(msgsock, buf2, len, 0);
+						Mfprintf(stderr, "share: cannot perform client share "
+								"request: discovery service is globally "
+								"disabled in %s\n", _mero_conffile);
+						continue;
+					}
+
 					if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
@@ -1584,10 +1598,8 @@ controlRunner(void *d)
 					topdb = stats;
 					while (stats != NULL) {
 						if (strcmp(q, stats->dbname) == 0) {
-							confkeyval *kv, *props = getDefaultProps();
 							readProps(props, stats->path);
 							kv = findConfKey(props, "shared");
-							/* leave and reannounce */
 							if (kv->val != NULL &&
 									strcmp(kv->val, "no") != 0)
 							{
@@ -1598,30 +1610,44 @@ controlRunner(void *d)
 								broadcast(buf);
 							}
 							p += strlen("share=");
+							if (kv->val != NULL) {
+								GDKfree(kv->val);
+								kv->val = NULL;
+							}
 							/* the prophecy:
-							 * <empty> inherit
+							 * <empty> inherit (bit useless)
 							 * yes     share with empty tag
 							 * no      don't share
 							 * *       share with * as tag
 							 */
 							if (*p == '\0') {
-								/* empty, inherit (e.g. remove local opt) */
+								/* empty, inherit (e.g. remove local opt),
+								 * but keep enabled, otherwise we never
+								 * came here */
+								writeProps(props, stats->path);
 								break;
 							} else if (strcmp(p, "yes") == 0) {
 								/* make this share an empty tag */
 								*p = '\0';
+								kv->val = GDKstrdup("yes");
 							} else if (strcmp(p, "no") == 0) {
 								/* do not share (any more) */
+								kv->val = GDKstrdup("no");
+								writeProps(props, stats->path);
 								break;
+							} else {
+								/* tag */
+								kv->val = GDKstrdup(p);
 							}
 
 							/* share as tag (can be empty), inject . */
 							*--p = '.';
 							snprintf(buf2, sizeof(buf2),
 									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
-									stats->dbname, p, _mero_hostname, _mero_port,
-									_mero_discoveryttl + 60);
+									stats->dbname, p, _mero_hostname,
+									_mero_port, _mero_discoveryttl + 60);
 							broadcast(buf);
+							writeProps(props, stats->path);
 							break;
 						}
 						stats = stats->next;
@@ -1635,6 +1661,8 @@ controlRunner(void *d)
 						send(msgsock, buf2, len, 0);
 					}
 					SABAOTHfreeStatus(&topdb);
+					freeConfFile(props);
+					GDKfree(props);
 				} else if (strcmp(q, "anelosimus") == 0 &&
 						strcmp(p, "eximius") == 0)
 				{
