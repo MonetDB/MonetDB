@@ -35,10 +35,11 @@
 	"# This file is used by merovingian and monetdb\n"
 
 static confkeyval _internal_prop_keys[] = {
-	{"logdir",  NULL},
-	{"forward", NULL},
-	{"shared",  NULL},
-	{ NULL,     NULL}
+	{"logdir",   NULL},
+	{"forward",  NULL},
+	{"shared",   NULL},
+	{"nthreads", NULL},
+	{ NULL,      NULL}
 };
 
 /**
