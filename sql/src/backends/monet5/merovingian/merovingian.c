@@ -90,6 +90,11 @@ typedef char* err;
 #define getErrMsg(X) X
 #define NO_ERR (err)0
 
+/* when not writing to stderr, one has to flush, make it easy to do so */
+#define Mfprintf(S, ...) \
+	fprintf(S, __VA_ARGS__); \
+	fflush(S);
+
 
 /* private structs */
 
@@ -199,6 +204,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream)
 			fprintf(stream, "%s", q);
 		}
 	} while (len == 8095);
+	fflush(stream);
 }
 
 static void
@@ -289,14 +295,14 @@ terminateProcess(void *p)
 
 	er = SABAOTHgetStatus(&stats, dbname);
 	if (er != MAL_SUCCEED) {
-		fprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
+		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
 				(long long int)pid, er);
 		GDKfree(er);
 		return;
 	}
 
 	if (stats == NULL) {
-		fprintf(stderr, "strange, process " LLFMT " serves database '%s' "
+		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
 				"which does not exist\n", (long long int)pid, dbname);
 		return;
 	}
@@ -306,27 +312,26 @@ terminateProcess(void *p)
 			/* ok, what we expect */
 		break;
 		case SABdbCrashed:
-			fprintf(stderr, "cannot shut down database '%s', mserver "
+			Mfprintf(stderr, "cannot shut down database '%s', mserver "
 					"(pid " LLFMT ") has crashed\n",
 					dbname, (long long int)pid);
 			SABAOTHfreeStatus(&stats);
 			return;
 		case SABdbInactive:
-			fprintf(stdout, "database '%s' appears to have shut down already\n",
+			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
 					dbname);
 			fflush(stdout);
 			SABAOTHfreeStatus(&stats);
 			return;
 		default:
-			fprintf(stderr, "unknown state: %d", (int)stats->state);
+			Mfprintf(stderr, "unknown state: %d", (int)stats->state);
 			SABAOTHfreeStatus(&stats);
 			return;
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
-	fprintf(stdout, "sending process " LLFMT " (database '%s') the "
+	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
 			"TERM signal\n", (long long int)pid, dbname);
-	fflush(stdout);
 	kill(pid, SIGTERM);
 	for (i = 0; i < _mero_exit_timeout * 2; i++) {
 		if (stats != NULL)
@@ -334,11 +339,11 @@ terminateProcess(void *p)
 		MT_sleep_ms(500);
 		er = SABAOTHgetStatus(&stats, dbname);
 		if (er != MAL_SUCCEED) {
-			fprintf(stderr, "unexpected problem: %s\n", er);
+			Mfprintf(stderr, "unexpected problem: %s\n", er);
 			GDKfree(er);
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
-			fprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
+			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
 					"any more\n", dbname);
 		} else {
 			switch (stats->state) {
@@ -346,53 +351,26 @@ terminateProcess(void *p)
 					/* ok, try again */
 				break;
 				case SABdbCrashed:
-					fprintf (stderr, "database '%s' crashed after SIGTERM\n",
+					Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
 							dbname);
 					SABAOTHfreeStatus(&stats);
 					return;
 				case SABdbInactive:
-					fprintf(stdout, "database '%s' has shut down\n", dbname);
+					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
 					fflush(stdout);
 					SABAOTHfreeStatus(&stats);
 					return;
 				default:
-					fprintf(stderr, "unknown state: %d", (int)stats->state);
+					Mfprintf(stderr, "unknown state: %d", (int)stats->state);
 				break;
 			}
 		}
 	}
-	fprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
+	Mfprintf(stderr, "timeout of %d seconds expired, sending process " LLFMT
 			" (database '%s') the KILL signal\n",
 			_mero_exit_timeout, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
 	return;
-}
-
-/**
- * Logs the given string and formatting parameter stuff by writing it to
- * stdout.
- */
-static void
-merlog(str fmt, ...)
-{
-	va_list ap;
-	char message[4096];
-	int len;
-
-	va_start(ap, fmt);
-
-	len = vsnprintf(message, 4095, fmt, ap);
-	message[len] = '\0';
-
-	/* trim trailing newlines */
-	while (len > 0 && message[--len] == '\n')
-		message[len] = '\0';
-
-	fprintf(stdout, "%s\n", message);
-	/* flush the stream, it seems that for some reason this is necessary */
-	fflush(stdout);
-
-	va_end(ap);
 }
 
 /**
@@ -499,7 +477,7 @@ forkMserver(str database, sabdb** stats, int force)
 	}
 
 	if ((*stats)->locked == 1) {
-		merlog("database '%s' is under maintenance", database);
+		Mfprintf(stdout, "database '%s' is under maintenance\n", database);
 		if (force == 0)
 			return(NO_ERR);
 	}
@@ -514,10 +492,10 @@ forkMserver(str database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			merlog("database '%s' has crashed after start on %s, "
+			Mfprintf(stdout, "database '%s' has crashed after start on %s, "
 					"attempting restart, "
 					"up min/avg/max: %s/%s/%s, "
-					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
+					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
 					database, tstr,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
@@ -527,9 +505,9 @@ forkMserver(str database, sabdb** stats, int force)
 			secondsToString(upmin, info.minuptime, 1);
 			secondsToString(upavg, info.avguptime, 1);
 			secondsToString(upmax, info.maxuptime, 1);
-			merlog("starting database '%s', "
+			Mfprintf(stdout, "starting database '%s', "
 					"up min/avg/max: %s/%s/%s, "
-					"crash average: %d.00 %.2f %.2f (%d-%d=%d)",
+					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
 					database,
 					upmin, upavg, upmax,
 					info.crashavg1, info.crashavg10, info.crashavg30,
@@ -541,7 +519,8 @@ forkMserver(str database, sabdb** stats, int force)
 	}
 
 	if ((*stats)->locked == 1 && force == 1)
-		merlog("startup of database under maintenance '%s' forced", database);
+		Mfprintf(stdout, "startup of database under maintenance "
+				"'%s' forced\n", database);
 
 	/* check if the vaultkey is there, otherwise abort early (value
 	 * lateron reused when server is started) */
@@ -624,7 +603,7 @@ forkMserver(str database, sabdb** stats, int force)
 
 		execv(_mero_mserver, argv);
 		/* if the exec returns, it is because of a failure */
-		fprintf(stderr, "executing failed: %s\n", strerror(errno));
+		Mfprintf(stderr, "executing failed: %s\n", strerror(errno));
 		exit(1);
 	} else if (pid > 0) {
 		int i;
@@ -759,8 +738,8 @@ forkMserver(str database, sabdb** stats, int force)
 			}
 		}
 		if ((*stats)->locked == 1) {
-			merlog("database '%s' has been put into maintenance "
-					"mode during startup", database);
+			Mfprintf(stdout, "database '%s' has been put into maintenance "
+					"mode during startup\n", database);
 		}
 
 		return(NO_ERR);
@@ -810,9 +789,11 @@ proxyThread(void *d)
 	if (p->name != NULL) {
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
-			merlog("client %s has disconnected from proxy", p->name);
+			Mfprintf(stdout, "client %s has disconnected from proxy\n",
+					p->name);
 		} else {
-			merlog("server has terminated proxy connection, disconnecting client %s", p->name);
+			Mfprintf(stdout, "server has terminated proxy connection, "
+					"disconnecting client %s\n", p->name);
 		}
 		GDKfree(p->name);
 
@@ -1185,7 +1166,8 @@ handleClient(int sock)
 	}
 
 	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		merlog("couldn't get peername of client: %s", strerror(errno));
+		Mfprintf(stdout, "couldn't get peername of client: %s\n",
+				strerror(errno));
 		host = "(unknown)";
 	} else {
 		/* avoid doing this, it requires some includes that probably
@@ -1212,13 +1194,13 @@ handleClient(int sock)
 	freeConfFile(ckv);
 	GDKfree(ckv);
 	if (mydoproxy == 0) {
-		merlog("redirecting client %s for database '%s' to %s",
+		Mfprintf(stdout, "redirecting client %s for database '%s' to %s\n",
 				host, stat->dbname, stat->conns->val);
 		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
 		/* flush redirect */
 		stream_flush(fout);
 	} else {
-		merlog("proxying client %s for database '%s' to %s",
+		Mfprintf(stdout, "proxying client %s for database '%s' to %s\n",
 				host, stat->dbname, stat->conns->val);
 		stream_printf(fout, "^mapi:merovingian:proxy\n");
 		/* flush redirect */
@@ -1235,7 +1217,7 @@ handleClient(int sock)
 			stream_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			merlog("starting a proxy failed: %s", e);
+			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			SABAOTHfreeStatus(&top);
 			return(e);
 		};
@@ -1282,7 +1264,7 @@ openConnectionTCP(int *ret, unsigned short port)
 	listen(sock, 5);
 
 	gethostname(host, 512);
-	merlog("listening for TCP connections on %s:%hu", host, port);
+	Mfprintf(stdout, "listening for TCP connections on %s:%hu\n", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1299,7 +1281,8 @@ openConnectionUDP(int *ret, unsigned short port)
 	char host[512];
 
 	if (port == 0) {
-		merlog("neighbour discovery service disabled by configuration");
+		Mfprintf(stdout, "neighbour discovery service disabled "
+				"by configuration\n");
 		*ret = -1;
 		return(NO_ERR);
 	}
@@ -1336,7 +1319,7 @@ openConnectionUDP(int *ret, unsigned short port)
 	freeaddrinfo(result);
 
 	gethostname(host, 512);
-	merlog("listening for UDP messages on %s:%hu", host, port);
+	Mfprintf(stdout, "listening for UDP messages on %s:%hu\n", host, port);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1364,7 +1347,7 @@ openConnectionUNIX(int *ret, char *path)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	merlog("listening for UNIX connections on %s", path);
+	Mfprintf(stdout, "listening for UNIX connections on %s\n", path);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1412,7 +1395,7 @@ acceptConnections(int sock)
 			continue;
 		e = handleClient(msgsock);
 		if (e != NO_ERR) {
-			fprintf(stderr, "client error: %s\n", getErrMsg(e));
+			Mfprintf(stderr, "client error: %s\n", getErrMsg(e));
 			freeErr(e);
 		}
 	} while (_mero_keep_listening);
@@ -1434,7 +1417,7 @@ broadcast(char *msg)
 	if (sendto(_mero_broadcastsock, msg, len, 0,
 				(struct sockaddr *)&_mero_broadcastaddr,
 				sizeof(_mero_broadcastaddr)) != len)
-		fprintf(_mero_discerr, "error while sending broadcast "
+		Mfprintf(_mero_discerr, "error while sending broadcast "
 				"message: %s\n", strerror(errno));
 }
 
@@ -1502,7 +1485,7 @@ controlRunner(void *d)
 						continue;
 					}
 					/* hmmm error ... give up */
-					fprintf(stderr, "error reading from control channel: %s\n",
+					Mfprintf(stderr, "error reading from control channel: %s\n",
 							strerror(errno));
 					break;
 				} else {
@@ -1514,7 +1497,7 @@ controlRunner(void *d)
 			p = strchr(q, '\n');
 			if (p == NULL) {
 				/* skip, must be garbage */
-				fprintf(stderr, "skipping garbage on control channel: %s\n", buf);
+				Mfprintf(stderr, "skipping garbage on control channel: %s\n", buf);
 				pos = 0;
 				continue;
 			}
@@ -1527,16 +1510,18 @@ controlRunner(void *d)
 
 			/* format is simple: database<space>command */
 			if ((p = strchr(q, ' ')) == NULL) {
-				fprintf(stderr, "malformed control signal: %s\n", q);
+				Mfprintf(stderr, "malformed control signal: %s\n", q);
 			} else {
 				*p++ = '\0';
 				if (strcmp(p, "start") == 0) {
 					err e;
-					merlog("starting database '%s' due to control signal", q);
+					Mfprintf(stdout, "starting database '%s' "
+							"due to control signal\n", q);
 					if ((e = forkMserver(q, &stats, 1)) != NO_ERR) {
-						fprintf(stderr, "failed to fork mserver: %s\n",
+						Mfprintf(stderr, "failed to fork mserver: %s\n",
 								getErrMsg(e));
-						len = snprintf(buf2, sizeof(buf2), "starting '%s' failed: %s\n",
+						len = snprintf(buf2, sizeof(buf2),
+								"starting '%s' failed: %s\n",
 								q, getErrMsg(e));
 						send(msgsock, buf2, len, 0);
 						freeErr(e);
@@ -1559,12 +1544,12 @@ controlRunner(void *d)
 					while (dp != NULL) {
 						if (strcmp(dp->dbname, q) == 0) {
 							if (strcmp(p, "stop") == 0) {
-								merlog("stopping database '%s' due to control "
-										"signal", q);
+								Mfprintf(stdout, "stopping database '%s' "
+										"due to control signal\n", q);
 								terminateProcess(dp);
 							} else {
-								merlog("killing database '%s' due to control "
-										"signal", q);
+								Mfprintf(stdout, "killing database '%s' "
+										"due to control signal\n", q);
 								kill(dp->pid, SIGKILL);
 							}
 							len = snprintf(buf2, sizeof(buf2), "OK\n");
@@ -1574,7 +1559,7 @@ controlRunner(void *d)
 						dp = dp->next;
 					}
 					if (dp == NULL) {
-						fprintf(stderr, "received control stop signal for "
+						Mfprintf(stderr, "received control stop signal for "
 								"database not under merovingian control: %s\n",
 								q);
 						len = snprintf(buf2, sizeof(buf2),
@@ -1591,7 +1576,7 @@ controlRunner(void *d)
 						len = snprintf(buf2, sizeof(buf2),
 								"internal error, please review the logs\n");
 						send(msgsock, buf2, len, 0);
-						fprintf(stderr, "share: SABAOTHgetStatus: %s\n", e);
+						Mfprintf(stderr, "share: SABAOTHgetStatus: %s\n", e);
 						freeErr(e);
 						continue;
 					}
@@ -1642,7 +1627,7 @@ controlRunner(void *d)
 						stats = stats->next;
 					}
 					if (stats == NULL) {
-						fprintf(stderr, "received control share signal for "
+						Mfprintf(stderr, "received control share signal for "
 								"database not under merovingian control: %s\n",
 								q);
 						len = snprintf(buf2, sizeof(buf2),
@@ -1672,7 +1657,7 @@ controlRunner(void *d)
 					 * combine it, disconnect the client */
 					break;
 				} else {
-					fprintf(stderr, "unknown control command: %s", p);
+					Mfprintf(stderr, "unknown control command: %s", p);
 					len = snprintf(buf2, sizeof(buf2),
 							"unknown command: %s\n", p);
 					send(msgsock, buf2, len, 0);
@@ -1683,11 +1668,11 @@ controlRunner(void *d)
 		continue;
 
 error:
-		fprintf(stderr, "%s\n", e);
+		Mfprintf(stderr, "%s\n", e);
 	} while (_mero_keep_listening);
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
-	merlog("control channel closed");
+	Mfprintf(stdout, "control channel closed\n");
 }
 
 static void
@@ -1738,7 +1723,7 @@ discoveryRunner(void *d)
 
 			/* list all known databases */
 			if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-				fprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+				Mfprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
 						"discovery services disabled\n", e);
 				GDKfree(e);
 				return;
@@ -1774,8 +1759,8 @@ discoveryRunner(void *d)
 				} else {
 					prv->next = rdb->next;
 				}
-				fprintf(_mero_discout, "neighbour database %s at %s has expired\n",
-						rdb->dbname, rdb->conn);
+				Mfprintf(_mero_discout, "neighbour database %s at %s "
+						"has expired\n", rdb->dbname, rdb->conn);
 				free(rdb->dbname);
 				free(rdb->conn);
 				free(rdb);
@@ -1810,7 +1795,7 @@ discoveryRunner(void *d)
 				peer_addr_len, host, 128,
 				service, 8, NI_NUMERICSERV);
 		if (s != 0) {
-			fprintf(_mero_discerr, "cannot retrieve name info: %s\n",
+			Mfprintf(_mero_discerr, "cannot retrieve name info: %s\n",
 					gai_strerror(s));
 			continue; /* skip this message */
 		}
@@ -1823,7 +1808,7 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			fprintf(_mero_discout, "discovered neighbour %s\n", host);
+			Mfprintf(_mero_discout, "discovered neighbour %s\n", host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
@@ -1869,7 +1854,7 @@ discoveryRunner(void *d)
 					free(rdb->dbname);
 					free(rdb->conn);
 					free(rdb);
-					fprintf(_mero_discout,
+					Mfprintf(_mero_discout,
 							"removed neighbour database %s at %s (%s)\n",
 							dbname, conn, host);
 					break;
@@ -1926,12 +1911,12 @@ discoveryRunner(void *d)
 
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 
-			fprintf(_mero_discout, "discovered neighbour database %s at %s "
+			Mfprintf(_mero_discout, "discovered neighbour database %s at %s "
 					"(refresh from %s in %s seconds)\n",
 					dbname, conn, host, ttl);
 		} else {
-			fprintf(_mero_discout, "ignoring unknown message from %s:%s: '%s'\n",
-					host, service, buf);
+			Mfprintf(_mero_discout, "ignoring unknown message from "
+					"%s:%s: '%s'\n", host, service, buf);
 		}
 	}
 
@@ -1939,7 +1924,7 @@ discoveryRunner(void *d)
 
 	/* list all known databases */
 	if ((e = SABAOTHgetStatus(&stats, NULL)) != MAL_SUCCEED) {
-		fprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
+		Mfprintf(_mero_discerr, "SABAOTHgetStatus error: %s, "
 				"discovery services disabled\n", e);
 		GDKfree(e);
 		return;
@@ -1982,7 +1967,7 @@ handler(int sig)
 		default:
 			assert(0);
 	}
-	merlog("caught %s, starting shutdown sequence", signame);
+	Mfprintf(stdout, "caught %s, starting shutdown sequence\n", signame);
 	_mero_keep_listening = 0;
 }
 
@@ -2011,20 +1996,19 @@ huphandler(int sig)
 			t = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
 					S_IRUSR | S_IWUSR);
 			if (t == -1) {
-				fprintf(stderr, "forced to ignore SIGHUP: "
-						"unable to open '%s': %s\n", _mero_msglogfile, strerror(errno));
+				Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
+						"'%s': %s\n", _mero_msglogfile, strerror(errno));
 			} else {
-				fprintf(_mero_streamout, "%s END merovingian[" LLFMT "]: "
+				Mfprintf(_mero_streamout, "%s END merovingian[" LLFMT "]: "
 						"caught SIGHUP, closing logfile\n",
 						mytime, (long long int)_mero_topdp->next->pid);
 				fflush(_mero_streamout);
 				fclose(_mero_streamout);
 				_mero_topdp->out = t;
 				_mero_streamout = fdopen(_mero_topdp->out, "a");
-				fprintf(_mero_streamout, "%s BEG merovingian[" LLFMT "]: "
+				Mfprintf(_mero_streamout, "%s BEG merovingian[" LLFMT "]: "
 						"reopening logfile\n",
 						mytime, (long long int)_mero_topdp->next->pid);
-				fflush(_mero_streamout);
 			}
 		}
 		if (_mero_errlogfile != NULL) {
@@ -2035,21 +2019,19 @@ huphandler(int sig)
 				t = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
 						S_IRUSR | S_IWUSR);
 				if (t == -1) {
-					fprintf(stderr, "forced to ignore SIGHUP: "
+					Mfprintf(stderr, "forced to ignore SIGHUP: "
 							"unable to open '%s': %s\n",
 							_mero_errlogfile, strerror(errno));
 				} else {
-					fprintf(_mero_streamerr, "%s END merovingian[" LLFMT "]: "
+					Mfprintf(_mero_streamerr, "%s END merovingian[" LLFMT "]: "
 							"caught SIGHUP, closing logfile\n",
 							mytime, (long long int)_mero_topdp->next->pid);
-					fflush(_mero_streamerr);
 					fclose(_mero_streamerr);
 					_mero_topdp->err = t;
 					_mero_streamerr = fdopen(_mero_topdp->err, "a");
-					fprintf(_mero_streamerr, "%s BEG merovingian[" LLFMT "]: "
+					Mfprintf(_mero_streamerr, "%s BEG merovingian[" LLFMT "]: "
 							"reopening logfile\n",
 							mytime, (long long int)_mero_topdp->next->pid);
-					fflush(_mero_streamerr);
 				}
 			}
 		}
@@ -2057,7 +2039,8 @@ huphandler(int sig)
 		/* logger go ahead! */
 		pthread_mutex_unlock(&_mero_topdp_lock);
 	} else {
-		merlog("caught SIGHUP, ignoring signal (logging to terminal)");
+		Mfprintf(stdout, "caught SIGHUP, ignoring signal "
+				"(logging to terminal)");
 	}
 }
 
@@ -2104,13 +2087,13 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			close(p->out);
 			close(p->err);
 			if (si->si_code == CLD_EXITED) {
-				merlog("database '%s' (%d) has exited with exit status %d",
-						p->dbname, p->pid, si->si_status);
+				Mfprintf(stdout, "database '%s' (%d) has exited with "
+						"exit status %d", p->dbname, p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				merlog("database '%s' (%d) was killed by signal %d",
+				Mfprintf(stdout, "database '%s' (%d) was killed by signal %d",
 						p->dbname, p->pid, si->si_status);
 			} else if (si->si_code == CLD_DUMPED) {
-				merlog("database '%s' (%d) has crashed (dumped core)",
+				Mfprintf(stdout, "database '%s' (%d) has crashed (dumped core)",
 						p->dbname, p->pid);
 			}
 			if (p->dbname)
@@ -2125,7 +2108,8 @@ childhandler(int sig, siginfo_t *si, void *unused)
 
 	pthread_mutex_unlock(&_mero_topdp_lock);
 
-	merlog("received SIGCHLD from unknown child with pid %d", si->si_pid);
+	Mfprintf(stdout, "received SIGCHLD from unknown child with pid %d\n",
+			si->si_pid);
 }
 
 int
@@ -2152,28 +2136,41 @@ main(int argc, char *argv[])
 	struct stat sb;
 	FILE *oerr = NULL;
 	pthread_mutexattr_t mta;
-	confkeyval *ckv;
+	confkeyval ckv[] = {
+		{"prefix",             GDKstrdup(MONETDB5_PREFIX)},
+		{"gdk_dbfarm",         NULL},
+		{"sql_logdir",         NULL},
+		{"mero_msglog",        NULL},
+		{"mero_errlog",        NULL},
+		{"mero_exittimeout",   NULL},
+		{"mero_pidfile",       NULL},
+		{"mero_doproxy",       NULL},
+		{"mero_discoveryttl",  NULL},
+		{"mero_discoveryport", NULL},
+		{ NULL,                NULL}
+	};
+	confkeyval *kv;
 
 	/* fork into the background immediately
  	 * By doing this our child can simply do everything it needs to do
 	 * itself.  Via a pipe it will tell us if it is happy or not. */
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+		Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
 		return(1);
 	}
 #ifndef MERO_DONTFORK
 	switch (fork()) {
 		case -1:
 			/* oops, forking went wrong! */
-			fprintf(stderr, "unable to fork into background: %s\n",
+			Mfprintf(stderr, "unable to fork into background: %s\n",
 					strerror(errno));
 			return(1);
 		case 0:
 			/* detach client from controlling tty, we only write to the
 			 * pipe to daddy */
 			if (setsid() < 0)
-				fprintf(stderr, "hmmm, can't detach from controlling tty, continuing anyway\n");
+				Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
+						"continuing anyway\n");
 			retfd = open("/dev/null", O_RDONLY);
 			dup2(retfd, 0);
 			close(retfd);
@@ -2185,7 +2182,7 @@ main(int argc, char *argv[])
 			 * has a good time */
 			close(pfd[1]); /* close unused write end */
 			if (read(pfd[0], &buf, 1) != 1) {
-				fprintf(stderr, "unable to retrieve startup status\n");
+				Mfprintf(stderr, "unable to retrieve startup status\n");
 				return(1);
 			}
 			close(pfd[0]);
@@ -2204,8 +2201,7 @@ main(int argc, char *argv[])
 		p = MONETDB5_CONFFILE;
 	cnf = fopen(p, "r");
 	if (cnf == NULL) {
-		fprintf(stderr, "cannot open config file %s\n", p);
-		fflush(stderr);
+		Mfprintf(stderr, "cannot open config file %s\n", p);
 		return(1);
 	}
 	/* store this conffile for later use in forkMserver */
@@ -2214,72 +2210,56 @@ main(int argc, char *argv[])
 #define MERO_EXIT(status) \
 	buf[0] = status; \
 	if (write(retfd, &buf, 1) != 1 || close(retfd) != 0) { \
-		fprintf(stderr, "could not write to parent\n"); \
-		fflush(stderr); \
+		Mfprintf(stderr, "could not write to parent\n"); \
 	} \
 	if (status != 0) \
 		return(status);
 
-	ckv = alloca(sizeof(confkeyval) * 11);
-	ckv[0].key = "prefix";
-	ckv[0].val = GDKstrdup(MONETDB5_PREFIX);
-	ckv[1].key = "gdk_dbfarm";
-	ckv[1].val = NULL;
-	ckv[2].key = "mero_msglog";
-	ckv[2].val = NULL;
-	ckv[3].key = "mero_errlog";
-	ckv[3].val = NULL;
-	ckv[4].key = "mero_exittimeout";
-	ckv[4].val = NULL;
-	ckv[5].key = "mero_pidfile";
-	ckv[5].val = NULL;
-	ckv[6].key = "mero_port";
-	ckv[6].val = NULL;
-	ckv[7].key = "mero_doproxy";
-	ckv[7].val = NULL;
-	ckv[8].key = "mero_discoveryttl";
-	ckv[8].val = NULL;
-	ckv[9].key = "mero_discoveryport";
-	ckv[9].val = NULL;
-	ckv[10].key = NULL;
-
 	readConfFile(ckv, cnf);
 	fclose(cnf);
 
-	prefix = ckv[0].val;
-	dbfarm = replacePrefix(ckv[1].val, prefix);
-	_mero_msglogfile = replacePrefix(ckv[2].val, prefix);
-	_mero_errlogfile = replacePrefix(ckv[3].val, prefix);
-	if (ckv[4].val != NULL)
-		_mero_exit_timeout = atoi(ckv[4].val);
-	pidfilename = replacePrefix(ckv[5].val, prefix);
-	if (ckv[6].val != NULL) {
-		ret = atoi(ckv[4].val);
+	kv = findConfKey(ckv, "prefix");
+	prefix = kv->val; /* has default, must be set */
+	kv = findConfKey(ckv, "gdk_dbfarm");
+	dbfarm = replacePrefix(kv ? kv->val : NULL, prefix);
+	kv = findConfKey(ckv, "mero_msglog");
+	_mero_msglogfile = replacePrefix(kv ? kv->val : NULL, prefix);
+	kv = findConfKey(ckv, "mero_errlog");
+	_mero_errlogfile = replacePrefix(kv ? kv->val : NULL, prefix);
+	kv = findConfKey(ckv, "mero_exittimeout");
+	if (kv && kv->val != NULL)
+		_mero_exit_timeout = atoi(kv->val);
+	kv = findConfKey(ckv, "mero_pidfile");
+	pidfilename = replacePrefix(kv ? kv->val : NULL, prefix);
+	kv = findConfKey(ckv, "mero_port");
+	if (kv && kv->val != NULL) {
+		ret = atoi(kv->val);
 		if (ret <= 0 || ret > 65535) {
-			fprintf(stderr, "invalid port number: %s\n", ckv[4].val);
-			fflush(stderr);
+			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
 			MERO_EXIT(1);
 		}
 		_mero_port = (unsigned short)ret;
 	}
-	if (ckv[7].val != NULL) {
-		if (strcmp(ckv[7].val, "yes") == 0 ||
-				strcmp(ckv[7].val, "true") == 0 ||
-				strcmp(ckv[7].val, "1") == 0)
+	kv = findConfKey(ckv, "mero_doproxy");
+	if (kv && kv->val != NULL) {
+		if (strcmp(kv->val, "yes") == 0 ||
+				strcmp(kv->val, "true") == 0 ||
+				strcmp(kv->val, "1") == 0)
 		{
 			_mero_doproxy = 1;
 		} else {
 			_mero_doproxy = 0;
 		}
 	}
-	if (ckv[8].val != NULL)
-		_mero_discoveryttl = atoi(ckv[8].val);
+	kv = findConfKey(ckv, "mero_discoveryttl");
+	if (kv && kv->val != NULL)
+		_mero_discoveryttl = atoi(kv->val);
 	discoveryport = _mero_port;  /* defaults to same port as mero_port */
-	if (ckv[9].val != NULL) {
-		ret = atoi(ckv[9].val);
+	kv = findConfKey(ckv, "mero_discoveryport");
+	if (kv && kv->val != NULL) {
+		ret = atoi(kv->val);
 		if (ret < 0 || ret > 65535) {
-			fprintf(stderr, "invalid port number: %s\n", ckv[9].val);
-			fflush(stderr);
+			Mfprintf(stderr, "invalid port number: %s\n", kv->val);
 			MERO_EXIT(1);
 		}
 		discoveryport = (unsigned short)ret;
@@ -2291,9 +2271,8 @@ main(int argc, char *argv[])
 	memcpy(_mero_mserver, buf, strlen(buf) + 1);
 	/* exit early if this is not going to work well */
 	if (stat(_mero_mserver, &sb) == -1) {
-		fprintf(stderr, "cannot stat %s executable: %s\n",
+		Mfprintf(stderr, "cannot stat %s executable: %s\n",
 				_mero_mserver, strerror(errno));
-		fflush(stderr);
 
 		MERO_EXIT(1);
 	}
@@ -2304,8 +2283,7 @@ main(int argc, char *argv[])
 
 	/* we need a dbfarm */
 	if (dbfarm == NULL) {
-		fprintf(stderr, "cannot find dbfarm via config file\n");
-		fflush(stderr);
+		Mfprintf(stderr, "cannot find dbfarm via config file\n");
 		MERO_EXIT(1);
 	} else {
 		/* check if dbfarm actually exists */
@@ -2316,17 +2294,15 @@ main(int argc, char *argv[])
 			while ((p = strchr(p + 1, '/')) != NULL) {
 				*p = '\0';
 				if (stat(dbfarm, &statbuf) == -1 && mkdir(dbfarm, 0755)) {
-					fprintf(stderr, "unable to create directory '%s': %s\n",
+					Mfprintf(stderr, "unable to create directory '%s': %s\n",
 							dbfarm, strerror(errno));
-					fflush(stderr);
 					MERO_EXIT(1);
 				}
 				*p = '/';
 			}
 			if (mkdir(dbfarm, 0755)) {
-				fprintf(stderr, "unable to create directory '%s': %s\n",
+				Mfprintf(stderr, "unable to create directory '%s': %s\n",
 						dbfarm, strerror(errno));
-				fflush(stderr);
 				MERO_EXIT(1);
 			}
 		}
@@ -2334,16 +2310,14 @@ main(int argc, char *argv[])
 
 	/* chdir to dbfarm so we are at least in a known to exist location */
 	if (chdir(dbfarm) < 0) {
-		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
+		Mfprintf(stderr, "could not move to dbfarm '%s': %s\n",
 				dbfarm, strerror(errno));
-		fflush(stderr);
 		MERO_EXIT(1);
 	}
 
 	/* we need a pidfile */
 	if (pidfilename == NULL) {
-		fprintf(stderr, "cannot find pidfilename via config file\n");
-		fflush(stderr);
+		Mfprintf(stderr, "cannot find pidfilename via config file\n");
 		MERO_EXIT(1);
 	}
 
@@ -2351,14 +2325,12 @@ main(int argc, char *argv[])
 	/* lock such that we are alone on this world */
 	if ((ret = MT_lockf(lockfile, F_TLOCK, 4, 1)) == -1) {
 		/* locking failed */
-		fprintf(stderr, "another merovingian is already running\n");
-		fflush(stderr);
+		Mfprintf(stderr, "another merovingian is already running\n");
 		MERO_EXIT(1);
 	} else if (ret == -2) {
 		/* directory or something doesn't exist */
-		fprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
+		Mfprintf(stderr, "unable to create .merovingian_lock file in %s: %s\n",
 				dbfarm, strerror(errno));
-		fflush(stderr);
 		MERO_EXIT(1);
 	}
 
@@ -2376,7 +2348,7 @@ main(int argc, char *argv[])
 		_mero_topdp->out = open(_mero_msglogfile, O_WRONLY | O_APPEND | O_CREAT,
 				S_IRUSR | S_IWUSR);
 		if (_mero_topdp->out == -1) {
-			fprintf(stderr, "unable to open '%s': %s\n",
+			Mfprintf(stderr, "unable to open '%s': %s\n",
 					_mero_msglogfile, strerror(errno));
 			MERO_EXIT(1);
 		}
@@ -2395,7 +2367,7 @@ main(int argc, char *argv[])
 			_mero_topdp->err = open(_mero_errlogfile, O_WRONLY | O_APPEND | O_CREAT,
 					S_IRUSR | S_IWUSR);
 			if (_mero_topdp->err == -1) {
-				fprintf(stderr, "unable to open '%s': %s\n",
+				Mfprintf(stderr, "unable to open '%s': %s\n",
 						_mero_errlogfile, strerror(errno));
 				MERO_EXIT(1);
 			}
@@ -2413,14 +2385,14 @@ main(int argc, char *argv[])
 
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
-		fprintf(stderr, "unable to open '%s' for writing: %s\n",
+		Mfprintf(stderr, "unable to open '%s' for writing: %s\n",
 				pidfilename, strerror(errno));
 		MERO_EXIT(1);
 	}
 
 	/* redirect stdout */
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "unable to create pipe: %s\n",
+		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
@@ -2430,7 +2402,7 @@ main(int argc, char *argv[])
 
 	/* redirect stderr */
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "unable to create pipe: %s\n",
+		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
@@ -2442,18 +2414,18 @@ main(int argc, char *argv[])
 
 	d->pid = getpid();
 	d->dbname = "merovingian";
-	d = d->next = alloca(sizeof(struct _dpair));
 
 	/* separate entry for the neighbour discovery service */
+	d = d->next = alloca(sizeof(struct _dpair));
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "unable to create pipe: %s\n",
+		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
 	d->out = pfd[0];
 	_mero_discout = fdopen(pfd[1], "a");
 	if (pipe(pfd) == -1) {
-		fprintf(stderr, "unable to create pipe: %s\n",
+		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
@@ -2467,8 +2439,7 @@ main(int argc, char *argv[])
 	gethostname(_mero_hostname, 128);
 
 	/* write out the pid */
-	fprintf(pidfile, "%d\n", (int)d->pid);
-	fflush(pidfile);
+	Mfprintf(pidfile, "%d\n", (int)d->pid);
 	fclose(pidfile);
 
 	/* allow a thread to relock this mutex */
@@ -2477,7 +2448,7 @@ main(int argc, char *argv[])
 	pthread_mutex_init(&_mero_topdp_lock, &mta);
 
 	if (pthread_create(&tid, NULL, (void *(*)(void *))logListener, (void *)NULL) < 0) {
-		fprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
+		Mfprintf(oerr, "%s: unable to create logthread, exiting\n", argv[0]);
 		MERO_EXIT(1);
 	}
 
@@ -2489,7 +2460,7 @@ main(int argc, char *argv[])
 			sigaction(SIGQUIT, &sa, NULL) == -1 ||
 			sigaction(SIGTERM, &sa, NULL) == -1)
 	{
-		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
 	}
 
@@ -2497,7 +2468,7 @@ main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = huphandler;
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
-		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
 	}
 
@@ -2505,7 +2476,7 @@ main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
 	}
 
@@ -2513,11 +2484,12 @@ main(int argc, char *argv[])
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = childhandler;
 	if (sigaction(SIGCHLD, &sa, NULL) == -1) {
-		fprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
+		Mfprintf(oerr, "%s: unable to create signal handlers\n", argv[0]);
 		MERO_EXIT(1);
 	}
 
-	merlog("starting Merovingian %s for dbfarm %s", MERO_VERSION, dbfarm);
+	Mfprintf(stdout, "starting Merovingian %s for dbfarm %s\n",
+			MERO_VERSION, dbfarm);
 
 	SABAOTHinit(dbfarm, NULL);
 
@@ -2540,7 +2512,7 @@ main(int argc, char *argv[])
 		if ((setsockopt(_mero_broadcastsock,
 						SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret))) == -1)
 		{
-			fprintf(stderr, "cannot create broadcast package, "
+			Mfprintf(stderr, "cannot create broadcast package, "
 					"discovery services disabled\n");
 			close(usock);
 			usock = -1;
@@ -2559,7 +2531,7 @@ main(int argc, char *argv[])
 		for (argp = 1; argp < argc; argp++) {
 			e = forkMserver(argv[argp], &stats, 0);
 			if (e != NO_ERR) {
-				fprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
+				Mfprintf(stderr, "failed to fork mserver: %s\n", getErrMsg(e));
 				freeErr(e);
 				stats = NULL;
 			}
@@ -2571,7 +2543,7 @@ main(int argc, char *argv[])
 		if (pthread_create(&ctid, NULL, (void *(*)(void *))controlRunner,
 					(void *)&unsock) < 0)
 		{
-			fprintf(stderr, "unable to create control command thread\n");
+			Mfprintf(stderr, "unable to create control command thread\n");
 			ctid = 0;
 		}
 
@@ -2579,7 +2551,7 @@ main(int argc, char *argv[])
 		if (usock >= 0 && pthread_create(&dtid, NULL,
 					(void *(*)(void *))discoveryRunner, (void *)&usock) < 0)
 		{
-			fprintf(stderr, "unable to start neighbour discovery thread\n");
+			Mfprintf(stderr, "unable to start neighbour discovery thread\n");
 			dtid = 0;
 		}
 
@@ -2603,10 +2575,10 @@ main(int argc, char *argv[])
 
 	if (e != NO_ERR) {
 		/* console */
-		fprintf(oerr, "%s: %s\n", argv[0], e);
+		Mfprintf(oerr, "%s: %s\n", argv[0], e);
 		MERO_EXIT(1);
 		/* logfile */
-		fprintf(stderr, "%s\n", e);
+		Mfprintf(stderr, "%s\n", e);
 	}
 
 	/* we don't need merovingian itself */
@@ -2630,7 +2602,7 @@ main(int argc, char *argv[])
 			if (pthread_create(&(tlw->tid), NULL,
 						(void *(*)(void *))terminateProcess, (void *)t) < 0)
 			{
-				fprintf(stderr, "%s: unable to create thread to terminate "
+				Mfprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s'\n", argv[0], d->dbname);
 				tlw->tid = 0;
 			}
@@ -2643,7 +2615,7 @@ main(int argc, char *argv[])
 		tlw = tl;
 		while (tlw != NULL) {
 			if (tlw->tid != 0 && (argp = pthread_join(tlw->tid, NULL)) != 0) {
-				fprintf(stderr, "failed to wait for termination thread: "
+				Mfprintf(stderr, "failed to wait for termination thread: "
 						"%s\n", strerror(argp));
 			}
 			tl = tlw->next;
@@ -2654,11 +2626,12 @@ main(int argc, char *argv[])
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	merlog("Merovingian %s stopped", MERO_VERSION);
+	Mfprintf(stdout, "Merovingian %s stopped\n", MERO_VERSION);
 
 	_mero_keep_logging = 0;
 	if ((argp = pthread_join(tid, NULL)) != 0) {
-		fprintf(oerr, "failed to wait for logging thread: %s\n", strerror(argp));
+		Mfprintf(oerr, "failed to wait for logging thread: %s\n",
+				strerror(argp));
 	}
 
 	close(_mero_topdp->out);
