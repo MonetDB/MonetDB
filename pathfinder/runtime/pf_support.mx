@@ -851,8 +851,8 @@ PROC trace (BAT[void,any] ws,
     # initial outer relation
     var init_outer_val := 1@0;
     
-    pws (s); printf("<scope id=\"%i\">\n", init_id); s :+= 1;
-    pws (s); printf("<iteration no=\"%i\">\n", init_outer_val);  s :+= 1;
+    pws (s); printf("<scope id=\"%lli\">\n", init_id); s :+= 1;
+    pws (s); printf("<iteration no=\"%lli\">\n", init_outer_val);  s :+= 1;
 
     # first print all trace information in nested scopes ...
     trace_scopes (ws,
@@ -899,7 +899,7 @@ PROC trace_scopes (BAT[void,any] ws,
 
     var index1 := 0;
     outer_rels@batloop () {
-        pws (s); printf("<scope id=\"%i\">\n", $h); s :+= 1;
+        pws (s); printf("<scope id=\"%lli\">\n", $h); s :+= 1;
 
         var next_id := $h;
         var inner_rel := inner_rels.fetch(index1);
@@ -908,7 +908,7 @@ PROC trace_scopes (BAT[void,any] ws,
         
         # iterate over the tuples of the outer|inner relation
         inner@batloop () {
-            pws (s); printf("<iteration no=\"%i\">\n", $t);  s :+= 1;
+            pws (s); printf("<iteration no=\"%lli\">\n", $t);  s :+= 1;
             
             # first print all trace information in nested scopes ...
             trace_scopes (ws,
@@ -960,7 +960,7 @@ PROC trace_ops (BAT[void,any] ws,
         # ... and pick the current iteration
         var msg_row := $t.reverse().select(cur_inner).reverse();
         if (msg_row.count() != 0) {
-            pws (s); printf("<trace msg=\"%s\" id=\"%i\">\n",
+            pws (s); printf("<trace msg=\"%s\" id=\"%lli\">\n",
                             msg_row.fetch(0),
                             $h); s :+= 1;
             
@@ -1071,8 +1071,8 @@ PROC trace_items (BAT[void,any] ws,
             printf (">%s", name);
         }
         else if (type_str = "node") {
-            printf (" id=\"%i\"", node_id);
-            printf (" fragment=\"%i\">", frag);
+            printf (" id=\"%lli\"", node_id);
+            printf (" fragment=\"%lli\">", frag);
             # element, text, comment, pi, and doc nodes
             print_result ("xml-noroot-noheader",
                           ws,
@@ -1087,11 +1087,11 @@ PROC trace_items (BAT[void,any] ws,
                           new (void,str).seqbase(0@0));
         }
         else if (type_str = "attribute") {
-            printf (" id=\"%i\"", attr_id);
+            printf (" id=\"%lli\"", attr_id);
             if (not (isnil (node_id))) {
-                printf (" parent_id=\"%i\"", node_id);
+                printf (" parent_id=\"%lli\"", node_id);
             }
-            printf (" fragment=\"%i\"", frag);
+            printf (" fragment=\"%lli\"", frag);
             # attribute nodes
             var qn_id := mposjoin (attr_id, frag, ws.fetch(ATTR_QN)).fetch(0);
             var qn_frag := mposjoin (attr_id, frag, ws.fetch(ATTR_CONT)).fetch(0);
