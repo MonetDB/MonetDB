@@ -1616,9 +1616,7 @@ controlRunner(void *d)
 						if (strcmp(q, stats->dbname) == 0) {
 							readProps(props, stats->path);
 							kv = findConfKey(props, "shared");
-							if (kv->val != NULL &&
-									strcmp(kv->val, "no") != 0)
-							{
+							if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
 								/* we can leave without tag, will remove all */
 								snprintf(buf2, sizeof(buf2),
 										"LEAV %s mapi:monetdb://%s:%hu/",
@@ -1640,8 +1638,6 @@ controlRunner(void *d)
 								/* empty, inherit (e.g. remove local opt),
 								 * but keep enabled, otherwise we never
 								 * came here */
-								writeProps(props, stats->path);
-								break;
 							} else if (strcmp(p, "yes") == 0) {
 								/* make this share an empty tag */
 								*p = '\0';
