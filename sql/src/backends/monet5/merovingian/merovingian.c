@@ -54,6 +54,7 @@
 #include "mal_sabaoth.h"
 #include "utils.h"
 #include "properties.h"
+#include "glob.h"
 #include <stdlib.h> /* exit, getenv, rand, srand */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf */
@@ -109,6 +110,7 @@ typedef struct _dpair {
 typedef struct _remotedb {
 	str dbname;       /* remote database name */
 	str tag;          /* database tag, if any, default = "" */
+	str fullname;     /* dbname + tag */
 	str conn;         /* remote connection, use in redirect */
 	int ttl;          /* time-to-live in seconds */
 	struct _remotedb* next;
@@ -422,11 +424,16 @@ forkMserver(str database, sabdb** stats, int force)
 	char upavg[8];
 	char upmax[8];
 
-	er = SABAOTHgetStatus(stats, database);
-	if (er != MAL_SUCCEED) {
-		err e = newErr("%s", er);
-		GDKfree(er);
-		return(e);
+	/* tagged names are always remote lookups */
+	if (strchr(database, '.') == NULL) {
+		er = SABAOTHgetStatus(stats, database);
+		if (er != MAL_SUCCEED) {
+			err e = newErr("%s", er);
+			GDKfree(er);
+			return(e);
+		}
+	} else {
+		*stats = NULL;
 	}
 
 	if (*stats == NULL) {
@@ -437,7 +444,7 @@ forkMserver(str database, sabdb** stats, int force)
 
 		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
-			if (strcmp(rdb->dbname, database) == 0) {
+			if (glob(database, rdb->fullname) == 1) {
 				/* take first match, create a fake sabdb struct */
 				*stats = GDKmalloc(sizeof(sabdb));
 				(*stats)->dbname = GDKstrdup(rdb->dbname);
@@ -1809,9 +1816,11 @@ discoveryRunner(void *d)
 					prv->next = rdb->next;
 				}
 				Mfprintf(_mero_discout, "neighbour database %s at %s "
-						"has expired\n", rdb->dbname, rdb->conn);
+						"has expired\n", rdb->fullname, rdb->conn);
 				free(rdb->dbname);
 				free(rdb->conn);
+				free(rdb->tag);
+				free(rdb->fullname);
 				free(rdb);
 				break;
 			}
@@ -1902,6 +1911,8 @@ discoveryRunner(void *d)
 					}
 					free(rdb->dbname);
 					free(rdb->conn);
+					free(rdb->tag);
+					free(rdb->fullname);
 					free(rdb);
 					Mfprintf(_mero_discout,
 							"removed neighbour database %s at %s (%s)\n",
@@ -1911,6 +1922,11 @@ discoveryRunner(void *d)
 				prv = rdb;
 				rdb = rdb->next;
 			}
+			if (rdb == NULL)
+				Mfprintf(_mero_discout,
+						"received leave request for unknown database "
+						"%s from %s (%s)\n",
+						dbname, conn, host);
 
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
@@ -1928,9 +1944,6 @@ discoveryRunner(void *d)
 
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
-
-			if ((tag = strchr(dbname, '.')) != NULL)
-				*tag++ = '\0';
 
 			pthread_mutex_lock(&_mero_remotedb_lock);
 
@@ -1957,6 +1970,9 @@ discoveryRunner(void *d)
 				}
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
+			rdb->fullname = strdup(dbname);
+			if ((tag = strchr(dbname, '.')) != NULL)
+				*tag++ = '\0';
 			rdb->dbname = strdup(dbname);
 			rdb->tag = tag != NULL ? strdup(tag) : NULL;
 			rdb->conn = strdup(conn);
@@ -1966,8 +1982,8 @@ discoveryRunner(void *d)
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 
 			Mfprintf(_mero_discout, "discovered neighbour database "
-					"%s%s%s@%s, %s, ttl=%ss\n",
-					dbname, tag ? "." : "", tag ? tag : "", host, conn, ttl);
+					"%s@%s %s ttl=%ss\n",
+					rdb->fullname, host, conn, ttl);
 		} else {
 			Mfprintf(_mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
