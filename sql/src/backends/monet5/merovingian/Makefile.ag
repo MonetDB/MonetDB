@@ -23,11 +23,12 @@ INCLUDES = \
 	$(MONETDB5_INCS) \
 	$(MONETDB_INCS)
 
-EXTRA_DIST = $(man_MANS) utils.h properties.h
+EXTRA_DIST = $(man_MANS) \
+	utils.h properties.h glob.h
 
 lib_meroutil = {
 	NOINST
-	SOURCES = utils.c properties.c
+	SOURCES = utils.c properties.c glob.c
 }
 
 bin_merovingian = {
