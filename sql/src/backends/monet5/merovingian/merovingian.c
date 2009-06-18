@@ -2139,10 +2139,8 @@ childhandler(int sig, siginfo_t *si, void *unused)
 				Mfprintf(stdout, "database '%s' (%d) has exited with "
 						"exit status %d\n", p->dbname, p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				char sig[SIG2STR_MAX];
-				sig2str(si->si_status, sig);
 				Mfprintf(stdout, "database '%s' (%d) was killed by signal "
-						"%d (SIG%s)\n", p->dbname, p->pid, si->si_status, sig);
+						"%d\n", p->dbname, p->pid, si->si_status);
 			} else if (si->si_code == CLD_DUMPED) {
 				Mfprintf(stdout, "database '%s' (%d) has crashed "
 						"(dumped core)\n", p->dbname, p->pid);
