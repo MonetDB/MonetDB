@@ -1917,6 +1917,7 @@ discoveryRunner(void *d)
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
 			char *dbname;
+			char *tag = NULL;
 			char *conn;
 			char *ttl;
 
@@ -1927,6 +1928,9 @@ discoveryRunner(void *d)
 
 			if (dbname == NULL || conn == NULL || ttl == NULL)
 				continue;
+
+			if ((tag = strchr(dbname, '.')) != NULL)
+				*tag++ = '\0';
 
 			pthread_mutex_lock(&_mero_remotedb_lock);
 
@@ -1954,6 +1958,7 @@ discoveryRunner(void *d)
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
 			rdb->dbname = strdup(dbname);
+			rdb->tag = tag != NULL ? strdup(tag) : NULL;
 			rdb->conn = strdup(conn);
 			rdb->ttl = time(NULL) + atoi(ttl);
 			rdb->next = NULL;
