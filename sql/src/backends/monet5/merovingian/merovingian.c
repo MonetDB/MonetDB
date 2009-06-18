@@ -1965,9 +1965,9 @@ discoveryRunner(void *d)
 
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 
-			Mfprintf(_mero_discout, "discovered neighbour database %s at %s "
-					"(refresh from %s in %s seconds)\n",
-					dbname, conn, host, ttl);
+			Mfprintf(_mero_discout, "discovered neighbour database "
+					"%s%s%s@%s, %s, ttl=%ss\n",
+					dbname, tag ? "." : "", tag ? tag : "", host, conn, ttl);
 		} else {
 			Mfprintf(_mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
