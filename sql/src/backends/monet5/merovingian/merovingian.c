@@ -1512,7 +1512,8 @@ controlRunner(void *d)
 			p = strchr(q, '\n');
 			if (p == NULL) {
 				/* skip, must be garbage */
-				Mfprintf(stderr, "skipping garbage on control channel: %s\n", buf);
+				Mfprintf(stderr, "skipping garbage on control channel: %s\n",
+						buf);
 				pos = 0;
 				continue;
 			}
@@ -1622,7 +1623,7 @@ controlRunner(void *d)
 								snprintf(buf2, sizeof(buf2),
 										"LEAV %s mapi:monetdb://%s:%hu/",
 										stats->dbname, _mero_hostname, _mero_port);
-								broadcast(buf);
+								broadcast(buf2);
 							}
 							p += strlen("share=");
 							if (kv->val != NULL) {
@@ -1661,7 +1662,7 @@ controlRunner(void *d)
 									"ANNC %s%s mapi:monetdb://%s:%hu/ %d",
 									stats->dbname, p, _mero_hostname,
 									_mero_port, _mero_discoveryttl + 60);
-							broadcast(buf);
+							broadcast(buf2);
 							writeProps(props, stats->path);
 							break;
 						}
