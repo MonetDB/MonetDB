@@ -57,8 +57,10 @@ writeDisclaimer(FILE *fp, const char *comment_start, const char *prefix, const c
 		return;
 
 	if (strlen(comment_start) > 0) {
-		fwrite(comment_start, strlen(comment_start), 1, fp);
-		fwrite("\n", 1, 1, fp);
+		if (!fwrite(comment_start, strlen(comment_start), 1, fp))
+			return;
+		if (!fwrite("\n", 1, 1, fp))
+			return;
 	}
 
 	memcpy(line, prefix, prefixLength);
@@ -75,14 +77,18 @@ writeDisclaimer(FILE *fp, const char *comment_start, const char *prefix, const c
 		if (line[i - 1] != '\n')
 			line[i++] = '\n';
 		line[i] = '\0';
-		fwrite(line, strlen(line), 1, fp);
+		if (!fwrite(line, strlen(line), 1, fp))
+			return;
 	}
 	if (strlen(comment_end) > 0) {
-		fwrite(comment_end, strlen(comment_end), 1, fp);
-		fwrite("\n", 1, 1, fp);
+		if (!fwrite(comment_end, strlen(comment_end), 1, fp))
+			return;
+		if (!fwrite("\n", 1, 1, fp))
+			return;
 	}
 
-	fwrite("\n", 1, 1, fp);
+	if (!fwrite("\n", 1, 1, fp))
+		return;
 	fclose(dfile);
 
 }
