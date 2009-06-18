@@ -2167,8 +2167,8 @@ childhandler(int sig, siginfo_t *si, void *unused)
 
 	pthread_mutex_unlock(&_mero_topdp_lock);
 
-	Mfprintf(stdout, "received SIGCHLD from unknown child with pid %d\n",
-			si->si_pid);
+	Mfprintf(stdout, "received SIGCHLD from unknown child with pid %lld\n",
+			(long long int)si->si_pid);
 }
 
 int
