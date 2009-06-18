@@ -4530,6 +4530,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
         case 51:
         /* Rel:    rank (Rel) */
         case 52:
+        {
             /* copy all existing column, from, and where lists */
             copy_cols_from_where (p, L(p));
 
@@ -4577,7 +4578,7 @@ reduce_ (PFla_op_t * p, int goalnt, int fallback_rule)
                 bind = true;
                 execute (comment ("binding due to rank operator"));
             }
-            break;
+        }   break;
 
         /* Rel:    rowid (Rel) */
         case 53:
