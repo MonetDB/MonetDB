@@ -1985,20 +1985,24 @@ discoveryRunner(void *d)
 		return;
 	}
 
+	/* craft LEAV messages for each db */
 	orig = stats;
 	while (stats != NULL) {
-		/* craft LEAV messages for each db */
-		snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
-				stats->dbname, _mero_hostname, _mero_port);
-		broadcast(buf);
-
+		readProps(ckv, stats->path);
+		kv = findConfKey(ckv, "shared");
+		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
+			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%hu/",
+					stats->dbname, _mero_hostname, _mero_port);
+			broadcast(buf);
+		}
+		freeConfFile(ckv);
 		stats = stats->next;
 	}
 
 	if (orig != NULL)
 		SABAOTHfreeStatus(&orig);
 
-	GDKfree(ckv); /* can make ckv static and reuse it all the time */
+	GDKfree(ckv);
 }
 
 /**
