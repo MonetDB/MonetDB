@@ -414,6 +414,7 @@ forkMserver(str database, sabdb** stats, int force)
 	dpair dp;
 	str vaultkey = NULL;
 	str logdir = NULL;
+	str nthreads = NULL;
 	char mydoproxy;
 	confkeyval *ckv, *kv;
 	struct stat statbuf;
@@ -535,18 +536,26 @@ forkMserver(str database, sabdb** stats, int force)
 
 	ckv = getDefaultProps();
 	readProps(ckv, (*stats)->path);
-	/* NOTE: we rely on existence of these keys (not if they're set) */
+
 	kv = findConfKey(ckv, "logdir");
-	if (kv->val != NULL) {
-		logdir = alloca(sizeof(char) * 512);
-		snprintf(logdir, 512, "sql_logdir=%s", kv->val);
-	} else {
-		logdir = NULL;
-	}
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_props, "logdir");
+	logdir = alloca(sizeof(char) * 512);
+	snprintf(logdir, 512, "sql_logdir=%s", kv->val);
+
 	kv = findConfKey(ckv, "forward");
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_props, "forward");
 	mydoproxy = strcmp(kv->val, "proxy") == 0;
+
+	kv = findConfKey(ckv, "nthreads");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_props, "nthreads");
+	if (kv->val != NULL) {
+		nthreads = alloca(sizeof(char) * 24);
+		snprintf(nthreads, 24, "gdk_nr_threads=%s", kv->val);
+	}
+
 	freeConfFile(ckv);
 	GDKfree(ckv); /* can make ckv static and reuse it all the time */
 
@@ -567,7 +576,7 @@ forkMserver(str database, sabdb** stats, int force)
 	if (pid == 0) {
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
-		str argv[15];	/* for the exec arguments */
+		str argv[17];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -596,10 +605,16 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
 		argv[c++] = "--set"; argv[c++] = vaultkey;
-		if (logdir != NULL) {
-			argv[c++] = "--set"; argv[c++] = logdir;
+		argv[c++] = "--set"; argv[c++] = logdir;
+		if (nthreads != NULL) {
+			argv[c++] = "--set"; argv[c++] = nthreads;
 		}
 		argv[c++] = NULL;
+
+		fprintf(stdout, "arguments:");
+		for (c = 0; argv[c] != NULL; c++)
+			fprintf(stdout, " %s", argv[c]);
+		Mfprintf(stdout, "\n");
 
 		execv(_mero_mserver, argv);
 		/* if the exec returns, it is because of a failure */
@@ -2122,13 +2137,15 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			close(p->err);
 			if (si->si_code == CLD_EXITED) {
 				Mfprintf(stdout, "database '%s' (%d) has exited with "
-						"exit status %d", p->dbname, p->pid, si->si_status);
+						"exit status %d\n", p->dbname, p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				Mfprintf(stdout, "database '%s' (%d) was killed by signal %d",
-						p->dbname, p->pid, si->si_status);
+				char sig[SIG2STR_MAX];
+				sig2str(si->si_status, sig);
+				Mfprintf(stdout, "database '%s' (%d) was killed by signal "
+						"%d (SIG%s)\n", p->dbname, p->pid, si->si_status, sig);
 			} else if (si->si_code == CLD_DUMPED) {
-				Mfprintf(stdout, "database '%s' (%d) has crashed (dumped core)",
-						p->dbname, p->pid);
+				Mfprintf(stdout, "database '%s' (%d) has crashed "
+						"(dumped core)\n", p->dbname, p->pid);
 			}
 			if (p->dbname)
 				GDKfree(p->dbname);
@@ -2315,15 +2332,17 @@ main(int argc, char *argv[])
 
 	/* setup default properties */
 	_mero_props = getDefaultProps();
-	/* not yet necessary
+	kv = findConfKey(ckv, "sql_logdir");
+	if ((p = kv->val) == NULL) {
+		Mfprintf(stderr, "cannot find sql_logdir via config file\n");
+		MERO_EXIT(1);
+	}
 	kv = findConfKey(_mero_props, "logdir");
-	kv->val = ...;
-	*/
+	kv->val = GDKstrdup(p);
 	kv = findConfKey(_mero_props, "forward");
 	kv->val = GDKstrdup(doproxy == 1 ? "proxy" : "redirect");
 	kv = findConfKey(_mero_props, "shared");
 	kv->val = GDKstrdup(discoveryport == 0 ? "no" : "yes");
-	/* not yet necessary
 	kv = findConfKey(ckv, "gdk_nr_threads");
 	if (kv->val != NULL) {
 		ret = atoi(kv->val);
@@ -2331,7 +2350,6 @@ main(int argc, char *argv[])
 		snprintf(buf, sizeof(buf), "%d", ret);
 		kv->val = GDKstrdup(buf);
 	}
-	*/
 
 	/* we no longer need prefix */
 	freeConfFile(ckv);
