@@ -75,7 +75,7 @@ import nl.cwi.monetdb.mcl.parser.*;
  * geared towards the format of the data.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 4.0
+ * @version 4.1
  * @see nl.cwi.monetdb.mcl.io.BufferedMCLReader
  * @see nl.cwi.monetdb.mcl.io.BufferedMCLWriter
  */
@@ -279,9 +279,11 @@ public final class MapiSocket {
 				// might have multiple clues on where to go.  For now we
 				// don't support anything intelligent but trying the
 				// first one.  URI should be in form of:
-				// "mapi:monetdb://host:port/database?args=value"
+				// "mapi:monetdb://host:port/database?arg=value&..."
 				// or
-				// "mapi:merovingian:proxy?args=value"
+				// "mapi:merovingian:proxy?arg=value&..."
+				// note that the extra arguments must be obeyed in both
+				// cases
 				String suri = redirects.get(0).toString();
 				if (!suri.startsWith("mapi:"))
 					throw new MCLException("unsupported redirect: " + suri);
@@ -291,6 +293,39 @@ public final class MapiSocket {
 					u = new URI(suri.substring(5));
 				} catch (URISyntaxException e) {
 					throw new MCLParseException(e.toString());
+				}
+
+				tmp = u.getQuery();
+				if (tmp != null) {
+					String args[] = tmp.split("&");
+					for (int i = 0; i < args.length; i++) {
+						int pos = args[i].indexOf("=");
+						if (pos > 0) {
+							tmp = args[i].substring(0, pos);
+							if (tmp.equals("database")) {
+								tmp = args[i].substring(pos + 1);
+								warns.add("redirect points to different database: " + tmp);
+								setDatabase(tmp);
+							} else if (tmp.equals("language")) {
+								tmp = args[i].substring(pos + 1);
+								warns.add("redirect specifies use of different language: " + tmp);
+								setLanguage(tmp);
+							} else if (tmp.equals("user")) {
+								tmp = args[i].substring(pos + 1);
+								if (!tmp.equals(user))
+									warns.add("ignoring different username '" + tmp + "' set by " +
+											"redirect, what are the security implications?");
+							} else if (tmp.equals("password")) {
+								warns.add("ignoring different password set by redirect, " +
+										"what are the security implications?");
+							} else {
+								warns.add("ignoring unknown argument '" + tmp + "' from redirect");
+							}
+						} else {
+							warns.add("ignoring illegal argument from redirect: " +
+									args[i]);
+						}
+					}
 				}
 
 				List w = null;
