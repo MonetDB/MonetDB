@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  19 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
+  Allow setting the name of a database (a.k.a. renaming it), doing all the
+  logic to keep the logdir aligned in case it's absolute.
+
   19 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c,
   merovingian.1:
   Increase the default mero_exittimeout from 7 to 60 seconds.

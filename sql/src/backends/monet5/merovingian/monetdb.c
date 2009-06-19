@@ -946,15 +946,82 @@ command_set(int argc, char *argv[], meroset type)
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (strcmp(property, "name") == 0) {
+			char new[512];
+			char newlogdir[512];
+
 			/* special virtual case */
 			if (type == INHERIT) {
 				fprintf(stderr, "inherit: cannot default to a database name\n");
 				state |= 1;
 				continue;
 			}
-			fprintf(stderr, "set: renaming a database is not yet implemented, sorry\n");
-			state |= 1;
-			continue;
+
+			/* check if dbname matches [A-Za-z0-9-_]+ */
+			for (i = 0; value[i] != '\0'; i++) {
+				if (
+						!(value[i] >= 'A' && value[i] <= 'Z') &&
+						!(value[i] >= 'a' && value[i] <= 'z') &&
+						!(value[i] >= '0' && value[i] <= '9') &&
+						!(value[i] == '-') &&
+						!(value[i] == '_')
+				   )
+				{
+					fprintf(stderr, "set: invalid character '%c' at %d "
+							"in database name '%s'\n",
+							value[i], i, value);
+					value[0] = '\0';
+					state |= 1;
+					break;
+				}
+			}
+			if (value[0] == '\0')
+				continue;
+
+			/* construct path to new database */
+			snprintf(new, 512, "%s", stats->path);
+			p = strrchr(new, '/');
+			if (p == NULL) {
+				fprintf(stderr, "set: non-absolute database path? '%s'\n",
+						stats->path);
+				state |= 1;
+				continue;
+			}
+			snprintf(p + 1, 512 - (p + 1 - new), "%s", value);
+
+			/* renaming is as simple as changing the directory name,
+			 * however, we have the logdir too.
+			 * - if relative: done
+			 * - if absolute, but within dbfarm/dbname: update entry
+			 * - if absolute: done */
+
+			readProps(props, stats->path);
+			kv = findConfKey(props, "logdir");
+			p = NULL;
+			if (kv->val != NULL && kv->val[0] == '/') {
+				/* if there are symlinks involved here, I'm affraid
+				 * we're going to fail (can't find realpath func) */
+				if (strncmp(kv->val, stats->path, strlen(stats->path)) == 0 &&
+						kv->val[strlen(stats->path)] == '/')
+				{
+					/* this is going to break, need to update the logdir
+					 * entry */
+					p = kv->val;
+					snprintf(newlogdir, 512, "%s%s", new,
+							p + strlen(stats->path));
+					GDKfree(p);
+					kv->val = GDKstrdup(newlogdir);
+					p = kv->val;
+				}
+			}
+			if (rename(stats->path, new) != 0) {
+				fprintf(stderr, "%s: failed to rename database from "
+						"'%s' to '%s': %s\n", argv[0], stats->path, new,
+						strerror(errno));
+				state |= 1;
+			}
+			if (p != NULL)
+				writeProps(props, new);
+			freeConfFile(props);
 		} else if (strcmp(property, "logdir") == 0) {
 			char *p;
 			char old[512];
