@@ -2058,6 +2058,42 @@ mapi_destroy(Mapi mid)
 	return MOK;
 }
 
+static void
+parse_uri_query(Mapi mid, char *uri)
+{
+	char *lasts;
+	char *arg;
+	char *val;
+
+	/* just don't care where it is, assume it all starts from '?' */
+	if ((uri = strchr(uri, '?')) == NULL)
+		return;
+
+	uri++; /* skip '?' */
+
+	while ((arg = strtok_r(uri, "&", &lasts)) != NULL) {
+		uri = NULL;
+		if ((val = strchr(arg, '=')) == NULL)
+			/* invalid argument, can't warn, just skip */
+			continue;
+
+		*val++ = '\0';
+		if (strcmp("database", arg) == 0) {
+			free(mid->database);
+			mid->database = strdup(val);
+		} else if (strcmp("language", arg) == 0) {
+			free(mid->language);
+			mid->language = strdup(val);
+		} else if (strcmp("user", arg) == 0) {
+			/* until we figure out how this can be done safely wrt
+			 * security, ignore */
+		} else if (strcmp("password", arg) == 0) {
+			/* until we figure out how this can be done safely wrt
+			 * security, ignore */
+		} /* can't warn, ignore */
+	}
+}
+
 @- Channel Constructor
 The first call of an application is to establish a connection with
 an already server. The username and password are sent as part of
@@ -2500,7 +2536,7 @@ mapi_start_talking(Mapi mid)
 				case '#':
 					motdlen += strlen(result->cache.line[i].rows) + 1;
 					break;
-				case '^':{
+				case '^': {
 					/* FIXME: there may be multiple redirects */
 					char *tmp = result->cache.line[i].rows;
 					char *tmp2 = "", *p = NULL, *db = NULL;
@@ -2508,7 +2544,7 @@ mapi_start_talking(Mapi mid)
 					/* redirect, looks like:
 					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
 					 * or
-					 * ^mapi:merovingian:proxy */
+					 * ^mapi:merovingian://proxy?database=test */
 
 					/* first see if we reached our redirection limit */
 					if (mid->redircnt > 10) {
@@ -2542,42 +2578,11 @@ mapi_start_talking(Mapi mid)
 						if (mid->hostname)
 							free(mid->hostname);
 						mid->hostname = strdup(p);
-						if ((tmp = strchr(tmp, '?')) != NULL) {
-							char *tmp3;
-
-							*tmp++ = '\0';
-							tmp2 = tmp;
-							while ((tmp = strchr(tmp, '&')) != NULL) {
-								*tmp++ = '\0';
-								if ((tmp3 = strchr(tmp2, '=')) != NULL) {
-									*tmp3++ = '\0';
-									/* tmp2 = key, tmp3 = val */
-									if (strcmp("user", tmp2) == 0) {
-										free(mid->username);
-										mid->username = strdup(tmp3);
-									} else if (strcmp("lang", tmp2) == 0) {
-										free(mid->language);
-										mid->language = strdup(tmp3);
-									} /* else ignore */
-								} /* else ignore */
-								tmp2 = tmp;
-							}
-							tmp = tmp2;
-							if ((tmp3 = strchr(tmp2, '=')) != NULL) {
-								*tmp3++ = '\0';
-								/* tmp2 = key, tmp3 = val */
-								if (strcmp("user", tmp2) == 0) {
-									free(mid->username);
-									mid->username = strdup(tmp3);
-								} else if (strcmp("lang", tmp2) == 0) {
-									free(mid->language);
-									mid->language = strdup(tmp3);
-								} /* else ignore */
-							} /* else ignore */
-						}	/* no optional arguments (weird) */
 						if (mid->database) 
 							free(mid->database);
 						mid->database = db != NULL ? strdup(db) : NULL;
+
+						parse_uri_query(mid, tmp);
 
 						mid->redircnt++;
 						mapi_close_handle(hdl);
@@ -2587,6 +2592,8 @@ mapi_start_talking(Mapi mid)
 						/* this is a proxy "offer", it means we should
 						 * restart the login ritual, without
 						 * disconnecting */
+						parse_uri_query(mid, tmp + 16);
+						mid->redircnt++;
 						return mapi_start_talking(mid);
 					} else {
 						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
@@ -2595,7 +2602,7 @@ mapi_start_talking(Mapi mid)
 						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
 						return (mid->error);
 					}
-				}
+				} break;
 				}
 			}
 		}
