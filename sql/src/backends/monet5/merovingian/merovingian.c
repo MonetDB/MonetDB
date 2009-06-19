@@ -1224,7 +1224,8 @@ handleClient(int sock)
 	} else {
 		Mfprintf(stdout, "proxying client %s for database '%s' to %s\n",
 				host, stat->dbname, stat->conns->val);
-		stream_printf(fout, "^mapi:merovingian:proxy\n");
+		stream_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
+				stat->dbname);
 		/* flush redirect */
 		stream_flush(fout);
 
