@@ -1171,7 +1171,28 @@ command_create(int argc, char *argv[])
 		sabdb *stats;
 		err e;
 		char *dbname = argv[i];
+		int c;
 
+		/* check if dbname matches [A-Za-z0-9-_]+ */
+		for (c = 0; dbname[c] != '\0'; c++) {
+			if (
+					!(dbname[c] >= 'A' && dbname[c] <= 'Z') &&
+					!(dbname[c] >= 'a' && dbname[c] <= 'z') &&
+					!(dbname[c] >= '0' && dbname[c] <= '9') &&
+					!(dbname[c] == '-') &&
+					!(dbname[c] == '_')
+			   )
+			{
+				fprintf(stderr, "create: invalid character '%c' at %d "
+						"in database name '%s'\n",
+						dbname[c], c, dbname);
+				dbname[0] = '\0';
+				state |= 1;
+				/* avoid usage message */
+				hadwork = 1;
+				break;
+			}
+		}
 		if (dbname[0] == '\0')
 			continue;
 
@@ -1183,14 +1204,13 @@ command_create(int argc, char *argv[])
 			exit(2);
 		}
 
-		if (stats == NULL) {
+		if (stats == NULL) { /* sabaoth doesn't know, green light for us! */
 			char path[8096];
 			FILE *f;
-			int i, size;
+			int size;
 			char buf[48];
 			confkeyval ckv[2];
 
-			/* Sabaoth doesn't know, green light for us! */
 			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
 			path[8095] = '\0';
 			if (mkdir(path, 0755) == -1) {
@@ -1220,11 +1240,11 @@ command_create(int argc, char *argv[])
 			/* generate a vault key */
 			size = rand();
 			size = (size % (36 - 20)) + 20;
-			for (i = 0; i < size; i++) {
-				buf[i] = seedChars[rand() % 62];
+			for (c = 0; c < size; c++) {
+				buf[c] = seedChars[rand() % 62];
 			}
-			for ( ; i < 48; i++) {
-				buf[i] = '\0';
+			for ( ; c < 48; c++) {
+				buf[c] = '\0';
 			}
 			snprintf(path, 8095, "%s/%s/.vaultkey", dbfarm, dbname);
 			f = fopen(path, "w");
