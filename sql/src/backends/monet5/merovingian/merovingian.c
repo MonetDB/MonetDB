@@ -145,7 +145,7 @@ static FILE *_mero_streamout = NULL;
 /* stream to the stderr output device (tty or file) */
 static FILE *_mero_streamerr = NULL;
 /* timeout when waiting for a database to shutdown (seconds) */
-static int _mero_exit_timeout = 7;
+static int _mero_exit_timeout = 60;
 /* the port merovingian listens on for client connections */
 static unsigned short _mero_port = MERO_PORT;
 /* the time-to-live to announce for each shared database (seconds) */

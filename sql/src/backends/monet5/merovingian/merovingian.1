@@ -119,12 +119,11 @@ signal.  A time-out value of
 means that no attempt is made to shut down started database servers.  As
 a result, database servers will remain active after
 .B merovingian
-has stopped.  This situation may yield in confusing scenarios, hence you
-are strongly advised to set the
+has stopped.  The default value for
 .B mero_exittimeout
-option as to override the
-.B 0
-default.
+is
+.B 60
+seconds.
 .IP mero_doproxy
 .B merovingian
 has two ways in which it can "attach" a connecting client to the target
@@ -183,15 +182,16 @@ adds a
 to each database that is being shared.  This tag is sent in addition to
 the database name, and only understood by other
 .BR merovingian s.
-.\".P
-.\"Tags are arbitrary ASCII-strings that follow the rules of the path
-.\"component in an URI.  The / character is hence a separator that can be
-.\"used to structure a tag which is useful given that
-.\".B merovingian
-.\"allows common path globbing using * on these tags.
-.\".P
-.\"dbname/octopus/nl/cwi
-.\"
+.P
+Tags are arbitrary ASCII-strings that follow the rules of the path
+component in an URI.  The / character is hence a separator that can be
+used to structure a tag which is useful given that
+.B merovingian
+allows common path globbing using * on these tags.
+.P
+dbname/octopus/nl/cwi
+pattern [A\-Za\-z0\-9.]+
+
 .SH SIGNALS
 .B merovingian
 acts upon a number of signals as is common for a daemon.
