@@ -304,8 +304,11 @@ public final class MapiSocket {
 							tmp = args[i].substring(0, pos);
 							if (tmp.equals("database")) {
 								tmp = args[i].substring(pos + 1);
-								warns.add("redirect points to different database: " + tmp);
-								setDatabase(tmp);
+								if (!tmp.equals(database)) {
+									warns.add("redirect points to different " +
+											"database: " + tmp);
+									setDatabase(tmp);
+								}
 							} else if (tmp.equals("language")) {
 								tmp = args[i].substring(pos + 1);
 								warns.add("redirect specifies use of different language: " + tmp);
@@ -339,6 +342,17 @@ public final class MapiSocket {
 						debug = true;
 					} else {
 						close();
+					}
+					tmp = u.getPath();
+					if (tmp != null && tmp.length() != 0) {
+						tmp = tmp.substring(1).trim();
+						if (!tmp.equals("")) {
+							if (!tmp.equals(database)) {
+								warns.add("redirect points to different " +
+										"database: " + tmp);
+								setDatabase(tmp);
+							}
+						}
 					}
 					int p = u.getPort();
 					w = connect(u.getHost(), p == -1 ? port : p,
