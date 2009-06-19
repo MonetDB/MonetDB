@@ -38,7 +38,7 @@
 #include "properties.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf */
+#include <stdio.h> /* fprintf, rename */
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -956,10 +956,45 @@ command_set(int argc, char *argv[], meroset type)
 			state |= 1;
 			continue;
 		} else if (strcmp(property, "logdir") == 0) {
-			/* FIXME */
-			fprintf(stderr, "%s: changing the logdir location is not yet implemented, sorry\n", argv[0]);
-			state |= 1;
-			continue;
+			char *p;
+			char old[512];
+			char new[512];
+
+			/* retrieve the current setting, if relative, make it
+			 * absolute: ${gdk_dbfarm}/${gdk_dbname} = stats->path */
+
+			readProps(props, stats->path);
+			kv = findConfKey(props, "logdir");
+
+			p = kv->val;
+			if (p == NULL)
+				p = logdir;
+
+			if (*p != '/') {
+				snprintf(old, 512, "%s/%s", stats->path, p);
+			} else {
+				snprintf(old, 512, "%s", p);
+			}
+
+			if (*value != '/') {
+				snprintf(new, 512, "%s/%s", stats->path, value);
+			} else {
+				snprintf(new, 512, "%s", value);
+			}
+
+			if (rename(old, new) != 0) {
+				fprintf(stderr, "%s: failed to move logdir from "
+						"'%s' to '%s': %s\n", argv[0], old, new,
+						strerror(errno));
+				state |= 1;
+				freeConfFile(props);
+				continue;
+			}
+			if (kv->val != NULL)
+				GDKfree(kv->val);
+			kv->val = GDKstrdup(value);
+			writeProps(props, stats->path);
+			freeConfFile(props);
 		} else {
 			readProps(props, stats->path);
 			kv = findConfKey(props, property);
