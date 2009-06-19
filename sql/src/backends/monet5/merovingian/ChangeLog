@@ -8,8 +8,12 @@
   19 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c:
   Restrict database names created by monetdb to the pattern [A-Za-z0-9-_]+.
 
-  17 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.c, monetdb.c:
-  props = 1837591
+  17 Jun 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1,
+  merovingian.c, monetdb.1, monetdb.c, +utils.c, +utils.h,
+  +properties.c, +properties.h:
+  Implemented full per-database property support.  monetdb now can
+  manage the following per-database properties: logdir, forward, shared,
+  nthreads.  Feature Request #1837591.
 
   16 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Fixed bug where destroying multiple databases without -f would abort after
@@ -46,7 +50,7 @@
   received.
 
   13 May 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1, merovingian.mx:
-  Implemented feature request #2782776. All logged messages are now prefixed
+  Implemented Feature Request #2782776. All logged messages are now prefixed
   with a timestamp.
 
 *Feb2009-SP2

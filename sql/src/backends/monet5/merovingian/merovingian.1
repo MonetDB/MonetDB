@@ -160,6 +160,16 @@ listens to the given port, which defaults to the setting of
 .BR mero_port .
 If the port is set to 0, the neighbour discovery service is disabled and
 hence no announcements will be made, nor received.
+.P
+Next to these global settings,
+.B merovingian
+respects per-database settings that are managed via
+.BR monetdb (1).
+The properties 
+.IR shared " and " forward
+overrule the defaults from
+.IR mero_discoveryport " and " mero_doproxy .
+To obtain a list of properties, use `monetdb get all`.
 .SH "REMOTE DATABASES"
 The neighbour discovery capabilities of
 .B merovingian

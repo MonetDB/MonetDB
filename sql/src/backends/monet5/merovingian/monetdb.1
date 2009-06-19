@@ -155,14 +155,16 @@ requires that the separate mserver5 processes are reachable by the ports
 they use.  Since this may not be the case due to a firewall, when set to
 proxy, merovingian tunnels the client to the right database.
 .IP "share=<yes|no|tag>"
-Defines if the database is being announced to other merovingians or not.
-If not set to
+Defines if and how the database is being announced to other merovingians
+or not.  If not set to
 .I "yes"
 or
 .I "no
-it is assumed the database can be announced, using the given string as
-.IR tag .
-For information about the tag format, see section REMOTE DATABASES in the
+the database is simply announced or not.  Using a string, called
+.I tag
+the database is shared using that tag, allowing for more sophisticated
+usage.  For information about the tag format and use, see section REMOTE
+DATABASES in the
 .BR merovingian (1)
 manpage.
 .IP "inherit property database [database ...]"
