@@ -960,6 +960,14 @@ command_set(int argc, char *argv[], meroset type)
 			char old[512];
 			char new[512];
 
+			if (type == INHERIT) {
+				fprintf(stderr, "inherit: having the logdir location "
+						"depend on the global default makes a fragile "
+						"system configuration\n");
+				state |= 1;
+				continue;
+			}
+
 			/* retrieve the current setting, if relative, make it
 			 * absolute: ${gdk_dbfarm}/${gdk_dbname} = stats->path */
 
