@@ -2162,14 +2162,17 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			close(p->out);
 			close(p->err);
 			if (si->si_code == CLD_EXITED) {
-				Mfprintf(stdout, "database '%s' (%d) has exited with "
-						"exit status %d\n", p->dbname, p->pid, si->si_status);
+				Mfprintf(stdout, "database '%s' (%lld) has exited with "
+						"exit status %d\n", p->dbname,
+						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_KILLED) {
-				Mfprintf(stdout, "database '%s' (%d) was killed by signal "
-						"%d\n", p->dbname, p->pid, si->si_status);
+				Mfprintf(stdout, "database '%s' (%lld) was killed by signal "
+						"%d\n", p->dbname,
+						(long long int)p->pid, si->si_status);
 			} else if (si->si_code == CLD_DUMPED) {
-				Mfprintf(stdout, "database '%s' (%d) has crashed "
-						"(dumped core)\n", p->dbname, p->pid);
+				Mfprintf(stdout, "database '%s' (%lld) has crashed "
+						"(dumped core)\n", p->dbname,
+						(long long int)p->pid);
 			}
 			if (p->dbname)
 				GDKfree(p->dbname);
