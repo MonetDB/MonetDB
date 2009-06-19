@@ -281,7 +281,7 @@ public final class MapiSocket {
 				// first one.  URI should be in form of:
 				// "mapi:monetdb://host:port/database?arg=value&..."
 				// or
-				// "mapi:merovingian:proxy?arg=value&..."
+				// "mapi:merovingian://proxy?arg=value&..."
 				// note that the extra arguments must be obeyed in both
 				// cases
 				String suri = redirects.get(0).toString();
