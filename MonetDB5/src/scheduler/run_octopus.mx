@@ -107,7 +107,7 @@ typedef struct {
 
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Sea sea[MAXSITES];
-static int nrsea = 0;
+static int nroctopus = 0;
 
 static str
 OCTOPUSdiscover(Client cntxt){
@@ -134,12 +134,12 @@ OCTOPUSdiscover(Client cntxt){
 	BATloop(l1,p,q){
 		str t= (str) BUNtail(bi,p);
 
-		if (nrsea ==MAXSITES) break;
-		if ( (strlen(t) >= 3 && strcmp("sea", t+strlen(t)-3) == 0) ||
+		if (nroctopus ==MAXSITES) break;
+		if ( (strlen(t) >= 3 && strcmp(".octopus", t+strlen(t)-8) == 0) ||
 			strcmp(dbname,t) == 0) {
-			sea[nrsea].usr = GDKstrdup("monetdb");
-			sea[nrsea].pwd = GDKstrdup("monetdb");
-			sea[nrsea++].name= GDKstrdup(t);
+			sea[nroctopus].usr = GDKstrdup("monetdb");
+			sea[nroctopus].pwd = GDKstrdup("monetdb");
+			sea[nroctopus++].name= GDKstrdup(t);
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"Found site %s\n",t);
 #else
@@ -148,7 +148,7 @@ OCTOPUSdiscover(Client cntxt){
 		}
 	}
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Seas %d\n",nrsea);
+		stream_printf(cntxt->fdout,"Octopus %d\n",nroctopus);
 #endif
 	BBPreleaseref(b1);
 	BBPreleaseref(b2);
@@ -180,7 +180,7 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	str conn, fname, msg = MAL_SUCCEED;
 
 	fname = getVarConstant(mb,getArg(p,2)).val.sval;
-	for ( i= 0; i< nrsea; i++){
+	for ( i= 0; i< nroctopus; i++){
 		msg= RMTconnect(&conn, &sea[i].name, &sea[i].usr, &sea[i].pwd);
 		if (msg ){
 			stream_printf(cntxt->fdout,"!%s\n",msg);
@@ -244,7 +244,7 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 #else
 		(void) cntxt;
 #endif
-		rr= (rr+1) % nrsea;
+		rr= (rr+1) % nroctopus;
 	}
 	return msg;
 }
@@ -279,7 +279,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p= getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
 			break;
-		if (nrsea > 1) {
+		if (nroctopus > 1) {
 			msg= OCTOPUSregister(cntxt,mb,p);
 			if ( msg && strstr(msg,"already defined on the remote site")==0 )
 				return msg;
