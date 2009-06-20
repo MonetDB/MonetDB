@@ -1339,10 +1339,15 @@ openConnectionUDP(int *ret, unsigned short port)
 		return(newErr("binding to datagram socket port %hu failed: "
 					"no available address", port));
 
+	/* retrieve information from the socket */
+	getnameinfo(rp->ai_addr, rp->ai_addrlen,
+			host, sizeof(host),
+			sport, sizeof(sport),
+			NI_NUMERICSERV | NI_DGRAM);
+
 	freeaddrinfo(result);
 
-	gethostname(host, 512);
-	Mfprintf(stdout, "listening for UDP messages on %s:%hu\n", host, port);
+	Mfprintf(stdout, "listening for UDP messages on %s:%s\n", host, sport);
 
 	*ret = sock;
 	return(NO_ERR);
