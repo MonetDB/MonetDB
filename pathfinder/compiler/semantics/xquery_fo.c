@@ -1834,6 +1834,13 @@ PFfun_xquery_fo (void)
             .par_ty = (PFty_t []) { PFty_xs_string () },
             .ret_ty = PFty_xs_QName () } },
         .alg = PFbui_fn_resolve_qname }
+    , /* fn:resolve-QName (xs:string?, element()) as xs:QName? */
+      { .ns = PFns_fn, .loc = "resolve-QName",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t []) { PFty_opt (PFty_xs_string ()),
+                                    PFty_xs_anyElement () },
+            .ret_ty = PFty_opt (PFty_xs_QName ()) } },
+        .alg = NULL }
     , /* fn:QName (xs:string?, xs:string) as xs:QName */
       { .ns = PFns_fn, .loc = "QName",
         .arity = 2, .sig_count = 1, .sigs = { {
