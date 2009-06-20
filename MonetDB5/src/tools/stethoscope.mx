@@ -340,8 +340,11 @@ int main(int argc, char **argv)
 	snprintf(buf,BUFSIZ,"profiler.openStream(\"%s\", %d);", host, portnr);
 	doQ(buf);
 
-	if ((s = udp_rastream(host, portnr, "profileStream")) == NULL)
+	if ((s = udp_rastream(host, portnr, "profileStream")) == NULL) {
 		perror("stream failed\n");
+		exit(-1);
+	}
+
 	doQ("profiler.setNone();");
 
 	if(a== argc) {

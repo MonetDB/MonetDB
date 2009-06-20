@@ -505,16 +505,19 @@ mil_materialize_elimination (PFmil_t *n,
         case m_assgn:
             assert(n->child[0]->kind == m_var);
 
+            mark_used = PFbitset_get (used_vars, n->child[0]->sem.ident);
+
+            /* The variable is unused before the assignment (but may be
+               used in the right part again -- e.g., 'a := a.reverse();' */
+            PFbitset_set (used_vars, n->child[0]->sem.ident, false);
+
             /* Propagate the information whether the input has to
                be materialized or not. */
             mil_materialize_elimination (n->child[1],
                                          used_vars,
-                                         PFbitset_get (used_vars,
-                                                       n->child[0]->sem.ident),
+                                         mark_used,
                                          change);
 
-            /* The variable is unused before the assignment. */
-            PFbitset_set (used_vars, n->child[0]->sem.ident, false);
             break;
 
         case m_var:
