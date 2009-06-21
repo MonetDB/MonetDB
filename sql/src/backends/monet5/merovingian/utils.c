@@ -31,7 +31,7 @@
 
 /**
  * Returns a GDKmalloced copy of s, with the first occurrence of
- * "${prefix}" replaced by prefix.  If s is NULL, this value returns
+ * "${prefix}" replaced by prefix.  If s is NULL, this function returns
  * also NULL.
  */
 inline char *
@@ -39,6 +39,9 @@ replacePrefix(char *s, char *prefix)
 {
 	char *p;
 	char buf[1024];
+
+	if (s == NULL)
+		return(NULL);
 
 	/* replace first occurence of ${prefix}, return a modified copy */
 	p = strstr(s, "${prefix}");
