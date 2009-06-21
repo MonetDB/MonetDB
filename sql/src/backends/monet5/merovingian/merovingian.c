@@ -1875,10 +1875,8 @@ discoveryRunner(void *d)
 			continue; /* skip this message */
 		}
 
-		/* ignore messages from self: FIXME make this more robust */
-		if (strcmp(host, _mero_hostname) == 0
-				|| strcmp(host, "localhost") == 0
-				|| strcmp(host, "0.0.0.0") == 0)
+		/* ignore messages from broadcast interface */
+		if (strcmp(host, "0.0.0.0") == 0)
 			continue;
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
