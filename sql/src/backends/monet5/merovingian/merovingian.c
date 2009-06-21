@@ -1196,13 +1196,21 @@ handleClient(int sock)
 		 * give trouble on windowz
 		host = inet_ntoa(saddr.sin_addr);
 		 */
-		host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3 + 1 + 5) + 1));
-		sprintf(host, "%u.%u.%u.%u:%d",
-				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
-				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
-				(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
-				(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
-				(int)ntohs(saddr.sin_port));
+		struct hostent *hoste = 
+			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
+		if (hoste == NULL) {
+			host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
+			sprintf(host, "%u.%u.%u.%u:%u",
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
+					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
+					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
+					(unsigned) (ntohs(saddr.sin_port)));
+		} else {
+			host = alloca(sizeof(char) * (strlen(hoste->h_name) + 1 + 5 + 1));
+			sprintf(host, "%s:%u",
+					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
+		}
 	}
 
 	/* need to send a response, either we are going to proxy, or we send
@@ -1260,6 +1268,9 @@ openConnectionTCP(int *ret, unsigned short port)
 	int i = 0;
 	struct hostent *hoste;
 	char *host;
+#ifdef CONTROL_BINDADDR
+	char bindaddr[512];   /* eligable for configuration */
+#endif
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
@@ -1269,7 +1280,14 @@ openConnectionTCP(int *ret, unsigned short port)
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 	server.sin_family = AF_INET;
+#ifdef CONTROL_BINDADDR
+	gethostname(bindaddr, 512);
+	hoste = gethostbyname(bindaddr);
+	memcpy(&server.sin_addr.s_addr, *(hoste->h_addr_list),
+			sizeof(server.sin_addr.s_addr));
+#else
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
+#endif
 	for (i = 0; i < 8; i++)
 		server.sin_zero[i] = 0;
 	length = (socklen_t) sizeof(server);
