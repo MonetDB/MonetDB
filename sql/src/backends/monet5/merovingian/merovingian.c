@@ -1255,11 +1255,11 @@ openConnectionTCP(int *ret, unsigned short port)
 {
 	struct sockaddr_in server;
 	int sock = -1;
-
 	socklen_t length = 0;
 	int on = 1;
 	int i = 0;
-	char host[512];
+	struct hostent *hoste;
+	char *host;
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
@@ -1283,10 +1283,21 @@ openConnectionTCP(int *ret, unsigned short port)
 	if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
 		return(newErr("failed getting socket name: %s",
 				strerror(errno)));
+	hoste = gethostbyaddr(&server.sin_addr.s_addr, 4, server.sin_family);
+	if (hoste == NULL) {
+		host = alloca(sizeof(char) * ((3 + 1 + 3 + 1 + 3 + 1 + 3) + 1));
+		sprintf(host, "%u.%u.%u.%u",
+				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 24) & 0xff),
+				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 16) & 0xff),
+				(unsigned) ((ntohl(server.sin_addr.s_addr) >> 8) & 0xff),
+				(unsigned) (ntohl(server.sin_addr.s_addr) & 0xff));
+	} else {
+		host = hoste->h_name;
+	}
+
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	gethostname(host, 512);
 	Mfprintf(stdout, "listening for TCP connections on %s:%hu\n", host, port);
 
 	*ret = sock;
