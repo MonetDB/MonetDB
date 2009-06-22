@@ -605,7 +605,7 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = dbname;
 		argv[c++] = "--dbinit=include sql;"; /* yep, no quotes needed! */
 		argv[c++] = "--set"; argv[c++] = "monet_daemon=yes";
-		if (mydoproxy == 0) {
+		if (mydoproxy == 1) {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=false";
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
