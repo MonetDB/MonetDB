@@ -216,9 +216,10 @@ mal_listing = 2
 
 # Monet Application Interface Section
 #====================================
-mapi_port=50000     # default port to address a mserver
-mapi_open=false     # should be set to 'true' to allow for 
-                    # remote access to a server
+mapi_port=50000       # default port to address an mserver
+mapi_autosense=false  # if set to 'true': automatically find a free port
+mapi_open=false       # should be set to 'true' to allow for 
+                      # remote access to a server
 
 # SQL Interface Section
 #====================================
