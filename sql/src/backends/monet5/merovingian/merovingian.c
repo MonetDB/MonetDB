@@ -1772,7 +1772,9 @@ discoveryRunner(void *d)
 	fd_set fds;
 	struct timeval tv;
 	int c;
-	time_t deadline = 0;
+	/* avoid first announce, the HELO will cause an announce when it's
+	 * received by ourself */
+	time_t deadline = 1;
 	time_t now = 0;
 	int forceannc = 0;
 	sabdb *orig;
@@ -1987,13 +1989,13 @@ discoveryRunner(void *d)
 				prv = NULL;
 				rdb = _mero_remotedbs;
 				while (rdb != NULL) {
-					if (strcmp(dbname, rdb->fullname) == 0) {
-						if (strcmp(conn, rdb->conn) == 0) {
-							/* refresh ttl */
-							rdb->ttl = time(NULL) + atoi(ttl);
-						}
+					if (strcmp(dbname, rdb->fullname) == 0 &&
+							strcmp(conn, rdb->conn) == 0)
+					{
+						/* refresh ttl */
+						rdb->ttl = time(NULL) + atoi(ttl);
 						rdb = prv;
-						break; /* skip duplicate entries */
+						break;
 					}
 					prv = rdb;
 					rdb = rdb->next;
