@@ -1957,7 +1957,7 @@ discoveryRunner(void *d)
 				prv = rdb;
 				rdb = rdb->next;
 			}
-			if (hadmatch == 1)
+			if (hadmatch == 0)
 				Mfprintf(_mero_discout,
 						"received leave request for unknown database "
 						"%s%s from %s\n", conn, dbname, host);
