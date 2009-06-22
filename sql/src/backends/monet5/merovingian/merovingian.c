@@ -1850,8 +1850,8 @@ discoveryRunner(void *d)
 				} else {
 					prv->next = rdb->next;
 				}
-				Mfprintf(_mero_discout, "neighbour database %s at %s "
-						"has expired\n", rdb->fullname, rdb->conn);
+				Mfprintf(_mero_discout, "neighbour database %s%s "
+						"has expired\n", rdb->conn, rdb->fullname);
 				free(rdb->dbname);
 				free(rdb->conn);
 				free(rdb->tag);
@@ -1912,6 +1912,7 @@ discoveryRunner(void *d)
 			char *sp = NULL;
 			char *dbname;
 			char *conn;
+			char hadmatch = 0;
 
 			strtok_r(buf, " ", &sp); /* discard the msg type */
 			dbname = strtok_r(NULL, " ", &sp);
@@ -1942,24 +1943,24 @@ discoveryRunner(void *d)
 					} else {
 						prv->next = rdb->next;
 					}
+					Mfprintf(_mero_discout,
+							"removed neighbour database %s%s\n",
+							conn, rdb->fullname);
 					free(rdb->dbname);
 					free(rdb->conn);
 					free(rdb->tag);
 					free(rdb->fullname);
 					free(rdb);
-					Mfprintf(_mero_discout,
-							"removed neighbour database %s at %s (%s)\n",
-							dbname, conn, host);
-					break;
+					hadmatch = 1;
+					/* there may be more, keep looking */
 				}
 				prv = rdb;
 				rdb = rdb->next;
 			}
-			if (rdb == NULL)
+			if (hadmatch == 1)
 				Mfprintf(_mero_discout,
 						"received leave request for unknown database "
-						"%s from %s (%s)\n",
-						dbname, conn, host);
+						"%s%s from %s\n", conn, dbname, host);
 
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
@@ -1986,7 +1987,7 @@ discoveryRunner(void *d)
 				prv = NULL;
 				rdb = _mero_remotedbs;
 				while (rdb != NULL) {
-					if (strcmp(dbname, rdb->dbname) == 0) {
+					if (strcmp(dbname, rdb->fullname) == 0) {
 						if (strcmp(conn, rdb->conn) == 0) {
 							/* refresh ttl */
 							rdb->ttl = time(NULL) + atoi(ttl);
@@ -2015,8 +2016,8 @@ discoveryRunner(void *d)
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 
 			Mfprintf(_mero_discout, "discovered neighbour database "
-					"%s@%s %s ttl=%ss\n",
-					rdb->fullname, host, conn, ttl);
+					"%s%s (ttl=%ss)\n",
+					conn, rdb->fullname, ttl);
 		} else {
 			Mfprintf(_mero_discout, "ignoring unknown message from "
 					"%s:%s: '%s'\n", host, service, buf);
