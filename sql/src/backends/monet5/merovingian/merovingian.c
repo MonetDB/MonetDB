@@ -583,7 +583,8 @@ forkMserver(str database, sabdb** stats, int force)
 	if (pid == 0) {
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
-		str argv[17];	/* for the exec arguments */
+		str port = alloca(sizeof(char) * 24);
+		str argv[19];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -597,9 +598,14 @@ forkMserver(str database, sabdb** stats, int force)
 		close(pfde[1]);
 
 		/* ok, now exec that mserver we want */
-		snprintf(conffile, 511, "--config=%s", _mero_conffile);
-		snprintf(dbname, 511, "--dbname=%s", database);
-		snprintf(vaultkey, 511, "monet_vault_key=%s/.vaultkey", (*stats)->path);
+		snprintf(conffile, 512, "--config=%s", _mero_conffile);
+		snprintf(dbname, 512, "--dbname=%s", database);
+		snprintf(vaultkey, 512, "monet_vault_key=%s/.vaultkey", (*stats)->path);
+		/* avoid this mserver binding to the same port as merovingian
+		 * but on another interface, (INADDR_ANY ... sigh) causing
+		 * endless redirects since 0.0.0.0 is not a valid address to
+		 * connect to, and hence the hostname is advertised instead */
+		snprintf(port, 24, "mapi_port=%d", _mero_port + 1);
 		argv[c++] = _mero_mserver;
 		argv[c++] = conffile;
 		argv[c++] = dbname;
@@ -610,7 +616,8 @@ forkMserver(str database, sabdb** stats, int force)
 		} else {
 			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
 		}
-		argv[c++] = "--set"; argv[c++] = "mapi_port=0"; /* force autosensing! */
+		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
+		argv[c++] = "--set"; argv[c++] = port;
 		argv[c++] = "--set"; argv[c++] = vaultkey;
 		argv[c++] = "--set"; argv[c++] = logdir;
 		if (nthreads != NULL) {
