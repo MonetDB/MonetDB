@@ -2061,7 +2061,7 @@ mapi_destroy(Mapi mid)
 static void
 parse_uri_query(Mapi mid, char *uri)
 {
-	char *lasts;
+	char *lasts = NULL;
 	char *arg;
 	char *val;
 
