@@ -1187,7 +1187,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 /******************** thetajoin check ************************/
 
                 unsigned int count = 0;
-                PFarray_t   *pred = p->sem.thetajoin_opt.pred;
+                PFarray_t   *pred = L(p)->sem.thetajoin_opt.pred;
                 
                 /* The following rewrite is incorrect if we have a real
                    thetajoin as the thetajoin arguments filter out some
@@ -1269,7 +1269,7 @@ do_opt_mvd (PFla_op_t *p, bool modified)
                 /******************** thetajoin check ************************/
 
                 unsigned int count = 0;
-                PFarray_t   *pred = p->sem.thetajoin_opt.pred;
+                PFarray_t   *pred = L(p)->sem.thetajoin_opt.pred;
                 
                 /* The following rewrite is incorrect if we have a real
                    thetajoin as the thetajoin arguments filter out some
