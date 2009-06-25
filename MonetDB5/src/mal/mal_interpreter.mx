@@ -825,10 +825,12 @@ runDFLOWworker(void *t)
 	str err;
 	int oldpc;
 /*	int hour=0; */
+	Thread thr;
 
 #ifdef DEBUG_FLOW
 	stream_printf(GDKstdout, "start parallel interpreter thread\n");
 #endif
+	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
 		fs = (FlowStep)q_dequeue(work);
 		oldpc= fs->pc;
@@ -850,6 +852,7 @@ runDFLOWworker(void *t)
 		}
 		q_enqueue(fs->flow->done, fs);
 	}
+	THRdel(thr);
 }
 
 static void 
