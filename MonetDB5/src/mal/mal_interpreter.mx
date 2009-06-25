@@ -830,7 +830,9 @@ runDFLOWworker(void *t)
 	str err;
 	int oldpc;
 /*	int hour=0; */
+	Thread thr;
 
+	thr = THRnew(MT_getpid(), "DFLOWworker");
 	while(task) {
 		fs = (FlowStep)q_dequeue(task->todo);
 		oldpc= fs->pc;
@@ -852,6 +854,7 @@ runDFLOWworker(void *t)
 		}
 		q_enqueue(fs->flow->done, fs);
 	}
+	THRdel(thr);
 }
 
 static void

@@ -87,6 +87,13 @@ make install DESTDIR=$RPM_BUILD_ROOT
 # cleanup stuff we don't want to have installed
 find $RPM_BUILD_ROOT -name .incs.in -delete -o -name \*.la -delete
 
+# Make sure that these .pyc and .pyo files exist so we can exclude
+# them.  Not all versions of Fedora generate these files during the
+# build process, and so the exclude would otherwise generate an error
+# which we now avoid (note, the generation of .pyc and .pyo files
+# happens in a separate pass after the install).
+for i in $RPM_BUILD_ROOT%{_bindir}/*.py; do touch ${i}c ${i}o; done
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
