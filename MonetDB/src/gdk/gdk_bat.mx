@@ -3025,11 +3025,11 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 	if (tpe == TYPE_void) {
 		return b;
 	}
-	if (yy > xx && BAThdense(b) && b->htype == TYPE_oid && *(oid *) BUNhloc(bi, BUNfirst(b)) != b->hseqbase) {
+	if (xx > yy /* BATcount(b) > 0 */ && BAThdense(b) && b->htype == TYPE_oid && *(oid *) BUNhloc(bi, BUNfirst(b)) != b->hseqbase) {
 		GDKerror("BATpropcheck: BAT %s(%d) with "BUNFMT" tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n",
 			 BATgetId(b), b->batCacheid, BATcount(b), b->hseqbase, *(oid *) BUNhloc(bi, BUNfirst(b)));
 	}
-	if (yy + 1 >= xx) {	/* BATcount(b) <= 1 */
+	if (xx <= yy + 1) {	/* BATcount(b) <= 1 */
 		if (ATOMlinear(tpe) && !(b->hsorted & 1)) {
 			XPROPDEBUG THRprintf(GDKout,"#BATpropcheck: BAT %s(%d)[%s,%s] with "BUNFMT" tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), BATcount(b));
 
