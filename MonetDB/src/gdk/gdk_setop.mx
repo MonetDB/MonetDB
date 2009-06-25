@@ -353,7 +353,7 @@ BATsunique(BAT *b)
 {
 	BAT *bn;
 
-	BATcheck(b, "BATsnique:");
+	BATcheck(b, "BATsunique:");
 
 	if (b->hkey || b->tkey || b->batSet) {
 		bn = BATcopy(b, b->htype, b->ttype, FALSE);
