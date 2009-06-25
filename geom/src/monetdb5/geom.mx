@@ -623,14 +623,12 @@ wkbFROMSTR(
 		nil = 1;
 
 	if (!nil && (geosGeometry = GEOSGeomFromWKT(src)) == NULL) {
-		*atom = wkbNULL();
-		return 0;
+		goto return_nil;
 	}
 	
 	if (!nil && GEOSGeomTypeId(geosGeometry) == -1) {
 		GEOSGeom_destroy(geosGeometry);
-		*atom = wkbNULL();
-		return 0;
+		goto return_nil;
 	}
 
 	if (!nil) {
@@ -652,6 +650,13 @@ wkbFROMSTR(
 	wkbLen = strlen(src);
 	assert(wkbLen <= GDK_int_max);
 	return (int) wkbLen;
+return_nil:
+	if ((size_t) *len < sizeof(wkb)) {
+		if (*atom) GDKfree(*atom);
+		*atom = GDKmalloc(*len = (int)sizeof(wkb));
+	}
+	**atom = *wkbNULL();
+	return 0;
 }
 
 geom_export str
