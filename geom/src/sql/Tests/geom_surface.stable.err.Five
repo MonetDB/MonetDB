@@ -81,28 +81,28 @@ stderr of test 'geom_surface` in directory 'src/sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20)');
 ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20, 30 40)');
 ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('POINT(10 10)');
 ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('POLYGON(10 10)');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: 10
-MAPI  = monetdb@koolmees:38689
+ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: '10'
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('POLYGON(10)');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: 10
-MAPI  = monetdb@koolmees:38689
+ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: '10'
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('POLYGON()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected 'EMPTY' or '(' but encountered : ')'
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('POLYGON');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:38689
+MAPI  = monetdb@ottar:32896
 QUERY = INSERT INTO surfaces values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
 
