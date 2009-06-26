@@ -251,6 +251,11 @@ end @2;
 @:ctypes(Geom,geometry,7)@
 @:ctypes(GeomCollection,geometrycollection,7)@
 
+module geom;
+command calc.isnil(v:wkb):bit
+address wkbIsnil
+comment "Nil test for wkb value";
+
 @h
 #ifndef GEOM_H
 #define GEOM_H
@@ -404,7 +409,7 @@ mbrTOSTR(
 			atom->xmin, atom->ymin,
 			atom->xmax, atom->ymax
 		);
-		dstStrLen = strlen(tempWkt);
+		dstStrLen = strlen(tempWkt) + 2;
 		assert(dstStrLen < GDK_int_max);
 	}
 	
@@ -414,7 +419,7 @@ mbrTOSTR(
 	}
 	
 	if (dstStrLen > 3)
-		strcpy(*dst, tempWkt);
+		snprintf(*dst, *len, "\"%s\"", tempWkt);
 	else
 		strcpy(*dst, "nil");
 	return (int) dstStrLen;
@@ -579,7 +584,7 @@ wkbTOSTR(
 		wkt = GEOSGeomToWKT(geosGeometry);
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
-		dstStrLen = (int) l;
+		dstStrLen = (int) l + 2;  /* add quotes */
 		GEOSGeom_destroy(geosGeometry);
 	}
 	
@@ -589,7 +594,7 @@ wkbTOSTR(
 	}
 	
 	if (wkt) {
-		strcpy(*dst, wkt);
+		snprintf(*dst, *len, "\"%s\"", wkt);
 		free(wkt);
 	} else {
 		strcpy(*dst, "nil");
@@ -769,6 +774,14 @@ wkbNULL(void)
 
 	nullval.len = ~(int) 0;
 	return (&nullval);
+}
+
+geom_export str wkbIsnil(bit *r, wkb **v);
+str
+wkbIsnil(bit *r, wkb **v)
+{
+	*r = wkb_isnil(*v);
+	return MAL_SUCCEED;
 }
 
 geom_export str
