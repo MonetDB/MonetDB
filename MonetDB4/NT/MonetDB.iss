@@ -1,7 +1,7 @@
 
 [Setup]
 AppName=MonetDB
-AppVerName=MonetDB 4.30.1
+AppVerName=MonetDB 4.30.2
 DefaultDirName={pf}\MonetDB
 DefaultGroupName=MonetDB
 UninstallDisplayIcon={app}\bin\Mserver.exe
