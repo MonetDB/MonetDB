@@ -81,28 +81,28 @@ stderr of test 'geom_curve` in directory 'src/sql` itself:
 # 20:50:33 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=30183 
 # 20:50:33 >  
 
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('POINT(10 10)');
 ERROR = !MALException:wkb.FromText:Geometry type 'Line' not found
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))');
 ERROR = !MALException:wkb.FromText:Geometry type 'Line' not found
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10), (15 15, 15 20, 10 15, 15 15))');
 ERROR = !MALException:wkb.FromText:Geometry type 'Line' not found
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('LINESTRING(10 10)');
 ERROR = !MALException:wkb.FromText:IllegalArgumentException: point array must contain 0 or >1 elements
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('LINESTRING(10)');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('LINESTRING()');
 ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('LINESTRING');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@koolmees:30183
+MAPI  = monetdb@ottar:32754
 QUERY = INSERT INTO curves values ('');
 ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
 

@@ -289,7 +289,7 @@ mbrTOSTR(
 			atom->xmin, atom->ymin,
 			atom->xmax, atom->ymax
 		);
-		dstStrLen = strlen(tempWkt);
+		dstStrLen = strlen(tempWkt) + 2;
 		assert(dstStrLen < GDK_int_max);
 	}
 	
@@ -299,7 +299,7 @@ mbrTOSTR(
 	}
 	
 	if (dstStrLen > 3)
-		strcpy(*dst, tempWkt);
+		snprintf(*dst, *len, "\"%s\"", tempWkt);
 	else
 		strcpy(*dst, "nil");
 	return (int) dstStrLen;
@@ -407,7 +407,7 @@ wkbTOSTR(
 		wkt = GEOSGeomToWKT(geosGeometry);
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
-		dstStrLen = (int) l;
+		dstStrLen = (int) l + 2;  /* add quotes */
 		GEOSGeom_destroy(geosGeometry);
 	}
 	
@@ -417,7 +417,7 @@ wkbTOSTR(
 	}
 	
 	if (wkt) {
-		strcpy(*dst, wkt);
+		snprintf(*dst, *len, "\"%s\"", wkt);
 		free(wkt);
 	} else {
 		strcpy(*dst, "nil");
