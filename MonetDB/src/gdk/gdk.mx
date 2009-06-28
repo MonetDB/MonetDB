@@ -2443,7 +2443,9 @@ gdk_export MT_Lock GDKtmLock;
 
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
-#define DEADBEEFMASK	(1<<25)
+#define OPTIMIZERS  (1<<25)
+#define OPTIMIZERSCHK	if (!(GDKdebug & JOINPROPMASK))
+#define DEADBEEFMASK	(1<<26)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
 #define ALLOCMASK	(1<<26)
@@ -2490,7 +2492,7 @@ The Thread structure should be ideally made directly accessible to each
 thread. This speeds up access to tid and file descriptors.
 @{
 @h
-#define THREADS	64
+#define THREADS	1024
 #define THREADDATA	16
 
 typedef struct threadStruct {
