@@ -258,12 +258,15 @@ foundit:
 
 	for (j = 0; j < p->argc; j++)
 		needed[getArg(p,j)]= 1;
-	/* find the instructions needed */
+@-
+Find the instructions needed. Beware pack operations
+already have been handled and produce their target.
+@c
 	for (; i > 0; i--){
 		p= getInstrPtr(mb,i);
 		fnd = 0;
-		if ( p->barrier){
-			for (j = 0; j < p->retc; j++)
+		if ( p->barrier ){
+			for (j = 0; j < p->argc; j++)
 				needed[getArg(p,j)]= 1;
 			fnd = 1;
 		}
@@ -275,11 +278,6 @@ foundit:
 			list[top++] = p;
 		}
 	}
-#ifdef DEBUG_OPT_OCTOPUS
-	stream_printf(cntxt->fdout,"List of instructions\n");
-	for(i=top-1;i>=0;i--)
-		printInstruction(cntxt->fdout,mb,0,list[i], LIST_MAL_STMT);
-#endif
 
 	snprintf(buf,BUFSIZ,"tentacle_%s_%d", 
 		getFunctionId(getInstrPtr(mb,0)),varid);
@@ -349,6 +347,7 @@ foundit:
 
 #ifdef DEBUG_OPT_OCTOPUS
 	stream_printf(cntxt->fdout, "TENTACLE octopus \n");
+	chkDeclarations(tm);
 	printFunction(cntxt->fdout, tm, 0, LIST_MAL_STMT);
 #endif
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
@@ -366,7 +365,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int tn=0, maxtn= MAL_MAXCLIENTS -2;	/* should be relaxed */
 	MalBlkPtr *tentacle= (MalBlkPtr *) GDKmalloc(sizeof(MalBlkPtr) * maxtn),sm = NULL;
 	Symbol s2;
-	int target=0, update=0, autocommit=0;
+	int target= -1, update=0, autocommit=0;
 	int version,v2;
 	int k,l;
 	char buf[BUFSIZ];
@@ -397,6 +396,7 @@ when scheduled correctly, would not lead to duplicate work.
 	limit = mb->stop;
 	old = mb->stmt;
 
+	autocommit = varGetProp(mb, getArg(old[0],0), PropertyIndex("autoCommit")) != NULL;
 	for (i = 1; i < limit; i++){
 		p = old[i];
 		
@@ -404,11 +404,10 @@ when scheduled correctly, would not lead to duplicate work.
 			target = i;
 		if( getModuleId(p)== sqlRef ){
 			update |= getFunctionId(p)== appendRef || getFunctionId(p)== deleteRef;
-			autocommit |=strcmp(getFunctionId(p),"autoCommit")==0;
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
-	if ( update || autocommit==0 )
+	if ( target == -1 || update || autocommit==0 )
 		return 0;
 
 	newMalBlkStmt(mb, mb->ssize);
@@ -582,8 +581,11 @@ The tentacle code should be optimized by the remaining optimizers too.
 		stream_printf(cntxt->fdout, "DONE octopus \n");
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT);
-		for (i=0; i<tn; i++)
+		for (i=0; i<tn; i++){
+			chkDeclarations(tentacle[i]);
+			chkFlow(tentacle[i]);
 			printFunction(cntxt->fdout, tentacle[i], 0, LIST_MAL_STMT);
+		}
 	}
 #endif
 	GDKfree(old);
