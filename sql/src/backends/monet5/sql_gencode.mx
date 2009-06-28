@@ -2093,6 +2093,7 @@ backend_create_func(backend *be, sql_func *f)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
+	int i;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
@@ -2115,8 +2116,6 @@ backend_create_func(backend *be, sql_func *f)
 
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
-
-	varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 
 	if (f->res.type) { 
 		if (f->res.type->localtype == TYPE_bat)
@@ -2153,7 +2152,17 @@ backend_create_func(backend *be, sql_func *f)
 	/* announce the transaction mode */
 	if ( m->session->auto_commit)
 		setCommitProperty(curBlk);
+
 	backend_dumpstmt(be, curBlk, s);
+	/* selectively make functions available for inlineing */
+	/* for the time being we only inline scalar functions */
+	for( i= 1; i<curBlk->stop; i++){
+		InstrPtr p = getInstrPtr(curBlk,i);
+		if ( getFunctionId(p)== bindRef || getFunctionId(p)== bindidxRef)
+			break;
+	}
+	if (i == curBlk->stop)
+		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	stmt_destroy(s);
 	addQueryToCache(c);
 	if (backup) 
