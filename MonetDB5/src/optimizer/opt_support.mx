@@ -687,12 +687,17 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 @-
 The default MAL optimizer includes a final call to
 the multiplex expander.
+We should take care of functions marked as 'inline',
+because they should be kept in raw form. 
+Their optimization takes place after inlining.
 @c
 str
 MALoptimizer(Client c)
 {
 	str msg;
 
+	if ( varGetProp(c->curprg->def,0,inlineProp))
+		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
 		OPTmultiplexSimple(c);
