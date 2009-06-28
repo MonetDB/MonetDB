@@ -844,6 +844,9 @@ and before continuing at the next level of invocation.
 The commands are self-explanatory.
 
 The prompt string sent to the user indicates the debugger mode.
+
+The history of the optimizers is maintained, which can be localized
+for inspection.
 @c
 #define MDBstatus(X) if(cntxt->fdout) \
 	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
@@ -855,6 +858,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out){
 	int idx=0;
 
 	skipBlanc(cntxt, b);
+	/* start with function in context */
 	if( *b == '['){
 		idx= atoi(b+1);
 		return getMalBlkHistory(mb,idx);
@@ -1403,6 +1407,11 @@ signatures satisfying the pattern.
 			skipWord(cntxt, b);
 			if (*b != 0) {
 				MalBlkPtr m= mdbLocateMalBlk(cntxt,mb,b,out);
+				if ( m && strchr(b,'*') ){
+					/* detect l user.fcn[*] */
+					for (m=mb; m != NULL; m = m->history)
+						printFunction(out, m, 0, lstng);
+				} else
 				if( m == NULL && !strchr(b,'.') && 
 					!strchr(b,'[') && !isdigit((int)*b)){
 					/* optionally dump the complete module */
