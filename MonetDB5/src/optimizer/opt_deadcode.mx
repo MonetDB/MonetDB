@@ -153,7 +153,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	GDKfree(old);
 #ifdef DEBUG_OPT_DEAD
 	stream_printf(cntxt->fdout,"LEAVING DEAD CODE ELIMINATION\n");
-	printFunction(cntxt->fdout,mb,LIST_MAL_ALL);
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 #endif
 	/* we may have uncovered new use-less operations */
 	if (actions) 
