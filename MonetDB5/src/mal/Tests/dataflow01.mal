@@ -22,6 +22,11 @@ end qry;
 
 s:= load();
 
+t1:= 0:wrd;
+t2:= 0:wrd;
+t3:= 0:wrd;
+t4:= 0:wrd;
+c := 0:wrd;
 barrier go:= language.dataflow();
 	t1:= qry(s,1,100);
 	t2:= qry(s,101,1000);

@@ -33,6 +33,11 @@ end qry;
 function user.main():void;
 # a simple dataflow test to check call methods. 
     s := user.load();
+    t1 := 0:wrd;
+    t2 := 0:wrd;
+    t3 := 0:wrd;
+    t4 := 0:wrd;
+    c := 0:wrd;
 barrier go := language.dataflow();
     t1 := user.qry(s,1,100);
     t2 := user.qry(s,101,1000);

@@ -875,7 +875,8 @@ in the context of a global stack.
 				setVarUsed(mb, l);
 		}
 		if( p->barrier){
-			if( blockStart(p)){
+			if ( blockStart(p) && 
+			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
 				if( top <MAXDEPTH-2){
 					blks[++top]= ++blkId;
 #ifdef DEBUG_MAL_FCN
@@ -888,10 +889,21 @@ in the context of a global stack.
 					return;
 				}
 			}
-			if( blockExit(p) && top > 0) {
+			if( blockExit(p) && top > 0 && 
+			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
 #ifdef DEBUG_MAL_FCN
 				stream_printf(GDKout,"leave block %d at top %d\n",blks[top], top);
 #endif
+@-
+At the end of the block we should reset the status of all variables
+defined within the block. For, the block could have been skipped
+leading to uninitialized variables.
+@c
+				for (l = 0; l < mb->vtop; l++)
+				if( decl[l] == blks[top]){
+					decl[l] =0;
+					clrVarInit(mb,l);
+				}
 			    top--;
 			}
 		}

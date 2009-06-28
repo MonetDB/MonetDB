@@ -31,6 +31,8 @@ stdout of test 'tst026` in directory 'src/mal` itself:
 function user.foo():void;
     b := bat.new(:oid,:int);
     cnt := 0:wrd;
+    f := 0;
+    g := 0;
 barrier d := true;
     f := 1;
     cnt := aggr.count(b);

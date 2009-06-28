@@ -247,5 +247,6 @@ saveload
 parseErrors
 
 dataflow01
+flowchk
 
 dynamicload

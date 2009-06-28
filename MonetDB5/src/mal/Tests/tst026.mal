@@ -1,6 +1,8 @@
 function foo();
 	b:= bat.new(:oid,:int);
 	cnt:= 0:wrd;
+	f:= 0;
+	g:= 0;
 barrier d:=true;
 	f:=1;
 	cnt:= aggr.count(b);
