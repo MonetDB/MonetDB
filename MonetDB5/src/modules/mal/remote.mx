@@ -755,7 +755,7 @@ static str RMTconnectInternal(
 		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(IO, "remote.connect", OPERATION_FAILED " An error occurred during "
 				"connect of connection '%s': %s",
-				conn, mapi_error(m));
+				conn, mapi_error_str(m) );
 	}
 
 	/* connection established */
