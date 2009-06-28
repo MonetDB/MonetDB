@@ -174,8 +174,8 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 		int sz;
 
 		res = BUNtail(bi, q);
-                sz = ATOMlen(b->ttype, res);
-                r = GDKmalloc(sz);
+		sz = ATOMlen(b->ttype, res);
+		r = GDKzalloc(sz);
 		memcpy(r,res,sz);
 		res = r;
 	}
@@ -233,7 +233,7 @@ table_dump(sql_trans *tr, sql_table *t)
 {
 	node *n = cs_first_node(&t->columns);
 	int i, l = cs_size(&t->columns);
-	BAT **b = (BAT**)GDKmalloc(sizeof(BAT*) * l);
+	BAT **b = (BAT**)GDKzalloc(sizeof(BAT*) * l);
 	
 	(void)tr;
 	for (i = 0; n; n = n->next, i++) {
@@ -281,7 +281,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 	BAT *b = NULL, *s = NULL, *d = NULL;
 	sql_column *nc;
 	void *nvl, *nvh;
-	rids *rs = NEW(rids);
+	rids *rs = ZNEW(rids);
 	sql_dbat *bat = key->t->data;
 
 	/* special case, key_value_low and high NULL, ie return all */
