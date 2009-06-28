@@ -251,7 +251,7 @@ mal_export int MCdefault;
 
 mal_export Client  MCfindClient(oid user, str scen, bstream *fin, stream *fout);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
-mal_export void    MCinitClientThread(Client c);
+mal_export int     MCinitClientThread(Client c);
 mal_export void    MCcloseClient    (Client c);
 mal_export Client  MCforkClient     (Client c);
 mal_export int	   MCcountClients(void);
@@ -537,7 +537,7 @@ The administrator should be initialized to enable
 interpretation of the command line arguments, before
 it starts serviceing statements
 @c
-void MCinitClientThread(Client c)
+int MCinitClientThread(Client c)
 {
 	Thread t;
 	char cname[11 + 1];
@@ -545,36 +545,26 @@ void MCinitClientThread(Client c)
 	snprintf(cname, 11, OIDFMT, c->user);
 	cname[11] = '\0';
 	c->mypid = MT_getpid();
-	c->mythread = t = THRnew(c->mypid,cname);
-	c->errbuf = GDKerrbuf;
-	if (c->errbuf == NULL) {
-		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
-		c->errbuf = GDKerrbuf;
+	t = THRnew(c->mypid,cname);
+	if ( t==0) {
+		showException(MAL, "initClientThread", "Failed to initialize client");
+		MPresetProfiler(c->fdout);
+		return -1;
 	}
-	c->errbuf[0]=0;
 @-
 The GDK thread administration should be set to reflect use of
 the proper IO descriptors.
 @c
-	if ( t==0) {
-		showException(MAL, "initClientThread", "Failed to initialize client");
-		MPresetProfiler(c->fdout);
-		assert(c->bak==NULL);
-		if( c->fdin){
-			/* missing protection against closing stdin stream */
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s);
-			(void) bstream_destroy(c->fdin);
-		}
-		if( c->fdout && c->fdout != GDKstdout) {
-			(void) stream_close(c->fdout);
-			(void) stream_destroy(c->fdout);
-		}
-		/* if( c->socket) close(c->socket);*/
-		return ;
-	}
 	t->data[1] = c->fdin;
 	t->data[0] = c->fdout;
+	c->mythread = t;
+	c->errbuf = GDKerrbuf;
+	if (c->errbuf == NULL) {
+		GDKsetbuf( GDKzalloc(GDKMAXERRLEN));
+		c->errbuf = GDKerrbuf;
+	} else
+		c->errbuf[0]=0;
+	return 0;
 } 
 @- Client decendants
 Forking is a relatively cheap way to create a new client.
