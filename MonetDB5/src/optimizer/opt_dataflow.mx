@@ -65,6 +65,9 @@ The statemens are all checked for being eligible for dataflow.
 			q->barrier= BARRIERsymbol;
 			getArg(q,0)= flowblock;
 			setVarUsed(mb,flowblock);
+			/* dataflow blocks are transparent, because they are always
+			   executed, either sequentially or in parallell */
+			varSetProperty(mb, getArg(q,0), "transparent",0,0);
 		}
 		for( j=start ; j<i; j++){
 			if (old[j] == NULL)
