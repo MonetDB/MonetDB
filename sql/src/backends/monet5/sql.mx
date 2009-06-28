@@ -272,10 +272,6 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
-pattern autoCommit{unsafe}()
-address SQLautoCommitFlag
-comment "Identifies autocommit transaction policy applies";
-
 function times(elaps:int,inblock:lng, oublock:lng):void;
 	io.printf("#times %d ms",elaps);
 	io.printf(" %d reads",inblock);
@@ -903,7 +899,6 @@ extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int a
 
 sql5_export str SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLautoCommitFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1280,17 +1275,6 @@ SQLrollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	*ret = 0;
 	mvc_rollback(m, 0, NULL); /* keep the changes */
-	return MAL_SUCCEED;
-}
-
-str
-SQLautoCommitFlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	/* just a marker for the optimizers */
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
 	return MAL_SUCCEED;
 }
 

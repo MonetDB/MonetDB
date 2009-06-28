@@ -1862,6 +1862,19 @@ The kernel uses two calls to procedures defined in SQL.
 They have to be initialized, which is currently hacked
 by using the SQLstatment.
 @c
+static void setCommitProperty(MalBlkPtr mb){
+	ValRecord cst;
+
+	if ( varGetProp(mb, getArg(mb->stmt[0],0), PropertyIndex("autoCommit")) )
+		return; /* already set */
+	cst.vtype= TYPE_bit;
+	cst.val.cval[0]= TRUE;
+	cst.val.cval[1]= 0;
+	cst.val.cval[2]= 0;
+	cst.val.cval[3]= 0;
+	varSetProperty(mb, getArg(getInstrPtr(mb,0),0), "autoCommit","=", &cst);
+}
+
 static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
 	mvc *c = be->mvc;
@@ -1869,7 +1882,7 @@ static void backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 
 	/* announce the transaction mode */
 	if ( c->session->auto_commit)
-		newFcnCall(mb,"sql","autoCommit");
+		setCommitProperty(mb);
 	(void)_dumpstmt(be, mb, s);
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt2(mb, sqlRef, exportOperationRef);
@@ -2139,7 +2152,7 @@ backend_create_func(backend *be, sql_func *f)
 	}
 	/* announce the transaction mode */
 	if ( m->session->auto_commit)
-		newFcnCall(curBlk,"sql","autoCommit");
+		setCommitProperty(curBlk);
 	backend_dumpstmt(be, curBlk, s);
 	stmt_destroy(s);
 	addQueryToCache(c);
