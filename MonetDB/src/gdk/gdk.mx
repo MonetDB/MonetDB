@@ -2443,9 +2443,7 @@ gdk_export MT_Lock GDKtmLock;
 
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
-#define OPTIMIZERS  (1<<25)
-#define OPTIMIZERSCHK	if (!(GDKdebug & JOINPROPMASK))
-#define DEADBEEFMASK	(1<<26)
+#define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 
 #define ALLOCMASK	(1<<26)
