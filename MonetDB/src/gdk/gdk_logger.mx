@@ -1070,6 +1070,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, precomm
 	   database consistency later on */
 	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
+		GDKunlink(lg->dir, LOGFILE, NULL);
 		GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL);
 	} 
 	fp = fopen(filename, "r");
