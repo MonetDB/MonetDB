@@ -40,6 +40,7 @@ comment "Selection cracking";
 #include "opt_selcrack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "opt_prelude.h"
+#include "mtime.h"
 
 #define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
 	getModuleId(X) && getModuleId(X)==M)
@@ -88,12 +89,14 @@ OPTselcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			ValRecord v, *vp;
 
 		  	/* crack only supported data types */
-			switch( getTailType(mb->var[getArg(p,0)]->type) ){
+			switch( update = getTailType(mb->var[getArg(p,0)]->type) ){
 			case TYPE_int: case TYPE_lng: case TYPE_sht:
 			case TYPE_flt: case TYPE_dbl: case TYPE_oid:
 				break;
 			case TYPE_wrd: /* to be moved up */
 			default:
+					if ( update == TYPE_date)
+						break;
 					continue;
 			}
 
