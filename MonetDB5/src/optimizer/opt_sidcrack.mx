@@ -52,6 +52,7 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	
 	str tables[maxTables];
 	int crackedTables=0;
+	int update = 0;
 
 	for(j=0;j<maxTables;j++)
 		 tables[j] = NULL;	
@@ -65,21 +66,36 @@ OPTsidcrackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	
 	limit = mb->stop;
 	old = mb->stmt;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if( getModuleId(p)== sqlRef )
+            update |= getFunctionId(p)== appendRef || 
+					  getFunctionId(p)== replaceRef ||
+					  getFunctionId(p)== deleteRef;
+	}
+	if( update)
+		return 0;
 	
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
 		/* add a property "can be cracked" to every base relation that is a candidate for selection cracking */
 		/* also, for every candidate bat, maintain the table name */
-		if ( match2(p, batRef, newRef) || match2(p, sqlRef, bindRef) ){  
+		if ( match2(p, sqlRef, bindRef) ){  
 			ValRecord v, *vp;
 
 		  	/* crack only supported data types */
-			if ( getTailType(mb->var[getArg(p,0)]->type)==TYPE_str )
+			switch( getTailType(mb->var[getArg(p,0)]->type) ){
+			case TYPE_int: case TYPE_lng: case TYPE_sht:
+			case TYPE_flt: case TYPE_dbl: case TYPE_oid:
+				break;
+			case TYPE_wrd: /* to be moved up */
+			default:
 					continue;
+			}
 
 			/* avoid cracking delta bats used for updates */
-			if (getModuleId(p)== sqlRef && mb->var[getArg(p,4)]->value.val.ival != 0 ) 
+			if (mb->var[getArg(p,4)]->value.val.ival != 0 ) 
 				continue;		
 				
 			vp = VALset(&v, TYPE_int,&i);
