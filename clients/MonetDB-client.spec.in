@@ -125,7 +125,9 @@ Group: Applications/Databases
 Requires: %{name} = %{version}-%{release}
 Requires: python
 BuildRequires: python
+%if 0%{?fedora} >= 10
 BuildArch: noarch
+%endif
 
 %if %{?_with_rubygem:1}%{!?_with_rubygem:0}
 %package ruby
@@ -137,7 +139,9 @@ Requires: ruby(abi) = 1.8
 BuildRequires: ruby
 BuildRequires: rubygems
 %endif
+%if 0%{?fedora} >= 10
 BuildArch: noarch
+%endif
 Provides: rubygem(ruby-monetdb-sql) = 0.1
 Provides: rubygem(activerecord-monetdb-adapter) = 0.1
 %endif
