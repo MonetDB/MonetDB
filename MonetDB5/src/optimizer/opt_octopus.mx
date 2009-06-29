@@ -135,9 +135,14 @@ tag them by orginating site.
 Updates on the persistent tables are not handled yet. They should
 lead to an upcall to the head for inclusion. Any update invalidates
 the request to distributed processing.
-In the same line, multi-statement SQL transactions including
-updates should be ignored. Perhaps we should limit it to
-autocommit situations only. [todo]
+In the same line, multi-statement SQL transactions and
+updates to global variables are ignored. 
+
+Global variables are tricky, because they are part of the
+session context. To make it work, we need to be able to perform
+an upcall to that context (=dangerous).
+The solution is that any variable context should be
+passed through a relation.
 @{
 @mal
 module octopus; 
@@ -323,6 +328,13 @@ already have been handled and produce their target.
 			getArg(p,i) = alias[a];
 		}
 		if (getModuleId(p) == sqlRef &&
+			strcmp(getFunctionId(p), "getVariable") == 0
+		){
+			getModuleId(p) = octopusRef;
+			p= setArgument(tm,p,1,conn);
+			setVarUDFtype(tm,getArg(p,0));
+		} else
+		if (getModuleId(p) == sqlRef &&
 			( getFunctionId(p) == bindRef ||
 			  getFunctionId(p) == bindidxRef)){
 			setModuleId(p, octopusRef);
@@ -404,6 +416,8 @@ when scheduled correctly, would not lead to duplicate work.
 			target = i;
 		if( getModuleId(p)== sqlRef ){
 			update |= getFunctionId(p)== appendRef || getFunctionId(p)== deleteRef;
+			update |= strcmp(getFunctionId(p),"getVariable")==0;
+			update |= strcmp(getFunctionId(p),"setVariable")==0;
 		}
 	}
 	/* we do not  support yet update operations in the octopus */
