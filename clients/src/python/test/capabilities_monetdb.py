@@ -52,14 +52,6 @@ class Test_Monetdb_Sql(capabilities.DatabaseTest):
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
     leak_test = False
 
-    def test_TIME(self):
-        from datetime import timedelta
-        def generator(row,col):
-            return timedelta(0, row*8000)
-        self.check_data_integrity(
-                 ('col1 TIME',),
-                 generator)
-
     def test_DATETIME(self):
         from time import time
         ticks = time()
@@ -80,32 +72,6 @@ class Test_Monetdb_Sql(capabilities.DatabaseTest):
         self.check_data_integrity(
             ('col1 TINYINT',),
             generator)
-
-    def test_stored_procedures(self):
-        db = self.connection
-        db.set_autocommit(False)
-        c = self.cursor
-        self.create_table(('pos INT', 'tree CHAR(20)'))
-        c.executemany("INSERT INTO %s (pos,tree) VALUES (%%s,%%s)" % self.table,
-                      list(enumerate('ash birch cedar larch pine'.split())))
-        db.commit()
-
-        c.execute("""
-        CREATE PROCEDURE test_sp(IN t VARCHAR(255))
-        BEGIN
-            SELECT pos FROM %s WHERE tree = t;
-        END
-        """ % self.table)
-        db.commit()
-
-        c.callproc('test_sp', ('larch',))
-        rows = c.fetchall()
-        self.assertEquals(len(rows), 1)
-        self.assertEquals(rows[0][0], 3)
-        c.nextset()
-
-        c.execute("DROP PROCEDURE test_sp")
-        c.execute('drop table %s' % (self.table))
 
     def test_small_CHAR(self):
         # Character data

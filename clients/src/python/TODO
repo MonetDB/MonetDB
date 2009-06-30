@@ -1,11 +1,8 @@
 
 The Python API is already usable, but some things need some more attention:
 
-* Improve exception types and messages
 * Get the capabilities tests working
 * Code cleanup (fix all TODO's in the source)
 * Add more cursor types (dict cursor)
 * Modify XQuery API to use native MAPI
-* Add a central exception handler
-
 

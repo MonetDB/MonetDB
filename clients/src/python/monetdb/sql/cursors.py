@@ -197,22 +197,28 @@ class Cursor:
         self.connection.command('Xreply_size %s' % self.arraysize)
 
         if operation == self.operation:
-            #TODO: same operation, DBAPI mentioned something about reuse?
+            #same operation, DBAPI mentioned something about reuse
+            # but monetdb doesn't support this
             pass
         else:
             self.operation = operation
 
         if parameters:
             if isinstance(parameters, dict):
-                query = operation % dict([(k, self.__monetizer.convert(v)) for (k,v) in parameters.items()])
+                query = operation % dict([(k, self.__monetizer.convert(v))
+                    for (k,v) in parameters.items()])
             elif type(parameters) == list:
-                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+                query = operation % tuple([self.__monetizer.convert(item)
+                    for item in parameters])
             elif type(parameters) == tuple:
-                query = operation % tuple([self.__monetizer.convert(item) for item in parameters])
+                query = operation % tuple([self.__monetizer.convert(item)
+                    for item in parameters])
             elif isinstance(parameters, str):
                 query = operation % parameters
             else:
-                self.__exception_handler(ValueError, "Parameters should be empty or a dictionary, now it is %s" % type(parameters))
+                self.__exception_handler(ValueError,
+                        "Parameters should be empty or a dictionary, now it is %s"
+                        % type(parameters))
         else:
            query = operation
 
@@ -260,7 +266,8 @@ class Cursor:
         self.__check_executed()
 
         if self.__query_id == -1:
-            self.__exception_handler(ProgrammingError, "query didn't result in a resultset")
+            self.__exception_handler(ProgrammingError,
+                    "query didn't result in a resultset")
 
         if self.rownumber >= (self.rowcount):
             logger.debug("rownumber >= rowcount")
@@ -336,7 +343,8 @@ class Cursor:
         self.__check_executed()
 
         if self.__query_id == -1:
-            self.__exception_handler(ProgrammingError, "query didn't result in a resultset")
+            self.__exception_handler(ProgrammingError,
+                    "query didn't result in a resultset")
 
         result = self.__rows[self.rownumber - self.__offset:]
         self.rownumber = len(self.__rows) + self.__offset
@@ -376,7 +384,8 @@ class Cursor:
         end = min(self.rowcount, self.rownumber + self.arraysize)
         amount = end - self.__offset
 
-        command = 'Xexport %s %s %s' % (self.__query_id, self.__offset, amount)
+        command = 'Xexport %s %s %s' % (self.__query_id,
+                self.__offset, amount)
         block = self.connection.command(command)
         self.__store_result(block)
         return True
@@ -549,7 +558,6 @@ class Cursor:
             self.lastrowid = None
             logger.debug("II empty response, assuming everything is ok")
             return
-
 
         # you are not supposed to be here
         self.__exception_handler(InterfaceError, "Unknown state, %s" % block)

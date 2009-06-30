@@ -32,8 +32,8 @@ class Pythonizer:
 
     def __init__(self):
         self.mapping = {
-            type_codes.CHAR: self.__string,
-            type_codes.VARCHAR: self.__string,
+            type_codes.CHAR: self.__strip,
+            type_codes.VARCHAR: self.__strip,
             type_codes.CLOB: self.__string,
             type_codes.BLOB: self.__string,
             type_codes.DECIMAL: int,
@@ -48,9 +48,9 @@ class Pythonizer:
             type_codes.DATE: self.__date,
             type_codes.TIME: self.__time,
             type_codes.TIMESTAMP: self.__timestamp,
-            type_codes.INTERVAL: self.__string, # TODO: check this
-            type_codes.MONTH_INTERVAL: self.__string, # TODO: check this
-            type_codes.SEC_INTERVAL: self.__string, # TODO: check this
+            type_codes.INTERVAL: self.__strip,
+            type_codes.MONTH_INTERVAL: self.__strip,
+            type_codes.SEC_INTERVAL: self.__strip,
             type_codes.TINYINT: int,
             type_codes.SHORTINT: int,
             type_codes.MEDIUMINT: int,
@@ -60,7 +60,11 @@ class Pythonizer:
         }
 
     def __string(self, data):
-        """ returns a python string, chops of quotes """
+        return str(data)
+
+    def __strip(self, data):
+        """ returns a python string, chops of quotes.
+        inverse of escape"""
         data = data.replace("\\\\", "\\")
         data = data.replace("\'", "'")
         data = data.replace("\\\"", "\"")
@@ -114,23 +118,21 @@ class Monetizer:
             decimal.Decimal: self.__string,
             datetime.timedelta: self.__escape,
             datetime.date: self.__escape,
-            #list: self.__string, # TODO: check this
-            #tuple: self.__string, # TODO: check this
-            #range: self.__string, # TODO: check this
-            #set: self.__string, # TODO: check this
-            #frozenset: self.__string, # TODO: check this
-            #dict: self.__string, # TODO: check this
-            #Ellipsis: self.__string, # TODO: check this
+            # I don't think these should be used:
+            #list: self.__string,
+            #tuple: self.__string,
+            #range: self.__string,
+            #set: self.__string,
+            #frozenset: self.__string,
+            #dict: self.__string,
+            #Ellipsis: self.__string,
         }
 
-
         (major, minor, micro, level, serial)  = sys.version_info
-
         if (major == 3) or (major == 2 and minor == 6):
             # bytes type is only supported by python 2.6 and higher
             self.mapping[bytes] = self.__bytes
             self.mapping[bytearray] = self.__string # TODO: check this
-
         if (major != 3):
             self.mapping[unicode] = self.__unicode
 
@@ -182,7 +184,8 @@ def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
 def Binary(x):
-    return str(x)
+    #return str(x)
+    return x.encode("hex").upper()
 
 
 class DBAPISet(frozenset):
@@ -211,6 +214,4 @@ TIME      = DBAPISet([type_codes.TIME])
 TIMESTAMP = DBAPISet([type_codes.TIMESTAMP])
 DATETIME  = TIMESTAMP
 ROWID     = DBAPISet()
-
-
 

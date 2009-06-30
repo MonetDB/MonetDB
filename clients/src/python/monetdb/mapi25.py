@@ -238,6 +238,9 @@ class Server:
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<h', ( len(data) << 1 ) + last )
-            self.socket.send(flag)
-            self.socket.send(data)
+            try:
+                self.socket.send(flag)
+                self.socket.send(data)
+            except socket.error, error:
+                raise OperationalError(error[1])
             pos += len(data)

@@ -168,12 +168,13 @@ class DatabaseTest(unittest.TestCase):
             self.cursor.execute(insert_statement, (0, '0'*256))
         except Warning:
             if self.debug: print self.cursor.messages
-        except self.connection.DataError:
+        except self.connection.Error:
             pass
         else:
             self.fail("Over-long column did not generate warnings/exception with single insert")
 
         self.connection.rollback()
+        self.create_table(columndefs)
 
         try:
             for i in range(self.rows):
@@ -183,12 +184,13 @@ class DatabaseTest(unittest.TestCase):
                 self.cursor.execute(insert_statement,tuple(data))
         except Warning:
             if self.debug: print self.cursor.messages
-        except self.connection.DataError:
+        except self.connection.Error:
             pass
         else:
             self.fail("Over-long columns did not generate warnings/exception with execute()")
 
         self.connection.rollback()
+        self.create_table(columndefs)
 
         try:
             data = [ [ generator(i,j) for j in range(len(columndefs)) ]
@@ -196,13 +198,12 @@ class DatabaseTest(unittest.TestCase):
             self.cursor.executemany(insert_statement, data)
         except Warning:
             if self.debug: print self.cursor.messages
-        except self.connection.DataError:
+        except self.connection.Error:
             pass
         else:
             self.fail("Over-long columns did not generate warnings/exception with executemany()")
 
         self.connection.rollback()
-        self.cursor.execute('drop table %s' % (self.table))
 
     def test_CHAR(self):
         # Character data
