@@ -162,6 +162,21 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
         finally:
             con.close()
 
+    def test_substring(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            args = {'beer': '"" \"\'\",\\"\\"\"\'\"'}
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+            cur.execute('select name from %sbooze' % self.table_prefix)
+            res = cur.fetchall()
+            beer = res[0][0]
+            self.assertEqual(beer,args['beer'],'incorrect data retrieved, got %s, should be %s' % (beer, args['beer']))
+        finally:
+            con.close()
+
+
 
     def test_Exceptions(self):
         # we override this since StandardError is depricated in python 3

@@ -542,63 +542,44 @@ class Cursor:
     def __parse_tuple(self, line):
         """ parses a mapi data tuple, and returns a list of python types"""
 
-        # values are seperated by ,\t. Substrings can contain this also, so
-        # if the length of the tuple doesn't match, we do a manual split
+        # values in a row are seperated by \t
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
             return tuple([self.__pythonizer.convert(element.strip(), description[1]) for
                     (element, description) in zip(elements, self.description)])
-
-        # Ok, that didn't work. Manual split then...
-        # TODO: this will FAIL in case of " [ \",\"] " (comma in a substring in a substring)
-        elements = []
-        sub_str = False
-        buff = ""
-        for char in line[1:-1]:
-            if char == '"':
-                sub_str = not sub_str
-                buff = buff + char
-            elif char == "," and not sub_str:
-                elements.append(buff.strip())
-                buff = ""
-            else:
-                buff = buff + char
-        elements.append(buff.strip())
-
-        #convert values to python types
-        return tuple([self.__pythonizer.convert(element, description[1]) for
-                (element, description) in zip(elements, self.description)])
+        else:
+            raise InterfaceError("length of row doesn't match header")
 
 
-        def scroll(self, value, mode='relative'):
-            """Scroll the cursor in the result set to a new position according
-            to mode.
+    def scroll(self, value, mode='relative'):
+        """Scroll the cursor in the result set to a new position according
+        to mode.
 
-            If mode is 'relative' (default), value is taken as offset to
-            the current position in the result set, if set to 'absolute',
-            value states an absolute target position.
+        If mode is 'relative' (default), value is taken as offset to
+        the current position in the result set, if set to 'absolute',
+        value states an absolute target position.
 
-            An IndexError should be raised in case a scroll operation would
-            leave the result set. In this case, the cursor position is left
-            undefined (ideal would be to not move the cursor at all).
+        An IndexError should be raised in case a scroll operation would
+        leave the result set. In this case, the cursor position is left
+        undefined (ideal would be to not move the cursor at all).
 
-            Note: This method should use native scrollable cursors, if
-            available , or revert to an emulation for forward-only
-            scrollable cursors. The method may raise NotSupportedErrors to
-            signal that a specific operation is not supported by the
-            database (e.g. backward scrolling)."""
+        Note: This method should use native scrollable cursors, if
+        available , or revert to an emulation for forward-only
+        scrollable cursors. The method may raise NotSupportedErrors to
+        signal that a specific operation is not supported by the
+        database (e.g. backward scrolling)."""
 
-            self.__check_executed()
-            # TODO: finish this, megre with nextset()
+        self.__check_executed()
+        # TODO: finish this, megre with nextset()
 
-            if mode not in ['relative', 'absolute']:
-                raise ProgrammingError("unknown mode '%s'" % mode)
+        if mode not in ['relative', 'absolute']:
+            raise ProgrammingError("unknown mode '%s'" % mode)
 
-            if mode == 'relative':
-                value = self.rownumber + value
+        if mode == 'relative':
+            value = self.rownumber + value
 
-            if value > self.rowcount:
-                raise IndexError("value beyond length of resultset")
+        if value > self.rowcount:
+            raise IndexError("value beyond length of resultset")
 
 
 

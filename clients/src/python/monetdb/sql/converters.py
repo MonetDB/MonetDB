@@ -61,10 +61,9 @@ class Pythonizer:
 
     def __string(self, data):
         """ returns a python string, chops of quotes """
-        # TODO: FIX THIS
-        #str = str.replace("\\\\", "\\")
-        #str = str.replace("\\'", "'")
-        #str = str.replace('\\"', '"')
+        data = data.replace("\\\\", "\\")
+        data = data.replace("\'", "'")
+        data = data.replace("\\\"", "\"")
         return data[1:-1]
 
     def __bool(self, data):
