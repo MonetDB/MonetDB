@@ -20,42 +20,32 @@
 require 'time'
 require 'ostruct'
 
-
 require "bigdecimal"
 
+require 'MonetDBConnection'
+
+require 'logger'
+
 class MonetDBData 
-  Q_TABLE               = "1" # SELECT operation
-  Q_UPDATE              = "2" # INSERT/UPDATE operations
-  Q_CREATE              = "3" # CREATE/DROP TABLE operations
-  Q_BLOCK               = "6" # QBLOCK message
-  
-
-  MONET_HEADER_OFFSET   = 2
-
-
   @@DEBUG               = false
  
   def initialize(connection, type_cast)
     @connection = connection
     
-    # Structure containing the header+results set for a fired Q_TABLE query
-    @Q_TABLE_instance = OpenStruct.new
-    @Q_TABLE_instance.query = {}
-    @Q_TABLE_instance.block_query = {}
-    @Q_TABLE_instance.header = {}
-    @Q_TABLE_instance.record_set = []
-    @Q_TABLE_instance.index = 0 # Position of the last returned record
-     
-    # Number of entries cached in a record set
-    @dataCacheSize = 10
+    @lang = 'sql'
+    
+    # Structure containing the header+results set for a fired Q_TABLE query     
+    @header = []
+    @query = {}
+    
+    @record_set = []
+    @index = 0 # Position of the last returned record
     
     
-    # The number of rows to retrieve after an 'export' operation.
-    @dataOffset = 10
-    
-    # The position from which to start retrieving rows from a recordset 
-    @dataStartIndex = 0
-    
+    @row_index = 0
+    @row_count = 0
+    @row_offset = 10
+
     # Convert SQL data types to Ruby
     @type_cast = type_cast
   end
@@ -63,197 +53,161 @@ class MonetDBData
   # Free memory used to store the record set
   def free()
     @connection = nil    
-    @Q_TABLE_instance = nil
-    @dataOffset = 10
-    @dataStartIndex = 0
+    
+    @header = []
+    @query = {}
 
+    @record_set = []
+    @index = 0 # Position of the last returned record
+
+
+    @row_index = 0
+    @row_count = 0
+    @row_offset = 10
+    
   end
   
   # Fire a query and return the server response
-  def execute(q)    
-    # Before firing a query, set the max reply length to one record
-    command = format_command("reply_size 1")
-    @connection.encode_message(command).each { |msg|
-      @connection.socket.write(msg)
-    }
-    
-    # server response to command
-    is_final, chunk_size = @connection.recv_decode_hdr()
-    
-    if chunk_size > 0
-        raise MonetDBCommandError, @connection.socket.recv(chunk_size)
-    end
-  
-    bc = 0
-    @connection.encode_message(q).each { |msg|
-      bc += @connection.socket.write(msg)
-      if @@DEBUG
-        print msg + " " + bc.to_s + " bytes transmitted\n"
-      end
-    }
-      
-    record_set = Array.new
-    header = Array.new
-    first_rows = Array.new
-    
-    
-    # Fetch the row header and first recordset entry (requested by setting the reply size to 1)
-    is_final, chunk_size = @connection.recv_decode_hdr()
-    read_bytes = 0
-    if is_final == true
-      # process one line at a time
-      while (read_bytes < chunk_size )
-        row = @connection.socket.readline
-        read_bytes += row.length
-        
-        if row != ""
-          
-          if row[0].chr == "!"
-            raise MonetDBQueryError, row
-          elsif row[0].chr == "%"
-            # process header data
-            header << row
+  def execute(q)
+   # Before firing a query, set the max reply length to one record. TODO: move this to MonetDBConnection
+    @connection.set_reply_size
 
-          elsif row[0].chr == "&" 
-             @Q_TABLE_instance.query = parse_header_query(row)
-          else
-            # process tuples, store the actual data in an array (each tuple is an array itself)
-            first_rows << parse_tuples(row)
+    # server response to command
+    response = @connection.receive
+    if response == MSG_PROMPT
+      #@connection.monetdb_ready = true # reply size successfully set
+    elsif response[0] == MSG_INFO
+      raise MonetDBCommandError, response
+      return
+    end
+   # fire a query and get ready to receive the data
+      
+    @connection.send(format_query(q))
+    
+    data = @connection.receive
+    
+    return if data == nil
+      
+    rows = receive_record_set(data)
+    # the fired query is a SELECT; store and return the whole record set
+    if @action == Q_TABLE
+      @header = parse_header_table(@header)
+      @header.freeze
+      
+      if @row_index.to_i < @row_count.to_i
+        block_rows = ""
+        while next_block
+          data = @connection.receive
+          block_rows += receive_record_set(data)
+        end
+        rows += block_rows
+      end
+    
+      @record_set = parse_tuples(rows)
+      @record_set.freeze  
+    end
+  end
+  
+  # store block of data, parse it and store it.
+  def receive_record_set(response)
+    rows = ""
+  
+    response.each_line do |row|      
+      if row[0].chr == MSG_QUERY      
+        if row[1].chr == Q_TABLE
+          
+          @action = Q_TABLE
+          @query = parse_header_query(row)
+          @query.freeze
+          @row_count = @query['rows'].to_i #total number of rows in table
+          @row_index = @query['returned'].to_i  # current row to retrieve
             
+        elsif row[1].chr == Q_BLOCK
+        # strip the block header from data
+          #puts row
+          # response = response[row.length...response.length]
+          @action = Q_BLOCK
+          @block = parse_header_query(row)          
+          block_rows = "" # new block; clean the row set
+          response.each_line do |row|
+            if row[0].chr == MSG_TUPLE
+              block_rows += row
+            elsif row == MSG_PROMPT
+              response = ""
+              return block_rows
+            end
           end
-        end
-     # end
-    end
-    
-    # Store infromation regarding a table
-    @Q_TABLE_instance.header = parse_header_table(header)
-    first_rows.each do
-      record_set << parse_tuples(row)
-    end
-  end
-      
-    
-    #reutrn the actual data
-    is_final = false
-    
-    # initialize cursors variables
-    row_count = @Q_TABLE_instance.query['rows'].to_i #total number of rows in table
-    row_index = @dataStartIndex + 1 # current row to retrieve (NOTE: one row as already been retrieved due to setting reply_size to 1)
-    row_offset = @dataOffset # number of rows to retrieve per each block
-    
-    if row_count > 1
-      if @Q_TABLE_instance.query['type'] == Q_TABLE and @Q_TABLE_instance.query['id'] != ""
-        @connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + row_index.to_s + " " +  row_offset.to_s)).each do |msg|
-          #@connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + ((block * @dataCacheSize) + blockOffset).to_s + " " +  @dataCacheSize.to_s)).each do |msg|
-        @connection.socket.write(msg)
-      end
-    end
-    
-    # Retrieve the table data
-    # Fetch the row header and first recordset entry (requested by setting the reply size to 1)
-    #  is_final, chunk_size = @connection.recv_decode_hdr()
-    #  data = @connection.socket.recv(chunk_size)
-    #  puts data
-    # for row in data do
-    
-    while row_index < row_count
-      if ( row_index % row_offset ) == 0
-        if row_index + row_offset > row_count
-          row_offset = row_count - row_index
-          if @DEBUG
-            puts "Offset: " + row_offset.to_s
-            puts "Rows: " + row_count.to_s
-            puts "IDX: " + row_index.to_s
-          end
-        else
-          @dataOffset *= 10
-          row_offset += @dataOffset
-        end
-  
-        # puts "Offset: " + row_offset.to_s
-  
-        @connection.encode_message(format_command("export " + @Q_TABLE_instance.query['id'] + " " + row_index.to_s  + " " + row_offset.to_s)).each do |msg|
-          @connection.socket.write(msg)
-        end
-      end
-      
-      # Process the records one line at a time, store them as string. Type conversion will be performed "on demand" by the user.
-      row = @connection.socket.readline
-      
-      if row != ""
-        if row[MONET_HEADER_OFFSET] == nil
-          # Empty line - step forward
-          next
           
-        elsif row[MONET_HEADER_OFFSET...MONET_HEADER_OFFSET+2] == "&6" 
-          # Processing a new block of rows - the data has already been buffered, continue and process tuples
-          next
-          
-          #@Q_TABLE_instance.block_query = parse_header_query(row[MONET_HEADER_OFFSET...row.length])
-          #block_record_set = Array.new
-      
-          #0.upto(@Q_TABLE_instance.block_query['rows'].to_i - 1) do
-            #row = @connection.socket.readline 
-            #puts row
-            #if row[0].chr == '['
-            #  block_record_set << parse_header_query(row[MONET_HEADER_OFFSET...row.length])
-            #  row_index += 1
-            #else
-            #  record_set << block_record_set
-          #  end
-          #end
-        elsif row[MONET_HEADER_OFFSET...MONET_HEADER_OFFSET+2] == "&4"
-          # Transaction/Rollback - skip for now
-          next
-        else
-          # process tuples, store the actual data in an array (each tuple is an array itself)
-          record_set << parse_tuples(row)
-          row_index += 1
+          @row_index += @row_offset.to_i
+          response = ""
+          return block_rows
+        elsif row[1].chr == Q_TRANSACTION
+          @action = Q_TRANSACTION
+        elsif row[1].chr == Q_CREATE
+          @action = Q_CREATE
         end
+      elsif row[0].chr == MSG_INFO
+        raise MonetDBQueryError, row
+      elsif row[0].chr == MSG_SCHEMA_HEADER
+        # process header data
+        @header << row
+
+      elsif row[0].chr == MSG_TUPLE
+        rows += row
+      elsif row == MSG_PROMPT
+        @record_set += parse_tuples(@rows)
       end
-    end
+    end 
+    return rows 
   end
+  
+  def next_block
+    if @row_index >= @row_count
+      return false
+    elsif (@row_index + @row_offset ) > @row_count
+      @row_offset = @row_count - @row_index
+    else
+      @row_offset = [@row_offset * 10, (@row_count - @row_index)].min
+    end
     
-        
-    # Make the data immutable
-    @Q_TABLE_instance.record_set = record_set.freeze
-    @Q_TABLE_instance.freeze
+    # export offset amount
+    @connection.set_export(@query['id'], @row_index.to_s, @row_offset.to_s)  
+    return true
   end
   
   # Returns the record set entries hashed by column name orderd by column position
-   def fetch_all_hash()
+  def fetch_all_hash()
      columns = {}
-     @Q_TABLE_instance.header["columns_name"].each do |col_name|
+     @header["columns_name"].each do |col_name|
        columns[col_name] = fetch_column_name(col_name)
      end
 
      return columns
    end
 
-   def fetch_hash()
-     index = @Q_TABLE_instance.index
-     if index >= @Q_TABLE_instance.query['rows'].to_i 
+  def fetch_hash()
+     index = @index
+     if index >= @query['rows'].to_i 
        return false
      else
        columns = {}
-       @Q_TABLE_instance.header["columns_name"].each do |col_name|
-         position = @Q_TABLE_instance.header["columns_order"].fetch(col_name)
-         
-        columns[col_name] = @Q_TABLE_instance.record_set[index][position]
+       @header["columns_name"].each do |col_name|
+         position = @header["columns_order"].fetch(col_name)
+         columns[col_name] = @record_set[index][position]
          
        end
-       @Q_TABLE_instance.index += 1
+      @index += 1
        return columns
      end
    end
 
-   # Returns the values for the column 'field'
-   def fetch_column_name(field="")
-     position = @Q_TABLE_instance.header["columns_order"].fetch(field)
+  # Returns the values for the column 'field'
+  def fetch_column_name(field="")
+     position = @header["columns_order"].fetch(field)
 
      col = Array.new
      # Scan the record set by row
-     @Q_TABLE_instance.record_set.each do |row|
+     @record_set.each do |row|
        col << row[position]
      end
 
@@ -261,113 +215,132 @@ class MonetDBData
    end
 
 
-   def fetch()
-     index = @Q_TABLE_instance.index
-     if index > @Q_TABLE_instance.query['rows'].to_i 
-       return false
+  def fetch()
+     index = @index
+     if index > @query['rows'].to_i 
+       false
      else
-       @Q_TABLE_instance.index += 1
-       return @Q_TABLE_instance.record_set[index]
+       @index += 1
+       @record_set[index]
      end
    end
 
-   # Cursor method that retrieves all the records present in a table and stores them in a cache.
-   def fetch_all()
-     if @Q_TABLE_instance.query['type'] == Q_TABLE   
-       @Q_TABLE_instance.index = @Q_TABLE_instance.query['rows'].to_i
-       return @Q_TABLE_instance.record_set
+  # Cursor method that retrieves all the records present in a table and stores them in a cache.
+  def fetch_all()
+     if @query['type'] == Q_TABLE   
+       @index = @query['rows'].to_i
+       @record_set
      else
        raise MonetDBDataError, "There is no record set currently available"
      end
 
    end
   
-   # Returns the number of rows in the record set
-   def num_rows()
-      return @Q_TABLE_instance.query['rows'].to_i
+  # Returns the number of rows in the record set
+  def num_rows()
+      return @query['rows'].to_i
    end
 
-   # Returns the number of fields in the record set
-   def num_fields()
-     return @Q_TABLE_instance.query['columns'].to_i
+  # Returns the number of fields in the record set
+  def num_fields()
+     return @query['columns'].to_i
    end
 
-   # Returns the (ordered) name of the columns in the record set
-   def name_fields()
-     return @Q_TABLE_instance.header['columns_name']
-   end
+  # Returns the (ordered) name of the columns in the record set
+  def name_fields()
+    return @header['columns_name']
+  end
   
   private
   
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
-    if @lang == @@LANG_SQL
+    if @lang.downcase == 'sql'
         return "s" + q + ";\n"
     else
-      raise LanguageNotSupported
+      raise LanguageNotSupported, @lang
     end
   end
   
-  # Formats a <i>command</i> string so that it can be parsed by the server
-  def format_command(x)
-    return "X" + x + "\nX"
+  # Substitued quoted characters in a string returned by the server and save the result as a
+  # String object
+  def parse_string(str)
+    
   end
   
   # Parses the data returned by the server and stores the content of header and record set 
   # for a Q_TABLE query in two (immutable) arrays. The Q_TABLE instance is then reperesented
   # by the OpenStruct variable @Q_TABLE_instance with separate fields for 'header' and 'record_set'.
   #
-  def parse_tuples(row)
-    # remove trailing and ending "[ ]"
-    row = row.gsub(/^\[\s+/,'')
-    row = row.gsub(/\t\]\n$/,'')
+  def parse_tuples(record_set)
+    processed_record_set = Array.new
     
-    row = row.split(/\t/)
-    
-    processed_row = Array.new
-    
-    # index the field position
-    position = 0
-    while position < row.length
-      field = row[position].gsub(/,$/, '')
-      if @type_cast == true
-        if @Q_TABLE_instance.header["columns_type"] != nil
-          name = @Q_TABLE_instance.header["columns_name"][position]
-          if @Q_TABLE_instance.header["columns_type"][name] != nil
-            type = @Q_TABLE_instance.header["columns_type"].fetch(name)
-          end
-          
-        #  field = self.type_cast(field, type)
-        field = type_cast(field, type)
- 
-        end
-      end
+    record_set.each_line do |row|
       
-      processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
-      position += 1
+      # remove trailing and ending "[ ]"
+      row = row.gsub(/^\[\s+/,'')
+      row = row.gsub(/\t\]\n$/,'')
+    
+      row = row.split(/\t/)
+    
+      processed_row = Array.new
+    
+      # index the field position
+      position = 0
+      while position < row.length
+        field = row[position].gsub(/,$/, '')
+        
+        if @type_cast == true
+          if @header["columns_type"] != nil
+            name = @header["columns_name"][position]
+            if @header["columns_type"][name] != nil
+              type = @header["columns_type"].fetch(name)
+            end
+          
+            #  field = self.type_cast(field, type)
+            field = type_cast(field, type)
+ 
+          end
+        end
+      
+        processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
+        position += 1
+      end
+      processed_record_set << processed_row
     end
-    return processed_row
+    return processed_record_set
   end
   
   # Parses a query header and returns information about the query.
   def parse_header_query(row)
     type = row[1].chr
-    if type == Q_TABLE or type == Q_BLOCK
+    if type == Q_TABLE
       # Performing a SELECT: store informations about the table size, query id, total number of records and returned.
+      id = row.split(' ')[1]
       rows = row.split(' ')[2]
       columns = row.split(' ')[3]
       returned = row.split(' ')[4]
-      id = row.split(' ')[1]
       
-      return { "id" => id, "type" => type, "rows" => rows, "columns" => columns, "returned" => returned }.freeze 
+      header = { "id" => id, "type" => type, "rows" => rows, "columns" => columns, "returned" => returned }
+    elsif  type == Q_BLOCK
+      # processing block header
+    
+      id = row.split(' ')[1]
+      columns = row.split(' ')[2]
+      remains = row.split(' ')[3]
+      offset = row.split(' ')[4]
+      
+      header = { "id" => id, "type" => type, "remains" => remains, "columns" => columns, "offset" => offset }
     else
-      return {"type" => type}.freeze
+      header = {"type" => type}
     end
+    
+    return header.freeze
   end
   
   # Parses a Q_TABLE header and returns information about the schema.
   def parse_header_table(header_t)
-    if @Q_TABLE_instance.query["type"] == Q_TABLE
+    if @query["type"] == Q_TABLE
       if header_t != nil
         name_t = header_t[0].split(' ')[1].gsub(/,$/, '')
         name_cols = Array.new
@@ -398,6 +371,7 @@ class MonetDBData
       end
     end
   end
+ 
   
   # Cursor method that returns the record at position <i>row</i> from a cached record set.
   # If 'row' is not specified, the method returns the next row in the record set
@@ -405,75 +379,79 @@ class MonetDBData
   # - type_conversion: cast the results type according to the schema specifications;
   def fetch_row(row = '-1', type_conversion = false)
     if row == '-1'
-      row = @Q_TABLE_instance.index
+      row = @index
     end
-    @Q_TABLE_instance.index = row.to_i + 1
-    return @Q_TABLE_instance.record_set[row.to_i]
+    @index = row.to_i + 1
+    @record_set[row.to_i]
   end
   
   
   # Converts the stored Q_TABLE fields into the actual data type specified in the schema
   # 
   def type_cast(field = "", cast = nil)
-    
-    if field == "NULL"
-      return nil
-    elsif cast == "varchar"
-      return field[0...255].gsub(/^"/,'').gsub(/"$/,'').gsub(/\\\"/, '"')
-    elsif cast == "int"
-      return BigDecimal.new(field, 32).to_i
-    elsif cast == "smallint"
-      return BigDecimal.new(field, 16).to_i
-    elsif cast == "bigint"
-      return BigDecimal.new(field, 64).to_i
-    elsif cast == "numeric"
-      return BigDecimal.new(field, 32).to_i
-    elsif cast == "decimal"
-      return BigDecimal.new(field, 32).to_i
-    elsif cast == "text"
-      return field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
-    elsif cast == "real"
-      return Float.new(field)
-    elsif cast == "double"
-      return Float.new(field)
-    elsif cast == "time"
-      return Time.gm(field)
-    elsif cast == "date"
-      return Date.civi(field)
-    elsif cast == "blob"
-      return field.gsub(/^"/,'').gsub(/"$/,'')
-    elsif cast == "boolean"
-      if field == "0"
-        return true
-      else 
-        return false
+    false
+  end
+end
+
+# Overload the class string to convert monetdb to ruby types.
+class String
+  def getInt
+    self.to_i
+  end
+  
+  def getFloat
+    self.to_f
+  end
+  
+  def getString
+    data = self.reverse
+    # parse the string starting from the end; 
+    escape = false
+    position = 0
+    for i in data
+      if i == '\\' and escape == true
+          if data[position+1] == '\\' 
+          data[position+1] = ''
+          escape = true
+        else
+          escape = false
+        end
       end
-    elsif cast == "bigint"
-      return BigInteger(field)
+      position += 1
     end
+    data.reverse
+    
   end
   
-  # Get a field as string
-  def monetdb2str(field)
+  def getBlob
+    self.gsub(/^"/,'').gsub(/"$/,'')
   end
   
-  # Get a field as int
-  def monetdb2int(field)
-  end
-
-  # Get a field as float
-  def monetdb2float(field)
-  end
-  
-
-  # Get a field as bool
-  def monetdb2bool(field)
-  end
-
-  # Get a field as nil
-  def monetdb2nil(field)
+  # ruby currently supports only time + date frommatted timestamps;
+  # treat TIME and DATE as strings.
+  def getTime
+    # HH:MM:SS
+    self.gsub(/^"/,'').gsub(/"$/,'')
   end
   
+  def getDate
+    self.gsub(/^"/,'').gsub(/"$/,'')
+  end
   
+  def getDateTime
+    #YYYY-MM-DD HH:MM:SS
+    date = self.split(' ')[0].split('-')
+    time = self.split(' ')[1].split(':')
+    
+    Time.gm(date[0], date[1], date[2], time[0], time[1], time[2])
+  end
   
+  def getChar
+    self.chr
+  end
+  
+  def getBool
+      return True if self == '1'
+      false
+  end
 end

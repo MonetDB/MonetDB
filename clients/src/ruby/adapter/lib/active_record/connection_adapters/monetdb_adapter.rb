@@ -133,10 +133,22 @@ module ActiveRecord
     # Functions like rename_table, rename_column and 
     # change_column cannot be implemented in MonetDB.
     def supports_migrations?
+      true
+    end
+    
+    # testing savepoints in progress
+    def supports_savepoints? #:nodoc:
+      false
+    end
+    
+    def support_transaction? #:nodoc:
+      true
+    end
+    
+    def supports_ddl_transactions?
       false
     end
 
-    # not sure yet about bigint
     def native_database_types
         {
           :primary_key => "int NOT NULL auto_increment PRIMARY KEY",
@@ -182,7 +194,8 @@ module ActiveRecord
     end
 
     def disconnect!
-      @connection.close
+     @connection.auto_commit(flag=true)
+     @connection.close
     end
 
     # -------END OF CONNECTION MANAGEMENT----------------
@@ -258,9 +271,7 @@ module ActiveRecord
       table_name = table_name.to_s if table_name.is_a?(Symbol)
       table_name = table_name.split('.')[-1] unless table_name.nil?
 
-      hdl = execute("	SELECT name, type, type_digits, type_scale, \"default\", \"null\" 
-			FROM _columns 
-			WHERE table_id in (SELECT id FROM _tables WHERE name = '#{table_name}')" ,name)
+      hdl = execute("	SELECT name, type, type_digits, type_scale, \"default\", \"null\"  FROM _columns 	WHERE table_id in (SELECT id FROM _tables WHERE name = '#{table_name}')" ,name)
       
       num_rows = hdl.num_rows
       return [] unless num_rows >= 1
@@ -424,20 +435,45 @@ module ActiveRecord
 
     # Begins the transaction.
     def begin_db_transaction
+      #
       hdl = execute("START TRANSACTION")
+      # Turn off auto commit mode      
+      @connection.auto_commit(flag=false)
     end
 
-    # Commits the transaction.
+    # Commits the transaction (ends TRANSACTIOM). 
     def commit_db_transaction
       hdl = execute("COMMIT")
     end
 
     # Rolls back the transaction. Must be
-    # done if the transaction block raises an exception or returns false.
+    # done if the transaction block raises an exception or returns false (ends TRANSACTIOM).
     def rollback_db_transaction
       hdl = execute("ROLLBACK")
     end
+    
+    def current_savepoint_name
+      @connection.transactions || 0
+    end
+    
+    # Create a new savepoint
+    def create_savepoint
+     # @connection.auto_commit(flag=false)
+     @connection.save
+     execute("SAVEPOINT #{current_savepoint_name}")
+    end
 
+    # rollback to the last savepoint
+    def rollback_to_savepoint
+      execute("ROLLBACK TO SAVEPOINT #{current_savepoint_name}")
+    end
+
+    # release current savepoint
+    def release_savepoint
+      $stdr.print @connection.savepoint
+      execute("RELEASE SAVEPOINT #{current_savepoint_name}")
+    end
+    
 
     def add_lock!(sql, options)
       @logger.info "Warning: MonetDB :lock option '#{options[:lock].inspect}' not supported. Returning unmodified sql statement!" if @logger && options.has_key?(:lock)
@@ -543,10 +579,8 @@ module ActiveRecord
 
     private
       def connect
-        if(@connection)
-          #@connection.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "ruby", auth_type = "SHA1")
-          @connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")
-        end
+        @connection.connect(user = @connection_options[2], passwd =  @connection_options[3], lang = @connection_options[5], host =  @connection_options[0], port =  @connection_options[1], db_name =  @connection_options[4], auth_type = "SHA1")  if @connection
+        # @connection.auto_commit(flag=false) # if @connection.auto_commit 
       end 
   end
 end

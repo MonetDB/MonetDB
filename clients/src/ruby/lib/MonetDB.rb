@@ -15,6 +15,15 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
+
+# A typical sequence of events is as follows:
+# Fire a query using the database handle to send the statement to the server and get back a result set object.
+
+# A result set object  has methods for fetching rows, moving around in the result set, obtaining column metadata, and releasing the result set.
+# Use a row fetching method such as 'fetch_row' or an iterator such as each to access the rows of the result set.
+# Call 'free' to release the result set. 
+
+
 #module MonetDB
 
   require 'MonetDBConnection'
@@ -36,7 +45,7 @@
     # * lang: language (default is sql) 
     # * host: server hostanme or ip  (default is localhost)
     # * port: server port (default is 50000)
-    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
+    def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = "50000", db_name = "demo", auth_type = "SHA1")
       # TODO: handle pools of connections
       @username = username
       @password = password
@@ -52,8 +61,6 @@
     # Send a <b> user submitted </b> query to the server and store the response
     def query(q = "", type_cast = false)
       if  @connection != nil 
-        q = "s" + q
-    
         @data = MonetDBData.new(@connection, type_cast = type_cast)
         @data.execute(q)    
       end
@@ -78,7 +85,34 @@
         @connection.real_connect(@db_name, @auth_type)
       end
     end
+    
+    # Turn auto commit on/off
+    def auto_commit(flag=true)
+      @connection.set_auto_commit(flag)
+    end
   
+    # Returns the current auto commit  (on/off) settings.
+    def auto_commit?
+      @connection.auto_commit?
+    end
+    
+    def commit
+      @connection.commit
+    end
+    
+    # Returns the name of the last savepoint in a transactions pool
+    def transactions
+      @connection.savepoint
+    end
+    
+    def save
+      @connection.transactions.save
+    end
+    
+    def release
+      @connection.transactions.release
+    end
+    
     # Close an active connection
     def close()
       @connection.disconnect
