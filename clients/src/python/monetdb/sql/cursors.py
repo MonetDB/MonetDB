@@ -94,13 +94,11 @@ class Cursor:
         This attribute will be None for operations that
         do not return rows or if the cursor has not had an
         operation invoked via the .execute*() method yet.
-
-        The type_code can be interpreted by comparing it to the
-        Type Objects specified in the section below."""
+        """
         self.description = None
 
-        """This read-only attribute indicates at which row
-        we currently are"""
+        #This read-only attribute indicates at which row
+        #we currently are
         self.rownumber = -1
 
         self.__executed = None
@@ -110,6 +108,10 @@ class Cursor:
 
         # the resultset
         self.__rows = []
+
+        # used to identify a query during server contact.
+        #Only select queries have query ID
+        self.__query_id = -1
 
         # the type converters
         self.__pythonizer = converters.Pythonizer()
@@ -257,6 +259,7 @@ class Cursor:
         count = 0
         for parameters in seq_of_parameters:
             count += self.execute(operation, parameters)
+        self.rowcount = count
         return count
 
 
@@ -267,9 +270,8 @@ class Cursor:
 
         self.__check_executed()
 
-        if self.rowcount == -1:
-             # TODO: change error exception to something more detailed
-            raise Error("query didn't result in a resultset")
+        if self.__query_id == -1:
+            raise ProgrammingError("query didn't result in a resultset")
 
         if self.rownumber >= (self.rowcount):
             logging.debug("rownumber >= rowcount")
@@ -344,8 +346,8 @@ class Cursor:
 
         self.__check_executed()
 
-        if self.rowcount == -1:
-            raise Error("query didn't result in a resultset")
+        if self.__query_id == -1:
+            raise ProgrammingError("query didn't result in a resultset")
 
         result = self.__rows[self.rownumber - self.__offset:]
         self.rownumber = len(self.__rows) + self.__offset
@@ -526,10 +528,10 @@ class Cursor:
                 self.__rows = []
                 self.__offset = 0
                 self.description = None
-                #self.rowcount = int(affected)
-                self.rowcount = -1
+                self.rowcount = int(affected)
+                self.__query_id = -1
                 logging.debug("II update finished")
-                return affected
+                return
 
         elif firstline.startswith(mapi.MSG_ERROR):
             raise ProgrammingError(firstline[1:])
