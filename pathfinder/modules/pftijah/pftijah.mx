@@ -577,13 +577,21 @@ PROC _tj_init_collection(str ftiName, BAT[str,str] param, BAT[void,str] v_pfc, b
     lock_set(tj_adm_lock);
     var err := CATCH({
       if ( verbose ) printf(HASH +"TJ tj_init_collection(\"%s\") called.\n",ftiName);
-
-      if (not(isnil(CATCH(bat("tj_collName").count_wrd())))) {
+      
+      # check existence of global index management BATs
+      if ( not(view_bbp_name().reverse().exist("tj_pfc_fti_dep")) ) {
     	tj_init_global(new(str,str),false); # just in case 
       }
-      if (bat("tj_collName").reverse().exist(ftiName)) {
-    	if ( not(rebuild) )
-	  ERROR("tj_init_collection, pftijah collection already exists: %s\n",ftiName);
+      # check whether index already exists
+      if ( view_bbp_name().reverse().exist("tj_" + ftiName + "_size1") ) {
+    	if ( not(rebuild) ) {
+          # check whether collection is empty
+          if (bat("tj_" + ftiName + "_size1").count_wrd() = wrd(0)) {
+             tj_delete_collection(ftiName, false);
+          } else {
+	     ERROR("tj_init_collection, pftijah collection already exists: %s\n",ftiName);
+          }
+        } 
       } else {
         if (rebuild) {
 	  ERROR("tj_rebuild_collection, pftijah collection \"%s\" does not exists\n",ftiName);
