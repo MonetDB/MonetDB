@@ -142,7 +142,7 @@ class Server:
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return
+            return ""
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:

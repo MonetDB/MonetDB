@@ -141,7 +141,6 @@ class Cursor:
         The semantics of .lastrowid are undefined in case the last
         executed statement modified more than one row, e.g. when
         using INSERT with .executemany()."""
-        # TODO: implement
         self.lastrowid = None
 
     def __check_executed(self):
@@ -431,7 +430,7 @@ class Cursor:
         """ parses the mapi result into a resultset"""
 
         if not block:
-            return
+            block = ""
 
         lines = block.split("\n")
         firstline = lines[0]
@@ -489,6 +488,7 @@ class Cursor:
                     self.__offset = 0
 
                     self.rowcount = rowcount
+                    self.lastrowid = None
                     logger.debug("II store result finished")
                     return
 
@@ -509,16 +509,18 @@ class Cursor:
                 self.__offset = 0
                 self.description = None
                 self.rowcount = -1
+                self.lastrowid = None
                 logger.debug("II schema finished")
                 return
 
         elif firstline.startswith(mapi.MSG_QUPDATE):
            if lines[1] == mapi.MSG_PROMPT:
-                (affected, identiy) = firstline[2:].split()
+                (affected, identity) = firstline[2:].split()
                 self.__rows = []
                 self.__offset = 0
                 self.description = None
                 self.rowcount = int(affected)
+                self.lastrowid = int(identity)
                 self.__query_id = -1
                 logger.debug("II update finished")
                 return
@@ -532,8 +534,20 @@ class Cursor:
                 self.__offset = 0
                 self.description = None
                 self.rowcount = -1
+                self.lastrowid = None
                 logger.debug("II transaction finished")
                 return
+
+        elif firstline.startswith(mapi.MSG_PROMPT):
+            self.__query_id = -1
+            self.__rows = []
+            self.__offset = 0
+
+            self.rowcount = 0
+            self.lastrowid = None
+            logger.debug("II empty response, assuming everything is ok")
+            return
+
 
         # you are not supposed to be here
         raise InterfaceError("Unknown state, %s" % block)

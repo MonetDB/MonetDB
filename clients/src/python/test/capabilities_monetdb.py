@@ -17,7 +17,7 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-import test_capabilities
+import capabilities
 import unittest
 import warnings
 
@@ -38,7 +38,7 @@ except ImportError:
 
 warnings.filterwarnings('error')
 
-class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
+class Test_Monetdb_Sql(capabilities.DatabaseTest):
     MAPIPORT = 50000
     TSTDB = 'demo'
     import os
