@@ -100,6 +100,10 @@ class Cursor:
         # the resultset
         self.__rows = []
 
+        # used to identify a query during server contact.
+        #Only select queries have query ID
+        self.__query_id = -1
+
         # the type converters
         self.__pythonizer = converters.Pythonizer()
         self.__monetizer = converters.Monetizer()
@@ -245,6 +249,7 @@ class Cursor:
         count = 0
         for parameters in seq_of_parameters:
             count += self.execute(operation, parameters)
+        self.rowcount = count
         return count
 
 
@@ -255,9 +260,8 @@ class Cursor:
 
         self.__check_executed()
 
-        if self.rowcount == -1:
-             # TODO: change error exception to something more detailed
-            raise Error("query didn't result in a resultset")
+        if self.__query_id == -1:
+            raise ProgrammingError("query didn't result in a resultset")
 
         if self.rownumber >= (self.rowcount):
             logger.debug("rownumber >= rowcount")
@@ -332,8 +336,8 @@ class Cursor:
 
         self.__check_executed()
 
-        if self.rowcount == -1:
-            raise Error("query didn't result in a resultset")
+        if self.__query_id == -1:
+            raise ProgrammingError("query didn't result in a resultset")
 
         result = self.__rows[self.rownumber - self.__offset:]
         self.rownumber = len(self.__rows) + self.__offset
@@ -515,6 +519,7 @@ class Cursor:
                 self.__offset = 0
                 self.description = None
                 self.rowcount = int(affected)
+                self.__query_id = -1
                 logger.debug("II update finished")
                 return
 

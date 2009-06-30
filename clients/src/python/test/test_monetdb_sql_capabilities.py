@@ -23,8 +23,8 @@ import warnings
 
 
 #import logging
-#logging.getLogger().setLevel(logging.DEBUG)
-
+#logging.basicConfig(level=logging.DEBUG)
+#logger = logging.getLogger('monetdb')
 
 
 try:
@@ -49,7 +49,7 @@ class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
 
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=True)
     leak_test = False
 
     def test_TIME(self):
@@ -83,6 +83,7 @@ class Test_Monetdb_Sql(test_capabilities.DatabaseTest):
 
     def test_stored_procedures(self):
         db = self.connection
+        db.set_autocommit(False)
         c = self.cursor
         self.create_table(('pos INT', 'tree CHAR(20)'))
         c.executemany("INSERT INTO %s (pos,tree) VALUES (%%s,%%s)" % self.table,
