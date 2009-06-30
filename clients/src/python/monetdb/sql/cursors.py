@@ -86,10 +86,12 @@ class Cursor:
 
         This attribute will be None for operations that
         do not return rows or if the cursor has not had an
-        operation invoked via the .execute*() method yet."""
+        operation invoked via the .execute*() method yet.
+        """
         self.description = None
 
-        # This read-only attribute indicates at which row we currently are
+        #This read-only attribute indicates at which row
+        #we currently are
         self.rownumber = -1
 
         self.__executed = None
