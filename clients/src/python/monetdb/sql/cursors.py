@@ -19,7 +19,7 @@ import logging
 import sys
 
 from monetdb.sql import converters
-from monetdb.monetdb_exceptions import ProgrammingError, Error
+from monetdb.monetdb_exceptions import *
 
 # a ugly hack to support python < 2.6
 (major, minor, micro, level, serial)  = sys.version_info
@@ -438,6 +438,9 @@ class Cursor:
     def __store_result(self, block):
         """ parses the mapi result into a resultset"""
 
+        if not block:
+            block = ""
+
         lines = block.split("\n")
         firstline = lines[0]
 
@@ -523,9 +526,10 @@ class Cursor:
                 self.__rows = []
                 self.__offset = 0
                 self.description = None
-                self.rowcount = int(affected)
-                logger.debug("II update finished")
-                return
+                #self.rowcount = int(affected)
+                self.rowcount = -1
+                logging.debug("II update finished")
+                return affected
 
         elif firstline.startswith(mapi.MSG_ERROR):
             raise ProgrammingError(firstline[1:])
