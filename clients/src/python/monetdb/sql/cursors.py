@@ -124,10 +124,7 @@ class Cursor:
         placed into this list, so checking the list allows the user to
         verify correct operation of the method calls.
 
-        The aim of this attribute is to eliminate the need for a
-        Warning exception which often causes problems (some warnings
-        really only have informational character)."""
-        #TODO: implement
+        ."""
         self.messages = []
 
 
@@ -145,7 +142,7 @@ class Cursor:
 
     def __check_executed(self):
         if not self.__executed:
-            raise ProgrammingError("do a execute() first")
+            self.__exception_handler(ProgrammingError, "do a execute() first")
 
 
     """
@@ -193,6 +190,9 @@ class Cursor:
         efficiency."""
 
 
+        # clear message history
+        self.messages = []
+
         # set the number of rows to fetch
         self.connection.command('Xreply_size %s' % self.arraysize)
 
@@ -212,7 +212,7 @@ class Cursor:
             elif isinstance(parameters, str):
                 query = operation % parameters
             else:
-                raise ValueError("Parameters should be empty or a dictionary, now it is %s" % type(parameters))
+                self.__exception_handler(ValueError, "Parameters should be empty or a dictionary, now it is %s" % type(parameters))
         else:
            query = operation
 
@@ -260,7 +260,7 @@ class Cursor:
         self.__check_executed()
 
         if self.__query_id == -1:
-            raise ProgrammingError("query didn't result in a resultset")
+            self.__exception_handler(ProgrammingError, "query didn't result in a resultset")
 
         if self.rownumber >= (self.rowcount):
             logger.debug("rownumber >= rowcount")
@@ -336,7 +336,7 @@ class Cursor:
         self.__check_executed()
 
         if self.__query_id == -1:
-            raise ProgrammingError("query didn't result in a resultset")
+            self.__exception_handler(ProgrammingError, "query didn't result in a resultset")
 
         result = self.__rows[self.rownumber - self.__offset:]
         self.rownumber = len(self.__rows) + self.__offset
@@ -437,6 +437,7 @@ class Cursor:
 
         while firstline.startswith(mapi.MSG_INFO):
             logger.info(firstline[1:])
+            self.messages.append((Warning, firstline[1:]))
             lines = lines[1:]
             firstline = lines[0]
 
@@ -474,7 +475,8 @@ class Cursor:
                         internal_size = [int(x) for x in values]
                         display_size = internal_size
                     else:
-                        raise InterfaceError("unknown header field")
+                        self.messages.append((InterfaceError, "unknown header field"))
+                        self.__exception_handler(InterfaceError, "unknown header field")
 
                     self.description = list(zip(column_name, type, display_size, internal_size, precision, scale, null_ok))
 
@@ -526,7 +528,7 @@ class Cursor:
                 return
 
         elif firstline.startswith(mapi.MSG_ERROR):
-            raise ProgrammingError(firstline[1:])
+            self.__exception_handler(ProgrammingError, firstline[1:])
 
         elif firstline.startswith(mapi.MSG_QTRANS):
            if lines[1] == mapi.MSG_PROMPT:
@@ -550,7 +552,7 @@ class Cursor:
 
 
         # you are not supposed to be here
-        raise InterfaceError("Unknown state, %s" % block)
+        self.__exception_handler(InterfaceError, "Unknown state, %s" % block)
 
 
     def __parse_tuple(self, line):
@@ -562,7 +564,7 @@ class Cursor:
             return tuple([self.__pythonizer.convert(element.strip(), description[1]) for
                     (element, description) in zip(elements, self.description)])
         else:
-            raise InterfaceError("length of row doesn't match header")
+            self.__exception_handler(InterfaceError, "length of row doesn't match header")
 
 
     def scroll(self, value, mode='relative'):
@@ -587,13 +589,20 @@ class Cursor:
         # TODO: finish this, megre with nextset()
 
         if mode not in ['relative', 'absolute']:
-            raise ProgrammingError("unknown mode '%s'" % mode)
+            self.__exception_handler(ProgrammingError, "unknown mode '%s'" % mode)
 
         if mode == 'relative':
             value = self.rownumber + value
 
         if value > self.rowcount:
-            raise IndexError("value beyond length of resultset")
+             self.__exception_handler(IndexError, "value beyond length of resultset")
+
+
+    def __exception_handler(self, exception_class, message):
+        """ raises the exception specified by exception, and add the error
+        to the message list """
+        self.messages.append((exception_class, message))
+        raise exception_class(message)
 
 
 

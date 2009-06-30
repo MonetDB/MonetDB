@@ -110,10 +110,10 @@ class Monetizer:
             complex: self.__string,
             int: self.__string,
             str: self.__escape,
-            datetime.datetime: self.__string,
+            datetime.datetime: self.__escape,
             decimal.Decimal: self.__string,
-            datetime.timedelta: self.__string,
-            datetime.date: self.__string,
+            datetime.timedelta: self.__escape,
+            datetime.date: self.__escape,
             #list: self.__string, # TODO: check this
             #tuple: self.__string, # TODO: check this
             #range: self.__string, # TODO: check this
@@ -150,7 +150,7 @@ class Monetizer:
             return "false"
 
     def __escape(self, data):
-        data = data.replace( "\\", "\\\\")
+        data = str(data).replace( "\\", "\\\\")
         data = data.replace( "'", "\\'")
         return "'%s'" % str(data)
 

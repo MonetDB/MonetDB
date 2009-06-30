@@ -49,7 +49,7 @@ class Test_Monetdb_Sql(capabilities.DatabaseTest):
 
     db_module = monetdb.sql
     connect_args = ()
-    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=True)
+    connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
     leak_test = False
 
     def test_TIME(self):
@@ -120,6 +120,10 @@ class Test_Monetdb_Sql(capabilities.DatabaseTest):
 
     def test_LONG(self):
         """ monetdb doesn't support LONG type """
+        pass
+
+    def test_LONG_BYTE(self):
+        """ monetdb doesn't support LONG_BYTE """
         pass
 
 if __name__ == '__main__':

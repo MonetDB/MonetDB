@@ -63,6 +63,7 @@ class DatabaseTest(unittest.TestCase):
         try:
             self.cursor.execute('select * from %s where 1=0' % name)
         except:
+            self.connection.rollback()
             return False
         else:
             return True
