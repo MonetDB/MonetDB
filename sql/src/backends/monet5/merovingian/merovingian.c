@@ -415,7 +415,6 @@ forkMserver(str database, sabdb** stats, int force)
 	int pfde[2];
 	dpair dp;
 	str vaultkey = NULL;
-	str logdir = NULL;
 	str nthreads = NULL;
 	char mydoproxy;
 	confkeyval *ckv, *kv;
@@ -544,12 +543,6 @@ forkMserver(str database, sabdb** stats, int force)
 	ckv = getDefaultProps();
 	readProps(ckv, (*stats)->path);
 
-	kv = findConfKey(ckv, "logdir");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_props, "logdir");
-	logdir = alloca(sizeof(char) * 512);
-	snprintf(logdir, 512, "sql_logdir=%s", kv->val);
-
 	kv = findConfKey(ckv, "forward");
 	if (kv->val == NULL)
 		kv = findConfKey(_mero_props, "forward");
@@ -584,7 +577,7 @@ forkMserver(str database, sabdb** stats, int force)
 		str conffile = alloca(sizeof(char) * 512);
 		str dbname = alloca(sizeof(char) * 512);
 		str port = alloca(sizeof(char) * 24);
-		str argv[19];	/* for the exec arguments */
+		str argv[17];	/* for the exec arguments */
 		int c = 0;
 
 		/* redirect stdout and stderr to a new pair of fds for
@@ -619,7 +612,6 @@ forkMserver(str database, sabdb** stats, int force)
 		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		argv[c++] = "--set"; argv[c++] = port;
 		argv[c++] = "--set"; argv[c++] = vaultkey;
-		argv[c++] = "--set"; argv[c++] = logdir;
 		if (nthreads != NULL) {
 			argv[c++] = "--set"; argv[c++] = nthreads;
 		}
@@ -2401,13 +2393,6 @@ main(int argc, char *argv[])
 
 	/* setup default properties */
 	_mero_props = getDefaultProps();
-	kv = findConfKey(ckv, "sql_logdir");
-	if ((p = kv->val) == NULL) {
-		Mfprintf(stderr, "cannot find sql_logdir via config file\n");
-		MERO_EXIT(1);
-	}
-	kv = findConfKey(_mero_props, "logdir");
-	kv->val = GDKstrdup(p);
 	kv = findConfKey(_mero_props, "forward");
 	kv->val = GDKstrdup(doproxy == 1 ? "proxy" : "redirect");
 	kv = findConfKey(_mero_props, "shared");

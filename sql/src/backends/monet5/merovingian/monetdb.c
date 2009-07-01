@@ -73,7 +73,6 @@ typedef char* err;
 #define NO_ERR (err)0
 
 static str dbfarm = NULL;
-static str logdir = NULL;
 static int mero_running = 0;
 static int TERMWIDTH = 80;  /* default to classic terminal width */
 
@@ -977,7 +976,6 @@ command_set(int argc, char *argv[], meroset type)
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		if (strcmp(property, "name") == 0) {
 			char new[512];
-			char newlogdir[512];
 
 			/* special virtual case */
 			if (type == INHERIT) {
@@ -1018,88 +1016,15 @@ command_set(int argc, char *argv[], meroset type)
 			}
 			snprintf(p + 1, 512 - (p + 1 - new), "%s", value);
 
-			/* renaming is as simple as changing the directory name,
-			 * however, we have the logdir too.
-			 * - if relative: done
-			 * - if absolute, but within dbfarm/dbname: update entry
-			 * - if absolute: done */
-
-			readProps(props, stats->path);
-			kv = findConfKey(props, "logdir");
-			p = NULL;
-			if (kv->val != NULL && kv->val[0] == '/') {
-				/* if there are symlinks involved here, I'm affraid
-				 * we're going to fail (can't find realpath func) */
-				if (strncmp(kv->val, stats->path, strlen(stats->path)) == 0 &&
-						kv->val[strlen(stats->path)] == '/')
-				{
-					/* this is going to break, need to update the logdir
-					 * entry */
-					p = kv->val;
-					snprintf(newlogdir, 512, "%s%s", new,
-							p + strlen(stats->path));
-					GDKfree(p);
-					kv->val = GDKstrdup(newlogdir);
-					p = kv->val;
-				}
-			}
+			/* Renaming is as simple as changing the directory name.
+			 * Since the logdir is relative to it, we don't need to
+			 * bother about that either. */
 			if (rename(stats->path, new) != 0) {
 				fprintf(stderr, "%s: failed to rename database from "
 						"'%s' to '%s': %s\n", argv[0], stats->path, new,
 						strerror(errno));
 				state |= 1;
 			}
-			if (p != NULL)
-				writeProps(props, new);
-			freeConfFile(props);
-		} else if (strcmp(property, "logdir") == 0) {
-			char *p;
-			char old[512];
-			char new[512];
-
-			if (type == INHERIT) {
-				fprintf(stderr, "inherit: having the logdir location "
-						"depend on the global default makes a fragile "
-						"system configuration\n");
-				state |= 1;
-				continue;
-			}
-
-			/* retrieve the current setting, if relative, make it
-			 * absolute: ${gdk_dbfarm}/${gdk_dbname} = stats->path */
-
-			readProps(props, stats->path);
-			kv = findConfKey(props, "logdir");
-
-			p = kv->val;
-			if (p == NULL)
-				p = logdir;
-
-			if (*p != '/') {
-				snprintf(old, 512, "%s/%s", stats->path, p);
-			} else {
-				snprintf(old, 512, "%s", p);
-			}
-
-			if (*value != '/') {
-				snprintf(new, 512, "%s/%s", stats->path, value);
-			} else {
-				snprintf(new, 512, "%s", value);
-			}
-
-			if (rename(old, new) != 0) {
-				fprintf(stderr, "%s: failed to move logdir from "
-						"'%s' to '%s': %s\n", argv[0], old, new,
-						strerror(errno));
-				state |= 1;
-				freeConfFile(props);
-				continue;
-			}
-			if (kv->val != NULL)
-				GDKfree(kv->val);
-			kv->val = GDKstrdup(value);
-			writeProps(props, stats->path);
-			freeConfFile(props);
 		} else {
 			readProps(props, stats->path);
 			kv = findConfKey(props, property);
@@ -1177,7 +1102,7 @@ command_get(int argc, char *argv[], confkeyval *defprops)
 			if (strcmp(property, "all") == 0) {
 				/* die hard leak (can't use constant, strtok modifies
 				 * (and hence crashes)) */
-				property = GDKstrdup("name,logdir,forward,shared,nthreads");
+				property = GDKstrdup("name,forward,shared,nthreads");
 			}
 		} else {
 			doall = 0;
@@ -1349,7 +1274,6 @@ command_create(int argc, char *argv[])
 			FILE *f;
 			int size;
 			char buf[48];
-			confkeyval ckv[2];
 
 			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
 			path[8095] = '\0';
@@ -1391,14 +1315,6 @@ command_create(int argc, char *argv[])
 			if (fwrite(buf, 1, 48, f) < 48)
 				fprintf(stderr, "create: failure in writing vaultkey file\n");
 			fclose(f);
-			/* write initial property: the sql_logdir at the time of
-			 * creation, should remain constant afterwards (or moved
-			 * correctly by monetdb itself) */
-			snprintf(path, 8095, "%s/%s", dbfarm, dbname);
-			ckv[0].key = "logdir";
-			ckv[0].val = logdir;
-			ckv[1].key = NULL;
-			writeProps(ckv, path);
 
 			/* without an .uplog file, Merovingian won't work, this
 			 * needs to be last to avoid race conditions */
@@ -1557,7 +1473,6 @@ command_destroy(int argc, char *argv[])
 
 		if (stats != NULL) {
 			err e;
-			char buf[8096];
 
 			if (stats->state == SABdbRunning) {
 				fprintf(stderr, "destroy: database '%s' is still running, "
@@ -1586,20 +1501,6 @@ command_destroy(int argc, char *argv[])
 				continue;
 			}
 			SABAOTHfreeStatus(&stats);
-			if (logdir[0] == '/') {
-				/* this is annoying, but till the time we have something
-				 * better, we should do it like this; the logdir is a
-				 * separate directory */
-				snprintf(buf, 8096, "%s/%s", logdir, dbname);
-				if ((e = deletedir(buf)) != NULL) {
-					fprintf(stderr, "destroy: failed to destroy '%s': %s\n",
-							argv[1], e);
-					GDKfree(e);
-					state |= 1;
-					hadwork = 1;
-					continue;
-				}
-			}
 			printf("successfully destroyed database '%s'\n", dbname);
 		} else {
 			fprintf(stderr, "destroy: no such database: %s\n", dbname);
@@ -1789,17 +1690,11 @@ main(int argc, char *argv[])
 
 	kv = findConfKey(ckv, "prefix");
 	prefix = kv->val;
+
 	kv = findConfKey(ckv, "gdk_dbfarm");
 	dbfarm = replacePrefix(kv->val, prefix);
-	kv = findConfKey(ckv, "sql_logdir");
-	logdir = replacePrefix(kv->val, prefix);
-
 	if (dbfarm == NULL) {
 		fprintf(stderr, "%s: cannot find gdk_dbfarm in config file\n", argv[0]);
-		exit(2);
-	}
-	if (logdir == NULL) {
-		fprintf(stderr, "%s: cannot find sql_logdir in config file\n", argv[0]);
 		exit(2);
 	}
 
@@ -1849,8 +1744,6 @@ main(int argc, char *argv[])
 		command_set(argc - 1, &argv[1], SET);
 	} else if (strcmp(argv[1], "get") == 0) {
 		/* change the keys to our names */
-		kv = findConfKey(ckv, "sql_logdir");
-		kv->key = "logdir";
 		kv = findConfKey(ckv, "mero_doproxy");
 		kv->key = "forward";
 		if (strcmp(kv->val, "yes") == 0 ||
