@@ -247,10 +247,3 @@ sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergeta
 #sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
 # The Mitosis-mergetable-reorder pipeline, aimed at better variable access locality.#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
-
-# Place to store transaction logs
-# The logs are best stored on a different storage medium
-# to protect the database against accidental hardware loss.
-# Non-absolute path arguments here are relative to the
-# ${gdk_dbfarm}@DIRSEP@${gdk_dbname} directory.
-sql_logdir=sql_logs
