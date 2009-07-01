@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  01 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c:
+  Allow an expression to be used to match against the list of discovered
+  databases for future convenience.
+
   19 Jun 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
   Allow setting the name of a database (a.k.a. renaming it), doing all the
   logic to keep the logdir aligned in case it's absolute.

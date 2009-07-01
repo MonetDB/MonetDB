@@ -36,6 +36,7 @@
 #include "mal_sabaoth.h"
 #include "utils.h"
 #include "properties.h"
+#include "glob.h"
 #include <stdlib.h> /* exit, getenv */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */
@@ -156,10 +157,11 @@ command_help(int argc, char *argv[])
 		printf("  unsets property, reverting to its inherited value from\n");
 		printf("  the default configuration for the given database\n");
 	} else if (strcmp(argv[1], "discover") == 0) {
-		printf("Usage: monetdb discover\n");
+		printf("Usage: monetdb discover [expression]\n");
 		printf("  Lists the remote databases discovered by the MonetDB\n");
 		printf("  Database Server.  Databases in this list can be connected\n");
-		printf("  to as well.\n");
+		printf("  to as well.  If expression is given, all entries are\n");
+		printf("  matched against a limited glob-style expression.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
 		printf("Yeah , help on help, how desparate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
@@ -534,18 +536,29 @@ command_discover(int argc, char *argv[])
 	char *p, *q;
 	int len;
 	int pos;
-	int twidth = TERMWIDTH - 50 - 2 /* for location */;
-	char dbname[twidth + 1];
-	char location[50 + 1];
-
-	(void)argc;
-	(void)argv;
+	size_t twidth = TERMWIDTH;
+	char location[twidth + 1];
+	char *match = NULL;
+	size_t numlocs = 50;
+	size_t posloc = 0;
+	size_t loclen = 0;
+	char **locations = malloc(sizeof(char*) * numlocs);
 
 	/* if Merovingian isn't running, there's not much we can do */
 	if (mero_running == 0) {
 		fprintf(stderr, "discover: cannot perform: MonetDB Database Server "
 				"(merovingian) is not running\n");
 		exit(1);
+	}
+
+	if (argc == 0) {
+		exit(2);
+	} else if (argc > 2) {
+		/* print help message for this command */
+		command_help(2, &argv[-1]);
+		exit(1);
+	} else if (argc == 2) {
+		match = argv[1];
 	}
 
 	snprintf(path, 8095, "%s/.merovingian_control", dbfarm);
@@ -564,9 +577,6 @@ command_discover(int argc, char *argv[])
 		exit(2);
 	}
 
-	printf("%*sname%*s                       location\n",
-			twidth - 4 /* name */ - ((twidth - 4) / 2), "",
-			(twidth - 4) / 2, "");
  	/* Send the pass phrase to unlock the information available in
 	 * merovingian.  Anelosimus eximius is a social species of spiders,
 	 * which help each other, just like merovingians do among each
@@ -610,11 +620,19 @@ command_discover(int argc, char *argv[])
 		}
 		*q++ = '\0';
 
-		/* cut too long database and location names */
-		abbreviateString(dbname, buf, twidth);
-		abbreviateString(location, q, 50);
-		/* show what we found */
-		printf("%-*s  %s\n", twidth, dbname, location);
+		snprintf(path, sizeof(path), "%s%s", q, buf);
+
+		if (match == NULL || glob(match, path)) {
+			/* cut too long location name */
+			abbreviateString(location, path, twidth);
+			/* store what we found */
+			if (posloc == numlocs)
+				locations = realloc(locations,
+						sizeof(char) * (numlocs = numlocs * 2));
+			locations[posloc++] = strdup(location);
+			if (strlen(location) > loclen)
+				loclen = strlen(location);
+		}
 
 		/* move it away */
 		len -= p - buf;
@@ -622,6 +640,18 @@ command_discover(int argc, char *argv[])
 	} while (1);
 
 	close(sock);
+
+	if (posloc > 0) {
+		printf("%*slocation\n",
+				(int)(loclen - 8 /* "location" */ - ((loclen - 8) / 2)), "");
+		/* could qsort the array here but we don't :P */
+		for (loclen = 0; loclen < posloc; loclen++) {
+			printf("%s\n", locations[loclen]);
+			free(locations[loclen]);
+		}
+	}
+
+	free(locations);
 }
 
 typedef enum {
