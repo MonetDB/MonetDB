@@ -163,9 +163,6 @@ SQLprelude(void)
 	s->engine = "SQLengine";
 	if (GDKembedded)
 		return MAL_SUCCEED;
-	tmp = SABAOTHmarchScenario(&res, &s->name);
-	if (tmp != MAL_SUCCEED)
-		return(tmp);
 
 	s = getFreeScenario();
 	if (!s)
@@ -190,7 +187,14 @@ SQLprelude(void)
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
-	return SABAOTHmarchScenario(&res, &s->name);
+	
+	/* only register availability of scenarios AFTER we are inited! */
+	tmp = "sql";
+	tmp = SABAOTHmarchScenario(&res, &tmp);
+	if (tmp != MAL_SUCCEED)
+		return(tmp);
+	tmp = "msql";
+	return SABAOTHmarchScenario(&res, &tmp);
 }
 
 str
