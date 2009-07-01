@@ -4150,8 +4150,9 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 
 @- startup sequence
 @mil
-var pf_logger := xquery_logger_create(0, "xquery", monet_environment.find("xquery_logdir"), 
-                                            monet_environment.find("gdk_dbname"), LOGGER_VERSION);
+var pf_logger := xquery_logger_create(0, "xquery", "xquery_logs", 
+                                      monet_environment.find("gdk_dbname"),
+                                      LOGGER_VERSION);
 # initialize persistent bats (use BBP as global mechanism to discover initialization)
 if (isnil(CATCH(bat("doc_name").count()))) {
     collection_name  := bat("collection_name");
