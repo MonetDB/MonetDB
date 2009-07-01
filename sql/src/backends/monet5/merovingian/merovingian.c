@@ -1375,7 +1375,7 @@ openConnectionUDP(int *ret, unsigned short port)
 
 	freeaddrinfo(result);
 
-	Mfprintf(stdout, "listening for UDP messages on %s:%s\n", host, sport);
+	Mfprintf(discout, "listening for UDP messages on %s:%s\n", host, sport);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -1403,7 +1403,7 @@ openConnectionUNIX(int *ret, char *path)
 	/* keep queue of 5 */
 	listen(sock, 5);
 
-	Mfprintf(stdout, "listening for UNIX connections on %s\n", path);
+	Mfprintf(stdout, "handling commands over UNIX socket %s\n", path);
 
 	*ret = sock;
 	return(NO_ERR);
