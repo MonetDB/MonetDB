@@ -164,11 +164,13 @@ secondsToString(char *buf, time_t t, int longness)
 /**
  * Fills the array pointed to by ret, with the string from in,
  * abbreviating it when it is longer than width chars long.
+ * This function possibly modifies its input argument in.  The array
+ * pointed to by ret must be at least of size width + 1.
  */
 inline void
-abbreviateString(char *ret, char *in, int width)
+abbreviateString(char *ret, char *in, size_t width)
 {
-	int len;
+	size_t len;
 
 	if ((len = strlen(in)) > width) {
 		/* position abbreviation dots in the middle (Mac style, iso

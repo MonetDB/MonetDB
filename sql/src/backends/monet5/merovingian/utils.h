@@ -33,7 +33,7 @@ void readConfFile(confkeyval *list, FILE *cnf);
 void freeConfFile(confkeyval *list);
 confkeyval *findConfKey(confkeyval *list, char *key);
 void secondsToString(char *buf, time_t t, int longness);
-void abbreviateString(char *ret, char *in, int width);
+void abbreviateString(char *ret, char *in, size_t width);
 
 #endif
 
