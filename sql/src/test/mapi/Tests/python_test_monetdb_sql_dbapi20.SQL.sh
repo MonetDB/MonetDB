@@ -5,4 +5,4 @@
 testpath="`monetdb-clients-config --pkglibdir`/Tests"
 export PYTHONPATH=$testpath:$PYTHONPATH
 
-Mlog -x "python $testpath/test_monetdb_sql_dbapi20.py"
+Mlog -x "python $testpath/dbapi20_monetdb.py"

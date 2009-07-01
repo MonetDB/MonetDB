@@ -27,7 +27,7 @@ Over..
 
 
 # 09:28:35 >  
-# 09:28:35 >  python /ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB/Tests/test_monetdb_sql_dbapi20.py
+# 09:28:35 >  python /ufs/manegold/_/scratch0/Monet/Testing/Stable/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB/Tests/dbapi20_monetdb.py
 # 09:28:35 >  
 
 
