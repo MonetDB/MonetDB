@@ -20,5 +20,5 @@ scripts_py = {
 	# sql/src/test/mapi/Tests/python_test_monetdb_sql_{dbapi20,capabilities}.SQL.{bat,sh}
 	# accordingly.
 	DIR = libdir/MonetDB/Tests
-	SOURCES = dbapi20.py test_monetdb_sql_dbapi20.py test_capabilities.py test_monetdb_sql_capabilities.py
+	SOURCES = capabilities.py capabilities_monetdb.py dbapi20.py dbapi20_monetdb.py
 }
