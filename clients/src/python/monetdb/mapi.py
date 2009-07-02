@@ -25,7 +25,7 @@ try:
 except ImportError:
     from monetdb_exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
-MAX_PACKAGE_LENGTH = 0xffff >> 1
+MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
 MSG_INFO = "#"
@@ -226,10 +226,10 @@ class Server:
         last = 0
         logging.debug("TX: %s" % block)
         while not last:
-            data = block[pos:MAX_PACKAGE_LENGTH].encode()
+            data = block[pos:pos+MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
-            flag = struct.pack( '<h', ( len(data) << 1 ) + last )
+            flag = struct.pack( '<H', ( len(data) << 1 ) + last )
             self.socket.send(flag)
             self.socket.send(data)
             pos += len(data)
