@@ -42,6 +42,3 @@ for i in (10, 100, 1000, 10000):
     c.execute('select * from tables, tables, tables')
     results = c.fetchall()
     print i, time.time() - t
-
-#import cProfile
-#cProfile.run('query()')
