@@ -17,7 +17,7 @@ running in the background for starting and stopping databases.
 The commands for the
 .B monetdb
 utility are
-.B create, destroy, lock, release, status, start, stop, kill, discover, help, version.
+.BR create ", " destroy ", " lock ", " release ", " status ", " start ", " stop ", " kill ", " set ", " get ", " inherit ", " discover ", " help ", " version .
 The commands facilitate adding, removing, maintaining, starting and
 stopping a database inside the MonetDB Database Server.
 .IP "create [\-l] database [database ...]"
@@ -25,7 +25,7 @@ Initialises a new database in the MonetDB Database Server.  A database
 created with this command makes it available for use by clients under
 its database name.  The name of the database must match the expression
 [A\-Za\-z0\-9\-_]+.
-.IP \-l
+.IP "  \-l"
 The
 .I \-l
 (lock) option, puts the database in maintenance mode directly after
@@ -37,7 +37,7 @@ upon a client request during its creation time.
 Removes the given database, including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this
 command.
-.IP \-f
+.IP "  \-f"
 By default, a confirmation question is asked, however the
 .I \-f
 option, when provided, suppresses this question and removal is executed
@@ -73,7 +73,7 @@ used.  This output resembles pretty much the output of various
 .B XXXstat
 functions, and is ideal for quickly gaining an overview of the system
 state.
-.IP \-c
+.IP "  \-c"
 The
 .I \-c
 flag shows the most used properties of a database.  This includes the
@@ -81,13 +81,13 @@ state of the database (running, crashed, stopped), whether it is under
 maintenance or not, the crash averages and uptime statistics.  The crash
 average is the number of times the database has crashed over the last 1,
 15 or 30 starts.  The lower the average, the healthier the database is.
-.IP \-l
+.IP "  \-l"
 Triggered by the
 .I \-l
 flag, a long listing is used.  This listing spans many rows with on each
 row one property and its value separated by a colon (`:').  The long
 listing includes all information that is available.
-.IP \-s
+.IP "  \-s"
 The
 .I \-s
 flag controls which databases are being shown, matching their state.
@@ -106,7 +106,7 @@ flag is absent, is
 .IP "stop [\-a] database [database ...]"
 .IP "kill [\-a] database [database ...]"
 Starts, stops or kills the given database(s) or, when
-.I \-a
+.I "  \-a"
 is supplied, all known databases, if the MonetDB Database Server
 .BR merovingian (1)
 is running.  The
@@ -148,13 +148,13 @@ properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.  The
 following properties have special values.
-.IP "forward=<redirect|proxy>"
+.IP "  forward=<redirect|proxy>"
 When set to redirect, merovingian tells each connecting client to make a
 new connection directly to the database the client looks for.  This
 requires that the separate mserver5 processes are reachable by the ports
 they use.  Since this may not be the case due to a firewall, when set to
 proxy, merovingian tunnels the client to the right database.
-.IP "share=<yes|no|tag>"
+.IP "  share=<yes|no|tag>"
 Defines if and how the database is being announced to other merovingians
 or not.  If not set to
 .I "yes"
@@ -163,19 +163,22 @@ or
 the database is simply announced or not.  Using a string, called
 .I tag
 the database is shared using that tag, allowing for more sophisticated
-usage.  For information about the tag format and use, see section REMOTE
-DATABASES in the
+usage.  For information about the tag format and use, see section
+.I "REMOTE DATABASES"
+in the
 .BR merovingian (1)
-manpage.
+manpage.  Note that this property can be set for a running database, and
+that a change takes immediate effect in the network.
 .IP "inherit property database [database ...]"
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.
 .IP "discover [expression]"
-Returns a list of remote databases that were discovered by
+Returns a list of remote databases URIs for databases that were
+discovered by
 .BR merovingian (1).
 All databases listed can be connected to via the local MonetDB Database
-Server as if it were local databases.  The connection is redirected or
-proxied based on configuration settings.  If
+Server as if it were local databases using their database name.  The
+connection is redirected or proxied based on configuration settings.  If
 .I expression
 is given, only those discovered databases are returned for which their
 URI matches the expression.  The expression syntax follows a limited
