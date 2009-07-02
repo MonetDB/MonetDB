@@ -423,20 +423,17 @@ forkMserver(str database, sabdb** stats, int force)
 	char upavg[8];
 	char upmax[8];
 
-	/* tagged names are always remote lookups */
-	if (strchr(database, '.') == NULL) {
-		er = SABAOTHgetStatus(stats, database);
-		if (er != MAL_SUCCEED) {
-			err e = newErr("%s", er);
-			GDKfree(er);
-			return(e);
-		}
-	} else {
-		*stats = NULL;
+	er = SABAOTHgetStatus(stats, database);
+	if (er != MAL_SUCCEED) {
+		err e = newErr("%s", er);
+		GDKfree(er);
+		return(e);
 	}
 
+	/* NOTE: remotes also include locals through self announcement */
 	if (*stats == NULL) {
 		remotedb rdb;
+		sabdb *walk = *stats;
 
 		/* check the remote databases */
 		pthread_mutex_lock(&_mero_remotedb_lock);
@@ -444,26 +441,30 @@ forkMserver(str database, sabdb** stats, int force)
 		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
 			if (glob(database, rdb->fullname) == 1) {
-				/* take first match, create a fake sabdb struct */
-				*stats = GDKmalloc(sizeof(sabdb));
-				(*stats)->dbname = GDKstrdup(rdb->dbname);
-				(*stats)->path = (*stats)->dbname; /* only freed by sabaoth */
-				(*stats)->locked = 0;
-				(*stats)->state = SABdbRunning;
-				(*stats)->scens = GDKmalloc(sizeof(sablist));
-				(*stats)->scens->val = GDKstrdup("sql");
-				(*stats)->scens->next = NULL;
-				(*stats)->conns = GDKmalloc(sizeof(sablist));
-				(*stats)->conns->val = GDKstrdup(rdb->conn);
-				(*stats)->conns->next = NULL;
-				(*stats)->next = NULL;
-				pthread_mutex_unlock(&_mero_remotedb_lock);
-				return(NO_ERR);
+				/* create a fake sabdb struct, chain where necessary */
+				if (walk != NULL) {
+					walk = walk->next = GDKmalloc(sizeof(sabdb));
+				} else {
+					walk = *stats = GDKmalloc(sizeof(sabdb));
+				}
+				walk->dbname = GDKstrdup(rdb->dbname);
+				walk->path = walk->dbname; /* only freed by sabaoth */
+				walk->locked = 0;
+				walk->state = SABdbRunning;
+				walk->scens = GDKmalloc(sizeof(sablist));
+				walk->scens->val = GDKstrdup("sql");
+				walk->scens->next = NULL;
+				walk->conns = GDKmalloc(sizeof(sablist));
+				walk->conns->val = GDKstrdup(rdb->conn);
+				walk->conns->next = NULL;
+				walk->next = NULL;
 			}
 			rdb = rdb->next;
 		}
 
 		pthread_mutex_unlock(&_mero_remotedb_lock);
+		if (*stats != NULL)
+			return(NO_ERR);
 
 		return(newErr("no such database: %s", database));
 	}
@@ -1027,6 +1028,8 @@ handleClient(int sock)
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
+	sabdb redirs[24];  /* do we need more? */
+	int r = 0;
 
 	fdin = socket_rastream(sock, "merovingian<-client (read)");
 	if (fdin == 0)
@@ -1175,10 +1178,23 @@ handleClient(int sock)
 		stat = top;
 	}
 
+	/* collect possible redirects */
+	for (stat = top; stat != NULL; stat = stat->next) {
+		if (stat->conns == NULL || stat->conns->val == NULL) {
+			Mfprintf(stdout, "dropping database without available "
+					"connections: '%s'\n", stat->dbname);
+		} else if (r == 24) {
+			Mfprintf(stdout, "dropping database connection because of "
+					"too many already: %s\n", stat->conns->val);
+		} else {
+			redirs[r++] = *stat;
+		}
+	}
+
 	/* if we can't redirect, our mission ends here */
-	if (stat->conns == NULL || stat->conns->val == NULL) {
-		e = newErr("database '%s' does not allow connections", stat->dbname);
-		stream_printf(fout, "!merovingian: database '%s' does not allow connections\n", stat->dbname);
+	if (r == 0) {
+		e = newErr("there are no available connections for '%s'", database);
+		stream_printf(fout, "!merovingian: %s\n", e);
 		stream_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
@@ -1187,7 +1203,7 @@ handleClient(int sock)
 	}
 
 	if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		Mfprintf(stdout, "couldn't get peername of client: %s\n",
+		Mfprintf(stderr, "couldn't get peername of client: %s\n",
 				strerror(errno));
 		host = "(unknown)";
 	} else {
@@ -1213,31 +1229,55 @@ handleClient(int sock)
 	}
 
 	/* need to send a response, either we are going to proxy, or we send
-	 * a redirect */
-	ckv = getDefaultProps();
-	readProps(ckv, stat->path);
-	kv = findConfKey(ckv, "forward");
-	if (kv->val == NULL)
-		kv = findConfKey(_mero_props, "forward");
-	mydoproxy = strcmp(kv->val, "proxy") == 0;
-	freeConfFile(ckv);
-	GDKfree(ckv);
+	 * a redirect, if we have multiple options, a redirect is our only
+	 * option, but if the redir is a single remote we need to stick to
+	 * our default */
+	mydoproxy = 0;
+	if (r == 1) {
+		if (redirs[0].dbname != redirs[0].path) {
+			ckv = getDefaultProps();
+			readProps(ckv, redirs[0].path);
+			kv = findConfKey(ckv, "forward");
+		} else {
+			ckv = NULL;
+			kv = NULL;
+		}
+		if (kv == NULL || kv->val == NULL)
+			kv = findConfKey(_mero_props, "forward");
+		mydoproxy = strcmp(kv->val, "proxy") == 0;
+		if (ckv != NULL) {
+			freeConfFile(ckv);
+			GDKfree(ckv);
+		}
+	}
+
 	if (mydoproxy == 0) {
-		Mfprintf(stdout, "redirecting client %s for database '%s' to %s\n",
-				host, stat->dbname, stat->conns->val);
-		stream_printf(fout, "^%s%s\n", stat->conns->val, stat->dbname);
+		fprintf(stdout, "redirecting client %s for database '%s' to",
+				host, database);
+		/* client is in control, send all redirects */
+		while (--r >= 0) {
+			fprintf(stdout, " %s%s",
+					redirs[r].conns->val, redirs[r].dbname);
+			stream_printf(fout, "^%s%s\n",
+					redirs[r].conns->val, redirs[r].dbname);
+		}
 		/* flush redirect */
+		fprintf(stdout, "\n");
+		fflush(stdout);
 		stream_flush(fout);
 	} else {
-		Mfprintf(stdout, "proxying client %s for database '%s' to %s\n",
-				host, stat->dbname, stat->conns->val);
+		Mfprintf(stdout, "proxying client %s for database '%s' to %s%s\n",
+				host, database, redirs[0].conns->val, redirs[0].dbname);
+		/* merovingian is in control, only consider the first redirect */
 		stream_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
-				stat->dbname);
+				redirs[0].dbname);
 		/* flush redirect */
 		stream_flush(fout);
 
 		/* wait for input, or disconnect in a proxy runner */
-		if ((e = startProxy(fdin, fout, stat->conns->val, host)) != NO_ERR) {
+		if ((e = startProxy(fdin, fout,
+						redirs[0].conns->val, host)) != NO_ERR)
+		{
 			/* we need to let the client login in order not to violate
 			 * the protocol */
 			stream_printf(fout, "void:merovingian:8:plain:BIG");
