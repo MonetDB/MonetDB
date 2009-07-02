@@ -23,8 +23,8 @@ library:
 * The SQL module is now named monetdb.sql
 * Small changes in argument names for functions
 * Type conversion is working (for example a monetdb int becomes a python int)
-* If you want to use the mapi module with python2.5 you should use the
-  mapi25.py module (import monetdb.mapi25 as mapi). This is done automatically
+* If you want to use the mapi module with python3.* you should use the
+  mapi3.py module (import monetdb.mapi3 as mapi). This is done automatically
   for the sql module
 
 
