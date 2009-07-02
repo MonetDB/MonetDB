@@ -1375,7 +1375,7 @@ openConnectionUDP(int *ret, unsigned short port)
 
 	freeaddrinfo(result);
 
-	Mfprintf(discout, "listening for UDP messages on %s:%s\n", host, sport);
+	Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
 
 	*ret = sock;
 	return(NO_ERR);
