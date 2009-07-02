@@ -165,6 +165,11 @@ main(int argc, char **argv)
 	stream_flush(out);
 
 	mapi_disconnect(mid);
+	if (stream_errnr(out)) {
+		fprintf(stderr, "%s: %s", argv[0], stream_error(out));
+		return 1;
+	}
+
 	return c;
 
 }
