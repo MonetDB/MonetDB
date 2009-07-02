@@ -17,20 +17,20 @@
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
 
-import capabilities
 import unittest
 import warnings
-
+import sys
+import os
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger('monetdb')
 
+import capabilities
 
 try:
     import monetdb.sql
 except ImportError:
-    import sys, os
     parent = os.path.join(sys.path[0], '..')
     sys.path.append(parent)
     import monetdb.sql
@@ -39,58 +39,13 @@ except ImportError:
 warnings.filterwarnings('error')
 
 class Test_Monetdb_Sql(capabilities.DatabaseTest):
-    MAPIPORT = 50000
-    TSTDB = 'demo'
-    import os
-    if os.environ.has_key('MAPIPORT'):
-        MAPIPORT = int(os.environ['MAPIPORT'])
-    if os.environ.has_key('TSTDB'):
-        TSTDB = os.environ['TSTDB']
-
+    MAPIPORT = int(os.environ.get('MAPIPORT', 50000))
+    TSTDB = os.environ.get('TSTDB', 'demo')
     db_module = monetdb.sql
     connect_args = ()
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, autocommit=False)
     leak_test = False
 
-    def test_DATETIME(self):
-        from time import time
-        ticks = time()
-        def generator(row,col):
-            return self.db_module.TimestampFromTicks(ticks+row*86400-col*1313)
-        self.check_data_integrity(
-                 ('col1 TIMESTAMP',),
-                 generator)
-
-
-    def test_TINYINT(self):
-        # Number data
-        def generator(row,col):
-            v = (row*row) % 256
-            if v > 127:
-                v = v-256
-            return v
-        self.check_data_integrity(
-            ('col1 TINYINT',),
-            generator)
-
-    def test_small_CHAR(self):
-        # Character data
-        def generator(row,col):
-            i = (row*col+62)%256
-            if i == 62: return ''
-            if i == 63: return None
-            return chr(i)
-        self.check_data_integrity(
-            ('col1 char(1)','col2 char(1)'),
-            generator)
-
-    def test_LONG(self):
-        """ monetdb doesn't support LONG type """
-        pass
-
-    def test_LONG_BYTE(self):
-        """ monetdb doesn't support LONG_BYTE """
-        pass
 
 if __name__ == '__main__':
     if Test_Monetdb_Sql.leak_test:

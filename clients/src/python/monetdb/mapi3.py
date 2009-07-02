@@ -16,13 +16,20 @@
 # All Rights Reserved.
 
 """
-this is the python2.5 version of the python mapi implementation.
-Main difference is the old try except syntax, and the removal of the IO module
+This is the python 3 version of the mapi API.
+
+Main differences are:
+    * different try except syntax
+    * Changed IO handling
+    * strict seperation between bytes and strings
+
+If you use python 2.* you should use the normal mapi.py
 """
 
 import socket
 import logging
 import struct
+from io import BytesIO
 
 from monetdb.monetdb_exceptions import *
 
@@ -50,12 +57,16 @@ STATE_READY = 1
 
 
 class Server:
+    """ A connection to a MonetDB database server. This is a native driver
+        implementation that uses only python code """
+
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
+        self.timeout = 5
 
     def connect(self, hostname, port, username, password, database, language):
-        """ connect to a MonetDB database using the mapi protocol"""
+        """ connect to a MonetDB database"""
 
         self.hostname = hostname
         self.port = port
@@ -66,9 +77,11 @@ class Server:
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        self.settimeout(self.timeout)
+
         try:
             self.socket.connect((hostname, port))
-        except socket.error, error:
+        except socket.error as error:
             (error_code, error_str) = error
             raise OperationalError(error_str)
 
@@ -83,6 +96,7 @@ class Server:
         response = self.__challenge_response(challenge)
         self.__putblock(response)
         prompt = self.__getblock().strip()
+        logger.debug(prompt)
 
         if len(prompt) == 0:
             # Empty response, server is happy
@@ -134,12 +148,12 @@ class Server:
         logger.debug("II: executing command %s" % operation)
 
         if self.state != STATE_READY:
-            raise(ProgrammingError, "Not connected")
+            raise ProgrammingError("Not connected")
 
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return
+            return ""
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:
@@ -158,24 +172,19 @@ class Server:
 
         if protocol == '9':
             algo = challenges[5]
+            import hashlib
             if algo == 'SHA512':
-                import hashlib
-                password = hashlib.sha512(password).hexdigest()
+                password = hashlib.sha512(password.encode()).hexdigest()
             elif algo == 'SHA384':
-                import hashlib
-                password = hashlib.sha384(password).hexdigest()
+                password = hashlib.sha384(password.encode()).hexdigest()
             elif algo == 'SHA256':
-                import hashlib
-                password = hashlib.sha256(password).hexdigest()
+                password = hashlib.sha256(password.encode()).hexdigest()
             elif algo == 'SHA224':
-                import hashlib
-                password = hashlib.sha224(password).hexdigest()
+                password = hashlib.sha224(password.encode()).hexdigest()
             elif algo == 'SHA1':
-                import hashlib
-                password = hashlib.sha1(password).hexdigest()
+                password = hashlib.sha1(password.encode()).hexdigest()
             elif algo == 'MD5':
-                import hashlib
-                password = hashlib.md5(password).hexdigest()
+                password = hashlib.md5(password.encode()).hexdigest()
             else:
                 raise NotSupportedError("The %s hash algorithm is not supported" % algo)
         elif protocol != "8":
@@ -205,7 +214,7 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        result = []
+        result_bytes = BytesIO()
         last = 0
         while not last:
             flag = self.__getbytes(2)
@@ -214,33 +223,41 @@ class Server:
             last = unpacked & 1
             logger.debug("II: reading %i bytes" % length)
             if length > 0:
-                result.append(self.__getbytes(length))
+                result_bytes.write(self.__getbytes(length))
 
-        result_str = "".join(result)
-        logger.debug("RX: %s" % result_str)
-        return result_str
+        result = result_bytes.getvalue()
+        logger.debug("RX: %s" % result)
+        return result.decode()
 
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
         try:
             return self.socket.recv(bytes)
-        except socket.error, error:
-            raise OperationalError(error[1])
+        except socket.error as error_str:
+            raise OperationalError(error_str)
 
 
     def __putblock(self, block):
         """ wrap the line in mapi format and put it into the socket """
         pos = 0
         last = 0
+        logger.debug("TX: %s" % block)
         while not last:
-            data = block[pos:MAX_PACKAGE_LENGTH]
+            data = block[pos:MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<h', ( len(data) << 1 ) + last )
             try:
                 self.socket.send(flag)
                 self.socket.send(data)
-            except socket.error, error:
-                raise OperationalError(error[1])
+            except socket.error as error_str:
+                raise OperationalError(error_str)
+
             pos += len(data)
+
+
+    def settimeout(self, timeout):
+        """ set the connection timeout (in seconds). Set to 0 for no timeout """
+        self.timeout = timeout
+        self.socket.settimeout(timeout)

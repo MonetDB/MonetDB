@@ -115,6 +115,7 @@ class Monetizer:
             int: self.__string,
             str: self.__escape,
             datetime.datetime: self.__escape,
+            datetime.time: self.__escape,
             decimal.Decimal: self.__string,
             datetime.timedelta: self.__escape,
             datetime.date: self.__escape,

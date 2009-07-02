@@ -27,9 +27,9 @@ logger = logging.getLogger("monetdb")
 # a ugly hack to support python 2 and 3 at the same time
 (major, minor, micro, level, serial)  = sys.version_info
 if (major == 3):
-    from monetdb import mapi
+    from monetdb import mapi3 as mapi
 else:
-    from monetdb import mapi25 as mapi
+    from monetdb import mapi
 
 class Connection:
     """This represents a MonetDB SQL database connection"""

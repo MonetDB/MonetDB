@@ -122,14 +122,9 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
             cur = con.cursor()
             self.executeDDL1(cur)
             args = {'beer': '\xc4\xa5'}
-
             cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
-
             cur.execute('select name from %sbooze' % self.table_prefix)
             res = cur.fetchall()
-            self.assertEqual(len(res),1,
-                'cursor.fetchall retrieved incorrect number of rows'
-                )
             beer = res[0][0]
             self.assertEqual(beer,args['beer'],'incorrect data retrieved')
         finally:
@@ -151,12 +146,8 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
                 args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
 
             cur.execute( 'insert into %sbooze values (\'%%(beer)s\')' % self.table_prefix, args )
-
             cur.execute('select name from %sbooze' % self.table_prefix)
             res = cur.fetchall()
-            self.assertEqual(len(res),1,
-                'cursor.fetchall retrieved incorrect number of rows'
-                )
             beer = res[0][0]
             self.assertEqual(beer,args['beer'].encode('utf8'),'incorrect data retrieved')
         finally:

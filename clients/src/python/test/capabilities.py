@@ -26,6 +26,7 @@
 from time import time
 import array
 import unittest
+import sys
 
 
 class DatabaseTest(unittest.TestCase):
@@ -36,6 +37,7 @@ class DatabaseTest(unittest.TestCase):
     create_table_extra = ''
     rows = 10
     debug = False
+    leak_test = True
 
     def setUp(self):
         import gc
@@ -43,10 +45,15 @@ class DatabaseTest(unittest.TestCase):
         self.connection = db
         self.cursor = db.cursor()
         self.BLOBText = ''.join([chr(i) for i in range(256)] * 100);
-        self.BLOBUText = u''.join([unichr(i) for i in range(16384)])
         self.BLOBBinary = self.db_module.Binary(''.join([chr(i) for i in range(256)] * 16))
 
-    leak_test = True
+        # in python 3 everything is unicode
+        major = sys.version_info[0]
+        if major == 3:
+            self.BLOBUText = self.BLOBText
+        else:
+            self.BLOBUText = unicode(''.join([unichr(i) for i in range(16384)]))
+
 
     def tearDown(self):
         if self.leak_test:
@@ -59,6 +66,7 @@ class DatabaseTest(unittest.TestCase):
             orphans = gc.collect()
             self.failIf(orphans, "%d orphaned objects found after deleting connection" % orphans)
 
+
     def table_exists(self, name):
         try:
             self.cursor.execute('select * from %s where 1=0' % name)
@@ -68,8 +76,10 @@ class DatabaseTest(unittest.TestCase):
         else:
             return True
 
+
     def quote_identifier(self, ident):
         return '"%s"' % ident
+
 
     def new_table_name(self):
         i = id(self.cursor)
@@ -79,8 +89,8 @@ class DatabaseTest(unittest.TestCase):
                 return name
             i = i + 1
 
-    def create_table(self, columndefs):
 
+    def create_table(self, columndefs):
         """ Create a table using a list of column definitions given in
             columndefs.
 
@@ -95,8 +105,8 @@ class DatabaseTest(unittest.TestCase):
                              ',\n'.join(columndefs),
                              self.create_table_extra))
 
+
     def check_data_integrity(self, columndefs, generator):
-        # insert
         self.create_table(columndefs)
         insert_statement = ('INSERT INTO %s VALUES (%s)' %
                             (self.table,
@@ -104,14 +114,14 @@ class DatabaseTest(unittest.TestCase):
         data = [ [ generator(i,j) for j in range(len(columndefs)) ]
                  for i in range(self.rows) ]
         if self.debug:
-            print data
+            print(data)
         self.cursor.executemany(insert_statement, data)
         self.connection.commit()
         # verify
         self.cursor.execute('select * from %s' % self.table)
         l = self.cursor.fetchall()
         if self.debug:
-            print l
+            print(l)
         self.assertEquals(len(l), self.rows)
         try:
             for i in range(self.rows):
@@ -120,6 +130,7 @@ class DatabaseTest(unittest.TestCase):
         finally:
             if not self.debug:
                 self.cursor.execute('drop table %s' % (self.table))
+
 
     def test_transactions(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
@@ -154,6 +165,7 @@ class DatabaseTest(unittest.TestCase):
         self.failUnless(len(l) == 1, "ROLLBACK didn't work")
         self.cursor.execute('drop table %s' % (self.table))
 
+
     def test_truncation(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
         def generator(row, col):
@@ -163,11 +175,11 @@ class DatabaseTest(unittest.TestCase):
         insert_statement = ('INSERT INTO %s VALUES (%s)' %
                             (self.table,
                              ','.join(['%s'] * len(columndefs))))
-
         try:
             self.cursor.execute(insert_statement, (0, '0'*256))
         except Warning:
-            if self.debug: print self.cursor.messages
+            if self.debug:
+                print(self.cursor.messages)
         except self.connection.Error:
             pass
         else:
@@ -183,7 +195,8 @@ class DatabaseTest(unittest.TestCase):
                     data.append(generator(i,j))
                 self.cursor.execute(insert_statement,tuple(data))
         except Warning:
-            if self.debug: print self.cursor.messages
+            if self.debug:
+                print(self.cursor.messages)
         except self.connection.Error:
             pass
         else:
@@ -197,13 +210,15 @@ class DatabaseTest(unittest.TestCase):
                      for i in range(self.rows) ]
             self.cursor.executemany(insert_statement, data)
         except Warning:
-            if self.debug: print self.cursor.messages
+            if self.debug:
+                print(self.cursor.messages)
         except self.connection.Error:
             pass
         else:
             self.fail("Over-long columns did not generate warnings/exception with executemany()")
 
         self.connection.rollback()
+
 
     def test_CHAR(self):
         # Character data
@@ -213,6 +228,7 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(255)','col2 char(255)'),
             generator)
 
+
     def test_INT(self):
         # Number data
         def generator(row,col):
@@ -220,6 +236,7 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
             ('col1 INT',),
             generator)
+
 
     def test_DECIMAL(self):
         # DECIMAL
@@ -230,6 +247,7 @@ class DatabaseTest(unittest.TestCase):
             ('col1 DECIMAL(5,2)',),
             generator)
 
+
     def test_DATE(self):
         ticks = time()
         def generator(row,col):
@@ -237,6 +255,7 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 DATE',),
                  generator)
+
 
     def test_TIME(self):
         ticks = time()
@@ -246,13 +265,15 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIME',),
                  generator)
 
+
     def test_DATETIME(self):
         ticks = time()
         def generator(row,col):
             return self.db_module.TimestampFromTicks(ticks+row*86400-col*1313)
         self.check_data_integrity(
-                 ('col1 DATETIME',),
+                 ('col1 TIMESTAMP',),
                  generator)
+
 
     def test_TIMESTAMP(self):
         ticks = time()
@@ -262,6 +283,7 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
+
     def test_fractional_TIMESTAMP(self):
         ticks = time()
         def generator(row,col):
@@ -270,15 +292,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
-    def test_LONG(self):
-        def generator(row,col):
-            if col == 0:
-                return row
-            else:
-                return self.BLOBUText # 'BLOB Text ' * 1024
-        self.check_data_integrity(
-                 ('col1 INT','col2 LONG'),
-                 generator)
 
     def test_TEXT(self):
         def generator(row,col):
@@ -287,15 +300,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col2 TEXT',),
                  generator)
 
-    def test_LONG_BYTE(self):
-        def generator(row,col):
-            if col == 0:
-                return row
-            else:
-                return self.BLOBBinary # 'BLOB\000Binary ' * 1024
-        self.check_data_integrity(
-                 ('col1 INT','col2 LONG BYTE'),
-                 generator)
 
     def test_BLOB(self):
         def generator(row,col):
@@ -306,4 +310,28 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 INT','col2 BLOB'),
                  generator)
+
+
+    def test_TINYINT(self):
+        # Number data
+        def generator(row,col):
+            v = (row*row) % 256
+            if v > 127:
+                v = v-256
+            return v
+        self.check_data_integrity(
+            ('col1 TINYINT',),
+            generator)
+
+
+    def test_small_CHAR(self):
+        # Character data
+        def generator(row,col):
+            i = (row*col+62)%256
+            if i == 62: return ''
+            if i == 63: return None
+            return chr(i)
+        self.check_data_integrity(
+            ('col1 char(1)','col2 char(1)'),
+            generator)
 

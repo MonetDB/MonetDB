@@ -22,21 +22,15 @@
 import sys
 import getopt
 
-try:
-    try:
-        from monetdb.mapi import Server
-    except SyntaxError:
-        from monetdb.mapi25 import Server
-except ImportError:
-    # if running from the build directory mapi is not in monetdb module
-    try:
-        from mapi import Server
-    except SyntaxError:
-        from mapi25 import Server
+# a ugly hack to support python 2 and 3 at the same time
+(major, minor, micro, level, serial)  = sys.version_info
+if (major == 3):
+    from monetdb import mapi3 as mapi
+else:
+    from monetdb import mapi
 
 
 def main(argv) :
-
     hostname = 'localhost'
     port = '50000'
     username = 'monetdb'
@@ -70,7 +64,7 @@ def main(argv) :
         if encoding is None:
             encoding = locale.getdefaultlocale()[1]
 
-    s = Server()
+    s = mapi.Server()
 
     s.connect(hostname = hostname,
               port = int(port),
