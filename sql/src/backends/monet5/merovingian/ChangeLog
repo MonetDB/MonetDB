@@ -1,6 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  02 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c:
+  Allow expression matches for 'monetdb status' command.
+
   01 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c:
   Allow an expression to be used to match against the list of discovered
   databases for future convenience.

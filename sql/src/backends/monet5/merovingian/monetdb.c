@@ -439,47 +439,66 @@ command_status(int argc, char *argv[])
 		}
 	}
 
-	if (doall == 1) {
-		/* don't even look at the arguments, because we are instructed
-		 * to list all known databases */
-		if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
-			fprintf(stderr, "status: internal error: %s\n", e);
-			GDKfree(e);
-			exit(2);
-		}
-		for (stats = orig; stats != NULL; stats = stats->next) {
-			if ((t = strlen(stats->dbname)) > dbwidth)
-				dbwidth = t;
-		}
-	} else {
+	if ((e = SABAOTHgetStatus(&orig, NULL)) != MAL_SUCCEED) {
+		fprintf(stderr, "status: internal error: %s\n", e);
+		GDKfree(e);
+		exit(2);
+	}
+	/* don't even look at the arguments, if we are instructed
+	 * to list all known databases */
+	if (doall != 1) {
 		sabdb *w = NULL;
-		orig = NULL;
+		sabdb *top = w;
+		sabdb *prev;
 		for (i = 1; i < argc; i++) {
+			t = 0;
 			if (argv[i] != NULL) {
-				if ((e = SABAOTHgetStatus(&stats, argv[i])) != MAL_SUCCEED) {
-					fprintf(stderr, "status: internal error: %s\n", e);
-					GDKfree(e);
-					exit(2);
+				prev = NULL;
+				for (stats = orig; stats != NULL; stats = stats->next) {
+					if (glob(argv[i], stats->dbname)) {
+						t = 1;
+						/* move out of orig into w, such that we can't
+						 * get double matches in the same output list
+						 * (as side effect also avoids a double free
+						 * lateron) */
+						if (w == NULL) {
+							top = w = stats;
+						} else {
+							w = w->next = stats;
+						}
+						if (prev == NULL) {
+							orig = stats->next;
+							/* little hack to revisit the now top of the
+							 * list */
+							w->next = orig;
+							stats = w;
+							continue;
+						} else {
+							prev->next = stats->next;
+							stats = prev;
+						}
+					}
+					prev = stats;
 				}
-
-				if (stats == NULL) {
+				if (w != NULL)
+					w->next = NULL;
+				if (t == 0) {
 					fprintf(stderr, "status: no such database: %s\n", argv[i]);
 					argv[i] = NULL;
-				} else {
-					if (orig == NULL) {
-						orig = stats;
-						w = stats;
-					} else {
-						w = w->next = stats;
-					}
-					if ((t = strlen(w->dbname)) > dbwidth)
-						dbwidth = t;
 				}
 			}
 		}
+		SABAOTHfreeStatus(&orig);
+		orig = top;
+	}
+	/* calculate width, BUG: SABdbState selection is only done at
+	 * printing */
+	for (stats = orig; stats != NULL; stats = stats->next) {
+		if ((t = strlen(stats->dbname)) > dbwidth)
+			dbwidth = t;
 	}
 
-	if (mode == 1) {
+	if (mode == 1 && orig != NULL) {
 		/* print header for short mode, state -- last crash = 54 chars */
 		twidth -= 54;
 		if (twidth < 6)

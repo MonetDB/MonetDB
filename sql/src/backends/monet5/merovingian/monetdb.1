@@ -65,9 +65,12 @@ available again for normal use by any client, and is started on demand.
 Use the
 .B lock
 command to take a database under maintenance.
-.IP "status [\-lc] [\-s<state>...] [database ...]"
+.IP "status [\-lc] [\-s<state>...] [expression ...]"
 Shows the state of the given database(s) or, when none given, all known
-databases.  Three modes control the level of detail in the displayed
+databases.  The database names can be given as expressions, allowing to
+do wildcard matches.  For details on the syntax, see
+.IR EXPRESSIONS .
+Three modes control the level of detail in the displayed
 output.  By default a condensed one-line output per database format is
 used.  This output resembles pretty much the output of various
 .B XXXstat
@@ -181,9 +184,9 @@ Server as if it were local databases using their database name.  The
 connection is redirected or proxied based on configuration settings.  If
 .I expression
 is given, only those discovered databases are returned for which their
-URI matches the expression.  The expression syntax follows a limited
-shell-globbing style, where the * in any position is expanded to an
-arbitrary string.
+URI matches the expression.  The expression syntax is described in the
+section
+.IR EXPRESSIONS .
 .IP \-h
 .IP "help [command]"
 Shows general help, or short help for a given command.
@@ -192,6 +195,12 @@ Shows general help, or short help for a given command.
 Shows the version of the
 .B monetdb
 utility.
+.SH "EXPRESSIONS"
+For various options, expressions can be used.  These expressions are
+limited shell-globbing like, where the * in any position is expanded to
+an arbitrary string.  The * can occur multiple times in the expression,
+allowing for more advanced matches.  Note that the empty string also
+matches the *, hence "de*mo" can return "demo" as match.
 .SH "RETURN VALUE"
 The
 .B monetdb
