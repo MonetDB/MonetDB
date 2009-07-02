@@ -22,7 +22,9 @@ import unittest
 import os
 
 #import logging
-#logging.getLogger().setLevel(logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
+#logger = logging.getLogger('monetdb')
+
 
 import dbapi20
 
@@ -145,7 +147,7 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
             else:
                 args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
 
-            cur.execute( 'insert into %sbooze values (\'%%(beer)s\')' % self.table_prefix, args )
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
             cur.execute('select name from %sbooze' % self.table_prefix)
             res = cur.fetchall()
             beer = res[0][0]

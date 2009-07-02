@@ -36,7 +36,7 @@ from monetdb.monetdb_exceptions import *
 
 logger = logging.getLogger("monetdb")
 
-MAX_PACKAGE_LENGTH = 0xffff >> 2
+MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
 MSG_INFO = "#"
@@ -244,7 +244,7 @@ class Server:
         last = 0
         logger.debug("TX: %s" % block)
         while not last:
-            data = block[pos:MAX_PACKAGE_LENGTH].encode()
+            data = block[pos:pos+MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<h', ( len(data) << 1 ) + last )

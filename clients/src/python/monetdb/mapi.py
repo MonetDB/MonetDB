@@ -30,7 +30,7 @@ from monetdb.monetdb_exceptions import *
 
 logger = logging.getLogger("monetdb")
 
-MAX_PACKAGE_LENGTH = 0xffff >> 2
+MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
 MSG_INFO = "#"
@@ -235,13 +235,17 @@ class Server:
         pos = 0
         last = 0
         while not last:
-            data = block[pos:MAX_PACKAGE_LENGTH]
-            if len(data) < MAX_PACKAGE_LENGTH:
+            data = block[pos:pos+MAX_PACKAGE_LENGTH]
+            length = len(data)
+            if length < MAX_PACKAGE_LENGTH:
                 last = 1
-            flag = struct.pack( '<h', ( len(data) << 1 ) + last )
+            flag = struct.pack( '<H', ( length << 1 ) + last )
             try:
+                logger.debug("II: sending %i bytes, last: %s" % (length, last))
+                logger.debug("TX: %s" % data)
                 self.socket.send(flag)
                 self.socket.send(data)
             except socket.error, error:
                 raise OperationalError(error[1])
-            pos += len(data)
+            pos += length
+

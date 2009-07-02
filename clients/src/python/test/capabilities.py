@@ -50,9 +50,9 @@ class DatabaseTest(unittest.TestCase):
         # in python 3 everything is unicode
         major = sys.version_info[0]
         if major == 3:
-            self.BLOBUText = self.BLOBText
+            self.BLOBUText = ''.join([chr(i) for i in range(1,16384)])
         else:
-            self.BLOBUText = unicode(''.join([unichr(i) for i in range(16384)]))
+            self.BLOBUText = unicode(''.join([unichr(i) for i in range(1,16384)]))
 
 
     def tearDown(self):

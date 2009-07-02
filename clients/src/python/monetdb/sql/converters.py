@@ -167,7 +167,7 @@ class Monetizer:
         return self.__escape(data)
 
     def __unicode(self, data):
-        return data.encode('utf-8')
+        return self.__escape(data.encode('utf-8'))
 
 
 
