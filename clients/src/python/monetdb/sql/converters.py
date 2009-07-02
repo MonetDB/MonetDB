@@ -36,7 +36,7 @@ class Pythonizer:
             type_codes.VARCHAR: self.__strip,
             type_codes.CLOB: self.__string,
             type_codes.BLOB: self.__string,
-            type_codes.DECIMAL: int,
+            type_codes.DECIMAL: self.__decimal,
             type_codes.SMALLINT: int,
             type_codes.INT: int,
             type_codes.WRD: int,
@@ -69,6 +69,9 @@ class Pythonizer:
         data = data.replace("\'", "'")
         data = data.replace("\\\"", "\"")
         return data[1:-1]
+
+    def __decimal(self, data):
+        return decimal.Decimal(data)
 
     def __bool(self, data):
         """ return python boolean """
