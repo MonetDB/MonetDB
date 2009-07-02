@@ -114,10 +114,10 @@ command_help(int argc, char *argv[])
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
-		printf("Usage: monetdb status [-lc] [database ...]\n");
-		printf("  Shows the state of a given database, or all known if none\n");
-		printf("  given.  Instead of the normal mode, a long and crash mode\n");
-		printf("  control what information is displayed.\n");
+		printf("Usage: monetdb status [-lc] [expression ...]\n");
+		printf("  Shows the state of a given glob-style database match, or\n");
+		printf("  all known if none given.  Instead of the normal mode, a\n");
+		printf("  long and crash mode control what information is displayed.\n");
 		printf("Options:\n");
 		printf("  -l  extended information listing\n");
 		printf("  -c  crash statistics listing\n");
