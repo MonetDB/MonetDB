@@ -44,7 +44,7 @@ class DatabaseTest(unittest.TestCase):
         db = self.db_module.connect(*self.connect_args, **self.connect_kwargs)
         self.connection = db
         self.cursor = db.cursor()
-        self.BLOBText = ''.join([chr(i) for i in range(256)] * 100);
+        self.BLOBText = ''.join([chr(i) for i in range(33,127)] * 100);
         self.BLOBBinary = self.db_module.Binary(''.join([chr(i) for i in range(256)] * 16))
 
         # in python 3 everything is unicode

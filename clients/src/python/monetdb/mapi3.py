@@ -247,7 +247,7 @@ class Server:
             data = block[pos:pos+MAX_PACKAGE_LENGTH].encode()
             if len(data) < MAX_PACKAGE_LENGTH:
                 last = 1
-            flag = struct.pack( '<h', ( len(data) << 1 ) + last )
+            flag = struct.pack( '<H', ( len(data) << 1 ) + last )
             try:
                 self.socket.send(flag)
                 self.socket.send(data)

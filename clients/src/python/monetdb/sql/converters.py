@@ -34,7 +34,7 @@ class Pythonizer:
         self.mapping = {
             type_codes.CHAR: self.__strip,
             type_codes.VARCHAR: self.__strip,
-            type_codes.CLOB: self.__string,
+            type_codes.CLOB: self.__strip,
             type_codes.BLOB: self.__string,
             type_codes.DECIMAL: self.__decimal,
             type_codes.SMALLINT: int,
@@ -78,15 +78,17 @@ class Pythonizer:
         return (data == "true")
 
     def __time(self, x):
-        return apply(Time, map(lambda x: int(float(x)), x.split(":")))
+        #return apply(Time, map(lambda x: int(float(x)), x.split(":")))
+        return Time(*map(lambda x: int(float(x)), x.split(":")))
 
     def __date(self, x):
-        return apply(Date, map(lambda x: int(float(x)), x.split("-")))
+        #return apply(Date, map(lambda x: int(float(x)), x.split("-")))
+        return Date(*map(lambda x: int(float(x)), x.split("-")))
 
     def __timestamp(self, x):
         x = x.split(" ")
-        return apply(Timestamp,
-                     map(lambda x: int(float(x)), x[0].split("-")) +
+        return Timestamp(
+                     *map(lambda x: int(float(x)), x[0].split("-")) +
                      map(lambda x: int(float(x)), x[1].split(":"))
                      )
 
@@ -188,8 +190,8 @@ def TimestampFromTicks(ticks):
     return Timestamp(*time.localtime(ticks)[:6])
 
 def Binary(x):
-    #return str(x)
-    return x.encode("hex").upper()
+    #return x.encode("hex").upper()
+    return ''.join([hex(ord(i))[2:] for i in x]).upper()
 
 
 class DBAPISet(frozenset):
