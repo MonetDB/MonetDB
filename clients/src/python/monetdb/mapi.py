@@ -30,7 +30,7 @@ from monetdb.monetdb_exceptions import *
 
 logger = logging.getLogger("monetdb")
 
-MAX_PACKAGE_LENGTH = 0xffff >> 1
+MAX_PACKAGE_LENGTH = 0xffff >> 2
 
 MSG_PROMPT = ""
 MSG_INFO = "#"
