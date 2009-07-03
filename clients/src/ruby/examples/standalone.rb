@@ -22,20 +22,23 @@ db = MonetDB.new
 db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
-res = db.query("select * from tables;");
+res = db.query("select * from tables");
 
 puts "Number of rows returned: " + res.num_rows.to_s
 puts "Number of fields: " + res.num_fields.to_s
 
+
 # Get the columns' name
 #col_names = res.name_fields
+
+# Get the columns' type
+#col_types = res.type_fields
 
 ###### Fetch all rows and store them
 #puts res.fetch_all
 
 
 # Iterate over the record set and retrieve on row at a time
-#puts res.fetch
 while row = res.fetch do
   printf "%s \n", row
 end
@@ -50,12 +53,32 @@ end
 #}
 
 
-###### Iterator over columns (on cell at a time)
+###### Iterator over columns (on cell at a time), convert the "id" field to a ruby integer value.  
 
 #while row = res.fetch_hash do
-#  printf "%s, %s\n", row["name"], row["id"]
+#  printf "%s, %i\n", row["name"], row["id"].getInt
 #end
-  
+
+###### Transactions
+
+db.query("START TRANSACTION")
+db.auto_commit(false)
+# create a savepoint
+db.save
+db.query("SAVEPOINT #{db.transactions} ;")
+
+# Modify the database
+db.query('CREATE TABLE test (col1 INT, col2 INT)')
+
+# Rollback to previous savepoint, discard changes
+
+db.query("ROLLBACK TO SAVEPOINT #{db.transactions}")
+# Release the save point
+db.release
+
+# Switch to auto commit mode
+db.auto_commit(true)
+
 # Deallocate memory used for storing the record set
 res.free
 

@@ -446,10 +446,6 @@ class MonetDBConnection
     @auto_commit
   end
   
-  def commit
-    send(format_command("commit"))
-  end
-  
   # Check if monetdb is running behind the merovingian proxy and forward the connection in case
   def merovingian?
     if @server_name.downcase == 'merovingian'

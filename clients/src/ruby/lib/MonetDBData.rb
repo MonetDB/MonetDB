@@ -29,14 +29,14 @@ require 'logger'
 class MonetDBData 
   @@DEBUG               = false
  
-  def initialize(connection, type_cast)
+  def initialize(connection)
     @connection = connection
     
     @lang = 'sql'
     
     # Structure containing the header+results set for a fired Q_TABLE query     
     @header = []
-    @query = {}
+    @query  = {}
     
     @record_set = []
     @index = 0 # Position of the last returned record
@@ -45,26 +45,6 @@ class MonetDBData
     @row_index = 0
     @row_count = 0
     @row_offset = 10
-
-    # Convert SQL data types to Ruby
-    @type_cast = type_cast
-  end
-  
-  # Free memory used to store the record set
-  def free()
-    @connection = nil    
-    
-    @header = []
-    @query = {}
-
-    @record_set = []
-    @index = 0 # Position of the last returned record
-
-
-    @row_index = 0
-    @row_count = 0
-    @row_offset = 10
-    
   end
   
   # Fire a query and return the server response
@@ -108,71 +88,21 @@ class MonetDBData
     end
   end
   
-  # store block of data, parse it and store it.
-  def receive_record_set(response)
-    rows = ""
-  
-    response.each_line do |row|      
-      if row[0].chr == MSG_QUERY      
-        if row[1].chr == Q_TABLE
-          
-          @action = Q_TABLE
-          @query = parse_header_query(row)
-          @query.freeze
-          @row_count = @query['rows'].to_i #total number of rows in table
-          @row_index = @query['returned'].to_i  # current row to retrieve
-            
-        elsif row[1].chr == Q_BLOCK
-        # strip the block header from data
-          #puts row
-          # response = response[row.length...response.length]
-          @action = Q_BLOCK
-          @block = parse_header_query(row)          
-          block_rows = "" # new block; clean the row set
-          response.each_line do |row|
-            if row[0].chr == MSG_TUPLE
-              block_rows += row
-            elsif row == MSG_PROMPT
-              response = ""
-              return block_rows
-            end
-          end
-          
-          @row_index += @row_offset.to_i
-          response = ""
-          return block_rows
-        elsif row[1].chr == Q_TRANSACTION
-          @action = Q_TRANSACTION
-        elsif row[1].chr == Q_CREATE
-          @action = Q_CREATE
-        end
-      elsif row[0].chr == MSG_INFO
-        raise MonetDBQueryError, row
-      elsif row[0].chr == MSG_SCHEMA_HEADER
-        # process header data
-        @header << row
-
-      elsif row[0].chr == MSG_TUPLE
-        rows += row
-      elsif row == MSG_PROMPT
-        @record_set += parse_tuples(@rows)
-      end
-    end 
-    return rows 
-  end
-  
-  def next_block
-    if @row_index >= @row_count
-      return false
-    elsif (@row_index + @row_offset ) > @row_count
-      @row_offset = @row_count - @row_index
-    else
-      @row_offset = [@row_offset * 10, (@row_count - @row_index)].min
-    end
+  # Free memory used to store the record set
+  def free()
+    @connection = nil    
     
-    # export offset amount
-    @connection.set_export(@query['id'], @row_index.to_s, @row_offset.to_s)  
-    return true
+    @header = []
+    @query = {}
+
+    @record_set = []
+    @index = 0 # Position of the last returned record
+
+
+    @row_index = 0
+    @row_count = 0
+    @row_offset = 10
+    
   end
   
   # Returns the record set entries hashed by column name orderd by column position
@@ -251,7 +181,79 @@ class MonetDBData
     return @header['columns_name']
   end
   
+  # Returns the (ordered) name of the columns in the record set
+  def type_fields
+    return @header['columns_type']
+  end
+  
   private
+  
+  # store block of data, parse it and store it.
+  def receive_record_set(response)
+    rows = ""
+  
+    response.each_line do |row|      
+      if row[0].chr == MSG_QUERY      
+        if row[1].chr == Q_TABLE
+          
+          @action = Q_TABLE
+          @query = parse_header_query(row)
+          @query.freeze
+          @row_count = @query['rows'].to_i #total number of rows in table
+          @row_index = @query['returned'].to_i  # current row to retrieve
+            
+        elsif row[1].chr == Q_BLOCK
+        # strip the block header from data
+          #puts row
+          # response = response[row.length...response.length]
+          @action = Q_BLOCK
+          @block = parse_header_query(row)          
+          block_rows = "" # new block; clean the row set
+          response.each_line do |row|
+            if row[0].chr == MSG_TUPLE
+              block_rows += row
+            elsif row == MSG_PROMPT
+              response = ""
+              return block_rows
+            end
+          end
+          
+          @row_index += @row_offset.to_i
+          response = ""
+          return block_rows
+        elsif row[1].chr == Q_TRANSACTION
+          @action = Q_TRANSACTION
+        elsif row[1].chr == Q_CREATE
+          @action = Q_CREATE
+        end
+      elsif row[0].chr == MSG_INFO
+        raise MonetDBQueryError, row
+      elsif row[0].chr == MSG_SCHEMA_HEADER
+        # process header data
+        @header << row
+
+      elsif row[0].chr == MSG_TUPLE
+        rows += row
+      elsif row == MSG_PROMPT
+        @record_set += parse_tuples(@rows)
+      end
+    end 
+    return rows 
+  end
+  
+  def next_block
+    if @row_index >= @row_count
+      return false
+    elsif (@row_index + @row_offset ) > @row_count
+      @row_offset = @row_count - @row_index
+    else
+      @row_offset = [@row_offset * 10, (@row_count - @row_index)].min
+    end
+    
+    # export offset amount
+    @connection.set_export(@query['id'], @row_index.to_s, @row_offset.to_s)  
+    return true
+  end
   
   # Formats a query <i>string</i> so that it can be parsed by the server
   def format_query(q)
@@ -260,12 +262,6 @@ class MonetDBData
     else
       raise LanguageNotSupported, @lang
     end
-  end
-  
-  # Substitued quoted characters in a string returned by the server and save the result as a
-  # String object
-  def parse_string(str)
-    
   end
   
   # Parses the data returned by the server and stores the content of header and record set 
@@ -289,19 +285,6 @@ class MonetDBData
       position = 0
       while position < row.length
         field = row[position].gsub(/,$/, '')
-        
-        if @type_cast == true
-          if @header["columns_type"] != nil
-            name = @header["columns_name"][position]
-            if @header["columns_type"][name] != nil
-              type = @header["columns_type"].fetch(name)
-            end
-          
-            #  field = self.type_cast(field, type)
-            field = type_cast(field, type)
- 
-          end
-        end
       
         processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
         position += 1
@@ -404,27 +387,33 @@ class String
   end
   
   def getString
-    data = self.reverse
+    #data = self.reverse
     # parse the string starting from the end; 
-    escape = false
-    position = 0
-    for i in data
-      if i == '\\' and escape == true
-          if data[position+1] == '\\' 
-          data[position+1] = ''
-          escape = true
-        else
-          escape = false
-        end
-      end
-      position += 1
-    end
-    data.reverse
-    
+    #escape = false
+    #position = 0
+    #for i in data
+    #  if i == '\\' and escape == true
+    #      if data[position+1] == '\\' 
+    #      data[position+1] = ''
+    #      escape = true
+    #    else
+    #      escape = false
+    #    end
+    #  end
+    #  position += 1
+    #end
+    #data.reverse
+    self.gsub(/^"/,'').gsub(/"$/,'')
   end
   
   def getBlob
+    # first strip trailing and leading " characters 
     self.gsub(/^"/,'').gsub(/"$/,'')
+    
+    # convert from HEX to the origianl binary data.
+    blob = ""
+    self.scan(/../) { |tuple| blob += tuple.hex.chr }
+    return blob
   end
   
   # ruby currently supports only time + date frommatted timestamps;
@@ -447,11 +436,32 @@ class String
   end
   
   def getChar
-    self.chr
+    # ruby < 1.9 does not have a Char datatype
+    begin
+      c = self.ord
+    rescue
+      c = self
+    end
+    
+    return c 
   end
   
   def getBool
-      return True if self == '1'
-      false
+      if ['1', 'y', 't', 'true'].include?(self)
+        return true
+      elsif ['0','n','f', 'false'].include?(self)
+        return false
+      else 
+        # unknown
+        return nil
+      end
+  end
+  
+  def getNull
+    if self.upcase == 'NONE'
+      return nil
+    else
+      raise "Unknown value"
+    end
   end
 end

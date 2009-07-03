@@ -22,7 +22,10 @@ db = MonetDB.new
 db.connect(user = "monetdb", passwd = "monetdb", lang = "sql", host="localhost", port = 50000, db_name = "ruby", auth_type = "SHA1")
 
 # set type_cast=true to enable MonetDB to Ruby type mapping
-res = db.query("select * from tests2;")
+#res = db.query("select * from tables, tables, tables;")
+
+#db.query("DROP TABLE tests2 ")
+#db.query(" CREATE TABLE tests2 ( col1  varchar(255), col2 varchar(255)) " )
 
 #puts "Number of rows returned: " + res.num_rows.to_s
 #puts "Number of fields: " + res.num_fields.to_s
@@ -31,6 +34,7 @@ res = db.query("select * from tests2;")
 # print res.name_fields
 
 ###### Fetch all rows and store them
+
 #puts res.fetch_all
 
 
@@ -52,27 +56,46 @@ res = db.query("select * from tests2;")
 
 ###### Iterator over columns (on cell at a time)
 
-while row = res.fetch_hash do
-  printf "%d %s %s\n",  row["id"].getInt, row["name"], row["surname"]
-end
+#while row = res.fetch_hash do
+#  printf "%s\n",  row["id"]
+#end
 
 # SQL TRANSACTIONS and SAVE POINTS
 
 
-#res = db.query("START TRANSACTION;")
-#db.auto_commit(flag=false)
+
+db.query('DROP TABLE tests2')
+db.auto_commit(false)
+puts db.auto_commit?
 # create a savepoint
-#db.save
-#res = db.query("SAVEPOINT #{db.transactions} ;")
-#res = db.query("INSERT INTO \"tests2\" (\"name\", \"surname\") VALUES('NAME4', 'SURNAME4')")
-#db.save
-#res = db.query("SAVEPOINT #{db.transactions} ;")
-#res = db.query("INSERT INTO \"tests2\" (\"name\", \"surname\") VALUES('NAME4', 'SURNAME4')")
+db.save
+db.query("CREATE TABLE tests2 (col1 VARCHAR(255), col2 VARCHAR(255))")
+res = db.query("SAVEPOINT #{db.transactions} ;")
+res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+#res = db.query("INSERT INTO \"tests2\" VALUES ('€¿®µ¶¹', '€¿®µ¶¹')")
+db.query("COMMIT")
+db.release
 
-#res = db.query("ROLLBACK TO SAVEPOINT #{db.transactions};")
-#db.release
+db.save
+res = db.query("SAVEPOINT #{db.transactions} ;")
+res = db.query("INSERT INTO \"tests2\" VALUES('NAME4', 'SURNAME4')")
 
-# Deallocate memory used for storing the record set
+res = db.query("ROLLBACK TO SAVEPOINT #{db.transactions};")
+db.release
+
+db.auto_commit(true)
+puts db.auto_commit?
+res = db.query('SELECT * from tests2')
+while row = res.fetch do
+  printf "%s \n", row
+end
+
 res.free
 
 db.close

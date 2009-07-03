@@ -1,3 +1,6 @@
+* Tue 30 Jun 2009 22:14:38 CEST
+Added test cases for the standalone driver (ruby unit test).
+
 * Thu 25 Jun 2009 17:31:02 CEST
 Fixed a major bug that resulted in data corruption;
 MAPI implementation code cleanup and bug fixes;
