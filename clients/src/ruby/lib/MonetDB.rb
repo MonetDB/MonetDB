@@ -20,7 +20,9 @@
   require 'MonetDBData'
   require 'MonetDBExceptions'
 
-   # A typical sequence of events is as follows:
+    # = Introduction
+    #
+    # A typical sequence of events is as follows:
     # Create a database instance (handle), invoke query using the database handle to send the statement to the server and get back a result set object.
     #
     # A result set object  has methods for fetching rows, moving around in the result set, obtaining column metadata, and releasing the result set.
@@ -30,7 +32,7 @@
     #
     # A database handler (dbh) is and instance of the MonetDB class.
     #
-    # <b> Connection management <b/>
+    # = Connection management 
     #
     #  connect    -  establish a new connection
     #                * user: username (default is monetdb)
@@ -51,7 +53,7 @@
     #
     # Currently MAPI protocols 8 and 9 are supported.
     #
-    # <b> Managing record sets <b/>
+    # = Managing record sets 
     #
     #
     # A record set is represented as an instance of the MonetDBData class; the class provides methods to manage retrieved data.
@@ -76,7 +78,7 @@
     #
     # To release a record set MonetDBData#free can be used.
     #
-    # <b> Type conversion </b>
+    # = Type conversion 
     #
     # Invoking MonetDB#query with the flag type_conversion=true will result in a type cast of the record set fields from SQL types to ruby types
     #
@@ -91,6 +93,14 @@
       @connection = nil 
     end
   
+    # establish a new connection
+    #                * user: username (default is monetdb)
+    #                * passwd: password (default is monetdb)
+    #                * lang: language (default is sql) 
+    #                * host: server hostanme or ip  (default is localhost)
+    #                * port: server port (default is 50000)
+    #                * db_name: name of the database to connect to
+    #                * auth_type: hashing function to use during authentication (default is SHA1)
     def connect(username = "monetdb", password = "monetdb", lang = "sql", host="127.0.0.1", port = 50000, db_name = "demo", auth_type = "SHA1")
       # TODO: handle pools of connections
       @username = username
