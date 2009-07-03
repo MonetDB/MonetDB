@@ -17,17 +17,36 @@
 
 # Information relative to a MonetDB connection
 
+
 require 'socket'
 require 'time'
 require 'hasher'
 require 'MonetDBExceptions'
+require 'iconv' # utf-8 support
 
+Q_TABLE               = "1" # SELECT operation
+Q_UPDATE              = "2" # INSERT/UPDATE operations
+Q_CREATE              = "3" # CREATE/DROP TABLE operations
+Q_TRANSACTION         = "4" # TRANSACTION
+Q_PREPARE             = "5"
+Q_BLOCK               = "6" # QBLOCK message
+
+MSG_REDIRECT          = '^' # auth redirection through merovingian
+MSG_QUERY             = '&'
+MSG_SCHEMA_HEADER     = '%'
+MSG_INFO              = '!' # info response from mserver
+MSG_TUPLE             = '['
+MSG_PROMPT            =  nil
+
+
+REPLY_SIZE            = '250'
+
+MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
+ 
+MONET_ERROR           = -1
 
 class MonetDBConnection
-  MSG_REDIRECT          = '^' # redirect through merovingian
-  MSG_INFO              = '!'
-  
-  MAX_AUTH_ITERATION    = 10  # maximum number of atuh iterations (thorough merovingian) allowed
+ 
   
   # enable debug output
   @@DEBUG               = false
@@ -55,7 +74,7 @@ class MonetDBConnection
   # * host: server hostanme or ip  (default is localhost)
   # * port: server port (default is 50000)
   
-  def initialize(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = 50000)
+  def initialize(user = "monetdb", passwd = "monetdb", lang = "sql", host="127.0.0.1", port = "50000")
     @user = user
     @passwd = passwd
     @lang = lang.downcase
@@ -66,23 +85,30 @@ class MonetDBConnection
     
     @auth_iteration = 0
     @connection_established = false
+        
+    if @@DEBUG == true
+      require 'logger'
+    end
+    
   end
-  
-  
   
   # Connect to the database, creates a new socket
   def connect(db_name = 'demo', auth_type = 'SHA1')
     @database = db_name
     @auth_type = auth_type
+    
     @socket = TCPSocket.new(@host, @port)  
+    
     real_connect
   end
   
-  
+
+  # perform a real connection; retrieve challenge, proxy through merovinginan, build challenge and set the timezone
   def real_connect
+    
     server_challenge = retrieve_server_challenge()
-#    puts @database
-    if server_challenge != ""
+    
+    if server_challenge != nil
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
       @protocol = server_challenge.split(':')[2].to_i
@@ -91,6 +117,8 @@ class MonetDBConnection
       if @protocol == 9
         @pwhash = server_challenge.split(':')[5]
       end
+    else
+      raise MonetDBConnectionError, "Error: server returned an empty challenge string."
     end
     
     # The server supports only RIPMED168 or crypt as an authentication hash function, but the driver does not.
@@ -100,7 +128,6 @@ class MonetDBConnection
         raise MonetDBConnectionError, auth.upcase + " " + ": algorithm not supported by ruby-monetdb."
       end
     end
-    
     
     # If the server protocol version is not 8: abort and notify the user.
     if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
@@ -115,19 +142,19 @@ class MonetDBConnection
     if @socket != nil
       @connection_established = true
 
-      encode_message(reply).each do |msg|
-        @socket.write(msg)
-      end
-
-      f, monetdb_auth = recv_decode_hdr
-            
-      if monetdb_auth == 0
+      send(reply)
+      
+      monetdb_auth = receive
+      
+      if monetdb_auth == ""
         # auth succedeed, now set the timezone and proceed
+        
         set_timezone
+        
       else
-        block = @socket.recv(monetdb_auth)
-#         puts "Block:" + block
-        if block[0].chr == MSG_REDIRECT
+        if monetdb_auth == MSG_PROMPT
+          true
+        elsif monetdb_auth[0].chr == MSG_REDIRECT
         #redirection
           if merovingian?
             if @auth_iteration <= 10
@@ -142,13 +169,29 @@ class MonetDBConnection
             connect(@database, @auth_type)
           else
             @connection_established = false
-            raise MonetDBQueryError, @socket.recv(monetdb_auth)
+            raise MonetDBQueryError, monetdb_auth
           end
-        elsif block[0].chr == MSG_INFO
-          raise MonetDBConnectionError, block
+        elsif monetdb_auth[0].chr == MSG_INFO
+          raise MonetDBConnectionError, monetdb_auth
         end
       end
     end
+  end
+
+  # Formats a <i>command</i> string so that it can be parsed by the server
+  def format_command(x)
+    return "X" + x + "\nX"
+  end
+  
+
+  # send an 'export' command to the server
+  def set_export(id, idx, offset)
+    send(format_command("export " + id.to_s + " " + idx.to_s + " " + offset.to_s ))
+  end
+  
+  # send a 'reply_size' command to the server
+  def set_reply_size
+    send(format_command(("reply_size " + REPLY_SIZE)))
   end
 
   # Disconnect from server
@@ -164,34 +207,33 @@ class MonetDBConnection
     end
   end
   
-  # send a message to monetdb5 server
-  def send(msg)
-    encode_message(msg).each do |m|
+  # send data to a monetdb5 server instance and returns server's response
+  def send(data)
+    encode_message(data).each do |m|
       @socket.write(m)
     end
+  end
+  
+  # receive data from a monetdb5 server instance
+  def receive
     is_final, chunk_size = recv_decode_hdr
     
-    return chunk_size
-  end
-  
-  # receive a response from monetdb5 server
-  def receive(is_final, chunk_size)
-    response = @socket.recv(chunk_size)
+    data = @socket.recv(chunk_size)
     
-    while is_final != true
-      is_final, chunk_size = recv_decode_hdr
-      response +=  @socket.recv(chunk_size)
+    if is_final == false 
+      while is_final == false
+        is_final, chunk_size = recv_decode_hdr
+        data +=  @socket.recv(chunk_size)
+      end
     end
     
-    return response
+    if data.length == 0      
+      data = MSG_PROMPT
+    end
+    
+    return data
   end
-  
-  # receive a response from monetdb5 server one line at a time (lines are terminated by '\n')
-  def receive_line()
-    return @socket.readline
-  end
-  
-  #
+    
   # Builds and authentication string given the parameters submitted by the user (MAPI protocol v8).
   # 
   def build_auth_string_v8(auth_type, salt, db_name)
@@ -270,7 +312,7 @@ class MonetDBConnection
       is_final = false
       
       if @@DEBUG
-      puts "q.lenght" + message_size.to_s
+      
       end
       i = 0
       while is_final != true
@@ -291,27 +333,12 @@ class MonetDBConnection
         
       
           is_final = true
-
-          if @@DEBUG
-            puts "fits\n"
-            puts "iter" + i.to_s
-            puts "begin" + data_delimiter_begin.to_s
-            puts "end" + data_delimiter_end.to_s
-            puts "msg" + message_size.to_s
-          end
         else
           
           fb = @@MAX_FB_SIZE
           sb = @@MAX_SB_SIZE
           
           fb = (fb << 1) | 00000000
-          if @@DEBUG
-            puts "bigger than max \n"
-            puts "iter" + i.to_s
-            puts "begin" + data_delimiter_begin.to_s
-            puts "end" + data_delimiter_end.to_s
-            puts "msg" + message_size.to_s
-          end
           
           message << fb.chr + sb.chr + query[data_delimiter_begin...data_delimiter_end]
           data_delimiter_begin = data_delimiter_end
@@ -328,30 +355,39 @@ class MonetDBConnection
 
   # Used as the first step in the authentication phase; retrives a challenge string from the server.
   def retrieve_server_challenge()
-    server_challenge = ""
-    is_final = false
-    while (!is_final)
-      is_final, chunk_size = recv_decode_hdr()
-      # retrieve the server challenge string.
-      server_challenge += @socket.recv(chunk_size)
-    end
-    return server_challenge
+    server_challenge = receive
   end
   
   # reads and decodes the header of a server message
   def recv_decode_hdr()
     if @socket != nil
+      
       fb = @socket.recv(1)
       sb = @socket.recv(1)
-      chunk_size = 0
+      
+      # Use execeptions handling to keep compatibility between different ruby
+      # versions.
+      #
+      # Chars are treated differently in ruby 1.8 and 1.9
+      # try do to ascii to int conversion using ord (ruby 1.9)
+      # and if it fail fallback to character.to_i (ruby 1.8)
+      begin
+        fb = fb[0].ord
+        sb = sb[0].ord
+      rescue NoMethodError => one_eight
+        fb = fb[0].to_i
+        sb = sb[0].to_i
+      end
+      
+      chunk_size = (sb << 7) | (fb >> 1)
+      
       is_final = false
-      if ( (fb[0].to_i & 1) == 1 )
+      if ( (fb & 1) == 1 )
         is_final = true
+        
       end
 
       # return the size of the chunk (in bytes)
-      
-      chunk_size = (sb[0].to_i << 7) | (fb[0].to_i >> 1)
       return is_final, chunk_size  
     else  
         raise MonetDBSocketError
@@ -368,27 +404,35 @@ class MonetDBConnection
     else
       tz_offset = "'+" + tz_offset.to_s + ":00'"
     end
-      
-    query_tz = "SET TIME ZONE INTERVAL " + tz_offset + " HOUR TO MINUTE;"
+    query_tz = "sSET TIME ZONE INTERVAL " + tz_offset + " HOUR TO MINUTE;"
     
     # Perform the query directly within the method
-    encode_message(query_tz).each { |msg|
-      @socket.write(msg)
-    }
-    
-    is_final, chunk_size = recv_decode_hdr
-    
-    if chunk_size > 0
-      monetdb_tz = @socket.recv(chunk_size)
-      if !is_final
-        while !is_final
-          is_final, chunk_size = recv_decode_hdr
-          monetdb_tz += @socket.recv(chunk_size)
-        end 
-      end
-      
-#      raise MonetDBQueryError, monetdb_tz
+    send(query_tz)
+    response = receive
+  
+    if response[0] == MSG_INFO
+      raise MonetDBQueryError, response
     end
+  end
+  
+  # Turns auto commit on/off
+  def set_auto_commit(flag=true)
+    if flag == false 
+      ac = " 0"
+    else 
+      ac = " 1"
+    end
+
+    send(format_command("auto_commit " + ac))
+    
+    response = receive
+    if response == MSG_PROMPT
+      @auto_commit = flag
+    elsif response[0] == MSG_INFO
+      raise MonetDBCommandError, response
+      return
+    end
+    
   end
   
   # Check if monetdb is running behind the merovingian proxy and forward the connection in case
@@ -422,43 +466,6 @@ class MonetDBConnection
       true
     else
       false
-    end
+    end    
   end
-  
 end
-
-
-# TOD: Handle the authentication procedure for protocols 8 and 9.
-#class MonetDBAuthentication
-  
-#  attr_reader :server_challenge, :challenge_reply
-  
-#  def initialize(proto = 8) :nodoc
-#    @proto = proto
-#  end
-  
-  # Takes as input a server challenge and credentials and returns 
-  # a response to autenticat to the mserver
-#  def login(challenge = '', account = [])
-#     @server_challenge = challenge
-#    
-#    if proto == 8
-#      build_challenge_reply8(account)
-#    elsif proto == 9
-#      build_challenge_reply9(account)
-#    end
-#  end
-
-#  private
-  # Takes as imput a server challenge and credentials and returns 
-  # a response to autenticat to mserver with MAPI protocol 8
-#  def build_challenge_reply8(account = [])
-#    @challenge_reply = ''
-#  end
-  
-  # Takes as imput a server challenge and credentials and returns 
-  # a response to autenticat to mserver with MAPI protocol 9
-#  def build_challenge_reply9(account = [])
-#    @challenge_reply = ''
-#  end
-#end
