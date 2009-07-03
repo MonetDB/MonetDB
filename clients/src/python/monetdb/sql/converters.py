@@ -129,13 +129,13 @@ class Monetizer:
             #frozenset: self.__string,
             #dict: self.__string,
             #Ellipsis: self.__string,
+            #self.mapping[bytearray] = self.__string # python2.6 only
         }
 
         (major, minor, micro, level, serial)  = sys.version_info
         if (major == 3) or (major == 2 and minor == 6):
             # bytes type is only supported by python 2.6 and higher
             self.mapping[bytes] = self.__bytes
-            self.mapping[bytearray] = self.__string # TODO: check this
         if (major != 3):
             self.mapping[unicode] = self.__unicode
 

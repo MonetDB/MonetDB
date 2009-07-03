@@ -25,7 +25,6 @@ import os
 #logging.basicConfig(level=logging.DEBUG)
 #logger = logging.getLogger('monetdb')
 
-
 import dbapi20
 
 try:

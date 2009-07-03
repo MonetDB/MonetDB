@@ -374,13 +374,12 @@ class Cursor:
         call to .execute*() did not produce any result set or no
         call was issued yet."""
 
-        logger.debug("retreiving next set")
-
         self.__check_executed()
 
         if self.rownumber >= self.rowcount:
             return False
 
+        logger.debug("retreiving next set")
         self.__offset += len(self.__rows)
 
         end = min(self.rowcount, self.rownumber + self.arraysize)
@@ -585,27 +584,31 @@ class Cursor:
         the current position in the result set, if set to 'absolute',
         value states an absolute target position.
 
-        An IndexError should be raised in case a scroll operation would
-        leave the result set. In this case, the cursor position is left
-        undefined (ideal would be to not move the cursor at all).
+        An IndexError is raised in case a scroll operation would
+        leave the result set.
+        """
 
-        Note: This method should use native scrollable cursors, if
-        available , or revert to an emulation for forward-only
-        scrollable cursors. The method may raise NotSupportedErrors to
-        signal that a specific operation is not supported by the
-        database (e.g. backward scrolling)."""
 
         self.__check_executed()
-        # TODO: finish this, megre with nextset()
 
         if mode not in ['relative', 'absolute']:
-            self.__exception_handler(ProgrammingError, "unknown mode '%s'" % mode)
+            self.__exception_handler(ProgrammingError,
+                    "unknown mode '%s'" % mode)
 
         if mode == 'relative':
             value = self.rownumber + value
 
         if value > self.rowcount:
-             self.__exception_handler(IndexError, "value beyond length of resultset")
+             self.__exception_handler(IndexError,
+                     "value beyond length of resultset")
+
+        self.__offset = value
+        end = min(self.rowcount, self.rownumber + self.arraysize)
+        amount = end - self.__offset
+        command = 'Xexport %s %s %s' % (self.__query_id,
+                self.__offset, amount)
+        block = self.connection.command(command)
+        self.__store_result(block)
 
 
     def __exception_handler(self, exception_class, message):

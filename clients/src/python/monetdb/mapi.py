@@ -210,6 +210,9 @@ class Server:
         last = 0
         while not last:
             flag = self.__getbytes(2)
+            if len(flag) != 2:
+                raise OperationalError("server returned %s bytes, I need 2" % len(flag))
+
             unpacked = struct.unpack('<H', flag)[0] # unpack (little endian short)
             length = unpacked >> 1
             last = unpacked & 1
