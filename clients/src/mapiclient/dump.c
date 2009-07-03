@@ -284,14 +284,13 @@ dump_foreign_keys(Mapi mid, char *schema, char *tname, stream *toConsole)
 }
 
 int
-dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign)
+describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign)
 {
-	int cnt, i;
+	int cnt;
 	MapiHdl hdl = NULL;
 	char *query;
 	char *view = NULL;
 	size_t maxquerylen;
-	int *string;
 	char *sname = NULL;
 
 	if (schema == NULL) {
@@ -692,15 +691,91 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 		mapi_explain_query(hdl, stderr);
 		goto bailout;
 	}
+
+  doreturn:
+	if (hdl)
+		mapi_close_handle(hdl);
+	if (view)
+		free(view);
+	if (query != NULL)
+		free(query);
+	if (sname != NULL)
+		free(sname);
+	return 0;
+
+  bailout:
+	if (hdl)
+		mapi_close_handle(hdl);
+	if (view)
+		free(view);
+	if (sname != NULL)
+		free(sname);
+	if (query != NULL)
+		free(query);
+	return 1;
+}
+
+int
+dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
+{
+	int cnt, i;
+	MapiHdl hdl = NULL;
+	char *query;
+	size_t maxquerylen;
+	int *string;
+	char *sname = NULL;
+
+	if (schema == NULL) {
+		if ((sname = strchr(tname, '.')) != NULL) {
+			size_t len = sname - tname;
+
+			sname = malloc(len + 1);
+			strncpy(sname, tname, len);
+			sname[len] = 0;
+			tname += len + 1;
+		} else if ((sname = get_schema(mid)) == NULL) {
+			return 1;
+		}
+		schema = sname;
+	}
+
+	maxquerylen = 512 + strlen(tname) + strlen(schema);
+	query = malloc(maxquerylen);
+
+	snprintf(query, maxquerylen,
+		 "SELECT \"t\".\"name\", \"t\".\"query\" "
+		 "FROM \"sys\".\"_tables\" \"t\", \"sys\".\"schemas\" \"s\" "
+		 "WHERE \"s\".\"name\" = '%s' "
+		 "AND \"t\".\"schema_id\" = \"s\".\"id\" "
+		 "AND \"t\".\"name\" = '%s'",
+		 schema, tname);
+
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+		if (hdl)
+			mapi_explain_query(hdl, stderr);
+		else
+			mapi_explain(mid, stderr);
+		goto bailout;
+	}
+	if (mapi_rows_affected(hdl) != 1) {
+		if (mapi_rows_affected(hdl) == 0)
+			fprintf(stderr, "Table %s.%s does not exist.\n", schema, tname);
+		else
+			fprintf(stderr, "Table %s.%s not unique.\n", schema, tname);
+		goto bailout;
+	}
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_fetch_field(hdl, 1)) {
+			/* the table is actually a view */
+			goto doreturn;
+		}
+	}
+	if (mapi_error(mid)) {
+		mapi_explain_query(hdl, stderr);
+		goto bailout;
+	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
-
-	/* end of description, continue if you need the data as well */
-	if (describe) {
-		if (sname != NULL)
-			free(sname);
-		return 0;
-	}
 
 	snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\".\"%s\"", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
@@ -715,10 +790,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 
 		if (strcmp(cntfld, "0") == 0) {
 			/* no records to dump, so return early */
-			mapi_close_handle(hdl);
-			if (sname != NULL)
-				free(sname);
-			return 0;
+			goto doreturn;
 		}
 
 		stream_printf(toConsole, "COPY %s RECORDS INTO ", cntfld);
@@ -776,8 +848,6 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
   doreturn:
 	if (hdl)
 		mapi_close_handle(hdl);
-	if (view)
-		free(view);
 	if (query != NULL)
 		free(query);
 	if (sname != NULL)
@@ -786,13 +856,22 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
   bailout:
 	if (hdl)
 		mapi_close_handle(hdl);
-	if (view)
-		free(view);
 	if (sname != NULL)
 		free(sname);
 	if (query != NULL)
 		free(query);
 	return 1;
+}
+
+int
+dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign)
+{
+	int rc;
+
+	rc = describe_table(mid, schema, tname, toConsole, foreign);
+	if (rc == 0 && !describe)
+		rc = dump_table_data(mid, schema, tname, toConsole);
+	return rc;
 }
 
 int

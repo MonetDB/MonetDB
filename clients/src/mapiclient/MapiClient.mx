@@ -1528,7 +1528,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt)
 
 						start_pager(&saveFD, &saveFD_raw);
 #endif
-						dump_table(mid, NULL, line, toConsole, 1, 1);
+						describe_table(mid, NULL, line, toConsole, 1);
 #ifdef HAVE_POPEN
 						end_pager(saveFD, saveFD_raw);
 #endif
