@@ -144,14 +144,16 @@ class Test_Monetdb_Sql(dbapi20.DatabaseAPI20Test):
             major = sys.version_info[0]
             if major == 3:
                 args = {'beer': '\N{latin small letter a with acute}'}
+                encoded = args['beer']
             else:
                 args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
+                encoded = args['beer'].encode('utf-8')
 
             cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
             cur.execute('select name from %sbooze' % self.table_prefix)
             res = cur.fetchall()
             beer = res[0][0]
-            self.assertEqual(beer,args['beer'].encode('utf8'),'incorrect data retrieved')
+            self.assertEqual(beer,encoded,'incorrect data retrieved')
         finally:
             con.close()
 

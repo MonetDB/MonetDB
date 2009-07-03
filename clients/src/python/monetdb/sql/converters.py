@@ -77,20 +77,17 @@ class Pythonizer:
         """ return python boolean """
         return (data == "true")
 
-    def __time(self, x):
-        #return apply(Time, map(lambda x: int(float(x)), x.split(":")))
-        return Time(*map(lambda x: int(float(x)), x.split(":")))
+    def __time(self, data):
+        return Time(*[int(float(x)) for x in data.split(':')])
 
-    def __date(self, x):
-        #return apply(Date, map(lambda x: int(float(x)), x.split("-")))
-        return Date(*map(lambda x: int(float(x)), x.split("-")))
+    def __date(self, data):
+        return Date(*[int(float(x)) for x in data.split('-')])
 
-    def __timestamp(self, x):
-        x = x.split(" ")
-        return Timestamp(
-                     *map(lambda x: int(float(x)), x[0].split("-")) +
-                     map(lambda x: int(float(x)), x[1].split(":"))
-                     )
+    def __timestamp(self, data):
+        splitted = data.split(" ")
+        date = [int(float(x)) for x in splitted[0].split('-')]
+        time = [int(float(x)) for x in splitted[1].split(':')]
+        return Timestamp(*date+time)
 
     def __blob(self, x):
         """ Converts a monet blob in string representation to a python string.

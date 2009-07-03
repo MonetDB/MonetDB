@@ -27,6 +27,7 @@ import os
 #logger = logging.getLogger('monetdb')
 
 import capabilities
+from dbapi20_monetdb import TextTestRunnerNoTime
 
 try:
     import monetdb.sql
@@ -52,4 +53,7 @@ if __name__ == '__main__':
         import gc
         gc.enable()
         gc.set_debug(gc.DEBUG_LEAK)
-    unittest.main()
+    #unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(Test_Monetdb_Sql)
+    TextTestRunnerNoTime(verbosity=3).run(suite)
+

@@ -37,7 +37,7 @@ class DatabaseTest(unittest.TestCase):
     create_table_extra = ''
     rows = 10
     debug = False
-    leak_test = True
+    leak_test = False
 
     def setUp(self):
         import gc
@@ -60,7 +60,7 @@ class DatabaseTest(unittest.TestCase):
             import gc
             del self.cursor
             orphans = gc.collect()
-            self.failIf(orphans, "%d orphaned objects found after deleting cursor" % orphans)
+            self.assertFalse(orphans, "%d orphaned objects found after deleting cursor" % orphans)
 
             del self.connection
             orphans = gc.collect()
@@ -157,20 +157,22 @@ class DatabaseTest(unittest.TestCase):
         self.cursor.execute('select col1 from %s where col1=%s' % \
                             (self.table, 0))
         l = self.cursor.fetchall()
-        self.failIf(l, "DELETE didn't work")
+        self.assertFalse(l, "DELETE didn't work")
         self.connection.rollback()
         self.cursor.execute('select col1 from %s where col1=%s' % \
                             (self.table, 0))
         l = self.cursor.fetchall()
-        self.failUnless(len(l) == 1, "ROLLBACK didn't work")
+        self.assertTrue(len(l) == 1, "ROLLBACK didn't work")
         self.cursor.execute('drop table %s' % (self.table))
 
 
     def test_truncation(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
         def generator(row, col):
-            if col == 0: return row
-            else: return ('%i' % (row%10))*((255-self.rows/2)+row)
+            if col == 0:
+                return row
+            else:
+                return ('%i' % (row%10))*(int(255-self.rows/2)+row)
         self.create_table(columndefs)
         insert_statement = ('INSERT INTO %s VALUES (%s)' %
                             (self.table,
@@ -295,7 +297,7 @@ class DatabaseTest(unittest.TestCase):
 
     def test_TEXT(self):
         def generator(row,col):
-            return self.BLOBUText # 'BLOB Text ' * 1024
+            return self.BLOBText # 'BLOB Text ' * 1024
         self.check_data_integrity(
                  ('col2 TEXT',),
                  generator)
