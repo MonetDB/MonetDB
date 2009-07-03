@@ -33,30 +33,24 @@ else:
 
 
 class Cursor:
-    """These objects represent a database cursor, which is used to manage
+    """This object represents a database cursor, which is used to manage
     the context of a fetch operation. Cursors created from the same
     connection are not isolated, i.e., any changes done to the
     database by a cursor are immediately visible by the other
-    cursors. Cursors created from different connections can or can not
-    be isolated, depending on how the transaction support is
-    implemented (see also the connection's .rollback() and .commit()
-    methods)."""
+    cursors"""
 
 
     def __init__(self, connection):
-        """This read-only attribute return a reference to the Connection
-        object on which the cursor was created.
 
-        The attribute simplifies writing polymorph code in
-        multi-connection environments."""
+        """This read-only attribute return a reference to the Connection
+        object on which the cursor was created."""
         self.connection = connection
 
         """last executed operation (query)"""
         self.operation = ""
 
         """This read/write attribute specifies the number of rows to
-        fetch at a time with .fetchmany(). It defaults to 1
-        meaning to fetch a single row at a time."""
+        fetch at a time with .fetchmany()"""
         self.arraysize = 1
 
 
@@ -130,7 +124,6 @@ class Cursor:
         self.messages = []
 
 
-
         """This read-only attribute provides the rowid of the last
         modified row (most databases return a rowid only when a single
         INSERT operation is performed). If the operation does not set
@@ -177,20 +170,7 @@ class Cursor:
         """Prepare and execute a database operation (query or
         command).  Parameters may be provided as mapping and
         will be bound to variables in the operation.
-
-        A reference to the operation will be retained by the
-        cursor.  If the same operation object is passed in again,
-        then the cursor can optimize its behavior.  This is most
-        effective for algorithms where the same operation is used,
-        but different parameters are bound to it (many times).
-
-        For maximum efficiency when reusing an operation, it is
-        best to use the .setinputsizes() method to specify the
-        parameter types and sizes ahead of time.  It is legal for
-        a parameter to not match the predefined information; the
-        implementation should compensate, possibly with a loss of
-        efficiency."""
-
+        """
 
         # clear message history
         self.messages = []
@@ -237,21 +217,8 @@ class Cursor:
         execute it against all parameter sequences or mappings
         found in the sequence seq_of_parameters.
 
-        Modules are free to implement this method using multiple
-        calls to the .execute() method or by using array operations
-        to have the database process the sequence as a whole in
-        one call.
-
-        Use of this method for an operation which produces one or
-        more result sets constitutes undefined behavior, and the
-        implementation is permitted (but not required) to raise
-        an exception when it detects that a result set has been
-        created by an invocation of the operation.
-
-        The same comments as for .execute() also apply accordingly
-        to this method.
-
-        Return values are not defined."""
+        It will return the number or rows affected
+        """
 
         count = 0
         for parameters in seq_of_parameters:
@@ -394,37 +361,20 @@ class Cursor:
 
 
     def setinputsizes(self, sizes):
-        """This can be used before a call to .execute*() to
-        predefine memory areas for the operation's parameters.
-
-        sizes is specified as a sequence -- one item for each
-        input parameter.  The item should be a Type Object that
-        corresponds to the input that will be used, or it should
-        be an integer specifying the maximum length of a string
-        parameter.  If the item is None, then no predefined memory
-        area will be reserved for that column (this is useful to
-        avoid predefined areas for large inputs).
-
+        """
         This method would be used before the .execute*() method
-        is invoked.
+        is invoked to reserve memory. This implementation doesn't
+        use this.
 
-        Implementations are free to have this method do nothing
-        and users are free to not use it."""
+        """
         pass
 
 
     def setoutputsize(self, size, column=None):
-        """Set a column buffer size for fetches of large columns
-        (e.g. LONGs, BLOBs, etc.).  The column is specified as an
-        index into the result sequence.  Not specifying the column
-        will set the default size for all large columns in the
-        cursor.
-
-        This method would be used before the .execute*() method
-        is invoked.
-
-        Implementations are free to have this method do nothing
-        and users are free to not use it."""
+        """
+        Set a column buffer size for fetches of large columns
+        This implementation doesn't use this
+        """
         pass
 
     def __iter__(self):

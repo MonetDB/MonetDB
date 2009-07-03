@@ -26,6 +26,7 @@ library:
 * If you want to use the mapi module with python3.* you should use the
   mapi3.py module (import monetdb.mapi3 as mapi). This is done automatically
   for the sql module
+* Dropped support for the dictionary based cursor
 
 
 Installation
