@@ -2061,8 +2061,7 @@ mapi_destroy(Mapi mid)
 static void
 parse_uri_query(Mapi mid, char *uri)
 {
-	char *lasts = NULL;
-	char *arg;
+	char *amp;
 	char *val;
 
 	/* just don't care where it is, assume it all starts from '?' */
@@ -2071,26 +2070,25 @@ parse_uri_query(Mapi mid, char *uri)
 
 	uri++; /* skip '?' */
 
-	while ((arg = strtok_r(uri, "&", &lasts)) != NULL) {
-		uri = NULL;
-		if ((val = strchr(arg, '=')) == NULL)
-			/* invalid argument, can't warn, just skip */
-			continue;
-
-		*val++ = '\0';
-		if (strcmp("database", arg) == 0) {
-			free(mid->database);
-			mid->database = strdup(val);
-		} else if (strcmp("language", arg) == 0) {
-			free(mid->language);
-			mid->language = strdup(val);
-		} else if (strcmp("user", arg) == 0) {
-			/* until we figure out how this can be done safely wrt
-			 * security, ignore */
-		} else if (strcmp("password", arg) == 0) {
-			/* until we figure out how this can be done safely wrt
-			 * security, ignore */
-		} /* can't warn, ignore */
+	while ((amp = strchr(uri, '&')) != NULL) {
+		*amp++ = '\0';
+		if ((val = strchr(uri, '=')) != NULL) {
+			*val++ = '\0';
+			if (strcmp("database", uri) == 0) {
+				free(mid->database);
+				mid->database = strdup(val);
+			} else if (strcmp("language", uri) == 0) {
+				free(mid->language);
+				mid->language = strdup(val);
+			} else if (strcmp("user", uri) == 0) {
+				/* until we figure out how this can be done safely wrt
+				 * security, ignore */
+			} else if (strcmp("password", uri) == 0) {
+				/* until we figure out how this can be done safely wrt
+				 * security, ignore */
+			} /* can't warn, ignore */
+		} /* else: invalid argument, can't warn, just skip */
+		uri = amp;
 	}
 }
 
