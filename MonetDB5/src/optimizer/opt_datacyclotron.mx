@@ -27,6 +27,10 @@ pattern optimizer.datacyclotron(mod:str, fcn:str):str
 address OPTdatacyclotron
 comment "Datacyclotron code injection";
 
+command copy(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
+address DCcopy
+comment "Inform the DataCyclotron about the intended access";
+
 command bind(schema:str, tab:str, col:str, kind:int):bat[:any_1,:any_2]
 address DCbind
 comment "Inform the DataCyclotron about the intended access";
@@ -142,5 +146,15 @@ DCunpin(int *ret, int *bid){
 	(void) ret;
 	(void) bid;
 	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
+}
+
+str
+DCcopy(int *ret, str *sch, str *tab, str *col, int *kind){
+	(void) ret;
+	(void) sch;
+	(void) tab;
+	(void) col;
+	(void) kind;
+	throw(MAL,"datacyclotron.copy",PROGRAM_NYI);
 }
 
