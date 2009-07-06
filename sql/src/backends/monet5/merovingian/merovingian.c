@@ -1729,10 +1729,10 @@ controlRunner(void *d)
 								writeProps(props, stats->path);
 								break;
 							} else {
-								/* tag, include . for easy life
+								/* tag, include '/' for easy life
 								 * afterwards */
-								*--p = '.';
-								kv->val = GDKstrdup(p);
+								*--p = '/';
+								kv->val = GDKstrdup(p + 1);
 							}
 
 							snprintf(buf2, sizeof(buf2),
@@ -1770,7 +1770,7 @@ controlRunner(void *d)
 					while (rdb != NULL) {
 						len = snprintf(buf2, sizeof(buf2), "%s%s%s\t%s\n",
 								rdb->dbname,
-								rdb->tag == NULL ? "" : ".",
+								rdb->tag == NULL ? "" : "/",
 								rdb->tag == NULL ? "" : rdb->tag,
 								rdb->conn);
 						send(msgsock, buf2, len, 0);
@@ -1823,6 +1823,7 @@ discoveryRunner(void *d)
 	err e;
 	remotedb rdb;
 	remotedb prv;
+	char *val;
 
 	ssize_t nread;
 	char buf[512]; /* our packages should be pretty small */
@@ -1860,12 +1861,13 @@ discoveryRunner(void *d)
 			for (orig = stats; stats != NULL; stats = stats->next) {
 				readProps(ckv, stats->path);
 				kv = findConfKey(ckv, "shared");
-				if (kv->val == NULL || strcmp(kv->val, "no") != 0) {
+				val = kv->val == NULL ? "" : kv->val;
+				if (strcmp(val, "no") != 0) {
 					/* craft ANNC message for this db */
-					snprintf(buf, 512, "ANNC %s%s mapi:monetdb://%s:%hu/ %d",
-							stats->dbname,
-							/* share the "old" thing (just db) if no tag set */
-							kv->val && kv->val[0] == '.' ? kv->val : "",
+					if (strcmp(val, "yes") == 0)
+						val = "";
+					snprintf(buf, 512, "ANNC %s%s%s mapi:monetdb://%s:%hu/ %d",
+							stats->dbname, val[0] == '\0' ? "" : "/", val,
 							_mero_hostname, _mero_port,
 							_mero_discoveryttl + 60);
 					broadcast(buf);
@@ -2046,7 +2048,7 @@ discoveryRunner(void *d)
 				rdb = prv->next = malloc(sizeof(struct _remotedb));
 			}
 			rdb->fullname = strdup(dbname);
-			if ((tag = strchr(dbname, '.')) != NULL)
+			if ((tag = strchr(dbname, '/')) != NULL)
 				*tag++ = '\0';
 			rdb->dbname = strdup(dbname);
 			rdb->tag = tag != NULL ? strdup(tag) : NULL;
