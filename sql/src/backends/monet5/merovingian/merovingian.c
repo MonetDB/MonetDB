@@ -1940,7 +1940,7 @@ discoveryRunner(void *d)
 
 		if (strncmp(buf, "HELO ", 5) == 0) {
 			/* HELLO message, respond with current databases */
-			Mfprintf(_mero_discout, "discovered neighbour %s\n", host);
+			Mfprintf(_mero_discout, "new neighbour %s\n", host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
 			c = 1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0)));
@@ -2056,7 +2056,7 @@ discoveryRunner(void *d)
 
 			pthread_mutex_unlock(&_mero_remotedb_lock);
 
-			Mfprintf(_mero_discout, "discovered neighbour database "
+			Mfprintf(_mero_discout, "new database "
 					"%s%s (ttl=%ss)\n",
 					conn, rdb->fullname, ttl);
 		} else {
