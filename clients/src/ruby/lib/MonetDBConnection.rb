@@ -17,6 +17,7 @@
 
 # Implements the MAPI communication protocol
 
+
 require 'socket'
 require 'time'
 require 'hasher'
@@ -129,7 +130,6 @@ class MonetDBConnection
         raise MonetDBConnectionError, auth.upcase + " " + ": algorithm not supported by ruby-monetdb."
       end
     end
-    
     
     # If the server protocol version is not 8: abort and notify the user.
     if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false

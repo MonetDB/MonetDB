@@ -16,7 +16,6 @@
 # All Rights Reserved.
 
 # Models a MonetDB RecordSet
-
 require 'time'
 require 'ostruct'
 
@@ -45,6 +44,9 @@ class MonetDBData
     @row_index = 0
     @row_count = 0
     @row_offset = 10
+
+    # Convert SQL data types to Ruby
+    @type_cast = type_cast
   end
   
   # Fire a query and return the server response
@@ -285,6 +287,19 @@ class MonetDBData
       position = 0
       while position < row.length
         field = row[position].gsub(/,$/, '')
+        
+        if @type_cast == true
+          if @header["columns_type"] != nil
+            name = @header["columns_name"][position]
+            if @header["columns_type"][name] != nil
+              type = @header["columns_type"].fetch(name)
+            end
+
+          #  field = self.type_cast(field, type)
+          field = type_cast(field, type)
+
+          end
+        end
       
         processed_row << field.gsub(/^"/,'').gsub(/"$/,'').gsub(/\"/, '')
         position += 1
@@ -367,10 +382,8 @@ class MonetDBData
     @index = row.to_i + 1
     @record_set[row.to_i]
   end
-  
-  
-  # Converts the stored Q_TABLE fields into the actual data type specified in the schema
-  # 
+
+
   def type_cast(field = "", cast = nil)
     false
   end
