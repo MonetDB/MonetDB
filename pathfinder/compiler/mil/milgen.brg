@@ -9465,6 +9465,13 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                                 reverse (twig_state->loop))),
                         assgn (
                             var (gsize->name),
+                            mifthenelse (
+                               misnil (var (gsize->name)),
+                               project (var (gsize->name),
+                                        lit_int (0)),
+                               var (gsize->name))),
+                        assgn (
+                            var (gsize->name),
                             leftjoin (
                                 twig_state->loop,
                                 var (gsize->name))));
