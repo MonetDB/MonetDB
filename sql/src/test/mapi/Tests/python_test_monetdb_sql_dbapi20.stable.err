@@ -110,12 +110,13 @@ test_rowcount (__main__.Test_Monetdb_Sql) ... ok
 test_setinputsizes (__main__.Test_Monetdb_Sql) ... ok
 test_setoutputsize (__main__.Test_Monetdb_Sql) ... ok
 test_setoutputsize_basic (__main__.Test_Monetdb_Sql) ... ok
+test_substring (__main__.Test_Monetdb_Sql) ... ok
 test_threadsafety (__main__.Test_Monetdb_Sql) ... ok
 test_unicode (__main__.Test_Monetdb_Sql) ... ok
 test_utf8 (__main__.Test_Monetdb_Sql) ... ok
 
 ----------------------------------------------------------------------
-Ran 37 tests
+Ran 38 tests
 
 OK
 
