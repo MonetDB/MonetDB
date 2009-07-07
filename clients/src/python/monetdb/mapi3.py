@@ -109,7 +109,7 @@ class Server:
             raise DatabaseError(prompt[1:])
 
         elif prompt.startswith(MSG_REDIRECT):
-           # a redirect can contain multiple redirects, for now we only use
+            # a redirect can contain multiple redirects, for now we only use
             # the first
             response = prompt.split()[0][1:].split(':')
 
