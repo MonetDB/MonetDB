@@ -4476,7 +4476,9 @@ mapi_unquote(char *msg)
 char *
 mapi_quote(const char *msg, int size)
 {
-	char *s = malloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
+	/* we absolutely don't need more than this (until we start
+	   producing octal escapes */
+	char *s = malloc((size < 0 ? strlen(msg) : (size_t) size) * 2 + 1);
 	char *t = s;
 
 	/* the condition is tricky: if initially size < 0, we must
