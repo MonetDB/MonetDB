@@ -45,8 +45,8 @@ class Connection:
         hostname -- hostname to connect to (default: localhost)
         port -- port to connect to (default: 50000)
         database -- name of the database (default: demo)
-        autocommit -- enable/disable auto commit (default: False, required by DBAPI)
-
+        autocommit -- enable/disable auto commit (default: False,
+                      required by DBAPI)
         """
 
         self.mapi = mapi.Server()

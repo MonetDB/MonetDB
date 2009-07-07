@@ -199,7 +199,7 @@ class Cursor:
                 query = operation % parameters
             else:
                 self.__exception_handler(ValueError,
-                        "Parameters should be empty or a dictionary, now it is %s"
+                        "Parameters should be None, dict or list, now it is %s"
                         % type(parameters))
         else:
            query = operation
@@ -289,12 +289,13 @@ class Cursor:
 
         logger.debug("end: %s" % end)
 
-        result = self.__rows[self.rownumber-self.__offset:end-self.__offset]
-        self.rownumber = min(end, len(self.__rows)+self.__offset)
+        result = self.__rows[self.rownumber - self.__offset:end - self.__offset]
+        self.rownumber = min(end, len(self.__rows) + self.__offset)
 
         while (end > self.rownumber) and self.nextset():
-                result += self.__rows[self.rownumber-self.__offset:end-self.__offset]
-                self.rownumber = min(end, len(self.__rows)+self.__offset)
+                result += self.__rows[self.rownumber - self.__offset:end -
+                        self.__offset]
+                self.rownumber = min(end, len(self.__rows) + self.__offset)
         return result
 
 
@@ -359,7 +360,6 @@ class Cursor:
         return True
 
 
-
     def setinputsizes(self, sizes):
         """
         This method would be used before the .execute*() method
@@ -377,14 +377,17 @@ class Cursor:
         """
         pass
 
+
     def __iter__(self):
         return self
+
 
     def next(self):
         row = self.fetchone()
         if not row:
             raise StopIteration
         return row
+
 
     def __store_result(self, block):
         """ parses the mapi result into a resultset"""
@@ -435,10 +438,13 @@ class Cursor:
                         internal_size = [int(x) for x in values]
                         display_size = internal_size
                     else:
-                        self.messages.append((InterfaceError, "unknown header field"))
-                        self.__exception_handler(InterfaceError, "unknown header field")
+                        self.messages.append((InterfaceError,
+                            "unknown header field"))
+                        self.__exception_handler(InterfaceError,
+                                "unknown header field")
 
-                    self.description = list(zip(column_name, type, display_size, internal_size, precision, scale, null_ok))
+                    self.description = list(zip(column_name, type,
+                        display_size, internal_size, precision, scale, null_ok))
 
                 if line.startswith(mapi.MSG_TUPLE):
                     values = self.__parse_tuple(line)
@@ -520,10 +526,12 @@ class Cursor:
         # values in a row are seperated by \t
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
-            return tuple([self.__pythonizer.convert(element.strip(), description[1]) for
-                    (element, description) in zip(elements, self.description)])
+            return tuple([self.__pythonizer.convert(element.strip(),
+                description[1]) for (element, description) in
+                zip(elements, self.description)])
         else:
-            self.__exception_handler(InterfaceError, "length of row doesn't match header")
+            self.__exception_handler(InterfaceError,
+                    "length of row doesn't match header")
 
 
     def scroll(self, value, mode='relative'):
@@ -537,8 +545,6 @@ class Cursor:
         An IndexError is raised in case a scroll operation would
         leave the result set.
         """
-
-
         self.__check_executed()
 
         if mode not in ['relative', 'absolute']:

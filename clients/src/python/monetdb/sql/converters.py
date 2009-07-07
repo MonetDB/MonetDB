@@ -143,7 +143,8 @@ class Monetizer:
         try:
             return self.mapping[type(data)](data)
         except KeyError:
-            raise ProgrammingError("type %s not supported as value" % type(data))
+            raise ProgrammingError("type %s not supported as value" %
+                    type(data))
 
     def __none(self, data):
         return "NULL"
@@ -211,7 +212,8 @@ class DBAPISet(frozenset):
 
 STRING    = DBAPISet([type_codes.VARCHAR])
 BINARY    = DBAPISet([type_codes.BLOB])
-NUMBER    = DBAPISet([type_codes.DECIMAL, type_codes.DOUBLE, type_codes.REAL, type_codes.BIGINT, type_codes.SMALLINT])
+NUMBER    = DBAPISet([type_codes.DECIMAL, type_codes.DOUBLE, type_codes.REAL,
+    type_codes.BIGINT, type_codes.SMALLINT])
 DATE      = DBAPISet([type_codes.DATE])
 TIME      = DBAPISet([type_codes.TIME])
 TIMESTAMP = DBAPISet([type_codes.TIMESTAMP])

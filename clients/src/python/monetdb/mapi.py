@@ -77,8 +77,8 @@ class Server:
 
 
     def __login(self, iteration=0):
-        """ Reads challenge from line, generate response and check if everything is
-        okay """
+        """ Reads challenge from line, generate response and check if
+        everything is okay """
 
         challenge = self.__getblock()
         response = self.__challenge_response(challenge)
@@ -96,21 +96,27 @@ class Server:
             raise DatabaseError(prompt[1:])
 
         elif prompt.startswith(MSG_REDIRECT):
-            response = prompt[1:].split(':')
+            # a redirect can contain multiple redirects, for now we only use
+            # the first
+            response = prompt.split()[0][1:].split(':')
             if response[1] == "merovingian":
-                logger.debug("II: merovingian proxy, restarting authenticatiton")
+                logger.debug("II: merovingian proxy, restarting " +
+                        "authenticatiton")
                 if iteration <= 10:
                     self.__login(iteration=iteration+1)
                 else:
-                    raise OperationalError("maximal number of redirects reached (10)")
+                    raise OperationalError("maximal number of redirects " +
+                    "reached (10)")
 
             elif response[1] == "monetdb":
                 self.hostname = response[2][2:]
                 self.port, self.database = response[3].split('/')
                 self.port = int(self.port)
-                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" % (self.hostname, self.port, self.database))
+                logger.info("II: merovingian redirect to monetdb://%s:%s/%s" %
+                        (self.hostname, self.port, self.database))
                 self.socket.close()
-                self.connect(self.hostname, self.port, self.username, self.password, self.database, self.language)
+                self.connect(self.hostname, self.port, self.username,
+                        self.password, self.database, self.language)
 
             else:
                 logger.error('!' + prompt[0])
@@ -149,7 +155,6 @@ class Server:
             raise ProgrammingError("unknown state: %s" % response)
 
 
-
     def __challenge_response(self, challenge):
         """ generate a response to a mapi login challenge """
         challenges = challenge.split(':')
@@ -178,7 +183,8 @@ class Server:
                 import hashlib
                 password = hashlib.md5(password).hexdigest()
             else:
-                raise NotSupportedError("The %s hash algorithm is not supported" % algo)
+                raise NotSupportedError("The %s hash algorithm is not " +
+                    "supported" % algo)
         elif protocol != "8":
             raise NotSupportedError("We only speak protocol v8 and v9")
 
@@ -201,7 +207,8 @@ class Server:
         else:
             pwhash = "{plain}" + password + salt
 
-        return ":".join(["BIG", self.username, pwhash, self.language, self.database]) + ":"
+        return ":".join(["BIG", self.username, pwhash, self.language,
+            self.database]) + ":"
 
 
     def __getblock(self):
@@ -211,9 +218,11 @@ class Server:
         while not last:
             flag = self.__getbytes(2)
             if len(flag) != 2:
-                raise OperationalError("server returned %s bytes, I need 2" % len(flag))
+                raise OperationalError("server returned %s bytes, I need 2" %
+                        len(flag))
 
-            unpacked = struct.unpack('<H', flag)[0] # unpack (little endian short)
+            # unpack (little endian short)
+            unpacked = struct.unpack('<H', flag)[0]
             length = unpacked >> 1
             last = unpacked & 1
             logger.debug("II: reading %i bytes" % length)

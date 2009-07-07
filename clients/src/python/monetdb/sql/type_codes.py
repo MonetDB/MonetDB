@@ -18,22 +18,22 @@
 # definition of types, for more info:
 # http://monetdb.cwi.nl/projects/monetdb/SQL/Documentation/Data-Types.html
 
-CHAR = 'char'                        # (L) character string with length L
-VARCHAR = 'varchar'                     # (L) string with atmost length L
+CHAR = 'char'                      # (L) character string with length L
+VARCHAR = 'varchar'                # (L) string with atmost length L
 CLOB = 'clob'
 BLOB = 'blob'
-DECIMAL = 'decimal'                     # (P,S)
-SMALLINT = 'smallint'                    # 16 bit integer
-INT = 'int'                         # 32 bit integer
-BIGINT = 'bigint'                      # 64 bit integer
-SERIAL = 'serial'                      # special 64 bit integer (sequence generator)
-REAL = 'real'                        # 32 bit floating point
-DOUBLE = 'double'                     # 64 bit floating point
+DECIMAL = 'decimal'                # (P,S)
+SMALLINT = 'smallint'              # 16 bit integer
+INT = 'int'                        # 32 bit integer
+BIGINT = 'bigint'                  # 64 bit integer
+SERIAL = 'serial'                  # special 64 bit integer (sequence generator)
+REAL = 'real'                      # 32 bit floating point
+DOUBLE = 'double'                  # 64 bit floating point
 BOOLEAN = 'boolean'
 DATE = 'date'
-TIME = 'time'                       # (T) time of day
-TIMESTAMP = 'timestamp'                  # (T) date concatenated with unique time
-INTERVAL = 'interval'                   # (Q) a temporal interval
+TIME = 'time'                      # (T) time of day
+TIMESTAMP = 'timestamp'            # (T) date concatenated with unique time
+INTERVAL = 'interval'              # (Q) a temporal interval
 
 MONTH_INTERVAL = 'month_interval'
 SEC_INTERVAL = 'sec_interval'
