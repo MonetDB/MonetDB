@@ -149,8 +149,14 @@ prop_infer_set (PFla_op_t *n, bool set)
             break;
 
         case la_semijoin:
-        case la_difference:
             l_set = n->prop->set;
+            r_set = true;
+            break;
+
+        case la_difference:
+            /* the left argument may not prune duplicates
+               (as this might lead to mor result tuples) */
+            l_set = false;
             r_set = true;
             break;
 
@@ -365,7 +371,6 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
             break;
 
         case la_semijoin:
-        case la_difference:
             /* adopt set information for left argument
                and allow duplicates in the right argument */
             r_col = col_NULL;
@@ -399,6 +404,15 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
                 }
             }
             l_set = false;
+            break;
+
+        case la_difference:
+            /* the left argument may not prune duplicates
+               (as this might lead to mor result tuples) */
+            l_set = false;
+            /* and allow duplicates in the right argument */
+            r_col = col_NULL;
+            r_set = true;
             break;
 
         case la_distinct:
