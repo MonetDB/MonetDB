@@ -111,9 +111,11 @@ test_setinputsizes (__main__.Test_Monetdb_Sql) ... ok
 test_setoutputsize (__main__.Test_Monetdb_Sql) ... ok
 test_setoutputsize_basic (__main__.Test_Monetdb_Sql) ... ok
 test_threadsafety (__main__.Test_Monetdb_Sql) ... ok
+test_unicode (__main__.Test_Monetdb_Sql) ... ok
+test_utf8 (__main__.Test_Monetdb_Sql) ... ok
 
 ----------------------------------------------------------------------
-Ran 35 tests
+Ran 37 tests
 
 OK
 
