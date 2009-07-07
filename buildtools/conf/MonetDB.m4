@@ -2108,6 +2108,7 @@ dnl libpthread
 have_pthread=auto
 PTHREAD_LIBS=""
 PTHREAD_INCS=""
+PTHREAD_EXTRA=""
 AC_ARG_WITH(pthread,
 	AC_HELP_STRING([--with-pthread=DIR],
 		[pthread library is installed in DIR]), 
@@ -2122,13 +2123,25 @@ yes|no|auto)
 esac
 case $host_os in
 *mingw*)
-	PTHREAD_INCS="$PTHREAD_INCS -D_DLL"
+	PTHREAD_EXTRA="-D_DDL"
 	;;
 esac
 if test "x$have_pthread" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+
+case $host_os in
+*mingw*)
+	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS/pthread $PTHREAD_EXTRA"
+	AC_CHECK_HEADER(pthread.h,[AC_DEFINE(HAVE_PTHREAD_H, 1,
+                        [Define if you have the pthread.h])
+			AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+			PTHREAD_INCS="$PTHREAD_INCS/pthread"]) 
+	;;
+*)
+	CPPFLAGS="$save_CPPFLAGS $PTHREAD_INCS $PTHREAD_EXTRA"
 	AC_CHECK_HEADERS(pthread.h semaphore.h sched.h) 
+	;;
+esac
 	CPPFLAGS="$save_CPPFLAGS"
 
 	save_LIBS="$LIBS"
@@ -2159,15 +2172,19 @@ if test "x$have_pthread" != xno; then
 		AC_DEFINE(HAVE_PTHREAD_SETSCHEDPRIO, 1,
 			[Define if you have the pthread_setschedprio function]))
 	LIBS="$save_LIBS"
+	CPPFLAGS="$save_CPPFLAGS"
 
 fi
 if test "x$have_pthread" != xno; then
 	AC_DEFINE(HAVE_LIBPTHREAD, 1, [Define if you have the pthread library])
-	CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+	PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
+	dnl CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
 else
 	PTHREAD_LIBS=""
+	PTHREAD_INCS=""
 fi
 AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(PTHREAD_INCS)
 
 dnl libreadline
 have_readline=auto
@@ -2399,7 +2416,9 @@ AC_CHECK_HEADERS([sys/socket.h winsock.h])
 dnl incase of windows we need to use try_link because windows uses the
 dnl pascal style of function calls and naming scheme. Therefore the 
 dnl function needs to be compiled with the correct header
-AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]))
+AC_CHECK_TYPE(SOCKET, , AC_DEFINE(SOCKET,int,[type used for sockets]), [#ifdef HAVE_WINSOCK_H
+#include <winsock.h>
+#endif])
 AC_CHECK_TYPE(socklen_t,
 	AC_DEFINE(HAVE_SOCKLEN_T, 1, [Define to 1 if the system has the type `socklen_t'.]),
 	AC_DEFINE(socklen_t,int,[type used by connect]),
