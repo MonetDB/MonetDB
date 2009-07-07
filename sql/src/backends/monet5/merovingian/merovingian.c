@@ -434,13 +434,30 @@ forkMserver(str database, sabdb** stats, int force)
 	if (*stats == NULL) {
 		remotedb rdb;
 		sabdb *walk = *stats;
+		size_t dbsize = strlen(database);
+		char *mdatabase = GDKmalloc(sizeof(char) * (dbsize + 2 + 1));
+		char mfullname[8096];  /* should be enough for everyone... */
+
+		/* each request has an implicit /'* (without ') added to match
+		 * all sub-levels to the request, such that a request for e.g. X
+		 * will return X/level1/level2/... */
+		memcpy(mdatabase, database, dbsize + 1);
+		if (dbsize <= 2 ||
+				mdatabase[dbsize - 2] != '/' ||
+				mdatabase[dbsize - 1] != '*')
+		{
+			mdatabase[dbsize++] = '/';
+			mdatabase[dbsize++] = '*';
+			mdatabase[dbsize++] = '\0';
+		}
 
 		/* check the remote databases */
 		pthread_mutex_lock(&_mero_remotedb_lock);
 
 		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
-			if (glob(database, rdb->fullname) == 1) {
+			snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
+			if (glob(mdatabase, mfullname) == 1) {
 				/* create a fake sabdb struct, chain where necessary */
 				if (walk != NULL) {
 					walk = walk->next = GDKmalloc(sizeof(sabdb));
@@ -463,6 +480,9 @@ forkMserver(str database, sabdb** stats, int force)
 		}
 
 		pthread_mutex_unlock(&_mero_remotedb_lock);
+
+		GDKfree(mdatabase);
+
 		if (*stats != NULL)
 			return(NO_ERR);
 

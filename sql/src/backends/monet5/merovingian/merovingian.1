@@ -200,7 +200,11 @@ used to structure a tag which is useful given that
 allows common path globbing using * on these tags.
 .P
 dbname/table/shard1
+
 pattern [A\-Za\-z0\-9./]+
+
+default match has implicit /* added to the search, making more generic
+search strings match more specific ones.
 
 .SH SIGNALS
 .B merovingian
