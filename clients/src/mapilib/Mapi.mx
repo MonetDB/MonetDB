@@ -2576,7 +2576,8 @@ mapi_start_talking(Mapi mid)
 						return mapi_start_talking(mid);
 					} else {
 						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
-						sprintf(tmp2, "error while parsing redirect: %s\n", tmp);
+						snprintf(tmp2, strlen(tmp) + 50,
+								"error while parsing redirect: %s\n", tmp);
 						mapi_close_handle(hdl);
 						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
 						return (mid->error);
