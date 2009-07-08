@@ -231,7 +231,10 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		BBPunfix(*bid);
 		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
 	}
-	GDKbloomfilter(b,c, &bn, &cn);
+	if ( BATcount(b) > BATcount(c) )
+		GDKbloomfilter(c,b, &cn, &bn);
+	else
+		GDKbloomfilter(b,c, &bn, &cn);
 	*cres= cn->batCacheid;
 	*bres= bn->batCacheid;
 	return MAL_SUCCEED;
