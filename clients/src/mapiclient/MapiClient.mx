@@ -44,8 +44,8 @@ The following options are supported:
 @item -l language 
 @tab --language=lang  
 @tab @{mal,sql,mil@} 
-@item -P passwd   
-@tab --passwd=passwd  
+@item -P[passwd]
+@tab --passwd[=passwd]
 @tab password 
 @item -p portnr   
 @tab --port=portnr    
@@ -59,8 +59,8 @@ The following options are supported:
 @item -t          
 @tab --time           
 @tab time commands 
-@item -u user     
-@tab --user=user      
+@item -u[user]
+@tab --user[=user]
 @tab user id 
 @item -H          
 @tab --history        
@@ -1788,12 +1788,12 @@ usage(const char *prog)
 	fprintf(stderr, " -i          | --interactive      read stdin after command line args\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,xquery,mal,mil}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
-	fprintf(stderr, " -P passwd   | --passwd=passwd    password\n");
+	fprintf(stderr, " -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)\n");
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
 	fprintf(stderr, " -t          | --time             time commands\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
-	fprintf(stderr, " -u user     | --user=user        user id\n");
+	fprintf(stderr, " -u[user]    | --user[=user]      user id (if no user id given, ask for one)\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
