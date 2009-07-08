@@ -3436,7 +3436,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_8_0_microsoft_vc80_crt_x86.msm"
+            "SourcePath" = "8:policy_9_0_microsoft_vc90_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -3450,7 +3450,7 @@
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:FALSE"
-            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC80_CRT_x86.msm"
+            "SourcePath" = "8:C:\\Program Files\\Common Files\\Merge Modules\\Microsoft_VC90_CRT_x86.msm"
                 "Properties"
                 {
                 }
