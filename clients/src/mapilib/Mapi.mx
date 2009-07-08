@@ -1012,7 +1012,8 @@ struct MapiStruct {
 	MapiHdl active;		/* set when not all rows have been received */
 
 	int cachelimit;		/* default maximum number of rows to cache */
-	int redircnt;		/* redirection count */
+	int redircnt;		/* redirection count, used to cut of redirect loops */
+	char *redirects[50];/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
@@ -2535,72 +2536,14 @@ mapi_start_talking(Mapi mid)
 					motdlen += strlen(result->cache.line[i].rows) + 1;
 					break;
 				case '^': {
-					/* FIXME: there may be multiple redirects */
-					char *tmp = result->cache.line[i].rows;
-					char *tmp2 = "", *p = NULL, *db = NULL;
-
-					/* redirect, looks like:
-					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
-					 * or
-					 * ^mapi:merovingian://proxy?database=test */
-
-					/* first see if we reached our redirection limit */
-					if (mid->redircnt > 10) {
-						mapi_close_handle(hdl);
-						mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
-						return (mid->error);
-					}
-					/* see if we can possibly handle the redirect */
-					tmp++;
-					if (strncmp("mapi:monetdb", tmp, 12) == 0) {
-						/* parse components (we store the args
-						 * immediately in the mid... ok, that's dirty */
-						tmp += strlen("mapi:monetdb://");
-						p = tmp;
-						if ((tmp = strchr(tmp, ':')) != NULL) {
-							*tmp++ = '\0';
-							tmp2 = tmp;
-						} else {
-							tmp = p;
-						}
-						if ((tmp = strchr(tmp, '/')) != NULL) {
-							*tmp++ = '\0';
-							mid->port = atoi(tmp2);
-							if (mid->port == 0)
-								mid->port = 50000; /* hardwired default */
-							db = tmp;
-						} else {
-							tmp = p;
-							db = NULL;
-						}
-						if (mid->hostname)
-							free(mid->hostname);
-						mid->hostname = strdup(p);
-						if (mid->database) 
-							free(mid->database);
-						mid->database = db != NULL ? strdup(db) : NULL;
-
-						parse_uri_query(mid, tmp);
-
-						mid->redircnt++;
-						mapi_close_handle(hdl);
-						/* reconnect using the new values */
-						return (mapi_reconnect(mid));
-					} else if (strncmp("mapi:merovingian", tmp, 16) == 0) {
-						/* this is a proxy "offer", it means we should
-						 * restart the login ritual, without
-						 * disconnecting */
-						parse_uri_query(mid, tmp + 16);
-						mid->redircnt++;
-						return mapi_start_talking(mid);
-					} else {
-						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
-						snprintf(tmp2, strlen(tmp) + 50,
-								"error while parsing redirect: %s\n", tmp);
-						mapi_close_handle(hdl);
-						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
-						return (mid->error);
-					}
+					char **r = mid->redirects;
+					int m = sizeof(mid->redirects) - 1;
+					for (; *r != NULL && m > 0; r++)
+						m--;
+					if (m == 0)
+						break;
+					*r++ = strdup(result->cache.line[i].rows + 1);
+					*r = NULL;
 				} break;
 				}
 			}
@@ -2614,6 +2557,95 @@ mapi_start_talking(Mapi mid)
 					strcat(mid->motd, "\n");
 				}
 		}
+
+		if (*mid->redirects != NULL) {
+			char *red;
+			char *p, *q;
+			char **fr;
+
+			/* redirect, looks like:
+			 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
+			 * or
+			 * ^mapi:merovingian://proxy?database=test */
+
+			/* first see if we reached our redirection limit */
+			if (mid->redircnt > 10) {
+				mapi_close_handle(hdl);
+				mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
+				return (mid->error);
+			}
+			/* we only implement following the first */
+			red = mid->redirects[0];
+
+			/* see if we can possibly handle the redirect */
+			if (strncmp("mapi:monetdb", red, 12) == 0) {
+				char *db = NULL;
+				/* parse components (we store the args
+				 * immediately in the mid... ok, that's dirty) */
+				red += strlen("mapi:monetdb://");
+				p = red;
+				if ((red = strchr(red, ':')) != NULL) {
+					*red++ = '\0';
+					q = red;
+				} else {
+					red = p;
+				}
+				if ((red = strchr(red, '/')) != NULL) {
+					*red++ = '\0';
+					mid->port = atoi(q);
+					if (mid->port == 0)
+						mid->port = 50000; /* hardwired default */
+					db = red;
+				} else {
+					red = p;
+					db = NULL;
+				}
+				if (mid->hostname)
+					free(mid->hostname);
+				mid->hostname = strdup(p);
+				if (mid->database) 
+					free(mid->database);
+				mid->database = db != NULL ? strdup(db) : NULL;
+
+				parse_uri_query(mid, red);
+
+				mid->redircnt++;
+				mapi_close_handle(hdl);
+				/* free all redirects */
+				fr = mid->redirects;
+				mid->redirects[0] = NULL;
+				while (*fr != NULL) {
+					free(*fr);
+					*fr = NULL;
+					fr++;
+				}
+				/* reconnect using the new values */
+				return mapi_reconnect(mid);
+			} else if (strncmp("mapi:merovingian", red, 16) == 0) {
+				/* this is a proxy "offer", it means we should
+				 * restart the login ritual, without
+				 * disconnecting */
+				parse_uri_query(mid, red + 16);
+				mid->redircnt++;
+				/* free all redirects */
+				fr = mid->redirects;
+				mid->redirects[0] = NULL;
+				while (*fr != NULL) {
+					free(*fr);
+					*fr = NULL;
+					fr++;
+				}
+				return mapi_start_talking(mid);
+			} else {
+				q = alloca(sizeof(char) * (strlen(red) + 50));
+				snprintf(q, strlen(red) + 50,
+						"error while parsing redirect: %s\n", red);
+				mapi_close_handle(hdl);
+				mapi_setError(mid, q, "mapi_start_talking", MERROR);
+				return (mid->error);
+			}
+		}
+
 		mid->versionId = strcmp("Mserver 5.0", result->cache.line[0].rows) == 0 ? 5 : 4;
 	}
 	mapi_close_handle(hdl);
