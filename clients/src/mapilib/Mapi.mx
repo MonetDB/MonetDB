@@ -2034,6 +2034,8 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 MapiMsg
 mapi_destroy(Mapi mid)
 {
+	char **r;
+
 	mapi_clrError(mid);
 
 	while (mid->first)
@@ -2057,6 +2059,13 @@ mapi_destroy(Mapi mid)
 		free(mid->database);
 	if (mid->server)
 		free(mid->server);
+
+	r = mid->redirects;
+	while (*r) {
+		free(*r);
+		r++;
+	}
+
 	free(mid);
 	return MOK;
 }
@@ -2690,8 +2699,8 @@ mapi_connect(const char *host, int port, const char *username, const char *passw
 	return mid;
 }
 
-/* Create an unconnected connection handle containing redirects */
-Mapi
+/* Returns an malloced NULL-terminated array with redirects */
+char **
 mapi_resolve(const char *host, int port, const char *pattern)
 {
 	int rmax;
@@ -2700,13 +2709,20 @@ mapi_resolve(const char *host, int port, const char *pattern)
 		rmax = mid->redirmax;
 		mid->redirmax = 0;
 		mapi_reconnect(mid);  /* real connect, don't follow redirects */
+		mid->redirmax = rmax;
 		if (mid->error == MOK) {
 			close_connection(mid); /* we didn't expect a connection actually */
 		} else {
-			mapi_clrError(mid);
+			char **ret = malloc(sizeof(char *) * sizeof(mid->redirects));
+			memcpy(ret, mid->redirects,
+					sizeof(char *) * sizeof(mid->redirects));
+			mid->redirects[0] = NULL;  /* make sure the members aren't freed */
+			mapi_destroy(mid);
+			return ret;
 		}
 	}
-	return mid;
+	mapi_destroy(mid);
+	return NULL;
 }
 
 stream **
