@@ -1013,6 +1013,7 @@ struct MapiStruct {
 
 	int cachelimit;		/* default maximum number of rows to cache */
 	int redircnt;		/* redirection count, used to cut of redirect loops */
+	int redirmax;       /* maximum redirects before giving up */
 	char *redirects[50];/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
@@ -1948,6 +1949,7 @@ mapi_new(void)
 
 	mid->cachelimit = 100;
 	mid->redircnt = 0;
+	mid->redirmax = 10;
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
@@ -2569,9 +2571,10 @@ mapi_start_talking(Mapi mid)
 			 * ^mapi:merovingian://proxy?database=test */
 
 			/* first see if we reached our redirection limit */
-			if (mid->redircnt > 10) {
+			if (mid->redircnt >= mid->redirmax) {
 				mapi_close_handle(hdl);
-				mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
+				mapi_setError(mid, "too many redirects",
+						"mapi_start_talking", MERROR);
 				return (mid->error);
 			}
 			/* we only implement following the first */
@@ -2584,6 +2587,7 @@ mapi_start_talking(Mapi mid)
 				 * immediately in the mid... ok, that's dirty) */
 				red += strlen("mapi:monetdb://");
 				p = red;
+				q = NULL;
 				if ((red = strchr(red, ':')) != NULL) {
 					*red++ = '\0';
 					q = red;
@@ -2592,9 +2596,11 @@ mapi_start_talking(Mapi mid)
 				}
 				if ((red = strchr(red, '/')) != NULL) {
 					*red++ = '\0';
-					mid->port = atoi(q);
-					if (mid->port == 0)
-						mid->port = 50000; /* hardwired default */
+					if (q != NULL) {
+						mid->port = atoi(q);
+						if (mid->port == 0)
+							mid->port = 50000; /* hardwired default */
+					}
 					db = red;
 				} else {
 					red = p;
@@ -2681,6 +2687,25 @@ mapi_connect(const char *host, int port, const char *username, const char *passw
 	mid = mapi_mapi(host, port, username, password, lang, dbname);
 	if (mid && mid->error == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
+	return mid;
+}
+
+/* Create an unconnected connection handle containing redirects */
+Mapi
+mapi_resolve(const char *host, int port, const char *pattern)
+{
+	int rmax;
+	Mapi mid = mapi_mapi(host, port, "mero", "mero", "sql", pattern);
+	if (mid && mid->error == MOK) {
+		rmax = mid->redirmax;
+		mid->redirmax = 0;
+		mapi_reconnect(mid);  /* real connect, don't follow redirects */
+		if (mid->error == MOK) {
+			close_connection(mid); /* we didn't expect a connection actually */
+		} else {
+			mapi_clrError(mid);
+		}
+	}
 	return mid;
 }
 
