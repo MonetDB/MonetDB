@@ -383,7 +383,8 @@ remote_export str RMTresolve(int *ret, str *pat) {
 		port = atoi(tmp);
 	if (port == 0)
 		port = 50000;  /* hardcoded default from merovingian.mx */
-	redirs = mapi_resolve("localhost", port, *pat);
+	gethostname(path, 8096);
+	redirs = mapi_resolve(path, port, *pat);
 
 	if (redirs == NULL)
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
