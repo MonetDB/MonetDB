@@ -100,6 +100,7 @@ command epilogue():void
 address RMTepilogue
 comment "Release the resources held by the remote module.";
 
+
 # global connection management functions
 
 command create(dbname:str, host:str, port:int):str
@@ -113,6 +114,10 @@ comment "Destroy a previously user-defined connection to a server.";
 command getList()(list:bat[:oid,:str], kind:bat[:oid,:str])
 address RMTgetList
 comment "List available databases for use with connect() and their kind (self, user, local, remote).";
+
+command resolve(pattern:str):bat[:oid,:str]
+address RMTresolve
+comment "resolve a pattern against Merovingian and return the redirects";
 
 # session local connection instantiation functions
 
@@ -331,6 +336,71 @@ str RMTdestroy(int *ret, str *dbname) {
 }
 
 @h
+remote_export str RMTresolve(int *ret, str *pat);
+@c
+/**
+ * Returns a BAT with valid redirects for the given pattern.  If
+ * merovingian is not running, this function throws an error.
+ */
+remote_export str RMTresolve(int *ret, str *pat) {
+#ifdef WIN32
+	throw(MAL, "remote.resolve", "merovingian is not available on "
+			"your platform, sorry"); /* please upgrade to Linux, etc. */
+#else
+	BAT *list;
+	char mero_running;
+	char path[8096];
+	int fd;
+	char **redirs;
+	str tmp;
+	int port;
+
+	if (pat == NULL || *pat == NULL || strcmp(*pat, (str)str_nil) == 0)
+		throw(ILLARG, "remote.resolve",
+				ILLEGAL_ARGUMENT ": pattern is NULL or nil");
+
+	mero_running = 1;
+	snprintf(path, 8096, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
+	fd = MT_lockf(path, F_TLOCK, 4, 1);
+	if (fd >= 0 || fd <= -2) {
+		if (fd >= 0) {
+			/* oops, not running */
+			close(fd);
+		}
+		mero_running = 0;
+	}
+
+	if (mero_running == 0)
+		throw(MAL, "remote.resolve", "this function needs merovingian "
+				"to be running, please start it first");
+
+	list = BATnew(TYPE_oid, TYPE_str, 20);
+	if (list == NULL)
+		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+
+	tmp = GDKgetenv("mero_port");
+	if (tmp != NULL)
+		port = atoi(tmp);
+	if (port == 0)
+		port = 50000;  /* hardcoded default from merovingian.mx */
+	redirs = mapi_resolve("localhost", port, *pat);
+
+	if (redirs == NULL)
+		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
+
+	while (*redirs != NULL) {
+		BUNappend(list, (ptr)*redirs, FALSE);
+		free(*redirs);
+		redirs++;
+	}
+	free(redirs);
+
+	BBPkeepref(*ret = list->batCacheid);
+	return(MAL_SUCCEED);
+#endif
+}
+
+@h
 remote_export str RMTgetList(int *ret, int *ret2);
 @c
 #define SOCKPTR struct sockaddr *
@@ -490,7 +560,6 @@ remote_export str RMTgetList(int *ret, int *ret2) {
 	return(MAL_SUCCEED);
 }
 
-
 /**
  * Helper function to return a userconn struct containing the bits needed
  * to open up a connection.  This function is very similar to
@@ -560,7 +629,7 @@ static INLINE userconn RMTgetConnDefinition(str dbname) {
 				ret->port = 0;
 				tmp = GDKgetenv("mero_port");
 				if (tmp != NULL)
-					ret->port = atoi(GDKgetenv("mero_port"));
+					ret->port = atoi(tmp);
 				if (ret->port == 0)
 					ret->port = 50000;  /* hardcoded default from merovingian.mx */
 				break;
