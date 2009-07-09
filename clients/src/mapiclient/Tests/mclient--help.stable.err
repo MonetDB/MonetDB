@@ -10,7 +10,7 @@ stderr of test 'mclient--help` in directory 'src/mapiclient` itself:
 # 13:46:19 >  Mtimeout -timeout 60 mclient --help
 # 13:46:19 >  
 
-Usage: /ufs/sjoerd/src/MonetDB/virgin/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-mclient --language=(sql|xquery|mal|mil) [ options ]
+Usage: /ufs/sjoerd/src/MonetDB/virgin-stable/clients/x86_64-unknown-linux-gnu/src/mapiclient/.libs/lt-mclient --language=(sql|xquery|mal|mil) [ options ]
 
 Options are:
  -d database | --database=database  database to connect to
@@ -22,12 +22,12 @@ Options are:
  -i          | --interactive     read stdin after command line args
  -l language | --language=lang   {sql,xquery,mal,mil}
  -L logfile  | --log=logfile     save client/server interaction
- -P passwd   | --passwd=passwd   password
+ -P[passwd]  | --passwd[=passwd]  password (if no passwd given, ask for one)
  -p portnr   | --port=portnr     port to connect to
  -s stmt     | --statement=stmt  run single statement
  -t          | --time            time commands
  -X          | --Xdebug          trace mapi network interaction
- -u user     | --user=user       user id
+ -u[user]    | --user[=user]      user id (if no user id given, ask for one)
  -?          | --help            show this usage message
  -| cmd      | --pager=cmd        for pagination
 
