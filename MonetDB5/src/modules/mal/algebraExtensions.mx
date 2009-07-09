@@ -144,7 +144,7 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	/* consider it an out-of-memory situation 
 		when more then 25% is used, 
 		otherwise use normal processing scheme */
-	if ( GDKbatfootprint(b) < 25 ){
+	if ( b->ttype != TYPE_int || GDKbatfootprint(b) < 25 ){
 		*bn = b;
 		BBPkeepref(b->batCacheid);
 		*cn = c;
@@ -253,15 +253,12 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid = (int *) getArgReference(stk, pci, 2);
 	int *cid = (int *) getArgReference(stk, pci, 3);
 	BAT *b, *c, *bn, *cn;
-	int tt;
 
 	(void) cntxt;
+	(void) mb;
+
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
-	if ( (tt= getTailType(getArgType(mb,pci,2))) != TYPE_int){
-		BBPunfix(*bid);
-		throw(MAL, "bbp.prejoin", OPERATION_FAILED "non-supported type");
-	}
 	if ( (c = BATdescriptor(*cid)) == NULL) {
 		BBPunfix(*bid);
 		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
