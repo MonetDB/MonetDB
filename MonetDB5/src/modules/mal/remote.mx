@@ -111,9 +111,9 @@ command destroy(alias:str):void
 address RMTdestroy
 comment "destroy a previously user-defined connection to a server";
 
-command getList()(list:bat[:oid,:str], kind:bat[:oid,:str])
+command getList()(alias:bat[:oid,:str], uri:bat[:oid,:str])
 address RMTgetList
-comment "list available user-defined databases for use with connect() and their kind (user, self).";
+comment "list available user-defined databases for use with connect() and their connection URI";
 
 command resolve(pattern:str):bat[:oid,:str]
 address RMTresolve
@@ -458,48 +458,36 @@ remote_export str RMTresolve(int *ret, str *pat) {
 remote_export str RMTgetList(int *ret, int *ret2);
 @c
 /**
- * Returns a BAT with user defined connections.  The last entry, marked
- * as "self", represents the currently running database.
+ * Returns two BATs with user defined connection alias and its URI.
  */
 remote_export str RMTgetList(int *ret, int *ret2) {
-	BAT *list, *kind;
-	str type;
+	BAT *list, *uris;
+	char uri[512];
 	userconn c;
-	sabdb *me;
-	str tmp;
 
 	list = BATnew(TYPE_oid, TYPE_str, 20);
 	if (list == NULL)
 		throw(MAL, "remote.getList", MAL_MALLOC_FAIL);
-	kind = BATnew(TYPE_oid, TYPE_str, 20);
-	if (kind == NULL){
+	uris = BATnew(TYPE_oid, TYPE_str, 20);
+	if (uris == NULL){
 		BBPunfix(list->batCacheid);
 		throw(MAL, "remote.getList", MAL_MALLOC_FAIL);
 	}
 
-	type = "user";
 	mal_set_lock(mal_remoteLock, "remote.list");
 	c = userconns;
 	/* walk through the list */
 	while (c != NULL) {
+		snprintf(uri, 512, "mapi:monetdb://%s:%d/%s",
+				c->host, c->port, c->dbname);
 		BUNappend(list, (ptr)c->alias, FALSE);
-		BUNappend(kind, (ptr)type, FALSE);
+		BUNappend(uris, (ptr)uri, FALSE);
 		c = c->next;
 	}
 	mal_unset_lock(mal_remoteLock, "remote.list");
 
-	/* part 2: "self" -- contact Sabaoth */
-	type = "self";
-	rethrow("remote.list", tmp, SABAOTHgetMyStatus(&me));
-	/* it is REALLY strange if you can have an operational server
-	 * without a database */
-	assert(me != NULL);
-	BUNappend(list, (ptr)me->dbname, FALSE);
-	BUNappend(kind, (ptr)type, FALSE);
-	SABAOTHfreeStatus(&me);
-
 	BBPkeepref(*ret = list->batCacheid);
-	BBPkeepref(*ret2 = kind->batCacheid);
+	BBPkeepref(*ret2 = uris->batCacheid);
 	return(MAL_SUCCEED);
 }
 
