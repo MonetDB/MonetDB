@@ -14,7 +14,9 @@ stdout of test 'remote06` in directory 'src/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://pegasus:36372/
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
-    db := const.take("dbname");
+    uri := sabaoth.getLocalConnectionURI();
+    db := "remote06";
+    remote.create(db,uri);
 # create a persistent connecton to ourself 
     conn1:str  := remote.connect(db,"monetdb","monetdb");
 # do it again ... 

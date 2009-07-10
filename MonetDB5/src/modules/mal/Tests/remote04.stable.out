@@ -17,7 +17,9 @@ stdout of test 'remote04` in directory 'src/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
 function user.main():void;
 # let connect figure out itself how to connect to the running db 
-    db := const.take("dbname");
+    uri := sabaoth.getLocalConnectionURI();
+    db := "remote04";
+    remote.create(db,uri);
     conn:str  := remote.connect(db,"monetdb","monetdb");
     io.print(conn);
     b := bat.new(:str,:int);
@@ -40,10 +42,10 @@ function user.main():void;
 # shutdown 
     remote.disconnect(conn);
 end main;
-[ "mTests_src_modules_mal_monetdb_0" ]
+[ "remote04_monetdb_0" ]
 [ "rmt0_b_bat_str_int" ]
-[ "rmt1__18_int" ]
-[ "rmt2__30_int" ]
+[ "rmt1__20_int" ]
+[ "rmt2__32_int" ]
 #-----------------#
 # h	t	  # name
 # str	int	  # type

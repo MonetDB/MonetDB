@@ -1,5 +1,7 @@
 # let connect figure out itself how to connect to the running db
-db := const.take("dbname");
+uri := sabaoth.getLocalConnectionURI();
+db := "remote06";
+remote.create(db, uri);
 
 # create a persistent connecton to ourself
 conn1:str := remote.connect(db, "monetdb", "monetdb");

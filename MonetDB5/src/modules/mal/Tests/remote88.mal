@@ -21,8 +21,9 @@ function octopus.bind(conn:str,v:int):bat[:oid,:int];
 end bind;
 
 function octopus.tentacle(v:int):bat[:oid,:int];
-	d := const.take("dbname");
-	conn:str := remote.connect(d, "monetdb", "monetdb", "msql");
+	# this only works because the example doesn't go off of the same
+	# machine
+	conn:str := remote.connect("octopus_leg_to_head", "monetdb", "monetdb", "msql");
 	b:= octopus.bind(conn,v);
 catch RMTexception:str;
 	io.print(RMTexception);
@@ -31,8 +32,8 @@ exit RMTexception;
 	return tentacle:=b;
 end tentacle;
 
-function octopus.exec(dbname:str, query:str, version:int):bat[:oid,:int];
-	conn:str := remote.connect(dbname, "monetdb", "monetdb","msql");
+function octopus.exec(alias:str, query:str, version:int):bat[:oid,:int];
+	conn:str := remote.connect(alias, "monetdb", "monetdb", "msql");
 	m:= remote.put(conn,version);
 	v:= remote.put(conn,nil:bat[:oid,:int]);
 	v:= remote.exec(conn,"octopus",query,m);
@@ -40,15 +41,18 @@ function octopus.exec(dbname:str, query:str, version:int):bat[:oid,:int];
 	remote.disconnect(conn);
 	return exec:=res;
 end exec;
-	
+
+uri := sabaoth.getLocalConnectionURI();
+remote.create("octopus_head_to_leg", uri);
+remote.create("octopus_leg_to_head", uri);
+
 barrier (k,v):= language.newRange(0:int);
 	io.print(v);
-	d := const.take("dbname");
 barrier go:= language.dataflow();
-	v1:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
-	v2:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
-	v3:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
-	v4:bat[:oid,:int] :=octopus.exec(d,"tentacle",v);
+	v1:bat[:oid,:int] :=octopus.exec("octopus_head_to_leg", "tentacle", v);
+	v2:bat[:oid,:int] :=octopus.exec("octopus_head_to_leg", "tentacle", v);
+	v3:bat[:oid,:int] :=octopus.exec("octopus_head_to_leg", "tentacle", v);
+	v4:bat[:oid,:int] :=octopus.exec("octopus_head_to_leg", "tentacle", v);
 	res:= mat.pack(v1,v2,v3,v4);
 exit go;
 	redo (k,v) := language.nextElement(1:int,25:int);

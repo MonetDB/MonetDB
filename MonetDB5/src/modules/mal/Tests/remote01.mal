@@ -7,7 +7,7 @@ h := sabaoth.getLocalConnectionHost();
 p := sabaoth.getLocalConnectionPort();
 
 # create a connecton to ourself
-remote.create(d, h, p);
+remote.create(d, h, p, d);
 conn := remote.connect(d, "monetdb", "monetdb");
 io.print(conn);
 
@@ -18,7 +18,7 @@ catch MALException:str;
 exit MALException;
 
 # should raise an exception because making duplicates makes no sense
-remote.create(d, h, p);
+remote.create(d, h, p, d);
 catch MALException:str;
 	io.printf("!%s\n",MALException);
 exit MALException;

@@ -25,7 +25,7 @@ function user.main():void;
     h := sabaoth.getLocalConnectionHost();
     p := sabaoth.getLocalConnectionPort();
 # create a connecton to ourself 
-    remote.create(d,h,p);
+    remote.create(d,h,p,d);
     conn := remote.connect(d,"monetdb","monetdb");
     io.print(conn);
 # retrieve a value (that for sure won't exist) 
@@ -34,7 +34,7 @@ catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
 # should raise an exception because making duplicates makes no sense 
-    remote.create(d,h,p);
+    remote.create(d,h,p,d);
 catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
@@ -51,7 +51,7 @@ end main;
 [ "mTests_src_modules_mal_monetdb_0" ]
 !MALException:remote.get:'b1_str' may not be used before being initialized
 
-!MALException:remote.create:Operation failed: connection with name 'mTests_src_modules_mal' already exists
+!MALException:remote.create:Operation failed: connection with alias 'mTests_src_modules_mal' already exists
 !MALException:remote.disconnect:Operation failed No such connection with name 'mTests_src_modules_mal_monetdb_0'
 
 
