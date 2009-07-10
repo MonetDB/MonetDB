@@ -432,7 +432,10 @@ forkMserver(str database, sabdb** stats, int force)
 
 	/* NOTE: remotes also include locals through self announcement */
 	if (*stats == NULL) {
-		remotedb rdb;
+		struct _remotedb dummy = { NULL, NULL, NULL, NULL, 0, NULL };
+		remotedb rdb = NULL;
+		remotedb pdb = NULL;
+		remotedb down = NULL;
 		sabdb *walk = *stats;
 		size_t dbsize = strlen(database);
 		char *mdatabase = GDKmalloc(sizeof(char) * (dbsize + 2 + 1));
@@ -451,10 +454,12 @@ forkMserver(str database, sabdb** stats, int force)
 			mdatabase[dbsize++] = '\0';
 		}
 
-		/* check the remote databases */
+		/* check the remote databases, in private */
 		pthread_mutex_lock(&_mero_remotedb_lock);
 
-		rdb = _mero_remotedbs;
+		dummy.next = _mero_remotedbs;
+		rdb = dummy.next;
+		pdb = &dummy;
 		while (rdb != NULL) {
 			snprintf(mfullname, sizeof(mfullname), "%s/", rdb->fullname);
 			if (glob(mdatabase, mfullname) == 1) {
@@ -475,8 +480,23 @@ forkMserver(str database, sabdb** stats, int force)
 				walk->conns->val = GDKstrdup(rdb->conn);
 				walk->conns->next = NULL;
 				walk->next = NULL;
+
+				/* move down first returned entry, as to implement a
+				 * round-robin DNS-like algorithm */
+				if (down == NULL) {
+					down = rdb;
+					pdb->next = rdb->next;
+					rdb->next = NULL;
+					rdb = pdb;
+				}
 			}
+			pdb = rdb;
 			rdb = rdb->next;
+		}
+
+		if (down != NULL) {
+			pdb->next = down;
+			down->next = NULL;
 		}
 
 		pthread_mutex_unlock(&_mero_remotedb_lock);
