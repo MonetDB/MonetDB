@@ -100,25 +100,24 @@ comment "Release the resources held by the remote module.";
 
 # global connection management functions
 
-command create(alias:str, conn:url):str
-address RMTcreateAlias
-comment "Create a user-defined connection to a server using the url from
-remote resolver.";
+command create(alias:str, uri:str):str
+address RMTcreateURI
+comment "create a user-defined connection to a server using an URI typically from remote.resolve()";
 command create(alias:str, host:str, port:int, dbname:str):str
 address RMTcreate
-comment "Create a user-defined connection to a server.";
+comment "create a user-defined connection to a server";
 
-command destroy(dbname:str):void
+command destroy(alias:str):void
 address RMTdestroy
-comment "Destroy a previously user-defined connection to a server.";
+comment "destroy a previously user-defined connection to a server";
 
 command getList()(list:bat[:oid,:str], kind:bat[:oid,:str])
 address RMTgetList
-comment "List available databases for use with connect() and their kind (self, user, local, remote).";
+comment "list available user-defined databases for use with connect() and their kind (user, self).";
 
 command resolve(pattern:str):bat[:oid,:str]
 address RMTresolve
-comment "resolve a pattern against Merovingian and return the redirects";
+comment "resolve a pattern against Merovingian and return the URIs";
 
 # session local connection instantiation functions
 
@@ -220,7 +219,7 @@ typedef struct _connection {
 } *connection;
 
 typedef struct _userconn {
-	char             *alias;     /* name of the connection */
+	char             *alias;      /* name of the connection */
 	char             *dbname;     /* name of the database */
 	char             *host;       /* host to connect to */
 	int              port;        /* target port */
@@ -237,10 +236,54 @@ static connection conns = NULL;
 static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 
 @h
+remote_export str RMTcreateURI(str *ret, str *alias, str *uri);
+@c
+/**
+ * Wrapper around RMTcreate that parses the URI.
+ */
+remote_export str RMTcreateURI(str *ret, str *alias, str *ouri) {
+	char uri[8096];
+	char *p;
+	char *host;
+	int port;
+	char *dbname;
+
+	/* don't need to check alias, as we rely on RMTcreate to do that */
+	if (ouri == NULL || *ouri == NULL || strcmp(*ouri, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": uri is NULL or nil");
+
+	if (strncmp(*ouri, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) != 0)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": unsupported URI: "
+				"%s", *ouri);
+
+	snprintf(uri, 8096, "%s", *ouri + sizeof("mapi:monetdb://") - 1);
+
+	if ((p = strchr(uri, ':')) == NULL)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": URI must contain "
+				"a port number after the hostname: %s", *ouri);
+	*p++ = '\0';
+	host = uri;
+	dbname = p; /* temp misuse */
+	
+	if ((p = strchr(dbname, '/')) == NULL)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": URI must contain "
+				"database name: %s", *ouri);
+	*p++ = '\0';
+	port = atoi(dbname);
+	if (port <= 0)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": port invalid: %s",
+				*ouri);
+
+	dbname = p;
+
+	return(RMTcreate(ret, alias, &host, &port, &dbname));
+}
+
+@h
 remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbname);
 @c
 /**
- * Stores a new connection in the global state.  The connection is not
+ * Stores a new user-defined connection.  The connection is not
  * validated.
  */
 remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbname) {
@@ -248,12 +291,14 @@ remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbn
 
 	*ret = 0;
 
-	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Database name is NULL or nil");
+	if (alias == NULL || *alias == NULL || strcmp(*alias, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": alias name is NULL or nil");
 	if (host == NULL || *host == NULL || strcmp(*host, (str)str_nil) == 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Hostname is NULL or nil");
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": hostname is NULL or nil");
 	if (port == NULL || *port <= 0)
-		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT " Port is NULL or <= 0");
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": port is NULL or <= 0");
+	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
+		throw(ILLARG, "remote.create", ILLEGAL_ARGUMENT ": database name is NULL or nil");
 
 	mal_set_lock(mal_remoteLock, "remote.create"); /* global userconns */
 	/* find a free slot, start with special case of connections not
@@ -267,10 +312,10 @@ remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbn
 		do {
 			/* at the same time also check if this connection name
 			 * already exists */
-			if (strcmp(c->dbname, *dbname) == 0) {
+			if (strcmp(c->alias, *alias) == 0) {
 				mal_unset_lock(mal_remoteLock, "remote.create"); /* global userconns */
-				throw(MAL, "remote.create", OPERATION_FAILED ": connection with name "
-						"'%s' already exists", *dbname);
+				throw(MAL, "remote.create", OPERATION_FAILED ": connection "
+						"with alias '%s' already exists", *alias);
 			}
 			t = c;
 			c = c->next;
@@ -286,7 +331,7 @@ remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbn
 	c->next = NULL;
 
 	mal_unset_lock(mal_remoteLock, "remote.create"); /* global userconns */
-	*ret = GDKstrdup(*dbname);
+	*ret = GDKstrdup(*alias);
 	return(MAL_SUCCEED);
 }
 
@@ -294,14 +339,15 @@ remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbn
 remote_export str RMTdestroy(int *ret, str *alias);
 @c
 /**
- * Removes a connection in the global state.  If the connection is in
+ * Removes a user-defined connection.  If the connection is in
  * use by a client, it will remain available for that client.
  */
 str RMTdestroy(int *ret, str *alias) {
 	userconn c, t;
 
-	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.destroy", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
+	if (alias == NULL || *alias == NULL || strcmp(*alias, (str)str_nil) == 0)
+		throw(ILLARG, "remote.destroy", ILLEGAL_ARGUMENT ": connection alias"
+				"is NULL or nil");
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
@@ -311,10 +357,11 @@ str RMTdestroy(int *ret, str *alias) {
 	t = NULL;
 	/* walk through the list */
 	while (c != NULL) {
-		if (strcmp(c->dbname, *dbname) == 0) {
+		if (strcmp(c->alias, *alias) == 0) {
 			/* ok, delete it... */
 			if (t == NULL) { /* the top */
 				t = c->next;
+				GDKfree(c->alias);
 				GDKfree(c->dbname);
 				GDKfree(c->host);
 				GDKfree(c);
@@ -323,6 +370,7 @@ str RMTdestroy(int *ret, str *alias) {
 				/* connect the grand child to the grand parent */
 				t->next = c->next;
 				/* and kill the parent in the middle */
+				GDKfree(c->alias);
 				GDKfree(c->dbname);
 				GDKfree(c->host);
 				GDKfree(c);
@@ -335,7 +383,8 @@ str RMTdestroy(int *ret, str *alias) {
 	}
 
 	mal_unset_lock(mal_remoteLock, "remote.destroy");
-	throw(MAL, "remote.destroy", OPERATION_FAILED " No such connection with name '%s'", *dbname);
+	throw(MAL, "remote.destroy", OPERATION_FAILED ": no such connection "
+			"with alias '%s'", *alias);
 }
 
 @h
