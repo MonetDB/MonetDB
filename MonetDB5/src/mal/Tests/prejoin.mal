@@ -15,7 +15,7 @@ d0:= t1-t0;
 io.printf("#loop %d\n",d0);
 t0:= alarm.usec();
 # create a sample with minimal overlap
-sample := 100;
+sample := 100000;
 c:= algebra.sample(base,sample);
 #c:= algebra.copy(b);
 
