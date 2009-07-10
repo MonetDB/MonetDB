@@ -49,6 +49,10 @@ command marchConnection(host:str, port:int)
 address SABmarchConnection
 comment "Publishes the given host/port as available for connecting to this server";
 
+command getLocalConnectionURI():str
+address SABgetLocalConnectionURI
+comment "Returns the URI this server can be connected to, or nil if none";
+
 command getLocalConnectionHost():str
 address SABgetLocalConnectionHost
 comment "Returns the hostname this server can be connected to, or nil if none";
@@ -92,6 +96,7 @@ sabaoth_export str SABepilogue(int *ret);
 sabaoth_export str SABmarchScenario(int *ret, str *lang);
 sabaoth_export str SABretreatScenario(int *ret, str *lang);
 sabaoth_export str SABmarchConnection(int *ret, str *host, int *port) ;
+sabaoth_export str SABgetLocalConnectionURI(str *ret);
 sabaoth_export str SABgetLocalConnectionHost(str *ret);
 sabaoth_export str SABgetLocalConnectionPort(int *ret);
 sabaoth_export str SABwildRetreat(int *ret);
@@ -128,6 +133,16 @@ str SABretreatScenario(int *ret, str *lang){
 
 str SABmarchConnection(int *ret, str *host, int *port) {
 	return SABAOTHmarchConnection(ret, host, port);
+}
+
+str SABgetLocalConnectionURI(str *ret) {
+	str tmp, con;
+
+	rethrow("sabaoth.getLocalConnectionURI", tmp,
+			SABAOTHgetLocalConnection(&con));
+
+	*ret = con;
+	return(MAL_SUCCEED);
 }
 
 str SABgetLocalConnectionHost(str *ret) {
