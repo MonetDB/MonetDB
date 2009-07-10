@@ -100,7 +100,11 @@ comment "Release the resources held by the remote module.";
 
 # global connection management functions
 
-command create(dbname:str, host:str, port:int):str
+command create(alias:str, conn:url):str
+address RMTcreateAlias
+comment "Create a user-defined connection to a server using the url from
+remote resolver.";
+command create(alias:str, host:str, port:int, dbname:str):str
 address RMTcreate
 comment "Create a user-defined connection to a server.";
 
@@ -216,7 +220,8 @@ typedef struct _connection {
 } *connection;
 
 typedef struct _userconn {
-	char             *dbname;     /* name of the connection */
+	char             *alias;     /* name of the connection */
+	char             *dbname;     /* name of the database */
 	char             *host;       /* host to connect to */
 	int              port;        /* target port */
 	struct _userconn *next;       /* the next connection in the list */
@@ -232,13 +237,13 @@ static connection conns = NULL;
 static INLINE str RMTquery(MapiHdl *ret, str func, Mapi conn, str query);
 
 @h
-remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port);
+remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbname);
 @c
 /**
  * Stores a new connection in the global state.  The connection is not
  * validated.
  */
-remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
+remote_export str RMTcreate(str *ret, str *alias, str *host, int *port, str *dbname) {
 	userconn c;
 
 	*ret = 0;
@@ -274,6 +279,7 @@ remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 	}
 
 	/* fill in the new entry */
+	c->alias = GDKstrdup(*alias);
 	c->dbname = GDKstrdup(*dbname);
 	c->host = GDKstrdup(*host);
 	c->port = *port;
@@ -285,13 +291,13 @@ remote_export str RMTcreate(str *ret, str *dbname, str *host, int *port) {
 }
 
 @h
-remote_export str RMTdestroy(int *ret, str *dbname);
+remote_export str RMTdestroy(int *ret, str *alias);
 @c
 /**
  * Removes a connection in the global state.  If the connection is in
  * use by a client, it will remain available for that client.
  */
-str RMTdestroy(int *ret, str *dbname) {
+str RMTdestroy(int *ret, str *alias) {
 	userconn c, t;
 
 	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
@@ -427,7 +433,7 @@ remote_export str RMTgetList(int *ret, int *ret2) {
 	c = userconns;
 	/* walk through the list */
 	while (c != NULL) {
-		BUNappend(list, (ptr)c->dbname, FALSE);
+		BUNappend(list, (ptr)c->alias, FALSE);
 		BUNappend(kind, (ptr)type, FALSE);
 		c = c->next;
 	}
