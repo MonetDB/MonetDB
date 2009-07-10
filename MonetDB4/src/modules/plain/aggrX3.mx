@@ -344,19 +344,33 @@ as the latter turned out to be rather expensive ...
 
 	/* scan b, and add values to sums in-place or in sums-array */
 	bhsb = b->hseqbase - 1;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNt@7(bi,p);
-		oid *h = (oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			@9 *dst = (@9*) @8;
-			if (*dst != @9_nil) {
-				if (*t == @6_nil) {
-					*dst = @9_nil;
-				} else {
-					*dst += (@9) *t;
-					hit[@[10]] = 1;
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				@9 *dst = (@9*) @8;
+				*dst += (@9) *t;
+				hit[@[10]] = 1;
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
+
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				@9 *dst = (@9*) @8;
+				if (*dst != @9_nil) {
+					if (*t == @6_nil) {
+						*dst = @9_nil;
+					} else {
+						*dst += (@9) *t;
+						hit[@[10]] = 1;
+					}
 				}
 			}
 		}
@@ -444,19 +458,33 @@ as the latter turned out to be rather expensive ...
 	}
 	/* scan b, and mul values to prods in-place or in prods-array */
 	bhsb = b->hseqbase - 1;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNt@7(bi,p);
-		oid *h = (oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			@9 *dst = (@9*) @8;
-			if (*dst != @9_nil) {
-				if (*t == @6_nil) {
-					*dst = @9_nil;
-				} else {
-					*dst *= (@9) *t;
-					hit[@[10]] = 1;
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				@9 *dst = (@9*) @8;
+				*dst *= (@9) *t;
+				hit[@[10]] = 1;
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
+
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				@9 *dst = (@9*) @8;
+				if (*dst != @9_nil) {
+					if (*t == @6_nil) {
+						*dst = @9_nil;
+					} else {
+						*dst *= (@9) *t;
+						hit[@[10]] = 1;
+					}
 				}
 			}
 		}
@@ -544,20 +572,34 @@ as the latter turned out to be rather expensive ...
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNt@7(bi,p);
-		oid *h = (oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			dbl *dst = (dbl*) @8;
-			if (*dst != dbl_nil) {
-				if (*t == @6_nil) {
-					*dst = dbl_nil;
-				} else {
-					*dst += *t;
-				}
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				dbl *dst = (dbl*) @8;
+				*dst += *t;
 				cnt[@9]++;
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid *h = (oid*) @5;
+
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				dbl *dst = (dbl*) @8;
+				if (*dst != dbl_nil) {
+					if (*t == @6_nil) {
+						*dst = dbl_nil;
+					} else {
+						*dst += *t;
+					}
+					cnt[@9]++;
+				}
 			}
 		}
 	}
@@ -885,18 +927,33 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	}
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	bhsb = b->hseqbase - 1;
-	BATloop(b, p, q) {
-		ptr t = BUNt@7(bi,p);
-		oid *h = (oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			ptr *val = &extremes[@8];
-			if (*val != nil) {
-				if ((*cmp)(t,nil) == 0) {
-					*val = nil;
-				} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				ptr *val = &extremes[@8];
+				if (*val == NULL || (*cmp)(t,*val) @1 0) {
 					*val = t;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid *h = (oid*) @5;
+
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				ptr *val = &extremes[@8];
+				if (*val != nil) {
+					if ((*cmp)(t,nil) == 0) {
+						*val = nil;
+					} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+						*val = t;
+					}
 				}
 			}
 		}
@@ -956,19 +1013,35 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	}
 	/* scan b and replace totals by the extreme value (just pointers to vals in b) */
 	bhsb = b->hseqbase - 1;
-	BATloop(b, p, q) {
-		ptr t = BUNt@7(bi,p);
-		oid *h = (oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid *h = (oid*) @5;
 
-		@3(r, bni, h);
-		if (r != BUN_NONE) {
-			oid *val = &extremes[@8];
-			if (*val != *(oid*)nil) {
-				if ((*cmp)(t,nil) == 0) {
-					*val = *(oid*)nil;
-				} else if ((*cmp)(t,val) @1 0) {
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				oid *val = &extremes[@8];
+				if ((*cmp)(t,val) @1 0) {
 					*val = *(oid*)t;
 					hit[@8] = 1;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid *h = (oid*) @5;
+
+			@3(r, bni, h);
+			if (r != BUN_NONE) {
+				oid *val = &extremes[@8];
+				if (*val != *(oid*)nil) {
+					if ((*cmp)(t,nil) == 0) {
+						*val = *(oid*)nil;
+					} else if ((*cmp)(t,val) @1 0) {
+						*val = *(oid*)t;
+						hit[@8] = 1;
+					}
 				}
 			}
 		}
@@ -1414,23 +1487,42 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNtloc(bi,p);
-		oid v = *(oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
-		@8 {
-			oid *h = (oid*) BUNtail(gi, w);
+			w = (BUN) (offset + v);
+			@8 {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				@9 *dst = (@9*) @7;
-				if (*dst != @9_nil) {
-					if (*t == @6_nil) {
-						*dst = @9_nil;
-					} else {
-						*dst += (@9) *t;
-						hit[@[10]] = 1;
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					*dst += (@9) *t;
+					hit[@[10]] = 1;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (offset + v);
+			@8 {
+				oid *h = (oid*) BUNtail(gi, w);
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					if (*dst != @9_nil) {
+						if (*t == @6_nil) {
+							*dst = @9_nil;
+						} else {
+							*dst += (@9) *t;
+							hit[@[10]] = 1;
+						}
 					}
 				}
 			}
@@ -1527,23 +1619,42 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNtloc(bi,p);
-		oid v = *(oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
-		@8 {
-			oid *h = (oid*) BUNtail(gi, w);
+			w = (BUN) (offset + v);
+			@8 {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				@9 *dst = (@9*) @7;
-				if (*dst != @9_nil) {
-					if (*t == @6_nil) {
-						*dst = @9_nil;
-					} else {
-						*dst *= (@9) *t;
-						hit[@[10]] = 1;
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					*dst *= (@9) *t;
+					hit[@[10]] = 1;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNtloc(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (offset + v);
+			@8 {
+				oid *h = (oid*) BUNtail(gi, w);
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					@9 *dst = (@9*) @7;
+					if (*dst != @9_nil) {
+						if (*t == @6_nil) {
+							*dst = @9_nil;
+						} else {
+							*dst *= (@9) *t;
+							hit[@[10]] = 1;
+						}
 					}
 				}
 			}
@@ -1636,24 +1747,43 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-	BATloop(b, p, q) {
-		@6 *t = (@6*) BUNt@7(bi,p);
-		oid v = *(oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
-		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtail(gi, w);
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				dbl *dst = (dbl*) @8;
-				if (*dst != dbl_nil) {
-					if (*t == @6_nil) {
-						*dst = dbl_nil;
-					} else {
-						*dst += *t;
-					}
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					dbl *dst = (dbl*) @8;
+					*dst += *t;
 					cnt[@9]++;
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			@6 *t = (@6*) BUNt@7(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					dbl *dst = (dbl*) @8;
+					if (*dst != dbl_nil) {
+						if (*t == @6_nil) {
+							*dst = dbl_nil;
+						} else {
+							*dst += *t;
+						}
+						cnt[@9]++;
+					}
 				}
 			}
 		}
@@ -2114,22 +2244,42 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
-	BATloop(b, p, q) {
-		ptr t = BUNt@7(bi,p);
-		oid v = *(oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
-		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtail(gi, w);
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				ptr *val = &extremes[@8];
-				if (*val != nil) {
-					if ((*cmp)(t,nil) == 0) {
-						*val = nil;
-					} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					ptr *val = &extremes[@8];
+					if (*val == NULL || (*cmp)(t,*val) @1 0) {
 						*val = t;
+					}
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					ptr *val = &extremes[@8];
+					if (*val != nil) {
+						if ((*cmp)(t,nil) == 0) {
+							*val = nil;
+						} else if (*val == NULL || (*cmp)(t,*val) @1 0) {
+							*val = t;
+						}
 					}
 				}
 			}
@@ -2192,23 +2342,44 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	offset = (ssize_t) base - (ssize_t) g->hseqbase;
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
-	BATloop(b, p, q) {
-		ptr t = BUNt@7(bi,p);
-		oid v = *(oid*) @5;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid v = *(oid*) @5;
 
-		w = (BUN) (offset + v);
-		if (w >= base && w < end) {
-			oid *h = (oid*) BUNtail(gi, w);
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
 
-			@3(r, bni, (oid*)h);
-			if (r != BUN_NONE) {
-				oid *val = &extremes[@8];
-				if (*val != *(oid*)nil) {
-					if ((*cmp)(t,nil) == 0) {
-						*val = *(oid*)nil;
-					} else if ((*cmp)(t,val) @1 0) {
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					oid *val = &extremes[@8];
+					if ((*cmp)(t,val) @1 0) {
 						*val = *(oid*)t;
 						hit[@8] = 1;
+					}
+				}
+			}
+		}
+	} else {
+		BATloop(b, p, q) {
+			ptr t = BUNt@7(bi,p);
+			oid v = *(oid*) @5;
+
+			w = (BUN) (offset + v);
+			if (w >= base && w < end) {
+				oid *h = (oid*) BUNtail(gi, w);
+
+				@3(r, bni, (oid*)h);
+				if (r != BUN_NONE) {
+					oid *val = &extremes[@8];
+					if (*val != *(oid*)nil) {
+						if ((*cmp)(t,nil) == 0) {
+							*val = *(oid*)nil;
+						} else if ((*cmp)(t,val) @1 0) {
+							*val = *(oid*)t;
+							hit[@8] = 1;
+						}
 					}
 				}
 			}
