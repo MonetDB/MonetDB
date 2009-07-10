@@ -1348,6 +1348,7 @@ end main;
 [ "epilogue",			  "command",	  "sabaoth",	  "():void ",																  "SABepilogue;"					  ]
 [ "getLocalConnectionPort",	  "command",	  "sabaoth",	  "():int ",																  "SABgetLocalConnectionPort;"				  ]
 [ "getLocalConnectionHost",	  "command",	  "sabaoth",	  "():str ",																  "SABgetLocalConnectionHost;"				  ]
+[ "getLocalConnectionURI",		  "command",	  "sabaoth",	  "():str ",																  "SABgetLocalConnectionURI;"				  ]
 [ "marchConnection",		  "command",	  "sabaoth",	  "(host:str,port:int):void ",														  "SABmarchConnection;"					  ]
 [ "marchScenario",		  "command",	  "sabaoth",	  "(lang:str):void ",															  "SABmarchScenario;"					  ]
 [ "prelude",			  "command",	  "sabaoth",	  "():void ",																  "SABprelude;"						  ]
