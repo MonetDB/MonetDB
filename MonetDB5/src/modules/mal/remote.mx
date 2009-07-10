@@ -376,6 +376,7 @@ remote_export str RMTresolve(int *ret, str *pat) {
 		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
 
 	tmp = GDKgetenv("mero_port");
+	port = 0;
 	if (tmp != NULL)
 		port = atoi(tmp);
 	if (port == 0)
