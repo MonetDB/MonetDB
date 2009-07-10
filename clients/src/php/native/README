@@ -1,0 +1,12 @@
+= Native PHP implementation of the MonetDB interface. =
+
+The php API aims at being compatible with the one provided by the C implementation.
+For details see: http://monetdb.cwi.nl/SQL/Documentation/The-PHP-Library.html
+
+== Directory structure ==
+ - lib/
+       php_mapi.inc - mapi protocol implementation
+       php_monetdb.php - php api
+
+ - TODO: list of pending tasks.
+
