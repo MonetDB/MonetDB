@@ -1153,7 +1153,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 	/* scan b, and increment counts in-place or in cnt-array */
 	bhsb = b->hseqbase-1;
 	btt = b->ttype;
-	if (*ignore_nils) {
+	if (*ignore_nils && !b->T->nonil) {
 		switch(ATOMstorage(btt)) {
 		case TYPE_chr:
 			@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,chr)))@
@@ -2419,7 +2419,7 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	end = base + BATcount(g);
 	bhsb = b->hseqbase;
 	btt = b->ttype;
-	if (*ignore_nils) {
+	if (*ignore_nils && !b->T->nonil) {
 		switch(ATOMstorage(btt)) {
 		case TYPE_chr:
 			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,chr)))@
