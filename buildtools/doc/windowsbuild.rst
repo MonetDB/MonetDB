@@ -181,7 +181,7 @@ Bison is a reimplementation of YACC (Yet Another Compiler Compiler), a
 program to convert a grammar into working code.
 
 A version of Bison for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Download Packages
+at http://gnuwin32.sourceforge.net/.  Click on the Packages
 link on the left and then on Bison, and get the Setup file and install
 it.
 
@@ -191,7 +191,7 @@ Flex
 Flex is a fast lexical analyzer generator.
 
 A version of Flex for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Download Packages
+at http://gnuwin32.sourceforge.net/.  Click on the Packages
 link on the left and then on Flex, and get the Setup file and install
 it.
 
@@ -211,6 +211,8 @@ to the appropriate values, e.g. by executing the command ``Open Visual
 Studio 2005 x64 Win64 Command Prompt``.  Then copy the files
 ``pthreadVC2.dll`` and ``pthreadVC2.lib`` to ``C:\Pthreads\lib``.
 
+.. _diff:
+
 Diff
 ----
 
@@ -219,9 +221,21 @@ differences.  This program is not used during the build process, but
 only during testing.  As such it is not a strict prerequisite.
 
 A version of Diff for Windows can be gotten from the GnuWin32 project
-at http://gnuwin32.sourceforge.net/.  Click on the Download Packages
+at http://gnuwin32.sourceforge.net/.  Click on the Packages
 link on the left and then on DiffUtils (note the name), and get the
 Setup file and install it.
+
+Patch
+-----
+
+Patch is a program to apply the output of diff_ to the original.  This
+program is not used during the build process, but only for testing,
+and then only to approve results that were different from what was
+expected.  As such it is not a strict prerequisite.
+
+A version of Patch for Windows can be gotten from the GnuWin32 project
+at http://gnuwin32.sourceforge.net/.  Click on the Packages link on
+the left and then on Patch, and get the Setup file and install it.
 
 PsKill
 ------
