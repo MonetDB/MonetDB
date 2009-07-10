@@ -24,16 +24,19 @@ on the MAL runtime setting, but logically belong to the kernel/algebra
 module.
 @mal
 
-pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2] 	
+pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2]
 address ALGprojectCst
 comment "Fill the tail column with a newly typed constant.";
 pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGprojectCst
 comment "Fill the tail column with a constant taken from the aligned BAT.";
-                                                                                
+
 pattern algebra.prejoin(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:int],:bat[:oid,:any_1])
 address ALGprejoin
 comment "Bloom filter to reduce join cost in out-of-memory situations";
+pattern algebra.prejoin_l(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:int],:bat[:oid,:any_1])
+address ALGprejoin_l
+comment "Bloom filter to reduce join cost in out-of-memory situations -- lefteris";
 @{
 @include prelude.mx
 @+ Implementation section
@@ -108,7 +111,8 @@ joins in case of out-of-memory situations.
 This footprint in terms of percentage of main memory use
 is calculated for the heap(s) only.
 @c
-/* #define DEBUG_BLOOMFILTER		*/
+
+#define DEBUG_BLOOMFILTER
 
 static
 size_t GDKbatfootprint(BAT *b){
@@ -143,14 +147,15 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 
 	/* consider it an out-of-memory situation 
 		when more then 25% is used, 
-		otherwise use normal processing scheme */
+		otherwise use normal processing scheme 
 	if ( b->ttype != TYPE_int || GDKbatfootprint(b) < 25 ){
 		*bn = b;
 		BBPkeepref(b->batCacheid);
 		*cn = c;
 		BBPkeepref(c->batCacheid);
 		return;
-	}	
+	}	*/
+	GDKbatfootprint(b);
 	
 	bv = (int*) Tloc(b, BUNfirst(b));
 	cv = (int*) Tloc(c, BUNfirst(c));
@@ -246,6 +251,98 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	GDKfree(cdone);
 }
 
+#define prime(x,y) ((1 << (x+y)) + 1)
+
+@= hash
+ABS((prime(@1,7)*@2)%@3)
+
+@c
+
+void
+GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
+	int *bv, *cv;
+	char *bbloom,*cbloom;
+	int mb, mc;
+	size_t i, blim, clim;
+
+	/* b is the smaller one */
+	if ( BATcount(b) > BATcount(c) ) {
+		GDKbloomfilter_int_l(c, b, cn, bn);
+		return;
+	}
+
+	/* consider it an out-of-memory situation
+	if ( b->ttype != TYPE_int || GDKbatfootprint(b) < 25 ){
+		*bn = b;
+		BBPkeepref(b->batCacheid);
+		*cn = c;
+		BBPkeepref(c->batCacheid);
+		return;
+	}*/
+
+	bv = (int*) Tloc(b, BUNfirst(b));
+	cv = (int*) Tloc(c, BUNfirst(c));
+	blim= BATcount(b);
+	clim= BATcount(c);
+	mb = blim*10;
+	mc = clim*10;
+
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout,"b %d\n",blim);
+	stream_printf(GDKout,"c %d\n",clim);
+#endif
+
+	bbloom = (char *) GDKmalloc(mb); /* this is a waste of space for now */
+	cbloom = (char *) GDKmalloc(mc);
+	memset(bbloom, 0, mb);
+	memset(cbloom, 0, mc);
+
+	/* for (b) { built bloom } */
+	for (i = 0; i < blim; i++) {
+		setBit(bbloom, @:hash(1,bv[i],mb)@, 1);
+		setBit(bbloom, @:hash(2,bv[i],mb)@, 1);
+		setBit(bbloom, @:hash(3,bv[i],mb)@, 1);
+		setBit(bbloom, @:hash(4,bv[i],mb)@, 1);
+	}
+
+	/*  for (c) { test bbloom; built cbloom } */
+	*cn = BATnew(TYPE_oid,TYPE_int, blim/4);
+	for (i = 0; i < clim; i++) {
+		if ((tstBit(bbloom, @:hash(1,cv[i], mb)@,1) &&
+				tstBit(bbloom, @:hash(2,cv[i], mb)@,1) &&
+				tstBit(bbloom, @:hash(3,cv[i], mb)@,1) &&
+				tstBit(bbloom, @:hash(4,cv[i], mb)@,1))) {
+			oid o = (oid) i;
+			*cn = BUNins(*cn, &o, &cv[i], FALSE);
+			setBit(cbloom, @:hash(1,cv[i],mc)@, 1);
+			setBit(cbloom, @:hash(2,cv[i],mc)@, 1);
+			setBit(cbloom, @:hash(3,cv[i],mc)@, 1);
+			setBit(cbloom, @:hash(4,cv[i],mc)@, 1);
+		}
+	}
+
+	/* for (b) { check cbloom } */
+	*bn = BATnew(TYPE_oid,TYPE_int, blim/4);
+	for (i = 0; i < blim; i++) {
+		if ((tstBit(cbloom, @:hash(1,bv[i], mc)@,1) &&
+				tstBit(cbloom, @:hash(2,bv[i], mc)@,1) &&
+				tstBit(cbloom, @:hash(3,bv[i], mc)@,1) &&
+				tstBit(cbloom, @:hash(4,bv[i], mc)@,1))) {
+				oid o = (oid) i;
+			*bn = BUNins(*bn, &o, &bv[i], FALSE);
+		}
+	}
+
+#ifdef DEBUG_BLOOMFILTER
+		stream_printf(GDKout,"b-reduce %d->%d\n",blim, BATcount(*bn));
+		stream_printf(GDKout,"c-reduce %d->%d\n",clim,  BATcount(*bn));
+#endif
+
+	BBPkeepref((*bn)->batCacheid);
+	BBPkeepref((*cn)->batCacheid);
+
+}
+
 str 
 ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bres = (int *) getArgReference(stk, pci, 0);
@@ -264,6 +361,29 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
 	}
 	GDKbloomfilter_int(b,c, &bn, &cn);
+	*cres= cn->batCacheid;
+	*bres= bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+str 
+ALGprejoin_l(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bres = (int *) getArgReference(stk, pci, 0);
+	int *cres = (int *) getArgReference(stk, pci, 1);
+	int *bid = (int *) getArgReference(stk, pci, 2);
+	int *cid = (int *) getArgReference(stk, pci, 3);
+	BAT *b, *c, *bn, *cn;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
+	if ( (c = BATdescriptor(*cid)) == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "bbp.prejoin", INTERNAL_BAT_ACCESS);
+	}
+	GDKbloomfilter_int_l(b,c, &bn, &cn);
 	*cres= cn->batCacheid;
 	*bres= bn->batCacheid;
 	return MAL_SUCCEED;
