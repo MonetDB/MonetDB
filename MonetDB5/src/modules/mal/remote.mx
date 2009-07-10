@@ -491,226 +491,22 @@ remote_export str RMTgetList(int *ret, int *ret2) {
 	return(MAL_SUCCEED);
 }
 
-/**
- * Helper function to return a userconn struct containing the bits needed
- * to open up a connection.  This function is very similar to
- * RMTgetList, but differs on enough crucial points to warrant its own
- * copy.
- * NOTE: this function assumes the caller has guaranteed
- * thread-safeness, e.g. by setting the mal_remoteLock!!!
- */
-#define SOCKPTR struct sockaddr *
-static INLINE userconn RMTgetConnDefinition(str dbname) {
-	userconn c;
-	sabdb *sab, *osab;
-	str tmp;
-	char path[8096];
-	userconn ret = NULL;
-	char mero_running;
-#ifndef WIN32
-	int fd;
-#endif
-
-	/* part 1: "user" -- this is trivial */
-	c = userconns;
-	/* walk through the list */
-	while (c != NULL) {
-		if (strcmp(c->dbname, dbname) == 0) {
-			ret = GDKzalloc(sizeof(struct _userconn));
-			ret->dbname = GDKstrdup(c->dbname);
-			ret->host = GDKstrdup(c->host);
-			ret->port = c->port;
-			break;
-		}
-	}
-	if (ret != NULL)
-		return(ret);
-
-	/* part 2: "local" -- bit more tricky, contact Sabaoth, but for
-	 *                    connection details, we better use Merovingian
-	 *                    which needs to be available in that case... */
-	mero_running = 0;
-#ifndef WIN32
-	mero_running = 1;
-	snprintf(path, 8096, "%s/.merovingian_lock", GDKgetenv("gdk_dbfarm"));
-	fd = MT_lockf(path, F_TLOCK, 4, 1);
-	if (fd >= 0 || fd <= -2) {
-		if (fd >= 0) {
-			/* oops, not running */
-			close(fd);
-		}
-		mero_running = 0;
-	}
-#endif
-
-	if ((tmp = SABAOTHgetStatus(&osab, NULL)) != NULL) {
-		/* if Sabaoth fails, Merovingian most probably won't have much
-		 * luck either, so just return */
-		GDKfree(tmp);
-		return(NULL);
-	}
-	sab = osab;
-	while (sab != NULL) {
-		ret = NULL;
-		if (strcmp(sab->dbname, dbname) == 0) {
-			if (mero_running == 1) { /* use Merovingian */
-				ret = GDKzalloc(sizeof(struct _userconn));
-				ret->dbname = GDKstrdup(sab->dbname);
-				gethostname(path, 8096);
-				ret->host = GDKstrdup(path);
-				ret->port = 0;
-				tmp = GDKgetenv("mero_port");
-				if (tmp != NULL)
-					ret->port = atoi(tmp);
-				if (ret->port == 0)
-					ret->port = 50000;  /* hardcoded default from merovingian.mx */
-				break;
-			} else { /* just use the server's own connection */
-				if (sab->state != SABdbRunning ||
-						sab->conns == NULL || sab->conns->val == NULL)
-				{
-					/* only return this server if it's running and
-					 * reachable */
-					break;
-				}
-				ret = GDKzalloc(sizeof(struct _userconn));
-				ret->dbname = GDKstrdup(sab->dbname);
-				tmp = sab->conns->val;
-				if (strncmp(tmp, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
-					str port, t;
-					tmp += sizeof("mapi:monetdb://") - 1;
-					/* drop anything off after the hostname */
-					if ((port = strchr(tmp, ':')) != NULL) {
-						*port = '\0';
-						port++;
-						if ((t = strchr(port, '/')) != NULL)
-							*t = '\0';
-						ret->host = GDKstrdup(tmp);
-						ret->port = atoi(port);
-						break;
-					}
-				}
-			}
-			/* local ones must be unique */
-			GDKfree(ret);
-			ret = NULL;
-			break;
-		}
-		sab = sab->next;
-	}
-	SABAOTHfreeStatus(&osab);
-	if (ret != NULL)
-		return(ret);
-
-	/* part 3: "remote" -- ask merovingian over a UNIX socket, oops
-	 *                     portability issues! */
-#ifndef WIN32
-	/* if Merovingian isn't running, there's not much we can do */
-	if (mero_running == 1) do {
-		char buf[256];
-		int sock = -1;
-		struct sockaddr_un server;
-		char *p, *q;
-		int len;
-		int pos;
-
-		snprintf(path, 8095, "%s/.merovingian_control", GDKgetenv("gdk_dbfarm"));
-		path[8095] = '\0';
-
-		if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
-			break;
-
-		memset(&server, 0, sizeof(struct sockaddr_un));
-		server.sun_family = AF_UNIX;
-		strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
-		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)))
-			break;
-
-		/* Send the pass phrase to unlock the information available in
-		 * merovingian.  Anelosimus eximius is a social species of spiders,
-		 * which help each other, just like merovingians do among each
-		 * other. */
-		len = snprintf(buf, sizeof(buf), "anelosimus eximius\n");
-		send(sock, buf, len, 0);
-		pos = 0;
-		len = 0;
-		buf[len] = '\0';
-		do {
-			if ((p = strchr(buf, '\n')) == NULL) {
-				if (len == sizeof(buf) - 1) {
-					/* no newline in this block, too large, discard */
-					pos = 0;
-				} else {
-					pos = len;
-				}
-				len = recv(sock, buf + pos, sizeof(buf) - 1 - pos, 0);
-				/* if there is no more... */
-				if (len <= 0)
-					break;
-				len += pos;
-				buf[len] = '\0';
-				continue;
-			}
-			*p++ = '\0';
-
-			if ((q = strchr(buf, '\t')) == NULL) {
-				/* doesn't look correct */
-				len -= p - buf;
-				memmove(buf, p, len + 1 /* include \0 */);
-				continue;
-			}
-			*q++ = '\0';
-
-			/* does it match? */
-			if (strcmp(buf, dbname) == 0) {
-				ret = GDKzalloc(sizeof(struct _userconn));
-				ret->dbname = GDKstrdup(dbname);
-				tmp = p;
-				if (strncmp(tmp, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
-					str port, t;
-					tmp += sizeof("mapi:monetdb://") - 1;
-					/* drop anything off after the hostname */
-					if ((port = strchr(tmp, ':')) != NULL) {
-						*port = '\0';
-						port++;
-						if ((t = strchr(port, '/')) != NULL)
-							*t = '\0';
-						ret->host = GDKstrdup(tmp);
-						ret->port = atoi(port);
-						break;
-					}
-				}
-			}
-
-			/* move it away */
-			len -= p - buf;
-			memmove(buf, p, len + 1 /* include \0 */);
-		} while (1);
-
-		close(sock);
-	} while (0);
-	if (ret != NULL)
-		return(ret);
-#endif
-
-	return(NULL);
-}
-
 /* for unique connection identifiers */
 static size_t connection_id = 0;
 
 /**
- * Returns a connection to the given dbname.  It always returns a newly
+ * Returns a connection to the given alias.  It always returns a newly
  * created connection.
  */
 static str RMTconnectInternal(
 		str *ret,
-		str *dbname,
+		str *alias,
 		str *user,
 		str *passwd,
 		str *scen)
 {
 	connection c;
+	userconn uc;
 	userconn cdef;
 	char conn[BUFSIZ];
 	char *s;
@@ -719,25 +515,40 @@ static str RMTconnectInternal(
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 
-	if (dbname == NULL || *dbname == NULL || strcmp(*dbname, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Database name is NULL or nil");
+	if (alias == NULL || *alias == NULL || strcmp(*alias, (str)str_nil) == 0)
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": database alias "
+				"is NULL or nil");
 	if (user == NULL || *user == NULL || strcmp(*user, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Username is NULL or nil");
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": username is "
+				"NULL or nil");
 	if (passwd == NULL || *passwd == NULL || strcmp(*passwd, (str)str_nil) == 0)
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT " Password is NULL or nil");
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": password is "
+				"NULL or nil");
 
 
 	mal_set_lock(mal_remoteLock, "remote.connect");
-	/* check if we know the dbname connection */
-	cdef = RMTgetConnDefinition(*dbname); /* needs lock! */
+	/* check if we know the alias */
+	uc = userconns;
+	while (uc != NULL) {
+		if (strcmp(uc->alias, *alias) == 0) {
+			cdef = GDKmalloc(sizeof(struct _userconn));
+			cdef->alias = GDKstrdup(uc->alias);
+			cdef->dbname = GDKstrdup(uc->dbname);
+			cdef->host = GDKstrdup(uc->host);
+			cdef->port = uc->port;
+			cdef->next = NULL;
+			break;
+		}
+		uc = uc->next;
+	}
 	if (cdef == NULL) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
 		throw(MAL, "remote.connect", OPERATION_FAILED
-			": unknown or unavailable connection: '%s'", *dbname);
+			": unknown connection: '%s'", *alias);
 	} 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
-	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, *dbname, *user, connection_id++);
+	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, *alias, *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
 		if (!isalpha((int)*s) && !isdigit((int)*s)) {
@@ -745,18 +556,18 @@ static str RMTconnectInternal(
 		}
 	}
 
-	m = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen,
-			(strcmp(*dbname, (str)str_nil) == 0 ? NULL : *dbname));
+	m = mapi_mapi(cdef->host, cdef->port, *user, *passwd, *scen, cdef->dbname);
 
+	GDKfree(cdef->alias);
 	GDKfree(cdef->dbname);
 	GDKfree(cdef->host);
 	GDKfree(cdef);
 
 	if (mapi_reconnect(m) != MOK) {
 		mal_unset_lock(mal_remoteLock, "remote.connect");
-		throw(IO, "remote.connect", OPERATION_FAILED " An error occurred during "
-				"connect of connection '%s': %s",
-				conn, mapi_error_str(m) );
+		throw(IO, "remote.connect", OPERATION_FAILED ": an error occurred "
+				"during connect of connection '%s': %s",
+				conn, mapi_error_str(m));
 	}
 
 	/* connection established */
@@ -784,36 +595,36 @@ static str RMTconnectInternal(
 @h
 remote_export str RMTconnect(
 		str *ret,
-		str *dbname,
+		str *alias,
 		str *user,
 		str *passwd);
 @c
 str RMTconnect(
 		str *ret,
-		str *dbname,
+		str *alias,
 		str *user,
 		str *passwd)
 {
 	str scen = "mal";
-	return RMTconnectInternal(ret, dbname, user, passwd, &scen);
+	return RMTconnectInternal(ret, alias, user, passwd, &scen);
 }
 
 @h
 remote_export str RMTconnectScen(
 		str *ret,
-		str *dbname,
+		str *alias,
 		str *user,
 		str *passwd,
 		str *scen);
 @c
 str RMTconnectScen(
 		str *ret,
-		str *dbname,
+		str *alias,
 		str *user,
 		str *passwd,
 		str *scen)
 {
-	return RMTconnectInternal(ret, dbname, user, passwd, scen);
+	return RMTconnectInternal(ret, alias, user, passwd, scen);
 }
 
 @h
@@ -828,7 +639,8 @@ str RMTdisconnect(int *ret, str *conn) {
 	connection c, t;
 
 	if (conn == NULL || *conn == NULL || strcmp(*conn, (str)str_nil) == 0)
-		throw(ILLARG, "remote.disconnect", ILLEGAL_ARGUMENT " Connection name is NULL or nil");
+		throw(ILLARG, "remote.disconnect", ILLEGAL_ARGUMENT ": connection "
+				"is NULL or nil");
 
 
 	/* just make sure the return isn't garbage */
