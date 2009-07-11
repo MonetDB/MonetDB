@@ -529,6 +529,7 @@ static str RMTconnectInternal(
 	mal_set_lock(mal_remoteLock, "remote.connect");
 	/* check if we know the alias */
 	uc = userconns;
+	cdef = NULL;
 	while (uc != NULL) {
 		if (strcmp(uc->alias, *alias) == 0) {
 			cdef = GDKmalloc(sizeof(struct _userconn));
