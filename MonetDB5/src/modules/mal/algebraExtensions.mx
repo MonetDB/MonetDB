@@ -31,10 +31,10 @@ pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_
 address ALGprojectCst
 comment "Fill the tail column with a constant taken from the aligned BAT.";
 
-pattern algebra.prejoin(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:int],:bat[:oid,:any_1])
+pattern algebra.prejoin(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:any_1],:bat[:oid,:any_1])
 address ALGprejoin
 comment "Bloom filter to reduce join cost in out-of-memory situations";
-pattern algebra.prejoin_l(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:int],:bat[:oid,:any_1])
+pattern algebra.prejoin_l(b:bat[:oid,:any_1],c:bat[:oid,:any_1]) (:bat[:oid,:any_1],:bat[:oid,:any_1])
 address ALGprejoin_l
 comment "Bloom filter to reduce join cost in out-of-memory situations -- lefteris";
 @{
@@ -70,6 +70,7 @@ ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 #include "mal_config.h"
 #include "algebraExtensions.h"
 #include "mal_errors.h"
+#include "mmath.h"
 str
 ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
@@ -123,22 +124,23 @@ size_t GDKbatfootprint(BAT *b){
 	return size /(mem/100);
 }
 
-#define MASK 1024*64
+#define MASK 1024*64	/* power of 2 */
 #define THRESHOLD 50000
 
-#define setBit(X, Y, Z) X[Y] |= Z
-#define tstBit(X, Y, Z) X[Y] == Z
+#define setBit(X, Y, Z) (X[Y] |= Z)
+#define tstBit(X, Y) (X[Y] == 1)
+
+static int primes[]= {577, 601, 613, 619, 7, 41, 239, 9369319, 769,787};
+
 void
 GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 
 	int *bv, *cv;
 	char hb[ MASK], hc[ MASK];
 	char *bdone, *cdone;
-	int  val, valp;
 	size_t i, blim, clim, bcnt, ccnt, bincr,cincr;
-	int mask = MASK, cutoff=10;
-	int p;
-	int rnd, rndp;
+	int mask, cutoff;
+	int brnd, crnd;
 
 	if ( BATcount(b) > BATcount(c) ) {
 		GDKbloomfilter_int(c,b, cn, bn);
@@ -164,60 +166,52 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	bdone = (char*) GDKzalloc(blim);
 	cdone = (char*) GDKzalloc(clim);
 #ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"b %d\n",blim);
-	stream_printf(GDKout,"c %d\n",clim);
+	stream_printf(GDKout,"Martin b %d ",blim);
+	stream_printf(GDKout,"c %d vector size %d\n",clim, MASK);
 #endif
 
-	memset(hb, 0, MASK);
-	memset(hc, 1, MASK);
+	bcnt= 0;
+	ccnt= 0;
+	mask = MASK-1;
+	cutoff = (int) log(MASK);
 
-	bcnt= bincr = 0;
-	ccnt= cincr = 0;
-	rnd = 1;
-	if ( blim >= THRESHOLD || clim >= THRESHOLD )
-	for ( p = 1; p < cutoff; p++){
-		bincr= 0;
-		rndp= rnd;
-		rnd = (1<< (cutoff-p)) - 1;
-		for ( i = 0; i < blim; i++){
-		if ( tstBit(bdone,i,0) ) {
-			val = (rnd * bv[i]) % mask;
-			valp = (rndp * bv[i]) % mask;
-			setBit(hb,ABS(val),tstBit(bdone,i,0));
-			setBit(bdone,i, tstBit(hc,ABS(valp),0));
-			bincr += tstBit(bdone,i,1);
-		}
-#ifdef DEBUG_BLOOMFILTER2
-		stream_printf(GDKout,"%d %d %d\n",i, ABS(val), tstBit(bdone,i,1));
-#endif
-		}
-		bcnt += bincr;
-
+	for(cutoff-- ; cutoff> 1; cutoff-= 2){
+		memset(hb, 0, MASK);
 		memset(hc, 0, MASK);
-		ccnt = 0;
+		cincr = bincr = 0;
+		brnd = (1<< cutoff) - 1;
+		brnd = primes[cutoff-1];
+		crnd = (1<< (cutoff-1)) - 1;
+
+		for ( i = 0; i < blim; i++)
+		if ( !tstBit(bdone,i) ) {
+			setBit(hb, (brnd * bv[i]) & mask, 1);
+		}
+
 		for ( i = 0; i < clim; i++){
-		if ( tstBit(cdone,i,0) ) {
-			val = (rnd * cv[i]) % mask;
-			setBit(hc,ABS(val),tstBit(cdone,i,0));
-			setBit(cdone,i, tstBit(hb, ABS(val),0));
-			cincr += tstBit(cdone,i,1);
-		} 
-#ifdef DEBUG_BLOOMFILTER2
-		stream_printf(GDKout,"%d %d %d\n", i, ABS(val), tstBit(cdone,i,1));
-#endif
+			if ( !tstBit(cdone,i) ) {
+				setBit(cdone,i, !tstBit(hb, (brnd * cv[i]) & mask));
+				cincr += tstBit(cdone,i);
+			}
+			if ( !tstBit(cdone,i) ) 
+				setBit(hc, (crnd * cv[i]) & mask, 1);
+		}
+
+		for ( i = 0; i < blim; i++)
+		if ( !tstBit(bdone,i) ) {
+			setBit(bdone,i, !tstBit(hc, (crnd * bv[i]) & mask));
+			bincr += tstBit(bdone,i);
 		}
 		ccnt += cincr;
+		bcnt += bincr;
+		if (cincr == 0 ||  bincr == 0)
+			break;
 
 #ifdef DEBUG_BLOOMFILTER
-		stream_printf(GDKout,"b-reduce %d->%d\n",blim,bcnt);
-		stream_printf(GDKout,"c-reduce %d->%d\n",clim,ccnt);
+		stream_printf(GDKout,"b-reduce %d %d->%d incr %d\n",brnd,blim,bcnt,bincr);
+		stream_printf(GDKout,"c-reduce %d %d->%d incr %d\n",crnd,clim,ccnt,cincr);
 #endif
-		ALGODEBUG THRprintf(GDKout,"#bloomfilter:" SZFMT " " SZFMT "\n",bcnt,ccnt);
-		if ( blim-bcnt < THRESHOLD && clim-ccnt < THRESHOLD && p > 1)
-			break;
-		memset(hb, 0, MASK);
 	}
-
 
 	/* stage 2, produce a temporary table */
 	/* create a snapshot */
@@ -227,7 +221,7 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	} else {
 		*bn = BATnew(TYPE_oid,TYPE_int, bcnt);
 		for ( i = 0; i < blim; i++)
-		if( tstBit(bdone,i,0) ){
+		if( !tstBit(bdone,i) ){
 			oid o = (oid) i;
 			*bn= BUNins(*bn,&o, &bv[i], FALSE);
 		}
@@ -241,12 +235,16 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	} else {
 		*cn = BATnew(TYPE_oid,TYPE_int, ccnt);
 		for ( i = 0; i < clim; i++)
-		if (tstBit(cdone,i,0) ){
+		if (!tstBit(cdone,i) ){
 			oid o = (oid) i;
 			*cn = BUNins(*cn,&o, &cv[i],FALSE);
 		}
 		BBPkeepref((*cn)->batCacheid);
 	}
+#ifdef DEBUG_BLOOMFILTER
+		stream_printf(GDKout,"b-reduced %d->%d\n",blim, BATcount(*bn));
+		stream_printf(GDKout,"c-reduced %d->%d\n",clim,  BATcount(*cn));
+#endif
 	GDKfree(bdone);
 	GDKfree(cdone);
 }
@@ -288,8 +286,8 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 	mc = clim*10;
 
 #ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"b %d\n",blim);
-	stream_printf(GDKout,"c %d\n",clim);
+	stream_printf(GDKout,"Lefteris b %d ",blim);
+	stream_printf(GDKout,"c %d vector size %d,%d\n",clim,mb,mc);
 #endif
 
 	bbloom = (char *) GDKmalloc(mb); /* this is a waste of space for now */
@@ -308,34 +306,34 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 	/*  for (c) { test bbloom; built cbloom } */
 	*cn = BATnew(TYPE_oid,TYPE_int, blim/4);
 	for (i = 0; i < clim; i++) {
-		if ((tstBit(bbloom, @:hash(1,cv[i], mb)@,1) &&
-				tstBit(bbloom, @:hash(2,cv[i], mb)@,1) &&
-				tstBit(bbloom, @:hash(3,cv[i], mb)@,1) &&
-				tstBit(bbloom, @:hash(4,cv[i], mb)@,1))) {
+		if ((tstBit(bbloom, @:hash(1,cv[i], mb)@) &&
+				tstBit(bbloom, @:hash(2,cv[i], mb)@) &&
+				tstBit(bbloom, @:hash(3,cv[i], mb)@) &&
+				tstBit(bbloom, @:hash(4,cv[i], mb)@))) {
 			oid o = (oid) i;
 			*cn = BUNins(*cn, &o, &cv[i], FALSE);
-			setBit(cbloom, @:hash(1,cv[i],mc)@, 1);
-			setBit(cbloom, @:hash(2,cv[i],mc)@, 1);
-			setBit(cbloom, @:hash(3,cv[i],mc)@, 1);
-			setBit(cbloom, @:hash(4,cv[i],mc)@, 1);
+			setBit(cbloom, @:hash(1,cv[i],mc)@,1);
+			setBit(cbloom, @:hash(2,cv[i],mc)@,1);
+			setBit(cbloom, @:hash(3,cv[i],mc)@,1);
+			setBit(cbloom, @:hash(4,cv[i],mc)@,1);
 		}
 	}
 
 	/* for (b) { check cbloom } */
 	*bn = BATnew(TYPE_oid,TYPE_int, blim/4);
 	for (i = 0; i < blim; i++) {
-		if ((tstBit(cbloom, @:hash(1,bv[i], mc)@,1) &&
-				tstBit(cbloom, @:hash(2,bv[i], mc)@,1) &&
-				tstBit(cbloom, @:hash(3,bv[i], mc)@,1) &&
-				tstBit(cbloom, @:hash(4,bv[i], mc)@,1))) {
+		if ((tstBit(cbloom, @:hash(1,bv[i], mc)@) &&
+				tstBit(cbloom, @:hash(2,bv[i], mc)@) &&
+				tstBit(cbloom, @:hash(3,bv[i], mc)@) &&
+				tstBit(cbloom, @:hash(4,bv[i], mc)@))) {
 				oid o = (oid) i;
 			*bn = BUNins(*bn, &o, &bv[i], FALSE);
 		}
 	}
 
 #ifdef DEBUG_BLOOMFILTER
-		stream_printf(GDKout,"b-reduce %d->%d\n",blim, BATcount(*bn));
-		stream_printf(GDKout,"c-reduce %d->%d\n",clim,  BATcount(*bn));
+		stream_printf(GDKout,"b-reduced %d->%d\n",blim, BATcount(*bn));
+		stream_printf(GDKout,"c-reduced %d->%d\n",clim,  BATcount(*cn));
 #endif
 
 	BBPkeepref((*bn)->batCacheid);
