@@ -1365,13 +1365,19 @@ CMDsum_@1_@2(@2* res, BAT *b)
 	BATcheck(b,"BATsum_@1_@2");
 	if (!BATcount(b))
 		result = @2_nil;
-	BATloop(b, p, q) {
-		@1 *value = (@1*) BUNtloc(bi, p);
-		if (*value == @1_nil) {
-			result = @2_nil;
-			break;
-		} else {
-			result += *value;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			result += *(@1*) BUNtloc(bi, p);
+		}
+	} else {
+		BATloop(b, p, q) {
+			@1 *value = (@1*) BUNtloc(bi, p);
+			if (*value == @1_nil) {
+				result = @2_nil;
+				break;
+			} else {
+				result += *value;
+			}
 		}
 	}
 	*res = result;
@@ -1394,13 +1400,19 @@ CMDprod_@1_@2(@2* res, BAT *b)
 	BATcheck(b,"BATprodInt");
 	if (!BATcount(b))
 		result = @2_nil;
-	BATloop(b, p, q) {
-		@1 *value = (@1*) BUNtloc(bi, p);
-		if (*value == @1_nil) {
-			result = @2_nil;
-			break;
-		} else {
-			result *= *value;
+	if (b->T->nonil) {
+		BATloop(b, p, q) {
+			result *= *(@1*) BUNtloc(bi, p);
+		}
+	} else {
+		BATloop(b, p, q) {
+			@1 *value = (@1*) BUNtloc(bi, p);
+			if (*value == @1_nil) {
+				result = @2_nil;
+				break;
+			} else {
+				result *= *value;
+			}
 		}
 	}
 	*res = result;
@@ -1443,14 +1455,23 @@ CMDmax_@1(@1* result, BAT *b)
 	if (s > 0 && !(BATtordered(b)&1)) {
 		char* nil = BATatoms[t].atomNull;
 		BUN p,q;
-		BATloop(b, p, q) {
-			x = (ptr) BUNt@2(bi, p);
-			if (@3_CMP(x, nil, @4) == 0) {
-				v = nil;
-				break;
+		if (b->T->nonil) {
+			BATloop(b, p, q) {
+				x = (ptr) BUNt@2(bi, p);
+				if (@3_@5(x, v, @4)) {
+					v = x;
+				}
 			}
-			if (@3_@5(x, v, @4)) {
-				v = x;
+		} else {
+			BATloop(b, p, q) {
+				x = (ptr) BUNt@2(bi, p);
+				if (@3_CMP(x, nil, @4) == 0) {
+					v = nil;
+					break;
+				}
+				if (@3_@5(x, v, @4)) {
+					v = x;
+				}
 			}
 		}
 	}

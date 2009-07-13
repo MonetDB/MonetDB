@@ -2916,6 +2916,9 @@ BATcount_no_nil(BAT *b)
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATcnt");
+	if (b->T->nonil) {
+		return BATcount(b);
+	}
 	tt = b->ttype;
 	nil = ATOMnilptr(tt);
 	switch (ATOMstorage(tt)) {
