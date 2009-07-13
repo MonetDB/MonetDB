@@ -664,7 +664,8 @@ static sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 	if (e->type == e_column)
 		tname = e->l;
-	ne = exp_column(tname, m->name, exp_subtype(m), rel->card, has_nil(m), is_intern(m));
+	ne = exp_column(tname, m->name, exp_subtype(m),
+			rel->card, has_nil(m), is_intern(m));
 	exp_setname(ne, NULL, e->name);
 	return ne;
 }
@@ -3234,12 +3235,14 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	if (f == sql_where && !groupby) 
-		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause",
+				toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr));
 	
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
+			return sql_error(sql, 02, "%s: unable to perform '%s(*)'",
+					toUpperCopy(alloca(strlen(aggrstr) + 1), aggrstr), aggrstr);
 		}
 		a = sql_bind_aggr(sql->session->schema, aggrstr, NULL);
 		/* add aggr expression to the groupby, and return a 
