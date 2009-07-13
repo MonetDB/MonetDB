@@ -248,8 +248,8 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 		BBPkeepref((*cn)->batCacheid);
 	}
 #ifdef DEBUG_BLOOMFILTER
-		stream_printf(GDKout,"b-reduced %d->%d\n",blim, BATcount(*bn));
-		stream_printf(GDKout,"c-reduced %d->%d\n",clim,  BATcount(*cn));
+		stream_printf(GDKout,"b-reduced %d->%d\n",blim,BATcount(*bn));
+		stream_printf(GDKout,"c-reduced %d->%d\n",clim,BATcount(*cn));
 #endif
 	GDKfree(bdone);
 	GDKfree(cdone);
@@ -353,10 +353,105 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 		}
 	}
 
+@= body_outofmemory
+	char * cbloom, *bbloom;
+	int bp[4];
+	int cp[4];
+	int counter = 0;
+	mb = blim*2;
+	mc = clim*2;
+	bbloom = (char *) GDKmalloc(mb);
+	cbloom = (char *) GDKmalloc(mc);
+	memset(bbloom, 0, mb);
+	memset(cbloom, 0, mc);
+	for (i = 0; i < 4; i++) {
+		bp[i] = (1 << (blog + i))+1;
+		cp[i] = (1 << (clog + i))+1;
+	}
+
+		/* for (b) { built bloom } */
+	for (i = 0; i < blim; i++) {
+		setBit(bbloom, bloomhash(bp[0],bv[i],mb), 1);
+	}
+
+	/*  for (c) { test bbloom; built cbloom } */
+	for (i = 0; i < clim; i++) {
+		if (tstBit(bbloom, bloomhash(bp[0],cv[i],mb))) {
+			setBit(cbloom, bloomhash(cp[0],cv[i],mc), 1);
+			setBit(cbloom, bloomhash(cp[1],cv[i],mc), 1);
+			counter++;
+		}
+	}
+
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout, "1st round c %d\n", counter);
+	counter = 0;
+#endif
+
+	memset(bbloom, 0, mb);
+	/*  for (b) { test cbloom; rebuilt bbloom } */
+	for (i = 0; i < blim; i++) {
+		if ((tstBit(cbloom, bloomhash(cp[0],bv[i],mc)) &&
+			 tstBit(cbloom, bloomhash(cp[1],bv[i],mc)))) {
+			setBit(bbloom, bloomhash(bp[0],bv[i],mb), 1);
+			setBit(bbloom, bloomhash(bp[1],bv[i],mb), 1);
+			setBit(bbloom, bloomhash(bp[2],bv[i],mb), 1);
+			setBit(bbloom, bloomhash(bp[3],bv[i],mb), 1);
+			counter++;
+		}
+	}
+
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout, "1st round b %d\n", counter);
+	counter = 0;
+#endif
+
+	/* for (c) { check bbloom } */
+	*cn = BATnew(TYPE_oid,TYPE_int, clim/4);
+	memset(cbloom, 0, mc);
+	for (i = 0; i < clim; i++) {
+		if ((tstBit(bbloom, bloomhash(bp[0],cv[i],mb)) &&
+			 tstBit(bbloom, bloomhash(bp[1],cv[i],mb)) &&
+			 tstBit(bbloom, bloomhash(bp[2],cv[i],mb)) &&
+			 tstBit(bbloom, bloomhash(bp[3],cv[i],mb)))) {
+			oid o = (oid) i;
+			*cn = BUNins(*cn, &o, &cv[i], FALSE);
+			setBit(cbloom, bloomhash(cp[0],cv[i],mc), 1);
+			setBit(cbloom, bloomhash(cp[1],cv[i],mc), 1);
+			setBit(cbloom, bloomhash(cp[2],cv[i],mc), 1);
+			setBit(cbloom, bloomhash(cp[3],cv[i],mc), 1);
+			counter++;
+		}
+	}
+
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout, "2nd round c %d\n", counter);
+	counter = 0;
+#endif
+
+	*bn = BATnew(TYPE_oid,TYPE_int, blim/4);
+	/* for (b) {check cbloom} */
+	for (i = 0; i < blim; i++) {
+		if ((tstBit(cbloom, bloomhash(cp[0],bv[i],mc)) &&
+			 tstBit(cbloom, bloomhash(cp[1],bv[i],mc)) &&
+			 tstBit(cbloom, bloomhash(cp[2],bv[i],mc)) &&
+			 tstBit(cbloom, bloomhash(cp[3],bv[i],mc)))) {
+			oid o = (oid) i;
+			*bn = BUNins(*bn, &o, &bv[i], FALSE);
+			counter++;
+		}
+	}
+
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout, "2nd round b %d\n", counter);
+	counter = 0;
+#endif
+
+
 @c
 
 void
-GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
+GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn, int algo) {
 	int *bv, *cv;
 	size_t i, blim, clim;
 	int clog, blog;
@@ -365,7 +460,7 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 
 	/* b is the smaller one */
 	if ( BATcount(b) > BATcount(c) ) {
-		GDKbloomfilter_int_l(c, b, cn, bn);
+		GDKbloomfilter_int_l(c, b, cn, bn, algo);
 		return;
 	}
 
@@ -385,7 +480,7 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 	clog = (int) log(clim);
 	blog = (int) log(blim);
 
-	if (clog-blog > 2) {
+	if (algo == 2) {
 		/* only build one bloom filter on the smaller BAT,
 		 * scan once the larger BAT to reduce it and exit.
 		 * This is the case when
@@ -394,7 +489,7 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 		 * 3. L's bloom filter fits in memory
 		 */
 		@:body_smallsubset@
-	} else if (clog-blog <= 2) {
+	} else if (algo == 3) {
 		/* both bats are of the same size
 		 * build bloom filter on the left
 		 * scan right to filter out and built bloom on the right
@@ -405,6 +500,8 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 		 * 3. L's and R's bloom filters fit in memory
 		 */
 		@:body_equalinmem@
+	} else { /* algo == 4*/
+		@:body_outofmemory@
 	}
 
 	if ( *bn == NULL ) { /* no filtering on b */
@@ -449,7 +546,9 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			GDKbloomfilter_int(b, c, &bn, &cn);
 			break;
 		case 2: /* lefteris 1st */
-			GDKbloomfilter_int_l(b, c, &bn, &cn);
+		case 3: /* 2nd */
+		case 4: /* 3rd */
+			GDKbloomfilter_int_l(b, c, &bn, &cn, algo);
 			break;
 		default:
 			throw(MAL, "bbp.prejoin", "unknow algo selected");
