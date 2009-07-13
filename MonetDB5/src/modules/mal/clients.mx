@@ -131,7 +131,6 @@ clients_export str CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 clients_export str CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTusers(int *ret);
 clients_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -144,18 +143,7 @@ clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
-clients_export str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTshutdown(int *ret, bit *forced);
-
-#endif /* _CLIENTS_H */
 @c
 #include "mal_config.h"
 #include "clients.h"
@@ -457,6 +445,8 @@ checkPermission) can only be executed by the administrator.
 command md5sum(pw:str):str
 address CLTmd5sum
 comment "Return hex string representation of the MD5 hash of the given string";
+@h
+clients_export str CLTmd5sum(str *ret, str *pw);
 @c
 str CLTmd5sum(str *ret, str *pw) {
 	str tmp;
@@ -470,6 +460,8 @@ str CLTmd5sum(str *ret, str *pw) {
 command sha1sum(pw:str):str
 address CLTsha1sum
 comment "Return hex string representation of the SHA-1 hash of the given string";
+@h
+clients_export str CLTsha1sum(str *ret, str *pw);
 @c
 str CLTsha1sum(str *ret, str *pw) {
 	str tmp;
@@ -483,6 +475,8 @@ str CLTsha1sum(str *ret, str *pw) {
 command ripemd160sum(pw:str):str
 address CLTripemd160sum
 comment "Return hex string representation of the RIPEMD160 hash of the given string";
+@h
+clients_export str CLTripemd160sum(str *ret, str *pw);
 @c
 str CLTripemd160sum(str *ret, str *pw) {
 	str tmp;
@@ -496,6 +490,8 @@ str CLTripemd160sum(str *ret, str *pw) {
 command sha2sum(pw:str, bits:int):str
 address CLTsha2sum
 comment "Return hex string representation of the SHA-2 hash with bits of the given string";
+@h
+clients_export str CLTsha2sum(str *ret, str *pw, int *bits);
 @c
 str CLTsha2sum(str *ret, str *pw, int *bits) {
 	str tmp;
@@ -509,6 +505,8 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 command backendsum(pw:str):str
 address CLTbackendsum
 comment "Return hex string representation of the currently used hash of the given string";
+@h
+clients_export str CLTbackendsum(str *ret, str *pw);
 @c
 str CLTbackendsum(str *ret, str *pw) {
 	str tmp;
@@ -522,6 +520,8 @@ str CLTbackendsum(str *ret, str *pw) {
 pattern addUser(nme:str, pw:str, scen:bat[:str,:any_1]):oid
 address CLTaddUser
 comment "Allow user with password access to the given scenarios";
+@h
+clients_export str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	oid *ret = (oid *)getArgReference(stk, pci, 0);
@@ -540,6 +540,8 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern removeUser(nme:str):void
 address CLTremoveUser
 comment "Remove the given user from the system";
+@h
+clients_export str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str tmp;
@@ -556,6 +558,8 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern getUsername():str
 address CLTgetUsername
 comment "Return the username of the currently logged in user";
+@h
+clients_export str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
@@ -570,6 +574,8 @@ str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern getPasswordHash(user:str):str
 address CLTgetPasswordHash
 comment "Return the password hash of the given user";
+@h
+clients_export str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
@@ -586,6 +592,8 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 pattern changeUsername(old:str, new:str):void
 address CLTchangeUsername
 comment "Change the username of the user into the new string";
+@h
+clients_export str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
@@ -602,6 +610,8 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern changePassword(old:str, new:str):void
 address CLTchangePassword
 comment "Change the password for the current user";
+@h
+clients_export str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
@@ -618,6 +628,8 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern setPassword(user:str, pass:str):void
 address CLTsetPassword
 comment "Set the password for the given user";
+@h
+clients_export str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
@@ -634,6 +646,8 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern checkPermission(usr:str, pw:str, sc:str):void
 address CLTcheckPermission
 comment "Check permission for a user, requires hashed password (backendsum)";
+@h
+clients_export str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
@@ -660,6 +674,8 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 pattern addScenario(usr:str, sc:str):void
 address CLTaddScenario
 comment "add the given scenario to the allowed scenarios for the given user";
+@h
+clients_export str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
@@ -676,6 +692,8 @@ str CLTaddScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern removeScenario(usr:str, sc:str):void
 address CLTremoveScenario
 comment "remove the given scenario from the allowed scenarios for the given user";
+@h
+clients_export str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
@@ -692,6 +710,8 @@ str CLTremoveScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 pattern getUsers(s:bat[:str,:any_1]):bat[:oid,:str]
 address CLTgetUsers
 comment "return a BAT with user id and name available in the system with access to the given scenario(s)";
+@h
+clients_export str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	bat *ret = (bat *)getArgReference(stk, pci, 0);
@@ -711,4 +731,6 @@ str CLTshutdown(int *ret, bit *forced) {
 	(void) forced;
 	throw(MAL,"clients.shutdown", PROGRAM_NYI);
 }
+@h
+#endif /* _CLIENTS_H */
 @}
