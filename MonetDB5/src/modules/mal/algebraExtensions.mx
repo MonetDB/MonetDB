@@ -260,10 +260,7 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 
 #define prime(x,y) ((1 << (x+y)) + 1)
 
-@= hash
-ABS((prime(@1,7)*@2)%@3)
-
-@c
+#define bloomhash(a,b,c) ABS((prime((a),7)*(b))%(c))
 
 void
 GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
@@ -306,35 +303,35 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn) {
 
 	/* for (b) { built bloom } */
 	for (i = 0; i < blim; i++) {
-		setBit(bbloom, @:hash(1,bv[i],mb)@, 1);
-		setBit(bbloom, @:hash(2,bv[i],mb)@, 1);
-		setBit(bbloom, @:hash(3,bv[i],mb)@, 1);
-		setBit(bbloom, @:hash(4,bv[i],mb)@, 1);
+		setBit(bbloom, bloomhash(1,bv[i],mb), 1);
+		setBit(bbloom, bloomhash(2,bv[i],mb), 1);
+		setBit(bbloom, bloomhash(3,bv[i],mb), 1);
+		setBit(bbloom, bloomhash(4,bv[i],mb), 1);
 	}
 
 	/*  for (c) { test bbloom; built cbloom } */
 	*cn = BATnew(TYPE_oid,TYPE_int, blim/4);
 	for (i = 0; i < clim; i++) {
-		if ((tstBit(bbloom, @:hash(1,cv[i], mb)@) &&
-				tstBit(bbloom, @:hash(2,cv[i], mb)@) &&
-				tstBit(bbloom, @:hash(3,cv[i], mb)@) &&
-				tstBit(bbloom, @:hash(4,cv[i], mb)@))) {
+		if ((tstBit(bbloom, bloomhash(1,cv[i], mb)) &&
+				tstBit(bbloom, bloomhash(2,cv[i], mb)) &&
+				tstBit(bbloom, bloomhash(3,cv[i], mb)) &&
+				tstBit(bbloom, bloomhash(4,cv[i], mb)))) {
 			oid o = (oid) i;
 			*cn = BUNins(*cn, &o, &cv[i], FALSE);
-			setBit(cbloom, @:hash(1,cv[i],mc)@,1);
-			setBit(cbloom, @:hash(2,cv[i],mc)@,1);
-			setBit(cbloom, @:hash(3,cv[i],mc)@,1);
-			setBit(cbloom, @:hash(4,cv[i],mc)@,1);
+			setBit(cbloom, bloomhash(1,cv[i],mc),1);
+			setBit(cbloom, bloomhash(2,cv[i],mc),1);
+			setBit(cbloom, bloomhash(3,cv[i],mc),1);
+			setBit(cbloom, bloomhash(4,cv[i],mc),1);
 		}
 	}
 
 	/* for (b) { check cbloom } */
 	*bn = BATnew(TYPE_oid,TYPE_int, blim/4);
 	for (i = 0; i < blim; i++) {
-		if ((tstBit(cbloom, @:hash(1,bv[i], mc)@) &&
-				tstBit(cbloom, @:hash(2,bv[i], mc)@) &&
-				tstBit(cbloom, @:hash(3,bv[i], mc)@) &&
-				tstBit(cbloom, @:hash(4,bv[i], mc)@))) {
+		if ((tstBit(cbloom, bloomhash(1,bv[i], mc)) &&
+				tstBit(cbloom, bloomhash(2,bv[i], mc)) &&
+				tstBit(cbloom, bloomhash(3,bv[i], mc)) &&
+				tstBit(cbloom, bloomhash(4,bv[i], mc)))) {
 				oid o = (oid) i;
 			*bn = BUNins(*bn, &o, &bv[i], FALSE);
 		}
