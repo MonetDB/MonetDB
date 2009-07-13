@@ -406,6 +406,13 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 		stream_write(toConsole, "\t", 1, 1);
 		quoted_print(toConsole, c_name);
 		stream_write(toConsole, " ", 1, 1);
+		/* map wrd type to something legal */
+		if (strcmp(c_type, "wrd") == 0) {
+			if (strcmp(c_type_scale, "32") == 0)
+				c_type = "int";
+			else
+				c_type = "bigint";
+		}
 		if (strcmp(c_type, "boolean") == 0 ||
 		    strcmp(c_type, "int") == 0 ||
 		    strcmp(c_type, "smallint") == 0 ||
