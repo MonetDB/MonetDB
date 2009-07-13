@@ -42,7 +42,7 @@ io.printf("#hot join %d\n",d0);
 cnt:= aggr.count(j);
 io.print(cnt);
 t0:= alarm.usec();
-(w,y):= algebra.prejoin(d,e);
+(w,y):= algebra.prejoin(d,e,2);
 t1:= alarm.usec();
 d0:= t1-t0;
 d1:= d0;
