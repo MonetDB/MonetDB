@@ -57,7 +57,7 @@ io.print(cnt);
 
 # the heart of the matter
 t0:= alarm.usec();
-(w,y):= algebra.prejoin(lb2,rb2);
+(w,y):= algebra.prejoin(lb2,rb2,1);
 t1:= alarm.usec();
 d0:= t1-t0;
 d1:= d0;
@@ -76,7 +76,7 @@ io.printf("#join total %d\n",d1);
 #io.print(y);
 
 t0:= alarm.usec();
-(w,y):= algebra.prejoin_l(lb2,rb2);
+(w,y):= algebra.prejoin(lb2,rb2,4);
 t1:= alarm.usec();
 d0:= t1-t0;
 d1:= d0;
