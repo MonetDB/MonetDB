@@ -290,27 +290,19 @@ mal_export str SABAOTHgetLocalConnection(str *ret);
  * first is returned.
  */
 str SABAOTHgetLocalConnection(str *ret) {
-	FILE *f;
-	str path = alloca(sizeof(char) * (PATHLENGTH + 1));
 	char data[8096];
 	str tmp;
+	sabdb *stats;
 
-	rethrow("sabaoth.getLocalConnection", tmp,
-			getDBPath(&path, PATHLENGTH, CONNECTIONFILE));
+	rethrow("sabaoth.getLocalConnection", tmp, SABAOTHgetMyStatus(&stats));
 
-	data[8095] = '\0';
-	if ((f = fopen(path, "r")) != NULL) {
-		if (fgets(data, 8095, f) != NULL) {
-			if (*data != '\0' && data[strlen(data) - 1] == '\n')
-				data[strlen(data) - 1] = '\0';
-			*ret = GDKstrdup(data);
-			(void)fclose(f);
-			return(MAL_SUCCEED);
-		}
-		(void)fclose(f);
+	if (stats == NULL || stats->conns == NULL || stats->conns->val == NULL) {
+		*ret = GDKstrdup(str_nil);
+	} else {
+		snprintf(data, sizeof(data), "%s%s", stats->conns->val, stats->dbname);
+		*ret = GDKstrdup(data);
 	}
 
-	*ret = GDKstrdup(str_nil);
 	return(MAL_SUCCEED);
 }
 
