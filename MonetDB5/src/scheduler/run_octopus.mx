@@ -35,10 +35,10 @@ To make our live easier, we assume that all tentacles are
 grouped together in a guarded block as follows:
 
 @verbatim
-barrier (parallel,version):= scheduler.octopus(timeout);
-a:= octopus.exec_qry(sitename,fcnname,version);
+barrier (parallel,version):= scheduler.octopus();
+a:= octopus.exec_qry(sitename,fcnname,version,arg...);
 ...
-b:= octopus.exec_qry(sitename,fcnname,version);
+b:= octopus.exec_qry(sitename,fcnname,version,arg...);
 z:= mat.pack(a,...,b);
 exit (parallel,version);
 @end verbatim
@@ -51,8 +51,8 @@ work threads available.
 
 To make the octopus work, the scheduler needs a list of databases
 to play with.
-For the time being this consists of all the database discovered
-using Merovingian and ending with the phrase 'sea'.
+For the time being this consists of all the database resolved
+using Merovingian with the phrase '*/octopus'.
 The default is to use the local database as a target.
 @{
 @mal
@@ -66,7 +66,7 @@ comment "Run the program block in parallel, but don't wait longer then t seconds
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/* #define DEBUG_RUN_OCTOPUS 		to trace processing */
+#define DEBUG_RUN_OCTOPUS 		/* to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -100,67 +100,61 @@ typedef struct REGMAL{
 
 typedef struct {
 	str name;
+	str uri;
 	str usr;
 	str pwd;
 	Registry nxt;	/* list of registered queries */
-} Sea;
+} Worker;
 
 #define MAXSITES 2048	/* should become dynamic at some point */
-static Sea sea[MAXSITES];
+static Worker workers[MAXSITES];
 static int nroctopus = 0;
 
 static str
 OCTOPUSdiscover(Client cntxt){
-	bat b1 = 0, b2 = 0;
-	BAT *l1, *l2;
+	bat bid = 0;
+	BAT *b;
 	BUN p,q;
 	str msg = MAL_SUCCEED;
 	BATiter bi;
-	str dbname= GDKgetenv("gdk_dbname");
+	char buf[BUFSIZ]= "*/octopus", *s= buf;
 
-	msg = RMTgetList(&b1,&b2);
+	msg = RMTresolve(&bid,&s);
 	if ( msg != MAL_SUCCEED)
 		return msg;
-	l1 = BATdescriptor(b1);
-	if ( l1 == NULL)
-		throw(MAL,"octopus.discover",OPERATION_FAILED "No database list available");
-	l2 = BATdescriptor(b2);
-	if ( l2 == NULL){
-		BBPreleaseref(b1);
-		throw(MAL,"octopus.discover",OPERATION_FAILED "No database list available");
-	}
-	/* add the databases to the working set */
-	bi= bat_iterator(l1);
-	BATloop(l1,p,q){
+	b = BATdescriptor(bid);
+	if ( b == NULL)
+		throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker list available");
+
+	bi= bat_iterator(b);
+	BATloop(b,p,q){
 		str t= (str) BUNtail(bi,p);
 
 		if (nroctopus ==MAXSITES) break;
-		if ( (strlen(t) >= 3 && strcmp(".octopus", t+strlen(t)-8) == 0) ||
-			strcmp(dbname,t) == 0) {
-			sea[nroctopus].usr = GDKstrdup("monetdb");
-			sea[nroctopus].pwd = GDKstrdup("monetdb");
-			sea[nroctopus++].name= GDKstrdup(t);
+		workers[nroctopus].usr = GDKstrdup("monetdb");
+		workers[nroctopus].uri = GDKstrdup(t);
+		workers[nroctopus].pwd = GDKstrdup("monetdb");
+		snprintf(buf,BUFSIZ, "octopus%d",nroctopus);
+		RMTcreateURI( &workers[nroctopus++].name, &s, &t);
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Found site %s\n",t);
+		stream_printf(cntxt->fdout,"Worker site %s %s\n",buf,t);
 #else
 		(void) cntxt;
 #endif
-		}
 	}
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"Octopus %d\n",nroctopus);
 #endif
-	BBPreleaseref(b1);
-	BBPreleaseref(b2);
+	BBPreleaseref(bid);
 	return MAL_SUCCEED;
 }
 
 @-
-We first register the tentacle at all sites and keep
+We first register the tentacle code at all worker sites and keep
 a list of those already sent.
 @c
 static int
-OCTOPUSfind(Sea s, str qry){
+OCTOPUSfind(Worker s, str qry){
 	Registry r;
 	for ( r= s.nxt; r; r= r->nxt)
 	if ( strcmp(qry, r->fcn)==0)
@@ -181,7 +175,7 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 
 	fname = getVarConstant(mb,getArg(p,2)).val.sval;
 	for ( i= 0; i< nroctopus; i++){
-		msg= RMTconnect(&conn, &sea[i].name, &sea[i].usr, &sea[i].pwd);
+		msg= RMTconnect(&conn, &workers[i].name, &workers[i].usr, &workers[i].pwd);
 		if (msg ){
 			stream_printf(cntxt->fdout,"!%s\n",msg);
 			GDKfree(msg);
@@ -189,12 +183,12 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 			(void) RMTdisconnect(&ret,&conn);
 			continue;
 		}
-		if( !OCTOPUSfind(sea[i], fname) ){
+		if( !OCTOPUSfind(workers[i], fname) ){
 			msg = RMTregisterInternal(cntxt, conn, octopusRef, fname);
 
 #ifdef DEBUG_RUN_OCTOPUS
 			stream_printf(cntxt->fdout,"octopus.%s registered at site %s\n",
-				fname,sea[i].name);
+				fname,workers[i].name);
 			stream_printf(cntxt->fdout,"reply: %s\n",msg?msg:"ok");
 #else
 			(void) cntxt;
@@ -202,8 +196,8 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 			if ( msg == MAL_SUCCEED){
 				Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
 				r->fcn = GDKstrdup(getFunctionId(p));
-				r->nxt = sea[i].nxt;
-				sea[i].nxt = r;
+				r->nxt = workers[i].nxt;
+				workers[i].nxt = r;
 			}
 		}
 		(void) RMTdisconnect(&ret,&conn);
@@ -234,12 +228,12 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		cst = &getVarConstant(mb, i);
 		if( cst->val.sval )
 			GDKfree(cst->val.sval);
-		cst->val.sval= GDKstrdup(sea[rr].name);
+		cst->val.sval= GDKstrdup(workers[rr].name);
 		cst->len = (int) strlen(cst->val.sval);
 		garbageElement(cntxt, &stk->stk[i]);
 		VALcopy(&stk->stk[i], cst);
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"octopus site selected %s\n",sea[rr].name);
+		stream_printf(cntxt->fdout,"octopus site selected %s\n",workers[rr].name);
 		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #else
 		(void) cntxt;
@@ -258,6 +252,8 @@ The version argument indicates the tentacles
 if it is time to refresh their caches. 
 It should be obtained from the recycler where we
 know when updates have been taken place.
+
+The time-out parameter is not used yet.
 @c
 str
 OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
