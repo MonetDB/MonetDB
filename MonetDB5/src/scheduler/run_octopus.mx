@@ -134,10 +134,8 @@ OCTOPUSdiscover(Client cntxt){
 		workers[nroctopus].usr = GDKstrdup("monetdb");
 		workers[nroctopus].uri = GDKstrdup(t);
 		workers[nroctopus].pwd = GDKstrdup("monetdb");
-		snprintf(buf,BUFSIZ, "octopus%d",nroctopus);
-		RMTcreateURI( &workers[nroctopus++].name, &s, &t);
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Worker site %s %s\n",buf,t);
+		stream_printf(cntxt->fdout,"Worker site %s\n",t);
 #else
 		(void) cntxt;
 #endif
