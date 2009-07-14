@@ -14,11 +14,10 @@ stdout of test 'remote99` in directory 'src/modules/mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33995/
 function user.main():void;
     uri := sabaoth.getLocalConnectionURI();
-    remote.create("leak",uri);
 # test leakage of connection settings. 
     db := const.take("dbname");
 barrier (k,v) := language.newRange(0:lng);
-    conn:str  := remote.connect("leak","monetdb","monetdb");
+    conn:str  := remote.connect(uri,"monetdb","monetdb");
     remote.disconnect(conn);
     redo (k,v) := language.nextElement(1:lng,200:lng);
 exit (k,v);

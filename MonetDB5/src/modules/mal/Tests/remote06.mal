@@ -1,12 +1,10 @@
 # let connect figure out itself how to connect to the running db
 uri := sabaoth.getLocalConnectionURI();
-db := "remote06";
-remote.create(db, uri);
 
 # create a persistent connecton to ourself
-conn1:str := remote.connect(db, "monetdb", "monetdb");
+conn1:str := remote.connect(uri, "monetdb", "monetdb");
 # do it again ...
-conn2:str := remote.connect(db, "monetdb", "monetdb");
+conn2:str := remote.connect(uri, "monetdb", "monetdb");
 # ... and check they are not the same
 barrier if := conn1 == conn2;
 	io.printf("!oops: %s == %s\n", conn1, conn2);

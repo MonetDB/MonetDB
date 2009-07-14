@@ -5,6 +5,5 @@ function octopus.qry(version:int):bat[:oid,:int];
 end octopus.qry;
 
 uri := sabaoth.getLocalConnectionURI();
-remote.create("octopus", uri);
-conn:str:= remote.connect("octopus", "monetdb", "monetdb");
+conn:str:= remote.connect(uri, "monetdb", "monetdb");
 remote.register(conn, "octopus", "qry");

@@ -19,8 +19,7 @@ function octopus.qry(version:int):bat[:oid,:int];
 end qry;
 function user.main():void;
     uri := sabaoth.getLocalConnectionURI();
-    remote.create("octopus",uri);
-    conn:str  := remote.connect("octopus","monetdb","monetdb");
+    conn:str  := remote.connect(uri,"monetdb","monetdb");
     remote.register(conn,"octopus","qry");
 end main;
 !MALException:remote.register:Operation failed Function 'octopus.qry' already defined on the remote site

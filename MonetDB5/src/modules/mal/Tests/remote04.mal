@@ -1,8 +1,6 @@
 # let connect figure out itself how to connect to the running db
 uri := sabaoth.getLocalConnectionURI();
-db := "remote04";
-remote.create(db, uri);
-conn:str := remote.connect(db, "monetdb", "monetdb");
+conn:str := remote.connect(uri, "monetdb", "monetdb");
 io.print(conn);
 
 b := bat.new(:str, :int);

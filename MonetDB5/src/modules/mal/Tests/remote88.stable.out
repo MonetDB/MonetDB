@@ -24,10 +24,8 @@ function octopus.bind(conn:str,v:int):bat[:oid,:int];
     bv:bat[:oid,:int]  := remote.get(conn,b);
     return bind := bv;
 end bind;
-function octopus.tentacle(v:int):bat[:oid,:int];
-# this only works because the example doesn't go off of the same 
-# machine 
-    conn:str  := remote.connect("octopus_leg_to_head","monetdb","monetdb","msql");
+function octopus.tentacle(v:int,uri:str):bat[:oid,:int];
+    conn:str  := remote.connect(uri,"monetdb","monetdb","msql");
     b := octopus.bind(conn,v);
 catch RMTexception:str ;
     io.print(RMTexception);
@@ -35,11 +33,13 @@ exit RMTexception:str ;
     remote.disconnect(conn);
     return tentacle := b;
 end tentacle;
-function octopus.exec(alias:str,query:str,version:int):bat[:oid,:int];
-    conn:str  := remote.connect(alias,"monetdb","monetdb","msql");
+function octopus.exec(uri:str,query:str,version:int):bat[:oid,:int];
+    conn:str  := remote.connect(uri,"monetdb","monetdb","msql");
     m := remote.put(conn,version);
     v := remote.put(conn,nil:bat[:oid,:int]);
-    v := remote.exec(conn,"octopus",query,m);
+    u := remote.put(conn,uri);
+# this works with uri, because head and tentacle are the same */ 
+    v := remote.exec(conn,"octopus",query,m,u);
     res:bat[:oid,:int]  := remote.get(conn,v);
     remote.disconnect(conn);
     return exec := res;
@@ -54,15 +54,13 @@ function user.main():void;
 #profiler.openStream("console"); 
 #profiler.start(); 
     uri := sabaoth.getLocalConnectionURI();
-    remote.create("octopus_head_to_leg",uri);
-    remote.create("octopus_leg_to_head",uri);
 barrier (k,v) := language.newRange(0:int);
     io.print(v);
 barrier go := language.dataflow();
-    v1:bat[:oid,:int]  := octopus.exec("octopus_head_to_leg","tentacle",v);
-    v2:bat[:oid,:int]  := octopus.exec("octopus_head_to_leg","tentacle",v);
-    v3:bat[:oid,:int]  := octopus.exec("octopus_head_to_leg","tentacle",v);
-    v4:bat[:oid,:int]  := octopus.exec("octopus_head_to_leg","tentacle",v);
+    v1:bat[:oid,:int]  := octopus.exec(uri,"tentacle",v);
+    v2:bat[:oid,:int]  := octopus.exec(uri,"tentacle",v);
+    v3:bat[:oid,:int]  := octopus.exec(uri,"tentacle",v);
+    v4:bat[:oid,:int]  := octopus.exec(uri,"tentacle",v);
     res := mat.pack(v1,v2,v3,v4);
 exit go;
     redo (k,v) := language.nextElement(1:int,25:int);
@@ -103,8 +101,6 @@ end main;
 [ 0,	  "0"	  ]
 [ 1,	  "0"	  ]
 [ 2,	  "0"	  ]
-[ 3,	  "0"	  ]
-[ 4,	  "0"	  ]
 
 # 20:12:35 >  
 # 20:12:35 >  Done.
