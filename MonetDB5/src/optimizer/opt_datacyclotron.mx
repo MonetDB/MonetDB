@@ -101,11 +101,12 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 @include optimizerWrapper.mx
 @h
 @:exportOptimizer(datacyclotron)@
-#endif
 @c
 #include "opt_statistics.h"
 @:wrapOptimizer(datacyclotron,OPT_CHECK_ALL)@
 @- The DataCyclotron Wrapper
+@h
+opt_export str DCrequest(int *ret, str *sch, str *tab, str *col, int *kind);
 @c
 str
 DCrequest(int *ret, str *sch, str *tab, str *col, int *kind){
@@ -117,6 +118,9 @@ DCrequest(int *ret, str *sch, str *tab, str *col, int *kind){
 	throw(MAL,"datacyclotron.request",PROGRAM_NYI);
 }
 
+@h
+opt_export str DCpin(int *ret, int *bid);
+@c
 str
 DCpin(int *ret, int *bid){
 	(void) ret;
@@ -124,7 +128,9 @@ DCpin(int *ret, int *bid){
 	throw(MAL,"datacyclotron.pin",PROGRAM_NYI);
 }
 
-
+@h
+opt_export str DCunpin(int *ret, int *bid);
+@c
 str
 DCunpin(int *ret, int *bid){
 	(void) ret;
@@ -132,3 +138,5 @@ DCunpin(int *ret, int *bid){
 	throw(MAL,"datacyclotron.unpin",PROGRAM_NYI);
 }
 
+@h
+#endif
