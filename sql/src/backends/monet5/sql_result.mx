@@ -907,6 +907,7 @@ mvc_export_value(mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, 
 	(void) qtype; /* pacify compiler in case asserts are disabled */
 #endif
 	assert(qtype == Q_TABLE);
+
 	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
@@ -1054,7 +1055,8 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (stream_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) != 1)
+		if (stream_write(s, c->type.type->sqlname,
+					strlen(c->type.type->sqlname), 1) != 1)
 			return export_error(order);
 		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
 			return export_error(order);
