@@ -43,7 +43,6 @@ function octopus.exec(uri:str, query:str, version:int):bat[:oid,:int];
 end exec;
 
 uri := sabaoth.getLocalConnectionURI();
-io.print(uri);
 
 barrier (k,v):= language.newRange(0:int);
 	io.print(v);
