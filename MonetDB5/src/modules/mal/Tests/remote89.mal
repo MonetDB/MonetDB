@@ -1,0 +1,56 @@
+# test octopus framework for a single server!!
+include sql;
+# The script mimicks the core produced by SQL
+#profiler.activate("statement");
+#profiler.setFilter("*","*");
+#profiler.openStream("console");
+#profiler.start();
+
+function octopus.bind(v:int):bat[:oid,:int];
+	b:= bat.new(:oid,:int);
+	bat.append(b,v);
+	return b;
+end bind;
+
+function octopus.bind(conn:str,v:int):bat[:oid,:int];
+	vh:= remote.put(conn,v);
+	b:= remote.put(conn,nil:bat[:oid,:int]);
+	b:= remote.exec(conn,"octopus","bind",vh);
+	bv:bat[:oid,:int]:= remote.get(conn,b);
+	return bv;
+end bind;
+
+function octopus.tentacle(v:int):bat[:oid,:int];
+	# this only works because the example doesn't go off of the same
+	# the name will be actually hardwired into the code produced for the octopus.
+	d := const.take("dbname");
+	conn:str := remote.connect(d, "monetdb", "monetdb", "msql");
+	b:= octopus.bind(conn,v);
+catch RMTexception:str;
+	io.print(RMTexception);
+exit RMTexception;
+	remote.disconnect(conn);
+	return tentacle:=b;
+end tentacle;
+
+#the alias is relevant for the octopus worker assignment only
+function octopus.exec(alias:str, query:str, version:int):bat[:oid,:int];
+	conn:str := remote.connect(alias, "monetdb", "monetdb", "msql");
+	m:= remote.put(conn,version);
+	v:= remote.put(conn,nil:bat[:oid,:int]);
+	v:= remote.exec(conn,"octopus",query,m);
+	res:bat[:oid,:int]:= remote.get(conn,v);
+	remote.disconnect(conn);
+	return exec:=res;
+end exec;
+
+res:= nil:bat;
+barrier (go,version):= scheduler.octopus(10);
+	v1:bat[:oid,:int] :=octopus.exec("octopus_worker_0", "tentacle", version);
+	v2:bat[:oid,:int] :=octopus.exec("octopus_worker_1", "tentacle", version);
+	v3:bat[:oid,:int] :=octopus.exec("octopus_worker_2", "tentacle", version);
+	v4:bat[:oid,:int] :=octopus.exec("octopus_worker_3", "tentacle", version);
+	res:= mat.pack(v1,v2,v3,v4);
+exit (go,version);
+io.print(res);
+io.print("done");
