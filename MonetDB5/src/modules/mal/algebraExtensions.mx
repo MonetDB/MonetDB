@@ -139,7 +139,7 @@ typedef struct{
 
 void 
 ALGsetFilter(BAT *b, Filter *h, int start){
-	size_t i, blim;
+	BUN i, blim;
 	int *bv, val;
 
 	blim= BATcount(b);
@@ -165,7 +165,7 @@ ALGsetFilter(BAT *b, Filter *h, int start){
 		GDKfree(h->hash);
 	} while( h->prime <= (size_t) start+4);
 #ifdef DEBUG_BLOOMFILTER
-	THRprintf(GDKout,"hash %d %o "SZFMT " \n", h->bits, h->prime, h->fill);
+	THRprintf(GDKout,"hash %d "SZFMT" "SZFMT " \n", h->bits, h->prime, h->fill);
 #endif
 }
 
@@ -174,7 +174,7 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 
 	int *bv, *cv;
 	char *bdone, *cdone;
-	size_t i, blim, clim, bcnt=0, ccnt=0;
+	BUN i, blim, clim, bcnt=0, ccnt=0;
 	Filter h[4];
 
 	if ( BATcount(b) > BATcount(c) ) {
@@ -205,8 +205,8 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 	bdone = (char*) GDKzalloc(blim);
 	cdone = (char*) GDKzalloc(clim);
 #ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"Martin b %d ",blim);
-	stream_printf(GDKout,"c %d \n",clim);
+	stream_printf(GDKout,"Martin b " BUNFMT " ",blim);
+	stream_printf(GDKout,"c " BUNFMT " \n",clim);
 #endif
 
 	for ( i = 0; i < clim; i++){
@@ -248,8 +248,8 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 		BBPkeepref((*cn)->batCacheid);
 	}
 #ifdef DEBUG_BLOOMFILTER
-		stream_printf(GDKout,"b-reduced %d->%d\n",blim,BATcount(*bn));
-		stream_printf(GDKout,"c-reduced %d->%d\n",clim,BATcount(*cn));
+		stream_printf(GDKout,"b-reduced " BUNFMT "->" BUNFMT "\n",blim,BATcount(*bn));
+		stream_printf(GDKout,"c-reduced " BUNFMT "->" BUNFMT "\n",clim,BATcount(*cn));
 #endif
 	GDKfree(bdone);
 	GDKfree(cdone);
@@ -453,9 +453,9 @@ GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 void
 GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn, int algo) {
 	int *bv, *cv;
-	size_t i, blim, clim;
+	BUN i, blim, clim;
 	int clog, blog;
-	size_t mb, mc;
+	BUN mb, mc;
 	mb = mc = 0;
 
 	/* b is the smaller one */
@@ -514,10 +514,10 @@ GDKbloomfilter_int_l(BAT *b, BAT *c, BAT **bn, BAT **cn, int algo) {
 	BBPkeepref((*cn)->batCacheid);
 
 #ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"Lefteris b %d ", blim);
-	stream_printf(GDKout,"c %d vector size %d,%d\n", clim, mb, mc);
-	stream_printf(GDKout,"b-reduced %d->%d\n",blim, BATcount(*bn));
-	stream_printf(GDKout,"c-reduced %d->%d\n",clim,  BATcount(*cn));
+	stream_printf(GDKout,"Lefteris b " BUNFMT " ", blim);
+	stream_printf(GDKout,"c " BUNFMT " vector size " BUNFMT "," BUNFMT "\n", clim, mb, mc);
+	stream_printf(GDKout,"b-reduced " BUNFMT "->" BUNFMT "\n",blim, BATcount(*bn));
+	stream_printf(GDKout,"c-reduced " BUNFMT "->" BUNFMT "\n",clim,  BATcount(*cn));
 #endif
 
 }
