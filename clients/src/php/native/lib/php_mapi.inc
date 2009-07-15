@@ -21,6 +21,8 @@
 
 	date_default_timezone_set('Europe/Amsterdam'); /* Set the default timezone. TODO: read from php.ini */
 	
+	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
+	
 	define("REPLY_SIZE", "-1"); // Set the initial reply size
 	
 	define("Q_TABLE", "1"); // SELECT operation
@@ -36,8 +38,11 @@
 	define("MSG_INFO", "!"); // info response from mserver
 	define("MSG_TUPLE", "[");
 	define("MSG_PROMPT", "");
+
+	define("PROTOCOL_v8", 8); // supported protocol(s)	
+	define("PROTOCOL_v9", 9); // supported protocol(s)
 	
-	define("PROTOCOL", "9"); // supported protocol(s)
+	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 	
 	$socket	= mapi_open();
 	$handle = array("header" => "", "query" => "", "record_set" => array(), "operation" => -1);
@@ -51,30 +56,36 @@
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
 			while ($handle["query"]["index"] < $handle["query"]["rows"]) {
 				// export a new window
-				write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " 10" );				
-				$handle["query"]["index"] += 10;
-	
-				$operation = mapi_store(mapi_read());
+				$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
+				
+				$exp_size = min(10, $left_rows);
+				write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size );				
+				$data = mapi_read();
+				
+				$operation = mapi_store($data);
+				
+				$handle["query"]["index"] += $exp_size;
 				
 			}
 		}
 		// record the last operation succesfully executed.
 		$handle["operation"] = $operation;
+		print_r($handle["record_set"]);
 		return $handle;
 	}
 	
 	function mapi_store($data) {
 		global $handle;
-		
-			
+				
 		$data = explode("\n", $data);
 
 		$record_set = "";
 		$operation = "";
 		
+		$count = 0;
+		
 		$rows = ""; // stores (partially) retrieved rows
-				foreach ($data as $row){
-			
+		foreach ($data as $row) {			
 			if ($row[0] == MSG_QUERY) {
 				if ($row[1] == Q_TABLE) {
 					$operation = Q_TABLE;
@@ -91,22 +102,14 @@
 				} else if ($row[1] == Q_BLOCK) {
 					// add Q_BLOCK to the record set
 					$operation = Q_BLOCK;
-					
-					foreach ($data as $row) {
-						$rows = $rows . $row;
-					}
-				} else if ($row[1] == MSG_PROMPT) {
-					// block of rows retrieved
-					$record_set = array_merge($record_set, php_parse_tuples($rows));
-					$rows = "";
 				}
-				
 			} else if ($row[0] == MSG_SCHEMA_HEADER){
 				// skip for now
 				continue;
 			} else if ($row[0] == MSG_TUPLE) {
 				// process tuples
 				$rows = $rows . $row;
+				$count += 1;
 			} else if ($row[0] == MSG_PROMPT) {
 				// receive all the tuples
 				$record_set = php_parse_tuples($rows);
@@ -115,6 +118,7 @@
 			
 		}
 		
+		//print_r($record_set);
 		$handle["record_set"] = array_merge($handle["record_set"], $record_set);
 		
 		return $operation;
@@ -152,25 +156,20 @@
 		hash	 =>
 	
 	*/
-	function mapi_connect() {
+	function mapi_connect($options, $merovingian_iter) {
 		global $socket;
 		
-		$host = "127.0.0.1";
-		$port = "50000";
-		
-		$user = "monetdb";
-		$passwd = "monetdb";
-		$hash = "sha1";
-		$dbname = "demo";
-		
-		if (socket_connect($socket, $host, $port) == FALSE) {
-			print(socket_strerror(socket_last_error()));
-			return FALSE;
-		}
+		$host 	= $options["host"];
+		$port 	= $options["port"];
+
+		$user 	= $options["username"];
+		$passwd = $options["password"];
+		$hash 	= $options["hashfunc"];
+		$dbname = $options["database"];
 		
 		# get server challenge
-		$challenge = mapi_read();
-				
+		$challenge = mapi_read();				
+
 		/*
 			Array
 			(
@@ -185,33 +184,84 @@
 		$credentials = split(":", $challenge);
 		
 
-		$response = "";
-		// $challenge[0] contains the salt
-		mapi_authenticate($user, $passwd, $hash, $credentials[0], $dbname);
-		$response = mapi_read();
 
-		set_timezone();
+		// $challenge[0] contains the salt
 		
-		write_command("reply_size " . REPLY_SIZE);		
+		if ($credentials[2] == PROTOCOL_v8 ){
+			// Protocol v8 supported only for legacy/testing reasons
+			mapi_authenticate_v8($user, $passwd, $hash, $credentials[0], $dbname);
+		} else if ($credentials[2] == PROTOCOL_v9) {
+			// $credentials[5] contains pwhash
+			mapi_authenticate_v9($user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
+		} else {
+			print "Protocol " . $credentials[2] . " not supported. Aborting.";
+			return FALSE;
+			
+		}
+		
+		$response = mapi_read();
+		print "\n" . $response; 
+		
+		if ($response != MSG_PROMPT) { 
+		// not ready to authenticate yet
+			if ($response[0] == MSG_REDIRECT) {
+				print "Being redirected\n";
+				if ($credentials[1] == "merovingian") {
+					print "merovingian responded\n";
+					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
+						$merovingian_iter++;
+						mapi_connect($options, $merovingian_iter);
+					}
+				
+				}
+				else if ($credentials[1] == "mserver") {
+					mapi_close();
+					$socket = mapi_connect();
+					mapi_connect($options);
+				}
+				
+			} else if ($response[0] == MSG_INFO) {
+				print "Error: " . $response;
+			}
+		
+		
+		}
 		
 		return TRUE;
 	}
 	
 	
-	function mapi_authenticate($user, $passwd, $hash, $salt, $dbname) {
+	
+	function mapi_authenticate_v8($user, $passwd, $hash, $salt, $dbname) {
 		$auth_string = "";
 		
-		$hashsum = hash(strtolower($hash), $passwd . $salt);
+		if (strtolower($hash) != "plain") {
+			$hashsum = hash(strtolower($hash), $passwd . $salt);
+		} else {
+			$hashsum = $passwd+$salt;
+		}
+		
 		
 		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
 		
 		mapi_write($auth_string);
 	}
 
+	function mapi_authenticate_v9($user, $passwd, $hash, $salt, $dbname, $pwhash) {
+		$auth_string = "";
+	
+		$pwhashsum = hash(strtolower($pwhash), $passwd);
+		$hashsum   = hash(strtolower($hash), $pwhashsum . $salt);
+		
+		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
+		
+		mapi_write($auth_string);
+	}
 
 	# decode the header and get the requested amount of data
 	function mapi_read() {
 		global $socket;
+
 		# get the first 2 bytes
 		$header = socket_read($socket, 2);
 		$data = "";
@@ -236,7 +286,7 @@
 
 
 	# encode data and send it to the server. Returns the number of bytes sent.
-	function mapi_write($msg) {
+	function mapi_write1($msg) {
 		global $socket;
 		
 		$fb = strlen($msg);
@@ -254,9 +304,48 @@
 		
 		return strlen($msg);
 	}
+
+
+	function mapi_write($msg) {
+		global $socket;
+		
+		$fb = 0;
+		$sb = 0;
+		
+		$buf = 0;
+		
+		$is_final = FALSE;
+		while (! $is_final) {
+		
+			if (strlen($msg) < MAX_PACKET_SIZE) {
+				$is_final = TRUE;
+				$data = $msg;
+				$fb = (strlen($data) << 1) | 1;
+				
+			} else {
+				$data  = substr($msg, $fb, min(MAX_PACKET_SIZE, len($msg) - $fb)  );
+				
+				$fb = (strlen($data) << 1) | 0; // more packets will follow
+				
+			}
+			
+		
+			
+			if ($buf += socket_write($socket, chr($fb) . chr(0) . $data) == FALSE) {
+				print socket_strerror(socket_last_error());
+				return -1;
+			}
+		
+		}
+		
+		return $buf;
+	}
+
+
 	
 	function set_timezone() {
 		global $socket;
+
 		$tz_offset = "'" . date('P') . "'"; /* Difference to Greenwich time (GMT) with colon between hours and minutes */
 				
 		$query = "sSET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE;";
@@ -278,19 +367,54 @@
 		global $socket;
 		
 		$buf = mapi_write("X" . $cmd . "\nX");
-
+		
+/*
 		$response = mapi_read();
 		
 		if ($response == "") { 
 			return TRUE; 
 		} else { 
-			print $response; 
+			print "RESPONSE" . $response; 
 			return FALSE; 
 		}
-		
+*/		
 	}
 	
-	function mapi_connect_proxy() {
+	
+	function mapi_connect_proxy($options) {
+		global $socket;
+		
+		$merovingian_iter = 0;
+		
+		$host 	= $options["host"];
+		$port 	= $options["port"];
+
+		$user 	= $options["username"];
+		$passwd = $options["password"];
+		$hash 	= $options["hashfunc"];
+		$dbname = $options["database"];
+		
+
+		if (socket_connect($socket, $host, $port) == FALSE) {
+			print(socket_strerror(socket_last_error()));
+			return FALSE;
+		}
+		
+		if (mapi_connect($options, $merovingian_iter) == TRUE ) {
+			/* Connected */
+			
+			set_timezone(); // arbitrarly set the timezone
+			
+			// export the reply size (max number of tuples returned at query executions)
+			write_command("reply_size " . REPLY_SIZE);		
+			if (strlen($response = mapi_read()) > 0 ) {
+				// something went wrong 
+				// print "RESPONSE:". $response;
+				return FALSE;
+			}
+		} else {
+			return FALSE;
+		}
 		
 		return TRUE;
 	}

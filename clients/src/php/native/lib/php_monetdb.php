@@ -24,7 +24,15 @@
 
 	
 	function monetdb_connect() {
-		mapi_connect();
+	 	$options["host"] = "127.0.0.1";
+		$options["port"] = "50000";
+
+		$options["username"] = "monetdb";
+		$options["password"] = "monetdb";
+		$options["hashfunc"] = "sha1";	
+		$options["database"] = "ruby"; 
+		
+		mapi_connect_proxy($options);
 	}
 
 
@@ -46,7 +54,9 @@
 		
 	}
 
-	monetdb_connect();
+	if (monetdb_connect() == FALSE) {
+		print "Connection failed\n";
+	}
 	
 	monetdb_query("select * FROM tables");
 	
