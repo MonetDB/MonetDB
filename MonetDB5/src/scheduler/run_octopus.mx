@@ -66,7 +66,7 @@ comment "Run the program block in parallel, but don't wait longer then t seconds
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#define DEBUG_RUN_OCTOPUS 		/* to trace processing */
+/* #define DEBUG_RUN_OCTOPUS 		to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -92,6 +92,7 @@ the (remote) database servers.
 #include "optimizer.h"
 #include <mapilib/Mapi.h>
 #include "remote.h"
+#include "mal_sabaoth.h"
 
 typedef struct REGMAL{
 	str fcn;
@@ -119,9 +120,26 @@ OCTOPUSdiscover(Client cntxt){
 	BATiter bi;
 	char buf[BUFSIZ]= "*/octopus", *s= buf;
 
+	if (nroctopus ==MAXSITES) 
+		throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker left");
+
 	msg = RMTresolve(&bid,&s);
-	if ( msg != MAL_SUCCEED)
-		return msg;
+	if ( msg != MAL_SUCCEED){
+		/* there is a last resort, yourself */
+		SABAOTHgetLocalConnection(&s);
+		snprintf(buf,BUFSIZ,"worker_%d",nroctopus);
+		workers[nroctopus].name = GDKstrdup(buf);
+		workers[nroctopus].uri = s;
+		workers[nroctopus].usr = GDKstrdup("monetdb");
+		workers[nroctopus].pwd = GDKstrdup("monetdb");
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(cntxt->fdout,"Worker site %d %s\n", nroctopus, s);
+#else
+		(void) cntxt;
+#endif
+		nroctopus++;
+		return MAL_SUCCEED;
+	}
 	b = BATdescriptor(bid);
 	if ( b == NULL)
 		throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker list available");
@@ -130,15 +148,17 @@ OCTOPUSdiscover(Client cntxt){
 	BATloop(b,p,q){
 		str t= (str) BUNtail(bi,p);
 
-		if (nroctopus ==MAXSITES) break;
+		if (nroctopus ==MAXSITES) 
+			throw(MAL,"octopus.discover",OPERATION_FAILED "No octopus worker left");
+		snprintf(buf,BUFSIZ,"worker_%d",nroctopus);
+		workers[nroctopus].name = GDKstrdup(buf);
 		workers[nroctopus].usr = GDKstrdup("monetdb");
 		workers[nroctopus].uri = GDKstrdup(t);
 		workers[nroctopus].pwd = GDKstrdup("monetdb");
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Worker site %s\n",t);
-#else
-		(void) cntxt;
+		stream_printf(cntxt->fdout,"Worker site %d %s\n", nroctopus, t);
 #endif
+		nroctopus++;
 	}
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"Octopus %d\n",nroctopus);
@@ -173,7 +193,12 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 
 	fname = getVarConstant(mb,getArg(p,2)).val.sval;
 	for ( i= 0; i< nroctopus; i++){
-		msg= RMTconnect(&conn, &workers[i].name, &workers[i].usr, &workers[i].pwd);
+#ifdef DEBUG_RUN_OCTOPUS
+		stream_printf(cntxt->fdout,"connect to worker %s\n", workers[i].uri);
+#else
+		(void) cntxt;
+#endif
+		msg= RMTconnect(&conn, &workers[i].uri, &workers[i].usr, &workers[i].pwd);
 		if (msg ){
 			stream_printf(cntxt->fdout,"!%s\n",msg);
 			GDKfree(msg);
@@ -186,10 +211,8 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 
 #ifdef DEBUG_RUN_OCTOPUS
 			stream_printf(cntxt->fdout,"octopus.%s registered at site %s\n",
-				fname,workers[i].name);
+				fname,workers[i].uri);
 			stream_printf(cntxt->fdout,"reply: %s\n",msg?msg:"ok");
-#else
-			(void) cntxt;
 #endif
 			if ( msg == MAL_SUCCEED){
 				Registry r= (Registry) GDKzalloc(sizeof(struct REGMAL));
@@ -205,7 +228,7 @@ OCTOPUSregister(Client cntxt, MalBlkPtr mb, InstrPtr p)
 }
 @-
 The work division looks at the system opportunities and
-replaces the target site in all instructions.
+replaces all null valued target site references in all instructions.
 The first policy is to simply perform round robin.
 The more advanced way is to negotiat with the remote sites.
 @c
@@ -224,14 +247,20 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		i = getArg(p,1);
 		assert( isVarConstant(mb, i) && getVarType(mb,i)== TYPE_str);
 		cst = &getVarConstant(mb, i);
+		if ( strncmp(cst->val.sval,"mapi:monetdb://",15) == 0){
+#ifdef DEBUG_RUN_OCTOPUS
+			stream_printf(cntxt->fdout,"reuse of worker %s\n",cst->val.sval);
+#endif
+			continue;
+		}
 		if( cst->val.sval )
 			GDKfree(cst->val.sval);
-		cst->val.sval= GDKstrdup(workers[rr].name);
+		cst->val.sval= GDKstrdup(workers[rr].uri);
 		cst->len = (int) strlen(cst->val.sval);
 		garbageElement(cntxt, &stk->stk[i]);
 		VALcopy(&stk->stk[i], cst);
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"octopus site selected %s\n",workers[rr].name);
+		stream_printf(cntxt->fdout,"octopus site selected %s %s\n",workers[rr].name, workers[rr].uri);
 		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #else
 		(void) cntxt;
