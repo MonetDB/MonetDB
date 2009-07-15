@@ -226,7 +226,7 @@ mal_export int saveBox(Box box, int flag);
 mal_export void loadBox(str nme);
 mal_export int releaseAllBox(Box box);
 
-mal_export int depositBox(Box box, str name, ValPtr val);
+mal_export int depositBox(Box box, str name, int type, ValPtr val);
 mal_export void insertToBox(Box box, str name, str val);
 mal_export int takeBox(Box box, str name, ValPtr val, int tpe);
 mal_export int bindBAT(Box box, str name, str location);
@@ -399,14 +399,14 @@ The deposit operation silently accepts any request to store
 an element.
 @c
 int
-depositBox(Box box, str name, ValPtr val)
+depositBox(Box box, str name, int type, ValPtr val)
 {
 	int i;
 	ValPtr v;
 
 	i = findVariable(box->sym, name);
 	if (i < 0) {
-		i = newVariable(box->sym, GDKstrdup(name), val->vtype);
+		i = newVariable(box->sym, GDKstrdup(name), type);
 		chkStack(box->val, i);
 	}
 	v = &box->val->stk[i];
@@ -414,7 +414,7 @@ depositBox(Box box, str name, ValPtr val)
 	VALcopy(v, val);
 	box->dirty= TRUE;
 #ifdef DEBUG_MAL_BOX
-	stream_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, v->vtype);
+	stream_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, type);
 #endif
 	return 0;
 }
@@ -427,7 +427,7 @@ insertToBox(Box box, str nme, str val)
 	vr.vtype = TYPE_str;
 	vr.val.sval = val? val: (str)str_nil;
 	vr.len = (int)strlen(vr.val.sval);
-	depositBox(box, nme, &vr);
+	depositBox(box, nme, TYPE_str, &vr);
 }
 
 @-
@@ -681,18 +681,21 @@ saveBox(Box box, int flag)
 	stream_printf(GDKout, "saveBox:created %s\n", boxfile);
 #endif
 	for (i = 0; i < box->sym->vtop; i++) {
+		str tnme; 
 		v = &box->val->stk[i];
 		if (v->vtype == TYPE_bat) {
-			BAT *b = (BAT *) BBPgetdesc(v->val.bval);
-
+			BAT *b = (BAT *) BATdescriptor(v->val.bval);
 			if (b && b->batPersistence == PERSISTENT){
-				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", 
-					box->name, getVarName(box->sym, i), 
-					BBPname(v->val.bval));
+				stream_printf(f, "%s:bat[:%s,:%s]:= %s.bind(%d);\n", 
+					getVarName(box->sym, i),  
+					getTypeName(getHeadType(getVarType(box->sym,i))),
+					getTypeName(getTailType(getVarType(box->sym,i))),
+					box->name, b->batCacheid);
 				BATcommit(b);
-			}
+			} 
+			BBPreleaseref(b->batCacheid);
 		} else {
-			str tnme = getTypeName(v->vtype);
+			tnme = getTypeName(getVarType(box->sym,i));
 			stream_printf(f, "%s := ", getVarName(box->sym, i));
 			ATOMprint(v->vtype, VALptr(v), f);
 			stream_printf(f, ":%s;\n", tnme);
