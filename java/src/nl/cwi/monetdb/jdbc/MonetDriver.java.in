@@ -272,27 +272,28 @@ final public class MonetDriver implements Driver {
 	static java.util.Map typeMap = new java.util.HashMap();
 	static {
 		// fill the typeMap once
-		typeMap.put("table", new Integer(Types.ARRAY));
+		typeMap.put("bigint", new Integer(Types.BIGINT));
+		typeMap.put("blob", new Integer(Types.BLOB));
 		typeMap.put("boolean", new Integer(Types.BOOLEAN));
 		typeMap.put("char", new Integer(Types.CHAR));
-		typeMap.put("varchar", new Integer(Types.VARCHAR));
 		typeMap.put("clob", new Integer(Types.CLOB));
-		typeMap.put("oid", new Integer(Types.OTHER));
-		typeMap.put("tinyint", new Integer(Types.TINYINT));
-		typeMap.put("smallint", new Integer(Types.SMALLINT));
-		typeMap.put("int", new Integer(Types.INTEGER));
-		typeMap.put("bigint", new Integer(Types.BIGINT));
-		typeMap.put("decimal", new Integer(Types.DECIMAL));
-		typeMap.put("real", new Integer(Types.REAL));
-		typeMap.put("double", new Integer(Types.DOUBLE));
-		typeMap.put("month_interval", new Integer(Types.INTEGER));
-		typeMap.put("sec_interval", new Integer(Types.BIGINT));
 		typeMap.put("date", new Integer(Types.DATE));
+		typeMap.put("decimal", new Integer(Types.DECIMAL));
+		typeMap.put("double", new Integer(Types.DOUBLE));
+		typeMap.put("int", new Integer(Types.INTEGER));
+		typeMap.put("month_interval", new Integer(Types.INTEGER));
+		typeMap.put("oid", new Integer(Types.OTHER));
+		typeMap.put("real", new Integer(Types.REAL));
+		typeMap.put("sec_interval", new Integer(Types.BIGINT));
+		typeMap.put("smallint", new Integer(Types.SMALLINT));
+		typeMap.put("table", new Integer(Types.ARRAY));
 		typeMap.put("time", new Integer(Types.TIME));
 		typeMap.put("timestamp", new Integer(Types.TIMESTAMP));
-		typeMap.put("timetz", new Integer(Types.TIME));
 		typeMap.put("timestamptz", new Integer(Types.TIMESTAMP));
-		typeMap.put("blob", new Integer(Types.BLOB));
+		typeMap.put("timetz", new Integer(Types.TIME));
+		typeMap.put("tinyint", new Integer(Types.TINYINT));
+		typeMap.put("varchar", new Integer(Types.VARCHAR));
+		typeMap.put("wrd", new Integer(Types.BIGINT));
 	}
 
 	/**
