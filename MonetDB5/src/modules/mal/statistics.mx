@@ -634,7 +634,7 @@ STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (p != BUN_NONE) return MAL_SUCCEED;
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
-	if (depositBox(box, *nme, &val))
+	if (depositBox(box, *nme, getArgType(mb,pci,1), &val))
 		throw(MAL, "statistics.deposit", OPERATION_FAILED);
 	bnme = BATgetId(b);
 	return STATenroll(ret, &bnme);

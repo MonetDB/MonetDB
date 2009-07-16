@@ -163,7 +163,7 @@ BOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(deposit)@
 	name = *(str *) getArgReference(stk, pci, 2);
 	v = getArgReference(stk,pci,3); 
-	if (depositBox(box, name, v))
+	if (depositBox(box, name, getArgType(mb,pci,2), v))
 		throw(MAL, "box.deposit", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

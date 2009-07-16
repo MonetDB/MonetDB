@@ -334,7 +334,7 @@ CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.deposit", IDENTIFIER_EXPECTED);
 	v = getArgReference(stk,pci,2); 
 	flg = findVariable(box->sym, name) >= 0;
-	if (depositBox(box, name, v))
+	if (depositBox(box, name, getArgType(mb,pci,1), v))
 		throw(MAL, "bbp.deposit", OPERATION_FAILED);
 	if (!flg)
 		BBPincref(v->val.bval, TRUE);
@@ -473,7 +473,7 @@ CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tt= getTailType(getArgType(mb,pci,0));
 
 	if ( *bid  == bat_nil)
-		throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS);
+		throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS "Integer expected");
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		throw(MAL, "bbp.bind", INTERNAL_BAT_ACCESS);

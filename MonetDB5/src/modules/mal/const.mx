@@ -239,7 +239,7 @@ CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(deposit)@
 	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,2);
-	if (depositBox(box, name, v))
+	if (depositBox(box, name, getArgType(mb,pci,1), v))
 		throw(MAL, "const.deposit", OPERATION_FAILED);
 	(void) mb;
 	return MAL_SUCCEED;
