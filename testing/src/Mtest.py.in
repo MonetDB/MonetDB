@@ -1067,7 +1067,6 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
 
         body = []
         for TST,COND in testlist:
-            #os.environ['TST'] = TST
             tt, FtOut, FtErr, bodyline = RunTest(env, htmlenv, TST, BusyPorts, COND)
             if tt:
                 t = "%7.3f" % tt
@@ -1717,7 +1716,6 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            #SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
             if TIMEOUT > 0:
@@ -1865,7 +1863,6 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
 
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            #SetExecEnv(env['exe'],0)
 
         if THISFILE == "Mtest.py":
             try:
@@ -3181,7 +3178,6 @@ def main(argv) :
     STDERR.flush()
     if not quiet:
         for v in par.keys():
-            #os.environ[v] = par[v]
             print"%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
@@ -3424,10 +3420,6 @@ def main(argv) :
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
-        #if not quiet:
-        #    SetExecEnv(exe,1)
-        #else:
-        #    SetExecEnv(exe,0)
 
         #TODO:
         #exe['JAVA']       = 'java'
