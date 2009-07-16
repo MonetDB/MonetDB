@@ -691,7 +691,7 @@ saveBox(Box box, int flag)
 					getTypeName(getHeadType(getVarType(box->sym,i))),
 					getTypeName(getTailType(getVarType(box->sym,i))),
 					box->name, b->batCacheid);
-				BATcommit(b);
+				BATsave(b);
 			} 
 			BBPreleaseref(b->batCacheid);
 		} else {
