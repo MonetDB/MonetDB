@@ -1,5 +1,5 @@
-- Finish to implement the protocol capabilities;
-
 - Implement the actual API;
 
-- Provide a sandoxed example.
+- Provide a sandboxed example.
+
+- Do utf8 tests

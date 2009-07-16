@@ -45,7 +45,9 @@
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 	
 	$socket	= mapi_open();
-	$handle = array("header" => "", "query" => "", "record_set" => array(), "operation" => -1);
+	$connected = FALSE; // Connection to a db status;
+	$last_error = "";
+	$handle = array("header" => array(), "query" => "", "record_set" => array(), "operation" => -1);
 	
 	function mapi_query($data) {
 		global $handle;
@@ -53,6 +55,9 @@
 		
 		$operation = mapi_store($data);
 		
+		print $data;
+		
+		/* The query produced a record set */
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
 			while ($handle["query"]["index"] < $handle["query"]["rows"]) {
 				// export a new window
@@ -67,10 +72,9 @@
 				$handle["query"]["index"] += $exp_size;
 				
 			}
-		}
+		} 
 		// record the last operation succesfully executed.
 		$handle["operation"] = $operation;
-		print_r($handle["record_set"]);
 		return $handle;
 	}
 	
@@ -81,8 +85,8 @@
 
 		$record_set = "";
 		$operation = "";
-		
-		$count = 0;
+				
+		$header = ""; // store temporary header informations;
 		
 		$rows = ""; // stores (partially) retrieved rows
 		foreach ($data as $row) {			
@@ -95,6 +99,8 @@
 					
 				} else if ($row[1] == Q_UPDATE) {
 					$operation = Q_UPDATE;
+					$fields = split(" ", $row);
+					$handle["query"] = array("affected" => $fields[1]);					
 				} else if ($row[1] == Q_CREATE) {
 					$operation = Q_CREATE;
 				} else if ($row[1] == Q_TRANSACTION) {
@@ -105,11 +111,11 @@
 				}
 			} else if ($row[0] == MSG_SCHEMA_HEADER){
 				// skip for now
-				continue;
+				
+				$header = $header . $row . "\n";
 			} else if ($row[0] == MSG_TUPLE) {
 				// process tuples
 				$rows = $rows . $row;
-				$count += 1;
 			} else if ($row[0] == MSG_PROMPT) {
 				// receive all the tuples
 				$record_set = php_parse_tuples($rows);
@@ -119,7 +125,14 @@
 		}
 		
 		//print_r($record_set);
-		$handle["record_set"] = array_merge($handle["record_set"], $record_set);
+		if ($record_set != "") {
+			$handle["record_set"] = array_merge($handle["record_set"], $record_set);
+		}
+		
+		if ($header != "") {
+			php_parse_header($header);
+		}
+		
 		
 		return $operation;
 	}
@@ -145,6 +158,23 @@
 		}
 		return $parsed_rows;
 	}
+	
+	function php_parse_header($header) {
+		global $handle;
+		$header = explode("\n", $header);
+		$name = $header[0];
+		
+		/* Field names */
+		$header[1] = ltrim($header[1], "%");
+		$header[1] = split("#", $header[1]);
+		$handle["header"]["fields"] = explode(",\t", $header[1][0]);
+
+
+		/* Field types */
+		$header[2] = ltrim($header[2], "%");
+		$header[2] = split("#", $header[2]);
+		$handle["header"]["types"]	= explode(",\t", $header[2][0]);
+	}
 
 	/*
 		$conn_opts is an array containing:
@@ -158,6 +188,7 @@
 	*/
 	function mapi_connect($options, $merovingian_iter) {
 		global $socket;
+		global $last_error;
 		
 		$host 	= $options["host"];
 		$port 	= $options["port"];
@@ -183,8 +214,6 @@
 		*/
 		$credentials = split(":", $challenge);
 		
-
-
 		// $challenge[0] contains the salt
 		
 		if ($credentials[2] == PROTOCOL_v8 ){
@@ -194,20 +223,18 @@
 			// $credentials[5] contains pwhash
 			mapi_authenticate_v9($user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
 		} else {
-			print "Protocol " . $credentials[2] . " not supported. Aborting.";
+			$last_error = "Protocol " . $credentials[2] . " not supported. Aborting.";
 			return FALSE;
 			
 		}
 		
 		$response = mapi_read();
-		print "\n" . $response; 
 		
 		if ($response != MSG_PROMPT) { 
 		// not ready to authenticate yet
 			if ($response[0] == MSG_REDIRECT) {
-				print "Being redirected\n";
+				
 				if ($credentials[1] == "merovingian") {
-					print "merovingian responded\n";
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
 						mapi_connect($options, $merovingian_iter);
@@ -221,7 +248,7 @@
 				}
 				
 			} else if ($response[0] == MSG_INFO) {
-				print "Error: " . $response;
+				$last_error = $response;
 			}
 		
 		
@@ -288,6 +315,7 @@
 	# encode data and send it to the server. Returns the number of bytes sent.
 	function mapi_write1($msg) {
 		global $socket;
+		global $last_error;
 		
 		$fb = strlen($msg);
 		$sb = 0;
@@ -298,7 +326,7 @@
 		$msg = chr($fb) . chr($sb) . $msg;
 		
 		if (socket_write($socket, $msg) == FALSE) {
-			print socket_strerror(socket_last_error());
+			$last_error = socket_strerror(socket_last_error());
 			return -1;
 		}
 		
@@ -308,6 +336,7 @@
 
 	function mapi_write($msg) {
 		global $socket;
+		global $last_error;
 		
 		$fb = 0;
 		$sb = 0;
@@ -332,7 +361,7 @@
 		
 			
 			if ($buf += socket_write($socket, chr($fb) . chr(0) . $data) == FALSE) {
-				print socket_strerror(socket_last_error());
+				$last_error = socket_strerror(socket_last_error());
 				return -1;
 			}
 		
@@ -345,6 +374,7 @@
 	
 	function set_timezone() {
 		global $socket;
+		global $last_error;
 
 		$tz_offset = "'" . date('P') . "'"; /* Difference to Greenwich time (GMT) with colon between hours and minutes */
 				
@@ -358,7 +388,7 @@
 			return TRUE; 
 		} else { 
 			
-			print $response; 
+			$last_error = $response; 
 			return FALSE; 
 		}
 	}
@@ -383,6 +413,8 @@
 	
 	function mapi_connect_proxy($options) {
 		global $socket;
+		global $connected;
+		global $last_error;
 		
 		$merovingian_iter = 0;
 		
@@ -396,11 +428,11 @@
 		
 
 		if (socket_connect($socket, $host, $port) == FALSE) {
-			print(socket_strerror(socket_last_error()));
+			$last_error = socket_strerror(socket_last_error());
 			return FALSE;
 		}
 		
-		if (mapi_connect($options, $merovingian_iter) == TRUE ) {
+		if ( ($connected = mapi_connect($options, $merovingian_iter)) == TRUE ) {
 			/* Connected */
 			
 			set_timezone(); // arbitrarly set the timezone
@@ -409,7 +441,7 @@
 			write_command("reply_size " . REPLY_SIZE);		
 			if (strlen($response = mapi_read()) > 0 ) {
 				// something went wrong 
-				// print "RESPONSE:". $response;
+				$last_error = $response;
 				return FALSE;
 			}
 		} else {
@@ -419,11 +451,18 @@
 		return TRUE;
 	}
 	
+	function mapi_connected() {
+		global $connected;
+		global $last_error;
+		
+		return $connected;
+	}
+	
 	/* Returns a socket */
 	function mapi_open() {
 		$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 		if ($socket == FALSE) {
-			print socket_strerror(socket_last_error());
+			$last_error = socket_strerror(socket_last_error());
 			return FALSE;
 		}
 		
@@ -432,8 +471,10 @@
 	
 	function mapi_close() {
 		global $socket;
+		global $connected;
 		
 		socket_close($socket);
+		$connected = FALSE;
 	}
 
 ?>
