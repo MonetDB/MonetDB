@@ -481,11 +481,16 @@ forkMserver(str database, sabdb** stats, int force)
 				walk->conns->next = NULL;
 				walk->next = NULL;
 
-				/* move down first returned entry, as to implement a
-				 * round-robin DNS-like algorithm */
+				/* cut out first returned entry, put it down the list
+				 * later, as to implement a round-robin DNS-like
+				 * algorithm */
 				if (down == NULL) {
 					down = rdb;
-					pdb->next = rdb->next;
+					if (pdb->next == _mero_remotedbs) {
+						_mero_remotedbs = pdb->next = rdb->next;
+					} else {
+						pdb->next = rdb->next;
+					}
 					rdb->next = NULL;
 					rdb = pdb;
 				}
@@ -494,10 +499,8 @@ forkMserver(str database, sabdb** stats, int force)
 			rdb = rdb->next;
 		}
 
-		if (down != NULL) {
+		if (down != NULL)
 			pdb->next = down;
-			down->next = NULL;
-		}
 
 		pthread_mutex_unlock(&_mero_remotedb_lock);
 
@@ -1204,6 +1207,22 @@ handleClient(int sock)
 		close_stream(fdin);
 		return(newErr("no database specified"));
 	} else {
+		if (strcmp(lang, "resolve") == 0) {
+			/* ensure the pattern ends with '/\*' such that we force a
+			 * remote entry, including those for local databases, this
+			 * way we will get a redirect back to merovingian for such
+			 * database if it is proxied and hence not remotely
+			 * available */
+			size_t len = strlen(database);
+			if (len > 2 &&
+					database[len - 2] != '/' &&
+					database[len - 1] != '*')
+			{
+				char *n = alloca(sizeof(char) * len + 2 + 1);
+				snprintf(n, len + 2 + 1, "%s/*", database);
+				database = n;
+			}
+		}
 		if ((e = forkMserver(database, &top, 0)) != NO_ERR) {
 			if (top == NULL) {
 				stream_printf(fout, "!merovingian: no such database '%s', please create it first\n", database);
