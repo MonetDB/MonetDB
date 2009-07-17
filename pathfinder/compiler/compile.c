@@ -351,9 +351,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /*******************************************/
     if (status->import_xml) {
 
-       /* todo: init-stuff */
-       /* e.g. qnameInit */
-       /* e.g namespaceInit */
+        tm_first = tm = PFtimer_start ();
+
+        /* todo: init-stuff */
+        /* e.g. qnameInit */
+        /* e.g namespaceInit */
 
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
 
@@ -403,6 +405,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
            laroot = PFla_pb_op_at (lapb, 0);
            lapb = NULL;
         }
+
+        tm = PFtimer_stop (tm);
+
+        if (status->timing)
+            PFlog ("XML algebra plan import:\t\t %s", PFtimer_str (tm));
 
         goto AFTER_CORE2ALG;
     }
