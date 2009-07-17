@@ -2623,25 +2623,17 @@ def CheckClassPath(env, quiet) :
     # + fall-back using `monetdb-config --pkgdatadir`/lib
     #               and `monetdb-config --pkgdatadir`/Tests
     cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'lib')
-    cpx += os.pathsep
-    cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'Tests')
     for d in cpx.split(os.pathsep):
         if os.path.isdir(d):
             for f in os.listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
-                    if f == 'BugConcurrent_clients_SF_1504657.class':
-                        C = 'HAVE_JDBCTESTS_DIR'
-                        if not CONDITIONALS.has_key(C):
-                            cp = cp + os.pathsep + d
-                            CONDITIONALS[C] = '#'
-                    else:
-                        C = 'HAVE_%s' % f.upper().replace('.','_')
-                        if not JARS.has_key(C):
-                            C = 'HAVE_MONETDBJDBC_JAR'
-                        if not CONDITIONALS.has_key(C) and JARS[C].match(f):
-                            cp = cp + os.pathsep + p
-                            CONDITIONALS[C] = '#'
+                    C = 'HAVE_%s' % f.upper().replace('.','_')
+                    if not JARS.has_key(C):
+                        C = 'HAVE_MONETDBJDBC_JAR'
+                    if not CONDITIONALS.has_key(C) and JARS[C].match(f):
+                        cp = cp + os.pathsep + p
+                        CONDITIONALS[C] = '#'
     if cp:
         env['CLASSPATH'] = cp
     miss = ''
