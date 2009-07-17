@@ -930,7 +930,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
-	qry = function2str(sym->def, LIST_MAL_STMT);
+	qry = function2str(sym->def, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
 #ifdef _DEBUG_REMOTE
 	stream_printf(cntxt->fdout, "#remote.register:%s:%s\n", c->name, qry);
 #endif
