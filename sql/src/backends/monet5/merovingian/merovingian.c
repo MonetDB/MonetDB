@@ -1271,10 +1271,13 @@ handleClient(int sock)
 	/* need to send a response, either we are going to proxy, or we send
 	 * a redirect, if we have multiple options, a redirect is our only
 	 * option, but if the redir is a single remote we need to stick to
-	 * our default */
+	 * our default, there is a special case when the client indicates it
+	 * is only resolving a pattern, in which we always need to send
+	 * redirects, even if it's one */
 	mydoproxy = 0;
 	if (r == 1 && strcmp(lang, "resolve") != 0) {
 		if (redirs[0].dbname != redirs[0].path) {
+			/* this is a real local database (not a remote) */
 			ckv = getDefaultProps();
 			readProps(ckv, redirs[0].path);
 			kv = findConfKey(ckv, "forward");
