@@ -206,6 +206,7 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	char path[8096];
 	int fd;
 	char **redirs;
+	char **or;
 	str tmp;
 	int port;
 
@@ -239,7 +240,7 @@ remote_export str RMTresolve(int *ret, str *pat) {
 	if (port == 0)
 		port = 50000;  /* hardcoded default from merovingian.mx */
 	gethostname(path, 8096);
-	redirs = mapi_resolve(path, port, *pat);
+	or = redirs = mapi_resolve(path, port, *pat);
 
 	if (redirs == NULL)
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
@@ -249,7 +250,7 @@ remote_export str RMTresolve(int *ret, str *pat) {
 		free(*redirs);
 		redirs++;
 	}
-	free(redirs);
+	free(or);
 
 	BBPkeepref(*ret = list->batCacheid);
 	return(MAL_SUCCEED);
