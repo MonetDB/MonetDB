@@ -859,7 +859,7 @@ SQLrenderer(MapiHdl hdl)
 					   available space */
 					len[i] = (pagewidth - 2 * fields - (fields - 1) - 2) / fields;
 				}
-				if (len[i] <= MINCOLSIZE)
+				if (len[i] < MINCOLSIZE)
 					len[i] = MINCOLSIZE;
 				s = mapi_get_name(hdl, i);
 				if (s != NULL) {
