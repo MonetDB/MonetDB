@@ -1273,7 +1273,7 @@ handleClient(int sock)
 	 * option, but if the redir is a single remote we need to stick to
 	 * our default */
 	mydoproxy = 0;
-	if (r == 1) {
+	if (r == 1 && strcmp(lang, "resolve") != 0) {
 		if (redirs[0].dbname != redirs[0].path) {
 			ckv = getDefaultProps();
 			readProps(ckv, redirs[0].path);
