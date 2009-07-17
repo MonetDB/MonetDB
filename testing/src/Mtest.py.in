@@ -2131,20 +2131,27 @@ def killProc(proc, outfile = None, cmd = None):
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
 
-def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
-    TestOut.write(Prompt(cmd))
-    TestOut.flush()
-    TestErr.write(Prompt(cmd))
-    TestErr.flush()
-
+def PrepareProcessEnv(env, quiet):
     # change env to actually make sense for the process
+    # maybe one day do this more generic by just stripping/converting
+    # all keys with arguments that are not strings
     osenv = copy.deepcopy(env)
     osenv.pop('exe', None)
     osenv.pop('TST_MODS', None)
     osenv.pop('QUIET', None)
     osenv.pop('USE_AT', None)
     osenv.update(os.environ)
-    SetExecEnv(env['exe'], osenv, not env['QUIET'])
+    SetExecEnv(env['exe'], osenv, not quiet)
+
+    return osenv
+
+def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
+    TestOut.write(Prompt(cmd))
+    TestOut.flush()
+    TestErr.write(Prompt(cmd))
+    TestErr.flush()
+
+    osenv = PrepareProcessEnv(env, env['QUIET'])
 
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE,
             stdout = subprocess.PIPE, stderr = TestErr,
@@ -2183,14 +2190,7 @@ def RunIt(cmd, env, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    # change env to actually make sense for the process
-    osenv = copy.deepcopy(env)
-    osenv.pop('exe', None)
-    osenv.pop('TST_MODS', None)
-    osenv.pop('QUIET', None)
-    osenv.pop('USE_AT', None)
-    osenv.update(os.environ)
-    SetExecEnv(env['exe'], osenv, not env['QUIET'])
+    osenv = PrepareProcessEnv(env, env['QUIET'])
 
     proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout =
             TestOut, stderr = TestErr, universal_newlines = True,
