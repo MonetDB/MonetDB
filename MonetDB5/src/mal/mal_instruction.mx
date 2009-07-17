@@ -1434,11 +1434,27 @@ Simplified cloning without property propagation.
 int
 cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 {
+	int res;
 	if ( isVarConstant(mb,x))
-		return cpyConstant(tm, getVar(mb,x));
+		res = cpyConstant(tm, getVar(mb,x));
+	else
 	if ( isTmpVar(mb,x))
-		return  newTmpVariable(tm, getVarType(mb,x));
-	return newVariable(tm,getVarName(mb,x), getVarType(mb,x));
+		res = newTmpVariable(tm, getVarType(mb,x));
+	else
+		res = newVariable(tm,getVarName(mb,x), getVarType(mb,x));
+	if (isVarFixed(mb, x) )
+		setVarFixed(tm,res);
+	if (isVarUsed(mb, x) )
+		setVarUsed(tm, res);
+	if (isVarInit(mb, x) )
+		setVarInit(tm, res);
+	if (isVarDisabled(mb, x) )
+		setVarDisabled(tm,res);
+	if (isVarUDFtype(mb, x) )
+		setVarUDFtype(tm, res);
+	if (isVarCleanup(mb, x) )
+		setVarCleanup(tm,res);
+	return res;
 }
 
 void

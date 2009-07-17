@@ -167,9 +167,10 @@ newCatchStmt(MalBlkPtr mb, str nme)
 	int i= findVariable(mb,nme);
 
 	q->barrier = CATCHsymbol;
-	if ( i< 0)
+	if ( i< 0) {
 		getArg(q,0)= newVariable(mb, GDKstrdup(nme),TYPE_str);
-	else getArg(q,0) = i;
+		setVarUDFtype(mb,getArg(q,0));
+	} else getArg(q,0) = i;
 	return q;
 }
 InstrPtr
