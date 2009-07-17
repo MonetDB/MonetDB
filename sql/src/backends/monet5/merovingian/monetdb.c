@@ -147,10 +147,11 @@ command_help(int argc, char *argv[])
 	} else if (strcmp(argv[1], "set") == 0) {
 		printf("Usage: monetdb set property=value database [database ...]\n");
 		printf("  sets property to value for the given database\n");
+		printf("  for a list of properties, use `monetdb get all`\n");
 	} else if (strcmp(argv[1], "get") == 0) {
 		printf("Usage: monetdb get <\"all\" | property,...> [database ...]\n");
 		printf("  gets value for property for the given database, or\n");
-		printf("  retrieves all known properties for the given database\n");
+		printf("  retrieves all properties for the given database\n");
 	} else if (strcmp(argv[1], "inherit") == 0) {
 		printf("Usage: monetdb inherit property database [database ...]\n");
 		printf("  unsets property, reverting to its inherited value from\n");
