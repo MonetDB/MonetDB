@@ -165,6 +165,7 @@ comment "Map-execute-reduce parallelism optimizer";
 #include "opt_deadcode.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
+#include "mal_sabaoth.h"
 @-
 The algorithm consists of several steps. The first one
 replaces the original query and creates the tentacle
@@ -180,12 +181,17 @@ The original block is trimmed as far as needed.
 static int
 OCTinitcode(Client cntxt, MalBlkPtr mb){
 	InstrPtr p;
+	str s;
+
 	(void) cntxt;
+
 	p = newStmt(mb, remoteRef,connectRef);
-    p= pushStr(mb,p, GDKgetenv("gdk_dbname"));
+	SABAOTHgetLocalConnection(&s);
+    p= pushStr(mb,p, s);
     p= pushStr(mb,p,"monetdb");
     p= pushStr(mb,p,"monetdb");
     p= pushStr(mb,p,"msql");
+	GDKfree(s);
 	return getArg(p,0);
 }
 
