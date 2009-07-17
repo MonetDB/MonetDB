@@ -1067,6 +1067,7 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
 
         body = []
         for TST,COND in testlist:
+            env['TST'] = TST
             tt, FtOut, FtErr, bodyline = RunTest(env, htmlenv, TST, BusyPorts, COND)
             if tt:
                 t = "%7.3f" % tt
@@ -2066,7 +2067,6 @@ def CheckSocket2(env,SERVER,force) :  #,SrvrErr) :
             return None, Smsg
 
         env[SERVER+'PORT'] = newport
-        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
@@ -2075,12 +2075,6 @@ def CheckSocket2(env,SERVER,force) :  #,SrvrErr) :
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
         env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
-        #os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
-        #os.environ['MIL_CLIENT']    = os.environ['MIL_CLIENT'].replace(op, np)
-        #os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
-        #os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
-        #os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
-        #os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
         Smsg = Smsg + """
 ! Using new %sPORT=%s !
 """ % (SERVER, env[SERVER+'PORT'])
@@ -2135,13 +2129,14 @@ def PrepareProcessEnv(env, quiet):
     # change env to actually make sense for the process
     # maybe one day do this more generic by just stripping/converting
     # all keys with arguments that are not strings
-    osenv = copy.deepcopy(env)
-    osenv.pop('exe', None)
-    osenv.pop('TST_MODS', None)
-    osenv.pop('QUIET', None)
-    osenv.pop('USE_AT', None)
-    osenv.update(os.environ)
+    osenv = copy.copy(os.environ)
     SetExecEnv(env['exe'], osenv, not quiet)
+    env = copy.deepcopy(env)
+    env.pop('exe', None)
+    env.pop('TST_MODS', None)
+    env.pop('QUIET', None)
+    env.pop('USE_AT', None)
+    osenv.update(env)
 
     return osenv
 
@@ -2600,7 +2595,7 @@ def Check(command, input) :
     return 0
 ### Check(command, input) #
 
-def CheckClassPath(quiet) :
+def CheckClassPath(env, quiet) :
     if os.environ.has_key('CLASSPATH'):
         cp = os.environ['CLASSPATH']
         cpx = cp + os.pathsep
@@ -2648,7 +2643,7 @@ def CheckClassPath(quiet) :
                             cp = cp + os.pathsep + p
                             CONDITIONALS[C] = '#'
     if cp:
-        os.environ['CLASSPATH'] = cp
+        env['CLASSPATH'] = cp
     miss = ''
     for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar', 'xrpcapi.jar', 'xrpcclient.jar', 'xrpcwrapper.jar']:
         C = 'HAVE_%s' % j.upper().replace('.','_')
@@ -3195,7 +3190,7 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
-    CheckClassPath(quiet)
+    CheckClassPath(env, quiet)
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
         CONDITIONALS['NOT_ALGEBRA']  = ''
@@ -3348,12 +3343,10 @@ def main(argv) :
         vars_ = vars_ + ['setXRPC_DOCROOT', 'setXQUERY_LOGDIR','setSQL_LOGDIR','setGDK_DBFARM','setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
-    for v in vars_:
-        if env.has_key(v):
-            os.environ[v] = env[v]
-            if not quiet:
-                print "%s = %s" % (v, env[v])
     if not quiet:
+        for v in vars_:
+            if env.has_key(v):
+                print "%s = %s" % (v, env[v])
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
