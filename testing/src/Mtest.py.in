@@ -2142,6 +2142,7 @@ def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
     osenv.pop('exe', None)
     osenv.pop('TST_MODS', None)
     osenv.pop('QUIET', None)
+    osenv.pop('USE_AT', None)
     osenv.update(os.environ)
     SetExecEnv(env['exe'], osenv, not env['QUIET'])
 
@@ -2187,6 +2188,7 @@ def RunIt(cmd, env, TestIn, TestOut, TestErr, TimeOut) :
     osenv.pop('exe', None)
     osenv.pop('TST_MODS', None)
     osenv.pop('QUIET', None)
+    osenv.pop('USE_AT', None)
     osenv.update(os.environ)
     SetExecEnv(env['exe'], osenv, not env['QUIET'])
 
