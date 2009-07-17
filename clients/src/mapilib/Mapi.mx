@@ -2705,7 +2705,7 @@ char **
 mapi_resolve(const char *host, int port, const char *pattern)
 {
 	int rmax;
-	Mapi mid = mapi_mapi(host, port, "mero", "mero", "sql", pattern);
+	Mapi mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
 	if (mid && mid->error == MOK) {
 		rmax = mid->redirmax;
 		mid->redirmax = 0;
