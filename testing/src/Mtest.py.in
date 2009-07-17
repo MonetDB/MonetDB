@@ -2155,7 +2155,7 @@ def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
 
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE,
             stdout = subprocess.PIPE, stderr = TestErr,
-            universal_newlines = True)
+            universal_newlines = True, env = osenv)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
