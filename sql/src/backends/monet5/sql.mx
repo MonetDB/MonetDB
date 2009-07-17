@@ -771,7 +771,7 @@ end octopus.bind;
 
 function octopus.bind_dbat(sch:str, tab:str,access:int, version:int):bat[:oid,:any_1];
 	b := sql.bind_dbat(sch,tab,access);
-	return bind:= b;
+	return bind_dbat:= b;
 end octopus.bind_dbat;
 
 function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int):bat[:oid,:oid];
@@ -782,12 +782,12 @@ function octopus.bind_dbat(conn:str,sch:str, tab:str, access:int, version:int):b
 	bh:= remote.exec(conn,"sql","bind_dbat",s,t,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	
-	return bind:= b;
+	return bind_dbat:= b;
 end octopus.bind_dbat;
 
 function octopus.bind_idxbat(sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:any_1];
 	b := sql.bind_idxbat(sch,tab,index,access);
-	return bind:= b;
+	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
 function octopus.bind_idxbat(conn:str,sch:str, tab:str, index:str, access:int, version:int):bat[:oid,:oid];
@@ -799,8 +799,15 @@ function octopus.bind_idxbat(conn:str,sch:str, tab:str, index:str, access:int, v
 	bh:= remote.exec(conn,"sql","bind_idxbat",s,t,i,a);
 	b:bat[:oid,:oid]:= remote.get(conn,bh);
 	
-	return bind:= b;
+	return bind_idxbat:= b;
 end octopus.bind_idxbat;
+
+function octopus.getVariable(conn:str,name:str):any_1;
+	s := remote.put(conn,name);
+	bh:= remote.exec(conn,"sql","getVariable",s);
+	b:any_1 := remote.get(conn,bh);
+	return getVariable:= b;
+end octopus.getVariable;
 
 pattern rdfshred (location:str, gname:str)
 address SQLrdfShred
