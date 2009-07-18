@@ -91,3 +91,33 @@ cnt:= aggr.count(h);
 io.print(cnt);
 d1:= d1+d0;
 io.printf("#join total %d\n",d1);
+
+t0:= alarm.usec();
+(w,y):= algebra.prejoin(lb2,rb2,5);
+t1:= alarm.usec();
+d0:= t1-t0;
+d1:= d0;
+io.printf("#blockjoin %d\n",d0);
+cnt:= aggr.count(w);
+io.print(cnt);
+io.printf("#join total %d\n",d1);
+
+t0:= alarm.usec();
+(w,y):= algebra.prejoin(lb2,rb2,6);
+t1:= alarm.usec();
+d0:= t1-t0;
+d1:= d0;
+io.printf("#blockjoin by StM %d\n",d0);
+cnt:= aggr.count(w);
+io.print(cnt);
+io.printf("#join total %d\n",d1);
+
+t0:= alarm.usec();
+(w,y):= algebra.prejoin(lb2,rb2,7);
+t1:= alarm.usec();
+d0:= t1-t0;
+d1:= d0;
+io.printf("#blockjoin by StM, v2 %d\n",d0);
+cnt:= aggr.count(w);
+io.print(cnt);
+io.printf("#join total %d\n",d1);

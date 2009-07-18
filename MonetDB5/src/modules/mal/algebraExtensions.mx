@@ -201,6 +201,93 @@ GDKblockjoin(BAT *b, BAT *c){
 	return bn;
 }
 
+static BAT *
+GDKblockjoinStM(BAT *b, BAT *c){
+	BAT *bp, *cp, *cr, *j, *bn = 0;
+	BUN blim,bl;
+	BUN clim,cl;
+	size_t blk = (size_t) sqrt ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid));
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout,"portion " SZFMT "\n",blk);
+#endif
+	blim = BATcount(b);
+	clim = BATcount(c);
+	
+	cr = BATmirror(c);
+	for( cl = 0; cl < clim + blk; cl+= blk){
+		cp = BATslice(cr, cl, cl+blk);
+		for( bl = 0; bl < blim + blk; bl+= blk){
+			bp = BATslice(b, bl, bl+blk);
+			j = BATjoin(bp,cp, BUN_NONE);
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout,"result " SZFMT " " SZFMT " " SZFMT "\n", bl, cl, BATcount(j));
+#endif
+			if (bn == 0)
+				bn = BATnew( j->htype, j->ttype, BATcount(j)*blim/blk);
+			bn= BATappend(bn,j, TRUE);
+			BBPunfix(j->batCacheid);
+			BBPunfix( bp->batCacheid);
+		}
+		BBPunfix( cp->batCacheid);
+	}
+	return bn;
+}
+
+static BAT *
+GDKblockjoinStM2(BAT *b, BAT *c){
+	bit swap = FALSE;
+	BAT *cp, *cr, *j, *bn = 0;
+	BUN blim;
+	BUN clim,cl;
+	size_t blk = (size_t) sqrt ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid));
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout,"portion " SZFMT "\n",blk);
+#endif
+	blim = BATcount(b);
+	clim = BATcount(c);
+	if (MIN(blim,clim) <= blk) {
+		/* smaller fits in mem => use it as inner */
+		if (blim < clim) {
+			BAT *x = b;
+			b = c;
+			c = x;
+			blim = BATcount(b);
+			clim = BATcount(c);
+			swap = TRUE;
+		}
+	} else {
+		/* both exceed mem => use bigger as inner */
+		if (blim > clim) {
+			BAT *x = b;
+			b = c;
+			c = x;
+			blim = BATcount(b);
+			clim = BATcount(c);
+			swap = TRUE;
+		}
+		
+	}
+	
+	/* partition only inner and steam outer through */
+	cr = BATmirror(c);
+	for( cl = 0; cl < clim + blk; cl+= blk){
+		cp = BATslice(cr, cl, cl+blk);
+		j = BATjoin(b,cp, BUN_NONE);
+#ifdef DEBUG_BLOOMFILTER
+	stream_printf(GDKout,"result " SZFMT " " SZFMT " " SZFMT "\n", bl, cl, BATcount(j));
+#endif
+		if (bn == 0)
+			bn = BATnew( j->htype, j->ttype, BATcount(j)*blim/blk);
+		bn= BATappend(bn,j, TRUE);
+		BBPunfix(j->batCacheid);
+		BBPunfix( cp->batCacheid);
+	}
+	if (swap)
+		return BATmirror(bn);
+	else
+		return bn;
+}
+
 void
 GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
 
@@ -584,6 +671,18 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			break;
 		case 5: /* blocked join */
 			bn = GDKblockjoin(b,c);
+			cn = c;
+			BBPkeepref(*cres= cn->batCacheid);
+			BBPkeepref(*bres= bn->batCacheid);
+			return MAL_SUCCEED;
+		case 6: /* blocked join by StM */
+			bn = GDKblockjoinStM(b,c);
+			cn = c;
+			BBPkeepref(*cres= cn->batCacheid);
+			BBPkeepref(*bres= bn->batCacheid);
+			return MAL_SUCCEED;
+		case 7: /* blocked join by StM, v2 */
+			bn = GDKblockjoinStM2(b,c);
 			cn = c;
 			BBPkeepref(*cres= cn->batCacheid);
 			BBPkeepref(*bres= bn->batCacheid);
