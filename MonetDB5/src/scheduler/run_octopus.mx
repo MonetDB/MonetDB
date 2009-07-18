@@ -50,9 +50,10 @@ The octopus scheduler merely ensures that there are enough
 work threads available.
 
 To make the octopus work, the scheduler needs a list of databases
-to play with.
-For the time being this consists of all the database resolved
-using Merovingian with the phrase '*/octopus'.
+to play with. This list it gets from Merovingian by resolving
+all with the property 'share=octopus'.
+The  Merovingian set up calls for making sure you have
+the 'forward=redirect' property set on all legs.
 The default is to use the local database as a target.
 @{
 @mal
@@ -66,7 +67,7 @@ comment "Run the program block in parallel, but don't wait longer then t seconds
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-/* #define DEBUG_RUN_OCTOPUS 		to trace processing */
+/* #define DEBUG_RUN_OCTOPUS 		 to trace processing */
 
 #ifdef WIN32
 #ifndef LIBRUN_OCTOPUS
@@ -161,7 +162,7 @@ OCTOPUSdiscover(Client cntxt){
 		nroctopus++;
 	}
 #ifdef DEBUG_RUN_OCTOPUS
-		stream_printf(cntxt->fdout,"Octopus %d\n",nroctopus);
+		stream_printf(cntxt->fdout,"Octopus workers %d\n",nroctopus);
 #endif
 	BBPreleaseref(bid);
 	return MAL_SUCCEED;
@@ -240,7 +241,7 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	InstrPtr p;
 	ValPtr cst;
 
-	for (; pc< mb->stop; pc++){
+	for (; pc< mb->stop && workers[rr].uri; pc++){
 		p= getInstrPtr(mb,pc);
 		if ( p->barrier == EXITsymbol || getFunctionId(p)== packRef)
 			break;
@@ -250,15 +251,13 @@ OCTOPUSworkdivision(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if ( strncmp(cst->val.sval,"mapi:monetdb://",15) == 0){
 #ifdef DEBUG_RUN_OCTOPUS
 			stream_printf(cntxt->fdout,"reuse of worker %s\n",cst->val.sval);
+			printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
 #endif
 			continue;
 		}
-		if( cst->val.sval )
-			GDKfree(cst->val.sval);
-		cst->val.sval= GDKstrdup(workers[rr].uri);
-		cst->len = (int) strlen(cst->val.sval);
 		garbageElement(cntxt, &stk->stk[i]);
-		VALcopy(&stk->stk[i], cst);
+		stk->stk[i].val.sval = GDKstrdup(workers[rr].uri);
+		stk->stk[i].len = (int) strlen(stk->stk[i].val.sval);
 #ifdef DEBUG_RUN_OCTOPUS
 		stream_printf(cntxt->fdout,"octopus site selected %s %s\n",workers[rr].name, workers[rr].uri);
 		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_STMT);
@@ -302,7 +301,7 @@ OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p= getInstrPtr(mb,j);
 		if ( p->barrier == EXITsymbol  || getFunctionId(p)== packRef)
 			break;
-		if (nroctopus > 1) {
+		if (nroctopus > 0) {
 			msg= OCTOPUSregister(cntxt,mb,p);
 			if ( msg && strstr(msg,"already defined on the remote site")==0 )
 				return msg;
