@@ -1,5 +1,5 @@
 # the bloom filter experiments
-# N= number elements in left, M= number elements in right
+# M= number elements in left, N= number elements in right
 # S= sample exchange size
 
 N:= 10000000:int;
