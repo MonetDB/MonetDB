@@ -685,6 +685,10 @@ GDKbloomfilter_int_l(bat *bid, bat *cid, BAT **bn, BAT **cn, int algo) {
 	clog = (int) log(clim);
 	blog = (int) log(blim); */
 
+	/* silence compilers */
+	blim = clim = clog = blog = 0;
+	b = c = bv = cv = NULL;
+
 	if (algo == 2) {
 		/* only build one bloom filter on the smaller BAT,
 		 * scan once the larger BAT to reduce it and exit.
