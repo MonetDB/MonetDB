@@ -35,6 +35,10 @@ pattern algebra.prejoin(b:bat[:oid,:any_1],c:bat[:oid,:any_1],algo:int) (:bat[:o
 address ALGprejoin
 comment "Bloom filter to reduce join cost in out-of-memory situations. 1 -- martin, 2 -- lefteris";
 @{
+pattern algebra.blkjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
+address ALGblkjoin
+comment "Simple stupid block join for out-of-memory joins";
+@{
 @include prelude.mx
 @+ Implementation section
 In most cases we pass a BAT identifier, which should be unified
@@ -171,33 +175,30 @@ ALGsetFilter(BAT *b, Filter *h, int prime){
 
 static BAT *
 GDKblockjoin(BAT *b, BAT *c){
-	BAT *bp, *cp, *cr, *j, *bn = 0;
-	BUN blim,bl;
+	BAT *cp, *j, *bn = 0;
+	BUN blim, cap = BUN_NONE;
 	BUN clim,cl;
-	size_t blk = (size_t) sqrt ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid));
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"portion " SZFMT "\n",blk);
-#endif
+	int k =0;
+	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /2.0/ (sizeof(int) +ATOMsize(b->ttype));
+
 	blim = BATcount(b);
 	clim = BATcount(c);
 	
-	for( bl = 0; bl < blim + blk; bl+= blk){
-		bp = BATslice(b, bl, bl+blk);
-		for( cl = 0; cl < clim + blk; cl+= blk){
-			cp = BATslice(c, cl, cl+blk);
-			cr = BATmirror(cp);
-			j = BATjoin(bp,cr, BUN_NONE);
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"result " SZFMT " " SZFMT " " SZFMT "\n", bl, cl, BATcount(j));
-#endif
-			if (bn == 0)
-				bn = BATnew( j->htype, j->ttype, BATcount(j)*blim/blk);
-			bn= BATappend(bn,j, TRUE);
-			BBPunfix(j->batCacheid);
-			BBPunfix( cp->batCacheid);
-		}
-		BBPunfix( bp->batCacheid);
+	k =0;
+	for( cl = 0; cl < clim + blk; cl+= blk){
+		k++;
+		cp = BATslice(c, cl, cl+blk);
+		j = BATjoin(b,cp, cap);
+		if (bn == 0)
+			bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
+		bn= BATappend(bn,j, TRUE);
+		cap = BATcount(j )* 2;
+		BBPunfix(j->batCacheid);
+		BBPunfix( cp->batCacheid);
 	}
+printf("block size " SZFMT "\n|",blk);
+printf("outersize " SZFMT " inner size " SZFMT "\n", blim,clim);
+printf("inner loop %d\n",k);
 	return bn;
 }
 
@@ -655,10 +656,10 @@ counter = 0;
 
 void
 GDKbloomfilter_int_l(bat *bid, bat *cid, BAT **bn, BAT **cn, int algo) {
-	int *bv, *cv;
-	BAT *b, *c;
-	BUN i, blim, clim;
-	int clog, blog;
+	int *bv =0, *cv =0;
+	BAT *b = 0, *c = 0;
+	BUN i, blim=0, clim=0;
+	int clog=0, blog=0;
 	BUN mb, mc;
 	mb = mc = 0;
 
@@ -677,17 +678,12 @@ GDKbloomfilter_int_l(bat *bid, bat *cid, BAT **bn, BAT **cn, int algo) {
 		return;
 	}*/
 
-	/*
 	bv = (int*) Tloc(b, BUNfirst(b));
 	cv = (int*) Tloc(c, BUNfirst(c));
 	blim= BATcount(b);
 	clim= BATcount(c);
 	clog = (int) log(clim);
-	blog = (int) log(blim); */
-
-	/* silence compilers */
-	blim = clim = clog = blog = 0;
-	b = c = bv = cv = NULL;
+	blog = (int) log(blim); 
 
 	if (algo == 2) {
 		/* only build one bloom filter on the smaller BAT,
@@ -732,6 +728,30 @@ GDKbloomfilter_int_l(bat *bid, bat *cid, BAT **bn, BAT **cn, int algo) {
 }
 
 str
+ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bres = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	int *cid = (int *) getArgReference(stk, pci, 2);
+	BAT *b, *c, *bn;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
+	if ( (c = BATdescriptor(*cid)) == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
+	}
+
+	bn = GDKblockjoin(b,c);
+	BBPkeepref(*bres= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(c->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bres = (int *) getArgReference(stk, pci, 0);
 	int *cres = (int *) getArgReference(stk, pci, 1);
@@ -760,7 +780,7 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		case 4: /* 3rd */
 			GDKbloomfilter_int_l(bid, cid, &bn, &cn, algo);
 			break;
-		case 5: /* blocked join */
+		case 15: /* blocked join */
 			bn = GDKblockjoin(b,c);
 			cn = c;
 			BBPkeepref(*cres= cn->batCacheid);
