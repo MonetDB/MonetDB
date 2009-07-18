@@ -51,9 +51,7 @@ work threads available.
 
 To make the octopus work, the scheduler needs a list of databases
 to play with. This list it gets from Merovingian by resolving
-all with the property 'share=octopus'.
-The  Merovingian set up calls for making sure you have
-the 'forward=redirect' property set on all legs.
+all with the property 'shared=octopus' (set by monetdb).
 The default is to use the local database as a target.
 @{
 @mal
