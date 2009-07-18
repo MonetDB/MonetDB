@@ -206,7 +206,7 @@ GDKblockjoinStM(BAT *b, BAT *c){
 	BAT *bp, *cp, *cr, *j, *bn = 0;
 	BUN blim,bl;
 	BUN clim,cl;
-	size_t blk = (size_t) sqrt ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid));
+	size_t blk = (size_t) ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid) / 2.0 );
 #ifdef DEBUG_BLOOMFILTER
 	stream_printf(GDKout,"portion " SZFMT "\n",blk);
 #endif
@@ -239,7 +239,7 @@ GDKblockjoinStM2(BAT *b, BAT *c){
 	BAT *cp, *cr, *j, *bn = 0;
 	BUN blim;
 	BUN clim,cl;
-	size_t blk = (size_t) sqrt ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid));
+	size_t blk = (size_t) ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid) / 2.0 );
 #ifdef DEBUG_BLOOMFILTER
 	stream_printf(GDKout,"portion " SZFMT "\n",blk);
 #endif
