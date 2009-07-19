@@ -1,9 +1,9 @@
-# the bloom filter experiments
+# the OOM join experiment
 # M= number elements in left, N= number elements in right
 # S= sample exchange size
 
 N:= 1000000000:int;
-M:= 100000000:int;
+M:= 1000000000:int;
 S:= 1000:int;
 
 t0:= alarm.usec();
