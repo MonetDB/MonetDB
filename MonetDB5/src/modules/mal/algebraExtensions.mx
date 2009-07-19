@@ -311,6 +311,11 @@ printf("mask " BUNFMT "\n",mask);
 		/* printf("next stage "BUNFMT " bcap " BUNFMT" ccap " BUNFMT"\n",i,bcap,ccap);*/
 		if ( cap == 0) break; /* done */
 
+		/* catch the single loop ones */
+		if ( bcap == blim && ccap == clim){
+			bn = BATjoin(b,c,BUN_NONE);
+			break;
+		}
 		/* now we collect elements we are interested in */
 		if ( bp == 0)
 			bp = BATnew(TYPE_oid,b->ttype, bcap);
