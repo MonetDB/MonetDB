@@ -65,3 +65,4 @@ primekeyconstraint.SF-2783425
 alter_table_drop_constraint.SF-2803477
 mclient-lsql-D
 view-except-limit.SF-2798333
+utf8_bug.SF-2822855

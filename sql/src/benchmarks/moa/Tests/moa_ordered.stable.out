@@ -5,15 +5,19 @@ stdout of test 'moa_ordered` in directory 'src/benchmarks/moa` itself:
 # 12:34:14 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_moa" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
 # 12:34:14 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB server v5.12.1, based on kernel v1.30.1
+# Serving database 'mTests_src_benchmarks_moa', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32187/
+# MonetDB/SQL module v2.30.1 loaded
 
 Ready.
-quit();
+#function user.main():void;
+#    clients.quit();
+#end main;
 
 Over..
 
@@ -24,7 +28,7 @@ Over..
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 5,	5,	2,	18,	1 # length
+% 5,	5,	2,	18,	0 # length
 [ "Video",	"match",	"ID",	"MediaInformationFK",	NULL	]
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name
@@ -33,7 +37,7 @@ Over..
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 15,	5,	10,	9,	1 # length
+% 15,	5,	10,	9,	0 # length
 [ "CreationCreator",	"match",	"CreationFK",	"CreatorFK",	NULL	]
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name
@@ -42,7 +46,7 @@ Over..
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 7,	5,	9,	12,	1 # length
+% 7,	5,	9,	12,	0 # length
 [ "Creator",	"match",	"CreatorPK",	"IndividualFK",	NULL	]
 % sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd,	sys.moa_dd # table_name
 % name,	type,	field1,	field2,	field3 # name

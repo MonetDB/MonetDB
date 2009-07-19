@@ -28,12 +28,12 @@ Over..
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % name,	query,	type,	system,	commit_action,	temporary # name
 % varchar,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 7,	1,	1,	5,	1,	1 # length
+% 7,	0,	1,	5,	1,	1 # length
 [ "schemas",	NULL,	0,	true,	0,	0	]
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % name,	query,	type,	system,	commit_action,	temporary # name
 % varchar,	varchar,	smallint,	boolean,	smallint,	tinyint # type
-% 7,	1,	1,	5,	1,	1 # length
+% 7,	0,	1,	5,	1,	1 # length
 [ "schemas",	NULL,	0,	true,	0,	0	]
 [ "types",	NULL,	0,	true,	0,	0	]
 

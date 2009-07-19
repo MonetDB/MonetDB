@@ -31,7 +31,7 @@ Over..
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	sys.x,	sys.x # table_name
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	temporary,	n,	s # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	tinyint,	int,	varchar # type
-% 4,	12,	4,	1,	1,	5,	1,	1,	1,	3 # length
+% 4,	12,	4,	0,	1,	5,	1,	1,	1,	3 # length
 [ 1062,	"schemas",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
 [ 1067,	"types",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]
 [ 1076,	"functions",	1061,	NULL,	0,	true,	0,	0,	1,	"one"	]

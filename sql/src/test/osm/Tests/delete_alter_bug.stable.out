@@ -35,7 +35,7 @@ Over..
 % sys.way_tags,	sys.way_tags,	sys.way_tags # table_name
 % way,	k,	v # name
 % int,	varchar,	varchar # type
-% 8,	10,	18 # length
+% 8,	10,	17 # length
 [ 23950375,	"name",	"Haarholzer Straße"	]
 [ 23950375,	"name",	"Haarholzer Straße"	]
 [ 23950375,	"created_by",	"Potlatch 0.10f"	]

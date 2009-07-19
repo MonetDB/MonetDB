@@ -75,13 +75,13 @@ Over..
 % sys.test,	sys.test,	sys.test # table_name
 % id,	name,	age  # name
 % int,	varchar,	int # type
-% 1,	1,	2 # length
+% 1,	0,	2 # length
 [ 2,	NULL,	26	]
 [ 4,	NULL,	NULL	]
 % sys.test,	sys.test,	sys.test # table_name
 % id,	name,	age  # name
 % int,	varchar,	int # type
-% 1,	1,	2 # length
+% 1,	0,	2 # length
 [ 2,	NULL,	26	]
 
 # 15:56:24 >  
