@@ -34,10 +34,14 @@ comment "Fill the tail column with a constant taken from the aligned BAT.";
 pattern algebra.prejoin(b:bat[:oid,:any_1],c:bat[:oid,:any_1],algo:int) (:bat[:oid,:any_1],:bat[:oid,:any_1])
 address ALGprejoin
 comment "Bloom filter to reduce join cost in out-of-memory situations. 1 -- martin, 2 -- lefteris";
-@{
+
 pattern algebra.blkjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
 address ALGblkjoin
 comment "Simple stupid block join for out-of-memory joins";
+
+pattern algebra.scanhashjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
+address ALGscanhashjoin
+comment "Simple multi-scan hash join for out-of-memory joins";
 
 pattern algebra.blkjoinStM(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
 address ALGblkjoinStM
@@ -69,6 +73,10 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 
 ae_export str ALGprojectCst(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
+ae_export str ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+ae_export str ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+ae_export str ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+ae_export str ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
 @c
@@ -187,7 +195,6 @@ GDKblockjoin(BAT *b, BAT *c){
 
 	blim = BATcount(b);
 	clim = BATcount(c);
-	
 	k =0;
 	for( cl = 0; cl < clim + blk; cl+= blk){
 		k++;
@@ -203,6 +210,140 @@ GDKblockjoin(BAT *b, BAT *c){
 printf("block size " BUNFMT "\n|",blk);
 printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
+	return bn;
+}
+
+/* a variation is where you try to explore all points before moving on */
+static BAT *
+GDKblockjoin2(BAT *b, BAT *c){
+	BAT *bp, *cp, *j, *bn = 0;
+	BUN blim, bl, cap = BUN_NONE;
+	BUN clim,cl;
+	int i=0, k =0;
+	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /4.0/ (sizeof(int) +ATOMsize(b->ttype));
+
+	blim = BATcount(b);
+	clim = BATcount(c);
+	
+	for( bl = 0; bl < blim + blk; bl+= blk){
+		i++;
+		bp = BATslice(b, bl, bl+blk);
+		k =0;
+		printf("next outer %d\n",i);
+		for( cl = 0; cl < clim + blk; cl+= blk){
+			k++;
+			cp = BATslice(c, cl, cl+blk);
+			j = BATjoin(b,cp, cap);
+			if (bn == 0)
+				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
+			bn= BATappend(bn,j, TRUE);
+			cap = BATcount(j )* 2;
+			BBPunfix(j->batCacheid);
+			BBPunfix( cp->batCacheid);
+		}
+		BBPunfix( bp->batCacheid);
+	}
+printf("block size " SZFMT "\n|",blk);
+printf("outersize " SZFMT " inner size " SZFMT "\n", blim,clim);
+printf("inner loop %d\n",k);
+	return bn;
+}
+
+/* a multi-scan-hash solution */
+static BAT *
+GDKscanhashjoin(BAT *b, BAT *c){
+	BAT *bp = 0, *cp = 0, *j, *bn = 0;
+	BUN blim, cap = BUN_NONE;
+	BUN clim;
+	BUN p,q;
+	BATiter bit,cit;
+	int type= b->ttype;
+	int *bhash, *chash;
+	BUN v,i,k,mask, bcap, ccap;
+
+	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /4.0/ (sizeof(int) +ATOMsize(b->ttype));
+
+	blim = BATcount(b);
+	mask = HASHmask(blim/blk);
+	clim = BATcount(c);
+	if ( HASHmask(clim/blk) >mask)
+		mask = HASHmask(clim/blk);
+printf("mask " BUNFMT "\n",mask);
+
+	/* collect the statistics first */
+	bhash = GDKzalloc(sizeof(int) * mask);
+	chash = GDKzalloc(sizeof(int) * mask);
+	mask--;
+
+	bit = bat_iterator(b);
+	cit = bat_iterator(c);
+	BATloop(b,p,q){
+		ptr t = (ptr) BUNtail(bit,p);
+		i= (int) ((mask*ATOMhash(type,t)) & mask);
+		bhash[i]++;
+	}
+	BATloop(c,p,q){
+		i= (int) ((mask * ATOMhash(type,BUNhead(cit,p))) & mask);
+		chash[i]++;
+	}
+
+	/* in the next stage we split fetch elements until memory is filled */
+	i = 0;
+	do{
+		cap = bcap = ccap = 0;
+		for (k = 0; k<= mask; k++){
+			if ( bhash[k]< 0) bhash[k]=0;
+			if ( chash[k]< 0) chash[k]=0;
+		}
+		for ( ; i <= mask && cap < blk; i++){
+			/* printf("hash "BUNFMT " bcap %d ccap %d\n",i,bhash[i],chash[i]);*/
+			if ( bhash[i]== 0 ) chash[i] = 0;
+			else
+			if ( chash[i] == 0 ) bhash[i] = 0;
+			else {
+				cap += bhash[i] + chash[i];
+				bcap += bhash[i];
+				ccap += chash[i];
+				bhash[i] = -1;
+				chash[i] = -1;
+			}
+		}
+		/* printf("next stage "BUNFMT " bcap " BUNFMT" ccap " BUNFMT"\n",i,bcap,ccap);*/
+		if ( cap == 0) break; /* done */
+
+		/* now we collect elements we are interested in */
+		if ( bp == 0)
+			bp = BATnew(TYPE_oid,b->ttype, bcap);
+		else
+			BATclear(bp);
+		BATloop(b,p,q){
+			ptr t = (ptr) BUNtail(bit,p);
+			v= (int) ( (mask * ATOMhash(type,t)) & mask);
+			if ( bhash[v] < 0)
+				BUNins(bp, (ptr) BUNhead(bit,p), t,TRUE);
+		}
+		if ( cp == 0)
+			cp = BATnew(c->htype,TYPE_oid, ccap);
+		else
+			BATclear(cp);
+		BATloop(c,p,q){
+			ptr t = (ptr) BUNhead(cit,p);
+			v= (int) ((mask * ATOMhash(type,t)) & mask);
+			if ( chash[v] < 0)
+				BUNins(cp, t, (ptr) BUNtail(cit,p), TRUE );
+		}
+	
+		j = BATjoin(bp,cp, BUN_NONE);
+		printf("step "BUNFMT " b " BUNFMT " c "BUNFMT" size " BUNFMT"\n", i, BATcount(bp), BATcount(cp), BATcount(j));
+		if (bn == 0)
+			bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
+		bn= BATappend(bn,j, TRUE);
+		BBPunfix(j->batCacheid);
+	} while ( cap > 0 );
+	if (bp )
+		BBPunfix( bp->batCacheid);
+	if (cp )
+		BBPunfix( cp->batCacheid);
 	return bn;
 }
 
@@ -715,7 +856,34 @@ ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
 	}
 
-	bn = GDKblockjoin(b,c);
+	if ( 0)
+		bn = GDKblockjoin(b,c);
+	else
+		bn = GDKblockjoin2(b,c);
+	BBPkeepref(*bres= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(c->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bres = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	int *cid = (int *) getArgReference(stk, pci, 2);
+	BAT *b, *c, *bn;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
+	if ( (c = BATdescriptor(*cid)) == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
+	}
+
+	bn = GDKscanhashjoin(b,c);
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(c->batCacheid);
