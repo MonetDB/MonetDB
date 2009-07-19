@@ -244,7 +244,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 		BBPunfix( bp->batCacheid);
 	}
 printf("block size " SZFMT "\n|",blk);
-printf("outersize " SZFMT " inner size " SZFMT "\n", blim,clim);
+printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
 	return bn;
 }
