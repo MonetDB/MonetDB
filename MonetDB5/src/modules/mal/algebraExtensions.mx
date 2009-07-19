@@ -38,6 +38,10 @@ comment "Bloom filter to reduce join cost in out-of-memory situations. 1 -- mart
 pattern algebra.blkjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
 address ALGblkjoin
 comment "Simple stupid block join for out-of-memory joins";
+
+pattern algebra.blkjoinStM(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
+address ALGblkjoinStM
+comment "Mane's version of Simple stupid block join for out-of-memory joins";
 @{
 @include prelude.mx
 @+ Implementation section
@@ -204,85 +208,52 @@ printf("inner loop %d\n",k);
 
 static BAT *
 GDKblockjoinStM(BAT *b, BAT *c){
-	BAT *bp, *cp, *cr, *j, *bn = 0;
-	BUN blim,bl;
-	BUN clim,cl;
-	size_t blk = (size_t) ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid) / 2.0 );
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"portion " SZFMT "\n",blk);
-#endif
-	blim = BATcount(b);
-	clim = BATcount(c);
-	
-	cr = BATmirror(c);
-	for( cl = 0; cl < clim + blk; cl+= blk){
-		cp = BATslice(cr, cl, cl+blk);
-		for( bl = 0; bl < blim + blk; bl+= blk){
-			bp = BATslice(b, bl, bl+blk);
-			j = BATjoin(bp,cp, BUN_NONE);
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"result " SZFMT " " SZFMT " " SZFMT "\n", bl, cl, BATcount(j));
-#endif
-			if (bn == 0)
-				bn = BATnew( j->htype, j->ttype, BATcount(j)*blim/blk);
-			bn= BATappend(bn,j, TRUE);
-			BBPunfix(j->batCacheid);
-			BBPunfix( bp->batCacheid);
-		}
-		BBPunfix( cp->batCacheid);
-	}
-	return bn;
-}
-
-static BAT *
-GDKblockjoinStM2(BAT *b, BAT *c){
 	bit swap = FALSE;
-	BAT *cp, *cr, *j, *bn = 0;
-	BUN blim;
-	BUN clim,cl;
-	size_t blk = (size_t) ((MT_npages() * MT_pagesize()) /4.0/ sizeof(oid) / 2.0 );
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"portion " SZFMT "\n",blk);
-#endif
+	int k = 0;
+	BAT *cp, *j, *bn = 0;
+	BUN blim, clim, cl, cap = BUN_NONE;
+	BUN blk = (BUN) ( (MT_npages() * MT_pagesize()) / (2 * (ATOMsize(b->htype) + ATOMsize(b->ttype) + ATOMsize(c->ttype) + sizeof(BUN))) );
+
 	blim = BATcount(b);
 	clim = BATcount(c);
 	if (MIN(blim,clim) <= blk) {
 		/* smaller fits in mem => use it as inner */
 		if (blim < clim) {
-			BAT *x = b;
-			b = c;
-			c = x;
-			blim = BATcount(b);
-			clim = BATcount(c);
 			swap = TRUE;
 		}
 	} else {
 		/* both exceed mem => use bigger as inner */
 		if (blim > clim) {
-			BAT *x = b;
-			b = c;
-			c = x;
-			blim = BATcount(b);
-			clim = BATcount(c);
 			swap = TRUE;
 		}
 		
 	}
+	if (swap) {
+		BAT *x = b;
+		b = BATmirror(c);
+		c = BATmirror(x);
+		blim = BATcount(b);
+		clim = BATcount(c);
+	}
 	
-	/* partition only inner and steam outer through */
-	cr = BATmirror(c);
-	for( cl = 0; cl < clim + blk; cl+= blk){
-		cp = BATslice(cr, cl, cl+blk);
-		j = BATjoin(b,cp, BUN_NONE);
-#ifdef DEBUG_BLOOMFILTER
-	stream_printf(GDKout,"result " SZFMT " " SZFMT " " SZFMT "\n", blk, cl, BATcount(j));
-#endif
+	/* partition only inner and stream outer through */
+	k = 0;
+	cap = MIN(blk, clim);
+	for( cl = 0, k = 0; cl < clim; cl += blk){
+		k++;
+		cp = BATslice(c, cl, cl+blk);
+		j = BATjoin(b, cp, cap);
 		if (bn == 0)
-			bn = BATnew( j->htype, j->ttype, BATcount(j)*blim/blk);
+			bn = BATnew( j->htype, j->ttype, 2*BATcount(j)*clim/blk);
 		bn= BATappend(bn,j, TRUE);
+		cap = MAX(cap, 2*BATcount(j));
 		BBPunfix(j->batCacheid);
 		BBPunfix( cp->batCacheid);
 	}
+printf("outer size " BUNFMT "\n", blim);
+printf("inner size " BUNFMT "\n", clim);
+printf("block size " BUNFMT "\n", blk);
+printf("blocks/loops %d\n",k);
 	if (swap)
 		return BATmirror(bn);
 	else
@@ -752,6 +723,30 @@ ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 str
+ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bres = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	int *cid = (int *) getArgReference(stk, pci, 2);
+	BAT *b, *c, *bn;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.blkjoinStM", INTERNAL_BAT_ACCESS);
+	if ( (c = BATdescriptor(*cid)) == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "algebra.blkjoinStM", INTERNAL_BAT_ACCESS);
+	}
+
+	bn = GDKblockjoinStM(b,c);
+	BBPkeepref(*bres= bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(c->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bres = (int *) getArgReference(stk, pci, 0);
 	int *cres = (int *) getArgReference(stk, pci, 1);
@@ -782,18 +777,6 @@ ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			break;
 		case 15: /* blocked join */
 			bn = GDKblockjoin(b,c);
-			cn = c;
-			BBPkeepref(*cres= cn->batCacheid);
-			BBPkeepref(*bres= bn->batCacheid);
-			return MAL_SUCCEED;
-		case 6: /* blocked join by StM */
-			bn = GDKblockjoinStM(b,c);
-			cn = c;
-			BBPkeepref(*cres= cn->batCacheid);
-			BBPkeepref(*bres= bn->batCacheid);
-			return MAL_SUCCEED;
-		case 7: /* blocked join by StM, v2 */
-			bn = GDKblockjoinStM2(b,c);
 			cn = c;
 			BBPkeepref(*cres= cn->batCacheid);
 			BBPkeepref(*bres= bn->batCacheid);
