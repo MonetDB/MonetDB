@@ -260,7 +260,6 @@ class Element(_Encode):
     # empty elements
     empty = ['link', 'basefont', 'br', 'area', 'img', 'param', 'hr',
              'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
-    xml = True                          # write XHTML instead of HTML
 
     def __init__(self, tag, attrdict = None, *children):
         self.tag = tag
@@ -284,15 +283,13 @@ class Element(_Encode):
         attrlist.sort()
         for name, value in attrlist:
             s.append(' %s="%s"' % (name, self.encode(value, True)))
-        if self.children or (not self.xml and not self.isempty):
+        if self.children:
             s.append('>')
             for c in self.children:
                 s.append(str(c))
             s.append('</%s>' % self.tag)
-        elif self.xml:
-            s.append('/>')
         else:
-            s.append('>')               # empty HTML element
+            s.append('/>')
         return ''.join(s)
 
     def write(self, f, newline = False):
@@ -301,23 +298,17 @@ class Element(_Encode):
         if self.tag.lower() == 'html':
             # before we write the DOCTYPE we should really check
             # whether the document conforms...
-            if self.xml:
-                f.write('<!DOCTYPE html PUBLIC '
-                        '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
-                        '                      '
-                        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
-            else:
-                f.write('<!DOCTYPE html PUBLIC '
-                        '"-//W3C//DTD HTML 4.01 Transitional//EN"\n'
-                        '                      '
-                        '"http://www.w3.org/TR/html4/loose.dtd">\n')
+            f.write('<!DOCTYPE html PUBLIC '
+                    '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
+                    '                      '
+                    '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
         inline = self.tag.lower() in self.inline
         f.write('<%s' % self.tag)
         attrlist = self.attrdict.items()
         attrlist.sort()
         for name, value in attrlist:
             f.write(' %s="%s"' % (name, self.encode(value, True)))
-        if self.children or (not self.xml and not self.isempty):
+        if self.children:
             if not inline:
                 for c in self.children:
                     if not isinstance(c, Element):
@@ -329,10 +320,8 @@ class Element(_Encode):
             for c in self.children:
                 c.write(f, newline and not inline)
             f.write('</%s>' % self.tag)
-        elif self.xml:
-            f.write('/>')
         else:
-            f.write('>')                # empty HTML element
+            f.write('/>')
         if newline:
             f.write('\n')
 
@@ -3904,4 +3893,5 @@ if __name__ == "__main__":
 
 #       END
 #############################################################################
+
 # vim: set ts=4 sw=4 expandtab :
