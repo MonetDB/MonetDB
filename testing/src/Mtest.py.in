@@ -1572,14 +1572,14 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
         #elif [ -f "${SRCTST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+SRCTST+" "+EXT
         #elif [ -f "$SRCTST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+SRCTST+" "+EXT
     else:
-        i = ORIGTST.rfind('.')
+        i = TST.rfind('.')
         if i > 0:
-            return RunTest(env, htmlenv, ORIGTST[:i], BusyPorts, COND)
+            return RunTest(env, htmlenv, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if   COND and not CONDITIONALS.has_key(COND):
-            elem = SkipTest(env, htmlenv, ORIGTST, EXT, "as conditional '%s' is unknown." % COND)
+            elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' is unknown." % COND)
         elif COND and not CONDITIONALS[COND]:
-            elem = SkipTest(env, htmlenv, ORIGTST, EXT, "as conditional '%s' does not hold." % COND)
+            elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' does not hold." % COND)
         elif os.name == "nt":
             ErrMsg("test missing: '"+SRCTST+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq)`")
             #TODO:
@@ -1653,7 +1653,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
         if MAPIsockets is not None:
             XRPCsockets, reason = CheckSocket2(env, "XRPC", False)   #, SrvrErr)
         if None in (MAPIsockets, XRPCsockets):
-            elem = SkipTest(env, htmlenv, ORIGTST, EXT, "as "+reason)
+            elem = SkipTest(env, htmlenv, TST, EXT, "as "+reason)
             return TX,Failed,Failed,elem
 
         if os.path.isfile(TRGTST+EXT+".src")  and not os.path.isfile(TRGTST+EXT):
