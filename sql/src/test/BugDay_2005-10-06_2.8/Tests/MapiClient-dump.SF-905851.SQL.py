@@ -22,10 +22,10 @@ def client(cmd, infile = None):
 
 def main():
     client(os.getenv('SQL_CLIENT'),
-           os.path.join(os.getenv('TSTSRCBASE'), os.getenv('TSTDIR'),
+           os.path.join(os.getenv('TSTSRCDIR'),
                         'JdbcClient_create_tables.sql'))
     client(os.getenv('SQL_CLIENT'),
-           os.path.join(os.getenv('TSTSRCBASE'), os.getenv('TSTDIR'),
+           os.path.join(os.getenv('TSTSRCDIR'),
                         'JdbcClient_inserts_selects.sql'))
     client(os.getenv('SQL_DUMP'))
 
