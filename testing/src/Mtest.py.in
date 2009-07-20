@@ -976,6 +976,10 @@ class PerformDir(Thread):
         self.testdir = copy.deepcopy(testdir)
         self.testlist = copy.deepcopy(testlist)
         self.BusyPorts = copy.deepcopy(BusyPorts)
+        # initialise these, because Python and threading is not a good
+        # combination it seems
+        self.t = 0
+        self.elem = ''
 
     def run(self):
         self.t, self.elem = RealPerformDir(self.env, self.htmlenv,
@@ -2132,10 +2136,12 @@ def PrepareProcessEnv(env, quiet):
     osenv = copy.copy(os.environ)
     SetExecEnv(env['exe'], osenv, not quiet)
     env = copy.deepcopy(env)
+    # remove some known offenders
     env.pop('exe', None)
     env.pop('TST_MODS', None)
-    env.pop('QUIET', None)
-    env.pop('USE_AT', None)
+    # flatten the rest
+    for key in env:
+        env[key] = str(env[key])
     osenv.update(env)
 
     return osenv
