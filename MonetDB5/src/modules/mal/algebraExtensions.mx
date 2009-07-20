@@ -252,14 +252,15 @@ printf("inner loop %d\n",k);
 /* a multi-scan-hash solution */
 static BAT *
 GDKscanhashjoin(BAT *b, BAT *c){
-	BAT *bp = 0, *cp = 0, *j, *bn = 0;
+	BAT **bp = 0, **cp = 0, *j, *bn = 0;
 	BUN blim, cap = BUN_NONE;
 	BUN clim;
 	BUN p,q;
 	BATiter bit,cit;
 	int type= b->ttype;
-	int *bhash, *chash;
-	BUN v,i,k,mask, bcap, ccap;
+	int box=0, *bhash, *chash;
+	int l;
+	BUN v,i,mask, bcap, ccap;
 
 	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /4.0/ (sizeof(int) +ATOMsize(b->ttype));
 
@@ -287,14 +288,13 @@ printf("mask " BUNFMT "\n",mask);
 		chash[i]++;
 	}
 
-	/* in the next stage we split fetch elements until memory is filled */
+	/* in the next stage we determine the buckets */
 	i = 0;
+	bp= (BAT**) GDKzalloc( (256) * sizeof( BAT*));
+	cp= (BAT**) GDKzalloc( (256) * sizeof( BAT*));
 	do{
+		box++;
 		cap = bcap = ccap = 0;
-		for (k = 0; k<= mask; k++){
-			if ( bhash[k]< 0) bhash[k]=0;
-			if ( chash[k]< 0) chash[k]=0;
-		}
 		for ( ; i <= mask && cap < blk; i++){
 			/* printf("hash "BUNFMT " bcap %d ccap %d\n",i,bhash[i],chash[i]);*/
 			if ( bhash[i]== 0 ) chash[i] = 0;
@@ -304,51 +304,52 @@ printf("mask " BUNFMT "\n",mask);
 				cap += bhash[i] + chash[i];
 				bcap += bhash[i];
 				ccap += chash[i];
-				bhash[i] = -1;
-				chash[i] = -1;
+				bhash[i] = box;
+				chash[i] = box;
 			}
 		}
-		/* printf("next stage "BUNFMT " bcap " BUNFMT" ccap " BUNFMT"\n",i,bcap,ccap);*/
-		if ( cap == 0) break; /* done */
+		bp[box] = BATnew(TYPE_oid,b->ttype, bcap);
+		cp[box] = BATnew(c->htype,TYPE_oid, ccap);
+		/* printf("next stage %d "BUNFMT " bcap " BUNFMT" ccap " BUNFMT"\n",box,,i,bcap,ccap);*/
+	} while(box < 255 && i < mask);
 
-		/* catch the single loop ones */
-		if ( bcap == blim && ccap == clim){
-			bn = BATjoin(b,c,BUN_NONE);
-			break;
-		}
-		/* now we collect elements we are interested in */
-		if ( bp == 0)
-			bp = BATnew(TYPE_oid,b->ttype, bcap);
-		else
-			BATclear(bp);
+	if ( box == 255 ){
+		GDKerror("Too many fragments ");
+		return 0;
+	}
+
+	/* catch the single loop ones */
+	/* we could also catch a box=2 case by avoiding the write
+		of the temporary to disk */
+	if (box == 1 )
+		bn = BATjoin(b,c,BUN_NONE);
+	else {
+		/* now we distributed the elements by hash */
 		BATloop(b,p,q){
 			ptr t = (ptr) BUNtail(bit,p);
 			v= (int) ( (mask * ATOMhash(type,t)) & mask);
-			if ( bhash[v] < 0)
-				BUNins(bp, (ptr) BUNhead(bit,p), t,TRUE);
+			if ( bhash[v] > 0)
+				BUNins(bp[bhash[v]], (ptr) BUNhead(bit,p), t,TRUE);
 		}
-		if ( cp == 0)
-			cp = BATnew(c->htype,TYPE_oid, ccap);
-		else
-			BATclear(cp);
 		BATloop(c,p,q){
 			ptr t = (ptr) BUNhead(cit,p);
 			v= (int) ((mask * ATOMhash(type,t)) & mask);
-			if ( chash[v] < 0)
-				BUNins(cp, t, (ptr) BUNtail(cit,p), TRUE );
+			if ( chash[v] > 0)
+				BUNins(cp[chash[v]], t, (ptr) BUNtail(cit,p), TRUE );
 		}
-	
-		j = BATjoin(bp,cp, BUN_NONE);
-		printf("step "BUNFMT " b " BUNFMT " c "BUNFMT" size " BUNFMT"\n", i, BATcount(bp), BATcount(cp), BATcount(j));
-		if (bn == 0)
-			bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
-		bn= BATappend(bn,j, TRUE);
-		BBPunfix(j->batCacheid);
-	} while ( cap > 0 );
-	if (bp )
-		BBPunfix( bp->batCacheid);
-	if (cp )
-		BBPunfix( cp->batCacheid);
+		
+		bn = BATnew( b->htype, c->ttype, 0);
+		for ( l=1; l <= box; l++){
+printf("box %d " BUNFMT " " BUNFMT "\n",l, BATcount(bp[l]), BATcount(cp[l]));
+			j = BATjoin(bp[l],cp[l], BUN_NONE);
+			bn= BATappend(bn,j, TRUE);
+			BBPunfix( bp[l]->batCacheid);
+			BBPunfix( cp[l]->batCacheid);
+			BBPunfix(j->batCacheid);
+		} 
+	}
+	GDKfree(bp);
+	GDKfree(cp);
 	return bn;
 }
 
@@ -889,6 +890,7 @@ ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	}
 
 	bn = GDKscanhashjoin(b,c);
+	if (bn) 
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(c->batCacheid);
