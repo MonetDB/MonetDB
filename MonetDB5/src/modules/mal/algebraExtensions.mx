@@ -191,7 +191,7 @@ GDKblockjoin(BAT *b, BAT *c){
 	BUN blim, cap = BUN_NONE;
 	BUN clim,cl;
 	int k =0;
-	BUN blk = (BUN) (MT_npages() * MT_pagesize()) /2.0/ (sizeof(int) +ATOMsize(b->ttype));
+	BUN blk = (BUN) (MT_npages() * MT_pagesize() / (2.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	blim = BATcount(b);
 	clim = BATcount(c);
@@ -220,7 +220,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 	BUN blim, bl, cap = BUN_NONE;
 	BUN clim,cl;
 	int i=0, k =0;
-	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /4.0/ (sizeof(int) +ATOMsize(b->ttype));
+	size_t blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	blim = BATcount(b);
 	clim = BATcount(c);
@@ -262,7 +262,7 @@ GDKscanhashjoin(BAT *b, BAT *c){
 	int l;
 	BUN v,i,mask, bcap, ccap;
 
-	size_t blk = (size_t) (MT_npages() * MT_pagesize()) /4.0/ (sizeof(int) +ATOMsize(b->ttype));
+	size_t blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	blim = BATcount(b);
 	mask = HASHmask(blim/blk);
