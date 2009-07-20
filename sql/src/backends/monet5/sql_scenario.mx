@@ -1155,6 +1155,8 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	printFunction(GDKout, ((Symbol)q->code)->def, 0, LIST_MAL_ALL);
 #endif
 	mb = ((Symbol)q->code)->def;
+	if ( mb->errors )
+		throw(SQL, "SQLengine", "Program contains errors");
 	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
