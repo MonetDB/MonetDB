@@ -1925,7 +1925,14 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     cmd.append('-d')
                 if quiet:
                     cmd.append('-q')
-                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TRGTST, STABLEout), '%s.test.out.FILTERED' % TRGTST, '%s.out.diff.html' % TRGTST])
+                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'],
+                    '-C%s' % par['CONTEXT'],
+                    '-A%d' % ACCURACYout,
+                    '-r%s' % REVe,
+                    '%s%s.FILTERED' % (TST, STABLEout),
+                    '%s.test.out.FILTERED' % TST,
+                    '%s.out.diff.html' % TST],
+                    cwd = TSTTRGDIR)
                 proc.killed = False
                 t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
@@ -1939,10 +1946,16 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                 timedout = proc.killed
                 ACCURACYout = ACCURACYout - 1
             if env.get('ECHO_DIFF'):
-                cmd = 'diff'
+                cmd = ['diff']
                 if ACCURACYout >= 0:
-                    cmd += ' -d'
-                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TRGTST, STABLEout, TRGTST))
+                    cmd.append('-d')
+                subprocess.call(cmd + [
+                    '-Bb',
+                    '-I"%s"' % par['IGNORE'],
+                    '-U%s' % par['CONTEXT'],
+                    '"%s%s.FILTERED"' % (TST, STABLEout),
+                    '"%s.test.out.FILTERED"' % TRGTST],
+                    cwd = TSTTRGDIR)
 
             #TODO:
             #timedout = 1
@@ -1974,21 +1987,49 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     # filesizes differ significantly => expect major differences!
                     ACCURACYerr = -1
             while timedout and MDIFF == MDIFF1:
+                cmd = ['Mdiff']
                 if ACCURACYerr == -1:
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
-                if not quiet:
-                    timedout = os.system('%s -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TRGTST, STABLEerr, TRGTST, TRGTST))
                 else:
-                    timedout = os.system('%s -q -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TRGTST, STABLEerr, TRGTST, TRGTST))
+                    cmd.append('-d')
+                if quiet:
+                    cmd.append('-q')
+                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'],
+                    '-C%s' % par['CONTEXT'],
+                    '-A%d' % ACCURACYerr,
+                    '-r%s' % REVe,
+                    '%s%s.FILTERED' % (TST, STABLEerr),
+                    '%s.test.err.FILTERED' % TST,
+                    '%s.err.diff.html' % TST],
+                    cwd = TSTTRGDIR)
+                proc.killed = False
+                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+                try:
+                    t.start()
+                    proc.wait()
+                    t.cancel()
+                except KeyboardInterrupt:
+                    t.cancel()
+                    killProc(proc)
+                    raise
+                timedout = proc.killed
                 ACCURACYerr = ACCURACYerr - 1
             if env.get('ECHO_DIFF'):
-                cmd = 'diff'
+                cmd = ['diff']
                 if ACCURACYerr >= 0:
-                    cmd += ' -d'
-                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TRGTST, STABLEerr, TRGTST))
+                    cmd.append('-d')
+                subprocess.call(cmd + [
+                    '-Bb',
+                    '-I"%s"' % par['IGNORE'],
+                    '-U%s' % par['CONTEXT'],
+                    '"%s%s.FILTERED"' % (TST, STABLEerr),
+                    '"%s.test.err.FILTERED"' % TRGTST],
+                    cwd = TSTTRGDIR)
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(htmlenv, env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(
+                    htmlenv, env, TST, STABLEout, STABLEerr,
+                    EXT, max(sockerr, timeout, killed))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
@@ -2118,12 +2159,12 @@ def killProc(proc, outfile = None, cmd = None):
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
 
-def PrepareProcessEnv(env, quiet):
+def PrepareProcessEnv(env):
     # change env to actually make sense for the process
     # maybe one day do this more generic by just stripping/converting
     # all keys with arguments that are not strings
     osenv = copy.copy(os.environ)
-    SetExecEnv(env['exe'], osenv, not quiet)
+    SetExecEnv(env['exe'], osenv, False)
     env = copy.deepcopy(env)
     # remove some known offenders
     env.pop('exe', None)
@@ -2141,7 +2182,7 @@ def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    osenv = PrepareProcessEnv(env, env['QUIET'])
+    osenv = PrepareProcessEnv(env)
 
     proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE,
             stdout = subprocess.PIPE, stderr = TestErr,
@@ -2180,11 +2221,11 @@ def RunIt(cmd, env, TestIn, TestOut, TestErr, TimeOut) :
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    osenv = PrepareProcessEnv(env, env['QUIET'])
+    osenv = PrepareProcessEnv(env)
 
     proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout =
             TestOut, stderr = TestErr, universal_newlines = True,
-            env = osenv)
+            env = osenv, cwd = env['TSTTRGDIR'])
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2344,7 +2385,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = TRGTST+EXT+" "+TST+" "+PRELUDE
                 killed = RunIt(cmd, env, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
-                cmd = exe['python'][1]+" "+TRGTST+EXT+" "+TST+" "+PRELUDE
+                cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
                 killed = RunIt(cmd, env, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs", "milS", "milSXs"]:
                 cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
