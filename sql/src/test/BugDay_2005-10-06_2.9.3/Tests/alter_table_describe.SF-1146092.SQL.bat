@@ -8,6 +8,6 @@ set LANG=en_US.UTF-8
 prompt # $t $g  
 echo on
 
-call java nl.cwi.monetdb.client.JdbcClient -h %HOST% -p %MAPIPORT% -d %TSTDB% -f "%TSTSRCBASE%\%TSTDIR%\alter_table_describe.SF-1146092-src.sql"
+call java nl.cwi.monetdb.client.JdbcClient -h %HOST% -p %MAPIPORT% -d %TSTDB% -f "%TSTSRCDIR%\alter_table_describe.SF-1146092-src.sql"
 
 @del .monetdb
