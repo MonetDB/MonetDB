@@ -50,6 +50,21 @@ comment "Expand inline functions";
 
 extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
 
+static int
+isCorrectInline(MalBlkPtr mb){
+	/* make sure we have a simple inline function with a singe return */
+	InstrPtr p;
+	int i, retseen=0;
+
+	for( i= 1; i < mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if ( p->token == RETURNsymbol || p->token == YIELDsymbol || 
+			 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+			retseen++;
+	}
+	return retseen == 1;
+}
+
 int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -85,7 +100,8 @@ They are produced by SQL compiler.
 Check if the function definition is tagged as being inlined.
 @c
 			if (sig->token == FUNCTIONsymbol &&
-			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL) {
+			    varGetProp(q->blk, getArg(sig, 0), inlineProp) != NULL &&
+				isCorrectInline(q->blk) ) {
 				(void) inlineMALblock(mb,i,q->blk);
 				i--;
 				actions++;
