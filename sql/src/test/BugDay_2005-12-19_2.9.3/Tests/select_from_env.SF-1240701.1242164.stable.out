@@ -65,6 +65,7 @@ Over..
 [ "mero_errlog"	]
 [ "mero_pidfile"	]
 [ "mal_init"	]
+[ "mapi_autosense"	]
 [ "sql_optimizer"	]
 [ "gdk_mem_pagebits"	]
 [ "gdk_mem_bigsize"	]
