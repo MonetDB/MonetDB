@@ -856,6 +856,7 @@ include sql_bpm;
 #include <streams.h>
 #include <mtime.h>
 #include <blob.h>
+#include <str.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
 #include "sql_rel2bin.h"
@@ -3024,7 +3025,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str)p; 
-		sz = _strlen(v);
+		strLength(&sz, v);
 		if (len == 0 || sz <= len) 
 			r = GDKstrdup(v);
 	}

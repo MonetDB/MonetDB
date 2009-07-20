@@ -77,7 +77,7 @@ Over..
 % sys.victim,	sys.victim # table_name
 % L10,	L11 # name
 % varchar,	varchar # type
-% 1,	1 # length
+% 0,	0 # length
 [ NULL,	NULL	]
 % sys.scenedoctors # table_name
 % doctor # name

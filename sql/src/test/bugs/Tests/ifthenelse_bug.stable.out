@@ -29,7 +29,7 @@ Over..
 % sys.my_table7,	sys.my_table7,	sys.my_table7,	sys.my_table7 # table_name
 % my_id,	col1,	col2,	col3 # name
 % int,	varchar,	varchar,	varchar # type
-% 2,	2,	1,	3 # length
+% 2,	2,	0,	3 # length
 [ 10,	"aa",	NULL,	"aaa"	]
 [ 20,	"ab",	NULL,	"aab"	]
 [ 30,	"ac",	NULL,	"aac"	]

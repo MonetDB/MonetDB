@@ -34,27 +34,27 @@ Over..
 % .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
-% 2,	1,	5 # length
+% 2,	0,	5 # length
 [ "id",	NULL,	true	]
 % .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
-% 2,	1,	5 # length
+% 2,	0,	5 # length
 [ "id",	NULL,	true	]
 % .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
-% 2,	1,	5 # length
+% 2,	0,	5 # length
 [ "id",	NULL,	true	]
 % .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
-% 2,	1,	5 # length
+% 2,	0,	5 # length
 [ "id",	NULL,	true	]
 % .columns,	.columns,	.columns # table_name
 % name,	default,	null # name
 % varchar,	varchar,	boolean # type
-% 2,	1,	5 # length
+% 2,	0,	5 # length
 [ "id",	NULL,	false	]
 
 # 00:12:36 >  
