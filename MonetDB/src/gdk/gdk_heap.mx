@@ -234,6 +234,7 @@ HEAPextend(Heap *h, size_t size)
 				/* and load heap back in via memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
+					GDKclrerr();  /* don't leak errors from e.g. HEAPload */
 					return 0;
 				}
 				/* we failed */

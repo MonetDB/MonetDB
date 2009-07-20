@@ -2338,6 +2338,7 @@ gdk_export int GDKerror(const char *format, ...);
 gdk_export int GDKsyserror(const char *format, ...);
 gdk_export int GDKfatal(const char *format, ...);
 gdk_export int GDKerrorCount(void);
+gdk_export void GDKclrerr(void);
 
 @
 @h
