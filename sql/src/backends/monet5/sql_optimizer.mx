@@ -55,7 +55,7 @@ This reference list is illustrative for optimizer developers .
     111 bat.new                           6 mmath.sin
     106 sql.assert                        6 calc.or
     104 bat.hasMoreElements               6 calc.lng
-    104 calc.ifthenelse 		  6 calc.abs
+    104 calc.ifthenelse                   6 calc.abs
      98 aggr.count_no_nil                 6 calc.>
      85 calc.int                          6 batcalc.-
      85 algebra.kunion                    5 sql.importTable

@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.10 (Magnistipula/MCL-1.5)
+MonetDB JDBC driver version 1.11 (Magnistipula/MCL-1.5)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2009-06-19
+Release date: 2009-07-15
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
