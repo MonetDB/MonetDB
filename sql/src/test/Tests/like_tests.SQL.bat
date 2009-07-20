@@ -1,1 +1,1 @@
-@call mclient -lsql -h %HOST% -p %MAPIPORT% %RELSRCDIR%\..\like_tests.sql
+@call mclient -lsql -h %HOST% -p %MAPIPORT% %TSTSRCBASE%\%TSTDIR%\like_tests.sql
