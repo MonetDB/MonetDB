@@ -82,7 +82,7 @@ malBootstrap()
 	if (bf)
 		bootfile = bf;
 	MSinitClientPrg(c,"user", "main");
-	MCinitClientThread(c);
+	(void) MCinitClientThread(c);
 	malInclude(c, bootfile, 0);
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->nspace, c->curprg->def);
@@ -453,7 +453,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			glb->stk[i].val.pval = 0;
 		}
 	}
-	trimMalVariables_(mb,used,glb);
+	if (mb->errors==0)
+		trimMalVariables_(mb,used,glb);
 	GDKfree(used);
 }
 
@@ -470,8 +471,10 @@ MSserveClient(void *dummy)
 	Client c = (Client) dummy;
 	str msg = 0;
 
-	if (!isAdministrator(c))
-		MCinitClientThread(c);
+	if (!isAdministrator(c) && MCinitClientThread(c) < 0){
+		MCcloseClient(c);
+		return;
+	}
 @-
 A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
