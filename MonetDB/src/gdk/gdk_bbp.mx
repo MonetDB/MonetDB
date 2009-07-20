@@ -3315,12 +3315,13 @@ BBPbackup(BAT *b, bit subcommit)
 @= backup
 	if (@2 && @2->storage != STORE_MMAP) { /* direct mmap is unprotected (readonly usage, or has WAL protection)  */
 		/* STORE_PRIV saves into X.new files. Two cases could happen.
-		   The first a valid X.new exists, because of an access change
-		   or a previous commit. This X.new should be backuped as 
-		   usual. The second case is when X.new doesn't exists.
-		   In that case we could have half written X.new files 
-	           (after a crash). To protect against these we write 
-		   X.new.kill files in to the backup directory (see heap_move).
+		   The first is when a valid X.new exists because of
+		   an access change or a previous commit. This X.new
+		   should be backed up as usual. The second case is
+		   when X.new doesn't exist. In that case we could
+		   have half written X.new files (after a crash). To
+		   protect against these we write X.new.kill files in
+		   the backup directory (see heap_move).
 		*/
 		str ext = (@2->filename && @2->newstorage == STORE_PRIV) ? "@1.new" : "@1";
    		int mvret = 0;

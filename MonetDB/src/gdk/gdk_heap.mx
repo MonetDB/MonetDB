@@ -433,7 +433,7 @@ HEAPsave(Heap *h, str nme, str ext)
 	return HEAPsave_intern(h, nme, ext, ".new");
 }
 @}
-@- HEAPload
+@- HEAPdelete
 Delete any saved heap file. For memory mapped files, also try to remove any remaining X.new
 @{
 @c
