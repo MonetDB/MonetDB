@@ -154,13 +154,13 @@ PFstate_init (PFstate_t *status)
 
     status->standoff_axis_steps = false;
 
-    status->opt_alg             = "OIKCG_VG_JIS_I_GECSVR_OK_N"
+    status->opt_alg             = "OIKCG_VG_JIS_I_GECSVR_OIK_N"
                                        "}MT{JISAI_GYECSVR_"
-                                       "}MT{JISAI_OK_GYECSVR_"
+                                       "}MT{JISAI_OIK_GYECSVR_"
                                        "DC_GP";
-    status->opt_sql             = "OIKCG_VG_JIS_I_GECSVR_OK_N"
+    status->opt_sql             = "OIKCG_VG_JIS_I_GECSVR_OIK_N"
                                     "QU_}MT{JISAI_GYECSVR_"
-                                    "QU_}MT{JISAI_OK_GYECSVR_"
+                                    "QU_}MT{JISAI_OIK_GYECSVR_"
                                     "QU_CGP";
 
     status->format              = NULL;
@@ -351,9 +351,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /*******************************************/
     if (status->import_xml) {
 
-       /* todo: init-stuff */
-       /* e.g. qnameInit */
-       /* e.g namespaceInit */
+        tm_first = tm = PFtimer_start ();
+
+        /* todo: init-stuff */
+        /* e.g. qnameInit */
+        /* e.g namespaceInit */
 
         XML2LALGContext *ctx = PFxml2la_xml2lalgContext();
 
@@ -403,6 +405,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
            laroot = PFla_pb_op_at (lapb, 0);
            lapb = NULL;
         }
+
+        tm = PFtimer_stop (tm);
+
+        if (status->timing)
+            PFlog ("XML algebra plan import:\t\t %s", PFtimer_str (tm));
 
         goto AFTER_CORE2ALG;
     }
