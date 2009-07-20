@@ -453,7 +453,8 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			glb->stk[i].val.pval = 0;
 		}
 	}
-	trimMalVariables_(mb,used,glb);
+	if (mb->errors==0)
+		trimMalVariables_(mb,used,glb);
 	GDKfree(used);
 }
 
