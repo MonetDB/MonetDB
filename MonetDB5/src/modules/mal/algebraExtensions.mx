@@ -233,7 +233,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 		for( cl = 0; cl < clim + blk; cl+= blk){
 			k++;
 			cp = BATslice(c, cl, cl+blk);
-			j = BATjoin(b,cp, cap);
+			j = BATjoin(bp,cp, cap);
 			if (bn == 0)
 				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
 			bn= BATappend(bn,j, TRUE);
@@ -320,22 +320,24 @@ printf("mask " BUNFMT "\n",mask);
 
 	/* catch the single loop ones */
 	/* we could also catch a box=2 case by avoiding the write
-		of the temporary to disk */
-	if (box == 1 )
+		of the temporary to disk, using a second read instead */
+	if (box == 1 ){
 		bn = BATjoin(b,c,BUN_NONE);
-	else {
+		BBPunfix( bp[1]->batCacheid);
+		BBPunfix( cp[1]->batCacheid);
+	} else {
 		/* now we distributed the elements by hash */
 		BATloop(b,p,q){
 			ptr t = (ptr) BUNtail(bit,p);
 			v= (int) ( (mask * ATOMhash(type,t)) & mask);
 			if ( bhash[v] > 0)
-				BUNins(bp[bhash[v]], (ptr) BUNhead(bit,p), t,TRUE);
+				BUNins(bp[bhash[v]], (ptr) BUNhead(bit,p), t, TRUE);
 		}
 		BATloop(c,p,q){
 			ptr t = (ptr) BUNhead(cit,p);
 			v= (int) ((mask * ATOMhash(type,t)) & mask);
 			if ( chash[v] > 0)
-				BUNins(cp[chash[v]], t, (ptr) BUNtail(cit,p), TRUE );
+				BUNins(cp[chash[v]], t, (ptr) BUNtail(cit,p), TRUE);
 		}
 		
 		bn = BATnew( b->htype, c->ttype, 0);
