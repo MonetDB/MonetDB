@@ -1234,9 +1234,15 @@ dump_tables(Mapi mid, stream *toConsole, int describe)
 			quoted_print(toConsole, curschema);
 			stream_printf(toConsole, ";\n");
 		}
-		if (func == NULL)
+		if (func == NULL) {
+			if (schema)
+				schema = strdup(schema);
+			tname = strdup(tname);
 			rc = dump_table(mid, schema, tname, toConsole, describe, describe);
-		else
+			if (schema)
+				free(schema);
+			free(tname);
+		} else
 			stream_printf(toConsole, "%s\n", func);
 	}
 	if (curschema) {
