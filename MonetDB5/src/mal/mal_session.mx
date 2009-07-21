@@ -471,10 +471,8 @@ MSserveClient(void *dummy)
 	Client c = (Client) dummy;
 	str msg = 0;
 
-	if (!isAdministrator(c) && MCinitClientThread(c) < 0){
-		MCcloseClient(c);
-		return;
-	}
+	if (!isAdministrator(c))
+		MCinitClientThread(c);
 @-
 A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
