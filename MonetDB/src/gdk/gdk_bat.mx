@@ -2385,7 +2385,7 @@ are not crucial anymore).
 @}
 @- BATmmap
 Changing the storage status of heaps in a BAT is done in @:BATmmap@. 
-The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded or extended. The later is needed for loading large data
+The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded or extended. The latter is needed for loading large data
 sets. These transient bats should switch cheaply between malloced and memory
 mapped modes.
 
@@ -2395,26 +2395,26 @@ that are used when the BAT descriptor is saved.
 @{
 @c
 /* TODO niels: merge with BATsetmodes in gdk_storage */
-#define STORE_MODE(m,r,e) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))?STORE_PRIV:STORE_MMAP)
-void
+#define STORE_MODE(m,r,e,s) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
+static void
 HEAPnewstorage(BAT *b)
 {
 	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
 	int brestrict = (b->batRestricted == BAT_WRITE);
 
 	if (b->batMaphead) {
-		b->H->heap.newstorage = STORE_MODE(b->batMaphead,brestrict,existing);
+		b->H->heap.newstorage = STORE_MODE(b->batMaphead,brestrict,existing,b->H->heap.storage);
 	}
 	if (b->batMaptail) {
-		b->T->heap.newstorage = STORE_MODE(b->batMaptail,brestrict,existing);
+		b->T->heap.newstorage = STORE_MODE(b->batMaptail,brestrict,existing,b->T->heap.storage);
 	}
-	if (b->hheap && b->batMaphheap) {
+	if (b->H->vheap && b->batMaphheap) {
  		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing);
+		b->H->vheap->newstorage = STORE_MODE(b->batMaphheap,brestrict||hrestrict,existing,b->H->vheap->storage);
 	}
-	if (b->theap && b->batMaptheap) {
+	if (b->T->vheap && b->batMaptheap) {
  		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing);
+		b->T->vheap->newstorage = STORE_MODE(b->batMaptheap,brestrict||trestrict,existing,b->T->vheap->storage);
 	}
 }
 
@@ -2436,8 +2436,8 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp)
 	b->batMaptail = tb;
 	b->batMaphheap = hhp;
 	b->batMaptheap = thp;
-	b->batDirtydesc = 1;
 	HEAPnewstorage(b);
+	b->batDirtydesc = 1;
 	return 0;
 }
 
