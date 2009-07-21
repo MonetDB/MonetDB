@@ -39,8 +39,9 @@
 #define XRPC_WSAT_CALLBACK "/xrpc/wsat"
 #define XRPC_REQ_CALLBACK  "/xrpc"
 
+#define ERR400 "400 Bad Request"
 #define ERR403 "403 Forbidden"
-#define ERR404 "404 Bad Request"
+#define ERR404 "404 Not Found"
 #define ERR408 "408 Request Timeout"
 #define ERR500 "500 Internal Server Error"
 #define ERR504 "504 Gateway Timeout"
