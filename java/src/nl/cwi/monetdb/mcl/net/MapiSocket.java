@@ -373,6 +373,10 @@ public final class MapiSocket {
 			default:
 				throw new MCLException("Unsupported protocol version: " + version);
 			case 9:
+				// proto 9 is like 8, but uses a hash instead of the
+				// plain password, the server tells us which hash in the
+				// challenge after the byteorder
+
 				/* NOTE: Java doesn't support RIPEMD160 :( */
 				if (chaltok[5].equals("SHA512")) {
 					algo = "SHA-512";
@@ -390,9 +394,6 @@ public final class MapiSocket {
 							chaltok[5]);
 				}
 
-				// proto 9 is like 8, but uses a hash instead of the
-				// plain password, the server tells us which hash in the
-				// challenge after the byteorder
 				try {
 					MessageDigest md = MessageDigest.getInstance(algo);
 					md.update(password.getBytes("UTF-8"));
