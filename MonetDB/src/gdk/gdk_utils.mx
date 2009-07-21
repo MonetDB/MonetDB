@@ -2052,6 +2052,16 @@ GDKsyserror(const char *format, ...)
 	return err;
 }
 
+void
+GDKclrerr(void)
+{
+	char *buf;
+
+	buf = GDKerrbuf;
+	if (buf)
+		*buf = 0;
+}
+
  /*VARARGS*/ int
 GDKfatal(const char *format, ...)
 {
