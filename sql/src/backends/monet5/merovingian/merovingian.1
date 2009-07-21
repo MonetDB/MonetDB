@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MEROVINGIAN 1 "JUNE 2009" Application "MonetDB Applications"
+.TH MEROVINGIAN 1 "JULY 2009" Application "MonetDB Applications"
 .SH NAME
 merovingian \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -93,12 +93,14 @@ Location pointing to the pidfile used by
 to write the process id of the daemon process that was started in the
 background.  This pid can be used to stop
 .B merovingian
-again by sending it a termination signal.
+again by send a termination signal to the process id found in the file.
 .IP mero_port
 The port
 .B merovingian
 will open up and listen to connections for.  When unset, the default
-port 50000 is used, which should be ok for most setups.
+port
+.I 50000
+is used, which should be fine for most setups.
 .IP mero_exittimeout
 All database servers that were started by
 .B merovingian
@@ -123,7 +125,10 @@ has stopped.  The default value for
 .B mero_exittimeout
 is
 .B 60
-seconds.
+seconds.  If your databases are rather large and find your databases
+consistently being killed by
+.B merovingian
+upon shutdown, you may have to increase this timeout.
 .IP mero_doproxy
 .B merovingian
 has two ways in which it can "attach" a connecting client to the target
@@ -132,8 +137,8 @@ process, the second method proxies the client to the mserver over
 .BR merovingian .
 While the first is more efficient, it requires the connecting client
 to be able to connect to the mserver.  In many settings this may be
-undesirable or even impossible, since a wide range of open ports are
-necessary for this.  In such case the proxy behaviour of
+undesirable or even impossible, since a wide range of open ports and
+routing are necessary for this.  In such case the proxy behaviour of
 .B merovingian
 is a good solution, which also allows a
 .B merovingian
@@ -187,25 +192,79 @@ names are assumed to be unique throughout the entire system.  This means
 local databases overshadow remote ones, and duplicate remote entries
 cannot be distinguished.  To compensate for this,
 .B merovingian
-adds a
+allows to adds a
 .I tag
 to each database that is being shared.  This tag is sent in addition to
 the database name, and only understood by other
 .BR merovingian s.
 .P
-Tags are arbitrary ASCII-strings that follow the rules of the path
-component in an URI.  The / character is hence a separator that can be
-used to structure a tag which is useful given that
+Tags are arbitrary ASCII-strings matching the pattern [A\-Za\-z0\-9./]+.
+There are no assumed semantics in the tag, which allows for multiple
+approaches when using the tag.  The tag is always used in combination
+with the database name.  For this, the `/' character is used as
+separator, which hence suggests the user to use that character as
+separator for multilevel tags.
 .B merovingian
-allows common path globbing using * on these tags.
+allows common path globbing using `*' on tags, which allows for many
+use-cases.  Consider for instance the following three databases with their
+tag:
+.PP
+.RS 0
+dbX/master/tableQ
+.RS 0
+dbY/slave/tableQ
+.RS 0
+dbZ/slave/tableQ
+.PP
+A default match has implicit `/*' added to the search, making more generic
+search strings match more specific ones.  Hence, a connect with
+database
+.I dbX
+is the same as
+.I dbX/*
+and hence matches
+.IR dbX/master/tableQ .
+Similar, a database connect for
+.I */master
+matches the same database as before.  Note that the implicit `/*' is
+not added if that would cause no matches, such as for
+.I */master/tableQ
+which would return all masters for 
+.IR tableQ ,
+which in our hypothetical example is only
+.IR dbX .
+In contrast, a database connect for
+.I */slave/tableQ
+matches with either
+.IR dbY " or " dbZ .
+.B merovingian
+returns the two options to the client in a round-robin fashion, such
+that subsequent connects for the same pattern result in a load-balanced
+connect to either of both databases.
 .P
-dbname/table/shard1
-
-pattern [A\-Za\-z0\-9./]+
-
-default match has implicit /* added to the search, making more generic
-search strings match more specific ones.
-
+With tags in use, one can possibly make distinction between databases,
+if setup like that.  The previous example could hence also be setup like
+this:
+.PP
+.RS 0
+tableQ/master
+.RS 0
+tableQ/slave
+.RS 0
+tableQ/slave
+.PP
+Connecting to
+.I tableQ/slave
+would now return either of both databases even though they are not
+unique (apart from the host they are located on, which is not shown in
+the example).  While being confusing for humans, for
+.B merovingian
+it is the same situation as in the previous example.  However, because
+globbing allows to make things easier to understand, tags for both
+slaves could be changed to
+.IR slaveX " or " slave/X
+and use the necessary pattern to match them.  It is up to the user to
+decide how to use the tags.
 .SH SIGNALS
 .B merovingian
 acts upon a number of signals as is common for a daemon.

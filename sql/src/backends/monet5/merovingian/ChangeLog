@@ -1,6 +1,15 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  21 Jul 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1,
+  merovingian.c, monetdb.1, monetdb.c:
+  Implemented sharing of databases with tags. Using these tags, extra
+  information is available on a remote merovingian to select a database during
+  connect. For this, a client can now connect to a database using a glob
+  expression, which is matched on the database plus tag.  When multiple
+  databases match such expression, a load-balancing technique is
+  applied.
+
   02 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.1, monetdb.c:
   Allow expression matches for 'monetdb status' command.
 
