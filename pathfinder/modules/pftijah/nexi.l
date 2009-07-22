@@ -34,6 +34,8 @@
 
 #include <pf_config.h>
 
+#define YY_NO_INPUT
+
 #include <string.h>
 #include "nexi.h"
 #include "nexi.tab.h"

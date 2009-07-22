@@ -270,7 +270,7 @@ request2bat(stream *out, char *reqmsg)
     bit verbose = FALSE;
 
     if(!reqmsg){
-        send_err(out, ERR404, "env:Sender", "No request message!");
+        send_err(out, ERR400, "env:Sender", "No XRPC request message found in the HTTP message body!");
         return NULL;
     }
 
@@ -280,7 +280,7 @@ request2bat(stream *out, char *reqmsg)
     strptr = reqmsg + 7; /* strlen("<?xml...?>") >= 7 */
     if( (strstr(reqmsg, "<?xml") != reqmsg) ||
         (strptr = strchr(strptr, (int)'<')) == NULL ) {
-        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
+        send_err(out, ERR400, "env:Sender", NOT_WELL_FORMED);
         return NULL;
     }
     if (!(shredBAT = BATnew(TYPE_str, TYPE_bat, 32))) {
@@ -289,7 +289,7 @@ request2bat(stream *out, char *reqmsg)
     }
     
     if( CMDshred_str(shredBAT, strptr, &percentage, NULL, &verbose) == GDK_FAIL ) {
-        send_err(out, ERR404, "env:Sender", NOT_WELL_FORMED);
+        send_err(out, ERR400, "env:Sender", NOT_WELL_FORMED);
         BBPreclaim(shredBAT);
         shredBAT = NULL;
     }
@@ -368,7 +368,7 @@ parse_request(stream *out,
         if(strcmp(err, OUT_OF_MEM) == 0)
             send_err(out, ERR500, "env:Receiver", err);
         else
-            send_err(out, ERR404, "env:Sender", err);
+            send_err(out, ERR400, "env:Sender", err);
     }
     if(!isAdmin && !isTrusted(out, req->location)) {
         XRPCreq_free(req);
@@ -427,7 +427,7 @@ execQuery(mapi_client *mc,
                 "Error occurred during execution.\n%s\n%s",
                 *errbuf ? errbuf : "",
                 err == ((char*)-1) ? "" : err);
-        send_err(mc->c->fdout, ERR404, "env:Sender", errbuf_all);
+        send_err(mc->c->fdout, ERR400, "env:Sender", errbuf_all);
     }
     GDKsetbuf(errbuf_bak);
     return ret;
@@ -536,7 +536,7 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
         BBPreclaim(shredBAT);
         return GDK_FAIL;
     } else if (req->qid) {
-        send_err(mc->c->fdout, ERR404, "env:Sender",
+        send_err(mc->c->fdout, ERR403, "env:Sender",
                 "Multi-request transaction not allowed for admin functions");
         BBPreclaim(shredBAT);
         XRPCreq_free(req);
@@ -544,7 +544,7 @@ xrpc_handle_admin_request(mapi_client *mc, struct shttpd_callback_arg *arg)
     }
 
     if(strcmp(req->module, MXQ_ADMIN) != 0){
-        send_err(mc->c->fdout, ERR404, "env:Sender", "Invalid namespace of admin module");
+        send_err(mc->c->fdout, ERR400, "env:Sender", "Invalid namespace of admin module");
         BBPreclaim(shredBAT);
         XRPCreq_free(req);
         return GDK_FAIL;
@@ -677,7 +677,7 @@ xrpc_handle_wsat_request(mapi_client *mc, struct shttpd_callback_arg *arg)
             c.qid = qid;
             c.start = GDKusec();
             seqnr = xquery_2pc_exec(mc, qid, (ptr) &c);
-            if (seqnr == 0) send_err(c.s, ERR404, "env:Sender", "prepare failed");
+            if (seqnr == 0) send_err(c.s, ERR500, "env:Receiver", "prepare failed");
 
             /* log the request */ 
             if (mode && strstr(mode, "trace")) {

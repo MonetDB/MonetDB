@@ -272,10 +272,16 @@ function doBackupCol()    { alert("Sorry, function doBackupCol() not implemented
 function doRestoreCol()   { alert("Sorry, function doRestoreCol() not implemented yet"); }
 
 function doAddDoc() {
-    var url =   top.content.document.getElementById("newURL").value;
+    var url =   top.content.document.getElementById("originalURL").value;
     var name =  top.content.document.getElementById("newName").value;
     var col =   top.content.document.getElementById("newCol").value;
     var perct = top.content.document.getElementById("newFree").value;
+
+    if(url == "" || name == "" || col == "") {
+        alert("Please fill in all required fields!");
+        return;
+    }
+
     myXRPC('add-doc', 4, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', url)) +
                                    XRPC_SEQ(XRPC_ATOM('string', name)) +
                                    XRPC_SEQ(XRPC_ATOM('string', col)) +
@@ -296,6 +302,11 @@ function doDelCol(colName) {
 
 function doBackup(){
     var id = top.content.document.getElementById("ID").value;
+    if(id == "") {
+        alert("Backup ID may not be empty!");
+        return;
+    }
+
     myXRPC('backup', 1, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id))), doBackupCallback);
     top.content.document.getElementById("div1").innerHTML = "Backup in progress..";
 }
@@ -303,6 +314,11 @@ function doBackup(){
 function doRestore(){
     var id =    top.content.document.getElementById("ID").value;
     var perct = top.content.document.getElementById("dfltFree").value;
+
+    if(id == "") {
+        alert("Backup ID may not be empty!");
+        return;
+    }
 
     myXRPC('restore', 2, XRPC_CALL(XRPC_SEQ(XRPC_ATOM('string', id)) + 
                                 XRPC_SEQ(XRPC_ATOM('integer', perct))), doRestoreCallback);
@@ -314,17 +330,20 @@ function makeAddDocForm(){
 
     dTable.innerHTML =
         '<h2>Shred an XML document into the database:</h2>\n' +
+        '<p>Please note that the document URL must be reachable by the ' +
+                  'server (e.g. for file:// URLs)</p>\n' +
+        '<p><i>(Fields with \'*\' are required)</i></p>\n' +
         '<table>\n' +
           '<tr>\n' +
-            '<td>Original URL:</td>\n' +
-            '<td><input type="file" id="newURL" value=""/></td>\n' +
+            '<td>Original URL*:</td>\n' +
+            '<td><input type="text" id="originalURL" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
-            '<td>New Name:</td>\n' +
+            '<td>New Name*:</td>\n' +
             '<td><input type="text" id="newName" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
-            '<td>Collection:</td>\n' +
+            '<td>Collection*:</td>\n' +
             '<td><input type="text" id="newCol" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
@@ -346,7 +365,7 @@ function makeBackupForm(){
         '<h2>Backup The Database</h2>\n' +
         '<table>\n' +
           '<tr>\n' +
-            '<td>Backup ID</td>\n' +
+            '<td>Backup ID*</td>\n' +
             '<td><input type="text" id="ID" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +
@@ -364,7 +383,7 @@ function makeRestoreForm(){
         '<h2>Restore The Database</h2>\n' +
         '<table>\n' +
           '<tr>\n' +
-            '<td>Backup ID</td>\n' +
+            '<td>Backup ID*</td>\n' +
             '<td><input type="text" id="ID" value=""/></td>\n' +
           '</tr>\n' +
           '<tr>\n' +

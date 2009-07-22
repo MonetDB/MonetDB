@@ -47,6 +47,8 @@
 
 #define yylex tjclex
 
+#define YY_NO_INPUT
+
 #define OUTSIDE_PF
 
 #ifdef OUTSIDE_PF /* JF */

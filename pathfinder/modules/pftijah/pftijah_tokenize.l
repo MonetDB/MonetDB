@@ -33,6 +33,8 @@
 
 #include <pf_config.h>
 
+#define YY_NO_INPUT
+
 #include "serialize_pftijah.h"
 #include <ctype.h>
 #include <string.h>
