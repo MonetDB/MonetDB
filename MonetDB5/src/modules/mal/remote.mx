@@ -156,6 +156,7 @@ pattern exec(conn:str, mod:str, func:str, :str...)(:str, :str)
 address RMTexec
 comment "Remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
 
+@{
 @h
 
 #ifndef _REMOTE_DEF
