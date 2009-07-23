@@ -236,7 +236,7 @@ mapi_open=false       # should be set to 'true' to allow for
 # sql_optimizer=inline,remap,deadcode,multiplex
 
 # The default pipeline
-#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
 #experimental pipelines stressing various components
 # The Recycle pipeline for Skyserver
@@ -249,6 +249,7 @@ mapi_open=false       # should be set to 'true' to allow for
 #sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,datacell,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 #
 # The Octopus pipeline for distributed processing (Linux only)
-sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,octopus,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
-# The Mitosis-mergetable-reorder pipeline, aimed at better variable access locality.#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+# The Mitosis-mergetable-reorder pipeline, aimed at better variable access locality.
+#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,mitosis,aliases,mergetable,deadcode,constants,commonTerms,joinPath,reorder,deadcode,reduce,garbageCollector,dataflow,history,multiplex
