@@ -84,6 +84,8 @@ ae_export str ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 #include "algebraExtensions.h"
 #include "mal_errors.h"
 #include "mmath.h"
+#define PGALIGN(X) (void*)( ( ((size_t)X)/MT_pagesize()) * MT_pagesize())
+
 str
 ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
 	BAT *b, *bn;
@@ -191,7 +193,7 @@ GDKblockjoin(BAT *b, BAT *c){
 	BUN blim, cap = BUN_NONE;
 	BUN clim,cl;
 	int k =0;
-	BUN blk = (BUN) (MT_npages() * MT_pagesize() / (2.0 * (sizeof(int) + ATOMsize(b->ttype))));
+	BUN blk = (BUN) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
 
 	blim = BATcount(b);
 	clim = BATcount(c);
@@ -199,10 +201,13 @@ GDKblockjoin(BAT *b, BAT *c){
 	for( cl = 0; cl < clim + blk; cl+= blk){
 		k++;
 		cp = BATslice(c, cl, cl+blk);
+		madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
 		j = BATjoin(b,cp, cap);
-		if (bn == 0)
-			bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
-		bn= BATappend(bn,j, TRUE);
+		if( BATcount(j) > 0){
+			if (bn == 0)
+				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
+			bn= BATappend(bn,j, FALSE);
+		}
 		cap = BATcount(j )* 2;
 		BBPunfix(j->batCacheid);
 		BBPunfix( cp->batCacheid);
@@ -210,6 +215,8 @@ GDKblockjoin(BAT *b, BAT *c){
 printf("block size " BUNFMT "\n|",blk);
 printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
+	if ( bn == 0)
+			bn = BATnew( TYPE_oid, TYPE_oid, 0);
 	return bn;
 }
 
@@ -228,11 +235,13 @@ GDKblockjoin2(BAT *b, BAT *c){
 	for( bl = 0; bl < blim + blk; bl+= blk){
 		i++;
 		bp = BATslice(b, bl, bl+blk);
+		madvise(PGALIGN(Tloc(bp,BUNfirst(bp))), BATcount(bp) * sizeof(int), MADV_SEQUENTIAL);
 		k =0;
 		printf("next outer %d\n",i);
 		for( cl = 0; cl < clim + blk; cl+= blk){
 			k++;
 			cp = BATslice(c, cl, cl+blk);
+		madvise(PGALIGN(Tloc(cp,BUNfirst(cp))), BATcount(cp) * sizeof(int), MADV_SEQUENTIAL);
 			j = BATjoin(bp,cp, cap);
 			if (bn == 0)
 				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
@@ -352,6 +361,156 @@ printf("box %d " BUNFMT " " BUNFMT "\n",l, BATcount(bp[l]), BATcount(cp[l]));
 	}
 	GDKfree(bp);
 	GDKfree(cp);
+	return bn;
+}
+
+static void
+GDKremap( bte *idx, BUN sze, int low, int hgh, BAT *rd){
+	BUN i,hb,x;
+	Hash *h;
+	BATiter bi = bat_iterator(rd);
+
+	assert(rd->htype == TYPE_oid || rd->ttype == TYPE_void);
+	BAThash(rd, BATcount(rd));
+	h= rd->H->hash;
+	for( i = 0; i< sze; i++)
+	if ( (int)(idx[i] & 255) >=low && (int)(idx[i] & 255) <hgh ){
+		/* locate all elements with value x and replace them */
+		/* wrong, may contain multiples */
+		HASHfnd_oid(x,bi,hb);
+		if ( x != BUN_NONE){
+			*(oid*) BUNhead(bi,x) = (oid) i;
+		}
+	}
+}
+
+static BAT *
+GDKclusterhashjoin(BAT *b, BAT *c){
+	BAT *bp, *cp, *jn, *bn = 0;
+	BAT *bmap, *cmap;
+	BUN prime,p,q, bcnt[256],ccnt[256],cnt,bcap,ccap;
+	BATiter bit,cit;
+	int type= b->ttype;
+	int i,low,hgh;
+	int *celm, *belm;
+	bte *bidx, *cidx;
+	BUN blk = (BUN) (  (MT_npages() * MT_pagesize()) / (2 * (ATOMsize(b->ttype) + + ATOMsize(c->htype) + 2 *sizeof(oid))) );
+
+	memset((char*)bcnt, 0, 256 * sizeof(BUN));
+	memset((char*)ccnt, 0, 256 * sizeof(BUN));
+
+	prime = HASHmask(BATcount(b));
+	if ( HASHmask(BATcount(c)) > prime)
+		prime = HASHmask(BATcount(c));
+	prime=1;
+printf("prime " BUNFMT "\n",prime);
+
+	/* construct the cluster map */
+	bmap = BATnew(TYPE_void, TYPE_bte, BATcount(b));
+	bidx = (bte*) Tloc(bmap,BUNfirst(bmap));
+
+	bit = bat_iterator(b);
+	madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+	BATloop(b,p,q){
+		ptr t = (ptr) BUNtail(bit,p);
+		i = (int) ((prime*ATOMhash(type,t)) & 255);
+		*bidx = (bte) i;
+		bcnt[i]++;
+		bidx++;
+	}
+	BATsetcount(bmap, BATcount(b));
+
+	cmap = BATnew(TYPE_void, TYPE_bte, BATcount(c));
+	cidx = (bte*) Tloc(cmap,BUNfirst(cmap));
+	madvise(PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
+	cit = bat_iterator(c);
+	BATloop(c,p,q){
+		ptr t = (ptr) BUNhead(cit,p);
+		i = ((prime*ATOMhash(type,t)) & 255);
+		*cidx = (bte) i;
+		ccnt[i]++;
+		cidx++;
+	}
+	BATsetcount(cmap, BATcount(c));
+
+	/* phase two: perform the partial joins  */
+
+	bp = cp = 0;
+	low = hgh = 0;
+	do{
+		/* calculate the range */
+		low= hgh;
+		cnt = 0;
+		bcap = ccap = 0;
+		for( ; hgh<256; hgh++){
+			if ( cnt + bcnt[hgh] + ccnt[hgh] >blk ) 
+				break;
+			cnt += bcnt[hgh] + ccnt[hgh];
+			bcap += bcnt[hgh];
+			ccap += ccnt[hgh];
+		}
+		printf("box %d %d " BUNFMT " " BUNFMT " " BUNFMT"\n",low,hgh,cnt,bcap,ccap); 
+		
+		/* prepare the scratch BATs  try to reuse them*/
+		if (bp == 0 || BATcapacity(bp) < bcap){
+			if ( bp )
+				BBPunfix(bp->batCacheid);
+			bp = BATnew( TYPE_void, b->ttype, bcap);
+		} 
+		BATclear(bp);
+
+		/* collect the tuples */
+		bit = bat_iterator(b);
+		bidx = (bte*) Tloc(bmap,BUNfirst(bmap));
+		belm = (int*) Tloc(bp,BUNfirst(bp));
+		BATsetcount(bp,bcap);
+		bp->tdense = FALSE;
+		bp->tkey = FALSE;
+		bp->tsorted = FALSE;
+		bcap = BATcount(b);
+
+		madvise( PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+		madvise(PGALIGN(bidx),BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+		for( cnt= 0; cnt < bcap; cnt++)
+		if ( (int)(bidx[cnt] & 255) >=low && (int)(bidx[cnt] &255) <hgh )
+			*belm++ = *(int*) BUNtail(bit,cnt);
+
+		if ( cp == 0 ||   BATcapacity(cp) < ccap){
+			if (cp)
+				BBPunfix(cp->batCacheid);
+			cp = BATnew( TYPE_void, c->htype, ccap);
+		} 
+
+		BATclear(cp);
+		cit = bat_iterator(c);
+		cidx = (bte*) Tloc(cmap,BUNfirst(cmap));
+		celm = (int*) Tloc(cp,BUNfirst(cp));
+		BATsetcount(cp,ccap);
+		cp->tdense = FALSE;
+		cp->tkey = FALSE;
+		cp->tsorted = FALSE;
+		ccap = BATcount(c);
+
+		madvise( PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
+		for( cnt= 0; cnt < ccap; cnt++)
+		if ( (int)(cidx[cnt] & 255) >=low && (int)(cidx[cnt] & 255) <hgh )
+			*celm++ = *(int*) BUNtail(cit,cnt);
+
+		printf("input " BUNFMT " " BUNFMT "\n", BATcount(bp), BATcount(cp));
+		jn = BATjoin(bp, BATmirror(cp), BATcount(bp));
+		printf("join " BUNFMT "\n", BATcount(jn));
+		if ( BATcount(jn) == 0) continue;
+		madvise( PGALIGN(Hloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+		GDKremap(bidx, BATcount(bmap), low,hgh, jn);
+		madvise( PGALIGN(Tloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+		GDKremap(cidx, BATcount(cmap), low,hgh, BATmirror(jn));
+		if( bn == 0)
+			bn = jn;
+		else
+			BATappend(bn,jn,FALSE);
+	}  while ( hgh < 256);
+	if( bn == 0)
+		bn = BATnew( b->htype, c->ttype, 0);
 	return bn;
 }
 
@@ -891,7 +1050,10 @@ ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
 	}
 
-	bn = GDKscanhashjoin(b,c);
+	if ( 0 )
+		bn = GDKscanhashjoin(b,c);
+	else 
+		bn = GDKclusterhashjoin(b,c);
 	if (bn) 
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
