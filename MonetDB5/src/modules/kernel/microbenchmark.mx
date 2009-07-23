@@ -26,6 +26,10 @@ activities.
 @mal
 module microbenchmark;
 
+command random(base:oid, size:int, domain:int):bat[:oid,:int]
+address MBMrandom
+comment "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)";
+
 command uniform(base:oid, size:int, domain:int):bat[:oid,:int]
 address MBMuniform
 comment "Create a BAT with uniform integer distribution";
@@ -59,6 +63,7 @@ comment "Create a BAT with skewed integer distribution";
 #define mb_export extern
 #endif
 
+mb_export str MBMrandom(int *ret, oid *base, int *size, int *domain);
 mb_export str MBMuniform(int *ret, oid *base, int *size, int *domain);
 mb_export str MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean);
 mb_export str MBMmix(int *ret, int *batid);
@@ -71,6 +76,56 @@ mb_export str MBMskewed(int *ret, oid *base, int *size, int *domain, int *skew);
 #include <math.h>
 #include <mal_exception.h>
 #include "microbenchmark.h"
+
+int
+BATrandom(BAT **bn, oid *base, int *size, int *domain)
+{
+	BUN n = (BUN) * size;
+	BAT *b = NULL;
+	BUN p, q;
+
+	if (*size < 0) {
+		GDKerror("BATrandom: size must not be negative");
+		return GDK_FAIL;
+	}
+
+	b = BATnew(TYPE_void, TYPE_int, n);
+	if (b == NULL)
+		return GDK_FAIL;
+	if (n == 0) {
+		b->tsorted = GDK_SORTED;
+		b->hsorted = GDK_SORTED;
+		b->tdense = FALSE;
+		b->hdense = TRUE;
+		BATseqbase(b, *base);
+		BATkey(b, TRUE);
+		BATkey(BATmirror(b), TRUE);
+		*bn = b;
+		return GDK_SUCCEED;
+	}
+
+	BATsetcount(b, n);
+	/* create BUNs with random distribution */
+	if (*domain == int_nil) {
+		BATloop(b, p, q) {
+			*(int *) Tloc(b, p) = rand();
+		}
+	} else {
+		BATloop(b, p, q) {
+			*(int *) Tloc(b, p) = rand() % *domain;
+		}
+	}
+
+	b->hsorted = GDK_SORTED;
+	b->hdense = TRUE;
+	BATseqbase(b, *base);
+	BATkey(b, TRUE);
+	b->tsorted = FALSE;
+	b->tdense = FALSE;
+	BATkey(BATmirror(b), FALSE);
+	*bn = b;
+	return GDK_SUCCEED;
+}
 
 int
 BATuniform(BAT **bn, oid *base, int *size, int *domain)
@@ -293,6 +348,18 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 @-
 The M5 wrapper code
 @c
+
+str
+MBMrandom(int *ret, oid *base, int *size, int *domain){
+	BAT *bn;
+	
+	BATrandom(&bn, base, size, domain);
+	if( bn ){
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		BBPkeepref(*ret= bn->batCacheid);
+	} else throw(MAL, "microbenchmark.random", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
 
 str
 MBMuniform(int *ret, oid *base, int *size, int *domain){
