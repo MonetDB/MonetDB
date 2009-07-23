@@ -44,18 +44,57 @@
 	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
 	
-	$socket	= mapi_open();
+
+	/**
+	* $connection_pool contains a list of the active database connections
+	*/
+	$connection_pool = array();
+	
+
+	/**
+	* Query handle
+	*/
+	$handle = array("header" => array(), "query" => "", "record_set" => array(), "operation" => -1);
+
 	$connected = FALSE; // Connection to a db status;
 	$last_error = "";
-	$handle = array("header" => array(), "query" => "", "record_set" => array(), "operation" => -1);
+		
+
+	/**
+	  * Use a global variable to index the last returned row from a record set.
+	  * I do this instead of passing the result set handler by reference to the proper functions
+	  * in order to retain syntax compatibility with the previous API.
+	*/
+	$last_row = 0;
 	
-	function mapi_query($data) {
+	function mapi_query($socket=NULL, $data) {
 		global $handle;
-		global $socket;
+		global $connection_pool;
+		
+		/*
+		$conn = "";
+		
+		// if multiple connections are present, require the user to specify which one to use.
+		if ((count($connection_pool) > 0) && $conn = NULL) {
+			return FALSE;
+		} else {
+			// get the socket associated with the desired connection
+			if (count($connection_pool == 1)) {
+				$socket = $connection_pool["socket"];
+			} else {
+				foreach ($connection_pool as $connection) {
+					if ($connection["id"] == $conn) {
+						$socket = $connection["socket"];
+						break;
+					}
+				}
+			}
+			
+		}
+		
+		*/
 		
 		$operation = mapi_store($data);
-		
-		print $data;
 		
 		/* The query produced a record set */
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
@@ -65,7 +104,7 @@
 				
 				$exp_size = min(10, $left_rows);
 				write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size );				
-				$data = mapi_read();
+				$data = mapi_read($socket);
 				
 				$operation = mapi_store($data);
 				
@@ -124,7 +163,6 @@
 			
 		}
 		
-		//print_r($record_set);
 		if ($record_set != "") {
 			$handle["record_set"] = array_merge($handle["record_set"], $record_set);
 		}
@@ -186,9 +224,9 @@
 		hash	 =>
 	
 	*/
-	function mapi_connect($options, $merovingian_iter) {
-		global $socket;
+	function mapi_connect($socket, $options, $merovingian_iter) {
 		global $last_error;
+		global $connection_pool;
 		
 		$host 	= $options["host"];
 		$port 	= $options["port"];
@@ -199,7 +237,7 @@
 		$dbname = $options["database"];
 		
 		# get server challenge
-		$challenge = mapi_read();				
+		$challenge = mapi_read($socket);				
 
 		/*
 			Array
@@ -218,17 +256,17 @@
 		
 		if ($credentials[2] == PROTOCOL_v8 ){
 			// Protocol v8 supported only for legacy/testing reasons
-			mapi_authenticate_v8($user, $passwd, $hash, $credentials[0], $dbname);
+			mapi_authenticate_v8($socket, $user, $passwd, $hash, $credentials[0], $dbname);
 		} else if ($credentials[2] == PROTOCOL_v9) {
 			// $credentials[5] contains pwhash
-			mapi_authenticate_v9($user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
+			mapi_authenticate_v9($socket, $user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
 		} else {
 			$last_error = "Protocol " . $credentials[2] . " not supported. Aborting.";
 			return FALSE;
 			
 		}
 		
-		$response = mapi_read();
+		$response = mapi_read($socket);
 		
 		if ($response != MSG_PROMPT) { 
 		// not ready to authenticate yet
@@ -237,14 +275,13 @@
 				if ($credentials[1] == "merovingian") {
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
-						mapi_connect($options, $merovingian_iter);
+						mapi_connect($socket, $options, $merovingian_iter);
 					}
 				
 				}
 				else if ($credentials[1] == "mserver") {
-					mapi_close();
-					$socket = mapi_connect();
-					mapi_connect($options);
+					mapi_close($socket);
+					mapi_connect(mapi_open(), $options);
 				}
 				
 			} else if ($response[0] == MSG_INFO) {
@@ -259,7 +296,7 @@
 	
 	
 	
-	function mapi_authenticate_v8($user, $passwd, $hash, $salt, $dbname) {
+	function mapi_authenticate_v8($socket, $user, $passwd, $hash, $salt, $dbname) {
 		$auth_string = "";
 		
 		if (strtolower($hash) != "plain") {
@@ -271,10 +308,10 @@
 		
 		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
 		
-		mapi_write($auth_string);
+		mapi_write($socket, $auth_string);
 	}
 
-	function mapi_authenticate_v9($user, $passwd, $hash, $salt, $dbname, $pwhash) {
+	function mapi_authenticate_v9($socket, $user, $passwd, $hash, $salt, $dbname, $pwhash) {
 		$auth_string = "";
 	
 		$pwhashsum = hash(strtolower($pwhash), $passwd);
@@ -282,13 +319,11 @@
 		
 		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
 		
-		mapi_write($auth_string);
+		mapi_write($socket, $auth_string);
 	}
 
-	# decode the header and get the requested amount of data
-	function mapi_read() {
-		global $socket;
-
+	// decode the header and get the requested amount of data
+	function mapi_read($socket=NULL) {
 		# get the first 2 bytes
 		$header = socket_read($socket, 2);
 		$data = "";
@@ -311,10 +346,9 @@
 		return $data;
 	}
 
-
-	# encode data and send it to the server. Returns the number of bytes sent.
-	function mapi_write1($msg) {
-		global $socket;
+/*
+	// encode data and send it to the server. Returns the number of bytes sent.
+	function mapi_write1($socket=NULL, $msg) {
 		global $last_error;
 		
 		$fb = strlen($msg);
@@ -332,10 +366,9 @@
 		
 		return strlen($msg);
 	}
+*/
 
-
-	function mapi_write($msg) {
-		global $socket;
+	function mapi_write($socket=NULL, $msg) {
 		global $last_error;
 		
 		$fb = 0;
@@ -344,8 +377,7 @@
 		$buf = 0;
 		
 		$is_final = FALSE;
-		while (! $is_final) {
-		
+		while (! $is_final) {		
 			if (strlen($msg) < MAX_PACKET_SIZE) {
 				$is_final = TRUE;
 				$data = $msg;
@@ -353,12 +385,8 @@
 				
 			} else {
 				$data  = substr($msg, $fb, min(MAX_PACKET_SIZE, len($msg) - $fb)  );
-				
 				$fb = (strlen($data) << 1) | 0; // more packets will follow
-				
 			}
-			
-		
 			
 			if ($buf += socket_write($socket, chr($fb) . chr(0) . $data) == FALSE) {
 				$last_error = socket_strerror(socket_last_error());
@@ -372,49 +400,36 @@
 
 
 	
-	function set_timezone() {
-		global $socket;
+	function set_timezone($socket=NULL) {
 		global $last_error;
 
 		$tz_offset = "'" . date('P') . "'"; /* Difference to Greenwich time (GMT) with colon between hours and minutes */
 				
 		$query = "sSET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE;";
 	
-		$buf = mapi_write($query);
+		$buf = mapi_write($socket, $query);
 					
-		$response = mapi_read();
+		$response = mapi_read($socket);
 		
 		if ($response == "") { 
 			return TRUE; 
 		} else { 
 			
 			$last_error = $response; 
-			return FALSE; 
+			return $response; 
 		}
 	}
 	
-	function write_command($cmd) {
-		global $socket;
-		
-		$buf = mapi_write("X" . $cmd . "\nX");
-		
-/*
-		$response = mapi_read();
-		
-		if ($response == "") { 
-			return TRUE; 
-		} else { 
-			print "RESPONSE" . $response; 
-			return FALSE; 
-		}
-*/		
+	function write_command($socket=NULL, $cmd) {
+
+		$buf = mapi_write($socket, "X" . $cmd . "\nX");
 	}
 	
 	
 	function mapi_connect_proxy($options) {
-		global $socket;
 		global $connected;
 		global $last_error;
+		global $connection_pool;
 		
 		$merovingian_iter = 0;
 		
@@ -426,20 +441,21 @@
 		$hash 	= $options["hashfunc"];
 		$dbname = $options["database"];
 		
+		$socket	= mapi_open();
 
 		if (socket_connect($socket, $host, $port) == FALSE) {
 			$last_error = socket_strerror(socket_last_error());
 			return FALSE;
 		}
 		
-		if ( ($connected = mapi_connect($options, $merovingian_iter)) == TRUE ) {
+		if ( ($connected = mapi_connect($socket, $options, $merovingian_iter)) == TRUE ) {
 			/* Connected */
 			
-			set_timezone(); // arbitrarly set the timezone
+			set_timezone($socket); // arbitrarly set the timezone
 			
 			// export the reply size (max number of tuples returned at query executions)
-			write_command("reply_size " . REPLY_SIZE);		
-			if (strlen($response = mapi_read()) > 0 ) {
+			write_command($socket, "reply_size " . REPLY_SIZE);		
+			if (strlen($response = mapi_read($socket)) > 0 ) {
 				// something went wrong 
 				$last_error = $response;
 				return FALSE;
@@ -448,14 +464,37 @@
 			return FALSE;
 		}
 		
-		return TRUE;
+		// Create a new connection instance and insert an entry in the connections table
+		$id = mapi_generate_id();
+		$connection = array("id" => $id, "socket" => $socket) ;
+		$connection_pool[] = $connection;
+		
+		return $connection;
 	}
 	
-	function mapi_connected() {
-		global $connected;
+	function mapi_connected($conn=NULL) {
 		global $last_error;
+		global $connection_pool;
 		
-		return $connected;
+		if ($conn == NULL) {
+			if (count($connection_pool == 1) && $connection_pool[0]["socket"] != NULL ) {
+				return TRUE;
+			}
+			
+		} else {
+			// Create anonymous callback function to filter results for connection.
+			$function_body = 'return ( $input[\'id\'] == "'.$conn["id"].'" );';
+			$function_name = create_function('$input', $function_body);
+			// Filter the results array using the anonymous callback function.
+			$connection = array_filter($connection_pool, $function_name);
+		
+			
+			if ($connection[0]["socket"] != NULL) {
+				return TRUE;
+			}
+		}
+		
+		return FALSE;
 	}
 	
 	/* Returns a socket */
@@ -469,12 +508,55 @@
 		return $socket;
 	}
 	
-	function mapi_close() {
-		global $socket;
-		global $connected;
+	function mapi_close($conn=NULL) {
+		global $connection_pool;
 		
-		socket_close($socket);
-		$connected = FALSE;
+		
+		
+		if ($conn == NULL) {
+			if (count($connection_pool) == 1) {
+				$socket = $connection_pool[0]["socket"];
+				socket_close($socket);
+				unset($connection_pool);
+				
+				return TRUE;
+			}
+			
+		} else {
+			$socket = $conn["socket"];
+			socket_close($socket);
+			
+			/* remove the $conn from the pool */
+			
+			// Create anonymous callback function to filter results for connection.
+			$function_body = 'return ( $input[\'id\'] != "'.$conn["id"].'" );';
+			$function_name = create_function('$input', $function_body);
+			// Filter the results array using the anonymous callback function.
+			$connection_pool = array_filter($connection_pool, $function_name);
+			
+			
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
+	
+	function mapi_generate_id(){
+		global $connection_pool;
+		
+		$connections = array();
+		foreach($connection_pool as $conn) {
+			$connections[] = $conn["id"];
+		}
+		
+		$id = hash("sha1", time());
+		if (count($connections) > 0) {
+			while (in_array($id, $connections) ) {
+				$id = hash("sha1", time());
+			}
+		}
+			
+		return $id;
 	}
 
 ?>

@@ -24,14 +24,10 @@
 	* function monetdb_escape_string($str) * 
 	**/
 
-	require 'php_mapi.inc';
-
-	/* Use a global function to index the last returned row from a record set.
-	   I do this instead of passing the result set handler by reference to the proper functions
-	   in order to retain syntax compabilitiy with the previous API.
+	/**
+	* php_mapi.inc is a native (socket based) php implementation of the MAPI communication protocol.
 	*/
-	$last_row = 0; 
-	
+	require 'php_mapi.inc';
 	
 	/**
 	 * Opens a connection to a MonetDB server.  
@@ -39,23 +35,25 @@
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_connect() {
-	 	$options["host"] = "127.0.0.1";
-		$options["port"] = "50000";
+	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "ruby" , $username = "monetdb", $password = "monetdb" ) {
+	 	$options["host"] = $host;
+		$options["port"] = $port;
 
-		$options["username"] = "monetdb";
-		$options["password"] = "monetdb";
+		$options["username"] = $username;
+		$options["password"] = $password;
 		$options["hashfunc"] = "sha1";	
-		$options["database"] = "ruby"; 
+		$options["database"] = $database; 
 		
 		return mapi_connect_proxy($options);
 	}
 
 	/**
 	 * Disconnects the connection to the database.
+	 *
+	 * @param resource connection instance
 	 */
-	function monetdb_disconnect() {
-		mapi_close();
+	function monetdb_disconnect($conn=NULL) {
+		mapi_close($conn);
 	}
 	
 	/**
@@ -63,10 +61,11 @@
 	 * not been closed yet.  Note that this function doesn't guarantee that
 	 * the connection is alive or usable.
 	 *
+	 * @param resource connection instance
 	 * @return bool TRUE if there is a connection, FALSE otherwise
 	 */
-	function monetdb_connected() {
-		return mapi_connected();
+	function monetdb_connected($conn) {
+		return mapi_connected($conn);
 	}
 	
 	/**
