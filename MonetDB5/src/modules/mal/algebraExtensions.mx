@@ -373,20 +373,21 @@ printf("box %d " BUNFMT " " BUNFMT "\n",l, BATcount(bp[l]), BATcount(cp[l]));
 
 static void
 GDKremap( bte *idx, BUN sze, int low, int hgh, BAT *rd){
-	BUN i,hb = 0,x;
+	BUN i,hb= 0,x,z=0;
 	Hash *h;
 	BATiter bi = bat_iterator(rd);
 
-	assert(rd->htype == TYPE_oid || rd->ttype == TYPE_void);
+	assert(rd->htype == TYPE_oid );
 	BAThash(rd, BATcount(rd));
 	h= rd->H->hash;
-	for( i = 0; i< sze; i++)
-	if ( (int)(idx[i] & 255) >=low && (int)(idx[i] & 255) <hgh ){
-		/* locate all elements with value x and replace them */
-		/* wrong, may contain multiples */
-		HASHfnd_oid(x,bi,hb);
-		if ( x != BUN_NONE){
-			*(oid*) BUNhead(bi,x) = (oid) i;
+	for( i = 0; i< sze; i++) {
+		hb = (BUN)(idx[i] & 255);
+		if ( hb >= (BUN)low && hb < (BUN)hgh ){
+			/* locate all elements with value z and replace them */
+			HASHloop_oid(bi,h,x,z){
+				*(oid*) BUNhead(bi,x) = (oid) i;
+			}
+			z++;
 		}
 	}
 }
@@ -508,8 +509,10 @@ printf("prime " BUNFMT "\n",prime);
 		printf("join " BUNFMT "\n", BATcount(jn));
 		if ( BATcount(jn) == 0) continue;
 		madvise( PGALIGN(Hloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+	if(0)
 		GDKremap(bidx, BATcount(bmap), low,hgh, jn);
 		madvise( PGALIGN(Tloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+	if(0)
 		GDKremap(cidx, BATcount(cmap), low,hgh, BATmirror(jn));
 		if( bn == 0)
 			bn = jn;
