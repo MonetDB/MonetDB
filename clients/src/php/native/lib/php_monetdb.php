@@ -30,6 +30,11 @@
 	require 'php_mapi.inc';
 	
 	/**
+	* stack that contains the set of (currently active) savepoint IDs
+	*/
+	$savepoints = array();
+	
+	/**
 	 * Opens a connection to a MonetDB server.  
 	 * 
 	 * @return bool TRUE on success or FALSE on failure 
@@ -63,6 +68,7 @@
 	 *
 	 * @param resource connection instance
 	 * @return bool TRUE if there is a connection, FALSE otherwise
+	 *
 	 */
 	function monetdb_connected($conn) {
 		return mapi_connected($conn);
@@ -71,12 +77,14 @@
 	/**
 	 * Executes the given query on the database.
 	 *
+	 * @param resource connection instance
 	 * @param string the SQL query to execute
 	 * @return resource a query handle or FALSE on failure
 	 */
-	function monetdb_query($query) {
-		$buf = mapi_write(format_query($query));
-		return mapi_query(mapi_read());
+	function monetdb_query($connection=NULL, $query) {
+		return mapi_execute($connection, $query);
+		
+		return mapi_execute(mapi_read());
 	}
 	
 	
@@ -103,23 +111,26 @@
 	 * @return array the next row in the query result as associative array or
 	 *         FALSE if no more rows exist
 	 */
-	function monetdb_fetch_row($hdl, $row=-1) {
-		global $last_row;
+	function monetdb_fetch_row(&$hdl, $row=-1) {		
 		
-		if ($hdl["operation"] != QTABLE) {
+		if ($hdl["operation"] != 1) {
 			return FALSE;
 		}
 		
 		if ($row == -1){
-			$row = $last_row;
+			$row = $hdl["last_row"];
+		} else {
+			$row -= 1; // ith row in the database is store at position i-1 in the array.
 		}	
+	
 		
-		if ($row > $hdl["rows"]) {
+		if ($row > $hdl["query"]["rows"]) {
 			// print "Error: the requested index exceeds the number of rows \n";
 			return FALSE;
 		}
-		
-		$last_row++;
+	
+		$hdl["last_row"] += 1;
+
 		return $hdl["record_set"][$row];
 	}
 	
@@ -132,10 +143,10 @@
 	 * @return array the next row in the query result as associative array or
 	 *         FALSE if no more rows exist
 	 */	
-	function monetdb_fetch_assoc($hdl, $row=-1) {
+	function monetdb_fetch_assoc(&$hdl, $row=-1) {
 		global $last_row;
 		
-		if ($hdl["operation"] != QTABLE) {
+		if ($hdl["operation"] != Q_TABLE) {
 			return FALSE;
 		}
 		
@@ -221,11 +232,51 @@
 		// NB: temporary solution; I'm studying better way to deal with possible sql injections issues.
 		return addslashes($str);
 	}
+		
+	/* These functions are not present in the original Cimpl implementation
+	 * TODO: make it connection aware
+	 */
 	
-	/* For internal use only */
-	function format_query($query) {
-		return "s" . $query . ";";
+	
+	function create_savepoint(&$conn) {
+		if ($conn != NULL) {
+			$index = count($conn["transactions"]);
+		
+			$id = "monetdbsp" . $index;
+			array_push($conn["transactions"], $id);
+			
+			return TRUE;
+		}
+		
+		return FALSE;
 	}
 	
+	function release_savepoint(&$conn) {
+		if ($conn != NULL) { 
+			return array_pop($conn["transactions"]);
+		}
 		
+		return FALSE;
+	}
+	
+	function get_savepoint(&$conn) {
+		if (count($conn["transactions"]) == 0) {
+			return FALSE;
+		}
+		
+		// return the last element in the array
+		return $conn["transactions"][count($conn["transactions"])-1];
+	}
+	
+	// turn auto commit on/off.
+	function auto_commit($conn, $flag=TRUE) {
+		if ($conn["socket"] != NULL) {
+			$cmd = "auto_commit " . $flag;
+			write_command($socket, $cmd);
+			
+			return TRUE;
+		}
+		return FALSE;
+	}
+	
 ?>

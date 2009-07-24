@@ -50,78 +50,93 @@
 	*/
 	$connection_pool = array();
 	
-
 	/**
-	* Query handle
+	* last error reported by the server. TODO: make it connection aware.
 	*/
-	$handle = array("header" => array(), "query" => "", "record_set" => array(), "operation" => -1);
-
-	$connected = FALSE; // Connection to a db status;
 	$last_error = "";
-		
-
-	/**
-	  * Use a global variable to index the last returned row from a record set.
-	  * I do this instead of passing the result set handler by reference to the proper functions
-	  * in order to retain syntax compatibility with the previous API.
-	*/
-	$last_row = 0;
 	
-	function mapi_query($socket=NULL, $data) {
-		global $handle;
+	/**
+	* Execute a query and return the resulting handle by reference.
+	*/
+	function &mapi_execute($conn, $query) {
 		global $connection_pool;
-		
-		/*
-		$conn = "";
+			
+		/**
+		* Query handle
+		* 
+		* "conn" - id of the connection that fired the query
+		* "header" - table header
+		* "record_set" - retrieved record set (if present)
+		* "operation" - query type
+		*
+		*/
+		$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 		
 		// if multiple connections are present, require the user to specify which one to use.
 		if ((count($connection_pool) > 0) && $conn = NULL) {
 			return FALSE;
 		} else {
 			// get the socket associated with the desired connection
-			if (count($connection_pool == 1)) {
-				$socket = $connection_pool["socket"];
-			} else {
-				foreach ($connection_pool as $connection) {
-					if ($connection["id"] == $conn) {
-						$socket = $connection["socket"];
-						break;
-					}
+			if (count($connection_pool == 1) && ($conn == NULL)) {
+				if (($socket = $connection_pool[0]["socket"]) == NULL) {
+					return FALSE;
 				}
+			$handle["conn"] = $connection_pool[0]["id"];
+				
+			} else if ($conn != NULL) {
+				if (($socket = $conn["socket"]) == NULL) {
+					return FALSE;
+				}
+				$handle["conn"] = $conn["id"];
+			} else {
+				return FALSE;
 			}
-			
 		}
 		
-		*/
 		
-		$operation = mapi_store($data);
+		/* Fire the query and read back the response */
+		$buf = mapi_write($socket, format_query($query));
+		$data = mapi_read($socket);
+		$operation = mapi_store($data, $handle);
 		
 		/* The query produced a record set */
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
-			while ($handle["query"]["index"] < $handle["query"]["rows"]) {
-				// export a new window
-				$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
-				
-				$exp_size = min(10, $left_rows);
-				write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size );				
-				$data = mapi_read($socket);
-				
-				$operation = mapi_store($data);
-				
-				$handle["query"]["index"] += $exp_size;
-				
-			}
-		} 
-		// record the last operation succesfully executed.
-		$handle["operation"] = $operation;
+			// fetch the whole result set
+			$handle = mapi_fetch_next($socket, $handle);
+		}
+			
+		if ($handle == NULL) {
+			return FALSE;
+		}
+
 		return $handle;
 	}
 	
-	function mapi_store($data) {
-		global $handle;
+	function mapi_fetch_next($socket, &$handle){
+		if ($socket == NULL){
+			return NULL;
+		}
+		
+		while ($handle["query"]["index"] < $handle["query"]["rows"]) {
+			// export a new window
+			$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
+				
+			$exp_size = min(10, $left_rows);
+			write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size );				
+			$data = mapi_read($socket);
+				
+			$operation = mapi_store($data, $handle);
+				
+			$handle["query"]["index"] += $exp_size;
+		}
+	
+		return $handle;		
+	}
+	
+	function mapi_store($data, &$handle) {
 				
 		$data = explode("\n", $data);
-
+		
 		$record_set = "";
 		$operation = "";
 				
@@ -168,9 +183,11 @@
 		}
 		
 		if ($header != "") {
-			php_parse_header($header);
+			
+			$handle["header"] = php_parse_header($header);
 		}
 		
+		$handle["operation"] = $operation;
 		
 		return $operation;
 	}
@@ -194,24 +211,28 @@
 			}
 			$parsed_rows[] = $row;
 		}
+	
 		return $parsed_rows;
 	}
 	
 	function php_parse_header($header) {
-		global $handle;
 		$header = explode("\n", $header);
 		$name = $header[0];
+		
+		$header_array = array();
 		
 		/* Field names */
 		$header[1] = ltrim($header[1], "%");
 		$header[1] = split("#", $header[1]);
-		$handle["header"]["fields"] = explode(",\t", $header[1][0]);
-
+		$header_array["fields"] = explode(",\t", $header[1][0]);
 
 		/* Field types */
 		$header[2] = ltrim($header[2], "%");
 		$header[2] = split("#", $header[2]);
-		$handle["header"]["types"]	= explode(",\t", $header[2][0]);
+		$header_array["types"] = explode(",\t", $header[2][0]);
+		
+		return $header_array;
+		
 	}
 
 	/*
@@ -466,7 +487,7 @@
 		
 		// Create a new connection instance and insert an entry in the connections table
 		$id = mapi_generate_id();
-		$connection = array("id" => $id, "socket" => $socket) ;
+		$connection = array("id" => $id, "socket" => $socket, "transactions" => array()) ;
 		$connection_pool[] = $connection;
 		
 		return $connection;
@@ -557,6 +578,11 @@
 		}
 			
 		return $id;
+	}
+	
+	/* For internal use only */
+	function format_query($query) {
+		return "s" . $query . ";";
 	}
 
 ?>
