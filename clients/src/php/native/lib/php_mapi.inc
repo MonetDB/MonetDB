@@ -51,14 +51,28 @@
 	$connection_pool = array();
 	
 	/**
-	* last error reported by the server. TODO: make it connection aware.
+	* Stores references to a pool of (per connection) query handles.
+	* 
 	*/
+	$connection_handles = array();
+
+	$connected = FALSE; // Connection to a db status;
 	$last_error = "";
+		
+
+	/**
+	  * Use a global variable to index the last returned row from a record set.
+	  * I do this instead of passing the result set handler by reference to the proper functions
+	  * in order to retain syntax compatibility with the previous API.
+	*/
+	$last_row = 0;
+	
+	
 	
 	/**
 	* Execute a query and return the resulting handle by reference.
 	*/
-	function &mapi_execute($conn, $query) {
+	function &mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
 			
 		/**
@@ -73,7 +87,7 @@
 		$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 		
 		// if multiple connections are present, require the user to specify which one to use.
-		if ((count($connection_pool) > 0) && $conn = NULL) {
+		if ((count($connection_pool) > 0) && $conn == NULL) {
 			return FALSE;
 		} else {
 			// get the socket associated with the desired connection
@@ -81,8 +95,8 @@
 				if (($socket = $connection_pool[0]["socket"]) == NULL) {
 					return FALSE;
 				}
-			$handle["conn"] = $connection_pool[0]["id"];
-				
+				$handle["conn"] = $connection_pool[0]["id"];
+								
 			} else if ($conn != NULL) {
 				if (($socket = $conn["socket"]) == NULL) {
 					return FALSE;
@@ -102,13 +116,16 @@
 		/* The query produced a record set */
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
 			// fetch the whole result set
-			$handle = mapi_fetch_next($socket, $handle);
+			if ($handle["query"]["index"] < $handle["query"]["rows"]) {
+				mapi_fetch_next($socket, $handle);
+			}
 		}
 			
 		if ($handle == NULL) {
 			return FALSE;
 		}
-
+		
+	
 		return $handle;
 	}
 	
@@ -188,7 +205,7 @@
 		}
 		
 		$handle["operation"] = $operation;
-		
+	
 		return $operation;
 	}
 	
@@ -448,7 +465,6 @@
 	
 	
 	function mapi_connect_proxy($options) {
-		global $connected;
 		global $last_error;
 		global $connection_pool;
 		
@@ -531,8 +547,6 @@
 	
 	function mapi_close($conn=NULL) {
 		global $connection_pool;
-		
-		
 		
 		if ($conn == NULL) {
 			if (count($connection_pool) == 1) {

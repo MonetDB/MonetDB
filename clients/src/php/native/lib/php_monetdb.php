@@ -30,11 +30,6 @@
 	require 'php_mapi.inc';
 	
 	/**
-	* stack that contains the set of (currently active) savepoint IDs
-	*/
-	$savepoints = array();
-	
-	/**
 	 * Opens a connection to a MonetDB server.  
 	 * 
 	 * @return bool TRUE on success or FALSE on failure 
@@ -83,8 +78,6 @@
 	 */
 	function monetdb_query($connection=NULL, $query) {
 		return mapi_execute($connection, $query);
-		
-		return mapi_execute(mapi_read());
 	}
 	
 	
