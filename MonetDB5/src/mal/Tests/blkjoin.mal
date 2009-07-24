@@ -161,7 +161,7 @@ d0:= t1-t0;
 d1:= d0;
 io.printf("#sort %d\n",d0);
 t0:= alarm.usec();
-s2 := algebra.sort(rb2);
+s2 := algebra.sortTail(rb2);
 ss2:= bat.reverse(s2);
 t1:= alarm.usec();
 d0:= t1-t0;
