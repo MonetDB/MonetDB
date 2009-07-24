@@ -366,7 +366,7 @@ printf("box %d " BUNFMT " " BUNFMT "\n",l, BATcount(bp[l]), BATcount(cp[l]));
 
 static void
 GDKremap( bte *idx, BUN sze, int low, int hgh, BAT *rd){
-	BUN i,hb,x;
+	BUN i,hb = 0,x;
 	Hash *h;
 	BATiter bi = bat_iterator(rd);
 
