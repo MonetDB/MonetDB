@@ -331,7 +331,7 @@ function makeAddDocForm(){
     dTable.innerHTML =
         '<h2>Shred an XML document into the database:</h2>\n' +
         '<p>Please note that the document URL must be reachable by the ' +
-                  'server (e.g. for file:// URLs)</p>\n' +
+        'server (e.g. for file:// URLs)</p>\n' +
         '<p><i>(Fields with \'*\' are required)</i></p>\n' +
         '<table>\n' +
           '<tr>\n' +

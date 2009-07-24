@@ -316,6 +316,10 @@ norm_out = (
 )
 
 
+attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
+elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
+# we're only interested in elements with attributes, hence the +^
+
 def mFilter (FILE, IGNORE) :
     fin = open(FILE, "rU")
     LINE = fin.readline().replace('\r','')
@@ -439,6 +443,14 @@ def mFilter (FILE, IGNORE) :
                 else:
                     pref = ''
                 preflen = len(pref)
+                pos = preflen
+                res = elemre.search(ln, pos)
+                while res is not None:
+                    attrsold = res.group('attrs')
+                    attrsnew = ' ' + ' '.join(sorted(attrre.findall(attrsold)))
+                    ln = ln[:res.start('attrs')] + attrsnew + ln[res.end('attrs'):]
+                    pos = res.end(0) + len(attrsnew) - len(attrsold)
+                    res = elemre.search(ln, pos)
                 ln = ln.replace('>', '>&\n').replace('<','&\n<').replace('>&\n&\n<', '>&\n<')
                 if ln[:2 + preflen] == pref + '&\n':
                     ln = pref + ln[2 + preflen:]
