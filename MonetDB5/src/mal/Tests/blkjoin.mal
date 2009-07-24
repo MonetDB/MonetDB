@@ -153,6 +153,13 @@ io.printf("#blkjoin %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
 
+#get fresh copies for both experiments
+t0:= alarm.usec();
+lb2:= algebra.copy(lbase);
+rb2:= algebra.copy(rbase);
+t1:= alarm.usec();
+d0:= t1-t0;
+io.printf("#copy %d\n",d0);
 # what if you sort first
 t0:= alarm.usec();
 s1 := algebra.sortTail(lb2);
