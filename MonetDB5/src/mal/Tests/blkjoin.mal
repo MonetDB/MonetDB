@@ -168,7 +168,7 @@ d0:= t1-t0;
 d1:= d1+d0;
 io.printf("#sort %d\n",d0);
 t0:= alarm.usec();
-j2 := algebra.join(lb2,rr2);
+j2 := algebra.join(s1,ss2);
 t1:= alarm.usec();
 d0:= t1-t0;
 d1:= d1+d0;
