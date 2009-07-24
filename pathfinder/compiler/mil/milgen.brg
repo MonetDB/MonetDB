@@ -4116,7 +4116,7 @@ do_reduce (PFpa_op_t * p, int rule, short *nts, PFpa_op_t *kids[])
                     seqbase (new (type (mty_void), type (mty_int)),
                              lit_oid (0))),
                 serialize (
-                    arg (lit_str ("xml"),
+                    arg (var (PF_MIL_VAR_GENTYPE),
                         arg (var (PF_MIL_VAR_WS),
                             arg (var (item->name),
                                 arg (var (kind->name),
