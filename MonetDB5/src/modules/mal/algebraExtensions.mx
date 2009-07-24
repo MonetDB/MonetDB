@@ -46,6 +46,12 @@ comment "Simple multi-scan hash join for out-of-memory joins";
 pattern algebra.blkjoinStM(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
 address ALGblkjoinStM
 comment "Mane's version of Simple stupid block join for out-of-memory joins";
+
+pattern algebra.partjoin(b:bat[:oid,:int],c:bat[:int,:oid],num_part:int):bat[:oid,:oid]
+address ALGpartjoin
+comment "A simple hash-/radix-partitioned hash-join implementation (for out-of-memory joins);
+	 num_part must be power of 2;
+	 num_part == nil:int  => automatically tuned to memory size";
 @{
 @include prelude.mx
 @+ Implementation section
@@ -77,6 +83,7 @@ ae_export str ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 ae_export str ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+ae_export str ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
 @c
@@ -567,6 +574,534 @@ printf("blocks/loops %d\n",k);
 	else
 		return bn;
 }
+
+
+
+/* ======== hash-partitioned (hash-)join ======== */
+
+/*#define StM_HOT_COLD*/
+/*#define StM_MADVICE*/
+/*#define StM_BAT_SAVE*/
+/*#define StM_GDK_M_SIZES*/
+
+#define StMhash1(v) ((v)^((v)>>3)^((v)>>5))
+#define StMhash2(v) StMhash1((v)^((v)>>8))
+#define StMhash4(v) StMhash2((v)^((v)>>16))
+#define StMhash8(v) StMhash4((v)^((v)>>32))
+
+@= GDKpartjoin_bailout
+	if (bn)	{
+		BBPreclaim(bn);
+		bn = 0;
+	}
+	if (jj)	{
+		for (p = 0; p < parts; p++) {
+			if (jj[p])
+				BBPreclaim(jj[p]);
+		}
+		GDKfree(jj);
+		jj = 0;
+	}
+	if (bb)	{
+		for (p = 0; p < parts; p++) {
+			if (bb[p])
+				BBPreclaim(bb[p]);
+		}
+		GDKfree(bb);
+		bb = 0;
+	}
+	if (cc)	{
+		for (p = 0; p < parts; p++) {
+			if (cc[p])
+				BBPreclaim(cc[p]);
+		}
+		GDKfree(cc);
+		cc = 0;
+	}
+	if (bbh)	{
+		GDKfree(bbh);
+		bbh = 0;
+	}
+	if (bbt)	{
+		GDKfree(bbt);
+		bbt = 0;
+	}
+	if (cch)	{
+		GDKfree(cch);
+		cch = 0;
+	}
+	if (cct)	{
+		GDKfree(cct);
+		cct = 0;
+	}
+	if (bbi)	{
+		GDKfree(bbi);
+		bbi = 0;
+	}
+	if (bbj)	{
+		GDKfree(bbj);
+		bbj = 0;
+	}
+	if (cci)	{
+		GDKfree(cci);
+		cci = 0;
+	}
+	if (b) {
+		BBPreleaseref(b->batCacheid);
+		b = 0;
+	}
+	if (bid != int_nil) {
+		BBPreleaselref(bid);
+		bid = int_nil;
+	}
+	if (c) {
+		BBPreleaseref(c->batCacheid);
+		c = 0;
+	}
+#ifdef StM_GDK_M_SIZES
+	GDK_mmap_minsize = org_mmap_minsize;
+	GDK_mem_bigsize  = org_mem_bigsize;
+#endif
+	return 0;
+@c
+
+@= suspend_bat
+	BBPkeepref(@2 = @1->batCacheid);
+#ifdef StM_HOT_COLD
+	BBPcold(@2);
+#endif
+	@1 = 0;
+@c
+
+@= resume_bat
+	if ((@2 = BATdescriptor(@1)) == NULL) {
+		@:GDKpartjoin_bailout@
+	}
+	BBPreleaselref(@1);
+#ifdef StM_HOT_COLD
+	BBPhot(@1);
+#endif
+	@1 = int_nil;
+@c
+
+@= drop_bat
+#ifdef StM_HOT_COLD
+	BBPcold(@1->batCacheid);
+#endif
+	BBPreclaim(@1);
+	@1 = 0;
+@c
+
+static BAT *
+GDKpartjoin(BAT *b, BAT *c, int parts) {
+#ifdef StM_GDK_M_SIZES
+	size_t org_mmap_minsize = GDK_mmap_minsize;
+	size_t org_mem_bigsize  = GDK_mem_bigsize;
+#endif
+	bit swap = FALSE;
+	int p, mask;
+	int bid = int_nil;
+	lng t0, t1;
+	BAT *bn = 0, **bb = 0, **cc = 0, **jj = 0;
+	bte *bbj = 0;
+	BUN cap = BUN_NONE, i, bbuns, cbuns, *bbi = 0, *cci = 0, jbuns = 0;
+	BUN blk = (BUN) ( (MT_npages() * MT_pagesize()) / (4 * 2 * (ATOMsize(TYPE_oid) + ATOMsize(b->ttype) + ATOMsize(TYPE_oid) + sizeof(BUN))) );
+	BUN blim = BATcount(b);
+	BUN clim = BATcount(c);
+	oid **bbh = 0, **cct = 0;
+	int **bbt = 0, **cch = 0;
+
+printf("left  size " BUNFMT "\n", blim);
+printf("right size " BUNFMT "\n", clim);
+printf("block size " BUNFMT "\n", blk);
+
+	if (parts == 1 || (parts < 1 && MIN(blim, clim) <= blk)) {
+		/* smaller fits in mem
+		 * => resort to standard BATjoin()
+		 */
+		printf("resorting to standard BATjoin()\n");
+		bn = BATjoin(b, c, BUN_NONE);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(c->batCacheid);
+		return bn;
+	}
+
+#ifdef StM_GDK_M_SIZES
+	GDK_mmap_minsize = MIN(GDK_mmap_minsize, blk);
+	GDK_mem_bigsize  = MIN(GDK_mem_bigsize,  blk);
+#endif
+
+	if (blim < clim) {
+		/* swap: use smaller as right/inner */
+		BAT *x = b;
+		b = BATmirror(c);
+		c = BATmirror(x);
+		blim = BATcount(b);
+		clim = BATcount(c);
+		swap = TRUE;
+	}
+
+	if (parts < 1) { /* includes (parts == int_nil) */
+		parts = 1;
+		/* smaller determines number of partitions
+		 * => minimizes number of partitions
+		 */
+		while (clim / parts > blk) {
+			parts <<= 1;
+		}
+@(
+		/* larger determines number of partitions
+		 * => minimizes size of inner partitions
+		 */
+		while (clim / parts > blk) {
+			parts <<= 1;
+		}
+@)
+	} else {
+		/* ensure parts is power of two */
+		p = 1;
+		while (p < parts) {
+			p <<= 1;
+		}
+		parts = p;
+	}
+	mask = parts - 1;
+	bbuns = (BUN) (2 * (dbl)blim / (dbl)parts);
+	cbuns = (BUN) (2 * (dbl)clim / (dbl)parts);
+
+printf("parts/joins %d\n", parts);
+printf("mask        %d\n", mask);
+printf("buns left   " BUNFMT "\n", bbuns);
+printf("buns right  " BUNFMT "\n", cbuns);
+fflush(stdout);
+
+	@:suspend_bat(b,bid)@
+
+{
+	bit c_hsorted = BAThordered(c)&1;
+	bit c_tsorted = BATtordered(c)&1;
+	bit c_hkey = c->hkey;
+	bit c_tkey = c->tkey;
+	int *ch = (int*) Hloc(c, BUNfirst(c));
+	oid  ct = c->tseqbase;
+
+	cc = (BAT**) GDKzalloc(parts * sizeof(BAT*));
+	if (cc == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	cch = (int**) GDKmalloc(parts * sizeof(int*));
+	if (cch == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	cct = (oid**) GDKmalloc(parts * sizeof(oid*));
+	if (cct == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	cci = (BUN*) GDKzalloc(parts * sizeof(BUN));
+	if (cci == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	for (p = 0; p < parts; p++) {
+		cc[p] = BATnew(c->htype, TYPE_oid, cbuns);
+		if (cc[p] == 0) {
+			@:GDKpartjoin_bailout@
+		}
+#ifdef StM_MADVICE
+		cc[p]->batDirty = TRUE;
+		if (BATmmap(cc[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
+			@:GDKpartjoin_bailout@
+		}
+		if (BATmadvise(cc[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
+			@:GDKpartjoin_bailout@
+		}
+#endif
+		cch[p] = (int*) Hloc(cc[p], BUNfirst(cc[p]));
+		cct[p] = (oid*) Tloc(cc[p], BUNfirst(cc[p]));
+	}
+t0 = GDKusec();
+	for (i = 0; i < clim; i++, ct++) {
+		p = (int)StMhash4(ch[i]) & mask;
+		if (cci[p] >= cbuns) {
+			/* TODO: BATextend to handle overflow */
+			@:GDKpartjoin_bailout@
+		}
+		cch[p][cci[p]] = ch[i];
+		cct[p][cci[p]] = ct;
+		cci[p]++;
+	}
+t1 = GDKusec();
+printf("part inner fill  " LLFMT "\n", t1 - t0);
+fflush(stdout);
+#ifdef StM_HOT_COLD
+	/*BBPcold(c->batCacheid);*/
+#endif
+	BBPreleaseref(c->batCacheid);
+	c = 0;
+t0 = GDKusec();
+	for (p = 0; p < parts; p++) {
+		if (cci[p] > 0) {
+			bit trivial  = cci[p] < 2;
+			
+			BATsetcount(cc[p], cci[p]);
+			cc[p]->batDirty = TRUE;
+			cc[p]->tdense = trivial;
+			if (cc[p]->tdense) {
+				BATseqbase(BATmirror(cc[p]), cct[p][0]);
+			}
+			cc[p]->hsorted = (trivial || c_hsorted) ? GDK_SORTED : 0;
+			BATkey(cc[p], trivial || c_hkey);
+			cc[p]->tsorted = (trivial || c_tsorted) ? GDK_SORTED : 0;
+			BATkey(BATmirror(cc[p]), trivial || c_tkey);
+
+			BATsetaccess(cc[p], BAT_READ);
+#ifdef StM_MADVICE
+			if (BATmadvise(cc[p], BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED) != 0) {
+				@:GDKpartjoin_bailout@
+			}
+#endif
+#ifdef StM_BAT_SAVE
+			if ((cc[p] = BATsave(cc[p])) == NULL) {
+				@:GDKpartjoin_bailout@
+			}
+#endif
+#ifdef StM_HOT_COLD
+			BBPcold(cc[p]->batCacheid);
+#endif
+		} else {
+			@:drop_bat(cc[p])@
+		}
+	}
+t1 = GDKusec();
+printf("part inner save  " LLFMT "\n", t1 - t0);
+fflush(stdout);
+	GDKfree(cch);
+	GDKfree(cct);
+	GDKfree(cci);
+	cch = 0;
+	cct = 0;
+	cci = 0;
+}
+
+	@:resume_bat(bid,b)@
+
+{
+	bit b_hsorted = BAThordered(b)&1;
+	bit b_tsorted = BATtordered(b)&1;
+	bit b_hkey = b->hkey;
+	bit b_tkey = b->tkey;
+	oid  bh = b->hseqbase;
+	int *bt = (int*) Tloc(b, BUNfirst(b));
+	
+	bb = (BAT**) GDKzalloc(parts * sizeof(BAT*));
+	if (bb == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	bbh = (oid**) GDKmalloc(parts * sizeof(oid*));
+	if (bbh == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	bbt = (int**) GDKmalloc(parts * sizeof(int*));
+	if (bbt == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	bbi = (BUN*) GDKzalloc(parts * sizeof(BUN));
+	if (bbi == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	bbj = (bte*) GDKzalloc(parts * sizeof(bte));
+	if (bbj == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	for (p = 0; p < parts; p++) {
+		bb[p] = BATnew(TYPE_oid, b->ttype, cc[p] == NULL ? 1 : bbuns);
+		if (bb[p] == 0) {
+			@:GDKpartjoin_bailout@
+		}
+#ifdef StM_MADVICE
+		bb[p]->batDirty = TRUE;
+		if (BATmmap(bb[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
+			@:GDKpartjoin_bailout@
+		}
+		if (BATmadvise(bb[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
+			@:GDKpartjoin_bailout@
+		}
+#endif
+		bbh[p] = (oid*) Hloc(bb[p], BUNfirst(bb[p]));
+		bbt[p] = (int*) Tloc(bb[p], BUNfirst(bb[p]));
+		bbj[p] = cc[p] == NULL ? 0 : 1;
+	}
+t0 = GDKusec();
+	for (i = 0; i < blim; i++, bh++) {
+		p = (int)StMhash4(bt[i]) & mask;
+		if (bbi[p] >= bbuns) {
+			/* TODO: BATextend to handle overflow */
+			@:GDKpartjoin_bailout@
+		}
+		bbh[p][bbi[p]] = bh;
+		bbt[p][bbi[p]] = bt[i];
+		bbi[p] += bbj[p];
+	}
+t1 = GDKusec();
+printf("part outer fill  " LLFMT "\n", t1 - t0);
+fflush(stdout);
+#ifdef StM_HOT_COLD
+	/*BBPcold(b->batCacheid);*/
+#endif
+	BBPreleaseref(b->batCacheid);
+	b = 0;
+t0 = GDKusec();
+	for (p = 0; p < parts; p++) {
+		if (bbi[p] > 0) {
+			bit trivial  = bbi[p] < 2;
+			
+			BATsetcount(bb[p], bbi[p]);
+			bb[p]->batDirty = TRUE;
+			bb[p]->hdense = trivial;
+			if (bb[p]->hdense) {
+				BATseqbase(bb[p], bbh[p][0]);
+			}
+			bb[p]->hsorted = (trivial || b_hsorted) ? GDK_SORTED : 0;
+			BATkey(bb[p], trivial || b_hkey);
+			bb[p]->tsorted = (trivial || b_tsorted) ? GDK_SORTED : 0;
+			BATkey(BATmirror(bb[p]), trivial || b_tkey);
+
+			BATsetaccess(bb[p], BAT_READ);
+#ifdef StM_MADVICE
+			if (BATmadvise(bb[p], BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED) != 0) {
+				@:GDKpartjoin_bailout@
+			}
+#endif
+#ifdef StM_BAT_SAVE
+			if ((bb[p] = BATsave(bb[p])) == NULL) {
+				@:GDKpartjoin_bailout@
+			}
+#endif
+#ifdef StM_HOT_COLD
+			BBPcold(bb[p]->batCacheid);
+#endif
+		} else {
+			@:drop_bat(bb[p])@
+		}
+	}
+t1 = GDKusec();
+printf("part outer save  " LLFMT "\n", t1 - t0);
+fflush(stdout);
+	GDKfree(bbh);
+	GDKfree(bbt);
+	GDKfree(bbi);
+	GDKfree(bbj);
+	bbh = 0;
+	bbt = 0;
+	bbi = 0;
+	bbj = 0;
+}
+
+	jj = (BAT**) GDKzalloc(parts * sizeof(BAT*));
+	if (jj == 0) {
+		@:GDKpartjoin_bailout@
+	}
+	
+t0 = GDKusec();
+	for (p = 0; p < parts; p++) {
+		if (bb[p] && cc[p]) {
+#ifdef StM_MADVICE
+			if (BATmadvise(bb[p], BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED) != 0) {
+				@:GDKpartjoin_bailout@
+			}
+			if (BATmadvise(cc[p], BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED) != 0) {
+				@:GDKpartjoin_bailout@
+			}
+#endif
+#ifdef StM_HOT_COLD
+			BBPhot(bb[p]->batCacheid);
+			BBPhot(cc[p]->batCacheid);
+#endif
+			jj[p] = BATjoin(bb[p], cc[p], cap);
+			if (jj[p] == 0) {
+				@:GDKpartjoin_bailout@
+			}
+			if (BATcount(jj[p]) == 0) {
+				@:drop_bat(jj[p])@
+			} else {
+				jbuns += BATcount(jj[p]);
+				if (cap == BUN_NONE) {
+					cap = 2 * BATcount(jj[p]);
+				} else {
+					cap = MAX(cap, 2 * BATcount(jj[p]));
+				}
+#ifdef StM_BAT_SAVE
+				if ((jj[p] = BATsave(jj[p])) == NULL) {
+					@:GDKpartjoin_bailout@
+				}
+#endif
+#ifdef StM_HOT_COLD
+				BBPcold(jj[p]->batCacheid);
+#endif
+			}
+		}
+		if (bb[p]) {
+			@:drop_bat(bb[p])@
+		}
+		if (cc[p]) {
+			@:drop_bat(cc[p])@
+		}
+	}
+t1 = GDKusec();
+printf("join all parts   " LLFMT "\n", t1 - t0);
+fflush(stdout);
+	
+	GDKfree(bb);
+	GDKfree(cc);
+	bb = 0;
+	cc = 0;
+
+	bn = BATnew(TYPE_oid, TYPE_oid, jbuns);
+	if (bn == 0) {
+		@:GDKpartjoin_bailout@
+	}
+#ifdef StM_MADVICE
+	bn->batDirty = TRUE;
+	if (BATmmap(bn, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
+		@:GDKpartjoin_bailout@
+	}
+	if (BATmadvise(bn, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
+		@:GDKpartjoin_bailout@
+	}
+#endif
+	
+t0 = GDKusec();
+	for (p = 0; p < parts; p++) {
+		if (jj[p] != 0) {
+#ifdef StM_HOT_COLD
+			BBPhot(jj[p]->batCacheid);
+#endif
+			bn = BATappend(bn, jj[p], TRUE);
+			@:drop_bat(jj[p])@
+			if (bn == 0) {
+				@:GDKpartjoin_bailout@
+			}
+		}
+	}
+t1 = GDKusec();
+printf("merge all parts  " LLFMT "\n", t1 - t0);
+fflush(stdout);
+
+	BATsetaccess(bn, BAT_READ);	
+	GDKfree(jj);
+	jj = 0;
+
+#ifdef StM_GDK_M_SIZES
+	GDK_mmap_minsize = org_mmap_minsize;
+	GDK_mem_bigsize  = org_mem_bigsize;
+#endif
+
+	if (swap)
+		bn = BATmirror(bn);
+	return bn;
+}
+/* -------- hash-partitioned (hash-)join -------- */
+
+
 
 void
 GDKbloomfilter_int(BAT *b, BAT *c, BAT **bn, BAT **cn){
@@ -1082,6 +1617,45 @@ ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(c->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *bres = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	int *cid = (int *) getArgReference(stk, pci, 2);
+	int *parts = (int *) getArgReference(stk, pci, 3);
+	BAT *b, *c, *bn;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.partjoin", INTERNAL_BAT_ACCESS);
+	if ( (c = BATdescriptor(*cid)) == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "algebra.partjoin", INTERNAL_BAT_ACCESS);
+	}
+
+	if (b->htype != TYPE_void || b->ttype != TYPE_int || \
+	    c->htype != TYPE_int || c->ttype != TYPE_void || \
+	    b->hseqbase == oid_nil || c->tseqbase == oid_nil ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(c->batCacheid);
+		throw(MAL, "algebra.partjoin", "currently only available for [VoID,INT]x[INT,VoID]");
+	}
+
+	bn = GDKpartjoin(b,c,*parts);
+	if (bn == NULL)
+		throw(MAL, "algebra.partjoin", "GDKpartjoin() failed");
+
+	BBPkeepref(*bres= bn->batCacheid);
+@(
+	/* now done inside GDKpartjoin() */
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(c->batCacheid);
+@)
 	return MAL_SUCCEED;
 }
 
