@@ -94,7 +94,7 @@ BATins(BAT *b, BAT *n, bit force)
 		if (ncap > grows)
 			grows = ncap;
 		if (BATextend(b, grows) == NULL)
-			fastpath = 0;
+			goto bunins_failed;
 	}
 
 	if (b->htype == TYPE_void && b->hseqbase != oid_nil) {
@@ -137,10 +137,12 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 
 	if (b->H->hash == NULL && b->hkey & BOUND2BTRUE) {
-		BAThash(b, BATcount(b) + BATcount(n));
+		if (BATcount(b) || (BATcount(n) && n->htype != TYPE_void && !n->hdense))
+			BAThash(b, BATcount(b) + BATcount(n));
 	}
 	if (b->T->hash == NULL && b->tkey & BOUND2BTRUE) {
-		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
+		if (BATcount(b) || (BATcount(n) && n->ttype != TYPE_void && !n->tdense))
+			BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
 	b->batDirty = 1;
 	if (fastpath) {
@@ -2576,10 +2578,16 @@ BATconst(BAT *b, int tailtype, ptr v)
 					bunfastins_nocheck(bt, r, NULL, v, 0, ts);
 			}
 			bt->tsorted = GDK_SORTED;
-			bn = VIEWcreate(b, bt);
+			if (b->htype == TYPE_void) {
+				bn = bt;
+				BATseqbase(bn, b->hseqbase);
+				ALIGNsetH(bn, b);
+			} else {
+				bn = VIEWcreate(b, bt);
+				BBPunfix(bt->batCacheid);
+			}
 			if (b != o)
 				BBPunfix(b->batCacheid);
-			BBPunfix(bt->batCacheid);
 			return bn;
 		}
 	}
