@@ -60,7 +60,13 @@ comment "Select tuples based on the pattern, only returning the head";
 command like_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
 address PCRElike_uselect_pcre;
 
+command ilike_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void] 
+address PCRElike_uselect_pcre;
+
 command like_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str] 
+address PCRElike_select_pcre;
+
+command ilike_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str] 
 address PCRElike_select_pcre;
 
 command match(s:str, pat:str):bit
@@ -208,16 +214,26 @@ strcasestr (char *haystack, char *needle)
 #endif
 
 static int 
-re_match(str s, RE *pattern )
+re_match(str s, RE *pattern, int ignore )
 {
 	RE *r;
 
-	for(r = pattern; r; r = r->n) {
-		if (!*s || 
+	if (ignore) {
+		for(r = pattern; r; r = r->n) {
+			if (!*s || 
 			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
 			(r->search && (s = strcasestr(s, r->k)) == NULL))
 			return 0;
-		s += r->len;
+			s += r->len;
+		}
+	} else {
+		for(r = pattern; r; r = r->n) {
+			if (!*s || 
+			(!r->search && strncmp(s, r->k, r->len) != 0) ||
+			(r->search && (s = strstr(s, r->k)) == NULL))
+			return 0;
+			s += r->len;
+		}
 	}
 	return 1;
 }
@@ -267,7 +283,7 @@ re_destroy( RE *p)
 }
 
 static BAT *
-re_uselect(RE *pattern, BAT *strs)
+re_uselect(RE *pattern, BAT *strs, int ignore)
 {
 	BATiter strsi = bat_iterator(strs);
 	BAT *r;
@@ -281,7 +297,7 @@ re_uselect(RE *pattern, BAT *strs)
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
-		if (re_match(s, pattern)) 
+		if (re_match(s, pattern, ignore)) 
 			BUNfastins(r, BUNhead(strsi, p), NULL);
 	}
 	r->H->nonil = strs->H->nonil;
@@ -295,7 +311,7 @@ re_uselect(RE *pattern, BAT *strs)
 }
 
 static BAT *
-re_select(RE *pattern, BAT *strs)
+re_select(RE *pattern, BAT *strs, int ignore)
 {
 	BATiter strsi = bat_iterator(strs);
 	BAT *r;
@@ -309,7 +325,7 @@ re_select(RE *pattern, BAT *strs)
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
-		if (re_match(s, pattern)) 
+		if (re_match(s, pattern, ignore)) 
 			BUNins(r, BUNhead(strsi, p), s, FALSE);
 	}
 	r->H->nonil = strs->H->nonil;
@@ -1197,7 +1213,7 @@ re_simple(char *pat)
 }
 
 str
-PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
+PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 {
 	char *ppat = NULL;
 	str r = MAL_SUCCEED;
@@ -1212,8 +1228,8 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 
 		if ( bp == NULL)
 			throw(MAL,"pcre.like", OPERATION_FAILED);
-		if (us) res = re_uselect(re, bp);
-		else res =  re_select(re, bp);
+		if (us) res = re_uselect(re, bp, ignore);
+		else res =  re_select(re, bp, ignore);
 			
 		re_destroy(re);
 		*ret = res->batCacheid;
@@ -1252,12 +1268,24 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us)
 str
 PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
 {
-	return PCRElike_pcre(ret,b,pat,esc,TRUE);
+	return PCRElike_pcre(ret,b,pat,esc,TRUE,FALSE);
+}  
+
+str
+PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc)
+{
+	return PCRElike_pcre(ret,b,pat,esc,TRUE,TRUE);
 }  
 
 str
 PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc)
 {
-	return PCRElike_pcre(ret,b,pat,esc,FALSE);
+	return PCRElike_pcre(ret,b,pat,esc,FALSE,FALSE);
+}  
+
+str
+PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc)
+{
+	return PCRElike_pcre(ret,b,pat,esc,FALSE,TRUE);
 }  
 @}
