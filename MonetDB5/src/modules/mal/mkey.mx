@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f mkey
-@a Peter Boncz, Stefan Manegold
+@a Peter Boncz, Stefan Manegold, Niels Nes
 @-
 @v 1.1
 @+ Multi-Attribute Equi-Join
@@ -51,6 +51,10 @@ command hash(v:lng):wrd
 address MKEYhash_lng; 
 command hash(v:str):wrd 
 address MKEYhash_str; 
+
+command hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd]
+address MKEYbathash
+comment "calculate a hash value";
 
 pattern bulk_rotate_xor_hash(h:wrd, nbits:int, v:any) :wrd 
 address MKEYrotate_xor_hash
@@ -190,6 +194,7 @@ mkey_export str  MKEYhash_lng(wrd *ret, lng *v);
 mkey_export str  MKEYhash_str(wrd *ret, str *v);
 mkey_export str  MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits,int *bid);
+mkey_export str  MKEYbathash(bat *res, bat *bid );
 
 #endif /* _MKEY_H */
 @-
@@ -314,6 +319,98 @@ CMDhash(wrd *res, ptr val, int tpe)
 	}
 	*res = code;
 	return GDK_SUCCEED;
+}
+
+static str
+voidbathash(BAT **res, BAT *b )
+{
+	BAT *dst;
+	BUN (*hash)(ptr v); 
+	wrd *r, *f;
+	BATiter bi, dsti;
+
+	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
+	if (!dst) 
+		throw(SQL, "bathash", "can not create bat");
+	BATseqbase(dst, b->hseqbase);
+
+	dsti = bat_iterator(dst);
+	bi = bat_iterator(b);
+ 	r = (wrd*)BUNtail(dsti, BUNfirst(dst));
+	f = r;
+	hash = BATatoms[b->ttype].atomHash;
+	if (ATOMvarsized(b->ttype)) { /* ugh */
+		BUN p,q;
+
+		BATloop(b,p,q) {
+			ptr v = BUNtail(bi,p);
+			*r++ = hash(v);
+		}
+	} else {
+		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
+		int sz = Tsize(b), tpe = b->ttype;
+
+		switch (ATOMstorage(tpe)) {
+		case TYPE_chr: 
+			for(; v < e; v+=sz) 
+				*r++ = *(chr*)v;
+			break;
+		case TYPE_bte:
+			for(; v < e; v+=sz) 
+				*r++ = *(bte*)v;
+			break;
+		case TYPE_sht:
+			for(; v < e; v+=sz) 
+				*r++ = *(sht*)v;
+			break;
+		case TYPE_int:
+		case TYPE_flt:
+			for(; v < e; v+=sz) 
+				*r++ = *(int*)v;
+			break;
+		case TYPE_lng:
+		case TYPE_dbl:
+			for(; v < e; v+=sz) 
+#if SIZEOF_WRD == SIZEOF_LNG
+				*r++ = *(wrd*)v;
+#else
+				*r++ = ((wrd *) v)[0] ^ ((wrd *) v)[1];
+#endif
+			break;
+		default:
+			for(; v < e; v+=sz) 
+				*r++ = hash(v);
+		}
+	}
+	BATsetcount(dst, (BUN) (r-f));
+	BATkey(BATmirror(dst), 0);
+	dst->tsorted = ATOMvarsized(b->ttype)?0: 
+			(Tsize(b)<=sizeof(wrd)?b->tsorted:0);
+
+	*res = dst;
+	return MAL_SUCCEED;
+}
+
+str
+MKEYbathash(bat *res, bat *bid )
+{
+	str msg;
+	BAT *b, *dst;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "bathash", "Cannot access descriptor");
+	}
+	assert(BAThrestricted(b));
+
+	msg = voidbathash(&dst, b);
+	if (b->htype != TYPE_void) {
+		BAT *x = VIEWcreate(b, dst);
+		BBPreleaseref(dst->batCacheid);
+		dst = x;
+	}
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
 }
 
 str
