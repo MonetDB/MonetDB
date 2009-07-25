@@ -213,6 +213,9 @@ HEAPextend(Heap *h, size_t size)
 				fclose(fp);
 				if (h->storage == STORE_MEM) {
 					int newmode = (h->newstorage != STORE_MMAP)?h->newstorage:STORE_PRIV;
+					/* make sure we realy MMAP */
+					if (must_mmap && h->newstorage == STORE_MEM)
+						newmode = STORE_MMAP;
 					h->newstorage = h->storage = newmode;
 				}
 				h->base = NULL;
