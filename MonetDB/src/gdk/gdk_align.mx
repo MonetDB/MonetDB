@@ -121,16 +121,18 @@ ALIGNsetH(BAT *b1, BAT *b2)
 		/* b2 is either dense or has a void(nil) head */
 		if (b1->htype != TYPE_void)
 			b1->hdense = TRUE;
+		else if (b2->hseqbase == oid_nil)
+			b1->H->nonil = FALSE;
 		BATseqbase(b1, b2->hseqbase);
 	} else if (b1->htype != TYPE_void) {
 		/* b2 is not dense, so set b1 not dense */
 		b1->hdense = FALSE;
 		BATseqbase(b1, oid_nil);
+		b1->H->nonil = b2->H->nonil;
 	}
 	BATkey(b1, BAThkey(b2));
 	b1->hsorted = BAThordered(b2);
 	b1->halign = b2->halign;
-	b1->H->nonil = b2->H->nonil;
 	b1->batDirtydesc = TRUE;
 	b1->H->nosorted_rev = (BUN) (b2->H->nosorted_rev + diff);
 	b1->H->nokey[0] = (BUN) (b2->H->nokey[0] + diff);
