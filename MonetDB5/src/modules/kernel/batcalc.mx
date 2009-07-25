@@ -125,6 +125,20 @@ C qualifier and the operands
 	@:calcGrp(or,OR,wrd,wrd,wrd)@
 	@:calcGrp(or,OR,lng,lng,lng)@
 
+	@:calcGrp(<<,LSH,oid,oid,int)@
+	@:calcGrp(<<,LSH,bte,bte,int)@
+	@:calcGrp(<<,LSH,sht,sht,int)@
+	@:calcGrp(<<,LSH,int,int,int)@
+	@:calcGrp(<<,LSH,wrd,wrd,int)@
+	@:calcGrp(<<,LSH,lng,lng,int)@
+
+	@:calcGrp(>>,RSH,oid,oid,int)@
+	@:calcGrp(>>,RSH,bte,bte,int)@
+	@:calcGrp(>>,RSH,sht,sht,int)@
+	@:calcGrp(>>,RSH,int,int,int)@
+	@:calcGrp(>>,RSH,wrd,wrd,int)@
+	@:calcGrp(>>,RSH,lng,lng,int)@
+
 @= coerceGrp
 	@:calcGrp(@1,@2,lng,int,sht)@
 	@:calcGrp(@1,@2,lng,sht,int)@
@@ -419,7 +433,7 @@ The similar code base is produced for dealing with a constant argument.
 	@4 *q = (@4*)Tloc(b, BUNlast(b));
 	@5 *r = (@5*)Tloc(right, BUNfirst(right));
 
-	if( '@1' == '/'){ 
+	if (strcmp("@1", "/") == 0) {
 		if (b->T->nonil && right->T->nonil)
 			for(; p<q; o++, p++, r++)
 			if (*r == 0) {
@@ -563,7 +577,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:chkSize(bn,b,CMDbataccum@2)@
 
-	if( '@1'== '/') {
+	if (strcmp("@1", "/") == 0) {
 		if (*(@5*)cst == 0) {
 			res = createException(ARITH, "batcalc.@1", "Division by zero");
 		} else {
@@ -605,7 +619,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *l, void *cst, int *r)
 	@:getBATdescriptor(r,b,"batcalc.@1")@
 	@:chkSize(bn,b,CMDbataccum@2)@
 
-	if( '@1'== '/') {
+	if (strcmp("@1", "/") == 0) {
 		@:accumCstDIV(@3,@1,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
@@ -642,7 +656,7 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
-	if( '@1'== '/') {
+	if (strcmp("@1", "/") == 0) {
 		if (*(@5*)cst == 0) {
 			res = createException(ARITH, "batcalc.@1", "Division by zero");
 		} else {
@@ -691,7 +705,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
-	if( '@1'== '/') {
+	if (strcmp("@1", "/") == 0) {
 		@:accumCstDIV(@3,@1,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
@@ -919,7 +933,7 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:voidresultBAT(b->ttype,"batcalc.@1")@
 
-	if( '@2'== '/') {
+	if (strcmp("@2", "/") == 0) {
 		if (*(@5*)cst == 0) {
 			res = createException(ARITH, "batcalc.@1", "Division by zero");
 		} else {
@@ -954,7 +968,7 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 	@:getBATdescriptor(l,b,"batcalc.@1")@
 	@:voidresultBAT(TYPE_@3,"batcalc.@1")@
 
-	if( '@2'== '/') {
+	if (strcmp("@2", "/") == 0) {
 		@:accumCstDIV(@3,@2,@4,@5)@ 
 	} else {
 		@:accumCstLeft(@3,@2,@4,@5)@ 
@@ -1000,6 +1014,20 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 @:numeric_funcs(OR,|,int,int,int)@
 @:numeric_funcs(OR,|,wrd,wrd,wrd)@
 @:numeric_funcs(OR,|,lng,lng,lng)@
+
+@:numeric_funcs(LSH,<<,oid,oid,int)@
+@:numeric_funcs(LSH,<<,bte,bte,int)@
+@:numeric_funcs(LSH,<<,sht,sht,int)@
+@:numeric_funcs(LSH,<<,int,int,int)@
+@:numeric_funcs(LSH,<<,wrd,wrd,int)@
+@:numeric_funcs(LSH,<<,lng,lng,int)@
+
+@:numeric_funcs(RSH,>>,oid,oid,int)@
+@:numeric_funcs(RSH,>>,bte,bte,int)@
+@:numeric_funcs(RSH,>>,sht,sht,int)@
+@:numeric_funcs(RSH,>>,int,int,int)@
+@:numeric_funcs(RSH,>>,wrd,wrd,int)@
+@:numeric_funcs(RSH,>>,lng,lng,int)@
 
 @- Implementation of unary operations
 @= accumUnary
