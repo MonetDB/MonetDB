@@ -149,11 +149,11 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is
 	not a substring of dst.";
 
-command batstr.like_uselect(s:bat[:oid,:str],pat:str):bat[:oid,:oid]
+command batstr.like_uselect(s:bat[:oid,:str],pat:str):bat[:oid,:void]
 address STRbatlike_uselect2
 comment "Perform SQL like operation against a string bat";
 
-command batstr.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:oid]
+command batstr.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:void]
 address STRbatlike_uselect
 comment "Perform SQL like operation against a string bat";
 
