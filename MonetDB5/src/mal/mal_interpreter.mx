@@ -1951,7 +1951,7 @@ str catchKernelException(Client cntxt, str ret){
 			strcat(z,cntxt->errbuf);
 			GDKfree(ret);
 			ret= z;
-		} else{
+		} else {
 			/* trap hidden (GDK) exception */
 			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
 			sprintf(z,"GDKerror:%s\n",ret);
