@@ -188,28 +188,28 @@ address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:oid] 
+		li:bit, hi:bit) :bat[:any_1,:void] 
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
-command thetauselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:oid] 
+command thetauselect(b:bat[:any_1,:any_2], val:any_2, op:str) :bat[:any_1,:void] 
 address ALGthetauselect
 comment "The theta (<=,<,=,>,>=) select() limited to head values";
 
-command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:oid] 
+command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2):bat[:any_1,:void] 
 address ALGuselect;
-command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:oid] 
+command uselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
 address ALGuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
 
-command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:oid] 
+command antiuselect(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1,:void] 
 address ALGantiuselect1
 comment "Value select, but returning only the 
 	head values. SEE ALSO:select(bat,val)";
 
 command antiuselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:oid] 
+		li:bit, hi:bit) :bat[:any_1,:void] 
 address ALGantiuselectInclusive
 comment "See select() but limited to head values";
 @- Pattern matching
@@ -569,6 +569,13 @@ command markT( b:bat[:any_1,:any_2] ) :bat[:any_1,:oid]
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
+command markT( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid] 
+address ALGtmarkp
+comment "Produces a BAT with fresh unique dense sequense of OIDs in 
+	the tail that starts at base (i.e. [base,..base+b.count()-1] ).
+	The base is uniquely defined by the part_nr (ie we set the highest
+	bits based on the part_nr/nr_parts) ";
+
 
 command markH( b:bat[:any_1,:any_2] ) :bat[:oid,:any_2] 
 address ALGmarkHead_default
@@ -578,6 +585,14 @@ command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:oid,:any_2]
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
 		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
+
+command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid] 
+address ALGhmarkp
+comment "Produces a BAT with fresh unique dense sequense of OIDs in 
+	the head that starts at base (i.e. [base,..base+b.count()-1] ).
+	The base is uniquely defined by the part_nr (ie we set the highest
+	bits based on the part_nr/nr_parts) ";
+
 
 command mark_grp( b:bat[:any_1,:oid], g:bat[:oid,:oid]) :bat[:any_1,:oid]
 address ALGmark_grp_1
@@ -1016,8 +1031,10 @@ algebra_export str ALGcount_nil(wrd *result, int *bid, bit *ignore_nils);
 algebra_export str ALGcount_no_nil(wrd *result, int *bid);
 algebra_export str ALGtmark(int *result, int *bid, oid *base);
 algebra_export str ALGtmark_default(int *result, int *bid);
+algebra_export str ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 algebra_export str ALGmarkHead(int *result, int *bid, oid *base);
 algebra_export str ALGmarkHead_default(int *result, int *bid);
+algebra_export str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
 algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
 algebra_export str ALGhashsplit(int *result, int *bid, int *nfrag);
@@ -3290,6 +3307,23 @@ ALGtmark_default(int *result, int *bid)
 	return ALGtmark(result, bid, &o);
 }
 
+str 
+ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
+{
+	int nr = *nr_parts;
+#if SIZEOF_OID == 4
+	int bits = 32
+#else
+	int bits = 64;
+#endif
+	oid base = 0;
+	
+	assert(*part_nr < *nr_parts);
+        while((nr >>= 1) > 0) bits--;
+	base = (*part_nr)<<bits;
+	return ALGtmark(result, bid, &base);
+}
+
 str
 ALGmarkHead(int *result, int *bid, oid *base)
 {
@@ -3317,6 +3351,23 @@ ALGmarkHead_default(int *result, int *bid)
 	oid o = 0;
 
 	return ALGmarkHead(result, bid, &o);
+}
+
+str 
+ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
+{
+	int nr = *nr_parts;
+#if SIZEOF_OID == 4
+	int bits = 32
+#else
+	int bits = 64;
+#endif
+	oid base = 0;
+	
+	assert(*part_nr < *nr_parts);
+        while((nr >>= 1) > 0) bits--;
+	base = (*part_nr)<<bits;
+	return ALGmarkHead(result, bid, &base);
 }
 
 str 
