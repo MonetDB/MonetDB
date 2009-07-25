@@ -128,9 +128,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			flowblock = getArg(p,0);
 			freeInstruction(p);
 			old[i] = NULL;
-		}
-
-		if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
+		} else if (flowblock && blockExit(p) && getArg(p,0) == flowblock) {
 			flowblock = 0;
 			freeInstruction(p);
 			old[i] = NULL;
@@ -141,6 +139,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p == NULL)
 			continue;
+
 		if (p->token == ENDsymbol)
 			break;
 		if (hasSideEffects(p,TRUE) || isUnsafeFunction(p)
