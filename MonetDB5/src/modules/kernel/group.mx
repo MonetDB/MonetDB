@@ -89,28 +89,28 @@ comment "Produces a new BAT with identical head column, and in the tail
 		Parameters: a start group -value, -number increment, -size.";
 
 command new(attr:bat[:any_1,:any_2] )
-	(histo:bat[:any_1,:int], grp:bat[:any_1,:void]) 
+	(histo:bat[:any_1,:wrd], grp:bat[:any_1,:void]) 
 address GRPgroup;
 
 command new(attr:bat[:any_1,:any_2] )
-	(histo:bat[:any_1,:int], grp:bat[:any_1,:oid]) 
+	(histo:bat[:any_1,:wrd], grp:bat[:any_1,:oid]) 
 address GRPgroup;
 
 command new(attr:bat[:any_1,:any_2], N:int, rng:int)
-	(histo:bat[:any_1,:int],grp:bat[:any_1,:oid]) 
+	(histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
 		user provided #bits in hashmask and #distinct values in range.";
 
-command derive(hist:bat[:any_1,:int], map:bat[:any_1,:oid], attr:bat[:any_1,:any_2])
-	(histo:bat[:any_1,:int],grp:bat[:any_1,:oid]) 
+command derive(hist:bat[:any_1,:wrd], map:bat[:any_1,:oid], attr:bat[:any_1,:any_2])
+	(histo:bat[:any_1,:wrd],grp:bat[:any_1,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
 		identical as in 'ct'. Tail values are from the same domain and 
 		indicate further refinement of the groups in 'ct', taking into 
 		account also the tail-values in 'attr'.";
-command derive(histo:bat[:void,:int], map:bat[:void,:oid], attr:bat[:oid,:any_2])
-	(hist:bat[:oid,:int],grp:bat[:oid,:oid]) 
+command derive(histo:bat[:void,:wrd], map:bat[:void,:oid], attr:bat[:oid,:any_2])
+	(hist:bat[:oid,:wrd],grp:bat[:oid,:oid]) 
 address GRPderive;
 
 command refine(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
@@ -234,8 +234,28 @@ macros identical to file names.
 #define _GROUP_H_
 #include "gdk.h"
 
-extern int CTderive(BAT **B, BAT **H, BAT *ct_hist, BAT *ct_map, BAT *b);
-extern int CTgroup(BAT **B, BAT **H, BAT *b);
+#ifdef WIN32
+#ifndef LIBGROUP
+#define group_export extern __declspec(dllimport)
+#else
+#define group_export extern __declspec(dllexport)
+#endif
+#else
+#define group_export extern
+#endif
+
+group_export int CTderive(BAT **B, BAT **H, BAT *ct_hist, BAT *ct_map, BAT *b);
+group_export int CTgroup(BAT **B, BAT **H, BAT *b);
+
+group_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
+group_export str GRPgroup(int *rethisto, int *retbid, int *bid);
+
+group_export str GRPprelude(void);
+group_export str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize);
+group_export str GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid);
+group_export str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid);
+group_export str GRPrefine(int *retid, int *bid, int *aid);
+group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
 
 #endif /* _GROUP_H_ */
 @c
@@ -255,7 +275,7 @@ grp_new(BAT *b, BAT *h)
 			if (BATcount(h) == BATcount(b)) {
 				ALIGNsetH(h, BATmirror(b));
 			}
-		} else if (BATorder(h) == NULL) {
+		} else if (!h->batRestricted && BATorder(h) == NULL) {
 			BBPreclaim(h);
 			return GDK_FAIL;
 		}
@@ -329,7 +349,7 @@ typedef struct {
 	oid hcur;		/* old group id */
 	BUN link;		/* hash link */
 	oid gid;		/* new group id */
-	int cnt;		/* histogram count */
+	wrd cnt;		/* histogram count */
 } mapentry_t;
 
 typedef struct {
@@ -387,7 +407,7 @@ map2histo(BAT *map)
 		return NULL;
 	}
 	sz = BATcount(map);
-	bn = BATnew(TYPE_oid,TYPE_int,sz);
+	bn = BATnew(TYPE_oid,TYPE_wrd,sz);
 	BATloop(map, p, q) {
 		bunfastins(bn, 
 			&((mapentry_t*)Hloc(map, p))->gid, 
@@ -582,7 +602,7 @@ bits(BUN i)
 
 	/* b->tkey, simply return mirror(0), and hist = project(reverse(bn),1) */
 	if (b->tkey) {
-		int one = 1;
+		wrd one = 1;
 		BAT *v = VIEWcombine(b);
 
 		bn = v;
@@ -590,7 +610,7 @@ bits(BUN i)
 			bn = BATcopy(v, v->htype, v->ttype, FALSE);
 			BBPreclaim(v);
 		}
-		histo = BATconst(BATmirror(bn), TYPE_int, &one);
+		histo = BATconst(BATmirror(bn), TYPE_wrd, &one);
 	} else {
 		bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
@@ -807,7 +827,71 @@ bunins_failed:
 		break;
 	}
 @c
-int
+
+/* partion based sub-order derive */
+int 
+CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto) 
+{
+	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	BAT *histo = BATnew(TYPE_oid, TYPE_wrd, BATcount(b)); 
+	wrd prv=0, *t = (wrd*)Tloc(ohisto, BUNfirst(ohisto));
+	wrd ordered = 1, *e = t + BATcount(ohisto);
+	str msg = NULL;
+
+	if (bn == NULL || histo == NULL) 
+		return -1;
+
+	bn->hseqbase = b->hseqbase;
+	for(;t < e; t++) {
+		BAT *bx = BATslice(b, prv, prv+*t ); 
+		bat nh, nbn;
+
+		prv += *t;
+		/* propcheck slice */
+		if (!BATtordered(bx)) 
+			BATpropcheck(BATmirror(bx), BATPROPS_ALL);
+		if (!BATtordered(bx)) {
+
+			ordered = 0;
+		}
+		if ((msg = GRPgroup(&nh, &nbn, &bx->batCacheid)) == NULL){
+			BAT *nhisto = BATdescriptor(nh);
+			BAT *B = BATdescriptor(nbn);
+			BATins(histo, nhisto, FALSE);
+			BATappend(bn, B, FALSE);
+			BBPreleaseref(nh);
+			BBPreleaseref(nbn);
+		} else {
+			GDKfree(msg);
+			BBPreleaseref(bx->batCacheid);
+			BBPreleaseref(histo->batCacheid);
+			BBPreleaseref(bn->batCacheid);
+			return -1;
+		}
+		BBPreleaseref(bx->batCacheid);
+	}
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
+	if (ordered) {
+		bn->tsorted = ordered;
+		histo->hsorted = b->hsorted;
+		histo->tsorted = 0;
+		BATkey(histo, TRUE);
+	}
+	if (b->hkey)
+		BATkey(bn, TRUE);
+	*res = bn;
+	*reshisto = histo;
+	return 0;
+}
+
+@c
+static int
 derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 {
 	BAT *histo = NULL, *bn = NULL;
@@ -817,6 +901,19 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt, map_T *m)
 	int ht = (synced && BAThdense(b)) ? TYPE_void : TYPE_oid;
 
 	if (!ct_map->tkey) { /* cannot derive more groups */
+		if (!b->tkey && BATcount(b) > 1 && BATtordered(ct_map)&1 && 
+			BAThordered(ct_histo) &&
+	    		ATOMtype(b->htype) == TYPE_oid && 
+	    		b->ttype < TYPE_str) {
+			int ret = 0;
+
+			ret = CTderive_ordered(ct_histo, b, &bn, &histo);
+			if (ret==0) {
+				*H = histo;
+				*M = bn;
+			}
+			return ret?GDK_FAIL:GDK_SUCCEED;
+		}
 		bn = BATnew(ht, TYPE_oid, BATcount(b));
 		if (bn == NULL) {
 			return GDK_FAIL;
@@ -888,9 +985,9 @@ CThistosum(
 )
 {
 	BATiter bi = bat_iterator(b), resi;
-	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
+	BAT *res = BATnew(TYPE_oid, TYPE_wrd, BATcount(b));
 	BUN p, q, qb;
-	int i, *z;
+	wrd i, *z;
 	oid *ot, *oh;
 
 	(void) c;
@@ -900,7 +997,7 @@ CThistosum(
 	resi = bat_iterator(res);
 	BATloop(b, p, q) {
 		oh = (oid *) BUNhloc(bi, p);
-		i = *(int *) BUNtloc(bi, p);
+		i = *(wrd *) BUNtloc(bi, p);
 
 		BUNfndOID(qb, bi, oh);
 		if (qb == BUN_NONE) {
@@ -913,7 +1010,7 @@ CThistosum(
 		if (qb == BUN_NONE) {
 			BUNins(res, ot, &i, FALSE);
 		} else {
-			z = (int *) BUNtloc(resi, qb);
+			z = (wrd *) BUNtloc(resi, qb);
 			*z += i;
 		}
 	}
@@ -931,9 +1028,9 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 	BUN size = BATcount(dom);
 	BUN yy, mask, *hash = NULL;
 	BUN r, p, q;
-	BAT *bn = BATnew(TYPE_oid, TYPE_int, size);
+	BAT *bn = BATnew(TYPE_oid, TYPE_wrd, size);
 	BAT *lnk = BATnew(TYPE_oid, TYPE_void, size);
-	int *hcnt = (int*)Tloc(bn, BUNfirst(bn));
+	wrd *hcnt = (wrd*)Tloc(bn, BUNfirst(bn));
 	oid *hcur = (oid*)Hloc(bn, BUNfirst(bn));
 	oid *link = (oid*)Hloc(lnk, BUNfirst(lnk));
 	oid *hdom = (oid*)Hloc(dom, 0);
@@ -1211,16 +1308,6 @@ Wrapping the version 4 xtables code base
 #include "mal_exception.h"
 #include "mal_atom.h"
 
-#ifdef WIN32
-#ifndef LIBGROUP
-#define group_export extern __declspec(dllimport)
-#else
-#define group_export extern __declspec(dllexport)
-#endif
-#else
-#define group_export extern
-#endif
-
 @-
 Recall that we only support void- and oid- typed heads.
 This is captured as a runtime check in the implementation.
@@ -1228,7 +1315,6 @@ This is captured as a runtime check in the implementation.
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
 		throw(MAL, "group.@2", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 @c
-group_export str GRPprelude(void);
 str
 GRPprelude(void)
 {
@@ -1237,7 +1323,6 @@ GRPprelude(void)
 	return MAL_SUCCEED;
 }
 
-group_export str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize);
 str
 GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
 {
@@ -1261,9 +1346,9 @@ BAT *
 CTgroup_@1_ordered(BAT *b, BAT **res) 
 {
 	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-	BAT *histo = BATnew(TYPE_oid, TYPE_int, 1024); 
+	BAT *histo = BATnew(TYPE_oid, TYPE_wrd, 1024); 
 	@1 *t = (@1*)Tloc(b, BUNfirst(b)), *e = t + BATcount(b), cur;
-	int cnt = 0;
+	wrd cnt = 0;
 	oid *rt = (oid*)Tloc(bn, BUNfirst(bn)), curid;
 
 	if (bn == NULL || histo == NULL) 
@@ -1326,8 +1411,6 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 @:group_ordered(int)@
 @:group_ordered(lng)@
 
-group_export str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng);
-group_export str GRPgroup(int *rethisto, int *retbid, int *bid);
 str
 GRPgroup(int *rethisto, int *retbid, int *bid)
 {
@@ -1423,7 +1506,6 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	return MAL_SUCCEED;
 }
 
-group_export str GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid);
 str
 GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 {
@@ -1462,7 +1544,6 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	return MAL_SUCCEED;
 }
 
-group_export str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid);
 str
 GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 {
@@ -1495,7 +1576,6 @@ GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 	return MAL_SUCCEED;
 }
 
-group_export str GRPrefine(int *retid, int *bid, int *aid);
 str
 GRPrefine(int *retid, int *bid, int *aid)
 {
@@ -1521,7 +1601,6 @@ GRPrefine(int *retid, int *bid, int *aid)
 	return MAL_SUCCEED;
 }
 
-group_export str GRPrefine_rev(int *retid, int *bid, int *aid);
 str
 GRPrefine_rev(int *retid, int *bid, int *aid)
 {
@@ -1982,7 +2061,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	BAT *bn = NULL;
 	BATiter ei, bi;
 	BUN off, idx = 0;
-	int *cnt;
+	wrd *cnt;
 	@1 zero = (@1) 0;
 	dbl *sum ;
 	dbl *sumsquares ;
@@ -2010,7 +2089,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
-	cnt = (int*) GDKmalloc(nElements*sizeof(int));
+	cnt = (wrd*) GDKmalloc(nElements*sizeof(wrd));
 	if (cnt == NULL) {
 		BBPreclaim(bn);
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
@@ -2039,7 +2118,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	}
 
 	/* init sums and counts to zero */
-	memset(cnt, 0, nElements*sizeof(int));
+	memset(cnt, 0, nElements*sizeof(wrd));
 	memset(sum, 0, nElements*sizeof(dbl));
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
@@ -2053,10 +2132,10 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 			idx = r-off;
 		}
 
-		if (cnt[idx] != int_nil) {
+		if (cnt[idx] != wrd_nil) {
 			@1 v = *(@1*) BUNtloc(bi,p);
 			if (v == @1_nil) {
-				cnt[idx] = int_nil;
+				cnt[idx] = wrd_nil;
 			} else {
 				cnt[idx]++;
 				sum[idx] += v;
@@ -2070,7 +2149,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	   squares */
 	idx = 0;
 	BATloop(e, p, q) {
-		if (cnt[idx] == int_nil) {
+		if (cnt[idx] == wrd_nil) {
 			@1 _nil = @1_nil;
 			if (BUNfastins(bn, BUNhead(ei,p), (ptr)&_nil) == NULL) {
 				err = 1;
