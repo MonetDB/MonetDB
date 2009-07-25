@@ -57,18 +57,19 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_prelude.h"
 #include "opt_support.h"
 
-/* #define _DEBUG_OPT_MITOSIS*/
-#define PARTITION_THRESHOLD (BUN) GDKnr_threads
-
 @c
 #include "mal_config.h"
 #include "opt_mitosis.h"
 #include "mal_interpreter.h"
 
+/* #define _DEBUG_OPT_MITOSIS*/
+#define PARTITION_THRESHOLD (BUN) GDKnr_threads
+
 static int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, k, limit, estimate=0, tpe, pieces=1;
+	str schema=0, table=0;
 	VarRecord low,hgh;
 	oid slice;
 	BUN r=0,rowcnt=0;	/* table should be sizeable to consider parallel execution*/
@@ -116,11 +117,11 @@ For the time being we just go for small pieces compared to memory
 spread evenly over the threads and the common type.
 @c
 	r= (BUN) (GDKmem_inuse() /2/sizeof(oid)/GDKnr_threads); /* how much fits  */
-	if (rowcnt >r )
+	if (rowcnt > r )
 		pieces = (int) (rowcnt /r+1);
-	if (pieces < GDKnr_threads && rowcnt >PARTITION_THRESHOLD)
+	if (pieces < GDKnr_threads && rowcnt > PARTITION_THRESHOLD)
 		pieces = GDKnr_threads;
-	if (pieces >256)
+	if (pieces > 256)
 		pieces = 256; /* cut off potential plan explosion */
 
 	if ( (size_t) rowcnt < (size_t) pieces || pieces <=1)
@@ -140,13 +141,28 @@ spread evenly over the threads and the common type.
 	newMalBlkStmt(mb,mb->ssize + 2* estimate);
 	estimate=0;
 
+	schema = getVarConstant(mb, getArg(target,1)).val.sval;
+	table = getVarConstant(mb, getArg(target,2)).val.sval;
 	for(i=0;i<limit;i++){
 		p= old[i];
-		if ( p != target){
+
+		if (getModuleId(p)!= sqlRef || 
+			!(getFunctionId(p)==bindRef ||
+			  getFunctionId(p)==bindidxRef )){
 			pushInstruction(mb,p);
 			continue;
 		}
-
+		/* don't split insert or update BATs */
+		if (getVarConstant(mb, getArg(p,4)).val.ival != 0 ){
+			pushInstruction(mb,p);
+			continue;
+		}
+		if (strcmp(schema, getVarConstant(mb, getArg(p,1)).val.sval) ||
+		    strcmp(table, getVarConstant(mb, getArg(p,2)).val.sval)){
+			pushInstruction(mb,p);
+			continue;
+		}
+		
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
 		low.value.val.oval= 0;
