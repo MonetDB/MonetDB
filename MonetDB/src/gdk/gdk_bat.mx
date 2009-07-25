@@ -694,12 +694,18 @@ int HEAPshare(Heap *dst, Heap *src, int copy_on_write) {
 }
 
 static int
-heapcopy(Heap *dst, Heap *src, int *remap)
+heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src, int *remap)
 {
 	if (*remap && HEAPshare(dst, src, *remap) == 0) {
 		return 0; /* use a shared memory heap */
 	}
 	*remap = 0;
+	if (src->filename && src->newstorage != STORE_MEM) {
+		str nme = BBP_physical(bn->batCacheid);
+
+		dst->filename = (str) GDKmalloc(strlen(nme) + 12);
+		GDKfilepath(dst->filename, NULL, nme, ext);
+	}
 	return HEAPcopy(dst, src);
 }
 
@@ -827,10 +833,10 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			memset(&hhp, 0, sizeof(Heap));
 			memset(&thp, 0, sizeof(Heap));
 
-			if ((b->htype && heapcopy(&bhhp, &b->H->heap, &hremap) < 0)||
-			    (b->ttype && heapcopy(&bthp, &b->T->heap, &tremap) < 0)||
-			    (bn->H->vheap && heapcopy(&hhp, b->H->vheap, &hvremap) < 0) ||
-			    (bn->T->vheap && heapcopy(&thp, b->T->vheap, &tvremap) < 0)) {
+			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap, &hremap) < 0)||
+			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap, &tremap) < 0)||
+			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap, &hvremap) < 0) ||
+			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap, &tvremap) < 0)) {
 				HEAPfree(&thp);
 				HEAPfree(&hhp);
 				HEAPfree(&bthp);
