@@ -700,7 +700,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
 %token RETURN 
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE CLUSTERED VALUES VIEW WHERE WITH
+%token ALTER ADD TABLE COLUMN TO UNIQUE CLUSTERED CLUSTER VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET
@@ -1354,6 +1354,13 @@ index_def:
 	  append_int(l, $2);
 	  append_list(l, $6);
 	  append_list(l, $8);
+	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
+  | create CLUSTER ident ON qname '(' ident_commalist ')'
+	{ dlist *l = L();
+	  append_string(l, $3);
+	  append_int(l, isclustered);
+	  append_list(l, $5);
+	  append_list(l, $7);
 	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
   ;
 
@@ -2302,6 +2309,7 @@ drop_statement:
  |  DROP ROLE qname	  { $$ = _symbol_create_list( SQL_DROP_ROLE, $3 ); }
  |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
+ |  DROP CLUSTER qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
  |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
  ;
 
@@ -3594,7 +3602,7 @@ aggr_ref:
  |  AGGR '(' DISTINCT case_scalar_exp ')'
 		{ dlist *l = L();
   		  append_string(l, $1);
-  		  append_int(l, FALSE);
+  		  append_int(l, TRUE);
   		  append_symbol(l, $4);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  AGGR '(' ALL case_scalar_exp ')'

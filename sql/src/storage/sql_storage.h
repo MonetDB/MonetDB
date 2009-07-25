@@ -106,9 +106,11 @@ typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
 /*
 -- count number of rows in column (excluding the deletes)
+-- check for sortedness
  */
 typedef size_t (*count_col_fptr) (sql_column *c);
 typedef size_t (*count_idx_fptr) (sql_idx *i);
+typedef int (*sorted_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -178,6 +180,7 @@ typedef struct store_functions {
 
 	count_col_fptr count_col;
 	count_idx_fptr count_idx;
+	sorted_col_fptr sorted_col;
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
@@ -313,6 +316,8 @@ extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnu
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt);
+extern sql_key * sql_trans_key_done(sql_trans *tr, sql_key *k);
+
 extern sql_fkey *sql_trans_create_fkey(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
 extern sql_key *sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options such as trunc */ );
 extern sql_fkey *sql_trans_create_fkc(sql_trans *tr, sql_fkey *k, sql_column *c /*, extra options such as trunc */ );

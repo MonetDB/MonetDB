@@ -124,6 +124,8 @@ idx_destroy(sql_idx * i)
 	if (isTable(i->t))
 		store_funcs.destroy_idx(NULL, i);
 	base_destroy(&i->base);
+	if (i->type == isclustered && i->t->cluster == i)
+		i->t->cluster = NULL;
 	_DELETE(i);
 }
 
@@ -369,7 +371,7 @@ load_idxcolumn(sql_trans *tr, sql_idx * i, ssize_t rid)
 	kc->trunc = *(int *)v;			_DELETE(v);
 	list_append(i->columns, kc);
 	assert(kc->c);
-	if (i->type == hash_idx) 
+	if (hash_index(i->type)) 
 		kc->c->unique = 1;
 }
 
@@ -397,6 +399,11 @@ load_idx(sql_trans *tr, sql_table *t, ssize_t rid)
 
 	if (isTable(ni->t) && idx_is_column(ni->type))
 		store_funcs.create_idx(tr, ni);
+
+	if (ni->type == isclustered)
+		t->cluster = ni;
+	/* TODO get clustered info from disk (for now we assume cluster is )*/
+	t->clustered = 1;
 
 	kc_id = find_sql_column(keycolumns, "id");
 	kc_nr = find_sql_column(keycolumns, "nr");
@@ -561,6 +568,7 @@ load_table(sql_trans *tr, sql_schema *s, ssize_t rid)
 	t->cleared = 0;
 
 	t->pkey = NULL;
+	t->cluster = NULL;
 	t->s = s;
 	t->sz = COLSIZE;
 
@@ -1102,6 +1110,7 @@ create_sql_table(char *name, sht type, bit system, int persistence, int commit_a
 	cs_init(&t->keys, (fdestroy) &key_destroy);
 	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 	t->pkey = NULL;
+	t->cluster = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
 	t->s = NULL;
@@ -1585,6 +1594,11 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	if (isNew(i) && flag == TR_NEW && tr->parent == gtrans) 
 		i->base.flag = TR_OLD;
 
+	if (ni->type == isclustered) {
+		ni->t->cluster = ni;
+		ni->t->clustered = i->t->clustered;
+	}
+
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
 
@@ -1669,6 +1683,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 
 	t->pkey = NULL;
+	t->cluster = NULL;
 
 	if (isTable(ot)) 
 		store_funcs.dup_del(tr, ot, t);
@@ -2170,6 +2185,8 @@ rollforward_drop_idx(sql_trans *tr, sql_idx * i, int mode)
 	/* remove idx from schema */
 	if (mode == R_APPLY)
 		list_remove_data(i->t->s->idxs, i);
+	if (i->t->cluster == i)
+		i->t->cluster = NULL;
 	return ok;
 }
 
@@ -2928,6 +2945,8 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 
 	/* remove idx from schema and table*/
 	list_remove_data(i->t->s->idxs, i);
+	if (i->t->cluster == i)
+		i->t->cluster = NULL;
 	sql_trans_drop_dependencies(tr, i->base.id);
 	if (isGlobalTable(i->t)) 
 		tr->schema_updates ++;
@@ -3613,8 +3632,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, char *name, key_type kt)
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
-	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx);
-	nk->idx->key = nk;
+	nk->idx = NULL;
 
 	uk = (sql_ukey *) nk;
 
@@ -3712,6 +3730,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options s
 	return k;
 }
 
+
 sql_fkey *
 sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c /*, extra options such as trunc */ )
 {
@@ -3736,6 +3755,76 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c /*, extra option
 	if (isGlobalTable(k->t)) 
 		tr->schema_updates ++;
 	return (sql_fkey*)k;
+}
+
+static sql_idx *
+table_has_idx( sql_table *t, list *keycols)
+{
+	node *n, *m, *o;
+	char *found = NULL;
+	int len = list_length(keycols);
+	
+	found = NEW_ARRAY(char, len);
+	if (t->idxs.set) for ( n = t->idxs.set->h; n; n = n->next ) {
+		sql_idx *i = n->data;
+		int nr;
+		
+		memset(found, 0, len);
+		for (m = keycols->h, nr = 0; m; m = m->next, nr++ ) {
+			sql_kc *kc = m->data;
+
+			for (o = i->columns->h; o; o = o->next) {
+				sql_kc *ikc = o->data;
+
+				if (kc->c == ikc->c) {
+					found[nr] = 1;
+					break;
+				}
+			}
+		}
+		for(nr = 0; nr<len; nr++)
+			if (!found[nr])
+				break;
+		if (nr == len) {
+			_DELETE(found);
+			return i;
+		}
+	}
+	if (found)
+		_DELETE(found);
+	return NULL;
+}
+
+sql_key *
+sql_trans_key_done(sql_trans *tr, sql_key *k) 
+{
+	node *n;
+	sql_idx *i;
+
+	/* for now we only mark the end of unique/primary key definitions */ 
+	if (k->type == fkey) 
+		return k;
+
+	if ((i = table_has_idx(k->t, k->columns)) != NULL) {
+		/* use available hash, or use the order */
+		if (hash_index(i->type)) {
+			k->idx = i;
+			if (!k->idx->key)
+				k->idx->key = k;
+		}
+		return k;
+	}
+
+	/* we need to create an index */
+	k->idx = sql_trans_create_idx(tr, k->t, k->base.name, hash_idx);
+	k->idx->key = k;
+
+	for (n=k->columns->h; n; n = n->next) {
+		sql_kc *kc = n->data;
+
+		sql_trans_create_ic(tr, k->idx, kc->c);
+	}
+	return k;
 }
 
 void
@@ -3795,6 +3884,13 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 	ni->t = t;
 	ni->key = NULL;
 
+	if (ni->type == isclustered) {
+		t->cluster= ni;
+		if (store_funcs.count_col(t->columns.set->h->data) == 0) 
+			t->clustered = 1;
+		/* TODO save clustered on disk */
+	}
+
 	cs_add(&t->idxs, ni, TR_NEW);
 	list_append(t->s->idxs, ni);
 
@@ -3820,13 +3916,26 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 	ic->trunc = 0;
 	list_append(i->columns, ic);
 
-	if (i->type == hash_idx && list_length(i->columns) > 1) {
+
+	if (hash_index(i->type) && list_length(i->columns) > 1) {
 		/* Correct the unique flag of the keys first column */
 		c->unique = list_length(i->columns); 
 		if (c->unique == 2) {
 			sql_kc *ic1 = i->columns->h->data;
 			ic1->c->unique ++;
 		}
+	}
+
+	/* should we switch to oph_idx ? */
+	if (0 && i->type == hash_idx && list_length(i->columns) == 1 &&
+	    store_funcs.count_col(ic->c) && store_funcs.sorted_col(tr, ic->c)) {
+		sql_table *sysidx = find_sql_table(syss, "idxs");
+		sql_column *sysidxid = find_sql_column(sysidx, "id");
+		sql_column *sysidxtype = find_sql_column(sysidx, "type");
+		ssize_t rid = table_funcs.column_find_row(tr, sysidxid, &i->base.id, NULL);
+	
+		i->type = oph_idx;
+		table_funcs.column_update_value(tr, sysidxtype, rid, &i->type);
 	}
 
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);

@@ -1062,8 +1062,10 @@ semantic(mvc *sql, symbol *s)
 		break;
 	}
 
-	case SQL_PREP:
 	case SQL_MULSTMT:
+	case SQL_PREP:
+		assert(0);
+
 	{
 		dnode *d;
 		list *l = create_stmt_list();

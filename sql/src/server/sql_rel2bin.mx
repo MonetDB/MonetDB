@@ -212,7 +212,6 @@ head_column(stmt *st)
 	case st_output:
 	case st_affected_rows:
 
-	case st_import:
 	case st_export:
 
 	case st_exception:
@@ -979,7 +978,7 @@ use_ukey( mvc *sql, list *l )
 		sql_idx *i;
 	   	for(in = t->idxs.set->h; in; in = in->next){
  			i = in->data;
-			if (i->type == hash_idx && 
+			if (hash_index(i->type) && 
 			    list_length(l) == list_length(i->columns)) {
 				node *icn;
 
@@ -1027,7 +1026,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_basetable:
 
 	case st_atom:
-	case st_import:
 	case st_export:
 	case st_var:
 	case st_table_clear:

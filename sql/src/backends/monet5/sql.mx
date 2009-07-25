@@ -254,9 +254,47 @@ address mvc_import_table_wrap
 comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
+function copy_from(
+	sname:str,
+	tname:str,
+	tsep:str,
+	rsep:str,
+	ssep:str,
+	ns:str,
+	fname:str,
+	nr:lng,
+	offset:lng
+):bat[:str,:bat];
+	cs := str.codeset();
+	f  := str.iconv(fname, "UTF-8", cs);
+	s  := streams.openRead(f);
+	bs := bstream.create(s, 1048576);
+
+	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	bstream.destroy(bs);
+	streams.close(s);
+	return res;
+end copy_from;
+
+function copyfrom(
+	sname:str,
+	tname:str,
+	tsep:str,
+	rsep:str,
+	ssep:str,
+	ns:str,
+	nr:lng,
+	offset:lng
+):bat[:str,:bat];
+	in := io.stdin();
+	res := sql.importTable(in, sname, tname, tsep, rsep, ssep, ns, nr, offset);
+	return res;
+end copyfrom;
+
 pattern importTable{unsafe}( sname:str, tname:str, fname:str... ) :bat[:str,:bat]
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
+
 
 command zero_or_one( col:bat[:any_2,:any_1]) :any_1
 address zero_or_one
@@ -413,14 +451,10 @@ The alternative is to extend modules with an alias.
 The routine below are added to the calc module to
 ease code generation.
 @mal
+pattern calc.hash( v:any ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
 command batcalc.rotate_xor_hash(h:bat[:oid,:wrd], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
-
-pattern calc.hash( v:any ) :wrd address hash_wrap; 
-
-command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd]
-address bathash_wrap 
-comment "calculate a hash value";
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
@@ -502,6 +536,7 @@ command calc.str( v:@1 ) :str
 address SQL@1_2_str
 comment "cast @1 to str";
 @mal
+@:mal_castfromstr(wrd)@
 @:mal_castfromstr(flt)@
 @:mal_castfromstr(dbl)@
 @:mal_castfromstr(timestamp)@
@@ -702,7 +737,7 @@ function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat
 	m := aggr.max(e);
 	c0 := calc.isnil(m);
 	c0 := calc.not(c0);
-	c1 := calc.>(m,1);
+	c1 := calc.>(m,1:wrd);
 	c1 := calc.and(c0,c1);
 	ms := calc.str(m); 
 	msg := str.+("zero_or_one: cardinality violation (", ms);
@@ -856,6 +891,7 @@ include sql_bpm;
 #include <streams.h>
 #include <mtime.h>
 #include <blob.h>
+#include <mkey.h>
 #include <str.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
@@ -935,8 +971,6 @@ sql5_export str mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr 
 sql5_export str mvc_export_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str bathash_wrap(bat *res, bat *bid );
-sql5_export str hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 sql5_export str setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -989,6 +1023,7 @@ sql5_export str SQL@1_2_str( str *res, @1 *val );
 @:cast_export(sht,shtToStr,sht)@
 @:cast_export(int,intToStr,int)@
 @:cast_export(lng,lngToStr,lng)@
+@:cast_export(wrd,wrdToStr,wrd)@
 @:cast_export(flt,fltToStr,flt)@
 @:cast_export(dbl,dblToStr,dbl)@
 @:cast_export(timestamp,timestamp_tostr,timestamp)@
@@ -1161,12 +1196,36 @@ from the statement cache. Compile and optimize it for later
 consumption, e.g. display
 @c
 stmt *
+sql_symbols2stmt(mvc *c, symbol *s) 
+{
+	dnode *d;
+	list *l = create_stmt_list();
+
+	for (d = s->data.lval->h; d; d = d->next) {
+		symbol *sym = d->data.sym;
+		stmt *st = sql_symbol2stmt(c, sym);
+
+		if (!st) {
+			list_destroy(l);
+			return NULL;
+		}
+		list_append(l, st);
+	}
+	return stmt_list(l);
+}
+
+stmt *
 sql_symbol2stmt(mvc *c, symbol *sym)
 {
 	stmt *s = NULL;
-	int status = c->session->status;
-	sql_rel *r = rel_semantic(c, sym);
+	int status;
+	sql_rel *r;
 
+	if (sym->token == SQL_MULSTMT) 
+		return sql_symbols2stmt(c, sym);
+
+	status = c->session->status;
+	r = rel_semantic(c, sym);
 	if (!r) {
 		if (c->errstr[0]) {
 			return NULL;
@@ -2575,115 +2634,6 @@ not_unique_oids(bat *ret, bat* bid)
 	return MAL_SUCCEED;
 }
 
-static str
-voidbathash(bat *res, BAT *b )
-{
-	BAT *dst;
-	BUN (*hash)(ptr v); 
-	wrd *r, *f;
-	BATiter bi, dsti;
-
-	dst = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
-	if (!dst) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "bathash", "can not create bat");
-	}
-	BATseqbase(dst, b->hseqbase);
-
-	dsti = bat_iterator(dst);
-	bi = bat_iterator(b);
- 	r = (wrd*)BUNtail(dsti, BUNfirst(dst));
-	f = r;
-	hash = BATatoms[b->ttype].atomHash;
-	if (ATOMvarsized(b->ttype)) { /* ugh */
-		BUN p,q;
-
-		BATloop(b,p,q) {
-			ptr v = BUNtail(bi,p);
-			*r++ = hash(v);
-		}
-	} else {
-		char *v = BUNtail(bi,BUNfirst(b)), *e = BUNtail(bi,BUNlast(b));
-		int sz = Tsize(b);
-
-		for(; v < e; v+=sz) 
-			*r++ = hash(v);
-	}
-	BATsetcount(dst, (BUN) (r-f));
-	BATkey(BATmirror(dst), 0);
-	dst->tsorted = 0;
-
-	BBPkeepref( *res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-bathash_wrap(bat *res, bat *bid )
-{
-	BAT *b, *dst;
-	BUN (*hash)(ptr v); 
-	BATiter bi;
-
-	if( (b = BATdescriptor(*bid)) == NULL ){
-		throw(SQL, "bathash", "Cannot access descriptor");
-	}
-
-	if (b->htype == TYPE_void) 
-		return voidbathash(res, b);
-
-	dst= BATnew(TYPE_oid, TYPE_wrd, BATcount(b));
-	if (!dst) {
-		BBPunfix(b->batCacheid);
-		throw(SQL, "bathash", "can not create bat");
-	}
-
-	hash = BATatoms[b->ttype].atomHash;
-	bi = bat_iterator(b);
-	if (ATOMvarsized(b->ttype)) { /* ugh */
-		BUN p,q;
-
-		BATloop(b,p,q){
-			ptr v = BUNtail(bi,p);
-			wrd h = hash(v);
-			BUNins(dst, BUNhead(bi,p), &h, FALSE);
-		}
-	} else {
-		BUN p,q;
-
-		BATloop(b,p,q){
-			ptr v = BUNtail(bi,p);
-			wrd h = hash(v);
-			BUNins(dst, BUNhead(bi,p), &h, FALSE);
-		}
-	}
-
-	BBPkeepref( *res = dst->batCacheid);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-
-str
-hash_wrap(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
-{
-	ptr v;
-	wrd *res, tpe = getArgType(m,p,1);
-
-	(void) cntxt;
-	v = getArgReference(s,p,1);
-
-	if (tpe == TYPE_bat)
-		return bathash_wrap((int*)getArgReference(s,p,0), (int*)v); 
-
-	res = (wrd *) getArgReference(s,p,0);
-	if (ATOMextern(tpe)) /* ugh */
-		*res = ATOMhash(tpe, *(char**)v);
-	else
-		*res = ATOMhash(tpe, v);
-	return NULL;
-}
-
 lng scales[20] = {
 	LL_CONSTANT(0),
 	LL_CONSTANT(10),
@@ -2927,6 +2877,12 @@ str
 @:fround(flt)@
 @:fround(dbl)@
 
+#if SIZEOF_WRD == SIZEOF_INT
+#define wrdToStr(sptr, lptr, p) intToStr(sptr, lptr, (int*)p)
+#else
+#define wrdToStr(sptr, lptr, p) lngToStr(sptr, lptr, (lng*)p)
+#endif
+
 @= cast
 str
 str_2_@1( @3 *res, str *val )
@@ -2997,6 +2953,7 @@ batstr_2_@1( int *res, int *bid )
 @:cast(sht,shtToStr,sht, *res = *(sht*)p)@
 @:cast(int,intToStr,int, *res = *(int*)p)@
 @:cast(lng,lngToStr,lng, *res = *(lng*)p)@
+@:cast(wrd,wrdToStr,wrd, *res = *(wrd*)p)@
 @:cast(flt,fltToStr,flt, *res = *(flt*)p)@
 @:cast(dbl,dblToStr,dbl, *res = *(dbl*)p)@
 @:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p)@
@@ -4128,14 +4085,14 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		if (first) {
 			bat psum;
-			unsigned int bits = 10;
+			unsigned int bits = 10, off = 0;
 			first = 0;
 			b = store_funcs.bind_col(tr, c, 0);
-			msg = voidbathash(&hid, b);
+			msg = MKEYbathash(&hid, &b->batCacheid);
 			BBPreleaseref(b->batCacheid);
 			if (msg)
 				return msg;
-			msg = CLS_create(&psum, &mid, &hid, &bits);
+			msg = CLS_create_wrd(&psum, &mid, &hid, &bits, &off);
 			BBPdecref(hid, TRUE);
 			BBPdecref(psum, TRUE);
 			if (msg)

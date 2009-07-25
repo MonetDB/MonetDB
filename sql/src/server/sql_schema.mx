@@ -843,15 +843,18 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
 			}
 		}
-#if 0
+#if 1
 		/* now we need to create the cluster table */
-		if (!idx_is_column(itype)) {
+		if (!idx_is_column(itype) && itype == clustered) {
+			list *sl;
 			char buf[BUFSIZ];
 			int l;
 			node *n;
 			sql_kc *ic = NULL;
 			sql_table *t = mvc_create_cluster(sql, s, i->base.name, 1, SQL_PERSIST, CA_COMMIT, 0); 
+			stmt *s;
 
+			/* TODO create isclustered index */
 			if (!t) 
 				return sql_error(sql, 02, "CREATE INDEX: cannot create cluster table '%s'", iname);
 			for( n = i->columns->h; n; n = n->next) {
@@ -868,17 +871,32 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 				l += snprintf(buf+l, BUFSIZ-l, "ins.%s, ", ic->c->base.name);
 			}
 			l += snprintf(buf+l, BUFSIZ-l, "rowid(ins.%s, '%s', '%s'));", ic->c->base.name, ic->c->t->s->base.name, ic->c->t->base.name);
-
-			l += snprintf(buf+l, BUFSIZ-l, "create trigger upd_%s before update on %s referencing old as tab new as upd for each row update %s ", t->base.name, i->t->base.name, t->base.name);
+			sl = create_stmt_list();
+			s = sql_parse(sql, _strdup(buf), m_normal);
+			if (!s) goto error;
+			list_append(sl, s);
+	
+			l = 0;
+			l += snprintf(buf+l, BUFSIZ-l, "create trigger upd_%s before update on %s referencing old as tab new as upd for each row update %s set ", t->base.name, i->t->base.name, t->base.name);
 			for( n = i->columns->h; n; n = n->next) {
 				ic = n->data;
-				l += snprintf(buf+l, BUFSIZ-l, "set %s = upd.%s%c, ", ic->c->base.name, ic->c->base.name, (n->next)?',':' ');
+				l += snprintf(buf+l, BUFSIZ-l, "%s = upd.%s%c", ic->c->base.name, ic->c->base.name, (n->next)?',':' ');
 			}
 			l += snprintf(buf+l, BUFSIZ-l, "where upd.NID = %s.NID;", t->base.name);
+			s = sql_parse(sql, _strdup(buf), m_normal);
+			if (!s) goto error;
+			list_append(sl, s);
 
+			l = 0;
 			l += snprintf(buf+l, BUFSIZ-l, "create trigger del_%s before delete on %s referencing old as del for each row delete from %s ", t->base.name, i->t->base.name, t->base.name);
 			l += snprintf(buf+l, BUFSIZ-l, "where del.NID = %s.NID;", t->base.name);
-			return stmt_sql(_strdup(buf));
+			s = sql_parse(sql, _strdup(buf), m_normal);
+			if (!s) goto error;
+			list_append(sl, s);
+			return stmt_list(sl);
+error:
+			list_destroy(sl);
+			return NULL;
 		}
 #endif
 		return stmt_none();
@@ -992,21 +1010,21 @@ drop_role(mvc *sql, dlist *qname)
 }
 
 static stmt *
-sql_update_add_idx(mvc *sql, sql_table *t, sql_idx * idx)
+sql_update_add_idx(mvc *sql, sql_table *t, list *cols)
 {
 	list *exps;
-	sql_kc *ic = idx->columns->h->data;
+	sql_kc *kc = cols->h->data;
 	sql_rel *updates, *update;
 
  	exps = new_exp_list();
 	exps = append(exps, 
 		exp_column(t->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 	exps = append(exps, 
-		exp_column(t->base.name, ic->c->base.name, &ic->c->type, CARD_MULTI, 0, 1 ));
+		exp_column(t->base.name, kc->c->base.name, &kc->c->type, CARD_MULTI, 0, 1 ));
 	updates = rel_project(rel_basetable(t, t->base.name), exps);
  	exps = new_exp_list();
 	exps = append(exps, 
-		exp_column(t->base.name, ic->c->base.name, &ic->c->type, CARD_MULTI, 0, 1 ));
+		exp_column(t->base.name, kc->c->base.name, &kc->c->type, CARD_MULTI, 0, 1 ));
 	update = rel_update(t, updates, exps);
 	update = rel_optimizer(sql, update);
 	return rel_bin(sql, update);
@@ -1041,9 +1059,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				k = mvc_create_ukey(sql, t, name, kt);
 
 				mvc_create_kc(sql, k, cs);
+				mvc_create_ukey_done(sql, k);
 				res = SQL_OK;
-				if (alter) {
-					stmt *s = sql_update_add_idx(sql, t, k->idx);
+				if (alter && k->idx) {
+					stmt *s = sql_update_add_idx(sql, t, k->columns);
 					if (!(*sl))
 						*sl = create_stmt_list();
 					list_append(*sl, s);
@@ -1093,7 +1112,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				mvc_create_fkc(sql, fk, cs);
 				res = SQL_OK;
 				if (alter) {
-					stmt *s = sql_update_add_idx(sql, t, ((sql_key *) fk)->idx);
+					stmt *s = sql_update_add_idx(sql, t, ((sql_key*)fk)->columns);
 					if (!(*sl))
 						*sl = create_stmt_list();
 					list_append(*sl, s);
@@ -1421,7 +1440,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 		}
 		if (alter) {
-			res = sql_update_add_idx(sql, t, ((sql_key *) fk)->idx);
+			res = sql_update_add_idx(sql, t, ((sql_key*)fk)->columns);
 		} else {
 			res = stmt_none();
 		}
@@ -1475,8 +1494,9 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 				} 
 				(void) mvc_create_kc(sql, k, c);
 			}
-			if (alter) {
-				res = sql_update_add_idx(sql, t, k->idx);
+			mvc_create_ukey_done(sql, k);
+			if (alter && k->idx) {
+				res = sql_update_add_idx(sql, t, k->columns);
 				list_append(l, res);
 				res = stmt_list(l);
 			} else {
@@ -1976,7 +1996,7 @@ schemas(mvc *sql, symbol *s)
 	stmt *ret = NULL;
 
 	/* TODO everything should be done via the backend language */ 
-	if (!QUERY_MODE(sql->emode))
+	if (!QUERY_MODE(sql->emode) && s->token != SQL_ALTER_TABLE)
 		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
 
 	switch (s->token) {

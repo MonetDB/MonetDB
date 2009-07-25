@@ -448,12 +448,12 @@ find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
 	   	for(in = l->idxs.set->h; in; in = in->next){
 	    		sql_idx *li = in->data;
 			if (li->type == join_idx) {
-		        	sql_idx *ri = ((sql_fkey*)li->key)->rkey->k.idx;
+		        	sql_key *rk = &((sql_fkey*)li->key)->rkey->k;
 				fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
-              			if (ri->t == r && 
+              			if (rk->t == r && 
 				    list_match(lcols, li->columns, cmp) == 0 &&
-				    list_match(rcols, ri->columns, cmp) == 0) {
+				    list_match(rcols, rk->columns, cmp) == 0) {
 					return li;
 				}
 			}
@@ -2437,6 +2437,7 @@ index_exp(sql_exp *e, sql_idx *i)
 	if (e->type == e_cmp && e->flag != cmp_or) {
 		switch(i->type) {
 		case hash_idx:
+		case oph_idx:
 			if (e->flag == cmp_equal)
 				return 0;
 		case join_idx:

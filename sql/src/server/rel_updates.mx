@@ -83,6 +83,43 @@ rel_insert(sql_table *t, sql_rel *inserts)
 {
 	sql_rel * r = rel_create();
 
+	if (t->clustered) /* needs a way to propagate ! */
+		t->clustered = 0;
+	r->op = op_insert;
+	r->l = t;
+	r->r = inserts;
+	return r;
+}
+
+static sql_rel *
+rel_insert_cluster(mvc *sql, sql_table *t, sql_rel *inserts)
+{
+	sql_rel * r = rel_create();
+
+	if (t->cluster) {
+		/* order inserts on cluster columns */
+		list *obe = new_exp_list();
+		node *n, *m;
+
+		for(n=t->cluster->columns->h; n; n = n->next) {
+			sql_exp *oe, *e;
+			sql_kc *c = n->data;
+			int nr;
+
+			nr = c->c->colnr;
+			for(m=inserts->exps->h; m && nr; m = m->next) 
+				nr--;
+			if (nr || !m) {
+				/* todo error */
+				return NULL;
+			}
+			e = m->data;
+			oe = exp_column(e->rname, e->name, exp_subtype(e), inserts->card, has_nil(e), is_intern(e));
+			set_direction(oe, 1 /* ASC */);
+			list_append(obe, oe);
+		}
+		inserts = rel_orderby(sql, inserts, obe);
+	}
 	r->op = op_insert;
 	r->l = t;
 	r->r = inserts;
@@ -445,13 +482,162 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	}
 }
 
+static sql_rel *
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset)
+{
+	sql_rel *res;
+	list *exps, *args;
+	node *n;
+	sql_subtype tpe;
+	sql_exp *import;
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
+	int len = 7 + (filename?1:0);
+	sql_subfunc *f = sql_find_func(sys, "copyfrom", len); 
+	
+	f->res.comp_type = t;
+ 	sql_find_subtype(&tpe, "varchar", 0, 0);
+	args = append( append( append( append( append( append( new_exp_list(), 
+		exp_atom_str(t->s?t->s->base.name:NULL, &tpe)), 
+		exp_atom_str(t->base.name, &tpe)), 
+		exp_atom_str(tsep, &tpe)), 
+		exp_atom_str(rsep, &tpe)), 
+		exp_atom_str(ssep, &tpe)), 
+		exp_atom_str(ns, &tpe));
+
+	if (filename)
+		append( args, exp_atom_str(filename, &tpe)); 
+	import = exp_op( append( 
+		append( args, exp_atom_lng(nr)), exp_atom_lng(offset)), f); 
+	
+	exps = new_exp_list();
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(exps, exp_column(t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	}
+	res = rel_table_func( import, exps);
+	res = rel_insert_cluster(sql, t, res);
+	return res;
+}
+
+static sql_rel *
+copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, str null_string)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	char *tsep = seps->h->data.sval;
+	char *rsep = seps->h->next->data.sval;
+	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	char *ns = (null_string)?null_string:"null";
+	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
+	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
+
+	assert(!nr_offset || nr_offset->h->type == type_lng);
+	assert(!nr_offset || nr_offset->h->next->type == type_lng);
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t) {
+			sql_subtype *tpe = stack_find_type(sql, tname);
+			if (tpe)
+				t = tpe->comp_type;
+		}
+	}
+	if (!t) {
+		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+	}
+	if (files) {
+		//list *slist = create_stmt_list();
+		dnode *n = files->h;
+
+		for (; n; n = n->next) {
+			char *fname = n->data.sval;
+
+			//list_append(slist, xxx);
+			return rel_import(sql, t, tsep, rsep, ssep, ns, fname, nr, offset);
+		}
+	}
+	return rel_import(sql, t, tsep, rsep, ssep, ns, NULL, nr, offset);
+}
+
+static sql_rel *
+bincopyfrom(mvc *sql, dlist *qname, dlist *files)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	dnode *dn;
+	node *n;
+	sql_rel *res;
+	list *exps, *args;
+	sql_subtype tpe;
+	sql_exp *import;
+	sql_schema *sys = mvc_bind_schema(sql, "sys");
+	sql_subfunc *f = sql_find_func(sys, "copyfrom", 2); 
+
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t) {
+			sql_subtype *tpe = stack_find_type(sql, tname);
+			if (tpe)
+				t = tpe->comp_type;
+		}
+	}
+	if (!t) {
+		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+	}
+	if (files == NULL)
+		return sql_error(sql, 02, "COPY INTO: must specify files");
+
+	f->res.comp_type = t;
+ 	sql_find_subtype(&tpe, "varchar", 0, 0);
+	args = append( append( new_exp_list(), 
+		exp_atom_str(t->s?t->s->base.name:NULL, &tpe)), 
+		exp_atom_str(t->base.name, &tpe));
+
+	for (dn = files->h; dn; dn = dn->next) {
+		append(args, exp_atom_str(dn->data.sval, &tpe)); 
+
+		/* extend the bincopyfrom, with extra args and types */
+	}
+	
+	import = exp_op( args, f); 
+
+	exps = new_exp_list();
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		append(exps, exp_column(t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+	}
+	res = rel_table_func( import, exps);
+	res = rel_insert_cluster(sql, t, res);
+	return res;
+}
+
+
 sql_rel *
 rel_updates(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
 	switch (s->token) {
-/*
 	case SQL_COPYFROM:
 	{
 		dlist *l = s->data.lval;
@@ -460,6 +646,15 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
+	case SQL_BINCOPYFROM:
+	{
+		dlist *l = s->data.lval;
+
+		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval);
+		sql->type = Q_UPDATE;
+	}
+		break;
+/*
 	case SQL_COPYTO:
 	{
 		dlist *l = s->data.lval;

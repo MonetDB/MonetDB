@@ -193,6 +193,7 @@ extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 
 extern sql_key *mvc_create_ukey(mvc *m, sql_table *t, char *kname, key_type kt);
+extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
 extern sql_fkey *mvc_create_fkey(mvc *m, sql_table *t, char *kname, key_type kt, sql_key *rk, int on_delete, int on_update);
 extern sql_key *mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
 extern sql_fkey *mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);
@@ -220,6 +221,7 @@ extern list *mvc_get_connection(mvc *m, int id, char *server, char *db, char *db
 extern void stack_push_var(mvc *sql, char *name, struct stmt *var, sql_subtype *type);
 extern void stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type);
 extern void stack_push_rel_view(mvc *sql, char *name, sql_rel *view);
+extern void stack_set_rel_view(mvc *sql, char *name, sql_rel *rel);
 
 extern void stack_push_frame(mvc *sql, char *name);
 extern void stack_pop_frame(mvc *sql);
@@ -1040,6 +1042,14 @@ mvc_create_ukey(mvc *m, sql_table *t, char *name, key_type kt)
 	return k;
 }
 
+sql_key *
+mvc_create_ukey_done(mvc *m, sql_key *k)
+{
+	k = sql_trans_key_done(m->session->tr, k);
+	m->type = Q_SCHEMA;
+	return k;
+}
+
 sql_fkey *
 mvc_create_fkey(mvc *m, sql_table *t, char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
@@ -1542,6 +1552,23 @@ stack_find_rel_view(mvc *sql, char *name)
 	}
 	return NULL;
 }
+
+void 
+stack_set_rel_view(mvc *sql, char *name, sql_rel *rel)
+{
+	int i;
+
+	for (i = sql->topvars-1; i >= 0; i--) {
+		if (sql->vars[i].s && sql->vars[i].view &&
+			strcmp(sql->vars[i].name, name)==0) {
+			if (sql->vars[i].s)
+				rel_destroy(sql->vars[i].s);
+			sql->vars[i].s = rel_dup(rel);
+			break;
+		}
+	}
+}
+
 
 stmt *
 stack_find_var(mvc *sql, char *name)

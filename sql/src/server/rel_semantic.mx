@@ -35,7 +35,7 @@ extern sql_rel *rel_parse(mvc *m, char *query, char emode);
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );
 extern comp_type range2rcompare( int r );
-extern int compare2range( comp_type l, comp_type r );
+extern int compare2range( int l, int r );
 
 #endif /*_REL_SEMANTIC_H_*/
 
@@ -96,7 +96,7 @@ range2rcompare( int r )
 }
 
 int 
-compare2range( comp_type l, comp_type r )
+compare2range( int l, int r )
 {
 	if (l == cmp_gt) {
 		if (r == cmp_lt)
@@ -213,8 +213,6 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
 
-	case SQL_COPYFROM:
-	case SQL_BINCOPYFROM:
 	case SQL_COPYTO:
 
 	case SQL_CREATE_FUNC:
@@ -230,6 +228,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
+	case SQL_COPYFROM:
+	case SQL_BINCOPYFROM:
 		return rel_updates(sql, s);
 
 	case SQL_WITH:
@@ -243,24 +243,43 @@ rel_semantic(mvc *sql, symbol *s)
 		for (d = d->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			dnode *dn = sym->data.lval->h;
+			dnode *cn = sym->data.lval->h->next;
 			char *name = qname_table(dn->data.lval);
+			sql_rel *rel, *nrel;
+			list *exps = NULL;
 
 			if (frame_find_var(sql, name)) {
 				return sql_error(sql, 01, "Variable '%s' allready declared", name);
 			}
-			rel = rel_semantic(sql, sym);
-			if (!rel) {  
+			/* add all columns */
+			if (cn->data.lval) {
+				dnode *n = cn->data.lval->h;
+
+				exps = new_exp_list();
+				for (; n; n = n->next) {
+					char *cname = n->data.sval;
+					append(exps, exp_column(name, cname, NULL, CARD_MULTI, 0 /* null? */, 0));
+				}
+			}
+			rel = rel_recursive_func(exps);
+			stack_push_rel_view(sql, name, rel);
+
+			nrel = rel_semantic(sql, sym);
+			if (!nrel) {  
 				stack_pop_frame(sql);
 				return NULL;
 			}
-			assert(is_project(rel->op));
-			if (is_project(rel->op) && rel->exps) {
-				node *ne = rel->exps->h;
+			assert(is_project(nrel->op));
+			if (is_project(nrel->op) && nrel->exps) {
+				node *ne = nrel->exps->h;
 
 				for (; ne; ne = ne->next) 
 					exp_setname( ne->data, name, NULL );
 			}
-			stack_push_rel_view(sql, name, rel);
+			if (!rel_is_ref(rel))
+				stack_set_rel_view(sql, name, nrel);
+			else
+				rel_destroy(nrel);
 		}
 		rel = rel_semantic(sql, select);
 		stack_pop_frame(sql);
@@ -268,7 +287,7 @@ rel_semantic(mvc *sql, symbol *s)
 	}
 
 	case SQL_MULSTMT:
-		/*return sql_error(sql, 02, "Not implemented");*/
+		assert(0); /* handled before rel_semantic */
 		return NULL;
 	case SQL_PREP:
 	{

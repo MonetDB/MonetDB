@@ -1295,13 +1295,13 @@ sqltypeinit(void)
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *BIT, *DBL, *WRD, *DEC;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
-	sql_type *ANY;
+	sql_type *ANY, *TABLE;
 	sql_func *f;
 
 	ANY = sql_create_type("ANY", 0, 0, 0, EC_ANY, "any");
 
 	t = ts;
-	*t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
+	TABLE = *t++ = sql_create_type("TABLE", 0, 0, 0, EC_TABLE, "bat");
 
 	BIT = *t++ = sql_create_type("BOOLEAN", 1, 0, 2, EC_BIT, "bit");
 	sql_create_alias(BIT->sqlname, "BOOL");
@@ -1340,7 +1340,6 @@ sqltypeinit(void)
 	floats = t;
 	*t++ = sql_create_type("REAL", 24, SCALE_NOFIX, 2, EC_FLT, "flt");
 	DBL = *t++ = sql_create_type("DOUBLE", 53, SCALE_NOFIX, 2, EC_FLT, "dbl");
-
 
 	dates = t;
 	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 32, 0, 2, EC_INTERVAL, "int");
@@ -1597,6 +1596,8 @@ sqltypeinit(void)
 		sql_create_func3("substring", "str", "substring", *t, INT, INT, *t, SCALE_NONE);
 		sql_create_func("like", "str", "like", *t, *t, BIT, SCALE_NONE);
 		sql_create_func3("like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func("ilike", "str", "ilike", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3("ilike", "str", "ilike", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func("patindex", "pcre", "patindex", *t, *t, INT, SCALE_NONE);
 		sql_create_func("truncate", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func("concat", "calc", "+", *t, *t, *t, DIGITS_ADD);
@@ -1635,6 +1636,37 @@ sqltypeinit(void)
 		sql_create_func_("levenshtein", "txtsim", "levenshtein",
 				 list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), &sres, FALSE, FALSE, SCALE_FIX);
 		}
+	}
+	{ sql_subtype sres;
+	sql_init_subtype(&sres, TABLE, 0, 0);
+	/* copyfrom fname (arg 6) */
+	sql_create_func_("copyfrom", "sql", "copy_from",
+	 	list_append( list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(LNG, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(LNG, 0, 0))), &sres, FALSE, FALSE, SCALE_FIX);
+
+	/* copyfrom stdin */
+	sql_create_func_("copyfrom", "sql", "copyfrom",
+	 	list_append( list_append( list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(LNG, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(LNG, 0, 0))), &sres, FALSE, FALSE, SCALE_FIX);
+
+	/* bincopyfrom */
+	sql_create_func_("copyfrom", "sql", "importTable",
+	 	list_append(list_append(list_create((fdestroy) &arg_destroy), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), 
+			create_arg(NULL, sql_create_subtype(STR, 0, 0))), &sres, FALSE, FALSE, SCALE_FIX);
 	}
 }
 

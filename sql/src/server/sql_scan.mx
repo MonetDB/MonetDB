@@ -239,6 +239,7 @@ scanner_init_keywords(void)
 	keywords_insert("CORRESPONDING", CORRESPONDING);
 	keywords_insert("UNIQUE", UNIQUE);
 	keywords_insert("CLUSTERED", CLUSTERED);
+	keywords_insert("CLUSTER", CLUSTER);
 	keywords_insert("USING", USING);
 	keywords_insert("VALUES", VALUES);
 	keywords_insert("VIEW", VIEW);

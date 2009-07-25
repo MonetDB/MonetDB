@@ -252,11 +252,14 @@ typedef struct sql_kc {
 typedef enum idx_type {
 	hash_idx,
 	join_idx,
-	clustered,
+	clustered,		/* ie has a clustered replica */
+	isclustered,		/* the table is (kept) clustered */
+	oph_idx,		/* order preserving hash */
 	new_idx_types
 } idx_type;
 
-#define idx_is_column(t) 	(t == hash_idx || t == join_idx)
+#define hash_index(t) 		(t == hash_idx || t == oph_idx )
+#define idx_is_column(t) 	(hash_index(t) || t == join_idx)
 
 typedef struct sql_idx {
 	sql_base base;
@@ -390,6 +393,8 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
+	sql_idx	 *cluster;	/* cluster column list */
+	int clustered;		/* is clustered or needs a recluster round */
 	changeset columns;
 	changeset idxs;
 	changeset keys;

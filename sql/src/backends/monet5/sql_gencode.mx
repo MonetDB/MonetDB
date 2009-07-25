@@ -606,9 +606,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					len = getDestVar(q);
 
 					if ((s->flag-1) > 0) {
-						q = newStmt1(mb, algebraRef, "sortTail");
+						q = newStmt2(mb, algebraRef, sortTailRef);
 					} else {
-						q = newStmt1(mb, algebraRef, "sortReverseTail");
+						q = newStmt2(mb, algebraRef, sortReverseTailRef);
 					}
 					q = pushArgument(mb, q, l);
 					l = getDestVar(q);
@@ -652,9 +652,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			if( s->flag > 0){
-				q = newStmt1(mb, algebraRef, "sortTail");
+				q = newStmt2(mb, algebraRef, sortTailRef);
 			} else {
-				q = newStmt1(mb, algebraRef, "sortReverseTail");
+				q = newStmt2(mb, algebraRef, sortReverseTailRef);
 			}
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
@@ -664,9 +664,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
 			if (s->flag) {
-				q = newStmt1(mb, groupRef, "refine");
+				q = newStmt2(mb, groupRef, refineRef);
 			} else {
-				q = newStmt1(mb, groupRef, "refine_reverse");
+				q = newStmt2(mb, groupRef, refine_reverseRef);
 			}
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
@@ -716,11 +716,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					showException(SQL,"sql","Unknown operator");
 				}
 
-				q = newStmt1(mb, batRef, "mirror" );
+				q = newStmt2(mb, batRef, mirrorRef );
 				q = pushArgument(mb, q, l);
 				hml = getDestVar(q);
 
-				q = newStmt1(mb, batRef, "mirror" );
+				q = newStmt2(mb, batRef, mirrorRef );
 				q = pushArgument(mb, q, r);
 				tmr = getDestVar(q);
 
@@ -1065,7 +1065,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			e = findVariable(mb, ext);
 			assert(e >= 0);
 
-			q = newStmt1(mb, batRef, "mirror");
+			q = newStmt2(mb, batRef, mirrorRef);
 			q = pushArgument(mb, q, e);
 			s->nr = getDestVar(q);
 		} break;
@@ -1114,7 +1114,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, l);
 
-				q = newStmt1(mb, batRef, "mirror");
+				q = newStmt2(mb, batRef, mirrorRef);
 				q = pushArgument(mb, q, e);
 				e = getDestVar(q);
 
@@ -1487,91 +1487,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, o2);
 			s->nr = getDestVar(q);
 		} break;
-		case st_import:{
-			char *sname = s->op1.stval->op1.tval->s->base.name;
-			char *tname = s->op1.stval->op1.tval->base.name;
-			node *n = s->op2.lval->h;
-			char *sep = n->data;
-			char *rsep = n->next->data;
-			char *ssep = n->next->next->data;
-			char *ns = n->next->next->next->data;
-			lng nr_rec = *(lng*)(n->next->next->next->next->data);
-			lng offset = *(lng*)(n->next->next->next->next->next->data);
-
-			if (sep == NULL) {
-				/* COPY INTO from binary files */
-				int *fn;
-				int i;
-				node *f;
-
-				fn = (int *) alloca(sizeof(int) * s->op4.lval->cnt);
-				for (f = s->op4.lval->h, i = 0; f; f = f->next, i++)
-					fn[i] = _dumpstmt(sql, mb, (stmt *) f->data);
-				q = newStmt1(mb, sqlRef, "importTable");
-				q = pushStr(mb, q, sname);
-				q = pushStr(mb, q, tname);
-				for (i = 0; i < s->op4.lval->cnt; i++)
-					q = pushArgument(mb, q, fn[i]);
-				s->nr = getDestVar(q);
-			} else if (s->op4.stval) {
-				int file = _dumpstmt(sql, mb, s->op4.stval);
-				int codeset;
-				int bs;
-
-				q = newStmt(mb, "str", "codeset");
-				codeset = getDestVar(q);
-
-				q = newStmt(mb, "str", "iconv");
-				q = pushArgument(mb, q, file);
-				q = pushStr(mb, q, "UTF-8");
-				q = pushArgument(mb, q, codeset);
-				file = getDestVar(q);
-
-				q = newStmt(mb, "streams", "openRead");
-				q = pushArgument(mb, q, file);
-				file = getDestVar(q);
-
-				q = newStmt(mb, "bstream", "create");
-				q = pushArgument(mb, q, file);
-				q = pushInt(mb, q, 1024*1024);
-				bs = getDestVar(q);
-
-				q = newStmt1(mb, sqlRef, "importTable");
-				q = pushArgument(mb, q, bs);
-				q = pushStr(mb, q, sname);
-				q = pushStr(mb, q, tname);
-				q = pushStr(mb, q, sep);
-				q = pushStr(mb, q, rsep);
-				q = pushStr(mb, q, ssep);
-				q = pushStr(mb, q, ns);
-				q = pushLng(mb, q, nr_rec);
-				q = pushLng(mb, q, offset);
-				s->nr = getDestVar(q);
-
-				q = newStmt(mb, "bstream", "destroy");
-				q = pushArgument(mb, q, bs);
-
-				q = newStmt(mb, "streams", "close");
-				q = pushArgument(mb, q, file);
-			} else {
-				int io_stdin;
-				q = newStmt(mb, "io", "stdin");
-				io_stdin = getDestVar(q);
-
-				q = newStmt1(mb, sqlRef, "importTable");
-				q = pushArgument(mb, q, io_stdin);
-				q = pushStr(mb, q, sname);
-				q = pushStr(mb, q, tname);
-				q = pushStr(mb, q, sep);
-				q = pushStr(mb, q, rsep);
-				q = pushStr(mb, q, ssep);
-				q = pushStr(mb, q, ns);
-				q = pushLng(mb, q, nr_rec);
-				q = pushLng(mb, q, offset);
-				s->nr = getDestVar(q);
-			}
-		}
-			break;
 		case st_ordered:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 

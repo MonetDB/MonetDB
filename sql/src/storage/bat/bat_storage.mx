@@ -412,6 +412,16 @@ count_idx(sql_idx *idx)
 	return b->cnt;
 }
 
+static int
+sorted_col(sql_trans *tr, sql_column *col)
+{
+	BAT *b = bind_col(tr, col, RDONLY);
+	int sorted = BATtordered(b);
+	
+	bat_destroy(b);
+	return sorted;
+}
+
 int
 load_delta(sql_delta *bat, int bid, int type)
 {
@@ -538,8 +548,12 @@ copyBat (bat i, int type, oid seq)
 	tb = temp_descriptor(i);
 	b = BATconst(tb, type, ATOMnilptr(type));
 	bat_destroy(tb);
-	tb = BATcopy(b, TYPE_void, b->ttype, TRUE);
-	bat_destroy(b);
+	if (isVIEW(b)) {
+		tb = BATcopy(b, TYPE_void, b->ttype, TRUE);
+		bat_destroy(b);
+	} else {
+		tb = b;
+	}
 
 	bat_set_access(tb, BAT_READ);
 	BATseqbase(tb, seq);
@@ -1408,6 +1422,7 @@ bat_storage_init( store_functions *sf)
 
 	sf->count_col = (count_col_fptr)&count_col;
 	sf->count_idx = (count_idx_fptr)&count_idx;
+	sf->sorted_col = (sorted_col_fptr)&sorted_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;

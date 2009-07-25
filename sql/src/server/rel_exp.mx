@@ -53,6 +53,7 @@ extern sql_exp *exp_aggr( list *l, sql_subaggr *a, int distinct, int no_nils, in
 extern sql_exp * exp_atom( atom *a);
 extern sql_exp * exp_atom_bool(int b); 
 extern sql_exp * exp_atom_int(int i);
+extern sql_exp * exp_atom_lng(lng l);
 extern sql_exp * exp_atom_wrd(wrd w);
 extern sql_exp * exp_atom_str(str s, sql_subtype *st);
 extern sql_exp * exp_atom_clob(str s);
@@ -293,18 +294,27 @@ exp_atom_int(int i)
 }
 
 sql_exp *
+exp_atom_lng(lng i) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "bigint", 19, 0);
+	return exp_atom(atom_int(&it, (lng)i ));
+}
+
+sql_exp *
 exp_atom_wrd(wrd w) 
 {
 	sql_subtype it; 
 
 	sql_find_subtype(&it, "wrd", 19, 0);
-	return exp_atom(atom_int(&it, (int)w ));
+	return exp_atom(atom_int(&it, (lng)w ));
 }
 
 sql_exp *
 exp_atom_str(str s, sql_subtype *st) 
 {
-	return exp_atom(atom_string(st, _strdup(s), 1 ));
+	return exp_atom(atom_string(st, s?_strdup(s):NULL, 1 ));
 }
 
 sql_exp *
