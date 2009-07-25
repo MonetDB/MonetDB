@@ -994,7 +994,7 @@ mat_pack_group_(MalBlkPtr mb, mat_t *mat, int g, int ext)
 			pck = pushArgument(mb, pck, attrs[k*cnt+i]);
 		pushInstruction(mb, pck);
 
-		getArg(grp,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_int));
+		getArg(grp,0) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_wrd));
 		grp = pushReturn(mb, grp, newTmpVariable(mb, newBatType(TYPE_oid,TYPE_oid)));
 		if (cur) {
 			setFunctionId(grp, deriveRef);
@@ -1262,6 +1262,7 @@ mat_union(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
 	return mat_add(mat, mtop, r, NULL, mat_none);
 }
 
+#if 0
 static InstrPtr
 mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
@@ -1323,6 +1324,40 @@ mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 			ca = pushArgument(mb, ca, o);
 			ca = pushArgument(mb, ca, getArg(c, 0));
 		}
+	}
+	return r;
+}
+#endif
+
+static InstrPtr
+mat_mark(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
+{
+	int k, tpe = getArgType(mb,p,0), nr = mat[m].mi->argc-1;
+	InstrPtr q, r = newInstruction(mb, ASSIGNsymbol);
+	
+#ifdef DEBUG_OPT_MERGETABLE
+	stream_printf(GDKout,"MAT optimizer, mat_group_union\n");
+	printInstruction(GDKout, mb, 0, p, LIST_MAL_ALL);
+#endif
+	/* We don't use the mark base id */
+	
+	r = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(r,matRef);
+	setFunctionId(r,newRef);
+	getArg(r,0) = getArg(p,0);
+	
+	assert(mat[m].mi1 == NULL);
+	for(k=1; k<mat[m].mi->argc; k++) {
+		q = copyInstruction(p);
+		q->argc = 2;
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m].mi,k);
+		q = pushInt(mb, q, nr);
+		q = pushInt(mb, q, k-1);
+		pushInstruction(mb,q);
+		propagateMarkProp(mb, q, getArg(mat[m].mi, k), k-1, k);
+
+		r = pushArgument(mb,r,getArg(q,0));
 	}
 	return r;
 }
@@ -1419,8 +1454,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, InstrPtr *old, int oldtop, int cur, mat_t *m
 		return 2;
 	} else if (getFunctionId(p) == kdifferenceRef &&
 		cur + 1 < oldtop &&
-		getModuleId(q) == algebraRef && 
-		getFunctionId(q) == kunionRef &&
+		getModuleId(q) == algebraRef && getFunctionId(q) == kunionRef &&
 	    	p->argv[0] == q->argv[1] && p->argv[2] == q->argv[2]) { 
 		InstrPtr semi;
 
@@ -1642,9 +1676,10 @@ And the min/max is as easy
 		    getModuleId(p) == groupRef || 
 		    getModuleId(p) == aggrRef || 
 		   (getModuleId(p) == batRef && 
-				getFunctionId(p) == sliceRef) ||
+			getFunctionId(p) == sliceRef) ||
 		   (getModuleId(p) == algebraRef && 
-				getFunctionId(p) == sortTailRef))) { 
+			(getFunctionId(p) == sortTailRef ||
+			 getFunctionId(p) == sortReverseTailRef)))) { 
 			error++;
 			goto fail;
 		}
