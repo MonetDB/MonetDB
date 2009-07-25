@@ -216,7 +216,8 @@ include opt_statistics;
 include opt_trace;
 
 include chopper;
-include cluster;# experimental
+include cluster;
+include opt_cluster;
 include txtsim;
 library sabaoth;
 
