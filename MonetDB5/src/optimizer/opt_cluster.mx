@@ -1,0 +1,434 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+@' Copyright August 2008-2009 MonetDB B.V.
+@' All Rights Reserved.
+
+@f opt_cluster
+@a N.J. Nes
+@- Cluster
+The simple goal of the cluster optimizer is to reduce the size(s) of hash
+tables. For example the hash tables in group.new or algebra.join. 
+The goal is reached by partitioning, the grouping columns or both sides
+of the join. 
+The base decision for clustering stems from the size estimates of xxx optimizer.
+
+Example
+
+@{
+@mal
+pattern optimizer.cluster():str
+address OPTcluster;
+pattern optimizer.cluster(mod:str, fcn:str):str
+address OPTcluster
+comment "Modify the plan to exploit parallel processing on multiple cores";
+
+@h
+#ifndef _OPT_CLUSTER
+#define _OPT_CLUSTER
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+/*#define _DEBUG_OPT_CLUSTER*/
+#define CLUSTER_THRESHOLD (BUN)(64*1024)
+
+@c
+#include "mal_config.h"
+#include "opt_cluster.h"
+#include "mal_interpreter.h"
+
+#define MAX_STMTS 	64
+
+#define GRP_NEW 	1
+#define GRP_DERIVE 	2
+#define AGGR_CNTS 	3
+#define AGGR_CNT 	4
+#define AGGR_SUM 	5
+
+#define ORDERBY_NONE 	1
+#define ORDERBY_SORT 	2
+#define ORDERBY_REFINE 	3
+#define ORDERBY_MARK 	4
+#define ORDERBY_REVERSE	5
+#define ORDERBY_JOIN 	6
+
+#if 0
+static int
+cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i, j = 0;
+	InstrPtr q;
+	int *grp = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int state = GRP_NEW;
+	int h = 0, g = 0, cnts = 0, cntl = 0, cntr = 0;
+
+	(void)cntxt;
+	(void)stk;
+	(void)p;
+	
+	/* locate the a sequence of group.new/derive statements */
+	for (i=1; i< mb->stop && j < MAX_STMTS && !cntl && !cntr; i++) {
+		q = getInstrPtr(mb,i);
+
+		/* TODO check we don't cluster twice */
+		if (state == GRP_DERIVE && 
+		    q->token == ASSIGNsymbol &&
+		    q->argc == 2 &&
+		    g == getArg(q,1)) {
+			g = getArg(q,0);
+		} else if (state == GRP_NEW && 
+		    getModuleId(q) == groupRef &&
+		    getFunctionId(q) == newRef &&
+		    q->argc == 2) {
+			state = GRP_DERIVE;
+			h = getArg(q,0);
+			g = getArg(q,1);
+		} else if (state == GRP_DERIVE &&
+		    getModuleId(q) == groupRef &&
+		    getFunctionId(q) == deriveRef &&
+		    q->argc == 4 &&
+		    h == getArg(q,2) && g == getArg(q,3)) {
+			state = GRP_DERIVE;
+			h = getArg(q,0);
+			g = getArg(q,1);
+		} else if (state == GRP_DERIVE &&
+		    getModuleId(q) == aggrRef &&
+		    q->argc == 4 &&
+		    getFunctionId(q) == countRef) {
+			state = AGGR_CNTS;
+			cnts = getArg(q,0);
+		} else if (state == AGGR_CNTS &&
+		    getModuleId(q) == aggrRef &&
+		    getFunctionId(q) == countRef &&
+		    q->argc == 2 &&
+		    cnts == getArg(q,1)) {
+			cntl = getArg(q,0);
+		} else if (state == AGGR_CNTS &&
+		    getModuleId(q) == aggrRef &&
+		    getFunctionId(q) == sumRef && 
+		    q->argc == 2 &&
+		    cnts == getArg(q,1)) {
+			cntr = getArg(q,0);
+		} else
+			continue;
+		grp[j++] = i;
+	}
+	//if (lcnt && rcnt) {
+		/* lets cluster */
+	//}
+#ifdef _DEBUG_OPT_CLUSTER
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
+	return 1;
+}
+#endif
+
+static int
+copyStmts( MalBlkPtr mb, InstrPtr *old, int cur, int s)
+{
+	for(; cur < s; cur++)
+		if (old[cur])
+			pushInstruction(mb, copyInstruction(old[cur]));
+	/* skip s */
+	return s+1;
+}
+
+static int
+cluster(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
+{
+	int nr_parts = 16;
+	InstrPtr *old = mb->stmt;
+	int oldtop, slimit, size;
+
+	oldtop = mb->stop;
+	slimit = mb->ssize;
+	size = (mb->stop * 1.2 < mb->ssize)? mb->ssize:(int)(mb->stop * 1.2);
+
+	/* for now we cluster only on the first order by column */
+	if (ol) { 
+		InstrPtr c, q = old[ord[0]], *no, m, s, o;
+		int i, j, p, tpe = getTailType(getArgType(mb, q, 1)), cur = 0;
+		int bits = 5; 
+		int offset = 3; 
+		
+		/* only cluster for bte,..,lng,flt,dbl atoms */
+		if (tpe < TYPE_bte || tpe > TYPE_dbl) 
+			return 0;
+
+		if (tpe == TYPE_int)
+			offset = 19;
+
+		mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
+		mb->ssize = size;
+		mb->stop = 0;
+
+		cur = copyStmts(mb, old, cur, ord[0]);
+
+		/* cluster into 'nr_parts' parts based on the values */
+		c = newStmt( mb, "cluster", "new" );
+		/* second return (map) value */
+        	c = pushReturn(mb, c, newTmpVariable(mb, TYPE_any));
+		c = pushArgument( mb, c, getArg(q, 1) );
+		c = pushInt( mb, c, bits);
+		c = pushInt( mb, c, offset);
+		c = pushBit( mb, c, TRUE);	/* Used for sorting */
+		
+		/* split clustered column */
+		s = newStmt( mb, "cluster", "split" );
+		/* split returns 'nr_parts' parts */
+		for (p = 1; p<nr_parts; p++)
+        		s = pushReturn(mb, s, newTmpVariable(mb, TYPE_any));
+		s = pushArgument( mb, s, getArg(q, 1) ); 
+		s = pushArgument( mb, s, getArg(c, 0) ); /* psum */
+		
+		/* order these parts then pack2 */
+		no = (InstrPtr*)alloca(sizeof(InstrPtr)*nr_parts);
+		o = old[ord[0]];
+		for (p = 0; p<nr_parts; p++) {
+			no[p] = copyInstruction(o);
+			getArg(no[p], 0) = newTmpVariable(mb, TYPE_any); 
+			getArg(no[p], 1) = getArg(s, p);
+			pushInstruction(mb, no[p]);
+		}
+
+		for (j=1; j<ol; j++) {
+			InstrPtr nno, o = old[ord[j]];
+
+			cur = copyStmts(mb, old, cur, ord[j]);
+
+			if (getFunctionId(o) == refineRef ||
+			    getFunctionId(o) == refine_reverseRef) {
+
+				m = newStmt( mb, "cluster", "map" );
+				/* if algo 0 pass psum */
+				m = pushArgument( mb, m, getArg(c, 0) );
+				m = pushArgument( mb, m, getArg(c, 1) );
+				m = pushArgument( mb, m, getArg(o, 2) );
+		
+				/* split input column first */
+				s = newStmt( mb, "cluster", "split" );
+				/* split returns 'nr_parts' parts */
+				for (p = 1; p<nr_parts; p++)
+        				s = pushReturn(mb, s, newTmpVariable(mb, TYPE_any));
+				s = pushArgument( mb, s, getArg(m, 0) ); 
+				s = pushArgument( mb, s, getArg(c, 0) ); /* psum */
+				for (p = 0; p<nr_parts; p++) {
+					nno = copyInstruction(o);
+					getArg(nno, 0) = newTmpVariable(mb, TYPE_any); 
+					getArg(nno, 1) = getArg(no[p], 0);
+					getArg(nno, 2) = getArg(s, p);
+					pushInstruction(mb, nno);
+					no[p] = nno;
+				}
+			} else {
+				for (p = 0; p<nr_parts; p++) {
+					nno = copyInstruction(o);
+					getArg(nno, 0) = newTmpVariable(mb, TYPE_any); 
+					getArg(nno, 1) = getArg(no[p], 0);
+					pushInstruction(mb, nno);
+					no[p] = nno;
+				}
+			}
+		}
+
+		/* projection join using parts followed by pack2s */
+		for(i=0; i < pl; i++) {
+			InstrPtr pj, ppj, opj = old[prj[i]];
+
+			cur = copyStmts(mb, old, cur, prj[i]);
+
+			/* if algo 0 pass psum */
+			m = newStmt( mb, "cluster", "map" );
+			m = pushArgument( mb, m, getArg(c, 0) );
+			m = pushArgument( mb, m, getArg(c, 1) );
+			m = pushArgument( mb, m, getArg(opj, 2) );
+		
+			s = newStmt( mb, "cluster", "split" );
+			/* split returns 'nr_parts' parts */
+			for (p = 1; p<nr_parts; p++)
+        			s = pushReturn(mb, s, newTmpVariable(mb, TYPE_any));
+			s = pushArgument( mb, s, getArg(m, 0) ); 
+			s = pushArgument( mb, s, getArg(c, 0) ); /* psum */
+
+			pj = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(pj,matRef);
+			setFunctionId(pj,pack2Ref);
+			getArg(pj,0) = getArg(opj,0);
+
+			for (p = 0; p<nr_parts; p++) {
+				ppj = copyInstruction(opj);
+				getArg(ppj, 0) = newTmpVariable(mb, TYPE_any); 
+				getArg(ppj, 1) = getArg(no[p], 0);
+				getArg(ppj, 2) = getArg(s, p);
+				
+				pushInstruction(mb, ppj);
+				pj = pushArgument(mb, pj, getArg(ppj, 0));
+			}
+			pushInstruction(mb, pj);
+		}
+		cur = copyStmts(mb, old, cur, oldtop);
+		for(i=0; i<slimit; i++)
+			if (old[i]) 
+				freeInstruction(old[i]);
+		GDKfree(old);
+	}
+	return 1;
+}
+
+static int
+cluster_orderby(MalBlkPtr mb)
+{
+	int i, j = 0, k = 0, o = 0, state = ORDERBY_NONE, actions = 0;
+	int *ord = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int *prj = (int*) alloca(sizeof(int) * MAX_STMTS);
+	InstrPtr q;
+
+	/* TODO only cluster on large inputs */
+	/* TODO reuse ordered columns */
+
+	/* locate the a sequence of group.new/derive statements */
+	for (i=1; i< mb->stop && j < MAX_STMTS && k < MAX_STMTS; i++) {
+		q = getInstrPtr(mb,i);
+
+		if (state == ORDERBY_NONE && 
+		    getModuleId(q) == algebraRef &&
+			(getFunctionId(q) == sortTailRef ||
+			 getFunctionId(q) == sortReverseTailRef) &&
+		    q->argc == 2) {
+			state = ORDERBY_SORT;
+			o = getArg(q,0);
+			ord[j++] = i;
+			/* TODO + markT + reverse */
+		} else if ((state == ORDERBY_SORT || state == ORDERBY_REFINE) &&
+		    getModuleId(q) == algebraRef &&
+		    getFunctionId(q) == markTRef &&
+			/* mark with base */
+		    (q->argc == 2 || q->argc == 3) && o == getArg(q,1)) {
+			state = ORDERBY_MARK;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if (state == ORDERBY_MARK &&
+		    getModuleId(q) == batRef &&
+		    getFunctionId(q) == reverseRef &&
+		    q->argc == 2 && o == getArg(q,1)) {
+			state = ORDERBY_JOIN;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if ((state == ORDERBY_SORT || state == ORDERBY_REFINE) &&
+		    getModuleId(q) == groupRef &&
+			(getFunctionId(q) == refineRef ||
+			 getFunctionId(q) == refine_reverseRef) &&
+		    q->argc == 3 && o == getArg(q,1)) {
+			state = ORDERBY_REFINE;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if (state == ORDERBY_JOIN &&
+		    getModuleId(q) == algebraRef &&
+		    getFunctionId(q) == leftjoinRef &&
+		    /* has join estimate */
+		    q->argc == 4 && o == getArg(q,1)) {
+			prj[k++] = i;
+		} else
+			continue;
+	}
+	if (k && j && state == ORDERBY_JOIN) 
+		actions = cluster(mb, ord, j, prj, k);
+	return actions;
+}
+
+static int
+cluster_join(MalBlkPtr mb)
+{
+	int i, j = 0, k = 0, o = 0, state = ORDERBY_NONE, actions = 0;
+	int *ord = (int*) alloca(sizeof(int) * MAX_STMTS);
+	int *prj = (int*) alloca(sizeof(int) * MAX_STMTS);
+	InstrPtr q;
+
+	/* TODO only cluster on large inputs */
+	/* TODO reuse ordered columns */
+
+	return 0;
+	/* locate the a sequence of group.new/derive statements */
+	for (i=1; i< mb->stop && j < MAX_STMTS && k < MAX_STMTS; i++) {
+		q = getInstrPtr(mb,i);
+
+		if (state == ORDERBY_NONE && 
+		    getModuleId(q) == algebraRef &&
+			(getFunctionId(q) == sortTailRef ||
+			 getFunctionId(q) == sortReverseTailRef) &&
+		    q->argc == 2) {
+			state = ORDERBY_SORT;
+			o = getArg(q,0);
+			ord[j++] = i;
+			/* TODO + markT + reverse */
+		} else if ((state == ORDERBY_SORT || state == ORDERBY_REFINE) &&
+		    getModuleId(q) == algebraRef &&
+		    getFunctionId(q) == markTRef &&
+			/* mark with base */
+		    (q->argc == 2 || q->argc == 3) && o == getArg(q,1)) {
+			state = ORDERBY_MARK;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if (state == ORDERBY_MARK &&
+		    getModuleId(q) == batRef &&
+		    getFunctionId(q) == reverseRef &&
+		    q->argc == 2 && o == getArg(q,1)) {
+			state = ORDERBY_JOIN;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if ((state == ORDERBY_SORT || state == ORDERBY_REFINE) &&
+		    getModuleId(q) == groupRef &&
+			(getFunctionId(q) == refineRef ||
+			 getFunctionId(q) == refine_reverseRef) &&
+		    q->argc == 3 && o == getArg(q,1)) {
+			state = ORDERBY_REFINE;
+			o = getArg(q,0);
+			ord[j++] = i;
+		} else if (state == ORDERBY_JOIN &&
+		    getModuleId(q) == algebraRef &&
+		    getFunctionId(q) == leftjoinRef &&
+		    /* has join estimate */
+		    q->argc == 4 && o == getArg(q,1)) {
+			prj[k++] = i;
+		} else
+			continue;
+	}
+	if (k && j && state == ORDERBY_JOIN) 
+		actions = cluster(mb, ord, j, prj, k);
+	return actions;
+}
+
+static int
+OPTclusterImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int actions = cluster_orderby(mb);
+
+	actions += cluster_join(mb);
+
+	(void)cntxt; (void)stk; (void)p;
+#ifdef _DEBUG_OPT_CLUSTER
+	printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
+#endif
+	return actions;
+}
+
+
+@include optimizerWrapper.mx
+@h
+@:exportOptimizer(cluster)@
+#endif
+@c
+#include "opt_statistics.h"
+@:wrapOptimizer(cluster,OPT_CHECK_ALL)@
+@}
