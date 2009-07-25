@@ -1943,7 +1943,7 @@ are described by an atom descriptor.
 @tab ATOMfromstr     (int id, str s, int* len, ptr* v_dst);
 @item int
 @tab ATOMtostr       (int id, str s, int* len, ptr* v_dst);
-@item int
+@item hash_t
 @tab ATOMhash        (int id, ptr val, in mask);
 @item int
 @tab ATOMcmp         (int id, ptr val_1, ptr val_2);
@@ -2013,7 +2013,7 @@ allocated with GDKmalloc().
 with capacity 'cap'.
 
 @item The @emph{ATOMhash()} computes a hash index for a value. `val' is a direct
-pointer to the atom value. Its return value should be an integer
+pointer to the atom value. Its return value should be an hash_t
 between 0 and 'mask'.
 
 @item The @emph{ATOMcmp()} operation computes two atomic values. Its parameters
