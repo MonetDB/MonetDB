@@ -835,7 +835,8 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 	BAT *bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	BAT *histo = BATnew(TYPE_oid, TYPE_wrd, BATcount(b)); 
 	wrd prv=0, *t = (wrd*)Tloc(ohisto, BUNfirst(ohisto));
-	wrd ordered = 1, *e = t + BATcount(ohisto);
+	wrd *e = t + BATcount(ohisto);
+	bit ordered = 1;
 	str msg = NULL;
 
 	if (bn == NULL || histo == NULL) 
