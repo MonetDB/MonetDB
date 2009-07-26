@@ -350,6 +350,10 @@ cluster_orderby(MalBlkPtr mb)
 static int
 cluster_join(MalBlkPtr mb)
 {
+	(void)mb;
+	return(0);
+
+#if 0
 	int i, j = 0, k = 0, o = 0, state = ORDERBY_NONE, actions = 0;
 	int *ord = (int*) alloca(sizeof(int) * MAX_STMTS);
 	int *prj = (int*) alloca(sizeof(int) * MAX_STMTS);
@@ -358,8 +362,6 @@ cluster_join(MalBlkPtr mb)
 	/* TODO only cluster on large inputs */
 	/* TODO reuse ordered columns */
 
-#if 0
-	return 0;
 	/* locate the a sequence of group.new/derive statements */
 	for (i=1; i< mb->stop && j < MAX_STMTS && k < MAX_STMTS; i++) {
 		q = getInstrPtr(mb,i);
@@ -407,8 +409,8 @@ cluster_join(MalBlkPtr mb)
 	}
 	if (k && j && state == ORDERBY_JOIN) 
 		actions = cluster(mb, ord, j, prj, k);
-#endif
 	return actions;
+#endif
 }
 
 static int
