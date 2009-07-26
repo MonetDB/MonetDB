@@ -358,6 +358,7 @@ cluster_join(MalBlkPtr mb)
 	/* TODO only cluster on large inputs */
 	/* TODO reuse ordered columns */
 
+#if 0
 	return 0;
 	/* locate the a sequence of group.new/derive statements */
 	for (i=1; i< mb->stop && j < MAX_STMTS && k < MAX_STMTS; i++) {
@@ -406,6 +407,7 @@ cluster_join(MalBlkPtr mb)
 	}
 	if (k && j && state == ORDERBY_JOIN) 
 		actions = cluster(mb, ord, j, prj, k);
+#endif
 	return actions;
 }
 
