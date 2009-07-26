@@ -91,6 +91,7 @@ ae_export str ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #include "algebraExtensions.h"
 #include "mal_errors.h"
 #include "mmath.h"
+#include <gdk_posix.h>
 #define PGALIGN(X) (void*)( ( ((size_t)X)/MT_pagesize()) * MT_pagesize())
 
 str
@@ -208,7 +209,7 @@ GDKblockjoin(BAT *b, BAT *c){
 	for( cl = 0; cl < clim + blk; cl+= blk){
 		k++;
 		cp = BATslice(c, cl, cl+blk);
-		madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
 		j = BATjoin(b,cp, cap);
 		if( BATcount(j) > 0){
 			if (bn == 0)
@@ -242,13 +243,13 @@ GDKblockjoin2(BAT *b, BAT *c){
 	for( bl = 0; bl < blim + blk; bl+= blk){
 		i++;
 		bp = BATslice(b, bl, bl+blk);
-		madvise(PGALIGN(Tloc(bp,BUNfirst(bp))), BATcount(bp) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise(PGALIGN(Tloc(bp,BUNfirst(bp))), BATcount(bp) * sizeof(int), MADV_SEQUENTIAL);
 		k =0;
 		printf("next outer %d\n",i);
 		for( cl = 0; cl < clim + blk; cl+= blk){
 			k++;
 			cp = BATslice(c, cl, cl+blk);
-		madvise(PGALIGN(Tloc(cp,BUNfirst(cp))), BATcount(cp) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise(PGALIGN(Tloc(cp,BUNfirst(cp))), BATcount(cp) * sizeof(int), MADV_SEQUENTIAL);
 			j = BATjoin(bp,cp, cap);
 			if (bn == 0)
 				bn = BATnew( j->htype, j->ttype, BATcount(j)*clim/blk);
@@ -418,7 +419,7 @@ printf("prime " BUNFMT "\n",prime);
 	bidx = (bte*) Tloc(bmap,BUNfirst(bmap));
 
 	bit = bat_iterator(b);
-	madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+	posix_madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
 	BATloop(b,p,q){
 		ptr t = (ptr) BUNtail(bit,p);
 		i = (int) ((prime*ATOMhash(type,t)) & 255);
@@ -430,7 +431,7 @@ printf("prime " BUNFMT "\n",prime);
 
 	cmap = BATnew(TYPE_void, TYPE_bte, BATcount(c));
 	cidx = (bte*) Tloc(cmap,BUNfirst(cmap));
-	madvise(PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
+	posix_madvise(PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
 	cit = bat_iterator(c);
 	BATloop(c,p,q){
 		ptr t = (ptr) BUNhead(cit,p);
@@ -477,8 +478,8 @@ printf("prime " BUNFMT "\n",prime);
 		bp->tsorted = FALSE;
 		bcap = BATcount(b);
 
-		madvise( PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
-		madvise(PGALIGN(bidx),BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise( PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise(PGALIGN(bidx),BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
 		for( cnt= 0; cnt < bcap; cnt++)
 		if ( (int)(bidx[cnt] & 255) >=low && (int)(bidx[cnt] &255) <hgh )
 			*belm++ = *(int*) BUNtail(bit,cnt);
@@ -499,7 +500,7 @@ printf("prime " BUNFMT "\n",prime);
 		cp->tsorted = FALSE;
 		ccap = BATcount(c);
 
-		madvise( PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise( PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
 		for( cnt= 0; cnt < ccap; cnt++)
 		if ( (int)(cidx[cnt] & 255) >=low && (int)(cidx[cnt] & 255) <hgh )
 			*celm++ = *(int*) BUNtail(cit,cnt);
@@ -508,10 +509,10 @@ printf("prime " BUNFMT "\n",prime);
 		jn = BATjoin(bp, BATmirror(cp), BATcount(bp));
 		printf("join " BUNFMT "\n", BATcount(jn));
 		if ( BATcount(jn) == 0) continue;
-		madvise( PGALIGN(Hloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise( PGALIGN(Hloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
 	if(0)
 		GDKremap(bidx, BATcount(bmap), low,hgh, jn);
-		madvise( PGALIGN(Tloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
+		posix_madvise( PGALIGN(Tloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
 	if(0)
 		GDKremap(cidx, BATcount(cmap), low,hgh, BATmirror(jn));
 		if( bn == 0)
