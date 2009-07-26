@@ -790,8 +790,8 @@ fflush(stdout);
 	}
 #ifdef StM_L1
 	else
-	if (clim < sz_l2 / 64) {
-		/* smaller exceeds L1 but fits well in L2
+	if (clim < sz_l2 / 32) {
+		/* smaller exceeds L1 but fits in L2
 		 * => partition for L1
 		 */
 		parts = 1;
@@ -812,8 +812,8 @@ fflush(stdout);
 	}
 #endif
 	else
-	if (clim < sz_mem / 64) {
-		/* smaller exceeds L2 but fits well in mem
+	if (clim < sz_mem / 32) {
+		/* smaller exceeds L2 but fits in mem
 		 * => partition for L2
 		 */
 		parts = 1;
