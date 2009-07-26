@@ -569,7 +569,7 @@ rows cached is returned.
 Read the answer to a query and pass the results verbatim to a
 stream. The result is not analyzed or cached.
 
-@item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
+@item MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
 
 Reset the row pointer to the requested row number.  If whence is
 @code{MAPI_SEEK_SET}, rownr is the absolute row number (0 being the
@@ -1221,7 +1221,7 @@ mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_quick_response(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int rowne, int whence);
+mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
 
 mapi_export MapiMsg mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
@@ -4219,7 +4219,7 @@ mapi_fetch_reset(MapiHdl hdl)
 }
 
 MapiMsg
-mapi_seek_row(MapiHdl hdl, int rownr, int whence)
+mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
 {
 	struct MapiResultSet *result;
 
