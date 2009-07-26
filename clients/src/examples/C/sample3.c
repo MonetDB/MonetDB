@@ -17,6 +17,7 @@
  * All Rights Reserved.
  */
 
+#include <clients_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

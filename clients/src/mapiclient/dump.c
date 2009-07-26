@@ -19,7 +19,6 @@
 
 #include "clients_config.h"
 #include <monet_options.h>
-#include <monet_utils.h>
 #include "mapilib/Mapi.h"
 #include "stream.h"
 #include <unistd.h>
