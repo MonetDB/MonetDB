@@ -1997,7 +1997,9 @@ schemas(mvc *sql, symbol *s)
 
 	/* TODO everything should be done via the backend language */ 
 	if (!QUERY_MODE(sql->emode) && s->token != SQL_ALTER_TABLE)
-		return sql_error(sql, 05, "Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement");
+		return sql_error(sql, 05, "schema statements are directly executed "
+				"and therefore cannot be debugged, explained, profiled, "
+				"traced or used in a prepared statement");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:

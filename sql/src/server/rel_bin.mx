@@ -1653,7 +1653,7 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 		stmt *aggrstmt = exp_bin(sql, aggrexp, sub, NULL, groupby, NULL); 
 
 		/* maybe the aggr uses intermediate results of this group by,
-		   therefor we pass the group by columns too 
+		   therefore we pass the group by columns too 
 		 */
 		if (!aggrstmt) 
 			aggrstmt = exp_bin(sql, aggrexp, sub, cursub, groupby, NULL); 

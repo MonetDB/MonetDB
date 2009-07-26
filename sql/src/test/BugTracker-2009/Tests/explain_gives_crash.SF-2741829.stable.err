@@ -73,16 +73,16 @@ stderr of test 'explain_gives_crash.SF-2741829` in directory 'src/test/BugTracke
 
 MAPI  = monetdb@alf:35519
 QUERY = explain alter table blabla add constraint dada unique (id);
-ERROR = !Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement
+ERROR = !schema statements are directly executed and therefore cannot be debugged, explained, profiled, traced or used in a prepared statement
 MAPI  = monetdb@alf:35519
 QUERY = explain alter table blabla add constraint dada unique (id);
-ERROR = !Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement
+ERROR = !schema statements are directly executed and therefore cannot be debugged, explained, profiled, traced or used in a prepared statement
 MAPI  = monetdb@alf:35519
 QUERY = alter table blabla drop constraint dada;
 ERROR = !ALTER TABLE: no such constraint 'dada'
 MAPI  = monetdb@alf:35519
 QUERY = explain alter table blabla add constraint dada unique (id);
-ERROR = !Schema statements are directly executed and therefor cannot be debugged, explained, profiled, traced or used in a prepare statement
+ERROR = !schema statements are directly executed and therefore cannot be debugged, explained, profiled, traced or used in a prepared statement
 
 # 22:45:54 >  
 # 22:45:54 >  Done.

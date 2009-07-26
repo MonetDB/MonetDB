@@ -1415,7 +1415,7 @@ store_exit(void)
 
 	logger_funcs.destroy();
 
-	/* Open transactions have a link to the global transaction therefor
+	/* Open transactions have a link to the global transaction therefore
 	   we need busy waiting until all transactions have ended or
 	   (current implementation) simply keep the gtrans alive and simply
 	   exit (but leak memory).
