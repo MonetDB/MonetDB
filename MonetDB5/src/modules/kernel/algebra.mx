@@ -3312,7 +3312,7 @@ ALGtmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
 	int nr = *nr_parts;
 #if SIZEOF_OID == 4
-	int bits = 32
+	int bits = 32;
 #else
 	int bits = 64;
 #endif
@@ -3358,7 +3358,7 @@ ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr)
 {
 	int nr = *nr_parts;
 #if SIZEOF_OID == 4
-	int bits = 32
+	int bits = 32;
 #else
 	int bits = 64;
 #endif
