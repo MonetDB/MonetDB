@@ -395,7 +395,7 @@ str
 MKEYbathash(bat *res, bat *bid )
 {
 	str msg;
-	BAT *b, *dst;
+	BAT *b, *dst = 0;
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
 		throw(SQL, "bathash", "Cannot access descriptor");
