@@ -2681,7 +2681,7 @@ exp_merge_range(list *exps)
 				    rf->card > CARD_ATOM) {
 					sql_exp *ne;
 					int swap = 0, lt = 0, gt = 0;
-					int ef = e->flag, ff = f->flag;
+					comp_type ef = e->flag, ff = f->flag;
 				
 					/* is left swapped ? */
 				     	if (exp_match_exp(re, lf)) {
