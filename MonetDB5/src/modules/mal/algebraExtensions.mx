@@ -662,6 +662,87 @@ fflush(stdout);
 		swap = TRUE;
 	}
 
+	if (BATtordered(b)&1 && BAThordered(c)&1) {
+#ifdef StM_DEBUG
+		printf("both inputs sorted (or dense) => merge-/fetch-join\n");
+		fflush(stdout);
+#endif  
+		bn = BATjoin(b, c, BUN_NONE);
+		if (bn == 0) {
+			printf("l: (bn == 0)\n");
+			fflush(stdout);
+			return 0;
+		}
+		if (swap) {
+			bn = BATmirror(bn);
+		}
+		return bn;
+	} else
+
+@(
+	if (BATtordered(b)&1 || BAThordered(c)&1) {
+#ifdef StM_DEBUG
+		printf("one input sorted (or dense) => cluster other on highest bits (range know from sorted/dense one) for L2 => sort & merge-/fetch-join per cluster\n");
+		fflush(stdout);
+#endif  
+		...
+
+		bn = BATjoin(b, c, BUN_NONE);
+		if (bn == 0) {
+			printf("l: (bn == 0)\n");
+			fflush(stdout);
+			return 0;
+		}
+		if (swap) {
+			bn = BATmirror(bn);
+		}
+		return bn;
+	} else
+@)
+@(
+	if (BATtordered(b)&1 && clim < sz_l2 / 64) {
+		BAT *cs = 0;
+#ifdef StM_DEBUG
+		printf("larger input sorted (or dense) & smaller input fits well in L2 => sort smaller in L2 & merge-/fetch-join\n");
+		fflush(stdout);
+#endif
+		cs = BATsort(c);
+		if (cs == 0) {
+			printf("m: (cs == 0)\n");
+			fflush(stdout);
+			return 0;
+		}
+		bn = BATjoin(b, cs, BUN_NONE);
+		BBPunfix(cs->batCacheid);
+		cs = 0;
+		if (bn == 0) {
+			printf("n: (bn == 0)\n");
+			fflush(stdout);
+			return 0;
+		}
+		if (swap) {
+			bn = BATmirror(bn);
+		}
+		return bn;
+	} else
+	if (BAThdense(c) && clim < sz_l2 / 64) {
+#ifdef StM_DEBUG
+		printf("smaller input dense & fits well in L2 => fetch-join\n");
+		fflush(stdout);
+#endif
+		bn = BATjoin(b, c, BUN_NONE);
+		if (bn == 0) {
+			printf("o: (bn == 0)\n");
+			fflush(stdout);
+			return 0;
+		}
+		if (swap) {
+			bn = BATmirror(bn);
+		}
+		return bn;
+	} else
+@)
+
 #ifdef StM_L1
 	if (clim < sz_l1 / 64) {
 		/* smaller fits well in L1
