@@ -122,24 +122,6 @@ io.printf("#copy %d\n",d0);
 rr2:= bat.reverse(rb2);
 # the heart of the matter
 t0:= alarm.usec();
-w := algebra.blkjoinStM(lb2,rr2);
-t1:= alarm.usec();
-d0:= t1-t0;
-d1:= d0;
-io.printf("#blkjoinStM %d\n",d0);
-cnt:= aggr.count(w);
-io.print(cnt);
-
-#get fresh copies for both experiments
-t0:= alarm.usec();
-lb2:= algebra.copy(lbase);
-rb2:= algebra.copy(rbase);
-t1:= alarm.usec();
-d0:= t1-t0;
-io.printf("#copy %d\n",d0);
-rr2:= bat.reverse(rb2);
-# the heart of the matter
-t0:= alarm.usec();
 w := algebra.blkjoin(lb2,rr2);
 t1:= alarm.usec();
 d0:= t1-t0;

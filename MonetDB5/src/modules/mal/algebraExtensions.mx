@@ -43,10 +43,6 @@ pattern algebra.scanhashjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oi
 address ALGscanhashjoin
 comment "Simple multi-scan hash join for out-of-memory joins";
 
-pattern algebra.blkjoinStM(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
-address ALGblkjoinStM
-comment "Mane's version of Simple stupid block join for out-of-memory joins";
-
 pattern algebra.partjoin(b:bat[:oid,:int],c:bat[:int,:oid]):bat[:oid,:oid]
 address ALGpartjoin
 comment "A simple hash-/radix-partitioned hash-join implementation (for out-of-memory joins);
@@ -82,7 +78,6 @@ ae_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 ae_export str ALGprejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGblkjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-ae_export str ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 ae_export str ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _ALGEBRA_EXTENSIONS_H*/
 
@@ -523,60 +518,6 @@ printf("prime " BUNFMT "\n",prime);
 	if( bn == 0)
 		bn = BATnew( b->htype, c->ttype, 0);
 	return bn;
-}
-
-static BAT *
-StMblockjoin(BAT *b, BAT *c){
-	bit swap = FALSE;
-	int k = 0;
-	BAT *cp, *j, *bn = 0;
-	BUN blim, clim, cl, cap = BUN_NONE;
-	BUN blk = (BUN) ( (MT_npages() * MT_pagesize()) / (2 * (ATOMsize(b->htype) + ATOMsize(b->ttype) + ATOMsize(c->ttype) + sizeof(BUN))) );
-
-	blim = BATcount(b);
-	clim = BATcount(c);
-	if (MIN(blim,clim) <= blk) {
-		/* smaller fits in mem => use it as inner */
-		if (blim < clim) {
-			swap = TRUE;
-		}
-	} else {
-		/* both exceed mem => use bigger as inner */
-		if (blim > clim) {
-			swap = TRUE;
-		}
-		
-	}
-	if (swap) {
-		BAT *x = b;
-		b = BATmirror(c);
-		c = BATmirror(x);
-		blim = BATcount(b);
-		clim = BATcount(c);
-	}
-	
-	/* partition only inner and stream outer through */
-	k = 0;
-	cap = MIN(blk, clim);
-	for( cl = 0, k = 0; cl < clim; cl += blk){
-		k++;
-		cp = BATslice(c, cl, cl+blk);
-		j = BATjoin(b, cp, cap);
-		if (bn == 0)
-			bn = BATnew( j->htype, j->ttype, 2*BATcount(j)*clim/blk);
-		bn= BATappend(bn,j, TRUE);
-		cap = MAX(cap, 2*BATcount(j));
-		BBPunfix(j->batCacheid);
-		BBPunfix( cp->batCacheid);
-	}
-printf("outer size " BUNFMT "\n", blim);
-printf("inner size " BUNFMT "\n", clim);
-printf("block size " BUNFMT "\n", blk);
-printf("blocks/loops %d\n",k);
-	if (swap)
-		return BATmirror(bn);
-	else
-		return bn;
 }
 
 
@@ -1763,30 +1704,6 @@ ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	else 
 		bn = GDKclusterhashjoin(b,c);
 	if (bn) 
-	BBPkeepref(*bres= bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(c->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int *bres = (int *) getArgReference(stk, pci, 0);
-	int *bid = (int *) getArgReference(stk, pci, 1);
-	int *cid = (int *) getArgReference(stk, pci, 2);
-	BAT *b, *c, *bn;
-
-	(void) cntxt;
-	(void) mb;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.blkjoinStM", INTERNAL_BAT_ACCESS);
-	if ( (c = BATdescriptor(*cid)) == NULL) {
-		BBPunfix(*bid);
-		throw(MAL, "algebra.blkjoinStM", INTERNAL_BAT_ACCESS);
-	}
-
-	bn = StMblockjoin(b,c);
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(c->batCacheid);
