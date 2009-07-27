@@ -35,6 +35,10 @@ command setenv(nme:str,val:str) :bit
 address UNIXsetenv
 comment "Set the environment variable string.";
 
+command sync() :void 
+address UNIXsync
+comment "Flush memory, expensive but sometimes needed";
+
 @- Implementation
 The remainder is a straight forward mapping to the underlying
 facilities
@@ -113,4 +117,10 @@ UNIXsetenv(bit *res, str *name, str *value)
 	return MAL_SUCCEED;
 }
 
+unix_export str UNIXsync(int *res);
+str UNIXsync(int *res){
+	(void) res;
+	sync();
+	return MAL_SUCCEED;
+}
 @}
