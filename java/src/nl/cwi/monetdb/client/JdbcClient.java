@@ -564,7 +564,6 @@ copts.produceHelpMessage()
 		QueryPart qp = null;
 
 		String query = "", curLine;
-		StringBuffer rl = new StringBuffer();
 		boolean wasComplete = true, doProcess, lastac = false;
 		if (!hasFile) {
 			lastac = con.getAutoCommit();
@@ -574,9 +573,7 @@ copts.produceHelpMessage()
 		}
 
 		// the main (interactive) process loop
-		int i = 0;
-		char c = 0;
-		for (i = 1; true; i++) {
+		for (long i = 1; true; i++) {
 			// Manually read a line, because we want to detect an EOF
 			// (ctrl-D).  Doing so allows to have a terminator for query
 			// which is not based on a special character, as is the
