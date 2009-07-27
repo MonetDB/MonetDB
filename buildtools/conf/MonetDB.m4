@@ -2955,17 +2955,17 @@ fi
 AC_SUBST(XPHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
-with_mapilite=no
+have_mapilite=no
 AC_ARG_WITH([mapilite],
 [AS_HELP_STRING([--with-mapilite],
 [enable experimental lightweight mapi library])],
-[with_mapilite=yes],
-[with_mapilite=no])
+[have_mapilite=yes],
+[have_mapilite=no])
 
-AS_IF([test "x$with_mapilite" != xno],
+AS_IF([test "x$have_mapilite" != xno],
    AC_DEFINE([HAVE_MAPILITE], [1], [Define if you want to use the mapilite library])
 )
-AM_CONDITIONAL(HAVE_MAPILITE, test x$have_mapilite != xtrue)
+AM_CONDITIONAL(HAVE_MAPILITE, test x$have_mapilite != xno)
 
 AC_SUBST(CFLAGS)
 
