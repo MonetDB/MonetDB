@@ -597,13 +597,14 @@ printf("blocks/loops %d\n",k);
 
 @= GDKpartjoin_bailout
 	if (bn) {
-		BBPreclaim(bn);
+		BBPunfix(bn->batCacheid);
 		bn = 0;
 	}
 	if (jj) {
 		for (p = 0; p < parts; p++) {
 			if (jj[p]) {
-				BBPreclaim(jj[p]);
+				BBPunfix(jj[p]->batCacheid);
+				jj[p] = 0;
 			}
 		}
 		GDKfree(jj);
@@ -612,7 +613,8 @@ printf("blocks/loops %d\n",k);
 	if (bb) {
 		for (p = 0; p < parts; p++) {
 			if (bb[p]) {
-				BBPreclaim(bb[p]);
+				BBPunfix(bb[p]->batCacheid);
+				bb[p] = 0;
 			}
 		}
 		GDKfree(bb);
@@ -621,7 +623,8 @@ printf("blocks/loops %d\n",k);
 	if (cc) {
 		for (p = 0; p < parts; p++) {
 			if (cc[p]) {
-				BBPreclaim(cc[p]);
+				BBPunfix(cc[p]->batCacheid);
+				cc[p] = 0;
 			}
 		}
 		GDKfree(cc);
@@ -656,51 +659,18 @@ printf("blocks/loops %d\n",k);
 		cci = 0;
 	}
 	if (b) {
-		BBPreleaseref(b->batCacheid);
-		b = 0;
-	}
-	if (bid != int_nil) {
-		BBPreleaselref(bid);
-		bid = int_nil;
+		BBPunfix(b->batCacheid);
+		*_b = b = 0;
 	}
 	if (c) {
-		BBPreleaseref(c->batCacheid);
-		c = 0;
+		BBPunfix(c->batCacheid);
+		*_c = c = 0;
 	}
 #ifdef StM_GDK_M_SIZES
 	GDK_mmap_minsize = org_mmap_minsize;
 	GDK_mem_bigsize  = org_mem_bigsize;
 #endif
 	return 0;
-@c
-
-@= suspend_bat
-	BBPkeepref(@2 = @1->batCacheid);
-#ifdef StM_HOT_COLD
-	BBPcold(@2);
-#endif
-	@1 = 0;
-@c
-
-@= resume_bat
-	if ((@2 = BATdescriptor(@1)) == NULL) {
-		printf("0: ((@2 = BATdescriptor(@1)) == NULL)\n");
-		fflush(stdout);
-		@:GDKpartjoin_bailout@
-	}
-	BBPreleaselref(@1);
-#ifdef StM_HOT_COLD
-	BBPhot(@1);
-#endif
-	@1 = int_nil;
-@c
-
-@= drop_bat
-#ifdef StM_HOT_COLD
-	BBPcold(@1->batCacheid);
-#endif
-	BBPreclaim(@1);
-	@1 = 0;
 @c
 
 static BAT *
@@ -717,7 +687,6 @@ GDKpartjoin(BAT **_b, BAT **_c, int shift, bit top) {
 	BAT *b = *_b, *c = *_c;
 	bit swap = FALSE;
 	int parts, p, mask, shift_inc = 0;
-	int bid = int_nil;
 #ifdef StM_DEBUG
 	lng t0, t1;
 #endif  
@@ -770,14 +739,9 @@ fflush(stdout);
 #endif  
 */
 		bn = BATjoin(b, c, BUN_NONE);
-		if (top) {
-			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(c->batCacheid);
-		} else {
-			@:drop_bat(b)@
-			@:drop_bat(c)@
-		}
-		*_b = *_c = 0;
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
+		*_b = *_c = b = c = 0;
 		if (bn == 0) {
 			printf("k: (bn == 0)\n");
 			fflush(stdout);
@@ -883,7 +847,9 @@ printf("buns right  " BUNFMT "\n", cbuns);
 fflush(stdout);
 #endif  
 
-	@:suspend_bat(b,bid)@
+#ifdef StM_HOT_COLD
+	BBPcold(b->batCacheid);
+#endif
 
 {
 	bit c_hsorted = BAThordered(c)&1;
@@ -975,11 +941,7 @@ fflush(stdout);
 #ifdef StM_HOT_COLD
 	/*BBPcold(c->batCacheid);*/
 #endif
-	if (top) {
-		BBPreleaseref(c->batCacheid);
-	} else {
-		@:drop_bat(c)@
-	}
+	BBPunfix(c->batCacheid);
 	*_c = c = 0;
 #ifdef StM_DEBUG
 t0 = GDKusec();
@@ -1014,7 +976,8 @@ t0 = GDKusec();
 			BBPcold(cc[p]->batCacheid);
 #endif
 		} else {
-			@:drop_bat(cc[p])@
+			BBPunfix(cc[p]->batCacheid);
+			cc[p] = 0;
 		}
 	}
 #ifdef StM_DEBUG
@@ -1030,7 +993,9 @@ fflush(stdout);
 	cci = 0;
 }
 
-	@:resume_bat(bid,b)@
+#ifdef StM_HOT_COLD
+	BBPhot(b->batCacheid);
+#endif
 
 {
 	bit b_hsorted = BAThordered(b)&1;
@@ -1129,11 +1094,7 @@ fflush(stdout);
 #ifdef StM_HOT_COLD
 	/*BBPcold(b->batCacheid);*/
 #endif
-	if (top) {
-		BBPreleaseref(b->batCacheid);
-	} else {
-		@:drop_bat(b)@
-	}
+	BBPunfix(b->batCacheid);
 	*_b = b = 0;
 #ifdef StM_DEBUG
 t0 = GDKusec();
@@ -1168,7 +1129,8 @@ t0 = GDKusec();
 			BBPcold(bb[p]->batCacheid);
 #endif
 		} else {
-			@:drop_bat(bb[p])@
+			BBPunfix(bb[p]->batCacheid);
+			bb[p] = 0;
 		}
 	}
 #ifdef StM_DEBUG
@@ -1217,7 +1179,8 @@ t0 = GDKusec();
 				@:GDKpartjoin_bailout@
 			}
 			if (BATcount(jj[p]) == 0) {
-				@:drop_bat(jj[p])@
+				BBPunfix(jj[p]->batCacheid);
+				jj[p] = 0;
 			} else {
 				jbuns += BATcount(jj[p]);
 				if (cap == BUN_NONE) {
@@ -1236,10 +1199,12 @@ t0 = GDKusec();
 			}
 		}
 		if (bb[p]) {
-			@:drop_bat(bb[p])@
+			BBPunfix(bb[p]->batCacheid);
+			bb[p] = 0;
 		}
 		if (cc[p]) {
-			@:drop_bat(cc[p])@
+			BBPunfix(cc[p]->batCacheid);
+			cc[p] = 0;
 		}
 	}
 #ifdef StM_DEBUG
@@ -1278,7 +1243,8 @@ t0 = GDKusec();
 			BBPhot(jj[p]->batCacheid);
 #endif
 			bn = BATappend(bn, jj[p], TRUE);
-			@:drop_bat(jj[p])@
+			BBPunfix(jj[p]->batCacheid);
+			jj[p] = 0;
 			if (bn == 0) {
 				printf("j: (bn == 0)\n");
 				fflush(stdout);
@@ -1850,17 +1816,17 @@ ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	    b->ttype == TYPE_int && c->htype == TYPE_int) {
 		bn = GDKpartjoin(&b,&c,0,TRUE);
 	} else {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(c->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(c->batCacheid);
 		throw(MAL, "algebra.partjoin", "currently only available for [vOID,INT]x[INT,vOID]");
 	}
 
 	if (b) {
-		BBPreleaseref(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		b = 0;
 	}
 	if (c) {
-		BBPreleaseref(c->batCacheid);
+		BBPunfix(c->batCacheid);
 		c = 0;
 	}
 	if (bn == NULL) {
