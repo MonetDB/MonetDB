@@ -526,7 +526,7 @@ printf("prime " BUNFMT "\n",prime);
 }
 
 static BAT *
-GDKblockjoinStM(BAT *b, BAT *c){
+StMblockjoin(BAT *b, BAT *c){
 	bit swap = FALSE;
 	int k = 0;
 	BAT *cp, *j, *bn = 0;
@@ -595,7 +595,7 @@ printf("blocks/loops %d\n",k);
 #define StMhash4(v) StMhash2((v)^((v)>>16))
 #define StMhash8(v) StMhash4((v)^((v)>>32))
 
-@= GDKpartjoin_bailout
+@= StMpartjoin_bailout
 	if (bn) {
 		BBPunfix(bn->batCacheid);
 		bn = 0;
@@ -674,7 +674,7 @@ printf("blocks/loops %d\n",k);
 @c
 
 static BAT *
-GDKpartjoin(BAT **_b, BAT **_c, int shift) {
+StMpartjoin(BAT **_b, BAT **_c, int shift) {
 	size_t sz_mem = MT_npages() * MT_pagesize();
 	size_t sz_l2  = 4 * 1024 * 1024;
 #ifdef StM_L1
@@ -864,40 +864,40 @@ fflush(stdout);
 	if (cc == 0) {
 		printf("1: (cc == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	cch = (int**) GDKmalloc(parts * sizeof(int*));
 	if (cch == 0) {
 		printf("2: (cch == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	cct = (oid**) GDKmalloc(parts * sizeof(oid*));
 	if (cct == 0) {
 		printf("3: (cct == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	cci = (BUN*) GDKzalloc(parts * sizeof(BUN));
 	if (cci == 0) {
 		printf("4: (cci == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	for (p = 0; p < parts; p++) {
 		cc[p] = BATnew(c->htype, TYPE_oid, cbuns);
 		if (cc[p] == 0) {
 			printf("5: (cc[p] == 0)\n");
 			fflush(stdout);
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 #ifdef StM_MADVICE
 		cc[p]->batDirty = TRUE;
 		if (BATmmap(cc[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 		if (BATmadvise(cc[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 #endif
 		cch[p] = (int*) Hloc(cc[p], BUNfirst(cc[p]));
@@ -913,7 +913,7 @@ t0 = GDKusec();
 				/* TODO: BATextend to handle overflow */
 				printf("6: (cci[p] >= cbuns)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			cch[p][cci[p]] = ch[i];
 			cct[p][cci[p]] = ctv;
@@ -926,7 +926,7 @@ t0 = GDKusec();
 				/* TODO: BATextend to handle overflow */
 				printf("7: (cci[p] >= cbuns)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			cch[p][cci[p]] = ch[i];
 			cct[p][cci[p]] = cto[i];
@@ -964,12 +964,12 @@ t0 = GDKusec();
 			BATsetaccess(cc[p], BAT_READ);
 #ifdef StM_MADVICE
 			if (BATmadvise(cc[p], BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED) != 0) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 #endif
 #ifdef StM_BAT_SAVE
 			if ((cc[p] = BATsave(cc[p])) == NULL) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 #endif
 #ifdef StM_HOT_COLD
@@ -1010,46 +1010,46 @@ fflush(stdout);
 	if (bb == 0) {
 		printf("8: (bb == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	bbh = (oid**) GDKmalloc(parts * sizeof(oid*));
 	if (bbh == 0) {
 		printf("9: (bbh == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	bbt = (int**) GDKmalloc(parts * sizeof(int*));
 	if (bbt == 0) {
 		printf("a: (bbt == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	bbi = (BUN*) GDKzalloc(parts * sizeof(BUN));
 	if (bbi == 0) {
 		printf("b: (bbi == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	bbj = (bte*) GDKzalloc(parts * sizeof(bte));
 	if (bbj == 0) {
 		printf("c: (bb == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	for (p = 0; p < parts; p++) {
 		bb[p] = BATnew(TYPE_oid, b->ttype, cc[p] == NULL ? 1 : bbuns);
 		if (bb[p] == 0) {
 			printf("d: (bb[p] == 0)\n");
 			fflush(stdout);
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 #ifdef StM_MADVICE
 		bb[p]->batDirty = TRUE;
 		if (BATmmap(bb[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 		if (BATmadvise(bb[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
-			@:GDKpartjoin_bailout@
+			@:StMpartjoin_bailout@
 		}
 #endif
 		bbh[p] = (oid*) Hloc(bb[p], BUNfirst(bb[p]));
@@ -1066,7 +1066,7 @@ t0 = GDKusec();
 				/* TODO: BATextend to handle overflow */
 				printf("e: (bbi[p] >= bbuns)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			bbh[p][bbi[p]] = bhv;
 			bbt[p][bbi[p]] = bt[i];
@@ -1079,7 +1079,7 @@ t0 = GDKusec();
 				/* TODO: BATextend to handle overflow */
 				printf("f: (bbi[p] >= bbuns)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			bbh[p][bbi[p]] = bho[i];
 			bbt[p][bbi[p]] = bt[i];
@@ -1117,12 +1117,12 @@ t0 = GDKusec();
 			BATsetaccess(bb[p], BAT_READ);
 #ifdef StM_MADVICE
 			if (BATmadvise(bb[p], BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED) != 0) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 #endif
 #ifdef StM_BAT_SAVE
 			if ((bb[p] = BATsave(bb[p])) == NULL) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 #endif
 #ifdef StM_HOT_COLD
@@ -1152,7 +1152,7 @@ fflush(stdout);
 	if (jj == 0) {
 		printf("g: (jj == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	
 #ifdef StM_DEBUG
@@ -1162,21 +1162,21 @@ t0 = GDKusec();
 		if (bb[p] && cc[p]) {
 #ifdef StM_MADVICE
 			if (BATmadvise(bb[p], BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED) != 0) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			if (BATmadvise(cc[p], BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED, BUF_WILLNEED) != 0) {
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 #endif
 #ifdef StM_HOT_COLD
 			BBPhot(bb[p]->batCacheid);
 			BBPhot(cc[p]->batCacheid);
 #endif
-			jj[p] = GDKpartjoin(&bb[p], &cc[p], shift + shift_inc);
+			jj[p] = StMpartjoin(&bb[p], &cc[p], shift + shift_inc);
 			if (jj[p] == 0) {
 				printf("h: (jj[p] == 0)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 			if (BATcount(jj[p]) == 0) {
 				BBPunfix(jj[p]->batCacheid);
@@ -1190,7 +1190,7 @@ t0 = GDKusec();
 				}
 #ifdef StM_BAT_SAVE
 				if ((jj[p] = BATsave(jj[p])) == NULL) {
-					@:GDKpartjoin_bailout@
+					@:StMpartjoin_bailout@
 				}
 #endif
 #ifdef StM_HOT_COLD
@@ -1222,15 +1222,15 @@ fflush(stdout);
 	if (bn == 0) {
 		printf("i: (bn == 0)\n");
 		fflush(stdout);
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 #ifdef StM_MADVICE
 	bn->batDirty = TRUE;
 	if (BATmmap(bn, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 	if (BATmadvise(bn, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
-		@:GDKpartjoin_bailout@
+		@:StMpartjoin_bailout@
 	}
 #endif
 	
@@ -1248,7 +1248,7 @@ t0 = GDKusec();
 			if (bn == 0) {
 				printf("j: (bn == 0)\n");
 				fflush(stdout);
-				@:GDKpartjoin_bailout@
+				@:StMpartjoin_bailout@
 			}
 		}
 	}
@@ -1786,7 +1786,7 @@ ALGblkjoinStM(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "algebra.blkjoinStM", INTERNAL_BAT_ACCESS);
 	}
 
-	bn = GDKblockjoinStM(b,c);
+	bn = StMblockjoin(b,c);
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(c->batCacheid);
@@ -1814,7 +1814,7 @@ ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (((b->htype == TYPE_void && b->hseqbase != oid_nil) || b->htype == TYPE_oid) && \
 	    ((c->ttype == TYPE_void && c->tseqbase != oid_nil) || c->ttype == TYPE_oid) && \
 	    b->ttype == TYPE_int && c->htype == TYPE_int) {
-		bn = GDKpartjoin(&b,&c,0);
+		bn = StMpartjoin(&b,&c,0);
 	} else {
 		BBPunfix(b->batCacheid);
 		BBPunfix(c->batCacheid);
@@ -1830,7 +1830,7 @@ ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		c = 0;
 	}
 	if (bn == NULL) {
-		throw(MAL, "algebra.partjoin", "GDKpartjoin() failed");
+		throw(MAL, "algebra.partjoin", "StMpartjoin() failed");
 	}
 
 	BBPkeepref(*bres= bn->batCacheid);
