@@ -674,7 +674,7 @@ printf("blocks/loops %d\n",k);
 @c
 
 static BAT *
-GDKpartjoin(BAT **_b, BAT **_c, int shift, bit top) {
+GDKpartjoin(BAT **_b, BAT **_c, int shift) {
 	size_t sz_mem = MT_npages() * MT_pagesize();
 	size_t sz_l2  = 4 * 1024 * 1024;
 #ifdef StM_L1
@@ -1172,7 +1172,7 @@ t0 = GDKusec();
 			BBPhot(bb[p]->batCacheid);
 			BBPhot(cc[p]->batCacheid);
 #endif
-			jj[p] = GDKpartjoin(&bb[p], &cc[p], shift + shift_inc, FALSE);
+			jj[p] = GDKpartjoin(&bb[p], &cc[p], shift + shift_inc);
 			if (jj[p] == 0) {
 				printf("h: (jj[p] == 0)\n");
 				fflush(stdout);
@@ -1814,7 +1814,7 @@ ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if (((b->htype == TYPE_void && b->hseqbase != oid_nil) || b->htype == TYPE_oid) && \
 	    ((c->ttype == TYPE_void && c->tseqbase != oid_nil) || c->ttype == TYPE_oid) && \
 	    b->ttype == TYPE_int && c->htype == TYPE_int) {
-		bn = GDKpartjoin(&b,&c,0,TRUE);
+		bn = GDKpartjoin(&b,&c,0);
 	} else {
 		BBPunfix(b->batCacheid);
 		BBPunfix(c->batCacheid);
