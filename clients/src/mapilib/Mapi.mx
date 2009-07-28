@@ -948,7 +948,7 @@ struct MapiRowBuf {
 	int writer;
 	int reader;
 	mapi_int64 first;	/* row # of first tuple */
-	size_t tuplecount;	/* number of tuples in the cache */
+	mapi_int64 tuplecount;	/* number of tuples in the cache */
 	struct {
 		int fldcnt;	/* actual number of fields in each row */
 		char *rows;	/* string representation of rows received */
