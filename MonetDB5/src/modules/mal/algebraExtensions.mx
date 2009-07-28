@@ -780,7 +780,6 @@ fflush(stdout);
 	}
 	else
 	{
-		int n = 0;
 		/* smaller exceeds L2
 		 * => partition for L2 in n steps (depth-first) such that no step
 		 *    generates more than 1024 new partitions per partition
@@ -803,8 +802,10 @@ fflush(stdout);
 			parts <<= 1;
 		}
 @)
-		n = ((p - 1) / 10) + 1;
-		p /= n;
+		p = p % 10;
+		if (p == 0) {
+			p = 10;
+		}
 		parts = 1 << p;
 	}
 
