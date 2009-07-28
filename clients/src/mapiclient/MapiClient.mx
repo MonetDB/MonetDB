@@ -941,9 +941,9 @@ SQLrenderer(MapiHdl hdl)
 	if (oldfields)
 		SQLseparator(hdr, oldfields, '-');
 	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), "%d rows", rows);
+	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
 	mark2 = strdup(buf);
-	printf("%d tuple%s\n", rows, rows != 1 ? "s" : "");
+	printf(LLFMT " tuple%s\n", rows, rows != 1 ? "s" : "");
 	if (len)
 		free(len);
 	if (hdr)
