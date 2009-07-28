@@ -947,8 +947,8 @@ struct MapiRowBuf {
 	int limit;		/* current storage space limit */
 	int writer;
 	int reader;
-	int first;		/* row # of first tuple */
-	int tuplecount;		/* number of tuples in the cache */
+	mapi_int64 first;	/* row # of first tuple */
+	size_t tuplecount;	/* number of tuples in the cache */
 	struct {
 		int fldcnt;	/* actual number of fields in each row */
 		char *rows;	/* string representation of rows received */
@@ -3432,7 +3432,7 @@ static MapiMsg
 mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 {
 	int i;			/* just a counter */
-	int n = 0;		/* # of tuples being deleted from front */
+	mapi_int64 n = 0;	/* # of tuples being deleted from front */
 
 	result->cache.tuplecount = 0;
 	for (i = 0; i < result->cache.writer - k; i++) {
@@ -4885,10 +4885,10 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				stream_printf(mid->tracelog, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount);
+				stream_printf(mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
 				stream_flush(mid->tracelog);
 			}
-			if (stream_printf(mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    stream_flush(mid->to))
 				check_stream(mid, mid->to, stream_error(mid->to), "mapi_fetch_line", 0);
 		}

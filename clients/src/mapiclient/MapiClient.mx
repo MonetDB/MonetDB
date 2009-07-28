@@ -823,7 +823,8 @@ SQLrenderer(MapiHdl hdl)
 	char **rest = NULL;
 	char buf[50];
 	char nullstring[5] = "null";
-	int ps = rowsperpage, silent = 0, rows = 0;
+	int ps = rowsperpage, silent = 0;
+	mapi_int64 rows = 0;
 
 	if (mark2)
 		free(mark2);

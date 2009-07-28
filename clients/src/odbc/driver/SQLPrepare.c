@@ -102,7 +102,13 @@ SQLPrepare_(ODBCStmt *stmt,
 		addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
 	}
-	nrParams = mapi_rows_affected(hdl);
+	if (mapi_rows_affected(hdl) > (1 << 16)) {
+		/* arbitrarily limit the number of parameters */
+		/* Memory allocation error */
+		addStmtError(stmt, "HY001", 0, 0);
+		return SQL_ERROR;
+	}
+	nrParams = (int) mapi_rows_affected(hdl);
 	setODBCDescRecCount(stmt->ImplParamDescr, nrParams);
 	rec = stmt->ImplParamDescr->descRec + 1;
 	for (i = 0; i < nrParams; i++, rec++) {
