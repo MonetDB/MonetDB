@@ -144,11 +144,11 @@ command get_field_count(hdl:int):int
 address SERVERget_field_count
 comment "Return number of fields.";
 
-command get_row_count(hdl:int):int
+command get_row_count(hdl:int):lng
 address SERVERget_row_count
 comment "Return number of rows.";
 
-command fetch_row(hdl:int):int
+command rows_affected(hdl:int):lng
 address SERVERrows_affected
 comment "Return number of affected rows.";
 
@@ -320,8 +320,8 @@ mal_mapi_export str SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 mal_mapi_export str SERVERprepare(int *ret, int *key, str *qry);
 mal_mapi_export str SERVERexecute(int *ret, int *idx);
 mal_mapi_export str SERVERfinish(int *ret, int *idx);
-mal_mapi_export str SERVERrows_affected(int *ret, int *idx);
-mal_mapi_export str SERVERget_row_count(int *ret, int *idx);
+mal_mapi_export str SERVERrows_affected(lng *ret, int *idx);
+mal_mapi_export str SERVERget_row_count(lng *ret, int *idx);
 mal_mapi_export str SERVERget_field_count(int *ret, int *idx);
 mal_mapi_export str SERVERfetch_row(int *ret, int *idx);
 mal_mapi_export str SERVERfetch_all_rows(int *ret, int *idx);
@@ -1204,7 +1204,7 @@ SERVERfinish(int *ret, int *key){
 }
 
 str 
-SERVERget_row_count(int *ret, int *key){
+SERVERget_row_count(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	@:accessTest(*key,get_row_count)@
@@ -1228,7 +1228,7 @@ SERVERget_field_count(int *ret, int *key){
 }
 
 str 
-SERVERrows_affected(int *ret, int *key){
+SERVERrows_affected(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	@:accessTest(*key,rows_affected)@
