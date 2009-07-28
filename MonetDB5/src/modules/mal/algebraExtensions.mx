@@ -629,9 +629,7 @@ GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 
 static BAT *
 StMpartjoin(BAT **_b, BAT **_c, int shift) {
-#ifdef StM_GDK_M_SIZES
 	size_t sz_mem = MT_npages() * MT_pagesize();
-#endif
 	size_t sz_l2  = 4 * 1024 * 1024;
 #ifdef StM_GDK_M_SIZES
 	size_t org_mmap_minsize = GDK_mmap_minsize;
@@ -655,9 +653,7 @@ StMpartjoin(BAT **_b, BAT **_c, int shift) {
 #ifdef StM_DEBUG
 printf("left  size " BUNFMT "\n", blim);
 printf("right size " BUNFMT "\n", clim);
-#ifdef StM_GDK_M_SIZES
 printf("mem   size " SZFMT "\n", sz_mem);
-#endif  
 printf("L2    size " SZFMT "\n", sz_l2);
 fflush(stdout);
 #endif
@@ -777,13 +773,13 @@ fflush(stdout);
 			bn = BATmirror(bn);
 		}
 		return bn;
-	}
-	else
-	{
-		/* smaller exceeds L2
+	} else
+	if (clim < sz_mem / 32) {
+		/* smaller exceeds L2 but fits in mem
 		 * => partition for L2 in n steps (depth-first) such that no step
 		 *    generates more than 1024 new partitions per partition
 		 */
+		int n = 0;
 		p = 0;
 		parts = 1;
 		/* smaller determines number of partitions
@@ -802,11 +798,29 @@ fflush(stdout);
 			parts <<= 1;
 		}
 @)
-		p = p % 10;
-		if (p == 0) {
-			p = 10;
-		}
+		n = ((p - 1) / 10) + 1;
+		p /= n;
 		parts = 1 << p;
+	} else
+	/* (clim > sz_mem / 32) */ {
+		/* smaller exceeds mem
+		 * => partition to fit in mem
+		 */
+		parts = 1;
+		/* smaller determines number of partitions
+		 * => minimizes number of partitions
+		 */
+		while (clim / parts > sz_mem / 32) {
+			parts <<= 1;
+		}
+@(
+		/* larger determines number of partitions
+		 * => minimizes size of inner partitions
+		 */
+		while (blim / parts > sz_mem / 32) {
+			parts <<= 1;
+		}
+@)
 	}
 
 #ifdef StM_GDK_M_SIZES
@@ -826,9 +840,7 @@ fflush(stdout);
 #ifdef StM_DEBUG
 printf("left  size " BUNFMT "\n", blim);
 printf("right size " BUNFMT "\n", clim);
-#ifdef StM_GDK_M_SIZES
 printf("mem   size " SZFMT "\n", sz_mem);
-#endif  
 printf("L2    size " SZFMT "\n", sz_l2);
 
 printf("parts/joins %d\n", parts);
