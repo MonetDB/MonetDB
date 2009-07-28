@@ -161,15 +161,16 @@ typedef struct{
 void 
 ALGsetFilter(BAT *b, Filter *h, int prime){
 	BUN i, blim;
-	int *bv, val;
+	int *bv;
+	size_t val;
 
 	blim= BATcount(b);
 	bv = (int*) Tloc(b, BUNfirst(b));
 	h->bits = prime/2 ;
 	do {
-		h->hash = (char *) GDKzalloc( 1 << h->bits);
-		h->mask = (1 << h->bits) -1;
-		h->prime = (1 << (prime)) -1;
+		h->hash = (char *) GDKzalloc( (size_t) 1 << h->bits);
+		h->mask = ((size_t) 1 << h->bits) -1;
+		h->prime = ((size_t) 1 << (prime)) -1;
 		h->fill = 0;
 		for(i=0; i<blim; i++){
 			val = (h->prime * bv[i]) % h->mask;
@@ -1518,7 +1519,7 @@ counter = 0;
 	b = BATdescriptor(*bid);
 	bv = (int*) Tloc(b, BUNfirst(b));
 	blim = BATcount(b);
-	blog = (int) log(blim);
+	blog = (int) log((double) blim);
 
 	mb = blim*2;
 	//mc = clim*2;
@@ -1545,7 +1546,7 @@ counter = 0;
 	c = BATdescriptor(*cid);
 	cv = (int*) Tloc(c, BUNfirst(c));
 	clim = BATcount(c);
-	clog = (int) log(clim);
+	clog = (int) log((double) clim);
 	mc = clim*2;
 	cbloom = (char *) GDKmalloc(mc);
 	memset(cbloom, 0, mc);
@@ -1691,8 +1692,8 @@ GDKbloomfilter_int_l(bat *bid, bat *cid, BAT **bn, BAT **cn, int algo) {
 	cv = (int*) Tloc(c, BUNfirst(c));
 	blim= BATcount(b);
 	clim= BATcount(c);
-	clog = (int) log(clim);
-	blog = (int) log(blim); 
+	clog = (int) log((double) clim);
+	blog = (int) log((double) blim); 
 
 	if (algo == 2) {
 		/* only build one bloom filter on the smaller BAT,
