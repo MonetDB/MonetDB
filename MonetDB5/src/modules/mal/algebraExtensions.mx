@@ -42,6 +42,9 @@ comment "Simple stupid block join for out-of-memory joins";
 pattern algebra.scanhashjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid]):bat[:oid,:oid]
 address ALGscanhashjoin
 comment "Simple multi-scan hash join for out-of-memory joins";
+pattern algebra.scanhashjoin(b:bat[:oid,:any_1],c:bat[:any_1,:oid], perc:int):bat[:oid,:oid]
+address ALGscanhashjoin
+comment "Simple multi-scan hash join for out-of-memory joins using a fraction of main memory to deal with the joins";
 
 pattern algebra.partjoin(b:bat[:oid,:int],c:bat[:int,:oid]):bat[:oid,:oid]
 address ALGpartjoin
@@ -273,6 +276,7 @@ GDKscanhashjoin(BAT *b, BAT *c){
 	int type= b->ttype;
 	int box=0, *bhash, *chash;
 	int l;
+	lng t0,t1;
 	BUN v,i,mask, bcap, ccap;
 
 	size_t blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
@@ -282,7 +286,6 @@ GDKscanhashjoin(BAT *b, BAT *c){
 	clim = BATcount(c);
 	if ( HASHmask(clim/blk) >mask)
 		mask = HASHmask(clim/blk);
-printf("mask " BUNFMT "\n",mask);
 
 	/* collect the statistics first */
 	bhash = GDKzalloc(sizeof(int) * mask);
@@ -291,6 +294,7 @@ printf("mask " BUNFMT "\n",mask);
 
 	bit = bat_iterator(b);
 	cit = bat_iterator(c);
+	t0 = GDKusec();
 	BATloop(b,p,q){
 		ptr t = (ptr) BUNtail(bit,p);
 		i= (int) ((mask*ATOMhash(type,t)) & mask);
@@ -300,6 +304,8 @@ printf("mask " BUNFMT "\n",mask);
 		i= (int) ((mask * ATOMhash(type,BUNhead(cit,p))) & mask);
 		chash[i]++;
 	}
+	t1 = GDKusec();
+	printf("filling the cluster table " LLFMT "\n", t1-t0);
 
 	/* in the next stage we determine the buckets */
 	i = 0;
@@ -368,156 +374,162 @@ printf("box %d " BUNFMT " " BUNFMT "\n",l, BATcount(bp[l]), BATcount(cp[l]));
 	return bn;
 }
 
-static void
-GDKremap( bte *idx, BUN sze, int low, int hgh, BAT *rd){
-	BUN i,hb= 0,x,z=0;
-	Hash *h;
-	BATiter bi = bat_iterator(rd);
-
-	assert(rd->htype == TYPE_oid );
-	BAThash(rd, BATcount(rd));
-	h= rd->H->hash;
-	for( i = 0; i< sze; i++) {
-		hb = (BUN)(idx[i] & 255);
-		if ( hb >= (BUN)low && hb < (BUN)hgh ){
-			/* locate all elements with value z and replace them */
-			HASHloop_oid(bi,h,x,z){
-				*(oid*) BUNhead(bi,x) = (oid) i;
-			}
-			z++;
-		}
-	}
-}
-
 static BAT *
-GDKclusterhashjoin(BAT *b, BAT *c){
-	BAT *bp, *cp, *jn, *bn = 0;
-	BAT *bmap, *cmap;
-	BUN prime,p,q, bcnt[256],ccnt[256],cnt,bcap,ccap;
-	BATiter bit,cit;
-	int type= b->ttype;
-	int i,low,hgh;
-	int *celm, *belm;
-	bte *bidx, *cidx;
-	BUN blk = (BUN) (  (MT_npages() * MT_pagesize()) / (2 * (ATOMsize(b->ttype) + + ATOMsize(c->htype) + 2 *sizeof(oid))) );
+GDKclusterhashjoin(BAT *b, BAT *c, int mb){
+	BAT **bp, **cp, **jn, *bn = 0;
+	BUN k, *bcnt,*ccnt,cnt,bcap,ccap, jcnt=0;
+	int bmax=0, cmax=0, bi = 0, ci = 0;
+	int parts, mask, i, nrblks, *map;
+	int *celm, *belm, **bpelm, **cpelm, *bpcnt, *cpcnt;
+	oid **bpoid, **cpoid;
+	lng t0,t1;
+	BUN blk = (BUN) ( 1024*mb   / (2 * (ATOMsize(b->ttype) + ATOMsize(c->htype) + 2 *sizeof(oid))) );
+	printf("block size " BUNFMT "\n", blk);
 
-	memset((char*)bcnt, 0, 256 * sizeof(BUN));
-	memset((char*)ccnt, 0, 256 * sizeof(BUN));
 
-	prime = HASHmask(BATcount(b));
-	if ( HASHmask(BATcount(c)) > prime)
-		prime = HASHmask(BATcount(c));
-	prime=1;
-printf("prime " BUNFMT "\n",prime);
+	mask = (int) HASHmask(BATcount(b)/blk);
+	if (  (int)HASHmask(BATcount(c)/blk) >mask)
+		mask =  (int)HASHmask(BATcount(c)/blk);
+	printf("mask size %d\n", mask);
+	mask--;
+	parts= mask+1;
+	bcnt= (BUN*) GDKzalloc(parts * sizeof(BUN));
+	ccnt= (BUN*) GDKzalloc(parts * sizeof(BUN));
+	map= (int*) GDKzalloc(parts * sizeof(int));
+	assert( bcnt != NULL);
+	assert( ccnt != NULL);
+	assert( map != NULL);
 
+	t0 = GDKusec();
 	/* construct the cluster map */
-	bmap = BATnew(TYPE_void, TYPE_bte, BATcount(b));
-	bidx = (bte*) Tloc(bmap,BUNfirst(bmap));
 
-	bit = bat_iterator(b);
-	posix_madvise(PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
-	BATloop(b,p,q){
-		ptr t = (ptr) BUNtail(bit,p);
-		i = (int) ((prime*ATOMhash(type,t)) & 255);
-		*bidx = (bte) i;
+	belm = (int*) Tloc(b,BUNfirst(b));
+	bcap = BATcount(b);  
+	for( k=0; k < bcap; k++){
+		i = belm[k] & mask;
 		bcnt[i]++;
-		bidx++;
 	}
-	BATsetcount(bmap, BATcount(b));
 
-	cmap = BATnew(TYPE_void, TYPE_bte, BATcount(c));
-	cidx = (bte*) Tloc(cmap,BUNfirst(cmap));
-	posix_madvise(PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
-	cit = bat_iterator(c);
-	BATloop(c,p,q){
-		ptr t = (ptr) BUNhead(cit,p);
-		i = ((prime*ATOMhash(type,t)) & 255);
-		*cidx = (bte) i;
+	celm = (int*) Hloc(c,BUNfirst(c));
+	ccap = BATcount(c);  
+	for(k=0 ; k < ccap; k++){
+		i = celm[k] & mask;
 		ccnt[i]++;
-		cidx++;
 	}
-	BATsetcount(cmap, BATcount(c));
+	t1= GDKusec();
+	printf("cluster table " LLFMT "\n", t1-t0);
 
-	/* phase two: perform the partial joins  */
+	/* use a small portion of memory */
+	nrblks =0;
 
-	bp = cp = 0;
-	low = hgh = 0;
-	do{
-		/* calculate the range */
-		low= hgh;
-		cnt = 0;
-		bcap = ccap = 0;
-		for( ; hgh<256; hgh++){
-			if ( cnt + bcnt[hgh] + ccnt[hgh] >blk ) 
-				break;
-			cnt += bcnt[hgh] + ccnt[hgh];
-			bcap += bcnt[hgh];
-			ccap += ccnt[hgh];
+	/* divide the work over a number of buckets */
+	cnt = 0;
+	bi=ci=0;
+	for( i=0 ; i<parts; i++){
+		map[i] = nrblks;
+		cnt += bcnt[i] + ccnt[i];
+		bi += (BUN) bcnt[i];
+		ci += (BUN) ccnt[i];
+		bmax = bmax < bi ? bi : bmax;
+		cmax = cmax < ci ? ci : cmax;
+		if ( cnt > blk){
+			nrblks++;
+			cnt = 0;
+			bi=ci=0;
 		}
-		printf("box %d %d " BUNFMT " " BUNFMT " " BUNFMT"\n",low,hgh,cnt,bcap,ccap); 
-		
-		/* prepare the scratch BATs  try to reuse them*/
-		if (bp == 0 || BATcapacity(bp) < bcap){
-			if ( bp )
-				BBPunfix(bp->batCacheid);
-			bp = BATnew( TYPE_void, b->ttype, bcap);
-		} 
-		BATclear(bp);
+	}
+	nrblks++;
+	printf("buckets %d %d %d\n",nrblks,bmax,cmax);
+	bp = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
+	cp = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
+	jn = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
+	bpelm= (int**) GDKzalloc(sizeof(int*) * nrblks);
+	bpoid= (oid**) GDKzalloc(sizeof(int*) * nrblks);
+	cpelm= (int**) GDKzalloc(sizeof(int*) * nrblks);
+	cpoid= (oid**) GDKzalloc(sizeof(int*) * nrblks);
+	bpcnt= (int*) GDKzalloc(sizeof(int) * nrblks);
+	cpcnt= (int*) GDKzalloc(sizeof(int) * nrblks);
 
-		/* collect the tuples */
-		bit = bat_iterator(b);
-		bidx = (bte*) Tloc(bmap,BUNfirst(bmap));
-		belm = (int*) Tloc(bp,BUNfirst(bp));
-		BATsetcount(bp,bcap);
-		bp->tdense = FALSE;
-		bp->tkey = FALSE;
-		bp->tsorted = FALSE;
-		bcap = BATcount(b);
+	t0 = GDKusec();
+	BATmadvise(b, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL);
+	for( i=0; i<nrblks; i++){
+		bp[i] = BATnew( TYPE_oid, b->ttype, (BUN) bmax);
+		bpelm[i] = (int*) Tloc(bp[i], BUNfirst(bp[i]));
+		bpoid[i] = (oid*) Hloc(bp[i], BUNfirst(bp[i]));
+		cp[i] = BATnew( TYPE_oid, b->ttype, (BUN) cmax);
+		cpelm[i] = (int*) Tloc(cp[i], BUNfirst(cp[i]));
+		cpoid[i] = (oid*) Hloc(cp[i], BUNfirst(cp[i]));
+	}
 
-		posix_madvise( PGALIGN(Tloc(b,BUNfirst(b))), BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
-		posix_madvise(PGALIGN(bidx),BATcount(b) * sizeof(int), MADV_SEQUENTIAL);
-		for( cnt= 0; cnt < bcap; cnt++)
-		if ( (int)(bidx[cnt] & 255) >=low && (int)(bidx[cnt] &255) <hgh )
-			*belm++ = *(int*) BUNtail(bit,cnt);
+	/* distribute the left tuples */
+	bcap = BATcount(b);
+	for( k= 0; k < bcap; k++){
+		int i;
+		i= belm[k] & mask ;
+		bpelm[map[i]][bpcnt[map[i]]] = belm[k];
+		bpoid[map[i]][bpcnt[map[i]]] = (oid) k;
+		bpcnt[map[i]]++;
+	}
+	for( i=0; i<nrblks; i++){
+		BATsetcount(bp[i], bpcnt[i]);
+		bp[i]->batDirty= TRUE;
+		bp[i]->hdense = TRUE;
+		bp[i]->tsorted = FALSE;
+		BATseqbase(bp[i],0);
+		BATsetaccess(bp[i], BAT_READ);
+		BATsave(bp[i]);
+	}
+	t1 = GDKusec();
+	printf("distributed left " LLFMT"\n", t1-t0);
 
-		if ( cp == 0 ||   BATcapacity(cp) < ccap){
-			if (cp)
-				BBPunfix(cp->batCacheid);
-			cp = BATnew( TYPE_void, c->htype, ccap);
-		} 
+	t0 = GDKusec();
+	BATmadvise(b, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL);
+	/* distribute the right tuples */
+	ccap = BATcount(c);
+	for( k= 0; k < ccap; k++){
+		int i;
+		i= celm[k] & mask;
+		cpelm[map[i]][cpcnt[map[i]]] = celm[k];
+		cpoid[map[i]][cpcnt[map[i]]] = (oid) k;
+		cpcnt[map[i]]++;
+	}
+	for( i=0; i<nrblks; i++){
+		BATsetcount(cp[i], cpcnt[i]);
+		cp[i]->batDirty= TRUE;
+		cp[i]->hdense = TRUE;
+		cp[i]->tsorted = FALSE;
+		BATseqbase(cp[i],0);
+		BATsetaccess(cp[i], BAT_READ);
+	}
+	t1 = GDKusec();
+	printf("distributed right " LLFMT"\n", t1-t0);
 
-		BATclear(cp);
-		cit = bat_iterator(c);
-		cidx = (bte*) Tloc(cmap,BUNfirst(cmap));
-		celm = (int*) Tloc(cp,BUNfirst(cp));
-		BATsetcount(cp,ccap);
-		cp->tdense = FALSE;
-		cp->tkey = FALSE;
-		cp->tsorted = FALSE;
-		ccap = BATcount(c);
 
-		posix_madvise( PGALIGN(Hloc(c,BUNfirst(c))), BATcount(c) * sizeof(int), MADV_SEQUENTIAL);
-		for( cnt= 0; cnt < ccap; cnt++)
-		if ( (int)(cidx[cnt] & 255) >=low && (int)(cidx[cnt] & 255) <hgh )
-			*celm++ = *(int*) BUNtail(cit,cnt);
-
-		printf("input " BUNFMT " " BUNFMT "\n", BATcount(bp), BATcount(cp));
-		jn = BATjoin(bp, BATmirror(cp), BATcount(bp));
-		printf("join " BUNFMT "\n", BATcount(jn));
-		if ( BATcount(jn) == 0) continue;
-		posix_madvise( PGALIGN(Hloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
-	if(0)
-		GDKremap(bidx, BATcount(bmap), low,hgh, jn);
-		posix_madvise( PGALIGN(Tloc(jn,BUNfirst(jn))), BATcount(jn) * sizeof(int), MADV_SEQUENTIAL);
-	if(0)
-		GDKremap(cidx, BATcount(cmap), low,hgh, BATmirror(jn));
-		if( bn == 0)
-			bn = jn;
-		else
-			BATappend(bn,jn,FALSE);
-	}  while ( hgh < 256);
-	if( bn == 0)
-		bn = BATnew( b->htype, c->ttype, 0);
+	t0 = GDKusec();
+	for( i=0; i<nrblks; i++){
+		t0 = GDKusec();
+		jn[i] = BATjoin(bp[i], BATmirror(cp[i]), BATcount(bp[i]));
+		BBPreclaim(bp[i]);
+		BBPreclaim(cp[i]);
+		t1 = GDKusec();
+		/* printf("join %d " BUNFMT " time " LLFMT"\n", i, BATcount(jn[i]),t1-t0); */
+		if ( BATcount(jn[i]) == 0) {
+			BBPreclaim(jn[i]);
+			jn[i]=0;
+			continue;
+		}
+		jcnt += BATcount(jn[i]);
+	}
+	t1 = GDKusec();
+	printf("%d joins " LLFMT"\n",nrblks, t1-t0);
+	t0 = GDKusec();
+	bn = BATnew( b->htype, c->ttype, jcnt);
+	for( i=0; i<nrblks; i++)
+	if( jn[i]){
+			bn= BATappend(bn,jn[i],TRUE);
+	}
+	t1 = GDKusec();
+	printf("final construct " LLFMT"\n", t1-t0);
 	return bn;
 }
 
@@ -1769,6 +1781,7 @@ ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bres = (int *) getArgReference(stk, pci, 0);
 	int *bid = (int *) getArgReference(stk, pci, 1);
 	int *cid = (int *) getArgReference(stk, pci, 2);
+	int perc = 1;
 	BAT *b, *c, *bn;
 
 	(void) cntxt;
@@ -1781,10 +1794,14 @@ ALGscanhashjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "bbp.blkjoin", INTERNAL_BAT_ACCESS);
 	}
 
+	if( pci->argc > 3){
+		perc = *(int*)getArgReference(stk, pci, 3);
+		printf("percentage %d\n",perc);
+	}
 	if ( 0 )
 		bn = GDKscanhashjoin(b,c);
 	else 
-		bn = GDKclusterhashjoin(b,c);
+		bn = GDKclusterhashjoin(b,c, perc);
 	if (bn) 
 	BBPkeepref(*bres= bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
