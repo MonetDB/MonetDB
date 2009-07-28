@@ -538,8 +538,8 @@ GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 /* ======== hash-partitioned (hash-)join ======== */
 
 /*#define StM_DEBUG*/
-/*#define StM_L1*/
 /*#define StM_HOT_COLD*/
+/*#define StM_MMAP*/
 /*#define StM_MADVICE*/
 /*#define StM_BAT_SAVE*/
 /*#define StM_GDK_M_SIZES*/
@@ -629,11 +629,10 @@ GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 
 static BAT *
 StMpartjoin(BAT **_b, BAT **_c, int shift) {
+#ifdef StM_GDK_M_SIZES
 	size_t sz_mem = MT_npages() * MT_pagesize();
-	size_t sz_l2  = 4 * 1024 * 1024;
-#ifdef StM_L1
-	size_t sz_l1  = 32 * 1024;
 #endif
+	size_t sz_l2  = 4 * 1024 * 1024;
 #ifdef StM_GDK_M_SIZES
 	size_t org_mmap_minsize = GDK_mmap_minsize;
 	size_t org_mem_bigsize  = GDK_mem_bigsize;
@@ -656,11 +655,10 @@ StMpartjoin(BAT **_b, BAT **_c, int shift) {
 #ifdef StM_DEBUG
 printf("left  size " BUNFMT "\n", blim);
 printf("right size " BUNFMT "\n", clim);
+#ifdef StM_GDK_M_SIZES
 printf("mem   size " SZFMT "\n", sz_mem);
+#endif  
 printf("L2    size " SZFMT "\n", sz_l2);
-#ifdef StM_L1
-printf("L1    size " SZFMT "\n", sz_l1);
-#endif
 fflush(stdout);
 #endif
 */
@@ -756,17 +754,10 @@ fflush(stdout);
 	} else
 @)
 
-#ifdef StM_L1
-	if (clim < sz_l1 / 64) {
-		/* smaller fits well in L1
-		 * => resort to standard BATjoin()
-		 */
-#else
 	if (clim < sz_l2 / 64) {
 		/* smaller fits well in L2
 		 * => resort to standard BATjoin()
 		 */
-#endif
 /*
 #ifdef StM_DEBUG
 		printf("resorting to standard BATjoin()\n");
@@ -787,70 +778,34 @@ fflush(stdout);
 		}
 		return bn;
 	}
-#ifdef StM_L1
 	else
-	if (clim < sz_l2 / 32) {
-		/* smaller exceeds L1 but fits in L2
-		 * => partition for L1
+	{
+		int n = 0;
+		/* smaller exceeds L2
+		 * => partition for L2 in n steps (depth-first) such that no step
+		 *    generates more than 1024 new partitions per partition
 		 */
+		p = 0;
 		parts = 1;
 		/* smaller determines number of partitions
 		 * => minimizes number of partitions
 		 */
-		while (clim / parts > sz_l1 / 128 && parts < 4096) {
+		while (clim / parts > sz_l2 / 128) {
+			p++;
 			parts <<= 1;
 		}
 @(
 		/* larger determines number of partitions
 		 * => minimizes size of inner partitions
 		 */
-		while (blim / parts > sz_l1 / 128 && parts < 4096) {
+		while (blim / parts > sz_l2 / 128) {
+			p++;
 			parts <<= 1;
 		}
 @)
-	}
-#endif
-	else
-	if (clim < sz_mem / 32) {
-		/* smaller exceeds L2 but fits in mem
-		 * => partition for L2
-		 */
-		parts = 1;
-		/* smaller determines number of partitions
-		 * => minimizes number of partitions
-		 */
-		while (clim / parts > sz_l2 / 128 && parts < 4096) {
-			parts <<= 1;
-		}
-@(
-		/* larger determines number of partitions
-		 * => minimizes size of inner partitions
-		 */
-		while (blim / parts > sz_l2 / 128 && parts < 4096) {
-			parts <<= 1;
-		}
-@)
-	}
-	else
-	/* (clim >= sz_mem / 64) */ {
-		/* smaller exceeds mem
-		 * => partition for mem
-		 */
-		parts = 1;
-		/* smaller determines number of partitions
-		 * => minimizes number of partitions
-		 */
-		while (clim / parts > sz_mem / 128 && parts < 1024) {
-			parts <<= 1;
-		}
-@(
-		/* larger determines number of partitions
-		 * => minimizes size of inner partitions
-		 */
-		while (blim / parts > sz_mem / 128 && parts < 1024) {
-			parts <<= 1;
-		}
-@)
+		n = ((p - 1) / 10) + 1;
+		p /= n;
+		parts = 1 << p;
 	}
 
 #ifdef StM_GDK_M_SIZES
@@ -870,7 +825,9 @@ fflush(stdout);
 #ifdef StM_DEBUG
 printf("left  size " BUNFMT "\n", blim);
 printf("right size " BUNFMT "\n", clim);
+#ifdef StM_GDK_M_SIZES
 printf("mem   size " SZFMT "\n", sz_mem);
+#endif  
 printf("L2    size " SZFMT "\n", sz_l2);
 
 printf("parts/joins %d\n", parts);
@@ -884,6 +841,7 @@ fflush(stdout);
 
 #ifdef StM_HOT_COLD
 	BBPcold(b->batCacheid);
+	BBPhot(c->batCacheid);
 #endif
 
 {
@@ -921,16 +879,21 @@ fflush(stdout);
 	}
 	for (p = 0; p < parts; p++) {
 		cc[p] = BATnew(c->htype, TYPE_oid, cbuns);
+#ifdef StM_HOT_COLD
+		BBPhot(cc[p]->batCacheid);
+#endif
 		if (cc[p] == 0) {
 			printf("5: (cc[p] == 0)\n");
 			fflush(stdout);
 			@:StMpartjoin_bailout@
 		}
-#ifdef StM_MADVICE
+#ifdef StM_MMAP
 		cc[p]->batDirty = TRUE;
 		if (BATmmap(cc[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
 			@:StMpartjoin_bailout@
 		}
+#endif
+#ifdef StM_MADVICE
 		if (BATmadvise(cc[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
 			@:StMpartjoin_bailout@
 		}
@@ -1073,16 +1036,21 @@ fflush(stdout);
 	}
 	for (p = 0; p < parts; p++) {
 		bb[p] = BATnew(TYPE_oid, b->ttype, cc[p] == NULL ? 1 : bbuns);
+#ifdef StM_HOT_COLD
+		BBPhot(bb[p]->batCacheid);
+#endif
 		if (bb[p] == 0) {
 			printf("d: (bb[p] == 0)\n");
 			fflush(stdout);
 			@:StMpartjoin_bailout@
 		}
-#ifdef StM_MADVICE
+#ifdef StM_MMAP
 		bb[p]->batDirty = TRUE;
 		if (BATmmap(bb[p], STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
 			@:StMpartjoin_bailout@
 		}
+#endif
+#ifdef StM_MADVICE
 		if (BATmadvise(bb[p], BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
 			@:StMpartjoin_bailout@
 		}
@@ -1254,16 +1222,21 @@ fflush(stdout);
 	cc = 0;
 
 	bn = BATnew(TYPE_oid, TYPE_oid, jbuns);
+#ifdef StM_HOT_COLD
+	BBPhot(bn->batCacheid);
+#endif
 	if (bn == 0) {
 		printf("i: (bn == 0)\n");
 		fflush(stdout);
 		@:StMpartjoin_bailout@
 	}
-#ifdef StM_MADVICE
+#ifdef StM_MMAP
 	bn->batDirty = TRUE;
 	if (BATmmap(bn, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP) != 0) {
 		@:StMpartjoin_bailout@
 	}
+#endif
+#ifdef StM_MADVICE
 	if (BATmadvise(bn, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0) {
 		@:StMpartjoin_bailout@
 	}
