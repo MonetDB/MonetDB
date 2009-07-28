@@ -148,7 +148,7 @@ command get_row_count(hdl:int):int
 address SERVERget_row_count
 comment "Return number of rows.";
 
-command fetch_row(hdl:int):int
+command rows_affected(hdl:int):int
 address SERVERrows_affected
 comment "Return number of affected rows.";
 
