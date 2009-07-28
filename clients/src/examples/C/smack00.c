@@ -22,16 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <mapilib/Mapi.h>
-#ifdef _MSC_VER
-/* monetdb_winconfig.h defines snprintf to _snprintf, don't redefine
- * incompatible */
-#if _MSC_VER >= 1400 && !defined(snprintf)
-/* this happens to work in this file */
-#define snprintf(buf,cnt,fmt,arg) _snprintf_s(buf,sizeof(buf),cnt,fmt,arg)
-#else
-#define snprintf _snprintf
-#endif
-#endif
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\
