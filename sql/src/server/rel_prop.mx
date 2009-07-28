@@ -52,9 +52,13 @@ extern prop * find_prop( prop *p, int kind);
 void
 prop_destroy( prop *p )
 {
-	if (p->p)
-		prop_destroy(p->p);
-	_DELETE(p);
+	prop *q;
+
+	while (p) {
+		q = p->p;
+		_DELETE(p);
+		p = q;
+	}
 }
 
 prop *
