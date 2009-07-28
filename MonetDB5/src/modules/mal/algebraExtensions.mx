@@ -941,7 +941,7 @@ fflush(stdout);
 #ifdef StM_DEBUG
 t0 = GDKusec();
 #endif  
-	if (c->ttype == TYPE_void) {
+	if (BATtdense(c)) {
 		for (i = 0; i < clim; i++, ctv++) {
 			p = (int) ((StMhash4(ch[i]) >> shift) & mask);
 			if (cci[p] >= cbuns) {
@@ -1094,7 +1094,7 @@ fflush(stdout);
 #ifdef StM_DEBUG
 t0 = GDKusec();
 #endif  
-	if (b->htype == TYPE_void) {
+	if (BAThdense(b)) {
 		for (i = 0; i < blim; i++, bhv++) {
 			p = (int) ((StMhash4(bt[i]) >> shift) & mask);
 			if (bbi[p] >= bbuns) {
@@ -1827,8 +1827,8 @@ ALGpartjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL, "algebra.partjoin", INTERNAL_BAT_ACCESS);
 	}
 
-	if (((b->htype == TYPE_void && b->hseqbase != oid_nil) || b->htype == TYPE_oid) && \
-	    ((c->ttype == TYPE_void && c->tseqbase != oid_nil) || c->ttype == TYPE_oid) && \
+	if ((BAThdense(b) || b->htype == TYPE_oid) && \
+	    (BATtdense(c) || c->ttype == TYPE_oid) && \
 	    b->ttype == TYPE_int && c->htype == TYPE_int) {
 		bn = StMpartjoin(&b,&c,0);
 	} else {
