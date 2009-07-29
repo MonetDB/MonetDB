@@ -1239,8 +1239,6 @@ BUNfirst(b) returns a BUN pointer to the first BUN as a BAT.
 BUNlast(b) returns the BUN pointer directly after the last BUN
 in the BAT.
 @item
-BUNsize(b) gives the size in bytes of each BUN.
-@item
 BUNhead(b, p) and BUNtail(b, p) return pointers to the
 head-value and tail-value in a given BUN.
 @item
