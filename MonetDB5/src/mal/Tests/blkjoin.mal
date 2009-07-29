@@ -57,6 +57,10 @@ d1:= d0;
 io.printf("#join %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
+w  := nil;
+rr2:= nil;
+rb2:= nil;
+lb2:= nil;
 
 #get fresh copies for both experiments
 t0:= alarm.usec();
@@ -75,6 +79,10 @@ d1:= d0;
 io.printf("#partjoin %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
+w  := nil;
+rr2:= nil;
+rb2:= nil;
+lb2:= nil;
 
 #get fresh copies for both experiments
 t0:= alarm.usec();
@@ -93,6 +101,10 @@ d1:= d0;
 io.printf("#partjoin %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
+w  := nil;
+rr2:= nil;
+rb2:= nil;
+lb2:= nil;
 
 #get fresh copies for both experiments
 t0:= alarm.usec();
@@ -111,6 +123,10 @@ d1:= d0;
 io.printf("#scanhashjoin %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
+w  := nil;
+rr2:= nil;
+rb2:= nil;
+lb2:= nil;
 
 #get fresh copies for both experiments
 t0:= alarm.usec();
@@ -129,6 +145,10 @@ d1:= d0;
 io.printf("#blkjoin %d\n",d0);
 cnt:= aggr.count(w);
 io.print(cnt);
+w  := nil;
+rr2:= nil;
+rb2:= nil;
+lb2:= nil;
 
 #get fresh copies for both experiments
 t0:= alarm.usec();
