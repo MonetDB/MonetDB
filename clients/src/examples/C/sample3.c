@@ -108,7 +108,7 @@ main(int argc, char **argv)
 	rows = mapi_fetch_all_rows(hdl);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
-	printf("rows received %d with %d fields\n", rows, mapi_get_field_count(hdl));
+	printf("rows received " LLFMT " with %d fields\n", rows, mapi_get_field_count(hdl));
 
 	/* Interpret the cache as a two-dimensional array */
 	for (i = 0; i < rows; i++) {
