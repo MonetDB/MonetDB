@@ -156,7 +156,7 @@ command fetch_row(hdl:int):int
 address SERVERfetch_row
 comment "Retrieve the next row for analysis.";
 
-command fetch_all_rows(hdl:int):int
+command fetch_all_rows(hdl:int):lng
 address SERVERfetch_all_rows
 comment "Retrieve all rows into the cache.";
 
@@ -324,7 +324,7 @@ mal_mapi_export str SERVERrows_affected(lng *ret, int *idx);
 mal_mapi_export str SERVERget_row_count(lng *ret, int *idx);
 mal_mapi_export str SERVERget_field_count(int *ret, int *idx);
 mal_mapi_export str SERVERfetch_row(int *ret, int *idx);
-mal_mapi_export str SERVERfetch_all_rows(int *ret, int *idx);
+mal_mapi_export str SERVERfetch_all_rows(lng *ret, int *idx);
 mal_mapi_export str SERVERfetch_field_str(str *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
@@ -1246,7 +1246,7 @@ SERVERfetch_row(int *ret, int *key){
 }
 
 str 
-SERVERfetch_all_rows(int *ret, int *key){
+SERVERfetch_all_rows(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	@:accessTest(*key,fetch_all_rows)@
