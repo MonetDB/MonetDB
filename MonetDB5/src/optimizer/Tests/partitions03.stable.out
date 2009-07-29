@@ -56,10 +56,10 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     x11{rows=1} := algebra.markT(x1{notnil=true,rows=1,bid=1489},0@0);#  9 x11:bat[:oid,:oid] := ALGtmark(x1:bat[:oid,:int], _21:oid) {G}
     x12{rows=1} := bat.reverse(x11{rows=1});# 10 x12:bat[:oid,:oid] := BKCreverse(x11:bat[:oid,:oid]) {G}
     x13{rows=1} := algebra.join(x12{rows=1},x1{notnil=true,rows=1,bid=1489});# 11 x13:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
-    (ext23,grp21) := group.new(x13{rows=1});# 12 (ext23:bat[:oid,:int], grp21:bat[:oid,:oid]) := GRPgroup(x13:bat[:oid,:int]) {G}
+    (ext23,grp21) := group.new(x13{rows=1});# 12 (ext23:bat[:oid,:wrd], grp21:bat[:oid,:oid]) := GRPgroup(x13:bat[:oid,:int]) {G}
     x18{rows=1} := algebra.join(x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 13 x18:bat[:oid,:int] := ALGjoin(x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
-    (ext34,grp32) := group.derive(ext23,grp21,x18{rows=1});# 14 (ext34:bat[:oid,:int], grp32:bat[:oid,:oid]) := GRPderive(ext23:bat[:oid,:int], grp21:bat[:oid,:oid], x18:bat[:oid,:int]) {G}
-    x21 := bat.mirror(ext34);           # 15 x21:bat[:oid,:oid] := BKCmirror(ext34:bat[:oid,:int]) {G}
+    (ext34,grp32) := group.derive(ext23,grp21,x18{rows=1});# 14 (ext34:bat[:oid,:wrd], grp32:bat[:oid,:oid]) := GRPderive(ext23:bat[:oid,:wrd], grp21:bat[:oid,:oid], x18:bat[:oid,:int]) {G}
+    x21 := bat.mirror(ext34);           # 15 x21:bat[:oid,:oid] := BKCmirror(ext34:bat[:oid,:wrd]) {G}
     x22 := algebra.joinPath(x21,x12{rows=1},x1{notnil=true,rows=1,bid=1489});# 16 x22:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
     x23 := algebra.joinPath(x21,x12{rows=1},x16{notnil=true,rows=1,bid=1492});# 17 x23:bat[:any,:any] := ALGjoinPath(x21:bat[:oid,:oid], x12:bat[:oid,:oid], x16:bat[:oid,:int]) {G}
     x24 := sql.resultSet(2,1,x22);      # 18 x24:void := MDBdummy(_15:int, _4:int, x22:bat[:any,:any]) 

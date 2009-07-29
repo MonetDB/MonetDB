@@ -14,23 +14,24 @@ stdout of test 'inlineFunction` in directory 'src/optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:35829/
 function user.my_case{inline}(Av:int):int;
     X3 := calc.==(Av,1);
+    res:int  := 0;
 barrier X4 := X3;
     X6 := calc.int(100);
-    return my_case:int  := X6;
+    res:int  := X6;
 exit X4;
 barrier X7 := calc.not(X3);
     X9 := calc.==(Av,2);
 barrier X10 := X9;
     X12 := calc.int(200:sht);
-    return my_case:int  := X12;
+    res:int  := X12;
 exit X10;
 barrier X13 := calc.not(X9);
     X14 := calc.-(1);
     X15 := calc.int(X14);
-    return my_case:int  := X15;
+    res:int  := X15;
 exit X13;
 exit X7;
-    return my_case:int  := my_case;
+    return my_case:int  := res;
 end my_case;
 function user.tst():void;
     z := user.my_case(1);
@@ -43,15 +44,13 @@ function user.main():void;
 end main;
 #result of inline
 function user.tst():void;
-barrier _2 := true;
-    z := 100;
-exit _2 := true;
+barrier _1 := true;
+exit _1 := true;
 end tst;
 #result of all optimizers
 function user.tst():void;
-barrier _2 := true;
-    z := 100;
-exit _2 := true;
+barrier _1 := true;
+exit _1 := true;
 end tst;
 
 # 01:05:28 >  

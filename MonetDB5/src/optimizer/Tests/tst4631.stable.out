@@ -132,19 +132,19 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V9 := bat.reverse(V8);              #  3 V9:bat[:oid,:oid] := BKCreverse(V8:bat[:oid,:oid]) {G}
     V10 := algebra.kdifference(V3,V9);  #  4 V10:bat[:oid,:date] := ALGkdiff(V3:bat[:oid,:date], V9:bat[:oid,:oid]) {G}
     a := mtime.date(nil);               #  5 a:date := MTIMEnil2date(_10:void) 
-    V14 := algebra.uselect(V10,a,a);    #  6 V14:bat[:oid,:oid] := ALGuselect(V10:bat[:oid,:date], a:date, a:date) {G}
-    V17 := algebra.markT(V14,0@0);      #  7 V17:bat[:oid,:oid] := ALGtmark(V14:bat[:oid,:oid], _13:oid) {G}
+    V14 := algebra.uselect(V10,a,a);    #  6 V14:bat[:oid,:void] := ALGuselect(V10:bat[:oid,:date], a:date, a:date) {G}
+    V17 := algebra.markT(V14,0@0);      #  7 V17:bat[:oid,:oid] := ALGtmark(V14:bat[:oid,:void], _13:oid) {G}
     V18 := bat.reverse(V17);            #  8 V18:bat[:oid,:oid] := BKCreverse(V17:bat[:oid,:oid]) {G}
     V19:bat[:oid,:bit]  := user.bind("sys","lineitem","l_returnflag",0);#  9 V19:bat[:oid,:bit] := user.bind(_2:str, _3:str, _16:str, _5:int) {G}
     V23 := algebra.kdifference(V19,V9); # 10 V23:bat[:oid,:bit] := ALGkdiff(V19:bat[:oid,:bit], V9:bat[:oid,:oid]) {G}
     V24 := algebra.join(V18,V23);       # 11 V24:bat[:oid,:bit] := ALGjoin(V18:bat[:oid,:oid], V23:bat[:oid,:bit]) {G}
-    (V25,E25) := group.new(V24);        # 12 (V25:bat[:oid,:int], E25:bat[:oid,:oid]) := GRPgroup(V24:bat[:oid,:bit]) {G}
+    (V25,E25) := group.new(V24);        # 12 (V25:bat[:oid,:wrd], E25:bat[:oid,:oid]) := GRPgroup(V24:bat[:oid,:bit]) {G}
     V26:bat[:oid,:bit]  := user.bind("sys","lineitem","l_linestatus",0);# 13 V26:bat[:oid,:bit] := user.bind(_2:str, _3:str, _24:str, _5:int) {G}
     V30 := algebra.kdifference(V26,V9); # 14 V30:bat[:oid,:bit] := ALGkdiff(V26:bat[:oid,:bit], V9:bat[:oid,:oid]) {G}
     V31 := algebra.join(V18,V30);       # 15 V31:bat[:oid,:bit] := ALGjoin(V18:bat[:oid,:oid], V30:bat[:oid,:bit]) {G}
-    (Ext,V32) := group.derive(V25,E25,V31);# 16 (Ext:bat[:oid,:int], V32:bat[:oid,:oid]) := GRPderive(V25:bat[:oid,:int], E25:bat[:oid,:oid], V31:bat[:oid,:bit]) {G}
-    V33 := algebra.tunique(Ext);        # 17 V33:bat[:oid,:int] := ALGtunique(Ext:bat[:oid,:int]) {G}
-    V34 := bat.mirror(V33);             # 18 V34:bat[:oid,:oid] := BKCmirror(V33:bat[:oid,:int]) {G}
+    (Ext,V32) := group.derive(V25,E25,V31);# 16 (Ext:bat[:oid,:wrd], V32:bat[:oid,:oid]) := GRPderive(V25:bat[:oid,:wrd], E25:bat[:oid,:oid], V31:bat[:oid,:bit]) {G}
+    V33 := algebra.tunique(Ext);        # 17 V33:bat[:oid,:wrd] := ALGtunique(Ext:bat[:oid,:wrd]) {G}
+    V34 := bat.mirror(V33);             # 18 V34:bat[:oid,:oid] := BKCmirror(V33:bat[:oid,:wrd]) {G}
     V39 := algebra.join(V34,V24);       # 19 V39:bat[:oid,:bit] := ALGjoin(V34:bat[:oid,:oid], V24:bat[:oid,:bit]) {G}
     V40 := algebra.sort(V39);           # 20 V40:bat[:oid,:bit] := ALGhsort(V39:bat[:oid,:bit]) {G}
     V48 := algebra.join(V34,V31);       # 21 V48:bat[:oid,:bit] := ALGjoin(V34:bat[:oid,:oid], V31:bat[:oid,:bit]) {G}

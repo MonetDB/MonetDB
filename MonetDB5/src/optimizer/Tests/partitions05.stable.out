@@ -51,8 +51,8 @@ function sql.query(A0:sht):void;        #  0 query:void := sql.query(A0:sht) {G}
     bpm.emptySet(bpm13);                #  7 _16:void := BPMemptySet(bpm13:bat[:oid,:int]) 
     x17:bat[:oid,:int] {notnil=true,rows=1,bid=2201} := sql.bind("sys","t","j",1);#  8 x17:bat[:oid,:int] := MDBdummy(_6:str, _7:str, _19:str, _4:int) {G}
     bpm17:bat[:oid,:int]  := bpm.unfold(x17{notnil=true,rows=1,bid=2201});#  9 bpm17:bat[:oid,:int] := BPMunfold(x17:bat[:oid,:int]) {G}
-    x7{rows=1} := algebra.uselect(x1{notnil=true,rows=1,bid=2199},nil:int,2,false,false);# 10 x7:bat[:oid,:oid] := ALGuselectInclusive(x1:bat[:oid,:int], _21:int, _15:int, _22:bit, _22:bit) {G}
-    x14{rows=1} := algebra.markT(x7{rows=1},0@0);# 11 x14:bat[:oid,:oid] := ALGtmark(x7:bat[:oid,:oid], _24:oid) {G}
+    x7{rows=1} := algebra.uselect(x1{notnil=true,rows=1,bid=2199},nil:int,2,false,false);# 10 x7:bat[:oid,:void] := ALGuselectInclusive(x1:bat[:oid,:int], _21:int, _15:int, _22:bit, _22:bit) {G}
+    x14{rows=1} := algebra.markT(x7{rows=1},0@0);# 11 x14:bat[:oid,:oid] := ALGtmark(x7:bat[:oid,:void], _24:oid) {G}
     x15{rows=1} := bat.reverse(x14{rows=1});# 12 x15:bat[:oid,:oid] := BKCreverse(x14:bat[:oid,:oid]) {G}
     x16{rows=1} := algebra.join(x15{rows=1},x1{notnil=true,rows=1,bid=2199});# 13 x16:bat[:oid,:int] := ALGjoin(x15:bat[:oid,:oid], x1:bat[:oid,:int]) {G}
     _44 := bpm.new(:oid,:int);          # 14 _44:bat[:oid,:int] := BPMnew(_45:oid, _46:int) {G}
