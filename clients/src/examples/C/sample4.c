@@ -41,7 +41,7 @@ main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl = NULL;
-	int rows;
+	mapi_int64 rows;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
@@ -108,7 +108,7 @@ main(int argc, char **argv)
 	rows = mapi_fetch_all_rows(hdl);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
-	printf("rows received %d\n", rows);
+	printf("rows received " LLFMT "\n", rows);
 	while (mapi_fetch_row(hdl)) {
 		char *nme = mapi_fetch_field(hdl, 0);
 		char *age = mapi_fetch_field(hdl, 1);

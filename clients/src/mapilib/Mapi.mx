@@ -558,7 +558,7 @@ be extracted.  It returns the number of fields recognized.  A zero is
 returned upon encountering end of sequence or error. This can be
 analyzed in using @code{mapi_error()}.
 
-@item int mapi_fetch_all_rows(MapiHdl hdl)
+@item mapi_int64 mapi_fetch_all_rows(MapiHdl hdl)
 
 All rows are cached at the client side first. Subsequent calls to
 @code{mapi_fetch_row()} will take the row from the cache. The number or
@@ -953,7 +953,7 @@ struct MapiRowBuf {
 		int fldcnt;	/* actual number of fields in each row */
 		char *rows;	/* string representation of rows received */
 		int tupleindex;	/* index of tuple rows */
-		int tuplerev;	/* reverse map of tupleindex */
+		mapi_int64 tuplerev;	/* reverse map of tupleindex */
 		char **anchors;	/* corresponding field pointers */
 	} *line;
 };
@@ -1225,7 +1225,7 @@ mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
 
 mapi_export MapiMsg mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
-mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
+mapi_export mapi_int64 mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
 mapi_export mapi_int64 mapi_get_row_count(MapiHdl hdl);
 mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
@@ -4866,7 +4866,7 @@ mapi_fetch_row(MapiHdl hdl)
 @-
 All rows can be cached first as well.
 @c
-int
+mapi_int64
 mapi_fetch_all_rows(MapiHdl hdl)
 {
 	Mapi mid;

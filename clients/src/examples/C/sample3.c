@@ -41,7 +41,8 @@ main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl = NULL;
-	int rows, i, j;
+	mapi_int64 rows, i;
+	int j;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
