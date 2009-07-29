@@ -304,6 +304,7 @@
 			
 		}
 		
+		print "here\n";
 		$response = mapi_read($socket);
 		
 		if ($response != MSG_PROMPT) { 
@@ -324,16 +325,14 @@
 				
 			} else if ($response[0] == MSG_INFO) {
 				$last_error = $response;
+				return FALSE;
 			}
-		
-		
 		}
 		
 		return TRUE;
 	}
 	
-	
-	
+		
 	function mapi_authenticate_v8($socket, $user, $passwd, $hash, $salt, $dbname) {
 		$auth_string = "";
 		
@@ -342,7 +341,6 @@
 		} else {
 			$hashsum = $passwd+$salt;
 		}
-		
 		
 		$auth_string = "BIG:" . $user . ":{" . strtoupper($hash) . "}" . $hashsum . ":sql:" . $dbname . ":";
 		
