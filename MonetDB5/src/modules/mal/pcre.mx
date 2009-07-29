@@ -205,7 +205,7 @@ strcasestr (char *haystack, char *needle)
 			np = needle + 1;
 			startn = p;
 			if (!*np)
-					return startn;
+				return startn;
 		}
 	}
 

@@ -231,7 +231,7 @@ handle_equality_exps( mvc *sql, list *l, list *r, stmt *left, stmt *right, group
 	}
 	c = exp_bin(sql, ce, left, right, grp, NULL);
 	/*s = stmt_mark_tail(stmt_reverse(stmt_semijoin(stmt_reverse(c), stmt_reverse(s))), 0);*/
-	/* not really a projection join, therefor make sure left values are unique !! */
+	/* not really a projection join, therefore make sure left values are unique !! */
 	s = stmt_project(c, stmt_reverse(stmt_unique(s, NULL)));
 
 	list_destroy(nl);
