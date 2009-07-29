@@ -32,6 +32,8 @@ t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#loop %d\n",d0);
 t0:= alarm.usec();
+bat.save(lbase);
+bat.save(rbase);
 
 #cnt:= aggr.count(lbase);
 #io.printf("#left:  %d\n",cnt);
@@ -48,6 +50,8 @@ rr2:= bat.reverse(rb2);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
+bat.save(lb2);
+bat.save(rb2);
 # the heart of the matter
 t0:= alarm.usec();
 w := algebra.join(lb2,rr2);
@@ -70,6 +74,8 @@ rr2:= bat.reverse(rb2);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
+bat.save(lb2);
+bat.save(rb2);
 # the heart of the matter
 t0:= alarm.usec();
 w := algebra.partjoin(lb2,rr2);
@@ -92,6 +98,8 @@ rr2:= bat.reverse(rb2);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
+bat.save(lb2);
+bat.save(rb2);
 # the heart of the matter
 t0:= alarm.usec();
 w := algebra.partjoin(lb2,rr2);
@@ -114,6 +122,8 @@ rr2:= bat.reverse(rb2);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
+bat.save(lb2);
+bat.save(rb2);
 # the heart of the matter
 t0:= alarm.usec();
 w := algebra.scanhashjoin(lb2,rr2);
@@ -136,6 +146,8 @@ t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
 rr2:= bat.reverse(rb2);
+bat.save(lb2);
+bat.save(rb2);
 # the heart of the matter
 t0:= alarm.usec();
 w := algebra.blkjoin(lb2,rr2);
@@ -157,6 +169,8 @@ rb2:= algebra.copy(rbase);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#copy %d\n",d0);
+bat.save(lb2);
+bat.save(rb2);
 # what if you sort first
 t0:= alarm.usec();
 s1 := algebra.sortTail(lb2);
@@ -165,6 +179,7 @@ d0:= t1-t0;
 d1:= d0;
 io.printf("#sort %d\n",d0);
 lb2 := nil;
+bat.save(s1);
 t0:= alarm.usec();
 s2 := algebra.sortTail(rb2);
 t1:= alarm.usec();
@@ -173,6 +188,7 @@ d1:= d1+d0;
 io.printf("#sort %d\n",d0);
 rb2 := nil;
 ss2:= bat.reverse(s2);
+bat.save(s2); 
 t0:= alarm.usec();
 w := algebra.join(s1,ss2);
 t1:= alarm.usec();
