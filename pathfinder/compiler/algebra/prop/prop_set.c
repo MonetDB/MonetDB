@@ -155,7 +155,7 @@ prop_infer_set (PFla_op_t *n, bool set)
 
         case la_difference:
             /* the left argument may not prune duplicates
-               (as this might lead to mor result tuples) */
+               (as this might lead to more result tuples) */
             l_set = false;
             r_set = true;
             break;
@@ -408,7 +408,7 @@ prop_infer_set_extended (PFla_op_t *n, bool set, PFalg_col_t col)
 
         case la_difference:
             /* the left argument may not prune duplicates
-               (as this might lead to mor result tuples) */
+               (as this might lead to more result tuples) */
             l_set = false;
             /* and allow duplicates in the right argument */
             r_col = col_NULL;
