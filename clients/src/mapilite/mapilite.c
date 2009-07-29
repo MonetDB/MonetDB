@@ -65,8 +65,10 @@ _CRTIMP char *__cdecl crypt(const char *key, const char *salt);
 #endif
 
 
-
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
+#define MAXQUERYSIZE	(100*1024)
+#define QUERYBLOCK	(16*1024)
+
 
 /* information about the columns in a result set */
 struct MapiColumn {
@@ -94,21 +96,19 @@ struct MapiParam {
 	int scale;
 };
 
-
-
 struct MapiRowBuf {
 	int rowlimit;		/* maximum number of rows to cache */
 	int shuffle;		/* percentage of rows to shuffle upon overflow */
 	int limit;		/* current storage space limit */
 	int writer;
 	int reader;
-	int first;		/* row # of first tuple */
-	int tuplecount;		/* number of tuples in the cache */
+	mapi_int64 first;	/* row # of first tuple */
+	mapi_int64 tuplecount;	/* number of tuples in the cache */
 	struct {
 		int fldcnt;	/* actual number of fields in each row */
 		char *rows;	/* string representation of rows received */
 		int tupleindex;	/* index of tuple rows */
-		int tuplerev;	/* reverse map of tupleindex */
+		mapi_int64 tuplerev;	/* reverse map of tupleindex */
 		char **anchors;	/* corresponding field pointers */
 	} *line;
 };
@@ -125,8 +125,6 @@ struct BlockCache {
    application can have any number of connections to any number of
    servers.  Connections are completely independent of each other.
 */
-
-
 struct MapiStruct {
 	char *server;		/* server version */
 	char *mapiversion;	/* mapi version */
@@ -154,7 +152,9 @@ struct MapiStruct {
 	MapiHdl active;		/* set when not all rows have been received */
 
 	int cachelimit;		/* default maximum number of rows to cache */
-	int redircnt;		/* redirection count */
+	int redircnt;		/* redirection count, used to cut of redirect loops */
+	int redirmax;       /* maximum redirects before giving up */
+	char *redirects[50];/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
@@ -166,16 +166,14 @@ struct MapiResultSet {
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
-	int row_count;
-	int last_id;
+	mapi_int64 row_count;
+	mapi_int64 last_id;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
 };
-
-
 
 struct MapiStatement {
 	struct MapiStruct *mid;
@@ -192,14 +190,15 @@ struct MapiStatement {
 	MapiHdl prev, next;
 };
 
-
-
+/*
 #ifdef DEBUG
 #define debugprint(fmt,arg)	printf(fmt,arg)
 #else
 #define debugprint(fmt,arg)	((void) 0)
 #endif
+*/
 
+/*
 #define mapi_check(X,C)							\
 	do {								\
 		debugprint("entering %s\n", (C));			\
@@ -210,6 +209,8 @@ struct MapiStatement {
 		}							\
 		mapi_clrError(X);					\
 	} while (0)
+*/
+
 #define mapi_check0(X,C)						\
 	do {								\
 		debugprint("entering %s\n", (C));			\
@@ -220,6 +221,7 @@ struct MapiStatement {
 		}							\
 		mapi_clrError(X);					\
 	} while (0)
+
 #define mapi_hdl_check(X,C)						\
 	do {								\
 		debugprint("entering %s\n", (C));			\
@@ -231,6 +233,7 @@ struct MapiStatement {
 		}							\
 		mapi_clrError((X)->mid);				\
 	} while (0)
+
 #define mapi_hdl_check0(X,C)						\
 	do {								\
 		debugprint("entering %s\n", (C));			\
@@ -243,28 +246,30 @@ struct MapiStatement {
 		mapi_clrError((X)->mid);				\
 	} while (0)
 
+#define testBinding(hdl,fnr,funcname)					\
+	do {								\
+		mapi_hdl_check(hdl, funcname);				\
+		if (fnr < 0) {						\
+			return mapi_setError(hdl->mid,			\
+					     "Illegal field number",	\
+					     funcname, MERROR);		\
+		}							\
+		/* make sure there is enough space */			\
+		if (fnr >= hdl->maxbindings)				\
+			mapi_extend_bindings(hdl, fnr);			\
+	} while (0)
 
-static Mapi mapi_new(void);
-static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
-static int mapi_extend_params(MapiHdl hdl, int minparams);
-static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error);
-static void close_connection(Mapi mid);
-static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
-static int unquote(const char *msg, char **start, const char **next, int endchar);
-static int mapi_slice_row(struct MapiResultSet *result, int cr);
-static void mapi_store_bind(struct MapiResultSet *result, int cr);
-
-static int mapi_initialized = 0;
-
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long mapi_uint64;
-typedef long long mapi_int64;
-#else
-#ifdef HAVE___INT64
-typedef unsigned __int64 mapi_uint64;
-typedef __int64 mapi_int64;
-#endif
-#endif
+#define testParam(hdl, fnr, funcname)					\
+	do {								\
+		mapi_hdl_check(hdl, funcname);				\
+		if (fnr < 0) {						\
+			return mapi_setError(hdl->mid,			\
+					     "Illegal param number",	\
+					     funcname, MERROR);		\
+		}							\
+		if (fnr >= hdl->maxparams)				\
+			mapi_extend_params(hdl, fnr);			\
+	} while (0)
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
@@ -276,9 +281,64 @@ typedef __int64 mapi_int64;
 			return (e);					\
 		}							\
 	} while (0)
+
 #define REALLOC(p,c)	((p) = ((p) ? realloc((p),(c)*sizeof(*(p))) : malloc((c)*sizeof(*(p)))))
 
+#define checkSpace(len)						\
+	do {							\
+		/* note: k==strlen(hdl->query) */		\
+		if (k+len >= lim) {				\
+			lim = k + len + MAPIBLKSIZE;		\
+			hdl->query = realloc(hdl->query, lim);	\
+			assert(hdl->query);			\
+		}						\
+	} while (0)
 
+
+/* local declerations */
+static Mapi mapi_new(void);
+static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
+static int mapi_extend_params(MapiHdl hdl, int minparams);
+static MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error);
+static void close_connection(Mapi mid);
+static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
+static int unquote(const char *msg, char **start, const char **next, int endchar);
+static int mapi_slice_row(struct MapiResultSet *result, int cr);
+static void mapi_store_bind(struct MapiResultSet *result, int cr);
+
+/* define replacements */
+static void debugprint(char *fmt, char *arg);
+static MapiMsg mapi_check(Mapi mid, char *C);
+static void mapi_clrError(Mapi mid);
+
+static int mapi_initialized = 0;
+
+static void
+debugprint(char *fmt, char *arg)
+{
+#ifdef DEBUG
+    printf(fmt, arg);
+#else
+    /* return the values to eliminate unused parameters compiler warning */
+    return (void)fmt;
+    return (void)arg;
+#endif
+}
+ 
+static MapiMsg
+mapi_check(Mapi mid,char *C)
+{
+	do {
+		debugprint("entering %s\n", C);
+		assert(mid);
+		if (mid->connected == 0) {
+			mapi_setError(mid, "Connection lost", C, MERROR);
+			return mid->error;
+		}
+		mapi_clrError(mid);
+	} while (0);
+    return mid->error;
+}
 
 static void
 mapi_clrError(Mapi mid)
@@ -319,24 +379,24 @@ mapi_error_str(Mapi mid)
 static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
-	size_t len = strlen(prefix);
+    size_t len = strlen(prefix);
 
-	while (msg && *msg) {
-		/* cut by line */
-		char *p = strchr(msg, '\n');
+    while (msg && *msg) {
+        /* cut by line */
+        char *p = strchr(msg, '\n');
 
-		if (p)
-			*p++ = 0;
+        if (p)
+            *p++ = 0;
 
-		/* skip over prefix */
-		if (strncmp(msg, prefix, len) == 0)
-			msg += len;
+        /* skip over prefix */
+        if (strncmp(msg, prefix, len) == 0)
+            msg += len;
 
-		/* output line */
-		fputs(msg, fd);
-		fputc('\n', fd);
-		msg = p;
-	}
+        /* output line */
+        fputs(msg, fd);
+        fputc('\n', fd);
+        msg = p;
+    }
 }
 
 static void
@@ -464,7 +524,6 @@ usec()
 #endif
 #endif
 }
-
 
 void
 mapi_log_header(Mapi mid, char *mark)
@@ -927,6 +986,7 @@ mapi_new(void)
 
 	mid->cachelimit = 100;
 	mid->redircnt = 0;
+	mid->redirmax = 10;
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
@@ -1011,6 +1071,8 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 MapiMsg
 mapi_destroy(Mapi mid)
 {
+	char **r;
+
 	mapi_clrError(mid);
 
 	while (mid->first)
@@ -1034,11 +1096,50 @@ mapi_destroy(Mapi mid)
 		free(mid->database);
 	if (mid->server)
 		free(mid->server);
+
+	r = mid->redirects;
+	while (*r) {
+		free(*r);
+		r++;
+	}
+
 	free(mid);
 	return MOK;
 }
 
+static void
+parse_uri_query(Mapi mid, char *uri)
+{
+	char *amp;
+	char *val;
 
+	/* just don't care where it is, assume it all starts from '?' */
+	if ((uri = strchr(uri, '?')) == NULL)
+		return;
+
+	uri++; /* skip '?' */
+
+	while ((amp = strchr(uri, '&')) != NULL) {
+		*amp++ = '\0';
+		if ((val = strchr(uri, '=')) != NULL) {
+			*val++ = '\0';
+			if (strcmp("database", uri) == 0) {
+				free(mid->database);
+				mid->database = strdup(val);
+			} else if (strcmp("language", uri) == 0) {
+				free(mid->language);
+				mid->language = strdup(val);
+			} else if (strcmp("user", uri) == 0) {
+				/* until we figure out how this can be done safely wrt
+				 * security, ignore */
+			} else if (strcmp("password", uri) == 0) {
+				/* until we figure out how this can be done safely wrt
+				 * security, ignore */
+			} /* can't warn, ignore */
+		} /* else: invalid argument, can't warn, just skip */
+		uri = amp;
+	}
+}
 
 /* (Re-)establish a connection with the server. */
 static MapiMsg
@@ -1477,102 +1578,16 @@ mapi_start_talking(Mapi mid)
 				case '#':
 					motdlen += strlen(result->cache.line[i].rows) + 1;
 					break;
-				case '^':{
-					/* FIXME: there may be multiple redirects */
-					char *tmp = result->cache.line[i].rows;
-					char *tmp2 = "", *p = NULL, *db = NULL;
-
-					/* redirect, looks like:
-					 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
-					 * or
-					 * ^mapi:merovingian:proxy */
-
-					/* first see if we reached our redirection limit */
-					if (mid->redircnt > 10) {
-						mapi_close_handle(hdl);
-						mapi_setError(mid, "too many redirects", "mapi_start_talking", MERROR);
-						return (mid->error);
-					}
-					/* see if we can possibly handle the redirect */
-					tmp++;
-					if (strncmp("mapi:monetdb", tmp, 12) == 0) {
-						/* parse components (we store the args
-						 * immediately in the mid... ok, that's dirty */
-						tmp += strlen("mapi:monetdb://");
-						p = tmp;
-						if ((tmp = strchr(tmp, ':')) != NULL) {
-							*tmp++ = '\0';
-							tmp2 = tmp;
-						} else {
-							tmp = p;
-						}
-						if ((tmp = strchr(tmp, '/')) != NULL) {
-							*tmp++ = '\0';
-							mid->port = atoi(tmp2);
-							if (mid->port == 0)
-								mid->port = 50000; /* hardwired default */
-							db = tmp;
-						} else {
-							tmp = p;
-							db = NULL;
-						}
-						if (mid->hostname)
-							free(mid->hostname);
-						mid->hostname = strdup(p);
-						if ((tmp = strchr(tmp, '?')) != NULL) {
-							char *tmp3;
-
-							*tmp++ = '\0';
-							tmp2 = tmp;
-							while ((tmp = strchr(tmp, '&')) != NULL) {
-								*tmp++ = '\0';
-								if ((tmp3 = strchr(tmp2, '=')) != NULL) {
-									*tmp3++ = '\0';
-									/* tmp2 = key, tmp3 = val */
-									if (strcmp("user", tmp2) == 0) {
-										free(mid->username);
-										mid->username = strdup(tmp3);
-									} else if (strcmp("lang", tmp2) == 0) {
-										free(mid->language);
-										mid->language = strdup(tmp3);
-									} /* else ignore */
-								} /* else ignore */
-								tmp2 = tmp;
-							}
-							tmp = tmp2;
-							if ((tmp3 = strchr(tmp2, '=')) != NULL) {
-								*tmp3++ = '\0';
-								/* tmp2 = key, tmp3 = val */
-								if (strcmp("user", tmp2) == 0) {
-									free(mid->username);
-									mid->username = strdup(tmp3);
-								} else if (strcmp("lang", tmp2) == 0) {
-									free(mid->language);
-									mid->language = strdup(tmp3);
-								} /* else ignore */
-							} /* else ignore */
-						}	/* no optional arguments (weird) */
-						if (mid->database) 
-							free(mid->database);
-						mid->database = db != NULL ? strdup(db) : NULL;
-
-						mid->redircnt++;
-						mapi_close_handle(hdl);
-						/* reconnect using the new values */
-						return (mapi_reconnect(mid));
-					} else if (strncmp("mapi:merovingian", tmp, 16) == 0) {
-						/* this is a proxy "offer", it means we should
-						 * restart the login ritual, without
-						 * disconnecting */
-						return mapi_start_talking(mid);
-					} else {
-						tmp2 = alloca(sizeof(char) * (strlen(tmp) + 50));
-						sprintf(tmp2, "error while parsing redirect: %s\n", tmp);
-						mapi_close_handle(hdl);
-						mapi_setError(mid, tmp2, "mapi_start_talking", MERROR);
-						return (mid->error);
-					}
-				}
+				case '^': {
+					char **r = mid->redirects;
+					int m = sizeof(mid->redirects) - 1;
+					for (; *r != NULL && m > 0; r++)
+						m--;
+					if (m == 0)
+						break;
+					*r++ = strdup(result->cache.line[i].rows + 1);
+					*r = NULL;
+				} break;
 				}
 			}
 		}
@@ -1585,6 +1600,99 @@ mapi_start_talking(Mapi mid)
 					strcat(mid->motd, "\n");
 				}
 		}
+
+		if (*mid->redirects != NULL) {
+			char *red;
+			char *p, *q;
+			char **fr;
+
+			/* redirect, looks like:
+			 * ^mapi:monetdb://localhost:50001/test?lang=sql&user=monetdb
+			 * or
+			 * ^mapi:merovingian://proxy?database=test */
+
+			/* first see if we reached our redirection limit */
+			if (mid->redircnt >= mid->redirmax) {
+				mapi_close_handle(hdl);
+				mapi_setError(mid, "too many redirects",
+						"mapi_start_talking", MERROR);
+				return (mid->error);
+			}
+			/* we only implement following the first */
+			red = mid->redirects[0];
+
+			/* see if we can possibly handle the redirect */
+			if (strncmp("mapi:monetdb", red, 12) == 0) {
+				char *db = NULL;
+				/* parse components (we store the args
+				 * immediately in the mid... ok, that's dirty) */
+				red += strlen("mapi:monetdb://");
+				p = red;
+				q = NULL;
+				if ((red = strchr(red, ':')) != NULL) {
+					*red++ = '\0';
+					q = red;
+				} else {
+					red = p;
+				}
+				if ((red = strchr(red, '/')) != NULL) {
+					*red++ = '\0';
+					if (q != NULL) {
+						mid->port = atoi(q);
+						if (mid->port == 0)
+							mid->port = 50000; /* hardwired default */
+					}
+					db = red;
+				} else {
+					red = p;
+					db = NULL;
+				}
+				if (mid->hostname)
+					free(mid->hostname);
+				mid->hostname = strdup(p);
+				if (mid->database) 
+					free(mid->database);
+				mid->database = db != NULL ? strdup(db) : NULL;
+
+				parse_uri_query(mid, red);
+
+				mid->redircnt++;
+				mapi_close_handle(hdl);
+				/* free all redirects */
+				fr = mid->redirects;
+				mid->redirects[0] = NULL;
+				while (*fr != NULL) {
+					free(*fr);
+					*fr = NULL;
+					fr++;
+				}
+				/* reconnect using the new values */
+				return mapi_reconnect(mid);
+			} else if (strncmp("mapi:merovingian", red, 16) == 0) {
+				/* this is a proxy "offer", it means we should
+				 * restart the login ritual, without
+				 * disconnecting */
+				parse_uri_query(mid, red + 16);
+				mid->redircnt++;
+				/* free all redirects */
+				fr = mid->redirects;
+				mid->redirects[0] = NULL;
+				while (*fr != NULL) {
+					free(*fr);
+					*fr = NULL;
+					fr++;
+				}
+				return mapi_start_talking(mid);
+			} else {
+				q = alloca(sizeof(char) * (strlen(red) + 50));
+				snprintf(q, strlen(red) + 50,
+						"error while parsing redirect: %s\n", red);
+				mapi_close_handle(hdl);
+				mapi_setError(mid, q, "mapi_start_talking", MERROR);
+				return (mid->error);
+			}
+		}
+
 		mid->versionId = strcmp("Mserver 5.0", result->cache.line[0].rows) == 0 ? 5 : 4;
 	}
 	mapi_close_handle(hdl);
@@ -1623,6 +1731,32 @@ mapi_connect(const char *host, int port, const char *username, const char *passw
 	return mid;
 }
 
+/* Returns an malloced NULL-terminated array with redirects */
+char **
+mapi_resolve(const char *host, int port, const char *pattern)
+{
+	int rmax;
+	Mapi mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
+	if (mid && mid->error == MOK) {
+		rmax = mid->redirmax;
+		mid->redirmax = 0;
+		mapi_reconnect(mid);  /* real connect, don't follow redirects */
+		mid->redirmax = rmax;
+		if (mid->error == MOK) {
+			close_connection(mid); /* we didn't expect a connection actually */
+		} else {
+			char **ret = malloc(sizeof(char *) * sizeof(mid->redirects));
+			memcpy(ret, mid->redirects,
+					sizeof(char *) * sizeof(mid->redirects));
+			mid->redirects[0] = NULL;  /* make sure the members aren't freed */
+			mapi_destroy(mid);
+			return ret;
+		}
+	}
+	mapi_destroy(mid);
+	return NULL;
+}
+
 stream **
 mapi_embedded_init(Mapi *midp, char *lang)
 {
@@ -1643,8 +1777,6 @@ mapi_embedded_init(Mapi *midp, char *lang)
 	*midp = mid;
 	return streams;
 }
-
-
 
 static void
 close_connection(Mapi mid)
@@ -1685,33 +1817,6 @@ mapi_disconnect(Mapi mid)
 	close_connection(mid);
 	return MOK;
 }
-
-
-
-#define testBinding(hdl,fnr,funcname)					\
-	do {								\
-		mapi_hdl_check(hdl, funcname);				\
-		if (fnr < 0) {						\
-			return mapi_setError(hdl->mid,			\
-					     "Illegal field number",	\
-					     funcname, MERROR);		\
-		}							\
-		/* make sure there is enough space */			\
-		if (fnr >= hdl->maxbindings)				\
-			mapi_extend_bindings(hdl, fnr);			\
-	} while (0)
-
-#define testParam(hdl, fnr, funcname)					\
-	do {								\
-		mapi_hdl_check(hdl, funcname);				\
-		if (fnr < 0) {						\
-			return mapi_setError(hdl->mid,			\
-					     "Illegal param number",	\
-					     funcname, MERROR);		\
-		}							\
-		if (fnr >= hdl->maxparams)				\
-			mapi_extend_params(hdl, fnr);			\
-	} while (0)
 
 MapiMsg
 mapi_bind(MapiHdl hdl, int fnr, char **ptr)
@@ -1813,8 +1918,6 @@ mapi_clear_params(MapiHdl hdl)
 	return MOK;
 }
 
-
-
 static void
 mapi_check_query(MapiHdl hdl)
 {
@@ -1859,7 +1962,6 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 	return hdl;
 }
 
-
 MapiMsg
 mapi_timeout(Mapi mid, int timeout)
 {
@@ -1892,8 +1994,6 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 	mapi_close_handle(hdl);	/* reads away any output */
 	return MOK;
 }
-
-
 
 MapiMsg
 mapi_prepare_handle(MapiHdl hdl, const char *cmd)
@@ -1949,16 +2049,6 @@ mapi_prepare_array(Mapi mid, const char *cmd, char **val)
 }
 
 
-
-#define checkSpace(len)						\
-	do {							\
-		/* note: k==strlen(hdl->query) */		\
-		if (k+len >= lim) {				\
-			lim = k + len + MAPIBLKSIZE;		\
-			hdl->query = realloc(hdl->query, lim);	\
-			assert(hdl->query);			\
-		}						\
-	} while (0)
 
 static void
 mapi_param_store(MapiHdl hdl)
@@ -2231,7 +2321,7 @@ mapi_stream_into(Mapi mid, char *docname, char *colname, FILE *fp)
 	if (mid->languageId != LANG_XQUERY)
 		mapi_setError(mid, "only allowed in XQuery mode", "mapi_stream_into", MERROR);
 
-	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? " " : "", colname ? colname : "");
+	i = snprintf(buf, sizeof(buf), "%s%s%s", docname, colname ? "," : "", colname ? colname : "");
 	if (i < 0)
 		return MERROR;
 	rc = mapi_Xcommand(mid, "copy", buf);
@@ -2274,7 +2364,6 @@ mapi_trace(Mapi mid, int flag)
 	return MOK;
 }
 
-
 static int
 slice_row(const char *reply, char *null, char ***anchorsp, int length, int endchar)
 {
@@ -2311,7 +2400,7 @@ static MapiMsg
 mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 {
 	int i;			/* just a counter */
-	int n = 0;		/* # of tuples being deleted from front */
+	mapi_int64 n = 0;	/* # of tuples being deleted from front */
 
 	result->cache.tuplecount = 0;
 	for (i = 0; i < result->cache.writer - k; i++) {
@@ -2471,7 +2560,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		case Q_PREPARE:{
 			int ntuples;	/* not used */
 
-			sscanf(nline, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
+			sscanf(nline, "%d " LLFMT " %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
 			break;
 		}
 		case Q_BLOCK:
@@ -2707,9 +2796,6 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 	hdl->active = NULL;
 	return mid->error;
 }
-
-#define MAXQUERYSIZE	(100*1024)
-#define QUERYBLOCK	(16*1024)
 
 static MapiMsg
 mapi_execute_internal(MapiHdl hdl)
@@ -2964,8 +3050,6 @@ mapi_query_done(MapiHdl hdl)
 	return ret == MOK && hdl->needmore ? MMORE : ret;
 }
 
-
-
 MapiHdl
 mapi_quick_query(Mapi mid, const char *cmd, FILE *fd)
 {
@@ -3005,8 +3089,6 @@ mapi_quick_query_array(Mapi mid, const char *cmd, char **val, FILE *fd)
 		printf("mapi_quick_query return:%d\n", ret);
 	return hdl;
 }
-
-
 
 MapiHdl
 mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
@@ -3087,7 +3169,7 @@ mapi_fetch_reset(MapiHdl hdl)
 }
 
 MapiMsg
-mapi_seek_row(MapiHdl hdl, int rownr, int whence)
+mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
 {
 	struct MapiResultSet *result;
 
@@ -3142,8 +3224,6 @@ mapi_cache_freeup(MapiHdl hdl, int percentage)
 		k = 1;
 	return mapi_cache_freeup_internal(result, k);
 }
-
-
 
 static char *
 mapi_fetch_line_internal(MapiHdl hdl)
@@ -3208,16 +3288,12 @@ mapi_fetch_line(MapiHdl hdl)
 	return reply;
 }
 
-
-
 MapiMsg
 mapi_finish(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_finish");
 	return finish_handle(hdl);
 }
-
-
 
 MapiMsg
 mapi_quick_response(MapiHdl hdl, FILE *fd)
@@ -3233,10 +3309,6 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 	} while (mapi_next_result(hdl) == 1);
 	return hdl->mid->error ? hdl->mid->error : (hdl->needmore ? MMORE : MOK);
 }
-
-
-
-
 
 /* msg is a string consisting comma-separated values.  The list of
    values is terminated by endchar or by the end-of-string NULL byte.
@@ -3393,7 +3465,9 @@ mapi_unquote(char *msg)
 char *
 mapi_quote(const char *msg, int size)
 {
-	char *s = malloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
+	/* we absolutely don't need more than this (until we start
+	   producing octal escapes */
+	char *s = malloc((size < 0 ? strlen(msg) : (size_t) size) * 2 + 1);
 	char *t = s;
 
 	/* the condition is tricky: if initially size < 0, we must
@@ -3442,11 +3516,6 @@ mapi_quote(const char *msg, int size)
 	return s;
 }
 
-
-
-
-
-
 static int
 mapi_extend_bindings(MapiHdl hdl, int minbindings)
 {
@@ -3463,9 +3532,6 @@ mapi_extend_bindings(MapiHdl hdl, int minbindings)
 	return MOK;
 }
 
-
-
-
 static int
 mapi_extend_params(MapiHdl hdl, int minparams)
 {
@@ -3481,10 +3547,6 @@ mapi_extend_params(MapiHdl hdl, int minparams)
 	hdl->maxparams = nm;
 	return MOK;
 }
-
-
-
-
 
 #if defined(HAVE_STRTOF) && !HAVE_DECL_STRTOF
 extern float strtof(const char *, char **);
@@ -3671,8 +3733,6 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 	return i;
 }
 
-
-
 int
 mapi_split_line(MapiHdl hdl)
 {
@@ -3711,9 +3771,7 @@ mapi_fetch_row(MapiHdl hdl)
 	return n;
 }
 
-
-
-int
+mapi_int64
 mapi_fetch_all_rows(MapiHdl hdl)
 {
 	Mapi mid;
@@ -3732,10 +3790,10 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				stream_printf(mid->tracelog, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount);
+				stream_printf(mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
 				stream_flush(mid->tracelog);
 			}
-			if (stream_printf(mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    stream_flush(mid->to))
 				check_stream(mid, mid->to, stream_error(mid->to), "mapi_fetch_line", 0);
 		}
@@ -3810,14 +3868,14 @@ mapi_get_field_count(MapiHdl hdl)
 	return hdl->result ? hdl->result->fieldcnt : 0;
 }
 
-int
+mapi_int64
 mapi_get_row_count(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_row_count");
 	return hdl->result ? hdl->result->row_count : 0;
 }
 
-int
+mapi_int64
 mapi_get_last_id(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_last_id");
@@ -3886,7 +3944,6 @@ mapi_get_query(MapiHdl hdl)
 	}
 }
 
-
 int
 mapi_get_querytype(MapiHdl hdl)
 {
@@ -3911,7 +3968,7 @@ mapi_get_tableid(MapiHdl hdl)
 	return 0;
 }
 
-int
+mapi_int64
 mapi_rows_affected(MapiHdl hdl)
 {
 	struct MapiResultSet *result;
@@ -3988,7 +4045,4 @@ mapi_get_active(Mapi mid)
 {
 	return mid->active;
 }
-
-
-
 

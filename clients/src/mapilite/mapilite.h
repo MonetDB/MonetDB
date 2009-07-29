@@ -81,6 +81,16 @@ extern "C" {
 #define mapi_export extern
 #endif
 
+#ifdef HAVE_LONG_LONG
+typedef unsigned long long mapi_uint64;
+typedef long long mapi_int64;
+#else
+#ifdef HAVE___INT64
+typedef unsigned __int64 mapi_uint64;
+typedef __int64 mapi_int64;
+#endif
+#endif
+
 /* three structures used for communicating date/time information */
 /* these structs are deliberately compatible with the ODBC versions
    SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
@@ -111,6 +121,7 @@ mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, con
 mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
+mapi_export char** mapi_resolve(const char *host, int port, const char *pattern);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
 #endif
@@ -168,15 +179,15 @@ mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_quick_response(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int rowne, int whence);
+mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
 
 mapi_export MapiMsg mapi_timeout(Mapi mid, int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
-mapi_export int mapi_fetch_all_rows(MapiHdl hdl);
+mapi_export mapi_int64 mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
-mapi_export int mapi_get_row_count(MapiHdl hdl);
-mapi_export int mapi_get_last_id(MapiHdl hdl);
-mapi_export int mapi_rows_affected(MapiHdl hdl);
+mapi_export mapi_int64 mapi_get_row_count(MapiHdl hdl);
+mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
+mapi_export mapi_int64 mapi_rows_affected(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
@@ -202,6 +213,7 @@ mapi_export int mapi_get_tableid(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 mapi_export MapiHdl mapi_get_active(Mapi mid);
+
 
 #ifdef __cplusplus
 }
