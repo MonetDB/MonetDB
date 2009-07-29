@@ -810,14 +810,14 @@ fflush(stdout);
 		/* smaller determines number of partitions
 		 * => minimizes number of partitions
 		 */
-		while (clim / parts > sz_mem / 32) {
+		while (clim / parts > sz_mem / 64) {
 			parts <<= 1;
 		}
 @(
 		/* larger determines number of partitions
 		 * => minimizes size of inner partitions
 		 */
-		while (blim / parts > sz_mem / 32) {
+		while (blim / parts > sz_mem / 64) {
 			parts <<= 1;
 		}
 @)
