@@ -331,6 +331,12 @@
 	/* 
 	 * These functions are not present in the original Cimpl implementation
 	 */
+	
+	/**
+	* Create a new savepoint ID
+	* @param resource connection instance
+	* @return bool TRUE if the ID has been correctly generated, FALSE otherwise.
+	*/
 	function create_savepoint(&$conn) {
 		if ($conn != NULL) {
 			$index = count($conn["transactions"]);
@@ -344,14 +350,25 @@
 		return FALSE;
 	}
 	
+	/**
+	* Release a savepoint ID.
+	* @param resource connection instance
+	* @return bool TRUE if the ID has been correctly released, FALSE otherwise.
+	*/
 	function release_savepoint(&$conn) {
 		if ($conn != NULL) { 
-			return array_pop($conn["transactions"]);
+			array_pop($conn["transactions"]);
+			return TRUE;
 		}
 		
 		return FALSE;
 	}
-	
+
+	/**
+	* Return the current (last generated) savepoint ID.
+	* @param resource connection instance
+	* @return string savepoint ID. I no savepoints are available, FALSE is returned.
+	*/
 	function get_savepoint(&$conn) {
 		if (count($conn["transactions"]) == 0) {
 			return FALSE;
@@ -360,12 +377,17 @@
 		// return the last element in the array
 		return $conn["transactions"][count($conn["transactions"])-1];
 	}
-	
-	// turn auto commit on/off.
+
+	/**
+	* Sets auto commit mode on/off
+	* @param resource connection instance
+	* @param bool TRUE to turn auto commit on, FALSE to turn it off.
+	* @return bool TRUE is auto commit mode was correctly set. FALSE otherwise.
+	*/
 	function auto_commit($conn, $flag=TRUE) {
 		if ($conn["socket"] != NULL) {
 			$cmd = "auto_commit " . $flag;
-			write_command($socket, $cmd);
+			mapi_write($socket, format_command($cmd));
 			
 			return TRUE;
 		}

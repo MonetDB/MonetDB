@@ -12,7 +12,7 @@
    * -  mapi_read() {
    * -  mapi_write($msg) {
    * -  set_timezone() {
-   * -  write_command($cmd) {
+   * -  format_command($cmd) {
    * -  mapi_connect_proxy() {
    * -  mapi_open() {
    * - mapi_close() {
@@ -89,26 +89,13 @@
 		$handle = array("conn" => "", "header" => array(), "query" => "", "record_set" => array(), "operation" => -1, "last_row" => 0);
 		
 		// if multiple connections are present, require the user to specify which one to use.
-		if ((count($connection_pool) > 0) && $conn == NULL) {
+		if ($conn == NULL) {
 			return FALSE;
-		} else {
-			// get the socket associated with the desired connection
-			if (count($connection_pool == 1) && ($conn == NULL)) {
-				if (($socket = $connection_pool[0]["socket"]) == NULL) {
-					return FALSE;
-				}
-				$handle["conn"] = $connection_pool[0]["id"];
-								
-			} else if ($conn != NULL) {
-				if (($socket = $conn["socket"]) == NULL) {
-					return FALSE;
-				}
-				$handle["conn"] = $conn["id"];
-			} else {
-				return FALSE;
-			}
+		} else if (($socket = $conn["socket"]) == NULL) {
+			return FALSE;
 		}
 		
+		$handle["conn"] = $conn["id"];		
 		
 		/* Fire the query and read back the response */
 		$buf = mapi_write($socket, format_query($query));
@@ -126,7 +113,6 @@
 		if ($handle == NULL) {
 			return FALSE;
 		}
-	
 		return $handle;
 	}
 	
@@ -140,7 +126,7 @@
 			$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
 				
 			$exp_size = min(10, $left_rows);
-			write_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size );				
+			mapi_write(format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
 			$operation = mapi_store($data, $handle);
@@ -304,7 +290,6 @@
 			
 		}
 		
-		print "here\n";
 		$response = mapi_read($socket);
 		
 		if ($response != MSG_PROMPT) { 
@@ -456,9 +441,8 @@
 		}
 	}
 	
-	function write_command($socket=NULL, $cmd) {
-
-		$buf = mapi_write($socket, "X" . $cmd . "\nX");
+	function format_command($cmd) {
+		return "X" . $cmd . "\nX";
 	}
 	
 	
@@ -489,7 +473,7 @@
 			set_timezone($socket); // set the timezone according to the system's configuration
 			
 			// export the reply size (max number of tuples returned at query executions)
-			write_command($socket, "reply_size " . REPLY_SIZE);		
+			mapi_write($socket, format_command("reply_size " . REPLY_SIZE));		
 			if (strlen($response = mapi_read($socket)) > 0 ) {
 				// something went wrong 
 				$last_error = $response;
