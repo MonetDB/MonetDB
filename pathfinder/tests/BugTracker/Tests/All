@@ -70,6 +70,7 @@ collection-naming.SF-1590782
 pf_docname.SF-2418722
 if-condition_testing_empty_sequence.SF-1589820
 update_error.SF-1579510
+value_append_to_nil.SF-1592689
 path_steps_with_name_tests_on_transsient_nodes.SF-1610247.alg
 add_qnames.SF-1611353.alg
 attribute_value_comparison.SF-1576463.alg
@@ -193,10 +194,10 @@ fn-collection_DOES-NOT-EXIST.SF-2664405
 unuseable_doc-available.SF-2791704
 stream-document.SF-2804823
 fn-trace.SF-2805513
+child-step-empty-node.SF-2815716
 nil-value-in-elem-construct.SF-2815820
 oidInDocMgmt.SF-2686121
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list!
-child-step-empty-node.SF-2815716
