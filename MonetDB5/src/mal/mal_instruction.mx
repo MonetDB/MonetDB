@@ -530,7 +530,7 @@ mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, ValPtr cst,int depth);
-mal_export int convertConstant(malType type, ValPtr vr);
+mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export int newProperty(MalBlkPtr mb);
 #define varSetProperty(mb, var, name, opname, cst) \
@@ -1742,47 +1742,43 @@ nil value is set.
 /**
  * Converts the constant in vr to the MAL type type.  Conversion is done
  * in the vr struct.
- * Returns 0 on success, non-zero otherwise.
  */
-int
+str
 convertConstant(malType type, ValPtr vr)
 {
 	if( vr->vtype == type)
-		return 0;
+		return MAL_SUCCEED;
 	if( vr->vtype == TYPE_str){
 		int ll = 0;
 		ptr d = NULL;
 
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL ) {
-			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 			VALinit(vr, type, ATOMnilptr(type));
-			return 1;
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 		}
 		if ( strncmp(vr->val.sval,"nil",3)!= 0 &&
                 ATOMcmp(type, vr, ATOMnilptr(type)) ==0){
-			showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 			VALinit(vr, type, ATOMnilptr(type));
-			return 1;
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 		}
 		VALset(vr, type, d);
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 		if ( vr->vtype != type)
-			showException(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
-		return vr->vtype != type;
+			throw(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
 	}
 	
 	if (type== TYPE_bat ||isaBatType(type)){
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
 		vr->val.bval = 0;
-		return 0;
+		return MAL_SUCCEED;
 	}
 	switch (ATOMstorage(type)) {
 	case TYPE_any:
 #ifdef DEBUG_MAL_INSTR
-		showException(SYNTAX, "convertConstant", "missing type");
+		throw(SYNTAX, "convertConstant", "missing type");
 #endif
 		assert(0);
 	case TYPE_bit:
@@ -1796,14 +1792,16 @@ convertConstant(malType type, ValPtr vr)
 	case TYPE_wrd:
 	case TYPE_lng:
 		VALconvert(type,vr);
-		return vr->vtype != type;
+		if ( vr->vtype != type)
+			throw(SYNTAX, "convertConstant", "coercion failed");
+		return MAL_SUCCEED;
 	case TYPE_str:
 		{ str w=0;
 		  if( vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0){
 			vr->vtype = type;
 			vr->val.sval = GDKstrdup(str_nil);
 			vr->len = (int) strlen(vr->val.sval);
-			return 0;
+			return MAL_SUCCEED;
 		  }
 		  if( vr->vtype == TYPE_chr){
 			w= GDKstrdup("a");
@@ -1816,25 +1814,27 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.sval= w;
 		  /* VALset(vr, type, w); does not use TYPE-str */
 		}
-		return vr->vtype != type;
+		if ( vr->vtype != type)
+			throw(SYNTAX, "convertConstant", "coercion failed");
+		return MAL_SUCCEED;
 
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
 		vr->val.bval = 0;
-		return 0;
+		return MAL_SUCCEED;
 	case TYPE_ptr:
 		/* all coercions should be avoided to protect against memory probing */
 		if (vr->vtype == TYPE_void) {
 			vr->vtype = type;
 			vr->val.pval = 0;
-			return 0;
+			return MAL_SUCCEED;
 		}
 		/*
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
 			vr->vtype = type;
 			vr->val.pval = 0;
-			return 0;
+			return MAL_SUCCEED;
 		}
 		if (vr->vtype == TYPE_int) {
 			char buf[BUFSIZ];
@@ -1845,16 +1845,16 @@ convertConstant(malType type, ValPtr vr)
 			(*BATatoms[type].atomFromStr) (buf, &ll, &d);
 			if( d==0 ){
 				VALinit(vr, type, BATatoms[type].atomNull);
-				return 1;
+				throw(SYNTAX, "convertConstant", "conversion error");
 			}
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0 )
 				GDKfree(d);
 		}
 		*/
-		if (vr->vtype != type)
-			showException(SYNTAX, "convertConstant", "pointer conversion error");
-		return vr->vtype != type;
+		if ( vr->vtype != type)
+			throw(SYNTAX, "convertConstant", "pointer conversion error");
+		return MAL_SUCCEED;
 @-
 Extended types are always represented as string literals
 and converted to the internal storage structure.
@@ -1865,19 +1865,14 @@ end.
 	default:{
 		int ll = 0;
 		ptr d = NULL;
-		str s;
 
 		if( isaBatType(type)){
 			VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat));
 			break;
 		}
 		/* see if an atomFromStr() function is available */
-		if (BATatoms[type].atomFromStr == 0) {
-			s = getTypeName(type);
-			showException(SYNTAX, "convertConstant", "no string coercion for '%s'", s);
-			GDKfree(s);
-			break;
-		}
+		if (BATatoms[type].atomFromStr == 0)
+			throw(SYNTAX, "convertConstant", "no conversion operator defined");
 
 		/* if the value we're converting from is nil, the to
 		 * convert to value will also be nil */
@@ -1897,10 +1892,9 @@ end.
 			/* and try to parse it from string as the desired type */
 			ATOMfromstr(type, &d, &ll, w);
 			if (d == 0) {
-				showException(SYNTAX, "convertConstant", "parse error in '%s'", w);
 				VALinit(vr, type, ATOMnilptr(type));
 				GDKfree(w);
-				return 1;
+				throw(SYNTAX, "convertConstant", "conversion error");
 			}
 			memset((char*)vr, 0, sizeof(*vr));
 			VALset(vr, type, d);
@@ -1910,9 +1904,8 @@ end.
 		} else { /* what we're converting from is a string */
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
-				showException(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
 				VALinit(vr, type, ATOMnilptr(type));
-				return 1;
+				throw(SYNTAX, "convertConstant", "conversion error");
 			}
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
@@ -1921,8 +1914,8 @@ end.
 	}
 	}
 	if (vr->vtype != type)
-		showException(SYNTAX, "convertConstant", "conversion error");
-	return vr->vtype != type;
+		throw(SYNTAX, "convertConstant", "conversion error");
+	return MAL_SUCCEED;
 }
 
 int
@@ -1960,14 +1953,15 @@ cpyConstant(MalBlkPtr mb, VarPtr vr)
 int
 defConstant(MalBlkPtr mb, int type, ValPtr cst )
 {
-	int i, k;
+	int k;
 	ValPtr vr;
+	str msg;
 
 	if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)){
 		ValRecord vr = *cst;
 		int otype = cst->vtype;
-		i= convertConstant(type, cst);
-		if (i) {
+		msg= convertConstant(type, cst);
+		if (msg) {
 			str ft,tt;
 
 			/* free old value */
