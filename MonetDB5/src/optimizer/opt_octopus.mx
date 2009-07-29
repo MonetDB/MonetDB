@@ -236,10 +236,14 @@ OPTtentacle(Client cntxt,  MalBlkPtr mb, InstrPtr sig, InstrPtr pci, int start, 
 	ValRecord cst;
 	int conn=0;
 
-	if (list == NULL || needed == NULL){
+	/* check if the head is properly administered for Octopus */
+	SABAOTHgetLocalConnection(&name);
+
+	if ( name == NULL || *name == 0 || list == NULL || needed == NULL){
 		if ( list ) GDKfree(list);
 		if ( needed) GDKfree(needed);
 		if ( alias) GDKfree(alias);
+		if ( name) GDKfree(name);
 		return 0;
 	}
 #ifdef DEBUG_OPT_OCTOPUS
