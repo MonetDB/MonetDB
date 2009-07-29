@@ -204,10 +204,10 @@ fn-collection_DOES-NOT-EXIST.SF-2664405
 unuseable_doc-available.SF-2791704
 stream-document.SF-2804823
 fn-trace.SF-2805513
+child-step-empty-node.SF-2815716
 nil-value-in-elem-construct.SF-2815820
 oidInDocMgmt.SF-2686121
 #
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list! 
 Zombie_document.SF-2009556
 # Test "Zombie_document.SF-2009556" currently seems to corrupt the database and hence should be last in this list!
-child-step-empty-node.SF-2815716
