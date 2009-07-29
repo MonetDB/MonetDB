@@ -62,7 +62,7 @@ isCorrectInline(MalBlkPtr mb){
 			 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	return retseen == 1;
+	return retseen <= 1;
 }
 
 int
