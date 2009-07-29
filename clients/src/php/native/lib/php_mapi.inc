@@ -561,8 +561,7 @@
 			$socket = $conn["socket"];
 			socket_close($socket);
 			
-			/* remove the $conn from the pool */
-			
+			/* remove the $conn from the pool */	
 			// Create anonymous callback function to filter results for connection.
 			$function_body = 'return ( $input[\'id\'] != "'.$conn["id"].'" );';
 			$function_name = create_function('$input', $function_body);

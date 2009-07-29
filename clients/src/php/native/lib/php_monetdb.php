@@ -159,11 +159,30 @@
 		return $hashed;
 	}
 
+
+
 	/**
-	 * TODO
+	 * Returns the result in the given query resource as object one row at a time.  Column
+	 * names become members of the object through which the column values
+	 * can be retrieved.
+	 *
+	 * @param resource the query handle
+	 * @param int the position of the row to retrieve
+	 * @return the query result as object or FALSE if there are no more rows
 	 */
-	function monetdb_fetch_object($hdl, $row=-1)  {	
-		return FALSE;
+	function monetdb_fetch_object(&$hdl, $row=-1)  {	
+		$row_array =  monetdb_fetch_assoc(&$hdl, $row);
+		$row_object = new stdClass();
+		
+		if (is_array($row_array) && count($row_array) > 0) {
+			foreach ($row_array as $name=>$value) {
+		   		$name = strtolower(trim($name));
+		        if (!empty($name)) {
+		        	$row_object->$name = $value;
+		        }
+		     }
+		   }
+		return $row_object;
 	}
 	
 	/**
@@ -225,12 +244,14 @@
 		// NB: temporary solution; I'm studying better way to deal with possible sql injections issues.
 		return addslashes($str);
 	}
+	
+	
+	
+	
 		
 	/* These functions are not present in the original Cimpl implementation
 	 * TODO: make it connection aware
 	 */
-	
-	
 	function create_savepoint(&$conn) {
 		if ($conn != NULL) {
 			$index = count($conn["transactions"]);
