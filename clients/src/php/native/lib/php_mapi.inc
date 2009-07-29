@@ -18,8 +18,6 @@
    * - mapi_close() {
    *
 **/
-
-	date_default_timezone_set('Europe/Amsterdam'); /* Set the default timezone. TODO: read from php.ini */
 	
 	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
 	
@@ -43,6 +41,17 @@
 	define("PROTOCOL_v9", 9); // supported protocol(s)
 	
 	define('MAX_MEROVINGIAN_ITER', 10); // Maximum number of iterations during proxied auth through merovingian
+
+	define('TIMEZONE', 'Europe/Amsterdam'); // Arbitrarly defined timezone.
+
+//	if (date_default_timezone_get() == "") {
+	if (ini_get('date.timezone') == "") {
+		/*
+		* PHP was not able to determine the timezone on the machine. Default to a pre set and warn the user.
+		*/
+		date_default_timezone_set(TIMEZONE); /* Set the default timezone. */
+		trigger_error("PHP was not able to determine the timezone on the machine. The default will be " . TIMEZONE, E_USER_NOTICE);
+	}
 	
 
 	/**
@@ -50,13 +59,6 @@
 	*/
 	$connection_pool = array();
 	
-	/**
-	* Stores references to a pool of (per connection) query handles.
-	* 
-	*/
-	$connection_handles = array();
-
-	$connected = FALSE; // Connection to a db status;
 	$last_error = "";
 		
 
@@ -124,7 +126,6 @@
 		if ($handle == NULL) {
 			return FALSE;
 		}
-		
 	
 		return $handle;
 	}
@@ -181,8 +182,7 @@
 					$operation = Q_BLOCK;
 				}
 			} else if ($row[0] == MSG_SCHEMA_HEADER){
-				// skip for now
-				
+				// process the table header
 				$header = $header . $row . "\n";
 			} else if ($row[0] == MSG_TUPLE) {
 				// process tuples
@@ -488,7 +488,7 @@
 		if ( ($connected = mapi_connect($socket, $options, $merovingian_iter)) == TRUE ) {
 			/* Connected */
 			
-			set_timezone($socket); // arbitrarly set the timezone
+			set_timezone($socket); // set the timezone according to the system's configuration
 			
 			// export the reply size (max number of tuples returned at query executions)
 			write_command($socket, "reply_size " . REPLY_SIZE);		
@@ -532,6 +532,17 @@
 		}
 		
 		return FALSE;
+	}
+	
+	/* Returns a pointer to the current (last initialized) connection */
+	function &mapi_get_current_conn() {
+		global $connection_pool;
+		
+		if (count($connection_pool) > 0) {
+			return end($connection_pool);
+		} else {
+			return FALSE;
+		}
 	}
 	
 	/* Returns a socket */

@@ -53,7 +53,15 @@
 	 * @param resource connection instance
 	 */
 	function monetdb_disconnect($conn=NULL) {
-		mapi_close($conn);
+		$num_args = func_num_args();
+		
+		if ($num_args == 0) {
+			$conn = mapi_get_current_conn();
+			mapi_close(NULL);
+		}
+		else {
+			mapi_close($conn);
+		}
 	}
 	
 	/**
@@ -65,8 +73,14 @@
 	 * @return bool TRUE if there is a connection, FALSE otherwise
 	 *
 	 */
-	function monetdb_connected($conn) {
-		return mapi_connected($conn);
+	function monetdb_connected($connection=NULL) {
+		$num_args = func_num_args();
+		
+		if ($num_args == 0){
+			return mapi_connected(mapi_get_current_conn());
+		}
+		
+		return mapi_connected($connection);
 	}
 	
 	/**
@@ -76,8 +90,23 @@
 	 * @param string the SQL query to execute
 	 * @return resource a query handle or FALSE on failure
 	 */
-	function monetdb_query($connection=NULL, $query) {
-		return mapi_execute($connection, $query);
+	function monetdb_query($connection=NULL, $query="") {
+		$num_args = func_num_args();
+		
+		if ($num_args == 1){
+			$arg = func_get_arg(0);
+			if (is_string($arg)) {
+				$conn = mapi_get_current_conn();
+				if ($conn != NULL) {
+					return mapi_execute($conn, $arg);
+				} 
+			}
+			
+		} else {
+			return mapi_execute($connection, $query);
+		}
+		
+		return FALSE;
 	}
 	
 	
@@ -97,35 +126,40 @@
 	}
 	
 	/**
-	 * Returns an array containing column values as value.
+	 * Returns an array containing column values as value. 
+	 * For efficiency reasons the array pointer is not reset when calling monetdb_fetch_row
+	 * specifying a row value. 
 	 *
 	 * @param resource the query handle
 	 * @param int the position of the row to retrieve
 	 * @return array the next row in the query result as associative array or
 	 *         FALSE if no more rows exist
 	 */
-	function monetdb_fetch_row(&$hdl, $row=-1) {		
-		
+
+
+	function monetdb_fetch_row(&$hdl, $row=-1) {	
+		global $last_error;
 		if ($hdl["operation"] != 1) {
 			return FALSE;
 		}
-		
+	
 		if ($row == -1){
-			$row = $hdl["last_row"];
+			$entry = current($hdl["record_set"]);
+			//advance the array of one position
+			next($hdl["record_set"]);
 		} else {
-			$row -= 1; // ith row in the database is store at position i-1 in the array.
+			if ($row < $hdl["query"]["rows"]) {
+				$entry = $hdl["record_set"][$row-1];
+			}
+			else {
+				$last_error = "Index out of bound\n";
+				return FALSE;
+			}
 		}	
-	
-		
-		if ($row > $hdl["query"]["rows"]) {
-			// print "Error: the requested index exceeds the number of rows \n";
-			return FALSE;
-		}
-	
-		$hdl["last_row"] += 1;
 
-		return $hdl["record_set"][$row];
+		return $entry;
 	}
+
 	
 	/**
 	 * Returns an associative array containing the column names as keys, and
@@ -137,14 +171,16 @@
 	 *         FALSE if no more rows exist
 	 */	
 	function monetdb_fetch_assoc(&$hdl, $row=-1) {
-		global $last_row;
-		
 		if ($hdl["operation"] != Q_TABLE) {
 			return FALSE;
 		}
 		
 		// first retrieve the row as an array
 		$fetched_row =  monetdb_fetch_row($hdl, $row);
+		
+		if ($fetched_row == FALSE) {
+			return FALSE;
+		}
 		
 		// now hash the array by field name		
 		$hashed = array();
@@ -160,7 +196,6 @@
 	}
 
 
-
 	/**
 	 * Returns the result in the given query resource as object one row at a time.  Column
 	 * names become members of the object through which the column values
@@ -170,8 +205,13 @@
 	 * @param int the position of the row to retrieve
 	 * @return the query result as object or FALSE if there are no more rows
 	 */
-	function monetdb_fetch_object(&$hdl, $row=-1)  {	
+	function monetdb_fetch_object(&$hdl, $row=-1)  {
 		$row_array =  monetdb_fetch_assoc(&$hdl, $row);
+		
+		if ($row_array == FALSE) {
+			return FALSE;
+		}
+		
 		$row_object = new stdClass();
 		
 		if (is_array($row_array) && count($row_array) > 0) {
@@ -190,7 +230,7 @@
 	 * query.  The number of affected rows typically is 1 for INSERT
 	 * queries.
 	 *
-	 * @param resource the query resource
+	 * @param resource the query handle
 	 * @return int the number of affected rows
 	 */	
 	function monetdb_affected_rows($hdl) {
@@ -204,7 +244,7 @@
 	/**
 	 * Returns the last error reported by the database.
 	 *
-	 * @return string string the last error
+	 * @return string the last error reported
 	 */
 	function monetdb_last_error() {
 		global $last_error;
@@ -212,9 +252,28 @@
 	}
 	
 	/**
-	* TODO
-	*/
-	function monetdb_insert_id($seq)  {
+	 * Generates the next id in the sequence $seq
+	 *
+	 * @param resource connection instance
+	 * @param seq sequence whose next
+	 * value we want to retrieve
+	 * @return string the ID of the last tuple inserted. FALSE if an error occurs
+	 */
+	function monetdb_insert_id($connection = NULL, $seq)  {
+		$num_args = func_num_args();
+		
+		if ($num_args == 1) {
+			$connection = mapi_get_current_conn();
+			$seq = func_get_arg(0);
+		}
+		
+		if (is_string($seq)) {
+			$query = "SELECT NEXT VALUE FOR ".db_quote_ident($seq)."";
+			$res = monetdb_query($connection, $query);
+			$row = monetdb_fetch_assoc($result);
+            return($row[$seq]);
+		}
+		
 		return FALSE;
 	}
 	
@@ -228,6 +287,7 @@
 	 *
 	 * @param string the identifier to quote
 	 * @return string the quoted identifier
+	 *
 	 */
 	function monetdb_quote_ident($str) {
 		return('"'. $str .'"');
@@ -241,16 +301,35 @@
 	 * @return string the escaped string
 	 */
 	function monetdb_escape_string($str) {
-		// NB: temporary solution; I'm studying better way to deal with possible sql injections issues.
+		// NB: temporary solution; I'm studying better ways to deal with possible sql injections issues.
 		return addslashes($str);
 	}
 	
-	
-	
-	
+	/**
+	* Free the result set memory.
+	* 
+	* @param resource the query handle.
+	* @return bool returns TRUE on success or FALSE on failure.
+	*
+	*/
+	function monetdb_free_result(&$hdl) {
 		
-	/* These functions are not present in the original Cimpl implementation
-	 * TODO: make it connection aware
+		if (isset($hdl)) {
+			foreach($hdl as $field) {
+				if (isset($field)) {
+					unset($field);
+				}
+			}
+			
+			unset($hdl);
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
+		
+	/* 
+	 * These functions are not present in the original Cimpl implementation
 	 */
 	function create_savepoint(&$conn) {
 		if ($conn != NULL) {
