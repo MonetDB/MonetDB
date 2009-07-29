@@ -378,7 +378,7 @@ static BAT *
 GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 	BAT **bp, **cp, **jn, *bn = 0;
 	BUN k, *bcnt,*ccnt,cnt,bcap,ccap, jcnt=0;
-	int bmax=0, cmax=0, bi = 0, ci = 0;
+	BUN bmax=0, cmax=0, bi = 0, ci = 0;
 	int parts, mask, i, nrblks, *map;
 	int *celm, *belm, **bpelm, **cpelm, *bpcnt, *cpcnt;
 	oid **bpoid, **cpoid;
@@ -428,8 +428,8 @@ GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 	for( i=0 ; i<parts; i++){
 		map[i] = nrblks;
 		cnt += bcnt[i] + ccnt[i];
-		bi += (BUN) bcnt[i];
-		ci += (BUN) ccnt[i];
+		bi += bcnt[i];
+		ci += ccnt[i];
 		bmax = bmax < bi ? bi : bmax;
 		cmax = cmax < ci ? ci : cmax;
 		if ( cnt > blk){
@@ -439,7 +439,7 @@ GDKclusterhashjoin(BAT *b, BAT *c, int mb){
 		}
 	}
 	nrblks++;
-	printf("buckets %d %d %d\n",nrblks,bmax,cmax);
+	printf("buckets %d " BUNFMT " " BUNFMT "\n",nrblks,bmax,cmax);
 	bp = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
 	cp = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
 	jn = (BAT **) GDKzalloc(sizeof(BAT*) * nrblks);
