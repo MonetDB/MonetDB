@@ -274,7 +274,7 @@ and build and install.  Make sure you set the Solution Configuration
 to Release if you want to build a releasable version of the MonetDB
 suite.  The library will be installed in ``C:\Program Files\PCRE``.
 
-For Windows64, select the correct compiler (``Visual Studio 8 2005
+For Windows64, select the correct compiler (``Visual Studio 9 2008
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
 ``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program Files/PCRE``.
