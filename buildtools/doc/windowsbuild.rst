@@ -265,19 +265,19 @@ window where you have to fill in the location of the source code and
 where to build the binaries.  Fill in where you extracted the PCRE
 sources, and some other directory (I used a ``build`` directory which
 I created within the PCRE source tree).  You need to configure some
-PCRE build options.  I chose to do build shared libs, and to do have
-UTF-8 support and support for Unicode properties.  When you're
-satisfied with the options, click on Configure, and then on OK.  Then
-in the build directory you've chosen, open the PCRE.sln file with
-Visual Studio, and build and install.  Make sure you set the Solution
-Configuration to Release if you want to build a releasable version of
-the MonetDB suite.  The library will be installed in ``C:\Program
-Files\PCRE``.
+PCRE build options.  I chose to do build shared libs, to match
+newlines with the ``ANYCRLF`` option, and to do have UTF-8 support and
+support for Unicode properties.  When you're satisfied with the
+options, click on Configure, and then on Generate.  Then in the build
+directory you've chosen, open the PCRE.sln file with Visual Studio,
+and build and install.  Make sure you set the Solution Configuration
+to Release if you want to build a releasable version of the MonetDB
+suite.  The library will be installed in ``C:\Program Files\PCRE``.
 
-For Windows64, select the correct compiler (``Visual Studio 8 2005
+For Windows64, select the correct compiler (``Visual Studio 9 2008
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
-``CMAKE_INSTALL_PREFIX`` value.
+``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program Files/PCRE``.
 
 __ http://www.pcre.org/
 
