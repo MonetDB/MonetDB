@@ -19,7 +19,7 @@
 	* function monetdb_num_rows($hdl)  *
 	* function monetdb_affected_rows($hdl) * 
 	* function monetdb_last_error()  *
-	* function monetdb_insert_id($seq)  
+	* function monetdb_insert_id($seq)  *
 	* function monetdb_quote_ident($str) *
 	* function monetdb_escape_string($str) * 
 	**/
@@ -213,7 +213,6 @@
 		}
 		
 		$row_object = new stdClass();
-		
 		if (is_array($row_array) && count($row_array) > 0) {
 			foreach ($row_array as $name=>$value) {
 		   		$name = strtolower(trim($name));
@@ -221,7 +220,8 @@
 		        	$row_object->$name = $value;
 		        }
 		     }
-		   }
+		 }
+		
 		return $row_object;
 	}
 	
@@ -302,7 +302,10 @@
 	 */
 	function monetdb_escape_string($str) {
 		// NB: temporary solution; I'm studying better ways to deal with possible sql injections issues.
-		return addslashes($str);
+		if (!get_magic_quotes_gpc()) {
+			return addslashes($str);
+		}
+		return $str;
 	}
 	
 	/**
@@ -313,7 +316,6 @@
 	*
 	*/
 	function monetdb_free_result(&$hdl) {
-		
 		if (isset($hdl)) {
 			foreach($hdl as $field) {
 				if (isset($field)) {
@@ -324,7 +326,6 @@
 			unset($hdl);
 			return TRUE;
 		}
-		
 		return FALSE;
 	}
 		

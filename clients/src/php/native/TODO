@@ -1,5 +1,5 @@
-- Implement the actual API;
-
 - Provide a sandboxed example.
 
-- Do utf8 tests
+- Do utf8 tests.
+
+- Security assetments.

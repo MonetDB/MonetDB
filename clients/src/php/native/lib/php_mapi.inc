@@ -59,17 +59,10 @@
 	*/
 	$connection_pool = array();
 	
-	$last_error = "";
-		
-
 	/**
-	  * Use a global variable to index the last returned row from a record set.
-	  * I do this instead of passing the result set handler by reference to the proper functions
-	  * in order to retain syntax compatibility with the previous API.
+	* Stores the last error reported by the server
 	*/
-	$last_row = 0;
-	
-	
+	$last_error = "";	
 	
 	/**
 	* Execute a query and return the resulting handle by reference.
@@ -178,7 +171,6 @@
 				$record_set = php_parse_tuples($rows);
 				$rows = "";
 			} 
-			
 		}
 		
 		if ($record_set != "") {
@@ -545,6 +537,12 @@
 			if (count($connection_pool) == 1) {
 				$socket = $connection_pool[0]["socket"];
 				socket_close($socket);
+				
+				foreach ($connection_pool as $field) {
+					if (isset($field)) {
+						unset($field);
+					}
+				}
 				unset($connection_pool);
 				
 				return TRUE;
@@ -561,6 +559,14 @@
 			// Filter the results array using the anonymous callback function.
 			$connection_pool = array_filter($connection_pool, $function_name);
 			
+			if (isset($conn)) {
+				foreach ($conn as $field) {
+					if (isset($field)) {
+						unset($field);
+					}
+				}
+				unset($conn);
+			}
 			
 			return TRUE;
 		}

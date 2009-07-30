@@ -13,7 +13,7 @@ $db = monetdb_connect($host = "127.0.0.1", $port = "50000", $database = DB , $us
 
 /* Fire a query */
 
-$query = "SELECT * FROM TABLES";
+$query = "SELECT * FROM TABLES, TABLES, TABLES";
 $res = monetdb_query($db, monetdb_escape_string($query)) or trigger_error(monetdb_last_error());
 
 /* Print the number of rows in the result set */
@@ -27,6 +27,7 @@ while ( $row = monetdb_fetch_object($res) )
 
 /* Free the result set */
 monetdb_free_result($res);
+
 
 /* Disconnect from the database */
 if (monetdb_connected($db)) {
