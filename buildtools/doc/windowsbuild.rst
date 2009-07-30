@@ -337,35 +337,30 @@ is only a prerequisite for the geom component.
 
 There are no Windows binaries available (not that I looked very hard),
 so to get the software, you will have to get the source and build it
-yourself.  Get the a checkout with Subversion__::
+yourself.
 
- svn checkout http://svn.osgeo.org/geos/branches/3.0 geos
+Get the source tar ball from http://trac.osgeo.org/geos/#Download and
+extract somewhere.  All the versions I have tried (up to 3.1.1) miss
+one essential file to build on Windows, so in addition get the file
+``nmake.opt`` from http://svn.osgeo.org/geos/branches/3.1/ and copy it
+to the top of the extracted source directory.  Then build using::
 
-The ``geos-3.0.0.tar.bz2`` tar ball does not contain all the files
-needed to compile on Windows.  Also, at the time I tried, the trunk
-checkout which is suggested on the website also didn't compile on
-Windows.
+ nmake /f makefile.vc
 
-With the sources checked out, compile using::
+Then install the library somewhere, e.g. in ``C:\geos-3.1.win32``::
 
- cd source
- nmake /f Makefile.vc
-
-Then install the library somewhere, e.g. in ``C:\geos-3.0.win32``::
-
- mkdir C:\geos-3.0.win32
- mkdir C:\geos-3.0.win32\lib
- mkdir C:\geos-3.0.win32\bin
- mkdir C:\geos-3.0.win32\include
- mkdir C:\geos-3.0.win32\include\geos
- copy geos_c_i.lib C:\geos-3.0.win32\lib
- copy geos_c.dll C:\geos-3.0.win32\bin
- copy headers C:\geos-3.0.win32\include
- copy headers\geos C:\geos-3.0.win32\include\geos
- copy ..\capi\geos_c.h C:\geos-3.0.win32\include
+ mkdir C:\geos-3.1.win32
+ mkdir C:\geos-3.1.win32\lib
+ mkdir C:\geos-3.1.win32\bin
+ mkdir C:\geos-3.1.win32\include
+ mkdir C:\geos-3.1.win32\include\geos
+ copy source\geos_c_i.lib C:\geos-3.1.win32\lib
+ copy source\geos_c.dll C:\geos-3.1.win32\bin
+ copy source\headers C:\geos-3.1.win32\include
+ copy source\headers\geos C:\geos-3.1.win32\include\geos
+ copy capi\geos_c.h C:\geos-3.1.win32\include
 
 __ http://geos.refractions.net/
-__ http://subversion.tigris.org/
 
 Optional Packages
 =================
@@ -382,27 +377,16 @@ The home of the program and library is
 http://www.gnu.org/software/libiconv/, but Windows binaries can be
 gotten from the same site as the libxml2 library:
 http://www.zlatkovic.com/libxml.en.html.  Click on Win32 Binaries on
-the right, and download iconv.  Install in e.g. ``C:\``.
+the right, and download iconv.  Install in e.g. ``C:\``.  Note that
+these binaries are quite old (libiconv-1.9.2, last I looked).
 
 On Windows64 you will have to compile iconv yourself.  Get the source
-from the `iconv website`__ and extract somewhere.  Edit the file
-``config.h.msvc`` and add the line::
+from the `iconv website`__ and extract somewhere.  Note that with the
+1.12 release, the libiconv developers removed support for building
+with Visual Studio but require MinGW instead, which means that there
+is no support for Windows64.  In other words, get the latest 1.11 release.
 
- #define EXEEXT ".exe"
-
-Edit the file ``srclib\Makefile.msvc`` and add ``width.obj`` to the
-``OBJECTS`` variable and add::
-
- width.obj: width.c; $(CC) $(INCLUDES) $(CFLAGS) -c width.c
-
-to the file.  Create a file ``windows\stdint.h`` with the contents::
-
- typedef unsigned char uint8_t;
- typedef unsigned short uint16_t;
- typedef unsigned long uint32_t;
-
-Create an empty file ``windows\unistd.h``.  Then build using the
-commands::
+Build using the commands::
 
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64
  nmake -f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\iconv-1.11.win64 install
