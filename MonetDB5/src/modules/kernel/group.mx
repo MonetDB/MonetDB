@@ -844,7 +844,7 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 
 	bn->hseqbase = b->hseqbase;
 	for(;t < e; t++) {
-		BAT *bx = BATslice(b, prv, prv+*t ); 
+		BAT *bx = BATslice(b, (BUN)prv, (BUN)(prv+*t));
 		bat nh, nbn;
 
 		prv += *t;
