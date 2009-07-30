@@ -32,6 +32,11 @@ catch MALException:str ;
     io.print("could not get minimum from timezones");
 exit MALException:str ;
     io.print(m);
+    m := statistics.getMax("timezones");
+catch MALException:str ;
+    io.print("could not get maximum from timezones");
+exit MALException:str ;
+    io.print(m);
     h := statistics.getHistogram("timezones");
 catch MALException:str ;
     io.print("could not get histogram from timezones");
@@ -51,7 +56,8 @@ exit MALException:str ;
 #io.table(dn,d,dl); 
 end main;
 [ 24 ]
-[ 0 ]
+[ nil ]
+[ nil ]
 [ "histogram" ]
 #---------------------------------------------------------------------------------------------------------#
 # h												t	  # name
