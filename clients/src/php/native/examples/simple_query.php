@@ -13,9 +13,10 @@
 	require '../lib/php_monetdb.php';
 	if ( isset($_POST['query']) )
 	{
-		$db = monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb" );
-
-		$sql = stripslashes($_POST['query']);
+		$db = monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "php_demo" , $username = "monetdb", $password = "monetdb" )
+		or die(monetdb_last_error());
+		
+		$sql = monetdb_escape_string($_POST['query']);
 		$res = monetdb_query($sql);
 		while ( $row = monetdb_fetch_assoc($res) )
 		{
@@ -23,6 +24,8 @@
 			print_r($row);
 			print "</pre>\n";
 		}
+		
+		monetdb_disconnect();
 	}
 
 	print "<form method=\"post\" action=\"{$_SERVER['PHP_SELF']}\">\n";
