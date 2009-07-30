@@ -1500,6 +1500,7 @@ parseAssign(Client cntxt, int cntrl)
 		/* Get target variable details*/
 		@:GETvariable@
 		if( !(currChar(cntxt)==':' && CURRENT(cntxt)[1]=='=') ){
+			curInstr->argv[0]= varid;
 			if( currChar(cntxt)==':') {
 				setVarUDFtype(curBlk,varid);
 				type = typeElm(cntxt,getVarType(curBlk,varid));
