@@ -21,7 +21,7 @@
 	
 	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
 	
-	define("REPLY_SIZE", "-1"); // Set the initial reply size
+	define("REPLY_SIZE", "250"); // Set the initial reply size
 	
 	define("Q_TABLE", "1"); // SELECT operation
 	define("Q_UPDATE", "2"); // INSERT/UPDATE operations
@@ -111,7 +111,7 @@
 	
 	function mapi_fetch_next($socket, &$handle){
 		if ($socket == NULL){
-			return NULL;
+			return FALSE;
 		}
 		
 		while ($handle["query"]["index"] < $handle["query"]["rows"]) {
@@ -119,12 +119,13 @@
 			$left_rows = $handle["query"]["rows"] - $handle["query"]["index"];
 				
 			$exp_size = min(10, $left_rows);
-			mapi_write(format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
+			mapi_write($socket, format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
 			$operation = mapi_store($data, $handle);
 				
 			$handle["query"]["index"] += $exp_size;
+			$handle["operation"] = $operation;
 		}
 	
 		return $handle;		

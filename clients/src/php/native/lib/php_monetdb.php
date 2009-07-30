@@ -117,7 +117,7 @@
 	 * @return int the number of rows in the result
 	 */
 	function monetdb_num_rows($hdl) {
-		if ($hdl["operation"] == Q_TABLE || $hdl["operation"] == Q_BLOCK ) {
+		if ($hdl["operation"] == Q_TABLE && $hdl["operation"] == Q_BLOCK ) {
 			return $hdl["query"]["rows"];
 		} else {
 			print "Last query did not produce a result set\n";
@@ -139,7 +139,7 @@
 
 	function monetdb_fetch_row(&$hdl, $row=-1) {	
 		global $last_error;
-		if ($hdl["operation"] != 1) {
+		if ($hdl["operation"] != Q_TABLE && $hdl["operation"] != Q_BLOCK ) {
 			return FALSE;
 		}
 	
@@ -171,7 +171,7 @@
 	 *         FALSE if no more rows exist
 	 */	
 	function monetdb_fetch_assoc(&$hdl, $row=-1) {
-		if ($hdl["operation"] != Q_TABLE) {
+		if ($hdl["operation"] != Q_TABLE && $hdl["operation"] != Q_BLOCK ) {
 			return FALSE;
 		}
 		
@@ -206,9 +206,12 @@
 	 * @return the query result as object or FALSE if there are no more rows
 	 */
 	function monetdb_fetch_object(&$hdl, $row=-1)  {
-		$row_array =  monetdb_fetch_assoc(&$hdl, $row);
 		
-		if ($row_array == FALSE) {
+		if ($hdl["operation"] != Q_TABLE && $hdl["operation"] != Q_BLOCK ) {
+			return FALSE;
+		}
+		
+		if (($row_array =  monetdb_fetch_assoc(&$hdl, $row)) == FALSE) {
 			return FALSE;
 		}
 		
