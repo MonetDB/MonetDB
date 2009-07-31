@@ -180,6 +180,46 @@ jmp_buf PFexitPoint;
         fputs (PFerrbuf, stderr);\
         exit (rtrn);
 
+
+
+
+void
+print_property (PFla_pb_item_property_t property, unsigned int nest)
+{
+
+	char *nestSpaces;
+	nestSpaces = (char *) PFmalloc (nest + 1);
+	for(unsigned int i = 0; i < nest; i++)
+	{
+		nestSpaces[i] = ' ';
+	}
+	nestSpaces[nest] = '\0';
+
+	fprintf (stdout, "%s<property name=\"%s\" value=\"%s\"",
+			nestSpaces, property.name, property.value);
+	if (property.properties)
+	{
+		fprintf (stdout, ">\n");
+		for (unsigned int i = 0;
+				i < PFarray_last (property.properties);
+	            i++)
+		{
+			PFla_pb_item_property_t subProperty =
+				*((PFla_pb_item_property_t*) PFarray_at (
+												property.properties, i));
+			print_property (subProperty, nest+2);
+		}
+		fprintf (stdout, "%s</property>\n", nestSpaces);
+	}
+	else
+	{
+		fprintf (stdout, "/>\n");
+	}
+
+}
+
+
+
 /**
  * Entry point to the Pathfinder compiler,
  * parses the command line (switches), then invokes the compiler driver
@@ -364,6 +404,22 @@ main (int argc, char *argv[])
                          PFla_pb_idref_at (lapb, i),
                          PFla_pb_colref_at (lapb, i));
             fprintf (stdout, ">\n");
+
+            if (PFla_pb_properties_at (lapb, i))
+			{
+				fprintf (stdout, "  <properties>\n");
+				for (unsigned int propertyID = 0;
+					propertyID < PFarray_last (PFla_pb_properties_at (lapb, i));
+					propertyID++)
+				{
+					PFla_pb_item_property_t property =
+						*((PFla_pb_item_property_t*) PFarray_at
+								(PFla_pb_properties_at (lapb, i), propertyID));
+					print_property (property, 4);
+				}
+				fprintf (stdout, "  </properties>\n");
+			}
+
             fprintf (stdout,
                      "<schema>\n"
                      "  <column name=\"%s\" function=\"iter\"/>\n",

@@ -41,12 +41,22 @@
 
 /** Logical algebra plan bundle item */
 struct PFla_pb_item_t {
-    PFla_op_t *op;     /**< the logical algebra plan */
-    int        id;     /**< the id of the plan */
-    int        idref;  /**< the reference to the parent plan */
-    int        colref; /**< the column reference to the parent plan */
+    PFla_op_t * op;         /**< the logical algebra plan */
+    int         id;         /**< the id of the plan */
+    int         idref;      /**< the reference to the parent plan */
+    int         colref;     /**< the column reference to the parent plan */
+    PFarray_t*	properties; /**< properties of the logical algebra plan */
 };
 typedef struct PFla_pb_item_t PFla_pb_item_t;
+
+/** A property of a Logical algebra plan bundle item  */
+struct PFla_pb_item_property_t {
+    char*      	name;       /**< property name  */
+    char*      	value;      /**< property value */
+    PFarray_t*	properties; /**< sub properties */
+};
+typedef struct PFla_pb_item_property_t PFla_pb_item_property_t;
+
 
 /** A list of columns (actually: column names) */
 #define PFla_pb_t               PFarray_t
@@ -62,10 +72,11 @@ typedef struct PFla_pb_item_t PFla_pb_item_t;
 /** Size of a column list */
 #define PFla_pb_size(pb)        PFarray_last ((pb))
 
-#define PFla_pb_op_at(pb,i)     (PFla_pb_at(pb,i)).op
-#define PFla_pb_id_at(pb,i)     (PFla_pb_at(pb,i)).id
-#define PFla_pb_idref_at(pb,i)  (PFla_pb_at(pb,i)).idref
-#define PFla_pb_colref_at(pb,i) (PFla_pb_at(pb,i)).colref
+#define PFla_pb_op_at(pb,i)         (PFla_pb_at(pb,i)).op
+#define PFla_pb_id_at(pb,i)         (PFla_pb_at(pb,i)).id
+#define PFla_pb_idref_at(pb,i)      (PFla_pb_at(pb,i)).idref
+#define PFla_pb_colref_at(pb,i)     (PFla_pb_at(pb,i)).colref
+#define PFla_pb_properties_at(pb,i) (PFla_pb_at(pb,i)).properties
 
 #endif  /* PLAN_BUNDLE_H */
 

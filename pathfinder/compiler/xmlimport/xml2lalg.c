@@ -467,6 +467,16 @@ getPFLA_Ordering(
     xmlNodePtr nodePtr, 
     const char* xpathExpression);
 
+PFla_pb_item_property_t
+getPFLA_qp_property(
+    XML2LALGContext* ctx,
+    xmlNodePtr nodePtr);
+
+PFarray_t*
+getPFLA_qp_properties(
+    XML2LALGContext* ctx,
+    xmlNodePtr nodePtr);
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -630,6 +640,7 @@ static void
 importQueryPlanBundle (XML2LALGContext* ctx, xmlNodePtr nodePtr, PFla_pb_t *lapb)
 {
     PFla_op_t *op;
+    PFarray_t *properties;
     int        id     = A2INT_O ("/@id", -1),
                idref  = A2INT_O ("/@idref", -1),
                colref = A2INT_O ("/@colref", -1);
@@ -638,6 +649,8 @@ importQueryPlanBundle (XML2LALGContext* ctx, xmlNodePtr nodePtr, PFla_pb_t *lapb
         PFoops (OOPS_FATAL,
                 "could not find query plan id in plan bundle");
 
+    properties = getPFLA_qp_properties(ctx, nodePtr);
+
     op = importLogicalQueryPlan (
             ctx, 
             PFxml2la_xpath_getNthNode(
@@ -645,10 +658,11 @@ importQueryPlanBundle (XML2LALGContext* ctx, xmlNodePtr nodePtr, PFla_pb_t *lapb
 
     assert (op);
 
-    PFla_pb_add (lapb) = (PFla_pb_item_t) { .op     = op,
-                                            .id     = id,
-                                            .idref  = idref,
-                                            .colref = colref };
+    PFla_pb_add (lapb) = (PFla_pb_item_t) { .op       = op,
+                                            .id       = id,
+                                            .idref    = idref,
+                                            .colref   = colref,
+                                            .properties = properties};
 }
 
 
@@ -2965,6 +2979,113 @@ getPFLA_Ordering(
 
 }
 
+
+
+
+
+
+PFla_pb_item_property_t
+getPFLA_qp_property(
+    XML2LALGContext* ctx,
+    xmlNodePtr nodePtr)
+{
+    /*
+     <property name="foo" value="foo">
+      (<property name="foo" value="foo">...</property>)*
+    </property>
+     */
+	char* name =  PFstrdup(
+					  PFxml2la_xpath_getAttributeValueFromElementNode(
+							  nodePtr, "name"));
+	char* value = PFstrdup(
+					  PFxml2la_xpath_getAttributeValueFromElementNode(
+							  nodePtr, "value"));
+
+	PFarray_t*	properties = NULL;
+
+	xmlXPathObjectPtr xpathObjPtr = PFxml2la_xpath_evalXPathFromNodeCtx(
+										ctx->docXPathCtx, nodePtr, "/property");
+
+	unsigned int nodeCount = PFxml2la_xpath_getNodeCount(xpathObjPtr);
+
+	if (nodeCount > 0)
+	{
+		properties = PFarray (sizeof (PFla_pb_item_property_t), nodeCount);
+		for (unsigned int i = 0; i < nodeCount; i++)
+		{
+			xmlNodePtr subItemNodePtr =
+					PFxml2la_xpath_getNthNode(xpathObjPtr, i);
+
+			PFla_pb_item_property_t subProperty =
+					getPFLA_qp_property(ctx, subItemNodePtr);
+
+			*(PFla_pb_item_property_t*) PFarray_add (properties) = subProperty;
+		}
+	}
+
+
+	PFla_pb_item_property_t result = (PFla_pb_item_property_t) {
+													.name = name,
+	                                                .value    = value,
+	                                                .properties = properties};
+	return result;
+
+}
+
+
+PFarray_t*
+getPFLA_qp_properties(
+    XML2LALGContext* ctx,
+    xmlNodePtr nodePtr)
+{
+    /*
+     <properties>
+      (<property name="foo" value="foo">...</property>)*
+    </properties>
+     */
+
+	PFarray_t*	qp_properties = NULL;
+
+	xmlXPathObjectPtr propertiesXPathObjPtr =
+			PFxml2la_xpath_evalXPathFromNodeCtx(
+					ctx->docXPathCtx, nodePtr, "/properties");
+
+	unsigned int propertiesNodeCount =
+			PFxml2la_xpath_getNodeCount(propertiesXPathObjPtr);
+
+ 	if (propertiesNodeCount == 1)
+	{
+ 			xmlNodePtr propertiesNodePtr =
+					PFxml2la_xpath_getNthNode(propertiesXPathObjPtr, 0);
+
+
+			xmlXPathObjectPtr propertyXPathObjPtr =
+					PFxml2la_xpath_evalXPathFromNodeCtx(
+							ctx->docXPathCtx, propertiesNodePtr, "/property");
+
+			unsigned int propertyNodeCount =
+					PFxml2la_xpath_getNodeCount(propertyXPathObjPtr);
+
+			if (propertyNodeCount > 0)
+			{
+				qp_properties = PFarray (sizeof (PFla_pb_item_property_t),
+													propertyNodeCount);
+				for (unsigned int i = 0; i < propertyNodeCount; i++)
+				{
+					xmlNodePtr propertyNodePtr =
+							PFxml2la_xpath_getNthNode(propertyXPathObjPtr, i);
+
+					PFla_pb_item_property_t property =
+							getPFLA_qp_property(ctx, propertyNodePtr);
+
+					*(PFla_pb_item_property_t*) PFarray_add (qp_properties) =
+																	property;
+				}
+			}
+	}
+
+	return qp_properties;
+}
 
 
 

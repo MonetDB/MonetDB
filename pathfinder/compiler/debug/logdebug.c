@@ -2697,6 +2697,43 @@ PFla_xml (FILE *f, PFla_op_t *root, char *prop_args)
     la_xml_internal (f, root, prop_args);
 }
 
+
+void
+PFla_xml_qp_property (
+	FILE *f, PFla_pb_item_property_t property, unsigned int nest)
+{
+
+	char *nestSpaces;
+	nestSpaces = (char *) PFmalloc (nest + 1);
+	for(unsigned int i = 0; i < nest; i++)
+	{
+		nestSpaces[i] = ' ';
+	}
+	nestSpaces[nest] = '\0';
+
+	fprintf (f, "%s<property name=\"%s\" value=\"%s\"",
+			nestSpaces, property.name, property.value);
+	if (property.properties)
+	{
+		fprintf (f, ">\n");
+		for (unsigned int i = 0;
+			 i < PFarray_last (property.properties);
+	         i++)
+		{
+			PFla_pb_item_property_t subProperty =
+				*((PFla_pb_item_property_t*) PFarray_at (
+												property.properties, i));
+			PFla_xml_qp_property (f, subProperty, nest+2);
+		}
+		fprintf (f, "%s</property>\n", nestSpaces);
+	}
+	else
+	{
+		fprintf (f, "/>\n");
+	}
+
+}
+
 /**
  * Dump algebra plan bundle in XML format
  *
@@ -2708,21 +2745,39 @@ PFla_xml_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
 {
     PFla_op_t *root;
     int        id, idref, colref;
+    PFarray_t *properties;
 
     fprintf (f, 
              "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
              "<query_plan_bundle>\n");
 
     for (unsigned int i = 0; i < PFla_pb_size(lapb); i++) {
-        root   = PFla_pb_op_at (lapb, i);
-        id     = PFla_pb_id_at (lapb, i);
-        idref  = PFla_pb_idref_at (lapb, i);
-        colref = PFla_pb_colref_at (lapb, i);
+        root       = PFla_pb_op_at (lapb, i);
+        id         = PFla_pb_id_at (lapb, i);
+        idref      = PFla_pb_idref_at (lapb, i);
+        colref     = PFla_pb_colref_at (lapb, i);
+        properties = PFla_pb_properties_at (lapb, i);
         
         fprintf (f, "<query_plan id=\"%i\"", id);
         if (idref != -1)
             fprintf (f, " idref=\"%i\" colref=\"%i\"", idref, colref);
         fprintf (f, ">\n");
+
+        if (properties)
+        {
+        	fprintf (f, "  <properties>\n");
+        	for (unsigned int i = 0;
+        					i < PFarray_last (properties);
+        		            i++)
+			{
+				PFla_pb_item_property_t property =
+					*((PFla_pb_item_property_t*) PFarray_at (properties, i));
+				PFla_xml_qp_property (f, property, 4);
+			}
+
+
+        	fprintf (f, "  </properties>\n");
+        }
 
         assert (root);
         la_xml_internal (f, root, prop_args);
