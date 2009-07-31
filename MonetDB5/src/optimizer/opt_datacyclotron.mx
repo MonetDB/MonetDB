@@ -86,7 +86,7 @@ OPTdatacyclotronImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 			 getFunctionId(p) == binddbatRef) ) {
 				setModuleId(p,putName("datacyclotron",13));
 #ifdef BIND_DATAFLOW_OPT
-				setFunctionId(p, putName("bind",7));
+				setFunctionId(p, putName("bind",4));
 #else
 				setFunctionId(p, putName("copy",4));
 #endif
