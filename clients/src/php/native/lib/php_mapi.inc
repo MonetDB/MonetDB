@@ -19,8 +19,7 @@
    *
 **/
 	
-//	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
-	define("MAX_PACKET_SIZE", 10); // Maximum packet size
+	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
 	
 	define("REPLY_SIZE", "250"); // Set the initial reply size
 	
@@ -376,26 +375,6 @@
 
 
 	// encode data and send it to the server. Returns the number of bytes sent.
-/*	function mapi_write($socket=NULL, $msg) {
-		global $last_error;
-		
-		$fb = strlen($msg);
-		$sb = 0;
-		
-		$fb = $fb << 1; 
-		$fb = $fb | 1;
-		
-		$msg = chr($fb) . chr($sb) . $msg;
-		
-		if (socket_write($socket, $msg) == FALSE) {
-			$last_error = socket_strerror(socket_last_error());
-			return -1;
-		}
-		
-		return strlen($msg);
-	}
-*/
-
 	function mapi_write($socket=NULL, $msg) {
 		global $last_error;
 		
@@ -420,17 +399,16 @@
 				
 			$fb = (strlen($data) << 1) | $end; 
 			
-			if ( ($buf = socket_write($socket, chr($fb) . chr($sb) . $data)) == FALSE) {
+			/**
+			  * socket_write() does not guarantee all data to be transmitted. 
+			  * Make sure that the buffer is flushed.
+			*/
+			if ( ($buf = socket_flush($socket, pack("v", $fb) . $data)) == FALSE) {
 				$last_error = socket_strerror(socket_last_error());			
 				return -1;
 			}
 			
-			if ($buf < strlen($data)+2) {
-				print "network buffering error\n";
-			}
 		}
-		
-		
 		return $buf;
 	}
 	
@@ -482,7 +460,6 @@
 		
 		if ( ($connected = mapi_connect($socket, $options, $merovingian_iter)) == TRUE ) {
 			/* Connected */
-			
 			set_timezone($socket); // set the timezone according to the system's configuration
 			
 			// export the reply size (max number of tuples returned at query executions)
@@ -613,9 +590,29 @@
 		return $id;
 	}
 	
-	/* For internal use only */
+	
 	function format_query($query) {
 		return "s" . $query . ";";
+	}
+	
+	/* Write data through a socket; make sure that the buffer is actually flushed */
+	function socket_flush($socket, $data) {
+		$buf = 0;
+		$bytes = strlen($data);
+		
+		if ($socket == NULL) {
+			return FALSE;
+		}
+		
+		while ( ($bytes - $buf) > 0 ) {
+			$buf += socket_write($socket, substr($data, $buf, $bytes), $bytes - $buf);
+			
+			if ($buf == FALSE) {
+				return FALSE;
+			}
+			
+		}
+		return $buf;
 	}
 
 ?>
