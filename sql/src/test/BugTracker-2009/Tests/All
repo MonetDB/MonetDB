@@ -67,3 +67,4 @@ mclient-lsql-D
 view-except-limit.SF-2798333
 utf8_bug.SF-2822855
 recursion-problem.SF-2827784
+select_X_where_bla_EQ_whatever.SF-282597
