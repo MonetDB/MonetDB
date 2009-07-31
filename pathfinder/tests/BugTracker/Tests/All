@@ -133,6 +133,7 @@ wrong_numeric_cast_in_general_comparison.SF-1731555
 pf-O0_produces_wrong_MIL.SF-1771532
 insert_attribute_gives_ERROR_in_merged_union.SF-1763575
 immune_for_updates.SF-1766259
+port_busy.SF-1809586
 repeated-insert.SF-1814911
 fn_normalize-space.SF-1828362
 recursive_function.SF-1835745
@@ -154,6 +155,7 @@ order_of_declared_functions_matters.SF-1905940
 multi-join_query_compile_error.SF-1908822
 immune_for_updates.SF-1981852
 join-query_compilation_error.SF-1889694
+hang_non_existing_doc.SF-1911209
 iter_in_join.SF-1991938
 compilation_or_runtime_choice.SF-1991738_0_MPS
 compilation_or_runtime_choice.SF-1991738_0_ALG

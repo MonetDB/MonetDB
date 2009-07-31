@@ -17,9 +17,13 @@ def client(cmd, input = None):
 
 def main():
     xq_client = os.getenv('XQUERY_CLIENT').split()
-    client(xq_client + ['--input=my-document', '--collection=my-collection'],
-           '<document>test document</document>')
-    client(xq_client + ['-s', 'for $doc in pf:documents() where $doc/@url = "my-document" return $doc'])
-    client(xq_client + ['-s', 'pf:del-doc("my-document")'])
+    # HACK ALERT: create updatable document by appending ,10 to collection name
+    client(xq_client + ['--input=doc1911209.xml', '--collection=doc1911209.xml,10'],
+           '<aap/>')
+    client(xq_client + ['-s', 'do insert <beer/> into doc("doc1911209.xml")/aap'])
+    for i in range(1000):
+        client(xq_client + ['-s', 'pf:documents()'])
+        client(xq_client + ['-s', 'doc("does_not_exist.xml")'])
+    client(xq_client + ['-s', 'pf:del-doc("doc1911209.xml")'])
 
 main()

@@ -4071,11 +4071,10 @@ rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 static sql_rel *
 rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int distinct)
 {
-	dnode *n;
+	dnode *n = 0;
 
 	if (!selection)
-		return sql_error(sql, 02, "SELECT: a query should atleast have a selection and/or a from part");
-	n = selection->h;
+		return sql_error(sql, 02, "SELECT: the selection or from part is missing");
 	if (where) {
 		sql_rel *r = rel_logical_exp(sql, rel, where, sql_where);
 		if (!r)
@@ -4084,7 +4083,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 	}
 	if (!rel || rel->op != op_project)
 		rel = rel_project(rel, new_exp_list());
-	for (; n; n = n->next ) {
+	for (n = selection->h; n; n = n->next ) {
 		/* Here we could get real column expressions (including single
 		 * atoms) but also table results. Therefor we try both
 		 * rel_column_exp and rel_table_exp.

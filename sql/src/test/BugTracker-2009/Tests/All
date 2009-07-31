@@ -70,3 +70,4 @@ utf8_bug.SF-2822855
 reorder.SF-2770608.sql
 orIssue.SF-2812504.sql
 recursion-problem.SF-2827784
+select_X_where_bla_EQ_whatever.SF-282597
