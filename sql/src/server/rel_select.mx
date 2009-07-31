@@ -4048,7 +4048,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 {
 	dnode *n = 0;
 
-	if (!selection || !selection->h)
+	if (!selection)
 		return sql_error(sql, 02, "SELECT: the selection or from part is missing");
 	if (where) {
 		sql_rel *r = rel_logical_exp(sql, rel, where, sql_where);
