@@ -1,6 +1,6 @@
 import os, sys
 try:
-    import sybprocess
+    import subprocess
 except ImportError:
     # user private copy for old Python versions
     import MonetDBtesting.subprocess26 as subprocess
