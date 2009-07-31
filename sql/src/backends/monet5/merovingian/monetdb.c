@@ -1518,14 +1518,6 @@ command_destroy(int argc, char *argv[])
 				hadwork = 1;
 				continue;
 			}
-			if (stats->locked == 1) {
-				fprintf(stderr, "destroy: database '%s' is under maintenance"
-						", release database first\n", dbname);
-				SABAOTHfreeStatus(&stats);
-				state |= 1;
-				hadwork = 1;
-				continue;
-			}
 
 			/* annoyingly we have to delete file by file, and
 			 * directories recursively... */

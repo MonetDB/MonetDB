@@ -1,6 +1,11 @@
 # ChangeLog file for sql/src/backends/monet5
 # This file is updated with mchangelog (Gentoo echangelog bastard script)
 
+  31 Jul 2009; Fabian Groffen <fabian@cwi.nl> monetdb.c:
+  monetdb destroy now allows to remove a database under maintenance. This way
+  an administrator can prevent users connecting to the database and hence
+  starting it on demand, which in turn prevents removal of the database.
+
   21 Jul 2009; Fabian Groffen <fabian@cwi.nl> merovingian.1,
   merovingian.c, monetdb.1, monetdb.c:
   Implemented sharing of databases with tags. Using these tags, extra
