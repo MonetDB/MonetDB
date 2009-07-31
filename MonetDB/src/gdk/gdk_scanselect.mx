@@ -312,7 +312,14 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #define SKIP_TYPE_EXPANSIONS
 #endif
 #include "gdk_scanselect.h"
-#include "gdk_scanselect_defs.h"
+#include "gdk_scanselect_defs_chr.h"
+#include "gdk_scanselect_defs_bte.h"
+#include "gdk_scanselect_defs_sht.h"
+#include "gdk_scanselect_defs_int.h"
+#include "gdk_scanselect_defs_flt.h"
+#include "gdk_scanselect_defs_dbl.h"
+#include "gdk_scanselect_defs_lng.h"
+#include "gdk_scanselect_defs_any.h"
 
 @-
 With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
