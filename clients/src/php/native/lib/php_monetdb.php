@@ -135,8 +135,6 @@
 	 * @return array the next row in the query result as associative array or
 	 *         FALSE if no more rows exist
 	 */
-
-
 	function monetdb_fetch_row(&$hdl, $row=-1) {	
 		global $last_error;
 		if ($hdl["operation"] != Q_TABLE && $hdl["operation"] != Q_BLOCK ) {
@@ -332,6 +330,7 @@
 		return FALSE;
 	}
 		
+	
 	/* 
 	 * These functions are not present in the original Cimpl implementation
 	 */

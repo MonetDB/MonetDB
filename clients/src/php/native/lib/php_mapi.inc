@@ -19,7 +19,8 @@
    *
 **/
 	
-	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
+//	define("MAX_PACKET_SIZE", 32767); // Maximum packet size 
+	define("MAX_PACKET_SIZE", 10); // Maximum packet size
 	
 	define("REPLY_SIZE", "250"); // Set the initial reply size
 	
@@ -70,6 +71,7 @@
 	function &mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
 			
+		
 		/**
 		* Query handle
 		* 
@@ -92,8 +94,13 @@
 		
 		/* Fire the query and read back the response */
 		$buf = mapi_write($socket, format_query($query));
+		
+		
 		$data = mapi_read($socket);
-		$operation = mapi_store($data, $handle);
+		
+		if ( ($operation = mapi_store($data, $handle)) == FALSE) {
+			return FALSE;
+		}
 		
 		/* The query produced a record set */
 		if ($operation == Q_TABLE || $operation == Q_BLOCK) {
@@ -122,7 +129,9 @@
 			mapi_write($socket, format_command("export " . $handle["query"]["id"] . " " . $handle["query"]["index"] . " " . $exp_size));				
 			$data = mapi_read($socket);
 				
-			$operation = mapi_store($data, $handle);
+			if ( ($operation = mapi_store($data, $handle)) == FALSE ) {
+				return FALSE;
+			}
 				
 			$handle["query"]["index"] += $exp_size;
 			$handle["operation"] = $operation;
@@ -131,8 +140,9 @@
 		return $handle;		
 	}
 	
-	function mapi_store($data, &$handle) {
-				
+	function mapi_store($data, &$handle) {	
+		global $last_error;
+					
 		$data = explode("\n", $data);
 		
 		$record_set = "";
@@ -142,6 +152,7 @@
 		
 		$rows = ""; // stores (partially) retrieved rows
 		foreach ($data as $row) {			
+		//	print $row;
 			if ($row[0] == MSG_QUERY) {
 				if ($row[1] == Q_TABLE) {
 					$operation = Q_TABLE;
@@ -171,7 +182,10 @@
 				// receive all the tuples
 				$record_set = php_parse_tuples($rows);
 				$rows = "";
-			} 
+			} else if ($row[0] == MSG_INFO) {
+				$last_error = $row;
+				return FALSE;
+			}
 		}
 		
 		if ($record_set != "") {
@@ -342,7 +356,7 @@
 		$header = socket_read($socket, 2);
 		$data = "";
 		$chunk_size = "";
-				
+
 		$chunk_size = ((ord($header[1]) << 7) | (ord($header[0]) >> 1));
 		$data = socket_read($socket, $chunk_size);
 		
@@ -360,9 +374,9 @@
 		return $data;
 	}
 
-/*
+
 	// encode data and send it to the server. Returns the number of bytes sent.
-	function mapi_write1($socket=NULL, $msg) {
+/*	function mapi_write($socket=NULL, $msg) {
 		global $last_error;
 		
 		$fb = strlen($msg);
@@ -388,40 +402,46 @@
 		$fb = 0;
 		$sb = 0;
 		
+		$pos = 0;
+		$data = "";
+		
 		$buf = 0;
 		
 		$is_final = FALSE;
-		while (! $is_final) {		
-			if (strlen($msg) < MAX_PACKET_SIZE) {
+		while (! $is_final) {						
+			$data  = substr($msg, $pos, min(MAX_PACKET_SIZE, strlen($msg) - $pos)  );
+			$pos += strlen($data);
+								
+			$end = 0; // more packets will follow
+			if ( (strlen($msg) - $pos) == 0) {
 				$is_final = TRUE;
-				$data = $msg;
-				$fb = (strlen($data) << 1) | 1;
-				
-			} else {
-				$data  = substr($msg, $fb, min(MAX_PACKET_SIZE, len($msg) - $fb)  );
-				$fb = (strlen($data) << 1) | 0; // more packets will follow
+				$end = 1;
 			}
+				
+			$fb = (strlen($data) << 1) | $end; 
 			
-			if ($buf += socket_write($socket, chr($fb) . chr(0) . $data) == FALSE) {
-				$last_error = socket_strerror(socket_last_error());
+			if ( ($buf = socket_write($socket, chr($fb) . chr($sb) . $data)) == FALSE) {
+				$last_error = socket_strerror(socket_last_error());			
 				return -1;
 			}
-		
+			
+			if ($buf < strlen($data)+2) {
+				print "network buffering error\n";
+			}
 		}
+		
 		
 		return $buf;
 	}
-
-
 	
 	function set_timezone($socket=NULL) {
 		global $last_error;
 
 		$tz_offset = "'" . date('P') . "'"; /* Difference to Greenwich time (GMT) with colon between hours and minutes */
 				
-		$query = "sSET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE;";
+		$query = "SET TIME ZONE INTERVAL " . $tz_offset . " HOUR TO MINUTE";
 	
-		$buf = mapi_write($socket, $query);
+		$buf = mapi_write($socket, format_query($query));
 					
 		$response = mapi_read($socket);
 		
