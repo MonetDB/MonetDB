@@ -242,25 +242,37 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 				for (cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					sql_column *c = 0;
+					sql_column *c = NULL;
 
+					/* allowed in schema */
 					int allowed = sql_grantable(sql,
-								    grantor, t->s->base.id,
-								    priv, 1);
+							grantor, t->s->base.id, priv, 1);
 
+					/* allowed on table */
 					if (!allowed)
-						allowed = sql_grantable(sql, grantor, t->base.id, priv, 1);
-
-					if (!allowed)
-						allowed = sql_grantable(sql, grantor, c->base.id, priv, 0);
-
-					if (!allowed) 
-						return sql_error(sql, 02, "GRANTOR %s is not allowed to grant privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(priv), tname);
+						allowed = sql_grantable(sql,
+								grantor, t->base.id, priv, 1);
 
 					c = mvc_bind_column(sql, t, cname);
 					if (!c) 
-						return sql_error(sql, 02, "Grant: table %s has no column %s", tname, cname);
-					sql_insert_priv(sql, grantee_id, c->base.id, priv, grantor, grant);
+						return sql_error(sql, 02, "GRANT: table %s has "
+								"no column %s", tname, cname);
+
+					/* allowed on column */
+					if (!allowed)
+						allowed = sql_grantable(sql,
+								grantor, c->base.id, priv, 0);
+
+					if (!allowed) 
+						return sql_error(sql, 02, "GRANTOR %s is not "
+								"allowed to grant privilege %s for "
+								"table %s",
+								stack_get_string(sql, "current_user"),
+								priv2string(priv),
+								tname);
+
+					sql_insert_priv(sql, grantee_id,
+							c->base.id, priv, grantor, grant);
 				}
 			} else {
 				int allowed = sql_grantable(sql, grantor,
