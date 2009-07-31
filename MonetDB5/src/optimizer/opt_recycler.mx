@@ -193,7 +193,12 @@ OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		} 
 
-		
+		/* don't change instructions in update statements */
+		if( updstmt){
+			pushInstruction(mb,p);
+			continue;
+		} 
+
 		/* skip simple assignments */
 		if( p->token == ASSIGNsymbol){
 			pushInstruction(mb,p);
