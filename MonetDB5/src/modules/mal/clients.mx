@@ -94,9 +94,22 @@ address CLTsuspend
 comment "Put a client process to sleep for some time.
 It will simple sleep for a second at a time, until
 the awake bit has been set in its descriptor";
+
 command wakeup(id:int):void
 address CLTwakeup
 comment "Wakeup a client process";
+
+pattern setTimeout(q:int,s:int):void
+address CLTsetTimeout
+comment "Abort a query after q seconds (q=0 means run undisturbed).
+The session timeout aborts the connection after spending too
+many seconds on query processing.";
+
+pattern getTimeout()(q:int,s:int)
+address CLTgetTimeout
+comment "A query is aborted after q seconds (q=0 means run undisturbed).
+The session timeout aborts the connection after spending too
+many seconds on query processing.";
 
 command shutdown(forced:bit):void
 address CLTshutdown
@@ -141,6 +154,8 @@ clients_export str CLTTime(int *ret);
 clients_export str CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+clients_export str CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 clients_export str CLTwakeup(int *ret, int *id);
 
 clients_export str CLTshutdown(int *ret, bit *forced);
@@ -430,6 +445,28 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
     return MCsuspendClient(*id,0);
 }
+
+str
+CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int qto=  *(int *) getArgReference(stk,pci,1);
+	int sto=  *(int *) getArgReference(stk,pci,2);
+	(void) mb;
+	cntxt->qtimeout = qto;
+	cntxt->stimeout = sto;
+    return MAL_SUCCEED;
+}
+str
+CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *qto=  (int *) getArgReference(stk,pci,0);
+	int *sto=  (int *) getArgReference(stk,pci,1);
+	(void) mb;
+	*qto = cntxt->qtimeout;
+	*sto = cntxt->stimeout;
+    return MAL_SUCCEED;
+}
+
 str
 CLTwakeup(int *ret, int *id)
 {
