@@ -2182,19 +2182,22 @@ It simply skips the barrier block upon return.
 @= performanceVariables
 #ifdef MALprofiler
 	lng newclk=0;
-	int ppc= -1;
-	if (malProfileMode)
+	int ppc= -2;
+	if (malProfileMode ) {
 		setFilterOnBlock(mb, 0, 0);
+		ppc = -1;
+	}
 #endif
 @= beginProfile
 #ifdef MALprofiler
-	if( mb->profiler != NULL && stk ){
+	if ( stk)
+		time(&stk->clock);
+	if( mb->profiler != NULL && stk){
 		@1->clk= GDKusec();
 		if( mb->profiler[stkpc].trace)
 		{
 			ppc= stkpc;
 			mb->profiler[ppc].clk= @1->clk;
-			time(&stk->clock);
 			mb->profiler[ppc].clock= stk->clock;
 #ifdef HAVE_TIMES
 			times(&stk->timer);
@@ -2208,7 +2211,7 @@ It simply skips the barrier block upon return.
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else
-	if(ppc!= -1 && mb->profiler != NULL && mb->profiler[ppc].trace && stk)
+	if(ppc>= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && stk)
 	{
 		newclk= GDKusec();
 		mb->profiler[ppc].counter++;
@@ -2221,6 +2224,8 @@ It simply skips the barrier block upon return.
 		profilerEvent(cntxt->nspace,mb,stk,ppc);
 		ppc= -1;
 	}
+	if ( cntxt->qtimeout &&  time(NULL) - stk->clock > cntxt->qtimeout)
+			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 #endif
 
 @= timingHndlr

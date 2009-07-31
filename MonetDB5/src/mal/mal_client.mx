@@ -164,6 +164,8 @@ Future releases may support a re-connect facility.  [TODO]
 	time_t      login;  
 	time_t      lastcmd;	/* set when input is received */
 	unsigned int  delay;	/* not yet used */
+	int 		qtimeout;	/* query abort after x seconds */
+	int			stimeout;	/* session abort after x seconds */
 @-
 Communication channels for the interconnect are stored here.
 It is perfectly legal to have a client without input stream.
@@ -510,6 +512,8 @@ Client MCinitClient(oid user, bstream *fin, stream *fout)
 	c->father = NULL;
 	c->login = c->lastcmd= time(0);
 	c->delay= TIMEOUT;
+	c->qtimeout= 0;
+	c->stimeout= 0;
 	c->stage = 0;
 	c->itrace = 0;
 	c->debugOptimizer = c->debugScheduler= 0;
@@ -647,6 +651,8 @@ void freeClient(Client c)
 	c->father = 0;
 	c->login = c->lastcmd = 0;
 	c->delay =  0;
+	c->qtimeout =  0;
+	c->stimeout =  0;
 	if(c->rcc){ 
 		GDKfree(c->rcc);
 		c->rcc = NULL;
