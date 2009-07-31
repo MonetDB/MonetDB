@@ -1515,6 +1515,7 @@ command_destroy(int argc, char *argv[])
 						"stop database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				state |= 1;
+				hadwork = 1;
 				continue;
 			}
 			if (stats->locked == 1) {
@@ -1522,6 +1523,7 @@ command_destroy(int argc, char *argv[])
 						", release database first\n", dbname);
 				SABAOTHfreeStatus(&stats);
 				state |= 1;
+				hadwork = 1;
 				continue;
 			}
 
