@@ -1,3 +1,6 @@
 load
+# needs to go here, later tests depend on char_tbl to exist
+char
 strings_concat
+strings_cast
 strings_like
