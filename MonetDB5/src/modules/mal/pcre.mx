@@ -1267,20 +1267,36 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 
 	if (!r) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
-			BAT *bp = BATdescriptor(*b);
-			BAT *res = NULL;
-			
-			if (bp == NULL)
-				throw(MAL, "pcre.like", OPERATION_FAILED);
-			if (us)
-				res = BATuselect(bp, *pat, *pat);
-			else
-				res = BATselect(bp, *pat, *pat);
-			
-			*ret = res->batCacheid;
-			BBPkeepref(res->batCacheid);
-			BBPreleaseref(bp->batCacheid);
-			r = MAL_SUCCEED;
+			/* there is no pattern or escape involved, fall back to
+			 * simple (no PCRE) match */
+			/* FIXME: we have a slight problem here if we need a case
+			 * insensitive match, so even though there is no pattern,
+			 * just fall back to PCRE for the moment.  If there is a
+			 * case insensitive BAT*select, we should use that instead */
+			if (ignore) {
+				GDKfree(ppat);
+				ppat = GDKmalloc(sizeof(char) * (strlen(*pat) + 3));
+				sprintf(ppat, "^%s$", *pat);
+				if (us)
+					r = PCREuselect(ret, &ppat, b, &ignore);
+				else
+					r = PCREselect(ret, &ppat, b, &ignore);
+			} else {
+				BAT *bp = BATdescriptor(*b);
+				BAT *res = NULL;
+				
+				if (bp == NULL)
+					throw(MAL, "pcre.like", OPERATION_FAILED); /*operation?*/
+				if (us)
+					res = BATuselect(bp, *pat, *pat);
+				else
+					res = BATselect(bp, *pat, *pat);
+				
+				*ret = res->batCacheid;
+				BBPkeepref(res->batCacheid);
+				BBPreleaseref(bp->batCacheid);
+				r = MAL_SUCCEED;
+			}
 		} else {
 			if (us)
 				r = PCREuselect(ret, &ppat, b, &ignore);
