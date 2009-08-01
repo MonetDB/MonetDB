@@ -69,7 +69,7 @@ LIBS = {
 	SOURCES = \
 		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
 		mkey.mx profiler.mx constant.mx \
-		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
+		aggr.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 		stats.mx unix.mx url.mx pqueue.mx 
 		#radix.mx tcpip.mx
@@ -79,6 +79,17 @@ LIBS = {
 		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(MATH_LIBS)
 }
+
+lib__aggrX3 = {
+	DIR = libdir/MonetDB4
+	SEP = _
+	SOURCES = aggrX3.mx aggrX3_be.mx aggrX3_bge.mx
+	#SCRIPTS = mil ""
+	LIBS = $(MONETDB_LIBS) -lstream -lbat \
+		../../monet/libmonet
+}
+
+EXTRA_DIST = aggrX3_ri.mx
 
 lib__counters = {
 	DIR = libdir/MonetDB4
