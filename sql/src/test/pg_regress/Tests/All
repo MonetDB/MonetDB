@@ -1,6 +1,10 @@
 load
-# needs to go here, later tests depend on char_tbl to exist
+
+# these need to go here, later tests depend on their tables to exist
 char
+varchar
+text
+
 strings_concat
 strings_cast
 strings_like
