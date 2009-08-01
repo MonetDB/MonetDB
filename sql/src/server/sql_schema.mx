@@ -1339,7 +1339,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		cs = find_sql_column(t, cname);
 		if (cs) 
-			return sql_error(sql, 02, "%s TABLE: A with name '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			return sql_error(sql, 02, "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 
 		cs = mvc_create_column(sql, t, cname, ctype);
 		if (column_options(sql, opt_list, ss, t, cs, alter, &sl) == SQL_ERR) {
