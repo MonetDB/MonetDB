@@ -36,7 +36,7 @@ sed -r \
 	-e 's/BEGIN;/START TRANSACTION;/ig' \
 	-e 's/END;/COMMIT;/ig' \
 	-e 's/COMMENT.*;//ig' \
-	-e 's/CREATE TABLE.*INHERITS.*;//ig' \
+	-e '/CREATE TABLE.*INHERITS.*;/s/INHERITS (.*)//' \
 	-e 's/\) INHERITS.*;/\);/ig' \
 	-e 's/\s+([^\s]+)::float[248]\b/ cast(\1 as double)/ig' \
 	-e 's/\s+([^\s]+)::int2\b/ cast(\1 as smallint)/ig' \
