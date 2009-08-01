@@ -319,7 +319,9 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #include "gdk_scanselect_defs_flt.h"
 #include "gdk_scanselect_defs_dbl.h"
 #include "gdk_scanselect_defs_lng.h"
-#include "gdk_scanselect_defs_any.h"
+#include "gdk_scanselect_defs_str.h"
+#include "gdk_scanselect_defs_fix.h"
+#include "gdk_scanselect_defs_var.h"
 
 @-
 With all the expansions enabled, (our) GNU compiler (gcc 3.2.1)
