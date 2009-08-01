@@ -1825,8 +1825,14 @@ compare_str2type( char *compare_op)
 				type = cmp_gte;
 	} else if (compare_op[0] == 'l') {
 		type = cmp_like;
+	} else if (compare_op[0] == 'i') {
+		type = cmp_ilike;
 	} else if (compare_op[0] == 'n') {
-		type = cmp_notlike;
+		if (strcmp(compare_op, "not_like")) {
+			type = cmp_notlike;
+		} else {
+			type = cmp_notilike;
+		}
 	}
 	return type;
 }
@@ -1843,7 +1849,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		exp_destroy(rs2);
 		return NULL;
 	}
-	if (!rs2 && type != cmp_like && type != cmp_notlike) {
+	if (!rs2 && type != cmp_like && type != cmp_notlike &&
+			type != cmp_ilike && type != cmp_notilike)
+	{
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
 	
@@ -1856,9 +1864,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 
 			type = (int)swap_compare((comp_type)type);
 		}
-		e = exp_compare( ls, rs, type );
+		e = exp_compare(ls, rs, type);
 	} else {
-		e = exp_compare2( ls, rs, rs2, type );
+		e = exp_compare2(ls, rs, rs2, type);
 	}
 	if (anti)
 		set_anti(e);
@@ -1888,7 +1896,8 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 }
 
 static sql_rel *
-rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_op, sql_exp *esc, int reduce )
+rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs,
+		char *compare_op, sql_exp *esc, int reduce)
 {
 	comp_type type = cmp_equal;
 
@@ -1898,10 +1907,6 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 	if (!rel || !reduce) {
 		sql_exp *e;
 
-		if (compare_op[0] == 'l') 
-			compare_op = "like";
-		if (compare_op[0] == 'n') 
-			compare_op = "not_like";
 		if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) {
 			exp_destroy(ls);
 			exp_destroy(rs);
@@ -1929,7 +1934,8 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *compare_
 }
 
 static sql_rel *
-rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, char *compare_op, int f, exp_kind k )
+rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro,
+		char *compare_op, int f, exp_kind k)
 {
 	sql_exp *rs = 0, *ls;
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -2240,6 +2246,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
+		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
@@ -2249,7 +2256,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		if (!exp_subtype(le)) {
 			exp_destroy(le);
-			return sql_error(sql, 02, "No parameter allowed on left hand of LIKE statement");
+			return sql_error(sql, 02, "SELECT: parameter not allowed on "
+					"left hand side of LIKE operator");
 		}
 
 		lo = ro->data.lval->h->data.sym;
@@ -2262,10 +2270,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (rel_set_type_param(sql, st, re) == -1) {
 				exp_destroy(le);
 				exp_destroy(re);
-				return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
+				return sql_error(sql, 02, "LIKE: wrong type, should be string");
 			}
 		} else if ((re = rel_check_type(sql, st, re, type_equal)) == NULL) {
-			return sql_error(sql, 02, "Wrong type used with LIKE statement, should be string");
+			return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		}
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
@@ -2273,13 +2281,15 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			ee = exp_atom(atom_string(st, _strdup(escape), 1));
 		}
 		if (sc->token == SQL_LIKE) {
+			char *like = insensitive ? "ilike" : "like";
 			if (ee)
-				return rel_nop_(sql, le, re, ee, NULL, NULL, "like", 0);
-			return rel_binop_(sql, le, re, NULL, "like", 0);
+				return rel_nop_(sql, le, re, ee, NULL, NULL, like, 0);
+			return rel_binop_(sql, le, re, NULL, like, 0);
 		} else {
+			char *notlike = insensitive ? "not_ilike" : "not_like";
 			if (ee)
-				return rel_nop_(sql, le, re, ee, NULL, NULL, "not_like", 0);
-			return rel_binop_(sql, le, re, NULL, "not_like", 0);
+				return rel_nop_(sql, le, re, ee, NULL, NULL, notlike, 0);
+			return rel_binop_(sql, le, re, NULL, notlike, 0);
 		}
 	}
 	case SQL_BETWEEN:
@@ -2681,6 +2691,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
+		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
@@ -2690,7 +2701,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!exp_subtype(le)) {
 			exp_destroy(le);
-			return sql_error(sql, 02, "SELECT: parameter not allowed on left hand of LIKE operator");
+			return sql_error(sql, 02, "SELECT: parameter not allowed on "
+					"left hand side of LIKE operator");
 		}
 
 		/* Do we need to escape ? */
@@ -2717,8 +2729,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		}
 		if (sc->token == SQL_LIKE) 
-			return rel_compare_exp(sql, rel, le, re, "l", ee, TRUE);
-		return rel_compare_exp(sql, rel, le, re, "n", ee, TRUE);
+			return rel_compare_exp(sql, rel, le, re, 
+					(insensitive ? "ilike" : "like"), ee, TRUE);
+		return rel_compare_exp(sql, rel, le, re,
+				(insensitive ? "not_ilike" : "not_like"), ee, TRUE);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:

@@ -520,8 +520,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			return NULL;
 		}
 
-		/* the escape charachter of like is in the right expression */
-		if (e->flag == cmp_notlike || e->flag == cmp_like) {
+		/* the escape character of like is in the right expression */
+		if (e->flag == cmp_notlike || e->flag == cmp_like ||
+				e->flag == cmp_notilike || e->flag == cmp_ilike)
+		{
 			if (!e->f)
 				r2 = stmt_atom_string(_strdup(""));
 			if (!l || !r || !r2) {
@@ -533,8 +535,11 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			}
 			if (l->nrcols == 0) {
 				stmt *lstmt;
+				char *likef = (e->flag == cmp_notilike || e->flag == cmp_ilike ?
+					"ilike" : "like");
 				sql_subtype *s = sql_bind_localtype("str");
-				sql_subfunc *like = sql_bind_func3(sql->session->schema, "like", s, s, s);
+				sql_subfunc *like = sql_bind_func3(sql->session->schema,
+						likef, s, s, s);
 				list *ops = create_stmt_list();
 
 				assert(s && like);
@@ -545,7 +550,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				lstmt = stmt_Nop(stmt_list(ops), like);
 				if (e->flag == cmp_notlike) {
 					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *not = sql_bind_func(sql->session->schema, "not", bt, NULL);
+					sql_subfunc *not = sql_bind_func(sql->session->schema,
+							"not", bt, NULL);
 					lstmt = stmt_unop(lstmt, not);
 				}
 				return lstmt;
@@ -570,9 +576,14 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			if (r2) {
 				if (l->nrcols == 0 && r->nrcols == 0 && r2->nrcols == 0) {
 					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *lf = sql_bind_func(sql->session->schema, compare_func(range2lcompare(e->flag)), tail_type(l), tail_type(r));
-					sql_subfunc *rf = sql_bind_func(sql->session->schema, compare_func(range2rcompare(e->flag)), tail_type(l), tail_type(r));
-					sql_subfunc *a = sql_bind_func(sql->session->schema, "and", bt, bt);
+					sql_subfunc *lf = sql_bind_func(sql->session->schema,
+							compare_func(range2lcompare(e->flag)),
+							tail_type(l), tail_type(r));
+					sql_subfunc *rf = sql_bind_func(sql->session->schema,
+							compare_func(range2rcompare(e->flag)),
+							tail_type(l), tail_type(r));
+					sql_subfunc *a = sql_bind_func(sql->session->schema,
+							"and", bt, bt);
 					assert(lf && rf && a);
 					l = stmt_dup(l);
 					s = stmt_binop(
@@ -589,7 +600,9 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			} else {
 				/* value compare or select */
 				if (l->nrcols == 0 && r->nrcols == 0) {
-					sql_subfunc *f = sql_bind_func(sql->session->schema, compare_func((comp_type)e->flag), tail_type(l), tail_type(r));
+					sql_subfunc *f = sql_bind_func(sql->session->schema,
+							compare_func((comp_type)e->flag),
+							tail_type(l), tail_type(r));
 					assert(f);
 					s = stmt_binop(l, r, f);
 				} else

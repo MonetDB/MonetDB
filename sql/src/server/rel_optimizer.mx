@@ -280,6 +280,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			return 6;
 		case cmp_like:
 		case cmp_notlike:
+		case cmp_ilike:
+		case cmp_notilike:
 			*cnt += 2;
 			return 2;
 		case cmp_or: /* prefer union over like */

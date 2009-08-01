@@ -136,7 +136,9 @@ typedef enum comp_type {
 	cmp_like = 7,
 	cmp_all = 8,
 	cmp_or = 9,
-	cmp_project = 10
+	cmp_project = 10,
+	cmp_notilike = 11,
+	cmp_ilike = 12
 } comp_type;
 
 /* flag to indicate anti join/select */
@@ -1548,7 +1550,8 @@ stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(st_uselect);
 
-	assert(cmptype != cmp_like && cmptype != cmp_notlike);
+	assert(cmptype != cmp_like && cmptype != cmp_notlike &&
+			cmptype != cmp_ilike && cmptype != cmp_notilike);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
@@ -2788,7 +2791,8 @@ print_stmt(stmt *s, int *nr)
 	case st_ordered: dump2(s, "ordered", nr); s->nr = -s->op1.stval->nr; break;
 	case st_select:
 	case st_uselect: 
-			if (s->flag == cmp_like || s->flag == cmp_notlike)
+			if (s->flag == cmp_like || s->flag == cmp_notlike ||
+					s->flag == cmp_ilike || s->flag == cmp_notilike)
 				dump3(s, "likeselect", nr);
 			else
 				dump2(s, "select", nr);

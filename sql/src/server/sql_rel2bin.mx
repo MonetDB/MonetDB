@@ -595,9 +595,20 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			}
 
 			/* finally collect all saved like, notlike, and notequal selects */
-			for (ct = cmp_like; ct >= cmp_notequal; ct--) {
-				list_merge(newsels, sels1[ct], (fdup) &stmt_dup);
-				list_destroy(sels1[ct]);
+			{
+				comp_type *ctp;
+				comp_type cts[] = {
+					cmp_ilike,
+					cmp_notilike,
+					cmp_like,
+					cmp_notlike,
+					cmp_notequal,
+					(comp_type)0
+				};
+				for (ctp = cts; *ctp != (comp_type)0; ctp++) {
+					list_merge(newsels, sels1[*ctp], (fdup) &stmt_dup);
+					list_destroy(sels1[*ctp]);
+				}
 			}
 		}
 		list_destroy(colsels);
@@ -916,11 +927,13 @@ push_semijoin( stmt *select, stmt *s )
 		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = stmt_dup( select->op2.stval);
 
-		if (cmp == cmp_like || cmp == cmp_notlike) {
-			stmt *op3 = stmt_dup( select->op3.stval);
+		if (cmp == cmp_like || cmp == cmp_notlike ||
+				cmp == cmp_ilike || cmp == cmp_notilike)
+		{
+			stmt *op3 = stmt_dup(select->op3.stval);
 
 			stmt_destroy(select);
-			return stmt_likeselect( s, op2, op3, cmp);
+			return stmt_likeselect(s, op2, op3, cmp);
 		} else {
 			stmt_destroy(select);
 			return stmt_select( s, op2, cmp);

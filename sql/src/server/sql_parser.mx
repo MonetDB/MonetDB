@@ -641,7 +641,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER BY
-%token <sval> LIKE BETWEEN
+%token <sval> LIKE ILIKE BETWEEN
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
@@ -1769,7 +1769,7 @@ ident_commalist:
  ;
 
 like_table:
-	LIKE qname	{ $$ = _symbol_create_list(SQL_LIKE, $2 ); }
+	LIKE qname	{ $$ = _symbol_create_list( SQL_LIKE, $2 ); }
  ;
 
 view_def:
@@ -3165,12 +3165,26 @@ like_predicate:
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
-		  $$ = _symbol_create_list(SQL_NOT_LIKE, l ); }
+		  append_int(l, FALSE);  /* case insensitive */
+		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
+ |  pred_exp NOT ILIKE like_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_symbol(l, $4);
+		  append_int(l, TRUE);  /* case insensitive */
+		  $$ = _symbol_create_list( SQL_NOT_LIKE, l ); }
  |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_LIKE, l ); }
+		  append_int(l, FALSE);  /* case insensitive */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
+ |  pred_exp ILIKE like_exp
+		{ dlist *l = L();
+		  append_symbol(l, $1);
+		  append_symbol(l, $3);
+		  append_int(l, TRUE);  /* case insensitive */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  ;
 
 like_exp:
