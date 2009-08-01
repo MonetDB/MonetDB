@@ -3070,7 +3070,10 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int tab
 		}
 	}
 	if (r && l)
-		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname, exp_subtype(l)->type->sqlname, exp_subtype(r)->type->sqlname);
+		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'",
+				fname,
+				exp_subtype(l)->type->sqlname,
+				exp_subtype(r)->type->sqlname);
 	if (l)
 		exp_destroy(l);
 	if (r)
