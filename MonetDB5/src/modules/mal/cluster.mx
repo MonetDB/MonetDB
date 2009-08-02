@@ -899,18 +899,26 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		BBPkeepref(*RB = b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	/* work around non aligned bats */
+	if (b->H->type != TYPE_void) {
+		BAT *ob = b;
+		BAT *v = VIEWcombine(cmap);
+
+		b = BATleftjoin(v, b, BATcount(b));
+		BBPunfix(ob->batCacheid);
+	}
 	if (BATcount(cmap) != BATcount(b) ||
 	    cmap->H->seq != b->H->seq) {
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
-		BBPunfix(*B);
-			throw(MAL, "cluster.map", OPERATION_FAILED " Counts of operands do not match");
+		BBPunfix(b->batCacheid);
+		throw(MAL, "cluster.map", OPERATION_FAILED " Counts of operands do not match");
 	}
 
 	if ((rb = BATnew(TYPE_void, ATOMtype(b->ttype), BATcount(b))) == NULL) {
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
-		BBPunfix(*B);
+		BBPunfix(b->batCacheid);
 		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
 	} 
 	BATseqbase(rb, b->H->seq);
@@ -969,7 +977,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	}
 	GDKfree(psumcp);
 	BBPunfix(*CMAP);
-	BBPunfix(*B);
+	BBPunfix(b->batCacheid);
 	rb = BATsetaccess(rb, BAT_READ);
 	BBPkeepref(*RB = rb->batCacheid);
 	return MAL_SUCCEED;
