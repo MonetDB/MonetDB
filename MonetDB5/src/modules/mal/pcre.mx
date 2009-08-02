@@ -873,46 +873,43 @@ pcre_heap(Heap *heap, size_t capacity)
 int
 sql2pcre(str *r, str pat, str esc_str) 
 {
-	/* change the SQL wilcards into PCRE wildcards */
-	int len = (int) strlen(pat);
 	int escaped = 0;
 	int hasWildcard = 0;
-	char *ppat = GDKmalloc(len*2+3 /* 3 = "^'the translated regexp'$0" */);
+	char *ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	int esc = esc_str[0]; /* should change to utf8_convert() */
 	int specials = 0;
 
 	*r = ppat;
-	/*
-	# the escape character can be a char which is special in a PCRE
-	# if the user used the "+" char as escape and has "++" in
-	# its pattern, then replacing this with "+" is not correct
-	# but should be "\+"
-	*/
+	/* The escape character can be a char which is special in a PCRE
+	 * expression.  If the user used the "+" char as escape and has "++"
+	 * in its pattern, then replacing this with "+" is not correct and
+	 * should be "\+" instead. */
 	if (*esc_str && strchr( ".+*()[]", esc) != NULL) 
 		specials = 1; 
 
-	*ppat ++ = '^';
+	*ppat++ = '^';
 	while (*pat) {
 		int c = *pat++;
 
 		if (c == esc) {
 			if (escaped) {
-				if (specials) { /* change ++ into \\+ */
+				if (specials) { /* change ++ into \+ */
 					*ppat++ = esc;
 				} else { /* do not escape simple escape symbols */
-					ppat[-1] = esc;
+					ppat[-1] = esc; /* overwrite backslash */
 				}
 				escaped = 0;
 			} else {
 				*ppat++ = '\\';
 				escaped = 1;
 			}
-			/* not optimal but functional */
 			hasWildcard = 1; 
-		} else if (strchr( ".?+*()[]\\", c) != NULL) {
-			*ppat++ = '\\';
+		} else if (strchr(".?+*()[]\\", c) != NULL) {
+			/* escape PCRE special chars, avoid double backslash if the
+			 * user uses an invalid escape sequence */
+			if (!escaped)
+				*ppat++ = '\\';
 			*ppat++ = c;
-			/* not optimal but functional */
 			hasWildcard = 1; 
 			escaped = 0;
 		} else if (c == '%' && !escaped) {
@@ -923,7 +920,11 @@ sql2pcre(str *r, str pat, str esc_str)
 			*ppat++ = '.';
 			hasWildcard = 1;
 		} else {
-			*ppat++ = c;
+			if (escaped) {
+				ppat[-1] = c; /* overwrite backslash of invalid escape */
+			} else {
+				*ppat++ = c;
+			}
 			escaped = 0;
 		}
 	}
