@@ -471,7 +471,7 @@ stmt_bool(int b)
 }
 
 static stmt *
-stmt_atom_oid(int i)
+stmt_atom_oid(oid i)
 {
 	sql_subtype t;
 
@@ -1324,7 +1324,7 @@ has_side_effect(stmt *val)
 stmt *
 stmt_const(stmt *rows, stmt *val) 
 {
-	if (has_side_effect(val)) {
+	if (val && has_side_effect(val)) {
 		stmt *x = push_project(rows, val);
 		stmt_destroy(rows);
 		return x;

@@ -538,7 +538,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_const:{
-			dump_2(sql, mb, s, algebraRef, projectRef);
+			if (s->op2.stval)
+				dump_2(sql, mb, s, algebraRef, projectRef);
+			else
+				dump_1(sql, mb, s, algebraRef, projectRef);
 		}
 			break;
 		case st_mark:{
