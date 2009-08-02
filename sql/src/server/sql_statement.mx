@@ -134,11 +134,11 @@ typedef enum comp_type {
 	cmp_notequal = 5,
 	cmp_notlike = 6,
 	cmp_like = 7,
-	cmp_all = 8,
-	cmp_or = 9,
-	cmp_project = 10,
-	cmp_notilike = 11,
-	cmp_ilike = 12
+	cmp_notilike = 8,
+	cmp_ilike = 9,
+	cmp_all = 10,
+	cmp_or = 11,
+	cmp_project = 12
 } comp_type;
 
 /* flag to indicate anti join/select */
