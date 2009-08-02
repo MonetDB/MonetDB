@@ -879,7 +879,7 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 		bn = r;
 	}
 	if (ordered) {
-		bn->tsorted = ordered;
+		bn->tsorted = TRUE;
 		histo->hsorted = b->hsorted;
 		histo->tsorted = 0;
 		BATkey(histo, TRUE);

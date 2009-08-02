@@ -530,21 +530,22 @@ CLUSTER_table( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @= c_cls_new
 str
-CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int *offset)
+CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
+	unsigned int bits = *Bits;
 	@1 *bt, *be; 
 	wrd *cnt, *pos, sum, *m;
 
 	if (off < 0)
 		off = 0;
-	if (*bits >= sizeof(int)*8)
+	if (bits >= sizeof(int)*8)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((*bits) != 0)
-		(*bits)--;
-	mask = (1<<*bits) - 1;
+	if ((bits) != 0)
+		bits--;
+	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
 		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
 
@@ -615,21 +616,22 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int 
 
 @= c_cls_new2
 str
-CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int *offset, bit *order)
+CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int *offset, bit *order)
 {
 	BAT *psum, *cmap, *b;
 	int i, mask = 0, off = *offset;
+	unsigned int bits = *Bits;
 	@1 *bt, *be, *bs; 
-	wrd *cnt, *pos, sum;
+	wrd *cnt, sum;
 
 	if (off < 0)
 		off = 0;
-	if (*bits >= sizeof(int)*8)
+	if (bits >= sizeof(int)*8)
 		throw(MAL, "cluster.new", TOO_MANY_BITS);
 
-	if ((*bits) != 0)
-		(*bits)--;
-	mask = (1<<*bits) - 1;
+	if ((bits) != 0)
+		bits--;
+	mask = (1<<bits) - 1;
 	if ((b = BATdescriptor(*B)) == NULL)
 		throw(MAL, "cluster.new", INTERNAL_BAT_ACCESS);
 
@@ -650,35 +652,34 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int
 
 	/* Make a histogram and fill the cluster map */
 	if (b->tsorted) {
-		oid *o, base;
-		bte p = -1, *mb, *m, h;
+		bte *mb, *m, h;
 
 		/* time to create the cluster map */
-		if ((cmap = BATnew(TYPE_oid, TYPE_bte, BATcount(b))) == NULL) {
+		if ((cmap = BATnew((!*order)?TYPE_void:TYPE_oid, TYPE_bte, BATcount(b))) == NULL) {
 			BBPunfix(*B);
 			BBPunfix(psum->batCacheid);
 			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 		}
 		BATseqbase(cmap, b->H->seq);
-		cmap->hdense= FALSE;
-		cmap->tdense= FALSE;
-		o = (oid*)Hloc(cmap, BUNfirst(cmap));
+		cmap->tdense = FALSE;
 		mb = m = (bte*)Tloc(cmap, BUNfirst(cmap));
 
-		base = b->hseqbase;
 		if (!*order) {
+			cmap->tsorted = FALSE;
 			for ( ; bt < be; bt++) {
 				int h = (((int)(*bt)) >> off) & mask;
-				if (p != h) {
-					*o++ = base + bt - bs;
-			   		p = *m++ = h;
-				}
+			   	*m++ = h;
 				cnt[h]++;
 			}
 		} else { /* try an optimized distribution, 1/Nth in each part */
+			oid *o, base;
 			lng sz = 0, parts = mask+1, psz = BATcount(b)/parts;
 			@1 prev = *bt - 1;
 			h = -1;
+
+			cmap->hdense= FALSE;
+			base = b->hseqbase;
+			o = (oid*)Hloc(cmap, BUNfirst(cmap));
 			for ( ; bt < be; bt++, sz++) {
 				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
 					h++;
@@ -701,8 +702,8 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int
 		}
 		BATseqbase(cmap, b->H->seq);
 		BATsetcount(cmap, BATcount(b));
-		cmap->tsorted= FALSE;
-		cmap->tdense= FALSE;
+		cmap->tsorted = FALSE;
+		cmap->tdense = FALSE;
 		m = (bte*)Tloc(cmap, BUNfirst(cmap));
 
 		for ( ; bt < be; bt++) {
@@ -713,12 +714,11 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *bits, unsigned int
 	}
 
 	/* convert histogram into prefix sum */
-	pos = (wrd*)alloca(sizeof(wrd) * (mask+1)); 
 	for (sum = 0, i=0 ; i <= mask; i++) {
 		wrd psum = sum;
 
 		sum += cnt[i];
-		pos[i] = cnt[i] = psum;
+		cnt[i] = psum;
 	}
 	
 	BBPunfix(*B);
@@ -907,7 +907,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 			throw(MAL, "cluster.map", OPERATION_FAILED " Counts of operands do not match");
 	}
 
-	if ((rb = BATnew(TYPE_void, b->ttype, BATcount(b))) == NULL) {
+	if ((rb = BATnew(TYPE_void, ATOMtype(b->ttype), BATcount(b))) == NULL) {
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
 		BBPunfix(*B);
@@ -993,7 +993,10 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *v;
 
 		l = *cnt;
-		h = *(cnt+1);
+		if (cnt+1 < end)
+			h = *(cnt+1);
+		else
+			h = BATcount(b)+1;
 		v = BATslice(b, l, h);
 		BBPkeepref(*res = v->batCacheid); 
 	} 

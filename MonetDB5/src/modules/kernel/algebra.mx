@@ -534,7 +534,7 @@ address ALGrangejoin;
 
 @+ Projection operations
 @mal
-command project(b:bat[:any_1,:any_2]) :bat[:any_1,:oid]
+command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
 comment "Extract the head of a BAT.";
 
