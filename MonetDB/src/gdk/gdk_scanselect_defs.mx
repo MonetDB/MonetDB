@@ -17,16 +17,6 @@
 
 @a S. Manegold, N. J. Nes, M. L. Kersten, P. Boncz
 
-@= gdk_scanselect_prefix
-#include "monetdb_config.h"
-#include "gdk.h"
-
-#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
-#define SKIP_TYPE_EXPANSIONS
-#endif
-#include "gdk_scanselect.h"
-@
-
 @-
 The structure of this file closely follows the structure of
 gdk_scanselect.mx.  This file contains the many functions that are
