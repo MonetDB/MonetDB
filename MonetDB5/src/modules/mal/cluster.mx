@@ -900,7 +900,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		return MAL_SUCCEED;
 	}
 	/* work around non aligned bats */
-	if (b->H->type != TYPE_void) {
+	if (cmap->H->seq != b->H->seq && b->H->type != TYPE_void) {
 		BAT *ob = b;
 		BAT *v = VIEWcombine(cmap);
 
