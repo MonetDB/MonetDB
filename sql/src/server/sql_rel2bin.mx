@@ -595,20 +595,9 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			}
 
 			/* finally collect all saved like, notlike, and notequal selects */
-			{
-				comp_type *ctp;
-				comp_type cts[] = {
-					cmp_ilike,
-					cmp_notilike,
-					cmp_like,
-					cmp_notlike,
-					cmp_notequal,
-					(comp_type)0
-				};
-				for (ctp = cts; *ctp != (comp_type)0; ctp++) {
-					list_merge(newsels, sels1[*ctp], (fdup) &stmt_dup);
-					list_destroy(sels1[*ctp]);
-				}
+			for (ct = cmp_ilike; ct >= cmp_notequal; ct--) {
+				list_merge(newsels, sels1[ct], (fdup)&stmt_dup);
+				list_destroy(sels1[ct]);
 			}
 		}
 		list_destroy(colsels);

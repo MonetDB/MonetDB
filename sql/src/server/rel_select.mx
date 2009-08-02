@@ -2953,7 +2953,8 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 
 sql_exp *
-rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int table_func)
+rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
+		char *fname, int table_func)
 {
 	sql_exp *res = NULL;
 	sql_subtype *t1, *t2;
