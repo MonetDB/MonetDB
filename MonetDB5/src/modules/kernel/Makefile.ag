@@ -42,7 +42,7 @@ lib__aggr = {
 	SEP = _
 	SOURCES = aggr.mx aggr_be.mx aggr_bge.mx
 	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream
+	LIBS = $(MONETDB_LIBS) -lbat -lstream ../../mal/libmonetdb5
 }
 
 EXTRA_DIST = aggr_ri.mx
