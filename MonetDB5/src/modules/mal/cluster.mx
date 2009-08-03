@@ -900,7 +900,8 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		return MAL_SUCCEED;
 	}
 	/* work around non aligned bats */
-	if (cmap->H->seq != b->H->seq && b->H->type != TYPE_void) {
+	if (BATcount(cmap) && 
+	    cmap->H->seq != b->H->seq && b->H->type != TYPE_void) {
 		BAT *ob = b;
 		BAT *v = VIEWcombine(cmap);
 
@@ -908,7 +909,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		BBPunfix(ob->batCacheid);
 	}
 	if (BATcount(cmap) != BATcount(b) ||
-	    cmap->H->seq != b->H->seq) {
+	   (BATcount(cmap) && cmap->H->seq != b->H->seq)) {
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
 		BBPunfix(b->batCacheid);
