@@ -728,6 +728,8 @@ parses the grammar, executing the inlined C statements along the way.
 #ifndef YYSTYPE
 #define YYSTYPE	YYSTREE
 #endif
+#define YYMALLOC GDKmalloc
+#define YYFREE GDKfree
 
 #include "monet_parse.h"	/* includes monet.h */
 
