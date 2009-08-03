@@ -2930,7 +2930,6 @@ opt_corresponding:
 
 selection:
     column_exp_commalist
- |  '*' 			{ $$ = NULL; }
  ;
 
 table_exp:
@@ -3544,7 +3543,12 @@ column_exp_commalist:
  ;
 
 column_exp:
-    ident '.' '*'
+    '*'
+		{ dlist *l = L();
+  		  append_string(l, NULL);
+  		  append_string(l, NULL);
+  		  $$ = _symbol_create_list( SQL_TABLE, l ); }
+ |  ident '.' '*'
 		{ dlist *l = L();
   		  append_string(l, $1);
   		  append_string(l, NULL);

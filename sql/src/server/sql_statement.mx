@@ -1551,7 +1551,7 @@ stmt_uselect(stmt *op1, stmt *op2, comp_type cmptype)
 	stmt *s = stmt_create(st_uselect);
 
 	assert(cmptype != cmp_like && cmptype != cmp_notlike &&
-			cmptype != cmp_ilike && cmptype != cmp_notilike);
+	       cmptype != cmp_ilike && cmptype != cmp_notilike);
 	s->op1.stval = op1;
 	s->op2.stval = op2;
 	s->flag = cmptype;
@@ -2792,7 +2792,7 @@ print_stmt(stmt *s, int *nr)
 	case st_select:
 	case st_uselect: 
 			if (s->flag == cmp_like || s->flag == cmp_notlike ||
-					s->flag == cmp_ilike || s->flag == cmp_notilike)
+			    s->flag == cmp_ilike || s->flag == cmp_notilike)
 				dump3(s, "likeselect", nr);
 			else
 				dump2(s, "select", nr);

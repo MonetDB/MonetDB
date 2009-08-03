@@ -190,7 +190,7 @@ push_select( stmt *select, stmt *s )
 
 	if (select->type == st_select) {
 		if (select->flag == cmp_like || select->flag == cmp_notlike ||
-				select->flag == cmp_ilike || select->flag == cmp_notilike)
+		    select->flag == cmp_ilike || select->flag == cmp_notilike)
 			return stmt_likeselect(s, stmt_dup(select->op2.stval),
 					stmt_dup(select->op3.stval), (comp_type)select->flag);
 		else
