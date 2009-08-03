@@ -1185,7 +1185,7 @@ PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 			if (strcmp(*s, *pat) == 0)
 				*ret = TRUE;
 		} else {
-			if (isens) {
+			if (*isens) {
 				r = PCREimatch(ret, s, &ppat);
 			} else {
 				r = PCREmatch(ret, s, &ppat);
@@ -1248,7 +1248,7 @@ PCREilike2(bit *ret, str *s, str *pat)
 {
 	char *esc = "\\";
 
-	return PCRElike3(ret, s, pat, &esc);
+	return PCREilike3(ret, s, pat, &esc);
 }
 
 str
@@ -1306,7 +1306,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				i++;
 			}
 		} else {
-			if (isens) {
+			if (*isens) {
 				BATloop(strs, p, q) {
 					str s = (str)BUNtail(strsi, p);
 
