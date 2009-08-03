@@ -71,7 +71,11 @@ address PCREilike_select_pcre;
 
 command match(s:str, pat:str):bit
 address PCREmatch
-comment "POSIX pattern matching against a string";
+comment "Perl Compatible Regular Expression pattern matching against a string";
+
+command imatch(s:str, pat:str):bit
+address PCREimatch
+comment "Caseless Perl Compatible Regular Expression pattern matching against a string";
 
 command patindex(pat:str, s:str) :int
 address PCREpatindex
@@ -84,7 +88,7 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replaceme
 	   'e': if present, an empty string is considered to be a valid match
 	   'i': if present, the match operates in case-insensitive mode. 
 		Otherwise, in case-sensitive mode.
-	 'm': if present, the match operates in multi-line mode.
+	   'm': if present, the match operates in multi-line mode.
 	   's': if present, the match operates in \"dot-all\"
 	   The specifications of the flags can be found in \"man pcreapi\"
 	   The flag letters may be repeated.
@@ -121,6 +125,18 @@ address BATPCRElike;
 command batstr.like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
 address BATPCRElike2;
 
+command ilike(s:str, pat:str, esc:str):bit 
+address PCREilike3;
+
+command ilike(s:str, pat:str):bit 
+address PCREilike2;
+
+command batstr.ilike(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
+address BATPCREilike;
+
+command batstr.ilike(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
+address BATPCREilike2;
+
 @-
 @verbatim
 ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
@@ -152,6 +168,7 @@ pcre_export str PCREquote(str *r, str *v);
 pcre_export str PCREselect(int *res, str *pattern, int *bid, bit *ignore);
 pcre_export str PCREuselect(int *res, str *pattern, int *bid, bit *ignore);
 pcre_export str PCREmatch(bit *ret, str *val, str *pat);
+pcre_export str PCREimatch(bit *ret, str *val, str *pat);
 pcre_export str PCREindex(int *ret, pcre *pat, str *val);
 pcre_export str PCREpatindex(int *ret, str *pat, str *val);
 pcre_export str PCREfromstr(str instr, int *l, pcre ** val);
@@ -175,6 +192,10 @@ pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCRElike2(bit *ret, str *s, str *pat);
 pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
+pcre_export str PCREilike3(bit *ret, str *s, str *pat, str *esc);
+pcre_export str PCREilike2(bit *ret, str *s, str *pat);
+pcre_export str BATPCREilike(int *ret, int *b, str *pat, str *esc);
+pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
@@ -722,12 +743,13 @@ pcre_exit(void)
 {
 }
 
-str
-pcre_match_with_flags(int *ret, str val, str pat, str flags)
+static str
+pcre_match_with_flags(bit *ret, str val, str pat, str flags)
 {
 	const char err[BUFSIZ], *err_p = err;
 	int errpos = 0;
 	int options = PCRE_UTF8, i;
+	int pos;
 	pcre *re;
 
 	for (i = 0; i < (int)strlen(flags); i++) {
@@ -740,34 +762,27 @@ pcre_match_with_flags(int *ret, str val, str pat, str flags)
 		} else if (flags[i] == 'x') {
 			options |= PCRE_EXTENDED;
 		} else {
-			throw(MAL, "pcre_match", ILLEGAL_ARGUMENT " Unsupported flag character '%c'\n", flags[i]);
+			throw(MAL, "pcre.match", ILLEGAL_ARGUMENT
+					": unsupported flag character '%c'\n", flags[i]);
 		}
 	}
 
 	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_match", OPERATION_FAILED "Compilation of regular expression (%s) failed at %d with '%s'", pat, errpos, err_p);
+		throw(MAL, "pcre.match", OPERATION_FAILED
+				": compilation of regular expression (%s) failed "
+				"at %d with '%s'", pat, errpos, err_p);
 	}
-	*ret = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
+	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
 	my_pcre_free(re);
-	return MAL_SUCCEED;
-}
-
-str
-pcre_match(bit *ret, str val, str pat)
-{
-	str msg;
-	int errpos = 0;
-
-	if ((msg = pcre_match_with_flags(&errpos, val, pat, "")) != MAL_SUCCEED) 
-		return msg;
-
-	if (errpos >= 0)
+	if (pos >= 0)
 		*ret = TRUE;
-	else if (errpos == -1)
+	else if (pos == -1)
 		*ret = FALSE;
 	else 
-		throw(MAL, "pcre_match", OPERATION_FAILED "Matching of regular expression (%s) failed with %d", pat, errpos);
-	return msg;
+		throw(MAL, "pcre.match", OPERATION_FAILED
+				": matching of regular expression (%s) failed with %d",
+				pat, pos);
+	return MAL_SUCCEED;
 }
 
 static int
@@ -1075,7 +1090,15 @@ PCREuselect(int *res, str *pattern, int *bid, bit *ignore)
 str
 PCREmatch(bit *ret, str *val, str *pat)
 {
-	return pcre_match(ret, *val, *pat);
+	char *flags = "";
+	return pcre_match_with_flags(ret, *val, *pat, flags);
+}
+
+str
+PCREimatch(bit *ret, str *val, str *pat)
+{
+	char *flags = "i";
+	return pcre_match_with_flags(ret, *val, *pat, flags);
 }
 
 str
@@ -1118,8 +1141,8 @@ PCREsql2pcre(str *ret, str *pat, str *esc)
 	return MAL_SUCCEED;
 } 
 
-str
-PCRElike3(bit *ret, str *s, str *pat, str *esc)
+static str
+PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 {
 	char *ppat = NULL;
 	str r = PCREsql2pcre(&ppat, pat, esc);
@@ -1130,12 +1153,24 @@ PCRElike3(bit *ret, str *s, str *pat, str *esc)
 			if (strcmp(*s, *pat) == 0)
 				*ret = TRUE;
 		} else {
-			r = PCREmatch(ret, s, &ppat);
+			if (isens) {
+				r = PCREimatch(ret, s, &ppat);
+			} else {
+				r = PCREmatch(ret, s, &ppat);
+			}
 		}
 	}
 	if (ppat)
 		GDKfree(ppat);
 	return r;
+}
+
+str
+PCRElike3(bit *ret, str *s, str *pat, str *esc)
+{
+	bit no = FALSE;
+
+	return(PCRElike4(ret, s, pat, esc, &no));
 }
 
 str
@@ -1147,7 +1182,23 @@ PCRElike2(bit *ret, str *s, str *pat)
 }
 
 str
-BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
+PCREilike3(bit *ret, str *s, str *pat, str *esc)
+{
+	bit yes = TRUE;
+
+	return(PCRElike4(ret, s, pat, esc, &yes));
+}
+
+str
+PCREilike2(bit *ret, str *s, str *pat)
+{
+	char *esc = "\\";
+
+	return PCRElike3(ret, s, pat, &esc);
+}
+
+str
+BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens)
 {
 	char *ppat = NULL;
 	str res = PCREsql2pcre(&ppat, pat, esc);
@@ -1180,7 +1231,11 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 			BATloop(strs, p, q) {
 				str s = (str)BUNtail(strsi, p);
 
-				res = PCREmatch(br+i, &s, &ppat);
+				if (isens) {
+					res = PCREimatch(br + i, &s, &ppat);
+				} else {
+					res = PCREmatch(br + i, &s, &ppat);
+				}
 				i++;
 			}
 		}
@@ -1206,7 +1261,31 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 }
 
 str
+BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
+{
+	bit no = FALSE;
+
+	return(BATPCRElike3(ret, bid, pat, esc, &no));
+}
+
+str
 BATPCRElike2(bat *ret, int *bid, str *pat)
+{
+	char *esc = "\\";
+
+	return BATPCRElike(ret, bid, pat, &esc);
+}
+
+str
+BATPCREilike(bat *ret, int *bid, str *pat, str *esc)
+{
+	bit yes = TRUE;
+
+	return(BATPCRElike3(ret, bid, pat, esc, &yes));
+}
+
+str
+BATPCREilike2(bat *ret, int *bid, str *pat)
 {
 	char *esc = "\\";
 
