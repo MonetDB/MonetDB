@@ -29,7 +29,8 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 !IFDEF BITS32
 install-installer:
 	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
+	if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe "s/Program Files/Program Files (x86)/" MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)\MonetDB4-XQuery-Installer.vdproj"
+	if not exist "C:\Program Files (x86)" $(INSTALL) MonetDB4-XQuery\MonetDB4-XQuery-Installer.vdproj "$(prefix)"
 !ENDIF
 !IFDEF BITS64
 install-installer:

@@ -30,6 +30,7 @@ install: targetdirs all install-m5installer $(INSTALLER_PREREQ)
 	if not "$(MAKEDIR)" == "$(prefix)" $(INSTALL) MSQLserver.bat "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).sln "$(prefix)"
 	$(INSTALL) $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj "$(prefix)"
+	if exist "C:\Program Files (x86)" if "$(bits)" == "32" C:\cygwin\bin\sed.exe "s/Program Files/Program Files (x86)/" $(INSTALLER)\$(INSTALLER)$(IBITS).vdproj > "$(prefix)\$(INSTALLER)$(IBITS).vdproj"
 	-devenv "$(prefix)\$(INSTALLER)$(IBITS).sln" /build
 	if exist "$(prefix)\$(INSTALLER)$(IBITS).msi" del /f "$(prefix)\$(INSTALLER)$(IBITS).msi"
 	if exist "$(prefix)\Debug\$(INSTALLER)$(IBITS).msi" $(INSTALL) /Y "$(prefix)"\Debug\$(INSTALLER)$(IBITS).msi "$(prefix)"
@@ -45,7 +46,8 @@ install: targetdirs all install-m5installer $(INSTALLER_PREREQ)
 !IFDEF BITS32
 install-m5installer:
 	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.sln "$(prefix)"
-	$(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
+	if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe "s/Program Files/Program Files (x86)/" MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj > "$(prefix)\MonetDB5-SQL-Installer.vdproj"
+	if not exist "C:\Program Files (x86)" $(INSTALL) MonetDB5-SQL\MonetDB5-SQL-Installer.vdproj "$(prefix)"
 !ENDIF
 
 !IFDEF BITS64

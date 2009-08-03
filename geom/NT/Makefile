@@ -28,7 +28,8 @@ install: targetdirs all $(M5INSTALLER)
 !IFDEF BITS32
 install-m5installer:
 	$(INSTALL) MonetDB5-Geom\MonetDB5-Geom-Module.sln "$(prefix)"
-	$(INSTALL) MonetDB5-Geom\MonetDB5-Geom-Module.vdproj "$(prefix)"
+	if exist "C:\Program Files (x86)" C:\cygwin\bin\sed.exe "s/Program Files/Program Files (x86)/" MonetDB5-Geom\MonetDB5-Geom-Module.vdproj > "$(prefix)\MonetDB5-Geom-Module.vdproj"
+	if not exist "C:\Program Files (x86)" $(INSTALL) MonetDB5-Geom\MonetDB5-Geom-Module.vdproj "$(prefix)"
 !ENDIF
 
 !IFDEF BITS64
