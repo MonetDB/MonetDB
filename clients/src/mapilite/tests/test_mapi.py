@@ -1,17 +1,135 @@
 
 import unittest
 import ctypes
+import ctypes.util
+import sys
+import os
+
+
+mapi_int64 = ctypes.c_longlong
+
+class MapiParam(ctypes.Structure):
+    pass
+
+class MapiResultSet(ctypes.Structure):
+    pass
+
+class MapiStatement(ctypes.Structure):
+    pass
+
+class MapiStruct(ctypes.Structure):
+    pass
+
+MapiHdl = MapiStatement
+Mapi = MapiStruct
+
+MapiParam._fields_ = [
+        ('inparam', ctypes.c_void_p),
+        ('sizeptr', ctypes.POINTER(ctypes.c_int)),
+        ('intype', ctypes.c_int),
+        ('outtype', ctypes.c_int),
+        ('precision', ctypes.c_int),
+        ('scale', ctypes.c_int),
+    ]
+
+MapiResultSet._fields_ = [
+        ('next', ctypes.POINTER(MapiResultSet)),
+        ('hdl', ctypes.POINTER(MapiStatement)),
+        ('tableid', ctypes.c_int),
+        ('querytype', ctypes.c_int),
+        ('row_count', mapi_int64),
+        ('last_id', mapi_int64),
+        ('fieldcnt', ctypes.c_int),
+        ('maxfieldsm', ctypes.c_int),
+        ('errorstr', ctypes.c_char_p)
+        #struct MapiColumn *fields
+        #struct MapiRowBuf cache
+    ]
+
+MapiStatement._fields_ = [
+        ('mid', ctypes.POINTER(MapiStruct)),
+        ('template', ctypes.c_char_p),
+        ('query', ctypes.c_char_p),
+        ('maxbindings', ctypes.c_int),
+        #struct MapiBinding *bindings
+        ('maxparams', ctypes.c_int),
+        #struct MapiParam *params
+        #struct MapiResultSet *result, *active, *lastresult
+        ('needmore', ctypes.c_int),
+        ('pending_close', ctypes.POINTER(ctypes.c_int)),
+        ('npending_close', ctypes.c_int),
+        ('prev', ctypes.POINTER(MapiStatement)),
+        ('next', ctypes.POINTER(MapiStatement)),
+    ]
+
+MapiStruct._fields_ = [
+        ('server', ctypes.c_char_p),
+        ('mapiversion', ctypes.c_char_p),
+        ('hostname', ctypes.c_char_p),
+        ('port', ctypes.c_int),
+        ('username', ctypes.c_char_p),
+        ('password', ctypes.c_char_p),
+        ('language', ctypes.c_char_p),
+        ('database', ctypes.c_char_p),
+        ('languageId', ctypes.c_int),
+        ('versionId', ctypes.c_int),
+        ('motd', ctypes.c_char_p),
+
+        ('profile', ctypes.c_int),
+        ('trace', ctypes.c_int),
+        ('auto_commit', ctypes.c_int),
+        ('noexplain', ctypes.c_char_p),
+        ('error', ctypes.c_int),
+        ('errorstr', ctypes.c_char_p),
+        ('action', ctypes.c_char_p),
+
+        #struct BlockCache blk
+        ('connected', ctypes.c_int),
+        ('first', MapiHdl),
+        ('active', MapiHdl),
+
+        ('cachelimit', ctypes.c_int),
+        ('redircnt', ctypes.c_int),
+        ('redirmax', ctypes.c_int),
+        #char *redirects[50],
+
+        #stream *tracelog,
+        #stream *from, *to,
+        ('index', ctypes.c_int),
+    ]
 
 
 class MapiTests(unittest.TestCase):
 
     def __init__(self, *args):
-        #TODO: add support for non macos platforms
-        self.libmapi = ctypes.cdll.LoadLibrary("../.libs/libmapilite.dylib")
+        location = ctypes.util.find_library('libmapilite')
+        if not location:
+            locations = {
+                    #TODO: add more platforms
+                    'darwin': '../.libs/libmapilite.dylib',
+                    'linux2': '../.libs/libmapilite.so',
+                    }
+            location = locations[sys.platform]
+        self.libmapi = ctypes.cdll.LoadLibrary(location)
         unittest.TestCase.__init__(self, *args)
 
     def test_mapi_mapi(self):
-        print self.libmapi.mapi_mapi()
+        host = 'localhost'
+        port = os.environ.get('MAPIPORT', '50000')
+        username = 'monetdb'
+        password = 'monetdb'
+        lang = 'sql'
+        db = os.environ.get('TSTDB', 'demo')
+
+        mapi_mapi = self.libmapi.mapi_mapi
+        mapi_mapi.argtypes = 6 * [ctypes.c_char_p]
+        mapi_mapi.restype = ctypes.POINTER(Mapi)
+        mapi = mapi_mapi(host, port, username, password, lang, db)
+
+        print(mapi)
+        print mapi.server
+        print dir(mapi)
+        print type(mapi)
         self.fail("not yet implemented")
 
     def mapi_destroy(self):

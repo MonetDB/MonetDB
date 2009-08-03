@@ -153,7 +153,7 @@ struct MapiStruct {
 
 	int cachelimit;		/* default maximum number of rows to cache */
 	int redircnt;		/* redirection count, used to cut of redirect loops */
-	int redirmax;       /* maximum redirects before giving up */
+	int redirmax;	   /* maximum redirects before giving up */
 	char *redirects[50];/* NULL-terminated list of redirects */
 
 	stream *tracelog;	/* keep a log for inspection */
@@ -251,8 +251,8 @@ struct MapiStatement {
 		mapi_hdl_check(hdl, funcname);				\
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
-					     "Illegal field number",	\
-					     funcname, MERROR);		\
+						 "Illegal field number",	\
+						 funcname, MERROR);		\
 		}							\
 		/* make sure there is enough space */			\
 		if (fnr >= hdl->maxbindings)				\
@@ -264,8 +264,8 @@ struct MapiStatement {
 		mapi_hdl_check(hdl, funcname);				\
 		if (fnr < 0) {						\
 			return mapi_setError(hdl->mid,			\
-					     "Illegal param number",	\
-					     funcname, MERROR);		\
+						 "Illegal param number",	\
+						 funcname, MERROR);		\
 		}							\
 		if (fnr >= hdl->maxparams)				\
 			mapi_extend_params(hdl, fnr);			\
@@ -317,27 +317,25 @@ static void
 debugprint(char *fmt, char *arg)
 {
 #ifdef DEBUG
-    printf(fmt, arg);
+	printf(fmt, arg);
 #else
-    /* return the values to eliminate unused parameters compiler warning */
-    return (void)fmt;
-    return (void)arg;
+	(void)fmt;
+	(void)arg;
 #endif
 }
  
 static MapiMsg
 mapi_check(Mapi mid,char *C)
 {
-	do {
-		debugprint("entering %s\n", C);
-		assert(mid);
-		if (mid->connected == 0) {
-			mapi_setError(mid, "Connection lost", C, MERROR);
-			return mid->error;
-		}
+	debugprint("entering %s\n", C);
+	assert(mid);
+	if (mid->connected == 0) {
+		mapi_setError(mid, "Connection lost", C, MERROR);
+		return false;
+	} else {
 		mapi_clrError(mid);
-	} while (0);
-    return mid->error;
+		return true;
+	}
 }
 
 static void
@@ -379,24 +377,24 @@ mapi_error_str(Mapi mid)
 static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
-    size_t len = strlen(prefix);
+	size_t len = strlen(prefix);
 
-    while (msg && *msg) {
-        /* cut by line */
-        char *p = strchr(msg, '\n');
+	while (msg && *msg) {
+		/* cut by line */
+		char *p = strchr(msg, '\n');
 
-        if (p)
-            *p++ = 0;
+		if (p)
+			*p++ = 0;
 
-        /* skip over prefix */
-        if (strncmp(msg, prefix, len) == 0)
-            msg += len;
+		/* skip over prefix */
+		if (strncmp(msg, prefix, len) == 0)
+			msg += len;
 
-        /* output line */
-        fputs(msg, fd);
-        fputc('\n', fd);
-        msg = p;
-    }
+		/* output line */
+		fputs(msg, fd);
+		fputc('\n', fd);
+		msg = p;
+	}
 }
 
 static void
@@ -410,7 +408,7 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	p = msg;
 	while (p && *p) {
 		fprintf(fd, "%s", s);
-		s = "        ";
+		s = "		";
 		q = strchr(p, '\n');
 		if (q) {
 			q++;	/* also print the newline */
@@ -670,7 +668,7 @@ close_result(MapiHdl hdl)
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
 				if (stream_printf(mid->to, msg) < 0 ||
-				    stream_flush(mid->to)) {
+					stream_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, stream_error(mid->to), "mapi_close_handle", MTIMEOUT);
 					break;
@@ -688,7 +686,7 @@ close_result(MapiHdl hdl)
 				mapi_log_record(mid, msg);
 				mid->active = hdl;
 				if (stream_printf(mid->to, msg) < 0 ||
-				    stream_flush(mid->to)) {
+					stream_flush(mid->to)) {
 					close_connection(mid);
 					mapi_setError(mid, stream_error(mid->to), "mapi_close_handle", MTIMEOUT);
 				} else
@@ -774,10 +772,10 @@ mapi_next_result(MapiHdl hdl)
 		if (close_result(hdl) != MOK)
 			return MERROR;
 		if (hdl->result &&
-		    (hdl->result->querytype == -1 ||
-		     hdl->result->querytype == Q_TABLE ||
-		     hdl->result->querytype == Q_UPDATE ||
-		     hdl->result->errorstr != NULL))
+			(hdl->result->querytype == -1 ||
+			 hdl->result->querytype == Q_TABLE ||
+			 hdl->result->querytype == Q_UPDATE ||
+			 hdl->result->errorstr != NULL))
 			return 1;
 	}
 	return hdl->needmore ? MMORE : MOK;
@@ -812,9 +810,9 @@ mapi_more_results(MapiHdl hdl)
 	while (result->next) {
 		result = result->next;
 		if (result->querytype == -1 ||
-		    result->querytype == Q_TABLE ||
-		    result->querytype == Q_UPDATE ||
-		    result->errorstr != NULL)
+			result->querytype == Q_TABLE ||
+			result->querytype == Q_UPDATE ||
+			result->errorstr != NULL)
 			return 1;
 	}
 	/* no more results */
@@ -1768,7 +1766,7 @@ mapi_embedded_init(Mapi *midp, char *lang)
 		return NULL;
 	streams = malloc(2 * sizeof(*streams));
 	if (rendezvous_streams(&streams[0], &mid->to, "to server") == 0 ||
-	    rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
+		rendezvous_streams(&mid->from, &streams[1], "from server") == 0) {
 		mapi_destroy(mid);
 		return NULL;
 	}
@@ -1978,7 +1976,7 @@ mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
 
 	mapi_check(mid, "mapi_Xcommand");
 	if (stream_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
-	    stream_flush(mid->to)) {
+		stream_flush(mid->to)) {
 		close_connection(mid);
 		mapi_setError(mid, stream_error(mid->to), "mapi_Xcommand", MTIMEOUT);
 		return MERROR;
@@ -2406,7 +2404,7 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 	for (i = 0; i < result->cache.writer - k; i++) {
 		if (result->cache.line[i].rows) {
 			if (result->cache.line[i].rows[0] == '[' ||
-			    result->cache.line[i].rows[0] == '=')
+				result->cache.line[i].rows[0] == '=')
 				n++;
 			free(result->cache.line[i].rows);
 		}
@@ -2423,8 +2421,8 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 		result->cache.line[i + k].anchors = 0;
 		result->cache.line[i].fldcnt = result->cache.line[i + k].fldcnt;
 		if (result->cache.line[i].rows &&
-		    (result->cache.line[i].rows[0] == '[' ||
-		     result->cache.line[i].rows[0] == '=')) {
+			(result->cache.line[i].rows[0] == '[' ||
+			 result->cache.line[i].rows[0] == '=')) {
 			result->cache.line[i].tuplerev = result->cache.tuplecount;
 			result->cache.line[result->cache.tuplecount++].tupleindex = i;
 		}
@@ -2436,7 +2434,7 @@ mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 	for ( /*i = result->cache.writer - k */ ; i < k /*result->cache.writer */ ; i++) {
 		if (result->cache.line[i].rows) {
 			if (result->cache.line[i].rows[0] == '[' ||
-			    result->cache.line[i].rows[0] == '=')
+				result->cache.line[i].rows[0] == '=')
 				n++;
 			free(result->cache.line[i].rows);
 		}
@@ -2714,9 +2712,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-			    result->cache.writer > 0 ||
-			    result->querytype == Q_TABLE ||
-			    result->querytype == Q_UPDATE) {
+				result->cache.writer > 0 ||
+				result->querytype == Q_TABLE ||
+				result->querytype == Q_UPDATE) {
 				result = new_result(hdl);
 				hdl->active = result;
 			}
@@ -2741,8 +2739,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			add_cache(result, strdup(line), !lookahead);
 			if (lookahead > 0 && (result->querytype == -1 /* unknown (not SQL) */  ||
-					      result->querytype == Q_TABLE ||
-					      result->querytype == Q_UPDATE))
+						  result->querytype == Q_TABLE ||
+						  result->querytype == Q_UPDATE))
 				return mid->error;
 			break;
 		}
@@ -3114,7 +3112,7 @@ mapi_cache_limit(Mapi mid, int limit)
 	mid->cachelimit = limit;
 /* 	if (hdl->cache.rowlimit < hdl->cache.limit) { */
 	/* TODO: decide what to do here */
-	/*              hdl->cache.limit = hdl->cache.rowlimit; *//* arbitrarily throw away cache lines */
+	/*			  hdl->cache.limit = hdl->cache.rowlimit; *//* arbitrarily throw away cache lines */
 /* 		if (hdl->cache.writer > hdl->cache.limit) { */
 /* 			hdl->cache.writer = hdl->cache.limit; */
 /* 			if (hdl->cache.reader > hdl->cache.writer) */
@@ -3133,7 +3131,7 @@ mapi_cache_limit(Mapi mid, int limit)
 			stream_flush(mid->tracelog);
 		}
 		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
-		    stream_flush(mid->to)) {
+			stream_flush(mid->to)) {
 			close_connection(mid);
 			mapi_setError(mid, stream_error(mid->to), "mapi_cache_limit", MTIMEOUT);
 			return MERROR;
@@ -3234,8 +3232,8 @@ mapi_fetch_line_internal(MapiHdl hdl)
 
 	/* try to read a line from the cache */
 	if ((result = hdl->result) == NULL ||
-	    result->cache.writer <= 0 ||
-	    result->cache.reader + 1 >= result->cache.writer) {
+		result->cache.writer <= 0 ||
+		result->cache.reader + 1 >= result->cache.writer) {
 		mid = hdl->mid;
 		if (mid->active != hdl || hdl->needmore)
 			return NULL;
@@ -3243,8 +3241,8 @@ mapi_fetch_line_internal(MapiHdl hdl)
 		if (read_into_cache(hdl, 1) != MOK)
 			return NULL;
 		if ((result = hdl->result) == NULL ||
-		    result->cache.writer <= 0 ||
-		    result->cache.reader + 1 >= result->cache.writer)
+			result->cache.writer <= 0 ||
+			result->cache.reader + 1 >= result->cache.writer)
 			return NULL;
 	}
 	reply = result->cache.line[++result->cache.reader].rows;
@@ -3264,11 +3262,11 @@ mapi_fetch_line(MapiHdl hdl)
 	mapi_hdl_check0(hdl, "mapi_fetch_line");
 	reply = mapi_fetch_line_internal(hdl);
 	if (reply == NULL &&
-	    (result = hdl->result) != NULL &&
-	    hdl->mid->languageId == LANG_SQL &&
-	    result->querytype == Q_TABLE &&
-	    result->row_count > 0 &&
-	    result->cache.first + result->cache.tuplecount < result->row_count) {
+		(result = hdl->result) != NULL &&
+		hdl->mid->languageId == LANG_SQL &&
+		result->querytype == Q_TABLE &&
+		result->row_count > 0 &&
+		result->cache.first + result->cache.tuplecount < result->row_count) {
 		if (hdl->needmore)	/* escalate */
 			return NULL;
 		if (hdl->mid->active != NULL)
@@ -3281,7 +3279,7 @@ mapi_fetch_line(MapiHdl hdl)
 			stream_flush(hdl->mid->tracelog);
 		}
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
-		    stream_flush(hdl->mid->to))
+			stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
 		reply = mapi_fetch_line_internal(hdl);
 	}
@@ -3621,31 +3619,31 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 #endif
 	case MAPI_DATE:
 		sscanf(val,
-		       "%hd-%hu-%hu",
-		       &((MapiDate *) dst)->year,
-		       &((MapiDate *) dst)->month,
-		       &((MapiDate *) dst)->day);
+			   "%hd-%hu-%hu",
+			   &((MapiDate *) dst)->year,
+			   &((MapiDate *) dst)->month,
+			   &((MapiDate *) dst)->day);
 		break;
 	case MAPI_TIME:
 		sscanf(val,
-		       "%hu:%hu:%hu",
-		       &((MapiTime *) dst)->hour,
-		       &((MapiTime *) dst)->minute,
-		       &((MapiTime *) dst)->second);
+			   "%hu:%hu:%hu",
+			   &((MapiTime *) dst)->hour,
+			   &((MapiTime *) dst)->minute,
+			   &((MapiTime *) dst)->second);
 		break;
 	case MAPI_DATETIME:{
 		int n;
 
 		((MapiDateTime *) dst)->fraction = 0;
 		sscanf(val,
-		       "%hd-%hu-%hu %hu:%hu:%hu%n",
-		       &((MapiDateTime *) dst)->year,
-		       &((MapiDateTime *) dst)->month,
-		       &((MapiDateTime *) dst)->day,
-		       &((MapiDateTime *) dst)->hour,
-		       &((MapiDateTime *) dst)->minute,
-		       &((MapiDateTime *) dst)->second,
-		       &n);
+			   "%hd-%hu-%hu %hu:%hu:%hu%n",
+			   &((MapiDateTime *) dst)->year,
+			   &((MapiDateTime *) dst)->month,
+			   &((MapiDateTime *) dst)->day,
+			   &((MapiDateTime *) dst)->hour,
+			   &((MapiDateTime *) dst)->minute,
+			   &((MapiDateTime *) dst)->second,
+			   &n);
 		if (val[n] == '.') {
 			unsigned int fac = 1000000000;
 			unsigned int nsec = 0;
@@ -3782,10 +3780,10 @@ mapi_fetch_all_rows(MapiHdl hdl)
 	mid = hdl->mid;
 	for (;;) {
 		if ((result = hdl->result) != NULL &&
-		    mid->languageId == LANG_SQL &&
-		    mid->active == NULL &&
-		    result->row_count > 0 &&
-		    result->cache.first + result->cache.tuplecount < result->row_count) {
+			mid->languageId == LANG_SQL &&
+			mid->active == NULL &&
+			result->row_count > 0 &&
+			result->cache.first + result->cache.tuplecount < result->row_count) {
 			mid->active = hdl;
 			hdl->active = result;
 			if (mid->tracelog) {
@@ -3794,7 +3792,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 				stream_flush(mid->tracelog);
 			}
 			if (stream_printf(mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
-			    stream_flush(mid->to))
+				stream_flush(mid->to))
 				check_stream(mid, mid->to, stream_error(mid->to), "mapi_fetch_line", 0);
 		}
 		if (mid->active)
@@ -3814,9 +3812,9 @@ mapi_fetch_field(MapiHdl hdl, int fnr)
 	mapi_hdl_check0(hdl, "mapi_fetch_field");
 
 	if ((result = hdl->result) == NULL ||
-	    (cr = result->cache.reader) < 0 ||
-	    (result->cache.line[cr].rows[0] != '[' &&
-	     result->cache.line[cr].rows[0] != '=')) {
+		(cr = result->cache.reader) < 0 ||
+		(result->cache.line[cr].rows[0] != '[' &&
+		 result->cache.line[cr].rows[0] != '=')) {
 		mapi_setError(hdl->mid, "Must do a successful mapi_fetch_row first", "mapi_fetch_field", MERROR);
 		return 0;
 	}
