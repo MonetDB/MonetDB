@@ -253,7 +253,7 @@ Over..
 % true # name
 % boolean # type
 % 5 # length
-[ true	] -- MonetDB actually returns false here!
+[ true	]
 #SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false";
 % . # table_name
 % false # name
@@ -265,7 +265,7 @@ Over..
 % true # name
 % boolean # type
 % 5 # length
-[ true	] -- MonetDB actually returns false here!
+[ true	]
 #SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false";
 % . # table_name
 % false # name
@@ -277,7 +277,7 @@ Over..
 % true # name
 % boolean # type
 % 5 # length
-[ true	] -- MonetDB actually returns false here!
+[ true	]
 #SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false";
 % . # table_name
 % false # name
@@ -289,7 +289,7 @@ Over..
 % true # name
 % boolean # type
 % 5 # length
-[ true	] -- MonetDB actually returns false here!
+[ true	]
 #SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false";
 % . # table_name
 % false # name
