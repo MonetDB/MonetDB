@@ -86,6 +86,10 @@ void pferror (const char *s);
 /* bison: generate verbose parsing error messages */
 #define YYERROR_VERBOSE 
 
+/* tell bison which malloc/free to use (needed for bison 2.4.1 on Windows) */
+#define YYMALLOC malloc
+#define YYFREE free
+
 #define leaf(t,loc)       p_leaf ((t), (loc))
 #define wire1(t,loc,a)    p_wire1 ((t), (loc), (a))
 #define wire2(t,loc,a,b)  p_wire2 ((t), (loc), (a), (b))

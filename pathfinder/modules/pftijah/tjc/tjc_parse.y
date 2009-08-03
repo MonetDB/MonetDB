@@ -45,6 +45,10 @@
 #include <string.h>
 #include "tjc_abssyn.h"
 
+/* tell bison which malloc/free to use (needed for bison 2.4.1 on Windows) */
+#define YYMALLOC malloc
+#define YYFREE free
+
 extern int tjclex(void);
 
 /* temporary string in memory */

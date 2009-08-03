@@ -38,6 +38,10 @@
 #include <malloc.h>
 #endif
 
+/* tell bison which malloc/free to use (needed for bison 2.4.1 on Windows) */
+#define YYMALLOC malloc
+#define YYFREE free
+
 #define CO 1
 #define CAS 2
 
