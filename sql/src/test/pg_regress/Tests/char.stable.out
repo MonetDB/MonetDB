@@ -51,8 +51,17 @@ Over..
 #-- try char's of greater than 1 length 
 #INSERT INTO CHAR_TBL (f1) VALUES ('cd');
 #INSERT INTO CHAR_TBL (f1) VALUES ('c     ');
-#SELECT '' AS seven, CHAR_TBL.*;
-[ output needs to go here ]
+#SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL;
+% .,	sys.char_tbl # table_name
+% seven,	f1 # name
+% char,	char # type
+% 0,	1 # length
+[ "",	"a"	]
+[ "",	"A"	]
+[ "",	"1"	]
+[ "",	"2"	]
+[ "",	"3"	]
+[ "",	""	]
 #SELECT '' AS six, c.*
 % .,	sys.c # table_name
 % six,	f1 # name
@@ -111,8 +120,14 @@ Over..
 [ 1	]
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcde');
 #INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
-#SELECT '' AS four, CHAR_TBL.*;
-[ output should go here ]
+#SELECT '' AS four, CHAR_TBL.* FROM CHAR_TBL;
+% .,	sys.char_tbl # table_name
+% four,	f1 # name
+% char,	char # type
+% 0,	4 # length
+[ "",	"a"	]
+[ "",	"ab"	]
+[ "",	"abcd"	]
 
 # 22:08:26 >  
 # 22:08:26 >  Done.

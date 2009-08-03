@@ -74,19 +74,19 @@ stderr of test 'char` in directory 'src/test/pg_regress` itself:
 # 22:08:26 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=pegasus --port=38104  -e < ../../../../../../../../../../mirror/fabian/monetdb/current/sql/src/test/pg_regress/Tests/../monetdb/char.sql
 # 22:08:26 >  
 
-MAPI  = monetdb@pegasus:38104
+MAPI  = monetdb@pegasus:36360
 QUERY = SELECT char 'c' = char 'c' AS true;
 ERROR = !syntax error, unexpected CHARACTER in: "select char"
-MAPI  = monetdb@pegasus:38104
+MAPI  = monetdb@pegasus:36360
 QUERY = INSERT INTO CHAR_TBL (f1) VALUES ('cd');
 ERROR = !SQLException:str_cast:value too long for type (var)char(1)
-MAPI  = monetdb@pegasus:38104
+MAPI  = monetdb@pegasus:36360
 QUERY = INSERT INTO CHAR_TBL (f1) VALUES ('c     ');
 ERROR = !SQLException:str_cast:value too long for type (var)char(1)
-MAPI  = monetdb@pegasus:38104
+MAPI  = monetdb@pegasus:36360
 QUERY = INSERT INTO CHAR_TBL (f1) VALUES ('abcde');
 ERROR = !SQLException:str_cast:value too long for type (var)char(4)
-MAPI  = monetdb@pegasus:38104
+MAPI  = monetdb@pegasus:36360
 QUERY = INSERT INTO CHAR_TBL (f1) VALUES ('abcd    ');
 ERROR = !SQLException:str_cast:value too long for type (var)char(4)
 
