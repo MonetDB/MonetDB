@@ -35,10 +35,6 @@
 %{
 #include <pf_config.h>
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
 #include <stdlib.h>
 
 #include "tjc_abssyn.h"

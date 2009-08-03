@@ -39,9 +39,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <str.h>
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
+#include <stdlib.h>
 
 static char *c, *e;
 

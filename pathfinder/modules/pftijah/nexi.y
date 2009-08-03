@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 #include "nexi.h"
-#include <malloc.h>
+#include <stdlib.h>
 
 /* tell bison which malloc/free to use (needed for bison 2.4.1 on Windows) */
 #define YYMALLOC malloc

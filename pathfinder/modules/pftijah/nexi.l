@@ -39,9 +39,7 @@
 #include <string.h>
 #include "nexi.h"
 #include "nexi.tab.h"
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
+#include <stdlib.h>
 
 int c;
 extern YYSTYPE nexilval;
