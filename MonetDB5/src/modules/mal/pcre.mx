@@ -119,11 +119,23 @@ address PCRElike3;
 command like(s:str, pat:str):bit 
 address PCRElike2;
 
+command not_like(s:str, pat:str, esc:str):bit 
+address PCREnotlike3;
+
+command not_like(s:str, pat:str):bit 
+address PCREnotlike2;
+
 command batstr.like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
 address BATPCRElike;
 
 command batstr.like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
 address BATPCRElike2;
+
+command batstr.not_like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
+address BATPCREnotlike;
+
+command batstr.not_like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
+address BATPCREnotlike2;
 
 command ilike(s:str, pat:str, esc:str):bit 
 address PCREilike3;
@@ -131,11 +143,23 @@ address PCREilike3;
 command ilike(s:str, pat:str):bit 
 address PCREilike2;
 
+command not_ilike(s:str, pat:str, esc:str):bit 
+address PCREnotilike3;
+
+command not_ilike(s:str, pat:str):bit 
+address PCREnotilike2;
+
 command batstr.ilike(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
 address BATPCREilike;
 
 command batstr.ilike(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
 address BATPCREilike2;
+
+command batstr.not_ilike(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
+address BATPCREnotilike;
+
+command batstr.not_ilike(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit] 
+address BATPCREnotilike2;
 
 @-
 @verbatim
@@ -190,12 +214,20 @@ pcre_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
 pcre_export str PCREsql2pcre(str *ret, str *pat, str *esc);
 pcre_export str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCRElike2(bit *ret, str *s, str *pat);
+pcre_export str PCREnotlike3(bit *ret, str *s, str *pat, str *esc);
+pcre_export str PCREnotlike2(bit *ret, str *s, str *pat);
 pcre_export str BATPCRElike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCRElike2(int *ret, int *b, str *pat);
+pcre_export str BATPCREnotlike(int *ret, int *b, str *pat, str *esc);
+pcre_export str BATPCREnotlike2(int *ret, int *b, str *pat);
 pcre_export str PCREilike3(bit *ret, str *s, str *pat, str *esc);
 pcre_export str PCREilike2(bit *ret, str *s, str *pat);
+pcre_export str PCREnotilike3(bit *ret, str *s, str *pat, str *esc);
+pcre_export str PCREnotilike2(bit *ret, str *s, str *pat);
 pcre_export str BATPCREilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
+pcre_export str BATPCREnotilike(int *ret, int *b, str *pat, str *esc);
+pcre_export str BATPCREnotilike2(int *ret, int *b, str *pat);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
@@ -1182,6 +1214,28 @@ PCRElike2(bit *ret, str *s, str *pat)
 }
 
 str
+PCREnotlike3(bit *ret, str *s, str *pat, str *esc)
+{
+	str tmp;
+	bit r;
+	
+	rethrow("str.not_like", tmp, PCRElike3(&r, s, pat, esc));
+	*ret = !r;
+	return(MAL_SUCCEED);
+}
+
+str
+PCREnotlike2(bit *ret, str *s, str *pat)
+{
+	str tmp;
+	bit r;
+	
+	rethrow("str.not_like", tmp, PCRElike2(&r, s, pat));
+	*ret = !r;
+	return(MAL_SUCCEED);
+}
+
+str
 PCREilike3(bit *ret, str *s, str *pat, str *esc)
 {
 	bit yes = TRUE;
@@ -1198,7 +1252,29 @@ PCREilike2(bit *ret, str *s, str *pat)
 }
 
 str
-BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens)
+PCREnotilike3(bit *ret, str *s, str *pat, str *esc)
+{
+	str tmp;
+	bit r;
+	
+	rethrow("str.not_ilike", tmp, PCREilike3(&r, s, pat, esc));
+	*ret = !r;
+	return(MAL_SUCCEED);
+}
+
+str
+PCREnotilike2(bit *ret, str *s, str *pat)
+{
+	str tmp;
+	bit r;
+	
+	rethrow("str.not_ilike", tmp, PCREilike2(&r, s, pat));
+	*ret = !r;
+	return(MAL_SUCCEED);
+}
+
+static str
+BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 {
 	char *ppat = NULL;
 	str res = PCREsql2pcre(&ppat, pat, esc);
@@ -1210,8 +1286,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens)
 		bit *br;
 		BUN p, q, i = 0;
 
-		if ( strs == NULL)
-			throw(MAL,"pcre.like", OPERATION_FAILED);
+		if (strs == NULL)
+			throw(MAL, "batstr.like", OPERATION_FAILED);
 
 		r = BATnew(TYPE_void, TYPE_bit, BATcount(strs));
 		br = (bit*)Tloc(r, BUNfirst(r));
@@ -1225,18 +1301,30 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens)
 					br[i] = TRUE;
 				else 
 					br[i] = FALSE;
+				if (not)
+					br[i] = !br[i];
 				i++;
 			}
 		} else {
-			BATloop(strs, p, q) {
-				str s = (str)BUNtail(strsi, p);
+			if (isens) {
+				BATloop(strs, p, q) {
+					str s = (str)BUNtail(strsi, p);
 
-				if (isens) {
 					res = PCREimatch(br + i, &s, &ppat);
-				} else {
-					res = PCREmatch(br + i, &s, &ppat);
+					i++;
 				}
-				i++;
+			} else {
+				BATloop(strs, p, q) {
+					str s = (str)BUNtail(strsi, p);
+
+					res = PCREmatch(br + i, &s, &ppat);
+					i++;
+				}
+			}
+			if (not) {
+				i = 0;
+				BATloop(strs, p, q)
+					br[i] = !br[i];
 			}
 		}
 		BATsetcount(r, i);
@@ -1265,7 +1353,7 @@ BATPCRElike(bat *ret, int *bid, str *pat, str *esc)
 {
 	bit no = FALSE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &no));
+	return(BATPCRElike3(ret, bid, pat, esc, &no, &no));
 }
 
 str
@@ -1277,11 +1365,29 @@ BATPCRElike2(bat *ret, int *bid, str *pat)
 }
 
 str
+BATPCREnotlike(bat *ret, int *bid, str *pat, str *esc)
+{
+	bit no = FALSE;
+	bit yes = TRUE;
+
+	return(BATPCRElike3(ret, bid, pat, esc, &no, &yes));
+}
+
+str
+BATPCREnotlike2(bat *ret, int *bid, str *pat)
+{
+	char *esc = "\\";
+
+	return(BATPCREnotlike(ret, bid, pat, &esc));
+}
+
+str
 BATPCREilike(bat *ret, int *bid, str *pat, str *esc)
 {
 	bit yes = TRUE;
+	bit no = FALSE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &yes));
+	return(BATPCRElike3(ret, bid, pat, esc, &yes, &no));
 }
 
 str
@@ -1289,7 +1395,23 @@ BATPCREilike2(bat *ret, int *bid, str *pat)
 {
 	char *esc = "\\";
 
-	return BATPCRElike(ret, bid, pat, &esc);
+	return BATPCREilike(ret, bid, pat, &esc);
+}
+
+str
+BATPCREnotilike(bat *ret, int *bid, str *pat, str *esc)
+{
+	bit yes = TRUE;
+
+	return(BATPCRElike3(ret, bid, pat, esc, &yes, &yes));
+}
+
+str
+BATPCREnotilike2(bat *ret, int *bid, str *pat)
+{
+	char *esc = "\\";
+
+	return(BATPCREnotilike(ret, bid, pat, &esc));
 }
 
 static int 
