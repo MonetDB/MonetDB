@@ -150,6 +150,11 @@ typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt); 
 
+/*
+-- gtrans_update push ibats and ubats
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*gtrans_update_fptr) (sql_trans *tr); 
 
 /*
 -- handle inserts and updates of columns and indices
@@ -220,6 +225,7 @@ typedef struct store_functions {
 	update_table_fptr snapshot_table;
 	update_table_fptr log_table;
 	update_table_fptr update_table;
+	gtrans_update_fptr gtrans_update;
 
 	col_ins_fptr col_ins;
 	col_upd_fptr col_upd;

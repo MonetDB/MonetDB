@@ -1088,6 +1088,88 @@ clear_del(sql_trans *tr, sql_table *t)
 }
 
 int 
+gtr_update_delta( sql_trans *tr, sql_delta *cbat)
+{
+	int ok = LOG_OK;
+	BAT *ups, *ins, *cur;
+
+	(void)tr;
+	assert(store_nr_active==0);
+
+	cur = temp_descriptor(cbat->bid);
+	ins = temp_descriptor(cbat->ibid);
+	/* any inserts */
+	if (BUNlast(ins) > BUNfirst(ins)) {
+		if (BATcount(cur)+BATcount(ins) > (BUN) REMAP_PAGE_MAXSIZE) { /* try to use mmap() */
+       			BATmmap(cur, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    		}
+		BATappend(cur,ins,TRUE);
+		temp_destroy(cbat->ibid);
+		cbat->ibid = e_bat(cur->ttype);
+	}
+	bat_destroy(ins);
+
+	ups = temp_descriptor(cbat->ubid);
+	/* any updates */
+	if (BUNlast(ups) > BUNfirst(ups)) {
+		void_replace_bat(cur, ups, TRUE);
+		temp_destroy(cbat->ubid);
+		cbat->ubid = e_ubat(cur->ttype);
+	}
+	bat_destroy(ups);
+	bat_destroy(cur);
+	return ok;
+}
+
+static int
+gtr_update_table(sql_trans *tr, sql_table *t)
+{
+	int ok = LOG_OK;
+	node *n;
+
+	for (n = t->columns.set->h; ok == LOG_OK && n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (!c->base.wtime) 
+			continue;
+		gtr_update_delta(tr, c->data);
+	}
+	if (ok == LOG_OK && t->idxs.set) {
+		for (n = t->idxs.set->h; ok == LOG_OK && n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			/* some indices have no bats */
+			if (!ci->base.wtime)
+				continue;
+
+			gtr_update_delta(tr, ci->data);
+		}
+	}
+	return ok;
+}
+
+static int
+gtr_update( sql_trans *tr )
+{
+	node *sn;
+
+	for(sn = tr->schemas.set->h; sn; sn = sn->next) {
+		sql_schema *s = sn->data;
+		
+		if (!isTempSchema(s) && s->tables.set) {
+			node *n;
+			for (n = s->tables.set->h; n; n = n->next) {
+				sql_table *t = n->data;
+
+				if (isGlobalTable(t))
+					gtr_update_table(tr, t);
+			}
+		}
+	}
+	return LOG_OK;
+}
+
+int 
 tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int cluster, BUN snapshot_minsize)
 {
 	int ok = LOG_OK;
@@ -1455,6 +1537,7 @@ bat_storage_init( store_functions *sf)
 	sf->update_table = (update_table_fptr)&update_table;
 	sf->log_table = (update_table_fptr)&log_table;
 	sf->snapshot_table = (update_table_fptr)&snapshot_table;
+	sf->gtrans_update = (gtrans_update_fptr)&gtr_update;
 	return LOG_OK;
 }
 

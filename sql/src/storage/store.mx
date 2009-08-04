@@ -1447,6 +1447,8 @@ store_manager(void)
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		schema_number++;
+		if (store_funcs.gtrans_update)
+			store_funcs.gtrans_update(gtrans);
 		res = logger_funcs.restart();
 		MT_unset_lock(bs_lock, "store_manager");
 		if (logging && res == LOG_OK)
@@ -4231,8 +4233,11 @@ sql_trans_begin(sql_session *s)
 	int snr = tr->schema_number;
 
 	if (tr->stime < gtrans->stime || tr->wtime || 
-			store_schema_number() != snr)
+			store_schema_number() != snr) {
+		if (tr->wtime)
+			snr = 0;
 		reset_trans(tr, gtrans);
+	}
 	tr = trans_init(tr, tr->stk, tr->parent);
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
