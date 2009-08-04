@@ -2155,6 +2155,8 @@ def killProc(proc, outfile = None, cmd = None):
         os.kill(-proc.pid, signal.SIGKILL)
     except AttributeError:
         subprocess.Popen(['pskill','-t',str(proc.pid)])
+    except OSError:
+        pass
     if outfile is not None and cmd is not None:
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
