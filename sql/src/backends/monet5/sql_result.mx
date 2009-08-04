@@ -494,10 +494,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if ( getFile(bs->s) == NULL)
-				TABLETload_file(&as,bs,out);
-			else
-			if (SQLload_file(&as, bs, out, sep, rsep, *ssep, sz, offset) != BUN_NONE)
+			if (( getFile(bs->s) == NULL && TABLETload_file(&as,bs,out) != BUN_NONE) || SQLload_file(&as, bs, out, sep, rsep, *ssep, offset, sz) != BUN_NONE)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)
