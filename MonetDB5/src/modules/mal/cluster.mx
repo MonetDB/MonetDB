@@ -684,7 +684,7 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 				if (prev != *bt && sz >= (h+1)*psz && h < (parts-1)) {
 					h++;
 					assert(base + bt - bs >= 0);
-					assert(base + bt - bs <= GDK_oid_max);
+					assert(base + bt - bs <= (ptrdiff_t) GDK_oid_max);
 					*o++ = (oid) (base + bt - bs);
 			   		*m++ = h;
 				}
@@ -693,7 +693,7 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 			}
 		}
 		assert(m - mb >= 0);
-		assert(m - mb <= BUN_MAX);
+		assert((lng) (m - mb) <= (lng) BUN_MAX);
 		BATsetcount(cmap, (BUN) (m - mb));
 	} else {
 		bte *m;
@@ -1005,12 +1005,12 @@ CLS_split( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = (bat*) getArgReference(stk, pci, i);
 		BAT *v;
 
-		assert(*cnt <= BUN_MAX);
+		assert((lng) *cnt <= (lng) BUN_MAX);
 		assert(*cnt >= 0);
 		l = (BUN) *cnt;
 		if (cnt+1 < end) {
 			assert(*(cnt+1) >= 0);
-			assert(*(cnt+1) <= BUN_MAX);
+			assert((lng) *(cnt+1) <= (lng) BUN_MAX);
 			h = (BUN) *(cnt+1);
 		} else
 			h = BATcount(b)+1;
