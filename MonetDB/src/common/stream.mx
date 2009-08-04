@@ -308,6 +308,9 @@ typedef enum stream_errors {
 #ifdef HAVE_LIBBZ2
 #include <bzlib.h>
 #endif
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>		/* for alloca on Windows */
+#endif
 
 #ifndef SHUT_RD
 #define SHUT_RD		0
