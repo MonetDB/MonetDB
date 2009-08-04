@@ -2125,10 +2125,6 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		for ( t = e; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
-		if ( s == e ) {
-			adt = fmt->nildata;
-			fmt->c->T->nonil = 0;
-		} else
 		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
 	} else {
 		for ( e = s; *e ; e++)
