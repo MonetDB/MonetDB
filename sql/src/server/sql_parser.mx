@@ -237,6 +237,9 @@ extern int sqlparse(void *);
 #endif
 #define yyerror(s) parse_error(YYLEX_PARAM, s)
 
+#define YYMALLOC malloc
+#define YYFREE free
+
 #define FALSE 0
 #define TRUE 1
 
