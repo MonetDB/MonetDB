@@ -2355,7 +2355,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 					*e = '\0';
 					if ( SQLload_file_line(task, as, s) < 0)
 						break;
-					if ( ++cnt == maxrow ) break;
 #ifdef _DEBUG_TABLET_
 				/*	stream_printf(GDKout,"line:%s\n",s);*/
 #endif
@@ -2366,6 +2365,8 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 				break; 
 			if ( skip < 0)
 				task->next++;
+			if ( ++cnt == maxrow ) 
+				break;
 		}
 		b->pos = (s - b->buf);
 #ifdef _DEBUG_TABLET_
@@ -2388,7 +2389,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		/* spin lock until they are finished */
 		do {
 			workers = 0;
-			MT_sleep_ms(10);
+			MT_sleep_ms(1);
 			for ( j=0; j< threads; j++)
 				workers += ptask[j].status != WORKER_DONE;
 		} while (workers >0);
