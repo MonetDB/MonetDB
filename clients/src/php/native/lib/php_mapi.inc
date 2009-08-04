@@ -450,6 +450,24 @@
 		$passwd = $options["password"];
 		$hash 	= $options["hashfunc"];
 		$dbname = $options["database"];
+		/**
+		  * First, when connecting, the function would first try to find a (persistent) link that's already 
+		  * open with the same host, username and password. If one is found, an identifier for it will be returned 
+		  * instead of opening a new connection. 
+		*/
+		if ($options["persistent"] == TRUE) {
+			
+			if (count($connection_pool) > 0) {
+				
+				foreach ($connection_pool as $conn) {
+					if ( ($conn["persistent"] == TRUE) && ($conn["dbname"] == $dbanme) && ($conn['username'] == $user) && ($conn["password"] == hash("sha1", $passwd) && ($conn["host"]) == $host)) {
+						return $conn;
+					}
+					
+				}
+				
+			}
+		}
 		
 		$socket	= mapi_open();
 
@@ -475,7 +493,7 @@
 		
 		// Create a new connection instance and insert an entry in the connections table
 		$id = mapi_generate_id();
-		$connection = array("id" => $id, "socket" => $socket, "transactions" => array()) ;
+		$connection = array("id" => $id, "socket" => $socket, "host" => $options["host"], "port" => $options["port"], "dbname" => $dbname, "username" => $options["username"], "password" => hash("sha1", $options["password"]), "transactions" => array(), "persistent" => $options["persistent"]) ;
 		$connection_pool[] = $connection;
 		
 		return $connection;
@@ -531,8 +549,9 @@
 	function mapi_close($conn=NULL) {
 		global $connection_pool;
 		
+		/* TODO: start closing connection at the end of the array! */
 		if ($conn == NULL) {
-			if (count($connection_pool) == 1) {
+			if ((count($connection_pool) == 1) && ($connection_pool[0]["persistent"]) == FALSE) {
 				$socket = $connection_pool[0]["socket"];
 				socket_close($socket);
 				
@@ -571,6 +590,39 @@
 		
 		return FALSE;
 	}
+	
+	function mapi_free_result($conn_id, $res_id) {
+		global $connection_pool;
+		global $last_error;
+		/* Fetch the connection from the pool */
+		
+		$conn = NULL;
+		foreach ($connection_pool as $connection) {
+			if ($connection["id"] == $conn_id) {
+				$conn = $connection;
+				break;
+			}
+		}
+		
+		if ($conn == NULL) {
+			return FALSE;
+		}
+		
+		$socket = $conn["socket"];
+		
+		/* Send a close command */
+		$cmd = "close " . $res_id;
+		
+		mapi_write($socket, format_command($cmd));
+		$last_error = mapi_read($socket);
+		
+		if ($last_error != "") {
+			return FALSE;
+		}
+	
+		return TRUE;
+	}
+	
 	
 	function mapi_generate_id(){
 		global $connection_pool;

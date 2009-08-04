@@ -35,7 +35,7 @@
 	 * @return bool TRUE on success or FALSE on failure 
 	 */
 	
-	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "ruby" , $username = "monetdb", $password = "monetdb" ) {
+	function monetdb_connect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb" ) {
 	 	$options["host"] = $host;
 		$options["port"] = $port;
 
@@ -43,6 +43,33 @@
 		$options["password"] = $password;
 		$options["hashfunc"] = "sha1";	
 		$options["database"] = $database; 
+		$options["persistent"] = FALSE;
+		
+		return mapi_connect_proxy($options);
+	}
+
+	/**
+	 * Opens a persistent connection to a MonetDB server.  
+	 * First, when connecting, the function would first try to find a (persistent) link that's already open with the same host, 
+	 * username and password. If one is found, an identifier for it will be returned instead of opening a new connection.
+	 *
+	 * Second, the connection to the SQL server will not be closed when the execution of the script ends. 
+	 * Instead, the link will remain open for future use (monetdb_close() will not close links established by monetdb_pconnect()).
+	 *
+	 * This type of link is therefore called 'persistent'. 
+	 *
+	 * @return bool TRUE on success or FALSE on failure 
+	 */
+	
+	function monetdb_pconnect($host = "127.0.0.1", $port = "50000", $database = "demo" , $username = "monetdb", $password = "monetdb" ) {
+	 	$options["host"] = $host;
+		$options["port"] = $port;
+
+		$options["username"] = $username;
+		$options["password"] = $password;
+		$options["hashfunc"] = "sha1";	
+		$options["database"] = $database; 
+		$options["persistent"] = TRUE;
 		
 		return mapi_connect_proxy($options);
 	}
@@ -317,6 +344,13 @@
 	*
 	*/
 	function monetdb_free_result(&$hdl) {
+		$conn_id = $hdl["conn"];
+		$res_id = $hdl["query"]["id"];
+
+		/* Release the result set on server */
+		mapi_free_result($conn_id, $res_id);
+		
+		
 		if (isset($hdl)) {
 			foreach($hdl as $field) {
 				if (isset($field)) {
@@ -325,8 +359,10 @@
 			}
 			
 			unset($hdl);
+			
 			return TRUE;
 		}
+		
 		return FALSE;
 	}
 		
