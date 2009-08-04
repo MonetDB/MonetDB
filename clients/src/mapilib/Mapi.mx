@@ -807,6 +807,12 @@ output returned from the server.
 # include <netdb.h>
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
 
 #include  <signal.h>
 #include  <string.h>
