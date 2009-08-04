@@ -920,7 +920,7 @@ def am_gem(fd, var, gem, am):
         am['INSTALL'].append(sf)
         am['UNINSTALL'].append(sf)
         fd.write('%s: %s\n' % (f[:-4], f))
-        fd.write('\td=$(dir $<); [ "$$d" -ef . ] || tar cf - -C "$$d" %s `sed -n \'/.*\.files *= *\[ */{s///;s/ *\].*//;s/"//g;s/ *, */ /g;p;}\' "$$d/%s"` | tar xf -\n' % (f, f))
+        fd.write('\td=$(dir $<); [ "$$d" -ef . ] || (cd "$$d"; tar cf - %s `sed -n \'/.*\.files *= *\[ */{s///;s/ *\].*//;s/"//g;s/ *, */ /g;p;}\' "%s"`) | tar xf -\n' % (f, f))
         fd.write('\tgem build %s\n' % f)
         fd.write('install-exec-local-%s: %s\n' % (sf, f[:-4]))
         fd.write('\tmkdir -p $(DESTDIR)%s\n' % rd)
