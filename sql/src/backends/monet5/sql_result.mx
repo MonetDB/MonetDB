@@ -481,8 +481,9 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].ws = !(has_whitespace(fmt[i].sep));
 			fmt[i].quote = ssep?ssep[0]:0;
 			fmt[i].nullstr = _strdup(ns);
-	                fmt[i].nildata = GDKmalloc(fmt[i].nillen);
-       		        memcpy(fmt[i].nildata, ATOMnilptr(fmt[i].adt), fmt[i].nillen);
+			fmt[i].null_length = strlen(ns);
+			fmt[i].nildata = GDKmalloc(fmt[i].nillen);
+			memcpy(fmt[i].nildata, ATOMnilptr(fmt[i].adt), fmt[i].nillen);
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -493,7 +494,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (TABLETload_file(&as, bs, out) != BUN_NONE)
+			if (SQLload_file(&as, bs, out, sep, rsep, *ssep, sz, offset) != BUN_NONE)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)
