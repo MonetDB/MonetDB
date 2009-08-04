@@ -2621,7 +2621,7 @@ PFla_dot_bundle (FILE *f, PFla_pb_t *lapb, char *prop_args)
         for (unsigned int j = 0; j < clsize (root->sem.ser_rel.items); j++)
             fprintf (f, "%s <item%u> %s ",
                      (j ? "|" : ""),
-                     j,
+                     j + 1,
                      PFcol_str (clat (root->sem.ser_rel.items, j)));
         fprintf (f, "}}}\"];\n"
                     "subgraph clusterPlan%i {\n", id);
