@@ -246,6 +246,13 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 	if (!rel)
 		return NULL;
 
+	if (!tname) {
+		if (is_project(rel->op))
+			return rel_projections(sql, rel->l, NULL, 1, 0);
+		else	
+			return NULL;
+	}
+
 	switch(rel->op) {
 	case op_join:
 	case op_left:
@@ -2286,10 +2293,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				return rel_nop_(sql, le, re, ee, NULL, NULL, like, 0);
 			return rel_binop_(sql, le, re, NULL, like, 0);
 		} else {
-			char *notlike = insensitive ? "not_ilike" : "not_like";
+			char *like = insensitive ? "ilike" : "like";
 			if (ee)
-				return rel_nop_(sql, le, re, ee, NULL, NULL, notlike, 0);
-			return rel_binop_(sql, le, re, NULL, notlike, 0);
+				le = rel_nop_(sql, le, re, ee, NULL, NULL, like, 0);
+			else
+				le = rel_binop_(sql, le, re, NULL, like, 0);
+			return rel_unop_(sql, le, NULL, "not", 0); 
 		}
 	}
 	case SQL_BETWEEN:
@@ -4237,12 +4246,16 @@ rel_remove_internal_exp(sql_rel *rel)
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind ek)
 {
+	dnode *n;
 	int aggr = 0;
 	list *jexps = NULL;
 	list *pre_prj = NULL;
 	list *outer_gbexps = NULL;
 	sql_rel *inner = NULL;
 	int decorrelated = 0;
+
+	if (!sn->selection)
+		return sql_error(sql, 02, "SELECT: the selection or from part is missing");
 
 	if (!sn->from)
 		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
@@ -4351,90 +4364,70 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		aggr = 1;
 	}
 
-	if (sn->selection) {
-		dnode *n = sn->selection->h;
+	n = sn->selection->h;
+	if (!outer || (!decorrelated && ek.card == card_set)) {
+		if (outer) /* for non decorrelated or card_set sub
+			      queries we project all of the outer */
+			rel = rel_project(rel, 
+				rel_projections(sql, outer, NULL, 1, 1));
+		else
+			rel = rel_project(rel, new_exp_list());
+	}
+	if (!inner)
+		inner = rel;
+	for (; n; n = n->next) {
+		/* Here we could get real column expressions 
+		 * (including single atoms) but also table results. 
+		 * Therefor we try both rel_column_exp 
+		 * and rel_table_exp.
 
-		if (!outer || (!decorrelated && ek.card == card_set)) {
-			if (outer) /* for non decorrelated or card_set sub
-						  queries we project all of the outer */
-				rel = rel_project(rel, 
-					rel_projections(sql, outer, NULL, 1, 1));
-			else
-				rel = rel_project(rel, new_exp_list());
-		}
-		if (!inner)
-			inner = rel;
-		for (; n; n = n->next) {
-			/* Here we could get real column expressions 
-			 * (including single atoms) but also table results. 
-			 * Therefor we try both rel_column_exp 
-			 * and rel_table_exp.
+		 * TODO 
+			the rel_table_exp should simply return a new 
+			relation
+	 	 */
+		list *te = NULL; 
+		sql_rel *o_inner = inner;
+		sql_exp *ce = rel_column_exp(sql, &inner, n->data.sym, sql_sel);
 
-			 * TODO 
-				the rel_table_exp should simply return a new 
-				relation
-		 	 */
-			list *te = NULL; 
-			sql_rel *o_inner = inner;
-			sql_exp *ce = rel_column_exp(sql, &inner, n->data.sym, sql_sel);
+		if (inner != o_inner) /* relation got rewritten */
+			rel = inner;
 
-			if (inner != o_inner) /* relation got rewritten */
-				rel = inner;
+		if (ce && exp_subtype(ce)) {
+			if (rel->card < ce->card) {
+				/* This doesn't work without de-correlations, ie in that case it should be done later */
+				if (outer) {
+					sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(ce));
 
-			if (ce && exp_subtype(ce)) {
-				if (rel->card < ce->card) {
-					/* This doesn't work without de-correlations, ie in that case it should be done later */
-					if (outer) {
-						sql_subaggr *zero_or_one = sql_bind_aggr(sql->session->schema, "zero_or_one", exp_subtype(ce));
-
-						ce = exp_aggr1(ce, zero_or_one, 0, 0, rel->card, 0);
-				
-					} else if (ce->name) {
-						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->name);
-					} else {
-						return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
-					}
+					ce = exp_aggr1(ce, zero_or_one, 0, 0, rel->card, 0);
+				} else if (ce->name) {
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", ce->name);
+				} else {
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
-				/* 
-				   because of the selection, the inner
-				   relation may change.
-				   We try hard to keep a projection
-				   around this inner relation.
-				*/
-				rel_project_add_exp(sql, inner, ce);
-				rel = inner;
-				continue;
-			} else if (!ce) {
-				te = rel_table_exp(sql, rel, n->data.sym);
-			} else {
-				exp_destroy(ce);
-				ce = NULL;
 			}
-			if (!ce && !te) 
-				return sql_error(sql, 02, "SELECT: subquery result missing");
-			/* here we should merge the column expressions we 
-			 * obtained sofar with the table expression, ie 
-			 * t1.* or a subquery.
-		 	 */
-			list_merge( rel->exps, te, (fdup)&exp_dup);
-			list_destroy(te);
-		}
-	} else {
-		/* select * from tables */
-		if (aggr) {
-			rel_destroy(rel);
-			return sql_error(sql, 02, "SELECT: cannot combine '*' with GROUP BY");
-		}
-
-		if (!outer && !is_project(rel->op)) {
-			rel = rel_project(rel, rel_projections(sql, rel, NULL, 1, 0));
-		} else if (!outer && is_project(rel->op)) {
-			rel_remove_internal_exp(rel);
-		} else {
 			/* 
-			 * subquery can only return one column
-			 */
+			   because of the selection, the inner
+			   relation may change.
+			   We try hard to keep a projection
+			   around this inner relation.
+			*/
+			rel_project_add_exp(sql, inner, ce);
+			rel = inner;
+			continue;
+		} else if (!ce) {
+			te = rel_table_exp(sql, rel, n->data.sym);
+		} else {
+			exp_destroy(ce);
+			ce = NULL;
 		}
+		if (!ce && !te) 
+			return sql_error(sql, 02, "SELECT: subquery result missing");
+		/* here we should merge the column expressions we 
+		 * obtained sofar with the table expression, ie 
+		 * t1.* or a subquery.
+		 */
+		list_merge( rel->exps, te, (fdup)&exp_dup);
+		list_destroy(te);
 	}
 
 	if (sn->having) {

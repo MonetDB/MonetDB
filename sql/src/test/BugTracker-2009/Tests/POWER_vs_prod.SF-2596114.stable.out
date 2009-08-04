@@ -25,8 +25,7 @@ Over..
 # 23:02:29 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=33742 
 # 23:02:29 >  
 
-function user.s0_1():void;
-    sql.autoCommit();
+function user.s0_1{autoCommit=true}():void;
 barrier _46 := language.dataflow();
     _2:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
     _7:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",2);
@@ -54,8 +53,7 @@ exit _46;
     _24 := io.stdout();
     sql.exportResult(_24,_18);
 end s0_1;
-function user.s1_1():void;
-    sql.autoCommit();
+function user.s1_1{autoCommit=true}():void;
 barrier _45 := language.dataflow();
     _2:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",0);
     _7:bat[:oid,:dbl]  := sql.bind("sys","sf_2596114","x",2);

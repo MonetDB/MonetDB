@@ -39,9 +39,14 @@ Over..
 [ 1	]
 [ 1	]
 #SELECT '' AS two, * FROM TEXT_TBL;
-[ output should go here ]
+% .,	sys.text_tbl # table_name
+% two,	f1 # name
+% char,	clob # type
+% 0,	17 # length
+[ "",	"doh!"	]
+[ "",	"hi de ho neighbor"	]
 
-# 22:26:27 >  
-# 22:26:27 >  Done.
-# 22:26:27 >  
+# 21:59:24 >  
+# 21:59:24 >  Done.
+# 21:59:24 >  
 

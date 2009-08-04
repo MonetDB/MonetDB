@@ -71,9 +71,9 @@ stderr of test 'select_X_where_bla_EQ_whatever.SF-282597` in directory 'src/test
 # 09:39:48 >  mclient -lsql -umonetdb -Pmonetdb --host=rig --port=30225 
 # 09:39:48 >  
 
-MAPI  = monetdb@rig:30225
+MAPI  = monetdb@alf:31814
 QUERY = select * where bla = "whatever";
-ERROR = !SELECT: the selection or from part is missing
+ERROR = !SELECT: identifier 'bla' unknown
 
 # 09:39:48 >  
 # 09:39:48 >  Done.

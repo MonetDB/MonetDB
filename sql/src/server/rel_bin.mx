@@ -523,7 +523,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 
 		/* the escape character of like is in the right expression */
 		if (e->flag == cmp_notlike || e->flag == cmp_like ||
-				e->flag == cmp_notilike || e->flag == cmp_ilike)
+		    e->flag == cmp_notilike || e->flag == cmp_ilike)
 		{
 			if (!e->f)
 				r2 = stmt_atom_string(_strdup(""));
@@ -539,8 +539,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				char *likef = (e->flag == cmp_notilike || e->flag == cmp_ilike ?
 					"ilike" : "like");
 				sql_subtype *s = sql_bind_localtype("str");
-				sql_subfunc *like = sql_bind_func3(sql->session->schema,
-						likef, s, s, s);
+				sql_subfunc *like = sql_bind_func3(sql->session->schema, likef, s, s, s);
 				list *ops = create_stmt_list();
 
 				assert(s && like);
@@ -549,7 +548,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				list_append(ops, r);
 				list_append(ops, r2);
 				lstmt = stmt_Nop(stmt_list(ops), like);
-				if (e->flag == cmp_notlike) {
+				if (e->flag == cmp_notlike || e->flag == cmp_notilike) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subfunc *not = sql_bind_func(sql->session->schema,
 							"not", bt, NULL);

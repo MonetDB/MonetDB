@@ -679,6 +679,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		case st_uselect:
 		case st_select: {
+			bit need_not = FALSE;
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
@@ -716,11 +717,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					mod = strRef;
 					break;
 				case cmp_notlike:
-					op = "notlike";
+					need_not = TRUE;
+					op = "like";
 					mod = strRef;
 					break;
 				case cmp_notilike:
-					op = "notilike";
+					need_not = TRUE;
+					op = "ilike";
 					mod = strRef;
 					break;
 				default:
@@ -768,7 +771,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt2(mb, algebraRef, uselectRef);
 				q = pushArgument(mb, q, k);
-				q = pushBit(mb, q, TRUE);
+				q = pushBit(mb, q, !need_not);
 				k = getDestVar(q);
 
 				q = newStmt2(mb, batRef, reverseRef );
@@ -1936,11 +1939,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			setVarUDFtype(mb,varid);
 		}
 	}
-
-@- 
-ROBERTO PATCH
-	newStmt(mb,sqlRef,putName("emptyset",8));
-@c
 
 	backend_dumpstmt(be, mb, s);
 	Toptimize = GDKusec();

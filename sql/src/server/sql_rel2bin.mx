@@ -917,7 +917,7 @@ push_semijoin( stmt *select, stmt *s )
 		stmt *op2 = stmt_dup( select->op2.stval);
 
 		if (cmp == cmp_like || cmp == cmp_notlike ||
-				cmp == cmp_ilike || cmp == cmp_notilike)
+		    cmp == cmp_ilike || cmp == cmp_notilike)
 		{
 			stmt *op3 = stmt_dup(select->op3.stval);
 
