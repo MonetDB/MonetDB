@@ -2355,7 +2355,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 				else break;
 			} while (e);
 
-			if (e && e != s) {
+			if (e ) {
 				if ( --skip < 0 ) {
 					task->fields[0][task->next] = s;
 					cnt++;
@@ -2615,6 +2615,7 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
+	/* why do we need here a long lasting global lock */
 	mal_set_lock(mal_contextLock,"tablet output");
 	if ((base = check_BATs(as)) != oid_nil) {
 		if (BAThdense(order) && order->hseqbase == base)
@@ -2636,6 +2637,7 @@ TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s)
 
 	as.nr_attrs = 0;
 	as.nr = BUN_NONE;
+	/* why do we need here a long lasting global lock */
 	mal_set_lock(mal_contextLock,"tablet output");
 	if (create_dumpformat(&as, NULL, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		res = TABLEToutput_file(&as, order, s);
