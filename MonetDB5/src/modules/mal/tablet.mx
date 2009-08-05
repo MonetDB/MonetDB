@@ -2124,11 +2124,11 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		for ( t = e; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
 	} else {
 		for ( e = s; *e ; e++)
 			;
-		adt = fmt->frstr(fmt, fmt->adt, s, e, quote);
+		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
 	}
 
 	if (!adt) {
@@ -2340,7 +2340,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		   separator.  Records are assumed smaller then b->size. (1M)
 		*/
 		e = s;
-		while (s < end ) {
+		while (s < end && cnt <maxrow ) {
 			/* alloc space in the task buffer */
 			if ( task->next == task->limit ){
 					for( i=0; i< as->nr_attrs; i++) 
@@ -2355,9 +2355,10 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 				else break;
 			} while (e);
 
-			if (e) {
+			if (e && e != s) {
 				if ( --skip < 0 ) {
 					task->fields[0][task->next] = s;
+					cnt++;
 					*e = '\0';
 					if ( SQLload_file_line(task, as, s) < 0)
 						break;
@@ -2371,8 +2372,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 				break; 
 			if ( skip < 0)
 				task->next++;
-			if ( ++cnt == maxrow ) 
-				break;
 		}
 		b->pos = (s - b->buf);
 #ifdef _DEBUG_TABLET_
