@@ -1,3 +1,5 @@
+/* this file is based on the PostgreSQL PHP module, which carried the
+ * following licence: */
 /*
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
@@ -15,12 +17,12 @@
    | Authors: Zeev Suraski <zeev@zend.com>                                |
    |          Jouni Ahto <jouni.ahto@exdec.fi>                            |
    |          Yasuo Ohgaki <yohgaki@php.net>                              |
-   |          Youichi Iwakiri <yiwakiri@st.rim.or.jp> (m_copy_*)         | 
+   |          Youichi Iwakiri <yiwakiri@st.rim.or.jp> (m_copy_*)          | 
    |          Chris Kings-Lynne <chriskl@php.net> (v3 protocol)           | 
-   |          Fabian Groffen <fabian@cwi.nl> (MonetDB version)            |
    +----------------------------------------------------------------------+
  */
- 
+/* afterwards the file was changed for MonetDB by MonetDB developers */
+
 /* $Id$ */
 #include <clients_config.h>
 
