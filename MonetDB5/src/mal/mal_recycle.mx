@@ -341,7 +341,16 @@ int RECYCLEnewQryStat(Client cntxt, MalBlkPtr mb)
 	int idx, i;
 	QryStatPtr qstat;
 	str nm = getFunctionId(mb->stmt[0]);
-	
+	int totrec = 0;
+
+	/* DML statements are not recycled,
+	 hence no need to keep query statistics for them */
+	for (i=0; i< mb->stop; i++){
+		totrec += mb->stmt[i]->recycle;
+	}
+	if ( totrec == REC_NO_INTEREST )
+		return -1;
+
 	if ((idx = findQryStat(cntxt,nm)) >= 0){
 		recycleQPat->ptrn[idx]->calls++;
 		return idx;
@@ -1420,7 +1429,7 @@ RECYCLEshutdown(Client cntxt){
 	MalBlkPtr mb = recycleBlk;
 	int i;
 	bte *used;
-    Client c;
+	Client c;
 	
 	if( recycleBlk == NULL)
 		return ;
@@ -1438,10 +1447,10 @@ RECYCLEshutdown(Client cntxt){
 	recycleBlk = NULL;
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
-    for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
-        if (c->mode != FREECLIENT) {
-    	    memset((char *)c->rcc, 0, sizeof(RecStat));
-	        c->rcc->curQ = -1;
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
+		if (c->mode != FREECLIENT) {
+			memset((char *)c->rcc, 0, sizeof(RecStat));
+			c->rcc->curQ = -1;
     }
 	freeQPat(recycleQPat);
 	recycleQPat = NULL;
