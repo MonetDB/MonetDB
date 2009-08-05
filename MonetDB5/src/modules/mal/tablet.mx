@@ -2134,9 +2134,14 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	if (!adt) {
 		char *val;
 		val = *s ? GDKstrdup(s) : GDKstrdup("");
-
-		snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT " field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
-		*err= GDKstrdup(buf);
+		/* watch out for concurrent threads */
+		mal_set_lock(mal_contextLock,"tablet insert value");
+		if ( *err == NULL){
+			snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT 
+				" field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
+			*err= GDKstrdup(buf);
+		}
+		mal_unset_lock(mal_contextLock,"tablet insert value");
 		GDKfree(val);
 		return -1;
 	}
@@ -2161,7 +2166,7 @@ SQLworker_column(READERtask *task, int col)
 	if ( BATcapacity(task->as->format[col].c) < BATcount(task->as->format[col].c) + task->next )
 		BATextend(task->as->format[col].c, BATgrows(task->as->format[col].c) + task->next);
 
-	for ( i = 0; i< task->next; i++){
+	for ( i = 0; i< task->next && task->as->error == NULL; i++){
 		SQLinsert_val(&task->as->format[col], task->fields[col][i], task->quote, NULL, &task->as->error, col);
 		if ( task->as->error) {
 			if (!task->as->tryall)
@@ -2228,9 +2233,10 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 		/* skip until field separator, watch out for escaped ones */
 		if ( i < as->nr_attrs-1)  {
 			do{
-				for ( ; *line ; line++)
-					if ( *line == *task->separator && line > start && *(line-1) != '\\')
-						break;
+				if ( *line != *task->separator )
+					for ( ; *line ; line++)
+						if ( *line == *task->separator && line>start && *(line-1) != '\\')
+							break;
 				if ( *line && (task->seplen == 1 || strncmp(line,task->separator,task->seplen) == 0) ){
 					*line = 0;
 					line += task->seplen;
