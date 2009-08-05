@@ -2089,6 +2089,7 @@ typedef struct{
 	int status;/* START/BUSY/DONE */
 	MT_Id tid;
 	MT_Sema sema;	/* threads wait for work , negative next implies exit*/
+	MT_Sema reply;	/* let reader continue */
 	Tablet *as;
 	char *separator;
 	size_t seplen;
@@ -2188,8 +2189,9 @@ SQLworker(void *arg)
 		if ( task->cols[i])
 			SQLworker_column(task,task->cols[i]-1);
 		task->status = WORKER_DONE;
+		MT_up_sema(task->reply,"SQLworker");
 	}
-	task->status = WORKER_DONE;
+	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker exists\n");
 #endif
@@ -2254,7 +2256,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	char *s, *e, *end;
 	lng cnt = 0;
 	int res = 0,j;
-	int leftover, workers;
+	int leftover;
 	unsigned int i;
 	int rseplen, cseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
@@ -2285,6 +2287,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		ptask[j]= *task;
 		ptask[j].cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
+		MT_init_sema(ptask[j].reply,0,"sqlworker");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
 	}
 
@@ -2295,7 +2298,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 
 	(void) cseplen;
 
-	while ((b->pos < b->len || !b->eof) && res == 0 ) {
+	while (b->pos <= b->len && !b->eof && res == 0 ) {
 
 		leftover = b->len - b->pos;
 		/* shift left-over from previous block to front */
@@ -2315,7 +2318,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 					res = -1;
 					continue;
 				}
-			break;
 		}
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=%d len=%d eof=%d \n", b->pos, b->len,b->eof);
@@ -2377,43 +2379,36 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		
 		/* activate the workers */
 		for( j= 0; j < threads ; j++) {
-			ptask[j].status = WORKER_START;
 			ptask[j].next= task->next;
 			ptask[j].fields= task->fields;
 			ptask[j].limit = task->limit;
 			MT_up_sema(ptask[j].sema,"SQLworker");
 		}
 		
-		/* spin lock until they are finished */
-		do {
-			workers = 0;
-			MT_sleep_ms(1);
-			for ( j=0; j< threads; j++)
-				workers += ptask[j].status != WORKER_DONE;
-		} while (workers >0);
+		for ( j=0; j< threads; j++)
+			MT_down_sema(ptask[j].reply,"sqlreader");
+		if ( cnt == maxrow ) 
+			break;
 
 #ifdef _DEBUG_TABLET_
-		if ((cnt % 100000) == 0)
+		if ((cnt % 10000000) == 0)
 			stream_printf(GDKout, "#inserted " BUNFMT "\n", cnt);
 #endif
-		if ( cnt && (cnt % 100000) == 0)
+		if ( cnt && (cnt % 10000000) == 0)
 			sync_bats(as);
 	}
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Close the workers\n");
 #endif
-		for( j= 0; j < threads ; j++){
-			ptask[j].next = -1;
-			MT_up_sema(ptask[j].sema,"SQLworker");
-		}
+	for( j= 0; j < threads ; j++){
+		ptask[j].next = -1;
+		MT_up_sema(ptask[j].sema,"SQLworker");
+	}
+		sync_bats(as);
 		/* wait for their dead */
-		do {
-			workers = 0;
-			MT_sleep_ms(10);
-			for ( j=0; j< threads; j++)
-				workers += ptask[j].status != WORKER_DONE;
-		} while (workers >0);
+		for ( j=0; j< threads; j++)
+			MT_down_sema(ptask[j].reply,"sqlreader");
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Found "LLFMT" tuples\n",cnt);
 #endif
