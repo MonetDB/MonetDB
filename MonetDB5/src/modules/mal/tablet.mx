@@ -1364,7 +1364,8 @@ TABLETcollect_bats(Tablet * as)
 		BATpropcheck(fmt[i].c, BATPROPS_ALL);
 		BATpropcheck(BATmirror(fmt[i].c), BATPROPS_ALL);
 		if (cnt != BATcount(fmt[i].c)) {
-			GDKerror("Error: the counts of column %d differes from first\n",i);
+			if ( as->error == 0) /* a new error */
+				GDKerror("Error: the counts of column %d differes from first\n",i);
 			return NULL;
 		}
 	}
@@ -2340,7 +2341,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		   separator.  Records are assumed smaller then b->size. (1M)
 		*/
 		e = s;
-		while (s < end && cnt <maxrow ) {
+		while (s < end && (cnt < maxrow || maxrow < 0) ) {
 			/* alloc space in the task buffer */
 			if ( task->next == task->limit ){
 					for( i=0; i< as->nr_attrs; i++) 
@@ -2615,8 +2616,6 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
-	/* why do we need here a long lasting global lock */
-	mal_set_lock(mal_contextLock,"tablet output");
 	if ((base = check_BATs(as)) != oid_nil) {
 		if (BAThdense(order) && order->hseqbase == base)
 			ret= output_file_dense(as, s);
@@ -2625,7 +2624,6 @@ TABLEToutput_file(Tablet * as, BAT *order, stream *s)
 	} else {
 		ret= output_file_default(as, order, s);
 	}
-	mal_unset_lock(mal_contextLock,"tablet output");
 	return ret;
 }
 
@@ -2637,12 +2635,9 @@ TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s)
 
 	as.nr_attrs = 0;
 	as.nr = BUN_NONE;
-	/* why do we need here a long lasting global lock */
-	mal_set_lock(mal_contextLock,"tablet output");
 	if (create_dumpformat(&as, NULL, seps, bats) != BUN_NONE && TABLETassign_BATs(&as, bats) != BUN_NONE) {
 		res = TABLEToutput_file(&as, order, s);
 	}
-	mal_unset_lock(mal_contextLock,"tablet output");
 	TABLETdestroy_format(&as);
 	if (res >= 0)
 		return as.nr;
