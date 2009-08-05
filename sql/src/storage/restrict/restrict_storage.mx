@@ -1006,6 +1006,7 @@ ro_storage_init( store_functions *sf)
 	sf->update_table = (update_table_fptr)NULL;
 	sf->log_table = (update_table_fptr)NULL;
 	sf->snapshot_table = (update_table_fptr)NULL;
+	sf->gtrans_update = (gtrans_update_fptr)NULL;
 	return LOG_OK;
 }
 

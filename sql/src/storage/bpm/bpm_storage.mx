@@ -1077,6 +1077,7 @@ bpm_storage_init( store_functions *sf)
 	sf->update_table = (update_table_fptr)&bpm_update_table;
 	sf->log_table = (update_table_fptr)&bpm_log_table;
 	sf->snapshot_table = (update_table_fptr)&bpm_none;
+	sf->gtrans_update = (gtrans_update_fptr)NULL;
 
 	MT_lock_init(&part_lock, "SQL_part_lock");
 	return LOG_OK;

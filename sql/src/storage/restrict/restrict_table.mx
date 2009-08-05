@@ -312,9 +312,9 @@ ro_table_init( table_functions *tf )
 	tf->column_find_row = column_find_row;
 	tf->column_find_value = column_find_value;
 
-	tf->column_update_value = NULL;
-	tf->table_insert = NULL;
-	tf->table_delete = NULL;
+	tf->column_update_value = column_update_value;
+	tf->table_insert = table_insert;
+	tf->table_delete = table_delete;
 	
 	tf->rids_select = rids_select;
 	tf->rids_orderby = rids_orderby;
