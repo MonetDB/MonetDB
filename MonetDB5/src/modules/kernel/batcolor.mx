@@ -137,12 +137,12 @@ comment	"Extracts Cb(blue color) component from a color atom";
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
 	if( X == NULL){ \
 		BBPreleaseref(Y->batCacheid); \
 		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL); \
 	} \
+	if( Y->htype== TYPE_void) \
+		BATseqbase(X, Y->hseqbase); \
 	X->hsorted=Y->hsorted; \
 	X->tsorted=0; 
 #define finalizeResult(X,Y,Z) \
