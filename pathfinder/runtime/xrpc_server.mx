@@ -820,7 +820,7 @@ CMDrpcd_start(int *port, bit *open, str options)
     listen_socket = ctx.sock;
 
     /* Serve connections infinitely until someone kills us */
-    for ( ; rpcd_running; ) shttpd_poll(&ctx, 200);
+    for ( ; rpcd_running; ) shttpd_poll(&ctx, 2000);
 
     return GDK_SUCCEED;
 }
