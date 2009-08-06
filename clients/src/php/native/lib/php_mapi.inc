@@ -292,22 +292,22 @@
 			mapi_authenticate_v9($socket, $user, $passwd, $hash, $credentials[0], $dbname, $credentials[5]);			
 		} else {
 			$last_error = "Protocol " . $credentials[2] . " not supported. Aborting.";
-			return FALSE;
-			
+			return FALSE;		
 		}
 		
 		$response = mapi_read($socket);
 		
 		if ($response != MSG_PROMPT) { 
 		// not ready to authenticate yet
-			if ($response[0] == MSG_REDIRECT) {
-				
+			if ($response[0] == MSG_REDIRECT) {		
 				if ($credentials[1] == "merovingian") {
 					if ($merovingian_iter < MAX_MEROVINGIAN_ITER) {
 						$merovingian_iter++;
 						mapi_connect($socket, $options, $merovingian_iter);
+					} else {
+						$last_error = "Maximum number of merovingian iterations exceeded during authentication\n";
+						return FALSE;
 					}
-				
 				}
 				else if ($credentials[1] == "mserver") {
 					mapi_close($socket);
@@ -450,27 +450,26 @@
 		$passwd = $options["password"];
 		$hash 	= $options["hashfunc"];
 		$dbname = $options["database"];
+		
+		$persistent = $options["persistent"];
+		
 		/**
 		  * First, when connecting, the function would first try to find a (persistent) link that's already 
 		  * open with the same host, username and password. If one is found, an identifier for it will be returned 
 		  * instead of opening a new connection. 
 		*/
-		if ($options["persistent"] == TRUE) {
-			
+		if ($persistent == TRUE) {
 			if (count($connection_pool) > 0) {
-				
 				foreach ($connection_pool as $conn) {
 					if ( ($conn["persistent"] == TRUE) && ($conn["dbname"] == $dbanme) && ($conn['username'] == $user) && ($conn["password"] == hash("sha1", $passwd) && ($conn["host"]) == $host)) {
 						return $conn;
-					}
-					
+					}	
 				}
-				
 			}
 		}
 		
+		
 		$socket	= mapi_open();
-
 		if (socket_connect($socket, $host, $port) == FALSE) {
 			$last_error = socket_strerror(socket_last_error());
 			return FALSE;
