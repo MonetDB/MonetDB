@@ -268,7 +268,8 @@ function copy_from(
 	cs := str.codeset();
 	f  := str.iconv(fname, "UTF-8", cs);
 	s  := streams.openRead(f);
-	bs := bstream.create(s, 1048576);
+	#bs := bstream.create(s, 1048576);
+	bs := bstream.create(s, 8388608);
 
 	res := sql.importTable(bs, sname, tname, tsep, rsep, ssep, ns, nr, offset);
 	bstream.destroy(bs);
