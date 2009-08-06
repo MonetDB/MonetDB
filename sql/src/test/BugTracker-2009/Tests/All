@@ -76,3 +76,4 @@ rollback_mistake.SF-2814622
 numeric_data_type_bug.SF-2818176
 insert_into_values_bug.SF-2807609
 set_and_arg_null.SF-2812729
+pow_operator.SF-2812721
