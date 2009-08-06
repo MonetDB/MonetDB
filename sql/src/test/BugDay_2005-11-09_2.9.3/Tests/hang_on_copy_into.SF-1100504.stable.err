@@ -79,13 +79,15 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 19:27:24 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31581 
 # 19:27:24 >  
 
-MAPI  = monetdb@alf:31581
+MAPI  = monetdb@eir:39012
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
-ERROR = !SQLException:sql:End of string (') missing in 'dwerg.net word volwassen, er is eindelijk content at line 1
+ERROR = !SQLException:sql:missing separator '	' line 1 field 0
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@alf:31581
-QUERY = en het voicemail archief begint al aardig vol te lopen.
-ERROR = !syntax error, unexpected IDENT in: "en"
+MAPI  = monetdb@eir:39012
+QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
+ERROR = !SQLException:sql:missing separator '	' line 1 field 0
+        !SQLException:importTable:failed to import table
+        !syntax error, unexpected IDENT in: "en"
 
 # 19:27:24 >  
 # 19:27:24 >  Done.
