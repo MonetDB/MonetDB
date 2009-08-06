@@ -1571,7 +1571,7 @@ insert_line(Tablet * as, char *line, ptr key, BUN col1, BUN col2 )
 				BUNins(as->complaints, NULL, as->error, TRUE);
 			}
 		} else {
-			snprintf(errmsg,BUFSIZ, "missing sep %s line " BUNFMT " field " BUNFMT "\n", 
+			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 				fmt->sep, BATcount(fmt->c), i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -2245,7 +2245,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 				}
 				line++;
 			} while (*line);
-			snprintf(errmsg,BUFSIZ, "missing sep %s line " BUNFMT " field " BUNFMT "\n", 
+			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
 				fmt->sep, BATcount(fmt->c) + task->next, i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
@@ -2397,10 +2397,10 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 			break;
 
 #ifdef _DEBUG_TABLET_
-		if ((cnt % 10000000) == 0)
+		if ((cnt % 100000) == 0)
 			stream_printf(GDKout, "#inserted " BUNFMT "\n", cnt);
 #endif
-		if ( cnt && (cnt % 10000000) == 0)
+		if ( cnt && (cnt % 100000) == 0)
 			sync_bats(as);
 	}
 	/* close down the workers */
