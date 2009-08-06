@@ -72,3 +72,4 @@ orIssue.SF-2812504.sql
 recursion-problem.SF-2827784
 select_X_where_bla_EQ_whatever.SF-282597
 prepare_decimal_bug.SF-2831994
+rollback_mistake.SF-2814622
