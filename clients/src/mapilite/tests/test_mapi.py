@@ -20,7 +20,7 @@ class MapiBaseTests(unittest.TestCase):
     """ the base test class. Loads the mapi library """
 
     def __init__(self, *args):
-        location = ctypes.util.find_library('libmapi')
+        location = ctypes.util.find_library('libmapilite')
         if not location:
             locations = {
                     #TODO: add more platforms
@@ -28,7 +28,6 @@ class MapiBaseTests(unittest.TestCase):
                     'linux2': '../.libs/libmapilite.so',
                     }
             location = locations[sys.platform]
-        location = "/opt/monetdb/may-2009-sp2/lib/libMapi.dylib"
         self.libmapi = ctypes.cdll.LoadLibrary(location)
         unittest.TestCase.__init__(self, *args)
 
@@ -36,13 +35,13 @@ class MapiBaseTests(unittest.TestCase):
         mapi_connect = self.libmapi.mapi_connect
         mapi_connect.restype = mapi_structs.Mapi
         mid = mapi_connect(hostname, port, username, password, lang, db)
-        if mid.contents.error != 0:
-            self.fail("can't connect to database:  %s" % mid.contents.errorstr)
+        self.assertEqual(mid.contents.error, 0, \
+            "can't connect to database:  %s" % mid.contents.errorstr)
         return mid
 
     def _disconnect(self, mid):
-        self.libmapi.mapi_disconnect(mid)
-        self.libmapi.mapi_destroy(mid)
+        self.assertEqual(self.libmapi.mapi_disconnect(mid), 0)
+        self.assertEqual(self.libmapi.mapi_destroy(mid), 0)
 
 
 
@@ -55,24 +54,61 @@ class MapiConnectTests(MapiBaseTests):
 
         self.assertEqual(mid.contents.hostname, hostname)
         self.assertEqual(mid.contents.username, username)
-        self.assertEqual(mid.contents.error, 0, mid.contents.errorstr +
-                ". would like 0, got %s" % mid.contents.error)
+        self.assertEqual(mid.contents.error, 0,
+                "%s. would like 0, got %s" % (mid.contents.errorstr, mid.contents.error))
         self.assertEqual(mid.contents.errorstr, None)
-        self.assertEqual(mid.contents.connected, 0)
-        #self.assertEqual(mid.contents.port, port) # merovingian redirects
+        self.assertEqual(mid.contents.connected, 1)
+        self.assertEqual(mid.contents.port, port)
+        self._disconnect(mid)
 
-    def test_mapi_mapi(self):
+    def mapi_mapi(self): # not a external used function
         mid = self._connect()
-
         self.assertEqual(mid.contents.hostname, hostname)
-        #self.assertEqual(mid.contents.port, port) # merovingian redirects
+        self.assertEqual(mid.contents.port, port)
         self.assertEqual(mid.contents.username, username)
         self.assertEqual(mid.contents.error, 0)
         self.assertEqual(mid.contents.errorstr, None)
+        self.assertEqual(mid.contents.connected, 1)
+
+    def test_mapi_disconnect(self):
+        mid = self._connect()
+        mapi_disconnect = self.libmapi.mapi_disconnect
+        message = mapi_disconnect(mid)
+        self.assertEqual(message, 0)
+        self.assertEqual(mid.contents.connected, 0)
+        self.libmapi.mapi_destroy(mid)
+
+    def test_mapi_destroy(self):
+        mid = self._connect()
+        self.libmapi.mapi_disconnect(mid)
+        mapi_destroy = self.libmapi.mapi_destroy
+        message = mapi_destroy(mid)
+        self.assertEqual(message, 0)
         self.assertEqual(mid.contents.connected, 0)
 
-    def mapi_destroy(self):
-        self.fail("not yet implemented")
+    def test_mapi_reconnect(self):
+        mid = self._connect()
+        mapi_reconnect = self.libmapi.mapi_reconnect
+        message = mapi_reconnect(mid)
+        self.assertEqual(message, 0)
+        self.assertEqual(mid.contents.connected, 1)
+        # also test when disconnected
+        self.libmapi.mapi_disconnect(mid)
+        message = mapi_reconnect(mid)
+        self.assertEqual(message, 0)
+        self.assertEqual(mid.contents.connected, 1)
+        self._disconnect(mid)
+
+    def test_mapi_ping(self):
+        mid = self._connect()
+        mapi_ping = self.libmapi.mapi_ping
+        message = mapi_ping(mid)
+        self.assertEqual(message, 0)
+        # also test when disconnected
+        self.libmapi.mapi_disconnect(mid)
+        message = mapi_ping(mid)
+        self.assertEqual(message, -1)
+        self._disconnect(mid)
 
 
 class MapiFunctionsTests(MapiBaseTests):
@@ -80,29 +116,20 @@ class MapiFunctionsTests(MapiBaseTests):
 
     def setUp(self):
         """ called for every test before the test is run """
-        self.connection = self._connect()
+        self.mid = self._connect()
 
     def tearDown(self):
         """ called for every test after the test is run """
-        self._disconnect(self.connection)
-        self.connection = None
+        self._disconnect(self.mid)
+        self.mid = None
 
-    def test_mapi_start_talking(self):
+    def mapi_start_talking(self):
         self.fail("not yet implemented")
 
     def mapi_resolve(self):
         self.fail("not yet implemented")
 
     def mapi_embedded_init(self):
-        self.fail("not yet implemented")
-
-    def mapi_disconnect(self):
-        self.fail("not yet implemented")
-
-    def mapi_reconnect(self):
-        self.fail("not yet implemented")
-
-    def mapi_ping(self):
         self.fail("not yet implemented")
 
     def mapi_error(self):
