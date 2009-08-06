@@ -7,10 +7,20 @@ import os
 
 import mapi_structs
 
-class MapiTests(unittest.TestCase):
+
+hostname = 'localhost'
+port = int(os.environ.get('MAPIPORT', '50000'))
+username = 'monetdb'
+password = 'monetdb'
+lang = 'sql'
+db = os.environ.get('TSTDB', 'demo')
+
+
+class MapiBaseTests(unittest.TestCase):
+    """ the base test class. Loads the mapi library """
 
     def __init__(self, *args):
-        location = ctypes.util.find_library('libmapilite')
+        location = ctypes.util.find_library('libmapi')
         if not location:
             locations = {
                     #TODO: add more platforms
@@ -18,34 +28,66 @@ class MapiTests(unittest.TestCase):
                     'linux2': '../.libs/libmapilite.so',
                     }
             location = locations[sys.platform]
+        location = "/opt/monetdb/may-2009-sp2/lib/libMapi.dylib"
         self.libmapi = ctypes.cdll.LoadLibrary(location)
         unittest.TestCase.__init__(self, *args)
 
+    def _connect(self):
+        mapi_connect = self.libmapi.mapi_connect
+        mapi_connect.restype = mapi_structs.Mapi
+        mid = mapi_connect(hostname, port, username, password, lang, db)
+        if mid.contents.error != 0:
+            self.fail("can't connect to database:  %s" % mid.contents.errorstr)
+        return mid
+
+    def _disconnect(self, mid):
+        self.libmapi.mapi_disconnect(mid)
+        self.libmapi.mapi_destroy(mid)
+
+
+
+class MapiConnectTests(MapiBaseTests):
+    """ here we test the connect and disconnect
+    functions"""
+
+    def test_mapi_connect(self):
+        mid = self._connect()
+
+        self.assertEqual(mid.contents.hostname, hostname)
+        self.assertEqual(mid.contents.username, username)
+        self.assertEqual(mid.contents.error, 0, mid.contents.errorstr +
+                ". would like 0, got %s" % mid.contents.error)
+        self.assertEqual(mid.contents.errorstr, None)
+        self.assertEqual(mid.contents.connected, 0)
+        #self.assertEqual(mid.contents.port, port) # merovingian redirects
+
     def test_mapi_mapi(self):
-        host = 'localhost'
-        port = os.environ.get('MAPIPORT', '50000')
-        username = 'monetdb'
-        password = 'monetdb'
-        lang = 'sql'
-        db = os.environ.get('TSTDB', 'demo')
+        mid = self._connect()
 
-        mapi_mapi = self.libmapi.mapi_mapi
-        #mapi_mapi.argtypes = 6 * [ctypes.c_char_p]
-        mapi_mapi.restype = mapi_structs.Mapi
-        mapi = mapi_mapi(host, port, username, password, lang, db)
-
-        print(mapi)
-        print dir(mapi.contents)
-        print mapi.contents.hostname
-        self.fail("not yet implemented")
+        self.assertEqual(mid.contents.hostname, hostname)
+        #self.assertEqual(mid.contents.port, port) # merovingian redirects
+        self.assertEqual(mid.contents.username, username)
+        self.assertEqual(mid.contents.error, 0)
+        self.assertEqual(mid.contents.errorstr, None)
+        self.assertEqual(mid.contents.connected, 0)
 
     def mapi_destroy(self):
         self.fail("not yet implemented")
 
-    def mapi_start_talking(self):
-        self.fail("not yet implemented")
 
-    def mapi_connect(self):
+class MapiFunctionsTests(MapiBaseTests):
+    """ Here we test everything _after_ connecting """
+
+    def setUp(self):
+        """ called for every test before the test is run """
+        self.connection = self._connect()
+
+    def tearDown(self):
+        """ called for every test after the test is run """
+        self._disconnect(self.connection)
+        self.connection = None
+
+    def test_mapi_start_talking(self):
         self.fail("not yet implemented")
 
     def mapi_resolve(self):

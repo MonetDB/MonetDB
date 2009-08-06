@@ -331,10 +331,10 @@ mapi_check(Mapi mid,char *C)
 	assert(mid);
 	if (mid->connected == 0) {
 		mapi_setError(mid, "Connection lost", C, MERROR);
-		return false;
+		return 1;
 	} else {
 		mapi_clrError(mid);
-		return true;
+		return 0;
 	}
 }
 

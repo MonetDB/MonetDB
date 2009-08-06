@@ -28,6 +28,8 @@ class TextTestRunnerNoTime(unittest.TextTestRunner):
         return result
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(test_mapi.MapiTests)
-    TextTestRunnerNoTime(verbosity=3).run(suite)
+    suite1 = unittest.TestLoader().loadTestsFromTestCase(test_mapi.MapiConnectTests)
+    suite2 = unittest.TestLoader().loadTestsFromTestCase(test_mapi.MapiFunctionsTests)
+    alltests = unittest.TestSuite([suite1, suite2])
+    TextTestRunnerNoTime(verbosity=3).run(alltests)
 
