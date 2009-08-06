@@ -2685,7 +2685,6 @@ simple_atom:
 
 insert_atom:
     simple_atom
- |  select_no_parens_orderby
  ;
 
 value:
