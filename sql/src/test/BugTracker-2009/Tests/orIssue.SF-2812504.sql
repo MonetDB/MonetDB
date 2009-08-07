@@ -17,3 +17,7 @@ CREATE TABLE "sys"."anbi" (
 
 select * from kvk,anbi where lower(naam) = lower(bedrijfsnaam) and
 (vestigingsplaats = 'DEN HAAG' or vestigingsplaats LIKE '%GRAVE%');
+
+
+drop table kvk;
+drop table anbi;
