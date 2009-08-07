@@ -341,7 +341,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 			break;
 		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r)) 
 			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r)) 
+		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL)) 
 			found = 1;
 		break;
 	case op_insert:
@@ -1138,6 +1138,7 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 static sql_rel *
 rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 {
+	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
 	switch(rel->op) {
 	case op_join:
@@ -1168,8 +1169,12 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	case op_project:
 	case op_table:
 	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname))
+		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous))
 			return rel;
+		if (ambiguous) {
+			(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+			return NULL;
+		}
 		*p = rel;
 		if (is_processed(rel))
 			return NULL;
@@ -1199,7 +1204,7 @@ rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 
 	if (is_project(rel->op) || rel->op == op_table) {
 		if (rel->exps) {
-			sql_exp *e = exps_bind_column(rel->exps, cname);
+			sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 			if (e)
 				return e;
 		}
@@ -1219,7 +1224,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 		return NULL;
 
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
-		sql_exp *e = exps_bind_column(rel->exps, cname);
+		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
 			return exp_alias_or_copy(sql, e->rname, cname, rel, e, 1);
 	}
@@ -3811,7 +3816,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
 				return NULL;
-			if (!e && col->token == SQL_COLUMN) {
+			if (!e && sql->session->status != -ERR_AMBIGUOUS && col->token == SQL_COLUMN) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -3822,7 +3827,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 					e = NULL;
 				}
 			}
-			if (!e) {
+			if (!e && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -4164,7 +4169,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
 		char *nm = le->name;
-		sql_exp *re = exps_bind_column(r_exps, nm);
+		sql_exp *re = exps_bind_column(r_exps, nm, NULL);
 
 		if (re) {
 			found = 1;
@@ -4651,12 +4656,16 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	rel_remove_internal_exp(t1);
 	rel_remove_internal_exp(t2);
 	if (list_length(t1->exps) != list_length(t2->exps)) {
+		int t1nrcols = list_length(t1->exps);
+		int t2nrcols = list_length(t2->exps);
 		char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
 			op = "INTERSECT";
-		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1->nrcols, t2->nrcols);
+		rel_destroy(t1);
+		rel_destroy(t2);
+		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
 	if (t1 && dist) 
 		t1 = rel_distinct(t1);

@@ -81,7 +81,7 @@ extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 extern int exp_is_atom(sql_exp *e);
 
-extern sql_exp *exps_bind_column( list *exps, char *cname);
+extern sql_exp *exps_bind_column( list *exps, char *cname, int *ambiguous);
 extern sql_exp *exps_bind_column2( list *exps, char *rname, char *cname);
 
 extern int exps_card( list *l );
@@ -608,10 +608,10 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->l) { 
+		if (e->l) {
 			ne = exps_bind_column2(rel->exps, e->l, e->r);
 		} else {
-			ne = exps_bind_column(rel->exps, e->r);
+			ne = exps_bind_column(rel->exps, e->r, NULL);
 		}
 		return ne;
 	case e_convert:
@@ -663,7 +663,7 @@ rel_find_exp( sql_rel *rel, sql_exp *e)
 			else if (rel->exps && e->l)
 				ne = exps_bind_column2(rel->exps, e->l, e->r);
 			else if (rel->exps)
-				ne = exps_bind_column(rel->exps, e->r);
+				ne = exps_bind_column(rel->exps, e->r, NULL);
 		}
 		break;
 		case op_basetable: 
@@ -727,18 +727,26 @@ exp_is_atom( sql_exp *e )
 }
 
 sql_exp *
-exps_bind_column( list *exps, char *cname ) 
+exps_bind_column( list *exps, char *cname, int *ambiguous ) 
 {
+	sql_exp *e = NULL;
+
 	if (exps && cname) {
 		node *en;
 
 		for (en = exps->h; en; en = en->next ) {
-			sql_exp *e = en->data;
-			if (e->name && strcmp(e->name, cname) == 0)
-				return e;
+			sql_exp *ce = en->data;
+			if (ce->name && strcmp(ce->name, cname) == 0) {
+				if (e) {
+					if (ambiguous)
+						*ambiguous = 1;
+					return NULL;
+				}
+				e = ce;
+			}
 		}
 	}
-	return NULL;
+	return e;
 }
 
 sql_exp *
