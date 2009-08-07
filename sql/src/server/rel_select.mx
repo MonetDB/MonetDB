@@ -4656,12 +4656,16 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	rel_remove_internal_exp(t1);
 	rel_remove_internal_exp(t2);
 	if (list_length(t1->exps) != list_length(t2->exps)) {
+		int t1nrcols = list_length(t1->exps);
+		int t2nrcols = list_length(t2->exps);
 		char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
 			op = "INTERSECT";
-		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1->nrcols, t2->nrcols);
+		rel_destroy(t1);
+		rel_destroy(t2);
+		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
 	if (t1 && dist) 
 		t1 = rel_distinct(t1);
