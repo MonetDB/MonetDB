@@ -367,12 +367,12 @@ mvc_type(mvc *m)
 void
 mvc_trans(mvc *m)
 {
-	int schema_changed = 0;
+	int schema_changed = 0, err = m->session->status;
 	assert(!m->session->active);	/* can only start a new transaction */
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
-	if (m->cache && (schema_changed || m->qc->id > 10000)){
+	if (m->cache && (schema_changed || m->qc->id > 10000 || err)){
 		if (m->qc)
 			qc_destroy(m->qc);
 		m->qc = qc_create(m->clientid);

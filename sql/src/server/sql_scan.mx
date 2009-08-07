@@ -792,6 +792,7 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '?':
 	case '%':
+	case '^':
 	case '+':
 	case '*':
 	case '/':
