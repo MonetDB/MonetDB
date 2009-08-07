@@ -88,6 +88,7 @@ extern char * rel_name( sql_rel *r );
 #include "rel_dump.h"
 #include "rel_prop.h"
 
+#define ERR_AMBIGUOUS		050000
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
 
 sql_rel *
@@ -1152,7 +1153,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
 			if (l && r && !is_subquery(r)) {
-				(void) sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", cname);
+				(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
 				return NULL;
 			}
 		}
@@ -1482,10 +1483,10 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column(sql, *rel, name, f);
 		if (exp) {
 			if (var || a) 
-				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+				return sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", name);
 		} else if (a) {
 			if (var) 
-				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+				return sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", name);
 			exp = exp_param(a->name, &a->type, 0);
 		}
 		if (!exp && var)
@@ -1969,7 +1970,7 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro,
 		   are correlations with the outer relation */
 		sql_rel *r = rel_subquery(sql, NULL, ro, ek);
 
-		if (!r) {
+		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
@@ -2078,7 +2079,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		   	are correlations with the outer relation */
 			sql_rel *r = rel_subquery(sql, NULL, ro, ek);
 	
-			if (!r) { /* correlation, ie return new relation */
+			if (!r && sql->session->status != -ERR_AMBIGUOUS) { /* correlation, ie return new relation */
 				sql_exp *e;
 
 				/* reset error */
@@ -2491,7 +2492,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		int correlated = 0, vals_only = 1;
 		int l_is_value = 1;
 
-		if (!l) {
+		if (!l && sql->session->status != -ERR_AMBIGUOUS) {
 		 	l_is_value = 0;
 			/* reset error */
 			left = rel;
@@ -2531,7 +2532,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_rel *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (!r) {
+				if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = 0;
@@ -2652,7 +2653,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek);
-		if (!r && rel) { /* correlation */
+		if (!r && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
 			sql_exp *le, *re;
 			/* reset error */
 			sql->session->status = 0;
@@ -3979,7 +3980,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			*is_last=1;
 			return e;
 		}
-		if (!r) {
+		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			if (!*rel)
 				return NULL;
 
