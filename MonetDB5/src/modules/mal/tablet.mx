@@ -2111,7 +2111,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	char *e, *t;
 
 	/* include testing on the terminating null byte !! */
-	if (*fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
+	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"nil value '%s' (%d) found in :%s\n",fmt->nullstr,fmt->nillen,(s?s:""));
 #endif
@@ -2459,7 +2459,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	/* wait for their dead */
 	for ( j=0; j< threads; j++)
 		MT_down_sema(ptask[j].reply,"sqlreader");
-	if (GRPalgorithms) {
+	if (GDKdebug & GRPalgorithms) {
 		stream_printf(GDKout,"# COPY reader time " LLFMT "\n#",total);
 		for( i=0; i< as->nr_attrs; i++) 
 				stream_printf(GDKout,LLFMT " ", task->time[i]);
