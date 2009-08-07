@@ -88,6 +88,7 @@ extern char * rel_name( sql_rel *r );
 #include "rel_dump.h"
 #include "rel_prop.h"
 
+#define ERR_AMBIGUOUS		050000
 #define rel_groupby_gbe(r,e) rel_groupby(r, append(new_exp_list(), e))
 
 sql_rel *
@@ -340,7 +341,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 			break;
 		if (!found && e->l && exps_bind_column2(rel->exps, e->l, e->r)) 
 			found = 1;
-		if (!found && !e->l && exps_bind_column(rel->exps, e->r)) 
+		if (!found && !e->l && exps_bind_column(rel->exps, e->r, NULL)) 
 			found = 1;
 		break;
 	case op_insert:
@@ -1137,6 +1138,7 @@ query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 static sql_rel *
 rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 {
+	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
 	switch(rel->op) {
 	case op_join:
@@ -1152,7 +1154,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
 			if (l && r && !is_subquery(r)) {
-				(void) sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", cname);
+				(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
 				return NULL;
 			}
 		}
@@ -1167,8 +1169,12 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	case op_project:
 	case op_table:
 	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname))
+		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous))
 			return rel;
+		if (ambiguous) {
+			(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+			return NULL;
+		}
 		*p = rel;
 		if (is_processed(rel))
 			return NULL;
@@ -1198,7 +1204,7 @@ rel_find_column( mvc *sql, sql_rel *rel, char *cname )
 
 	if (is_project(rel->op) || rel->op == op_table) {
 		if (rel->exps) {
-			sql_exp *e = exps_bind_column(rel->exps, cname);
+			sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 			if (e)
 				return e;
 		}
@@ -1218,7 +1224,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 		return NULL;
 
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
-		sql_exp *e = exps_bind_column(rel->exps, cname);
+		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
 			return exp_alias_or_copy(sql, e->rname, cname, rel, e, 1);
 	}
@@ -1482,10 +1488,10 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			exp = rel_bind_column(sql, *rel, name, f);
 		if (exp) {
 			if (var || a) 
-				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+				return sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", name);
 		} else if (a) {
 			if (var) 
-				return sql_error(sql, 02, "SELECT: identifier '%s' ambiguous", name);
+				return sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", name);
 			exp = exp_param(a->name, &a->type, 0);
 		}
 		if (!exp && var)
@@ -1969,7 +1975,7 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro,
 		   are correlations with the outer relation */
 		sql_rel *r = rel_subquery(sql, NULL, ro, ek);
 
-		if (!r) {
+		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
@@ -2078,7 +2084,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		   	are correlations with the outer relation */
 			sql_rel *r = rel_subquery(sql, NULL, ro, ek);
 	
-			if (!r) { /* correlation, ie return new relation */
+			if (!r && sql->session->status != -ERR_AMBIGUOUS) { /* correlation, ie return new relation */
 				sql_exp *e;
 
 				/* reset error */
@@ -2491,7 +2497,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		int correlated = 0, vals_only = 1;
 		int l_is_value = 1;
 
-		if (!l) {
+		if (!l && sql->session->status != -ERR_AMBIGUOUS) {
 		 	l_is_value = 0;
 			/* reset error */
 			left = rel;
@@ -2531,7 +2537,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_rel *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (!r) {
+				if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = 0;
@@ -2652,7 +2658,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek);
-		if (!r && rel) { /* correlation */
+		if (!r && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
 			sql_exp *le, *re;
 			/* reset error */
 			sql->session->status = 0;
@@ -3810,7 +3816,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
 				return NULL;
-			if (!e && col->token == SQL_COLUMN) {
+			if (!e && sql->session->status != -ERR_AMBIGUOUS && col->token == SQL_COLUMN) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -3821,7 +3827,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 					e = NULL;
 				}
 			}
-			if (!e) {
+			if (!e && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -3979,7 +3985,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			*is_last=1;
 			return e;
 		}
-		if (!r) {
+		if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 			if (!*rel)
 				return NULL;
 
@@ -4163,7 +4169,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op)
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
 		char *nm = le->name;
-		sql_exp *re = exps_bind_column(r_exps, nm);
+		sql_exp *re = exps_bind_column(r_exps, nm, NULL);
 
 		if (re) {
 			found = 1;

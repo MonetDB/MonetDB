@@ -68,7 +68,7 @@ Over..
 [ 3,	-1	]
 [ 4,	-1	]
 % . # table_name
-% isnull_not_isnull_NULL # name
+% isnull_single_value # name
 % char # type
 % 0 # length
 [ "x"	]

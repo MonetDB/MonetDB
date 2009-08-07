@@ -1,0 +1,13 @@
+start transaction;
+create table pce (i int, s string);
+commit;
+start transaction;
+prepare insert into pce (i,s) values (?,?); 
+exec 0(1,'test 1');
+select * from pce;
+commit;
+start transaction;
+exec 0(2,'test 2');
+select * from pce;
+commit;
+drop table pce;

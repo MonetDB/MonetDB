@@ -79,3 +79,5 @@ set_and_arg_null.SF-2812729
 pow_operator.SF-2812721
 count_distinct_bug.SF-2826015
 assert_in_update.SF-2807336
+prepare_commit_execute.SF-2606020
+ambiguous_order_by.SF-2827916

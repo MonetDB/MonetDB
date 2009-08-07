@@ -4233,11 +4233,8 @@ sql_trans_begin(sql_session *s)
 	int snr = tr->schema_number;
 
 	if (tr->stime < gtrans->stime || tr->wtime || 
-			store_schema_number() != snr) {
-		if (tr->wtime)
-			snr = 0;
+			store_schema_number() != snr) 
 		reset_trans(tr, gtrans);
-	}
 	tr = trans_init(tr, tr->stk, tr->parent);
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);

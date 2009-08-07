@@ -67,7 +67,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 		sql_table *t = rel->l;
 
 		if (rel->exps) {
-			sql_exp *rename = exps_bind_column(rel->exps, name);
+			sql_exp *rename = exps_bind_column(rel->exps, name, NULL);
 			if (!rename ||
 			     rename->type != e_column ||
 			    (rename->l && strcmp(t->base.name, rename->l) != 0))
@@ -83,7 +83,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	}
 	case op_table:
 		if (rel->exps)
-			alias = exps_bind_column(rel->exps, name);
+			alias = exps_bind_column(rel->exps, name, NULL);
 		/* table func */
 		return NULL;
 	case op_join: 
@@ -107,7 +107,7 @@ name_find_column( sql_rel *rel, char *rname, char *name )
 	case op_groupby: 
 		if (!rel->exps)
 			break;
-		alias = exps_bind_column(rel->exps, name);
+		alias = exps_bind_column(rel->exps, name, NULL);
 		break;
 	case op_insert:
 	case op_update:
@@ -883,7 +883,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column2(f->exps, e->l, e->r);
 			/* if relation name matches expressions relation name, find column based on column name alone */
 		} else {
-			ne = exps_bind_column(f->exps, e->r);
+			ne = exps_bind_column(f->exps, e->r, NULL);
 		}
 		if (!ne)
 			return exp_dup(e);
@@ -993,7 +993,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			/* if relation name matches expressions relation name, find column based on column name alone */
 		}
 		if (!ne && !e->l)
-			ne = exps_bind_column(f->exps, e->r);
+			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne)
 			return NULL;
 		e = NULL;
@@ -2010,7 +2010,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				if (exp_is_atom(e))
 					continue;
 				if ((e->l && exps_bind_column2(r_exps, e->l, e->r) != NULL) || 
-				   (exps_bind_column(r_exps, e->r) != NULL && (!e->l || !e->r)))
+				   (exps_bind_column(r_exps, e->r, NULL) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 			for(n = r_exps->h; n; n = n->next) {
@@ -2019,7 +2019,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				if (exp_is_atom(e))
 					continue;
 				if ((e->l && exps_bind_column2(l_exps, e->l, e->r) != NULL) || 
-				   (exps_bind_column(l_exps, e->r) != NULL && (!e->l || !e->r)))
+				   (exps_bind_column(l_exps, e->r, NULL) != NULL && (!e->l || !e->r)))
 					return rel;
 			}
 			list_destroy(l_exps);
@@ -2749,7 +2749,7 @@ is_identity( sql_exp *e, sql_rel *r)
 			if (e->l)
 				re = exps_bind_column2(r->exps, e->l, e->r);
 			if (!re && ((char*)e->r)[0] == 'L')
-				re = exps_bind_column(r->exps, e->r);
+				re = exps_bind_column(r->exps, e->r, NULL);
 			if (re)
 				return is_identity(re, r->l);
 		}
