@@ -2088,6 +2088,7 @@ typedef struct{
 	int next;
 	int limit;
 	int status;/* START/BUSY/DONE */
+	lng time;
 	MT_Id tid;
 	MT_Sema sema;	/* threads wait for work , negative next implies exit*/
 	MT_Sema reply;	/* let reader continue */
@@ -2182,7 +2183,8 @@ static void
 SQLworker(void *arg)
 {
 	READERtask *task = (READERtask *) arg;
-	unsigned int i;
+	unsigned int i, cnt=0;
+	lng t0;
 	while( task->next >= 0){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker started\n");
@@ -2191,11 +2193,21 @@ SQLworker(void *arg)
 		if ( task->next < 0 )
 			break;
 		task->status = WORKER_BUSY;
+		t0 = GDKusec();
 		for ( i= 0; i < task->as->nr_attrs; i++)
 		if ( task->cols[i])
 			SQLworker_column(task,task->cols[i]-1);
 		task->status = WORKER_DONE;
+		t0 = GDKusec() -t0;
+		task->time += t0;
+		cnt += task->next;
 		MT_up_sema(task->reply,"SQLworker");
+		if ( cnt % 100000)
+		for ( i= 0; i < task->as->nr_attrs; i++)
+		if ( task->cols[i] && task->as->format[task->cols[i]-1].c->T->heap.storage == STORE_MMAP) {
+			BATsave(task->as->format[task->cols[i]-1].c);
+			task->as->format[task->cols[i]-1].c->batDirty = TRUE;
+		}
 	}
 	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
@@ -2269,7 +2281,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
-
+	lng t0, total=0;
 
 	assert(rsep);
 	assert(csep);
@@ -2307,6 +2319,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 
 	while (b->pos <= b->len && !b->eof && res == 0 ) {
 
+		t0 = GDKusec();
 		leftover = b->len - b->pos;
 		/* shift left-over from previous block to front */
 		if (leftover > 0)
@@ -2374,6 +2387,8 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 			if ( skip < 0)
 				task->next++;
 		}
+		t0 = GDKusec() - t0;
+		total += t0;
 		b->pos = (s - b->buf);
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"fill the BATs %d  "LLFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c));
@@ -2396,12 +2411,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		if ( cnt == maxrow ) 
 			break;
 
-#ifdef _DEBUG_TABLET_
-		if ((cnt % 100000) == 0)
-			stream_printf(GDKout, "#inserted " BUNFMT "\n", cnt);
-#endif
-		if ( cnt && (cnt % 100000) == 0)
-			sync_bats(as);
 	}
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
@@ -2411,10 +2420,14 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		ptask[j].next = -1;
 		MT_up_sema(ptask[j].sema,"SQLworker");
 	}
-		sync_bats(as);
-		/* wait for their dead */
+	/* wait for their dead */
+	for ( j=0; j< threads; j++)
+		MT_down_sema(ptask[j].reply,"sqlreader");
+	if (GRPalgorithms) {
+		stream_printf(GDKout,"# COPY reader time " LLFMT "\n",total);
 		for ( j=0; j< threads; j++)
-			MT_down_sema(ptask[j].reply,"sqlreader");
+			stream_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].time);
+	}
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Found "LLFMT" tuples\n",cnt);
 #endif
