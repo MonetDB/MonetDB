@@ -860,9 +860,9 @@ Get the new information for the server socket and start listening.
 		if (usock >= 0)
 			FD_SET(usock, &fds);
 #endif
-		/* Wait up to 0.5 seconds. */
-		tv.tv_sec = 0;
-		tv.tv_usec = 500;
+		/* Wait up to 2 seconds. */
+		tv.tv_sec = 2;
+		tv.tv_usec = 0;
 
 		/* temporarily use msgsock to record the larger of sock and usock */
 		msgsock = sock;

@@ -2141,6 +2141,7 @@ connect_to_server(Mapi mid)
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
 		serv = (struct sockaddr *) &userver;
 		servsize = sizeof(userver);
+		s = socket(userver.sun_family, SOCK_STREAM, IPPROTO_TCP);
 	} else
 #endif
 	{
@@ -2156,9 +2157,9 @@ connect_to_server(Mapi mid)
 		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
+		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
 	}
 
-	s = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
 	if (s == INVALID_SOCKET) {
 		return mapi_setError(mid, "Open socket failed", "mapi_reconnect", MERROR);
 	}
