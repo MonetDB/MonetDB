@@ -2140,7 +2140,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		mal_set_lock(mal_contextLock,"tablet insert value");
 		if ( *err == NULL){
 			snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c), c, fmt->type);
+				" field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c)+1, c, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		mal_unset_lock(mal_contextLock,"tablet insert value");
@@ -2155,7 +2155,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	}
 	return 0;
 bunins_failed:
-	snprintf(buf,BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c), c);
+	snprintf(buf,BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c)+1, c);
 	*err= GDKstrdup(buf);
 	return -1;
 }
