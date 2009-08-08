@@ -1465,6 +1465,9 @@ GDKvmtrim(void *limit)
 	do {
 		stream *fp = NULL;
 		MT_sleep_ms(highload ? 500 : 5000);
+		/* check for runtime overruling */
+		if ( GDK_vm_trim == 0)
+			continue;
 		MEMDEBUG {
 			fp = GDKout;
 			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT ", GDK_mmap_minsize=" SZFMT ")\n", 
