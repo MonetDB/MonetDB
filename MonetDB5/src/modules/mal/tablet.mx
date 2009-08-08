@@ -2328,7 +2328,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 {
 	char *s, *e, *end;
 	lng cnt = 0;
-	int res = 0,j;
+	int j;
 	int leftover;
 	unsigned int i;
 	int rseplen, cseplen;
@@ -2379,7 +2379,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 
 	(void) cseplen;
 
-	while (b->pos <= b->len && !b->eof && res == 0 ) {
+	while (b->pos < b->len || !b->eof) {
 
 		t0 = GDKusec();
 		leftover = b->len - b->pos;
@@ -2395,15 +2395,15 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 #endif
 		/* fill the buffer as far as possible */
 		if (read_more(b, out, b->size - leftover ) == EOF) {
-			if (!b->eof && b->len > b->pos) {
+			if (leftover > 0) 
 				GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
-					res = -1;
-					continue;
-				}
+			break;	/* all done */
 		}
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=%d len=%d eof=%d \n", b->pos, b->len,b->eof);
 #endif
+		if ( b->len == 0 || b->buf[0] == '\n')
+			break;	/* nothing to be done, or empty line */
 
 		/* now we fill the copy buffer with pointers to the record */
 		/* skipping tuples as needed */
@@ -2489,7 +2489,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 			MT_down_sema(ptask[j].reply,"sqlreader");
 		if ( cnt == maxrow ) 
 			break;
-
 	}
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
@@ -2518,7 +2517,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	GDKfree(task->fields);
 	GDKfree(task->time);
 	GDKfree(task);
-	/* restore system setting */
+		/* restore system setting */
 	GDK_vm_trim = vmtrim;
 	return cnt;
 }
