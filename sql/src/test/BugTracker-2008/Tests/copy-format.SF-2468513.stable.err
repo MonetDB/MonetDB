@@ -79,14 +79,14 @@ stderr of test 'copy-format.SF-2468513` in directory 'src/test/BugTracker-2008` 
 # 09:34:56 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34345 
 # 09:34:56 >  
 
-MAPI  = monetdb@eir:35434
+MAPI  = monetdb@eir:38924
 QUERY = COPY 3 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
-ERROR = !SQLException:sql:value '1.01' while parsing '1.01||aaa|bbb' from line 0 field 1 not inserted, expecting type int
+ERROR = !SQLException:sql:value '1.01' while parsing '1.01' from line 1 field 2 not inserted, expecting type int
         !SQLException:importTable:failed to import table
-MAPI  = monetdb@eir:35434
-QUERY = 553|.02||aaa|bbb
+MAPI  = monetdb@eir:38924
+QUERY = select * from my_copytest;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@eir:35434
+MAPI  = monetdb@eir:38924
 QUERY = abort;
 ERROR = !current transaction is aborted (please ROLLBACK)
 
