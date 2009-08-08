@@ -2119,13 +2119,13 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 #endif
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
-	} else if ( *s == quote ) {
+	} else if ( quote && *s == quote ) {
 		e = s++;	/* find the last quote */
 		for ( t = e; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
 		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
-	} else{
+	} else {
 		for( e=s; *e; e++)
 			;
 		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
@@ -2228,7 +2228,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 	for (i = 0; i < as->nr_attrs ; i++) {
 		task->fields[i][task->next] = start = line;
 		/* recognize fields starting with a quote, keep them */
-		if ( *line == task->quote ){
+		if ( task->quote && *line == task->quote ){
 			line = skip_string(line + 1, task->quote);
 			if (!line) {
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
@@ -2268,7 +2268,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 				line++;
 			} while (*line);
 			snprintf(errmsg,BUFSIZ, "missing separator '%s' line " BUNFMT " field " BUNFMT "\n", 
-				fmt->sep, BATcount(fmt->c) + task->next, i);
+				fmt->sep, BATcount(fmt->c) + 1 + task->next, i);
 			as->error = GDKstrdup(errmsg);
 			if (!as->tryall)
 				return -1;
