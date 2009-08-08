@@ -2393,12 +2393,12 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=%d len=%d size=%d leftover=%d\n", b->pos, b->len,b->size,leftover);
 #endif
-		/* fill the buffer as far as possible */
-		if (read_more(b, out, b->size - leftover ) == EOF) {
-			if (leftover > 0) 
-				GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
-			break;	/* all done */
+		if (leftover > 0 && b->eof)  {
+			GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+			break;
 		}
+		/* fill the buffer as far as possible */
+		read_more(b, out, b->size - leftover );
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=%d len=%d eof=%d \n", b->pos, b->len,b->eof);
 #endif
@@ -2430,14 +2430,12 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 				if ( *e == '\\') 
 					e++; 
 				else
-				if ( *e == *rsep){
-					*e = '\0';
-					s = e + 1;
-					e = s;
+				if ( *e == *rsep)
 					break;
-				}
 				if (*e == 0) 
 					e = 0;
+				else
+					*e = '\0';
 			} else
 			do {
 				for ( ; *e ; e++)
