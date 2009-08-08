@@ -2092,6 +2092,7 @@ typedef struct{
 	MT_Sema sema;	/* threads wait for work , negative next implies exit*/
 	MT_Sema reply;	/* let reader continue */
 	Tablet *as;
+	char *errbuf;
 	char *separator;
 	size_t seplen;
 	char quote;
@@ -2185,6 +2186,9 @@ SQLworker(void *arg)
 	READERtask *task = (READERtask *) arg;
 	unsigned int i, cnt=0;
 	lng t0;
+
+	/* where to leave errors */
+	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
 	while( task->next >= 0){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker started\n");
@@ -2193,7 +2197,7 @@ SQLworker(void *arg)
 		if ( task->next < 0 )
 			break;
 
-		for ( i= 0; i < task->as->nr_attrs; i++)
+		for ( i= 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
 		if ( task->cols[i]) {
 			t0 = GDKusec();
 			SQLworker_column(task,task->cols[i]-1);
@@ -2224,6 +2228,8 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 	BUN i;
 	char *start;
 	char errmsg[BUFSIZ];
+
+	as->error = NULL;
 
 	for (i = 0; i < as->nr_attrs ; i++) {
 		task->fields[i][task->next] = start = line;
@@ -2327,7 +2333,7 @@ BUN
 SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
 {
 	char *s, *e, *end;
-	lng cnt = 0;
+	BUN cnt = 0;
 	int j;
 	int leftover;
 	unsigned int i;
@@ -2353,6 +2359,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	task->quote = quote;
 	task->separator = csep;
 	task->seplen = strlen(csep);
+	task ->errbuf =  THRget_errbuf(THRget(THRgettid()));
 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
@@ -2370,6 +2377,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		MT_init_sema(ptask[j].sema,0,"sqlworker");
 		MT_init_sema(ptask[j].reply,0,"sqlworker");
 		MT_create_thread(&ptask[j].tid, SQLworker, (void*) &ptask[j]);
+
 	}
 
 #ifdef _DEBUG_TABLET_
@@ -2393,10 +2401,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=%d len=%d size=%d leftover=%d\n", b->pos, b->len,b->size,leftover);
 #endif
-		if (leftover > 0 && b->eof)  {
-			GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
-			break;
-		}
 		/* fill the buffer as far as possible */
 		read_more(b, out, b->size - leftover );
 #ifdef _DEBUG_TABLET_
@@ -2416,7 +2420,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		   separator.  Records are assumed smaller then b->size. (1M)
 		*/
 		e = s;
-		while (s < end && (cnt < maxrow || maxrow < 0) ) {
+		while (s < end && (cnt < (BUN) maxrow || maxrow < 0) ) {
 			/* alloc space in the task buffer */
 			if ( task->next == task->limit ){
 					for( i=0; i< as->nr_attrs; i++) 
@@ -2434,8 +2438,6 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 					break;
 				if (*e == 0) 
 					e = 0;
-				else
-					*e = '\0';
 			} else
 			do {
 				for ( ; *e ; e++)
@@ -2471,9 +2473,9 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		total += t0;
 		b->pos = (s - b->buf);
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"fill the BATs %d  "LLFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c));
+		stream_printf(GDKout,"fill the BATs %d  "BUNFMT" cap " BUNFMT"\n", task->next, cnt, BATcapacity(as->format[0].c));
 #endif
-		SQLworkdivider(task, ptask, as->nr_attrs, threads);
+		SQLworkdivider(task, ptask, (int) as->nr_attrs, threads);
 		
 		/* activate the workers */
 		for( j= 0; j < threads ; j++) {
@@ -2485,9 +2487,12 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 		/* await for their completion */
 		for ( j=0; j< threads; j++)
 			MT_down_sema(ptask[j].reply,"sqlreader");
-		if ( cnt == maxrow ) 
+		if ( cnt == (BUN) maxrow ) 
 			break;
 	}
+	if (b->len - b->pos > 0 && b->eof)  {
+		GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+		}
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
 		stream_printf(GDKout,"Close the workers\n");
@@ -2508,7 +2513,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 			stream_printf(GDKout,"# COPY thread time " LLFMT "\n",ptask[j].wtime);
 	}
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"Found "LLFMT" tuples\n",cnt);
+		stream_printf(GDKout,"Found " BUNFMT" tuples\n",cnt);
 #endif
 	for( i=0; i< as->nr_attrs; i++) 
 		GDKfree(task->fields[i]);
