@@ -490,6 +490,7 @@ tablet_export int has_whitespace(char *sep);
 
 #include <string.h>
 #include <ctype.h>
+#include <gdk_posix.h>
 
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat
@@ -2182,7 +2183,7 @@ static void
 SQLworker(void *arg)
 {
 	READERtask *task = (READERtask *) arg;
-	unsigned int i, cnt=0, lcnt =0;
+	unsigned int i, cnt=0;
 	lng t0;
 	while( task->next >= 0){
 #ifdef _DEBUG_TABLET_
@@ -2204,12 +2205,6 @@ SQLworker(void *arg)
 
 		MT_up_sema(task->reply,"SQLworker");
 
-		if ( cnt - lcnt > 100000){
-			lcnt = cnt;
-			for ( i= 0; i < task->as->nr_attrs; i++)
-			if ( task->cols[i] && task->as->format[task->cols[i]-1].c->T->heap.storage == STORE_MMAP)
-				BATsave(task->as->format[task->cols[i]-1].c);
-		}
 	}
 	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
@@ -2341,6 +2336,11 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
 	lng t0, total=0;
+	int vmtrim = GDK_vm_trim; 
+	/* trimming process should not be active during this process. */
+	/* on sf10 experiments it should a slowdown of a factor 2 on */
+	/* large tables. Instead rely on madvise */
+	GDK_vm_trim = 0;
 
 	assert(rsep);
 	assert(csep);
@@ -2357,6 +2357,8 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
 		task->cols[i] = i+1;	/* to distinguish non initialized later with zero */
+		/* advice memory manager on expected use of results */
+		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
 	}
 	task->next = 10000;
 #ifdef _DEBUG_TABLET_
@@ -2516,6 +2518,8 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	GDKfree(task->fields);
 	GDKfree(task->time);
 	GDKfree(task);
+	/* restore system setting */
+	GDK_vm_trim = vmtrim;
 	return cnt;
 }
 
