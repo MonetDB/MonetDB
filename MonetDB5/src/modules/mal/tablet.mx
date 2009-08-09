@@ -470,7 +470,7 @@ tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, 
 tablet_export int TABLETcreate_bats(Tablet * as, BUN est);
 tablet_export BUN TABLETassign_BATs(Tablet * as, BAT *bats);
 tablet_export BUN TABLETload_file(Tablet * as, bstream *b, stream *out);
-tablet_export BUN SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
+tablet_export BUN SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
 tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
@@ -2330,7 +2330,7 @@ static void SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, in
 }
 
 BUN
-SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
+SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow)
 {
 	char *s, *e, *end;
 	BUN cnt = 0;
@@ -2359,7 +2359,7 @@ SQLload_file(Tablet * as, bstream *b, stream *out, char *csep, char *rsep, char 
 	task->quote = quote;
 	task->separator = csep;
 	task->seplen = strlen(csep);
-	task ->errbuf =  THRget_errbuf(THRget(THRgettid()));
+	task ->errbuf =  cntxt->errbuf;
 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
