@@ -25,12 +25,10 @@ Over..
 # 08:13:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koala --port=38956 
 # 08:13:34 >  
 
-[ 1	]
 % sys.bulk,	sys.bulk # table_name
 % num,	name # name
 % smallint,	varchar # type
-% 4,	6 # length
-[ 5536,	"'5536'"	]
+% 1,	0 # length
 
 # 08:13:34 >  
 # 08:13:34 >  Done.
