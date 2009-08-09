@@ -2121,8 +2121,8 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		adt = fmt->nildata;
 		fmt->c->T->nonil = 0;
 	} else if ( quote && *s == quote ) {
-		e = s++;	/* find the last quote */
-		for ( t = e; *t ; t++)
+		s++;	/* find the last quote */
+		for ( t = e = s; *t ; t++)
 			if ( *t == quote) e = t;
 		*e = 0;
 		adt = fmt->frstr(fmt, fmt->adt, s, e, 0);
@@ -2221,8 +2221,26 @@ the record in the cache already, so we can do most work quickly.
 Furthermore, it assume a uniform (SQL) pattern, without whitespace skipping, but with quote and separator.
 @c
 
+static str
+SQLload_error(READERtask *task, Tablet *as, int idx, str csep, str rsep){
+	str line;
+	size_t sz =0, rseplen=strlen(rsep), cseplen = strlen(csep);
+	unsigned int i;
+	for ( i = 0; i < as->nr_attrs; i++)
+		sz += strlen(task->fields[i][idx]) + cseplen;
+
+	line = (str) GDKzalloc(sz + rseplen + 1);
+	for ( i = 0; i < as->nr_attrs; i++){
+		strcat(line,task->fields[i][idx]);
+		if ( i < as->nr_attrs -1)
+			strcat(line,csep);
+	}
+	strcat(line,rsep);
+	return line;
+}
+
 static int
-SQLload_file_line(READERtask *task, Tablet * as, char *line)
+SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 {
 	Column *fmt = as->format;
 	BUN i;
@@ -2237,9 +2255,11 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line)
 		if ( task->quote && *line == task->quote ){
 			line = skip_string(line + 1, task->quote);
 			if (!line) {
+				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in %s at line " BUNFMT "\n", task->quote, line, BATcount(as->format->c) + task->next);
+					"in %s at line " BUNFMT "field "BUNFMT"\n", task->quote, line, BATcount(as->format->c) + task->next +1, i);
 				as->error = GDKstrdup(errmsg);
+				GDKfree(errline);
 				if (!as->tryall)
 					return -1;
 				BUNins(as->complaints, NULL, as->error, TRUE);
@@ -2456,7 +2476,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					task->fields[0][task->next] = s;
 					cnt++;
 					*e = '\0';
-					if ( SQLload_file_line(task, as, s) < 0)
+					if ( SQLload_file_line(task, as, s, csep,rsep) < 0)
 						break;
 #ifdef _DEBUG_TABLET_
 				/*	stream_printf(GDKout,"line:%s\n",s);*/
