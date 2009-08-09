@@ -1367,6 +1367,7 @@ TABLETcollect_bats(Tablet * as)
 		if (cnt != BATcount(fmt[i].c)) {
 			if ( as->error == 0) /* a new error */
 				GDKerror("Error: the counts of column %d differes from first\n",i);
+			BBPunfix(bats->batCacheid);
 			return NULL;
 		}
 	}
@@ -2112,6 +2113,7 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	ptr *adt;
 	char buf[BUFSIZ];
 	char *e, *t;
+	int ret = 0;
 
 	/* include testing on the terminating null byte !! */
 	if (fmt->nullstr && strncasecmp(s, fmt->nullstr, fmt->null_length+1) == 0){
@@ -2138,13 +2140,16 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 		/* watch out for concurrent threads */
 		mal_set_lock(mal_contextLock,"tablet insert value");
 		if ( *err == NULL){
-			snprintf(buf,BUFSIZ, "value '%s' while parsing '%s' from line " BUNFMT 
-				" field %d not inserted, expecting type %s\n", val, s, BATcount(fmt->c)+1, c+1, fmt->type);
+			snprintf(buf,BUFSIZ, "value '%s' from line " BUNFMT 
+				" field %d not inserted, expecting type %s\n", val, BATcount(fmt->c)+1, c+1, fmt->type);
 			*err= GDKstrdup(buf);
 		}
 		mal_unset_lock(mal_contextLock,"tablet insert value");
 		GDKfree(val);
-		return -1;
+		/* replace itwith a nil */
+		adt = fmt->nildata;
+		fmt->c->T->nonil = 0;
+		ret = -1;
 	}
 	/* key maybe NULL but thats not a problem, as long as we have void */
 	if (fmt->raw){
@@ -2152,9 +2157,9 @@ SQLinsert_val(Column * fmt, char *s, char quote, ptr key, str *err, int c)
 	} else {
 		bunfastins(fmt->c, key, adt);
 	}
-	return 0;
+	return ret;
 bunins_failed:
-	snprintf(buf,BUFSIZ, "while parsing '%s' from line " BUNFMT " field %d not inserted\n", s, BATcount(fmt->c)+1, c+1);
+	snprintf(buf,BUFSIZ, "parsing error from line " BUNFMT " field %d not inserted\n", BATcount(fmt->c)+1, c+1);
 	*err= GDKstrdup(buf);
 	return -1;
 }
@@ -2164,19 +2169,23 @@ SQLworker_column(READERtask *task, int col)
 {
 	int i;
 	Column *fmt = task->as->format;
+	str err = 0;
 
 	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next )
 		BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next);
 
-	if ( task->as->error == NULL)
 	for ( i = 0; i< task->next ; i++){
 		SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &task->as->error, col);
-		if ( task->as->error) {
+		if ( task->as->error != NULL && err == 0) {
 			if (!task->as->tryall)
 				return -1;
+			err= task->as->error;
+			task->as->error= NULL;
 			BUNins(task->as->complaints, NULL, task->as->error, TRUE);
 		}
 	}
+	if ( err )
+		task->as->error = err; /* restore for upper layers */
 	return 0;
 }
 
@@ -2227,11 +2236,14 @@ SQLload_error(READERtask *task, Tablet *as, int idx, str csep, str rsep){
 	size_t sz =0, rseplen=strlen(rsep), cseplen = strlen(csep);
 	unsigned int i;
 	for ( i = 0; i < as->nr_attrs; i++)
+	if (task->fields[i][idx])
 		sz += strlen(task->fields[i][idx]) + cseplen;
+	else sz += cseplen;
 
 	line = (str) GDKzalloc(sz + rseplen + 1);
 	for ( i = 0; i < as->nr_attrs; i++){
-		strcat(line,task->fields[i][idx]);
+		if (task->fields[i][idx])
+			strcat(line,task->fields[i][idx]);
 		if ( i < as->nr_attrs -1)
 			strcat(line,csep);
 	}
@@ -2257,7 +2269,7 @@ SQLload_file_line(READERtask *task, Tablet * as, char *line, str csep, str rsep)
 			if (!line) {
 				str errline = SQLload_error(task,as,task->next,csep,rsep);
 				snprintf(errmsg,BUFSIZ, "End of string (%c) missing "
-					"in %s at line " BUNFMT "field "BUNFMT"\n", task->quote, line, BATcount(as->format->c) + task->next +1, i);
+					"in \"%s\" at line " BUNFMT " field "BUNFMT"\n", task->quote, errline, BATcount(as->format->c) + task->next +1, i);
 				as->error = GDKstrdup(errmsg);
 				GDKfree(errline);
 				if (!as->tryall)
