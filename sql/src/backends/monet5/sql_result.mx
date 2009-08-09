@@ -495,7 +495,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, *ssep, offset, sz) != BUN_NONE)
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, *ssep, offset, sz) != BUN_NONE && !as.error)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)

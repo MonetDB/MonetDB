@@ -21,12 +21,16 @@ Ready.
 
 Over..
 
-# 09:34:56 >  
-# 09:34:56 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34345 
-# 09:34:56 >  
+# 21:14:18 >  
+# 21:14:18 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31439 
+# 21:14:18 >  
 
+% sys.my_copytest,	sys.my_copytest,	sys.my_copytest,	sys.my_copytest,	sys.my_copytest # table_name
+% col1,	col2,	col3,	col4,	col5 # name
+% int,	int,	int,	varchar,	varchar # type
+% 1,	1,	1,	0,	0 # length
 
-# 09:34:56 >  
-# 09:34:56 >  Done.
-# 09:34:56 >  
+# 21:14:18 >  
+# 21:14:18 >  Done.
+# 21:14:18 >  
 

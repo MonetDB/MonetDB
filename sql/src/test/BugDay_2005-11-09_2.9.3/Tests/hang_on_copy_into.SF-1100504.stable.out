@@ -21,13 +21,12 @@ Ready.
 
 Over..
 
-# 13:23:25 >  
-# 13:23:25 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37794 
-# 13:23:25 >  
+# 21:12:48 >  
+# 21:12:48 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35234 
+# 21:12:48 >  
 
-[ 0	]
 
-# 13:23:25 >  
-# 13:23:25 >  Done.
-# 13:23:25 >  
+# 21:12:48 >  
+# 21:12:48 >  Done.
+# 21:12:48 >  
 

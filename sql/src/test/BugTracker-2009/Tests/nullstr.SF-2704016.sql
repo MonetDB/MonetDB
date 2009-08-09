@@ -4,6 +4,6 @@ create table testnull (
 	v varchar(1024)
 );
 copy 1 records into testnull from stdin using delimiters ',','\n','''';
-1, 'test', 'Nullen RA'
+1,'test','Nullen RA'
 select * from testnull;
 drop table testnull;

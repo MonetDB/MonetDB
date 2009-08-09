@@ -22,8 +22,8 @@
   copy 2 records into studenten 
        from stdin
        using delimiters ',','\n','"';
-1, "k.zheng@ewi.tudelft.nl", "Kang Zheng", "1190857"
-2, "yaleyoung109@hotmail.com", "Yang Yang", "1194887"
+1,"k.zheng@ewi.tudelft.nl","Kang Zheng","1190857"
+2,"yaleyoung109@hotmail.com","Yang Yang","1194887"
   copy 1 records into classes
        from stdin
        using delimiters ',','\n','''';
