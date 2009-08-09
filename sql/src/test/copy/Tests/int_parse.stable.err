@@ -79,13 +79,9 @@ stderr of test 'int_parse` in directory 'src/test/copy` itself:
 # 19:40:24 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37659 
 # 19:40:24 >  
 
-MAPI  = monetdb@eir:37659
+MAPI  = monetdb@eir:34075
 QUERY = copy 4 records into t_int from stdin delimiters ',','\n' NULL as '';
-ERROR = !SQLException:sql:value 'null' while parsing 'null' from line 2 field 0 not inserted, expecting type int
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@eir:37659
-QUERY = abc
-ERROR = !syntax error, unexpected IDENT in: "abc"
+ERROR = !SQLException:sql:value 'abc' from line 4 field 1 not inserted, expecting type int
 
 # 19:40:25 >  
 # 19:40:25 >  Done.

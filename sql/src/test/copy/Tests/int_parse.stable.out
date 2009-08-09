@@ -21,12 +21,21 @@ Ready.
 
 Over..
 
-# 19:40:24 >  
-# 19:40:24 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37659 
-# 19:40:24 >  
+# 13:54:35 >  
+# 13:54:35 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34075 
+# 13:54:35 >  
 
+[ 4	]
+% sys.t_int # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 
-# 19:40:25 >  
-# 19:40:25 >  Done.
-# 19:40:25 >  
+# 13:54:35 >  
+# 13:54:35 >  Done.
+# 13:54:35 >  
 
