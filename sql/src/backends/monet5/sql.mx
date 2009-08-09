@@ -2391,7 +2391,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng *sz = (lng *) getArgReference(stk, pci, 8);
 	lng *offset = (lng *) getArgReference(stk, pci, 9);
 
-	(void) cntxt;
 	if (msg)
 		return msg;
 	len = strlen((char*)(*T));
@@ -2402,7 +2401,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKstrFromStr(ssep=GDKmalloc(len+1), *S, len); len = 0;
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
-	b = mvc_import_table(m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
+	b = mvc_import_table(cntxt, m, *s, *sname, *tname, (char*)tsep, (char*)rsep, (char*)ssep, (char*)ns, *sz, *offset);
 	GDKfree(tsep);
 	GDKfree(rsep);
 	GDKfree(ssep);

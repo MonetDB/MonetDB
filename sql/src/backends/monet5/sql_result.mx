@@ -27,6 +27,7 @@
 #include <sql_mvc.h>
 #include <sql_catalog.h>
 #include <sql_qc.h>
+#include "mal_client.h"
 
 extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
 extern int mvc_export_operation(mvc *m, stream *s, str w);
@@ -36,7 +37,7 @@ extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
 
-extern BAT *mvc_import_table(mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset);
+extern BAT *mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
@@ -420,7 +421,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 
 
 BAT *
-mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset)
+mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset)
 {
 	int i = 0;
 	sql_schema *s = mvc_bind_schema(m, sname);
@@ -494,7 +495,7 @@ mvc_import_table(mvc *m, bstream *bs, char *sname, char *tname, char *sep, char 
 			fmt[i].size = ATOMsize(fmt[i].adt);
 		}
 		if (TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz)) >= 0) {
-			if (SQLload_file(&as, bs, out, sep, rsep, *ssep, offset, sz) != BUN_NONE)
+			if (SQLload_file(cntxt, &as, bs, out, sep, rsep, *ssep, offset, sz) != BUN_NONE)
 				bats = TABLETcollect_bats(&as);
 		}
 		if (as.error)

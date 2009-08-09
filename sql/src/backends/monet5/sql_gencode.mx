@@ -2025,7 +2025,7 @@ backend_create_func(backend *be, sql_func *f)
 	Client c = be->client;
 	Symbol backup = NULL;
 	stmt *s;
-	int i;
+	int i, retseen =0;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
 	if (!f->sql || f->sql > 1)
@@ -2088,12 +2088,16 @@ backend_create_func(backend *be, sql_func *f)
 	backend_dumpstmt(be, curBlk, s);
 	/* selectively make functions available for inlineing */
 	/* for the time being we only inline scalar functions */
+	/* and only if we see a single return value */
 	for( i= 1; i<curBlk->stop; i++){
 		InstrPtr p = getInstrPtr(curBlk,i);
 		if ( getFunctionId(p)== bindRef || getFunctionId(p)== bindidxRef)
 			break;
+		if ( p->token == RETURNsymbol || p->token == YIELDsymbol ||
+					 p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
+            retseen++;
 	}
-	if (i == curBlk->stop)
+	if (i == curBlk->stop && retseen == 1)
 		varSetProp(curBlk, getArg(curInstr, 0), inlineProp, op_eq, NULL);
 	stmt_destroy(s);
 	addQueryToCache(c);
