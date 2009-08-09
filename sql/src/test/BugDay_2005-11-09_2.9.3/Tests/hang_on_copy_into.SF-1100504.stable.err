@@ -79,15 +79,15 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 19:27:24 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=31581 
 # 19:27:24 >  
 
-MAPI  = monetdb@eir:39012
+MAPI  = monetdb@eir:37794
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
-ERROR = !SQLException:sql:missing separator '	' line 1 field 0
-        !SQLException:importTable:failed to import table
-MAPI  = monetdb@eir:39012
+ERROR = !SQLException:sql:End of string (') missing in "1	'dwerg.net word volwassen, er is eindelijk content		
+        !" at line 1 field 1
+MAPI  = monetdb@eir:37794
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t', '\n', '''';
-ERROR = !SQLException:sql:missing separator '	' line 1 field 0
-        !SQLException:importTable:failed to import table
-        !syntax error, unexpected IDENT in: "en"
+ERROR = !SQLException:sql:End of string (') missing in "1	'dwerg.net word volwassen, er is eindelijk content		
+        !" at line 1 field 1
+        !syntax error, unexpected sqlINT in: "1"
 
 # 19:27:24 >  
 # 19:27:24 >  Done.

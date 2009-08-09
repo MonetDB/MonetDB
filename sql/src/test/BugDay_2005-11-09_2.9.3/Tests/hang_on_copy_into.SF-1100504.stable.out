@@ -21,12 +21,13 @@ Ready.
 
 Over..
 
-# 12:45:48 >  
-# 12:45:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < hang_on_copy_into.SF-1100504.sql
-# 12:45:48 >  
+# 13:23:25 >  
+# 13:23:25 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37794 
+# 13:23:25 >  
 
+[ 0	]
 
-# 12:45:48 >  
-# 12:45:48 >  Done.
-# 12:45:48 >  
+# 13:23:25 >  
+# 13:23:25 >  Done.
+# 13:23:25 >  
 
