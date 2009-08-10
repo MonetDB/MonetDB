@@ -293,7 +293,7 @@ bat_max_@1length(BAT *b)
 	}
 	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) {
 		if (!*s || *s < '0' || *s > '9') {
-			showException(SQL,"sql", "decimal wrong format (%s) digit expected", p);
+			createException(SQL,"sql", "decimal wrong format (%s) digit expected", p);
 			return NULL;
 		}
 		res *= 10;
@@ -306,13 +306,13 @@ bat_max_@1length(BAT *b)
 	}
 	if (*s) {
 		if (*s != '.') {
-			showException(SQL,"sql", "decimal wrong format (%s) '.' expected", p);
+			createException(SQL,"sql", "decimal wrong format (%s) '.' expected", p);
 			return NULL;
 		}
 		s++;
 		for( i = 0; *s && i < t->scale; i++, s++) {
 			if (*s < '0' || *s > '9') {
-				showException(SQL,"sql", "decimal wrong format (%s)", p);
+				createException(SQL,"sql", "decimal wrong format (%s)", p);
 				return NULL;
 			}
 			res *= 10;
@@ -323,7 +323,7 @@ bat_max_@1length(BAT *b)
 		}
 	}
 	if (*s) {
-		showException(SQL,"sql", "decimal wrong format (%s) too many characters", p);
+		createException(SQL,"sql", "decimal wrong format (%s) too many characters", p);
 		return NULL;
 	}
 	r = c->data;
@@ -344,7 +344,7 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	(void)e;
 	(void)quote;
 	if (s == e) {
-		GDKerror("Decimal cannot be parsed from %s\n", ATOMname(type));
+		createException(SQL, "sql", "Decimal cannot be parsed from %s\n", ATOMname(type));
 		return NULL;
 	} else if (type == TYPE_bte) {
 		@:dec_frstr(bte)@
@@ -355,7 +355,7 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	} else if (type == TYPE_lng) {
 		@:dec_frstr(lng)@
 	} else {
-		GDKerror("Decimal cannot be parsed from %s\n", ATOMname(type));
+		createException(SQL, "sql", "Decimal cannot be parsed from %s\n", ATOMname(type));
 	}
 	return NULL;
 }
