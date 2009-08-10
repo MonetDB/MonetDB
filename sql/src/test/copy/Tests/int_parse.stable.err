@@ -79,9 +79,10 @@ stderr of test 'int_parse` in directory 'src/test/copy` itself:
 # 19:40:24 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=37659 
 # 19:40:24 >  
 
-MAPI  = monetdb@eir:34075
+MAPI  = monetdb@alf:34976
 QUERY = copy 4 records into t_int from stdin delimiters ',','\n' NULL as '';
 ERROR = !SQLException:sql:value 'abc' from line 4 field 1 not inserted, expecting type int
+        !SQLException:importTable:failed to import table
 
 # 19:40:25 >  
 # 19:40:25 >  Done.
