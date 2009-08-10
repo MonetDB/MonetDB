@@ -329,11 +329,7 @@
 	 * @return string the escaped string
 	 */
 	function monetdb_escape_string($str) {
-		// NB: temporary solution; I'm studying better ways to deal with possible sql injections issues.
-		if (!get_magic_quotes_gpc()) {
-			return addslashes($str);
-		}
-		return $str;
+		return mapi_quote($str, strlen($str));
 	}
 	
 	/**
@@ -351,7 +347,7 @@
 		mapi_free_result($conn_id, $res_id);
 		
 		
-		if (isset($hdl)) {
+		if (isset($hdl) && is_array($hdl)) {
 			foreach($hdl as $field) {
 				if (isset($field)) {
 					unset($field);

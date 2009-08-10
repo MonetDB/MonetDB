@@ -44,6 +44,8 @@
 
 	define('TIMEZONE', 'Europe/Amsterdam'); // Arbitrarly defined timezone.
 
+	define('PLACEHOLDER', '?'); // Used for string escaping.
+
 //	if (date_default_timezone_get() == "") {
 	if (ini_get('date.timezone') == "") {
 		/*
@@ -664,6 +666,58 @@
 			
 		}
 		return $buf;
+	}
+	
+	function mapi_quote($string, $size) {
+		$quoted_string = ""; # upper bound: $size * 2 + 1
+		
+		$index = 0; // current position in the original string
+		$t = 0; // current position in the quoted string
+
+		/* Parse the original string character by character and copy it in a new buffer escaping characters */
+        while ($size < 0 ? $quoted_string[$t] : $size > 0) {
+                if ($size > 0)
+                        $size--;
+                switch ($string[$index]) {
+                	case '\n':
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = 'n';
+                        break;
+                	case '\t':
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = 't';
+                        break;
+                	case PLACEHOLDER:
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = PLACEHOLDER;
+                        break;
+                	case '\\':
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = '\\';
+                        break;
+                	case '\'':
+                        $quoted_string[$t++] = '\'';
+                       break;
+                	case '\"':
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = '"';
+                        break;
+                	case '\0':
+                        $quoted_string[$t++] = '\\';
+                        $quoted_string[$t++] = '0';
+                        break;
+                default:
+                        $quoted_string[$t++] = $string[$index];
+                        break;
+                }
+                $index++;
+                /* also deal with binaries */
+        }
+  
+		if (is_array($quoted_string)) {
+			$quoted_string = implode($quoted_string);
+		}
+        return $quoted_string;
 	}
 
 ?>
