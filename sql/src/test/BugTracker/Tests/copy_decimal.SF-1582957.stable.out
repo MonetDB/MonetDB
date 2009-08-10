@@ -15,7 +15,6 @@ stdout of test 'copy_decimal.SF-1582957` in directory 'src/test/BugTracker` itse
 # MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-!SQLException:sql:decimal wrong format (17.000) too many characters
 #function user.main():void;
 #    clients.quit();
 #end main;
