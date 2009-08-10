@@ -1949,13 +1949,10 @@ str catchKernelException(Client cntxt, str ret){
 			strcpy(z,ret);
 			if (z[strlen(z)-1] != '\n') strcat(z,"\n");
 			strcat(z,cntxt->errbuf);
-			GDKfree(ret);
-			ret= z;
 		} else {
 			/* trap hidden (GDK) exception */
 			z= (char*) GDKmalloc( strlen("GDKerror:")+strlen(cntxt->errbuf)+2);
-			sprintf(z,"GDKerror:%s\n",ret);
-			ret= GDKstrdup(cntxt->errbuf);
+			sprintf(z,"GDKerror:%s\n",cntxt->errbuf);
 		}
 		cntxt->errbuf[0] = '\0';
 	} else z = ret;
