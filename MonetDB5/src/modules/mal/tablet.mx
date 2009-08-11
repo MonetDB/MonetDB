@@ -2178,7 +2178,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	int j;
 	size_t leftover;
 	unsigned int i;
-	size_t rseplen, cseplen;
+	size_t rseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
@@ -2192,7 +2192,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	assert(rsep);
 	assert(csep);
 	rseplen = strlen(rsep);
-	cseplen = strlen(csep);
 	task->fields =  (char***) GDKzalloc(as->nr_attrs * sizeof(char*));
 	task->cols =  (int*) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time =  (lng*) GDKzalloc(as->nr_attrs * sizeof(lng));
@@ -2225,8 +2224,6 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	stream_printf(GDKout,"parallel bulk load "LLFMT " - " LLFMT"\n",skip, maxrow);
 	stream_printf(GDKout,"csep '%s' rsep '%s'\n",csep,rsep);
 #endif
-
-	(void) cseplen;
 
 	while (b->pos < b->len || !b->eof) {
 
