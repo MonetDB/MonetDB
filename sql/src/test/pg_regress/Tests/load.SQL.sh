@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-Mlog -x "$SQL_CLIENT < $RELSRCDIR/../monetdb/create_table.sql"
+Mlog -x "$SQL_CLIENT < $TSTSRCDIR/../monetdb/create_table.sql"
 
 Mlog "loading data with sed-foo"
 
@@ -12,7 +12,7 @@ sed -r \
 	-e '/DELETE FROM/d' \
 	-e "s/COPY (.*);/COPY INTO \1 USING DELIMITERS '\\\\t\', '\\\\n';/i" \
 	-e '/stud_emp/d' \
-	$RELSRCDIR/../input/copy.source \
+	$TSTSRCDIR/../input/copy.source \
 	| $SQL_CLIENT
 
 Mlog -x "$SQL_CLIENT -s 'select count(*) from aggtest;'"
