@@ -46,9 +46,6 @@ import time
 import socket
 import struct
 import select
-from threading import Thread
-import copy
-import string
 #import signal
 #import getpass
 import Mfilter
@@ -110,22 +107,18 @@ def _configure(str):
     return str
 
 try:
-    # rely on the Python provided implementation, where possible
-    import subprocess
+    import MonetDBtesting.subprocess26 as subprocess
 except ImportError:
-    try:
-        import MonetDBtesting.subprocess26 as subprocess
-    except ImportError:
-        import distutils.sysconfig
-        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-        else:
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
-        sys.path.insert(0, p)
-        import MonetDBtesting.subprocess26 as subprocess
-        if os.environ.has_key('PYTHONPATH'):
-            p = p + os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
+    import distutils.sysconfig
+    if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
+    else:
+        p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+    sys.path.insert(0, p)
+    import MonetDBtesting.subprocess26 as subprocess
+    if os.environ.has_key('PYTHONPATH'):
+        p = p + os.pathsep + os.environ['PYTHONPATH']
+    os.environ['PYTHONPATH'] = p
 
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
@@ -260,6 +253,7 @@ class Element(_Encode):
     # empty elements
     empty = ['link', 'basefont', 'br', 'area', 'img', 'param', 'hr',
              'input', 'col', 'frame', 'isindex', 'base', 'meta', ]
+    xml = True                          # write XHTML instead of HTML
 
     def __init__(self, tag, attrdict = None, *children):
         self.tag = tag
@@ -283,13 +277,15 @@ class Element(_Encode):
         attrlist.sort()
         for name, value in attrlist:
             s.append(' %s="%s"' % (name, self.encode(value, True)))
-        if self.children:
+        if self.children or (not self.xml and not self.isempty):
             s.append('>')
             for c in self.children:
                 s.append(str(c))
             s.append('</%s>' % self.tag)
-        else:
+        elif self.xml:
             s.append('/>')
+        else:
+            s.append('>')               # empty HTML element
         return ''.join(s)
 
     def write(self, f, newline = False):
@@ -298,17 +294,23 @@ class Element(_Encode):
         if self.tag.lower() == 'html':
             # before we write the DOCTYPE we should really check
             # whether the document conforms...
-            f.write('<!DOCTYPE html PUBLIC '
-                    '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
-                    '                      '
-                    '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
+            if self.xml:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n')
+            else:
+                f.write('<!DOCTYPE html PUBLIC '
+                        '"-//W3C//DTD HTML 4.01 Transitional//EN"\n'
+                        '                      '
+                        '"http://www.w3.org/TR/html4/loose.dtd">\n')
         inline = self.tag.lower() in self.inline
         f.write('<%s' % self.tag)
         attrlist = self.attrdict.items()
         attrlist.sort()
         for name, value in attrlist:
             f.write(' %s="%s"' % (name, self.encode(value, True)))
-        if self.children:
+        if self.children or (not self.xml and not self.isempty):
             if not inline:
                 for c in self.children:
                     if not isinstance(c, Element):
@@ -320,8 +322,10 @@ class Element(_Encode):
             for c in self.children:
                 c.write(f, newline and not inline)
             f.write('</%s>' % self.tag)
-        else:
+        elif self.xml:
             f.write('/>')
+        else:
+            f.write('>')                # empty HTML element
         if newline:
             f.write('\n')
 
@@ -484,10 +488,10 @@ def try_open(path, mode) :
     return f
 ###  try_open(path, mode) #
 
-def CreateHtmlIndex (env, cenv, *body) :
-    TSTDIR=cenv['TSTDIR']
-    TSTTRGBASE=cenv['TSTTRGBASE']
-    TSTTRGDIR=cenv['TSTTRGDIR']
+def CreateHtmlIndex (env, *body) :
+    TSTDIR=env['TSTDIR']
+    TSTTRGBASE=env['TSTTRGBASE']
+    TSTTRGDIR=env['TSTTRGDIR']
 
     if TSTDIR:
         INDEX=".index"
@@ -495,6 +499,9 @@ def CreateHtmlIndex (env, cenv, *body) :
         INDEX="index"
 
     if body:
+        BACK = os.getcwd()
+        os.chdir(TSTTRGDIR)
+
         if TSTDIR:
             header = Text(TSTDIR)
             if URLPREFIX:
@@ -528,7 +535,7 @@ def CreateHtmlIndex (env, cenv, *body) :
                                                 'cellspacing': '0',
                                                 'cellpadding': '3'},
                                                tr))))
-        f = open(os.path.join(TSTTRGDIR, INDEX+".head.html"), "w")
+        f = open(INDEX+".head.html","w")
         html.write(f, True)
         f.close()
 
@@ -562,17 +569,17 @@ def CreateHtmlIndex (env, cenv, *body) :
                                         'bordercolor': white,
                                         'marginwidth': '0',
                                         'marginheight': '0'})))
-        f = open(os.path.join(TSTTRGDIR, INDEX+".html"), "w")
+        f = open(INDEX+".html","w")
         html.write(f, True)
         f.close()
         env['_'+TSTDIR+'_BODY_'] = ["",0]
+        os.chdir(BACK)
 ### CreateHtmlIndex (env, *body) #
 
-def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, SockTime) :
+def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, SockTime) :
     WHAT = stableWHAT[7:11]
     TSTDIR    = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
-    TSTTRGDIR = env['TSTTRGDIR']
 
     testT = re.compile("^/"+TST+EXT+"/([^/]*)/", re.MULTILINE)
     testS = re.compile("^/"+TST+stableWHAT+"/([^/]*)/", re.MULTILINE)
@@ -588,7 +595,7 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, SockTime) :
             if mS:
                 REVs=mS.group(1)
     l = ''
-    for l in open(TSTTRGDIR + os.path.sep + TST+WHAT+".diff.html"):
+    for l in open(TST+WHAT+".diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
         diffclass = 'good'
@@ -600,7 +607,7 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, SockTime) :
         diffclass = 'error'
         difftext = 'Major differences'
     else:
-        Warn("Unexpected last line in %s:\n%s" % (TSTTRGDIR + os.path.sep + TST+WHAT+".diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+WHAT+".diff.html",l))
         f = open(TST+WHAT+".diff.html","a")
         f.write("\n<!--MajorDiffs-->\n")
         f.close()
@@ -647,10 +654,10 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, SockTime) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = open("%s%s.%s%s.html" % (TSTTRGDIR, os.path.sep, TST, WHAT),"w")
+    f = open(".%s%s.html" % (TST, WHAT),"w")
     html.write(f, True)
     f.close()
-    f = open("%s%s.%s%s.head.html" % (TSTTRGDIR, os.path.sep, TST, WHAT),"w")
+    f = open(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
     cvs = Text('cvs')
     if URLPREFIX:
@@ -706,13 +713,12 @@ def CreateTstWhatXhtml(env, TST, stableWHAT, EXT, SockTime) :
 
 def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
-    TSTTRGDIR = env['TSTTRGDIR']
     TSTDIR    = env['TSTDIR']
 
     if URLPREFIX:
         framesrc = '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F)
     else:
-        f = open(TSTTRGDIR + os.path.sep + "."+TST+".nosrc.index.html","w")
+        f = open("."+TST+".nosrc.index.html","w")
         html = Element('html', {},
                        Element('head', {},
                                Element('title', {},
@@ -753,7 +759,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = open(TSTTRGDIR + os.path.sep + "."+TST+".src.index.html","w")
+    f = open("."+TST+".src.index.html","w")
     html.write(f, True)
     f.close()
 
@@ -788,7 +794,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                             'cellspacing': '0',
                                             'cellpadding': '3'},
                                            tr))))
-    f = open(TSTTRGDIR + os.path.sep + "."+TST+".src.index.head.html","w")
+    f = open("."+TST+".src.index.head.html","w")
     html.write(f, True)
     f.close()
 ### CreateSrcIndex (env, TST, EXT) #
@@ -814,14 +820,13 @@ def AddHref (href, target, linktext, diff) :
         return [a]
 ### AddHref (TSTDIR, TST, WHAT, diff) #
 
-def AddTstToHtmlIndex (env, cenv, TST, STABLEout, STABLEerr, EXT, SockTime) :
-    TSTDIR = cenv['TSTDIR']
-    TSTTRGDIR = cenv['TSTTRGDIR']
+def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, SockTime) :
+    TSTDIR = env['TSTDIR']
 
-    CreateTstWhatXhtml(cenv, TST, STABLEout, EXT, F_OK)
-    CreateTstWhatXhtml(cenv, TST, STABLEerr, EXT, SockTime)
+    CreateTstWhatXhtml(env, TST, STABLEout, EXT, F_OK)
+    CreateTstWhatXhtml(env, TST, STABLEerr, EXT, SockTime)
 
-    for l in open(TSTTRGDIR + os.path.sep + TST+".out.diff.html"):
+    for l in open(TST+".out.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
         o = F_OK
@@ -830,12 +835,12 @@ def AddTstToHtmlIndex (env, cenv, TST, STABLEout, STABLEerr, EXT, SockTime) :
     elif l[:17] == '<!--MajorDiffs-->':
         o = F_ERROR
     else:
-        Warn("Unexpected last line in %s:\n%s" % (TSTTRGDIR + os.path.sep + TST+".out.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".out.diff.html",l))
         ff = open(TST+WHAT+".out.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         o = F_ERROR
-    for l in open(TSTTRGDIR + os.path.sep + TST+".err.diff.html"):
+    for l in open(TST+".err.diff.html"):
         pass
     if   l[:14] == '<!--NoDiffs-->':
         e = F_OK
@@ -844,7 +849,7 @@ def AddTstToHtmlIndex (env, cenv, TST, STABLEout, STABLEerr, EXT, SockTime) :
     elif l[:17] == '<!--MajorDiffs-->':
         e = F_ERROR
     else:
-        Warn("Unexpected last line in %s:\n%s" % (TSTTRGDIR + os.path.sep + TST+".err.diff.html",l))
+        Warn("Unexpected last line in %s:\n%s" % (TST+".err.diff.html",l))
         ff = open(TST+WHAT+".err.diff.html","a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
@@ -885,12 +890,15 @@ def AddTstToHtmlIndex (env, cenv, TST, STABLEout, STABLEerr, EXT, SockTime) :
         else:
             env['_'+TSTDIR+'_BODY_'] = ["."+TST+".out.html", o]
 
-    CreateSrcIndex(cenv, TST, EXT)
+    CreateSrcIndex(env, TST, EXT)
 
     return o, e, td
 ### AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT) #
 
 def AddSubToHtmlIndex (env, TSTDIR, diff) :
+    TSTTRGBASE = env['TSTTRGBASE']
+    TSTPREF = env['TSTPREF']
+
     td = Element('td', {'class': 'header'})
     td.addchildren(AddHref('%s/.index.html' % url(TSTDIR), '%s__body' % DISTVER,
                            TSTDIR, diff))
@@ -901,15 +909,14 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
     return td
 ### AddSubToHtmlIndex (env, TSTDIR, diff) #
 
-def SkipTest(cenv, env, TST, EXT, REASON) :
-    TSTDIR = cenv['TSTDIR']
-    TSTTRGDIR = cenv['TSTTRGDIR']
+def SkipTest(env, TST, EXT, REASON) :
+    TSTDIR = env['TSTDIR']
     TEXT = "Skipping test %s%s %s" % (TST, EXT, REASON)
-    if not cenv['QUIET']:
+    if not env['QUIET']:
         Warn(TEXT)
     else:
         STDOUT.write("-")
-    f = open(TSTTRGDIR + os.path.sep + "."+TST+".SKIPPED","w")
+    f = open("."+TST+".SKIPPED","w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
     target = '%s_%s_body' % (DISTVER, TSTDIR)
@@ -926,7 +933,7 @@ def SkipTest(cenv, env, TST, EXT, REASON) :
        not env['_'+TSTDIR+'_BODY_'][0]  or  \
        not env['_'+TSTDIR+'_BODY_'][1]:
         env['_'+TSTDIR+'_BODY_'] = ["."+TST+".SKIPPED", F_SKIP]
-    CreateSrcIndex(cenv, TST, EXT)
+    CreateSrcIndex(env, TST, EXT)
     return td
 ### SkipTest(env, TST, EXT, REASON) #
 
@@ -944,43 +951,7 @@ def find_test_dirs(thisdir) :
     return testdirs
 ### find_test_dirs(thisdir) #
 
-def EnsureFreeJobSlot(workers, jobs):
-    jobs = int(jobs)
-    while True:
-        active = 0
-        for w in workers:
-            if w.isAlive():
-                active += 1
-            if active >= jobs:
-                break
-        if active < jobs:
-            return
-        w.join(0.75) # actually, just misuse this worker to sleep a little
-
-class PerformDir(Thread):
-    def __init__(self, env, htmlenv, testdir, testlist, BusyPorts):
-        Thread.__init__(self)
-        self.env = copy.deepcopy(env)
-        self.htmlenv = htmlenv
-        self.testdir = copy.deepcopy(testdir)
-        self.testlist = copy.deepcopy(testlist)
-        self.BusyPorts = copy.deepcopy(BusyPorts)
-        # initialise these, because Python and threading is not a good
-        # combination it seems
-        self.t = 0
-        self.elem = ''
-
-    def run(self):
-        self.t, self.elem = RealPerformDir(self.env, self.htmlenv,
-                self.testdir, self.testlist, self.BusyPorts)
-
-    def getTime(self):
-        return self.t
-
-    def getElem(self):
-        return self.elem
-
-def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
+def PerformDir(env, testdir, testlist, BusyPorts) :
     td = 0
     elem = None
     FdOut = F_SKIP
@@ -1022,6 +993,11 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
     env['TSTSRCDIR'] = TSTSRCDIR
     env['TSTTRGDIR'] = TSTTRGDIR
     env['RELSRCDIR'] = os.path.join(((os.pardir+os.sep)*(len(TSTDIR.split(os.sep))+1))+env['RELSRCBASE'],TSTDIR,TSTSUFF).replace(os.sep+os.sep,os.sep)
+    os.environ['TSTDB']     = TSTDB
+    os.environ['TSTDIR']    = TSTDIR
+    os.environ['TSTSRCDIR'] = TSTSRCDIR
+    os.environ['TSTTRGDIR'] = TSTTRGDIR
+    os.environ['RELSRCDIR'] = env['RELSRCDIR']
 
     #STDERR.flush()
     #for v in 'RELSRCDIR':
@@ -1060,8 +1036,8 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
 
         body = []
         for TST,COND in testlist:
-            env['TST'] = TST
-            tt, FtOut, FtErr, bodyline = RunTest(env, htmlenv, TST, BusyPorts, COND)
+            os.environ['TST'] = TST
+            tt, FtOut, FtErr, bodyline = RunTest(env, TST, BusyPorts, COND)
             if tt:
                 t = "%7.3f" % tt
             else:
@@ -1075,8 +1051,8 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
         TIMES.append([TSTDIR,'',"%7.3f" % td,td,FdOut,FdErr])
 
         if THISFILE == "Mtest.py":
-            CreateHtmlIndex(htmlenv, env, *body)
-            elem = AddSubToHtmlIndex(htmlenv, TSTDIR, max(FdOut,FdErr))
+            CreateHtmlIndex(env, *body)
+            elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
 
         # HACK: remove large data-/input- files to save disk space
         for f in 'tcpip2.init.bat', 'ascii_io.4MBload', 'test100k', 'no.145.k100_unique1', 'test_00.k100_unique1', 'VOCrightpages.xml', 'VOCleftpages.xml':
@@ -1093,7 +1069,7 @@ def RealPerformDir(env, htmlenv, testdir, testlist, BusyPorts) :
             td = td + ApproveOutput(env, TST)
 
     return td, elem
-### RealPerformDir(env, testdir, testlist, BusyPorts) #
+### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
     sem = 0
@@ -1101,6 +1077,7 @@ def ApproveOutput (env, TST) :
     TSTDIR  = env['TSTDIR']
     TSTSRCDIR = env['TSTSRCDIR']
     TSTTRGDIR = env['TSTTRGDIR']
+    os.chdir(TSTSRCDIR)
     EXTENSIONS = par['EXTENSION']
     FORCE = par['FORCE']
 
@@ -1198,7 +1175,7 @@ def ApproveOutput (env, TST) :
 # environment and the variable name minus the Q prefix does occur in
 # the environment.
 _varprog = None
-def expandvars(env, path):
+def expandvars(path):
     """Expand shell variables of form $var and ${var}.  Unknown variables
     are left unchanged."""
     global _varprog
@@ -1216,15 +1193,15 @@ def expandvars(env, path):
         name = m.group(1)
         if name.startswith('{') and name.endswith('}'):
             name = name[1:-1]
-        if name in env:
+        if name in os.environ:
             tail = path[j:]
-            val = env[name]
+            val = os.environ[name]
             path = path[:i] + val
             i = len(path)
             path += tail
-        elif name[:1] == 'Q' and name[1:] in env:
+        elif name[:1] == 'Q' and name[1:] in os.environ:
             tail = path[j:]
-            val = env[name[1:]].replace('\\', '\\\\')
+            val = os.environ[name[1:]].replace('\\', '\\\\')
             path = path[:i] + val
             i = len(path)
             path += tail
@@ -1455,10 +1432,10 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
         STATIC = "(\.STATIC)?"
     if ALGEBRA:
         ALGEBRA = "(\.Algebra)?"
-    dir,file = string.rsplit(TST, os.path.sep, 1)  # since Python 2.4
+    dir,file = os.path.split(TST)
     outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?(\.%s)?%s%s%s$' % (re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, OIDS, FIVE, STATIC, ALGEBRA))
     bestout = besterr = ''
-    for f in os.listdir(dir):
+    for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
         if res is not None:
             if res.group('tp') == 'out':
@@ -1478,7 +1455,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def RunTest(env, htmlenv, TST, BusyPorts, COND) :
+def RunTest(env, TST, BusyPorts, COND) :
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -1488,21 +1465,20 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
     RELSRCDIR = env['RELSRCDIR']
     TSTTRGDIR = env['TSTTRGDIR']
     TSTTRGBASE = env['TSTTRGBASE']
+    os.chdir(TSTSRCDIR)
     elem = None
-    quiet = env['QUIET']
 
-    SRCTST = os.path.join(TSTSRCDIR, TST)
-    TRGTST = os.path.join(TSTTRGDIR, TST)
+    quiet = env['QUIET']
 
     TX = 0
     EXT = CALL = SERVER = ""
-    x  = isexecutable(SRCTST)
+    x  = isexecutable(TST)
     if not x[0]:
-        x  = isexecutable(SRCTST,'')
-    xI = isexecutable(SRCTST+".MIL")
-    xA = isexecutable(SRCTST+".MAL")
-    xS = isexecutable(SRCTST+".SQL")
-    xQ = isexecutable(SRCTST+".XQUERY")
+        x  = isexecutable(TST,'')
+    xI = isexecutable(TST+".MIL")
+    xA = isexecutable(TST+".MAL")
+    xS = isexecutable(TST+".SQL")
+    xQ = isexecutable(TST+".XQUERY")
     if   x[0]:
         EXT = x[1]          ; CALL = "other"
     elif xI[0]:
@@ -1513,146 +1489,146 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
         EXT = ".SQL"+xS[1]  ; CALL = "other"  ; SERVER = "SQL"
     elif xQ[0]:
         EXT = ".XQUERY"+xQ[1] ; CALL = "other" ; SERVER = "XQUERY"
-    elif os.path.isfile(SRCTST+".py")            or  os.path.isfile(SRCTST+".py.src"):
+    elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
         EXT = ".py"         ; CALL = "python"
-    elif os.path.isfile(SRCTST+".MIL"+".py")     or  os.path.isfile(SRCTST+".MIL"+".py.src")     or  os.path.isfile(SRCTST+".MIL"+".py.in"):
+    elif os.path.isfile(TST+".MIL"+".py")     or  os.path.isfile(TST+".MIL"+".py.src")     or  os.path.isfile(TST+".MIL"+".py.in"):
         EXT = ".MIL.py"     ; CALL = "python" ; SERVER = "MIL"
-    elif os.path.isfile(SRCTST+".MAL"+".py")     or  os.path.isfile(SRCTST+".MAL"+".py.src")     or  os.path.isfile(SRCTST+".MAL"+".py.in"):
+    elif os.path.isfile(TST+".MAL"+".py")     or  os.path.isfile(TST+".MAL"+".py.src")     or  os.path.isfile(TST+".MAL"+".py.in"):
         EXT = ".MAL.py"     ; CALL = "python" ; SERVER = "MAL"
-    elif os.path.isfile(SRCTST+".SQL"+".py")     or  os.path.isfile(SRCTST+".SQL"+".py.src")     or  os.path.isfile(SRCTST+".SQL"+".py.in"):
+    elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
-    elif os.path.isfile(SRCTST+".XQUERY"+".py")  or  os.path.isfile(SRCTST+".XQUERY"+".py.src")  or  os.path.isfile(SRCTST+".XQUERY"+".py.in"):
+    elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
         EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
-    elif os.path.isfile(SRCTST+".milS")          or  os.path.isfile(SRCTST+".milS.src")          or  os.path.isfile(SRCTST+".milS.in"):
+    elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
         EXT = ".milS"       ; CALL = "milS"
-    elif os.path.isfile(SRCTST+".milC")          or  os.path.isfile(SRCTST+".milC.src")          or  os.path.isfile(SRCTST+".milC.in"):
+    elif os.path.isfile(TST+".milC")          or  os.path.isfile(TST+".milC.src")          or  os.path.isfile(TST+".milC.in"):
         EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MIL"
-    elif os.path.isfile(SRCTST+"_s00.milS")      or  os.path.isfile(SRCTST+"_s00.milS.src")      or  os.path.isfile(SRCTST+"_s00.milS.in"):
+    elif os.path.isfile(TST+"_s00.milS")      or  os.path.isfile(TST+"_s00.milS.src")      or  os.path.isfile(TST+"_s00.milS.in"):
         EXT = ".milS"       ; CALL = "milSXs"
-    elif os.path.isfile(SRCTST+"_s00.milC")      or  os.path.isfile(SRCTST+"_s00.milC.src")      or  os.path.isfile(SRCTST+"_s00.milC.in"):
+    elif os.path.isfile(TST+"_s00.milC")      or  os.path.isfile(TST+"_s00.milC.src")      or  os.path.isfile(TST+"_s00.milC.in"):
         EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MIL"
-    elif os.path.isfile(SRCTST+"_p00.milC")      or  os.path.isfile(SRCTST+"_p00.milC.src")      or  os.path.isfile(SRCTST+"_p00.milC.in"):
+    elif os.path.isfile(TST+"_p00.milC")      or  os.path.isfile(TST+"_p00.milC.src")      or  os.path.isfile(TST+"_p00.milC.in"):
         EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MIL"
-    elif os.path.isfile(SRCTST+".mal")           or  os.path.isfile(SRCTST+".mal.src")           or  os.path.isfile(SRCTST+".mal.in"):
+    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
         EXT = ".mal"        ; CALL = "mal"
-    elif os.path.isfile(SRCTST+"_s00.mal")       or  os.path.isfile(SRCTST+"_s00.mal.src")       or  os.path.isfile(SRCTST+"_s00.mal.in"):
+    elif os.path.isfile(TST+"_s00.mal")       or  os.path.isfile(TST+"_s00.mal.src")       or  os.path.isfile(TST+"_s00.mal.in"):
         EXT = ".mal"        ; CALL = "malXs"
-    elif os.path.isfile(SRCTST+".malC")          or  os.path.isfile(SRCTST+".malC.src")          or  os.path.isfile(SRCTST+".malC.in"):
+    elif os.path.isfile(TST+".malC")          or  os.path.isfile(TST+".malC.src")          or  os.path.isfile(TST+".malC.in"):
         EXT = ".malC"       ; CALL = "malC"   ; SERVER = "MAL"
-    elif os.path.isfile(SRCTST+"_s00.malC")      or  os.path.isfile(SRCTST+"_s00.malC.src")      or  os.path.isfile(SRCTST+"_s00.malC.in"):
+    elif os.path.isfile(TST+"_s00.malC")      or  os.path.isfile(TST+"_s00.malC.src")      or  os.path.isfile(TST+"_s00.malC.in"):
         EXT = ".malC"       ; CALL = "malCXs" ; SERVER = "MAL"
-    elif os.path.isfile(SRCTST+"_p00.malC")      or  os.path.isfile(SRCTST+"_p00.malC.src")      or  os.path.isfile(SRCTST+"_p00.malC.in"):
+    elif os.path.isfile(TST+"_p00.malC")      or  os.path.isfile(TST+"_p00.malC.src")      or  os.path.isfile(TST+"_p00.malC.in"):
         EXT = ".malC"       ; CALL = "malCXp" ; SERVER = "MAL"
-    elif os.path.isfile(SRCTST+".sql")           or  os.path.isfile(SRCTST+".sql.src")           or  os.path.isfile(SRCTST+".sql.in"):
+    elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
         EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
-    elif os.path.isfile(SRCTST+"_s00.sql")       or  os.path.isfile(SRCTST+"_s00.sql.src")       or  os.path.isfile(SRCTST+"_s00.sql.in"):
+    elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
         EXT = ".sql"        ; CALL = "sqlXs"  ; SERVER = "SQL"
-    elif os.path.isfile(SRCTST+"_p00.sql")       or  os.path.isfile(SRCTST+"_p00.sql.src")       or  os.path.isfile(SRCTST+"_p00.sql.in"):
+    elif os.path.isfile(TST+"_p00.sql")       or  os.path.isfile(TST+"_p00.sql.src")       or  os.path.isfile(TST+"_p00.sql.in"):
         EXT = ".sql"        ; CALL = "sqlXp"  ; SERVER = "SQL"
-    elif os.path.isfile(SRCTST+".xq")            or  os.path.isfile(SRCTST+".xq.src")            or  os.path.isfile(SRCTST+".xq.in"):
+    elif os.path.isfile(TST+".xq")            or  os.path.isfile(TST+".xq.src")            or  os.path.isfile(TST+".xq.in"):
         EXT = ".xq"         ; CALL = "xq"     ; SERVER = "XQUERY"
-    elif os.path.isfile(SRCTST+"_s00.xq")        or  os.path.isfile(SRCTST+"_s00.xq.src")        or  os.path.isfile(SRCTST+"_s00.xq.in"):
+    elif os.path.isfile(TST+"_s00.xq")        or  os.path.isfile(TST+"_s00.xq.src")        or  os.path.isfile(TST+"_s00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXs"   ; SERVER = "XQUERY"
-    elif os.path.isfile(SRCTST+"_p00.xq")        or  os.path.isfile(SRCTST+"_p00.xq.src")        or  os.path.isfile(SRCTST+"_p00.xq.in"):
+    elif os.path.isfile(TST+"_p00.xq")        or  os.path.isfile(TST+"_p00.xq.src")        or  os.path.isfile(TST+"_p00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXp"   ; SERVER = "XQUERY"
         #TODO:
-        #elif [ -f "$SRCTST.java"       ] ; then  EXT="java" ; CALL="Java   "+SRCTST+" "+EXT
-        #elif [ -f "${SRCTST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+SRCTST+" "+EXT
-        #elif [ -f "${SRCTST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+SRCTST+" "+EXT
-        #elif [ -f "$SRCTST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+SRCTST+" "+EXT
+        #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
+        #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
+        #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
+        #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
         i = TST.rfind('.')
         if i > 0:
-            return RunTest(env, htmlenv, TST[:i], BusyPorts, COND)
+            return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if   COND and not CONDITIONALS.has_key(COND):
-            elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' is unknown." % COND)
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
         elif COND and not CONDITIONALS[COND]:
-            elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' does not hold." % COND)
+            elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
         elif os.name == "nt":
-            ErrMsg("test missing: '"+SRCTST+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|milS|milC|sql|xq)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+SRCTST+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.milS|.milC|.sql|.xq]`")
         return TX,Failed,Failed,elem
 
     if par['PACKAGE'] not in ('monetdb', 'monetdb-java', 'monetdb-clients'):
-        MissingMods = CheckMods(env, SRCTST, SERVER, CALL)
-        MissingBATs = CheckBATs(env, SRCTST, TSTDB)
+        MissingMods = CheckMods(env, TST, SERVER, CALL)
+        MissingBATs = CheckBATs(env, TST, TSTDB)
     else:
         MissingMods = []
         MissingBATs = []
 
-    # from now on, use TRGTST
+    os.chdir(TSTTRGDIR)
 
     if   COND and not CONDITIONALS.has_key(COND):
-        elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' is unknown." % COND)
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' is unknown." % COND)
     elif COND and not CONDITIONALS[COND]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as conditional '%s' does not hold." % COND)
+        elem = SkipTest(env, TST, EXT, "as conditional '%s' does not hold." % COND)
     elif ( EXT[:4] == ".mil" or SERVER == "MIL" ) and par['M5']:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as MonetDB v5 does not support MIL.")
+        elem = SkipTest(env, TST, EXT, "as MonetDB v5 does not support MIL.")
     elif ( EXT[:4] == ".mal" or SERVER == "MAL" ) and par['M4']:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as MonetDB v4 does not support MAL.")
+        elem = SkipTest(env, TST, EXT, "as MonetDB v4 does not support MAL.")
     elif EXT == ".milC" and  not env['exe']['MIL_Client'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['MILCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MILCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".malC" and  not env['exe']['MAL_Client'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MALCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['SQLCLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['SQLDUMP'].split(None, 1)[0]+" is not available.")
     elif EXT == ".xq" and  not env['exe']['XQuery_Client'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['XQUERYCLIENT'].split(None, 1)[0]+" is not available.")
     elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and not env['exe']['Mserver'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
+        elem = SkipTest(env, TST, EXT, "as "+env['MSERVER'].split(None, 1)[0]+" is not available.")
     elif CALL == "python"  and  not env['exe']['python'][0]:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as python is not available.")
+        elem = SkipTest(env, TST, EXT, "as python is not available.")
         #TODO:
         #elif EXT == ".milC":
-        #elem = SkipTest(env, htmlenv, TST, EXT, "as mclient-tests are temporary not supported by "+THISFILE+".")
+        #elem = SkipTest(env, TST, EXT, "as mclient-tests are temporary not supported by "+THISFILE+".")
         #TODO:
         #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
-        #elem = SkipTest(env, htmlenv, TST, EXT, "as java is not in $PATH.")
+        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.")
     elif MissingMods:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
+        elem = SkipTest(env, TST, EXT, "as modules '"+str(MissingMods)+"` are missing.")
     elif MissingBATs:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
+        elem = SkipTest(env, TST, EXT, "as BATs '"+str(MissingBATs)+"` are missing in database '"+TSTDB+"`.")
     elif CALL == "milCXp":
-        elem = SkipTest(env, htmlenv, TST, EXT, "as multiple MIL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple MIL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "malCXp":
-        elem = SkipTest(env, htmlenv, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple MAL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "sqlXp":
-        elem = SkipTest(env, htmlenv, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
-        elem = SkipTest(env, htmlenv, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
+        elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
     elif SERVER in ["MIL", "MAL", "SQL", "XQUERY"] and "MAPI" in BusyPorts:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
+        elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
     elif SERVER == "XQUERY" and "XRPC" in BusyPorts:
-        elem = SkipTest(env, htmlenv, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
+        elem = SkipTest(env, TST, EXT, "as XRPCPORT=%s is not available." % (env['XRPCPORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        for f in os.listdir(TSTSRCDIR):
+        for f in os.listdir(RELSRCDIR):
             if test.match(f):
-                SymlinkOrCopy(os.path.join(RELSRCDIR, f), os.path.join(TSTTRGDIR, f))
+                SymlinkOrCopy(os.path.join(RELSRCDIR,f),os.path.join(TSTTRGDIR,f))
 
         # Check for available sockets and block them until we're ready to run the actual test
-        MAPIsockets, reason = CheckSocket2(env, "MAPI", False)   #, SrvrErr)
+        MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
         XRPCsockets = None
         if MAPIsockets is not None:
-            XRPCsockets, reason = CheckSocket2(env, "XRPC", False)   #, SrvrErr)
+            XRPCsockets, reason = CheckSocket2(env, "XRPC")   #, SrvrErr)
         if None in (MAPIsockets, XRPCsockets):
-            elem = SkipTest(env, htmlenv, TST, EXT, "as "+reason)
+            elem = SkipTest(env, TST, EXT, "as "+reason)
             return TX,Failed,Failed,elem
 
-        if os.path.isfile(TRGTST+EXT+".src")  and not os.path.isfile(TRGTST+EXT):
-            f = open(TRGTST+EXT+".src","r")
-            TSTSRC = expandvars(env, path(f.readline().strip()))
+        if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
+            f = open(TST+EXT+".src","r")
+            TSTSRC = expandvars(path(f.readline().strip()))
             f.close()
-            if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                SymlinkOrCopy(TSTSRC, TRGTST+EXT)
+            if os.path.isfile(TSTSRC):
+                SymlinkOrCopy(TSTSRC,TST+EXT)
             else:
-                elem = SkipTest(env, htmlenv, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
+                elem = SkipTest(env, TST, EXT+".src", "as source file '"+TSTSRC+"` is missing.")
                 # Release reserved sockets before bailing out
                 MAPIsockets[0].close()
                 MAPIsockets[1].close()
@@ -1661,48 +1637,48 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                 return TX,Failed,Failed,elem
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
-            if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
-                f = open(os.path.join(TSTTRGDIR, ff), "r")
-                TSTSRC = expandvars(env, path(f.readline().strip()))
+            if test.match(ff) and not os.path.isfile(ff[:-4]):
+                f = open(ff,"r")
+                TSTSRC = expandvars(path(f.readline().strip()))
                 f.close()
-                if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
-                    SymlinkOrCopy(TSTSRC, os.path.join(TSTTRGDIR, ff[:-4]))
+                if os.path.isfile(TSTSRC):
+                    SymlinkOrCopy(TSTSRC,ff[:-4])
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
         test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
         for ff in os.listdir(TSTTRGDIR):
-            fff = os.path.join(TSTTRGDIR, ff[:-3])
+            fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(fff):
                 f = open(fff,"w")
-                for l in open(os.path.join(TSTTRGDIR, ff)):
-                    f.write(expandvars(env, l))
+                for l in open(ff):
+                    f.write(expandvars(l))
                 f.close()
 
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
-        STABLEout,STABLEerr = StableOutErr(env,par,TRGTST,SYST,RELEASE,DIST,VERSION)
-        if not os.path.isfile(TRGTST+STABLEout):
-            open(TRGTST+STABLEout,"w").close()
+        STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
+        if not os.path.isfile(TST+STABLEout):
+            open(TST+STABLEout,"w").close()
             ACCURACYout = 0
-        if not os.path.isfile(TRGTST+STABLEerr):
-            open(TRGTST+STABLEerr,"w").close()
+        if not os.path.isfile(TST+STABLEerr):
+            open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
 
         PRELUDE = ""
         #if EXT not in  ['.milC','.sql','.xq']:
         if EXT not in  ['.sql','.xq']:
-            if os.path.isfile(TRGTST+".prelude")  and  par['M4']:
-                PRELUDE = TRGTST+".prelude"
-            if os.path.isfile(TRGTST+".prelude5")  and  par['M5']:
-                PRELUDE = TRGTST+".prelude5"
+            if os.path.isfile(TST+".prelude")  and  par['M4']:
+                PRELUDE = TST+".prelude"
+            if os.path.isfile(TST+".prelude5")  and  par['M5']:
+                PRELUDE = TST+".prelude5"
 
         TIMEOUTED = "Mtimeout"
         for v in env['exe'].keys():
             TIMEOUTED = TIMEOUTED+"|"+v.upper()
         test = re.compile("^[^#]*("+TIMEOUTED+")[^#]*(# ([0-9]+)x|#.*)?$", re.MULTILINE)
         TIMEOUT = par['TIMEOUT']
-        if os.path.isfile(TRGTST+".timeout"):
-            for f in open(TRGTST+".timeout"):
+        if os.path.isfile(TST+".timeout"):
+            for f in open(TST+".timeout"):
                 TOf = float(f.strip())
                 if TOf > 0:
                     TIMEOUT = int(TIMEOUT * TOf)
@@ -1710,11 +1686,12 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     TIMEOUT = 1
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
+            SetExecEnv(env['exe'],0)
         CTIMEOUT = 0
         if   CALL in ["other", "python"]:
             if TIMEOUT > 0:
                 CTIMEOUT = CTIMEOUT + min(TIMEOUT, par['TIMEOUT'])
-            for l in open(TRGTST+EXT):
+            for l in open(TST+EXT):
                 TOm = test.match(l)
                 if TOm:
                     TOx = TOm.group(3)
@@ -1725,7 +1702,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     CTIMEOUT = CTIMEOUT + ( TOx * TIMEOUT )
         elif CALL in ["malXs", "milSXs", "milCXs", "sqlXs", "xqXs"]:
             test = re.compile("^"+TST+"_s[0-9][0-9]"+EXT+"$", re.MULTILINE)
-            d = os.listdir(TSTSRCDIR)
+            d = os.listdir(os.getcwd())
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
@@ -1742,12 +1719,12 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
         MkillUsers = ""
         MkillUsersAT = ""
         if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and env.get('USE_AT'):
-            for f in TRGTST+".KILLED.out", TRGTST+".KILLED.err":
+            for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
             ME = str(os.getpid())
             WAIT = str(int(STIMEOUT / 60) + 2)
-            FILES = SRCTST+" "+TRGTST+".*"
+            FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
             if env.has_key('SQL_LOGDIR'):
@@ -1758,7 +1735,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
             if env.get('CONCURRENT'):
                  WHAT0 = WHAT0+" --concurrent"
             WHAT0 = WHAT0+" -l"+ME
-            WHAT1 = FILES+r" \>\>"+TRGTST+".KILLED.out"+r" 2\>\>"+TRGTST+".KILLED.err"
+            WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
             WHAT = WHAT0+" -p"+ME+" "+WHAT1
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
@@ -1769,8 +1746,8 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
             MkillUsersAT = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
         #if THISFILE == "Mtest.py":
-        TestOutFile = TRGTST+".test.out"
-        TestErrFile = TRGTST+".test.err"
+        TestOutFile = TST+".test.out"
+        TestErrFile = TST+".test.err"
         TestOut = open(TestOutFile,"w")
         TestErr = open(TestErrFile,"w")
         TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
@@ -1799,7 +1776,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
             os.system(MkillUsers)
 
         killed = F_OK
-        n = TRGTST+".KILLED."
+        n = TST+".KILLED."
         for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
             f = n+x
             if os.name == "nt":
@@ -1857,13 +1834,14 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
 
         if env['exe']['Mtimeout'][0]:
             env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
+            SetExecEnv(env['exe'],0)
 
         if THISFILE == "Mtest.py":
             try:
-                Mfilter.mFilter(TRGTST+STABLEout,par['IGNORE'])
-                Mfilter.mFilter(TRGTST+STABLEerr,par['IGNORE'])
-                Mfilter.mFilter(TRGTST+".test.out",par['IGNORE'])
-                Mfilter.mFilter(TRGTST+".test.err",par['IGNORE'])
+                Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+                Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+                Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+                Mfilter.mFilter(TST+".test.err",par['IGNORE'])
             except:
                 Warn("mFilter failed\n")
                 pass
@@ -1899,7 +1877,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
             #       signal.alarm(0)
             #       ACCURACY = ACCURACY - 1
             MDIFF = MDIFF1
-            diff_html = open('%s.out.diff.html' % TRGTST,"w")
+            diff_html = open('%s.out.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
@@ -1907,8 +1885,8 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYout = -1
             else:
-                fs = open("%s%s.FILTERED" % (TRGTST, STABLEout))
-                ft = open("%s.test.out.FILTERED" % TRGTST)
+                fs = open("%s%s.FILTERED" % (TST, STABLEout))
+                ft = open("%s.test.out.FILTERED" % TST)
                 szs = os.fstat(fs.fileno())[6]
                 szt = os.fstat(ft.fileno())[6]
                 fs.close()
@@ -1925,14 +1903,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     cmd.append('-d')
                 if quiet:
                     cmd.append('-q')
-                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'],
-                    '-C%s' % par['CONTEXT'],
-                    '-A%d' % ACCURACYout,
-                    '-r%s' % REVe,
-                    '%s%s.FILTERED' % (TST, STABLEout),
-                    '%s.test.out.FILTERED' % TST,
-                    '%s.out.diff.html' % TST],
-                    cwd = TSTTRGDIR)
+                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'], '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout, '-r%s' % REVe, '%s%s.FILTERED' % (TST, STABLEout), '%s.test.out.FILTERED' % TST, '%s.out.diff.html' % TST])
                 proc.killed = False
                 t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
                 try:
@@ -1946,16 +1917,10 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                 timedout = proc.killed
                 ACCURACYout = ACCURACYout - 1
             if env.get('ECHO_DIFF'):
-                cmd = ['diff']
+                cmd = 'diff'
                 if ACCURACYout >= 0:
-                    cmd.append('-d')
-                subprocess.call(cmd + [
-                    '-Bb',
-                    '-I"%s"' % par['IGNORE'],
-                    '-U%s' % par['CONTEXT'],
-                    '"%s%s.FILTERED"' % (TST, STABLEout),
-                    '"%s.test.out.FILTERED"' % TRGTST],
-                    cwd = TSTTRGDIR)
+                    cmd += ' -d'
+                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.out.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEout, TST))
 
             #TODO:
             #timedout = 1
@@ -1969,7 +1934,7 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
             #       signal.alarm(0)
             #       ACCURACY = ACCURACY - 1
             MDIFF = MDIFF1
-            diff_html = open('%s.err.diff.html' % TRGTST,"w")
+            diff_html = open('%s.err.diff.html' % TST,"w")
             diff_html.write('<!--MajorDiffs-->\n')
             diff_html.close()
             timedout = 1
@@ -1977,8 +1942,8 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                 # test run timed out or orphan processes were killed => expect major differences!
                 ACCURACYerr = -1
             else:
-                fs = open("%s%s.FILTERED" % (TRGTST, STABLEerr))
-                ft = open("%s.test.err.FILTERED" % TRGTST)
+                fs = open("%s%s.FILTERED" % (TST, STABLEerr))
+                ft = open("%s.test.err.FILTERED" % TST)
                 szs = os.fstat(fs.fileno())[6]
                 szt = os.fstat(ft.fileno())[6]
                 fs.close()
@@ -1987,49 +1952,21 @@ def RunTest(env, htmlenv, TST, BusyPorts, COND) :
                     # filesizes differ significantly => expect major differences!
                     ACCURACYerr = -1
             while timedout and MDIFF == MDIFF1:
-                cmd = ['Mdiff']
                 if ACCURACYerr == -1:
                     MDIFF = MDIFF0
                     ACCURACYerr = 0
+                if not quiet:
+                    timedout = os.system('%s -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 else:
-                    cmd.append('-d')
-                if quiet:
-                    cmd.append('-q')
-                proc = subprocess.Popen(cmd + ['-I%s' % par['IGNORE'],
-                    '-C%s' % par['CONTEXT'],
-                    '-A%d' % ACCURACYerr,
-                    '-r%s' % REVe,
-                    '%s%s.FILTERED' % (TST, STABLEerr),
-                    '%s.test.err.FILTERED' % TST,
-                    '%s.err.diff.html' % TST],
-                    cwd = TSTTRGDIR)
-                proc.killed = False
-                t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-                try:
-                    t.start()
-                    proc.wait()
-                    t.cancel()
-                except KeyboardInterrupt:
-                    t.cancel()
-                    killProc(proc)
-                    raise
-                timedout = proc.killed
+                    timedout = os.system('%s -q -I"%s" -C%s -A%d -r"%s" "%s%s.FILTERED" "%s.test.err.FILTERED" "%s.err.diff.html"' % (MDIFF, par['IGNORE'], par['CONTEXT'], ACCURACYerr, REVe, TST, STABLEerr, TST, TST))
                 ACCURACYerr = ACCURACYerr - 1
             if env.get('ECHO_DIFF'):
-                cmd = ['diff']
+                cmd = 'diff'
                 if ACCURACYerr >= 0:
-                    cmd.append('-d')
-                subprocess.call(cmd + [
-                    '-Bb',
-                    '-I"%s"' % par['IGNORE'],
-                    '-U%s' % par['CONTEXT'],
-                    '"%s%s.FILTERED"' % (TST, STABLEerr),
-                    '"%s.test.err.FILTERED"' % TRGTST],
-                    cwd = TSTTRGDIR)
+                    cmd += ' -d'
+                os.system('%s -Bb -I"%s" -U%s "%s%s.FILTERED" "%s.test.err.FILTERED"' % (cmd, par['IGNORE'], par['CONTEXT'], TST, STABLEerr, TST))
 
-            FailedOut, FailedErr, elem = AddTstToHtmlIndex(
-                    htmlenv, env, TST, STABLEout, STABLEerr,
-                    EXT, max(sockerr, timeout, killed))
+            FailedOut, FailedErr, elem = AddTstToHtmlIndex(env, TST, STABLEout, STABLEerr, EXT, max(sockerr, timeout, killed))
 
     return TX,FailedOut,FailedErr,elem
 ### RunTest(env, TST, BusyPorts) #
@@ -2079,11 +2016,11 @@ def randomPort(l,h) :
     return port
 ### randomPort(l,h) #
 
-def CheckSocket2(env,SERVER,force) :  #,SrvrErr) :
+def CheckSocket2(env,SERVER) :  #,SrvrErr) :
     port = int(env[SERVER+'PORT'])
     newport = port
     busy, host, Serrno, Serrstr, S = CheckPort(port)
-    if busy or force:
+    if busy:
         S[0].close()
         S[1].close()
         Smsg = """
@@ -2101,6 +2038,7 @@ def CheckSocket2(env,SERVER,force) :  #,SrvrErr) :
             return None, Smsg
 
         env[SERVER+'PORT'] = newport
+        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
         op = 'port=%d' % port
         np = 'port=%s' % env[SERVER+'PORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
@@ -2109,6 +2047,12 @@ def CheckSocket2(env,SERVER,force) :  #,SrvrErr) :
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
         env['exe']['XQuery_Client'] = env['exe']['XQuery_Client'][0] , env['exe']['XQuery_Client'][1].replace(op, np)
+        os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
+        os.environ['MIL_CLIENT']    = os.environ['MIL_CLIENT'].replace(op, np)
+        os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
+        os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
+        os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
+        os.environ['XQUERY_CLIENT'] = os.environ['XQUERY_CLIENT'].replace(op, np)
         Smsg = Smsg + """
 ! Using new %sPORT=%s !
 """ % (SERVER, env[SERVER+'PORT'])
@@ -2161,34 +2105,13 @@ def killProc(proc, outfile = None, cmd = None):
         outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
     proc.killed = True
 
-def PrepareProcessEnv(env):
-    # change env to actually make sense for the process
-    # maybe one day do this more generic by just stripping/converting
-    # all keys with arguments that are not strings
-    osenv = copy.copy(os.environ)
-    SetExecEnv(env['exe'], osenv, False)
-    env = copy.deepcopy(env)
-    # remove some known offenders
-    env.pop('exe', None)
-    env.pop('TST_MODS', None)
-    # flatten the rest
-    for key in env:
-        env[key] = str(env[key])
-    osenv.update(env)
-
-    return osenv
-
-def LaunchIt(cmd, env, TestInput, TestOut, TestErr, TimeOut) :
+def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut) :
     TestOut.write(Prompt(cmd))
     TestOut.flush()
     TestErr.write(Prompt(cmd))
     TestErr.flush()
 
-    osenv = PrepareProcessEnv(env)
-
-    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE,
-            stdout = subprocess.PIPE, stderr = TestErr,
-            universal_newlines = True, env = osenv)
+    proc = subprocess.Popen(cmd, shell = True, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
@@ -2212,7 +2135,7 @@ def CollectIt(pOut, TestOut) :
             TestOut.write(buf)
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
-def RunIt(cmd, env, TestIn, TestOut, TestErr, TimeOut) :
+def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     if type(TestIn) is type(''):
         TestInput = TestIn
         TestIn = subprocess.PIPE
@@ -2222,12 +2145,7 @@ def RunIt(cmd, env, TestIn, TestOut, TestErr, TimeOut) :
     TestOut.flush()
     TestErr.write(Prompt(cmd))
     TestErr.flush()
-
-    osenv = PrepareProcessEnv(env)
-
-    proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout =
-            TestOut, stderr = TestErr, universal_newlines = True,
-            env = osenv, cwd = env['TSTTRGDIR'])
+    proc = subprocess.Popen(cmd, shell = True, stdin = TestIn, stdout = TestOut, stderr = TestErr, universal_newlines = True)
     proc.killed = False
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
@@ -2285,10 +2203,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     TSTDB = env['TSTDB']
     exe = env['exe']
 
-    TRGTST = os.path.join(env['TSTTRGDIR'], TST)
     LOCAL_CONF = ""
-    if os.path.isfile(TRGTST+".conf"):
-        LOCAL_CONF = ' "--config=%s"' % TRGTST+".conf"
+    if os.path.isfile(TST+".conf"):
+        LOCAL_CONF = ' "--config=%s"' % TST+".conf"
     elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
         LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
 
@@ -2308,20 +2225,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     pSrvrTimer = None
     try:
         if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
-            SrvrOutFile = TRGTST+".server.out"
-            SrvrErrFile = TRGTST+".server.err"
+            SrvrOutFile = TST+".server.out"
+            SrvrErrFile = TST+".server.err"
             SrvrOut = open(SrvrOutFile,"w")
             SrvrErr = open(SrvrErrFile,"w")
-            ClntOutFile = TRGTST+".client.out"
-            ClntErrFile = TRGTST+".client.err"
+            ClntOutFile = TST+".client.out"
+            ClntErrFile = TST+".client.err"
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
 
             PROLOGUE = ""
-            if os.path.isfile(TRGTST+".prologue") and par['M4']:
-                PROLOGUE = " "+TRGTST+".prologue"
-            if os.path.isfile(TRGTST+".prologue5") and par['M5']:
-                PROLOGUE = " "+TRGTST+".prologue5"
+            if os.path.isfile(TST+".prologue") and par['M4']:
+                PROLOGUE = " "+TST+".prologue"
+            if os.path.isfile(TST+".prologue5") and par['M5']:
+                PROLOGUE = " "+TST+".prologue5"
 
             Srvr = '%s%s "--dbname=%s"' % (exe['Mserver'][1], LOCAL_CONF, TSTDB)
             if par['ALGEBRA']:
@@ -2330,11 +2247,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr += ' --set xquery_backend=milprint_summer'
 
             DBINIT=""
-            if os.path.isfile(TRGTST+".dbinit") and par['M4']:
-                dbinit = TRGTST+".dbinit"
+            if os.path.isfile(TST+".dbinit") and par['M4']:
+                dbinit = TST+".dbinit"
                 DBINIT = open(dbinit).readline().strip()
-            if os.path.isfile(TRGTST+".dbinit5") and par['M5']:
-                dbinit = TRGTST+".dbinit5"
+            if os.path.isfile(TST+".dbinit5") and par['M5']:
+                dbinit = TST+".dbinit5"
                 DBINIT = open(dbinit).readline().strip()
 
             lang=""
@@ -2361,7 +2278,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr = Srvr+' ; echo ; '
             Srvr = Srvr+'echo Over..'
 
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, env, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"
             while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
                 ln=pSrvr.stdout.readline()
@@ -2384,11 +2301,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         killed = False
         if ServerReady:
             if   CALL == "other":
-                cmd = TRGTST+EXT+" "+TST+" "+PRELUDE
-                killed = RunIt(cmd, env, "", ClntOut, ClntErr, CTIMEOUT)
+                cmd = os.path.join(".",TST+EXT)+" "+TST+" "+PRELUDE
+                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
                 cmd = exe['python'][1]+" "+TST+EXT+" "+TST+" "+PRELUDE
-                killed = RunIt(cmd, env, "", ClntOut, ClntErr, CTIMEOUT)
+                killed = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs", "milS", "milSXs"]:
                 cmd = '%s%s --dbname=%s %s ' % (exe['Mserver'][1], LOCAL_CONF, TSTDB, PRELUDE)
                 if par['ALGEBRA']:
@@ -2400,17 +2317,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(env['TSTTRGDIR'])
+                d = os.listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        f = os.path.join(env['TSTTRGDIR'], f)
                         if CALL[:3] == "mal":
-                            killed = RunIt(cmd + f, env, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            killed = RunIt(cmd + f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         elif par['M5']:
-                            killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, env, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                            killed = RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
                         else:
-                            killed = RunIt(cmd, env, open(f), ClntOut, ClntErr, TIMEOUT)
+                            killed = RunIt(cmd, open(f), ClntOut, ClntErr, TIMEOUT)
                     if killed:
                         break
             elif CALL in ["milC", "milCXs", "malC", "malCXs"]:
@@ -2420,11 +2336,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(env['TSTTRGDIR'])
+                d = os.listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        TSTs.append(os.path.join(env['TSTTRGDIR'], f))
+                        TSTs.append(f)
 
                 if CALL[:3] == "mil":
                     Clnt = exe['MIL_Client'][1]
@@ -2433,7 +2349,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = ''               # cannot happen
                 for f in TSTs:
-                    killed = RunIt(Clnt, env, open(f), ClntOut, ClntErr, TIMEOUT)
+                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if killed:
                         break
 
@@ -2446,15 +2362,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(env['TSTTRGDIR'])
+                d = os.listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        TSTs.append(os.path.join(env['TSTTRGDIR'], f))
+                        TSTs.append(f)
 
                 Clnt = exe['SQL_Client'][1]
                 for f in TSTs:
-                    killed = RunIt(Clnt, env, open(f), ClntOut, ClntErr, TIMEOUT)
+                    killed = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if killed:
                         break
             elif CALL in ["xq", "xqXs"]:
@@ -2464,15 +2380,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     X="_s[0-9][0-9]"
                 test = re.compile("^"+TST+X+EXT+"$", re.MULTILINE)
-                d = os.listdir(env['TSTTRGDIR'])
+                d = os.listdir(os.getcwd())
                 d.sort()
                 for f in d:
                     if test.match(f):
-                        TSTs.append(os.path.join(env['TSTTRGDIR'], f))
+                        TSTs.append(f)
 
                 Clnt = exe['XQuery_Client'][1]+" "
                 for f in TSTs:
-                    killed = RunIt(Clnt+f, env, "", ClntOut, ClntErr, TIMEOUT)
+                    killed = RunIt(Clnt+f, "", ClntOut, ClntErr, TIMEOUT)
                     if killed:
                         break
         else:
@@ -2483,10 +2399,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER in ["MIL", "MAL", "SQL", "XQUERY"]:
             EPILOGUE = None
-            if os.path.isfile(TRGTST+".epilogue") and par['M4']:
-                EPILOGUE = open(TRGTST+".epilogue",'r')
-            if os.path.isfile(TRGTST+".epilogue5") and par['M5']:
-                EPILOGUE = open(TRGTST+".epilogue5",'r')
+            if os.path.isfile(TST+".epilogue") and par['M4']:
+                EPILOGUE = open(TST+".epilogue",'r')
+            if os.path.isfile(TST+".epilogue5") and par['M5']:
+                EPILOGUE = open(TST+".epilogue5",'r')
             if EPILOGUE:
                 EpiFailed = ""
                 try:
@@ -2633,7 +2549,7 @@ def Check(command, input) :
     return 0
 ### Check(command, input) #
 
-def CheckClassPath(env, quiet) :
+def CheckClassPath(quiet) :
     if os.environ.has_key('CLASSPATH'):
         cp = os.environ['CLASSPATH']
         cpx = cp + os.pathsep
@@ -2661,19 +2577,27 @@ def CheckClassPath(env, quiet) :
     # + fall-back using `monetdb-config --pkgdatadir`/lib
     #               and `monetdb-config --pkgdatadir`/Tests
     cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'lib')
+    cpx += os.pathsep
+    cpx += os.path.join(GetMonetConfig('monetdb','--pkgdatadir'),'Tests')
     for d in cpx.split(os.pathsep):
         if os.path.isdir(d):
             for f in os.listdir(d):
                 p = os.path.join(d,f)
                 if os.path.isfile(p):
-                    C = 'HAVE_%s' % f.upper().replace('.','_')
-                    if not JARS.has_key(C):
-                        C = 'HAVE_MONETDBJDBC_JAR'
-                    if not CONDITIONALS.has_key(C) and JARS[C].match(f):
-                        cp = cp + os.pathsep + p
-                        CONDITIONALS[C] = '#'
+                    if f == 'BugConcurrent_clients_SF_1504657.class':
+                        C = 'HAVE_JDBCTESTS_DIR'
+                        if not CONDITIONALS.has_key(C):
+                            cp = cp + os.pathsep + d
+                            CONDITIONALS[C] = '#'
+                    else:
+                        C = 'HAVE_%s' % f.upper().replace('.','_')
+                        if not JARS.has_key(C):
+                            C = 'HAVE_MONETDBJDBC_JAR'
+                        if not CONDITIONALS.has_key(C) and JARS[C].match(f):
+                            cp = cp + os.pathsep + p
+                            CONDITIONALS[C] = '#'
     if cp:
-        env['CLASSPATH'] = cp
+        os.environ['CLASSPATH'] = cp
     miss = ''
     for j in ['monetdbjdbc.jar', 'jdbcclient.jar', 'jdbctests.jar', 'xrpcapi.jar', 'xrpcclient.jar', 'xrpcwrapper.jar']:
         C = 'HAVE_%s' % j.upper().replace('.','_')
@@ -2685,7 +2609,7 @@ def CheckClassPath(env, quiet) :
         CONDITIONALS['HAVE_JDBCTESTS'] = '#'
 ### CheckClassPath(quiet) #
 
-def SetExecEnv(exe, env, verbose) :
+def SetExecEnv(exe,verbose) :
     if os.name == "nt":
         CALL = "call "
     else:
@@ -2695,11 +2619,11 @@ def SetExecEnv(exe, env, verbose) :
     for v in exe.keys():
         V = v.upper()
         if  v != 'Mtimeout':
-            env[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
+            os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
         elif exe[v][0]:
-            env[V] = CALL+exe[v][1]
+            os.environ[V] = CALL+exe[v][1]
         else:
-            env[V] = ""
+            os.environ[V] = ""
         if verbose:
             print "%s = %s : %s" % (V, exe[v][0], exe[v][1])
     if verbose:
@@ -2943,7 +2867,6 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         dft['GDK_DEBUG']      = "TSTDBG"
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
-        dft['JOBS']           = "str(1)"
         dft['MONETDB_MOD_PATH'] = "''"   #"GetMonetConfig(par['PACKAGE'],'--modpath')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
@@ -3003,8 +2926,6 @@ def main(argv) :
             ('debug', 'd', 'debug', '<num>',
              ("debug value to be used by Mserver/mserver5 (default: -d%s)\n"
               "(see `Mserver --help' / `mserver5 --help' for details)") % TSTDBG),
-            ('jobs', 'j', 'jobs', '<num>',
-             "specify the number of concurrent jobs"),
             ('nr_threads', 'n', 'nr_threads', '<num>',
              ("number of threads for mserver5 (default: -n%s)\n"
               "-n0 => mserver5 automatically determines the number of CPU cores") % TSTTHREADS),
@@ -3143,11 +3064,6 @@ def main(argv) :
         a = opts.get('nr_threads')
         if a is not None:
             env['GDK_NR_THREADS'] = str(int(a))
-        a = opts.get('jobs')
-        if a is not None:
-            env['JOBS'] = str(int(a))
-            if env['JOBS'] <= 0:
-                ErrExit('jobs must be a positive number')
         a = opts.get('monet_mod_path')
         if a is not None:
             env['MONETDB_MOD_PATH'] = a
@@ -3205,6 +3121,7 @@ def main(argv) :
     STDERR.flush()
     if not quiet:
         for v in par.keys():
+            #os.environ[v] = par[v]
             print"%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
@@ -3220,7 +3137,7 @@ def main(argv) :
     else:
         CONDITIONALS['HAVE_MONETDB5'] = ''
         CONDITIONALS['HAVE_MONETDB4'] = '#'
-    CheckClassPath(env, quiet)
+    CheckClassPath(quiet)
     if par['ALGEBRA']:
         CONDITIONALS['WITH_ALGEBRA'] = '#'
         CONDITIONALS['NOT_ALGEBRA']  = ''
@@ -3243,8 +3160,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE == "Mtest.py":
-        vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG',
-                'GDK_NR_THREADS', 'MONETDB_MOD_PATH', 'JOBS']
+        vars_ = vars + ['MAPIPORT', 'XRPCPORT', 'GDK_DEBUG', 'GDK_NR_THREADS', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -3279,7 +3195,7 @@ def main(argv) :
             env['setDBG'] = ''
 
     #TODO:
-    ## in case of inconsistencies, try to fallback to "safe" settings
+    ## in case of inconsistencies, try to fallback to "save" settings
     #
     #if not os.path.indir(TSTSRCBASE):
     #       ErrXit("Illegal TSTSRCBASE: directory '"+a"` does not exist!")
@@ -3373,10 +3289,12 @@ def main(argv) :
         vars_ = vars_ + ['setXRPC_DOCROOT', 'setXQUERY_LOGDIR','setSQL_LOGDIR','setGDK_DBFARM','setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
-    if not quiet:
-        for v in vars_:
-            if env.has_key(v):
+    for v in vars_:
+        if env.has_key(v):
+            os.environ[v] = env[v]
+            if not quiet:
                 print "%s = %s" % (v, env[v])
+    if not quiet:
         print "%s = %s" % ('PATH', os.environ['PATH'])
         if os.environ.has_key('PYTHONPATH'):
             print "%s = %s" % ('PYTHONPATH', os.environ['PYTHONPATH'])
@@ -3445,6 +3363,10 @@ def main(argv) :
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
+        if not quiet:
+            SetExecEnv(exe,1)
+        else:
+            SetExecEnv(exe,0)
 
         #TODO:
         #exe['JAVA']       = 'java'
@@ -3723,7 +3645,6 @@ def main(argv) :
     STDERR.flush()
     t_ = 0
     body = []
-    htmlenv = {}
     if len(testdirs) == 1:
         if testlist:
             tsts = "tests "+str(testlist)
@@ -3731,26 +3652,14 @@ def main(argv) :
             tsts = "all tests"
         if not quiet:
             print "\nRunning %s in directory %s.\n" % (tsts , testdirs[0])
-        t_, elem = RealPerformDir(env, htmlenv, testdirs[0], testlist, BusyPorts)
+        t_, elem = PerformDir(env, testdirs[0], testlist, BusyPorts)
         if elem is not None:
             body.append(elem)
     else:
         if not quiet:
             print "\nRunning all tests in directories %s.\n" % str(testdirs)
-        workers = []
         for d in testdirs:
-            EnsureFreeJobSlot(workers, env['JOBS'])
-            for SRVR in 'MAPI', 'XRPC':
-                # refresh random port, FIXME, if user gives a static
-                # port, fall back to jobs == 1
-                CheckSocket2(env, SRVR, True);
-            w = PerformDir(env, htmlenv, d, [], BusyPorts)
-            workers.append(w)
-            w.start()
-        for w in workers:
-            w.join()
-            t = w.getTime()
-            elem = w.getElem()
+            t, elem = PerformDir(env, d, [], BusyPorts)
             t_ = t_ + t
             if elem is not None:
                 body.append(elem)
@@ -3849,7 +3758,7 @@ VALUES (%s, '%s', '%s', '%s',
     if THISFILE == "Mtest.py":
         env['TSTDIR'] = ""
         env['TSTTRGDIR'] = os.path.join(env['TSTTRGBASE'],TSTPREF)
-        CreateHtmlIndex(htmlenv, env, *body)
+        CreateHtmlIndex(env, *body)
 
         Failed = 0
         for f in Failure[1:]:
@@ -3936,5 +3845,3 @@ if __name__ == "__main__":
 
 #       END
 #############################################################################
-
-# vim: set ts=4 sw=4 expandtab :
