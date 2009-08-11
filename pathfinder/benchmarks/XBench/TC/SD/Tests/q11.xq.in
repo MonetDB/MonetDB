@@ -1,8 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-    [hwg/hw="the"]/ss/s/qp/q
-order by exactly-one($a/qd)
-return
-    <Output>
-        {$a/a}
-        {$a/qd}
-    </Output>

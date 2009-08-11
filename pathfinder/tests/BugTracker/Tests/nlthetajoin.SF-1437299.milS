@@ -1,3 +1,0 @@
-module(pathfinder);
-var a := bat(int,int).insert(1,1).insert(1,1);
-nlthetajoin(a.tmark(0@0), a.mark(0@0), EQ, 4LL).print();

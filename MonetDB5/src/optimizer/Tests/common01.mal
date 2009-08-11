@@ -1,9 +1,0 @@
-function qry();
-    X136 := remote.connect("localhost","monetdb","monetdb");
-    X143 := remote.put(X136,0);
-    X145 := remote.exec(X136,"sql","getVersion",X143);
-    X147 := remote.put(X136,0);
-    X148 := remote.exec(X136,"sql","getVersion",X143);
-end qry;
-optimizer.commonTerms("user","qry");
-mdb.list("user","qry");

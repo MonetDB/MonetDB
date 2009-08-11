@@ -1,9 +1,0 @@
-<a>
- <b start="1" end="4">
-  <c start="2" end="3"/>
- </b>
- <b start="2" end="5">
-  <c start="4" end="5"/>
- </b>
-</a>
-

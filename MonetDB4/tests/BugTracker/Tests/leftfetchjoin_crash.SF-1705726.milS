@@ -1,5 +1,0 @@
-module(malalgebra);
-debugmask(0);
-var a := new(void,oid).seqbase(0@0).append(500000@0).append(500000@0);
-var b := new(void,oid).seqbase(0@0).append(1@0);
-a.leftfetchjoin(b).print();

@@ -1,8 +1,0 @@
-module(unix);
-module(pathfinder);
-var TST := getenv("TST")+".xml";
-var TSTSRCDIR := getenv("TSTSRCDIR");
-
-shred_doc(TSTSRCDIR+"/"+TST,TST,TST,9LL);
-
-xquery("xml","let $batch := (<beer/>,<mies/>) return do insert $batch after exactly-one(doc(\""+TST+"\")//noot)").printf();

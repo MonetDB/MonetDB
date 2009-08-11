@@ -1,9 +1,0 @@
-module(pathfinder);
-module("unix");
-
-var TSTDOC := getenv("TSTSRCDIR") + "/test1237444.xml";
-
-shred_doc(TSTDOC,"test1237444.xml");
-
-xquery("xml", "doc(\"test1237444.xml\")//*/self::scene").printf();
-

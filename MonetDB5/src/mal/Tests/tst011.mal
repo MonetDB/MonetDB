@@ -1,7 +1,0 @@
-# exit value of a barrier
-barrier k:=12;
-	io.print(k);
-	leave k;
-	io.print("not possible");
-exit 	k:=11;
-	io.print(k);

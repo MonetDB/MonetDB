@@ -1,6 +1,0 @@
-# the multiplex code blocks. Testing syntax errors
-
-b:= bat.new(:lng,:lng);
-x:= multiplex.+(b,b);
-d:= [+](b,c) ;;# parser bug
-a:= b [+] b;

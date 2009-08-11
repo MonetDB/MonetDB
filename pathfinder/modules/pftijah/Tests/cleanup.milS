@@ -1,3 +1,0 @@
-module(pathfinder);
-
-tj_delete_global();
