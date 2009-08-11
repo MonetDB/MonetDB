@@ -2176,9 +2176,9 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	char *s, *e, *end;
 	BUN cnt = 0;
 	int j;
-	int leftover;
+	size_t leftover;
 	unsigned int i;
-	int rseplen, cseplen;
+	size_t rseplen, cseplen;
 	READERtask *task= (READERtask*) GDKzalloc(sizeof(READERtask));
 	READERtask ptask[16];
 	int threads= GDKnr_threads < 16? GDKnr_threads: 16;
@@ -2200,7 +2200,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	task->quote = quote;
 	task->separator = csep;
 	task->seplen = strlen(csep);
-	task ->errbuf =  cntxt->errbuf;
+	task->errbuf =  cntxt->errbuf;
 
 	for( i=0; i< as->nr_attrs; i++) {
 		task->fields[i] = GDKzalloc(sizeof(char*) * 10000);
@@ -2240,7 +2240,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		b->len = leftover;
 
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"read pos=%d len=%d size=%d leftover=%d\n", b->pos, b->len,b->size,leftover);
+	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " leftover=" SZFMT "\n", b->pos, b->len,b->size,leftover);
 #endif
 		/* fill the buffer as far as possible */
 		read_more(b, out, b->size - leftover );
