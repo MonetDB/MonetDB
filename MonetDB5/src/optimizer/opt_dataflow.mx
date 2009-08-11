@@ -69,11 +69,9 @@ The statemens are all checked for being eligible for dataflow.
 			   executed, either sequentially or in parallell */
 			varSetProperty(mb, getArg(q,0), "transparent",0,0);
 		}
-		for( j=start ; j<i; j++){
-			if (old[j] == NULL)
-				continue;
-			pushInstruction(mb,old[j]);
-		}
+		for( j=start ; j<i; j++)
+			if (old[j])
+				pushInstruction(mb,old[j]);
 		if (entries>1){
 			q= newAssignment(mb);
 			q->barrier= EXITsymbol;
@@ -180,10 +178,17 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (cnt && cnt == p->argc-p->retc)
 			entries++;
 	}
+	if (flowblock){
+		for( j=start ; j<i; j++){
+			if (old[j] == NULL)
+				continue;
+			pushInstruction(mb,old[j]);
+		}
+	}
 	/* take the remainder as is */
 	for (; i<limit; i++) 
-	if (old[i])
-		pushInstruction(mb,old[i]);
+		if (old[i])
+			pushInstruction(mb,old[i]);
 	GDKfree(old);
 	GDKfree(span);
 #ifdef DEBUG_DATAFLOW_OPT
