@@ -1,0 +1,58 @@
+--
+-- COPY
+--
+
+-- CLASS POPULATION
+--	(any resemblance to real life is purely coincidental)
+--
+COPY INTO aggtest FROM '$TSTSRCBASE/$TSTDIR/data/agg.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO onek FROM '$TSTSRCBASE/$TSTDIR/data/onek.data' USING DELIMITERS '\t', '\n';
+
+-- COPY INTO onek TO '@abs_builddir@/results/onek.data' USING DELIMITERS '\t', '\n';
+
+-- DELETE FROM onek;
+
+-- COPY INTO onek FROM '@abs_builddir@/results/onek.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO tenk1 FROM '$TSTSRCBASE/$TSTDIR/data/tenk.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO slow_emp4000 FROM '$TSTSRCBASE/$TSTDIR/data/rect.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO person FROM '$TSTSRCBASE/$TSTDIR/data/person.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO emp FROM '$TSTSRCBASE/$TSTDIR/data/emp.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO student FROM '$TSTSRCBASE/$TSTDIR/data/student.data' USING DELIMITERS '\t', '\n';
+
+-- don't load stud_emp, as it's the only data file with \N entries
+-- (PostgreSQL NULL notation)
+-- COPY INTO stud_emp FROM '$TSTSRCBASE/$TSTDIR/data/stud_emp.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO road FROM '$TSTSRCBASE/$TSTDIR/data/streets.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO real_city FROM '$TSTSRCBASE/$TSTDIR/data/real_city.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO hash_i4_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO hash_name_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO hash_txt_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO hash_f8_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
+-- the data in this file has a lot of duplicates in the index key
+-- fields, leading to long bucket chains and lots of table expansion.
+-- this is therefore a stress test of the bucket overflow code (unlike
+-- the data in hash.data, which has unique index keys).
+--
+-- COPY INTO hash_ovfl_heap FROM '$TSTSRCBASE/$TSTDIR/data/hashovfl.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO bt_i4_heap FROM '$TSTSRCBASE/$TSTDIR/data/desc.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO bt_name_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO bt_txt_heap FROM '$TSTSRCBASE/$TSTDIR/data/desc.data' USING DELIMITERS '\t', '\n';
+
+COPY INTO bt_f8_heap FROM '$TSTSRCBASE/$TSTDIR/data/hash.data' USING DELIMITERS '\t', '\n';
+
