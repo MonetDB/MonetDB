@@ -926,7 +926,12 @@ PHP_FUNCTION(monetdb_query)
 	len = strlen(Z_STRVAL_PP(query));
 	myq = alloca(sizeof(char) * (len + 2));
 	memcpy(myq, Z_STRVAL_PP(query), len + 1);
-	myq[len++] = ';';
+	
+	/* only add the ';' for languages that use ';' as statement delimiter (all but xquery). */
+	if (strcmp(mapi_get_lang(monetdb),"xquery") != 0) {
+		myq[len++] = ';';
+	}
+
 	myq[len] = '\0';
 	monetdb_result = mapi_query(monetdb, myq);
 	if ((MG(auto_reset_persistent) & 2) && monetdb_result == NULL) {

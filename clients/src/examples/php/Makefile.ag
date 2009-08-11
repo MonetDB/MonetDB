@@ -19,5 +19,5 @@ MTSAFE
 
 scripts_php = {
 	DIR = libdir/MonetDB/Tests
-	SOURCES = sqlsample.php
+	SOURCES = sqlsample.php xquerysample.php
 }
