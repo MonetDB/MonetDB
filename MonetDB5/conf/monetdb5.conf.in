@@ -236,9 +236,12 @@ mapi_open=false       # should be set to 'true' to allow for
 # sql_optimizer=inline,remap,deadcode,multiplex
 
 # The default pipeline
-sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,cluster,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
 
 #experimental pipelines stressing various components
+# The cluster pipeline for Skyserver loading
+#sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,cluster,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,garbageCollector,dataflow,history,multiplex
+#
 # The Recycle pipeline for Skyserver
 #sql_optimizer=inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,garbageCollector,dataflow,history,multiplex
 #
