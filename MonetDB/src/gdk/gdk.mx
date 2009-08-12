@@ -1269,14 +1269,14 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 #define bunfastins(b, h, t) do {					\
 		REGISTER BUN _p = BUNlast(b);				\
-		REGISTER unsigned short _hsize = headsize(b,1);		\
-		REGISTER unsigned short _tsize = tailsize(b,1);		\
+		REGISTER unsigned short _hsize = headsize((b),1);	\
+		REGISTER unsigned short _tsize = tailsize((b),1);	\
 		if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {		\
 			GDKerror("bunfastins: bat too large\n");	\
 			goto bunins_failed;				\
 		}							\
 		if (_p + 1 > BATcapacity(b)) {				\
-			if (BATextend(b, BATgrows(b)) == NULL)		\
+			if (BATextend((b), BATgrows(b)) == NULL)	\
 				goto bunins_failed;			\
 		}							\
 		hfastins_nocheck((b), _p, (h), _hsize);			\
@@ -1343,8 +1343,8 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define Tsize(b)	((b)->T->width)
 
 /* new semantics ! */
-#define headsize(b,p)   (b->H->type?((size_t)(p))<<b->H->shift:0)
-#define tailsize(b,p)   (b->T->type?((size_t)(p))<<b->T->shift:0)
+#define headsize(b,p)   ((b)->H->type?((size_t)(p))<<(b)->H->shift:0)
+#define tailsize(b,p)   ((b)->T->type?((size_t)(p))<<(b)->T->shift:0)
 
 #define Hloc(b,p)	((b)->H->heap.base+((p)<<(b)->H->shift))
 #define Tloc(b,p)	((b)->T->heap.base+((p)<<(b)->T->shift))
