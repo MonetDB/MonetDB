@@ -1,6 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where empty($a/vfl) and empty($a/et)
-return
-    <NoVFLnET>
-        {$a/@id}
-    </NoVFLnET>

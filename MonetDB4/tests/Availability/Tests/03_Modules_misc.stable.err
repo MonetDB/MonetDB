@@ -1,4 +1,0 @@
-stderr of test '03_Modules_misc` in directory 'tests/Availability` itself:
-
-#> Mtest:	milS 03_Modules_misc milS
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_Availability -single 03_Modules_misc.milS

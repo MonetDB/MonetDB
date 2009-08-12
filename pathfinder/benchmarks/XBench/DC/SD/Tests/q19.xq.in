@@ -1,7 +1,0 @@
-for $item in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item[@id="I7"],
-    $related in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
-where $item/related_items/related_item/item_id = $related/@id
-return
-    <Output>
-        {$related/title}
-    </Output>

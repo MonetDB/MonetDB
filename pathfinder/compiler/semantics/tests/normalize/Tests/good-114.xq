@@ -1,3 +1,0 @@
-declare variable $a := ();
-
-$a

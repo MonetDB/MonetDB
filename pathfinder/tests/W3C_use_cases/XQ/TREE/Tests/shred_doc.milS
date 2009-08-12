@@ -1,5 +1,0 @@
-module(ascii_io);
-module(unix);
-module(pathfinder);
-var TSTTRGDIR := getenv("TSTTRGDIR");
-shred_doc(TSTTRGDIR+"/shred_doc.book.xml", "book.xml");

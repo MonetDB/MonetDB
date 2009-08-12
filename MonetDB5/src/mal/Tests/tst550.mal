@@ -1,6 +1,0 @@
-# use of the lock module
-l:= lock.create();
-lock.set(l);
-i:=lock.try(l);
-lock.unset(l);
-lock.destroy(l);

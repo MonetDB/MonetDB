@@ -1,4 +1,0 @@
-stderr of test 'BATkey` in directory 'src/gdk` itself:
-
-#> Mtest (15:58:32):	milM BATkey milM
-#> Mtest (15:58:32):	Mtimeout -timeout 600 Mserver -p -modulesilent -yaccsilent -d8 -db src_gdk

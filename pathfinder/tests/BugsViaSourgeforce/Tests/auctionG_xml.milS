@@ -1,5 +1,0 @@
-module(unix);
-module(pathfinder);
-var TSTSRCBASE := getenv("TSTSRCBASE");
-shred_doc(TSTSRCBASE+"/benchmarks/XMark/Tests/auctionG.xml","auctionG.xml");
-quit();

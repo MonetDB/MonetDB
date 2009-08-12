@@ -1,5 +1,0 @@
-pf:add-doc("$TSTSRCDIR/document.xml", "document.xml", "document.xml", 10)
-<>
-do insert attribute attr {"value"} into exactly-one(doc("document.xml")/document)
-<>
-doc("document.xml")

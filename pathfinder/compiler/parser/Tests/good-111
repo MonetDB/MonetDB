@@ -1,9 +1,0 @@
-#!/bin/bash
-
-NAME=$1
-
-# cd to the test source directory, as that is where the modules are
-cd $TSTSRCDIR
-
-pf -s2 < $NAME.xq
-echo $?

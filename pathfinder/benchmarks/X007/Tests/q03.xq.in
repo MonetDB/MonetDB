@@ -1,5 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $a in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart/Connection/AtomicPart
-          [@buildDate >= 1900 and @buildDate < 1950]
-return $a

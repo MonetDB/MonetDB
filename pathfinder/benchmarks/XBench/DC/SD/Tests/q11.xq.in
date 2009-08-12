@@ -1,9 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.catalog.xml")/catalog/item
-where zero-or-one($a/date_of_release) gt "1990-01-01" and
-    zero-or-one($a/date_of_release) lt "1995-01-01"
-order by zero-or-one($a/data_of_release) descending
-return
-    <Output>
-        {$a/title}
-        {$a/date_of_release}
-    </Output>

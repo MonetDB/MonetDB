@@ -1,5 +1,0 @@
-# run test find_first_on_void_void.SF-1505232 first
-var a := bat("test1505232");
-a.print();
-a.find(0@0).print();
-a.find(1@0).print();

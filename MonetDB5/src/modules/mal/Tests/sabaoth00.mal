@@ -1,7 +1,0 @@
-include sabaoth;
-
-h := sabaoth.getLocalConnectionHost();
-p := sabaoth.getLocalConnectionPort();
-
-io.print(h);
-io.print(p);
