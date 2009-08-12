@@ -1980,9 +1980,12 @@ SQLworker_column(READERtask *task, int col)
 	Column *fmt = task->as->format;
 	str err = 0;
 
-	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next )
-		BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next);
+	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next ) {
+		if ( BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next) == NULL)
+			err= GDKstrdup("Failed to extend the BAT, perhaps disk full");
+	}
 
+	if ( err == 0)
 	for ( i = 0; i< task->next ; i++){
 		SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &task->as->error, col);
 		if ( task->as->error != NULL && err == 0) {
@@ -2007,13 +2010,15 @@ SQLworker(void *arg)
 
 	/* where to leave errors */
 	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
-	while( task->next >= 0){
+	while( task->next >= 0 && task->as->error == NULL){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker started\n");
 #endif
 		MT_down_sema(task->sema,"SQLworker");
-		if ( task->next < 0 )
+		if ( task->next < 0 ){
+			MT_up_sema(task->reply,"SQLworker");
 			break;
+		}
 
 		for ( i= 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
 		if ( task->cols[i]) {
@@ -2026,9 +2031,7 @@ SQLworker(void *arg)
 		cnt += task->next;
 
 		MT_up_sema(task->reply,"SQLworker");
-
 	}
-	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker exists\n");
 #endif
