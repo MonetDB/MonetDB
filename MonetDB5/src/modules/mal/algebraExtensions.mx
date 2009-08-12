@@ -224,9 +224,12 @@ static BAT *
 GDKblockjoin2(BAT *b, BAT *c){
 	BAT *bp, *cp, *j, *bn = 0;
 	BUN blim, bl, cap = BUN_NONE;
-	BUN clim,cl;
+	BUN clim,cl, blk;
 	int i=0, k =0;
-	size_t blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
+	size_t _blk = (size_t) (MT_npages() * MT_pagesize() / (4.0 * (sizeof(int) + ATOMsize(b->ttype))));
+
+	assert(_blk <= (size_t)BUN_MAX);
+	blk = (BUN) _blk;
 
 	blim = BATcount(b);
 	clim = BATcount(c);
@@ -251,7 +254,7 @@ GDKblockjoin2(BAT *b, BAT *c){
 		}
 		BBPunfix( bp->batCacheid);
 	}
-printf("block size " SZFMT "\n|",blk);
+printf("block size " SZFMT "\n|",_blk);
 printf("outersize " BUNFMT " inner size " BUNFMT "\n", blim,clim);
 printf("inner loop %d\n",k);
 	return bn;
