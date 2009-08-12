@@ -1,0 +1,36 @@
+stdout of test 'load_stdin_incorrect_line_nr` in directory 'src/test/copy` itself:
+
+
+# 17:35:32 >  
+# 17:35:32 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=33038 --set xrpc_port=49172 --set monet_prompt= --trace  "--dbname=mTests_src_test_copy" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 17:35:32 >  
+
+# MonetDB server v5.13.0, based on kernel v1.31.0
+# Serving database 'mTests_src_test_copy', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33038/
+# MonetDB/SQL module v2.33.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+Over..
+
+# 22:56:13 >  
+# 22:56:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34976 
+# 22:56:13 >  
+
+% sys.number # table_name
+% isanumber # name
+% int # type
+% 1 # length
+
+# 17:35:33 >  
+# 17:35:33 >  Done.
+# 17:35:33 >  
+
