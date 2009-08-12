@@ -105,7 +105,7 @@ bat_@1_@2(BAT **ret, BAT *b)
 			bv = @2(bv);
 		*bnp++ = bv;
 	}
-        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / Tsize(bn)));
+        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / tailsize(bn,1)));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -141,7 +141,7 @@ batbat_@1_@2(BAT **ret, BAT *l, BAT *r)
 		bnp++;
 	}
 
-        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / Tsize(bn)));
+        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / tailsize(bn,1)));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -180,7 +180,7 @@ valbat_@1_@2(BAT **ret, @1 *v, BAT *b)
 			bnp++;
 		}
 	}
-        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / Tsize(bn)));
+        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / tailsize(bn,1)));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;
@@ -218,7 +218,7 @@ batval_@1_@2(BAT **ret, BAT *b, @1 *v)
 			bnp++;
 		}
 	}
-        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / Tsize(bn)));
+        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / tailsize(bn,1)));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;

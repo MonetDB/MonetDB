@@ -47,11 +47,11 @@ extern int store_nr_active;
 extern store_type active_store_type;
 
 /* relational interface */
-typedef ssize_t (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
-typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, ssize_t rid);
-typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, ssize_t rid, void *value);
+typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, void *value, ...);
+typedef void *(*column_find_value_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
-typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, ssize_t rid);
+typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
 
 typedef struct rids {
 	BUN cur;
@@ -67,7 +67,7 @@ typedef rids *(*rids_orderby_fptr)( sql_trans *tr, rids *r, sql_column *orderby_
 typedef rids *(*rids_join_fptr)( sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc);
 
 /* return table rids from result of table_select, return (-1) when done */
-typedef ssize_t (*rids_next_fptr)(rids *r);
+typedef oid (*rids_next_fptr)(rids *r);
 
 /* clean up the resources taken by the result of table_select */
 typedef void (*rids_destroy_fptr)(rids *r);
@@ -100,7 +100,7 @@ typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 */
 typedef void (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
 typedef void (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
-typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t, ssize_t rid);
+typedef void (*update_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t, oid rid);
 typedef void (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
 typedef void (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 

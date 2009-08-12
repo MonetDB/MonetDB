@@ -255,7 +255,7 @@ void
 bpm_delete_host(bpmHost bpmH )
 {
 	BAT *r = NULL;
-	ssize_t rid = -1;
+	oid rid = oid_nil;
 	BUN p;
 
 	if (!dist_id)

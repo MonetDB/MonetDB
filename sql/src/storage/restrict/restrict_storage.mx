@@ -126,12 +126,11 @@ update_bat( sql_bat *bat, BAT *upd, int isnew)
 }
 
 static void
-update_val( sql_bat *bat, ssize_t rid, void *upd, int isnew) 
+update_val( sql_bat *bat, oid rid, void *upd, int isnew) 
 {
 	BAT *b;
 
-	assert(rid != (ssize_t)oid_nil);
-	assert(rid != -1);
+	assert(rid != oid_nil);
 	b = temp_descriptor(bat->bid);
 	if (!isnew) {
 		BAT *u = NULL;
@@ -152,18 +151,18 @@ update_val( sql_bat *bat, ssize_t rid, void *upd, int isnew)
 		}
 		bat_destroy(u);
 	}
-	assert(rid > 0);
+	assert(rid != oid_nil);
 #if SIZEOF_OID < SIZEOF_SSIZE_T
 	assert((lng) rid <= (lng) GDK_oid_max);
 #endif
-	void_inplace(b, (oid)rid, upd, TRUE);
+	void_inplace(b, rid, upd, TRUE);
 	bat_destroy(b);
 }
 
 /* for now we simply apply the updates, problem is we can't rollback */
 
 static void
-update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
+update_col(sql_trans *tr, sql_column *c, void *i, int tpe, oid rid)
 {
 	sql_bat *bat = c->data;
 

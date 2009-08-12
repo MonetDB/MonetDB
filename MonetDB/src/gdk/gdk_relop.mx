@@ -156,8 +156,8 @@ unsorted l with a sorted r; in that case it always uses binary search.
 
 #define bunfastins_limit(b, h, t, limit, percdone) {  		\
                 REGISTER BUN _p = BUNlast(b);                   \
-                REGISTER unsigned short _hsize = Hsize(b);	\
-                REGISTER unsigned short _tsize = Tsize(b);	\
+                REGISTER unsigned short _hsize = headsize(b,1);	\
+                REGISTER unsigned short _tsize = tailsize(b,1);	\
                 if (BUNlast(b) + 1 > BATcapacity(b)) {		\
                         if (limit) {				\
 				*limit = (BUN) (b->batCount * (percdone)); \
@@ -1011,7 +1011,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		ESTIDEBUG THRprintf(GDKout, "#BATfetchjoin: estimated resultsize: " BUNFMT "\n", lcount);
 
 		dst = Tloc(bn,BUNfirst(bn));
- 		ts = Tsize(bn);
+ 		ts = tailsize(bn,1);
 
 		if (ATOMstorage(tpe) == TYPE_chr) {
 			@:voidfetchjoin(tloc,chr,SIMPLE)@
@@ -1338,7 +1338,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		ptr nilt = ATOMnilptr(r->ttype);
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
-		unsigned short hs = Hsize(bn), ts = Tsize(bn);
+		unsigned short hs = headsize(bn,1), ts = tailsize(bn,1);
 
 		BATloop(l, p, q) {
 			oid v = *(oid *) BUNtail(li, p);

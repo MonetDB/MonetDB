@@ -1610,7 +1610,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			BUN q = BUNlast(b);
 			BUN p = BUNfirst(b);
 			BUN r = BUNfirst(bn);
-			unsigned short hs = Hsize(bn), ts = Tsize(bn);
+			unsigned short hs = headsize(bn,1), ts = tailsize(bn,1);
 
 			if (tpe == TYPE_oid && b->ttype == TYPE_void) {
 				/* void => oid materialization is a special case */

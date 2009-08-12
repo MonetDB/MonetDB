@@ -4186,7 +4186,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char buff[24];
 	mvc *m = NULL;
 	int id = 0;
-	ssize_t rid = -1;
+	oid rid = oid_nil;
 
 	str msg = getContext(cntxt, mb, &m, NULL);
 	if (msg)
@@ -4198,7 +4198,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	gid = mvc_bind_column(m, g_tbl, "gid");
 
 	rid = table_funcs.column_find_row(m->session->tr, gname, *name, NULL);
-	if (rid != -1) {
+	if (rid != oid_nil) {
 		throw(SQL,"sql.rdfShred","graph name allready exists in rdf.graph");
 	}
 	id = (int) store_funcs.count_col(gname);

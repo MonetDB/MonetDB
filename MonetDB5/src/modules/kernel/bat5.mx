@@ -1832,7 +1832,7 @@ copy_segment(MT_mmap_hdl *hdl, BAT *bn, BAT *b, oid src, BUN dst, BUN cnt)
 	int ret = 0;
 
 	if (cnt) {
-		size_t xx = REMAP_PAGE_SIZE * Tsize(b);
+		size_t xx = REMAP_PAGE_SIZE * tailsize(b,1);
 		off_t src_off = (off_t) (src * xx); /* 64bit: could overflow */
 		size_t dst_off = dst * xx;
 		size_t nbytes  = cnt * xx;
@@ -1982,7 +1982,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 		bn->T->heap.storage = STORE_MMAP;
 		if (!*force)
 			bn->T->heap.storage |= STORE_PRIV; 
-	} else if (HEAPalloc(&bn->T->heap, n, Tsize(bn)) < 0) {
+	} else if (HEAPalloc(&bn->T->heap, n, tailsize(bn,1)) < 0) {
 		goto error;
 	}
 
@@ -2274,8 +2274,8 @@ CMDmsync(BAT **r, BAT *b, oid* lo, oid *hi, bit *async)
 		return GDK_FAIL;
 	}
 	if (*lo < *hi && (b->T->heap.storage == STORE_MMAP)) {
-		size_t lo_off = (*lo - b->hseqbase) * Tsize(b);
-		size_t hi_off = (*hi - b->hseqbase) * Tsize(b);
+		size_t lo_off = (*lo - b->hseqbase) * tailsize(b,1);
+		size_t hi_off = (*hi - b->hseqbase) * tailsize(b,1);
 		lo_off = (lo_off / MT_pagesize()) * MT_pagesize();
 		hi_off = (((hi_off - 1) / MT_pagesize()) + 1) * MT_pagesize();
 		if (MT_msync(b->T->heap.base, lo_off, hi_off - lo_off, (*async==TRUE)?MMAP_ASYNC:MMAP_SYNC)) {

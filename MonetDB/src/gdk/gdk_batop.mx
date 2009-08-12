@@ -147,7 +147,7 @@ BATins(BAT *b, BAT *n, bit force)
 	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
-		unsigned short ts = Tsize(b);
+		unsigned short ts = tailsize(b,1);
 
 		if (BATcount(b) == 0) {
 			ALIGNset(b, n);
@@ -208,7 +208,7 @@ BATins(BAT *b, BAT *n, bit force)
 			}
 		} else if (b->H->hash) {
 			BUN i = BUNlast(b);
-			unsigned short hs = Hsize(b);
+			unsigned short hs = headsize(b,1);
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {
@@ -220,7 +220,7 @@ BATins(BAT *b, BAT *n, bit force)
 				i++;
 			}
 		} else {
-			unsigned short hs = Hsize(b);
+			unsigned short hs = headsize(b,1);
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {
@@ -283,7 +283,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
 				BUN r = BUNlast(b);
-				unsigned short hs = Hsize(b);
+				unsigned short hs = headsize(b,1);
 				oid m;
 
 				f = MAXoid(b);
@@ -364,8 +364,8 @@ BATappend(BAT *b, BAT *n, bit force)
 				b->T->nodense = last;
 			}
 		}
- 		hs = Hsize(b);
-		ts = Tsize(b);
+ 		hs = headsize(b,1);
+		ts = tailsize(b,1);
 		if (b->htype == TYPE_void) {
 			BATiter ni = bat_iterator(n);
 
@@ -798,8 +798,8 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 		BUN q = BUNfirst(bn);
 		BUN r;
 		BATiter bi = bat_iterator(b);
-		unsigned short hs = Hsize(bn);
-		unsigned short ts = Tsize(bn);
+		unsigned short hs = headsize(bn,1);
+		unsigned short ts = tailsize(bn,1);
 
 		assert(BATcapacity(bn) <= BUN_MAX);
 		r = (BUN) BATcapacity(bn);
@@ -1809,7 +1809,7 @@ BAT@6order@3(BAT *b)
 		b = BATrevert(b);
 		return b;
 	}
-	GDK@7sort@3(Hloc(b,BUNfirst(b)), Tloc(b,BUNfirst(b)), (b->hheap)?b->H->vheap->base:NULL, BATcount(b), Hsize(b), Tsize(b), b->htype);
+	GDK@7sort@3(Hloc(b,BUNfirst(b)), Tloc(b,BUNfirst(b)), (b->hheap)?b->H->vheap->base:NULL, BATcount(b), headsize(b,1), tailsize(b,1), b->htype);
 	HASHdestroy(b);
 	ALIGNdel(b, "BATorder@3", FALSE);
 	b->hsorted = (bit) GDK_SORTED@2;
@@ -2260,8 +2260,8 @@ BATnumber(BAT *b)
 	if (bn == NULL)
 		return NULL;
 	r = BUNfirst(bn);
-	hs = Hsize(bn);
-	ts = Tsize(bn);
+	hs = headsize(bn,1);
+	ts = tailsize(bn,1);
 	@:updateloop(bn,b,BUNnumber)@
 	ALIGNsetH(bn, b);
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, i);	/* 64bit: no (wrd) cast to remind us */
@@ -2290,8 +2290,8 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 	if (bn == NULL)
 		return NULL;
 	r = BUNfirst(bn);
-	hs = Hsize(bn);
-	ts = Tsize(bn);
+	hs = headsize(bn,1);
+	ts = tailsize(bn,1);
 
 	ALIGNsetH(bn, b);
 
@@ -2547,7 +2547,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 			if (!bt)
 				return NULL;
 			bt->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
-			ts = Tsize(bt);
+			ts = tailsize(bt,1);
 			switch(ATOMsize(ATOMstorage(tailtype))) {
 			case 1: {
 				bte *d = (bte*)Tloc(bt, BUNfirst(bt)), V = *(bte*)v;
@@ -2598,8 +2598,8 @@ BATconst(BAT *b, int tailtype, ptr v)
 	if (bn == NULL) 
 		return bn;
 	r = BUNfirst(bn);
-	hs = Hsize(bn);
-	ts = Tsize(bn);
+	hs = headsize(bn,1);
+	ts = tailsize(bn,1);
 	BATloop(b, p, q) {
 		bunfastins_nocheck(bn, r, BUNhead(bi, p), v, hs, ts);
 		r++;

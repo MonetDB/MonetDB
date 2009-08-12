@@ -48,11 +48,11 @@ extern BAT * delta_bind_bat( sql_delta *bat, int access, int temp);
 extern BAT * delta_bind_del(sql_dbat *bat, int access);
 
 extern void delta_update_bat( sql_delta *bat, BAT *upd, int is_new);
-extern void delta_update_val( sql_delta *bat, ssize_t rid, void *upd);
+extern void delta_update_val( sql_delta *bat, oid rid, void *upd);
 extern void delta_append_bat( sql_delta *bat, BAT *i );
 extern void delta_append_val( sql_delta *bat, void *i );
 extern void delta_delete_bat( sql_dbat *bat, BAT *i );
-extern void delta_delete_val( sql_dbat *bat, ssize_t rid );
+extern void delta_delete_val( sql_dbat *bat, oid rid );
 
 extern int load_delta(sql_delta *bat, int bid, int type);
 extern int load_dbat(sql_dbat *bat, int bid);
@@ -230,12 +230,11 @@ delta_update_bat( sql_delta *bat, BAT *upd, int is_new)
 }
 
 void
-delta_update_val( sql_delta *bat, ssize_t rid, void *upd) 
+delta_update_val( sql_delta *bat, oid rid, void *upd) 
 {
 	BAT *b;
 
-	assert(rid != (ssize_t)oid_nil);
-	assert(rid != -1);
+	assert(rid != oid_nil);
 
 	if (bat->ubid) {
 		b = temp_descriptor(bat->ubid);
@@ -252,13 +251,13 @@ delta_update_val( sql_delta *bat, ssize_t rid, void *upd)
 		BUNreplace(b, (ptr) &rid, upd, TRUE);
 	} else {
 		b = temp_descriptor(bat->ibid);
-		void_inplace(b, (oid) rid, upd, TRUE);
+		void_inplace(b, rid, upd, TRUE);
 	}
 	bat_destroy(b);
 }
 
 static void
-update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
+update_col(sql_trans *tr, sql_column *c, void *i, int tpe, oid rid)
 {
 	sql_delta *bat = c->data;
 
@@ -370,7 +369,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 }
 
 void
-delta_delete_val( sql_dbat *bat, ssize_t rid ) 
+delta_delete_val( sql_dbat *bat, oid rid ) 
 {
 	BAT *b = temp_descriptor(bat->dbid);
 
@@ -395,7 +394,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	if (tpe == TYPE_bat)
 		delta_delete_bat(bat, ib);
 	else
-		delta_delete_val(bat, *(ssize_t*)ib);
+		delta_delete_val(bat, *(oid*)ib);
 }
 
 static size_t
