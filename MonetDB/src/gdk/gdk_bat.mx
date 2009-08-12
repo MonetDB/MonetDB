@@ -201,9 +201,9 @@ chr
 ATOMelmshift(int sz)
 {
 	chr sh;
-	int i = sz >> 1;
+	int i = sz - 1;
 
-	for (sh = 0; i != 0; sh++) {
+	for (sh = 0; i > 0; sh++) {
 		i >>= 1;
 	}
 	return sh;
@@ -249,10 +249,10 @@ BATnewstorage(int ht, int tt, BUN cap)
 		bn->U->capacity = cap;
 
 		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
+		if (ht && HEAPalloc(&bn->H->heap, cap, headsize(bn,1)) < 0) {
 			return NULL;
 		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
+		if (tt && HEAPalloc(&bn->T->heap, cap, tailsize(bn,1)) < 0) {
 			if (ht) HEAPfree(&bn->H->heap);
 			return NULL;
 		}
@@ -453,10 +453,10 @@ malloc.
 
 	b->batCapacity = newcap;
 
-	hheap_size *= Hsize(b);
+	hheap_size = headsize(b,hheap_size);
 	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
 		return NULL;
-	theap_size *= Tsize(b);
+	theap_size = tailsize(b,theap_size);
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
 	HASHdestroy(b);
@@ -880,7 +880,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
 			BATiter bi = bat_iterator(b);
-			unsigned short hs = Hsize(b), ts = Tsize(b);
+			unsigned short hs = headsize(b,1), ts = tailsize(b,1);
 
 			BATloop(b, p, q) {
 				ptr h = BUNhead(bi, p);
@@ -912,9 +912,9 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 
 			bn->H->heap.free = bn->T->heap.free = 0;
 			if (ht) 
-				bn->H->heap.free = bunstocopy * Hsize(bn);
+				bn->H->heap.free = headsize(bn, bunstocopy);
 			else 
-				bn->T->heap.free = bunstocopy * Tsize(bn);
+				bn->T->heap.free = tailsize(bn, bunstocopy);
 
 			if (tpe == TYPE_chr || tpe == TYPE_bte) {
 				bte *src = (bte *) cur, *dst = (bte *)d;
@@ -1619,8 +1619,8 @@ last inserted bun (if present) is copied over it.
 				}
 			}
 		}
-		b->H->heap.free -= Hsize(b);
-		b->T->heap.free -= Tsize(b);
+		b->H->heap.free -= headsize(b,1);
+		b->T->heap.free -= tailsize(b,1);
 		p--;
 	}
 	b->batCount--;

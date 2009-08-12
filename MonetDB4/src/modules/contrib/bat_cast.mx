@@ -76,7 +76,7 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 		*bnp = (bv != @1_nil) ? (@2)bv : @2_nil;
 		bnp++;
 	}
-        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / Tsize(bn)));
+        BATsetcount(bn, (BUN) (((char*)bnp - bn->T->heap.base) / tailsize(bn,1)));
         if (!bn->batDirty) bn->batDirty = TRUE;
 
         *ret = bn;

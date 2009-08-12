@@ -565,7 +565,7 @@ VIEWreset(BAT *b)
 			if (head.filename == NULL)
 				goto bailout;
 			sprintf(head.filename, "%s.head", nme);
-			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0) 
+			if (n->htype && HEAPalloc(&head, cnt, headsize(n,1)) < 0) 
 				goto bailout;
 		}
 		if (n->ttype) {
@@ -573,7 +573,7 @@ VIEWreset(BAT *b)
 			if (tail.filename == NULL)
 				goto bailout;
 			sprintf(tail.filename, "%s.tail", nme);
-			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0) 
+			if (n->ttype && HEAPalloc(&tail, cnt, tailsize(n,1)) < 0) 
 				goto bailout;
 		}
 		if (n->H->vheap) {

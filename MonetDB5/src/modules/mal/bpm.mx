@@ -1652,8 +1652,8 @@ BPMsizePolicy( BAT *b, BAT *bs, int ov)
 	int cs=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+	space = BATcount(b)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
 
 /*	stream_printf(GDKout,"tuples " BUNFMT " size  " LLFMT " selection " LLFMT "\n", BATcount(b),space, space1); */
 	if(ov <3) {
@@ -1701,8 +1701,8 @@ BPMhybridPolicy( BAT *b, BAT *bs, int ov)
 	BUN cnt=0;
 	lng space, space1, space2=0;
 
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
-	space1 = BATcount(bs)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+	space = BATcount(b)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
+	space1 = BATcount(bs)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
 
 	if(ov <3) {
 		space2 = space -space1;
@@ -1805,7 +1805,7 @@ BPMadaptImpl(bat *ret, bat *bid, ptr low, ptr hgh, bat *rs, int policy )
 	tpe = rngType(b->ttype);
 
 /* baseline size, too small BATs are never broken*/
-	space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+	space = BATcount(b)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
 	if (space < Mmin) { /* no re-org.*/
 		BBPkeepref(*ret = b->batCacheid);
 		return MAL_SUCCEED;
@@ -3128,7 +3128,7 @@ BPMsplitquant(bat *ret, bat *bid, int *mb)
 	/*	materializePartition(bpmcat[i]); */
 		@:getBATdescriptor(&bpmcat[i]->bid,b,"bpm.splitquantile");
 		
-		space = BATcount(b)* (Hsize(b) + Tsize(b) + sizeof(BUN)) + sizeof(BATstore);
+		space = BATcount(b)* (headsize(b,1) + tailsize(b,1) + sizeof(BUN)) + sizeof(BATstore);
 		if ((b->htype == TYPE_void) || (b->ttype == TYPE_void))
 			space += BATcount(b)* sizeof(oid);
 	#ifdef _DEBUG_BPM_
