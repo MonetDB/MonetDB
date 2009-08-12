@@ -336,7 +336,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	sql_column *priv_priv = find_sql_column(privs, "privileges");
 	sql_trans *tr = sql->session->tr;
 	rids *A;
-	ssize_t r = -1;
+	oid rid = oid_nil;
 
 	(void) grantor;
 	(void) grantable;
@@ -345,8 +345,8 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	A = table_funcs.rids_select(tr, priv_auth, &auth_id, &auth_id, priv_priv, &privilege, &privilege, priv_obj, &obj_id, &obj_id, NULL );
 
 	/* remove them */
-	for(r = table_funcs.rids_next(A); r>=0; r = table_funcs.rids_next(A)) 
-		table_funcs.table_delete(tr, privs, r); 
+	for(rid = table_funcs.rids_next(A); rid != oid_nil; rid = table_funcs.rids_next(A)) 
+		table_funcs.table_delete(tr, privs, rid); 
 	table_funcs.rids_destroy(A);
 }
 

@@ -57,13 +57,13 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	return b;
 }
 
-static ssize_t
+static oid
 column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 {
 	va_list va;
 	BUN q;
 	BAT *b = NULL, *s = NULL, *r = NULL, *d = NULL;
-	ssize_t rid = -1;
+	oid rid = oid_nil;
 	sql_column *nc;
 	void *nv;
 	sql_bat *bat = c->t->data;
@@ -99,7 +99,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 }
 
 static void *
-column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
+column_find_value(sql_trans *tr, sql_column *c, oid rid)
 {
 	BUN q;
 	BAT *b, *d = NULL;
@@ -129,10 +129,9 @@ column_find_value(sql_trans *tr, sql_column *c, ssize_t rid)
 }
 
 static int
-column_update_value(sql_trans *tr, sql_column *c, ssize_t rid, void *value)
+column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
-	assert(rid != (ssize_t)oid_nil);
-	assert(rid != -1);
+	assert(rid != oid_nil);
 
 	store_funcs.update_col(tr, c, value, c->type.type->localtype, rid);
 	return 0;
@@ -162,10 +161,9 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 }
 
 static int
-table_delete(sql_trans *tr, sql_table *t, ssize_t rid)
+table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
-	assert(rid != (ssize_t)oid_nil);
-	assert(rid != -1);
+	assert(rid != oid_nil);
 
 	store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
 	return 0;
@@ -244,15 +242,15 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 }
 
 
-/* return table rids from result of rids_select, return (-1) when done */
-static ssize_t 
+/* return table rids from result of rids_select, return (oid_nil) when done */
+static oid 
 rids_next(rids *r)
 {
 	if (r->cur < BATcount(r->data)) {
 		BATiter bi = bat_iterator(r->data);
 		return *(oid*)BUNhead(bi, r->cur++);
 	}
-	return -1;
+	return oid_nil;
 }
 
 static rids *

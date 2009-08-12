@@ -269,11 +269,11 @@ update_bat( sql_bpm *p, BAT *upd)
 }
 
 static void
-update_val( sql_bpm *p, ssize_t rid, void *upd) 
+update_val( sql_bpm *p, oid rid, void *upd) 
 {
 	sht nr = (sht) (rid?rid/BPM_SPLIT:0);
 
-	assert(rid != -1);
+	assert(rid != oid_nil);
 
 	if (nr >= p->nr)
 		nr = p->nr-1;
@@ -282,7 +282,7 @@ update_val( sql_bpm *p, ssize_t rid, void *upd)
 
 /* TODO have a update_bpm */
 static void
-update_col(sql_trans *tr, sql_column *c, void *i, int tpe, ssize_t rid)
+update_col(sql_trans *tr, sql_column *c, void *i, int tpe, oid rid)
 {
 	sql_bpm *p = c->data;
 
@@ -411,11 +411,11 @@ delete_bat( sql_dbpm *p, BAT *del )
 }
 
 static void
-delete_val( sql_dbpm *p, ssize_t rid ) 
+delete_val( sql_dbpm *p, oid rid ) 
 {
 	sht nr = (sht) (rid?rid/BPM_SPLIT:0);
 
-	assert(rid != -1);
+	assert(rid != oid_nil);
 	if (nr >= p->nr)
 		nr = p->nr-1;
 	delta_delete_val( &p->parts[nr], rid);
@@ -431,7 +431,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 	if (tpe == TYPE_bat)
 		delete_bat(p, ib);
 	else
-		delete_val(p, *(ssize_t*)ib);
+		delete_val(p, *(oid*)ib);
 }
 
 static size_t
