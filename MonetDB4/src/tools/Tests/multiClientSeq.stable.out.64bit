@@ -792,7 +792,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-----------------------------------------------------------------------------------------#
@@ -824,7 +823,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#
@@ -912,7 +910,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#
@@ -1730,7 +1727,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-----------------------------------------------------------------------------------------#
@@ -1762,7 +1758,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#
@@ -1850,7 +1845,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/data/home/niels/data/Linux-x86_64/var/MonetDB/log"		  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "monet_cwd",		  "/data/db3/niels/Linux-x86_64/mTests/src/tools"		  ]
 #-------------------------#

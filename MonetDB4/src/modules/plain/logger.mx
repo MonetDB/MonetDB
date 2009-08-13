@@ -311,7 +311,7 @@ logger_find_bat_wrap( int *bid, logger *L, str nme )
 
 @mil
 proc logger_start() : void {
-	var dir := bat("monet_environment").find("sql_logdir");
+	var dir := "sql_logs";
 	var db := bat("monet_environment").find("gdk_dbname");
 	print(dir);
 	print(db);

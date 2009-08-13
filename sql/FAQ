@@ -29,6 +29,8 @@ mclient -lsql < batchfile
 
 3) How do I change the location of the SQL log files?
 
-To change the location of the log-files, add the following option to Mserver:
- 
- --set sql_logdir=<logdir>
+As of MonetDB version Aug2009 the location of SQL log files is fixed to
+<dbfarm>/<dbname>/sql_logs .
+In case you indeed need to change this location (e.g., to place the logs on
+a different partition, disk, or filesystem than the database, please use
+symbolic links.

@@ -870,7 +870,6 @@ Start of MIL script.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"							  ]
 [ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/src/tools"																					  ]
 #-------------------------#
