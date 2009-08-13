@@ -107,16 +107,8 @@ end main;
 [ 0@0,	  <author>john<title>spring</title><title>summer</title></author>	  ]
 [ 1@0,	  <author>marie<title>autum</title></author>				  ]
 [ "book construction" ]
-#-------------------------------------------------------------------------------------------------------------------------#
-# h	t														  # name
-# oid	xml														  # type
-#-------------------------------------------------------------------------------------------------------------------------#
-[ 0@0,	  <author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author>	  ]
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-# h	t																  # name
-# oid	xml																  # type
-#-----------------------------------------------------------------------------------------------------------------------------------------#
-[ 0@0,	  <books><author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author></books>	  ]
+[ <author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author> ]
+[ <books><author>john<title>spring</title><title>summer</title></author><author>marie<title>autum</title></author></books> ]
 
 # 23:09:29 >  
 # 23:09:29 >  Done.
