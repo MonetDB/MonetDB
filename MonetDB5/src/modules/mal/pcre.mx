@@ -228,8 +228,12 @@ pcre_export str BATPCREilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREilike2(int *ret, int *b, str *pat);
 pcre_export str BATPCREnotilike(int *ret, int *b, str *pat, str *esc);
 pcre_export str BATPCREnotilike2(int *ret, int *b, str *pat);
+pcre_export str PCREselectDef(int *res, str *pattern, int *bid);
+pcre_export str PCREuselectDef(int *res, str *pattern, int *bid);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
+pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
