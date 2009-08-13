@@ -1064,9 +1064,9 @@ format_result(MapiHdl hdl)
 		}
 		if (mapi_get_querytype(hdl) == Q_UPDATE) {
 			if (formatter == RAWformatter)
-				stream_printf(toConsole, "[ %d\t]\n", mapi_rows_affected(hdl));
+				stream_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
 			else
-				stream_printf(toConsole, "Rows affected %d\n", mapi_rows_affected(hdl));
+				stream_printf(toConsole, "Rows affected " LLFMT "\n", mapi_rows_affected(hdl));
 			continue;
 		}
 		if (pagewidth <= 0) {
