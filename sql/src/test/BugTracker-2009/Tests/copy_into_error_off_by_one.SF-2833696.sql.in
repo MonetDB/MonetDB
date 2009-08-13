@@ -1,3 +1,0 @@
-create table number (isanumber integer);
-COPY 2 RECORDS INTO number FROM '$RELSRCDIR/copy_into_error_off_by_one.SF-2833696.csv' USING DELIMITERS '\n';
-drop table number;
