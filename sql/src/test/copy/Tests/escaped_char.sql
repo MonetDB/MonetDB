@@ -12,8 +12,8 @@ copy 1 records into t_str from stdin delimiters ',','\n','"';
 hello\,world,"all"
 
 copy 1 records into t_str from stdin delimiters ',','\n','"';
-hello\,world,"all"\
-therest
+hello\,world,"all\
+therest"
 
 select * from t_str;
 
