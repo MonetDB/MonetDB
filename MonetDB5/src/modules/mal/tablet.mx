@@ -2242,6 +2242,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"read pos=" SZFMT " len=" SZFMT " size=" SZFMT " leftover=" SZFMT "\n", b->pos, b->len,b->size,leftover);
 #endif
+		if ( b->size - leftover == 0 ){
+			/* the record is longer then the buffer */
+			GDKerror("SQLload_file: record too long (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+			break;
+		}
+
 		/* fill the buffer as far as possible */
 		read_more(b, out, b->size - leftover );
 #ifdef _DEBUG_TABLET_
