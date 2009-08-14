@@ -61,6 +61,7 @@ temp_table_fail_leaves_data.SF-2793286
 having_min_crash.SF-2795951
 insert_type_exception.SF-2789976
 explain_gives_crash.SF-2741829
+explain_gives_crash.SF-2741829_cleanup
 primekeyconstraint.SF-2783425
 random.SF-2737889
 alter_table_drop_constraint.SF-2803477
