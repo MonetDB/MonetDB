@@ -22,6 +22,10 @@
 #include <string.h>
 #include <mapilib/Mapi.h>
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\
 					mapi_explain_result(hdl,stderr); \
