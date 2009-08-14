@@ -17,6 +17,11 @@
  * All Rights Reserved.
  */
 
+#ifdef _MSC_VER
+/* suppress deprecation warning for snprintf */
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

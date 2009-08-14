@@ -22,7 +22,6 @@
 #include <string.h>
 #include <mapilib/Mapi.h>
 #ifdef _MSC_VER
-#define snprintf _snprintf
 #define LLFMT "%I64d"
 #else
 #define LLFMT "%lld"
