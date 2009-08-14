@@ -4342,10 +4342,10 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->active = result;
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
-			stream_printf(hdl->mid->tracelog, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount);
+			stream_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
 			stream_flush(hdl->mid->tracelog);
 		}
-		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+		if (stream_printf(hdl->mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
 		reply = mapi_fetch_line_internal(hdl);
