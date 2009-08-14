@@ -3577,7 +3577,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		/* handle fields &qt */
 
 		nline++;	/* query type */
-		qt = strtol(nline, &nline, 0);
+		qt = (int) strtol(nline, &nline, 0);
 
 		if (qt != Q_BLOCK || result == NULL)
 			result = new_result(hdl);
