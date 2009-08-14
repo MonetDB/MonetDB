@@ -2010,14 +2010,17 @@ SQLworker(void *arg)
 
 	/* where to leave errors */
 	THRset_errbuf(THRget(THRgettid()), task->errbuf);  
-	while( task->next >= 0 && task->as->error == NULL){
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker started\n");
 #endif
+	while(task->next >= 0 ){
 		MT_down_sema(task->sema,"SQLworker");
 		if ( task->next < 0 ){
+#ifdef _DEBUG_TABLET_
+	stream_printf(GDKout,"SQLworker terminated\n");
+#endif
 			MT_up_sema(task->reply,"SQLworker");
-			break;
+			return;
 		}
 
 		for ( i= 0; i < task->as->nr_attrs && task->as->error == NULL; i++)
@@ -2032,6 +2035,7 @@ SQLworker(void *arg)
 
 		MT_up_sema(task->reply,"SQLworker");
 	}
+	MT_up_sema(task->reply,"SQLworker");
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker exists\n");
 #endif
@@ -2212,7 +2216,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	}
 	task->next = 10000;
 #ifdef _DEBUG_TABLET_
-	stream_printf(GDKout,"Prepare work for %d threads\n",nway);
+	stream_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
 #endif
 	for( j= 0; j < threads ; j++){
 		ptask[j]= *task;
@@ -2274,25 +2278,37 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 						task->fields[i] = GDKrealloc(task->fields[i], sizeof(char*) * (task->limit + 10000));
 					task->limit += 10000;
 			}
-			/* tokenize the record completely , watch out for escaped rsep*/
-			/* we split based on simple character separators for speed */
+			/* tokenize the record completely
+			   the format of the input should comply to the following grammar rule 
+			    [ [[quote][[esc]char]*[quote]csep]*rsep]* 
+				where quote is a single user defined charactor
+				within the quoted fields a character may be escaped with a backslash
+				The user should supply the correct number of fields.
+				The algorithm performance a double scan to simplify rolling back
+				when the record received is incomplete.
+			*/
 			if ( rseplen == 1 ){
 				for (; *e; e++)
-				if ( *e == *rsep) {
-					if ( e > s && *(e-1) == '\\')
-						continue;
+				if ( *e == quote) {
+					for ( e++; *e && *e != quote; e++)
+						if ( *e == '\\' && *(e+1) != 0)
+							e++;
+				} else
+				if ( *e == *rsep)
 					break;
-				}
+
 				if (*e == 0) 
 					e = 0;
 			} else
 			do {
 				for ( ; *e ; e++)
-				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 ) {
-					if ( e > s && *(e-1) == '\\')
-						continue;
+				if ( *e == quote) {
+					for ( e++; *e && *e != quote; e++)
+						if ( *e == '\\' && *(e+1) != 0)
+							e++;
+				} else
+				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 )
 					break;
-				}
 
 				if ( *e ) break;
 				e = 0;
@@ -2303,16 +2319,26 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 					task->fields[0][task->next] = s;
 					cnt++;
 					*e = '\0';
-					if ( SQLload_file_line(task, as, s, csep,rsep) < 0)
+					if ( SQLload_file_line(task, as, s, csep,rsep) < 0) {
+						s = e + rseplen;
+						e = s;
 						break;
+					}
 #ifdef _DEBUG_TABLET_
 				/*	stream_printf(GDKout,"line:%s\n",s);*/
 #endif
 				}
 				s = e + rseplen;
 				e = s;
-			} else
-				break; 
+			} else {
+				/* could not find a proper record, extend the buffer */
+				size_t size = b->size;
+
+				if (b->pos == 0 || (b->len - b->pos > b->size >> 1))
+					size <<= 4;
+				read_more(b, out, size);
+				continue; 
+			}
 			if ( skip < 0)
 				task->next++;
 		}
@@ -2337,12 +2363,12 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if ( cnt == (BUN) maxrow ) 
 			break;
 	}
-	if (b->len - b->pos > 0 && b->eof)  {
+	if (cnt < (BUN) maxrow  && b->len - b->pos > 0 && b->eof)  {
 		GDKerror("SQLload_file: read error (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
 		}
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
-		stream_printf(GDKout,"Close the workers\n");
+	stream_printf(GDKout,"Close the workers\n");
 #endif
 	for( j= 0; j < threads ; j++){
 		ptask[j].next = -1;
