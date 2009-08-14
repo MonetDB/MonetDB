@@ -103,9 +103,6 @@ Over..
   <bun head="xquery_cacherules">
 #    
   </bun>
-  <bun head="xquery_logdir">
-#    /net/jarl/export/scratch0/zhang/monet-install/stable/debug/var/MonetDB4/xquery_logs
-  </bun>
   <bun head="xquery_output">
 #    dm
   </bun>
