@@ -1935,7 +1935,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
-	lng *res = (lng *)getArgReference(stk, pci, 0);
+	wrd *res = (wrd *)getArgReference(stk, pci, 0);
 	str *sname = (str *)getArgReference(stk, pci, 1);
 	str *tname = (str *)getArgReference(stk, pci, 2);
 
