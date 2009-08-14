@@ -1005,26 +1005,24 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #STDOUT.flush()
 
     if THISFILE == "Mtest.py":
-        for LogDBvar in 'GDK_DBFARM':
-            if env.has_key(LogDBvar):
-                LogDBdir = os.path.join(env[LogDBvar],TSTDB)
-                LogDBtxt = ""
-                if LogDBdir and os.path.exists(LogDBdir):
-                    try:
-                        shutil.rmtree(LogDBdir)
-                    except:
-                        Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
-                        #TODO:
-                        # add "something" to HTML output
-                        return td, elem
-                if os.path.isabs(LogDBdir):
-                    try:
-                        os.makedirs(LogDBdir)
-                    except:
-                        Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-                        #TODO:
-                        # add "something" to HTML output
-                        return td, elem
+        if env.has_key('GDK_DBFARM'):
+            LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
+            if LogDBdir and os.path.exists(LogDBdir):
+                try:
+                    shutil.rmtree(LogDBdir)
+                except:
+                    Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem
+            if os.path.isabs(LogDBdir):
+                try:
+                    os.makedirs(LogDBdir)
+                except:
+                    Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
