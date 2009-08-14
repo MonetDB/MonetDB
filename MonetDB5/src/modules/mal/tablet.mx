@@ -2278,21 +2278,21 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 			/* we split based on simple character separators for speed */
 			if ( rseplen == 1 ){
 				for (; *e; e++)
-				if ( *e == '\\') 
-					e++; 
-				else
-				if ( *e == *rsep)
+				if ( *e == *rsep) {
+					if ( e > s && *(e-1) == '\\')
+						continue;
 					break;
+				}
 				if (*e == 0) 
 					e = 0;
 			} else
 			do {
 				for ( ; *e ; e++)
-				if ( *e == '\\')
-					e++;
-				else
-				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 )
+				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 ) {
+					if ( e > s && *(e-1) == '\\')
+						continue;
 					break;
+				}
 
 				if ( *e ) break;
 				e = 0;
