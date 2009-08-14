@@ -39,6 +39,8 @@
 #include <windows.h>
 #define DIFF	"diff"		/* --binary */
 #define COPY	"copy /y"	/* "cp -f" */
+#define popen _popen
+#define pclose _pclose
 
 #ifndef DIR_SEP
 # define DIR_SEP '\\'
@@ -55,11 +57,6 @@
 #endif
 #endif
 
-#define SYSTEM(cmd)	{ int r;					    \
-			  TRACE(fprintf(STDERR,"%s => \n",cmd));	    \
-			  r = system(cmd); (void) r;			    \
-			  TRACE(fprintf(STDERR,"\t => %i\n",r));	  }
-
 #ifdef DEBUG
 #define UNLINK(x)
 #define ERRHNDL(r,s,t,u) ErrXit(s,t,u)
@@ -68,10 +65,10 @@
 #define ERRHNDL(r,s,t,u) return r
 #endif
 
-#define SETBLACK(f)  if(clr[f]!=0  ) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#000000>"              ); clr[f]=0;   }
-#define SETBLUE(f,m) if(clr[f]!=3-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#00%sff>",(m?"aa":"00")); clr[f]=3-m; }
-#define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%s00>",(m?"aa":"00")); clr[f]=5-m; }
-#define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"</FONT><FONT SIZE=1 COLOR=#ff%sff>",(m?"aa":"00")); clr[f]=7-m; }
+#define SETBLACK(f)  if(clr[f]!=0  ) { fprintf(clmn_fp[f],"</span><span>"              ); clr[f]=0;   }
+#define SETBLUE(f,m) if(clr[f]!=3-m) { fprintf(clmn_fp[f],"</span><span class='%sblue'>",(m?"light":"")); clr[f]=3-m; }
+#define SETRED(f,m)  if(clr[f]!=5-m) { fprintf(clmn_fp[f],"</span><span class='%sred'>",(m?"light":"")); clr[f]=5-m; }
+#define SETPINK(f,m) if(clr[f]!=7-m) { fprintf(clmn_fp[f],"</span><span class='%spink'>",(m?"light":"")); clr[f]=7-m; }
 
 #define CMDLEN  8192
 #define BUFLEN  16384
@@ -134,68 +131,32 @@ markNL(FILE *fp, int k)
 }
 
 
-int
-oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *u_diff_fn)
+FILE *
+oldnew2u_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn)
 {
 	char command[CMDLEN];
-	struct stat old_fstat, new_fstat;
-	FILE *u_diff_fp, *oldnew_fp;
-	char c, *ok, line[BUFLEN];
 	char *_d = mindiff ? "-d" : "";
 
-	TRACE(fprintf(STDERR, "oldnew2u_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, u_diff_fn));
+	TRACE(fprintf(STDERR, "oldnew2u_diff(%i,%i,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn));
 
-	stat(old_fn, &old_fstat);
-	stat(new_fn, &new_fstat);
-
-	if ((old_fstat.st_size != 0) && (new_fstat.st_size != 0)) {
-		sprintf(command, "%s %s -a %s -U%d %s    %s    > %s", DIFF, ignore, _d, context, old_fn, new_fn, u_diff_fn);
-
-		SYSTEM(command);
-
-	} else {
-		u_diff_fp = Wfopen(u_diff_fn);
-		fprintf(u_diff_fp, "--- %s\t%s", old_fn, ctime(&old_fstat.st_mtime));
-		fprintf(u_diff_fp, "+++ %s\t%s", new_fn, ctime(&new_fstat.st_mtime));
-		if (old_fstat.st_size == 0) {
-			c = '+';
-			fprintf(u_diff_fp, "@@ -0,0 +1,0 @@\n");
-			oldnew_fp = Rfopen(new_fn);
-		} else {
-			c = '-';
-			fprintf(u_diff_fp, "@@ -1,0 +0,0 @@\n");
-			oldnew_fp = Rfopen(old_fn);
-		}
-		ok = line;
-		while (ok && (ok = fgets(line, BUFLEN, oldnew_fp))) {
-			fprintf(u_diff_fp, "%c", c);
-			do {
-				fprintf(u_diff_fp, "%s", line);
-			} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, oldnew_fp)));
-		}
-		fclose(oldnew_fp);
-		fflush(u_diff_fp);
-		fclose(u_diff_fp);
-	}
-
-	return 1;
+	sprintf(command, "%s %s -a %s -U%d %s    %s", DIFF, ignore, _d, context, old_fn, new_fn);
+	return popen(command, "r");
 }
 
 /* oldnew2u_diff */
 
 
 int
-u_diff2l_diff(char *u_diff_fn, char *l_diff_fn)
+u_diff2l_diff(FILE *u_diff_fp, char *l_diff_fn)
 {
-	FILE *u_diff_fp, *l_diff_fp;
+	FILE *l_diff_fp;
 	char *ok, line[BUFLEN];
 
-	TRACE(fprintf(STDERR, "u_diff2l_diff(%s,%s)\n", u_diff_fn, l_diff_fn));
+	TRACE(fprintf(STDERR, "u_diff2l_diff(%p,%s)\n", u_diff_fp, l_diff_fn));
 
-	u_diff_fp = Rfopen(u_diff_fn);
 	if (!(ok = fgets(line, BUFLEN, u_diff_fp))) {
-		fclose(u_diff_fp);
-		ERRHNDL(0, "empty file in u_diff2l_diff:", u_diff_fn, 1);
+		pclose(u_diff_fp);
+		ERRHNDL(0, "empty file in u_diff2l_diff:", "pipe", 1);
 	}
 
 	l_diff_fp = Wfopen(l_diff_fn);
@@ -220,7 +181,7 @@ u_diff2l_diff(char *u_diff_fn, char *l_diff_fn)
 	fflush(l_diff_fp);
 	fclose(l_diff_fp);
 
-	fclose(u_diff_fp);
+	pclose(u_diff_fp);
 	return 1;
 }
 
@@ -231,7 +192,7 @@ static int
 lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 {
 	FILE *lw_diff_fp, *wc_diff_fp, *fp[2], *pipe_fp;
-	char line[BUFLEN], command[CMDLEN], pipe_ln[BUFLEN], pipe_fn[CMDLEN];
+	char line[BUFLEN], command[CMDLEN], pipe_ln[BUFLEN];
 	char *ok, *fn[2];
 	size_t i;
 	int j;
@@ -240,8 +201,6 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 	char *_d = mindiff ? "-d" : "";
 
 	TRACE(fprintf(STDERR, "lw_diff2wc_diff(%i,%i,%s,%s)\n", mindiff, doChar, lw_diff_fn, wc_diff_fn));
-
-	sprintf(pipe_fn, "%s-pipe", wc_diff_fn);
 
 	lw_diff_fp = Rfopen(lw_diff_fn);
 	if (!(ok = fgets(line, BUFLEN, lw_diff_fp))) {
@@ -360,12 +319,10 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
       SYSTEM(command);
 */
 
-		sprintf(command, "%s -a %s -U%d %s %s > %s", DIFF, _d, MAX(l[0], l[1]), fn[0], fn[1], pipe_fn);
+		sprintf(command, "%s -a %s -U%d %s %s", DIFF, _d, MAX(l[0], l[1]), fn[0], fn[1]);
 
-		SYSTEM(command);
+		pipe_fp = popen(command, "r");
 
-
-		pipe_fp = Rfopen(pipe_fn);
 		wc_diff_fp = Afopen(wc_diff_fn);
 		while (fgets(pipe_ln, BUFLEN, pipe_fp)) {
 			if (strncmp(pipe_ln, "@@ -", 4) &&
@@ -379,8 +336,7 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 		}
 		fflush(wc_diff_fp);
 		fclose(wc_diff_fp);
-		fclose(pipe_fp);
-		UNLINK(pipe_fn);
+		pclose(pipe_fp);
 	}
 	UNLINK(wc_old_fn);
 	UNLINK(wc_new_fn);
@@ -416,116 +372,19 @@ w_diff2c_diff(int mindiff, char *w_diff_fn, char *c_diff_fn)
 
 
 int
-l_diff2c_diff(int mindiff, char *l_diff_fn, char *c_diff_fn)
-{
-	char w_diff_fn[CMDLEN];
-	int rtrn = 0;
-
-	TRACE(fprintf(STDERR, "l_diff2c_diff(%i,%s,%s)\n", mindiff, l_diff_fn, c_diff_fn));
-
-	sprintf(w_diff_fn, "%s%c.difflib-%ld-l_diff2c_diff-w_diff", tmpdir(), DIR_SEP, (long) getpid());
-
-	if (!l_diff2w_diff(mindiff, l_diff_fn, w_diff_fn)) {
-		UNLINK(w_diff_fn);
-		ERRHNDL(0, "l_diff2w_diff returns 0 in l_diff2c_diff", "", 1);
-	}
-
-	rtrn = w_diff2c_diff(mindiff, w_diff_fn, c_diff_fn);
-
-	UNLINK(w_diff_fn);
-	return rtrn;
-}
-
-/* l_diff2c_diff */
-
-
-int
-u_diff2w_diff(int mindiff, char *u_diff_fn, char *w_diff_fn)
-{
-	char l_diff_fn[CMDLEN];
-	int rtrn = 0;
-
-	TRACE(fprintf(STDERR, "u_diff2w_diff(%i,%s,%s)\n", mindiff, u_diff_fn, w_diff_fn));
-
-	sprintf(l_diff_fn, "%s%c.difflib-%ld-u_diff2w_diff-l_diff", tmpdir(), DIR_SEP, (long) getpid());
-
-	if (!u_diff2l_diff(u_diff_fn, l_diff_fn)) {
-		UNLINK(l_diff_fn);
-		ERRHNDL(0, "u_diff2l_diff returns 0 in u_diff2w_diff", "", 1);
-	}
-
-	rtrn = l_diff2w_diff(mindiff, l_diff_fn, w_diff_fn);
-
-	UNLINK(l_diff_fn);
-	return rtrn;
-}
-
-/* u_diff2w_diff */
-
-
-int
-u_diff2c_diff(int mindiff, char *u_diff_fn, char *c_diff_fn)
-{
-	char w_diff_fn[CMDLEN];
-	int rtrn = 0;
-
-	TRACE(fprintf(STDERR, "u_diff2c_diff(%i,%s,%s)\n", mindiff, u_diff_fn, c_diff_fn));
-
-	sprintf(w_diff_fn, "%s%c.difflib-%ld-u_diff2c_diff-w_diff", tmpdir(), DIR_SEP, (long) getpid());
-
-	if (!u_diff2w_diff(mindiff, u_diff_fn, w_diff_fn)) {
-		UNLINK(w_diff_fn);
-		ERRHNDL(0, "u_diff2w_diff returns 0 in u_diff2c_diff", "", 1);
-	}
-
-	rtrn = w_diff2c_diff(mindiff, w_diff_fn, c_diff_fn);
-
-	UNLINK(w_diff_fn);
-	return rtrn;
-}
-
-/* u_diff2c_diff */
-
-
-int
-u_diff2lwc_diff(int mindiff, int LWC, char *u_diff_fn, char *lwc_diff_fn)
-{
-	TRACE(fprintf(STDERR, "u_diff2lwc_diff(%i,%s,%s)\n", LWC, u_diff_fn, lwc_diff_fn));
-
-	switch (LWC) {
-	case 0:
-		return (u_diff2l_diff(u_diff_fn, lwc_diff_fn));
-	case 1:
-		return (u_diff2w_diff(mindiff, u_diff_fn, lwc_diff_fn));
-	case 2:
-		return (u_diff2c_diff(mindiff, u_diff_fn, lwc_diff_fn));
-	default:
-		ErrXit("u_diff2lwc_diff called with wrong LWC", "", 1);
-	}
-	return 0;
-}
-
-/* u_diff2lwc_diff */
-
-
-int
 oldnew2l_diff(int mindiff, int context, char *ignore, char *old_fn, char *new_fn, char *l_diff_fn)
 {
-	char u_diff_fn[CMDLEN];
+	FILE *u_diff_fp;
 	int rtrn = 0;
 
 	TRACE(fprintf(STDERR, "oldnew2l_diff(%i,%i,%s,%s,%s,%s)\n", mindiff, context, ignore, old_fn, new_fn, l_diff_fn));
 
-	sprintf(u_diff_fn, "%s%c.difflib-%ld-oldnew2l_diff-u_diff", tmpdir(), DIR_SEP, (long) getpid());
-
-	if (!oldnew2u_diff(mindiff, context, ignore, old_fn, new_fn, u_diff_fn)) {
-		UNLINK(u_diff_fn);
+	if ((u_diff_fp = oldnew2u_diff(mindiff, context, ignore, old_fn, new_fn)) == NULL) {
 		ERRHNDL(0, "oldnew2u_diff returns 0 in oldnew2l_diff", "", 1);
 	}
 
-	rtrn = u_diff2l_diff(u_diff_fn, l_diff_fn);
+	rtrn = u_diff2l_diff(u_diff_fp, l_diff_fn);
 
-	UNLINK(u_diff_fn);
 	return rtrn;
 }
 
@@ -601,6 +460,25 @@ oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *old_fn, c
 /* oldnew2lwc_diff */
 
 
+static char *doctype = "\
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'\n\
+                      'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>\n\
+";
+static char *stylesheet = "\
+.blue { color: #0000ff; }\n\
+.lightblue { color: #00aaff; }\n\
+.red { color: #ff0000; }\n\
+.lightred { color: #ffaa00; }\n\
+.pink { color: #ff00ff; }\n\
+.lightpink { color: #ffaaff; }\n\
+.colhead { font-family: monospace; color: blue; font-size: medium; }\n\
+caption { font-weight: bold; font-family: sans-serif; }\n\
+body { background-color: white; color: black; }\n\
+a:link { color: green; }\n\
+a:visited { color: darkgreen; }\n\
+a:active { color: lime; }\n\
+td { color: black; font-size: xx-small; font-family: monospace; }\n\
+";
 
 int
 lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char *caption, char *revision)
@@ -621,22 +499,21 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 /*
       fprintf(html_fp,"Content-type: text/html\n\n");
 */
-		fprintf(html_fp, "<HTML>\n<BODY BGCOLOR=#ffffff TEST=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>\n");
-		fprintf(html_fp, "<CENTER>\n<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=1>\n");
+		fprintf(html_fp, "%s<html>\n<head>\n<style>\n%s</style>\n</head>\n<body>\n<center>\n<table align='abscenter' border='1' cellspacing='0' cellpadding='1'>\n", doctype, stylesheet);
 		if (*caption)
-			fprintf(html_fp, "<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n", caption);
-		fprintf(html_fp, "<TR>");
+			fprintf(html_fp, "<caption>%s</caption>\n", caption);
+		fprintf(html_fp, "<tr>");
 		if (!new_fn)
-			fprintf(html_fp, "<TH>&nbsp;</TH>");
-		fprintf(html_fp, "<TH><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A></CODE></FONT></TH>", filename(old_fn), filename(old_fn), revision);
-		fprintf(html_fp, "<TH>&nbsp;</TH>");
+			fprintf(html_fp, "<th>&nbsp;</th>");
+		fprintf(html_fp, "<th class='colhead'><a href='%s'>%s%s</a></th>", filename(old_fn), filename(old_fn), revision);
+		fprintf(html_fp, "<th>&nbsp;</th>");
 		if (new_fn)
-			fprintf(html_fp, "<TH><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A></CODE></FONT></TH>", new_fn, new_fn);
-		fprintf(html_fp, "</TR>\n");
-		fprintf(html_fp, "<TR><TH COLSPAN=3 ALIGN=CENTER>No differences.</TH></TR>\n");
-		fprintf(html_fp, "</TABLE></CENTER>\n");
-		fprintf(html_fp, "<HR>\n");
-		fprintf(html_fp, "</BODY>\n</HTML>\n");
+			fprintf(html_fp, "<th class='colhead'><a href='%s'>%s</a></th>", new_fn, new_fn);
+		fprintf(html_fp, "</tr>\n");
+		fprintf(html_fp, "<tr><th colspan='3' align='center'>No differences.</th></tr>\n");
+		fprintf(html_fp, "</table></center>\n");
+		fprintf(html_fp, "<hr/>\n");
+		fprintf(html_fp, "</body>\n</html>\n");
 		fprintf(html_fp, "<!--NoDiffs-->\n");
 		fflush(html_fp);
 		fclose(html_fp);
@@ -653,10 +530,10 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 /*
   fprintf(html_fp,"Content-type: text/html\n\n");
 */
-	fprintf(html_fp, "<HTML>\n<BODY BGCOLOR=#ffffff TEST=#000000 LINK=#00AA00 VLINK=#005500 ALINK=#00ff00>\n");
-	fprintf(html_fp, "<CENTER>\n<TABLE ALIGN=ABSCENTER BORDER=1 CELLSPACING=0 CELLPADDING=1>\n");
+	fprintf(html_fp, "%s<html>\n<head>\n<style>\n%s</style>\n</head>\n<body>\n", doctype, stylesheet);
+	fprintf(html_fp, "<center>\n<table align='abscenter' border='1' cellspacing='0' cellpadding='1'>\n");
 	if (*caption)
-		fprintf(html_fp, "<CAPTION><FONT FACE='helvetica, arial'><B>%s</B></FONT></CAPTION>\n", caption);
+		fprintf(html_fp, "<caption>%s</caption>\n", caption);
 
 	line[strlen(line) - 1] = '\0';
 	while (ok && strncmp(line, "@@ -", 4)) {
@@ -665,7 +542,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		else if (!strncmp(line, "+++ ", 4))
 			new = strdup(line + 4);
 		else
-			fprintf(html_fp, "<TR><TD COLSPAN=7><FONT SIZE=1 COLOR=#000000><CODE>%s</CODE></FONT></TD></TR>\n", HTMLsave(line));
+			fprintf(html_fp, "<tr><td colspan='7'>%s</td></tr>\n", HTMLsave(line));
 		ok = fgets(line, BUFLEN, lwc_diff_fp);
 		line[strlen(line) - 1] = '\0';
 	}
@@ -673,9 +550,9 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 	*old_time++ = '\0';
 	new_time = strchr(new, '\t') + 1;
 	*new_time++ = '\0';
-	fprintf(html_fp, "<TR><TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#0000ff><CODE><A HREF='%s'>%s%s</A>\t%s</CODE></FONT></TH>", filename(old), filename(old_fn), revision, old_time);
-	fprintf(html_fp, "<TH>&nbsp;</TH>");
-	fprintf(html_fp, "<TH COLSPAN=3 ALIGN=CENTER><FONT SIZE=3 COLOR=#ff0000><CODE><A HREF='%s'>%s</A>\t%s</CODE></FONT></TH></TR>\n", new, new_fn, new_time);
+	fprintf(html_fp, "<tr><th colspan='3' align='center' class='colhead'><a href='%s'>%s%s</a>\t%s</th>", filename(old), filename(old_fn), revision, old_time);
+	fprintf(html_fp, "<th>&nbsp;</th>");
+	fprintf(html_fp, "<th colspan='3' align='center' class='colhead'><a href='%s'>%s</a>\t%s</th></tr>\n", new, new_fn, new_time);
 	free(old);
 	free(new);
 	while (ok) {
@@ -686,13 +563,13 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		oln = atoi(olns);
 		nln = atoi(nlns);
 		if ((oln > 1) && (nln > 1)) {
-			fprintf(html_fp, "<TR><TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
-			fprintf(html_fp, "<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
-			fprintf(html_fp, "<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
-			fprintf(html_fp, "<TD>&nbsp;</TD>");
-			fprintf(html_fp, "<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
-			fprintf(html_fp, "<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD>");
-			fprintf(html_fp, "<TD ALIGN=CENTER><FONT SIZE=1 COLOR=#000000><CODE>...</CODE></FONT></TD></TR>\n");
+			fprintf(html_fp, "<tr><td align='center'>...</td>");
+			fprintf(html_fp, "<td align='center'>...</td>");
+			fprintf(html_fp, "<td align='center'>...</td>");
+			fprintf(html_fp, "<td>&nbsp;</td>");
+			fprintf(html_fp, "<td align='center'>...</td>");
+			fprintf(html_fp, "<td align='center'>...</td>");
+			fprintf(html_fp, "<td align='center'>...</td></tr>\n");
 		}
 		for (i = 0; i < 5; i++)
 			clr[i] = 0;
@@ -845,64 +722,64 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 			fclose(clmn_fp[i]);
 		}
 
-		fprintf(html_fp, "<TR>");
+		fprintf(html_fp, "<tr>");
 		i = 1;
-		fprintf(html_fp, "<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top' align='center'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 0;
-		fprintf(html_fp, "<TD VALIGN=TOP><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 1;
-		fprintf(html_fp, "<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top' align='center'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 2;
-		fprintf(html_fp, "<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top' align='center'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 3;
-		fprintf(html_fp, "<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top' align='center'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 4;
-		fprintf(html_fp, "<TD VALIGN=TOP><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
+		fprintf(html_fp, "</span></pre></td>");
 		i = 3;
-		fprintf(html_fp, "<TD VALIGN=TOP ALIGN=CENTER><PRE><FONT SIZE=1 COLOR=#000000>");
+		fprintf(html_fp, "<td valign='top' align='center'><pre><span>");
 		clmn_fp[i] = Rfopen(clmn_fn[i]);
 		while (fgets(ln, BUFLEN, clmn_fp[i]))
 			fprintf(html_fp, "%s", ln);
 		fclose(clmn_fp[i]);
-		fprintf(html_fp, "</FONT></PRE></TD>");
-		fprintf(html_fp, "</TR>\n");
+		fprintf(html_fp, "</span></pre></td>");
+		fprintf(html_fp, "</tr>\n");
 
 		TRACE(for (i = 0; i < 5; i++) clmn_fn[i][strlen(clmn_fn[i]) - 1]++) ;
 	}
 
-	fprintf(html_fp, "</TABLE></CENTER>\n");
-	fprintf(html_fp, "<HR>\n");
-	fprintf(html_fp, "</BODY>\n</HTML>\n");
+	fprintf(html_fp, "</table></center>\n");
+	fprintf(html_fp, "<hr/>\n");
+	fprintf(html_fp, "</body>\n</html>\n");
 	fprintf(html_fp, "<!--%sDiffs-->\n", Major ? "Major" : (Minor ? "Minor" : "No"));
 	fflush(html_fp);
 	fclose(html_fp);
@@ -917,29 +794,6 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 }
 
 /* lwc_diff2html */
-
-
-int
-u_diff2html(int mindiff, int LWC, char *u_diff_fn, char *html_fn, char *caption, char *revision)
-{
-	char lwc_diff_fn[CMDLEN];
-	int rtrn;
-
-	TRACE(fprintf(STDERR, "u_diff2html(%i,%s,%s,%s,%s)\n", LWC, u_diff_fn, html_fn, caption, revision));
-
-	sprintf(lwc_diff_fn, "%s%c.difflib-%ld-u_diff2html-lwc_diff", tmpdir(), DIR_SEP, (long) getpid());
-
-	if (!u_diff2lwc_diff(mindiff, LWC, u_diff_fn, lwc_diff_fn))
-		/* { UNLINK(lwc_diff_fn); ERRHNDL(0,"u_diff2lwc_diff returns 0 in u_diff2html","",1); } */
-		fclose(Wfopen(lwc_diff_fn));
-
-	rtrn = lwc_diff2html(u_diff_fn, (char *) 0, lwc_diff_fn, html_fn, caption, revision);
-
-	UNLINK(lwc_diff_fn);
-	return rtrn;
-}
-
-/* u_diff2html */
 
 
 int

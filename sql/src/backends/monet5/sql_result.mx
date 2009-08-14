@@ -979,7 +979,7 @@ mvc_export_affrows(mvc *m, stream *s, lng val, str w)
 	/* if we don't have a stream, nothing can go wrong, so we return
 	 * success.  This is especially vital for execution of internal SQL
 	 * commands, since they don't get a stream to suppress their output.
-	 * If we would fail on heaving no stream here, those internal commands
+	 * If we would fail on having no stream here, those internal commands
 	 * fail too.
 	 */
 	if (!s) return 0;

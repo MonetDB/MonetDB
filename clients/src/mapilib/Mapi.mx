@@ -3577,7 +3577,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		/* handle fields &qt */
 
 		nline++;	/* query type */
-		qt = strtol(nline, &nline, 0);
+		qt = (int) strtol(nline, &nline, 0);
 
 		if (qt != Q_BLOCK || result == NULL)
 			result = new_result(hdl);
@@ -3592,8 +3592,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 				hdl->mid->auto_commit = 1;
 			break;
 		case Q_UPDATE:
-			result->row_count = strtol(nline, &nline, 0);
-			result->last_id = strtol(nline, &nline, 0);
+			result->row_count = strtoll(nline, &nline, 0);
+			result->last_id = strtoll(nline, &nline, 0);
 			break;
 		case Q_TABLE:
 		case Q_PREPARE:{
