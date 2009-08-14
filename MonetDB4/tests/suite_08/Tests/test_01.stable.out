@@ -265,8 +265,6 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_logdir",		  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/sql_logs"																																																																																																																																													  ]
-[ "xquery_logdir",	  "/ufs/manegold/_/scratch0/Monet/Testing/Stable/build.--enable-strict_--disable-debug_--enable-optimize_--enable-assert/MonetDB4/xquery_logs"																																																																																																																																													  ]
 [ "standoff_ns",	  ""																																																															  ]
 [ "standoff_start",	  "start"																																																														  ]
 [ "standoff_end",	  "end"																																																															  ]

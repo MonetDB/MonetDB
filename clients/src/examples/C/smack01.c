@@ -17,11 +17,19 @@
  * All Rights Reserved.
  */
 
-#include <clients_config.h>
+#ifdef _MSC_VER
+/* suppress deprecation warning for snprintf */
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <mapilib/Mapi.h>
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\

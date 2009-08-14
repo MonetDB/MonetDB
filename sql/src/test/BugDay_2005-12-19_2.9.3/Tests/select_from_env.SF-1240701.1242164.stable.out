@@ -49,8 +49,6 @@ Over..
 [ "mapi_debug"	]
 [ "mapi_clients"	]
 [ "sql_debug"	]
-[ "sql_logdir"	]
-[ "xquery_logdir"	]
 [ "standoff_ns"	]
 [ "standoff_start"	]
 [ "standoff_end"	]

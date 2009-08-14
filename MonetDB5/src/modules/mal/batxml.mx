@@ -111,7 +111,7 @@ command xml.agg(val:bat[:oid,:xml],grp:bat[:oid,:oid]):bat[:oid,:xml]
 address BATXMLagg
 comment "Aggregate the XML values over groups specified.";
 
-command xml.agg(val:bat[:oid,:xml]):bat[:oid,:xml]
+command xml.agg(val:bat[:oid,:xml]):xml
 address BATXMLgroup
 comment "Aggregate the XML values over groups specified.";
 
@@ -170,7 +170,7 @@ batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
 batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 batxml_export str BATXMLagg(int *ret, int *bid, int *grp);
 batxml_export str BATXMLagg3(int *ret, int *bid, int *grp, int *e);
-batxml_export str BATXMLgroup(int *ret, int *bid);
+batxml_export str BATXMLgroup(xml *ret, int *bid);
 #endif /* _BATXML_H_ */
 @c
 #include "mal_config.h"
@@ -1140,7 +1140,11 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	/* this will not work as it will corrupt the order of the column, ie
 	   the order in which the data will be generated */
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
+	BBPreleaseref(e->batCacheid);
 	r = BATsort(j);
+	BBPunfix(j->batCacheid);
 
 	/* now we can perform a simple scan and emit the group */
 
@@ -1195,19 +1199,13 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	}
 
 	BBPunfix(r->batCacheid);
-	BBPunfix(j->batCacheid);
 	GDKfree(buf);
-	BBPunfix(e->batCacheid);
-	BBPunfix(g->batCacheid);
-	BBPunfix(b->batCacheid);
 	bn->tsorted = 0;
 	bn->T->nonil = 0;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPunfix(e->batCacheid);
-	BBPunfix(g->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPunfix(r->batCacheid);
 	BBPunfix(bn->batCacheid);
 	GDKfree(buf);
 	throw(MAL, "xml.agg", err);
@@ -1238,7 +1236,10 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	bn->T->nonil = 1;
 
 	j = BATjoin(BATmirror(g), b, BUN_NONE);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
 	r = BATsort(j);
+	BBPunfix(j->batCacheid);
 
 	/* now we can perform a simple scan and emit the group */
 
@@ -1293,44 +1294,68 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	}
 
 	BBPunfix(r->batCacheid);
-	BBPunfix(j->batCacheid);
 	GDKfree(buf);
 	bn->tsorted = 0;
 	bn->T->nonil = 0;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BBPreleaseref(g->batCacheid);
-	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	BBPunfix(r->batCacheid);
 	GDKfree(buf);
 	throw(MAL, "xml.agg", err);
 }
 
 str
-BATXMLgroup(int *ret, int *bid)
+BATXMLgroup(xml *ret, int *bid)
 {
-	BAT *b, *g;
-	str msg = MAL_SUCCEED;
-	oid o = 0;
+	BAT *b;
 	BUN p, q;
+	str t;
+	size_t len, size = BUFSIZ, offset;
+	str buf = GDKmalloc(size);
 	BATiter bi;
+	str err = NULL;
 
-	@:getBATdescriptor(bid,b,"xml.group")@
+	@:getBATdescriptor(bid,b,"xml.agg")@
 
-	g = BATnew(BAThtype(b), TYPE_oid, BATcount(b));
+	strcpy(buf, str_nil);
+	offset = 0;
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		ptr v = BUNhead(bi, p);
+		int n;
 
-		bunfastins(g, v, &o);
+		t = (str) BUNtail(bi, p);
+
+		if (strNil(t))
+			continue;
+		len = strlen(t) + 1;
+		if (len >= size - offset) {
+			size += len + 128;
+			buf = GDKrealloc(buf, size);
+		}
+		if (offset == 0)
+			n = snprintf(buf, size, "%s", t);
+		else if (buf[0] != *t) {
+			err = "incompatible values in group";
+			goto failed;
+		} else if (buf[0] == 'A')
+			n = snprintf(buf + offset, size - offset, " %s", t + 1);
+		else if (buf[0] == 'C')
+			n = snprintf(buf + offset, size - offset, "%s", t + 1);
+		else {
+			err = "can only group attributes and element content";
+			goto failed;
+		}
+		offset += n;
 	}
-	msg = BATXMLagg(ret, bid, &g->batCacheid);
-	g->H->nonil = b->H->nonil;
-      bunins_failed:
-	BBPunfix(g->batCacheid);
-	BBPunfix(b->batCacheid);
-	return msg;
+	BBPreleaseref(b->batCacheid);
+	*ret = buf;
+	return MAL_SUCCEED;
+  failed:
+	BBPreleaseref(b->batCacheid);
+	GDKfree(buf);
+	throw(MAL, "xml.agg", err);
 }
 
 str

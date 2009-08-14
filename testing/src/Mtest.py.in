@@ -1005,31 +1005,24 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     #STDOUT.flush()
 
     if THISFILE == "Mtest.py":
-        for LogDBvar in 'GDK_DBFARM', 'SQL_LOGDIR', 'XQUERY_LOGDIR':
-            if env.has_key(LogDBvar):
-                LogDBdir = os.path.join(env[LogDBvar],TSTDB)
-                if LogDBvar in 'SQL_LOGDIR':
-                    LogDBtxt = "sql log directory for "
-                elif LogDBvar in 'XQUERY_LOGDIR':
-                    LogDBtxt = "xquery log directory for "
-                else:
-                    LogDBtxt = ""
-                if LogDBdir and os.path.exists(LogDBdir):
-                    try:
-                        shutil.rmtree(LogDBdir)
-                    except:
-                        Warn(LogDBtxt+"database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
-                        #TODO:
-                        # add "something" to HTML output
-                        return td, elem
-                if os.path.isabs(LogDBdir):
-                    try:
-                        os.makedirs(LogDBdir)
-                    except:
-                        Warn("creating "+LogDBtxt+"database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
-                        #TODO:
-                        # add "something" to HTML output
-                        return td, elem
+        if env.has_key('GDK_DBFARM'):
+            LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
+            if LogDBdir and os.path.exists(LogDBdir):
+                try:
+                    shutil.rmtree(LogDBdir)
+                except:
+                    Warn("database '"+TSTDB+"` exists, but destroying it failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem
+            if os.path.isabs(LogDBdir):
+                try:
+                    os.makedirs(LogDBdir)
+                except:
+                    Warn("creating database '"+TSTDB+" failed; skipping tests in '"+TSTSRCDIR+"`!")
+                    #TODO:
+                    # add "something" to HTML output
+                    return td, elem
         if not os.path.exists(TSTTRGDIR):
             #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
@@ -1727,10 +1720,6 @@ def RunTest(env, TST, BusyPorts, COND) :
             FILES = os.path.join(TSTTRGDIR,TST)+" "+os.path.join(TSTTRGDIR,TST)+".*"
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
-            if env.has_key('SQL_LOGDIR'):
-                FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'sql_logs\\*')
-            if env.has_key('XQUERY_LOGDIR'):
-                FILES = FILES+" "+os.path.join(env['XQUERY_LOGDIR'],TSTDB,'xquery_logs\\*')
             WHAT0 = os.path.join(THISPATH,"MkillUsers")
             if env.get('CONCURRENT'):
                  WHAT0 = WHAT0+" --concurrent"
@@ -2870,8 +2859,6 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"   #"GetMonetConfig(par['PACKAGE'],'--modpath')"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
-        dft['setSQL_LOGDIR']     = "''"
-        dft['setXQUERY_LOGDIR']  = "''"
         dft['setXRPC_DOCROOT']   = "'--set \"xrpc_docroot='+env['XRPC_DOCROOT']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
         dft['XRPCPORT']       = "str(randomPort(40000,49999))"
@@ -2933,10 +2920,6 @@ def main(argv) :
              "override Mserver's/mserver5's default module search path"),
             ('dbfarm', None, 'gdk_dbfarm', '<directory>',
              "override default location of database directory"),
-            ('sql_logdir', None, 'sql_logdir', '<directory>',
-             "override default location of SQL transaction-log directory"),
-            ('xquery_logdir', None, 'xquery_logdir', '<directory>',
-             "override default location of XQuery transaction-log directory"),
             ('xrpc_docroot', None, 'xrpc_docroot', '<directory>',
              "override default root directory from which the XRPC HTTP server will serve files"),
             ('MILCLIENT', None, 'MILCLIENT', '<mil-client program>',
@@ -3070,12 +3053,6 @@ def main(argv) :
         a = opts.get('gdk_dbfarm')
         if a is not None:
             env['GDK_DBFARM'] = a
-        a = opts.get('sql_logdir')
-        if a is not None:
-            env['SQL_LOGDIR'] = a
-        a = opts.get('xquery_logdir')
-        if a is not None:
-            env['XQUERY_LOGDIR'] = a
         a = opts.get('xrpc_docroot')
         if a is not None:
             env['XRPC_DOCROOT'] = a
@@ -3177,14 +3154,6 @@ def main(argv) :
             env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
         else:
             env['setGDK_DBFARM'] = ''
-        if env.has_key('SQL_LOGDIR'):
-            env['setSQL_LOGDIR'] = eval(dft['setSQL_LOGDIR'])
-        else:
-            env['setSQL_LOGDIR'] = ''
-        if env.has_key('XQUERY_LOGDIR'):
-            env['setXQUERY_LOGDIR'] = eval(dft['setXQUERY_LOGDIR'])
-        else:
-            env['setXQUERY_LOGDIR'] = ''
         if env.has_key('XRPC_DOCROOT'):
             env['setXRPC_DOCROOT'] = eval(dft['setXRPC_DOCROOT'])
         else:
@@ -3285,8 +3254,8 @@ def main(argv) :
     # export and display env
     STDERR.flush()
     if THISFILE == "Mtest.py":
-        vars_ = vars_ + ['XRPC_DOCROOT', 'XQUERY_LOGDIR','SQL_LOGDIR','GDK_DBFARM']
-        vars_ = vars_ + ['setXRPC_DOCROOT', 'setXQUERY_LOGDIR','setSQL_LOGDIR','setGDK_DBFARM','setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['XRPC_DOCROOT','GDK_DBFARM']
+        vars_ = vars_ + ['setXRPC_DOCROOT','setGDK_DBFARM','setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -3342,11 +3311,11 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if par['M5']:
-            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['setXQUERY_LOGDIR'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
+            exe['Mserver']       = CheckExec('Mserver')      , '%s Mserver "--config=%s" --debug=%s --set gdk_nr_threads=%s %s %s %s --set mapi_open=true --set xrpc_open=true --set mapi_port=%s --set xrpc_port=%s --set monet_prompt= --trace %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setXRPC_DOCROOT'], env['MAPIPORT'], env['XRPCPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MIL_Client']    = CheckExec(env['MILCLIENT'].split(None, 1)[0])  , '%s -umonetdb -Pmonetdb --host=%s --port=%s' % (env['MILCLIENT'], HOST, env['MAPIPORT'])
@@ -3468,14 +3437,6 @@ def main(argv) :
         if not os.path.exists(env['GDK_DBFARM']):
             #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
-        if env.has_key('SQL_LOGDIR'):
-            if not os.path.exists(env['SQL_LOGDIR']) and os.path.isabs(env['SQL_LOGDIR']):
-                #TODO: set mode to umask
-                os.makedirs(env['SQL_LOGDIR'])
-        if env.has_key('XQUERY_LOGDIR'):
-            if not os.path.exists(env['XQUERY_LOGDIR']) and os.path.isabs(env['XQUERY_LOGDIR']):
-                #TODO: set mode to umask
-                os.makedirs(env['XQUERY_LOGDIR'])
         if env.has_key('XRPC_DOCROOT'):
             if not os.path.exists(env['XRPC_DOCROOT']):
                 #TODO: set mode to umask

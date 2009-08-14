@@ -33,7 +33,6 @@ skiplist.insert(nil,"gdk_dbfarm");
 skiplist.insert(nil,"monet_mod_path");
 skiplist.insert(nil,"mapi_port");
 skiplist.insert(nil,"sql_port");
-skiplist.insert(nil,"sql_logdir");
 skiplist.insert(nil,"monet_cwd");
 
 debugmask().print();

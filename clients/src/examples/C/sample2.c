@@ -17,14 +17,10 @@
  * All Rights Reserved.
  */
 
-#include <clients_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <mapilib/Mapi.h>
-#ifdef _MSC_VER
-#define snprintf _snprintf
-#endif
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\

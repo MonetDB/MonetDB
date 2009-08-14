@@ -61,14 +61,15 @@ temp_table_fail_leaves_data.SF-2793286
 having_min_crash.SF-2795951
 insert_type_exception.SF-2789976
 explain_gives_crash.SF-2741829
+explain_gives_crash.SF-2741829_cleanup
 primekeyconstraint.SF-2783425
 random.SF-2737889
 alter_table_drop_constraint.SF-2803477
 mclient-lsql-D
 view-except-limit.SF-2798333
 utf8_bug.SF-2822855
-reorder.SF-2770608.sql
-orIssue.SF-2812504.sql
+reorder.SF-2770608
+orIssue.SF-2812504
 recursion-problem.SF-2827784
 select_X_where_bla_EQ_whatever.SF-282597
 prepare_decimal_bug.SF-2831994
@@ -82,7 +83,7 @@ assert_in_update.SF-2807336
 prepare_commit_execute.SF-2606020
 ambiguous_order_by.SF-2827916
 except_error_wrong.SF-2808409
-table-leftovers.SF-2779462.sql
+table-leftovers.SF-2779462
 Floating_point_exception.SF-2791356
 Division_by_zero_error.SF-2791361
 copy_into_error_off_by_one.SF-2833696

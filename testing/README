@@ -244,7 +244,7 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	SYSTVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MDIFF		"$MTIMEOUT Mdiff"
-	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM $setSQL_LOGDIR $setXQUERY_LOGDIR --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
+	MSERVER		"$MTIMEOUT Mserver --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --set monet_prompt= --trace"
 	MIL_CLIENT	"$MTIMEOUT $MILCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
 	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
@@ -258,20 +258,15 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	TSTSRCDIR	$TSTSRCBASE/$TSTDIR/Tests
 	TSTTRGDIR	$TSTTRGBASE/mTests/$TSTDIR
 	MONETDB_CONF	location of MonetDB.conf (default: `monetdb4-config --sysconfdir`/MonetDB.conf)
-	SQL_LOGDIR	as read from $MONETDB_CONF or set by --sql_logdir=<path>
-	XQUERY_LOGDIR	as read from $MONETDB_CONF or set by --xquery_logdir=<path>
 	GDK_DBFARM	as read from $MONETDB_CONF or set by --dbfarm=<path>
 	GDK_DEBUG	debug bitmask for Mserver (default: 10)
 	MONETDB_MOD_PATH	new module search path of Mserver (if set via --monet_mod_path=<pathlist>)
 	setMONETDB_MOD_PATH	"--set monet_mod_path=$MONETDB_MOD_PATH"	(if --monet_mod_path=<pathlist> is used)
 	setGDK_DBFARM	"--set gdk_dbfarm=$GDK_DBFARM"	(if --dbfarm=<path> is used)
-	setSQL_LOGDIR	"--set sql_logdir=$SQL_LOGDIR"	(if --sql_logdir=<path> is used)
-	setXQUERY_LOGDIR	"--set xquery_logdir=$XQUERY_LOGDIR"	(if --xquery_logdir=<path> is used)
 
 
 - For each directory, Mtest.py creates a database $TSTDB in $GDK_DBFARM
-  and the respective transaction-log directories $TSTDB in $SQL_LOGDIR 
-  and $XQUERY_LOGDIR before running any test.
+  before running any test.
 
 
 - A test is skipped (i.e. not executed), 

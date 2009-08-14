@@ -1129,14 +1129,14 @@ extern "C" {
 #define mapi_export extern
 #endif
 
-#ifdef HAVE_LONG_LONG
-typedef unsigned long long mapi_uint64;
-typedef long long mapi_int64;
-#else
-#ifdef HAVE___INT64
+#if defined(_MSC_VER)
+/* Microsoft & Intel compilers under Windows have type __int64 */
 typedef unsigned __int64 mapi_uint64;
 typedef __int64 mapi_int64;
-#endif
+#else
+/* gcc and other (Unix-) compilers (usually) have type long long */
+typedef unsigned long long mapi_uint64;
+typedef long long mapi_int64;
 #endif
 
 /* three structures used for communicating date/time information */
@@ -4342,10 +4342,10 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->active = result;
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
-			stream_printf(hdl->mid->tracelog, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount);
+			stream_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount);
 			stream_flush(hdl->mid->tracelog);
 		}
-		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+		if (stream_printf(hdl->mid->to, "X" "export %d " LLFMT "\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 		    stream_flush(hdl->mid->to))
 			check_stream(hdl->mid, hdl->mid->to, stream_error(hdl->mid->to), "mapi_fetch_line", NULL);
 		reply = mapi_fetch_line_internal(hdl);

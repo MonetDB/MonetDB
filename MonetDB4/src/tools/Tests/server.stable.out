@@ -643,7 +643,6 @@ Start of MIL prelude.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"																												  ]
 [ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/src/tools"																					  ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -675,7 +674,6 @@ Start of MIL prelude.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"																												  ]
 [ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/src/tools"																					  ]
 #-------------------------#
@@ -759,7 +757,6 @@ Start of MIL prelude.
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"																												  ]
 [ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/src/tools"																					  ]
 #-------------------------#
@@ -1380,7 +1377,6 @@ skiplist.insert(nil,"gdk_dbfarm");
 skiplist.insert(nil,"monet_mod_path");
 skiplist.insert(nil,"mapi_port");
 skiplist.insert(nil,"sql_port");
-skiplist.insert(nil,"sql_logdir");
 skiplist.insert(nil,"monet_cwd");
 
 debugmask().print();
@@ -1519,7 +1515,6 @@ view_gdk_env().print();
 [ "sql_debug",		  "0"													  ]
 [ "sql_user",		  "monetdb"												  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/sjoerd/src/MonetDB/build/log"																								  ]
 [ "gdk_embedded",	  "no"																												  ]
 [ "monet_cwd",		  "/net/indus/export/scratch1/sjoerd/MonetDB/mTests/src/tools"																					  ]
 view_gdk_io().print();
