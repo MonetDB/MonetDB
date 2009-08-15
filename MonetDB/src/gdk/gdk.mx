@@ -929,6 +929,9 @@ typedef struct {
 	bat parentid;		/* cache id of VIEW parent bat */
 } COLrec;
 
+/* assert that atom width is power of 2, i.e., width == 1<<shift */
+#define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
+
 #define GDKLIBRARY_PRE_VARSHIFT	061022  /* almost compatible version, see gdk_bbp.mx */
 #define GDKLIBRARY		061023
 

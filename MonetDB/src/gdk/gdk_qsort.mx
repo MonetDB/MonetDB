@@ -434,6 +434,8 @@ GDKqsort@1(void *h, void *t, void* base, size_t n, int hs, int ts, int tpe)
 	buf.ts = (unsigned) ts;
 	buf.hshift = ATOMelmshift(hs);
 	buf.tshift = ATOMelmshift(ts);
+	assert_shift_width(buf.hshift,buf.hs);
+	assert_shift_width(buf.tshift,buf.ts);
 	buf.vshift = ATOMvarsized(tpe)?GDK_VARSHIFT:0;
 	buf.h = h;
 	if (!t)

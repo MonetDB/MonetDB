@@ -217,6 +217,8 @@ BATsetdims(BAT *b)
 	b->T->width = ATOMsize(b->ttype);
 	b->H->shift = ATOMelmshift(Hsize(b));
 	b->T->shift = ATOMelmshift(Tsize(b));
+	assert_shift_width(b->H->shift,b->H->width);
+	assert_shift_width(b->T->shift,b->T->width);
 	b->H->varsized = BATatoms[b->htype].varsized;
 	b->T->varsized = BATatoms[b->ttype].varsized;
 }
@@ -2997,6 +2999,8 @@ check if duplicated properties are equal
 		     ((b->T->shift != bm->H->shift) << 7) |
 		     ((b->H->width != bm->T->width) << 8) |
 		     ((b->T->width != bm->H->width) << 8) |
+		     (((b->H->width != 0 || b->H->shift != 0) && b->H->width != (1<<b->H->shift)) << 9) |
+		     (((b->T->width != 0 || b->T->shift != 0) && b->T->width != (1<<b->T->shift)) << 9) |
 		     ((b->batFirst < b->batDeleted) << 10) |
 		     ((b->batFirst > b->batInserted) << 11) |
 		     ((b->H->heap.size > b->H->heap.maxsize) << 13) |

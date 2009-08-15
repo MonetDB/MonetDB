@@ -777,6 +777,7 @@ BBPinit(void)
 			bs->@1.width = width;
 			bs->@1.varsized = var != 0;
 			bs->@1.shift = ATOMelmshift(width);
+			assert_shift_width(bs->@1.shift,bs->@1.width);
 			bs->@1.nokey[0] = (BUN) nokey0;
 			bs->@1.nokey[1] = (BUN) nokey1;
 			bs->@1.sorted = (bit) (properties & 0x00FF);

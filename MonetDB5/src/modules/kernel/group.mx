@@ -336,20 +336,25 @@ hashing.
 #define declare_unclustered	/* avoid warning */
 #define declare_clustered   int samecluster = TRUE;
 
-#define chain_unclustered   for (zz = hash[c]; zz != BUN_NONE; zz = e->link)
-#define chain_clustered     for (zz = hash[c]; (zz != BUN_NONE) && (samecluster); zz = e->link)
+#define chain_unclustered   for (zz = hash[c]; zz != BUN_NONE; zz = e->use.link)
+#define chain_clustered     for (zz = hash[c]; (zz != BUN_NONE) && (samecluster); zz = e->use.link)
 
 #define tst_grp_unclustered(eq,p,t)    (eq(p, tcur, t))
 #define tst_grp_clustered(eq,p,t)      (samecluster = eq(p, tcur, t))
 
-#define tst_derive_unclustered(eq,p,t) (e->hcur == hcur && eq(p, tcur, t))
-#define tst_derive_clustered(eq,p,t)   ((samecluster = e->hcur == hcur) && eq(p, tcur, t))
+#define tst_derive_unclustered(eq,p,t) (e->use.hcur == hcur && eq(p, tcur, t))
+#define tst_derive_clustered(eq,p,t)   ((samecluster = e->use.hcur == hcur) && eq(p, tcur, t))
 
-typedef struct {
-	oid hcur;		/* old group id */
-	BUN link;		/* hash link */
-	oid gid;		/* new group id */
-	wrd cnt;		/* histogram count */
+typedef union {
+	struct {
+		oid hcur;	/* old group id */
+		BUN link;	/* hash link */
+		oid gid;	/* new group id */
+		wrd cnt;	/* histogram count */
+	} use;			/* use this one */
+	struct {
+		wrd w1, w2, w3, w4;
+	} pad;			/* padding to ensure power of 2 width */
 } mapentry_t;
 
 typedef struct {
@@ -373,7 +378,7 @@ typedef struct {
 			hash[_yy] = BUN_NONE;				\
 		}							\
 	}								\
-	entry.cnt = 1;							\
+	entry.use.cnt = 1;							\
 	if (map == NULL || hash == NULL) {				\
 		if (map) BBPunfix(map->batCacheid);			\
 		if (hash) GDKfree(hash);				\
@@ -410,8 +415,8 @@ map2histo(BAT *map)
 	bn = BATnew(TYPE_oid,TYPE_wrd,sz);
 	BATloop(map, p, q) {
 		bunfastins(bn, 
-			&((mapentry_t*)Hloc(map, p))->gid, 
-			&((mapentry_t*)Hloc(map, p))->cnt);
+			&((mapentry_t*)Hloc(map, p))->use.gid, 
+			&((mapentry_t*)Hloc(map, p))->use.cnt);
 	}
 	BATkey(BATmirror(bn),FALSE);
 	bn->tsorted = 0;
@@ -483,7 +488,7 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 			e = (mapentry_t*) BUNhloc(mapi,r);
 			if (tst_grp_@4(@3_EQ, BUN@2(mapi,r), @1)) {
 				if (m == NULL)
-					e->cnt++;
+					e->use.cnt++;
 				goto found;
 			}
 		}
@@ -492,9 +497,9 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(bi,p);
+			entry.use.gid = *(oid*) BUNhead(bi,p);
 		}
-		entry.link = hash[c];
+		entry.use.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
@@ -503,7 +508,7 @@ CTgroup_@1_@4_@5(group_params_@5 BAT *b, BAT *bn, map_T *m)
 found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 		if (bn->htype)
 			*hdst++ = *(oid*) BUNhead(bi,p);
-		*dst++ = m?zz:e->gid;
+		*dst++ = m?zz:e->use.gid;
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
@@ -755,7 +760,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 			e = (mapentry_t*) Hloc(map,r);
 			if (tst_derive_@5(@4_EQ, BUN@3(mapi,r), @2)) {
 				if (m == NULL)
-					e->cnt++;
+					e->use.cnt++;
 				goto found;
 			}
 		}
@@ -763,10 +768,10 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 		if (m) {
 			zz = mapsize;
 		} else {
-			entry.gid = *(oid*) BUNhead(bi,p);
+			entry.use.gid = *(oid*) BUNhead(bi,p);
 		}
-		entry.hcur = hcur;
-		entry.link = hash[c];
+		entry.use.hcur = hcur;
+		entry.use.link = hash[c];
 		hash[c] = mapsize++;
 		bunfastins(map, &entry, tcur);
 		e = &entry;
@@ -775,7 +780,7 @@ CTderive_@1_@2_@5(BAT* ct_map, BAT *ct_histo, BAT *b, BAT *bn, map_T *m)
 found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		if (bn->htype)
 			*hdst++ = *(oid*) BUNhead(bi,p);
-		*dst++ = m?zz:e->gid;
+		*dst++ = m?zz:e->use.gid;
 	}
 	BATsetcount(bn, (BUN) (dst - (oid *) bn->T->heap.base)); 
 	if (hash && !m)
