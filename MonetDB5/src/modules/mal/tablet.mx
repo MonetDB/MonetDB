@@ -1981,24 +1981,25 @@ SQLworker_column(READERtask *task, int col)
 	str err = 0;
 
 	if ( BATcapacity(fmt[col].c) < BATcount(fmt[col].c) + task->next ) {
-		if ( BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next) == NULL)
-			err= GDKstrdup("Failed to extend the BAT, perhaps disk full");
-	}
-
-	if ( err == 0)
-	for ( i = 0; i< task->next ; i++){
-		SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &task->as->error, col);
-		if ( task->as->error != NULL && err == 0) {
-			if (!task->as->tryall)
-				return -1;
-			err= task->as->error;
-			task->as->error= NULL;
-			BUNins(task->as->complaints, NULL, task->as->error, TRUE);
+		if ( (fmt[col].c =  BATextend(fmt[col].c, BATgrows(fmt[col].c) + task->next)) == NULL){
+			task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
+			stream_printf(GDKout,"Failed to extend the BAT, perhaps disk full");
+			return -1;
 		}
 	}
-	if ( err )
-		task->as->error = err; /* restore for upper layers */
-	return 0;
+
+	for ( i = 0; i< task->next ; i++){
+		SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col);
+		if ( err ) {
+			if (!task->as->tryall){
+				task->as->error = err; /* restore for upper layers */
+				return -1;
+			}
+			BUNins(task->as->complaints, NULL, err, TRUE);
+		}
+	}
+	task->as->error = err; /* restore for upper layers */
+	return err ? -1 : 0;
 }
 
 static void
@@ -2039,6 +2040,7 @@ SQLworker(void *arg)
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"SQLworker exists\n");
 #endif
+	stream_printf(GDKout,"##SQLworker exists %s\n",task->as->error);
 }
 @-
 The line is broken into pieces directly on their field separators. It assumes that we have
@@ -2213,7 +2215,7 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		/* advice memory manager on expected use of results */
 		BATmadvise(as->format[i].c, BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL,BUF_SEQUENTIAL);
 	}
-	task->next = 10000;
+	task->limit = 10000;
 #ifdef _DEBUG_TABLET_
 	stream_printf(GDKout,"Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",threads,csep,rsep,quote);
 #endif
@@ -2285,6 +2287,14 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				The algorithm performance a double scan to simplify rolling back
 				when the record received is incomplete.
 			*/
+			if ( rseplen == 1 && quote == 0 ){
+				for (; *e; e++)
+				if ( *e == *rsep)
+					break;
+
+				if (*e == 0) 
+					e = 0;
+			} else
 			if ( rseplen == 1 ){
 				for (; *e; e++)
 				if ( *e == quote) {
@@ -2298,6 +2308,17 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 				if (*e == 0) 
 					e = 0;
 			} else
+			if ( quote == 0)
+			do {
+				for ( ; *e ; e++)
+				if ( *e == *rsep && strncmp(e,rsep,rseplen) == 0 )
+					break;
+
+				if (*e ) 
+					break;
+				e = 0;
+			} while (e);
+			else
 			do {
 				for ( ; *e ; e++)
 				if ( *e == quote) {
@@ -2355,8 +2376,10 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 		if ( cnt == (BUN) maxrow ) 
 			break;
 	}
-	if (cnt < (BUN) maxrow   && maxrow > 0)
-		GDKerror("SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+	if (cnt < (BUN) maxrow   && maxrow > 0) {
+		/* providing a precise count is not always easy, instead consider maxrow as an upperbound */
+		stream_printf(GDKout,"#SQLload_file: read error, tuples missing (after loading " BUNFMT " records)\n", BATcount(as->format[0].c));
+	}
 	
 	/* close down the workers */
 #ifdef _DEBUG_TABLET_
@@ -2386,7 +2409,8 @@ SQLload_file(Client cntxt, Tablet * as, bstream *b, stream *out, char *csep, cha
 	GDKfree(task->fields);
 	GDKfree(task->time);
 	GDKfree(task);
-		/* restore system setting */
+
+	/* restore system setting */
 	GDK_vm_trim = vmtrim;
 	return cnt;
 }
