@@ -1,7 +1,0 @@
-import module namespace mies = "http://test.cwi.nl/mies" at "$TSTTRGDIR/modules_diamond_prepare.mies.xq";
-import module namespace noot = "http://test.cwi.nl/noot" at "$TSTTRGDIR/modules_diamond_prepare.noot.xq";
-(: (: nested comment! :) :)
-mies:fcn(42) 
-
-
-

@@ -1,4 +1,0 @@
-for $i in <docs><doc>$TSTSRCDIR/oidInDocMgmt.SF-2686121.xml</doc></docs>//doc
-let $docname := $i cast as xs:string
-let $data := $i cast as xs:string
-return pf:add-doc($data,$docname,"patents04")

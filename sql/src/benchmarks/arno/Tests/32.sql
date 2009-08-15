@@ -1,1 +1,0 @@
-SELECT MODEL192.is_mutagen, count(distinct MODEL192.model_id ) FROM MODEL MODEL192, BOND T1008290412300  WHERE MODEL192.model_id=T1008290412300.model_id AND MODEL192.lumo='-3' group by MODEL192.is_mutagen;

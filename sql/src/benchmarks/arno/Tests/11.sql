@@ -1,1 +1,0 @@
-SELECT MODEL110.is_mutagen, count(distinct MODEL110.model_id ) FROM MODEL MODEL110, BOND BOND111, ATOM T1008290375830  WHERE MODEL110.model_id=BOND111.model_id AND MODEL110.model_id=T1008290375830.model_id group by MODEL110.is_mutagen;

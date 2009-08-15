@@ -1,9 +1,0 @@
-module(pf_support);
-var foo := bat(oid,str)
-.insert(1@0, ", ")
-.insert(2@0," _____ ")
-.insert(3@0," muh ")
-.insert(4@0, "")
-.insert(6@0, "-");
-string_join(bat(oid,str), foo).print();
-

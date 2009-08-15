@@ -1,6 +1,0 @@
-let $doc :=
-for $d in doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-return doc($d)
-for $order in $doc/order[@id="1"]
-return
-    $order/customer_id

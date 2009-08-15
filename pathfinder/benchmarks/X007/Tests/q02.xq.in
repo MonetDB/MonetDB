@@ -1,9 +1,0 @@
-let $doc := doc("$TSTTRGDIR/load_docs.xml")//doc/text()
-
-for $d in doc(exactly-one($doc[1]))/ComplexAssembly/ComplexAssembly/ComplexAssembly/ComplexAssembly/BaseAssembly/CompositePart/Document
-          [@title = "Composite Part 00000009"
-          or @title = "Composite Part 00000050"
-          or @title = "Composite Part 00000034"
-          or @title = "Composite Part 00000022"
-          or @title = "Composite Part 00000080"]
-return $d/para[1]

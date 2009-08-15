@@ -1,4 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eOccasional
-  where contains(string($e), "oneB4") return
-  <eOccasional aRef="{$e/@aRef}">
-  </eOccasional>
