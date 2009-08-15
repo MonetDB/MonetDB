@@ -1,4 +1,0 @@
-import module namespace xf = "xrpc-fun" at "$TSTSRCDIR/xrpcfun.xq";
-
-for $i in (1, 2, 3)
-    return execute at {"$HOST:$XRPCPORT"} {xf:echoVoid()}

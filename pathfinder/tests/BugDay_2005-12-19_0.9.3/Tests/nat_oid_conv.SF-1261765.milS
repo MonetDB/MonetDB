@@ -1,5 +1,0 @@
-module(unix);module(pathfinder);
-var TSTSRCDIR := getenv("TSTSRCDIR");
-shred_doc(TSTSRCDIR+"/test1261765.xml", "test1261765.xml");
-var docno := bat("doc_name").reverse().find("test1261765.xml").int();
-bat(str(docno)+"_rid_prop").fetch(0).print();

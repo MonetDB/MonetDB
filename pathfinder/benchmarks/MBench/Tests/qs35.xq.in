@@ -1,5 +1,0 @@
-for $e in doc("$TSTTRGDIR/sf0.1.xml")//eNest return
-  if (not(exists($e/eOccasional))) then 
-  <eNest aUnique1="{$e/@aUnique1}" aLevel="{$e/@aLevel}">
-  </eNest>
-  else()

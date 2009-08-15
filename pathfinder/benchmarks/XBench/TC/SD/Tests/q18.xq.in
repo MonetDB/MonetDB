@@ -1,4 +1,0 @@
-for $a in doc("$TSTTRGDIR/small.dictionary.xml")/dictionary/e
-where contains($a, "the hockey")
-return
-    $a/hwg/hw

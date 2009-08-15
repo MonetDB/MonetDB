@@ -1,5 +1,0 @@
-module("pathfinder");
-module("unix");
-var bib := getenv("TSTSRCDIR")+"/ID.1204965-d.xml";
-shred_doc(bib,"bib.xml");
-quit();
