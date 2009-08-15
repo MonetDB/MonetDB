@@ -2276,6 +2276,9 @@ We also refined the swap criterion. If the BBPtrim was initiated due to:
 - too little memory: big bats are unloaded first (from LRU cold to hot).
 Unloading-first is enforced by subtracting @math{2^31} from the stamp in the
 field where the candidates are sorted on.
+
+BBPtrim is abandoned when the application has indicated that it does not
+need it anymore.
 @{
 @c
 #define BBPMAXTRIM 40000
@@ -2498,6 +2501,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 	limit = bbpscanstart;
 
 	while (memtarget > 0 || vmtarget > 0) {
+		/* check for runtime overruling */
+		if ( GDK_vm_trim == 0)
+			break;
 		if( done-- <0)
 			break;
 		/* acquire the BBP locks */
