@@ -813,7 +813,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole)
 		quoted_print(toConsole, schema);
 		stream_printf(toConsole, ".");
 		quoted_print(toConsole, tname);
-		stream_printf(toConsole, " FROM stdin USING DELIMITERS '\\t';\n");
+		stream_printf(toConsole, " FROM stdin USING DELIMITERS '\\t', '\\n', '\"';\n");
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
