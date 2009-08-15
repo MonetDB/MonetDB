@@ -60,8 +60,6 @@ lost_update.SF-2790020
 temp_table_fail_leaves_data.SF-2793286
 having_min_crash.SF-2795951
 insert_type_exception.SF-2789976
-explain_gives_crash.SF-2741829
-explain_gives_crash.SF-2741829_cleanup
 primekeyconstraint.SF-2783425
 random.SF-2737889
 alter_table_drop_constraint.SF-2803477
@@ -87,3 +85,8 @@ table-leftovers.SF-2779462
 Floating_point_exception.SF-2791356
 Division_by_zero_error.SF-2791361
 copy_into_error_off_by_one.SF-2833696
+#
+# The following test currently crashes and this fact (or its remains) might
+# harm sub-sequent tests; hence, this test should be last in this directory.
+explain_gives_crash.SF-2741829
+explain_gives_crash.SF-2741829_cleanup
